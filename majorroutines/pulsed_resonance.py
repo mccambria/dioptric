@@ -726,17 +726,7 @@ def main_with_cxn(
     fig.tight_layout()
     fig.canvas.flush_events()
 
-    # %% Fit the data
 
-    fit_func, popt, pcov = fit_resonance(
-        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
-    )
-    if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(
-            freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
-        )
-    else:
-        fit_fig = None
 
     # %% Clean up and save the data
 
@@ -784,10 +774,23 @@ def main_with_cxn(
         raw_file_name = filePath.stem()
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
+        
+    # %% Fit the data
+
+    fit_func, popt, pcov = fit_resonance(
+        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
+    )
+    if (fit_func is not None) and (popt is not None):
+        fit_fig = create_fit_figure(
+            freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
+        )
+    else:
+        fit_fig = None
+        
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
-
+        
     # %% Return
 
     if fit_func == single_gaussian_dip:

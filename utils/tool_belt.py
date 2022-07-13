@@ -1024,7 +1024,8 @@ def lorentzian(x, x0, A, L, offset):
     return offset + A * 0.5*L / (x_center**2 + (0.5*L)**2)
 
 
-
+def exp_decay(x, amp, decay, offset):
+    return offset + amp * np.exp(-x / decay)
 
 def gaussian(x, *params):
     """

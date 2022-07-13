@@ -367,9 +367,9 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             ax.set_title('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
             ax.legend()
 
-            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name']+'histogram' )
             tool_belt.save_raw_data(raw_data, file_path)
-            tool_belt.save_figure(fig_hist, file_path + '_histogram')
+            tool_belt.save_figure(fig_hist, file_path)
 
             print('data collected!')
             # return
@@ -390,6 +390,7 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             #         'threshold': threshold
             #         }
 
+            #file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
             # tool_belt.save_raw_data(raw_data, file_path)
             # tool_belt.save_figure(fig, file_path)
 
@@ -552,11 +553,12 @@ if __name__ == '__main__':
     }  # 14.5 max
     red_power = 0.75
     nv_sig = {
-        "coords":[-0.225, -0.029,5.718], #NV2
-        "name": "{}-R2-a6".format(sample_name,),
+            "coords":[-0.886, -0.534, 5.890],
+        "name": "{}".format(sample_name,),
         "disable_opt":False,
-        "ramp_voltages": True,
-        "expected_count_rate":None,
+        "ramp_voltages": False,
+        "expected_count_rate":12,
+        "correction_collar": 0.12,
         
         "imaging_laser":green_laser,
         "imaging_laser_power": None,
@@ -576,8 +578,8 @@ if __name__ == '__main__':
         #                   nd_filter = 'nd_0.5')
         
         for n in [2]:
-            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [50e6],
-                                    readout_yellow_powers = [ 0.15],
+            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [1e6,50e6,100e6],
+                                    readout_yellow_powers = [ 0.1, 0.15,0.2],
                                    # readout_yellow_powers = [0.56],
                               nd_filter = 'nd_1.0',
                               num_pulses = n)

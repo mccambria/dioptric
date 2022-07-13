@@ -157,6 +157,7 @@ def plot_broadened_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot 
         ax.plot(lin_r, data_out, 'bo')
         ax.set_xlabel('r (nm)')
         ax.set_ylabel('NV- probability')
+        ax.set_ylim([0,1])
     else:
         ax = []
     
@@ -405,21 +406,39 @@ def width_scaling_w_mods(t, C, e, a, R):
     return numpy.sqrt((-e*C + numpy.sqrt(e**2*C**2 + 4*C**2*a/t)) / (2*C**2)) + R**2
 
 def intensity_scaling(P):
+    '''
+    convert power to intensity
+    '''
     I = P*NA**2*pi/wavelength**2
     return I
 
 
 def radial_scaling(r):
+    '''
+    convert radial distance  to dimensionless length, in terms of NA and wavelength
+    '''
     x = 2*pi*NA*r/wavelength
     return x
 
 def intensity_airy_func(r, P, I_bkgd_perc):
+    '''
+    the function we use for the intensity of the depletion beam. Optional 
+    background value, I_bkgd_perc, which is some percentage of peak intensity
+    '''
     I = intensity_scaling(P)
     x = radial_scaling(r)
-    return I * (2*j1(x) / x)**2  + I_bkgd_perc*I
+    
+    background = I_bkgd_perc*I# *numpy.exp(-x/radial_scaling(300))
+    # background_val = max(0,background)
+    return I * (2*j1(x) / x)**2  + background 
 
 
 def eta(r,v, P, t, I_bkgd_perc = 0):
+    '''
+    the rsponse of the NV to the depletion light, based on the profile of the 
+    depletion beam, and the distance of the NV from the center of the Airy pattern ,r
+
+    '''
     return numpy.exp(-v*t*intensity_airy_func(r, P, I_bkgd_perc)**2)
 
 
@@ -431,15 +450,16 @@ if __name__ == '__main__':
     
     # vary_duration_height(300, 20, [0.25, 100],broadened_val = 0,  I_bkgd_perc = 0.006) # -0.25
     
-    # fit_gaussian_peak(300, 70, 100, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
+    # fit_gaussian_peak(300, 20, 0.25, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
+    plot_broadened_peak(550, 20, 2.5, broadened_val = 0, I_bkgd_perc = 0.0022, do_plot = True)
 
-    I = 0
-    simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 0.1,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 1,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 10,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 100,  1500, 100, I_bkgd_perc = I)
+    # I = 0.0022
+    # simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.05,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.25, 1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 2.5,  1500, 100, I_bkgd_perc = I)
     
     # estimate_ion_rate()
     # fig, ax = plt.subplots(1, 1)
