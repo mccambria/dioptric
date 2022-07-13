@@ -157,7 +157,7 @@ def plot_1D_SpaCE(file_name, file_path, threshold = None, do_plot = True, do_fit
         tool_belt.save_figure(fig, filePath + '-gaussian_fit')
         
     return rad_dist, counts, opti_params, cov_arr
-
+# %%
 def plot_width_vs_dur(file_list,  path, threshold, e):
     widths_master_list = []
     widths_error = []
@@ -244,12 +244,15 @@ def recursive_fit(file_list, path, threshold, num_reps):
     
     e_list =[]
     R_list = []
-    for i in range(num_reps):
+    # recursively fit to find parameters from two models
+    for i in range(num_reps): 
         print()
         print('*** Fitting round {} ***'.format(i))
                 
+        # use height of SAM peaks to find epsilon. We constrain alpha in this fit
         e = plot_heights_vs_dur(file_list, path, threshold, alpha)
         e_list.append(e)
+        # use FWHM of SAM peaks to find alpha (and R). We constrain e in this fit
         alpha, R, R_err = plot_width_vs_dur(file_list,  path, threshold, e)
         R_list.append(R)
     
