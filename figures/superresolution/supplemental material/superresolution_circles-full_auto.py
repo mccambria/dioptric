@@ -27,6 +27,7 @@ import sys
 import multiprocessing
 from functools import partial
 import time
+import superresolution_circles_fake_data as fake_data
 
 # endregion
 
@@ -227,20 +228,27 @@ def calc_distance(fig, x0, x1, y0, y1, sx0, sx1, sy0, sy1):
 
 
 def main(
-    image_file_name, circle_a, circle_b, fast_recursive=False, brute_range=None
+    image_file_name,
+    circle_a=None,
+    circle_b=None,
+    fast_recursive=False,
+    brute_range=None,
 ):
 
     # region Setup
 
     cost_func = cost0
     # minimize_type = "manual"
-    # minimize_type = "publication"
+    # minimize_type =   "publication"
     # minimize_type = "recursive"
     minimize_type = "full_auto"
 
-    # Get the image as a 2D ndarray
-    image_file_dict = tool_belt.get_raw_data(image_file_name)
-    image = np.array(image_file_dict["readout_image_array"])
+    if image_file_name == "fake":
+        image = fake_data.main()
+    else:
+        # Get the image as a 2D ndarray
+        image_file_dict = tool_belt.get_raw_data(image_file_name)
+        image = np.array(image_file_dict["readout_image_array"])
 
     image_domain = image.shape
     image_len_x = image_domain[1]
@@ -250,7 +258,7 @@ def main(
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
 
     opti_image = sigmoid_image
-    plot_image = image
+    plot_image = sigmoid_image
 
     # Plot the image
     fig, ax = plt.subplots()
@@ -448,11 +456,12 @@ def main(
             bounds = [
                 (image_len_y / 4, 3 * image_len_y / 4),
                 (image_len_x / 4, 3 * image_len_x / 4),
-                (20, 35),
+                # (20, 35),
+                (40, 60),
             ]
 
             # Anything worse than minimum_cost and we stop searching for circles
-            minimum_cost = 0.375
+            minimum_cost = 0.5
 
             # Initialize best_cost
             best_cost = 1
@@ -490,7 +499,9 @@ def main(
                 # print(new_best_cost)
                 # print(bounds)
 
-            if new_best_cost > minimum_cost:
+            # Quit if our best is worse than the threshold we set, but make sure
+            # we have at least one circle to plot
+            if (len(plot_circles) > 0) and (new_best_cost > minimum_cost):
                 break
             excluded_centers.append(opti_circle[0:2])
             plot_circles.append(opti_circle)
@@ -548,38 +559,40 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    # circles = [3]
-    circles = [4]
-    # circles = [3, 4]
-    for circle in circles:
+    # # circles = [3]
+    # circles = [4]
+    # # circles = [3, 4]
+    # for circle in circles:
 
-        # Fig. 3
-        if circle == 3:
-            image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
-            # Best circles by hand
-            # circle_a = [41.5, 37, 27.5]
-            # circle_b = [40, 44, 27.75]
-            # Recursive brute results, 1000 point circle
-            circle_a = [41.74, 36.85, 27.73]  # 0.31941
-            # errs_a = [1.4, 1.4, 1.2]
-            circle_b = [39.05, 43.87, 27.59]  # 0.36108
-            # errs_b = [1.5, 0.9, 1.0]
+    #     # Fig. 3
+    #     if circle == 3:
+    #         image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
+    #         # Best circles by hand
+    #         # circle_a = [41.5, 37, 27.5]
+    #         # circle_b = [40, 44, 27.75]
+    #         # Recursive brute results, 1000 point circle
+    #         circle_a = [41.74, 36.85, 27.73]  # 0.31941
+    #         # errs_a = [1.4, 1.4, 1.2]
+    #         circle_b = [39.05, 43.87, 27.59]  # 0.36108
+    #         # errs_b = [1.5, 0.9, 1.0]
 
-        # Fig. 4
-        elif circle == 4:
-            image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
-            # Best circles by hand
-            # circle_a = [50, 46, 26]
-            # circle_b = [51.7, 56.5, 27.3]
-            # Recursive brute results, 1000 point circle
-            circle_a = [50.98, 45.79, 26.14]  # 0.3176
-            # circle_a = [50.98 - 0, 45.79 + 0, 26.14 - 0]  # 0.3176
-            # errs_a = [2.1, 1.1, 1.3]
-            circle_b = [51.2, 56.32, 27.29]  # 0.35952
-            # errs_b = [1.8, 1.1, 1.2]
+    #     # Fig. 4
+    #     elif circle == 4:
+    #         image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
+    #         # Best circles by hand
+    #         # circle_a = [50, 46, 26]
+    #         # circle_b = [51.7, 56.5, 27.3]
+    #         # Recursive brute results, 1000 point circle
+    #         circle_a = [50.98, 45.79, 26.14]  # 0.3176
+    #         # circle_a = [50.98 - 0, 45.79 + 0, 26.14 - 0]  # 0.3176
+    #         # errs_a = [2.1, 1.1, 1.3]
+    #         circle_b = [51.2, 56.32, 27.29]  # 0.35952
+    #         # errs_b = [1.8, 1.1, 1.2]
 
-        main(image_file_name, circle_a, circle_b, fast_recursive=True)
-        # calc_errors(image_file_name, circle_a, circle_b)
+    #     main(image_file_name, circle_a, circle_b, fast_recursive=True)
+    #     # calc_errors(image_file_name, circle_a, circle_b)
+
+    main("fake")
 
     plt.show(block=True)
 
