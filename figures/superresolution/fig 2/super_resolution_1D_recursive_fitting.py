@@ -165,7 +165,7 @@ def plot_width_vs_dur(file_list,  path, threshold, e):
     
     # fit the data with file "plot_1D_SpaCE
     # Currently fitting to quadratic gaussian
-    # Returns the width of the fit (related to FWHM with scaling at deginning of file)
+    # Returns the width of the fit (related to FWHM with scaling at beginning of file)
     # and corresponding uyncertainty with fit. Values in nanometers
     # Also saves the pulse time, in ms
     for f in range(len(file_list)):
@@ -180,7 +180,7 @@ def plot_width_vs_dur(file_list,  path, threshold, e):
         
 
     #### modified inverse quarter####
-    # Estimate the lower limit and convert to dimentionless units below
+    # Estimate the repeatability R and convert to dimentionless units below
     R_guess = 5 #nm 
     fit_func = lambda t, alpha, R: width_scaling_w_mods(t, e, alpha, R) 
     init_fit = [  0.000005, 2*numpy.pi*NA*R_guess/wavelength] 
