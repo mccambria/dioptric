@@ -16,13 +16,13 @@ import utils.tool_belt as tool_belt
 import random
 
 wavelength = 638
-NA = 1.3  
+NA = 1.3
 pi = numpy.pi
 # v = 50 / (30 * NA**2 * pi /wavelength**2)**2 # I should measure the actual value here
 # v = 1.6e10 #nm^4 / (ms mW^2)
 # v = 1.6e10 #nm^4 / (ms mW^2)
 # v = 1.6e13 #nm^4 / (ms mW^2) #hadn't converted us to ms?
-v = 5.8e12 #nm^4 / (ms mW^2) value from Fig 2 fit
+v = 2.3e12 #nm^4 / (ms mW^2) value from Fig 2 fit. Actually, this should be 2.3e12...
 fwhm =2.355
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -34,43 +34,43 @@ def exp_func(t,g):
     return numpy.exp(-g*t)
 def quad_func(I, v):
     return v*I**2
-    
+
 def estimate_ion_rate():    # try to fit to data (data from 7/27?, along x direction)
 
     n_1 = [0.9, 0.5, 0.2, 0.01] # near the first dip
     t_1 = [1e-3, 5e-3, 10e-3, 50e-3] #us
-    r_1 = 350 # nm 
-    
+    r_1 = 350 # nm
+
     n_2 = [0.8, 0.2, 0.1] # first dip
     t_2 = [1e-3, 5e-3, 10e-3]
     r_2 = 401.476 # nm 5.14
-    
+
     n_3 = [0.9, 0.8, 0.4,0.01] # second dip
     t_3 = [10e-3, 50e-3, 100e-3, 500e-3]
     r_3 = 657.67 # nm 8.42
-    
+
     P = 18.4
     # print(intensity_airy_func(r_1, P))
-    
+
     n_list = [n_1, n_2, n_3]
     t_list = [t_1, t_2, t_3]
     r_list = [r_1, r_2, r_3]
-    
-    
+
+
     intensity_list = []
     g_list = []
-    
+
     do_fit = True
-    
+
     if do_fit:
         for i in range(len(r_list)):
             r= r_list[i]
             n = n_list[i]
             t = t_list[i]
-            
+
             init_fit = [1e-1]
             t_linspace = numpy.linspace(t[0], t[-1], 100)
-            
+
             # eta_n = lambda t, v: eta(r,v, P, t)
             opti_params, cov_arr = curve_fit(exp_func,
                   t ,n,p0=init_fit)
@@ -78,38 +78,38 @@ def estimate_ion_rate():    # try to fit to data (data from 7/27?, along x direc
             I = intensity_airy_func(r, P, 0)
             intensity_list.append(I)
             g_list.append(opti_params[0])
-            
+
             fig, ax = plt.subplots()
             ax.plot(t_linspace, exp_func(t_linspace, *opti_params))
             ax.plot(t, n, 'ro')
             ax.set_xlabel('time (ms)')
             ax.set_ylabel('NV- population')
-        
+
         init_fit = [1e10]
         opti_params, cov_arr = curve_fit(quad_func,
               intensity_list ,g_list, p0=init_fit)
         i_min = min(intensity_list)
         i_max = max(intensity_list)
         int_linspace = numpy.linspace(i_min, i_max, 100)
-        
+
         fig, ax = plt.subplots()
         ax.plot(int_linspace, quad_func(int_linspace, *opti_params))
         ax.plot(intensity_list, g_list, 'ro')
         ax.set_xlabel(r'Intensity (mW/nm$^2$)')
         ax.set_ylabel('NV- ionization rate (1/ms)')
-        
+
         text = 'NV- ionization rate scaling, v = {:.3f}\n'.format(opti_params[0]) + r'mW$^2$/(ms nm$^4$)'
         ax.text(0.2, 0.2, text, transform=ax.transAxes, fontsize=12,
                 verticalalignment='top', bbox=props)
         print(opti_params[0])
-    
+
 # %%
 
 # def plot_peak(peak, P, t, do_plot = False):
 #     dr = 150
 #     lin_r = numpy.linspace(peak - dr, peak + dr, 100)
 #     data = eta(lin_r,v, P, t)
-    
+
 #     if do_plot:
 #         fig, ax = plt.subplots(1, 1)
 #         ax.plot(lin_r, data, 'bo')
@@ -117,7 +117,7 @@ def estimate_ion_rate():    # try to fit to data (data from 7/27?, along x direc
 #         ax.set_ylabel('NV- probability')
 #     else:
 #         ax = []
-    
+
 #     return lin_r, data, ax
 
 def plot_broadened_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot = False):
@@ -126,7 +126,7 @@ def plot_broadened_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot 
     data_original = eta(lin_r,v, P, t, I_bkgd_perc)
     num_rand = 100 #number of times it repeats the data
     repeatability = broadened_val #max +/- shift to the data
-    
+
 
     if broadened_val != 0:
         # calc random shifts in the data
@@ -139,10 +139,10 @@ def plot_broadened_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot 
                 data_shift = [0]*int(i) + data_shift[:-int(i)]
             elif i < 0:
                 data_shift = data_shift[-int(i):] + [0]*-int(i)
-            
+
             data_new = data_out + data_shift
             data_out = data_new
-            
+
         data_out = data_out / num_rand
     else:
         data_out = data_original
@@ -151,7 +151,7 @@ def plot_broadened_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot 
     # shifted_data = shift_list + data.tolist()
     # data = data.tolist() + shift_list
     # new_data = (numpy.array(data) + numpy.array(shifted_data))/2
-    
+
     if do_plot:
         fig, ax = plt.subplots(1, 1)
         ax.plot(lin_r, data_out, 'bo')
@@ -160,37 +160,37 @@ def plot_broadened_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot 
         ax.set_ylim([0,1])
     else:
         ax = []
-    
+
     return lin_r, data_out, ax
 
 def fit_gaussian_peak(peak, P, t, broadened_val = 0, I_bkgd_perc = 0, do_plot = False):
     # ret_vals = plot_peak(peak, P, t, do_plot)
     ret_vals = plot_broadened_peak(peak, P, t, broadened_val, I_bkgd_perc, do_plot)
     lin_r, data, ax = ret_vals
-    
+
     init_guess = [0.5, peak, peak/10, 0]
     fit_params, cov_arr = curve_fit( tool_belt.gaussian, lin_r, data,
                                       p0 = init_guess)
-    
+
     if do_plot:
         print(abs(fit_params[2]*fwhm))
         print(fit_params)
         ax.plot(lin_r, tool_belt.gaussian(lin_r, *fit_params), 'r-')
-        
+
         eq_text = 'FWHM = {:.3f} +/- {:.3f} nm'.format(abs(fit_params[2]*fwhm), cov_arr[2][2]*fwhm)
         ax.text(0.5, 0.95, eq_text, transform=ax.transAxes, fontsize=12,
                 verticalalignment='top', bbox=props)
-        
-    
-    
-    
+
+
+
+
     return fit_params
 
 def vary_powers(peak, P_range, t, broadened_val = 0,):
-    
+
     width_list = []
     power_list = []
-    
+
     # for P in numpy.linspace(P_range[0], P_range[1], 50):
     for P in numpy.logspace(numpy.log10(P_range[0]), numpy.log10(P_range[1]), 50):
         failed = True
@@ -199,17 +199,17 @@ def vary_powers(peak, P_range, t, broadened_val = 0,):
             failed = False
         except Exception:
             continue
-        
+
         if not failed:
             width_list.append(abs(fit_params[2]))
             power_list.append(P)
-            
+
     init_guess = [50, -0.5]
     fit_params, _ = curve_fit(power_law, power_list, width_list,
                                       p0 = init_guess)
     print(fit_params)
-        
-    
+
+
     fig, ax = plt.subplots(1, 1)
     lin_powers = numpy.linspace(power_list[0], power_list[-1], 100)
     ax.plot(power_list, width_list, 'bo')
@@ -218,7 +218,7 @@ def vary_powers(peak, P_range, t, broadened_val = 0,):
     ax.set_ylabel(r'Gaussian fit width, $\sigma$ (nm)')
     ax.set_yscale('log')
     ax.set_xscale('log')
-    
+
     eq_text = 'a * x ^ b'
     ax.text(0.75, 0.95, eq_text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
@@ -230,7 +230,7 @@ def vary_powers(peak, P_range, t, broadened_val = 0,):
 def vary_duration_width(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
     width_list = []
     duration_list = []
-    
+
     # for t in numpy.linspace(t_range[0], t_range[1], 100):
     for t in numpy.logspace(numpy.log10(t_range[0]), numpy.log10(t_range[1]), 100):
         failed = True
@@ -239,20 +239,20 @@ def vary_duration_width(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
             failed = False
         except Exception:
             continue
-        
+
         if not failed:
             width_list.append(abs(fit_params[2]))
             duration_list.append(t)
-            
+
     fig, ax = plt.subplots(1, 1)
     lin_durations = numpy.linspace(duration_list[0], duration_list[-1], 100)
     ax.plot(duration_list, numpy.array(width_list)*fwhm, 'bo')
-    
+
     ### Fitting ###
     ### Modified scaling with background intensity and broadening
     C = bessel_scnd_der(radial_scaling(peak)) # get the constant term based on bessel functions
     bound_vals = (0, numpy.infty)
-    
+
     # fit function for background, no broadening
     if broadened_val ==0 and I_bkgd_perc != 0:
         fit_func = lambda t, e, a: width_scaling_w_mods(t, C, e, a, 0)
@@ -277,20 +277,20 @@ def vary_duration_width(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
         init_guess = [50]
         text = r'$t^{-1/4}$ scaling'
 
-    
-    
+
+
     print(fit_params)
     if broadened_val !=0 and I_bkgd_perc != 0: #print some info in test case
         print('Fit value for broadening: {} nm'.format(fit_params[2]**2))
         print('Input value for broadening: {} nm'.format(broadened_val))
         print('Fit value for background intensity: {}'.format(fit_params[0]))
         print('Input value for background intensity: {}'.format(I_bkgd_perc))
-    
+
     if broadened_val ==0 and I_bkgd_perc != 0: #print some info in test case
         print('Fit value for background intensity: {}'.format(fit_params[0]))
         print('Input value for background intensity: {}'.format(I_bkgd_perc))
     ax.plot(lin_durations, fit_func(lin_durations, 0.005, 30)*fwhm, 'r-')
-    
+
     #inverse quarter
     fit_func = lambda x, a: power_law(x, a, (-1/4))
     init_guess = [50]
@@ -298,13 +298,13 @@ def vary_duration_width(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
     fit_params, _ = curve_fit(fit_func, duration_list, width_list,
                                       p0 = init_guess)
     ax.plot(lin_durations, fit_func(lin_durations, *fit_params)*fwhm, 'k-')
-    
-    
+
+
     ax.set_xlabel('Duration (ms)')
     ax.set_ylabel(r'FWHM (nm)')
     ax.set_yscale('log')
     ax.set_xscale('log')
-    
+
     ax.text(0.05, 0.10, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
     return duration_list, width_list
@@ -313,7 +313,7 @@ def vary_duration_width(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
 def vary_duration_height(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
     height_list = []
     duration_list = []
-    
+
     # for t in numpy.linspace(t_range[0], t_range[1], 100):
     for t in numpy.linspace(t_range[0], t_range[1], 100):
         failed = True
@@ -322,15 +322,15 @@ def vary_duration_height(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
             failed = False
         except Exception:
             continue
-        
+
         if not failed:
             height_list.append(fit_params[0]**2)
             duration_list.append(t)
-            
+
     fig, ax = plt.subplots(1, 1)
     lin_durations = numpy.linspace(duration_list[0], duration_list[-1], 100)
     ax.plot(duration_list, height_list, 'bo')
-    
+
     if I_bkgd_perc != 0:
         fit_func = lambda t,  d: exp_scaling(t, 1, 1, d)
         init_guess = [1]
@@ -338,66 +338,66 @@ def vary_duration_height(peak, P, t_range, broadened_val = 0, I_bkgd_perc = 0):
                                       p0 = init_guess)
     print(fit_params)
     ax.plot(lin_durations, fit_func(lin_durations, *fit_params), 'k-')
-    
+
     I_0 = intensity_scaling(P)
     epsilon = numpy.sqrt(1/(fit_params[0] * v * I_0**2))
     print('fit value for background percentage: ', epsilon)
-    
+
     ax.set_xlabel('Duration (ms)')
     ax.set_ylabel(r'Peak height')
     ax.set_yscale('log')
     # ax.set_xscale('log')
-    
+
     return duration_list, height_list
 
 def simulation_2D(P, t,  img_range, num_steps, I_bkgd_perc = 0):
     img_array = numpy.zeros((num_steps,num_steps))
-    
+
     half_img_range = img_range/2
     x_vals = numpy.linspace(-half_img_range, half_img_range, num_steps)
     y_vals = numpy.linspace(-half_img_range, half_img_range, num_steps)
-    
+
     for j in range(num_steps):
         for i in range(num_steps):
             r = numpy.sqrt(x_vals[i]**2 + y_vals[j]**2)
             val = eta(r,v, P, t, I_bkgd_perc)
             img_array[i][j] = val
-            
+
     half_px = (x_vals[1]-x_vals[0] )/2
     img_extent = [-(half_img_range+half_px), (half_img_range+half_px),
                   -(half_img_range+half_px), (half_img_range+half_px)]
-    
-    
-    fig, ax = plt.subplots(dpi=300)    
+
+
+    fig, ax = plt.subplots(dpi=300)
     fig.set_figwidth(3)
     fig.set_figheight(3)
-    
-    img = ax.imshow(img_array, cmap='inferno', 
+
+    img = ax.imshow(img_array, cmap='inferno',
                     extent=tuple(img_extent),
                     vmax = 1.0,
                     vmin = 0)
     clb = plt.colorbar(img)
     clb.set_label("NV- pop", rotation=270)
-    
-    
+
+
     ax.set_xlabel('x (nm)')
     ax.set_ylabel('y (nm)')
     # Draw the canvas and flush the events to the backend
     fig.canvas.draw()
     plt.tight_layout()
     fig.canvas.flush_events()
-            
+
 # %%
 def bessel_scnd_der(x):
     term_1 = 24*j1(x)**2
     term_2 = 16*j1(x)*(jv(0,x) - jv(2,x))
     term_3 = 4* (0.5* (jv(0,x) - jv(2,x))**2 + j1(x)* (0.5*(jv(3,x) - j1(x)) - j1(x)))
-    
+
     return term_1/x**4 - term_2/x**3 + term_3/x**2
 
 def power_law(x, a, b):
     return a*x**b
-    
+
 def exp_scaling(x, a, b, d):
     return a*numpy.exp(-x**b/d)
 
@@ -422,20 +422,20 @@ def radial_scaling(r):
 
 def intensity_airy_func(r, P, I_bkgd_perc):
     '''
-    the function we use for the intensity of the depletion beam. Optional 
+    the function we use for the intensity of the depletion beam. Optional
     background value, I_bkgd_perc, which is some percentage of peak intensity
     '''
     I = intensity_scaling(P)
     x = radial_scaling(r)
-    
+
     background = I_bkgd_perc*I# *numpy.exp(-x/radial_scaling(300))
     # background_val = max(0,background)
-    return I * (2*j1(x) / x)**2  + background 
+    return I * (2*j1(x) / x)**2  + background
 
 
 def eta(r,v, P, t, I_bkgd_perc = 0):
     '''
-    the rsponse of the NV to the depletion light, based on the profile of the 
+    the rsponse of the NV to the depletion light, based on the profile of the
     depletion beam, and the distance of the NV from the center of the Airy pattern ,r
 
     '''
@@ -447,20 +447,22 @@ def eta(r,v, P, t, I_bkgd_perc = 0):
 if __name__ == '__main__':
     # vary_powers(300, [40, 340], 70) # -0.5
     # vary_duration_width(300, 70, [0.25, 100],broadened_val = 0,  I_bkgd_perc = 0.005) # -0.25
-    
-    # vary_duration_height(300, 20, [0.25, 100],broadened_val = 0,  I_bkgd_perc = 0.006) # -0.25
-    
-    # fit_gaussian_peak(300, 20, 0.25, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
-    plot_broadened_peak(550, 20, 2.5, broadened_val = 0, I_bkgd_perc = 0.0022, do_plot = True)
 
-    # I = 0.0022
-    # simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.05,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.25, 1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 2.5,  1500, 100, I_bkgd_perc = I)
-    
+    # vary_duration_height(300, 20, [0.25, 100],broadened_val = 0,  I_bkgd_perc = 0.006) # -0.25
+
+    # fit_gaussian_peak(300, 70, 100, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
+    # i = intensity_scaling(20)
+    # print(i)
+    I = 0.001#22
+    simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.05,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.25,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 2.5,  1500, 100, I_bkgd_perc = I)
+
+    # plot_broadened_peak(550, 20, 2.5, broadened_val = 0, I_bkgd_perc = I, do_plot = True)
+
     # estimate_ion_rate()
     # fig, ax = plt.subplots(1, 1)
     # r = numpy.linspace(-700 , 700, 701)
@@ -471,7 +473,7 @@ if __name__ == '__main__':
     # I_bkgd_perc = 0.00
     # fig, ax = plt.subplots()
     # x_lin = numpy.linspace(-300, 900, 601)
-    # y_vals_light = intensity_airy_func(x_lin, 1, I_bkgd_perc) 
+    # y_vals_light = intensity_airy_func(x_lin, 1, I_bkgd_perc)
     # y_vals_eta = eta(x_lin, 1e4, 1, 10, I_bkgd_perc)
     # ax.plot(x_lin, y_vals_light, '-', color = 'purple')
     # ax.plot(x_lin, y_vals_eta, 'r-')

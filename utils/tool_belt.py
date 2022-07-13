@@ -685,6 +685,9 @@ def create_image_figure(
         matplotlib.figure.Figure
     """
 
+
+    # plt.rcParams.update({'font.size': 22})
+
     if um_scaled:
         axes_label = r"$\mu$m"
     else:
@@ -740,14 +743,15 @@ def create_image_figure(
     return fig
 
 
-def calc_image_extent(x_center, y_center, scan_range, num_steps,
-                      pixel_size_adjustment=True):
+def calc_image_extent(
+    x_center, y_center, scan_range, num_steps, pixel_size_adjustment=True
+):
     """
     Calculate the image extent to be fed to create_image_figure from the
     center coordinates, scan range, and number of steps (the latter two
     are assumed to be the same for x and y).
-    
-    If pixel_size_adjustment, adjust extent by half a pixel so pixel 
+
+    If pixel_size_adjustment, adjust extent by half a pixel so pixel
     coordinates are centered on the pixel. Should only be used for plotting.
     """
 
@@ -758,9 +762,9 @@ def calc_image_extent(x_center, y_center, scan_range, num_steps,
     y_high = y_center + half_scan_range
 
     if pixel_size_adjustment:
-        _, _, pixel_size = calc_image_scan_vals(x_center, y_center, 
-                                                scan_range, num_steps, 
-                                                ret_pixel_size=True)
+        _, _, pixel_size = calc_image_scan_vals(
+            x_center, y_center, scan_range, num_steps, ret_pixel_size=True
+        )
         half_pixel_size = pixel_size / 2
         image_extent = [
             x_low - half_pixel_size,
@@ -770,21 +774,23 @@ def calc_image_extent(x_center, y_center, scan_range, num_steps,
         ]
     else:
         image_extent = [x_low, x_high, y_low, y_high]
-    
+
     return image_extent
 
 
-def calc_image_scan_vals(x_center, y_center, scan_range, num_steps, 
-                         ret_pixel_size=False):
+def calc_image_scan_vals(
+    x_center, y_center, scan_range, num_steps, ret_pixel_size=False
+):
     """
     Calculate the scan values in x, y for creating an image
     """
 
-    x_low, x_high, y_low, y_high = calc_image_extent(x_center, y_center, 
-                                                 scan_range, num_steps,
-                                                 pixel_size_adjustment=False)
-    x_scan_vals, pixel_size = np.linspace(x_low, x_high, num_steps, 
-                                          retstep=True)
+    x_low, x_high, y_low, y_high = calc_image_extent(
+        x_center, y_center, scan_range, num_steps, pixel_size_adjustment=False
+    )
+    x_scan_vals, pixel_size = np.linspace(
+        x_low, x_high, num_steps, retstep=True
+    )
     y_scan_vals = np.linspace(y_low, y_high, num_steps)
 
     if ret_pixel_size:
@@ -1006,7 +1012,7 @@ def get_pi_on_2_pulse_dur(rabi_period):
 
 
 def lorentzian(x, x0, A, L, offset):
-    
+
     """
     Calculates the value of a lorentzian for the given input and parameters
 
@@ -1501,9 +1507,9 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
 
     folderDir = get_folder_dir(source_name, subfolder_name)
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
-    
+
     file_path_Path = Path(fileDir)
-    
+
     return file_path_Path
 
 
@@ -1590,8 +1596,6 @@ def save_raw_data(rawData, filePath):
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
-        
-    
 
 
 def get_nv_sig_units():
@@ -2066,7 +2070,7 @@ def set_drift(drift):
 
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
-    
+
 def adjust_coords_for_drift(coords, drift=None):
     if drift is None:
         drift = get_drift()
