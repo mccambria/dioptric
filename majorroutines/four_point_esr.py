@@ -33,7 +33,6 @@ import sys
 
 
 def main(
-    cxn,
     nv_sig,
     apd_indices,
     num_reps,
@@ -45,7 +44,7 @@ def main(
 ):
 
     with labrad.connect() as cxn:
-        resonance_list = main_with_cxn(
+        resonance, res_err = main_with_cxn(
             cxn,
             nv_sig,
             apd_indices,
@@ -56,7 +55,7 @@ def main(
             d_omega,
             opti_nv_sig,
         )
-    return resonance_list
+    return resonance, res_err
 
 
 def main_with_cxn(
@@ -66,7 +65,7 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state,
-    detuning=0.005,
+    detuning=0.004,
     d_omega=0.002,
     opti_nv_sig=None,
 ):
@@ -76,7 +75,7 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
 
     # Calculate the frequencies we need to set
-    passed_res = nv_sig[f"resonance_{state.value}"]
+    passed_res = nv_sig[f"resonance_{state.name}"]
     freq_1 = passed_res - detuning - d_omega
     freq_2 = passed_res - detuning + d_omega
     freq_3 = passed_res + detuning - d_omega
@@ -100,11 +99,12 @@ def main_with_cxn(
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
     readout_sec = readout / (10 ** 9)
+    pi_pulse_dur = tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.name}"])
     seq_args = [
-        tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.value}"]),
+        pi_pulse_dur,
         polarization_time,
         readout,
-        tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.value}"]),
+        pi_pulse_dur,
         apd_indices[0],
         state.value,
         laser_name,
@@ -215,10 +215,10 @@ def main_with_cxn(
     delta_res = ((f1 + f2) - (f3 + f4)) * (d_omega / ((f1 - f2) - (f3 - f4)))
     resonance = passed_res + delta_res
     # Calculate the error
-    d_delta_res_df1 = (-2 * d_omega * (f2 - f4)) / (f1 - f2 - f3 + f4) ^ 2
-    d_delta_res_df2 = (2 * d_omega * (f1 - f3)) / (f1 - f2 - f3 + f4) ^ 2
-    d_delta_res_df3 = (2 * d_omega * (f2 - f4)) / (f1 - f2 - f3 + f4) ^ 2
-    d_delta_res_df4 = (-2 * d_omega * (f1 - f3)) / (f1 - f2 - f3 + f4) ^ 2
+    d_delta_res_df1 = (-2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
+    d_delta_res_df2 = (2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
+    d_delta_res_df3 = (2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
+    d_delta_res_df4 = (-2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
     resonance_err = np.sqrt(
         (d_delta_res_df1 * f1_err) ** 2
         + (d_delta_res_df2 * f2_err) ** 2
@@ -244,6 +244,10 @@ def main_with_cxn(
         "num_runs": num_runs,
         "readout": readout,
         "readout-units": "ns",
+        "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
+        "norm_avg_sig-units": "arb",
+        "norm_avg_sig_ste": norm_avg_sig_ste.astype(float).tolist(),
+        "norm_avg_sig_ste-units": "arb",
         "freq_index_master_list": freq_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
@@ -251,10 +255,6 @@ def main_with_cxn(
         "sig_counts-units": "counts",
         "ref_counts": ref_counts.astype(int).tolist(),
         "ref_counts-units": "counts",
-        "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
-        "norm_avg_sig-units": "arb",
-        "norm_avg_sig_ste": norm_avg_sig_ste.astype(float).tolist(),
-        "norm_avg_sig_ste-units": "arb",
     }
 
     nv_name = nv_sig["name"]

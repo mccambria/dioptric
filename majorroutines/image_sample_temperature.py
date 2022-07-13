@@ -27,9 +27,12 @@ import utils.common as common
 
 
 def process_resonances(ref_resonances, sig_resonances):
+# def process_resonances(ref_resonances, ref_res_errs,
+#                         sig_resonances, sig_res_errs):
     """Deprecated, but still maybe still useful. Use process_res_files instead"""
 
     ref_zfss = [[(el[1] + el[0]) / 2 for el in row] for row in ref_resonances]
+    # ref_zfs_errs
     sig_zfss = [[(el[1] + el[0]) / 2 for el in row] for row in sig_resonances]
 
     ref_temps = [
@@ -255,6 +258,8 @@ def main_with_cxn(
 # region Run the file
 
 if __name__ == "__main__":
+    
+    pass
 
     # plt.show(block=True)
 
