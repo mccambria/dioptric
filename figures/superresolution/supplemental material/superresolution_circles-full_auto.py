@@ -2,6 +2,10 @@
 """
 Fit circles to superresolution rings in images demonstrating resolved
 images of two NVs separated by less than the diffraction limit.
+By full auto I mean you don't have to tell the program how many circles
+there are - it'll figure it out for you by finding the best circle,
+finding the next best circle, and so on until there are no more good
+circles left.
 
 Created on February 25, 2022
 
@@ -22,6 +26,7 @@ import cv2 as cv
 import sys
 import multiprocessing
 from functools import partial
+import time
 
 # endregion
 
@@ -38,15 +43,26 @@ sin_phi_linspace = np.sin(phi_linspace)
 # region Functions
 
 
-def cost0(params, image, x_lim, y_lim, debug):
+def cost0(params, image, x_lim, y_lim, debug, excluded_centers):
     """
-    Faux-integrate the pixel values around the circle. Then muliply by -1 so that
-    lower values are better and we can use scipy.optimize.minimize.
-    By faux-integrate I mean average the values under a 1000 point, linearly spaced
-    sampling of the circle.
+    Faux-integrate the pixel values around the circle. By faux-integrate I mean
+    average the values under a 1000 point, linearly spaced sampling of the circle.
+
+    excluded_centers: list of tuples (x,y) describing potential centers that we don't
+    want to consider. Useful for ignoring circles we've already found when optimizing.
     """
 
     circle_center_x, circle_center_y, circle_radius = params
+
+    # Check if the circle is in the exclusion range
+    exclusion_range = 4  # Pixels
+    for excluded_x, excluded_y in excluded_centers:
+        dist = np.sqrt(
+            (excluded_x - circle_center_x) ** 2
+            + (excluded_y - circle_center_y) ** 2
+        )
+        if dist < exclusion_range:
+            return 1
 
     circle_samples_x = circle_center_x + circle_radius * cos_phi_linspace
     circle_samples_y = circle_center_y + circle_radius * sin_phi_linspace
@@ -218,10 +234,9 @@ def main(
 
     cost_func = cost0
     # minimize_type = "manual"
-    minimize_type = "plotting"
-    # minimize_type = "auto"
+    # minimize_type = "publication"
     # minimize_type = "recursive"
-    # minimize_type = "none"
+    minimize_type = "full_auto"
 
     # Get the image as a 2D ndarray
     image_file_dict = tool_belt.get_raw_data(image_file_name)
@@ -235,7 +250,7 @@ def main(
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
 
     opti_image = sigmoid_image
-    plot_image = sigmoid_image
+    plot_image = image
 
     # Plot the image
     fig, ax = plt.subplots()
@@ -248,12 +263,15 @@ def main(
 
     # region Circle finding
 
-    args = [opti_image, image_len_x, image_len_y, False]
+    excluded_centers = []
+    args = [opti_image, image_len_x, image_len_y, False, excluded_centers]
     # Partial function with everything but the circle parameters filled in
     cost_func_partial = partial(
         cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2]
     )
     plot_circles = []
+
+    start = time.time()
 
     if minimize_type == "manual":
 
@@ -292,18 +310,22 @@ def main(
             opti_circle = res.x
             plot_circles.append(opti_circle)
 
-    elif minimize_type == "plotting":
-        half_range = 18 #for circle 3
+    elif minimize_type == "publication":
+        half_range = 18  # for circle 3
         # half_range = 20 #for circle 4
         num_points = 100
         half_len_x = image_len_x // 2
         half_len_y = image_len_x // 2
-        x_linspace = np.linspace(half_len_x - half_range, half_len_x + half_range, num_points)
-        y_linspace = np.linspace(half_len_y - half_range, half_len_y + half_range, num_points)
+        x_linspace = np.linspace(
+            half_len_x - half_range, half_len_x + half_range, num_points
+        )
+        y_linspace = np.linspace(
+            half_len_y - half_range, half_len_y + half_range, num_points
+        )
         reconstruction = []
         print(image_len_x)
         print(x_linspace)
-        
+
         # return
 
         # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
@@ -366,33 +388,6 @@ def main(
 
         plot_circles = [circle_a, circle_b]
 
-    elif minimize_type == "auto":
-
-        # Define the bounds of the optimization
-        bounds_a = [(el - brute_range, el + brute_range) for el in circle_a]
-        bounds_b = [(el - brute_range, el + brute_range) for el in circle_b]
-        # Assume one circle is in the left half of the image and the other
-        # is in the right half
-        mid_x = (bounds_a[1][1] + bounds_b[1][0]) / 2
-        bounds_a[1] = (bounds_a[1][0], mid_x)
-        bounds_b[1] = (mid_x, bounds_b[1][1])
-        bounds_a = tuple(bounds_a)
-        bounds_b = tuple(bounds_b)
-
-        for bounds in [bounds_a, bounds_b]:
-
-            # Run a brute force optimization to avoid local minima. This function
-            # automatically includes a fine tuning minimization at the end
-            opti_circle = brute(
-                cost_func,
-                bounds,
-                Ns=20,
-                args=args,
-                # finish=None
-            )
-
-            plot_circles.append(opti_circle)
-
     elif minimize_type == "recursive":
 
         # Define the bounds of the optimization
@@ -417,7 +412,12 @@ def main(
             while True:
 
                 opti_circle = brute(
-                    cost_func, bounds, Ns=20, args=args, finish=None
+                    cost_func,
+                    bounds,
+                    Ns=20,
+                    args=args,
+                    finish=None,
+                    workers=-1,  # Multiprocessing: -1 means use as many cores as available
                 )
                 new_best_cost = cost_func(opti_circle, *args)
 
@@ -440,9 +440,63 @@ def main(
 
             plot_circles.append(opti_circle)
 
-    # Just use the passed circles
-    else:
-        plot_circles = [circle_a, circle_b]
+    elif minimize_type == "full_auto":
+
+        while True:
+
+            # Define the bounds of the optimization
+            bounds = [
+                (image_len_y / 4, 3 * image_len_y / 4),
+                (image_len_x / 4, 3 * image_len_x / 4),
+                (20, 35),
+            ]
+
+            # Anything worse than minimum_cost and we stop searching for circles
+            minimum_cost = 0.375
+
+            # Initialize best_cost
+            best_cost = 1
+
+            while True:
+
+                # Update args with the last found opti_circle
+                args[-1] = excluded_centers
+
+                opti_circle = brute(
+                    cost_func,
+                    bounds,
+                    Ns=20,
+                    args=args,
+                    finish=None,
+                    workers=-1,  # Multiprocessing: -1 means use as many cores as available
+                )
+                args[-1] = []
+                new_best_cost = cost_func(opti_circle, *args)
+
+                threshold = 0.0001 * best_cost
+                if best_cost - new_best_cost < threshold:
+                    break
+                best_cost = new_best_cost
+
+                bounds_span = [el[1] - el[0] for el in bounds]
+                half_new_span = [0.1 * el for el in bounds_span]
+                bounds = [
+                    (
+                        opti_circle[ind] - half_new_span[ind],
+                        opti_circle[ind] + half_new_span[ind],
+                    )
+                    for ind in range(3)
+                ]
+                # print(new_best_cost)
+                # print(bounds)
+
+            if new_best_cost > minimum_cost:
+                break
+            excluded_centers.append(opti_circle[0:2])
+            plot_circles.append(opti_circle)
+
+    end = time.time()
+    print(f"Elapsed time: {end-start}")
 
     # endregion
 
@@ -494,8 +548,8 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    circles = [3]
-    # circles = [4]
+    # circles = [3]
+    circles = [4]
     # circles = [3, 4]
     for circle in circles:
 
