@@ -434,15 +434,15 @@ if __name__ == '__main__':
     # fit_gaussian_peak(300, 70, 100, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
     # i = intensity_scaling(20)
     # print(i)
-    I = 0.00#22
-    # simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.05,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 0.25,  1500, 100, I_bkgd_perc = I)
-    # simulation_2D(20, 2.5,  1500, 100, I_bkgd_perc = I)
+    I = 0.001#22
+    simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.05,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.25,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 2.5,  1500, 100, I_bkgd_perc = I)
     
-    plot_broadened_peak(550, 20, 2.5, broadened_val = 0, I_bkgd_perc = I, do_plot = True)
+    # plot_broadened_peak(550, 20, 2.5, broadened_val = 0, I_bkgd_perc = I, do_plot = True)
         
     # estimate_ion_rate()
     # fig, ax = plt.subplots(1, 1)
