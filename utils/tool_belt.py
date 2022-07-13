@@ -684,6 +684,9 @@ def create_image_figure(
     Returns:
         matplotlib.figure.Figure
     """
+    
+    
+    # plt.rcParams.update({'font.size': 22})
 
     if um_scaled:
         axes_label = r"$\mu$m"
