@@ -81,12 +81,13 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     readouts = readouts_with_zero[1:]  # Exclude 0 ns
     integrated_sig_tags = [(sig_tags < readout).sum() for readout in readouts]
     integrated_ref_tags = [(ref_tags < readout).sum() for readout in readouts]
-    snr = []
+    snr_per_readout = []
     for sig, ref in zip(integrated_sig_tags, integrated_ref_tags):
         # Assume Poisson statistics on each count value
         sig_noise = np.sqrt(sig)
         ref_noise = np.sqrt(ref)
-        snr.append((ref-sig) / np.sqrt(sig_noise**2 + ref_noise**2))
+        snr = (ref-sig) / np.sqrt(sig_noise**2 + ref_noise**2)
+        snr_per_readout.append(snr / np.sqrt(num_reps))
 
     ax = axes_pack[0]
     # ax.plot(readouts, integrated_sig_tags, label=r"$\ket{m_{s}=\pm 1}$")
@@ -97,8 +98,9 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     sig_hist, bin_edges = np.histogram(sig_tags, bins=readouts_with_zero)
     ref_hist, bin_edges = np.histogram(ref_tags, bins=readouts_with_zero)
     readout_window = round(readouts_with_zero[1] - readouts_with_zero[0])
-    sig_rates = sig_hist / (readout_window * num_reps)
-    ref_rates = ref_hist / (readout_window * num_reps)
+    readout_window_sec = readout_window ** -9
+    sig_rates = sig_hist / (readout_window_sec * num_reps)
+    ref_rates = ref_hist / (readout_window_sec * num_reps)
     bin_centers = (readouts_with_zero[:-1] + readouts) / 2
     ax.plot(bin_centers, sig_rates, label=r"$m_{s}=\pm 1$")
     ax.plot(bin_centers, ref_rates, label=r"$m_{s}=0$")
@@ -157,6 +159,7 @@ def optimize_readout_duration_sub(
     # Some initial parameters
     opti_period = 2.5 * 60  # optimize every opti_period seconds
     num_reps_per_cycle = round(opti_period / period_sec)
+    print(num_reps_per_cycle)
     num_reps_remaining = num_reps
     timetags = []
     channels = []
@@ -189,6 +192,7 @@ def optimize_readout_duration_sub(
             num_reps_to_run = int(num_reps_per_cycle)
         else:
             num_reps_to_run = int(num_reps_remaining)
+        print(num_reps_to_run)
         cxn.pulse_streamer.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
