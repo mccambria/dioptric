@@ -584,6 +584,9 @@ def get_tagger_wiring(cxn):
 
 
 # %% Matplotlib plotting utils
+# NOTE: This and other new plotting helper functions should all be in kplotlib 
+# now. I'm leaving the below functions here so that I don't break anything by
+# deleting them.
 
 
 def init_matplotlib(font_size=17):

@@ -115,3 +115,41 @@ def zero_to_one_threshold(val):
 
 
 # endregion
+
+def init_kplotlib(font_size=17):
+    """
+    Runs the default initialization for kplotlib, our default configuration
+    of matplotlib
+    """
+
+    # Interactive mode so plots update as soon as the event loop runs
+    plt.ion()
+
+    ####### Latex setup #######
+
+    preamble = r""
+    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+
+    # Fonts
+    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+    preamble += r"\usepackage{helvet}"
+    # Latin mdoern is default math font but let's be safe
+    preamble += r"\usepackage{lmodern}"
+
+    # Sans serif math font, looks better for axis numbers.
+    # Preserves \mathrm and \mathit commands so you can still use serif
+    # Latin modern font for actually variables, equations, or whatever.
+    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+
+    plt.rcParams["text.latex.preamble"] = preamble
+
+    ###########################
+
+    # plt.rcParams["savefig.format"] = "svg"
+
+    plt.rcParams["font.size"] = font_size
+    # plt.rcParams["font.size"] = 17
+    # plt.rcParams["font.size"] = 15
+
+    plt.rc("text", usetex=True)
