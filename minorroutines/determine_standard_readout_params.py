@@ -25,13 +25,44 @@ from random import shuffle
 from utils.tool_belt import States
 import utils.kplotlib as kpl
 import copy
+import matplotlib.pyplot as plt
 
 
 # region Functions
 
 
-def integrate_tags(tags, integral_lim):
-    """Add up the number of tags that are below integral_lim"""
+def process_raw_tags(apd_gate_channel, raw_tags, channels):
+    """
+    Take a raw timetag signal with tags in units of ns since the tagger
+    started and convert the tags into relative times from when the gate opened
+    """
+
+    sig_tags = []
+    ref_tags = []
+    gate_open_channel = apd_gate_channel
+    gate_close_channel = -gate_open_channel
+
+    channels_array = np.array(channels)
+    gate_open_inds = np.where(channels_array == gate_open_channel)[0]
+    gate_close_inds = np.where(channels_array == gate_close_channel)[0]
+
+    num_reps = len(gate_open_inds)
+    for rep_ind in range(num_reps):
+        open_ind = gate_open_inds[rep_ind]
+        close_ind = gate_close_inds[rep_ind]
+        open_timetag = raw_tags[open_ind]
+        rep_processed_timetags = raw_tags[open_ind + 1 : close_ind]
+        rep_processed_timetags = [
+            val - open_timetag for val in rep_processed_timetags
+        ]
+        # Every even gate is sig, odd is ref
+        if rep_ind % 2 == 0:
+            sig_tags.append(rep_processed_timetags)
+        else:
+            ref_tags.append(rep_processed_timetags)
+            
+
+    return sig_tags, ref_tags
 
 
 def plot_readout_duration_optimization(max_readout, sig_tags, ref_tags):
@@ -40,302 +71,186 @@ def plot_readout_duration_optimization(max_readout, sig_tags, ref_tags):
     the spin states; 2 the SNR vs readout duration
     """
     
-    fig, axes_pack = plt.subplots(1, 2, kpl.figsize)
-    ax1, ax2 = axes_pack
+    fig, axes_pack = plt.subplots(1, 2, kpl.double_figsize)
     
     readouts = np.linspace(0, max_readout, 100)
     integrated_sig_tags = [(sig_tags < readout).sum() for readout in readouts]
     integrated_ref_tags = [(ref_tags < readout).sum() for readout in readouts]
+    snr = []
+    for sig, ref in zip(integrated_sig_tags, integrated_ref_tags):
+        # Assume Poisson statistics on each count value
+        sig_noise = np.sqrt(sig)
+        ref_noise = np.sqrt(ref)
+        snr.append((sig-ref) / np.sqrt(sig_noise**2 + ref_noise**2))
 
-    ax1.plot(readouts, integrated_sig_tags, 'r-')
-    ax1.plot(readouts, integrated_sig_tags, 'r-')
-    ax.plot(list(range(0, num_steps)), avg_ref_counts, 'g-')
+    ax = axes_pack[0]
+    ax.plot(readouts, integrated_sig_tags, label=r"$\ket{m_{s}=\pm 1}$")
+    ax.plot(readouts, integrated_ref_tags, label=r"$\ket{m_{s}=0}$")
     ax.set_xlabel('Readout duration (ns)')
     ax.set_ylabel('Integrated counts')
+    ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(list(range(0, num_steps)), norm_avg_sig, 'b-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
-    ax.set_xlabel('num_run')
-    ax.set_ylabel('Normalized contrast')
+    ax.plot(readouts, snr)
+    ax.set_xlabel('Readout duration (ns)')
+    ax.set_ylabel('SNR')
+    max_snr = round(max(snr),2)
+    optimum_readout = int(np.argmax(snr))
+    text = f"Max SNR of {max_snr} at {optimum_readout} ns"
+    ax.text(0.05, 0.95, text, transform=ax.transAxes)
 
-    raw_fig.canvas.draw()
-    # fig.set_tight_layout(True)
-    raw_fig.canvas.flush_events()
+    fig.tight_layout()
 
-    return raw_fig
+    return fig
     
 # endregion 
 
-# %% Main, this allows any one of the inputs to be varied, like the readout
-#    time or the nd_filter
 
-def snr_measurement(nv_sig, readout_time, 
-                    num_steps, num_reps, num_runs, apd_indices,
-                    do_plot, save_raw_data):
-
-    with labrad.connect() as cxn:
-        sig_to_noise_ratio = snr_measurement_with_cxn(cxn, nv_sig, readout_time,
-                                                      num_steps, num_reps, num_runs, 
-                                                      apd_indices, do_plot, save_raw_data)
-        return sig_to_noise_ratio
+def optimize_readout_duration_sub(
+    cxn, nv_sig, apd_indices, num_reps, state=States.LOW
+):
     
+    print("here")
+    tool_belt.reset_cfm(cxn)
+    print("test")
+
+    seq_file = "rabi.py"
+    laser_key = "spin_laser"
+    laser_name = nv_sig[laser_key]
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    polarization_time = nv_sig["spin_pol_dur"]
+    readout = nv_sig["spin_readout_dur"]
+    pi_pulse_dur = tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.name}"])
+    seq_args = [
+        pi_pulse_dur,
+        polarization_time,
+        readout,
+        pi_pulse_dur,
+        apd_indices[0],
+        state.value,
+        laser_name,
+        laser_power,
+    ]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    period = ret_vals[0]
+    period_sec = period / 10 ** 9
     
-def snr_measurement_with_cxn(cxn, nv_sig, readout_time,
-                             num_steps, num_reps, num_runs, apd_indices, 
-                             do_plot = False, save_raw_data = False):
-
-
-    # %% Get the starting time of the function
-
-    startFunctionTime = time.time()
-
-    # %% Initial calculations and setup
-
-    # Assume the low state
-    state = States.LOW
-    # state = States.HIGH
-
-    config = tool_belt.get_config_dict(cxn)
-
-    # Define some times (in ns)
-    exp_dur = 5 * 10**3
-    polarization_dur = nv_sig["spin_pol_dur"]
-    laser_name = nv_sig["spin_laser"]
-    pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
-
-    # The two parameters we currently alter
-    readout_time = int(readout_time)
-
-    file_name = os.path.basename(__file__)
-
-    # Set up our data structure, an array of NaNs that we'll fill
-    # incrementally. NaNs are ignored by matplotlib, which is why they're
-    # useful for us here.
-    # We define 2D arrays, with the horizontal dimension for the frequency and
-    # the veritical dimension for the index of the run.
-    sig_counts = np.empty([num_runs, num_steps], dtype=np.uint32)
-    ref_counts = np.copy(sig_counts)
-
-    # %% Make some lists and variables to save at the end
-
     opti_coords_list = []
 
-    # Create a list of indices to step through the taus. This will be shuffled
-    ind_list = list(range(0, num_steps))
+    sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
 
-    # %% Collect the data
+    # Some initial parameters
+    opti_period = 2.5 * 60  # optimize every opti_period seconds
+    num_reps_per_cycle = round(opti_period / period_sec)
+    num_reps_remaining = num_reps
+    timetags = []
+    channels = []
+    print("test")
+    print(num_reps_per_cycle)
+    return
 
-    for run_ind in range(num_runs):
-
-#        print('Run index: {}'. format(run_ind))
+    while num_reps_remaining > 0:
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
 
-        # Optimize
+        # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
-        tool_belt.set_filter(cxn, nv_sig, "collection")
-        tool_belt.set_filter(cxn, nv_sig, "spin_laser")
-
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_freq(nv_sig['resonance_{}'.format(state.name)])
-        sig_gen_cxn.set_amp(nv_sig['uwave_power_{}'.format(state.name)])
+        # Set up the microwaves and laser. Then load the pulse streamer
+        # (must happen after optimize and iq_switch since run their
+        # own sequences)
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        sig_gen_cxn.set_freq(nv_sig[f"resonance_{state.name}"])
+        sig_gen_cxn.set_amp(nv_sig[f"uwave_power_{state.name}"])
         sig_gen_cxn.uwave_on()
-
-        # Load the APD stream
+        
+        # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
+        cxn.apd_tagger.clear_buffer()
 
-        # Shuffle the list of indices to use for stepping through the taus
-        shuffle(ind_list)
+        # Run the sequence
+        if num_reps_remaining > num_reps_per_cycle:
+            num_reps_to_run = int(num_reps_per_cycle)
+        else:
+            num_reps_to_run = int(num_reps_remaining)
+        cxn.pulse_streamer.stream_immediate(
+            seq_file, num_reps_to_run, seq_args_string
+        )
 
-        for ind in ind_list:
+        # Get the counts
+        ret_vals = cxn.apd_tagger.read_tag_stream(1)
+        buffer_timetags, buffer_channels = ret_vals
 
-            # Break out of the while if the user says stop
-            if tool_belt.safe_stop():
-                break
+        cxn.apd_tagger.stop_tag_stream()
+        
+        # We don't care about picosecond resolution here, so just round to ns
+        # We also don't care about the offset value, so subtract that off
+        if len(timetags) == 0:
+            offset = np.int64(buffer_timetags[0])
+        buffer_timetags = [
+            int((np.int64(val) - offset) / 1e3) for val in buffer_timetags
+        ]
+        timetags.extend(buffer_timetags)
+        channels.extend(buffer_channels)
 
-            # Stream the sequence
-            # polarization_dur, exp_dur, aom_delay, uwave_delay,
-            # readout_dur, pi_pulse, apd_index, uwave_gate_index
-            seq_args = [polarization_dur, exp_dur, readout_time, 
-                        pi_pulse, apd_indices[0], state.value, laser_name]
-            seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.apd_tagger.stop_tag_stream()
 
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
+        num_reps_remaining -= num_reps_per_cycle
 
-            # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-
-            sample_counts = new_counts[0]
-
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, ind] = sum(sig_gate_counts)
-
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, ind] = sum(ref_gate_counts)
-
-        tool_belt.reset_cfm(cxn)
-
-    # %% Average the counts over the iterations
-
-    avg_sig_counts = np.average(sig_counts, axis=0)
-    avg_ref_counts = np.average(ref_counts, axis=0)
-
-    # %% Calculate the statistics of the run
-
-    norm_avg_sig = avg_ref_counts - avg_sig_counts
-
-    sig_stat = np.average(norm_avg_sig)
-
-    st_dev_stat = np.std(norm_avg_sig)
-
-    sig_to_noise_ratio = sig_stat / st_dev_stat
-
-    print('Readout Time: {} ns \nSignal: {:.3f} \nNoise: {:.3f} \nSNR: {:.1f}\n '.format(readout_time, \
-          sig_stat, st_dev_stat, sig_to_noise_ratio))
-
-    # %% Plot the counts
-    if do_plot:
-
-        raw_fig = raw_plot(num_steps, avg_sig_counts, avg_ref_counts, norm_avg_sig)
-
-    # %% Save the data
-    if save_raw_data:
-
-        endFunctionTime = time.time()
-
-        timeElapsed = endFunctionTime - startFunctionTime
-
-        timestamp = tool_belt.get_time_stamp()
-
-        raw_data = {'timestamp': timestamp,
-                    'timeElapsed': timeElapsed,
-                    'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'readout_time': readout_time,
-                    'readout_time-unit': 'ns',
-                    'sig_stat': sig_stat,
-                    'st_dev_stat': st_dev_stat,
-                    'sig_to_noise_ratio': sig_to_noise_ratio,
-                    'nv_sig': nv_sig,
-                    'opti_coords_list': opti_coords_list,
-                    'coords-units': 'V',
-                    'state': state,
-                    'num_steps': num_steps,
-                    'num_reps': num_reps,
-                    'num_runs': num_runs,
-                    'sig_counts': sig_counts.astype(int).tolist(),
-                    'sig_counts-units': 'counts',
-                    'ref_counts': ref_counts.astype(int).tolist(),
-                    'ref_counts-units': 'counts',
-                    'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-                    'norm_avg_sig-units': 'arb'}
-
-        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-        tool_belt.save_figure(raw_fig, file_path)
-        tool_belt.save_raw_data(raw_data, file_path)
-
-    return sig_to_noise_ratio
-
-# %%
-
-def optimize_readout(nv_sig, apd_indices, num_reps, num_runs, 
-                     state=States.LOW):
-
-    # don't plot or save each individual raw data of the snr
-    do_plot = False
-    save_raw_data = False
-
-    # Create an empty list to fill with snr
-    snr_list = []
+    return timetags, channels, opti_coords_list
     
-    with labrad.connect() as cxn:
-        laser_power = tool_belt.set_laser_power(cxn, nv_sig, "spin_laser")
 
-    # Step thru the readout times and take a snr measurement
-    for readout_ind_time in readout_time_list:
+def optimize_readout_duration(cxn, nv_sig, apd_indices, num_reps, 
+                              state=States.LOW):
 
-        # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
-            break
+    # Assume a common gate for both APDs
+    apd_gate_channel = tool_belt.get_apd_gate_channel(cxn, apd_indices[0])
+    print("pre")
+    timetags, channels, opti_coords_list = optimize_readout_duration_sub(
+        cxn, nv_sig, apd_indices, num_reps, state
+    )
+    print("post")
 
-        readout_time = readout_ind_time
-
-        snr_value = snr_measurement(nv_sig, readout_time, 
-                                    num_steps, num_reps, num_runs,
-                                    apd_indices, do_plot, save_raw_data)
-
-        snr_list.append(snr_value)
-
-
-    # Prepare the plot:
-    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
-    ax.set_xlabel('Readout time (ns)')
-    ax.set_ylabel('Signal-to-noise ratio')
-    ax.set_title('Optimize readout window at {} mW'.format(laser_power))
-
-    # Fit the data to a parabola
-    offset = 130
-    amplitude = 10
-    readout_time_guess = np.average(readout_range)
-
-    init_guess_list = [offset, amplitude, readout_time_guess]
-    try:
-        popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
-
-        # If the fit works, plot the fitted curve
-        linspace_time = np.linspace(readout_range[0], readout_range[-1], num=1000)
-        ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-
-        text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
-
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
-                                verticalalignment="top", bbox=props)
-
-    except Exception as e:
-        # Just print the error if the fit failed
-        print(e)
-
-    # Plot the figure
-    ax.legend()
-    snr_fig.canvas.draw()
-    snr_fig.canvas.flush_events()
+    # Process the raw tags
+    sig_tags, ref_tags = process_raw_tags(apd_gate_channel, timetags, channels)
+    
+    # Analyze and plot
+    fig = plot_readout_duration_optimization(max_readout, sig_tags, ref_tags)
 
     # Save the data
     timestamp = tool_belt.get_time_stamp()
-    snr_data = {'timestamp': timestamp,
-                'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'num_steps': num_steps,
-                'num_reps': num_reps,
-                'num_runs': num_runs,
-                'snr_list': snr_list,
-                'readout_time_list': readout_time_list.tolist(),
-                }
-
+    raw_data = {
+        "timestamp": timestamp,
+        "nv_sig": nv_sig,
+        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "opti_coords_list": opti_coords_list,
+        "opti_coords_list-units": "V",
+        "state": state.name,
+        "num_reps": num_reps,
+        "apd_gate_channel": apd_gate_channel,
+        "sig_tags": sig_tags,
+        "ref_tags": ref_tags,
+    }
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(snr_fig, file_path)
-    tool_belt.save_raw_data(snr_data, file_path)
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
 
 
-# %%
+# region Main
 
-def main(nv_sig, apd_indices, num_reps, num_runs, 
+def main(nv_sig, apd_indices, num_reps, 
          max_readouts, powers=None, filters=None, state=States.LOW):
     
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, 
+        main_with_cxn(cxn, nv_sig, apd_indices, num_reps, 
                       max_readouts, powers, filters, state)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, 
+def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, 
               max_readouts, powers=None, filters=None, state=States.LOW):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
@@ -347,7 +262,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs,
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
-
+    
     num_exps = len(max_readouts)
     
     for ind in range(num_exps): 
@@ -356,21 +271,27 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs,
         if tool_belt.safe_stop():
             break
         
-        max_readout = max_readouts[ind]
-        if powers is not None:
-            power = powers[ind]
-        if filters is not None:
-            filt = filters[ind]
-        
         adjusted_nv_sig = copy.deepcopy(nv_sig)
-        adjusted_nv_sig["spin_readout_dur"] = max_readout
-        adjusted_nv_sig["spin_laser_power"] = power
-        adjusted_nv_sig["spin_laser_filter"] = filt
+        if max_readouts is not None:
+            adjusted_nv_sig["spin_readout_dur"] = max_readouts[ind]
+        if powers is not None:
+            adjusted_nv_sig["spin_laser_power"] = powers[ind]
+        if filters is not None:
+            adjusted_nv_sig["spin_laser_filter"] = filters[ind]
+        
+        optimize_readout_duration(cxn, nv_sig, apd_indices, num_reps, state)
 
-        optimize_readout(nv_sig, max_readout, num_reps, num_runs, state)
-
-# %%
+# endregion
 
 if __name__ == '__main__':
+    
+    file = ""
+    data = tool_belt.get_raw_data(file)
+    
+    max_readout = data["max_readout"]
+    sig_tags = data["sig_tags"]
+    ref_tags = data["ref_tags"]
+    
+    plot_readout_duration_optimization(max_readout, sig_tags, ref_tags)
 
-    pass
+    plt.show(block=True)

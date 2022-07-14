@@ -46,6 +46,7 @@ marker_size = 7
 line_width = 1.5
 marker_edge_width = line_width
 figsize = [6.5, 5.0]
+double_figsize = [figsize[0]*2, figsize[1]]
 
 # endregion
 

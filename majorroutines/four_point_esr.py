@@ -149,7 +149,7 @@ def main_with_cxn(
         # Set up the microwaves and laser. Then load the pulse streamer
         # (must happen after optimize and iq_switch since run their
         # own sequences)
-        sig_gen_cxn.set_amp(States.LOW.value)
+        sig_gen_cxn.set_amp(nv_sig[f"uwave_power_{state.name}"])
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 

@@ -2088,7 +2088,7 @@ def reset_cfm(cxn=None):
     routine where they matter anyway).
     """
 
-    if cxn == None:
+    if cxn is None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
     else:

@@ -232,6 +232,16 @@ def do_four_point_esr(nv_sig, apd_indices, state):
     return resonance, res_err
 
 
+def do_determine_standard_readout_params(nv_sig, apd_indices):
+    
+    num_reps = 1e4
+    max_readouts = [5e3]
+    state = States.LOW
+    
+    determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
+                                           max_readouts, state=state)
+
+
 def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
@@ -860,8 +870,8 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 2e3, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 100e3,
-        # "spin_pol_dur": 50e3,
+        # "spin_pol_dur": 100e3,
+        "spin_pol_dur": 50e3,
         "spin_readout_dur": 350,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
@@ -897,7 +907,7 @@ if __name__ == "__main__":
 
     try:
 
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
@@ -953,12 +963,13 @@ if __name__ == "__main__":
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         # do_nir_battery(nv_sig, apd_indices)
+        do_determine_standard_readout_params(nv_sig, apd_indices)
 
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
         # do_four_point_esr(nv_sig, apd_indices, States.HIGH)
         # do_nir_temp_differential(nv_sig, apd_indices)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
