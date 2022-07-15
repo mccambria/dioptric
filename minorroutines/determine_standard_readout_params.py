@@ -64,7 +64,9 @@ def process_raw_tags(apd_gate_channel, raw_tags, channels):
 
     sig_tags_arr = np.array(sig_tags, dtype=int)
     ref_tags_arr = np.array(ref_tags, dtype=int)
-    return sig_tags_arr, ref_tags_arr
+    sorted_sig_tags = np.sort(sig_tags_arr)
+    sorted_ref_tags = np.sort(ref_tags_arr)
+    return sorted_sig_tags, sorted_ref_tags
 
 
 def plot_readout_duration_optimization(max_readout, num_reps, 
@@ -76,31 +78,50 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
     
-    num_points = 100
-    readouts_with_zero = np.linspace(0, max_readout, num_points)
+    num_points = 50
+    readouts_with_zero = np.linspace(0, max_readout, num_points + 1)
     readouts = readouts_with_zero[1:]  # Exclude 0 ns
-    integrated_sig_tags = [(sig_tags < readout).sum() for readout in readouts]
-    integrated_ref_tags = [(ref_tags < readout).sum() for readout in readouts]
-    snr_per_readout = []
+    
+    # Integrate up the tags that fell before each readout duration under test
+    integrated_sig_tags = []
+    integrated_ref_tags = []
+    zip_iter = zip((sig_tags, ref_tags), (integrated_sig_tags.append, integrated_ref_tags.append))
+    for sorted_tags, integrated_append in zip_iter:
+        current_readout_ind = 0
+        current_readout = readouts[current_readout_ind]
+        for ind in range(len(sorted_tags)):
+            # Cycle through readouts until the tag falls within the readout or
+            # we run out of readouts
+            while sorted_tags[ind] > current_readout:
+                integrated_append(ind)
+                current_readout_ind += 1
+                if current_readout_ind == num_points:
+                    break
+                current_readout = readouts[current_readout_ind]
+            if current_readout_ind == num_points:
+                break
+        # If we got to the end of the counts and there's still readouts left
+        # (eg the experiment went dark for some reason), pad with the final ind
+        while current_readout_ind < num_points:
+            integrated_append(ind)
+            current_readout_ind += 1
+            
+    # Calculate the snr per readout for each readout duration
+    snr_per_readouts = []
     for sig, ref in zip(integrated_sig_tags, integrated_ref_tags):
         # Assume Poisson statistics on each count value
         sig_noise = np.sqrt(sig)
         ref_noise = np.sqrt(ref)
         snr = (ref-sig) / np.sqrt(sig_noise**2 + ref_noise**2)
-        snr_per_readout.append(snr / np.sqrt(num_reps))
+        snr_per_readouts.append(snr / np.sqrt(num_reps))
 
     ax = axes_pack[0]
-    # ax.plot(readouts, integrated_sig_tags, label=r"$\ket{m_{s}=\pm 1}$")
-    # ax.plot(readouts, integrated_ref_tags, label=r"$\ket{m_{s}=0}$")
-    # ax.plot(readouts, integrated_sig_tags, label=r"$m_{s}=\pm 1$")
-    # ax.plot(readouts, integrated_ref_tags, label=r"$m_{s}=0$")
-    # ax.set_ylabel('Integrated counts')
     sig_hist, bin_edges = np.histogram(sig_tags, bins=readouts_with_zero)
     ref_hist, bin_edges = np.histogram(ref_tags, bins=readouts_with_zero)
     readout_window = round(readouts_with_zero[1] - readouts_with_zero[0])
-    readout_window_sec = readout_window ** -9
-    sig_rates = sig_hist / (readout_window_sec * num_reps)
-    ref_rates = ref_hist / (readout_window_sec * num_reps)
+    readout_window_sec = readout_window * 10 ** -9
+    sig_rates = sig_hist / (readout_window_sec * num_reps * 1000)
+    ref_rates = ref_hist / (readout_window_sec * num_reps * 1000)
     bin_centers = (readouts_with_zero[:-1] + readouts) / 2
     ax.plot(bin_centers, sig_rates, label=r"$m_{s}=\pm 1$")
     ax.plot(bin_centers, ref_rates, label=r"$m_{s}=0$")
@@ -109,13 +130,13 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(readouts, snr)
+    ax.plot(readouts, snr_per_readouts)
     ax.set_xlabel('Readout duration (ns)')
-    ax.set_ylabel('SNR')
-    max_snr = round(max(snr),2)
-    optimum_readout = round(readouts[np.argmax(snr)])
+    ax.set_ylabel('SNR per readout')
+    max_snr = tool_belt.round_sig_figs(max(snr_per_readouts), 3)
+    optimum_readout = round(readouts[np.argmax(snr_per_readouts)])
     text = f"Max SNR of {max_snr} at {optimum_readout} ns"
-    ax.text(0.05, 0.95, text, transform=ax.transAxes)
+    ax.text(0.6, 0.05, text, transform=ax.transAxes)
 
     fig.tight_layout()
 
@@ -147,6 +168,8 @@ def optimize_readout_duration_sub(
         laser_name,
         laser_power,
     ]
+    # print(seq_args)
+    # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
@@ -155,11 +178,12 @@ def optimize_readout_duration_sub(
     opti_coords_list = []
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+    
+    
+    opti_period = 2.5 * 60  # Optimize every opti_period seconds
 
     # Some initial parameters
-    opti_period = 2.5 * 60  # optimize every opti_period seconds
     num_reps_per_cycle = round(opti_period / period_sec)
-    print(num_reps_per_cycle)
     num_reps_remaining = num_reps
     timetags = []
     channels = []
@@ -192,7 +216,6 @@ def optimize_readout_duration_sub(
             num_reps_to_run = int(num_reps_per_cycle)
         else:
             num_reps_to_run = int(num_reps_remaining)
-        print(num_reps_to_run)
         cxn.pulse_streamer.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
@@ -305,13 +328,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps,
 
 if __name__ == '__main__':
     
-    file = ""
+    file = "2022_07_14-18_29_49-hopper-search"
     data = tool_belt.get_raw_data(file)
     
-    max_readout = data["max_readout"]
+    nv_sig = data["nv_sig"]
+    max_readout = nv_sig["spin_readout_dur"]
     sig_tags = data["sig_tags"]
     ref_tags = data["ref_tags"]
+    num_reps = data["num_reps"]
     
-    plot_readout_duration_optimization(max_readout, sig_tags, ref_tags)
+    plot_readout_duration_optimization(max_readout, num_reps, 
+                                       sig_tags, ref_tags)
 
-    plt.show(block=True)
+    # plt.show(block=True)

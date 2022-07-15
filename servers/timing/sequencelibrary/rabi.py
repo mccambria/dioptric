@@ -61,9 +61,10 @@ def get_seq(pulse_streamer, config, args):
 
     # The period is independent of the particular tau, but it must be long
     # enough to accomodate the longest tau
-    period = aom_delay_time + polarization_time + reference_wait_time + \
-        reference_wait_time + polarization_time + reference_wait_time + \
-        reference_time + max_tau
+    # period = aom_delay_time + polarization_time + reference_wait_time + \
+    #     reference_wait_time + polarization_time + reference_wait_time + \
+    #     reference_time + max_tau
+    # print(period)
 
     # %% Define the sequence
 
@@ -79,10 +80,10 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, HIGH), 
              (0, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
-    # total_dur = 0
-    # for el in train:
-    #     total_dur += el[0]
-    # print(total_dur)
+    period = 0
+    for el in train:
+        period += el[0]
+    # print(period)
 
     # # Ungate (high) the APD channel for the background
     # gateBackgroundTrain = [( AOMDelay + preparationTime + polarizationTime + referenceWaitTime + referenceTime + backgroundWaitTime, low),
@@ -122,6 +123,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     # tool_belt.set_delays_to_zero(config)
-    args = [126, 50000.0, 100000, 126, 0, 1, 'laserglow_532', None]
+    args = [126, 50000.0, 20000, 126, 0, 1, 'laserglow_532', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()
