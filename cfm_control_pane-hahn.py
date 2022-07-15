@@ -235,7 +235,7 @@ def do_four_point_esr(nv_sig, apd_indices, state):
 def do_determine_standard_readout_params(nv_sig, apd_indices):
     
     num_reps = 1e5
-    max_readouts = [20e3]
+    max_readouts = [25e3]
     state = States.LOW
     
     determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
