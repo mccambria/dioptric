@@ -107,14 +107,14 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 def do_image_sample_temperature(nv_sig, apd_indices):
     
-    image_range = 0.1
+    image_range = 0.3
     # num_steps = 5
     num_steps = 3
     
     nir_laser_voltage = 1.3
     
-    esr_num_reps = 4e4
-    esr_num_runs = 8
+    esr_num_reps = 3e4
+    esr_num_runs = 800
     
     image_sample_temperature.main(
         nv_sig,
@@ -870,9 +870,8 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 2e3, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        # "spin_pol_dur": 100e3,
-        "spin_pol_dur": 50e3,
-        "spin_readout_dur": 350,
+        "spin_pol_dur": 25e3,
+        "spin_readout_dur": 6e3,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
@@ -936,7 +935,6 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
-        # do_image_sample_temperature(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
@@ -963,11 +961,13 @@ if __name__ == "__main__":
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         # do_nir_battery(nv_sig, apd_indices)
-        do_determine_standard_readout_params(nv_sig, apd_indices)
+        # do_determine_standard_readout_params(nv_sig, apd_indices)
 
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
         # do_four_point_esr(nv_sig, apd_indices, States.HIGH)
         # do_nir_temp_differential(nv_sig, apd_indices)
+        do_image_sample_temperature(nv_sig, apd_indices)
+        
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)

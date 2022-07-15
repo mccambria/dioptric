@@ -126,7 +126,7 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     ax.plot(bin_centers, sig_rates, label=r"$m_{s}=\pm 1$")
     ax.plot(bin_centers, ref_rates, label=r"$m_{s}=0$")
     ax.set_ylabel('Count rate (kcps)')
-    ax.set_xlabel('Readout duration (ns)')
+    ax.set_xlabel('Time since readout began (ns)')
     ax.legend()
 
     ax = axes_pack[1]

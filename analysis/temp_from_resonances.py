@@ -32,7 +32,7 @@ from utils import common
 from utils import kplotlib as kpl
 from scipy.optimize import curve_fit
 
-bad_zfs_temps = 295
+bad_zfs_temps = 350
 
 
 # %% Functions
