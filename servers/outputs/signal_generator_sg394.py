@@ -51,8 +51,7 @@ class SignalGeneratorSg394(LabradServer):
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('signal_generator_sg394_visa_address')
         p.cd(['', 'Config', 'Wiring', 'Daq'])
-        p.get('di_clock')
-        # p.get('ao_uwave_sig_gen_mod')
+        p.get('di_clock')  
         result = await p.send()
         return result['get']
 

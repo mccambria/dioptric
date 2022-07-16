@@ -26,6 +26,7 @@ import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
+import majorroutines.four_point_esr as four_point_esr
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.discrete_rabi as discrete_rabi
@@ -36,6 +37,7 @@ import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
+import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
@@ -105,25 +107,21 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 def do_image_sample_temperature(nv_sig, apd_indices):
     
-    scan_range = 0.3
+    image_range = 0.3
     # num_steps = 5
     num_steps = 3
     
     nir_laser_voltage = 1.3
     
-    esr_freq_range = 0.040
-    esr_num_steps = 51
-    esr_num_reps = 4e3
-    esr_num_runs = 32
+    esr_num_reps = 3e4
+    esr_num_runs = 800
     
     image_sample_temperature.main(
         nv_sig,
-        scan_range,
+        image_range,
         num_steps,
         apd_indices,
         nir_laser_voltage,
-        esr_freq_range,
-        esr_num_steps,
         esr_num_reps,
         esr_num_runs,
     )
@@ -213,6 +211,37 @@ def do_resonance_state(nv_sig, apd_indices, state):
     )
 
 
+def do_four_point_esr(nv_sig, apd_indices, state):
+
+    detuning=0.004
+    d_omega=0.002
+    num_reps = 2e4
+    num_runs = 800
+
+    resonance, res_err = four_point_esr.main(
+        nv_sig,
+        apd_indices,
+        num_reps,
+        num_runs,
+        state,
+        detuning,
+        d_omega,
+    )
+    
+    # print(resonance, res_err)
+    return resonance, res_err
+
+
+def do_determine_standard_readout_params(nv_sig, apd_indices):
+    
+    num_reps = 1e5
+    max_readouts = [25e3]
+    state = States.LOW
+    
+    determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
+                                           max_readouts, state=state)
+
+
 def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
@@ -244,8 +273,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_reps = 5e4
     # num_runs = 20
     num_reps = 4e3
-    # num_runs = 16
-    num_runs = 4
+    num_runs = 16
+    # num_runs = 4
 
     # Zoom
     # freq_range = 0.035
@@ -757,6 +786,49 @@ def do_nir_battery(nv_sig, apd_indices):
     time.sleep(1)
 
 
+def do_nir_temp_differential(nv_sig, apd_indices):
+    
+    dD_dT = -74e-6  # GHz / K
+
+    low_res, low_res_err = do_four_point_esr(nv_sig, apd_indices, States.LOW)
+    high_res, high_res_err = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+    zfs = (low_res + high_res) / 2
+    zfs_err = np.sqrt(low_res_err**2 + high_res_err**2) / 2
+    d_temp = zfs / dD_dT
+    d_temp_err = zfs_err / abs(dD_dT)
+
+    with labrad.connect() as cxn:
+        power_supply = cxn.power_supply_mp710087
+        power_supply.output_on()
+        power_supply.set_voltage(1.3)
+    time.sleep(1)
+
+    nir_low_res, nir_low_res_err = do_four_point_esr(nv_sig, apd_indices, States.LOW)
+    nir_high_res, nir_high_res_err = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+    nir_zfs = (nir_low_res + nir_high_res) / 2
+    nir_zfs_err = np.sqrt(nir_low_res_err**2 + nir_high_res_err**2) / 2
+    nir_d_temp = nir_zfs / dD_dT
+    nir_d_temp_err = nir_zfs_err / abs(dD_dT)
+
+    with labrad.connect() as cxn:
+        power_supply = cxn.power_supply_mp710087
+        power_supply.output_off()
+    time.sleep(1)
+    
+    print(low_res, low_res_err)
+    print(high_res, high_res_err)
+    print(zfs, zfs_err)
+    print(d_temp, d_temp_err)
+    
+    print(nir_low_res, nir_low_res_err)
+    print(nir_high_res, nir_high_res_err)
+    print(nir_zfs, nir_zfs_err)
+    print(nir_d_temp, nir_d_temp_err)
+    
+    print((nir_zfs - zfs) / dD_dT)
+    print(np.sqrt(nir_zfs_err**2 + zfs_err**2) / abs(dD_dT))
+
+
 def do_test_major_routines(nv_sig, apd_indices):
     """Run this whenver you make a significant code change. It'll make sure
     you didn't break anything in the major routines.
@@ -798,8 +870,8 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 2e3, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 100e3,
-        "spin_readout_dur": 350,
+        "spin_pol_dur": 25e3,
+        "spin_readout_dur": 6e3,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
@@ -825,8 +897,8 @@ if __name__ == "__main__":
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8044, 'rabi_LOW': 252, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9359, 'rabi_HIGH': 370, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8046, 'rabi_LOW': 252, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9359, 'rabi_HIGH': 337, 'uwave_power_HIGH': 16.5,
         }
 
 
@@ -834,7 +906,7 @@ if __name__ == "__main__":
 
     try:
 
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
@@ -863,7 +935,6 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
-        # do_image_sample_temperature(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
@@ -890,13 +961,18 @@ if __name__ == "__main__":
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         # do_nir_battery(nv_sig, apd_indices)
+        # do_determine_standard_readout_params(nv_sig, apd_indices)
 
-        do_four_point_esr()
+        # do_four_point_esr(nv_sig, apd_indices, States.LOW)
+        # do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+        # do_nir_temp_differential(nv_sig, apd_indices)
+        do_image_sample_temperature(nv_sig, apd_indices)
+        
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_spin_echo(nv_sig, apd_indices)
 
         # SCC characterization

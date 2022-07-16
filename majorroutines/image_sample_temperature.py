@@ -27,9 +27,11 @@ import utils.common as common
 
 
 def process_resonances(ref_resonances, sig_resonances):
-    """Deprecated, but still maybe still useful. Use process_res_files instead"""
+# def process_resonances(ref_resonances, ref_res_errs,
+#                         sig_resonances, sig_res_errs):
 
     ref_zfss = [[(el[1] + el[0]) / 2 for el in row] for row in ref_resonances]
+    # ref_zfs_errs
     sig_zfss = [[(el[1] + el[0]) / 2 for el in row] for row in sig_resonances]
 
     ref_temps = [
@@ -110,34 +112,34 @@ def main_with_cxn(
     image_center_coords = (np.array(coords) + np.array(drift)).tolist()
     x_center, y_center, z_center = image_center_coords
 
-    gen_blank_square_list = lambda num_steps: [
+    gen_blank_square_list = lambda size: [
         [
             None,
         ]
-        * num_steps
-        for ind in range(num_steps)
+        * size
+        for ind in range(size)
     ]
 
-    ref_resonances = gen_blank_square_list()
-    sig_resonances = gen_blank_square_list()
-    ref_res_errs = gen_blank_square_list()
-    sig_res_errs = gen_blank_square_list()
+    ref_resonances = gen_blank_square_list(num_steps)
+    sig_resonances = gen_blank_square_list(num_steps)
+    ref_res_errs = gen_blank_square_list(num_steps)
+    sig_res_errs = gen_blank_square_list(num_steps)
 
-    four_point_low_lambda = lambda adj_nv_sig: four_point_esr.state(
+    four_point_low_lambda = lambda adj_nv_sig: four_point_esr.main_with_cxn(
         cxn,
-        adj_nv_sig,
+        nv_sig,
         apd_indices,
         esr_num_reps,
         esr_num_runs,
         States.LOW,
     )
-    four_point_high_lambda = lambda adj_nv_sig: four_point_esr.state(
+    four_point_high_lambda = lambda adj_nv_sig: four_point_esr.main_with_cxn(
         cxn,
-        adj_nv_sig,
+        nv_sig,
         apd_indices,
         esr_num_reps,
         esr_num_runs,
-        States.HIGH,
+        States.LOW,
     )
 
     cxn_power_supply = cxn.power_supply_mp710087
@@ -255,6 +257,8 @@ def main_with_cxn(
 # region Run the file
 
 if __name__ == "__main__":
+    
+    pass
 
     # plt.show(block=True)
 
