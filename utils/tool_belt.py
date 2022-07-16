@@ -684,8 +684,7 @@ def create_image_figure(
     Returns:
         matplotlib.figure.Figure
     """
-    
-    
+
     # plt.rcParams.update({'font.size': 22})
 
     if um_scaled:
@@ -2067,7 +2066,8 @@ def set_drift(drift):
 
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
-    
+
+
 def adjust_coords_for_drift(coords, drift=None):
     if drift is None:
         drift = get_drift()
