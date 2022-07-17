@@ -24,6 +24,7 @@ from numpy import pi
 from matplotlib.patches import Circle
 import cv2 as cv
 import sys
+import utils.kplotlib as kpl
 
 # import multiprocessing
 # import pathos
@@ -486,17 +487,20 @@ def main(
             max(y_linspace),
             min(y_linspace),
         ]
-        img = ax.imshow(reconstruction, cmap="inferno_r", extent=extent)
-        _ = plt.colorbar(img)
+        img = ax.imshow(
+            reconstruction, cmap="inferno_r", extent=extent  # , vmin=0.35
+        )
+        cbar = plt.colorbar(img)
 
         if "circle_centers" in image_file_dict:
             circle_centers = image_file_dict["circle_centers"]
+            color = kpl.KplColors.GRAY.value
             for circle in circle_centers:
                 circle_patch = Circle(
                     (circle[1], circle[0]),
                     0.25,
-                    fill="w",
-                    color="w",
+                    fill=color,
+                    color=color,
                 )
                 ax.add_patch(circle_patch)
 

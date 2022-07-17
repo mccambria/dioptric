@@ -26,9 +26,11 @@ import sys
 
 # region Functions
 
-def calc_resonance(norm_avg_sig, norm_avg_sig_ste, 
-                   detuning, d_omega, passed_res):
-    
+
+def calc_resonance(
+    norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+):
+
     f1, f2, f3, f4 = norm_avg_sig
     f1_err, f2_err, f3_err, f4_err = norm_avg_sig_ste
     delta_res = ((f1 + f2) - (f3 + f4)) * (d_omega / ((f1 - f2) - (f3 - f4)))
@@ -44,9 +46,9 @@ def calc_resonance(norm_avg_sig, norm_avg_sig_ste,
         + (d_delta_res_df3 * f3_err) ** 2
         + (d_delta_res_df4 * f4_err) ** 2
     )
-    
+
     return resonance, resonance_err
-    
+
 
 # endregion
 
@@ -62,6 +64,7 @@ def main(
     detuning=0.005,
     d_omega=0.002,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     with labrad.connect() as cxn:
@@ -75,6 +78,7 @@ def main(
             detuning,
             d_omega,
             opti_nv_sig,
+            ret_file_name,
         )
     return resonance, res_err
 
@@ -89,6 +93,7 @@ def main_with_cxn(
     detuning=0.004,
     d_omega=0.002,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     # %% Initial calculations and setup
@@ -230,9 +235,10 @@ def main_with_cxn(
         ste_sig_counts,
         norm_avg_sig_ste,
     ) = ret_vals
-    
-    resonance, resonance_err = calc_resonance(norm_avg_sig, norm_avg_sig_ste, 
-                                              detuning, d_omega, passed_res)
+
+    resonance, resonance_err = calc_resonance(
+        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+    )
 
     # %% Clean up and save the data
 
@@ -247,8 +253,8 @@ def main_with_cxn(
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "state": state.name,
-        "detuning": detuning, 
-        "d_omega": d_omega, 
+        "detuning": detuning,
+        "d_omega": d_omega,
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
@@ -273,19 +279,23 @@ def main_with_cxn(
 
     # %% Return
 
-    return resonance, resonance_err
+    ret_vals = resonance, resonance_err
+    if ret_file_name:
+        raw_file_name = filePath.stem()
+        ret_vals.append(raw_file_name)
+    return ret_vals
 
 
 # %% Run the file
 
 
 if __name__ == "__main__":
-    
-    f = ""
+
+    f = "2022_07_16-16_33_11-hopper-search"
     data = tool_belt.get_raw_data(f)
-    
-    norm_avg_sig = data[""]
-    norm_avg_sig_ste = data[""]
+
+    norm_avg_sig = data["norm_avg_sig"]
+    norm_avg_sig_ste = data["norm_avg_sig_ste"]
     # detuning = data[""]
     # d_omega = data[""]
     detuning = 0.004
@@ -294,5 +304,7 @@ if __name__ == "__main__":
     state = data["state"]
     passed_res = nv_sig[f"resonance_{state}"]
 
-    resonance, resonance_err = calc_resonance(norm_avg_sig, norm_avg_sig_ste, 
-                                              detuning, d_omega, passed_res)
+    resonance, resonance_err = calc_resonance(
+        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+    )
+    print(resonance, resonance_err)
