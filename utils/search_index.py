@@ -20,7 +20,6 @@ date_glob = "[0-9][0-9][0-9][0-9]_[0-9][0-9]"
 search_index_glob = f"{nvdata_dir_str}/pc_*/branch_*/*/{date_glob}/*.txt"
 
 
-
 def process_full_path(full_path):
     """
     Return just what we want for writing to the database. Expects a string
@@ -52,7 +51,7 @@ def gen_search_index():
     Once complete, delete the old index file and remove the "new_" prefix
     from the fresh index.
     """
-    
+
     # Create the table
     temp_name = "new_" + search_index_file_name
     search_index = sqlite3.connect(nvdata_dir / temp_name)
@@ -105,17 +104,20 @@ def get_data_path(data_file_name):
         print("Attempting on the fly indexing.")
         index_path = index_on_the_fly(data_file_name)
         if index_path is None:
-            msg = f"File {data_file_name} does not appear to exist in data folders."
+            msg = (
+                f"File {data_file_name} does not appear to exist in data"
+                " folders."
+            )
             raise RuntimeError(msg)
         return index_path
-        
-        
+
+
 def index_on_the_fly(data_file_name):
     """
     If a file fails to be indexed for whatever reason and we subsequently
     unsuccesfully attempt to look it up, we'll just index it on the fly
     """
-    
+
     data_file_name_w_ext = f"{data_file_name}.txt"
     data_full_path = None
     yyyy_mm = data_file_name[0:7]
@@ -131,10 +133,10 @@ def index_on_the_fly(data_file_name):
         if not root.endswith(yyyy_mm):
             continue
         if data_file_name_w_ext in files:
-        # for f in files:
+            # for f in files:
             data_full_path = f"{root}/{data_file_name_w_ext}"
             break
-    
+
     if data_full_path is None:
         print(f"Failed to index file {data_file_name} on the fly.")
         return None

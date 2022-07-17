@@ -18,6 +18,7 @@ import json
 import random
 
 import utils.tool_belt as tool_belt
+import superresolution_circles_full_auto as circle_fitting
 
 # import math
 
@@ -224,6 +225,26 @@ def main():
     fig, ax = plt.subplots()
     img = ax.imshow(fake_data, cmap="inferno")
     clb = plt.colorbar(img)
+    fig.tight_layout()
+
+    timestamp = "-".join(filenm.split("-")[0:2])
+    file_path_faked = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "-faked"
+    )
+    tool_belt.save_figure(fig, file_path_faked)
+
+    fit_circles, fig = circle_fitting.main(image=dataset, run_type="full_auto")
+    file_path = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "-orig_fit"
+    )
+    tool_belt.save_figure(fig, file_path)
+    original_fit_circle = fit_circles[0]
+    randgen_with_zero = randgen.tolist()
+    randgen_with_zero.insert(0, [int(totalcols / 2), int(totalrows / 2)])
+    orig_y, orig_x = original_fit_circle[0:2]
+    circle_centers = [
+        (orig_y + el[1], orig_x + el[0]) for el in randgen_with_zero
+    ]
 
     # """
     # PLotting original data
@@ -246,11 +267,19 @@ def main():
     fig, ax = plt.subplots()
     img = ax.imshow(dataset, extent=extent, cmap="inferno")
     clb = plt.colorbar(img)
+    fig.tight_layout()
 
-    # fig, ax = plt.subplots()
-    # img = ax.imshow(new_arrpx, extent=extent)
-    # clb = plt.colorbar(img)
-    # """
+    file_path_orig = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "-orig"
+    )
+    tool_belt.save_figure(fig, file_path_orig)
+
+    raw_data = {
+        "readout_image_array": fake_data.tolist(),
+        "original_fit_circle": original_fit_circle.tolist(),
+        "circle_centers": circle_centers,
+    }
+    tool_belt.save_raw_data(raw_data, file_path_faked)
 
     return fake_data
 

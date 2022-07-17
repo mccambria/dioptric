@@ -24,10 +24,13 @@ from numpy import pi
 from matplotlib.patches import Circle
 import cv2 as cv
 import sys
-import multiprocessing
+
+# import multiprocessing
+# import pathos
 from functools import partial
 import time
 import superresolution_circles_fake_data as fake_data
+from pathos.multiprocessing import ProcessingPool as Pool
 
 # endregion
 
@@ -228,24 +231,23 @@ def calc_distance(fig, x0, x1, y0, y1, sx0, sx1, sy0, sy1):
 
 
 def main(
-    image_file_name,
+    image_file_name=None,
+    image=None,
     circle_a=None,
     circle_b=None,
     fast_recursive=False,
-    brute_range=None,
+    brute_bounds=None,
+    # "manual", "publication", "recursive", "fixed_r_reconstruction", "full_auto"
+    run_type="full_auto",
 ):
 
     # region Setup
 
     cost_func = cost0
-    # minimize_type = "manual"
-    # minimize_type =   "publication"
-    # minimize_type = "recursive"
-    minimize_type = "full_auto"
 
     if image_file_name == "fake":
         image = fake_data.main()
-    else:
+    elif image_file_name is not None:
         # Get the image as a 2D ndarray
         image_file_dict = tool_belt.get_raw_data(image_file_name)
         image = np.array(image_file_dict["readout_image_array"])
@@ -258,7 +260,8 @@ def main(
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
 
     opti_image = sigmoid_image
-    plot_image = sigmoid_image
+    # plot_image = sigmoid_image
+    plot_image = image
 
     # Plot the image
     fig, ax = plt.subplots()
@@ -281,7 +284,7 @@ def main(
 
     start = time.time()
 
-    if minimize_type == "manual":
+    if run_type == "manual":
 
         x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         y_linspace = np.linspace(0, image_len_x, image_len_y, endpoint=False)
@@ -318,7 +321,7 @@ def main(
             opti_circle = res.x
             plot_circles.append(opti_circle)
 
-    elif minimize_type == "publication":
+    elif run_type == "publication":
         half_range = 18  # for circle 3
         # half_range = 20 #for circle 4
         num_points = 100
@@ -331,8 +334,8 @@ def main(
             half_len_y - half_range, half_len_y + half_range, num_points
         )
         reconstruction = []
-        print(image_len_x)
-        print(x_linspace)
+        # print(image_len_x)
+        # print(x_linspace)
 
         # return
 
@@ -396,7 +399,7 @@ def main(
 
         plot_circles = [circle_a, circle_b]
 
-    elif minimize_type == "recursive":
+    elif run_type == "recursive":
 
         # Define the bounds of the optimization
         if fast_recursive:
@@ -448,20 +451,77 @@ def main(
 
             plot_circles.append(opti_circle)
 
-    elif minimize_type == "full_auto":
+    elif run_type == "fixed_r_reconstruction":
+
+        # Determine the best radius by a full auto run desinged to find
+        # the single best circle in the image. Then use that radius to
+        # plot the full image.
+        ret_vals = main(image_file_name, run_type="full_auto")
+        best_circle = ret_vals[0][0]
+        radius = best_circle[2]
+
+        half_range = round(0.15 * image_len_x)
+        num_points = 100
+        half_len_x = image_len_x // 2
+        half_len_y = image_len_x // 2
+        x_linspace = np.linspace(
+            half_len_x - half_range, half_len_x + half_range, num_points
+        )
+        y_linspace = np.linspace(
+            half_len_y - half_range, half_len_y + half_range, num_points
+        )
+
+        reconstruction = []
+        for y in y_linspace:
+            cost_lambda = lambda x: cost_func([y, x, radius], *args)
+            with Pool() as p:
+                x_line = p.map(cost_lambda, x_linspace)
+            reconstruction.append(x_line)
+
+        fig2, ax = plt.subplots()
+        fig2.set_tight_layout(True)
+        extent = [
+            min(x_linspace),
+            max(x_linspace),
+            max(y_linspace),
+            min(y_linspace),
+        ]
+        img = ax.imshow(reconstruction, cmap="inferno_r", extent=extent)
+        _ = plt.colorbar(img)
+
+        if "circle_centers" in image_file_dict:
+            circle_centers = image_file_dict["circle_centers"]
+            for circle in circle_centers:
+                circle_patch = Circle(
+                    (circle[1], circle[0]),
+                    0.25,
+                    fill="w",
+                    color="w",
+                )
+                ax.add_patch(circle_patch)
+
+        end = time.time()
+        print(f"Elapsed time: {end-start}")
+        return
+
+    elif run_type == "full_auto":
 
         while True:
 
             # Define the bounds of the optimization
-            bounds = [
-                (image_len_y / 4, 3 * image_len_y / 4),
-                (image_len_x / 4, 3 * image_len_x / 4),
-                # (20, 35),
-                (40, 60),
-            ]
+            if brute_bounds is None:
+                bounds = [
+                    (0.4 * image_len_y, 0.6 * image_len_y),
+                    (0.4 * image_len_x, 0.6 * image_len_x),
+                    # (20, 35),
+                    (40, 60),
+                ]
+            else:
+                bounds = brute_bounds
 
             # Anything worse than minimum_cost and we stop searching for circles
-            minimum_cost = 0.5
+            minimum_cost = None
+            num_circles = 1
 
             # Initialize best_cost
             best_cost = 1
@@ -499,13 +559,17 @@ def main(
                 # print(new_best_cost)
                 # print(bounds)
 
-            # Quit if our best is worse than the threshold we set, but make sure
-            # we have at least one circle to plot
-            if (len(plot_circles) > 0) and (new_best_cost > minimum_cost):
-                break
+            # Quit if we've found the number of specified circles. ELse quit if
+            # our best is worse than the threshold we set and we have at least
+            # one circle
+            if num_circles is None:
+                if (len(plot_circles) > 0) and (new_best_cost > minimum_cost):
+                    break
             excluded_centers.append(opti_circle[0:2])
             plot_circles.append(opti_circle)
-            if len(plot_circles) > 5:
+            if (num_circles is not None) and (
+                len(plot_circles) == num_circles
+            ):
                 break
 
     end = time.time()
@@ -545,7 +609,7 @@ def main(
         ax.add_patch(circle_patch)
 
     # endregion
-    return
+    return plot_circles, fig
 
 
 # region Run the file
@@ -594,7 +658,8 @@ if __name__ == "__main__":
     #     main(image_file_name, circle_a, circle_b, fast_recursive=True)
     #     # calc_errors(image_file_name, circle_a, circle_b)
 
-    main("fake")
+    image_file_name = "2022_01_03-08_49_15-johnson-nv0_2021_12_22-faked"
+    main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
 
     plt.show(block=True)
 
