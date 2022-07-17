@@ -174,7 +174,7 @@ def main_with_cxn(
 
             cxn_power_supply.output_off()
 
-            time.sleep(10)
+            time.sleep(1)
 
             low_res, low_res_err = four_point_low_lambda(adjusted_nv_sig)
             high_res, high_res_err = four_point_high_lambda(adjusted_nv_sig)
@@ -190,15 +190,15 @@ def main_with_cxn(
             cxn_power_supply.output_on()
             cxn_power_supply.set_voltage(nir_laser_voltage)
 
-            time.sleep(10)
+            time.sleep(1)
 
             low_res, low_res_err = four_point_low_lambda(adjusted_nv_sig)
             high_res, high_res_err = four_point_high_lambda(adjusted_nv_sig)
-            ref_resonances[image_y_ind][adj_x_ind] = (
+            sig_resonances[image_y_ind][adj_x_ind] = (
                 low_res,
                 high_res,
             )
-            ref_res_errs[image_y_ind][adj_x_ind] = (
+            sig_res_errs[image_y_ind][adj_x_ind] = (
                 low_res_err,
                 high_res_err,
             )
