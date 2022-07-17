@@ -134,6 +134,7 @@ def main_with_cxn(
         esr_num_reps,
         esr_num_runs,
         States.LOW,
+        ret_file_name=True,
     )
     four_point_high_lambda = lambda adj_nv_sig: four_point_esr.main_with_cxn(
         cxn,
@@ -142,6 +143,7 @@ def main_with_cxn(
         esr_num_reps,
         esr_num_runs,
         States.LOW,
+        ret_file_name=True,
     )
 
     cxn_power_supply = cxn.power_supply_mp710087
