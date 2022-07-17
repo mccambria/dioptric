@@ -124,22 +124,26 @@ def main_with_cxn(
     sig_resonances = gen_blank_square_list(num_steps)
     ref_res_errs = gen_blank_square_list(num_steps)
     sig_res_errs = gen_blank_square_list(num_steps)
+    ref_files = gen_blank_square_list(num_steps)
+    sig_files = gen_blank_square_list(num_steps)
 
     four_point_low_lambda = lambda adj_nv_sig: four_point_esr.main_with_cxn(
         cxn,
-        nv_sig,
+        adj_nv_sig,
         apd_indices,
         esr_num_reps,
         esr_num_runs,
         States.LOW,
+        ret_file_name=True,
     )
     four_point_high_lambda = lambda adj_nv_sig: four_point_esr.main_with_cxn(
         cxn,
-        nv_sig,
+        adj_nv_sig,
         apd_indices,
         esr_num_reps,
         esr_num_runs,
         States.LOW,
+        ret_file_name=True,
     )
 
     cxn_power_supply = cxn.power_supply_mp710087
@@ -155,6 +159,7 @@ def main_with_cxn(
     # Start rasterin'
 
     parity = +1  # Determines x scan direction
+    adjusted_nv_sig = copy.deepcopy(nv_sig)
 
     for y_ind in range(num_steps):
 
@@ -169,15 +174,14 @@ def main_with_cxn(
             adj_x_ind = x_ind if parity == +1 else -1 - x_ind
             x_voltage = x_voltages_1d[adj_x_ind]
 
-            adjusted_nv_sig = copy.deepcopy(nv_sig)
             adjusted_nv_sig["coords"] = [x_voltage, y_voltage, z_center]
 
             cxn_power_supply.output_off()
 
             time.sleep(1)
 
-            low_res, low_res_err = four_point_low_lambda(adjusted_nv_sig)
-            high_res, high_res_err = four_point_high_lambda(adjusted_nv_sig)
+            low_res, low_res_err, low_file = four_point_low_lambda(adjusted_nv_sig)
+            high_res, high_res_err, high_file = four_point_high_lambda(adjusted_nv_sig)
             ref_resonances[image_y_ind][adj_x_ind] = (
                 low_res,
                 high_res,
@@ -186,14 +190,18 @@ def main_with_cxn(
                 low_res_err,
                 high_res_err,
             )
+            ref_files[image_y_ind][adj_x_ind] = (
+                low_file,
+                high_file,
+            )
 
             cxn_power_supply.output_on()
             cxn_power_supply.set_voltage(nir_laser_voltage)
 
             time.sleep(1)
 
-            low_res, low_res_err = four_point_low_lambda(adjusted_nv_sig)
-            high_res, high_res_err = four_point_high_lambda(adjusted_nv_sig)
+            low_res, low_res_err, low_file = four_point_low_lambda(adjusted_nv_sig)
+            high_res, high_res_err, high_file = four_point_high_lambda(adjusted_nv_sig)
             sig_resonances[image_y_ind][adj_x_ind] = (
                 low_res,
                 high_res,
@@ -201,6 +209,10 @@ def main_with_cxn(
             sig_res_errs[image_y_ind][adj_x_ind] = (
                 low_res_err,
                 high_res_err,
+            )
+            sig_files[image_y_ind][adj_x_ind] = (
+                low_file,
+                high_file,
             )
 
         parity *= -1
@@ -237,8 +249,10 @@ def main_with_cxn(
         "x_voltages": x_voltages_1d.tolist(),
         "y_voltages": y_voltages_1d.tolist(),
         "xy_units": xy_units,
+        "ref_files": ref_files,
         "ref_resonances": ref_resonances,
         "ref_res_errs": ref_res_errs,
+        "sig_files": sig_files,
         "sig_resonances": sig_resonances,
         "sig_res_errs": sig_res_errs,
         "diff_temps": diff_temps.astype(float).tolist(),
@@ -257,7 +271,7 @@ def main_with_cxn(
 # region Run the file
 
 if __name__ == "__main__":
-    
+
     pass
 
     # plt.show(block=True)
