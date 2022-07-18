@@ -419,7 +419,7 @@ if __name__ == "__main__":
 
     # main_files(files)
 
-    main(2.87, zfs_err=0.00001)
+    main(2.870351174669307, zfs_err=2.1e-05)
 
     # process_temp_dep_res_files()
 

@@ -79,6 +79,7 @@ def cost0(params, image, x_lim, y_lim, debug, excluded_centers):
     integrand = [image[el] for el in circle_samples if check_valid(el)]
 
     cost = np.sum(integrand) / len(integrand)
+    # cost = 1 - (np.sum(integrand) / len(integrand))
 
     return cost
 
@@ -259,10 +260,20 @@ def main(
 
     ret_vals = process_image(image)
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
+    normed_blur_image = (blur_image - np.min(blur_image)) / (
+        np.max(blur_image) - np.min(blur_image)
+    )
+    inv_sigmoid_image = 1 - sigmoid_image
+    final_image = normed_blur_image * inv_sigmoid_image
 
     opti_image = sigmoid_image
-    # plot_image = sigmoid_image
-    plot_image = image
+    # opti_image = final_image
+    plot_image = opti_image
+
+    # opti_image = normed_blur_image
+    # plot_image = final_image
+    # plot_image = normed_blur_image
+    # plot_image = image
 
     # Plot the image
     fig, ax = plt.subplots()
@@ -457,9 +468,11 @@ def main(
         # Determine the best radius by a full auto run desinged to find
         # the single best circle in the image. Then use that radius to
         # plot the full image.
-        ret_vals = main(image_file_name, run_type="full_auto")
-        best_circle = ret_vals[0][0]
-        radius = best_circle[2]
+        # ret_vals = main(image_file_name, run_type="full_auto")
+        # best_circle = ret_vals[0][0]
+        # radius = best_circle[2]
+        radius = 46.1  # MCC testing
+        # radius = 28.5  # MCC testing
 
         half_range = round(0.15 * image_len_x)
         num_points = 100
@@ -506,6 +519,14 @@ def main(
 
         end = time.time()
         print(f"Elapsed time: {end-start}")
+
+        if image_file_name is not None:
+            image_file_name_split = image_file_name.split("-")
+            timestamp = "-".join(image_file_name_split[0:2])
+            nv_name = "-".join(image_file_name_split[2:4])
+            file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+            tool_belt.save_figure(fig2, file_path)
+
         return
 
     elif run_type == "full_auto":
@@ -517,15 +538,15 @@ def main(
                 bounds = [
                     (0.4 * image_len_y, 0.6 * image_len_y),
                     (0.4 * image_len_x, 0.6 * image_len_x),
-                    # (20, 35),
-                    (40, 60),
+                    (20, 35),
+                    # (40, 60),
                 ]
             else:
                 bounds = brute_bounds
 
             # Anything worse than minimum_cost and we stop searching for circles
             minimum_cost = None
-            num_circles = 1
+            num_circles = 2
 
             # Initialize best_cost
             best_cost = 1
@@ -662,8 +683,11 @@ if __name__ == "__main__":
     #     main(image_file_name, circle_a, circle_b, fast_recursive=True)
     #     # calc_errors(image_file_name, circle_a, circle_b)
 
-    image_file_name = "2022_01_03-08_49_15-johnson-nv0_2021_12_22-faked"
+    image_file_name = "2022_07_17-20_55_18-johnson-nv0_2021_12_22-faked"
     main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
+
+    # image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
+    # main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
 
     plt.show(block=True)
 
