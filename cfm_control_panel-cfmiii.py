@@ -3,7 +3,7 @@
 This file contains functions to control the CFM. Just change the function call
 in the main section at the bottom of this file and run the file. Shared or
 frequently changed parameters are in the __main__ body and relatively static
-parameters are in the function definitions.
+parameters are in the function definitions. 
 
 Created on Sun Nov 25 14:00:28 2018
 
