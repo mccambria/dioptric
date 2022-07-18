@@ -48,6 +48,12 @@ sin_phi_linspace = np.sin(phi_linspace)
 # region Functions
 
 
+def norm_0_to_1(image):
+    normed_image = (image - np.min(image)) / (np.max(image) - np.min(image))
+
+    return normed_image
+
+
 def cost0(params, image, x_lim, y_lim, debug, excluded_centers):
     """
     Faux-integrate the pixel values around the circle. By faux-integrate I mean
@@ -79,7 +85,7 @@ def cost0(params, image, x_lim, y_lim, debug, excluded_centers):
     integrand = [image[el] for el in circle_samples if check_valid(el)]
 
     cost = np.sum(integrand) / len(integrand)
-    # cost = 1 - (np.sum(integrand) / len(integrand))
+    # cost = 1 - (np.sum(integrand) / len(integrand))  # Best should be minimum
 
     return cost
 
@@ -182,16 +188,20 @@ def process_image(image):
     laplacian_image = cv.Laplacian(
         gradient_root, cv.CV_64F, ksize=gaussian_size
     )
+    # laplacian_image = norm_0_to_1(laplacian_image)
+    # laplacian_image = 2*(laplacian_image - 0.5)
+    # laplacian_image += 20
     # offset = np.average(np.abs(laplacian_image))
     # print(offset)
     # offset = np.sqrt(np.average(laplacian_image ** 2))
-    # # # print(offset)
+    # print(offset)
     # laplacian_image += offset
     # laplacian_image -= np.min(laplacian_image)
 
     sobel_x = cv.Sobel(gradient_root, cv.CV_64F, 1, 0, ksize=gaussian_size)
     sobel_y = cv.Sobel(gradient_root, cv.CV_64F, 0, 1, ksize=gaussian_size)
     gradient_image = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
+    # gradient_image = norm_0_to_1(gradient_image)
     # gradient_image += 100
     # gradient_image = gradient_image**2
 
@@ -235,8 +245,7 @@ def calc_distance(fig, x0, x1, y0, y1, sx0, sx1, sy0, sy1):
 def main(
     image_file_name=None,
     image=None,
-    circle_a=None,
-    circle_b=None,
+    passed_circles=None,
     fast_recursive=False,
     brute_bounds=None,
     # "manual", "publication", "recursive", "fixed_r_reconstruction", "full_auto"
@@ -260,9 +269,7 @@ def main(
 
     ret_vals = process_image(image)
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
-    normed_blur_image = (blur_image - np.min(blur_image)) / (
-        np.max(blur_image) - np.min(blur_image)
-    )
+    normed_blur_image = norm_0_to_1(blur_image)
     inv_sigmoid_image = 1 - sigmoid_image
     final_image = normed_blur_image * inv_sigmoid_image
 
@@ -298,40 +305,7 @@ def main(
 
     if run_type == "manual":
 
-        x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
-        y_linspace = np.linspace(0, image_len_x, image_len_y, endpoint=False)
-        rad_linspace = np.linspace(25, 30, 10)
-
-        left_best_circle = None
-        left_best_cost = 1
-        right_best_circle = None
-        right_best_cost = 1
-        half_x = image_len_x / 2
-
-        # Manual brute force optimization for left/right halves
-        for x in x_linspace:
-            for y in y_linspace:
-                for r in rad_linspace:
-                    circle = [y, x, r]
-                    cost = cost_func(circle, *args)
-                    if x < half_x:
-                        if cost < left_best_cost:
-                            left_best_circle = circle
-                            left_best_cost = cost
-                    else:
-                        if cost < right_best_cost:
-                            right_best_circle = circle
-                            right_best_cost = cost
-
-        brute_circles = [left_best_circle, right_best_circle]
-        for circle in brute_circles:
-            # print(circle)
-            bounds = [(val - 1, val + 1) for val in circle]
-            res = minimize(
-                cost_func, circle, bounds=bounds, args=args, method="L-BFGS-B"
-            )
-            opti_circle = res.x
-            plot_circles.append(opti_circle)
+        plot_circles = passed_circles
 
     elif run_type == "publication":
         half_range = 18  # for circle 3
@@ -363,34 +337,12 @@ def main(
         half_x = image_len_x / 2
 
         # Manual brute force optimization for left/right halves
+        reconstruction = []
         for y in y_linspace:
-            reconstruction.append([])
-            for x in x_linspace:
-
-                # set the r value
-                # if x < half_x:
-                #     r = circle_a[2]
-                # else:
-                #     r = circle_b[2]
-
-                # Cost at a fixed r
-                # circle = [y, x, r]
-                # cost_value = 0.5 - cost_func(circle, *args)
-
-                # just recording min cost value over rad_linspace
-                # test_circles = [[y, x, r] for r in rad_linspace]
-                # with multiprocessing.Pool() as pool:
-                #     cost_vals = pool.map(cost_func_partial, test_circles)
-                # Slow singlethreaded version
-                cost_func_lambda = lambda r: cost_func([y, x, r], *args)
-                cost_vals = [cost_func_lambda(r) for r in rad_linspace]
-                # cost_value = 0.5 - min(cost_vals)
-                cost_value = min(cost_vals)
-
-                # print(cost_value)
-                # image_copy[int(y)][int(x)] = cost_value
-                # image_copy_log[int(y)][int(x)] = np.log(cost_value)
-                reconstruction[-1].append(cost_value)
+            cost_lambda = lambda x: cost_func([y, x, radius], *args)
+            with Pool() as p:
+                x_line = p.map(cost_lambda, x_linspace)
+            reconstruction.append(x_line)
 
         fig2, ax = plt.subplots()
         fig2.set_tight_layout(True)
@@ -468,10 +420,10 @@ def main(
         # Determine the best radius by a full auto run desinged to find
         # the single best circle in the image. Then use that radius to
         # plot the full image.
-        # ret_vals = main(image_file_name, run_type="full_auto")
-        # best_circle = ret_vals[0][0]
-        # radius = best_circle[2]
-        radius = 46.1  # MCC testing
+        ret_vals = main(image_file_name, run_type="full_auto")
+        best_circle = ret_vals[0][0]
+        radius = best_circle[2]
+        # radius = 46.1  # MCC testing
         # radius = 28.5  # MCC testing
 
         half_range = round(0.15 * image_len_x)
@@ -538,7 +490,8 @@ def main(
                 bounds = [
                     (0.4 * image_len_y, 0.6 * image_len_y),
                     (0.4 * image_len_x, 0.6 * image_len_x),
-                    (20, 35),
+                    (26, 30),
+                    # (26, 28),
                     # (40, 60),
                 ]
             else:
@@ -559,7 +512,7 @@ def main(
                 opti_circle = brute(
                     cost_func,
                     bounds,
-                    Ns=20,
+                    Ns=30,
                     args=args,
                     finish=None,
                     workers=-1,  # Multiprocessing: -1 means use as many cores as available
@@ -567,7 +520,8 @@ def main(
                 args[-1] = []
                 new_best_cost = cost_func(opti_circle, *args)
 
-                threshold = 0.0001 * best_cost
+                # threshold = 0.0001 * best_cost
+                threshold = 0.001 * best_cost
                 if best_cost - new_best_cost < threshold:
                     break
                 best_cost = new_best_cost
@@ -650,41 +604,48 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    # # circles = [3]
+    circles = [3]
     # circles = [4]
-    # # circles = [3, 4]
-    # for circle in circles:
+    # circles = [3, 4]
+    for circle in circles:
 
-    #     # Fig. 3
-    #     if circle == 3:
-    #         image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
-    #         # Best circles by hand
-    #         # circle_a = [41.5, 37, 27.5]
-    #         # circle_b = [40, 44, 27.75]
-    #         # Recursive brute results, 1000 point circle
-    #         circle_a = [41.74, 36.85, 27.73]  # 0.31941
-    #         # errs_a = [1.4, 1.4, 1.2]
-    #         circle_b = [39.05, 43.87, 27.59]  # 0.36108
-    #         # errs_b = [1.5, 0.9, 1.0]
+        # Fig. 3
+        if circle == 3:
+            image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
+            # Best circles by hand
+            # circle_a = [41.5, 37, 27.5]
+            # circle_b = [40, 44, 27.75]
+            # Recursive brute results, 1000 point circle
+            # circle_a = [41.74, 36.85, 27.73]  # 0.31941
+            # errs_a = [1.4, 1.4, 1.2]
+            circle_a = [39.97, 41.93, 29.46]  # test
+            circle_b = [39.05, 43.87, 27.59]  # 0.36108
+            # errs_b = [1.5, 0.9, 1.0]
 
-    #     # Fig. 4
-    #     elif circle == 4:
-    #         image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
-    #         # Best circles by hand
-    #         # circle_a = [50, 46, 26]
-    #         # circle_b = [51.7, 56.5, 27.3]
-    #         # Recursive brute results, 1000 point circle
-    #         circle_a = [50.98, 45.79, 26.14]  # 0.3176
-    #         # circle_a = [50.98 - 0, 45.79 + 0, 26.14 - 0]  # 0.3176
-    #         # errs_a = [2.1, 1.1, 1.3]
-    #         circle_b = [51.2, 56.32, 27.29]  # 0.35952
-    #         # errs_b = [1.8, 1.1, 1.2]
+        # Fig. 4
+        elif circle == 4:
+            image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
+            # Best circles by hand
+            # circle_a = [50, 46, 26]
+            # circle_b = [51.7, 56.5, 27.3]
+            # Recursive brute results, 1000 point circle
+            circle_a = [50.98, 45.79, 26.14]  # 0.3176
+            # circle_a = [50.98 - 0, 45.79 + 0, 26.14 - 0]  # 0.3176
+            # errs_a = [2.1, 1.1, 1.3]
+            circle_b = [51.2, 56.32, 27.29]  # 0.35952
+            # errs_b = [1.8, 1.1, 1.2]
 
-    #     main(image_file_name, circle_a, circle_b, fast_recursive=True)
-    #     # calc_errors(image_file_name, circle_a, circle_b)
+        # main(image_file_name, run_type="full_auto")
+        main(
+            image_file_name,
+            passed_circles=[circle_a, circle_b],
+            run_type="manual",
+        )
+        # main(image_file_name, circle_a, circle_b, run_type="full_auto")
+        # calc_errors(image_file_name, circle_a, circle_b)
 
-    image_file_name = "2022_07_17-20_55_18-johnson-nv0_2021_12_22-faked"
-    main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
+    # image_file_name = "2022_07_17-20_55_18-johnson-nv0_2021_12_22-faked"
+    # main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
 
     # image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
     # main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
