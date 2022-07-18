@@ -179,7 +179,7 @@ def main_with_cxn(
 
             cxn_power_supply.output_off()
 
-            time.sleep(10)
+            time.sleep(1)
 
             low_res, low_res_err, low_file = four_point_low_lambda(
                 adjusted_nv_sig
@@ -203,7 +203,7 @@ def main_with_cxn(
             cxn_power_supply.output_on()
             cxn_power_supply.set_voltage(nir_laser_voltage)
 
-            time.sleep(10)
+            time.sleep(1)
 
             low_res, low_res_err, low_file = four_point_low_lambda(
                 adjusted_nv_sig

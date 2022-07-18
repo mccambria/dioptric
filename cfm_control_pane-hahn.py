@@ -116,7 +116,7 @@ def do_image_sample_temperature(nv_sig, apd_indices):
     # esr_num_reps = 3e4
     # esr_num_runs = 800
     esr_num_reps = 1e5
-    esr_num_runs = 16
+    esr_num_runs = 4
     
     image_sample_temperature.main(
         nv_sig,
