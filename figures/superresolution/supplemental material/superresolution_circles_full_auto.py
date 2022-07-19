@@ -37,7 +37,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 # region Constants
 
-num_circle_samples = 1000
+num_circle_samples = 100
 
 phi_linspace = np.linspace(0, 2 * pi, num_circle_samples, endpoint=False)
 cos_phi_linspace = np.cos(phi_linspace)
@@ -46,67 +46,6 @@ sin_phi_linspace = np.sin(phi_linspace)
 # endregion
 
 # region Functions
-
-
-def norm_0_to_1(image):
-    normed_image = (image - np.min(image)) / (np.max(image) - np.min(image))
-
-    return normed_image
-
-
-def cost0(params, image, x_lim, y_lim, debug, excluded_centers):
-    """
-    Faux-integrate the pixel values around the circle. By faux-integrate I mean
-    average the values under a 1000 point, linearly spaced sampling of the circle.
-
-    excluded_centers: list of tuples (x,y) describing potential centers that we don't
-    want to consider. Useful for ignoring circles we've already found when optimizing.
-    """
-
-    circle_center_x, circle_center_y, circle_radius = params
-
-    # Check if the circle is in the exclusion range
-    exclusion_range = 4  # Pixels
-    for excluded_x, excluded_y in excluded_centers:
-        dist = np.sqrt(
-            (excluded_x - circle_center_x) ** 2
-            + (excluded_y - circle_center_y) ** 2
-        )
-        if dist < exclusion_range:
-            return 1
-
-    circle_samples_x = circle_center_x + circle_radius * cos_phi_linspace
-    circle_samples_y = circle_center_y + circle_radius * sin_phi_linspace
-    circle_samples_x_round = [round(el) for el in circle_samples_x]
-    circle_samples_y_round = [round(el) for el in circle_samples_y]
-    circle_samples = zip(circle_samples_x_round, circle_samples_y_round)
-
-    check_valid = lambda el: (0 <= el[1] < x_lim) and (0 <= el[0] < y_lim)
-    integrand = [image[el] for el in circle_samples if check_valid(el)]
-
-    cost = np.sum(integrand) / len(integrand)
-    # cost = 1 - (np.sum(integrand) / len(integrand))  # Best should be minimum
-
-    return cost
-
-
-def sigmoid_quotient(laplacian, gradient):
-
-    # Get the zeros from the gradient so we can avoid divide by zeros.
-    # At the end we'll just set the sigmoid to the sign of the Laplacian
-    # for these values.
-    gradient_zeros = gradient < 1e-10
-    gradient_not_zeros = np.logical_not(gradient_zeros)
-    masked_gradient = (gradient * gradient_not_zeros) + gradient_zeros
-    quotient = laplacian / masked_gradient
-    sigmoid = 1 / (1 + np.exp(-1 * quotient))
-    # sigmoid = 1 / (1 + np.exp(-5 * quotient - 0.0))
-    # sigmoid = quotient
-    laplacian_positive = np.sign(laplacian) == 1
-    sigmoid = (sigmoid * gradient_not_zeros) + (
-        laplacian_positive * gradient_zeros
-    )
-    return sigmoid
 
 
 def calc_errors(image_file_name, circle_a, circle_b):
@@ -177,11 +116,103 @@ def calc_errors(image_file_name, circle_a, circle_b):
     print()
 
 
+def norm_0_to_1(image):
+    normed_image = (image - np.min(image)) / (np.max(image) - np.min(image))
+
+    return normed_image
+
+
+def cost0(params, image, x_lim, y_lim, debug, invert, excluded_centers):
+    """
+    Faux-integrate the pixel values around the circle. By faux-integrate I mean
+    average the values under a 1000 point, linearly spaced sampling of the circle.
+
+    excluded_centers: list of tuples (x,y) describing potential centers that we don't
+    want to consider. Useful for ignoring circles we've already found when optimizing.
+    """
+
+    circle_center_x, circle_center_y, circle_radius = params
+
+    # Check if the circle is in the exclusion range
+    exclusion_range = 4  # Pixels
+    for excluded_x, excluded_y in excluded_centers:
+        dist = np.sqrt(
+            (excluded_x - circle_center_x) ** 2
+            + (excluded_y - circle_center_y) ** 2
+        )
+        if dist < exclusion_range:
+            return 1
+
+    circle_samples_x = circle_center_x + circle_radius * cos_phi_linspace
+    circle_samples_y = circle_center_y + circle_radius * sin_phi_linspace
+    circle_samples_x_round = [round(el) for el in circle_samples_x]
+    circle_samples_y_round = [round(el) for el in circle_samples_y]
+    circle_samples = zip(circle_samples_x_round, circle_samples_y_round)
+
+    check_valid = lambda el: (0 <= el[1] < x_lim) and (0 <= el[0] < y_lim)
+    integrand = [image[el] for el in circle_samples if check_valid(el)]
+    # integrand = [image[el] ** 2 for el in circle_samples if check_valid(el)]
+
+    if invert:  # Best should be minimum
+        cost = 1 - (np.sum(integrand) / len(integrand))
+    else:
+        cost = np.sum(integrand) / len(integrand)
+        # cost = np.sqrt(np.sum(integrand) / len(integrand))
+
+    return cost
+
+
+def sigmoid_quotient(laplacian, gradient):
+
+    # Get the zeros from the gradient so we can avoid divide by zeros.
+    # At the end we'll just set the sigmoid to the sign of the Laplacian
+    # for these values.
+    gradient_zeros = gradient < 1e-10
+    gradient_not_zeros = np.logical_not(gradient_zeros)
+    masked_gradient = (gradient * gradient_not_zeros) + gradient_zeros
+    quotient = laplacian / masked_gradient
+    sigmoid = 1 / (1 + np.exp(-1 * quotient))
+    # sigmoid = 1 / (1 + np.exp(-5 * quotient - 0.0))
+    # sigmoid = quotient
+    laplacian_positive = np.sign(laplacian) == 1
+    sigmoid = (sigmoid * gradient_not_zeros) + (
+        laplacian_positive * gradient_zeros
+    )
+    return sigmoid
+
+
+def sigmoid_quotient2(laplacian, gradient, orig):
+
+    # Get the zeros from the gradient so we can avoid divide by zeros.
+    # At the end we'll just set the sigmoid to the sign of the Laplacian
+    # for these values.
+    gradient_zeros = gradient < 1e-10
+    gradient_not_zeros = np.logical_not(gradient_zeros)
+    masked_gradient = (gradient * gradient_not_zeros) + gradient_zeros
+    # quotient = laplacian / masked_gradient
+    # quotient = 0.5 * laplacian / masked_gradient
+    quotient = orig * laplacian / masked_gradient
+    sigmoid = 1 / (1 + np.exp(-1 * quotient))
+    laplacian_positive = np.sign(laplacian) == 1
+    sigmoid = (sigmoid * gradient_not_zeros) + (
+        laplacian_positive * gradient_zeros
+    )
+    return sigmoid
+
+
 def process_image(image):
 
     # Blur
     gaussian_size = 7
     blur_image = cv.GaussianBlur(image, (gaussian_size, gaussian_size), 0)
+    # normed_blur_image = norm_0_to_1(blur_image)
+    normed_blur_image = blur_image - np.min(blur_image)
+    norm = np.percentile(
+        normed_blur_image, 90
+    )  # Normalize to the ring brightness, roughly
+    # print(norm)
+    normed_blur_image = normed_blur_image / norm
+    # normed_blur_image = blur_image
 
     gradient_root = blur_image
 
@@ -190,8 +221,8 @@ def process_image(image):
     )
     # laplacian_image = norm_0_to_1(laplacian_image)
     # laplacian_image = 2*(laplacian_image - 0.5)
-    # laplacian_image += 20
-    # offset = np.average(np.abs(laplacian_image))
+    # laplacian_image += 3
+    # offset = 10 * np.average(np.abs(laplacian_image))
     # print(offset)
     # offset = np.sqrt(np.average(laplacian_image ** 2))
     # print(offset)
@@ -205,12 +236,15 @@ def process_image(image):
     # gradient_image += 100
     # gradient_image = gradient_image**2
 
-    sigmoid_image = sigmoid_quotient(laplacian_image, gradient_image)
+    # sigmoid_image = sigmoid_quotient(laplacian_image, gradient_image)
+    sigmoid_image = sigmoid_quotient2(
+        laplacian_image, gradient_image, normed_blur_image
+    )
     # sigmoid_image = cv.GaussianBlur(
     #     sigmoid_image, (gaussian_size, gaussian_size), 0
     # )
 
-    return blur_image, laplacian_image, gradient_image, sigmoid_image
+    return normed_blur_image, laplacian_image, gradient_image, sigmoid_image
 
 
 def calc_distance(fig, x0, x1, y0, y1, sx0, sx1, sy0, sy1):
@@ -267,11 +301,21 @@ def main(
     image_len_x = image_domain[1]
     image_len_y = image_domain[0]
 
+    # image *= 10
     ret_vals = process_image(image)
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
     normed_blur_image = norm_0_to_1(blur_image)
     inv_sigmoid_image = 1 - sigmoid_image
     final_image = normed_blur_image * inv_sigmoid_image
+
+    # mean_blur_image = np.percentile(blur_image, 1)
+    # normed_blur_image = (blur_image - mean_blur_image) / mean_blur_image
+    # sigmoid_blur_image = 1 / (1 + np.exp(-1 * normed_blur_image))
+    # sigmoid_blur_image = norm_0_to_1(sigmoid_blur_image)
+    # # sigmoid_blur_image = (sigmoid_blur_image - 0.5) * 2
+    # final_image = sigmoid_blur_image * inv_sigmoid_image
+    # # final_image = (blur_image > mean_blur_image) * inv_sigmoid_image
+    final_image = 1 - final_image
 
     opti_image = sigmoid_image
     # opti_image = final_image
@@ -279,8 +323,13 @@ def main(
 
     # opti_image = normed_blur_image
     # plot_image = final_image
+    # plot_image = gradient_image
     # plot_image = normed_blur_image
+    # plot_image = sigmoid_blur_image
     # plot_image = image
+
+    invert_cost = False
+    # invert_cost = True
 
     # Plot the image
     fig, ax = plt.subplots()
@@ -289,16 +338,41 @@ def main(
     _ = plt.colorbar(img)
     # return
 
+    # fig2, ax2 = plt.subplots()
+    # fig2.set_tight_layout(True)
+    # img2 = ax2.imshow(sigmoid_image, cmap="inferno")
+    # _ = plt.colorbar(img2)
+
+    # fig3, ax3 = plt.subplots()
+    # fig3.set_tight_layout(True)
+    # img3 = ax3.imshow(gradient_image, cmap="inferno")
+    # _ = plt.colorbar(img3)
+
+    # fig4, ax4 = plt.subplots()
+    # fig4.set_tight_layout(True)
+    # img4 = ax4.imshow(laplacian_image, cmap="inferno")
+    # _ = plt.colorbar(img4)
+
+    # fig5, ax5 = plt.subplots()
+    # fig5.set_tight_layout(True)
+    # img5 = ax5.imshow(blur_image, cmap="inferno")
+    # _ = plt.colorbar(img5)
+
+    # return
+
     # endregion
 
     # region Circle finding
 
     excluded_centers = []
-    args = [opti_image, image_len_x, image_len_y, False, excluded_centers]
-    # Partial function with everything but the circle parameters filled in
-    cost_func_partial = partial(
-        cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2]
-    )
+    args = [
+        opti_image,
+        image_len_x,
+        image_len_y,
+        False,
+        invert_cost,
+        excluded_centers,
+    ]
     plot_circles = []
 
     start = time.time()
@@ -427,7 +501,7 @@ def main(
         # radius = 28.5  # MCC testing
 
         half_range = round(0.15 * image_len_x)
-        num_points = 100
+        num_points = 1000
         half_len_x = image_len_x // 2
         half_len_y = image_len_x // 2
         x_linspace = np.linspace(
@@ -490,16 +564,16 @@ def main(
                 bounds = [
                     (0.4 * image_len_y, 0.6 * image_len_y),
                     (0.4 * image_len_x, 0.6 * image_len_x),
-                    (26, 30),
+                    # (26, 30),
                     # (26, 28),
-                    # (40, 60),
+                    (40, 60),
                 ]
             else:
                 bounds = brute_bounds
 
             # Anything worse than minimum_cost and we stop searching for circles
             minimum_cost = None
-            num_circles = 2
+            num_circles = 1
 
             # Initialize best_cost
             best_cost = 1
@@ -604,9 +678,9 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    circles = [3]
+    # circles = [3]
     # circles = [4]
-    # circles = [3, 4]
+    circles = [3, 4]
     for circle in circles:
 
         # Fig. 3
@@ -616,11 +690,11 @@ if __name__ == "__main__":
             # circle_a = [41.5, 37, 27.5]
             # circle_b = [40, 44, 27.75]
             # Recursive brute results, 1000 point circle
-            # circle_a = [41.74, 36.85, 27.73]  # 0.31941
+            circle_a = [41.74, 36.85, 27.73]  # 0.31941
             # errs_a = [1.4, 1.4, 1.2]
-            circle_a = [39.97, 41.93, 29.46]  # test
             circle_b = [39.05, 43.87, 27.59]  # 0.36108
             # errs_b = [1.5, 0.9, 1.0]
+            circle_c = [39.97, 41.93, 29.46]  # test
 
         # Fig. 4
         elif circle == 4:
@@ -635,17 +709,14 @@ if __name__ == "__main__":
             circle_b = [51.2, 56.32, 27.29]  # 0.35952
             # errs_b = [1.8, 1.1, 1.2]
 
+        circles = [circle_a, circle_b, circle_c]
         # main(image_file_name, run_type="full_auto")
-        main(
-            image_file_name,
-            passed_circles=[circle_a, circle_b],
-            run_type="manual",
-        )
+        # main(image_file_name, passed_circles=circles, run_type="manual")
         # main(image_file_name, circle_a, circle_b, run_type="full_auto")
         # calc_errors(image_file_name, circle_a, circle_b)
 
-    # image_file_name = "2022_07_17-20_55_18-johnson-nv0_2021_12_22-faked"
-    # main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
+    image_file_name = "2022_07_17-20_55_18-johnson-nv0_2021_12_22-faked"
+    main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
 
     # image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
     # main(image_file_name=image_file_name, run_type="fixed_r_reconstruction")
