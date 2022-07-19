@@ -121,8 +121,9 @@ def main():
     # IMPUT PARAMTERS HERE
     # --------------------
 
-    totalrows = 15  # total number of pixels being added in the y axis
-    totalcols = 15  # total number of pixels being added in the x axis
+    # ~20 nm per pixel, this should correspond to beam waist
+    totalrows = 19  # total number of pixels being added in the y axis
+    totalcols = totalrows  # total number of pixels being added in the x axis
     num_col = (
         num_steps  # number of pxls added in x axis (columns) in the front
     )
