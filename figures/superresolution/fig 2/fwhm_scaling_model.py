@@ -50,9 +50,9 @@ def width_scaling_w_mods(t, e, alpha, R):
 
 
 fit_func = width_scaling_w_mods
-e =  0.0008723132950598539
-alpha = 0.00000309380937
-R_nm = 6.1
+e =  0.000877509029905619
+alpha = 0.00000309948343
+R_nm = 6.2
 params = [e, alpha, R_nm*(2*numpy.pi*NA)/wavelength]
 
 fig, ax = plt.subplots()

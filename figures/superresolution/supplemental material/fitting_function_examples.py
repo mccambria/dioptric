@@ -31,6 +31,11 @@ wavelength = 638
 fwhm =1.825 
 scale = 0.99e3
 
+
+epsilon = 8.7e-4
+alpha = 3.1e-6
+R_nm = 6
+
 red = '#ee3542'
 orange = '#faa51a'
 purple = '#a12964'
@@ -215,38 +220,37 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     widths_master_list_x = 2*numpy.pi*NA*widths_master_list_fwhm/wavelength
     
     fit_func = lambda t, e, a: width_scaling_w_mods(t, C, e, a, 0) 
-    init_fit = [ 0.006, 10]
-    opti_params, cov_arr = curve_fit(fit_func,
-          t_vals,widths_master_list_x,p0=init_fit,
-           bounds=(0, [1, numpy.inf])
-          )
-    ax.plot(lin_x_vals, fit_func(lin_x_vals, *opti_params)*wavelength/(2*numpy.pi*NA), 
+    funct_vals = [ epsilon, alpha]
+    # opti_params, cov_arr = curve_fit(fit_func,
+    #       t_vals,widths_master_list_x,p0=init_fit,
+    #        bounds=(0, [1, numpy.inf])
+    #       )
+    ax.plot(lin_x_vals, fit_func(lin_x_vals, *funct_vals)*wavelength/(2*numpy.pi*NA), 
             color = 'blue',  linestyle = (0,(6,3))   , linewidth = 1, label = r"$\Delta x'$")
     
     
     #### modified inverse quarter####
     # Estimate the lower limit and convert to dimentionless units below
-    R_guess = 10 #nm 
     fit_func = lambda t, e, a, R: width_scaling_w_mods(t, C, e, a, R) 
-    init_fit = [ 0.006, 10, 2*numpy.pi*NA*R_guess/wavelength]
+    func_vals = [ epsilon, alpha, 2*numpy.pi*NA*R_nm/wavelength]
     
     
-    opti_params, cov_arr = curve_fit(fit_func,
-          t_vals,widths_master_list_x,p0=init_fit,
-           bounds=(0, [1, numpy.inf, numpy.inf])
-          )
+    # opti_params, cov_arr = curve_fit(fit_func,
+    #       t_vals,widths_master_list_x,p0=init_fit,
+    #        bounds=(0, [1, numpy.inf, numpy.inf])
+    #       )
     
-    print(opti_params)
-    print('e = {:.7f} +/- {:.7f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
-    print('a = {:.14f} +/- {:.14f}'.format(opti_params[1], numpy.sqrt(cov_arr[1][1])))
-    R_val = opti_params[2]
-    R_val_conv = (opti_params[2])*wavelength/(2*numpy.pi*NA)
-    R_err_conv = numpy.sqrt(cov_arr[2][2])*wavelength/(2*numpy.pi*NA)
-    print('R = {:.5f} +/- {:.5f}'.format(R_val_conv, R_err_conv))
+    # print(opti_params)
+    # print('e = {:.7f} +/- {:.7f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
+    # print('a = {:.14f} +/- {:.14f}'.format(opti_params[1], numpy.sqrt(cov_arr[1][1])))
+    # R_val = opti_params[2]
+    # R_val_conv = (opti_params[2])*wavelength/(2*numpy.pi*NA)
+    # R_err_conv = numpy.sqrt(cov_arr[2][2])*wavelength/(2*numpy.pi*NA)
+    # print('R = {:.5f} +/- {:.5f}'.format(R_val_conv, R_err_conv))
     # print('Opti params: ' + str(opti_params))
     # print(cov_arr)
     # print((opti_params[2])**2*wavelength/(2*numpy.pi*NA))
-    ax.plot(lin_x_vals, fit_func(lin_x_vals, *opti_params)*wavelength/(2*numpy.pi*NA), 
+    ax.plot(lin_x_vals, fit_func(lin_x_vals, *func_vals)*wavelength/(2*numpy.pi*NA), 
             color = 'red',  linestyle = 'solid' , linewidth = 1, label = r"$\Delta x''$")
     
     
