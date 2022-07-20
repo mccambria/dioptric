@@ -32,7 +32,7 @@ from utils import common
 from utils import kplotlib as kpl
 from scipy.optimize import curve_fit
 
-bad_zfs_temps = 295
+bad_zfs_temps = 350
 
 
 # %% Functions
@@ -419,7 +419,13 @@ if __name__ == "__main__":
 
     # main_files(files)
 
-    main(2.87, zfs_err=0.00001)
+    # zfs = (2.80437571982632 + 2.9361011568838298) / 2
+    # zfs_err = np.sqrt(2.3665998318251086e-05**2 + 2.7116675293791154e-05**2) / 2
+    zfs = (2.804495746863994 + 2.936131974306111) / 2
+    zfs_err = (
+        np.sqrt(2.6001293985452265e-05 ** 2 + 2.9769666707425683e-05 ** 2) / 2
+    )
+    main(zfs, zfs_err)
 
     # process_temp_dep_res_files()
 

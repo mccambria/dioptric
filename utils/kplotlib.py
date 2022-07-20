@@ -36,6 +36,7 @@ import keyring
 import math
 import utils.common as common
 from colorutils import Color
+from enum import Enum
 
 # endregion
 
@@ -46,6 +47,7 @@ marker_size = 7
 line_width = 1.5
 marker_edge_width = line_width
 figsize = [6.5, 5.0]
+double_figsize = [figsize[0] * 2, figsize[1]]
 
 # endregion
 
@@ -56,23 +58,26 @@ figsize = [6.5, 5.0]
 
 kpl_colors = {
     # The following are taken from matplotlib's excellent default palette
-    "blue": "#1f77b4",
-    "orange": "#ff7f0e",
-    "green": "#2ca02c",
-    "red": "#d62728",
-    "purple": "#9467bd",
-    "brown": "#8c564b",
-    "pink": "#e377c2",
-    "gray": "#7f7f7f",
-    "yellow": "#bcbd22",
-    "cyan": "#17becf",
+}
+
+
+class KplColors(Enum):
+    BLUE = "#1f77b4"
+    ORANGE = "#ff7f0e"
+    GREEN = "#2ca02c"
+    RED = "#d62728"
+    PURPLE = "#9467bd"
+    BROWN = "#8c564b"
+    PINK = "#e377c2"
+    GRAY = "#7f7f7f"
+    YELLOW = "#bcbd22"
+    CYAN = "#17becf"
     #
     # The following are good for background lines on plots to mark interesting points
-    "gray": "#C0C0C0",
+    MEDIUM_GRAY = "#C0C0C0"
     # If marking an interesting point with a confidence interval, use dark_gray for the main line and light_gray for the interval
-    "dark_gray": "#909090",
-    "light_gray": "#DCDCDC",
-}
+    DARK_GRAY = "#909090"
+    LIGHT_GRAY = "#DCDCDC"
 
 
 def color_mpl_to_color_hex(color_mpl):
@@ -114,3 +119,42 @@ def zero_to_one_threshold(val):
 
 
 # endregion
+
+
+def init_kplotlib(font_size=17):
+    """
+    Runs the default initialization for kplotlib, our default configuration
+    of matplotlib
+    """
+
+    # Interactive mode so plots update as soon as the event loop runs
+    plt.ion()
+
+    ####### Latex setup #######
+
+    preamble = r""
+    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+
+    # Fonts
+    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+    preamble += r"\usepackage{helvet}"
+    # Latin mdoern is default math font but let's be safe
+    preamble += r"\usepackage{lmodern}"
+
+    # Sans serif math font, looks better for axis numbers.
+    # Preserves \mathrm and \mathit commands so you can still use serif
+    # Latin modern font for actually variables, equations, or whatever.
+    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+
+    plt.rcParams["text.latex.preamble"] = preamble
+
+    ###########################
+
+    # plt.rcParams["savefig.format"] = "svg"
+
+    plt.rcParams["font.size"] = font_size
+    # plt.rcParams["font.size"] = 17
+    # plt.rcParams["font.size"] = 15
+
+    plt.rc("text", usetex=True)

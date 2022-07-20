@@ -584,6 +584,9 @@ def get_tagger_wiring(cxn):
 
 
 # %% Matplotlib plotting utils
+# NOTE: This and other new plotting helper functions should all be in kplotlib
+# now. I'm leaving the below functions here so that I don't break anything by
+# deleting them.
 
 
 def init_matplotlib(font_size=17):
@@ -684,8 +687,7 @@ def create_image_figure(
     Returns:
         matplotlib.figure.Figure
     """
-    
-    
+
     # plt.rcParams.update({'font.size': 22})
 
     if um_scaled:
@@ -1028,6 +1030,10 @@ def lorentzian(x, x0, A, L, offset):
     """
     x_center = x - x0
     return offset + A * 0.5 * L / (x_center ** 2 + (0.5 * L) ** 2)
+
+
+def exp_decay(x, amp, decay, offset):
+    return offset + amp * np.exp(-x / decay)
 
 
 def gaussian(x, *params):
@@ -2067,7 +2073,8 @@ def set_drift(drift):
 
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
-    
+
+
 def adjust_coords_for_drift(coords, drift=None):
     if drift is None:
         drift = get_drift()
@@ -2085,7 +2092,7 @@ def reset_cfm(cxn=None):
     routine where they matter anyway).
     """
 
-    if cxn == None:
+    if cxn is None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
     else:

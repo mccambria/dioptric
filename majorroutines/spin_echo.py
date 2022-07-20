@@ -267,20 +267,22 @@ def fit_data(data):
     transform = numpy.fft.rfft(norm_avg_sig)
     freqs = numpy.fft.rfftfreq(num_steps, d=tau_step)
     transform_mag = numpy.absolute(transform)
+    fig, ax = plt.subplots()
+    ax.plot(freqs, transform_mag)
 
     # For a nice spin echo there may be two dominant frequencies of similar
     # magnitudes. We'll find the right one by brute force
     sorted_inds = numpy.argsort(transform_mag[2:])
     dominant_freqs = [freqs[sorted_inds[-1] + 1], freqs[sorted_inds[-2] + 1]]
-    # print(revival_time)
+    # print(dominant_freqs)
     # return
 
     # Hard guess
-    # amplitude = 0.07
-    # offset = 0.90
-    # decay_time = 2000.0
-    revival_time = 45
-    dominant_freqs = [1 / (1000*revival_time)]
+    amplitude = 0.07
+    offset = 0.90
+    decay_time = 2000.0
+    revival_time = 35e3
+    # dominant_freqs = [1 / (1000*revival_time)]
 
     # %% Fit
 
@@ -300,10 +302,13 @@ def fit_data(data):
     best_scaled_chi_sq = None
     best_popt = None
     for freq in dominant_freqs:
-        revival_time = 1 / freq
+        # print(freq)
+        # revival_time = 1 / freq
         # print(revival_time)
         num_revivals = max_precession_dur / revival_time
-        amplitudes = [amplitude for el in range(0, int(1.5 * num_revivals))]
+        amplitudes = [amplitude for el in range(0, int(1.0 * num_revivals))]
+        # print(num_revivals)
+
         revival_time_us = revival_time / 1000
         init_params = [
             offset,
@@ -825,7 +830,7 @@ def main_with_cxn(
     file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     tool_belt.save_figure(fit_fig, file_path_fit)
     file_path_angle = tool_belt.get_file_path(__file__, timestamp, nv_name + "-angle")
-    tool_belt.save_figure(fit_fig, file_path_angle)
+    tool_belt.save_figure(angle_fig, file_path_angle)
 
     return theta_B_deg
 
@@ -861,8 +866,8 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_06_15-01_53_26-hopper-nv1_2022_06_14"
-    data = tool_belt.get_raw_data(file_name)
+    file_name = "2022_07_11-23_56_59-rubin-nv1"
+    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_07')
     ret_vals = plot_resonances_vs_theta_B(data)
 
     # plt.show(block=True)
