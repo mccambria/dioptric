@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Fit circles to superresolution rings in images demonstrating resolved
-images of two NVs separated by less than the diffraction limit.
-By full auto I mean you don't have to tell the program how many circles
-there are - it'll figure it out for you by finding the best circle,
-finding the next best circle, and so on until there are no more good
-circles left.
-
+Testing ground for superresolution circle fitting
 Created on February 25, 2022
 
 @author: mccambria
@@ -52,7 +46,7 @@ sin_phi_linspace = np.sin(phi_linspace)
 
 def calc_errors(image_file_name, circle_a, circle_b):
 
-    cost_func = cost1
+    cost_func = cost0
 
     # Get the image as a 2D ndarray
     image_file_dict = tool_belt.get_raw_data(image_file_name)
@@ -73,14 +67,7 @@ def calc_errors(image_file_name, circle_a, circle_b):
     for circle in [circle_a, circle_b]:
 
         print(circle)
-        args = [
-            sigmoid_image,
-            image_len_x,
-            image_len_y,
-            False,
-            False,
-            [],
-        ]
+        args = [sigmoid_image, image_len_x, image_len_y, False]
         opti_cost = cost_func(circle, *args)
 
         for param_ind in range(3):
@@ -251,9 +238,11 @@ def sigmoid_quotient2(laplacian, gradient, orig):
 def process_image(image):
 
     # Blur
+    # gaussian_size = 5
     gaussian_size = 7
     blur_image = cv.GaussianBlur(image, (gaussian_size, gaussian_size), 0)
-    normed_blur_image = norm_0_to_1(blur_image)
+    # normed_blur_image = norm_0_to_1(blur_image)
+    # normed_blur_image *= 2
     # zeroed_blur_image = blur_image - np.min(blur_image)
     # norm = np.percentile(
     #     zeroed_blur_image, 75
@@ -262,15 +251,17 @@ def process_image(image):
     # normed_blur_image = zeroed_blur_image / norm
     # # normed_blur_image = blur_image
 
-    processing_root = normed_blur_image
+    # processing_root = normed_blur_image
+    processing_root = blur_image
 
     laplacian_image = cv.Laplacian(
         processing_root, cv.CV_64F, ksize=gaussian_size
     )
+    # laplacian_image = (1 / 10) * laplacian_image ** 2
     # laplacian_image = norm_0_to_1(laplacian_image)
     # laplacian_image = 2*(laplacian_image - 0.5)
     # laplacian_image += 3
-    # offset = 10 * np.average(np.abs(laplacian_image))
+    # offset = 0.1 * np.average(np.abs(laplacian_image))
     # print(offset)
     # offset = np.sqrt(np.average(laplacian_image ** 2))
     # print(offset)
@@ -281,18 +272,25 @@ def process_image(image):
     sobel_y = cv.Sobel(processing_root, cv.CV_64F, 0, 1, ksize=gaussian_size)
     gradient_image = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
     # gradient_image = norm_0_to_1(gradient_image)
-    # gradient_image += 100
-    # gradient_image = gradient_image**2
+    # gradient_image += 1
+    # offset = 0.5 * np.average(gradient_image)
+    # gradient_image += offset
 
-    # sigmoid_image = sigmoid_quotient(laplacian_image, gradient_image)
-    sigmoid_image = sigmoid_quotient2(
-        laplacian_image, gradient_image, normed_blur_image
-    )
+    max_gradient = np.max(gradient_image)
+    # laplacian_image /= np.max(np.abs(laplacian_image))
+    # gradient_image /= np.max(gradient_image)
+    # laplacian_image *= 2
+    gradient_image += 0.2 * max_gradient
+
+    sigmoid_image = sigmoid_quotient(laplacian_image, gradient_image)
+    # sigmoid_image = sigmoid_quotient2(
+    #     laplacian_image, gradient_image, normed_blur_image
+    # )
     # sigmoid_image = cv.GaussianBlur(
     #     sigmoid_image, (gaussian_size, gaussian_size), 0
     # )
 
-    return normed_blur_image, laplacian_image, gradient_image, sigmoid_image
+    return blur_image, laplacian_image, gradient_image, sigmoid_image
 
 
 def calc_distance(fig, x0, x1, y0, y1, sx0, sx1, sy0, sy1):
@@ -446,6 +444,7 @@ def main(
         if image_file_name == "2021_09_30-13_18_47-johnson-dnv7_2021_09_23":
             half_range = 18
             radius = np.mean(radii)
+            # radius = 27.65
         # Fig. 4
         elif image_file_name == "2021_10_17-19_02_22-johnson-dnv5_2021_09_23":
             half_range = 20
@@ -456,7 +455,7 @@ def main(
             radius = radii[0]
             # radius = 45.98
 
-        if image_file_name in main_text_fig_file_names:
+        if False:  # image_file_name in main_text_fig_file_names:
             radius_half_range = 0.05 * radius
             num_points_r = 20
             rad_linspace = np.linspace(
@@ -687,9 +686,9 @@ if __name__ == "__main__":
             # circle_a = [41.5, 37, 27.5]
             # circle_b = [40, 44, 27.75]
             # Recursive brute results, 1000 point circle
-            circle_a = [41.73, 36.83, 27.72]  # 0.31941
+            circle_a = [41.74, 36.85, 27.73]  # 0.31941
             # errs_a = [1.4, 1.4, 1.2]
-            circle_b = [39.1, 43.9, 27.64]  # 0.36108
+            circle_b = [39.05, 43.87, 27.59]  # 0.36108
             # errs_b = [1.5, 0.9, 1.0]
             circle_c = [39.97, 41.93, 29.46]  # test
             # circle_c = [20.1, 41.93, 29.46]  # test
@@ -701,24 +700,23 @@ if __name__ == "__main__":
             # circle_a = [50, 46, 26]
             # circle_b = [51.7, 56.5, 27.3]
             # Recursive brute results, 1000 point circle
-            circle_a = [50.64, 45.64, 26.29]  # 0.3176
+            circle_a = [50.98, 45.79, 26.14]  # 0.3176
             # circle_a = [50.98 - 0, 45.79 + 0, 26.14 - 0]  # 0.3176
             # errs_a = [2.1, 1.1, 1.3]
-            circle_b = [51.02, 56.15, 27.48]  # 0.35952
+            circle_b = [51.2, 56.32, 27.29]  # 0.35952
             # errs_b = [1.8, 1.1, 1.2]
             circle_c = None
 
-        # circles = [circle_a, circle_b, circle_c]
-        circles = [circle_a, circle_b]
+        circles = [circle_a, circle_b, circle_c]
         # main(image_file_name, run_type="full_auto")
-        # main(image_file_name, run_type="reconstruction")
+        main(image_file_name, run_type="reconstruction")
         # main(image_file_name, passed_circles=circles, run_type="manual")
         # main(image_file_name, circle_a, circle_b, run_type="full_auto")
-        calc_errors(image_file_name, circle_a, circle_b)
+        # calc_errors(image_file_name, circle_a, circle_b)
 
     image_file_name = "2022_07_17-20_55_18-johnson-nv0_2021_12_22-faked"
     # image_file_name = "2022_07_19-10_59_00-johnson-nv0_2021_12_22-faked"
-    # main(image_file_name, run_type="reconstruction")
+    main(image_file_name, run_type="reconstruction")
     # cProfile.run('main(image_file_name, run_type="reconstruction")')
 
     # image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
@@ -733,6 +731,3 @@ if __name__ == "__main__":
 
 #  Fig 3: 15.225 nm / pixel
 #  Fig 4: 17.4 nm / pixel
-
-
-51.42, 56.1, 27.56

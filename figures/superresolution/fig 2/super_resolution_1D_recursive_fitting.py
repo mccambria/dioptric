@@ -11,6 +11,7 @@ import numpy
 import matplotlib.pyplot as plt
 import airy_disk_simulation
 from scipy.optimize import curve_fit
+import scipy.stats as stats
 from scipy.special import j1
 from scipy.special import jv
 import copy
@@ -88,7 +89,7 @@ def gaussian_quad(x, *params):
     coeff, mean, stdev, offset = params
     var = stdev ** 4  # variance squared
     centDist = x - mean  # distance from the center
-    return offset + coeff ** 2 * numpy.exp(-(centDist ** 4) / (var))
+    return  coeff * numpy.exp(-(centDist ** 4) / (var)) +offset
 
 
 # %%
@@ -118,18 +119,21 @@ def plot_1D_SpaCE(
                 elif current_val >= threshold:
                     set_val = 1
                 raw_counts[r][c] = set_val
-        counts = numpy.average(raw_counts, axis=1)
 
-    nv_sig = data["nv_sig"]
-    coords = nv_sig["coords"]
-    num_steps = data["num_steps_a"]
+        counts = numpy.average(raw_counts, axis = 1)
+        # counts_ste = stats.sem(raw_counts, axis = 1)
+        # print(counts_ste)
+    nv_sig = data['nv_sig']
+    coords = nv_sig['coords']
+    num_steps = data['num_steps_a']
     try:
-        rad_dist = numpy.array(data["rad_dist"]) * scale
+        rad_dist = numpy.array(data['rad_dist'])*scale
     except Exception:
 
         coords_voltages = data["coords_voltages"]
         x_voltages = numpy.array([el[0] for el in coords_voltages]) - coords[0]
         rad_dist = x_voltages * (scale)
+
 
     opti_params = []
     # fit_func = tool_belt.gaussian
@@ -142,42 +146,40 @@ def plot_1D_SpaCE(
         fig.set_figwidth(fig_w)
         fig.set_figheight(fig_l)
 
-        ax.plot(
-            rad_dist,
-            counts,
-            "b.",
-            markersize=1,
-        )
-        ax.set_xlabel("r (nm)", fontsize=f_size)
-        ax.set_ylabel("Average counts", fontsize=f_size)
-        ax.tick_params(
-            which="both",
-            length=fig_tick_l,
-            width=fig_tick_w,
-            direction="in",
-            grid_alpha=0.7,
-            labelsize=f_size,
-        )
+
+        ax.plot(rad_dist, counts, 'b.', markersize = 1,)
+        # ax.errorbar(rad_dist, counts, yerr = counts_ste, fmt = 'b.', markersize = 1,)
+        ax.set_xlabel('r (nm)', fontsize = f_size)
+        ax.set_ylabel('Average counts', fontsize = f_size)
+        ax.tick_params(which = 'both', length=fig_tick_l, width=fig_tick_w,
+                        direction='in',grid_alpha=0.7, labelsize = f_size)
 
     if do_fit:
-        init_fit = [2, rad_dist[int(num_steps / 2)], 15, 7]
-        try:
-            opti_params, cov_arr = curve_fit(
-                fit_func, rad_dist, counts, p0=init_fit
-            )
+            init_fit = [0.1, rad_dist[int(num_steps/2)], 10, 0.01]
+        # try:
+            opti_params, cov_arr = curve_fit(fit_func,
+                  rad_dist,
+                  counts,
+                  p0=init_fit,
+                    # sigma = counts_ste,
+                    # absolute_sigma = True
+                   # bounds = ([-numpy.infty, -numpy.infty, -numpy.infty, 0], 
+                   #   [numpy.infty, numpy.infty, numpy.infty, 100])
+                  )
+
             # print(opti_params[2]*fwhm, numpy.sqrt(cov_arr[2][2])*fwhm)
+            
             if do_plot:
-                lin_radii = numpy.linspace(rad_dist[0], rad_dist[-1], 100)
-                ax.plot(
-                    lin_radii,
-                    fit_func(lin_radii, *opti_params),
-                    "r-",
-                    linestyle="solid",
-                    linewidth=1,
-                )
-        except Exception:
-            text = "Peak could not be fit"
-            print(text)
+                print(opti_params, cov_arr)
+                print()
+                lin_radii = numpy.linspace(rad_dist[0],
+                                rad_dist[-1], 100)
+                ax.plot(lin_radii,
+                       fit_func(lin_radii, *opti_params), 'r-',  linestyle = 'solid' , linewidth = 1)
+        # except Exception:
+        #     text = 'Peak could not be fit'
+        #     print(text)
+
 
     if do_plot and do_save:
         filePath = tool_belt.get_file_path("SPaCE", timestamp, nv_sig["name"])
@@ -254,15 +256,14 @@ def plot_heights_vs_dur(file_list, path, threshold, Alpha):
     t_vals = []
     for f in range(len(file_list)):
         file_name = file_list[f]
-        data = tool_belt.get_raw_data(file_name, path)
-        nv_sig = data["nv_sig"]
+        data = tool_belt.get_raw_data( file_name, path)
+        nv_sig=data['nv_sig']
+    
+        ret_vals = plot_1D_SpaCE(file_name, path, threshold, do_plot = False, do_fit = True)
+        heights_master_list.append(ret_vals[2][0])
+        heights_error.append(numpy.sqrt(ret_vals[3][0][0]))
+        t_vals.append(nv_sig['CPG_laser_dur']/10**6)
 
-        ret_vals = plot_1D_SpaCE(
-            file_name, path, threshold, do_plot=False, do_fit=True
-        )
-        heights_master_list.append(ret_vals[2][0] ** 2)
-        heights_error.append(numpy.sqrt(ret_vals[3][0][0]) ** 2)
-        t_vals.append(nv_sig["CPG_laser_dur"] / 10 ** 6)
 
     #### exp decay###
     init_fit = [0.5, 0.001]
@@ -276,16 +277,10 @@ def plot_heights_vs_dur(file_list, path, threshold, Alpha):
         absolute_sigma=True,
     )
     print()
-    print("constrained alpha: " + str(Alpha))
-    print(
-        "A: " + str(opti_params[0]) + " +/-" + str(numpy.sqrt(cov_arr[0][0]))
-    )
-    print(
-        "epsilon: "
-        + str(opti_params[1])
-        + " +/- "
-        + str(numpy.sqrt(cov_arr[1][1]))
-    )
+    print('constrained alpha: ' + str(Alpha))
+    print('A: ' + str(opti_params[0]) + ' +/-' + str(numpy.sqrt(cov_arr[0][0])))
+    print('epsilon = {:.7f} +/- {:.7f}'.format(opti_params[1], numpy.sqrt(cov_arr[1][1])))
+    
 
     return opti_params[1]
 
@@ -339,8 +334,8 @@ threshold = 5
 
 
 ###################
-# plot_width_vs_dur(file_list, [], path, threshold)
-# plot_heights_vs_dur(file_list, [], path, threshold)
+# plot_width_vs_dur(file_list, path, threshold, 1e-4)
+# plot_heights_vs_dur(file_list, path, threshold, 5e-6)
 
 num_reps = 6
 recursive_fit(file_list, path, threshold, num_reps)

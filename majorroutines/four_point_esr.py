@@ -10,6 +10,7 @@ Created on Thu Apr 11 15:39:23 2019
 # %% Imports
 
 
+from isort import file
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import majorroutines.pulsed_resonance as pulsed_resonance
@@ -291,20 +292,24 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    f = "2022_07_16-16_33_11-hopper-search"
-    data = tool_belt.get_raw_data(f)
+    temp_file = "2022_07_18-14_34_21-hopper-search"
+    temp_data = tool_belt.get_raw_data(temp_file)
+    sig_files = temp_data["sig_files"]
+    ref_files = temp_data["ref_files"]
+    files_to_run = [*sig_files[2][3], *ref_files[2][3]]
+    # f = "2022_07_16-16_33_11-hopper-search"
+    for f in files_to_run:
+        data = tool_belt.get_raw_data(f)
 
-    norm_avg_sig = data["norm_avg_sig"]
-    norm_avg_sig_ste = data["norm_avg_sig_ste"]
-    # detuning = data[""]
-    # d_omega = data[""]
-    detuning = 0.004
-    d_omega = 0.002
-    nv_sig = data["nv_sig"]
-    state = data["state"]
-    passed_res = nv_sig[f"resonance_{state}"]
+        norm_avg_sig = data["norm_avg_sig"]
+        norm_avg_sig_ste = data["norm_avg_sig_ste"]
+        detuning = data["detuning"]
+        d_omega = data["d_omega"]
+        nv_sig = data["nv_sig"]
+        state = data["state"]
+        passed_res = nv_sig[f"resonance_{state}"]
 
-    resonance, resonance_err = calc_resonance(
-        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
-    )
-    print(resonance, resonance_err)
+        resonance, resonance_err = calc_resonance(
+            norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+        )
+        print(resonance, resonance_err)

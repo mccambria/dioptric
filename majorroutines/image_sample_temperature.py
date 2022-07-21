@@ -27,8 +27,8 @@ import utils.common as common
 
 
 def process_resonances(ref_resonances, sig_resonances):
-# def process_resonances(ref_resonances, ref_res_errs,
-#                         sig_resonances, sig_res_errs):
+    # def process_resonances(ref_resonances, ref_res_errs,
+    #                         sig_resonances, sig_res_errs):
 
     ref_zfss = [[(el[1] + el[0]) / 2 for el in row] for row in ref_resonances]
     # ref_zfs_errs
@@ -49,6 +49,7 @@ def process_resonances(ref_resonances, sig_resonances):
     diff_temps = sig_temps - ref_temps
 
     return diff_temps
+
 
 def plot_diff_temps(diff_temps, image_extent):
 
@@ -180,8 +181,12 @@ def main_with_cxn(
 
             time.sleep(1)
 
-            low_res, low_res_err, low_file = four_point_low_lambda(adjusted_nv_sig)
-            high_res, high_res_err, high_file = four_point_high_lambda(adjusted_nv_sig)
+            low_res, low_res_err, low_file = four_point_low_lambda(
+                adjusted_nv_sig
+            )
+            high_res, high_res_err, high_file = four_point_high_lambda(
+                adjusted_nv_sig
+            )
             ref_resonances[image_y_ind][adj_x_ind] = (
                 low_res,
                 high_res,
@@ -200,8 +205,12 @@ def main_with_cxn(
 
             time.sleep(1)
 
-            low_res, low_res_err, low_file = four_point_low_lambda(adjusted_nv_sig)
-            high_res, high_res_err, high_file = four_point_high_lambda(adjusted_nv_sig)
+            low_res, low_res_err, low_file = four_point_low_lambda(
+                adjusted_nv_sig
+            )
+            high_res, high_res_err, high_file = four_point_high_lambda(
+                adjusted_nv_sig
+            )
             sig_resonances[image_y_ind][adj_x_ind] = (
                 low_res,
                 high_res,
