@@ -142,7 +142,7 @@ def main_with_cxn(
         apd_indices,
         esr_num_reps,
         esr_num_runs,
-        States.LOW,
+        States.HIGH,
         ret_file_name=True,
     )
 

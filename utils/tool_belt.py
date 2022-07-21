@@ -1960,7 +1960,8 @@ def check_safe_stop_alive():
 def init_safe_stop():
     """
     Initialize safe stop. Recycles the current instance of safe stop if
-    there's one already running.
+    there's one already running. If safe_stop has already been initialized
+    and stopped, don't restart
     """
 
     global SAFESTOPEVENT
@@ -1972,9 +1973,9 @@ def init_safe_stop():
     try:
         SAFESTOPEVENT
         SAFESTOPTHREAD
-        if not SAFESTOPTHREAD.isAlive():
-            # Safe stop has already run to completion so start it back up
-            needNewSafeStop = True
+        # if not SAFESTOPTHREAD.isAlive():
+        #     # Safe stop has already run to completion so start it back up
+        #     needNewSafeStop = True
     except NameError:
         # Safe stop was never initialized so just get a new instance
         needNewSafeStop = True

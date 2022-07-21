@@ -107,9 +107,10 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 def do_image_sample_temperature(nv_sig, apd_indices):
     
-    image_range = 0.3
+    # Sample every 0.02 V for diffraction limited spacing
+    image_range = 0.2
     # num_steps = 5
-    num_steps = 3
+    num_steps = 10
     
     nir_laser_voltage = 1.3
     
@@ -217,10 +218,10 @@ def do_four_point_esr(nv_sig, apd_indices, state):
 
     detuning=0.004
     d_omega=0.002
-    num_reps = 2e4
-    num_runs = 800
+    num_reps = 1e5
+    num_runs = 4
 
-    resonance, res_err = four_point_esr.main(
+    ret_vals = four_point_esr.main(
         nv_sig,
         apd_indices,
         num_reps,
@@ -228,10 +229,11 @@ def do_four_point_esr(nv_sig, apd_indices, state):
         state,
         detuning,
         d_omega,
+        ret_file_name=True,
     )
     
     # print(resonance, res_err)
-    return resonance, res_err
+    return ret_vals
 
 
 def do_determine_standard_readout_params(nv_sig, apd_indices):
@@ -831,6 +833,52 @@ def do_nir_temp_differential(nv_sig, apd_indices):
     print(np.sqrt(nir_zfs_err**2 + zfs_err**2) / abs(dD_dT))
 
 
+def do_nir_temp_differential2(nv_sig, apd_indices):
+    
+    tool_belt.init_safe_stop()
+    
+    sig_files = []
+    ref_files = []
+    
+    while not tool_belt.safe_stop():
+
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_on()
+            power_supply.set_voltage(1.3)
+        time.sleep(1)
+        
+        _, _, low_file = do_four_point_esr(nv_sig, apd_indices, States.LOW)
+        _, _, high_file = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+        sig_files.append([low_file, high_file])
+    
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_off()
+        time.sleep(1)
+    
+        _, _, low_file = do_four_point_esr(nv_sig, apd_indices, States.LOW)
+        _, _, high_file = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+        ref_files.append([low_file, high_file])
+        
+    with labrad.connect() as cxn:
+        power_supply = cxn.power_supply_mp710087
+        power_supply.output_off()
+    
+    
+    timestamp = tool_belt.get_time_stamp()
+    rawData = {
+        "timestamp": timestamp,
+        "nv_sig": nv_sig,
+        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "sig_files": sig_files,
+        "ref_files": ref_files,
+    }
+    nv_name = nv_sig["name"]
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_raw_data(rawData, filePath)        
+
+
 def do_test_major_routines(nv_sig, apd_indices):
     """Run this whenver you make a significant code change. It'll make sure
     you didn't break anything in the major routines.
@@ -857,7 +905,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
+        'coords': [-0.035, 0.055, 0], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -968,7 +1016,8 @@ if __name__ == "__main__":
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
         # do_four_point_esr(nv_sig, apd_indices, States.HIGH)
         # do_nir_temp_differential(nv_sig, apd_indices)
-        do_image_sample_temperature(nv_sig, apd_indices)
+        do_nir_temp_differential2(nv_sig, apd_indices)
+        # do_image_sample_temperature(nv_sig, apd_indices)
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)

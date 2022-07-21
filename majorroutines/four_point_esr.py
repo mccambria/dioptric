@@ -68,7 +68,7 @@ def main(
 ):
 
     with labrad.connect() as cxn:
-        resonance, res_err = main_with_cxn(
+        ret_vals = main_with_cxn(
             cxn,
             nv_sig,
             apd_indices,
@@ -80,7 +80,7 @@ def main(
             opti_nv_sig,
             ret_file_name,
         )
-    return resonance, res_err
+    return ret_vals
 
 
 def main_with_cxn(
@@ -279,9 +279,9 @@ def main_with_cxn(
 
     # %% Return
 
-    ret_vals = resonance, resonance_err
+    ret_vals = [resonance, resonance_err]
     if ret_file_name:
-        raw_file_name = filePath.stem()
+        raw_file_name = filePath.stem
         ret_vals.append(raw_file_name)
     return ret_vals
 
