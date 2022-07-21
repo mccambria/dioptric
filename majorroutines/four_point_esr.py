@@ -10,6 +10,7 @@ Created on Thu Apr 11 15:39:23 2019
 # %% Imports
 
 
+from isort import file
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import majorroutines.pulsed_resonance as pulsed_resonance
@@ -27,13 +28,68 @@ import sys
 # region Functions
 
 
+def calc_resonance_from_file(f):
+
+    data = tool_belt.get_raw_data(f)
+
+    norm_avg_sig = data["norm_avg_sig"]
+    norm_avg_sig_ste = data["norm_avg_sig_ste"]
+    detuning = data["detuning"]
+    d_omega = data["d_omega"]
+    nv_sig = data["nv_sig"]
+    state = data["state"]
+    passed_res = nv_sig[f"resonance_{state}"]
+
+    resonance, resonance_err = calc_resonance(
+        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+    )
+    return resonance, resonance_err
+
+
+def calc_resonance(
+    norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+):
+
+    f1, f2, f3, f4 = norm_avg_sig
+    f1_err, f2_err, f3_err, f4_err = norm_avg_sig_ste
+    delta_res = ((f1 + f2) - (f3 + f4)) * (d_omega / ((f1 - f2) - (f3 - f4)))
+    resonance = passed_res + delta_res
+    # Calculate the error
+    # d_delta_res_df1 = (-2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
+    # d_delta_res_df2 = (2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
+    # d_delta_res_df3 = (2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
+    # d_delta_res_df4 = (-2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
+    # resonance_err = np.sqrt(
+    #     (d_delta_res_df1 * f1_err) ** 2
+    #     + (d_delta_res_df2 * f2_err) ** 2
+    #     + (d_delta_res_df3 * f3_err) ** 2
+    #     + (d_delta_res_df4 * f4_err) ** 2
+    # )
+    # Error from Mathematica
+    resonance_err = (
+        2
+        * np.sqrt(
+            (
+                d_omega ** 2
+                * (
+                    f2_err ** 2 * (f1 - f3) ** 2
+                    + f4_err ** 2 * (f1 - f3) ** 2
+                    + (f1_err ** 2 + f3_err ** 2) * (f2 - f4) ** 2
+                )
+            )
+        )
+        / (f1 - f2 - f3 + f4) ** 2
+    )
+
+    return resonance, resonance_err
+
+
 # endregion
 
 # region Main
 
 
 def main(
-    cxn,
     nv_sig,
     apd_indices,
     num_reps,
@@ -42,10 +98,11 @@ def main(
     detuning=0.005,
     d_omega=0.002,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     with labrad.connect() as cxn:
-        resonance_list = main_with_cxn(
+        ret_vals = main_with_cxn(
             cxn,
             nv_sig,
             apd_indices,
@@ -55,8 +112,9 @@ def main(
             detuning,
             d_omega,
             opti_nv_sig,
+            ret_file_name,
         )
-    return resonance_list
+    return ret_vals
 
 
 def main_with_cxn(
@@ -66,9 +124,10 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state,
-    detuning=0.005,
+    detuning=0.004,
     d_omega=0.002,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     # %% Initial calculations and setup
@@ -76,7 +135,7 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
 
     # Calculate the frequencies we need to set
-    passed_res = nv_sig[f"resonance_{state.value}"]
+    passed_res = nv_sig[f"resonance_{state.name}"]
     freq_1 = passed_res - detuning - d_omega
     freq_2 = passed_res - detuning + d_omega
     freq_3 = passed_res + detuning - d_omega
@@ -100,11 +159,12 @@ def main_with_cxn(
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
     readout_sec = readout / (10 ** 9)
+    pi_pulse_dur = tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.name}"])
     seq_args = [
-        tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.value}"]),
+        pi_pulse_dur,
         polarization_time,
         readout,
-        tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.value}"]),
+        pi_pulse_dur,
         apd_indices[0],
         state.value,
         laser_name,
@@ -149,7 +209,7 @@ def main_with_cxn(
         # Set up the microwaves and laser. Then load the pulse streamer
         # (must happen after optimize and iq_switch since run their
         # own sequences)
-        sig_gen_cxn.set_amp(States.LOW.value)
+        sig_gen_cxn.set_amp(nv_sig[f"uwave_power_{state.name}"])
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
@@ -210,20 +270,8 @@ def main_with_cxn(
         norm_avg_sig_ste,
     ) = ret_vals
 
-    f1, f2, f3, f4 = norm_avg_sig
-    f1_err, f2_err, f3_err, f4_err = norm_avg_sig_ste
-    delta_res = ((f1 + f2) - (f3 + f4)) * (d_omega / ((f1 - f2) - (f3 - f4)))
-    resonance = passed_res + delta_res
-    # Calculate the error
-    d_delta_res_df1 = (-2 * d_omega * (f2 - f4)) / (f1 - f2 - f3 + f4) ^ 2
-    d_delta_res_df2 = (2 * d_omega * (f1 - f3)) / (f1 - f2 - f3 + f4) ^ 2
-    d_delta_res_df3 = (2 * d_omega * (f2 - f4)) / (f1 - f2 - f3 + f4) ^ 2
-    d_delta_res_df4 = (-2 * d_omega * (f1 - f3)) / (f1 - f2 - f3 + f4) ^ 2
-    resonance_err = np.sqrt(
-        (d_delta_res_df1 * f1_err) ** 2
-        + (d_delta_res_df2 * f2_err) ** 2
-        + (d_delta_res_df3 * f3_err) ** 2
-        + (d_delta_res_df4 * f4_err) ** 2
+    resonance, resonance_err = calc_resonance(
+        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
     )
 
     # %% Clean up and save the data
@@ -239,11 +287,17 @@ def main_with_cxn(
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "state": state.name,
+        "detuning": detuning,
+        "d_omega": d_omega,
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
         "readout": readout,
         "readout-units": "ns",
+        "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
+        "norm_avg_sig-units": "arb",
+        "norm_avg_sig_ste": norm_avg_sig_ste.astype(float).tolist(),
+        "norm_avg_sig_ste-units": "arb",
         "freq_index_master_list": freq_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
@@ -251,10 +305,6 @@ def main_with_cxn(
         "sig_counts-units": "counts",
         "ref_counts": ref_counts.astype(int).tolist(),
         "ref_counts-units": "counts",
-        "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
-        "norm_avg_sig-units": "arb",
-        "norm_avg_sig_ste": norm_avg_sig_ste.astype(float).tolist(),
-        "norm_avg_sig_ste-units": "arb",
     }
 
     nv_name = nv_sig["name"]
@@ -263,7 +313,11 @@ def main_with_cxn(
 
     # %% Return
 
-    return resonance, resonance_err
+    ret_vals = [resonance, resonance_err]
+    if ret_file_name:
+        raw_file_name = filePath.stem
+        ret_vals.append(raw_file_name)
+    return ret_vals
 
 
 # %% Run the file
@@ -271,4 +325,24 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    pass
+    temp_file = "2022_07_18-14_34_21-hopper-search"
+    temp_data = tool_belt.get_raw_data(temp_file)
+    sig_files = temp_data["sig_files"]
+    ref_files = temp_data["ref_files"]
+    files_to_run = [*sig_files[2][3], *ref_files[2][3]]
+    # f = "2022_07_16-16_33_11-hopper-search"
+    for f in files_to_run:
+        data = tool_belt.get_raw_data(f)
+
+        norm_avg_sig = data["norm_avg_sig"]
+        norm_avg_sig_ste = data["norm_avg_sig_ste"]
+        detuning = data["detuning"]
+        d_omega = data["d_omega"]
+        nv_sig = data["nv_sig"]
+        state = data["state"]
+        passed_res = nv_sig[f"resonance_{state}"]
+
+        resonance, resonance_err = calc_resonance(
+            norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+        )
+        print(resonance, resonance_err)

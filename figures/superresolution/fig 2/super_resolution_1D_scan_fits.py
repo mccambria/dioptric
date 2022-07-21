@@ -287,13 +287,13 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     #### modified inverse quarter####
     x0=7.0156 #Position of this Airy disk (n2), in dimensionless units
     C = bessel_scnd_der(x0) #Calculate a constant to use in fit
-    # print(C) 
-    # print(t_vals)
+    epsilon = 8.7e-4
+    alpha = 3.1e-6
+    R_nm = 6
     # Estimate the lower limit and convert to dimentionless units below
     R_guess = 5 #nm 
-    e = 0.0008723151593412476
-    fit_func = lambda t, a, R: width_scaling_w_mods(t, C, e, a, R) 
-    init_fit = [  0.005, 2*numpy.pi*NA*R_guess/wavelength]
+    fit_func = lambda t, e, a, R: width_scaling_w_mods(t, C, e, a, R) 
+    func_values = [  epsilon, alpha, 2*numpy.pi*NA*R_nm/wavelength]
     
     #convert extracted value for sigma of peaks to fwhm:
     widths_master_list_fwhm = numpy.array(widths_master_list)*fwhm
@@ -304,24 +304,24 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     widths_error_fwhm_x = 2*numpy.pi*NA*widths_error_fwhm/wavelength
     
     # print('widths_master_list_x: ' + str(widths_master_list_x))
-    opti_params, cov_arr = curve_fit(fit_func,
-          t_vals,widths_master_list_x,p0=init_fit,
-          sigma = widths_error_fwhm_x,
-          absolute_sigma = True,
-            # bounds=(0, [numpy.inf, 2*numpy.pi*NA*20/wavelength]) #1
-          )
+    # opti_params, cov_arr = curve_fit(fit_func,
+    #       t_vals,widths_master_list_x,p0=init_fit,
+    #       sigma = widths_error_fwhm_x,
+    #       absolute_sigma = True,
+    #         # bounds=(0, [numpy.inf, 2*numpy.pi*NA*20/wavelength]) #1
+    #       )
     
     # init_fit = [ 0.0000035 , 2*numpy.pi*NA*(4.7-8) /wavelength]
     # opti_params = init_fit
     # print('e = {:.7f} +/- {:.7f}'.format(opti_params[2], numpy.sqrt(cov_arr[2][2])))
-    print('a = {:.14f} +/- {:.14f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
-    R_val_conv = (opti_params[1])*wavelength/(2*numpy.pi*NA)
-    R_err_conv = numpy.sqrt(cov_arr[1][1])*wavelength/(2*numpy.pi*NA)
-    print('R = {:.5f} +/- {:.5f}'.format(R_val_conv, R_err_conv))
+    # print('a = {:.14f} +/- {:.14f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
+    # R_val_conv = (opti_params[1])*wavelength/(2*numpy.pi*NA)
+    # R_err_conv = numpy.sqrt(cov_arr[1][1])*wavelength/(2*numpy.pi*NA)
+    # print('R = {:.5f} +/- {:.5f}'.format(R_val_conv, R_err_conv))
     # print('Opti params: ' + str(opti_params))
     # print(cov_arr)
     # print((opti_params[2])**2*wavelength/(2*numpy.pi*NA)*fwhm)
-    ax.plot(lin_x_vals, fit_func(lin_x_vals, *opti_params)*wavelength/(2*numpy.pi*NA), 
+    ax.plot(lin_x_vals, fit_func(lin_x_vals, *func_values)*wavelength/(2*numpy.pi*NA), 
             color = 'red',  linestyle = 'dashed' , linewidth = 1)
     
         
@@ -536,7 +536,7 @@ plot_width_vs_dur(file_list, [], path, threshold)
 # plot_heights_vs_dur(file_list, [], path, threshold)
 
 
-# plot_3_plots(file_list_dur, path, label_list, threshold)
+plot_3_plots(file_list_dur, path, label_list, threshold)
 
 ####################
 # data from Lumerial modeling of the experiment. However, the fit is not good. Returns a value for epsilon of 0

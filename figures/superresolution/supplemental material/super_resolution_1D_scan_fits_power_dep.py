@@ -40,6 +40,10 @@ orange_ = '#f89522'
 dark_purple = '#190d3c'
 
 
+epsilon = 8.7e-4
+alpha = 6.7e-4 #(mW^2)
+R_nm = 6
+
 color_list =  [  '#f9b91d', '#ef6f23','#c43d4e']
 color_list =  [  '#2bace2', 'orange','green']
 shape_list = ['^', 's', 'd']
@@ -54,7 +58,7 @@ def width_scaling_w_mods(P, C, e, a, R):
     # # return numpy.sqrt(term_2 / term_3) + R**2
     # return numpy.sqrt((numpy.sqrt(term_2 / term_3))**2 + R**2)
 
-    return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ 1*a/P**2)) + R**2)
+    return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ a/P**2)) + R**2)
     
 def bessel_scnd_der(x):
     term_1 = 24*j1(x)**2
@@ -265,10 +269,11 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
         
     # return
     # Get a linear list of time values for the fit
+    
+    # I_vals = numpy.array(p_vals)*NA**2*numpy.pi/wavelength**2
     p_min = min(p_vals)
     p_max = max(p_vals)
-    print(p_vals)
-    print(widths_master_list)
+    
     # lin_x_vals = numpy.linspace(t_min,
     #                 t_max, 100)
     lin_x_vals = numpy.logspace(numpy.log10(p_min), numpy.log10(p_max), 100)
@@ -288,9 +293,10 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     # print(C)
     # print(t_vals)
     # Estimate the lower limit and convert to dimentionless units below
-    R_guess = 10 #nm 
+    # R_guess = 10 #nm 
     fit_func = lambda P, e, a: width_scaling_w_mods(P, C, e, a, 0) 
-    init_fit = [ 0.006, 10,]# 2*numpy.pi*NA*R_guess/wavelength]
+    func_vals = [epsilon, alpha, 2*numpy.pi*NA*R_nm/wavelength]
+    init_fit = [0.001, 0.1, ]#2*numpy.pi*NA*R_nm/wavelength]
     
     #convert extracted value for sigma of peaks to fwhm:
     widths_master_list_fwhm = numpy.array(widths_master_list)*fwhm
@@ -299,7 +305,7 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     
     opti_params, cov_arr = curve_fit(fit_func,
           p_vals,widths_master_list_x,p0=init_fit,
-           # bounds=(0, [1, numpy.inf, numpy.inf])
+            # bounds=(0, [1, numpy.inf, numpy.inf])
           )
     
     print('e = {:.7f} +/- {:.7f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
@@ -388,4 +394,4 @@ threshold  = 7
 plot_width_vs_dur(file_list, [], path, threshold)
 
 
-plot_1D_inset(inset_file, path, threshold)
+# plot_1D_inset(inset_file, path, threshold)

@@ -584,6 +584,9 @@ def get_tagger_wiring(cxn):
 
 
 # %% Matplotlib plotting utils
+# NOTE: This and other new plotting helper functions should all be in kplotlib
+# now. I'm leaving the below functions here so that I don't break anything by
+# deleting them.
 
 
 def init_matplotlib(font_size=17):
@@ -684,7 +687,6 @@ def create_image_figure(
     Returns:
         matplotlib.figure.Figure
     """
-
 
     # plt.rcParams.update({'font.size': 22})
 
@@ -1027,11 +1029,12 @@ def lorentzian(x, x0, A, L, offset):
             3: offset, constant y value offset
     """
     x_center = x - x0
-    return offset + A * 0.5*L / (x_center**2 + (0.5*L)**2)
+    return offset + A * 0.5 * L / (x_center ** 2 + (0.5 * L) ** 2)
 
 
 def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
+
 
 def gaussian(x, *params):
     """
@@ -1597,6 +1600,9 @@ def save_raw_data(rawData, filePath):
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
 
+    # Sleep for 1 second so that every file name from the same PC should be unique
+    time.sleep(1)
+
 
 def get_nv_sig_units():
     return {
@@ -1957,7 +1963,8 @@ def check_safe_stop_alive():
 def init_safe_stop():
     """
     Initialize safe stop. Recycles the current instance of safe stop if
-    there's one already running.
+    there's one already running. If safe_stop has already been initialized
+    and stopped, don't restart
     """
 
     global SAFESTOPEVENT
@@ -1969,9 +1976,9 @@ def init_safe_stop():
     try:
         SAFESTOPEVENT
         SAFESTOPTHREAD
-        if not SAFESTOPTHREAD.isAlive():
-            # Safe stop has already run to completion so start it back up
-            needNewSafeStop = True
+        # if not SAFESTOPTHREAD.isAlive():
+        #     # Safe stop has already run to completion so start it back up
+        #     needNewSafeStop = True
     except NameError:
         # Safe stop was never initialized so just get a new instance
         needNewSafeStop = True
@@ -2071,6 +2078,7 @@ def set_drift(drift):
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
 
+
 def adjust_coords_for_drift(coords, drift=None):
     if drift is None:
         drift = get_drift()
@@ -2088,7 +2096,7 @@ def reset_cfm(cxn=None):
     routine where they matter anyway).
     """
 
-    if cxn == None:
+    if cxn is None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
     else:

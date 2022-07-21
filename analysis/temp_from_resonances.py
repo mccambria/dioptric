@@ -32,7 +32,7 @@ from utils import common
 from utils import kplotlib as kpl
 from scipy.optimize import curve_fit
 
-bad_zfs_temps = 295
+bad_zfs_temps = 350
 
 
 # %% Functions
@@ -338,7 +338,7 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
     return main(zfs, zfs_err)
 
 
-def main(zfs, zfs_err=None):
+def main(zfs, zfs_err=None, no_print=None):
 
     # func_to_invert = zfs_from_temp_barson
     func_to_invert = zfs_from_temp
@@ -359,7 +359,8 @@ def main(zfs, zfs_err=None):
     # plt.plot(x_vals, zfs_diff(x_vals))
     # print(zfs)
     # plt.show(block=True)
-
+    
+    temp_err = None
     if zfs_err is not None:
         zfs_lower = zfs - zfs_err
         zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
@@ -378,10 +379,14 @@ def main(zfs, zfs_err=None):
             results = root_scalar(zfs_diff, x0=x0, x1=x1)
             temp_lower = results.root
 
-        print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+        if not no_print:
+            print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+        temp_err = ((temp_mid - temp_lower) + (temp_higher - temp_mid)) / 2
+        return temp_mid, temp_err
     else:
-        print(temp_mid)
-
+        if not no_print:
+            print(temp_mid)
+        
     return temp_mid
 
     # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
@@ -419,7 +424,13 @@ if __name__ == "__main__":
 
     # main_files(files)
 
-    main(2.87, zfs_err=0.00001)
+    # zfs = (2.80437571982632 + 2.9361011568838298) / 2
+    # zfs_err = np.sqrt(2.3665998318251086e-05**2 + 2.7116675293791154e-05**2) / 2
+    zfs = (2.804495746863994 + 2.936131974306111) / 2
+    zfs_err = (
+        np.sqrt(2.6001293985452265e-05 ** 2 + 2.9769666707425683e-05 ** 2) / 2
+    )
+    main(zfs, zfs_err)
 
     # process_temp_dep_res_files()
 

@@ -18,6 +18,7 @@ import json
 import random
 
 import utils.tool_belt as tool_belt
+import superresolution_circles_full_auto as circle_fitting
 
 # import math
 
@@ -120,8 +121,9 @@ def main():
     # IMPUT PARAMTERS HERE
     # --------------------
 
-    totalrows = 30  # total number of pixels being added in the y axis
-    totalcols = 30  # total number of pixels being added in the x axis
+    # ~20 nm per pixel, this should correspond to beam waist
+    totalrows = 19  # total number of pixels being added in the y axis
+    totalcols = totalrows  # total number of pixels being added in the x axis
     num_col = (
         num_steps  # number of pxls added in x axis (columns) in the front
     )
@@ -133,6 +135,8 @@ def main():
     noise_th = 6  # int(noise_h/10)
     # noise_th = int((noise_l+noise_h)/2)
     numof_matrix = 3  # number of matrices being added aka number of NV centers
+
+    timestamp = tool_belt.get_time_stamp()
 
     ##################################
     # Array with just the NV ring
@@ -212,6 +216,15 @@ def main():
         #                         num_row, num_col, noise_l, noise_h, dataset)
         # fake_data2 = np.where(newmatrix2 < noise_th, np.add(fake_data2, 0),
         #                       np.add(fake_data2, newmatrix2))
+        fake_matrix = np.where(newmatrix < noise_th, 0, newmatrix)
+        fig, ax = plt.subplots()
+        img = ax.imshow(fake_matrix, cmap="inferno")
+        clb = plt.colorbar(img)
+        fig.tight_layout()
+        file_path_faked = tool_belt.get_file_path(
+            __file__, timestamp, nv_sig["name"] + f"-faked-{i}"
+        )
+        tool_belt.save_figure(fig, file_path_faked)
 
     # print(test)
     # print('fake data:')
@@ -224,6 +237,27 @@ def main():
     fig, ax = plt.subplots()
     img = ax.imshow(fake_data, cmap="inferno")
     clb = plt.colorbar(img)
+    fig.tight_layout()
+
+    file_path_faked = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "-faked"
+    )
+    tool_belt.save_figure(fig, file_path_faked)
+
+    fit_circles, fig = circle_fitting.main(image=dataset, run_type="full_auto")
+    file_path = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "-orig_fit"
+    )
+    tool_belt.save_figure(fig, file_path)
+    original_fit_circle = fit_circles[0]
+    shifts_with_zero = shifts.tolist()
+    shifts_with_zero.insert(0, [0, 0])
+    orig_y, orig_x = original_fit_circle[0:2]
+    adj_orig_x = orig_x + int(totalcols / 2)
+    adj_orig_y = orig_y + int(totalcols / 2)
+    circle_centers = [
+        (adj_orig_y + el[1], adj_orig_x + el[0]) for el in shifts_with_zero
+    ]
 
     # """
     # PLotting original data
@@ -246,11 +280,20 @@ def main():
     fig, ax = plt.subplots()
     img = ax.imshow(dataset, extent=extent, cmap="inferno")
     clb = plt.colorbar(img)
+    fig.tight_layout()
 
-    # fig, ax = plt.subplots()
-    # img = ax.imshow(new_arrpx, extent=extent)
-    # clb = plt.colorbar(img)
-    # """
+    file_path_orig = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "-orig"
+    )
+    tool_belt.save_figure(fig, file_path_orig)
+
+    raw_data = {
+        "original_file_name": filenm,
+        "readout_image_array": fake_data.tolist(),
+        "original_fit_circle": original_fit_circle.tolist(),
+        "circle_centers": circle_centers,
+    }
+    tool_belt.save_raw_data(raw_data, file_path_faked)
 
     return fake_data
 
