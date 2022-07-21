@@ -359,7 +359,8 @@ def main(zfs, zfs_err=None):
     # plt.plot(x_vals, zfs_diff(x_vals))
     # print(zfs)
     # plt.show(block=True)
-
+    
+    temp_err = None
     if zfs_err is not None:
         zfs_lower = zfs - zfs_err
         zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
@@ -379,9 +380,11 @@ def main(zfs, zfs_err=None):
             temp_lower = results.root
 
         print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+        temp_err = ((temp_mid - temp_lower) + (temp_higher - temp_mid)) / 2
+        return temp_mid, temp_err
     else:
         print(temp_mid)
-
+        
     return temp_mid
 
     # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))

@@ -28,6 +28,24 @@ import sys
 # region Functions
 
 
+def calc_resonance_from_file(f):
+    
+    data = tool_belt.get_raw_data(f)
+
+    norm_avg_sig = data["norm_avg_sig"]
+    norm_avg_sig_ste = data["norm_avg_sig_ste"]
+    detuning = data["detuning"]
+    d_omega = data["d_omega"]
+    nv_sig = data["nv_sig"]
+    state = data["state"]
+    passed_res = nv_sig[f"resonance_{state}"]
+
+    resonance, resonance_err = calc_resonance(
+        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+    )
+    return resonance, resonance_err
+
+
 def calc_resonance(
     norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
 ):
