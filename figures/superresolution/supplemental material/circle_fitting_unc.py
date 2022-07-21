@@ -13,40 +13,40 @@ scale = 34.5e3
 num_steps_3 = 81
 px_v_3 = 0.035/(num_steps_3-1)
 
-xa = 36.76
-dxa = 1.35
+xa = 36.83
+dxa = 1.36
 ya = 41.73
 dya=1.59
-ra = 27.77
+ra = 27.72
 dra = 1.14
-costA=0.42567
+costA=0.42379
 
 xb = 43.9
-dxb=0.72
-yb=39.0
-dyb=1.10
-rb = 27.54
-drb = 0.82
-costB=0.43086
+dxb=0.74
+yb=39.1
+dyb=1.08
+rb = 27.64
+drb = 0.83
+costB=0.44067
 
 #Fig 4
 num_steps_4 = 101
 px_v_4 = 0.05/(num_steps_4-1)
-xc = 45.79
-dxc= 1.02
-yc = 50.93
-dyc= 1.27
-rc = 26.13
-drc = 1.37
-cost_C = 0.37751
+xc = 45.64
+dxc= 1.26
+yc = 50.64
+dyc= 1.42
+rc = 26.29
+drc = 1.46
+cost_C = 0.43131
 
-xd = 56.1
-dxd=0.91
-yd=51.42
-dyd=1.67
-rd = 27.56
-drd = 1.05
-costD=0.41919
+xd = 56.15
+dxd=1.11
+yd=51.02
+dyd=1.58
+rd = 27.48
+drd = 1.20
+costD=0.45009
 
 def convert_position(pos_px, pos_px_unc, num_steps, px_v, x_or_y ):
     # because of the flipped y axis, we need to subtract the center point of
