@@ -29,7 +29,7 @@ import sys
 
 
 def calc_resonance_from_file(f):
-    
+
     data = tool_belt.get_raw_data(f)
 
     norm_avg_sig = data["norm_avg_sig"]
@@ -55,15 +55,30 @@ def calc_resonance(
     delta_res = ((f1 + f2) - (f3 + f4)) * (d_omega / ((f1 - f2) - (f3 - f4)))
     resonance = passed_res + delta_res
     # Calculate the error
-    d_delta_res_df1 = (-2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
-    d_delta_res_df2 = (2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
-    d_delta_res_df3 = (2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
-    d_delta_res_df4 = (-2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
-    resonance_err = np.sqrt(
-        (d_delta_res_df1 * f1_err) ** 2
-        + (d_delta_res_df2 * f2_err) ** 2
-        + (d_delta_res_df3 * f3_err) ** 2
-        + (d_delta_res_df4 * f4_err) ** 2
+    # d_delta_res_df1 = (-2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
+    # d_delta_res_df2 = (2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
+    # d_delta_res_df3 = (2 * d_omega * (f2 - f4)) / ((f1 - f2 - f3 + f4) ** 2)
+    # d_delta_res_df4 = (-2 * d_omega * (f1 - f3)) / ((f1 - f2 - f3 + f4) ** 2)
+    # resonance_err = np.sqrt(
+    #     (d_delta_res_df1 * f1_err) ** 2
+    #     + (d_delta_res_df2 * f2_err) ** 2
+    #     + (d_delta_res_df3 * f3_err) ** 2
+    #     + (d_delta_res_df4 * f4_err) ** 2
+    # )
+    # Error from Mathematica
+    resonance_err = (
+        2
+        * np.sqrt(
+            (
+                d_omega ** 2
+                * (
+                    f2_err ** 2 * (f1 - f3) ** 2
+                    + f4_err ** 2 * (f1 - f3) ** 2
+                    + (f1_err ** 2 + f3_err ** 2) * (f2 - f4) ** 2
+                )
+            )
+        )
+        / (f1 - f2 - f3 + f4) ** 2
     )
 
     return resonance, resonance_err

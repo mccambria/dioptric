@@ -338,7 +338,7 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
     return main(zfs, zfs_err)
 
 
-def main(zfs, zfs_err=None):
+def main(zfs, zfs_err=None, no_print=None):
 
     # func_to_invert = zfs_from_temp_barson
     func_to_invert = zfs_from_temp
@@ -379,11 +379,13 @@ def main(zfs, zfs_err=None):
             results = root_scalar(zfs_diff, x0=x0, x1=x1)
             temp_lower = results.root
 
-        print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+        if not no_print:
+            print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
         temp_err = ((temp_mid - temp_lower) + (temp_higher - temp_mid)) / 2
         return temp_mid, temp_err
     else:
-        print(temp_mid)
+        if not no_print:
+            print(temp_mid)
         
     return temp_mid
 
