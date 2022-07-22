@@ -17,6 +17,7 @@ import utils.kplotlib as kpl
 import majorroutines.four_point_esr as four_point_esr
 import analysis.temp_from_resonances as temp_from_resonances
 from pathos.multiprocessing import ProcessingPool as Pool
+import allantools
 
 
 # endregion
@@ -49,6 +50,7 @@ def get_temps_from_files(files):
 
     with Pool() as p:
         temps_and_errs = p.map(get_temp_from_file_pair, files)
+    # temps_and_errs = [get_temp_from_file_pair(pair) for pair in files]
 
     temps = []
     temp_errs = []
@@ -66,23 +68,45 @@ def get_temps_from_files(files):
 # region Main functions
 
 
+def allan_deviation(sig_files, ref_files):
+
+    fig, ax = plt.subplots()
+
+    x_vals = range(len(sig_files))
+    sig_vals, sig_errs = get_temps_from_files(sig_files)
+    ref_vals, ref_errs = get_temps_from_files(ref_files)
+
+    test_data = sig_vals
+    (t2, ad, ade, adn) = allantools.oadev(
+        test_data / np.mean(test_data), rate=1, data_type="freq", taus=x_vals
+    )
+
+    ax.plot(t2, ad)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Time Cluster (sec)")
+    ax.set_ylabel("Allan Deviation")
+
+    fig.tight_layout()
+
+
 def temp_vs_time(sig_files, ref_files):
 
     fig, ax = plt.subplots()
 
     x_vals = range(len(sig_files))
-
     sig_vals, sig_errs = get_temps_from_files(sig_files)
-    # ax.errorbar(x_vals, sig_vals, yerr=sig_errs, label="sig")
-    # ax.plot(x_vals, sig_vals - np.mean(sig_vals), label="sig")
-
     ref_vals, ref_errs = get_temps_from_files(ref_files)
+
+    # ax.errorbar(x_vals, sig_vals, yerr=sig_errs, label="sig")
+    ax.plot(x_vals, sig_vals, label="sig")
+
     # ax.errorbar(x_vals, ref_vals, yerr=ref_errs, label="ref")
-    # ax.plot(x_vals, ref_vals, label="ref")
+    ax.plot(x_vals, ref_vals, label="ref")
 
     diff_vals = sig_vals - ref_vals
     diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
-    ax.errorbar(x_vals, diff_vals, yerr=diff_errs, label="diff")
+    # ax.errorbar(x_vals, diff_vals, yerr=diff_errs, label="diff")
 
     eval_type = "diff"
     vals = eval(f"{eval_type}_vals")
@@ -110,7 +134,8 @@ if __name__ == "__main__":
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
 
-    temp_vs_time(sig_files, ref_files)
+    # temp_vs_time(sig_files, ref_files)
+    allan_deviation(sig_files, ref_files)
 
     plt.show(block=True)
 
