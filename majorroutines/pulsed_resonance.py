@@ -328,8 +328,7 @@ def fit_resonance(
             fit_bounds = (0, np.infty)
         print(guess_params)
         popt, pcov = curve_fit(
-            fit_func, freqs, norm_avg_sig, p0=guess_params,
-            bounds = fit_bounds
+            fit_func, freqs, norm_avg_sig, p0=guess_params, bounds=fit_bounds
         )
     # except Exception as e:
     #     print(e)
@@ -363,49 +362,37 @@ def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
 
 def process_counts(ref_counts, sig_counts, num_runs):
-
-    ##### Original Version #####
+    """
+    Extract the normalized average signal at each data point.
+    Assume the reference measurements are independent of the signal
+    measurements (as they should be) so we can use a single averaged
+    value for the reference. Since we sometimes don't do many runs
+    (<10), we often will have an insufficient sample size to run
+    stats on for norm_avg_sig calculation. We assume Poisson
+    statistics instead.
+    """
 
     # Find the averages across runs
-    # avg_ref_counts = np.average(ref_counts, axis=0)
-    # avg_sig_counts = np.average(sig_counts, axis=0)
-    # norm_avg_sig = avg_sig_counts / avg_ref_counts
+    single_ref_avg = np.average(ref_counts)
+    ref_counts_avg = np.average(ref_counts, axis=0)
+    sig_counts_avg = np.average(sig_counts, axis=0)
 
-    # # Extract the error
-    # # Typically we don't do many runs (<10), so this isn't a large enough
-    # # sample to run stats on. Assume Poisson statistics instead.
-    # ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
-    # ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
-    # norm_avg_sig_ste = np.copy(norm_avg_sig)
-    # norm_avg_sig_ste *= np.sqrt(
-    #     (ste_sig_counts / avg_sig_counts) ** 2
-    #     + (ste_ref_counts / avg_ref_counts) ** 2
-    # )
+    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs)
+    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
+    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
 
-    ##### Simplified Version #####
-
-    # # Find the averages across runs
-    single_avg_ref = np.average(ref_counts)
-    avg_ref_counts = np.average(ref_counts, axis=0)
-    avg_sig_counts = np.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / single_avg_ref
-
-    # Extract the error
-    # Typically we don't do many runs (<10), so this isn't a large enough
-    # sample to run stats on. Assume Poisson statistics instead.
-    ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
-    ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
-    norm_avg_sig_ste = np.copy(ste_ref_counts)
-    norm_avg_sig_ste /= single_avg_ref
-
-    ##### Return #####
+    norm_avg_sig = sig_counts_avg / single_ref_avg
+    norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+        (sig_counts_ste / sig_counts_avg) ** 2
+        + (single_ref_ste / single_ref_avg) ** 2
+    )
 
     return (
-        avg_ref_counts,
-        avg_sig_counts,
+        ref_counts_avg,
+        sig_counts_avg,
         norm_avg_sig,
-        ste_ref_counts,
-        ste_sig_counts,
+        ref_counts_ste,
+        sig_counts_ste,
         norm_avg_sig_ste,
     )
 
@@ -726,8 +713,6 @@ def main_with_cxn(
     fig.tight_layout()
     fig.canvas.flush_events()
 
-
-
     # %% Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
@@ -774,7 +759,7 @@ def main_with_cxn(
         raw_file_name = filePath.stem()
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-        
+
     # %% Fit the data
 
     fit_func, popt, pcov = fit_resonance(
@@ -786,11 +771,11 @@ def main_with_cxn(
         )
     else:
         fit_fig = None
-        
+
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
-        
+
     # %% Return
 
     if fit_func == single_gaussian_dip:
@@ -841,8 +826,9 @@ if __name__ == "__main__":
     # ax.set_ylabel("Contrast (arb. units)")
     # ax.legend(loc="lower right")
 
-    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
-                                          norm_avg_sig, norm_avg_sig_ste)
+    fit_func, popt, pcov = fit_resonance(
+        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
+    )
     # create_fit_figure(
     #     freq_range,
     #     freq_center,
@@ -853,7 +839,6 @@ if __name__ == "__main__":
     # )
     print(popt)
     print(pcov)
-
 
     # tool_belt.init_matplotlib()
     # # matplotlib.rcParams["axes.linewidth"] = 1.0
