@@ -257,9 +257,9 @@ def do_resonance(nv_sig, opti_nv_sig,apd_indices, freq_center=2.87, freq_range=0
 def do_resonance_state(nv_sig, opti_nv_sig, apd_indices, state):
 
     freq_center = nv_sig["resonance_{}".format(state.name)]
-    uwave_power = -10.0
+    uwave_power = 10.0
 
-    freq_range = 0.1
+    freq_range = 0.15
     num_steps = 51
     num_runs = 10
 
@@ -286,7 +286,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
     num_reps = 1e4
     num_runs = 10
     uwave_power = 10
-    uwave_pulse_dur = int(50)
+    uwave_pulse_dur = int(40)
 
     pulsed_resonance.main(
         nv_sig,
@@ -310,11 +310,11 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.2
+    freq_range = 0.1
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 10
+    num_runs = 5
 
     composite = False
 
@@ -347,7 +347,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     num_freq_runs = 10
 
     # Pulsed
-    uwave_power = 1#14.5
+    uwave_power = 10#14.5
     uwave_pulse_dur = 80/2
     num_freq_reps = int(1e4)
 
@@ -374,8 +374,8 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
-    num_reps = int(1e4)
-    num_runs = 10
+    num_reps = int(5e4)
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -471,49 +471,49 @@ def do_spin_echo(nv_sig, apd_indices):
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
     max_tau_omega = 15e6
-    max_tau_gamma = 10e6
-    num_steps = 21
+    max_tau_gamma = 15e6
+    num_steps = 31
     num_reps = 1e4
     num_runs = 20
     
-    # t1_exp_array = numpy.array(
-    #     [[
-    #             [States.ZERO, States.ZERO],
-    #             [min_tau, max_tau_omega],
-    #             num_steps,
-    #             num_reps,
-    #             num_runs,
-    #         ]])
-    
     t1_exp_array = numpy.array(
-       [ [
-                [States.ZERO, States.ZERO],
-                [min_tau, max_tau_omega],
-                num_steps,
-                num_reps,
-                num_runs,
-            ], 
-        [
-                [States.ZERO, States.HIGH],
-                [min_tau, max_tau_omega],
-                num_steps,
-                num_reps,
-                num_runs,
-            ],
-                [
+        [[
                 [States.HIGH, States.HIGH],
                 [min_tau, max_tau_gamma],
                 num_steps,
                 num_reps,
                 num_runs,
-            ], 
-                    [
-                [States.HIGH, States.LOW],
-                [min_tau, max_tau_gamma],
-                num_steps,
-                num_reps,
-                num_runs,
-            ]] )
+            ]])
+    
+    # t1_exp_array = numpy.array(
+    #    [ [
+    #             [States.ZERO, States.ZERO],
+    #             [min_tau, max_tau_omega],
+    #             num_steps,
+    #             num_reps,
+    #             num_runs,
+    #         ], 
+    #     [
+    #             [States.ZERO, States.HIGH],
+    #             [min_tau, max_tau_omega],
+    #             num_steps,
+    #             num_reps,
+    #             num_runs,
+    #         ],
+    #             [
+    #             [States.HIGH, States.HIGH],
+    #             [min_tau, max_tau_gamma],
+    #             num_steps,
+    #             num_reps,
+    #             num_runs,
+    #         ], 
+    #                 [
+    #             [States.HIGH, States.LOW],
+    #             [min_tau, max_tau_gamma],
+    #             num_steps,
+    #             num_reps,
+    #             num_runs,
+    #         ]] )
     
     t1_dq_main.main(
             nv_sig,
@@ -802,11 +802,12 @@ if __name__ == "__main__":
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 60,
-        "resonance_LOW":2.7790,"rabi_LOW":80,
+        "magnet_angle": 156,
+        "resonance_LOW":2.7790,
+        "rabi_LOW":72.2,
         "uwave_power_LOW": 10,  # 15.5 max
-        "resonance_HIGH": 2.9562,
-        "rabi_HIGH":80,
+        "resonance_HIGH":2.7790,#2.9611,
+        "rabi_HIGH":68,
         "uwave_power_HIGH": 10,
     }  # 14.5 max
     
@@ -871,15 +872,17 @@ if __name__ == "__main__":
         #do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.2)
         # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.1)
+        # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
         
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
         
-        do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.2) ###
+        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
+
         #do_spin_echo(nv_sig, apd_indices)
         
         

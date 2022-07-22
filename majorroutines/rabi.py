@@ -281,7 +281,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #        start_time = time.time()
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
-#            print('Tau: {} ns'. format(taus[tau_ind]))
+            # print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
