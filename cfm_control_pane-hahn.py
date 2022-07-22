@@ -277,8 +277,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_reps = 5e4
     # num_runs = 20
     num_reps = 4e3
-    num_runs = 16
-    # num_runs = 4
+    # num_runs = 16
+    num_runs = 4
 
     # Zoom
     # freq_range = 0.035
@@ -905,7 +905,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        'coords': [-0.035, 0.055, 0], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -920,7 +920,7 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 2e3, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 25e3,
+        "spin_pol_dur": 50e3,
         "spin_readout_dur": 6e3,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
