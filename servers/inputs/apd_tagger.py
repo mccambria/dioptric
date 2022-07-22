@@ -324,7 +324,7 @@ class ApdTagger(LabradServer):
         # De-duplicate the channels list
         channels = list(set(channels))
         self.stream = TimeTagger.TimeTagStream(
-            self.tagger, 10 ** 9, channels
+            self.tagger, 10 ** 7, channels
         )
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,
