@@ -284,13 +284,12 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
     
     nv_sig = { 
-       "coords":[-0.886, -0.534, 5.890],
-        "name": "{}".format(sample_name,),
+            "coords":[-0.852, -0.616,  6.1],
+        "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":12,
+        "expected_count_rate":11,
         "correction_collar": 0.12,
-        
         
         
           "spin_laser":green_laser,
@@ -361,7 +360,7 @@ if __name__ == "__main__":
         # num_reps = int(1e5)
         # laser_name = 'laserglow_589'
         # delay_range = [800, 1700]
-        num_reps = int(5e4)
+        num_reps = int(1e4)
         laser_name = 'integrated_520'
         # laser_power = 0.65
         # laser_name = 'cobolt_638'
