@@ -163,12 +163,12 @@ def plot_1D_SpaCE(
                   p0=init_fit,
                     # sigma = counts_ste,
                     # absolute_sigma = True
-                   # bounds = ([-numpy.infty, -numpy.infty, -numpy.infty, 0], 
+                   # bounds = ([-numpy.infty, -numpy.infty, -numpy.infty, 0],
                    #   [numpy.infty, numpy.infty, numpy.infty, 100])
                   )
 
             # print(opti_params[2]*fwhm, numpy.sqrt(cov_arr[2][2])*fwhm)
-            
+
             if do_plot:
                 print(opti_params, cov_arr)
                 print()
@@ -258,7 +258,7 @@ def plot_heights_vs_dur(file_list, path, threshold, Alpha):
         file_name = file_list[f]
         data = tool_belt.get_raw_data( file_name, path)
         nv_sig=data['nv_sig']
-    
+
         ret_vals = plot_1D_SpaCE(file_name, path, threshold, do_plot = False, do_fit = True)
         heights_master_list.append(ret_vals[2][0])
         heights_error.append(numpy.sqrt(ret_vals[3][0][0]))
@@ -280,7 +280,7 @@ def plot_heights_vs_dur(file_list, path, threshold, Alpha):
     print('constrained alpha: ' + str(Alpha))
     print('A: ' + str(opti_params[0]) + ' +/-' + str(numpy.sqrt(cov_arr[0][0])))
     print('epsilon = {:.7f} +/- {:.7f}'.format(opti_params[1], numpy.sqrt(cov_arr[1][1])))
-    
+
 
     return opti_params[1]
 
@@ -290,6 +290,7 @@ def recursive_fit(file_list, path, threshold, num_reps):
 
     e_list = []
     R_list = []
+    # recursively fit to find parameters from two models
     for i in range(num_reps):
         print()
         print("*** Fitting round {} ***".format(i))

@@ -27,7 +27,7 @@ def bessel_scnd_der(x):
     term_3 = 4* (0.5* (jv(0,x) - jv(2,x))**2 + j1(x)* (0.5*(jv(3,x) - j1(x)) - j1(x)))
     
     return term_1/x**4 - term_2/x**3 + term_3/x**2
-# %%
+# %% Data from fitting
 y = numpy.array([0.21638739, 0.23514312, 0.270726 ,  0.27750125, 0.39541004, 0.59534277,
  0.58171584, 0.69582389, 0.86908403, 1.11268992, 1.22341671, 1.36458656,
  2.36018764]) #fwhm list, in dimensionless units
