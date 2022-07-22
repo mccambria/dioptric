@@ -22,7 +22,7 @@ pi = numpy.pi
 # v = 1.6e10 #nm^4 / (ms mW^2)
 # v = 1.6e10 #nm^4 / (ms mW^2)
 # v = 1.6e13 #nm^4 / (ms mW^2) #hadn't converted us to ms?
-v = 2.3e12 #nm^4 / (ms mW^2) value from Fig 2 fit. Actually, this should be 2.3e12...
+v = 3e12 #nm^4 / (ms mW^2) value from Fig 2 fit.
 fwhm =2.355
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -453,7 +453,7 @@ if __name__ == '__main__':
     # fit_gaussian_peak(300, 70, 100, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
     # i = intensity_scaling(20)
     # print(i)
-    I = 0.001#22
+    I = 8.72313e-4
     simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
     simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
     simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)

@@ -285,8 +285,8 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
     num_steps =101
     num_reps = 1e4
     num_runs = 10
-    uwave_power = 1
-    uwave_pulse_dur = int(40)
+    uwave_power = 10
+    uwave_pulse_dur = int(50)
 
     pulsed_resonance.main(
         nv_sig,
@@ -310,7 +310,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.08
+    freq_range = 0.2
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
@@ -764,11 +764,11 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-            "coords":[-0.875, -0.575, 6.085],
+            "coords":[-0.875, -0.575,  6.1],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":12,
+        "expected_count_rate":11,
         "correction_collar": 0.12,
         
 
@@ -802,12 +802,12 @@ if __name__ == "__main__":
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 157,
-        "resonance_LOW":2.7790,"rabi_LOW":84.5,
-        "uwave_power_LOW": 1,  # 15.5 max
+        "magnet_angle": 60,
+        "resonance_LOW":2.7790,"rabi_LOW":80,
+        "uwave_power_LOW": 10,  # 15.5 max
         "resonance_HIGH": 2.9562,
-        "rabi_HIGH":76.4,
-        "uwave_power_HIGH": 14,
+        "rabi_HIGH":80,
+        "uwave_power_HIGH": 10,
     }  # 14.5 max
     
     
@@ -841,7 +841,7 @@ if __name__ == "__main__":
 
         # do_optimize(nv_sig,apd_indices)
         
-        #do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -873,17 +873,17 @@ if __name__ == "__main__":
         # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.1)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
         
-        ##do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        #do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
         
-        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.3) ###
-        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.2) ###
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         #do_spin_echo(nv_sig, apd_indices)
         
         
-        do_relaxation(nv_sig, apd_indices)
+        # do_relaxation(nv_sig, apd_indices)
         
   
         # Operations that don't need an NV#
