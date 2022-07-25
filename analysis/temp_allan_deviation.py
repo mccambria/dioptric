@@ -52,6 +52,11 @@ def get_temps_from_files(files):
         temps_and_errs = p.map(get_temp_from_file_pair, files)
     # temps_and_errs = [get_temp_from_file_pair(pair) for pair in files]
 
+    first_time = tool_belt.utc_from_file_name(files[0][0])
+    times = [
+        tool_belt.utc_from_file_name(pair[0]) - first_time for pair in files
+    ]
+
     temps = []
     temp_errs = []
 
@@ -59,7 +64,7 @@ def get_temps_from_files(files):
         temps.append(el[0])
         temp_errs.append(el[1])
 
-    return np.array(temps), np.array(temp_errs)
+    return np.array(temps), np.array(temp_errs), times
 
 
 # endregion
@@ -72,16 +77,19 @@ def allan_deviation(sig_files, ref_files):
 
     fig, ax = plt.subplots()
 
-    x_vals = range(len(sig_files))
-    sig_vals, sig_errs = get_temps_from_files(sig_files)
-    ref_vals, ref_errs = get_temps_from_files(ref_files)
+    sig_vals, sig_errs, times = get_temps_from_files(sig_files)
+    ref_vals, ref_errs, times = get_temps_from_files(ref_files)
 
     test_data = sig_vals
     (t2, ad, ade, adn) = allantools.oadev(
-        test_data / np.mean(test_data), rate=1, data_type="freq", taus=x_vals
+        test_data / np.mean(test_data),
+        rate=1 / 250,
+        data_type="freq",
+        taus=times,
     )
 
-    ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
+    # ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
+    ax.plot(t2, ad)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Time Cluster (sec)")
@@ -94,19 +102,18 @@ def temp_vs_time(sig_files, ref_files):
 
     fig, ax = plt.subplots()
 
-    x_vals = range(len(sig_files))
-    sig_vals, sig_errs = get_temps_from_files(sig_files)
-    ref_vals, ref_errs = get_temps_from_files(ref_files)
+    sig_vals, sig_errs, times = get_temps_from_files(sig_files)
+    ref_vals, ref_errs, times = get_temps_from_files(ref_files)
 
     # ax.errorbar(x_vals, sig_vals, yerr=sig_errs, label="sig")
-    ax.plot(x_vals, sig_vals, label="sig")
+    # ax.plot(x_vals, sig_vals, label="sig")
 
     # ax.errorbar(x_vals, ref_vals, yerr=ref_errs, label="ref")
-    ax.plot(x_vals, ref_vals, label="ref")
+    # ax.plot(x_vals, ref_vals, label="ref")
 
     diff_vals = sig_vals - ref_vals
     diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
-    # ax.errorbar(x_vals, diff_vals, yerr=diff_errs, label="diff")
+    ax.errorbar(times, diff_vals, yerr=diff_errs, label="diff")
 
     eval_type = "diff"
     vals = eval(f"{eval_type}_vals")

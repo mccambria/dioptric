@@ -1516,6 +1516,21 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
     return file_path_Path
 
 
+def utc_from_file_name(file_name):
+
+    f_split = file_name.split("-")
+    date = f_split[0]
+    date_split = date.split("_")
+    date_ints = [int(el) for el in date_split]
+    time = f_split[1]
+    time_split = time.split("_")
+    time_ints = [int(el) for el in time_split]
+    dt = datetime.datetime(*date_ints, *time_ints)
+    utc_time = dt.replace(tzinfo=datetime.timezone.utc)
+    utc_timestamp = utc_time.timestamp()
+    return utc_timestamp
+
+
 # def get_file_path(source_name, time_stamp='', name='', subfolder=None):
 #    """
 #    Get the file path to save to. This will be in a subdirectory of nvdata.
