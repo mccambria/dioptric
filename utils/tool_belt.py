@@ -1600,9 +1600,6 @@ def save_raw_data(rawData, filePath):
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
 
-    # Sleep for 1 second so that every file name from the same PC should be unique
-    time.sleep(1)
-
 
 def get_nv_sig_units():
     return {

@@ -846,7 +846,7 @@ def do_nir_temp_differential2(nv_sig, apd_indices):
             power_supply = cxn.power_supply_mp710087
             power_supply.output_on()
             power_supply.set_voltage(1.3)
-        time.sleep(1)
+        time.sleep(10)
         
         _, _, low_file = do_four_point_esr(nv_sig, apd_indices, States.LOW)
         _, _, high_file = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
@@ -855,7 +855,7 @@ def do_nir_temp_differential2(nv_sig, apd_indices):
         with labrad.connect() as cxn:
             power_supply = cxn.power_supply_mp710087
             power_supply.output_off()
-        time.sleep(1)
+        time.sleep(10)
     
         _, _, low_file = do_four_point_esr(nv_sig, apd_indices, States.LOW)
         _, _, high_file = do_four_point_esr(nv_sig, apd_indices, States.HIGH)

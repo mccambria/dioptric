@@ -81,7 +81,7 @@ def allan_deviation(sig_files, ref_files):
         test_data / np.mean(test_data), rate=1, data_type="freq", taus=x_vals
     )
 
-    ax.plot(t2, ad)
+    ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Time Cluster (sec)")
@@ -130,13 +130,13 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # f = "2022_07_19-18_14_50-hopper-search-2"
-    f = "2022_07_22-13_36_50-hopper-search"
+    f = "2022_07_22-13_36_50-hopper-search-2"
     data = tool_belt.get_raw_data(f)
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
 
-    temp_vs_time(sig_files, ref_files)
-    # allan_deviation(sig_files, ref_files)
+    # temp_vs_time(sig_files, ref_files)
+    allan_deviation(sig_files, ref_files)
 
     plt.show(block=True)
 
