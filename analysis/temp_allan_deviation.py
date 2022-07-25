@@ -129,7 +129,8 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    f = "2022_07_19-18_14_50-hopper-search-2"
+    # f = "2022_07_19-18_14_50-hopper-search-2"
+    f = "2022_07_24-22_03_54-hopper-search"
     data = tool_belt.get_raw_data(f)
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
