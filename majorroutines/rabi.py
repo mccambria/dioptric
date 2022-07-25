@@ -210,8 +210,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
-#    print(seq_args)
-#    return
+    # print(seq_args)
+    # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 
@@ -281,7 +281,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #        start_time = time.time()
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
-#            print('Tau: {} ns'. format(taus[tau_ind]))
+            # print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -293,6 +293,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                         readout, max_uwave_time, apd_indices[0], 
                         state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            # print(seq_args)
             # Clear the tagger buffer of any excess counts
             cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
@@ -300,19 +301,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-#            print(new_counts)
+            # print(new_counts)
 
             sample_counts = new_counts[0]
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-#            print('Sig counts: {}'.format(sum(sig_gate_counts)))
+            print('Sig counts: {}'.format(sum(sig_gate_counts)))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-#            print('Ref counts: {}'.format(sum(ref_gate_counts)))
+            print('Ref counts: {}'.format(sum(ref_gate_counts)))
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time

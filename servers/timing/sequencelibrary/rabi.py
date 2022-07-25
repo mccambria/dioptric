@@ -123,6 +123,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     # tool_belt.set_delays_to_zero(config)
-    args = [126, 50000.0, 20000, 126, 0, 1, 'laserglow_532', None]
+    args = [10, 1000.0, 350, 200, 1, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()
