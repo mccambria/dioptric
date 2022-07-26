@@ -52,6 +52,11 @@ def get_temps_from_files(files):
         temps_and_errs = p.map(get_temp_from_file_pair, files)
     # temps_and_errs = [get_temp_from_file_pair(pair) for pair in files]
 
+    first_time = tool_belt.utc_from_file_name(files[0][0])
+    times = [
+        tool_belt.utc_from_file_name(pair[0]) - first_time for pair in files
+    ]
+
     temps = []
     temp_errs = []
 
@@ -59,7 +64,7 @@ def get_temps_from_files(files):
         temps.append(el[0])
         temp_errs.append(el[1])
 
-    return np.array(temps), np.array(temp_errs)
+    return np.array(temps), np.array(temp_errs), times
 
 
 # endregion
@@ -72,20 +77,27 @@ def allan_deviation(sig_files, ref_files):
 
     fig, ax = plt.subplots()
 
-    x_vals = range(len(sig_files))
-    sig_vals, sig_errs = get_temps_from_files(sig_files)
-    ref_vals, ref_errs = get_temps_from_files(ref_files)
+    sig_vals, sig_errs, times = get_temps_from_files(sig_files)
+    ref_vals, ref_errs, times = get_temps_from_files(ref_files)
 
-    test_data = sig_vals
+    diff_vals = sig_vals - ref_vals
+    diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
+
+    test_data = diff_vals
+    period = (times[-1] - times[0]) / (len(times) - 1)
     (t2, ad, ade, adn) = allantools.oadev(
-        test_data / np.mean(test_data), rate=1, data_type="freq", taus=x_vals
+        test_data / np.mean(test_data),
+        rate=1 / period,
+        data_type="freq",
+        taus="all",
     )
 
-    ax.plot(t2, ad)
+    ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
+    # ax.plot(t2, ad)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Time Cluster (sec)")
-    ax.set_ylabel("Allan Deviation")
+    ax.set_ylabel(r"$\mathrm{\Delta}\mathit{T}$ (K) Allan Deviation")
 
     fig.tight_layout()
 
@@ -94,27 +106,31 @@ def temp_vs_time(sig_files, ref_files):
 
     fig, ax = plt.subplots()
 
-    x_vals = range(len(sig_files))
-    sig_vals, sig_errs = get_temps_from_files(sig_files)
-    ref_vals, ref_errs = get_temps_from_files(ref_files)
+    sig_vals, sig_errs, times = get_temps_from_files(sig_files)
+    ref_vals, ref_errs, times = get_temps_from_files(ref_files)
+    num_exps = len(sig_vals)
 
     # ax.errorbar(x_vals, sig_vals, yerr=sig_errs, label="sig")
-    ax.plot(x_vals, sig_vals, label="sig")
+    # ax.plot(x_vals, sig_vals, label="sig")
 
     # ax.errorbar(x_vals, ref_vals, yerr=ref_errs, label="ref")
-    ax.plot(x_vals, ref_vals, label="ref")
+    # ax.plot(x_vals, ref_vals, label="ref")
 
     diff_vals = sig_vals - ref_vals
     diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
-    # ax.errorbar(x_vals, diff_vals, yerr=diff_errs, label="diff")
+    ax.errorbar(times, diff_vals, yerr=diff_errs, label="diff", fmt="o")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel(r"$\mathrm{\Delta}\mathit{T}$ (K)")
 
     eval_type = "diff"
     vals = eval(f"{eval_type}_vals")
     errs = eval(f"{eval_type}_errs")
     val_mean = np.mean(vals)
     err_mean = np.mean(errs)
+    ste = np.sqrt(np.sum(errs ** 2)) / num_exps
     print(val_mean)
     print(np.std((vals - val_mean) / err_mean))
+    print(ste)
 
     ax.legend()
 
@@ -129,14 +145,13 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # f = "2022_07_19-18_14_50-hopper-search-2"
-    f = "2022_07_22-13_36_50-hopper-search-2"
+    f = "2022_07_24-22_03_54-hopper-search"
     data = tool_belt.get_raw_data(f)
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
 
-    temp_vs_time(sig_files, ref_files)
-    # allan_deviation(sig_files, ref_files)
+    # temp_vs_time(sig_files, ref_files)
+    allan_deviation(sig_files, ref_files)
 
     plt.show(block=True)
 

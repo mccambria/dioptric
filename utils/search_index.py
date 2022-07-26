@@ -12,6 +12,7 @@ import utils.common as common
 import os
 from pathlib import PurePath
 import sqlite3
+import time
 
 search_index_file_name = "search_index.db"
 nvdata_dir = common.get_nvdata_dir()
@@ -85,6 +86,8 @@ def add_to_search_index(data_full_path):
     cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
     search_index.commit()
     search_index.close()
+    # Sleep for 1 second so that every file name from the same PC should be unique
+    time.sleep(1)
     return db_vals[1]
 
 
@@ -101,7 +104,7 @@ def get_data_path(data_file_name):
         return res[1]
     except Exception as exc:
         print(f"Failed to find file {data_file_name} in search index.")
-        print("Attempting on the fly indexing.")
+        print("Attempting on-the-fly indexing.")
         index_path = index_on_the_fly(data_file_name)
         if index_path is None:
             msg = (

@@ -1516,6 +1516,21 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
     return file_path_Path
 
 
+def utc_from_file_name(file_name):
+
+    f_split = file_name.split("-")
+    date = f_split[0]
+    date_split = date.split("_")
+    date_ints = [int(el) for el in date_split]
+    time = f_split[1]
+    time_split = time.split("_")
+    time_ints = [int(el) for el in time_split]
+    dt = datetime.datetime(*date_ints, *time_ints)
+    utc_time = dt.replace(tzinfo=datetime.timezone.utc)
+    utc_timestamp = utc_time.timestamp()
+    return utc_timestamp
+
+
 # def get_file_path(source_name, time_stamp='', name='', subfolder=None):
 #    """
 #    Get the file path to save to. This will be in a subdirectory of nvdata.
@@ -1599,9 +1614,6 @@ def save_raw_data(rawData, filePath):
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
-
-    # Sleep for 1 second so that every file name from the same PC should be unique
-    time.sleep(1)
 
 
 def get_nv_sig_units():
