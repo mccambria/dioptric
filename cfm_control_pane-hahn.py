@@ -22,7 +22,7 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_temperature as image_sample_temperature
-import majorroutines.image_sample_NIR_counts_differential as image_sample_NIR_counts_differential
+import majorroutines.image_sample_NIR_counts_differential as image_sample_NIR_counts_differential_2
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -131,7 +131,7 @@ def do_image_sample_temperature(nv_sig, apd_indices):
     )
     
 
-def do_ensemble_image_sample(nv_sig, apd_indices, technique,): # CF: added to include NIR counts differential map option
+def do_ensemble_image_sample(nv_sig, apd_indices, technique): # CF: added to include NIR counts differential map option
     
     list_of_techniquies = ['NIR_temperature_differential','NIR_counts_differential'] 
     if technique not in list_of_techniquies:
@@ -154,17 +154,15 @@ def do_ensemble_image_sample(nv_sig, apd_indices, technique,): # CF: added to in
         )
     
     if technique=='NIR_counts_differential':
-        image_range = 0.2
+        scan_range = 0.2
         num_steps = 60
         nir_laser_voltage = 1.3
-        image_sample_NIR_counts_differential.main(
+        image_sample_NIR_counts_differential_2.main(
             nv_sig,
-            scan_range,
             scan_range,
             num_steps,
             apd_indices,
             nir_laser_voltage,
-            nv_minus_initialization=False
             )
 
 
@@ -926,22 +924,6 @@ def do_test_major_routines(nv_sig, apd_indices):
     test_major_routines.main(nv_sig, apd_indices)
     
 
-def do_test_four_point_vs_avg(nv_sig, apd_indices):
-    """This is to test how the four point measurement of the ZFS compares 
-    to simply taking the average of the resonance frequencies"""
-    
-    resonance_low_nofp = do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-    print(resonance_low_nofp)
-    resonance_high_nofp = do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    print(resonance_high_nofp)
-    zfs_nofp = (resonance_low_nofp + resonance_high_nofp)/2
-    # print(do_four_point_esr(nv_sig, apd_indices, States.LOW))
-    low_res_fp, low_res_fp_err, name = do_four_point_esr(nv_sig, apd_indices, States.LOW)
-    high_res_fp, high_res_fp_err, name = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
-    zfs_fp = (low_res_fp + high_res_fp) / 2
-    # zfs_fp_err = np.sqrt(low_res_fp_err**2 + high_res_fp_err**2) / 2
-    print(zfs_fp/zfs_nofp)
-
 # %% Run the file
 
 
@@ -1074,6 +1056,7 @@ if __name__ == "__main__":
         # do_nir_temp_differential2(nv_sig, apd_indices)
         # do_test_four_point_vs_avg(nv_sig, apd_indices)
         # do_image_sample_temperature(nv_sig, apd_indices)
+        do_ensemble_image_sample(nv_sig, apd_indices, technique='NIR_counts_differential')
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
