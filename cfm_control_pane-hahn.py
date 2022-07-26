@@ -22,6 +22,7 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_temperature as image_sample_temperature
+import majorroutines.image_sample_NIR_counts_differential as image_sample_NIR_counts_differential
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -128,6 +129,43 @@ def do_image_sample_temperature(nv_sig, apd_indices):
         esr_num_reps,
         esr_num_runs,
     )
+    
+
+def do_ensemble_image_sample(nv_sig, apd_indices, technique,): # CF: added to include NIR counts differential map option
+    
+    list_of_techniquies = ['NIR_temperature_differential','NIR_counts_differential'] 
+    if technique not in list_of_techniquies:
+        print('Technique must be in:', list_of_techniquies)
+    
+    if technique=='NIR_temperature_differential':
+        image_range = 0.2
+        num_steps = 10
+        nir_laser_voltage = 1.3
+        esr_num_reps = 1e5
+        esr_num_runs = 4
+        image_sample_temperature.main(
+            nv_sig,
+            image_range,
+            num_steps,
+            apd_indices,
+            nir_laser_voltage,
+            esr_num_reps,
+            esr_num_runs,
+        )
+    
+    if technique=='NIR_counts_differential':
+        image_range = 0.2
+        num_steps = 60
+        nir_laser_voltage = 1.3
+        image_sample_NIR_counts_differential.main(
+            nv_sig,
+            scan_range,
+            scan_range,
+            num_steps,
+            apd_indices,
+            nir_laser_voltage,
+            nv_minus_initialization=False
+            )
 
 
 def do_optimize(nv_sig, apd_indices):
@@ -300,6 +338,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
         composite,
     )
     nv_sig["resonance_{}".format(state.name)] = res
+    return res
 
 
 def do_scc_pulsed_resonance(nv_sig, apd_indices, state=States.LOW):
@@ -888,14 +927,19 @@ def do_test_major_routines(nv_sig, apd_indices):
     
 
 def do_test_four_point_vs_avg(nv_sig, apd_indices):
-    """This is to test how the four point measurement of the ZFS compares to simply taking the average of the resonance frequencies"""
+    """This is to test how the four point measurement of the ZFS compares 
+    to simply taking the average of the resonance frequencies"""
     
-    resonances_nofp = do_pulsed_resonance(nv_sig, apd_indices)
-    zfs_nofp = (resonances_nofp[0] + resonances_nofp[1])/2
-    low_res_fp, low_res_fp_err = do_four_point_esr(nv_sig, apd_indices, States.LOW)
-    high_res_fp, high_res_fp_err = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+    resonance_low_nofp = do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    print(resonance_low_nofp)
+    resonance_high_nofp = do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    print(resonance_high_nofp)
+    zfs_nofp = (resonance_low_nofp + resonance_high_nofp)/2
+    # print(do_four_point_esr(nv_sig, apd_indices, States.LOW))
+    low_res_fp, low_res_fp_err, name = do_four_point_esr(nv_sig, apd_indices, States.LOW)
+    high_res_fp, high_res_fp_err, name = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
     zfs_fp = (low_res_fp + high_res_fp) / 2
-    zfs_fp_err = np.sqrt(low_res_fp_err**2 + high_res_fp_err**2) / 2
+    # zfs_fp_err = np.sqrt(low_res_fp_err**2 + high_res_fp_err**2) / 2
     print(zfs_fp/zfs_nofp)
 
 # %% Run the file
@@ -992,7 +1036,7 @@ if __name__ == "__main__":
         #     # do_image_sample_zoom(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
 
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1028,7 +1072,7 @@ if __name__ == "__main__":
         # do_four_point_esr(nv_sig, apd_indices, States.HIGH)
         # do_nir_temp_differential(nv_sig, apd_indices)
         # do_nir_temp_differential2(nv_sig, apd_indices)
-        do_test_four_point_vs_avg(nv_sig, apd_indices)
+        # do_test_four_point_vs_avg(nv_sig, apd_indices)
         # do_image_sample_temperature(nv_sig, apd_indices)
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
@@ -1056,7 +1100,7 @@ if __name__ == "__main__":
         # do_t1_dq(nv_sig, apd_indices)
 
     except Exception as exc:
-        tool_belt.send_exception_email(email_to="cambria@wisc.edu")
+        tool_belt.send_exception_email(email_to="cdfox@wisc.edu")
         raise exc
 
     finally:
