@@ -40,8 +40,8 @@ def get_temp_from_file_pair(f_pair):
     zfs_err = np.sqrt(low_error ** 2 + high_error ** 2) / 2
     temp, temp_err = temp_from_resonances.main(zfs, zfs_err, no_print=True)
 
-    return temp, temp_err
-    # return zfs, zfs_err
+    # return temp, temp_err
+    return zfs, zfs_err
     # return low_res, low_error
     # return high_res, high_error
 
@@ -80,7 +80,10 @@ def allan_deviation(sig_files, ref_files):
     sig_vals, sig_errs, times = get_temps_from_files(sig_files)
     ref_vals, ref_errs, times = get_temps_from_files(ref_files)
 
-    test_data = sig_vals
+    diff_vals = sig_vals - ref_vals
+    diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
+
+    test_data = diff_vals
     period = (times[-1] - times[0]) / (len(times) - 1)
     (t2, ad, ade, adn) = allantools.oadev(
         test_data / np.mean(test_data),
@@ -89,12 +92,12 @@ def allan_deviation(sig_files, ref_files):
         taus="all",
     )
 
-    # ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
-    ax.plot(t2, ad)
+    ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
+    # ax.plot(t2, ad)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Time Cluster (sec)")
-    ax.set_ylabel("Allan Deviation")
+    ax.set_ylabel(r"$\mathrm{\Delta}\mathit{T}$ (K) Allan Deviation")
 
     fig.tight_layout()
 
@@ -105,6 +108,7 @@ def temp_vs_time(sig_files, ref_files):
 
     sig_vals, sig_errs, times = get_temps_from_files(sig_files)
     ref_vals, ref_errs, times = get_temps_from_files(ref_files)
+    num_exps = len(sig_vals)
 
     # ax.errorbar(x_vals, sig_vals, yerr=sig_errs, label="sig")
     # ax.plot(x_vals, sig_vals, label="sig")
@@ -114,7 +118,7 @@ def temp_vs_time(sig_files, ref_files):
 
     diff_vals = sig_vals - ref_vals
     diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
-    ax.errorbar(times, diff_vals, yerr=diff_errs, label="diff")
+    ax.errorbar(times, diff_vals, yerr=diff_errs, label="diff", fmt="o")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel(r"$\mathrm{\Delta}\mathit{T}$ (K)")
 
@@ -123,8 +127,10 @@ def temp_vs_time(sig_files, ref_files):
     errs = eval(f"{eval_type}_errs")
     val_mean = np.mean(vals)
     err_mean = np.mean(errs)
+    ste = np.sqrt(np.sum(errs ** 2)) / num_exps
     print(val_mean)
     print(np.std((vals - val_mean) / err_mean))
+    print(ste)
 
     ax.legend()
 
@@ -144,8 +150,8 @@ if __name__ == "__main__":
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
 
-    temp_vs_time(sig_files, ref_files)
-    # allan_deviation(sig_files, ref_files)
+    # temp_vs_time(sig_files, ref_files)
+    allan_deviation(sig_files, ref_files)
 
     plt.show(block=True)
 

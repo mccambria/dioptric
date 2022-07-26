@@ -38,6 +38,7 @@ import keyring
 import math
 import utils.common as common
 import utils.search_index as search_index
+import signal
 
 # %% Constants
 
@@ -1931,103 +1932,49 @@ def presentation_round_latex(val, err):
     return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
 
 
-# %% Safe stop (TM mccambria)
+# %% Safe Stop (TM mccambria)
 
 
 """
-Safe stop allows you to listen for a stop command while other things are
-happening. This allows you to, say, stop a loop-based routine halfway
-through. To use safe stop, call init_safe_stop() and then poll for the
-stop command with safe_stop(). It's up to you to actually stop the
-routine once you get the signal. Note that there's no way to programmatically
-halt safe stop once it's running; the user must press enter.
-
-Safe stop works by setting up a second thread alongside the main
-thread. This thread listens for input, and sets a threading event after
-the input. A threading event is just a flag used for communication between
-threads. safe_stop() simply returns whether the flag is set.
+Use this to safely stop experiments without risking data loss or weird state.
+Works by reassigning CTRL + C to set a global variable rather than raise a 
+KeyboardInterrupt exception. That way we can check on the global variable
+whenever we like and stop the experiment appropriately.
 """
-
-
-def safe_stop_input():
-    """
-    This is what the safe stop thread does.
-    """
-
-    global SAFESTOPEVENT
-    input("Press enter to stop...")
-    SAFESTOPEVENT.set()
-
-
-def check_safe_stop_alive():
-    """
-    Checks if the safe stop thread is alive.
-    """
-
-    global SAFESTOPTHREAD
-    try:
-        SAFESTOPTHREAD
-        return SAFESTOPTHREAD.isAlive()
-    except NameError:
-        return False
 
 
 def init_safe_stop():
     """
-    Initialize safe stop. Recycles the current instance of safe stop if
-    there's one already running. If safe_stop has already been initialized
-    and stopped, don't restart
+    Call this at the beginning of a loop or other section which you may
+    want to interrupt
     """
+    
+    print("\nPress CTRL + C to stop...\n")
+    global SAFESTOPFLAG
+    SAFESTOPFLAG = False
+    signal.signal(signal.SIGINT, safe_stop_handler)
+    return
 
-    global SAFESTOPEVENT
-    global SAFESTOPTHREAD
-    needNewSafeStop = False
-
-    # Determine if we need a new instance of safe stop or if there's
-    # already one running
-    try:
-        SAFESTOPEVENT
-        SAFESTOPTHREAD
-        # if not SAFESTOPTHREAD.isAlive():
-        #     # Safe stop has already run to completion so start it back up
-        #     needNewSafeStop = True
-    except NameError:
-        # Safe stop was never initialized so just get a new instance
-        needNewSafeStop = True
-
-    if needNewSafeStop:
-        SAFESTOPEVENT = threading.Event()
-        SAFESTOPTHREAD = threading.Thread(target=safe_stop_input)
-        SAFESTOPTHREAD.start()
-
+def safe_stop_handler(sig, frame):
+    """This should never need to be called directly"""
+    
+    global SAFESTOPFLAG
+    SAFESTOPFLAG = True
 
 def safe_stop():
+    """Call this to check whether the user asked us to stop"""
+        
+    global SAFESTOPFLAG
+    return SAFESTOPFLAG 
+    
+def reset_safe_stop():
     """
-    Check if the user has told us to stop. Call this whenever there's a safe
-    break point after initializing safe stop.
+    Reset the Safe Stop flag, but don't remove the handler in case we want
+    to reuse it.
     """
-
-    global SAFESTOPEVENT
-
-    try:
-        return SAFESTOPEVENT.is_set()
-    except Exception:
-        print("Stopping. You have to intialize safe stop before checking it.")
-        return True
-
-
-def poll_safe_stop():
-    """
-    Polls safe stop continuously until the user says stop. Effectively a
-    regular blocking input. The problem with just sticking input() in the main
-    thread is that you can't have multiple threads looking for input.
-    """
-
-    init_safe_stop()
-    while True:
-        time.sleep(0.1)
-        if safe_stop():
-            break
+    
+    global SAFESTOPFLAG
+    SAFESTOPFLAG = False
 
 
 # %% State/globals
