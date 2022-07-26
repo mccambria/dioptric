@@ -40,8 +40,8 @@ def get_temp_from_file_pair(f_pair):
     zfs_err = np.sqrt(low_error ** 2 + high_error ** 2) / 2
     temp, temp_err = temp_from_resonances.main(zfs, zfs_err, no_print=True)
 
-    return temp, temp_err
-    # return zfs, zfs_err
+    # return temp, temp_err
+    return zfs, zfs_err
     # return low_res, low_error
     # return high_res, high_error
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # f = "2022_07_19-18_14_50-hopper-search-2"
-    f = "2022_07_22-13_36_50-hopper-search"
+    f = "2022_07_22-13_36_50-hopper-search-2"
     data = tool_belt.get_raw_data(f)
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
