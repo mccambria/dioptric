@@ -1965,6 +1965,7 @@ def safe_stop():
     """Call this to check whether the user asked us to stop"""
         
     global SAFESTOPFLAG
+    time.sleep(0.1)  # Pause execution to allow safe_stop_handler to run
     return SAFESTOPFLAG 
     
 def reset_safe_stop():

@@ -838,17 +838,7 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
 #
-        tool_belt.init_safe_stop()
-        tally = 0
-        while not tool_belt.safe_stop():
-            tally +=1
-            print(tally)
-            time.sleep(2)
-        print("done")
-        print(tally)
-            
-
-        # do_optimize(nv_sig,apd_indices)
+        do_optimize(nv_sig,apd_indices)
 
         # do_image_sample(nv_sig, apd_indices)
 

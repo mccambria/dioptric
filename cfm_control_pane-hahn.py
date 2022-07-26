@@ -1091,12 +1091,9 @@ if __name__ == "__main__":
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
         tool_belt.reset_cfm()
+        tool_belt.reset_safe_stop()
 
         # Leave green on
         # with labrad.connect() as cxn:
         #     cxn.pulse_streamer.constant([3], 0.0, 0.0)
 
-        # Kill safe stop
-        if tool_belt.check_safe_stop_alive():
-            print("\n\nRoutine complete. Press enter to exit.")
-            tool_belt.poll_safe_stop()
