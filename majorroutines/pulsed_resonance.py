@@ -829,14 +829,14 @@ if __name__ == "__main__":
     fit_func, popt, pcov = fit_resonance(
         freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
-    # create_fit_figure(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     fit_func,
-    #     popt,
-    # )
+    create_fit_figure(
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        fit_func,
+        popt,
+    )
     print(popt)
     print(pcov)
 

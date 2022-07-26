@@ -777,7 +777,7 @@ def main(
         }
 
         file_name = "{}-analysis".format(folder)
-        file_path = data_dir / path_folder / file_name
+        file_path = str(data_dir / path_folder / file_name)
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
 
@@ -827,8 +827,7 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        path = "pc_rabi/branch_master/t1_dq_main/2022_07/"
-        folder = "2022_07_13"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
 
         main(
             path,
@@ -845,9 +844,9 @@ if __name__ == "__main__":
     elif mode == "batch_analysis":
 
         # file_name = "compiled_data"
-        file_name = "2022_07_12-09_37_10-rubin-nv1"
+        file_name = "compiled_data-single_ref"
         home = common.get_nvdata_dir()
-        path = home / "pc_rabi/branch_master/t1_dq_main/2022_07/incremental"
+        path = home / "paper_materials/relaxation_temp_dependence"
         data_points = get_data_points(path, file_name, override_skips=True)
 
         for point in data_points:
