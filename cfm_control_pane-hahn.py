@@ -846,7 +846,7 @@ def do_nir_temp_differential2(nv_sig, apd_indices):
             power_supply = cxn.power_supply_mp710087
             power_supply.output_on()
             power_supply.set_voltage(1.3)
-        time.sleep(1)
+        time.sleep(10)
         
         _, _, low_file = do_four_point_esr(nv_sig, apd_indices, States.LOW)
         _, _, high_file = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
@@ -855,7 +855,7 @@ def do_nir_temp_differential2(nv_sig, apd_indices):
         with labrad.connect() as cxn:
             power_supply = cxn.power_supply_mp710087
             power_supply.output_off()
-        time.sleep(1)
+        time.sleep(10)
     
         _, _, low_file = do_four_point_esr(nv_sig, apd_indices, States.LOW)
         _, _, high_file = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
@@ -885,7 +885,18 @@ def do_test_major_routines(nv_sig, apd_indices):
     """
 
     test_major_routines.main(nv_sig, apd_indices)
+    
 
+def do_test_four_point_vs_avg(nv_sig, apd_indices):
+    """This is to test how the four point measurement of the ZFS compares to simply taking the average of the resonance frequencies"""
+    
+    resonances_nofp = do_pulsed_resonance(nv_sig, apd_indices)
+    zfs_nofp = (resonances_nofp[0] + resonances_nofp[1])/2
+    low_res_fp, low_res_fp_err = do_four_point_esr(nv_sig, apd_indices, States.LOW)
+    high_res_fp, high_res_fp_err = do_four_point_esr(nv_sig, apd_indices, States.HIGH)
+    zfs_fp = (low_res_fp + high_res_fp) / 2
+    zfs_fp_err = np.sqrt(low_res_fp_err**2 + high_res_fp_err**2) / 2
+    print(zfs_fp/zfs_nofp)
 
 # %% Run the file
 
@@ -1016,7 +1027,8 @@ if __name__ == "__main__":
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
         # do_four_point_esr(nv_sig, apd_indices, States.HIGH)
         # do_nir_temp_differential(nv_sig, apd_indices)
-        do_nir_temp_differential2(nv_sig, apd_indices)
+        # do_nir_temp_differential2(nv_sig, apd_indices)
+        do_test_four_point_vs_avg(nv_sig, apd_indices)
         # do_image_sample_temperature(nv_sig, apd_indices)
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
