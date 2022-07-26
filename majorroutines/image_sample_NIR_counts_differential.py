@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Scan the galvos over the designated area, collecting counts at each point.
-Generate an image of the sample.
+Image the count differential of a sample when under NIR light in a raster scan.
+Only designed for ensemble.
 
-Created on Tue Apr  9 15:18:53 2019
+Created on July 25th, 2022
 
-@author: mccambria
+@author: cdfox
 """
 
 
@@ -229,19 +229,19 @@ def replot_for_analysis(file_name):
 # %% Main
 
 
-def main(nv_sig, x_range, y_range, num_steps, apd_indices,
+def main(nv_sig, x_range, y_range, num_steps, apd_indices, nir_laser_voltage, 
          save_data=True, plot_data=True,
          um_scaled=False, nv_minus_initialization=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
-                      y_range, num_steps, apd_indices, save_data, plot_data,
+                      y_range, num_steps, apd_indices, nir_laser_voltage, save_data, plot_data,
                       um_scaled, nv_minus_initialization)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
-                  apd_indices, save_data=True, plot_data=True,
+                  apd_indices, nir_laser_voltage, save_data=True, plot_data=True,
                   um_scaled=False, nv_minus_initialization=False):
 
     # %% Some initial setup
@@ -331,6 +331,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
+    
+    cxn_power_supply = cxn.power_supply_mp710087 # CF: setup NIR laser
 
     # %% Set up the APD
 
@@ -361,14 +363,17 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
         title = r'Confocal scan, {}, {} us readout'.format(readout_laser, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
-                        clickHandler=on_click_image, color_bar_label='kcps',
+                        clickHandler=on_click_image, color_bar_label='Change in Counts (kcps)',
                         title=title, um_scaled=um_scaled)
 
     # %% Collect the data
     cxn.apd_tagger.clear_buffer()
-    cxn.pulse_streamer.stream_start(total_num_samples)
+    # cxn.pulse_streamer.stream_start(total_num_samples) # CF: removed
+    cxn.pulse_streamer.stream_start(total_num_samples*2) # CF: now we do two readouts at each pixel
 
-    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+
+    # timeout_duration = ((period*(10**-9)) * total_num_samples) + 10 # CF: removed
+    timeout_duration = ((period*(10**-9)) * total_num_samples*2) + 10 # CF: now we do two readouts at each pixel
     timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
@@ -387,19 +392,32 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
         # Read the samples and update the image
         if charge_initialization:
-            new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
+            cxn_power_supply.output_off() # CF: added for NIR
+            new_samples_noNIR = cxn.apd_tagger.read_counter_modulo_gates(2)
+            
+            cxn_power_supply.output_on() # CF: added for NIR
+            cxn_power_supply.set_voltage(nir_laser_voltage) # CF: added for NIR
+            new_samples_NIR = cxn.apd_tagger.read_counter_modulo_gates(2) # CF: added for NIR
+            
+            new_samples = new_samples_NIR - new_samples_noNIR # CF: added for NIR
         else:
-            new_samples = cxn.apd_tagger.read_counter_simple()
+            cxn_power_supply.output_off() # CF: added for NIR
+            new_samples_noNIR = cxn.apd_tagger.read_counter_simple()
+            
+            cxn_power_supply.output_on() # CF: added for NIR
+            cxn_power_supply.set_voltage(nir_laser_voltage) # CF: added for NIR
+            new_samples_NIR = cxn.apd_tagger.read_counter_simple() # CF: added for NIR
+            
+            new_samples = new_samples_NIR - new_samples_noNIR # CF: added for NIR
 
 #        print(new_samples)
         num_new_samples = len(new_samples)
-
-        if num_new_samples > 0:
+        if num_new_samples > 0: 
 
             # If we did charge initialization, subtract out the background
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-            print(img_write_pos)
+
             populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
