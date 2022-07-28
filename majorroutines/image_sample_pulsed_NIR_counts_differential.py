@@ -43,6 +43,7 @@ def main(
     num_steps,
     apd_indices,
     nir_laser_voltage,
+    nv_minus_initialization=False
 ):
 
     with labrad.connect() as cxn:
@@ -53,6 +54,7 @@ def main(
             num_steps,
             apd_indices,
             nir_laser_voltage,
+            nv_minus_initialization
         )
 
     return img_array, x_voltages, y_voltages
@@ -65,6 +67,7 @@ def main_with_cxn(
     num_steps,
     apd_indices,
     nir_laser_voltage,
+    nv_minus_initialization
 ):
     
     # Some initial setup
@@ -91,9 +94,17 @@ def main_with_cxn(
     counts_NIR_img = gen_blank_square_list(num_steps)
     percent_diff_counts_img = gen_blank_square_list(num_steps)
     
-    laser_key = 'imaging_laser'
-    readout_laser = nv_sig[laser_key]
-    readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    if nv_minus_initialization:
+        readout_laser_key = 'charge_readout_laser' ## CF: correct one?
+        readout_laser = nv_sig[readout_laser_key]
+        readout = nv_sig['charge_readout_dur']
+        readout_power = tool_belt.set_laser_power(cxn, nv_sig, readout_laser_key)
+    else:
+        readout_laser_key = 'imaging_laser'
+        readout_laser = nv_sig[readout_laser_key]
+        readout = nv_sig['imaging_readout_dur']
+        readout_power = tool_belt.set_laser_power(cxn, nv_sig, readout_laser_key)
+    
     
     dir_path = ['', 'Config', 'Positioning']
     cxn.registry.cd(*dir_path)
@@ -115,17 +126,15 @@ def main_with_cxn(
         x_center, y_center, image_range, num_steps
     )
     
-    readout = nv_sig['imaging_readout_dur']
     readout_sec = readout / 10**9
-    readout_us = readout / 10**3
 
     # Start rasterin'
 
     parity = +1  # Determines x scan direction
     adjusted_nv_sig = copy.deepcopy(nv_sig)
-    # i=0
+    i=0
     sleep_time = 2
-    print("expected run time: ", ((sleep_time*2+.7)*num_steps**2)/3600,'hours')
+    # print("expected run time: ", ((sleep_time*2+.7)*num_steps**2)/3600,'hours')
     for y_ind in range(num_steps):
 
         y_voltage = y_voltages_1d[y_ind]
@@ -135,9 +144,10 @@ def main_with_cxn(
         image_y_ind = -1 - y_ind
         
         for x_ind in range(num_steps):
-            # a = time.time()
-            # i=i+1
+            a = time.time()
+            i=i+1
             if tool_belt.safe_stop():
+                cxn_power_supply.output_off()
                 break
 
             adj_x_ind = x_ind if parity == +1 else -1 - x_ind
@@ -151,18 +161,34 @@ def main_with_cxn(
             cxn_power_supply.set_voltage(nir_laser_voltage)
             time.sleep(sleep_time)
 
-            seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]
-            seq_args_string = tool_belt.encode_seq_args(seq_args)
-            ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',seq_args_string)
+            if nv_minus_initialization:
+                laser_key = "nv-_prep_laser"
+                tool_belt.set_filter(cxn, nv_sig, laser_key)
+                init = nv_sig['{}_dur'.format(laser_key)]
+                init_laser = nv_sig[laser_key]
+                init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+                seq_args = [init, readout, apd_indices[0], init_laser, init_power, readout_laser, readout_power]
+                seq_args_string = tool_belt.encode_seq_args(seq_args)
+                ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',seq_args_string)
+                
+            else:
+                seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]
+                seq_args_string = tool_belt.encode_seq_args(seq_args)
+                ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',seq_args_string)
+
             period = ret_vals[0]
+            if i == 1:
+                print("expected run time: ", (period*10**(-9))/60, 'minutes')
             total_num_samples = 1
-            timeout_duration = ((period*(10**-9)) * total_num_samples) + 10 
+            timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
             timeout_inst = time.time() + timeout_duration
             cxn.apd_tagger.start_tag_stream(apd_indices)
             
+            ### Collect then read the data
             cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_start(total_num_samples)
             new_samples_NIR = cxn.apd_tagger.read_counter_simple(total_num_samples)
+            
 
             
             ### First turn off the NIR laser and readout at this location
@@ -170,35 +196,46 @@ def main_with_cxn(
             time.sleep(sleep_time)
              
             ### Set up pulse streamer and apd
-            seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]
-            seq_args_string = tool_belt.encode_seq_args(seq_args)
-            ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',seq_args_string)
+            if nv_minus_initialization:
+                laser_key = "nv-_prep_laser"
+                tool_belt.set_filter(cxn, nv_sig, laser_key)
+                init = nv_sig['{}_dur'.format(laser_key)]
+                init_laser = nv_sig[laser_key]
+                init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+                seq_args = [init, readout, apd_indices[0], init_laser, init_power, readout_laser, readout_power]
+                seq_args_string = tool_belt.encode_seq_args(seq_args)
+                ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',seq_args_string)
+            else:
+                seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]
+                seq_args_string = tool_belt.encode_seq_args(seq_args)
+                ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',seq_args_string)
+                
             period = ret_vals[0]
             total_num_samples = 1
-            timeout_duration = ((period*(10**-9)) * total_num_samples) + 10 
+            timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
             timeout_inst = time.time() + timeout_duration
             cxn.apd_tagger.start_tag_stream(apd_indices)
             
             ### Collect then read the data
             cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_start(total_num_samples)
-            new_samples_noNIR = cxn.apd_tagger.read_counter_simple(total_num_samples) 
-            
+            cxn.pulse_streamer.stream_start(total_num_samples)            
+            new_samples_noNIR = cxn.apd_tagger.read_counter_simple(total_num_samples)
+
             
             ### Now populate the image with the subtracted value
             counts_NIR_img[image_y_ind][adj_x_ind] = new_samples_NIR[0]/(readout_sec)/1000
             counts_noNIR_img[image_y_ind][adj_x_ind] = new_samples_noNIR[0]/(readout_sec)/1000
             diff_counts_img[image_y_ind][adj_x_ind] = (new_samples_NIR[0] - new_samples_noNIR[0])/(readout_sec)/1000
             percent_diff_counts_img[image_y_ind][adj_x_ind] = (new_samples_NIR[0] - new_samples_noNIR[0])/new_samples_noNIR[0]
-            # print(i,new_samples_NIR,'',new_samples_noNIR)
-            # print(time.time()-a)
+            print(i,new_samples_NIR,'',new_samples_noNIR)
+            print(time.time()-a)
 
         parity *= -1
 
     cxn_power_supply.output_off()
 
     # Plot
-    fig1 = plot_diff_counts(percent_diff_counts_img, image_extent,'(NIR-noNIR)/noNIR Counts (kcps)')
+    fig1 = plot_diff_counts(percent_diff_counts_img, image_extent,'(NIR-noNIR)/noNIR Counts')
     fig2 = plot_diff_counts(diff_counts_img, image_extent,'NIR-noNIR Counts (kcps)')
     fig3 = plot_diff_counts(counts_noNIR_img, image_extent,'noNIR Counts (kcps)')
     fig4 = plot_diff_counts(counts_NIR_img, image_extent,'NIR Counts (kcps)')
@@ -219,6 +256,10 @@ def main_with_cxn(
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         "drift": drift,
+        "charge_initialization": str(nv_minus_initialization),
+        "readout_laser": readout_laser,
+        "readout_time": readout,
+        "readout_laser_power": readout_power,
         "image_range": image_range,
         "image_center_coords": image_center_coords,
         "image_extent": image_extent,
@@ -233,11 +274,16 @@ def main_with_cxn(
         "percentdiff_counts_img": percent_diff_counts_img,
         "diff_counts-units": "kcps",
     }
-
-    filePath1 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_percentdiff")
-    filePath2 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_diff")
-    filePath3 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_noNIR")
-    filePath4 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_NIR")
+    if nv_minus_initialization:
+        filePath1 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_pulsed_percentdiff")
+        filePath2 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_pulsed_diff")
+        filePath3 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_pulsed_noNIR")
+        filePath4 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_pulsed_NIR")
+    else:
+        filePath1 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_percentdiff")
+        filePath2 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_diff")
+        filePath3 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_noNIR")
+        filePath4 = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"]+"_NIR")
     tool_belt.save_raw_data(rawData, filePath1)
     tool_belt.save_figure(fig1, filePath1)
     tool_belt.save_figure(fig2, filePath2)

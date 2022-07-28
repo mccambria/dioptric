@@ -259,6 +259,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         # Digital, feedthrough
         if feedthrough:
             laser_cxn = eval("cxn.{}".format(laser_name))
+            print(laser_cxn)
             if turn_on:
                 laser_cxn.laser_on()
             else:
@@ -1949,8 +1950,13 @@ def init_safe_stop():
     want to interrupt
     """
     
-    print("\nPress CTRL + C to stop...\n")
     global SAFESTOPFLAG
+    # Tell the user safe stop has started if it was stopped or just not started
+    try:
+        if not SAFESTOPFLAG:
+            print("\nPress CTRL + C to stop...\n")
+    except Exception as exc:
+        print("\nPress CTRL + C to stop...\n")
     SAFESTOPFLAG = False
     signal.signal(signal.SIGINT, safe_stop_handler)
     return

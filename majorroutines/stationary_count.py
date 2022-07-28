@@ -107,7 +107,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         seq_args = [init, readout, apd_indices[0], init_laser, init_power,
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
+        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout_background_subtraction.py',
                                                   seq_args_string)
     elif nv_zero_initialization:
         laser_key = 'nv0_prep_laser'
@@ -120,7 +120,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         # print(seq_args)
         # return
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
+        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout_background_subtraction.py',
                                                   seq_args_string)
     else:
         seq_args = [0, readout, apd_indices[0], readout_laser, readout_power]
@@ -174,6 +174,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     tool_belt.init_safe_stop()
 
     charge_initialization = (nv_minus_initialization or nv_zero_initialization)
+    charge_initialization = False
     # print(charge_initialization)
 
     while True:
@@ -187,6 +188,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         # Read the samples and update the image
         if charge_initialization:
             new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
+            # print(new_samples)
         else:
             new_samples = cxn.apd_tagger.read_counter_simple()
 
