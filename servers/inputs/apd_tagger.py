@@ -33,6 +33,7 @@ import logging
 import re
 import time
 import socket
+from pathos.multiprocessing import ProcessingPool as Pool
 
 
 class ApdTagger(LabradServer):
@@ -170,10 +171,14 @@ class ApdTagger(LabradServer):
         # memory reasons.
         gate_zip = zip(gate_inds[0], gate_inds[1])
         apd_channel = self.tagger_di_apd[apd_index]
-        channel_counts = [
-            count_nonzero(sample_channels[open_ind:close_ind] == apd_channel)
-            for open_ind, close_ind in gate_zip
-        ]
+        count_lambda = lambda gate: count_nonzero(sample_channels[gate[0]: gate[1]] == apd_channel)
+        # with Pool() as p:
+        #     channel_counts = p.map(count_lambda, gate_zip)
+        # channel_counts = [
+        #     count_nonzero(sample_channels[open_ind:close_ind] == apd_channel)
+        #     for open_ind, close_ind in gate_zip
+        # ]
+        channel_counts = [count_lambda(gate) for gate in gate_zip]
         sample_counts_append(channel_counts)
 
     def read_counter_internal(self):
@@ -183,11 +188,9 @@ class ApdTagger(LabradServer):
         second). If it's not fast enough, we may encounter unexpected behavior,
         like certain samples returning 0 counts when clearly they should return
         something > 0. As such, this function is already highly optimized. The
-        main approach is to use functions that map from Python to some
-        other language (like how list comprehension runs in C) since Python
-        is so slow. So unless you're prepared to run some performance tests
-        (apd_tagger_speed_tests makes this pretty easy), don't even make minor
-        changes to this function.
+        main approach is to use lambda functions and built-ins that map from 
+        Python to some other language (like how list comprehension runs in C) 
+        since Python is so slow. So beware of messing around here. 
         """
 
         if self.stream is None:
@@ -471,17 +474,17 @@ class ApdTagger(LabradServer):
             logging.critical("Combined counts from APDs with different gates.")
 
         # Add the APD counts as vectors for each sample in complete_counts
-        separate_gate_counts = [
-            np.sum(sample, 0, dtype=int).tolist()
-            for sample in complete_counts
-        ]
+        # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
+        # with Pool() as p:
+        #     separate_gate_counts = p.map(sum_lambda, complete_counts)
+        separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
         
         # Run the modulus
         return_counts = []
         for sample in separate_gate_counts:
             sample_list = []
             for ind in range(modulus):
-                sample_list.append(sum(sample[ind::modulus]))
+                sample_list.append(np.sum(sample[ind::modulus]))
             return_counts.append(sample_list)
 
         return return_counts

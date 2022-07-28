@@ -393,6 +393,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 #        print(new_samples)
         num_new_samples = len(new_samples)
+
         if num_new_samples > 0:
 
             # If we did charge initialization, subtract out the background
