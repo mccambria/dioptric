@@ -22,7 +22,8 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_temperature as image_sample_temperature
-import majorroutines.image_sample_NIR_counts_differential as image_sample_NIR_counts_differential_2
+import majorroutines.image_sample_NIR_counts_differential_2 as image_sample_NIR_counts_differential_2
+import majorroutines.image_sample_pulsed_NIR_counts_differential as image_sample_pulsed_NIR_counts_differential
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -131,7 +132,7 @@ def do_image_sample_temperature(nv_sig, apd_indices):
     )
     
 
-def do_ensemble_image_sample(nv_sig, apd_indices, technique): # CF: added to include NIR counts differential map option
+def do_ensemble_image_sample(nv_sig, apd_indices, technique, nv_minus_initialization=False): # CF: added to include NIR counts differential map option
     
     list_of_techniquies = ['NIR_temperature_differential','NIR_counts_differential'] 
     if technique not in list_of_techniquies:
@@ -155,15 +156,17 @@ def do_ensemble_image_sample(nv_sig, apd_indices, technique): # CF: added to inc
     
     if technique=='NIR_counts_differential':
         scan_range = 0.2
-        num_steps = 60
+        num_steps = 2
         nir_laser_voltage = 1.3
-        image_sample_NIR_counts_differential_2.main(
+        image_sample_pulsed_NIR_counts_differential.main(
             nv_sig,
             scan_range,
             num_steps,
             apd_indices,
             nir_laser_voltage,
+            nv_minus_initialization
             )
+        
 
 
 def do_optimize(nv_sig, apd_indices):
@@ -385,7 +388,8 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [5e6, 10e6, 20e6, 40e6, 100e6]
+    readout_durs = [100e6]
+    # readout_durs = [5e6, 10e6, 20e6, 40e6, 100e6, 500e6, 1e9]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
     # readout_durs = [2e9]
@@ -396,8 +400,8 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     # readout_powers = np.arange(0.6, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    # readout_powers = [0.75, 1.0]
-    readout_powers = [1.0]
+    readout_powers = [0.25,0.5,0.75,1.0]
+    # readout_powers = [1.0]
     # readout_powers = [0.75]
     readout_powers = [round(val, 3) for val in readout_powers]
 
@@ -947,9 +951,7 @@ if __name__ == "__main__":
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": "nd_0",
-        "imaging_readout_dur": 1e7,
+        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
@@ -957,7 +959,7 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 2e3, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 50e3,
+        "spin_pol_dur": 100e3,
         "spin_readout_dur": 6e3,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
@@ -966,7 +968,7 @@ if __name__ == "__main__":
         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
         "nv-_prep_laser": green_laser,
         "nv-_prep_laser_dur": 1e6,
-        "nv-_prep_laser_filter": "nd_1.0",
+        "nv-_prep_laser_filter": "nd_0",
         # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_dur": 75,
@@ -1018,7 +1020,7 @@ if __name__ == "__main__":
         #     # do_image_sample_zoom(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
 
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1056,7 +1058,7 @@ if __name__ == "__main__":
         # do_nir_temp_differential2(nv_sig, apd_indices)
         # do_test_four_point_vs_avg(nv_sig, apd_indices)
         # do_image_sample_temperature(nv_sig, apd_indices)
-        do_ensemble_image_sample(nv_sig, apd_indices, technique='NIR_counts_differential')
+        do_ensemble_image_sample(nv_sig, apd_indices, technique='NIR_counts_differential',nv_minus_initialization=True)
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)

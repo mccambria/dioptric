@@ -132,16 +132,16 @@ if __name__ == '__main__':
     # Hahn
     # laser_names = ['cobolt_638']
     # laser_names = ['integrated_520']
-    # laser_names = ['laserglow_589']
-    laser_names = ['laserglow_532']
+    laser_names = ['laserglow_589']
+    # laser_names = ['laserglow_532']
     # laser_names = ['cobolt_638', 'laserglow_532']
     # laser_names = ['laserglow_532', 'laserglow_589']
     # laser_powers = [None, 1.0]
-    laser_powers = [2.0]
+    laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
     filter_name = 'nd_1.0'
     pos = [0.0, 0.0, 5.0]
-    laser_powers = None
+    # laser_powers = None
 
     with labrad.connect() as cxn:
         # start = time.time()
@@ -161,7 +161,8 @@ if __name__ == '__main__':
 
         # cxn.pulse_streamer.constant([])
         # cxn.pulse_streamer.constant([], 1.0)
-        cxn.pulse_streamer.constant([3])
+        cxn.pulse_streamer.constant([3,5])
+        # cxn.pulse_streamer.constant([5], 1.0)
 
         input('Press enter to stop...')
 

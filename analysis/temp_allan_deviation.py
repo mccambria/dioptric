@@ -150,8 +150,8 @@ if __name__ == "__main__":
     sig_files = data["sig_files"]
     ref_files = data["ref_files"]
 
-    # temp_vs_time(sig_files, ref_files)
-    allan_deviation(sig_files, ref_files)
+    temp_vs_time(sig_files, ref_files)
+    # allan_deviation(sig_files, ref_files)
 
     plt.show(block=True)
 
