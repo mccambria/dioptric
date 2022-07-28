@@ -69,7 +69,7 @@ def calc_separation(
     mean_m = sum(occur_m * x_vals_m) / num_reps
     std_m = np.sqrt(sum(occur_m * (x_vals_m - mean_m) ** 2) / (num_reps - 1))
     avg_std = (std_0 + std_m) / 2
-    norm_sep = (std_m - std_0) / avg_std
+    norm_sep = (mean_m - mean_0) / avg_std
     if report_averages:
         print(mean_0)
         print(mean_m)
@@ -88,7 +88,7 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
         int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
     ]
 
-    separations = []
+    sensitivities = []
     num_reps = len(nv0)
 
     for dur in readout_dur_linspace:
@@ -96,10 +96,10 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
         separation = calc_separation(
             occur_0, x_vals_0, occur_m, x_vals_m, num_reps
         )
-        separations.append(separation)
+        sensitivities.append(separation * np.sqrt(dur*10**9))
 
-    max_separation = max(separations)
-    opti_readout_dur_ind = separations.index(max_separation)
+    max_sensitivity = max(sensitivities)
+    opti_readout_dur_ind = sensitivities.index(max_sensitivity)
     opti_readout_dur = readout_dur_linspace[opti_readout_dur_ind]
 
     return opti_readout_dur
@@ -116,7 +116,8 @@ def plot_histogram(
     separation = calc_separation(
         occur_0, x_vals_0, occur_m, x_vals_m, num_reps, report_averages
     )
-    print("Normalized separation: {}".format(separation))
+    sensitivity = separation * np.sqrt(dur*10**9)
+    print(f"Normalized separation / sqrt(Hz): {sensitivity}")
 
     fig_hist, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0, occur_0, "r-o", label="Initial red pulse")
@@ -370,11 +371,11 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    if False:
-    # if True:
+    # if False:
+    if True:
         tool_belt.init_matplotlib()
         # file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
-        file_name = "2022_04_14-16_31_30-wu-nv3_2022_04_14"
+        file_name = "2022_07_27-19_28_04-hopper-search"
         data = tool_belt.get_raw_data(file_name)
         nv_sig = data["nv_sig"]
         nv0 = data["nv0"]
@@ -385,7 +386,7 @@ if __name__ == "__main__":
         opti_readout_dur = determine_opti_readout_dur(
             nv0, nvm, max_readout_dur
         )
-        opti_readout_dur = 80e6
+        # opti_readout_dur = 80e6
         # do_save = True
         do_save = False
         plot_histogram(
@@ -404,7 +405,7 @@ if __name__ == "__main__":
         # for dur in readout_durs:
         #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-        # plt.show(block=True)
+        plt.show(block=True)
         sys.exit()
 
     ########################
@@ -443,12 +444,12 @@ if __name__ == "__main__":
         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
         "nv-_prep_laser": green_laser,
         "nv-_prep_laser_dur": 1e6,
-        "nv-_prep_laser_filter": None,# "nd_1.0",
+        "nv-_prep_laser_filter": None,  # "nd_1.0",
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_dur": 100,
         "nv0_prep_laser": red_laser,
         "nv0_prep_laser-power": 0.69,
-        "nv0_prep_laser_dur": 1E6,
+        "nv0_prep_laser_dur": 1e6,
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_dur": 0,
         "spin_shelf_laser_power": 1.0,
