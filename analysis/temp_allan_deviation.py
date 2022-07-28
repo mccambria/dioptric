@@ -83,14 +83,17 @@ def allan_deviation(sig_files, ref_files):
     diff_vals = sig_vals - ref_vals
     diff_errs = np.sqrt(sig_errs ** 2 + ref_errs ** 2)
 
-    test_data = diff_vals
+    test_data = sig_vals
+    fractional_data = test_data / np.mean(test_data)
     period = (times[-1] - times[0]) / (len(times) - 1)
-    (t2, ad, ade, adn) = allantools.oadev(
-        test_data / np.mean(test_data),
-        rate=1 / period,
+    rate = 1 / period
+    ret_vals = allantools.oadev(
+        fractional_data,
+        rate=rate,
         data_type="freq",
-        taus="all",
+        taus="octaves",
     )
+    t2, ad, ade, adn = ret_vals
 
     ax.errorbar(t2, ad, yerr=ade, ls="None", fmt="o")
     # ax.plot(t2, ad)

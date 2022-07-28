@@ -1275,7 +1275,7 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     ]
     markers = ["^", "D", "p", "H", "X", "d"]
     colors = ["red", "pink", "brown", "yellow", "purple", "orange"]
-    colors = [kpl.kpl_colors[el] for el in colors]
+    colors = [kpl.KplColors[el.upper()].value for el in colors]
     for res, marker, color in zip(past_results, markers, colors):
 
         (
@@ -1417,7 +1417,10 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
         markers_list = []
 
     markers = {"hopper": "o", "wu": "v"}
-    colors = {"hopper": kpl.kpl_colors["green"], "wu": kpl.kpl_colors["blue"]}
+    colors = {
+        "hopper": kpl.KplColors.GREEN.value,
+        "wu": kpl.KplColors.BLUE.value,
+    }
 
     for point in data_points:
 
