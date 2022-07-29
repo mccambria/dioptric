@@ -982,7 +982,7 @@ if __name__ == "__main__":
         "initialize_dur": 1e4,
         "charge_readout_laser": yellow_laser,
         "charge_readout_dur": 100e6,
-        "charge_readout_laser_power": 0.75,
+        "charge_readout_laser_power": 1.0,
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
@@ -1058,7 +1058,7 @@ if __name__ == "__main__":
         # do_nir_temp_differential2(nv_sig, apd_indices)
         # do_test_four_point_vs_avg(nv_sig, apd_indices)
         # do_image_sample_temperature(nv_sig, apd_indices)
-        do_ensemble_image_sample(nv_sig, apd_indices, technique='NIR_counts_differential',nv_minus_initialization=True)
+        # do_ensemble_image_sample(nv_sig, apd_indices, technique='NIR_counts_differential',nv_minus_initialization=True)
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
@@ -1068,7 +1068,7 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
 
         # SCC characterization
-        # do_determine_charge_readout_params(nv_sig,apd_indices)
+        do_determine_charge_readout_params(nv_sig,apd_indices)
         # do_scc_pulsed_resonance(nv_sig, apd_indices)
 
         # Automatic T1 setup

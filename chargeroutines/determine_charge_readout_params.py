@@ -69,7 +69,7 @@ def calc_separation(
     mean_m = sum(occur_m * x_vals_m) / num_reps
     std_m = np.sqrt(sum(occur_m * (x_vals_m - mean_m) ** 2) / (num_reps - 1))
     avg_std = (std_0 + std_m) / 2
-    norm_sep = (std_m - std_0) / avg_std
+    norm_sep = (mean_m - mean_0) / avg_std
     if report_averages:
         print(mean_0)
         print(mean_m)
@@ -126,7 +126,7 @@ def plot_histogram(
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
     # ax.set_title("{} ms readout, {} V".format(int(dur / 1e6), power))
-    ax.set_title("{} ms readout, {} V, {} sep/time".format(int(dur / 1e6), power,round(fig_of_merit,2)))
+    ax.set_title("{} ms readout, {} V, {} sep/sqrt(time)".format(int(dur / 1e6), power,round(fig_of_merit,2)))
     ax.legend()
 
     if do_save:

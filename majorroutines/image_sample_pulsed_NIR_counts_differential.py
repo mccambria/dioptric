@@ -147,7 +147,6 @@ def main_with_cxn(
             a = time.time()
             i=i+1
             if tool_belt.safe_stop():
-                cxn_power_supply.output_off()
                 break
 
             adj_x_ind = x_ind if parity == +1 else -1 - x_ind
@@ -225,9 +224,11 @@ def main_with_cxn(
             ### Now populate the image with the subtracted value
             counts_NIR_img[image_y_ind][adj_x_ind] = new_samples_NIR[0]/(readout_sec)/1000
             counts_noNIR_img[image_y_ind][adj_x_ind] = new_samples_noNIR[0]/(readout_sec)/1000
-            diff_counts_img[image_y_ind][adj_x_ind] = (new_samples_NIR[0] - new_samples_noNIR[0])/(readout_sec)/1000
-            percent_diff_counts_img[image_y_ind][adj_x_ind] = (new_samples_NIR[0] - new_samples_noNIR[0])/new_samples_noNIR[0]
+            diff_counts_img[image_y_ind][adj_x_ind] = (np.int32(new_samples_NIR[0]) - np.int32(new_samples_noNIR[0]))/(readout_sec)/1000
+            percent_diff_counts_img[image_y_ind][adj_x_ind] = (np.int32(new_samples_NIR[0]) - np.int32(new_samples_noNIR[0]))/np.int32(new_samples_noNIR[0])
             print(i,new_samples_NIR,'',new_samples_noNIR)
+            # print(type(new_samples_noNIR[0]))
+            print(diff_counts_img)
             print(time.time()-a)
 
         parity *= -1
