@@ -55,12 +55,6 @@ double_figsize = [figsize[0] * 2, figsize[1]]
 # region Colors
 # The default color specification is hex, eg "#bcbd22"
 
-
-kpl_colors = {
-    # The following are taken from matplotlib's excellent default palette
-}
-
-
 class KplColors(Enum):
     BLUE = "#1f77b4"
     ORANGE = "#ff7f0e"

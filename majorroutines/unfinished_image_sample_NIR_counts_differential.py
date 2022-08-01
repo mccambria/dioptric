@@ -369,7 +369,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Collect the data
     cxn.apd_tagger.clear_buffer()
     # cxn.pulse_streamer.stream_start(total_num_samples) # CF: removed
-    cxn.pulse_streamer.stream_start(total_num_samples*2) # CF: now we do two readouts at each pixel
+    cxn.pulse_streamer.stream_start(total_num_samples*2) # CF: now we do two readouts at each pixel. need to alter how I am doing this.
 
 
     # timeout_duration = ((period*(10**-9)) * total_num_samples) + 10 # CF: removed
@@ -393,22 +393,26 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         # Read the samples and update the image
         if charge_initialization:
             cxn_power_supply.output_off() # CF: added for NIR
+            time.sleep(1) # CF: added for NIR
             new_samples_noNIR = cxn.apd_tagger.read_counter_modulo_gates(2)
             
-            cxn_power_supply.output_on() # CF: added for NIR
+            cxn_power_supply.output_on()# CF: added for NIR
             cxn_power_supply.set_voltage(nir_laser_voltage) # CF: added for NIR
+            time.sleep(1) # CF: added for NIR
             new_samples_NIR = cxn.apd_tagger.read_counter_modulo_gates(2) # CF: added for NIR
             
-            new_samples = new_samples_NIR - new_samples_noNIR # CF: added for NIR
+            # new_samples = new_samples_NIR - new_samples_noNIR # CF: added for NIR
         else:
             cxn_power_supply.output_off() # CF: added for NIR
+            time.sleep(1) # CF: added for NIR
             new_samples_noNIR = cxn.apd_tagger.read_counter_simple()
             
             cxn_power_supply.output_on() # CF: added for NIR
             cxn_power_supply.set_voltage(nir_laser_voltage) # CF: added for NIR
+            time.sleep(1) # CF: added for NIR
             new_samples_NIR = cxn.apd_tagger.read_counter_simple() # CF: added for NIR
             
-            new_samples = new_samples_NIR - new_samples_noNIR # CF: added for NIR
+            # new_samples = new_samples_NIR - new_samples_noNIR # CF: added for NIR. this is the issue. how to interpret samples???
 
 #        print(new_samples)
         num_new_samples = len(new_samples)
@@ -418,13 +422,17 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
 
-            populate_img_array(new_samples, img_array, img_write_pos)
+            populate_img_array(new_samples_noNIR, img_array, img_write_pos) # CF: for noNIR
+            populate_img_array(new_samples_NIR, img_array, img_write_pos) # CF: for NIR
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
             if plot_data:
                 img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
                 tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
+            
+    img_array_difference = ...
+    cxn_power_supply.output_off()
 
     # %% Clean up
 
