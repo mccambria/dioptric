@@ -22,11 +22,14 @@ scale = 0.99e3
 
 
 def bessel_scnd_der(x):
-    term_1 = 24*j1(x)**2
-    term_2 = 16*j1(x)*(jv(0,x) - jv(2,x))
-    term_3 = 4* (0.5* (jv(0,x) - jv(2,x))**2 + j1(x)* (0.5*(jv(3,x) - j1(x)) - j1(x)))
-    
-    return term_1/x**4 - term_2/x**3 + term_3/x**2
+    term_1 = 24/2 * j1(x) ** 2
+    term_2 = 16/2 * j1(x) * (jv(2, x) - jv(0, x))
+    term_3 = 4/2 * (
+        0.5 * (jv(0, x) - jv(2, x)) ** 2
+        + j1(x) * (0.5 * (jv(3, x) - j1(x)) - j1(x))
+    )
+
+    return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
 # %% Data from fitting
 y = numpy.array([0.21638739, 0.23514312, 0.270726 ,  0.27750125, 0.39541004, 0.59534277,
  0.58171584, 0.69582389, 0.86908403, 1.11268992, 1.22341671, 1.36458656,
@@ -50,8 +53,8 @@ def width_scaling_w_mods(t, e, alpha, R):
 
 
 fit_func = width_scaling_w_mods
-e =  0.000877509029905619
-alpha = 0.00000309948343
+e =  0.0004388
+alpha = 0.00000077491976
 R_nm = 6.2
 params = [e, alpha, R_nm*(2*numpy.pi*NA)/wavelength]
 

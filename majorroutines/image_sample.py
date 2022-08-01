@@ -399,7 +399,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             # If we did charge initialization, subtract out the background
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-            print(img_write_pos)
+            # print(img_write_pos)
             populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution

@@ -764,7 +764,7 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.858, -0.600,  6.3],
+            "coords":[-0.858, -0.600,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -835,12 +835,12 @@ if __name__ == "__main__":
          #
         #
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0, 0.0, 0.0])
+        tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
 #
-        do_optimize(nv_sig,apd_indices)
+        # do_optimize(nv_sig,apd_indices)
 
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
 
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -895,9 +895,8 @@ if __name__ == "__main__":
 #ML -0.216, -0.115,5.417
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it
-        # if not debug_mode:
-        #     tool_belt.send_exception_email()
-        tool_belt.send_exception_email(to="cambria@wisc.edu")
+        if not debug_mode:
+            tool_belt.send_exception_email()
         raise exc
 
     finally:
