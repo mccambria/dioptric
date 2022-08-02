@@ -104,7 +104,7 @@ if __name__ == '__main__':
     # print(pulser_wiring)
 
     # Set up a dummy args list
-    args = [50000, 50000, 100000.0, 1, 'cobolt_638', 0.5]
+    args = [5000, 5000.0, 5000.0, 1, 'integrated_520', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

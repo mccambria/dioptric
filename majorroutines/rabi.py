@@ -272,14 +272,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #        sig_gen_cxn.set_amp(uwave_power)
 #        sig_gen_cxn.uwave_on()
 
+        # Load the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
 
 #        start_time = time.time()
         for tau_ind in tau_ind_list:
-            # Load the APD
-            cxn.apd_tagger.start_tag_stream(apd_indices)
 #        for tau_ind in range(len(taus)):
             # print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
@@ -307,12 +307,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-            print('Sig counts: {}'.format(sum(sig_gate_counts)))
+            # print('Sig counts: {}'.format(sum(sig_gate_counts)))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            print('Ref counts: {}'.format(sum(ref_gate_counts)))
+            # print('Ref counts: {}'.format(sum(ref_gate_counts)))
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
