@@ -373,9 +373,9 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 
 def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
-    num_steps = 5
-    num_reps = int(1e4)
-    num_runs = 1
+    num_steps = 21
+    num_reps = int(1e5)
+    num_runs = 3
 
     period = rabi.main(
         nv_sig,
