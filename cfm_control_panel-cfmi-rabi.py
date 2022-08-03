@@ -286,7 +286,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
     num_reps = 1e4
     num_runs = 10
     uwave_power = 10
-    uwave_pulse_dur = int(40)
+    uwave_pulse_dur = int(25)
 
     pulsed_resonance.main(
         nv_sig,
@@ -314,7 +314,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 10
+    num_runs = 5
 
     composite = False
 
@@ -375,7 +375,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 2
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -764,11 +764,11 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.854, -0.605,  6.177],
+            "coords":[-0.857, -0.588,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":None,
+        "expected_count_rate":10,
         "correction_collar": 0.12,
 
 
@@ -835,17 +835,17 @@ if __name__ == "__main__":
          #
         #
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0, 0.0, 0.0])
+       # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
 #
-        # do_optimize(nv_sig,apd_indices)
+        #do_optimize(nv_sig,apd_indices)
 
-        # do_image_sample(nv_sig, apd_indices)
+        #do_image_sample(nv_sig, apd_indices)
 
         # do_stationary_count(nv_sig, apd_indices)
 
 
-        # do_image_sample_xz(nv_sig, apd_indices)
+        #do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
 
 
@@ -873,12 +873,12 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
-        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
         do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
 
-        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
+        do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
 
         #do_spin_echo(nv_sig, apd_indices)
