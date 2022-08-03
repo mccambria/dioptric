@@ -121,14 +121,14 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     laser_name = nv_sig["imaging_laser"]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, "imaging_laser")
     readout = nv_sig["imaging_readout_dur"]
-    total_num_samples = 2
+    total_num_samples = 6#2
     x_center, y_center, z_center = coords
 
     if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
         tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
     else:
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    
+    time.sleep(0.5) # finding we need a bit more time to settle at new position
     
     config_positioning = config["Positioning"]
     if "xy_small_response_delay" in config_positioning:
@@ -143,6 +143,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     cxn.apd_tagger.start_tag_stream(apd_indices)
     cxn.pulse_streamer.stream_start(total_num_samples)
     new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+    print(new_samples)
     new_samples_avg = numpy.average(new_samples)
     cxn.apd_tagger.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10 ** 9)
@@ -545,6 +546,7 @@ def main_with_cxn(
             continue
 
         # Check the count rate
+        print("checking this stationary_count_lite")
         opti_count_rate = stationary_count_lite(
             cxn, nv_sig, opti_coords, config, apd_indices
         )

@@ -767,8 +767,8 @@ if __name__ == "__main__":
             "coords":[-0.857, -0.588,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
-        "ramp_voltages": False,
-        "expected_count_rate":10,
+        "ramp_voltages": True,
+        "expected_count_rate":None,
         "correction_collar": 0.12,
 
 
@@ -803,12 +803,12 @@ if __name__ == "__main__":
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 156,
-        "resonance_LOW":2.7790,
-        "rabi_LOW":72.2,
-        "uwave_power_LOW": 10,  # 15.5 max
-        "resonance_HIGH":2.7790,#2.9611,
+        "resonance_LOW":2.7821,
+        "rabi_LOW":117.8,
+        "uwave_power_LOW": 5,  # 15.5 max
+        "resonance_HIGH":2.9599,
         "rabi_HIGH":68,
-        "uwave_power_HIGH": 10,
+        "uwave_power_HIGH": 5,
     }  # 14.5 max
 
 
@@ -838,7 +838,7 @@ if __name__ == "__main__":
        # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
 #
-        #do_optimize(nv_sig,apd_indices)
+        do_optimize(nv_sig,apd_indices)
 
         #do_image_sample(nv_sig, apd_indices)
 
@@ -873,12 +873,12 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
-        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
-        do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
 
         #do_spin_echo(nv_sig, apd_indices)
