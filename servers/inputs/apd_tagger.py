@@ -33,7 +33,7 @@ import logging
 import re
 import time
 import socket
-from pathos.multiprocessing import ProcessingPool as Pool
+# from pathos.multiprocessing import ProcessingPool as Pool
 
 
 class ApdTagger(LabradServer):
@@ -327,7 +327,7 @@ class ApdTagger(LabradServer):
         # De-duplicate the channels list
         channels = list(set(channels))
         self.stream = TimeTagger.TimeTagStream(
-            self.tagger, 10 ** 7, channels
+            self.tagger, 10 ** 8, channels
         )
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,

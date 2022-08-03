@@ -51,9 +51,9 @@ def get_seq(pulse_streamer, config, args):
     aom_delay_time = config['Optics'][laser_name]['delay']
     uwave_delay_time = config['Microwaves'][sig_gen_name]['delay']
     signal_wait_time = config['CommonDurations']['uwave_buffer']
-    background_wait_time = signal_wait_time
+    # background_wait_time = signal_wait_time
     reference_wait_time = 2 * signal_wait_time
-    reference_time = signal_wait_time
+    # reference_time = signal_wait_time
 
     prep_time = polarization_time + signal_wait_time + \
         tau + signal_wait_time
@@ -71,32 +71,25 @@ def get_seq(pulse_streamer, config, args):
     seq = Sequence()
 
     # APD gating - first high is for signal, second high is for reference
-    pre_duration = aom_delay_time + prep_time
-#    mid_duration = period - (pre_duration + (2 * gate_time) + post_duration)
+    pre_duration = aom_delay_time +uwave_delay_time + prep_time
     mid_duration = polarization_time + reference_wait_time - gate_time
     train = [(pre_duration, LOW),
              (gate_time, HIGH),
              (mid_duration, LOW),
              (gate_time, HIGH), 
-             (0, LOW)]
+             (end_rest_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     period = 0
     for el in train:
         period += el[0]
     # print(period)
 
-    # # Ungate (high) the APD channel for the background
-    # gateBackgroundTrain = [( AOMDelay + preparationTime + polarizationTime + referenceWaitTime + referenceTime + backgroundWaitTime, low),
-    #                       (gateTime, high), (endRestTime - gateTime, low)]
-    # pulserSequence.setDigital(pulserDODaqGate0, gateBackgroundTrain)
-
     # Pulse the laser with the AOM for polarization and readout
-    train = [(polarization_time, HIGH),
+    train = [(uwave_delay_time+ polarization_time, HIGH),
              (signal_wait_time + tau + signal_wait_time, LOW),
              (polarization_time, HIGH),
              (reference_wait_time, LOW),
-             (gate_time, HIGH),
-             (aom_delay_time, LOW)]
+             (gate_time + aom_delay_time + end_rest_time, HIGH)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 laser_name, laser_power, train)
     # total_dur = 0
@@ -105,9 +98,9 @@ def get_seq(pulse_streamer, config, args):
     # print(total_dur)
 
     # Pulse the microwave for tau
-    pre_duration = aom_delay_time + polarization_time + signal_wait_time - uwave_delay_time
+    pre_duration = aom_delay_time + polarization_time + signal_wait_time
     post_duration = signal_wait_time + polarization_time + \
-        reference_wait_time + gate_time + uwave_delay_time
+        reference_wait_time + gate_time + uwave_delay_time + end_rest_time
     train = [(pre_duration, LOW), (tau, HIGH), (post_duration, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     # total_dur = 0

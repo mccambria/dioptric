@@ -62,8 +62,16 @@ def bessel_scnd_der(x):
         0.5 * (jv(0, x) - jv(2, x)) ** 2
         + j1(x) * (0.5 * (jv(3, x) - j1(x)) - j1(x))
     )
+    
+    term1= x**2* jv(0,x)**2 
+    term2 = - 3*( x**2 - 4 )*j1(x)**2 
+    term3 = x**2*jv(2,x)**2
+    term4 = -2*x*jv(0,x)*( 4*j1(x) + x*jv(2,x) ) 
+    term5= x*j1(x)*( 8*jv(2,x) + x*jv(3,x) )
+                    
+    return x**-4*(term1+term2+term3+term4+term5)
 
-    return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
+    # return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
 
 
 def exp_decay(t, A, alpha, e):
@@ -340,9 +348,9 @@ threshold = 5
 # plot_heights_vs_dur(file_list, path, threshold, 5e-6)
 
 num_reps = 6
-recursive_fit(file_list, path, threshold, num_reps)
+# recursive_fit(file_list, path, threshold, num_reps)
 
 # plt.show(block=True)
-# x0 =  7.016  # Position of this Airy disk (n2), in dimensionless units
-# C = bessel_scnd_der(x0)
-# print(C)
+x0 =  3.832  # Position of this Airy disk (n2), in dimensionless units
+C = bessel_scnd_der(x0)
+print(C)
