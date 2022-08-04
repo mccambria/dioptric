@@ -48,7 +48,7 @@ def get_seq(pulse_streamer, config, args):
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
     
     wait_time = config['CommonDurations']['uwave_buffer']
-    aom_delay_time = config['Optics'][laser_name]['delay']
+    aom_delay_time = 0#config['Optics'][laser_name]['delay']
     
     pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     config['Optics']['laserglow_532']['delay'] = 0
 
     # Set up a dummy args list
-    args = [-300.0, 500, 350, 75, 1000.0, 1, 0, 'cobolt_515', None]
+    args = [150, 500, 350, 28, 1000.0, 1, 1, 'integrated_520', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

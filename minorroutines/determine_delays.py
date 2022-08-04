@@ -85,7 +85,7 @@ def measure_delay(
         n+=1
         # print(tau)
         if seq_file == "aom_delay.py":
-            readout = 1e4#,nv_sig["imaging_readout_dur"]
+            readout = 5e3#,nv_sig["imaging_readout_dur"]
             seq_args = [
                 tau,
                 max_tau, 
@@ -284,12 +284,13 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
     
     nv_sig = { 
-            "coords":[-0.852, -0.616,  6.1],
+            "coords":[-0.854, -0.605,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":11,
+        "expected_count_rate":None,
         "correction_collar": 0.12,
+
         
         
           "spin_laser":green_laser,
@@ -306,12 +307,13 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": None,
-        "resonance_LOW":2.87,"rabi_LOW": 150,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.932,
-        "rabi_HIGH": 59.6,
-        "uwave_power_HIGH": 14.5,
+        "magnet_angle": 156,
+        "resonance_LOW":2.7790,
+        "rabi_LOW":55,
+        "uwave_power_LOW": 10,  # 15.5 max
+        "resonance_HIGH":2.7790,#2.9611,
+        "rabi_HIGH":68,
+        "uwave_power_HIGH": 10,
     }  # 14.5 max
     apd_indices = [1]
 
@@ -360,7 +362,7 @@ if __name__ == "__main__":
         # num_reps = int(1e5)
         # laser_name = 'laserglow_589'
         # delay_range = [800, 1700]
-        num_reps = int(1e4)
+        num_reps = int(1e5)
         laser_name = 'integrated_520'
         # laser_power = 0.65
         # laser_name = 'cobolt_638'
@@ -372,10 +374,10 @@ if __name__ == "__main__":
             aom_delay(cxn, nv_sig, apd_indices,
                       delay_range, num_steps, num_reps, laser_name, laser_power)
 
-        # uwave_delay
-        # num_reps = int(1e4)
-        # delay_range = [-200, 200]
-        # num_steps = 101
+        # # uwave_delay
+        # num_reps = int(5e4)
+        # delay_range = [0, 500]
+        # num_steps = 25#101
         # # sg394
         # state = States.LOW
         # # tsg4104a

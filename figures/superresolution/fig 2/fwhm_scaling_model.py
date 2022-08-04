@@ -54,7 +54,7 @@ def width_scaling_w_mods(t, e, alpha, R):
 
 fit_func = width_scaling_w_mods
 e =  0.0004388
-alpha = 0.00000077491976
+alpha = 0.00000077491978 
 R_nm = 6.2
 params = [e, alpha, R_nm*(2*numpy.pi*NA)/wavelength]
 
