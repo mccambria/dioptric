@@ -376,7 +376,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 25
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -419,11 +419,11 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
 
 def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
-    detuning = 10  # MHz
+    detuning = 6  # MHz
     precession_time_range = [0, 2 * 10 ** 3]
     num_steps = 101
     num_reps = int( 10 ** 4)
-    num_runs = 6
+    num_runs = 20
 
     ramsey.main(
         nv_sig,
@@ -765,7 +765,7 @@ def do_test_major_routines(nv_sig, apd_indices):
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = False
+    debug_mode = True
     
 
     # %% Shared parameters
@@ -779,18 +779,18 @@ if __name__ == "__main__":
     nd_green = 'nd_0.4'
     red_power = 120
     sample_name = "rubin"
-    green_laser = "integrated_520"#"cobolt_515"
+    green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
 
 
     nv_sig = {
-            "coords":[-0.852, -0.603,  6.177],
+            "coords":[-0.855, -0.591,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":11,
+        "expected_count_rate":12,
         "correction_collar": 0.12,
 
 
@@ -856,13 +856,13 @@ if __name__ == "__main__":
             # do_image_sample(nv_sig_copy, apd_indices)
          #
         #
-        #tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
        # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
 #
-        do_optimize(nv_sig,apd_indices)
+        # do_optimize(nv_sig,apd_indices)
 
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
 
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -895,15 +895,15 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
-       # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
+        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
       #  do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
+        # do_ramsey(nv_sig, nv_sig,apd_indices)
 
-        do_spin_echo(nv_sig, apd_indices)
+        # do_spin_echo(nv_sig, apd_indices)
 
 
         # do_relaxation(nv_sig, apd_indices)
