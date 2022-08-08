@@ -809,15 +809,15 @@ def main(
 if __name__ == "__main__":
 
     temp = 295
-    folder = "2022_08_03-test"
+    folder = "2022_08_05"
 
     # mode = "prediction"
     mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = omega_calc(temp)
-        est_gamma = gamma_calc(temp)
+        est_omega = 51#omega_calc(temp)
+        est_gamma = 150#gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))

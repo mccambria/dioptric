@@ -44,6 +44,7 @@ import chargeroutines.super_resolution_pulsed_resonance as super_resolution_puls
 import chargeroutines.super_resolution_ramsey as super_resolution_ramsey
 import chargeroutines.super_resolution_spin_echo as super_resolution_spin_echo
 import chargeroutines.g2_measurement as g2_SCC_branch
+import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
@@ -471,11 +472,12 @@ def do_spin_echo(nv_sig, apd_indices):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 15e6
-    max_tau_gamma = 10e6
-    num_steps = 31
-    num_reps = 2e3
-    num_runs = 40
+    max_tau_omega = 20e6
+    max_tau_gamma = 8e6
+    num_steps_omega = 21
+    num_steps_gamma = 21
+    num_reps = 100
+    num_runs = 3
     a=False
     b=True
     if b:
@@ -483,17 +485,17 @@ def do_relaxation(nv_sig, apd_indices, ):
         [[
                 [States.ZERO, States.ZERO],
                 [min_tau, max_tau_omega],
-                num_steps,
+                num_steps_omega,
                 num_reps,
                 num_runs,
             ],
-        [
-                [States.ZERO, States.HIGH],
-                [min_tau, max_tau_omega],
-                num_steps,
-                num_reps,
-                num_runs,
-            ],
+        # [
+        #         [States.ZERO, States.HIGH],
+        #         [min_tau, max_tau_omega],
+        #         num_steps_omega,
+        #         num_reps,
+        #         num_runs,
+        #     ],
              
              ])
     if a:
@@ -501,28 +503,28 @@ def do_relaxation(nv_sig, apd_indices, ):
         [ [
                 [States.ZERO, States.ZERO],
                 [min_tau, max_tau_omega],
-                num_steps,
+                num_steps_omega,
                 num_reps,
                 num_runs,
             ],
         [
                 [States.ZERO, States.HIGH],
                 [min_tau, max_tau_omega],
-                num_steps,
+                num_steps_omega,
                 num_reps,
                 num_runs,
             ],
                 [
                 [States.HIGH, States.HIGH],
                 [min_tau, max_tau_gamma],
-                num_steps,
+                num_steps_gamma,
                 num_reps,
                 num_runs,
             ],
                     [
                 [States.HIGH, States.LOW],
                 [min_tau, max_tau_gamma],
-                num_steps,
+                num_steps_gamma,
                 num_reps,
                 num_runs,
             ]] )
@@ -533,7 +535,7 @@ def do_relaxation(nv_sig, apd_indices, ):
             t1_exp_array,
             num_runs,
             composite_pulses=False,
-            scc_readout=False,
+            scc_readout=True,
         )
 
 def do_determine_standard_readout_params(nv_sig, apd_indices):
@@ -545,6 +547,25 @@ def do_determine_standard_readout_params(nv_sig, apd_indices):
     determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
                                            max_readouts, state=state)
     
+def do_determine_charge_readout_params(nv_sig, apd_indices):
+        opti_nv_sig = nv_sig
+        num_reps = 500
+        readout_durs = [1e6, 50e6, 100e6]
+        readout_durs = [int(el) for el in readout_durs]
+        max_readout_dur = max(readout_durs)
+        readout_powers = [0.1, 0.15, 0.2, 0.25]
+        
+            
+        determine_charge_readout_params.determine_readout_dur_power(  
+          nv_sig,
+          opti_nv_sig,
+          apd_indices,
+          num_reps,
+          max_readout_dur=max_readout_dur,
+          readout_powers=readout_powers,
+          plot_readout_durs=readout_durs,
+          fit_threshold_full_model= False,)
+        
 def do_time_resolved_readout(nv_sig, apd_indices):
 
     # nv_sig uses the initialization key for the first pulse
@@ -790,7 +811,7 @@ if __name__ == "__main__":
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":12,
+        "expected_count_rate":13.5,
         "correction_collar": 0.12,
 
 
@@ -815,11 +836,29 @@ if __name__ == "__main__":
 
 
 
-
+        "nv-_prep_laser": green_laser,
+        "nv-_prep_laser-power": None,
+        "nv-_prep_laser_dur": 1e3,
+        "nv0_prep_laser": red_laser,
+        "nv0_prep_laser-power": None,
+        "nv0_prep_laser_dur": 1e3,
+        
+        "nv-_reionization_laser": green_laser,
+        "nv-_reionization_laser_power": green_power,
+        "nv-_reionization_dur": 1e3,
+        
+        "nv0_ionization_laser": red_laser,
+        "nv0_ionization_laser_power": None,
+        "nv0_ionization_dur": 300,
+        
+        "spin_shelf_laser": red_laser,
+        "spin_shelf_laser_power": None,
+        "spin_shelf_dur": 0,
+        
          "charge_readout_laser": yellow_laser,
-          "charge_readout_laser_power": 0.2, #0.15 for NV
+          "charge_readout_laser_power": 0.2, 
           "charge_readout_laser_filter": "nd_1.0",
-          "charge_readout_laser_dur": 50e6, #50e6 for NV
+          "charge_readout_dur": 100e6, 
 
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
@@ -895,7 +934,7 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
-        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
       #  do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
@@ -906,9 +945,10 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
 
 
-        # do_relaxation(nv_sig, apd_indices)
+        do_relaxation(nv_sig, apd_indices)
         
         # do_determine_standard_readout_params(nv_sig, apd_indices)
+        # do_determine_charge_readout_params(nv_sig, apd_indices)
 
         # Operations that don't need an NV#
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset

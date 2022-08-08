@@ -93,6 +93,18 @@ class ArbitraryWaveformGenerator(LabradServer):
 
         self.load_iq(phases)
 
+    @setting(10, num_dd_reps="i")
+    def load_xy4n(self, c, num_dd_reps):
+
+        # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
+        phases = [0]
+        repeated_phases = [0, pi/2]*8*num_dd_reps
+        phases.append(repeated_phases)
+        phases.append([0])
+        
+        phases = phases*4
+
+        self.load_iq(phases)
 
     def load_iq(self, phases):
         """
