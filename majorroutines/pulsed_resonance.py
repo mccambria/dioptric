@@ -550,7 +550,7 @@ def main_with_cxn(
             uwave_pulse_dur,
             polarization_time,
             readout,
-            uwave_pulse_dur,  # +100,
+            uwave_pulse_dur,
             apd_indices[0],
             state.value,
             laser_name,
@@ -561,6 +561,20 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
+
+    # create figure
+    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    ax = axes_pack[0]
+    ax.plot([], [])
+    ax.set_title("Non-normalized Count Rate Versus Frequency")
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("Count rate (kcps)")
+
+    ax = axes_pack[1]
+    ax.plot([], [])
+    ax.set_title("Normalized Count Rate vs Frequency")
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("Contrast (arb. units)")
 
     # %% Get the starting time of the function
 
@@ -642,14 +656,52 @@ def main_with_cxn(
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
-            print(sum(sig_gate_counts))
+            # print(sum(sig_gate_counts))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
-            print(sum(ref_gate_counts))
+            # print(sum(ref_gate_counts))
 
         cxn.apd_tagger.stop_tag_stream()
+
+        # %% incremental plotting
+
+        # Average the counts over the iterations
+        single_ref_avg = np.average(ref_counts[: (run_ind + 1)])
+        ref_counts_avg = np.average(ref_counts[: (run_ind + 1)], axis=0)
+        sig_counts_avg = np.average(sig_counts[: (run_ind + 1)], axis=0)
+        norm_avg_sig = sig_counts_avg / single_ref_avg
+
+        kcps_uwave_off_avg = (ref_counts_avg / (num_reps * 1000)) / readout_sec
+        kcpsc_uwave_on_avg = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+
+        ax = axes_pack[0]
+        ax.cla()
+        ax.plot(freqs, kcps_uwave_off_avg, "r-", label="Reference")
+        ax.plot(freqs, kcpsc_uwave_on_avg, "g-", label="Signal")
+
+        ax.legend()
+
+        ax = axes_pack[1]
+        ax.cla()
+        ax.plot(freqs, norm_avg_sig, "b-")
+
+        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.8,
+            0.9,
+            text_popt,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=props,
+        )
+
+        fig.canvas.draw()
+        fig.set_tight_layout(True)
+        fig.canvas.flush_events()
 
         # %% Save the data we have incrementally for long measurements
 
@@ -685,6 +737,7 @@ def main_with_cxn(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
         tool_belt.save_raw_data(rawData, file_path)
+        tool_belt.save_figure(fig, file_path)
 
     # %% Process and plot the data
 
@@ -702,12 +755,9 @@ def main_with_cxn(
     kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
 
-    # Create an image with 2 plots on one row, with a specified size
-    # Then draw the canvas and flush all the previous plots from the canvas
-    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
     # The first plot will display both the uwave_off and uwave_off counts
     ax = axes_pack[0]
+    ax.cla()
     ax.plot(freqs, kcps_uwave_off_avg, "r-", label="Reference")
     ax.plot(freqs, kcpsc_uwave_on_avg, "g-", label="Signal")
     ax.set_title("Non-normalized Count Rate Versus Frequency")
@@ -716,6 +766,7 @@ def main_with_cxn(
     ax.legend()
     # The second plot will show their subtracted values
     ax = axes_pack[1]
+    ax.cla()
     ax.plot(freqs, norm_avg_sig, "b-")
     ax.set_title("Normalized Count Rate vs Frequency")
     ax.set_xlabel("Frequency (GHz)")

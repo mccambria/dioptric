@@ -195,13 +195,13 @@ if __name__ == '__main__':
     util.runServer(__server__)
 
 
-    # phases = [pi/4, -pi/4] * 16
-    # phase_comps = iq_comps(phases)
-    # seq1 = str(phase_comps[1])[1:-1]  # Convert to string and trim the brackets
-    # seq = '0.5, -0.5, ' * 16
-    # seq2 = seq[:-2]
+    phases = [pi/4, -pi/4] * 16
+    phase_comps = iq_comps(phases)
+    seq1 = str(phase_comps[1])[1:-1]  # Convert to string and trim the brackets
+    seq = '0.5, -0.5, ' * 16
+    seq2 = seq[:-2]
 
-    # print(seq1)
-    # print(seq2)
+    print(seq1)
+    print(seq2)
 
-    # print(seq1 == seq2)
+    print(seq1 == seq2)

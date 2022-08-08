@@ -90,7 +90,7 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     
     taus_us = numpy.array(taus)/1e3
     # Guess the other params for fitting
-    amp_1 = 0.3
+    amp_1 = 0.1
     amp_2 = amp_1
     amp_3 = amp_1
     decay = 1
@@ -99,15 +99,25 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     guess_params = (offset, decay, amp_1, FreqParams[0],
                         amp_2, FreqParams[1],
                         amp_3, FreqParams[2])
-
+    
+    # guess_params_fixed_freq = (offset, decay, amp_1,
+    #                     amp_2, 
+    #                     amp_3, )
+    # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    
     # Try the fit to a sum of three cosines
-
+    
+    fit_func = tool_belt.cosine_sum
+    init_params = guess_params
+    
+    # fit_func = cosine_sum_fixed_freq
+    # init_params = guess_params_fixed_freq
     try:
-        popt,pcov = curve_fit(tool_belt.cosine_sum, taus_us, norm_avg_sig,
-                      p0=guess_params,
-                       bounds=(0, [numpy.infty, numpy.infty, numpy.infty, numpy.infty,
-                                   numpy.infty, numpy.infty,
-                                   numpy.infty, numpy.infty, ])
+        popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
+                      p0=init_params,
+                        bounds=(0, [numpy.infty, numpy.infty, numpy.infty, numpy.infty,
+                                    numpy.infty, numpy.infty,
+                                    numpy.infty, numpy.infty, ])
                       )
     except Exception:
         print('Something went wrong!')
@@ -119,20 +129,20 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
 
     fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(taus_us, norm_avg_sig,'b',label='data')
-    ax.plot(taus_us_linspace, tool_belt.cosine_sum(taus_us_linspace,*popt),'r',label='fit')
+    ax.plot(taus_us_linspace, fit_func(taus_us_linspace,*popt),'r',label='fit')
     ax.set_xlabel('Free precesion time (ns)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend()
-    text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
-                       r'$d = $' + '%.2f'%(abs(popt[1])) + ' us',
-                       r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
-                       r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
-                       r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
-                       ))
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    # text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
+    #                    r'$d = $' + '%.2f'%(abs(popt[1])) + ' us',
+    #                    r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
+    #                    r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
+    #                    r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
+    #                    ))
+    # props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
 
-    ax.text(0.40, 0.25, text1, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
+    # ax.text(0.40, 0.25, text1, transform=ax.transAxes, fontsize=12,
+    #                         verticalalignment="top", bbox=props)
 
 
 
@@ -224,6 +234,7 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
+    plot_taus = (taus + uwave_pi_pulse) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -293,7 +304,21 @@ def main_with_cxn(
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     #    return
-
+    
+    # create figure
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    ax = axes_pack[0]
+    ax.plot([], [])
+    ax.set_title("Non-normalized Count Rate Versus Frequency")
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_ylabel("Counts")
+    
+    ax = axes_pack[1]
+    ax.plot([], [])
+    ax.set_title("Ramsey Measurement")
+    ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
+    ax.set_ylabel("Contrast (arb. units)")
+    
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -403,7 +428,46 @@ def main_with_cxn(
             print("Second Reference = " + str(count))
 
         cxn.apd_tagger.stop_tag_stream()
+        
+        # %% incremental plotting
+        
+        #Average the counts over the iterations
+        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        try:
+            norm_avg_sig = avg_sig_counts / avg_ref_counts
+        except RuntimeWarning as e:
+            print(e)
+            inf_mask = numpy.isinf(norm_avg_sig)
+            # Assign to 0 based on the passed conditional array
+            norm_avg_sig[inf_mask] = 0
+        
+        
+        ax = axes_pack[0]
+        ax.cla()
+        ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
+        ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Counts")
+        ax.legend()
+        
+        ax = axes_pack[1]
+        ax.cla()
+        ax.plot(plot_taus, norm_avg_sig, "b-")
+        ax.set_title("Ramsey Measurement")
+        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        
+        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
+                verticalalignment='top', bbox=props)
+        
+        raw_fig.canvas.draw()
+        raw_fig.set_tight_layout(True)
+        raw_fig.canvas.flush_events()
+        
         # %% Save the data we have incrementally for long T1s
 
         raw_data = {
@@ -445,35 +509,19 @@ def main_with_cxn(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
         tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(raw_fig, file_path)
 
     # %% Hardware clean up
 
     tool_belt.reset_cfm(cxn)
 
-    # %% Average the counts over the iterations
 
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    # %% Plot the final data
 
-    # %% Calculate the ramsey data, signal / reference over different
-    # relaxation times
-
-    # Replace x/0=inf with 0
-    try:
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(norm_avg_sig)
-        # Assign to 0 based on the passed conditional array
-        norm_avg_sig[inf_mask] = 0
-
-    # %% Plot the data
-
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
+    ax.cla()
     # Account for the pi/2 pulse on each side of a tau
-    plot_taus = (taus + uwave_pi_pulse) / 1000
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
     ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
@@ -481,9 +529,10 @@ def main_with_cxn(
     ax.legend()
 
     ax = axes_pack[1]
+    ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
     ax.set_title("Ramsey Measurement")
-    ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -545,13 +594,15 @@ def main_with_cxn(
                                precession_time_range, num_steps, detuning)
     
     # Save the fft figure
-    tool_belt.save_figure(fig_fft, file_path + '_fft')
+    file_path_fft = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"] + '_fft')
+    tool_belt.save_figure(fig_fft, file_path_fft)
     
     # Fit actual data
     fig_fit = fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
 
     # Save the file in the same file directory
-    tool_belt.save_figure(fig_fit, file_path + '-fit')
+    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"] + '_fit')
+    tool_belt.save_figure(fig_fit, file_path_fit)
 
     return 
 
@@ -562,8 +613,8 @@ def main_with_cxn(
 if __name__ == "__main__":
 
 
-    folder = "pc_rabi/branch_master/ramsey/2021_10"
-    file = '2021_10_15-10_37_22-johnson-nv0_2021_10_08'
+    folder = "pc_rabi/branch_master/ramsey/2022_08"
+    file = '2022_08_04-12_59_05-rubin-nv1'
     
     # detuning = 0
     data = tool_belt.get_raw_data(file, folder)
@@ -585,4 +636,4 @@ if __name__ == "__main__":
     _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
     print(FreqParams)
 
-    fit_ramsey(norm_avg_sig,taus,  precession_time_range, [2.4, 4.5, 6.9])
+    fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)

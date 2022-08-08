@@ -599,7 +599,7 @@ def main_with_cxn(
             total_exp_time_h
         )
     )
-    #    return
+    #return
 
     # %% Get the starting time of the function, to be used to calculate run time
 
