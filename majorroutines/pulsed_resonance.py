@@ -201,7 +201,7 @@ def get_guess_params(
         height = 5 * rel_ref_ste
         # print(height)
     else:
-        height = 0.08
+        height = 0.06
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -236,8 +236,8 @@ def get_guess_params(
         # List of higest peak then next highest peak
         peaks = [max_peak_freqs, next_max_peak_freqs]
 
-        # Only keep the smaller peak if it's > 1/3 the height of the larger peak
-        if next_max_peak_height > max_peak_height / 3:
+        # Only keep the smaller peak if it's at least 50% the height of the larger peak
+        if next_max_peak_height > 0.5 * max_peak_height:
             # Sort by frequency
             peaks.sort()
             low_freq_guess = freqs[peaks[0]]
@@ -373,19 +373,29 @@ def process_counts(ref_counts, sig_counts, num_runs):
     """
 
     # Find the averages across runs
+    sig_counts_avg = np.average(sig_counts, axis=0)
     single_ref_avg = np.average(ref_counts)
     ref_counts_avg = np.average(ref_counts, axis=0)
-    sig_counts_avg = np.average(sig_counts, axis=0)
 
+    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
-    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
 
-    norm_avg_sig = sig_counts_avg / single_ref_avg
-    norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-        (sig_counts_ste / sig_counts_avg) ** 2
-        + (single_ref_ste / single_ref_avg) ** 2
-    )
+    # New style, single reference
+    if False:
+        norm_avg_sig = sig_counts_avg / single_ref_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (single_ref_ste / single_ref_avg) ** 2
+        )
+
+    # Old style, point-by-point reference
+    else:
+        norm_avg_sig = sig_counts_avg / ref_counts_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (ref_counts_ste / ref_counts_avg) ** 2
+        )
 
     return (
         ref_counts_avg,
@@ -540,7 +550,7 @@ def main_with_cxn(
             uwave_pulse_dur,
             polarization_time,
             readout,
-            uwave_pulse_dur,#+100,
+            uwave_pulse_dur,  # +100,
             apd_indices[0],
             state.value,
             laser_name,
