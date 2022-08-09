@@ -33,7 +33,7 @@ def calc_histogram(nv0, nvm, dur):
     dur_us = dur / 1e3
     nv0_counts = [np.count_nonzero(np.array(rep) < dur_us) for rep in nv0] # ???
     nvm_counts = [np.count_nonzero(np.array(rep) < dur_us) for rep in nvm] # ???
-
+    # print(nv0_counts)
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
     occur_0, bin_edges_0 = np.histogram(
@@ -130,7 +130,7 @@ def single_nv_photon_statistics_model(readout_time, NV0, NVm, do_plot = True):
         plt.show()
     return fit
 
-def calculate_threshold_with_model(readout_time,nv0_array,nvm_array, power, nd_filter=None):
+def calculate_threshold_with_model(readout_time,nv0_array,nvm_array, max_x_val, power, nd_filter=None):
     '''
     Using the histograms of the NV- and NV0 measurement, and modeling them as 
     an NV perfectly prepared in either NV- or NV0, detemines the optimum
@@ -146,15 +146,15 @@ def calculate_threshold_with_model(readout_time,nv0_array,nvm_array, power, nd_f
         state as NV-. And below this value, identify as NV0.
     '''
     tR = readout_time/10**6
-    fit_rate = single_nv_photon_statistics_model(readout_time,nv0_array,nvm_array)
-    x_data = np.linspace(0,500,501)
+    fit_rate = single_nv_photon_statistics_model(tR,nv0_array,nvm_array)
+    max_x_val = int(max_x_val)
+    x_data = np.linspace(0,100,101)
     thresh_para = model.calculate_threshold(tR,x_data,fit_rate )
-    # print(thresh_para)
 
-    x_data = np.linspace(0,60,61)
+    plot_x_data = np.linspace(0,max_x_val,max_x_val+1)
     fig3,ax = plt.subplots()
-    ax.plot(x_data,model.get_PhotonNV0_list(x_data,tR,fit_rate,0.5),"-o")
-    ax.plot(x_data,model.get_PhotonNVm_list(x_data,tR,fit_rate,0.5),"-o")
+    ax.plot(plot_x_data,model.get_PhotonNV0_list(plot_x_data,tR,fit_rate,0.5),"-o")
+    ax.plot(plot_x_data,model.get_PhotonNVm_list(plot_x_data,tR,fit_rate,0.5),"-o")
     plt.axvline(x=thresh_para[0],color = "red")
     mu_0 = fit_rate[3]*tR
     mu_m = fit_rate[2]*tR
@@ -180,6 +180,8 @@ def calculate_threshold_with_model(readout_time,nv0_array,nvm_array, power, nd_f
 
     fidelity = thresh_para[1]
     threshold =thresh_para[0]
+    print(title_text)
+    print('Threshold: {} counts, fidelity: {:.3f}'.format(threshold, fidelity))
     return threshold, fidelity, mu_0, mu_m, fig3
 
 
@@ -236,6 +238,8 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,
     
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0_counts, 
                                                       nvm_counts, readout_dur)
+    max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
+
     
     num_reps = len(nv0_counts)
     mean_0 = sum(occur_0 * x_vals_0) / num_reps
@@ -243,31 +247,18 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,
     
     if fit_threshold_full_model:
         dur_us = readout_dur / 1e3
-        nv0_counts_list = [np.count_nonzero(np.array(rep) < dur_us) for rep in nv0]
-        nvm_counts_list = [np.count_nonzero(np.array(rep) < dur_us) for rep in nvm]
+        nv0_counts_list = [np.count_nonzero(np.array(rep) < dur_us) for rep in nv0_counts]
+        nvm_counts_list = [np.count_nonzero(np.array(rep) < dur_us) for rep in nvm_counts]
         threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(readout_dur,
-                                                   nv0_counts_list, nvm_counts_list, power, nd_filter)
+                                                   nv0_counts_list, nvm_counts_list,max_x_val, power, nd_filter)
     else:
         threshold, fidelity, fig = calculate_threshold_no_model(readout_dur, occur_0, 
                                       occur_m,mean_0, mean_m,x_vals_0, x_vals_m, power, nd_filter)
     
     timestamp = tool_belt.get_time_stamp()
-    # raw_data = {'timestamp': timestamp,
-    #         'nv_sig': nv_sig,
-    #         'num_runs':num_reps,
-    #         'nv0': nv0.tolist(),
-    #         'nv0_list-units': 'counts',
-    #         'nvm': nvm.tolist(),
-    #         'nvm-units': 'counts',
-    #         'mu_0': mu_0,
-    #         'mu_m': mu_m,
-    #         'fidelity': fidelity,
-    #         'threshold': threshold
-    #         }
 
     if do_save:
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'] + "-threshold")
-        # tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
     return 
     
@@ -575,7 +566,7 @@ def determine_readout_dur_power(
                 plot_histogram(nv_sig, nv0, nvm, dur, p,  nd_filter=nd_filter)
                 
                 if fit_threshold_full_model:
-                    print('Calculating threshold values...')
+                    print('Calculating threshold values...\nMay take up to a few minutes...')
                 plot_threshold(nv_sig, dur, nv0, nvm, p,
                        fit_threshold_full_model, nd_filter=nd_filter,
                        do_save =True)
@@ -594,8 +585,8 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    # if False:
-    if True:
+    if False:
+    # if True:
         tool_belt.init_matplotlib()
         # file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
         file_name = "2022_08_08-12_58_35-rubin-nv1"
@@ -606,24 +597,25 @@ if __name__ == "__main__":
         readout_power = nv_sig["charge_readout_laser_power"]
         max_readout_dur = nv_sig["charge_readout_dur"]
 
-        opti_readout_dur = determine_opti_readout_dur(
-            nv0, nvm, max_readout_dur
-        )
-        # opti_readout_dur = 80e6
+        # opti_readout_dur = determine_opti_readout_dur(
+        #     nv0, nvm, max_readout_dur
+        # )
+        # print(opti_readout_dur)
+        opti_readout_dur = 49000000
         # do_save = True
         do_save = False
-        plot_histogram(
-            nv_sig,
-            nv0,
-            nvm,
-            opti_readout_dur,
-            readout_power,
-            do_save=do_save,
-            report_averages=True,
-        )
+        # plot_histogram(
+        #     nv_sig,
+        #     nv0,
+        #     nvm,
+        #     opti_readout_dur,
+        #     readout_power,
+        #     do_save=do_save,
+        #     report_averages=True,
+        # )
 
-        # plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power,
-        #                 fit_threshold_full_model = False, nd_filter=nd_filter)
+        plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power,
+                        fit_threshold_full_model = True, nd_filter=None)
         # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 
         # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
@@ -720,22 +712,21 @@ if __name__ == "__main__":
     # num_reps = 1000
     num_reps = 500
 
-    # try:
-    #     a = 1
-    #     # determine_readout_dur_power(
-    #     #     nv_sig,
-    #     #     nv_sig,
-    #     #     apd_indices,
-    #     #     num_reps,
-    #     #     max_readout_dur=max_readout_dur,
-    #     #     readout_powers=readout_powers,
-    #     #     plot_readout_durs=readout_durs,
-    #     # )
-    # finally:
-    #     # Reset our hardware - this should be done in each routine, but
-    #     # let's double check here
-    #     tool_belt.reset_cfm()
-    #     # Kill safe stop
-    #     if tool_belt.check_safe_stop_alive():
-    #         print("\n\nRoutine complete. Press enter to exit.")
-    #         tool_belt.poll_safe_stop()
+    try:
+        determine_readout_dur_power(
+            nv_sig,
+            nv_sig,
+            apd_indices,
+            num_reps,
+            max_readout_dur=max_readout_dur,
+            readout_powers=readout_powers,
+            plot_readout_durs=readout_durs,
+        )
+    finally:
+        # Reset our hardware - this should be done in each routine, but
+        # let's double check here
+        tool_belt.reset_cfm()
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print("\n\nRoutine complete. Press enter to exit.")
+            tool_belt.poll_safe_stop()

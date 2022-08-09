@@ -477,7 +477,7 @@ def do_relaxation(nv_sig, apd_indices, ):
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 100
-    num_runs = 3
+    num_runs = 30
     a=False
     b=True
     if b:
@@ -550,10 +550,10 @@ def do_determine_standard_readout_params(nv_sig, apd_indices):
 def do_determine_charge_readout_params(nv_sig, apd_indices):
         opti_nv_sig = nv_sig
         num_reps = 500
-        readout_durs = [1e6, 50e6, 100e6]
+        readout_durs = [100e6]
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
-        readout_powers = [0.1, 0.15, 0.2, 0.25]
+        readout_powers = [0.2]
         
             
         determine_charge_readout_params.determine_readout_dur_power(  
@@ -564,7 +564,7 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
           max_readout_dur=max_readout_dur,
           readout_powers=readout_powers,
           plot_readout_durs=readout_durs,
-          fit_threshold_full_model= False,)
+          fit_threshold_full_model= True,)
         
 def do_time_resolved_readout(nv_sig, apd_indices):
 
@@ -945,10 +945,10 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
 
 
-        do_relaxation(nv_sig, apd_indices)
+        # do_relaxation(nv_sig, apd_indices)
         
         # do_determine_standard_readout_params(nv_sig, apd_indices)
-        # do_determine_charge_readout_params(nv_sig, apd_indices)
+        do_determine_charge_readout_params(nv_sig, apd_indices)
 
         # Operations that don't need an NV#
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
