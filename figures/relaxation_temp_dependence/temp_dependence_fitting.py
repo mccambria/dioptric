@@ -30,6 +30,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import copy
 from utils.tool_belt import presentation_round, presentation_round_latex
+from utils.kplotlib import figsize, double_figsize
 
 
 # %% Constants
@@ -80,9 +81,6 @@ ratio_edge_color = "#EF2424"
 # qutrit_max_edge_color = "#bcbd22"
 qutrit_color = "#bcbd22"
 qubit_color = "#1f77b4"
-
-figsize = [6.5, 5.0]  # default
-# figsize = [0.7 * el for el in figsize]
 
 sample_column_title = "Sample"
 skip_column_title = "Skip"
@@ -1712,7 +1710,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 x_loc,
                 y_loc - 2.25 * linespacing,
                 r"$\boldsymbol{\leftarrow}$",
-                **args
+                **args,
             )
             args["fontsize"] = prev
 
@@ -1726,7 +1724,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 x_loc,
                 y_loc - 2.25 * linespacing,
                 r"$\boldsymbol{\rightarrow}$",
-                **args
+                **args,
             )
             args["fontsize"] = prev
 
@@ -1940,16 +1938,94 @@ def main(
 
     # %% Setup
 
-    marker_type = "sample"
-    # marker_type = "nv"
+    if plot_type == "T2_max_supp":
+        fs = double_figsize
+        fig, axes_pack = plt.subplots(1, 2, figsize=fs)
+        ax1, ax2 = axes_pack
+        _, _, leg1, T2_max_qubit_hopper_temp = main_sub(
+            fig,
+            ax1,
+            file_name,
+            path,
+            "T2_max",
+            rates_to_plot[0],
+            temp_range[0],
+            rate_range[0],
+            xscale[0],
+            yscale[0],
+            dosave,
+        )
+        _ = main_sub(
+            fig,
+            ax2,
+            file_name,
+            path,
+            "T2_frac",
+            rates_to_plot[1],
+            temp_range[1],
+            rate_range[1],
+            xscale[1],
+            yscale[1],
+            dosave,
+        )
+        fig.text(
+            -0.16,
+            0.96,
+            "(a)",
+            transform=ax1.transAxes,
+            color="black",
+            fontsize=18,
+        )
+        fig.text(
+            -0.138,
+            0.96,
+            "(b)",
+            transform=ax2.transAxes,
+            color="black",
+            fontsize=18,
+        )
+        fig.subplots_adjust(wspace=0.16)
+        return fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp
+    else:
+        fs = figsize
+        fig, ax = plt.subplots(figsize=fs)
+        return main_sub(
+            fig,
+            ax,
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            rate_range,
+            xscale,
+            yscale,
+            dosave,
+        )
+
+
+def main_sub(
+    fig,
+    ax,
+    file_name,
+    path,
+    plot_type,
+    rates_to_plot,
+    temp_range,
+    rate_range,
+    xscale,
+    yscale,
+    dosave,
+):
+
     data_points = get_data_points(path, file_name, temp_range)
 
+    marker_type = "sample"
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
     linspace_min_temp = max(0, min_temp)
     temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
-    fig, ax = plt.subplots(figsize=figsize)
 
     # Fit to Omega and gamma simultaneously
     (
@@ -2028,7 +2104,9 @@ def main(
         temp
     )
     if plot_type in ["ratios", "ratio_fits"]:
-        for func in [ratio_hopper_lambda, ratio_wu_lambda]:
+        # for func in [ratio_hopper_lambda, ratio_wu_lambda]:
+        for sample in rates_to_plot:
+            func = eval("ratio_{}_lambda".format(sample))
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
@@ -2036,7 +2114,7 @@ def main(
                 color=gamma_edge_color,
                 linewidth=line_width,
             )
-    if plot_type == "T2_max":
+    if plot_type in ["T2_max", "T2_frac"]:
         T2_max_qubit = lambda omega, gamma: 2 / (3 * omega + gamma)
         T2_max_qubit_hopper_temp = lambda temp: T2_max_qubit(
             omega_hopper_lambda(temp), gamma_hopper_lambda(temp)
@@ -2048,30 +2126,24 @@ def main(
             (T2max ** 2) / 2
         ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
 
-        # linestyles = {"hopper": "dotted", "wu": "dashed"}
-        for func, linestyle, label in [
-            # (
-            #     T2_max_qubit_hopper_temp,
-            #     "solid",
-            #     r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
-            # ),
-            (
-                T2_max_qubit_hopper_temp,
-                "dotted",
-                r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
-            ),
-            (T2_max_qubit_wu_temp, "dashed", None),
-        ]:
-            # for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
-            ax.plot(
-                temp_linspace,
-                func(temp_linspace),
-                label=label,
-                # label=r"Qubit T2 max",
-                color=qubit_color,
-                linewidth=line_width,
-                ls=linestyle,
-            )
+        if plot_type == "T2_max":
+            for sample, linestyle, label in [
+                ("hopper", "dotted", r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$"),
+                ("wu", "dashed", None),
+            ]:
+                if sample not in rates_to_plot:
+                    continue
+                func = eval(f"T2_max_qubit_{sample}_temp")
+                if len(rates_to_plot) == 1:
+                    linestyle = "solid"
+                ax.plot(
+                    temp_linspace,
+                    func(temp_linspace),
+                    label=label,
+                    color=qubit_color,
+                    linewidth=line_width,
+                    ls=linestyle,
+                )
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
         T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
             T2max ** 2
@@ -2082,34 +2154,26 @@ def main(
         T2_max_qutrit_wu_temp = lambda temp: T2_max_qutrit(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
-        for func, linestyle, label in [
-            # (
-            #     T2_max_qutrit_hopper_temp,
-            #     "solid",
-            #     r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
-            # ),
-            (
-                T2_max_qutrit_hopper_temp,
-                "dotted",
-                r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
-            ),
-            (T2_max_qutrit_wu_temp, "dashed", None),
-        ]:
-            # for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
-            ax.plot(
-                temp_linspace,
-                func(temp_linspace),
-                label=label,
-                # label=r"Qutrit T2 max",
-                color=qutrit_color,
-                linewidth=line_width,
-                ls=linestyle,
-            )
+        if plot_type == "T2_max":
+            for sample, linestyle, label in [
+                ("hopper", "dotted", r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$"),
+                ("wu", "dashed", None),
+            ]:
+                if sample not in rates_to_plot:
+                    continue
+                func = eval(f"T2_max_qutrit_{sample}_temp")
+                if len(rates_to_plot) == 1:
+                    linestyle = "solid"
+                ax.plot(
+                    temp_linspace,
+                    func(temp_linspace),
+                    label=label,
+                    color=qutrit_color,
+                    linewidth=line_width,
+                    ls=linestyle,
+                )
 
         ax.axvline(x=125, color="silver", zorder=-10)
-
-    # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
-    # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
 
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if plot_type == "rates":
@@ -2124,6 +2188,10 @@ def main(
         ax.set_ylabel(r"Normalized residuals")
     elif plot_type == "T2_max":
         ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
+    elif plot_type == "T2_frac":
+        ax.set_ylabel(
+            r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$"
+        )
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -2460,7 +2528,10 @@ def main(
             )
             tool_belt.save_figure(fig, file_path)
 
-    return fig, ax, leg1
+    if plot_type in ["T2_max", "T2_frac", "T2_supp"]:
+        return fig, ax, leg1, T2_max_qubit_hopper_temp
+    else:
+        return fig, ax, leg1
 
 
 # %% Run the file

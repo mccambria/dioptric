@@ -32,9 +32,9 @@ fwhm =1.825
 scale = 0.99e3
 
 
-epsilon = 8.7e-4
-alpha = 3.1e-6
-R_nm = 6
+epsilon = 0.0004388
+alpha = 0.00000077491978
+R_nm = 6.2
 
 red = '#ee3542'
 orange = '#faa51a'
@@ -54,12 +54,16 @@ shape_list = ['o']*3
 def width_scaling_w_mods(t, C, e, a, R):
     return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ a/t)) + R**2)
     
+
 def bessel_scnd_der(x):
-    term_1 = 24*j1(x)**2
-    term_2 = 16*j1(x)*(jv(0,x) - jv(2,x))
-    term_3 = 4* (0.5* (jv(0,x) - jv(2,x))**2 + j1(x)* (0.5*(jv(3,x) - j1(x)) - j1(x)))
-    
-    return term_1/x**4 - term_2/x**3 + term_3/x**2
+    term_1 = 24/2 * j1(x) ** 2
+    term_2 = 16/2 * j1(x) * (jv(2, x) - jv(0, x))
+    term_3 = 4/2 * (
+        0.5 * (jv(0, x) - jv(2, x)) ** 2
+        + j1(x) * (0.5 * (jv(3, x) - j1(x)) - j1(x))
+    )
+
+    return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
     
 def inverse_quarter(x, a):
     return a*x**(-1/4)
@@ -127,7 +131,7 @@ def plot_1D_SpaCE(file_name, file_path, threshold = None, do_plot = True, do_fit
     
     opti_params = []
     # fit_func = tool_belt.gaussian
-    fit_func = gaussian_quad # ???
+    fit_func = gaussian_quad 
 
     if do_plot:
         fig_w =1.5

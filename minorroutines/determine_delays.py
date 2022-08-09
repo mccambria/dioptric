@@ -85,7 +85,7 @@ def measure_delay(
         n+=1
         # print(tau)
         if seq_file == "aom_delay.py":
-            readout = 1e4#,nv_sig["imaging_readout_dur"]
+            readout = 5e3#,nv_sig["imaging_readout_dur"]
             seq_args = [
                 tau,
                 max_tau, 
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
     
     nv_sig = { 
-            "coords":[-0.852, -0.616,  6.1],
+            "coords":[-0.857, -0.588,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -306,12 +306,13 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": None,
-        "resonance_LOW":2.87,"rabi_LOW": 150,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.932,
-        "rabi_HIGH": 59.6,
-        "uwave_power_HIGH": 14.5,
+        "magnet_angle": 156,
+        "resonance_LOW":2.7809,
+        "rabi_LOW":64.9,
+        "uwave_power_LOW": 15,  # 15.5 max
+        "resonance_HIGH":2.9592,
+        "rabi_HIGH":49.5,
+        "uwave_power_HIGH": 15,
     }  # 14.5 max
     apd_indices = [1]
 
@@ -360,7 +361,7 @@ if __name__ == "__main__":
         # num_reps = int(1e5)
         # laser_name = 'laserglow_589'
         # delay_range = [800, 1700]
-        num_reps = int(1e4)
+        num_reps = int(1e5)
         laser_name = 'integrated_520'
         # laser_power = 0.65
         # laser_name = 'cobolt_638'
@@ -368,28 +369,28 @@ if __name__ == "__main__":
         # laser_name = 'laserglow_589'
         # laser_power = 0.6
         delay_range = [0,1e3]
-        with labrad.connect() as cxn:
-            aom_delay(cxn, nv_sig, apd_indices,
-                      delay_range, num_steps, num_reps, laser_name, laser_power)
+        # with labrad.connect() as cxn:
+        #     aom_delay(cxn, nv_sig, apd_indices,
+        #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
         # uwave_delay
-        # num_reps = int(1e4)
-        # delay_range = [-200, 200]
-        # num_steps = 101
-        # # sg394
+        num_reps = int(5e4)
+        delay_range = [-400, 400]
+        num_steps = 101
+        # bnc 835
         # state = States.LOW
-        # # tsg4104a
-        # # state = States.HIGH
-        # with labrad.connect() as cxn:
-        #     uwave_delay(
-        #         cxn,
-        #         nv_sig,
-        #         apd_indices,
-        #         state,
-        #         delay_range,
-        #         num_steps,
-        #         num_reps,
-        #     )
+        #  sg394
+        state = States.HIGH
+        with labrad.connect() as cxn:
+            uwave_delay(
+                cxn,
+                nv_sig,
+                apd_indices,
+                state,
+                delay_range,
+                num_steps,
+                num_reps,
+            )
 
     finally:
         # Reset our hardware - this should be done in each routine, but

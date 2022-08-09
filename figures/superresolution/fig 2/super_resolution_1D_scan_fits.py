@@ -59,12 +59,16 @@ def width_scaling_w_mods(t, C, e, a, R):
     # return numpy.sqrt(2/C* (-e + numpy.sqrt(e**2+ 4*a/t)) + R**2) #previous
     return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ a/t)) + R**2) #current
     
+
 def bessel_scnd_der(x):
-    term_1 = 24*j1(x)**2
-    term_2 = 16*j1(x)*(jv(0,x) - jv(2,x))
-    term_3 = 4* (0.5* (jv(0,x) - jv(2,x))**2 + j1(x)* (0.5*(jv(3,x) - j1(x)) - j1(x)))
-    
-    return term_1/x**4 - term_2/x**3 + term_3/x**2
+    term_1 = 24/2 * j1(x) ** 2
+    term_2 = 16/2 * j1(x) * (jv(2, x) - jv(0, x))
+    term_3 = 4/2 * (
+        0.5 * (jv(0, x) - jv(2, x)) ** 2
+        + j1(x) * (0.5 * (jv(3, x) - j1(x)) - j1(x))
+    )
+
+    return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
     
 def inverse_quarter(x, a):
     return a*x**(-1/4)
@@ -287,9 +291,9 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     #### modified inverse quarter####
     x0=7.0156 #Position of this Airy disk (n2), in dimensionless units
     C = bessel_scnd_der(x0) #Calculate a constant to use in fit
-    epsilon = 8.7e-4
-    alpha = 3.1e-6
-    R_nm = 6
+    epsilon = 0.0004388
+    alpha = 0.00000077491978
+    R_nm = 6.2
     # Estimate the lower limit and convert to dimentionless units below
     R_guess = 5 #nm 
     fit_func = lambda t, e, a, R: width_scaling_w_mods(t, C, e, a, R) 

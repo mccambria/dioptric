@@ -39,6 +39,7 @@ import chargeroutines.SPaCE as SPaCE
 import chargeroutines.SPaCE_simplified as SPaCE_simplified
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import chargeroutines.scc_spin_echo as scc_spin_echo
+import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.super_resolution_pulsed_resonance as super_resolution_pulsed_resonance
 import chargeroutines.super_resolution_ramsey as super_resolution_ramsey
 import chargeroutines.super_resolution_spin_echo as super_resolution_spin_echo
@@ -286,7 +287,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
     num_reps = 1e4
     num_runs = 10
     uwave_power = 10
-    uwave_pulse_dur = int(40)
+    uwave_pulse_dur = int(25)
 
     pulsed_resonance.main(
         nv_sig,
@@ -314,7 +315,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 1
+    num_runs = 5
 
     composite = False
 
@@ -373,9 +374,9 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 
 def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
-    num_steps = 5
-    num_reps = int(1e4)
-    num_runs = 1
+    num_steps = 51
+    num_reps = int(2e4)
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -418,11 +419,11 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
 
 def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
-    detuning = 10  # MHz
+    detuning = 6  # MHz
     precession_time_range = [0, 2 * 10 ** 3]
     num_steps = 101
     num_reps = int( 10 ** 4)
-    num_runs = 6
+    num_runs = 20
 
     ramsey.main(
         nv_sig,
@@ -446,7 +447,7 @@ def do_spin_echo(nv_sig, apd_indices):
 
 
     num_reps = 1e4
-    num_runs =100
+    num_runs =20
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -471,49 +472,60 @@ def do_spin_echo(nv_sig, apd_indices):
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
     max_tau_omega = 15e6
-    max_tau_gamma = 15e6
+    max_tau_gamma = 10e6
     num_steps = 31
-    num_reps = 1e4
-    num_runs = 20
-
-    t1_exp_array = numpy.array(
+    num_reps = 2e3
+    num_runs = 40
+    a=False
+    b=True
+    if b:
+     t1_exp_array = numpy.array(
         [[
+                [States.ZERO, States.ZERO],
+                [min_tau, max_tau_omega],
+                num_steps,
+                num_reps,
+                num_runs,
+            ],
+        [
+                [States.ZERO, States.HIGH],
+                [min_tau, max_tau_omega],
+                num_steps,
+                num_reps,
+                num_runs,
+            ],
+             
+             ])
+    if a:
+     t1_exp_array = numpy.array(
+        [ [
+                [States.ZERO, States.ZERO],
+                [min_tau, max_tau_omega],
+                num_steps,
+                num_reps,
+                num_runs,
+            ],
+        [
+                [States.ZERO, States.HIGH],
+                [min_tau, max_tau_omega],
+                num_steps,
+                num_reps,
+                num_runs,
+            ],
+                [
                 [States.HIGH, States.HIGH],
                 [min_tau, max_tau_gamma],
                 num_steps,
                 num_reps,
                 num_runs,
-            ]])
-
-    # t1_exp_array = numpy.array(
-    #    [ [
-    #             [States.ZERO, States.ZERO],
-    #             [min_tau, max_tau_omega],
-    #             num_steps,
-    #             num_reps,
-    #             num_runs,
-    #         ],
-    #     [
-    #             [States.ZERO, States.HIGH],
-    #             [min_tau, max_tau_omega],
-    #             num_steps,
-    #             num_reps,
-    #             num_runs,
-    #         ],
-    #             [
-    #             [States.HIGH, States.HIGH],
-    #             [min_tau, max_tau_gamma],
-    #             num_steps,
-    #             num_reps,
-    #             num_runs,
-    #         ],
-    #                 [
-    #             [States.HIGH, States.LOW],
-    #             [min_tau, max_tau_gamma],
-    #             num_steps,
-    #             num_reps,
-    #             num_runs,
-    #         ]] )
+            ],
+                    [
+                [States.HIGH, States.LOW],
+                [min_tau, max_tau_gamma],
+                num_steps,
+                num_reps,
+                num_runs,
+            ]] )
 
     t1_dq_main.main(
             nv_sig,
@@ -524,6 +536,15 @@ def do_relaxation(nv_sig, apd_indices, ):
             scc_readout=False,
         )
 
+def do_determine_standard_readout_params(nv_sig, apd_indices):
+    
+    num_reps = 7e5
+    max_readouts = [1e3]
+    state = States.LOW
+    
+    determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
+                                           max_readouts, state=state)
+    
 def do_time_resolved_readout(nv_sig, apd_indices):
 
     # nv_sig uses the initialization key for the first pulse
@@ -745,6 +766,7 @@ if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
     debug_mode = True
+    
 
     # %% Shared parameters
 
@@ -757,18 +779,18 @@ if __name__ == "__main__":
     nd_green = 'nd_0.4'
     red_power = 120
     sample_name = "rubin"
-    green_laser = "integrated_520"#"cobolt_515"
+    green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
 
 
     nv_sig = {
-            "coords":[-0.854, -0.605,  6.177],
+            "coords":[-0.855, -0.591,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":None,
+        "expected_count_rate":12,
         "correction_collar": 0.12,
 
 
@@ -803,12 +825,12 @@ if __name__ == "__main__":
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 156,
-        "resonance_LOW":2.7790,
-        "rabi_LOW":72.2,
-        "uwave_power_LOW": 10,  # 15.5 max
-        "resonance_HIGH":2.7790,#2.9611,
-        "rabi_HIGH":68,
-        "uwave_power_HIGH": 10,
+        "resonance_LOW":2.7809,
+        "rabi_LOW":64.9,
+        "uwave_power_LOW": 15,  # 15.5 max
+        "resonance_HIGH":2.9592,
+        "rabi_HIGH":49.5,
+        "uwave_power_HIGH": 15,
     }  # 14.5 max
 
 
@@ -835,7 +857,7 @@ if __name__ == "__main__":
          #
         #
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0, 0.0, 0.0])
+       # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
 #
         # do_optimize(nv_sig,apd_indices)
@@ -845,7 +867,7 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices)
 
 
-        # do_image_sample_xz(nv_sig, apd_indices)
+        #do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
 
 
@@ -873,19 +895,20 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
-        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
+      #  do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
 
-        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
+        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
+        # do_ramsey(nv_sig, nv_sig,apd_indices)
 
-        #do_spin_echo(nv_sig, apd_indices)
+        # do_spin_echo(nv_sig, apd_indices)
 
 
         # do_relaxation(nv_sig, apd_indices)
-
+        
+        # do_determine_standard_readout_params(nv_sig, apd_indices)
 
         # Operations that don't need an NV#
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
