@@ -549,8 +549,8 @@ def do_determine_standard_readout_params(nv_sig, apd_indices):
     
 def do_determine_charge_readout_params(nv_sig, apd_indices):
         opti_nv_sig = nv_sig
-        num_reps = 500
-        readout_durs = [100e6]
+        num_reps = 100
+        readout_durs = [50e6]
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
         readout_powers = [0.2]
@@ -564,7 +564,7 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
           max_readout_dur=max_readout_dur,
           readout_powers=readout_powers,
           plot_readout_durs=readout_durs,
-          fit_threshold_full_model= True,)
+          fit_threshold_full_model= False,)
         
 def do_time_resolved_readout(nv_sig, apd_indices):
 
@@ -906,7 +906,7 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices)
 
 
-        #do_image_sample_xz(nv_sig, apd_indices)
+        # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
 
 

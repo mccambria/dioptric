@@ -46,7 +46,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_tau_max = numpy.int64(uwave_tau_max)
 
     # Get the wait time between pulses
-    uwave_buffer = config["CommonDurations"]["uwave_buffer"]
+    uwave_buffer =  config["CommonDurations"]["uwave_buffer"]
     scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
     sig_ref_buffer = uwave_buffer
 
@@ -125,8 +125,8 @@ def get_seq(pulse_streamer, config, args):
         (post_wait_time, LOW),
         (sig_ref_buffer, LOW),
         # Reference
+        (reion_time, LOW),
         (reion_time, HIGH),
-        (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
         (shelf_time, LOW),
@@ -137,7 +137,7 @@ def get_seq(pulse_streamer, config, args):
         (sig_ref_buffer, LOW),
         (green_delay_time, LOW)
     ]
-    power_list = [reion_power, reion_power]
+    power_list = reion_power
     tool_belt.process_laser_seq(
         pulse_streamer, seq, config, green_laser_name,power_list , train
     )
@@ -246,6 +246,7 @@ def get_seq(pulse_streamer, config, args):
         (yellow_delay_time, LOW)
     ]
     power_list= [shelf_power, readout_power, shelf_power, readout_power]
+    # power_list= readout_power
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 yellow_laser_name, 
                                 power_list, train)
@@ -263,9 +264,12 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == "__main__":
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    seq_args = [10000.0, 1000.0, 100, 50, 0, 50, 
+    # seq_args = [10000.0, 1000.0, 100, 50, 0, 50, 
+    #             'integrated_520', 'laserglow_589', 'cobolt_638', 
+    #             'signal_generator_sg394', 1, None, None, 1.0, 0.5]
+    seq_args = [5000.0, 1000.0, 1000, 32, 0, 32, 
                 'integrated_520', 'laserglow_589', 'cobolt_638', 
-                'signal_generator_sg394', 1, None, None, 1.0, 0.5]
+                'signal_generator_bnc835', 1, None, None, 0.0, 0.2]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
     

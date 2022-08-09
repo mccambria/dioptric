@@ -585,11 +585,11 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    if False:
-    # if True:
+    # if False:
+    if True:
         tool_belt.init_matplotlib()
         # file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
-        file_name = "2022_08_08-12_58_35-rubin-nv1"
+        file_name = "2022_08_09-15_22_25-rubin-nv1"
         data = tool_belt.get_raw_data(file_name)
         nv_sig = data["nv_sig"]
         nv0 = data["nv0"]
@@ -615,7 +615,7 @@ if __name__ == "__main__":
         # )
 
         plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power,
-                        fit_threshold_full_model = True, nd_filter=None)
+                        fit_threshold_full_model = False, nd_filter=None)
         # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 
         # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
@@ -712,21 +712,21 @@ if __name__ == "__main__":
     # num_reps = 1000
     num_reps = 500
 
-    try:
-        determine_readout_dur_power(
-            nv_sig,
-            nv_sig,
-            apd_indices,
-            num_reps,
-            max_readout_dur=max_readout_dur,
-            readout_powers=readout_powers,
-            plot_readout_durs=readout_durs,
-        )
-    finally:
-        # Reset our hardware - this should be done in each routine, but
-        # let's double check here
-        tool_belt.reset_cfm()
-        # Kill safe stop
-        if tool_belt.check_safe_stop_alive():
-            print("\n\nRoutine complete. Press enter to exit.")
-            tool_belt.poll_safe_stop()
+    # try:
+    #     determine_readout_dur_power(
+    #         nv_sig,
+    #         nv_sig,
+    #         apd_indices,
+    #         num_reps,
+    #         max_readout_dur=max_readout_dur,
+    #         readout_powers=readout_powers,
+    #         plot_readout_durs=readout_durs,
+    #     )
+    # finally:
+    #     # Reset our hardware - this should be done in each routine, but
+    #     # let's double check here
+    #     tool_belt.reset_cfm()
+    #     # Kill safe stop
+    #     if tool_belt.check_safe_stop_alive():
+    #         print("\n\nRoutine complete. Press enter to exit.")
+    #         tool_belt.poll_safe_stop()

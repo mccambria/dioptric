@@ -94,8 +94,8 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
 
     # Initial Calculation and setup
     tool_belt.set_filter(cxn, nv_sig, "charge_readout_laser")
-    tool_belt.set_filter(cxn, nv_sig, "nv-_prep_laser")
-    tool_belt.set_filter(cxn, nv_sig, "nv0_prep_laser")
+    tool_belt.set_filter(cxn, nv_sig, "nv-_reionization_laser")
+    tool_belt.set_filter(cxn, nv_sig, "nv0_ionization_laser")
     # tool_belt.set_filter(cxn, nv_sig, "spin_shelf_laser")
         
     readout_time = nv_sig['charge_readout_dur']
@@ -107,10 +107,10 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
         cxn, nv_sig, "charge_readout_laser"
     )
     reion_power = tool_belt.set_laser_power(
-        cxn, nv_sig, "nv-_prep_laser"
+        cxn, nv_sig, "nv-_reionization_laser"
     )
     ion_power = tool_belt.set_laser_power(
-        cxn, nv_sig, "nv0_prep_laser"
+        cxn, nv_sig, "nv0_ionization_laser"
     )
     shelf_power = tool_belt.set_laser_power(
         cxn, nv_sig, "spin_shelf_laser"
@@ -133,10 +133,12 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
     # Estimate the lenth of the sequance            
     file_name = 'rabi_scc.py'        
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pi_pulse,
-        shelf_time ,  uwave_pi_pulse, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-        apd_indices[0], reion_power, ion_power, readout_power, shelf_power]
+        shelf_time ,  uwave_pi_pulse, 
+        green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
+        apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+      
     # print(seq_args)
     # return
     
@@ -168,14 +170,18 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
 
     new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
     sample_counts = new_counts[0]
+    # print(sample_counts)
 
     # signal counts are even - get every second element starting from 0
     sig_counts = sample_counts[0::2]
+    # print(sig_counts)
 
     # ref counts are odd - sample_counts every second element starting from 1
     ref_counts = sample_counts[1::2]
+    # print(ref_counts)
     
     cxn.apd_tagger.stop_tag_stream()
+    tool_belt.reset_cfm(cxn)
 
     return sig_counts, ref_counts
 
@@ -191,18 +197,13 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
         ion_durs = numpy.linspace(0,1000,11)
   
     num_steps = len(ion_durs)
-    # create some lists for data
-    # sig_count_raw = []
-    # ref_count_raw = []
+    
+    # create some arrays for data
     sig_counts_array = numpy.zeros(num_steps)
     sig_counts_ste_array = numpy.copy(sig_counts_array)
     ref_counts_array = numpy.copy(sig_counts_array)
     ref_counts_ste_array = numpy.copy(sig_counts_array)
     snr_array = numpy.copy(sig_counts_array)
-    # sig_counts[:] = numpy.nan
-    
-    # ref_counts_avg = []
-    # snr_list = []
     
 
     dur_ind_master_list = []
@@ -219,6 +220,7 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
         nv_sig_copy['nv0_ionization_dur'] = t
         sig_counts, ref_counts = measure(nv_sig_copy, apd_indices, num_reps,
                                     state, plot = False)
+        # print(sig_counts)
         
         sig_count_avg = numpy.average(sig_counts)
         sig_counts_ste = stats.sem(sig_counts)
@@ -640,6 +642,7 @@ if __name__ == '__main__':
 
     nv_sig = {
             "coords":[-0.855, -0.591,  6.177],
+            # "coords": [-0.874, -0.612, 6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -659,21 +662,21 @@ if __name__ == '__main__':
          "imaging_laser_filter": nd_green,
           "imaging_readout_dur": 1e7,
 
-         "initialize_laser": green_laser,
-           "initialize_laser_power": green_power,
-           "initialize_laser_dur":  1e3,
-         "CPG_laser": green_laser,
-           "CPG_laser_power":red_power,
-           "CPG_laser_dur": int(1e6),
+         # "initialize_laser": green_laser,
+         #   "initialize_laser_power": green_power,
+         #   "initialize_laser_dur":  1e3,
+         # "CPG_laser": green_laser,
+         #   "CPG_laser_power":red_power,
+         #   "CPG_laser_dur": int(1e6),
 
 
 
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser-power": None,
-        "nv-_prep_laser_dur": 1e3,
-        "nv0_prep_laser": red_laser,
-        "nv0_prep_laser-power": None,
-        "nv0_prep_laser_dur": 1e3,
+        # "nv-_prep_laser": green_laser,
+        # "nv-_prep_laser-power": None,
+        # "nv-_prep_laser_dur": 1e3,
+        # "nv0_prep_laser": red_laser,
+        # "nv0_prep_laser-power": None,
+        # "nv0_prep_laser_dur": 1e3,
         
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_laser_power": green_power,
@@ -683,8 +686,8 @@ if __name__ == '__main__':
         "nv0_ionization_laser_power": None,
         "nv0_ionization_dur": 300,
         
-        "spin_shelf_laser": red_laser,
-        "spin_shelf_laser_power": None,
+        "spin_shelf_laser": yellow_laser,
+        "spin_shelf_laser_power": 0.0,
         "spin_shelf_dur": 0,
         
          "charge_readout_laser": yellow_laser,
