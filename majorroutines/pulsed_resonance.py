@@ -201,7 +201,7 @@ def get_guess_params(
         height = 5 * rel_ref_ste
         # print(height)
     else:
-        height = 0.08
+        height = 0.06
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -236,8 +236,8 @@ def get_guess_params(
         # List of higest peak then next highest peak
         peaks = [max_peak_freqs, next_max_peak_freqs]
 
-        # Only keep the smaller peak if it's > 1/3 the height of the larger peak
-        if next_max_peak_height > max_peak_height / 3:
+        # Only keep the smaller peak if it's at least 50% the height of the larger peak
+        if next_max_peak_height > 0.5 * max_peak_height:
             # Sort by frequency
             peaks.sort()
             low_freq_guess = freqs[peaks[0]]
@@ -373,19 +373,29 @@ def process_counts(ref_counts, sig_counts, num_runs):
     """
 
     # Find the averages across runs
+    sig_counts_avg = np.average(sig_counts, axis=0)
     single_ref_avg = np.average(ref_counts)
     ref_counts_avg = np.average(ref_counts, axis=0)
-    sig_counts_avg = np.average(sig_counts, axis=0)
 
+    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
-    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
 
-    norm_avg_sig = sig_counts_avg / single_ref_avg
-    norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-        (sig_counts_ste / sig_counts_avg) ** 2
-        + (single_ref_ste / single_ref_avg) ** 2
-    )
+    # New style, single reference
+    if False:
+        norm_avg_sig = sig_counts_avg / single_ref_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (single_ref_ste / single_ref_avg) ** 2
+        )
+
+    # Old style, point-by-point reference
+    else:
+        norm_avg_sig = sig_counts_avg / ref_counts_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (ref_counts_ste / ref_counts_avg) ** 2
+        )
 
     return (
         ref_counts_avg,
@@ -559,13 +569,13 @@ def main_with_cxn(
     ax.set_title("Non-normalized Count Rate Versus Frequency")
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Count rate (kcps)")
-    
+
     ax = axes_pack[1]
     ax.plot([], [])
     ax.set_title("Normalized Count Rate vs Frequency")
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Contrast (arb. units)")
-    
+
     # %% Get the starting time of the function
 
     start_timestamp = tool_belt.get_time_stamp()
@@ -656,39 +666,43 @@ def main_with_cxn(
         cxn.apd_tagger.stop_tag_stream()
 
         # %% incremental plotting
-        
-        #Average the counts over the iterations
-        single_ref_avg = np.average(ref_counts[:(run_ind+1)])
-        ref_counts_avg = np.average(ref_counts[:(run_ind+1)], axis=0)
-        sig_counts_avg = np.average(sig_counts[:(run_ind+1)], axis=0)
+
+        # Average the counts over the iterations
+        single_ref_avg = np.average(ref_counts[: (run_ind + 1)])
+        ref_counts_avg = np.average(ref_counts[: (run_ind + 1)], axis=0)
+        sig_counts_avg = np.average(sig_counts[: (run_ind + 1)], axis=0)
         norm_avg_sig = sig_counts_avg / single_ref_avg
-        
-        
+
         kcps_uwave_off_avg = (ref_counts_avg / (num_reps * 1000)) / readout_sec
         kcpsc_uwave_on_avg = (sig_counts_avg / (num_reps * 1000)) / readout_sec
-        
-        
+
         ax = axes_pack[0]
         ax.cla()
         ax.plot(freqs, kcps_uwave_off_avg, "r-", label="Reference")
         ax.plot(freqs, kcpsc_uwave_on_avg, "g-", label="Signal")
-    
+
         ax.legend()
-        
+
         ax = axes_pack[1]
         ax.cla()
         ax.plot(freqs, norm_avg_sig, "b-")
-        
-        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                verticalalignment='top', bbox=props)
-        
+        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.8,
+            0.9,
+            text_popt,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=props,
+        )
+
         fig.canvas.draw()
         fig.set_tight_layout(True)
         fig.canvas.flush_events()
-        
+
         # %% Save the data we have incrementally for long measurements
 
         rawData = {
