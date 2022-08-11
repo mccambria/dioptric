@@ -274,9 +274,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
-        # sig_gen_cxn.load_iq()
+        sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
-        # cxn.arbitrary_waveform_generator.iq_switch()
+        cxn.arbitrary_waveform_generator.load_arb_phases([0])
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835

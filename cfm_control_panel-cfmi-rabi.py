@@ -29,6 +29,7 @@ import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
+import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.ramsey as ramsey
 import majorroutines.t1_dq_main as t1_dq_main
@@ -317,7 +318,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 5
+    num_runs = 10
 
     composite = False
 
@@ -378,7 +379,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -392,6 +393,22 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     )
     nv_sig["rabi_{}".format(state.name)] = period
 
+
+
+def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
+
+    num_reps = 2e4
+    # num_runs = 2
+    num_runs = 10
+
+    discrete_rabi.main(
+        nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs
+    )
+
+    # for iq_delay in numpy.linspace(550, 570, 21):
+    #     print(iq_delay)
+    #     discrete_rabi.main(nv_sig, apd_indices,
+    #                         state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
 
 
@@ -479,8 +496,8 @@ def do_dd_xy4(nv_sig, apd_indices):
     precession_time_range = [0, max_time*10**3]
 
     num_dd_reps = 1
-    num_reps = 1e2
-    num_runs =1
+    num_reps = 1e4
+    num_runs =4
 
 
     state = States.HIGH
@@ -507,11 +524,10 @@ def do_relaxation(nv_sig, apd_indices, ):
     max_tau_gamma = 8e6
     num_steps_omega = 21
     num_steps_gamma = 21
-    num_reps = 100
-    num_runs = 30
-    a=False
-    b=True
-    if b:
+    num_reps = 2000
+    num_runs = 60
+    
+    if False:
      t1_exp_array = numpy.array(
         [[
                 [States.ZERO, States.ZERO],
@@ -529,7 +545,7 @@ def do_relaxation(nv_sig, apd_indices, ):
         #     ],
              
              ])
-    if a:
+    if True:
      t1_exp_array = numpy.array(
         [ [
                 [States.ZERO, States.ZERO],
@@ -566,7 +582,7 @@ def do_relaxation(nv_sig, apd_indices, ):
             t1_exp_array,
             num_runs,
             composite_pulses=False,
-            scc_readout=True,
+            scc_readout=False,
         )
 
 def do_determine_standard_readout_params(nv_sig, apd_indices):
@@ -985,6 +1001,21 @@ if __name__ == "__main__":
 
             # do_SPaCE(nv_sig, nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b,
             #  img_range_1D,img_range_2D, offset)
+            
+        if False: 
+            for i in [4, 5, 8, 10]:
+                ind = i-1
+                nv_sig_i = copy.deepcopy(nv_sig)
+                nv_sig_i["coords"] = nv_coords_list[ind]
+                nv_sig_i["expected_count_rate"]=expected_count_rate_list[ind]
+                nv_sig_i['name']= "{}-nv{}".format(sample_name,i)
+                
+                do_pulsed_resonance_state(nv_sig_i, nv_sig_i,apd_indices, States.LOW)
+                do_pulsed_resonance_state(nv_sig_i, nv_sig_i,apd_indices, States.HIGH)
+                do_rabi(nv_sig_i, nv_sig_i, apd_indices, States.LOW, uwave_time_range=[0, 100])
+                do_rabi(nv_sig_i, nv_sig_i,apd_indices, States.HIGH, uwave_time_range=[0, 100])
+                
+                do_relaxation(nv_sig_i, apd_indices)
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.2)
@@ -993,7 +1024,7 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
-      #  do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
+        do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
@@ -1001,7 +1032,8 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, nv_sig,apd_indices)
 
         # do_spin_echo(nv_sig, apd_indices)
-        do_dd_xy4(nv_sig, apd_indices)
+        # do_dd_xy4(nv_sig, apd_indices)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
 
         # do_relaxation(nv_sig, apd_indices)
         

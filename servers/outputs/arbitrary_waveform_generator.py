@@ -33,7 +33,9 @@ import time
 import numpy
 from numpy import pi
 root2_on_2 = numpy.sqrt(2) / 2
-amp = 0.1 #root2_on_2
+# amp = 0.5  # from SRS sig gen datasheet, ( I^2 + Q^2 ) ^ (1/2) = 0.5 V for full scale input. The amp should then be 0.5 V. This relates to 1.0 Vpp from the AWG
+amp = 0.1
+# amp=root2_on_2
 
 
 def iq_comps(phase):
