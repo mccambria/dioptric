@@ -33,6 +33,7 @@ import majorroutines.g2_measurement as g2_measurement
 import majorroutines.ramsey as ramsey
 import majorroutines.t1_dq_main as t1_dq_main
 import majorroutines.spin_echo as spin_echo
+import majorroutines.dynamical_decoupling_xy4 as dynamical_decoupling_xy4
 import majorroutines.lifetime_v2 as lifetime_v2
 import minorroutines.time_resolved_readout as time_resolved_readout
 import chargeroutines.SPaCE as SPaCE
@@ -87,8 +88,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.25
     # scan_range = 0.2
     # scan_range = 0.15
-    scan_range = 0.1
-    # scan_range = 0.05
+    # scan_range = 0.1
+    scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
@@ -99,8 +100,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps =120
     # num_steps = 90
-    num_steps = 60
-    # num_steps = 31
+    # num_steps = 60
+    num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -287,8 +288,8 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
     num_steps =101
     num_reps = 1e4
     num_runs = 10
-    uwave_power = 10
-    uwave_pulse_dur = int(25)
+    uwave_power = 15
+    uwave_pulse_dur = int(30)
 
     pulsed_resonance.main(
         nv_sig,
@@ -469,6 +470,36 @@ def do_spin_echo(nv_sig, apd_indices):
         state,
     )
     return angle
+
+def do_dd_xy4(nv_sig, apd_indices):
+
+    max_time = 100  # us
+    num_steps = int(max_time + 1)  # 1 point per us
+    
+    precession_time_range = [0, max_time*10**3]
+
+    num_dd_reps = 1
+    num_reps = 1e2
+    num_runs =1
+
+
+    state = States.HIGH
+
+
+
+    dynamical_decoupling_xy4.main(
+        nv_sig,
+        apd_indices,
+        precession_time_range,
+        num_dd_reps,
+        num_steps,
+        num_reps,
+        num_runs,
+        state,
+    )
+    return 
+
+
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
@@ -805,9 +836,22 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
 
-
+    nv_coords_list = [
+        [-0.853, -0.593, 6.16],
+        [-0.887, -0.567, 6.15],
+        [-0.817, -0.604, 6.17],
+        [-0.823, -0.597, 6.18],
+        [-0.831, -0.609, 6.15],
+        [-0.838, -0.617, 6.16],
+        [-0.865, -0.625, 6.16],
+        [-0.892, -0.619, 6.15],
+        [-0.887, -0.627, 6.14],
+        [-0.905, -0.601, 6.18],
+        ]
+    
+    expected_count_rate_list = [13.5, 10, 12, 15, 17, 13, 13, 13, 15, 15]
     nv_sig = {
-            "coords":[-0.855, -0.591,  6.177],
+            "coords":[-0.854, -0.592,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -877,7 +921,7 @@ if __name__ == "__main__":
 
 
 
-    nv_sig = nv_sig
+    # nv_sig = nv_sig
 
 
     # %% Functions to run
@@ -898,11 +942,25 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
        # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
-#
+        
+        # if True:
+        if False:
+            
+            for i in range(len(nv_coords_list)):
+                nv_sig_i = copy.deepcopy(nv_sig)
+                nv_sig_i["coords"] = nv_coords_list[i]
+                nv_sig_i["expected_count_rate"]=expected_count_rate_list[i]
+                nv_sig_i['name']= "{}-nv{}".format(sample_name,i+1)
+                
+                # do_optimize(nv_sig_i,apd_indices)
+    
+                do_image_sample(nv_sig_i, apd_indices)
+                
+                # do_pulsed_resonance(nv_sig_i, nv_sig_i, apd_indices, 2.87, 0.30) ###
+                
         # do_optimize(nv_sig,apd_indices)
-
         # do_image_sample(nv_sig, apd_indices)
-
+                
         # do_stationary_count(nv_sig, apd_indices)
 
 
@@ -943,12 +1001,12 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, nv_sig,apd_indices)
 
         # do_spin_echo(nv_sig, apd_indices)
-
+        do_dd_xy4(nv_sig, apd_indices)
 
         # do_relaxation(nv_sig, apd_indices)
         
         # do_determine_standard_readout_params(nv_sig, apd_indices)
-        do_determine_charge_readout_params(nv_sig, apd_indices)
+        # do_determine_charge_readout_params(nv_sig, apd_indices)
 
         # Operations that don't need an NV#
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset

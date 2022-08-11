@@ -154,7 +154,7 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    pi_pulse_reps = num_dd_reps*8
+    pi_pulse_reps = 1# num_dd_reps*8
     seq_args = [
         min_precession_time,
         polarization_time,
@@ -184,7 +184,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    #    return
+    # return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -266,9 +266,11 @@ def main_with_cxn(
                 laser_name,
                 laser_power,
             ]
+            # print(seq_args)
+            # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
+            # cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
@@ -278,6 +280,7 @@ def main_with_cxn(
             # parse the returned list into what we want.
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
+            # print(new_counts)
 
             count = sum(sample_counts[0::4])
             sig_counts[run_ind, tau_ind_first] = count
@@ -322,7 +325,7 @@ def main_with_cxn(
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
-        ax.set_title("XY4-{} Measurement").format(num_dd_reps)
+        ax.set_title("XY4-{} Measurement".format(num_dd_reps))
         ax.set_xlabel(r"$\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
@@ -395,7 +398,7 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_title("XY4-{} Measurement").format(num_dd_reps)
+    ax.set_title("XY4-{} Measurement".format(num_dd_reps))
     ax.set_xlabel(r"$\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 

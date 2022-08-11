@@ -712,7 +712,7 @@ def create_image_figure(
     fig.set_tight_layout(True)
 
     # Tell the axes to show a grayscale image
-    print(imgArray)
+    # print(imgArray)
     img = ax.imshow(
         imgArray,
         cmap=color_map,

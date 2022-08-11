@@ -709,7 +709,7 @@ if __name__ == '__main__':
     
     num_reps = 500
     # Run the program
-    determine_ionization_dur(nv_sig, apd_indices, num_reps)
+    determine_ionization_dur(nv_sig, apd_indices, num_reps, [600, 650, 700, 750, 800, 850, 900, 950, 1000])
     # determine_reion_dur(nv_sig)
     # determine_shelf_dur(nv_sig)
         
