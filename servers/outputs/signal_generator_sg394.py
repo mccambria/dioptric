@@ -110,7 +110,7 @@ class SignalGeneratorSg394(LabradServer):
         # Determine how many decimal places we need
         precision = len(str(amp).split('.')[1])
         cmd = 'AMPR {0:.{1}f} DBM'.format(amp, precision)
-        logging.info(cmd)
+        # logging.info(cmd)
         self.sig_gen.write(cmd)
 
     # def load_stream_writer(self, task_name, voltages, period):
@@ -179,11 +179,15 @@ class SignalGeneratorSg394(LabradServer):
 
         # QAM is type 7
         self.sig_gen.write('TYPE 7')
+        # STYP 1 is vector modulation
         # self.sig_gen.write('STYP 1')
         # External mode is modulation function 5
         self.sig_gen.write('QFNC 5')
         # Turn on modulation
-        self.sig_gen.write('MODL 1')
+        cmd = 'MODL 1'
+        self.sig_gen.write(cmd)
+        logging.info(cmd)
+        
 
     @setting(6)
     def reset(self, c):
@@ -199,7 +203,26 @@ class SignalGeneratorSg394(LabradServer):
         #     task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
         #                                          min_val=-1.0, max_val=1.0)
         #     task.write(0.0)
-
+    
+    @setting(10,
+             returns="i")
+    def querry_err(self, c, option):
+        
+        err = self.sig_gen.write('LERR?')
+        return err
+    
+    @setting(11,
+             returns="i")
+    def querry_mode(self, c):
+        self.sig_gen.write('TYPE 7')
+        self.sig_gen.write('QFNC 1')
+        # boo = self.sig_gen.write('QFNC?')
+        
+        cmd = 'QFNC?'
+        logging.info(cmd)
+        boo = self.sig_gen.write(cmd)
+        logging.info(boo)
+        return boo
 
 __server__ = SignalGeneratorSg394()
 

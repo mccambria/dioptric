@@ -233,6 +233,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # Create a list of indices to step through the taus. This will be shuffled
     tau_ind_list = list(range(0, num_steps))
 
+    # create figure
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    ax = axes_pack[0]
+    ax.plot([], [])
+    ax.set_xlabel('rf time (ns)')
+    ax.set_ylabel('Counts')
+    
+    ax = axes_pack[1]
+    ax.plot([], [])
+    ax.set_xlabel('Microwave duration (ns)')
+    ax.set_ylabel('Normalized signal')
+
     # %% Collect the data
 
     # Start 'Press enter to stop...'
@@ -301,19 +313,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-            # print(new_counts)
 
             sample_counts = new_counts[0]
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-            print('Sig counts: {}'.format(sum(sig_gate_counts)))
+            # print('Sig counts: {}'.format(sum(sig_gate_counts)))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            print('Ref counts: {}'.format(sum(ref_gate_counts)))
+            # print('Ref counts: {}'.format(sum(ref_gate_counts)))
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
@@ -322,6 +333,42 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #            print('Elapsed time {}'.format(run_elapsed_time))
         cxn.apd_tagger.stop_tag_stream()
 
+        # %% incremental plotting
+        
+        #Average the counts over the iterations
+        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        
+        
+        ax = axes_pack[0]
+        ax.cla()
+        ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
+        ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
+        
+        ax.set_xlabel('rf time (ns)')
+        ax.set_ylabel('Counts')
+        ax.legend()
+        
+        ax = axes_pack[1]
+        ax.cla()
+        ax.plot(taus , norm_avg_sig, 'b-')
+        ax.set_title('Normalized Signal With Varying Microwave Duration')
+        ax.set_xlabel('Microwave duration (ns)')
+        ax.set_ylabel('Normalized signal')
+        
+        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
+
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
+                verticalalignment='top', bbox=props)
+        
+        raw_fig.canvas.draw()
+        raw_fig.set_tight_layout(True)
+        raw_fig.canvas.flush_events()
+        
+        
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
@@ -350,15 +397,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(raw_fig, file_path)
 
-    # %% Average the counts over the iterations
-
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-
-    # %% Calculate the Rabi data, signal / reference over different Tau
-
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # %% Fit the data and extract piPulse
 
@@ -366,9 +406,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # %% Plot the Rabi signal
 
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
     ax = axes_pack[0]
+    ax.cla()
     ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     
@@ -378,6 +417,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax.legend()
 
     ax = axes_pack[1]
+    ax.cla()
     ax.plot(taus , norm_avg_sig, 'b-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')

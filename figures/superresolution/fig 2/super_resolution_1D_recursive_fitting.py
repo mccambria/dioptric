@@ -56,14 +56,22 @@ def width_scaling_w_mods(t, e, alpha, R):
 
 
 def bessel_scnd_der(x):
-    term_1 = 24 * j1(x) ** 2
-    term_2 = 16 * j1(x) * (jv(0, x) - jv(2, x))
-    term_3 = 4 * (
+    term_1 = 24/2 * j1(x) ** 2
+    term_2 = 16/2 * j1(x) * (jv(2, x) - jv(0, x))
+    term_3 = 4/2 * (
         0.5 * (jv(0, x) - jv(2, x)) ** 2
         + j1(x) * (0.5 * (jv(3, x) - j1(x)) - j1(x))
     )
+    
+    term1= x**2* jv(0,x)**2 
+    term2 = - 3*( x**2 - 4 )*j1(x)**2 
+    term3 = x**2*jv(2,x)**2
+    term4 = -2*x*jv(0,x)*( 4*j1(x) + x*jv(2,x) ) 
+    term5= x*j1(x)*( 8*jv(2,x) + x*jv(3,x) )
+                    
+    return x**-4*(term1+term2+term3+term4+term5)
 
-    return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
+    # return term_1 / x ** 4 - term_2 / x ** 3 + term_3 / x ** 2
 
 
 def exp_decay(t, A, alpha, e):
@@ -212,7 +220,7 @@ def plot_width_vs_dur(file_list, path, threshold, e):
 
     #### modified inverse quarter####
     # Estimate the repeatability R and convert to dimentionless units below
-    R_guess = 5  # nm
+    R_guess = 10  # nm
     fit_func = lambda t, alpha, R: width_scaling_w_mods(t, e, alpha, R)
     init_fit = [0.000005, 2 * numpy.pi * NA * R_guess / wavelength]
 
@@ -234,6 +242,7 @@ def plot_width_vs_dur(file_list, path, threshold, e):
         p0=init_fit,
         sigma=widths_error_fwhm_x,
         absolute_sigma=True,
+        bounds=(0, numpy.infty)
     )
 
     print()
@@ -339,6 +348,9 @@ threshold = 5
 # plot_heights_vs_dur(file_list, path, threshold, 5e-6)
 
 num_reps = 6
-recursive_fit(file_list, path, threshold, num_reps)
+# recursive_fit(file_list, path, threshold, num_reps)
 
 # plt.show(block=True)
+x0 =  3.832  # Position of this Airy disk (n2), in dimensionless units
+C = bessel_scnd_der(x0)
+print(C)

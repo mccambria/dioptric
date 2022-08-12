@@ -515,6 +515,8 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
+    # Account for the pi/2 pulse on each side of a tau
+    plot_taus = (taus + uwave_pi_pulse) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -586,7 +588,10 @@ def main_with_cxn(
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     #    return
-
+    
+    # create figure
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -691,6 +696,45 @@ def main_with_cxn(
 
         cxn.apd_tagger.stop_tag_stream()
 
+        # %% incremental plotting
+        
+        #Average the counts over the iterations
+        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        try:
+            norm_avg_sig = avg_sig_counts / avg_ref_counts
+        except RuntimeWarning as e:
+            print(e)
+            inf_mask = numpy.isinf(norm_avg_sig)
+            # Assign to 0 based on the passed conditional array
+            norm_avg_sig[inf_mask] = 0
+        
+        
+        ax = axes_pack[0]
+        ax.cla()
+        ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
+        ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Counts")
+        ax.legend()
+        
+        ax = axes_pack[1]
+        ax.cla()
+        ax.plot(plot_taus, norm_avg_sig, "b-")
+        ax.set_title("Spin Echo Measurement")
+        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        
+        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
+
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
+                verticalalignment='top', bbox=props)
+        
+        raw_fig.canvas.draw()
+        raw_fig.set_tight_layout(True)
+        raw_fig.canvas.flush_events()
+        
         # %% Save the data we have incrementally for long T1s
 
         raw_data = {
@@ -730,35 +774,16 @@ def main_with_cxn(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
         tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(raw_fig, file_path)
 
     # %% Hardware clean up
 
     tool_belt.reset_cfm(cxn)
 
-    # %% Average the counts over the iterations
-
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-
-    # %% Calculate the ramsey data, signal / reference over different
-    # relaxation times
-
-    # Replace x/0=inf with 0
-    try:
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(norm_avg_sig)
-        # Assign to 0 based on the passed conditional array
-        norm_avg_sig[inf_mask] = 0
-
     # %% Plot the data
 
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
     ax = axes_pack[0]
-    # Account for the pi/2 pulse on each side of a tau
-    plot_taus = (taus + uwave_pi_pulse) / 1000
+    ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
     ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
@@ -766,6 +791,7 @@ def main_with_cxn(
     ax.legend()
 
     ax = axes_pack[1]
+    ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
     ax.set_title("Spin Echo Measurement")
     ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")

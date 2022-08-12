@@ -599,7 +599,7 @@ def main_with_cxn(
             total_exp_time_h
         )
     )
-    #    return
+    # return
 
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -850,56 +850,56 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    # path = (
-    #     "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
-    # )
-    # folder = "hopper-nv1_2022_06_15-295K-10mW-z_adjusted-expanded"
+    path = (
+        "pc_rabi/branch_master/t1_dq_main/"
+    )
+    folder = "2022_08"
     # collate_incremental(path, folder)
-    # full_path_to_incremental = "{}/{}/incremental".format(path, folder)
-    # data = tool_belt.get_raw_data(
-    #     "collated_incremental", full_path_to_incremental
-    # )
+    full_path_to_incremental = "{}/{}/incremental".format(path, folder)
+    data = tool_belt.get_raw_data(
+        "2022_08_05-15_40_34-rubin-nv1", full_path_to_incremental
+    )
 
-    # # start = 75
-    # # file_names = unpack_interleave(data, start, start + 24)
-    # file_names = unpack_interleave(data)
+    # start = 75
+    # file_names = unpack_interleave(data, start, start + 24)
+    file_names = unpack_interleave(data)
 
-    # save_folder_path = common.get_nvdata_dir() / path / folder
-    # for el in file_names:
-    #     path_to_file = tool_belt.get_raw_data_path(el)
-    #     shutil.copy(str(path_to_file), str(save_folder_path))
-    #     shutil.copy(
-    #         str(path_to_file.with_suffix(".svg")), str(save_folder_path)
-        # )
+    save_folder_path = common.get_nvdata_dir() / path / folder
+    for el in file_names:
+        path_to_file = tool_belt.get_raw_data_path(el)
+        shutil.copy(str(path_to_file), str(save_folder_path))
+        shutil.copy(
+            str(path_to_file.with_suffix(".svg")), str(save_folder_path)
+        )
 
-    # plt.show(block=True)
+    plt.show(block=True)
     
     
-    file_name = "2022_07_10-04_23_35-rubin"
-    data = tool_belt.get_raw_data(file_name)
-    params_list = data['params_master_list'][0]
-    min_relaxation_time = params_list[1][0] / 1e6
-    max_relaxation_time = params_list[1][1] / 1e6
-    num_steps = params_list[2]
-    taus = numpy.linspace(
-            min_relaxation_time,
-            max_relaxation_time,
-            num=num_steps)
-    sig_counts_list = data['sig_counts_master_list'][0]
-    avg_sig_counts = numpy.average(sig_counts_list, axis =0)
-    ref_counts_list = data['ref_counts_master_list'][0]
-    avg_ref_counts = numpy.average(ref_counts_list, axis =0)
-    norm_counts = avg_sig_counts/avg_ref_counts
+    # file_name = "2022_07_10-04_23_35-rubin"
+    # data = tool_belt.get_raw_data(file_name)
+    # params_list = data['params_master_list'][0]
+    # min_relaxation_time = params_list[1][0] / 1e6
+    # max_relaxation_time = params_list[1][1] / 1e6
+    # num_steps = params_list[2]
+    # taus = numpy.linspace(
+    #         min_relaxation_time,
+    #         max_relaxation_time,
+    #         num=num_steps)
+    # sig_counts_list = data['sig_counts_master_list'][0]
+    # avg_sig_counts = numpy.average(sig_counts_list, axis =0)
+    # ref_counts_list = data['ref_counts_master_list'][0]
+    # avg_ref_counts = numpy.average(ref_counts_list, axis =0)
+    # norm_counts = avg_sig_counts/avg_ref_counts
     
-    fig, ax = plt.subplots()
-    ax.plot(taus,norm_counts, 'bo')
-    ax.set_xlabel('Relaxation time (ms)')
-    ax.set_ylabel('Norm opulation')
+    # fig, ax = plt.subplots()
+    # ax.plot(taus,norm_counts, 'bo')
+    # ax.set_xlabel('Relaxation time (ms)')
+    # ax.set_ylabel('Norm opulation')
     
-    fit_func = tool_belt.exp_decay
-    taus_fit = numpy.linspace(min_relaxation_time,max_relaxation_time, 100 )
-    popt, covarr = curve_fit(fit_func,taus,norm_counts,p0 = [0.2, 5, 0.8])
+    # fit_func = tool_belt.exp_decay
+    # taus_fit = numpy.linspace(min_relaxation_time,max_relaxation_time, 100 )
+    # popt, covarr = curve_fit(fit_func,taus,norm_counts,p0 = [0.2, 5, 0.8])
     
-    print(popt)
-    ax.plot(taus_fit,fit_func(taus_fit, *popt), 'r-')
+    # print(popt)
+    # ax.plot(taus_fit,fit_func(taus_fit, *popt), 'r-')
     # ax.plot(taus_fit,fit_func(taus_fit, 0.2,5, 0.8), 'r-')

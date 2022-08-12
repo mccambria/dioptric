@@ -26,11 +26,13 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     reported_temp_column_title,
     low_res_file_column_title,
     high_res_file_column_title,
+    bose,
 )
 import matplotlib.pyplot as plt
 from utils import common
 from utils import kplotlib as kpl
 from scipy.optimize import curve_fit
+from numpy import inf
 
 bad_zfs_temps = 350
 
@@ -90,22 +92,64 @@ def sub_room_zfs_from_temp(temp):
 
 
 def sub_room_zfs_from_temp_free(
-    # temp, coeff_1, coeff_2, coeff_3, coeff_4, coeff_5, coeff_6
     temp,
-    coeff_0,
-    # coeff_1,
+    coeff_1,
     coeff_2,
-    # coeff_3,
+    coeff_3,
     coeff_4,
-    # coeff_5,
+    coeff_5,
     coeff_6,
+    # temp,
+    # coeff_0,
+    # # coeff_1,
+    # coeff_2,
+    # # coeff_3,
+    # coeff_4,
+    # # coeff_5,
+    # coeff_6,
+    # skip_derivatives_check=False,
 ):
-    # coeffs = [coeff_1, coeff_2, coeff_3, coeff_4, coeff_5, coeff_6]
-    coeffs = [coeff_0, coeff_2, coeff_4, coeff_6]
+    coeffs = [coeff_1, coeff_2, coeff_3, coeff_4, coeff_5, coeff_6]
+    # coeffs = [coeff_0, coeff_2, coeff_4, coeff_6]
+
+    # Calculate the zfs and its first and second derivatives
     ret_val = 0
+    # Only consider this a valid trial fit function if it has negative first and second derivatives everywhere
+    # if not skip_derivatives_check:
+    #     num_test_points = 1000
+    #     max_test_temp = 300
+    #     test_temps = np.linspace(1, max_test_temp, num_test_points)
+    #     first_der = 0
+    #     second_der = 0
     for ind in range(len(coeffs)):
-        exp = ind * 2
+
+        # zfs
+        exp = ind
+        # exp = ind * 2
         ret_val += coeffs[ind] * (temp ** exp)
+
+        # if not skip_derivatives_check:
+        #     # First derivative
+        #     if ind in [0]:
+        #         continue
+        #     exp = ind - 1
+        #     first_der += ind * coeffs[ind] * (test_temps ** exp)
+
+        #     # Second derivative
+        #     if ind in [0, 1]:
+        #     # if ind in [0]:
+        #         continue
+        #     exp = ind - 2
+        #     second_der += ind * (ind - 1) * coeffs[ind] * (test_temps ** exp)
+
+    # Only consider this a valid trial fit function if it has negative first and second derivatives everywhere
+    # if not skip_derivatives_check:
+    #     if np.any(first_der > 0) or np.any(second_der > 0):
+    #         if type(temp) in [list, np.ndarray]:
+    #             ret_val = np.array([0] * len(temp))
+    #         else:
+    #             ret_val = 0
+
     return ret_val
 
 
@@ -149,12 +193,21 @@ def zfs_from_temp_barson(temp):
     Comes from Barson paper!
     """
 
+    zfs0 = 2.87771  # GHz
     X1 = 0.4369e-7  # 1 / K
     X2 = 15.7867e-7  # 1 / K
     X3 = 42.5598e-7  # 1 / K
     Theta1 = 200  # K
     Theta2 = 880  # K
     Theta3 = 2137.5  # K
+
+    return zfs_from_temp_barson_free(
+        temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3
+    )
+
+
+def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
+
     dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (
         np.exp(Theta / T) - 1
     )
@@ -176,7 +229,7 @@ def zfs_from_temp_barson(temp):
     b5 = 3.1e-12
     b6 = -1.8e-15
     D_of_T = (
-        lambda T: 2.87771
+        lambda T: zfs0
         + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
         / 1000
     )
@@ -189,6 +242,16 @@ def zfs_from_temp_barson(temp):
         return ret_vals
     else:
         return D_of_T(temp)
+
+
+def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
 
 
 def experimental_zfs_versus_t(path, file_name):
@@ -209,6 +272,7 @@ def experimental_zfs_versus_t(path, file_name):
             continue
         reported_temp = el[reported_temp_column_title]
         if not (min_temp <= reported_temp <= max_temp):
+            # if not (min_temp <= reported_temp <= 300):
             continue
         temp_list.append(reported_temp)
         low_res_file = el[low_res_file_column_title]
@@ -228,7 +292,7 @@ def experimental_zfs_versus_t(path, file_name):
         zfs_list.append(zfs)
         zfs_err_list.append(zfs_err)
 
-    color = kpl.kpl_colors["red"]
+    color = kpl.KplColors.RED.value
     facecolor = kpl.lighten_color_hex(color)
 
     fig, ax = plt.subplots(figsize=kpl.figsize)
@@ -246,47 +310,87 @@ def experimental_zfs_versus_t(path, file_name):
     )
 
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    ax.plot(
-        temp_linspace,
-        sub_room_zfs_from_temp(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Chen",
-    )
-    ax.plot(
-        temp_linspace,
-        super_room_zfs_from_temp(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Toyli",
-    )
+    # ax.plot(
+    #     temp_linspace,
+    #     sub_room_zfs_from_temp(temp_linspace),
+    #     lw=kpl.line_width,
+    #     # color=kpl.kpl_colors["blue"],
+    #     label="Chen",
+    # )
+    # ax.plot(
+    #     temp_linspace,
+    #     super_room_zfs_from_temp(temp_linspace),
+    #     lw=kpl.line_width,
+    #     # color=kpl.kpl_colors["blue"],
+    #     label="Toyli",
+    # )
+    # ax.plot(
+    #     temp_linspace,
+    #     zfs_from_temp_barson(temp_linspace),
+    #     lw=kpl.line_width,
+    #     # color=kpl.kpl_colors["blue"],
+    #     label="Barson",
+    # )
 
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     ax.set_ylabel("Zero field splitting (GHz)")
 
     guess_params = [
         2.87771,
-        # -4.625e-6,
-        1.067e-7,
-        # -9.325e-10,
-        1.739e-12,
-        # -1.838e-15,
-        -1.838e-17,
+        -8e-2,
+        -4e-1,
+        65,
+        165,
     ]
+    # guess_params = [
+    #     2.8778,
+    #     0,  # -3.287e-15,
+    #     -3e-08,
+    #     0,  # -2.4e-10,
+    #     0,  # -1.7e-13,
+    #     0,  # -0.8e-23,
+    # ]
+    # guess_params = [
+    #     2.87771,
+    #     -4.625e-6,
+    #     1.067e-7,
+    #     -9.325e-10,
+    #     1.739e-12,
+    #     -1.838e-15,
+    # ]  # , -1.838e-17]
+    # guess_params = [
+    #     2.87771,
+    #     # -4.625e-6,
+    #     -1.067e-7,
+    #     # -9.325e-10,
+    #     -1.739e-12,
+    #     # -1.838e-15,
+    #     -1.838e-17,
+    # ]
+    # fit_func = sub_room_zfs_from_temp_free
+    # fit_func = zfs_from_temp_barson_free
+    fit_func = cambria_test
     popt, pcov = curve_fit(
-        sub_room_zfs_from_temp_free,
+        fit_func,
         temp_list,
         zfs_list,
         p0=guess_params,
         sigma=zfs_err_list,
         absolute_sigma=True,
+        # bounds=((-inf, -inf, -inf, -inf, -inf, -inf), (inf, 0, 0, 0, 0, 0)),
     )
-    cambria_lambda = lambda temp: sub_room_zfs_from_temp_free(temp, *popt)
+    print(popt)
+    print(np.sqrt(np.diag(pcov)))
+    cambria_lambda = lambda temp: fit_func(
+        temp,
+        *popt,
+        # *guess_params,
+    )
     ax.plot(
         temp_linspace,
         cambria_lambda(temp_linspace),
         lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
+        color=kpl.KplColors.RED.value,
         label="Cambria",
     )
 
@@ -296,11 +400,11 @@ def experimental_zfs_versus_t(path, file_name):
         ssr += ((zfs - calc_zfs) / zfs_err) ** 2
     print(ssr)
 
-    ax.legend()
+    # ax.legend()
 
     # ax.set_yticks([2.85, 2.855, 2.86, 2.865, 2.87])
-    fig.tight_layout(pad=0.3)
-    fig.tight_layout(pad=0.3)
+    fig.tight_layout()
+    fig.tight_layout()
 
 
 # %% Main
@@ -359,7 +463,7 @@ def main(zfs, zfs_err=None, no_print=None):
     # plt.plot(x_vals, zfs_diff(x_vals))
     # print(zfs)
     # plt.show(block=True)
-    
+
     temp_err = None
     if zfs_err is not None:
         zfs_lower = zfs - zfs_err
@@ -386,7 +490,7 @@ def main(zfs, zfs_err=None, no_print=None):
     else:
         if not no_print:
             print(temp_mid)
-        
+
     return temp_mid
 
     # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
@@ -426,11 +530,11 @@ if __name__ == "__main__":
 
     # zfs = (2.80437571982632 + 2.9361011568838298) / 2
     # zfs_err = np.sqrt(2.3665998318251086e-05**2 + 2.7116675293791154e-05**2) / 2
-    zfs = (2.804495746863994 + 2.936131974306111) / 2
-    zfs_err = (
-        np.sqrt(2.6001293985452265e-05 ** 2 + 2.9769666707425683e-05 ** 2) / 2
-    )
-    main(zfs, zfs_err)
+    # zfs = (2.804495746863994 + 2.936131974306111) / 2
+    # zfs_err = (
+    #     np.sqrt(2.6001293985452265e-05 ** 2 + 2.9769666707425683e-05 ** 2) / 2
+    # )
+    # main(zfs, zfs_err)
 
     # process_temp_dep_res_files()
 
@@ -450,12 +554,12 @@ if __name__ == "__main__":
     # # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
     # # ax.legend()
 
-    # tool_belt.init_matplotlib()
+    tool_belt.init_matplotlib()
 
-    # home = common.get_nvdata_dir()
-    # path = home / "paper_materials/relaxation_temp_dependence"
-    # file_name = "compiled_data"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
+    file_name = "compiled_data"
 
-    # experimental_zfs_versus_t(path, file_name)
+    experimental_zfs_versus_t(path, file_name)
 
-    # plt.show(block=True)
+    plt.show(block=True)

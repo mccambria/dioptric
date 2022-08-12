@@ -1880,6 +1880,8 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
 
 
 def round_sig_figs(val, num_sig_figs):
+    if val == 0:
+        return 0
     func = lambda val, num_sig_figs: round(
         val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
     )
@@ -1894,6 +1896,8 @@ def round_sig_figs(val, num_sig_figs):
 
 
 def presentation_round(val, err):
+    if val == 0: 
+        return [0, None, None]
     err_mag = math.floor(math.log10(err))
     sci_err = err / (10 ** err_mag)
     first_err_digit = int(str(sci_err)[0])
@@ -1909,6 +1913,8 @@ def presentation_round(val, err):
 
 
 def presentation_round_latex(val, err):
+    if val == 0:
+        return "0"
     # if val <= 0 or err > val:
     #     return ""
     rounded_val, rounded_err, power_of_10 = presentation_round(val, err)

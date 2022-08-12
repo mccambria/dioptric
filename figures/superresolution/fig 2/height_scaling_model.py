@@ -136,9 +136,9 @@ def plot_inset(file_name, folder, threshold):
 
 def plot_height_vs_duration():
     fit_func = exp_decay
-    e =  8.7e-4
-    A = 0.579
-    alpha = 3.1e-6
+    e =  0.0004388
+    A = 0.5793453635733714
+    alpha = 0.00000077491978
 
 
     params = [A, alpha, e]

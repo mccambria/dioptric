@@ -401,4 +401,5 @@ if __name__ == '__main__':
     # drive_res, drive_rabi, nv_res, nv_rabi, num_pulses
     # print(simulate_single(2.87, 90, 2.87, 100, 1))
     
-    simulate(2.87, 100, 2.87, 100, 8)
+    simulate(2.9592, 49.5, 2.9592, 49.5, 8)
+    #drive_res, drive_rabi, nv_res, nv_rabi, num_pulses

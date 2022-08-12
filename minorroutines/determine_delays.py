@@ -56,26 +56,31 @@ def measure_delay(
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-    if 'charge_readout_laser_filter' in nv_sig:
-        tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
 
     tool_belt.reset_cfm(cxn)
-
-    # Turn on the microwaves for determining microwave delay
-    sig_gen = None
-    if seq_file == "uwave_delay.py":
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
-        sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
-        sig_gen_cxn.uwave_on()
-        pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
-    cxn.apd_tagger.start_tag_stream(apd_indices)
+        
+    if 'charge_readout_laser_filter' in nv_sig:
+        tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
+        
 
     tool_belt.init_safe_stop()
     
     n= 0
     for tau_ind in tau_ind_list:
+        
+        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        # Turn on the microwaves for determining microwave delay
+        sig_gen = None
+        if seq_file == "uwave_delay.py":
+            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+            sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
+            sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
+            sig_gen_cxn.uwave_on()
+            pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
+
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+        ###########
+    
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
@@ -85,7 +90,7 @@ def measure_delay(
         n+=1
         # print(tau)
         if seq_file == "aom_delay.py":
-            readout = 1e4#,nv_sig["imaging_readout_dur"]
+            readout = 5e3#,nv_sig["imaging_readout_dur"]
             seq_args = [
                 tau,
                 max_tau, 
@@ -284,11 +289,11 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
     
     nv_sig = { 
-            "coords":[-0.852, -0.616,  6.1],
+            "coords":[-0.855, -0.591,  6.177],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":11,
+        "expected_count_rate":13.5,
         "correction_collar": 0.12,
         
         
@@ -302,16 +307,20 @@ if __name__ == "__main__":
         "imaging_laser_power": green_power,
          "imaging_laser_filter": nd_green,
           "imaging_readout_dur": 1e7,
+          
+         "charge_readout_laser": yellow_laser,
+          "charge_readout_laser_filter": "nd_0",
         
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": None,
-        "resonance_LOW":2.87,"rabi_LOW": 150,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.932,
-        "rabi_HIGH": 59.6,
-        "uwave_power_HIGH": 14.5,
+        "magnet_angle": 156,
+        "resonance_LOW":2.7809,
+        "rabi_LOW":64.9,
+        "uwave_power_LOW": 15,  # 15.5 max
+        "resonance_HIGH":2.9592,
+        "rabi_HIGH":49.5,
+        "uwave_power_HIGH": 15,
     }  # 14.5 max
     apd_indices = [1]
 
@@ -350,52 +359,44 @@ if __name__ == "__main__":
     #         'resonance_HIGH': 2.9416, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
 
 
-    try:
 
-        # laser delay
-        num_steps = 101
-        # num_reps = int(1e4)
-        # laser_name = 'laserglow_532'
-        # delay_range = [600, 1400]
-        # num_reps = int(1e5)
-        # laser_name = 'laserglow_589'
-        # delay_range = [800, 1700]
-        num_reps = int(1e4)
-        laser_name = 'integrated_520'
-        # laser_power = 0.65
-        # laser_name = 'cobolt_638'
-        laser_power = None
-        # laser_name = 'laserglow_589'
-        # laser_power = 0.6
-        delay_range = [0,1e3]
-        with labrad.connect() as cxn:
-            aom_delay(cxn, nv_sig, apd_indices,
-                      delay_range, num_steps, num_reps, laser_name, laser_power)
+    # laser delay
+    num_steps = 101
+    # num_reps = int(1e4)
+    # laser_name = 'laserglow_532'
+    # delay_range = [600, 1400]
+    # num_reps = int(1e5)
+    # laser_name = 'laserglow_589'
+    # delay_range = [800, 1700]
+    num_reps = int(1e4)
+    # laser_name = 'integrated_520'
+    # laser_power = 0.65
+    # laser_name = 'cobolt_638'
+    # laser_power = None
+    laser_name = 'laserglow_589'
+    laser_power = 0.6
+    delay_range = [0,2e3]
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, apd_indices,
+                  delay_range, num_steps, num_reps, laser_name, laser_power)
 
-        # uwave_delay
-        # num_reps = int(1e4)
-        # delay_range = [-200, 200]
-        # num_steps = 101
-        # # sg394
-        # state = States.LOW
-        # # tsg4104a
-        # # state = States.HIGH
-        # with labrad.connect() as cxn:
-        #     uwave_delay(
-        #         cxn,
-        #         nv_sig,
-        #         apd_indices,
-        #         state,
-        #         delay_range,
-        #         num_steps,
-        #         num_reps,
-        #     )
+    # uwave_delay
+    num_reps = int(5e4)
+    delay_range = [-400, 400]
+    num_steps = 101
+    # bnc 835
+    # state = States.LOW
+    #  sg394
+    state = States.HIGH
+    # with labrad.connect() as cxn:
+    #     uwave_delay(
+    #         cxn,
+    #         nv_sig,
+    #         apd_indices,
+    #         state,
+    #         delay_range,
+    #         num_steps,
+    #         num_reps,
+    #     )
 
-    finally:
-        # Reset our hardware - this should be done in each routine, but
-        # let's double check here
-        tool_belt.reset_cfm()
-        # Kill safe stop
-        if tool_belt.check_safe_stop_alive():
-            print("\n\nRoutine complete. Press enter to exit.")
-            tool_belt.poll_safe_stop()
+ 

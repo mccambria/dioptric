@@ -110,9 +110,12 @@ def main(
     # bar_gill_label = "[10]"
     # herbschleb_label = "[11]"
     # abobeih_label = "[30]"
-    bar_gill_label = "[3]"
-    herbschleb_label = "[4]"
-    abobeih_label = "[5]"
+    bar_gill_label = "[2]"
+    herbschleb_label = "[3]"
+    abobeih_label = "[4]"
+    # bar_gill_label = "Bar-Gill"
+    # herbschleb_label = "Herbschleb"
+    # abobeih_label = "Abobeih"
     # fmt: off
     data_points = [
         #
@@ -162,7 +165,7 @@ def main(
     # Randomization of Pulse Phases for Unambiguous and Robust Quantum Sensing, Why not try T2 limits?
     # Robust quantum control for the manipulation of solid-state spins, Likewise
 
-    fig, ax, leg1 = temp_dependence_fitting.main(
+    ret_vals = temp_dependence_fitting.main(
         file_name,
         path,
         plot_type,
@@ -173,6 +176,11 @@ def main(
         yscale,
         dosave=False,
     )
+
+    if plot_type == "T2_max_supp":
+        fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp = ret_vals
+    else:
+        fig, ax1, leg1, T2_max_qubit_hopper_temp = ret_vals
 
     # colors = {
     #     "Bar-Gill 2013": "green",
@@ -201,43 +209,57 @@ def main(
         "Naydenov": "d",
     }
 
+    if plot_type == "T2_max_supp":
+        sub_plot_types = ["T2_max", "T2_frac"]
+    else:
+        sub_plot_types = [plot_type]
+
     ms = marker_size ** 2
     used_authors = []
-    for point in data_points:
-        temp = point["temp"]
-        val = point["val"]
-        # err = point["err"]
-        err = None
-        author = point["author"]
-        # color = colors[author]
-        marker = markers[author]
-        label = None
-        if author not in used_authors:
-            used_authors.append(author)
-            label = point["label"]
-        ax.errorbar(
-            temp,
-            val,
-            err,
-            # color="black",
-            # markerfacecolor="gray",
-            color=qubit_color,
-            markerfacecolor=kpl.lighten_color_hex(qubit_color),
-            label=label,
-            marker=marker,
-            ms=marker_size,
-            lw=line_width,
-            markeredgewidth=marker_edge_width,
-            linestyle="None",
-        )
+    ind = 0
+    for sub_plot_type in sub_plot_types:
+        ind += 1
+        ax = eval(f"ax{ind}")
+        for point in data_points:
+            temp = point["temp"]
+            T2 = point["val"]
+            frac = T2 / T2_max_qubit_hopper_temp(temp)
+            if sub_plot_type == "T2_max":
+                val = T2
+            elif sub_plot_type == "T2_frac":
+                val = frac
+            # err = point["err"]
+            err = None
+            author = point["author"]
+            # color = colors[author]
+            marker = markers[author]
+            label = None
+            if author not in used_authors:
+                used_authors.append(author)
+                label = point["label"]
+            ax.errorbar(
+                temp,
+                val,
+                err,
+                # color="black",
+                # markerfacecolor="gray",
+                color=qubit_color,
+                markerfacecolor=kpl.lighten_color_hex(qubit_color),
+                label=label,
+                marker=marker,
+                ms=marker_size,
+                lw=line_width,
+                markeredgewidth=marker_edge_width,
+                linestyle="None",
+            )
 
     # Legend without errorbars
-    handles, labels = ax.get_legend_handles_labels()
+    handles, labels = ax1.get_legend_handles_labels()
     errorbar_type = matplotlib.container.ErrorbarContainer
     # handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
     handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
     labels = labels[2:]
-    ax.legend(
+    ax1.legend(
         handles,
         labels,
         title="Prior results",
@@ -246,7 +268,8 @@ def main(
         handlelength=1,
     )
     # Add back in original legend
-    ax.add_artist(leg1)
+    if leg1 is not None:
+        ax1.add_artist(leg1)
 
     # ax.legend()
 
@@ -260,13 +283,25 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_type = "T2_max"
-    # y_range = [1e-3, 10]
-    y_range = [7e-4, 30]
-    yscale = "log"
-    temp_range = [-5, 480]
-    xscale = "linear"
-    rates_to_plot = "both"
+    plot_type = "T2_max_supp"
+    y_range = [[7e-4, 30], [-0.02, 0.62]]
+    yscale = ["log", "linear"]
+    temp_range = [[-5, 480], [-5, 310]]
+    xscale = ["linear", "linear"]
+    rates_to_plot = [["hopper", "wu"], ["hopper"]]
+
+    # plot_type = "T2_max"
+    # y_range = [7e-4, 30]
+    # yscale = "log"
+
+    # plot_type = "T2_frac"
+    # y_range = [0, 1]
+    # yscale = "linear"
+
+    # temp_range = [-5, 480]
+    # xscale = "linear"
+
+    # rates_to_plot = ["hopper"]
 
     main(
         file_name,

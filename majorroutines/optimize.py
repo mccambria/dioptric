@@ -128,7 +128,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
         tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
     else:
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    
+    time.sleep(0.5) # finding we need a bit more time to settle at new position
     
     config_positioning = config["Positioning"]
     if "xy_small_response_delay" in config_positioning:
@@ -143,6 +143,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     cxn.apd_tagger.start_tag_stream(apd_indices)
     cxn.pulse_streamer.stream_start(total_num_samples)
     new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+    # print(new_samples)
     new_samples_avg = numpy.average(new_samples)
     cxn.apd_tagger.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10 ** 9)

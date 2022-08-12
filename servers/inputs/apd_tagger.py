@@ -33,8 +33,7 @@ import logging
 import re
 import time
 import socket
-from pathos.multiprocessing import ProcessingPool as Pool
-# from numba import jit
+# from pathos.multiprocessing import ProcessingPool as Pool
 
 
 class ApdTagger(LabradServer):
@@ -150,7 +149,7 @@ class ApdTagger(LabradServer):
                 logging.error(msg)
 
         return counts
-    
+
     # @jit(nopython=True)
     def get_gate_click_inds(self, sample_channels_arr, apd_index):
 
@@ -331,7 +330,7 @@ class ApdTagger(LabradServer):
         # De-duplicate the channels list
         channels = list(set(channels))
         self.stream = TimeTagger.TimeTagStream(
-            self.tagger, 10 ** 7, channels
+            self.tagger, 10 ** 8, channels
         )
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,
@@ -382,7 +381,7 @@ class ApdTagger(LabradServer):
     #             num_read = np.count_nonzero(np.array(channels) == self.tagger_di_clock)
     #             # logging.info("num_read: {}".format(num_read))
     #             if num_read >= num_to_read:
-    #                 break 
+    #                 break
     #             timestamps_chunk, channels_chunk = self.read_raw_stream()
     #             timestamps.extend(timestamps_chunk.tolist())
     #             channels.extend(channels_chunk.tolist())
@@ -418,7 +417,7 @@ class ApdTagger(LabradServer):
                 new_num_read = np.count_nonzero(channels_chunk == self.tagger_di_clock)
                 num_read += new_num_read
                 if num_read >= num_to_read:
-                    break 
+                    break
         # Convert timestamps to strings since labrad does not support int64s
         # It must be converted to int64s back on the client
         timestamps = timestamps.astype(str).tolist()
@@ -487,7 +486,7 @@ class ApdTagger(LabradServer):
         # with Pool() as p:
         #     separate_gate_counts = p.map(sum_lambda, complete_counts)
         separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
-        
+
         # Run the modulus
         return_counts = []
         for sample in separate_gate_counts:
