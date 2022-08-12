@@ -356,6 +356,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         half_pixel_size = pixel_size / 2
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
+        
+        # img_extent = tool_belt.calc_image_extent(x_center, y_center, x_range, num_steps) # assumes square image
+        
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]

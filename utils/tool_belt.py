@@ -673,6 +673,8 @@ def create_image_figure(
     um_scaled=False,
     aspect_ratio=None,
     color_map="inferno",
+    cmin=None,
+    cmax=None,
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
@@ -712,12 +714,13 @@ def create_image_figure(
     fig.set_tight_layout(True)
 
     # Tell the axes to show a grayscale image
-    print(imgArray)
+    # print(imgArray)
     img = ax.imshow(
         imgArray,
         cmap=color_map,
         extent=tuple(imgExtent),
-        vmin=min_value,
+        vmin = cmin ,#min_value,
+        vmax = cmax,
         aspect=aspect_ratio,
     )
 

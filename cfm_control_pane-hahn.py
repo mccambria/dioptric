@@ -22,8 +22,8 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_temperature as image_sample_temperature
-import majorroutines.image_sample_NIR_counts_differential_2 as image_sample_NIR_counts_differential_2
-import majorroutines.image_sample_pulsed_NIR_counts_differential as image_sample_pulsed_NIR_counts_differential
+import majorroutines.ensemble_image_sample_NIR_differential as ensemble_image_sample_NIR_differential
+import majorroutines.ensemble_image_sample_NIR_differential_faster as ensemble_image_sample_NIR_differential_faster
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -54,8 +54,8 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     # scan_range = 0.5
     # num_steps = 90
 
-    scan_range = 0.2
-    num_steps = 60
+    scan_range = 0.3
+    num_steps = 25
 
     # scan_range = 1.0
     # num_steps = 120
@@ -96,7 +96,7 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
 def do_image_sample_zoom(nv_sig, apd_indices):
 
     scan_range = 0.2
-    num_steps = 3
+    num_steps = 35
 
     image_sample.main(
         nv_sig,
@@ -132,21 +132,22 @@ def do_image_sample_temperature(nv_sig, apd_indices):
     )
     
 
-def do_ensemble_image_sample(nv_sig, apd_indices, technique, nv_minus_initialization=False): # CF: added to include NIR counts differential map option
+def do_ensemble_image_sample(nv_sig, apd_indices, num_steps,  technique, scan_range=0.2, nv_minus_initialization=False,
+                             cbarmin_percdiff=None,cbarmax_percdiff=None,cbarmin_counts=None,cbarmax_counts=None,cbarmin_diffcounts=None,cbarmax_diffcounts=None):
     
-    list_of_techniquies = ['NIR_temperature_differential','NIR_counts_differential'] 
+    list_of_techniquies = ['NIR_temperature_diff','NIR_counts_diff','NIR_counts_diff_faster'] 
     if technique not in list_of_techniquies:
         print('Technique must be in:', list_of_techniquies)
     
-    if technique=='NIR_temperature_differential':
-        image_range = 0.2
-        num_steps = 10
+    if technique=='NIR_temperature_diff':
+        # image_range = scan_range
+        # num_steps = 10
         nir_laser_voltage = 1.3
         esr_num_reps = 1e5
         esr_num_runs = 4
         image_sample_temperature.main(
             nv_sig,
-            image_range,
+            scan_range,
             num_steps,
             apd_indices,
             nir_laser_voltage,
@@ -154,11 +155,13 @@ def do_ensemble_image_sample(nv_sig, apd_indices, technique, nv_minus_initializa
             esr_num_runs,
         )
     
-    if technique=='NIR_counts_differential':
-        scan_range = 0.2
-        num_steps = 2
+    if technique=='NIR_counts_diff':
+        # scan_range = 0.5
+        # num_steps = 90
+        # scan_range = .6
+        # num_steps = 3
         nir_laser_voltage = 1.3
-        image_sample_pulsed_NIR_counts_differential.main(
+        ensemble_image_sample_NIR_differential.main(
             nv_sig,
             scan_range,
             num_steps,
@@ -166,6 +169,23 @@ def do_ensemble_image_sample(nv_sig, apd_indices, technique, nv_minus_initializa
             nir_laser_voltage,
             nv_minus_initialization
             )
+        
+    if technique=='NIR_counts_diff_faster':
+        # scan_range = 0.5
+        # num_steps = 90
+        # scan_range = .6
+        # num_steps = 3
+        nir_laser_voltage = 1.3
+        sleeptime=1
+        ensemble_image_sample_NIR_differential_faster.main(
+            nv_sig,
+            scan_range,
+            num_steps,
+            apd_indices, 
+            nir_laser_voltage,
+            sleeptime,
+            nv_minus_initialization,
+            cbarmin_percdiff,cbarmax_percdiff,cbarmin_counts,cbarmax_counts,cbarmin_diffcounts,cbarmax_diffcounts)
         
 
 
@@ -481,9 +501,10 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
-    num_reps = 2e4
+    # num_reps = 2e4
+    num_reps = 1e3
     # num_runs = 2
-    num_runs = 10
+    num_runs = 4
 
     discrete_rabi.main(
         nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs
@@ -662,7 +683,7 @@ def do_t1_dq(nv_sig, apd_indices):
 def do_t1_dq_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 500
+    num_runs = 100
     num_reps = 1000
     num_steps = 12
     min_tau = 10e3
@@ -946,13 +967,13 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, -2], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e9,
         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E6, 'spin_readout_dur': 350,
@@ -986,40 +1007,54 @@ if __name__ == "__main__":
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8046, 'rabi_LOW': 252, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9359, 'rabi_HIGH': 337, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8047, 'rabi_LOW': 323.4, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9363, 'rabi_HIGH': 416.6, 'uwave_power_HIGH': 16.5,
         }
 
 
     # %% Functions to run
 
     try:
+        
+        pass
 
         # tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, 0)
+        #     cxn.cryo_piezos.write_xy(120,3)
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
-        # for x_pos in numpy.arange(-100, 100, 20):
-        #     for y_pos in numpy.arange(-100, 100, 20):
-        # for pos in numpy.arange(80, 120, 4):
-        # # # while True:
+            
+        # for pos in [-2]:
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(pos)
-        #     # with labrad.connect() as cxn:
-        #     #     # cxn.cryo_piezos.write_xy(0, int(pos))
-        #     #     # cxn.cryo_piezos.write_xy(int(pos), 0)
-        #     #     cxn.cryo_piezos.write_xy(int(x_pos), int(y_pos))
-        #     # do_image_sample_zoom(nv_sig, apd_indices)
-        #     do_image_sample(nv_sig, apd_indices)
+        #     # do_image_sample(nv_sig, apd_indices)
+        #     do_ensemble_image_sample(nv_sig, apd_indices, scan_range=.3, num_steps=30, 
+        #                              technique='NIR_counts_diff_faster',nv_minus_initialization=False,
+        #                               cbarmin_percdiff=0,cbarmax_percdiff=.165,cbarmin_diffcounts=0,cbarmax_diffcounts=320,
+        #                               )
 
+        
+        # for x in [90]:
+        #     for y in [30]:
+        #         with labrad.connect() as cxn:
+        #             cxn.cryo_piezos.write_xy(x, y)
+        #             print(x,y)
+        #         do_image_sample(nv_sig, apd_indices)
+        # a=time.time()
+        # do_ensemble_image_sample(nv_sig, apd_indices, scan_range=.8, num_steps=50, 
+        #                               technique='NIR_counts_diff_faster',nv_minus_initialization=False,
+        #                                 cbarmin_percdiff=-.0,cbarmax_percdiff=.125,
+        #                                 cbarmin_diffcounts=0,cbarmax_diffcounts=220,
+        #                                 cbarmin_counts=0,cbarmax_counts=2200
+        #                                 )
+        # print(int((time.time()-a)/60), 'minutes', (time.time()-a) % 60, 'seconds')
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1041,8 +1076,8 @@ if __name__ == "__main__":
         # # # do_spin_echo_battery(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)0203c
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
@@ -1058,8 +1093,7 @@ if __name__ == "__main__":
         # do_nir_temp_differential2(nv_sig, apd_indices)
         # do_test_four_point_vs_avg(nv_sig, apd_indices)
         # do_image_sample_temperature(nv_sig, apd_indices)
-        # do_ensemble_image_sample(nv_sig, apd_indices, technique='NIR_counts_differential',nv_minus_initialization=True)
-        
+        # do_ensemble_image_sample(nv_sig, apd_indices,scan_range=.4, num_steps=40, technique='NIR_counts_diff_faster',nv_minus_initialization=False)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -1068,7 +1102,7 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
 
         # SCC characterization
-        do_determine_charge_readout_params(nv_sig,apd_indices)
+        # do_determine_charge_readout_params(nv_sig,apd_indices)
         # do_scc_pulsed_resonance(nv_sig, apd_indices)
 
         # Automatic T1 setup
@@ -1077,15 +1111,18 @@ if __name__ == "__main__":
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 6)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 6)
         # nv_sig["spin_pol_dur"] = 1e6
         # # # # # do_t1_interleave_knill(nv_sig, apd_indices)
         # # paper_figure1_data(nv_sig, apd_indices)
-        # do_t1_dq(nv_sig, apd_indices)
+        # # do_t1_dq(nv_sig, apd_indices)
+        # do_t1_dq_knill(nv_sig, apd_indices)
 
     except Exception as exc:
-        tool_belt.send_exception_email(email_to="cdfox@wisc.edu")
+        recipient = "cdfox@wisc.edu"
+        # recipient = "cambria@wisc.edu"
+        tool_belt.send_exception_email(email_to=recipient)
         raise exc
 
     finally:

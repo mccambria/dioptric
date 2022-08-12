@@ -808,8 +808,8 @@ if __name__ == "__main__":
     temp = 295
     folder = "hopper-nv1_2022_06_15-{}K-10mW-z_adjusted-expanded".format(temp)
 
-    # mode = "prediction"
-    mode = "analysis"
+    mode = "prediction"
+    # mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":

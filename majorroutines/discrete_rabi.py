@@ -282,11 +282,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, pi_ind] = sum(sig_gate_counts)
+            sum_sig_gate_counts = sum(sig_gate_counts)
+            sig_counts[run_ind, pi_ind] = sum_sig_gate_counts
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, pi_ind] = sum(ref_gate_counts)
+            sum_ref_gate_counts = sum(ref_gate_counts)
+            ref_counts[run_ind, pi_ind] = sum_ref_gate_counts
 
         cxn.apd_tagger.stop_tag_stream()
 

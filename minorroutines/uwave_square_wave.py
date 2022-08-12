@@ -42,21 +42,22 @@ def main(cxn, uwave_freq, uwave_power, state = States.LOW):
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
     sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.set_amp(uwave_power)
-    sig_gen_cxn.uwave_on()
+    sig_gen_cxn.load_iq()
+    # sig_gen_cxn.uwave_on()
         
-    seq_file = 'uwave_square_wave.py'
-    uwave_on = int(200)
-    uwave_off = int(1e4)
-    seq_args = [uwave_on,  uwave_off, state.value]
-    print(seq_args)
+    # seq_file = 'uwave_square_wave.py'
+    # uwave_on = int(200)
+    # uwave_off = int(1e4)
+    # seq_args = [uwave_on,  uwave_off, state.value]
+    # print(seq_args)
     
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    # seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+    # cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
 
-    input('Press enter to stop...')
+    # input('Press enter to stop...')
 
-    sig_gen_cxn.uwave_off()
+    # sig_gen_cxn.uwave_off()
 
 
 # %% Run the file
