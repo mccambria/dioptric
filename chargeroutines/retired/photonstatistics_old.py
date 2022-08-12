@@ -38,43 +38,36 @@ def get_y1(readout_power):
 #%% Photon statistical model and fidelity
 # Photon statistics of initializing in NV- and reading out for tR at power P
 # return the probabilty of getting n photons
-def get_Probability_distribution(aList):
-    def get_unique_value(aList):
-        unique_value_list = []
-        for i in range(0,len(aList)):
-            if aList[i] not in unique_value_list:
-                unique_value_list.append(aList[i])
-        unique_value_list.sort()
-        return unique_value_list
-    unique_value = get_unique_value(aList)
-    relative_frequency = []
-    for i in range(0,len(unique_value)):
-        relative_frequency.append(aList.count(unique_value[i])/ (len(aList)))
-
-    return unique_value, relative_frequency
-
-def PhotonNVm(n,readout_time,readout_power, rate_fit):
+def PhotonNVm(n,readout_time,readout_power):
     P = readout_power
-    g0,g1,y1,y0 = rate_fit
+    g0 = get_g0(P)
+    g1 = get_g1(P)
+    y1 = get_y1(P)
+    y0 = get_y0(P)
     tR =readout_time 
     poisspdf2 = scipy.stats.poisson(y1*tR)
     def Integ(t):
         poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-        integ = (g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n))
+        integ = g1*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t)))*poisspdf1.pmf(n)
+        + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n)
         return integ
     val, err = scipy.integrate.quad(Integ,0,tR)
     result = val + math.e**(-g1*tR)*poisspdf2.pmf(n)
     return result
 # Photon statistics of initializing in NV0 and reading out for tR at power P\
 # return probability of getting n photons
-def PhotonNV0(n,readout_time,readout_power,rate_fit):
+def PhotonNV0(n,readout_time,readout_power):
     P = readout_power
-    g0,g1,y1,y0 = rate_fit
+    g0 = get_g0(P)
+    g1 = get_g1(P)
+    y1 = get_y1(P)
+    y0 = get_y0(P)
     tR =readout_time 
     poisspdf2 = scipy.stats.poisson(y0*tR)
     def Integ(t):
-        poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-        integ = (g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n))
+        poisspdf1 = scipy.stats.poisson(y0*t+y1*(tR-t))
+        integ = g0*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t)))*poisspdf1.pmf(n)
+        + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n)
         return integ
     val, err = scipy.integrate.quad(Integ,0,tR)
     result = val + math.e**(-g0*tR)*poisspdf2.pmf(n)
@@ -109,30 +102,6 @@ def plotPhotonDistribution(readout_time,readout_power, NV_state,max_range):
 #plotPhotonDistribution(820*10**-3,240*10**-6,1,20)
 #plotPhotonDistribution(820*10**-3,240*10**-6,0,20)
 #plt.show()    
-        
-def get_PhotonNVm_list(photon_number,readout_time,rate_fit,weight):
-    tR =readout_time 
-    A = weight
-    i =0 
-    P = 0
-    Probability_list = []
-    for i in range(len(photon_number)):
-        n = photon_number[i] 
-        result = A*(PhotonNVm(n,tR,P,rate_fit))
-        Probability_list.append(result)
-    return Probability_list
-
-def get_PhotonNV0_list(photon_number,readout_time,rate_fit,weight):
-    tR =readout_time 
-    A = weight
-    i =0 
-    P = 0
-    Probability_list = []
-    for i in range(len(photon_number)):
-        n =photon_number[i] 
-        result = A*(PhotonNV0(n,tR,P,rate_fit))
-        Probability_list.append(result)
-    return Probability_list
 
 #get measurement fidelity 
 def get_readout_fidelity(readout_time, readout_power, NV_state,n_threshold):
@@ -153,177 +122,45 @@ def get_readout_fidelity(readout_time, readout_power, NV_state,n_threshold):
         fidelity = (1 - Probability_NVm_les_nth) /((1-Probability_NV0_les_nth) + (1 - Probability_NVm_les_nth))
         return fidelity
 #%% curve fit to the photon distribution
-
-def get_photon_distribution_curve(tR, photon_number,g0,g1,y1,y0):    
-    poisspdf2 = scipy.stats.poisson(y1*tR)
-    poisspdf3 = scipy.stats.poisson(y0*tR)
-    photon_number = photon_number
-    i = 0
-    curve = []
-    for i in range(len(photon_number)): 
-        n = photon_number[i]
-        def IntegNVm(t):
-            poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-            integ = (g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n))
-            return integ
-        def IntegNV0(t):
-            poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-            integ = (g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n))
-            return integ
-        valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
-        valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-        A = 0.35
-        B = 1- A
-        result = A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n)
-        curve.append(result)
-        i += 1
-    return curve
-
-# fit the model to the actual data and return the 4 rates: g0, g1, y1, y0
-def get_curve_fit(readout_time,readout_power,data,guess):
-    tR = readout_time
-    P = readout_power
-    initial_guess = guess
-    uniq_val, freq = get_Probability_distribution(data)
-    photon_number = uniq_val
-    def get_photon_distribution_curve(photon_number,g0,g1,y1,y0):    
-        poisspdf2 = scipy.stats.poisson(y1*tR)
-        poisspdf3 = scipy.stats.poisson(y0*tR)
-        photon_number = list(photon_number)
-        i = 0
-        curve = []
-        for i in range(len(photon_number)): 
-            n = photon_number[i]
-            def IntegNVm(t):
-                poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-                integ = (g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n))
-                return integ
-            def IntegNV0(t):
-                poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-                integ = (g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n))
-                return integ
-            valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
-            valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-            A = 0.35
-            B = 1- A
-            result = (A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n))
-            curve.append(result)
-            i += 1
-        return curve 
-    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, freq, p0 = initial_guess,bounds=(0,np.inf))
-    return popt, pcov
-
-#A = 0.85
-def get_curve_fit_green(readout_time,readout_power,data,guess):
-    tR = readout_time
-    P = readout_power
-    initial_guess = guess
-    uniq_val, freq = get_Probability_distribution(data)
-    photon_number = uniq_val
-    def get_photon_distribution_curve(photon_number,g0,g1,y1,y0):    
-        poisspdf2 = scipy.stats.poisson(y1*tR)
-        poisspdf3 = scipy.stats.poisson(y0*tR)
-        photon_number = list(photon_number)
-        i = 0
-        curve = []
-        for i in range(len(photon_number)): 
-            n = photon_number[i]
-            def IntegNVm(t):
-                poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-                integ = (g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n))
-                return integ
-            def IntegNV0(t):
-                poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-                integ = (g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n))
-                return integ
-            valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
-            valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-            A = 1
-            B = 1- A
-            result = A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n)
-            curve.append(result)
-            i += 1
-        return curve 
-    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, freq, p0 = initial_guess,bounds=(0,np.inf))
-    return popt, pcov
-
-#A = 0.13
-def get_curve_fit_red(readout_time,readout_power,data,guess):
-    tR = readout_time
-    P = readout_power
-    initial_guess = guess
-    uniq_val, freq = get_Probability_distribution(data)
-    photon_number = uniq_val
-    def get_photon_distribution_curve(photon_number,g0,g1,y1,y0):    
-        poisspdf2 = scipy.stats.poisson(y1*tR)
-        poisspdf3 = scipy.stats.poisson(y0*tR)
-        photon_number = list(photon_number)
-        i = 0
-        curve = []
-        for i in range(len(photon_number)): 
-            n = photon_number[i]
-            def IntegNVm(t):
-                poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-                integ = (g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n))
-                return integ
-            def IntegNV0(t):
-                poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-                integ = (g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n))
-                return integ
-            valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
-            valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-            A = 0.13
-            B = 1- A
-            result = A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n)
-            curve.append(result)
-            i += 1
-        return curve 
-    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, freq, p0 = initial_guess,bounds=(0,np.inf))
-    return popt, pcov
-
-
-
-
-def get_photon_distribution_curve_weight(photon_number,readout_time, g0,g1,y1,y0,A):    
+def get_photon_distribution_curve(photon_number_range,readout_time, g0,g1,y1,y0):    
     tR = readout_time 
     poisspdf2 = scipy.stats.poisson(y1*tR)
     poisspdf3 = scipy.stats.poisson(y0*tR)
+    photon_number = list(range(photon_number_range))
     i = 0
     curve = []
     for i in range(len(photon_number)): 
-        n = photon_number[i]
+        n = i
         def IntegNVm(t):
             poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-            integ = g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n)
-            return integ           
+            integ = g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)
+            + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n)
+            return integ
         def IntegNV0(t):
             poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-            integ = g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n)
+            integ = g0*math.e**((g0-g1)*t-g0*tR)*poisspdf4.pmf(n)
+            + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n)
             return integ
         valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
         valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-        B = 1 -A
-        result = A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n)      
+        result = 0.5*(valNVm + valNV0 + math.e**(-g1*tR)*poisspdf2.pmf(n) + math.e**(-g0*tR)*poisspdf3.pmf(n))
         curve.append(result)
         i += 1
     return curve 
 
-# calculate the weight of each charge state given a set of data, A = NVm, B = NV0
-def get_curve_fit_to_weight(readout_time,readout_power,data,guess, rate_fit):
+# fit the model to the actual data and return the 4 rates: g0, g1, y1, y0
+def get_curve_fit(readout_time,readout_power,data):
     tR = readout_time
     P = readout_power
-    initial_guess = guess
-    uniq_val, freq = get_Probability_distribution(data)
-    photon_number = uniq_val
-    g0,g1,y1,y0 = rate_fit
-    def get_photon_distribution_curve_weight(photon_number,A ):    
+    initial_guess = [10,100,10000,1000]
+    def get_photon_distribution_curve(photon_number,g0,g1,y1,y0):    
         poisspdf2 = scipy.stats.poisson(y1*tR)
         poisspdf3 = scipy.stats.poisson(y0*tR)
         photon_number = list(photon_number)
         i = 0
         curve = []
         for i in range(len(photon_number)): 
-            n = photon_number[i]
+            n = i
             def IntegNVm(t):
                 poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
                 integ = g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n)
@@ -334,13 +171,14 @@ def get_curve_fit_to_weight(readout_time,readout_power,data,guess, rate_fit):
                 return integ
             valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
             valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-            B = 1- A
-            result = A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n)
+            result = 0.5*valNVm + 0.5*valNV0 + 0.5*math.e**(-g1*tR)*poisspdf2.pmf(n) + 0.5*math.e**(-g0*tR)*poisspdf3.pmf(n)
             curve.append(result)
             i += 1
         return curve 
-    popt, pcov = curve_fit(get_photon_distribution_curve_weight, photon_number, freq, p0 = initial_guess,bounds = (0,1))
-    return popt, pcov
+    max_range = len(data)
+    photon_number = list(range(0,max_range))
+    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, data, p0 = initial_guess)
+    return popt  
 
 #def get_curve_fit_NVm(readout_time,readout_power,data):
 #    tR = readout_time
@@ -368,38 +206,6 @@ def get_curve_fit_to_weight(readout_time,readout_power,data,guess, rate_fit):
 #    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, data, p0 = initial_guess)
 #    return popt  
 
-# fit the model to the actual data and return the 4 rates: g0, g1, y1, y0, A
-def get_curve_fit_weight(readout_time,readout_power,data,guess):
-    tR = readout_time
-    P = readout_power
-    initial_guess = guess
-    uniq_val, freq = get_Probability_distribution(data)
-    photon_number = uniq_val
-    def get_photon_distribution_curve(photon_number,g0,g1,y1,y0,A):    
-        poisspdf2 = scipy.stats.poisson(y1*tR)
-        poisspdf3 = scipy.stats.poisson(y0*tR)
-        photon_number = list(photon_number)
-        i = 0
-        curve = []
-        for i in range(len(photon_number)): 
-            n = photon_number[i]
-            def IntegNVm(t):
-                poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
-                integ = (g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n))
-                return integ
-            def IntegNV0(t):
-                poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
-                integ = (g0*math.e**((g1-g0)*t-g1*tR)*poisspdf4.pmf(n)*scipy.special.jv(0, 2*math.sqrt(g1*g0*t*(tR-t))) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n))
-                return integ
-            valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
-            valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
-            B = 1- A
-            result = A*valNVm + B*valNV0 + A*math.e**(-g1*tR)*poisspdf2.pmf(n) + B*math.e**(-g0*tR)*poisspdf3.pmf(n)
-            curve.append(result)
-            i += 1
-        return curve 
-    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, freq, p0 = initial_guess,bounds=(0,np.inf))
-    return popt, pcov
 
 #%% test module that simulates data to test the curve fit
 #given readout time and power, return a list of probability of observing each number of photon
@@ -485,114 +291,7 @@ def get_optimized_fidelity(readout_time, power_range, n_threshold_list):
     optimized_n_threshold = get_optimized_n_threshold(tR, P, n_threshold_list)
     highest_fidelity, optimized_power = get_optimized_power(tR, P, optimized_n_threshold)
     return optimized_n_threshold, optimized_power, highest_fidelity
-
-# given a power and readout time, find the optimized threshold 
-
-def get_area(x_data,dis, thred):
-    unique_value = x_data
-    prob = dis
-    area_below = 0
-    area_above = 0
-    for i in range(len(unique_value)):
-        # print(i)
-        if unique_value[i] < thred:
-            area_below += prob[i]
-        else: 
-            area_above += prob[i]
-    return [area_below,area_above]
-def calculate_threshold(readout_time,x_data,rate_fit):
-    #calculate mu, the mean count of the Poisson distribution for NV0 and NV-
-    tR = readout_time
-    mu1 = rate_fit[3]*readout_time
-    mu2 = rate_fit[2]*readout_time
-    # Create a list of counts to test between the two mu's
-    threshold_list = np.linspace(int(mu1),int(mu2)+2,int(mu2) - int(mu1) +3)
-    #calculate the NV distribution based off the models
-    dis1 = np.array(get_PhotonNV0_list(x_data, tR, rate_fit, 1))
-    dis2 = np.array(get_PhotonNVm_list(x_data, tR, rate_fit, 1))
-    fidelity_list = []
-    for i in range(len(threshold_list.tolist())):
-        thred = threshold_list[i]
-        area_below_nv0 = get_area(x_data,dis1.tolist(),thred)[0]
-        # area_below_nvm = get_area(x_data,dis2.tolist(),thred)[0]
-        # area_above_nv0 = get_area(x_data,dis1.tolist(),thred)[1]
-        area_above_nvm = get_area(x_data,dis2.tolist(),thred)[1]
-        # prob_below = area_below_nv0 / (area_below_nvm + area_below_nv0)
-        # prob_above = area_above_nvm/ (area_above_nvm+ area_above_nv0)
-        # prob_diff_list.append(abs(prob_below - prob_above))
-        pnvm_c = area_above_nvm
-        pnv0_c = area_below_nv0
-        fidelity_list.append( (pnvm_c + pnv0_c)/2 )
-    thre_index = fidelity_list.index(max(fidelity_list))
-    n_thresh = threshold_list[thre_index]
-    # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
-    # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
-    return np.array([n_thresh,  max(fidelity_list)])
-
-def calculate_threshold_from_experiment( x_vals_0, x_vals_m, mu0, mu1, nv0_hist, nvm_hist):
-    threshold_list = np.linspace(int(mu0),int(mu1)+2,int(mu1) - int(mu0) +3)
-    # print(threshold_list)
-    dis0 = nv0_hist
-    dis1 = nvm_hist
-    fidelity_list = []
-    for i in range(len(threshold_list.tolist())):
-        thred = threshold_list[i]
-        area_below_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[0]
-        # area_below_nvm = get_area(x_vals_m,dis1.tolist(),thred)[0]
-        # area_above_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[1]
-        area_above_nvm = get_area(x_vals_m,dis1.tolist(),thred)[1]
-        # prob_below = area_below_nv0 / (area_below_nvm + area_below_nv0)
-        # prob_above = area_above_nvm/ (area_above_nvm+ area_above_nv0)
-        # prob_diff_list.append(abs(prob_below - prob_above))
-        pnvm_c = area_above_nvm
-        pnv0_c = area_below_nv0
-        fidelity_list.append( (pnvm_c + pnv0_c)/2 )
-    thre_index = fidelity_list.index(max(fidelity_list))
-    n_thresh = threshold_list[thre_index]
-    # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
-    # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
-    return n_thresh,  max(fidelity_list)
-
-#nv_para = array([g0(P),g1(P),y0(P),y1(P)]) =  [A0,B0,A1,B1,C0,D0,C1,D1]
-def optimize_single_shot_readout(power_range,time_range,nv_para,optimize_steps):
-    m = optimize_steps
-    power_array = np.linspace(power_range[0],power_range[1],m)
-    time_array = np.linspace(time_range[0],time_range[1],m)
-    Ag0, Bg0, Ag1, Bg1,Ay0, By0, Ay1, By1 = nv_para
-    x_data = np.linspace(0,50,51)
-    def rate_model(x,A,B):
-        return A*x**2 + B*x
-    def FL_model(x,A, B):
-        return A*x + B
-    fid_power_list = []
-    time_power_list = []
-    thresh_power_list = []
-    for i in range(0,m):
-        fid_time_list = []
-        thresh_time_list = []
-        power = power_array[i]
-        #fit = [g0,g1,y1,y0]
-        fit = [10**-3*rate_model(power,Ag0,Bg0),10**-3*rate_model(power,Ag1,Bg1),FL_model(power,Ay1,By1),FL_model(power,Ay0,By0)]
-        for j in range(0,m):
-            tR = time_array[j]
-            n_th,fid = calculate_threshold(tR,x_data,fit)
-            fid_time_list.append(fid)
-            thresh_time_list.append(n_th)
-        max_fid = max(fid_time_list)
-        index = fid_time_list.index(max_fid)
-        max_fid_time = time_array[index]
-        max_nth_time = thresh_time_list[index]
-        fid_power_list.append(max_fid)
-        time_power_list.append(max_fid_time)
-        thresh_power_list.append(max_nth_time)
-    max_fid = max(fid_power_list)
-    index = fid_power_list.index(max_fid)
-    max_fid_time = time_power_list[index]
-    max_fid_power = power_array[index]
-    max_fid_nth = thresh_power_list[index]
-    return np.array([max_fid_time,max_fid_power,max_fid_nth,max_fid])
-            
-        
+    
 #%% curve fit and figure drawing for each charge state
 #given actural data: 
 #unique_value: number of photons that are collected; 
@@ -620,7 +319,7 @@ def get_curve_fit_NVm(readout_time,readout_power,unique_value, relative_frequenc
         return curve 
     photon_number =unique_value
     popt, pcov = curve_fit(get_photon_distribution_curve, photon_number,  relative_frequency, p0 = initial_guess)
-    return popt 
+    return popt, np.diag(pcov)
 
 def get_photon_distribution_curveNVm(photon_number,readout_time, g0,g1,y1,y0):  
     if g0 < 0:
@@ -668,7 +367,8 @@ def get_curve_fit_NV0(readout_time,readout_power,unique_value, relative_frequenc
         return curve 
     photon_number =unique_value
     popt, pcov = curve_fit(get_photon_distribution_curve, photon_number,  relative_frequency, p0 = initial_guess)
-    return popt 
+    print(np.diag(pcov))
+    return popt, np.diag(pcov)
 
 def get_photon_distribution_curveNV0(photon_number,readout_time, g0,g1,y1,y0):    
     if g0 < 0:
@@ -703,7 +403,7 @@ def get_sigle_poisson_distribution_fit(readout_time,readout_power,unique_value, 
             poissonian.append(((F*tR)**n) * (math.e ** (-F*tR)) /math.factorial(n))
         return poissonian
     popt, pcov = curve_fit(PoissonDistribution, number_of_photons,  relative_frequency)
-    return popt
+    return popt, np.diag(pcov)
 
 def get_single_poisson_distribution_curve(number_of_photons,readout_time, F):
     poissonian_curve =[]
@@ -775,3 +475,5 @@ def get_photon_counts(readout_time, photon_number_list):
     return photon_counts.tolist()
         
         
+        
+                

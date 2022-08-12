@@ -52,6 +52,7 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_apd_gate = pulser_wiring[key]
     state = States(state)
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    # print(sig_gen_name)
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
@@ -92,6 +93,10 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, HIGH),
              (post_duration, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
 
     # Laser
     train = [(polarization_time, HIGH),
@@ -99,9 +104,13 @@ def get_seq(pulse_streamer, config, args):
              (polarization_time, HIGH),
              (reference_wait_time, LOW),
              (reference_time, HIGH),
-             (background_wait_time + end_rest_time + aom_delay_time, LOW)]
+             (background_wait_time + end_rest_time + aom_delay_time, HIGH)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config, 
                                 laser_name, laser_power, train)
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
 
     # Microwave train
     pre_duration = aom_delay_time + polarization_time + signal_wait_time - uwave_delay_time
@@ -110,6 +119,10 @@ def get_seq(pulse_streamer, config, args):
         background_wait_time + end_rest_time + uwave_delay_time
     train = [(pre_duration, LOW), (tau, HIGH), (post_duration, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
     
     # Switch the phase with the AWG
     composite_pulse = [(10, HIGH), (uwave_pi_pulse-10, LOW)] * 5
@@ -122,6 +135,10 @@ def get_seq(pulse_streamer, config, args):
         train.extend(composite_pulse)
     train.extend([(post_duration, LOW)])
     seq.setDigital(pulser_do_arb_wave_trigger, train)
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
 
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -129,14 +146,11 @@ def get_seq(pulse_streamer, config, args):
 
 
 if __name__ == '__main__':
-    wiring = {'ao_589_aom': 1, 'ao_638_laser': 0, 'do_532_aom': 3,
-              'do_638_laser': 7, 'do_apd_0_gate': 5, 'do_arb_wave_trigger': 6,
-              'do_sample_clock': 0, 'do_signal_generator_tsg4104a_gate': 1,
-              'do_signal_generator_sg394_gate': 4}
-#    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
-    # seq_args = [12000, 1000, 1000, 2000, 1000, 1060, 1000, 555, 350, 92, 46, 8, 8, 0, 3]
-    # args = [500, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 0, 4, 0, 3]
-    # seq_args = [1200, 1000, 1000, 10000, 1000, 0, 0, 0, 350, 78, 39, 1, 1, 0, 3]
-    seq_args = [5000, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 86, 43, 1, 2, 0, 3]
-    seq = get_seq(wiring, seq_args)[0]
+    seq_args =[100000.0, 675, 6000.0, 162, 81, 2, 6, 0, 1, 'laserglow_532', None]
+    config = tool_belt.get_config_dict()
+    print(config)
+    tool_belt.set_delays_to_zero(config)
+    # seq_args = [0, 1000.0, 350, 23, 12, 100000, 1, 2, 'integrated_520', None]
+    # seq_args = [5000, 0, 1000, 2000, 1000, 2, 3, 0,  3, 'integrated_520', None]
+    seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

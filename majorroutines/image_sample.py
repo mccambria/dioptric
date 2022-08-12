@@ -356,6 +356,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         half_pixel_size = pixel_size / 2
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
+        
+        # img_extent = tool_belt.calc_image_extent(x_center, y_center, x_range, num_steps) # assumes square image
+        
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
@@ -454,9 +457,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 if __name__ == '__main__':
 
-    file_name = '2022_06_20-16_36_36-sandia-R21-a8'
+    file_name = '2022_08_10-10_45_18-rubin-nv1'
     scale = 83
 
-    replot_for_presentation(file_name, scale)
+    # replot_for_presentation(file_name, scale)
 
-    # replot_for_analysis(file_name)
+    replot_for_analysis(file_name)
