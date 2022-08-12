@@ -186,7 +186,7 @@ class SignalGeneratorSg394(LabradServer):
         # Turn on modulation
         cmd = 'MODL 1'
         self.sig_gen.write(cmd)
-        logging.info(cmd)
+        # logging.info(cmd)
         
 
     @setting(6)

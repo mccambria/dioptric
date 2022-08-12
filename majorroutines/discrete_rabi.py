@@ -192,8 +192,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                 0, max_num_pi_pulses,
                 apd_indices[0], state.value, laser_name, laser_power]
-#    print(seq_args)
-#    return
+    print(seq_args)
+    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 

@@ -1016,9 +1016,9 @@ if __name__ == "__main__":
 
     try:
         
-        pass
+        # pass
 
-        # tool_belt.init_safe_stop()
+        tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
