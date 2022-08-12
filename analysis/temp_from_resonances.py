@@ -244,7 +244,11 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
         return D_of_T(temp)
 
 
-def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+# def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+def cambria_test(temp, zfs0, A1, A2):
+
+    Theta1 = 60
+    Theta2 = 160
 
     ret_val = zfs0
     for ind in range(2):
@@ -258,7 +262,7 @@ def experimental_zfs_versus_t(path, file_name):
 
     min_temp = 0
     # max_temp = 295
-    max_temp = 500
+    max_temp = 1000
 
     csv_file_path = path / "{}.csv".format(file_name)
 
@@ -310,27 +314,27 @@ def experimental_zfs_versus_t(path, file_name):
     )
 
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    # ax.plot(
-    #     temp_linspace,
-    #     sub_room_zfs_from_temp(temp_linspace),
-    #     lw=kpl.line_width,
-    #     # color=kpl.kpl_colors["blue"],
-    #     label="Chen",
-    # )
-    # ax.plot(
-    #     temp_linspace,
-    #     super_room_zfs_from_temp(temp_linspace),
-    #     lw=kpl.line_width,
-    #     # color=kpl.kpl_colors["blue"],
-    #     label="Toyli",
-    # )
-    # ax.plot(
-    #     temp_linspace,
-    #     zfs_from_temp_barson(temp_linspace),
-    #     lw=kpl.line_width,
-    #     # color=kpl.kpl_colors["blue"],
-    #     label="Barson",
-    # )
+    ax.plot(
+        temp_linspace,
+        sub_room_zfs_from_temp(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Chen",
+    )
+    ax.plot(
+        temp_linspace,
+        super_room_zfs_from_temp(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Toyli",
+    )
+    ax.plot(
+        temp_linspace,
+        zfs_from_temp_barson(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Barson",
+    )
 
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     ax.set_ylabel("Zero field splitting (GHz)")
@@ -339,8 +343,8 @@ def experimental_zfs_versus_t(path, file_name):
         2.87771,
         -8e-2,
         -4e-1,
-        65,
-        165,
+        # 65,
+        # 165,
     ]
     # guess_params = [
     #     2.8778,
@@ -400,7 +404,7 @@ def experimental_zfs_versus_t(path, file_name):
         ssr += ((zfs - calc_zfs) / zfs_err) ** 2
     print(ssr)
 
-    # ax.legend()
+    ax.legend()
 
     # ax.set_yticks([2.85, 2.855, 2.86, 2.865, 2.87])
     fig.tight_layout()
