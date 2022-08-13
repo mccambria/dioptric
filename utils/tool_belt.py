@@ -514,6 +514,16 @@ def set_delays_to_zero(config):
         val = config[key]
         if type(val) is dict:
             set_delays_to_zero(val)
+            
+            
+def seq_train_length_check(train):
+    """
+    Print out the length of a the sequence train for a specific channel. Useful for debugging sequences.
+    """
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
 
 
 def set_feedthroughs_to_false(config):
