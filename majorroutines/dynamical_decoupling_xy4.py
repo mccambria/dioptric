@@ -92,8 +92,11 @@ def main_with_cxn(
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
 
     # Get pulse frequencies
-    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
-    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    # uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    # uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    # pi pulses are slightly different than just half of the rabi period
+    uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
+    uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -218,7 +221,9 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        cxn.arbitrary_waveform_generator.load_xy4n(num_dd_reps)
+        # cxn.arbitrary_waveform_generator.load_xy4n(num_dd_reps)
+        cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
+        
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -352,8 +357,6 @@ def main_with_cxn(
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
             "uwave_power-units": "dBm",
-            "rabi_period": rabi_period,
-            "rabi_period-units": "ns",
             "uwave_pi_pulse": uwave_pi_pulse,
             "uwave_pi_pulse-units": "ns",
             "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
@@ -426,8 +429,6 @@ def main_with_cxn(
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
         "uwave_power-units": "dBm",
-        "rabi_period": rabi_period,
-        "rabi_period-units": "ns",
         "uwave_pi_pulse": uwave_pi_pulse,
         "uwave_pi_pulse-units": "ns",
         "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,

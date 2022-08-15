@@ -375,11 +375,12 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     )
 
 
-def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
+def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, 
+            uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 5
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -389,13 +390,14 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
         num_steps,
         num_reps,
         num_runs,
+        iq_mod_on = True,
         opti_nv_sig = opti_nv_sig
     )
     nv_sig["rabi_{}".format(state.name)] = period
 
 
 
-def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
+def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=10):
 
     num_reps = 2e4
     # num_runs = 2
@@ -404,8 +406,15 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
     discrete_rabi.main(
         nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs
     )
+    
+    # discrete_rabi.main(
+    #     nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs,
+    #     iq_delay = 440
+    # )
 
-    # for iq_delay in numpy.linspace(550, 570, 21):
+    # for iq_delay in numpy.linspace(445, 455, 11): #448
+    # # t = 160#360
+    # # for iq_delay in numpy.linspace(t-10, t+10, 3):
     #     print(iq_delay)
     #     discrete_rabi.main(nv_sig, apd_indices,
     #                         state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
@@ -926,9 +935,13 @@ if __name__ == "__main__":
         "magnet_angle": 156,
         "resonance_LOW":2.7809,
         "rabi_LOW":64.9,
+        'pi_pulse_HIGH': 37.7,
+        'pi_on_2_pulse_HIGH': 21.0,
         "uwave_power_LOW": 15,  # 15.5 max
         "resonance_HIGH":2.9592,
-        "rabi_HIGH":49.5,
+        "rabi_HIGH":66.0,
+        'pi_pulse_HIGH': 37.7,
+        'pi_on_2_pulse_HIGH': 21.0,
         "uwave_power_HIGH": 15,
     }  # 14.5 max
 
@@ -1002,7 +1015,7 @@ if __name__ == "__main__":
             # do_SPaCE(nv_sig, nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b,
             #  img_range_1D,img_range_2D, offset)
             
-        if False: 
+        if False:
             for i in [4, 5, 8, 10]:
                 ind = i-1
                 nv_sig_i = copy.deepcopy(nv_sig)
@@ -1024,7 +1037,8 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
-        do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
+        # for a in numpy.linspace(0.2, 0.8, 7):
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
@@ -1032,7 +1046,7 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, nv_sig,apd_indices)
 
         # do_spin_echo(nv_sig, apd_indices)
-        # do_dd_xy4(nv_sig, apd_indices)
+        do_dd_xy4(nv_sig, apd_indices)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
 
         # do_relaxation(nv_sig, apd_indices)

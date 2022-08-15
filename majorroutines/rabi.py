@@ -161,18 +161,24 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 
 
 def main(nv_sig, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs, opti_nv_sig = None):
+         num_steps, num_reps, num_runs, 
+         iq_mod_on = False,
+         opti_nv_sig = None):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, 
                                          apd_indices, uwave_time_range, state,
-                                         num_steps, num_reps, num_runs, opti_nv_sig)
+                                         num_steps, num_reps, num_runs, 
+                                         iq_mod_on,
+                                         opti_nv_sig)
 
         return rabi_per
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
-                  num_steps, num_reps, num_runs, opti_nv_sig = None):
+                  num_steps, num_reps, num_runs,
+                  iq_mod_on = False,
+                  opti_nv_sig = None):
 
     tool_belt.reset_cfm(cxn)
 
@@ -274,9 +280,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.load_iq()
+        if iq_mod_on:
+            sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
-        cxn.arbitrary_waveform_generator.load_arb_phases([0])
+        if iq_mod_on:
+            cxn.arbitrary_waveform_generator.load_arb_phases([0])
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
