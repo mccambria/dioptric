@@ -39,6 +39,7 @@ import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
+import chargeroutines.determine_charge_readout_params_moving_target as determine_charge_readout_params_moving_target
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import debug.test_major_routines as test_major_routines
@@ -54,8 +55,8 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     # scan_range = 0.5
     # num_steps = 90
 
-    scan_range = 0.3
-    num_steps = 25
+    # scan_range = 0.3
+    # num_steps = 25
 
     # scan_range = 1.0
     # num_steps = 120
@@ -66,7 +67,7 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     # scan_range = 1.0
     # scan_range = 0.75
     # scan_range = 0.3
-    # scan_range = 0.2
+    scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
     # scan_range = 0.075
@@ -78,7 +79,7 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     #    num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    # num_steps = 60
+    num_steps = 60
     # num_steps = 50
     # num_steps = 20
 
@@ -298,7 +299,7 @@ def do_four_point_esr(nv_sig, apd_indices, state):
 def do_determine_standard_readout_params(nv_sig, apd_indices):
     
     num_reps = 1e5
-    max_readouts = [25e3]
+    max_readouts = [50e3]
     state = States.LOW
     
     determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
@@ -420,8 +421,8 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     # readout_powers = np.arange(0.6, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [0.25,0.5,0.75,1.0]
-    # readout_powers = [1.0]
+    # readout_powers = [0.25,0.5,0.75,1.0]
+    readout_powers = [1.0]
     # readout_powers = [0.75]
     readout_powers = [round(val, 3) for val in readout_powers]
 
@@ -432,6 +433,32 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     determine_charge_readout_params.determine_readout_dur_power(
         nv_sig,
         nv_sig,
+        apd_indices,
+        num_reps,
+        max_readout_dur=max_readout_dur,
+        readout_powers=readout_powers,
+        plot_readout_durs=readout_durs,
+    )
+
+def do_determine_charge_readout_params_moving_target(nv_sig, apd_indices, x_readout_step, y_readout_step):
+    
+    readout_durs = [100e6]
+    
+    readout_durs = [int(el) for el in readout_durs]
+    max_readout_dur = max(readout_durs)
+
+   
+    readout_powers = [1.0]
+    readout_powers = [round(val, 3) for val in readout_powers]
+    
+    # num_reps = 1000
+    num_reps = 500
+
+    determine_charge_readout_params_moving_target.determine_readout_dur_power(
+        nv_sig,
+        nv_sig,
+        x_readout_step, 
+        y_readout_step, 
         apd_indices,
         num_reps,
         max_readout_dur=max_readout_dur,
@@ -503,6 +530,7 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2e4
     num_reps = 1e3
+    # num_reps = 100
     # num_runs = 2
     num_runs = 4
 
@@ -821,14 +849,16 @@ def do_spin_echo_battery(nv_sig, apd_indices):
 
 def do_nir_battery(nv_sig, apd_indices):
 
-    do_image_sample(nv_sig, apd_indices)
+    # do_image_sample(nv_sig, apd_indices)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
     # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
     # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
     # do_spin_echo(nv_sig, apd_indices)
+    # do_determine_charge_readout_params(nv_sig,apd_indices)
+    do_determine_standard_readout_params(nv_sig,apd_indices)
 
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
@@ -836,15 +866,17 @@ def do_nir_battery(nv_sig, apd_indices):
         power_supply.set_voltage(1.3)
     time.sleep(1)
 
-    do_image_sample(nv_sig, apd_indices)
+    # do_image_sample(nv_sig, apd_indices)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
     # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
     # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
     # nv_sig["spin_pol_dur"] = 1e6
     # do_t1_dq_knill(nv_sig, apd_indices)
+    # do_determine_charge_readout_params(nv_sig,apd_indices)
+    do_determine_standard_readout_params(nv_sig,apd_indices)
 
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
@@ -967,7 +999,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        'coords': [0.0, 0.0, -2], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -1007,8 +1039,8 @@ if __name__ == "__main__":
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8047, 'rabi_LOW': 323.4, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9363, 'rabi_HIGH': 416.6, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8047, 'rabi_LOW': 250, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9363, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
         }
 
 
@@ -1022,14 +1054,13 @@ if __name__ == "__main__":
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(120,3)
+        #     cxn.cryo_piezos.write_xy(-225,110)
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
-            
         # for pos in [-2]:
         #     if tool_belt.safe_stop():
         #         break
@@ -1039,7 +1070,6 @@ if __name__ == "__main__":
         #                              technique='NIR_counts_diff_faster',nv_minus_initialization=False,
         #                               cbarmin_percdiff=0,cbarmax_percdiff=.165,cbarmin_diffcounts=0,cbarmax_diffcounts=320,
         #                               )
-
         
         # for x in [90]:
         #     for y in [30]:
@@ -1103,25 +1133,25 @@ if __name__ == "__main__":
 
         # SCC characterization
         # do_determine_charge_readout_params(nv_sig,apd_indices)
+        do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,x_readout_step=0.05, y_readout_step=0.05)
         # do_scc_pulsed_resonance(nv_sig, apd_indices)
 
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 6)
-        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 6)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 1000])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 1000])
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 6)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 6)
         # nv_sig["spin_pol_dur"] = 1e6
         # # # # # do_t1_interleave_knill(nv_sig, apd_indices)
-        # # paper_figure1_data(nv_sig, apd_indices)
         # # do_t1_dq(nv_sig, apd_indices)
         # do_t1_dq_knill(nv_sig, apd_indices)
 
     except Exception as exc:
-        recipient = "cdfox@wisc.edu"
-        # recipient = "cambria@wisc.edu"
+        # recipient = "cdfox@wisc.edu"
+        recipient = "cambria@wisc.edu"
         tool_belt.send_exception_email(email_to=recipient)
         raise exc
 

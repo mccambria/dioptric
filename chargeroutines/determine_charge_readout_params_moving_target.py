@@ -6,7 +6,7 @@ difference readout durations.
 
 Created on Thu Apr 22 14:09:39 2021
 
-@author: mccambria
+@author: Carter Fox
 """
 
 import copy
@@ -365,17 +365,21 @@ def process_timetags(apd_gate_channel, timetags, channels):
 
 
 def measure_histograms_sub(
-    cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+    cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
 ):
 
+    
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
     period_sec = period / 10 ** 9
+ 
 
+    
     # Some initial parameters
     opti_period = 2.5 * 60
     num_reps_per_cycle = round(opti_period / period_sec)
+
     num_reps_remaining = num_reps
     timetags = []
     channels = []
@@ -394,6 +398,7 @@ def measure_histograms_sub(
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
+        
 
         # Make sure the lasers are at the right powers
         # Initial Calculation and setup
@@ -405,6 +410,8 @@ def measure_histograms_sub(
         _ = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
 
         # Load the APD
+        # xy_server.load_arb_scan_xy(x_points, y_points, int(10e7)) #CF
+        
         cxn.apd_tagger.start_tag_stream(apd_indices)
         cxn.apd_tagger.clear_buffer()
 
@@ -413,10 +420,27 @@ def measure_histograms_sub(
             num_reps_to_run = num_reps_per_cycle
         else:
             num_reps_to_run = num_reps_remaining
+            
+        
+        
+        ##############this is what I mainly added
+        xy_server = tool_belt.get_xy_server(cxn) #CF
+        
+        init_pulse_x = adjusted_nv_coords[0]
+        init_pulse_y = adjusted_nv_coords[1]
+        readout_pulse_x = init_pulse_x + x_readout_step
+        readout_pulse_y = init_pulse_y + y_readout_step
+        x_points = [init_pulse_x] +  [readout_pulse_x, init_pulse_x]*num_reps_to_run   
+        y_points = [init_pulse_y] + [readout_pulse_y, init_pulse_y]*num_reps_to_run    
+
+        xy_server.load_arb_scan_xy(x_points, y_points, int(10e7)) #CF
+        ################
+        
+        
         cxn.pulse_streamer.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
-        # print(num_reps_to_run)
+        
 
         ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run)
         buffer_timetags, buffer_channels = ret_vals
@@ -440,18 +464,18 @@ def measure_histograms_sub(
 # Apply a gren or red pulse, then measure the counts under yellow illumination.
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
 # Use with DM on red and green
-def measure_histograms(nv_sig, opti_nv_sig, apd_indices, num_reps):
+def measure_histograms(nv_sig, opti_nv_sig,x_readout_step, y_readout_step, apd_indices, num_reps):
 
     with labrad.connect() as cxn:
         nv0, nvm, total_seq_time_sec = measure_histograms_with_cxn(
-            cxn, nv_sig, opti_nv_sig, apd_indices, num_reps
+            cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, apd_indices, num_reps
         )
 
     return nv0, nvm, total_seq_time_sec
 
 
 def measure_histograms_with_cxn(
-    cxn, nv_sig, opti_nv_sig, apd_indices, num_reps
+    cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, apd_indices, num_reps
 ):
     # Only support a single APD for now
     apd_index = apd_indices[0]
@@ -471,7 +495,7 @@ def measure_histograms_with_cxn(
 
     # Pulse sequence to do a single pulse followed by readout
     readout_on_2nd_pulse = 2
-    seq_file = "simple_readout_two_pulse.py"
+    seq_file = "simple_readout_two_pulse_moving_target.py" #CF
     gen_seq_args = lambda init_laser: [
         nv_sig["{}_dur".format(init_laser)],
         readout_pulse_time,
@@ -491,14 +515,14 @@ def measure_histograms_with_cxn(
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
     timetags, channels, period_sec = measure_histograms_sub(
-        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+        cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
     )
     nvm = process_timetags(apd_gate_channel, timetags, channels)
 
     # Red measurement
     seq_args = gen_seq_args("nv0_prep_laser")
     timetags, channels, period_sec = measure_histograms_sub(
-        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+        cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
     )
     nv0 = process_timetags(apd_gate_channel, timetags, channels)
 
@@ -510,6 +534,8 @@ def measure_histograms_with_cxn(
 def determine_readout_dur_power(
     nv_sig,
     opti_nv_sig,
+    x_readout_step, 
+    y_readout_step, 
     apd_indices,
     num_reps=500,
     max_readout_dur=1e9,
@@ -537,7 +563,7 @@ def determine_readout_dur_power(
         nv_sig_copy["charge_readout_laser_power"] = p
 
         nv0, nvm, total_seq_time_sec = measure_histograms(
-            nv_sig_copy, opti_nv_sig, apd_indices, num_reps
+            nv_sig_copy, opti_nv_sig, x_readout_step, y_readout_step, apd_indices, num_reps
         )
         nv0_power.append(nv0)
         nvm_power.append(nvm)
