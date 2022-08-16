@@ -190,7 +190,7 @@ if __name__ == '__main__':
   # init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
     config = tool_belt.get_config_dict()
     # tool_belt.set_delays_to_zero(config)
-    seq_args = [50e6, 100e6, "laserglow_532", "laserglow_589", "nd_0", 1.0, 2, 0]
+    seq_args = [50e6, 100e6, "cobolt_638", "laserglow_589", "nd_0", 1.0, 2, 0]
     # seq_args = [5000000, 30000000, 140, 1080, 90, 2000000, 0.3, 0.65, 0.65, 0, '515a', 589]
 
     seq, final, ret_vals = get_seq(None, config, seq_args)

@@ -40,6 +40,7 @@ import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
 import chargeroutines.determine_charge_readout_params_moving_target as determine_charge_readout_params_moving_target
+import chargeroutines.determine_charge_readout_params_1Dscan_target as determine_charge_readout_params_1Dscan_target
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import debug.test_major_routines as test_major_routines
@@ -400,7 +401,7 @@ def do_scc_pulsed_resonance(nv_sig, apd_indices, state=States.LOW):
     )
 
 
-def do_determine_charge_readout_params(nv_sig, apd_indices):
+def do_determine_charge_readout_params(nv_sig, apd_indices,nbins=None,nreps=500):
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
@@ -428,7 +429,7 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
 
     # num_reps = 2000
     # num_reps = 1000
-    num_reps = 500
+    num_reps = nreps
 
     determine_charge_readout_params.determine_readout_dur_power(
         nv_sig,
@@ -436,11 +437,12 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
         apd_indices,
         num_reps,
         max_readout_dur=max_readout_dur,
+        bins=nbins,
         readout_powers=readout_powers,
         plot_readout_durs=readout_durs,
     )
 
-def do_determine_charge_readout_params_moving_target(nv_sig, apd_indices, x_readout_step, y_readout_step):
+def do_determine_charge_readout_params_moving_target(nv_sig, apd_indices, x_readout_step, y_readout_step,nbins=None,nreps=500):
     
     readout_durs = [100e6]
     
@@ -452,9 +454,9 @@ def do_determine_charge_readout_params_moving_target(nv_sig, apd_indices, x_read
     readout_powers = [round(val, 3) for val in readout_powers]
     
     # num_reps = 1000
-    num_reps = 500
-
-    determine_charge_readout_params_moving_target.determine_readout_dur_power(
+    num_reps = nreps
+    
+    mu_0, mu_m = determine_charge_readout_params_moving_target.determine_readout_dur_power(
         nv_sig,
         nv_sig,
         x_readout_step, 
@@ -462,10 +464,34 @@ def do_determine_charge_readout_params_moving_target(nv_sig, apd_indices, x_read
         apd_indices,
         num_reps,
         max_readout_dur=max_readout_dur,
+        bins=nbins,
         readout_powers=readout_powers,
         plot_readout_durs=readout_durs,
     )
+    return mu_0, mu_m
 
+ 
+def do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, x_steps, y_steps, nbins=None,nreps=500,NIRtest=True):
+    
+    readout_dur = [int(100e6)]
+    readout_power = [round(1.0,3)]
+    
+    determine_charge_readout_params_1Dscan_target.main(
+        nv_sig,
+        nv_sig,
+        np.asarray(x_steps), 
+        np.asarray(y_steps), 
+        apd_indices,
+        nreps,
+        max_readout_dur=max(readout_dur),
+        bins=nbins,
+        readout_powers=readout_power,
+        plot_readout_durs=readout_dur,
+        fit_threshold_full_model= False,
+        NIR_test = NIRtest,
+    )
+    
+            
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
@@ -847,6 +873,7 @@ def do_spin_echo_battery(nv_sig, apd_indices):
     return angle
 
 
+
 def do_nir_battery(nv_sig, apd_indices):
 
     # do_image_sample(nv_sig, apd_indices)
@@ -858,14 +885,47 @@ def do_nir_battery(nv_sig, apd_indices):
     # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
     # do_spin_echo(nv_sig, apd_indices)
     # do_determine_charge_readout_params(nv_sig,apd_indices)
-    do_determine_standard_readout_params(nv_sig,apd_indices)
-
-    with labrad.connect() as cxn:
-        power_supply = cxn.power_supply_mp710087
-        power_supply.output_on()
-        power_supply.set_voltage(1.3)
-    time.sleep(1)
-
+    # do_determine_standard_readout_params(nv_sig,apd_indices)
+    ylist = np.arange(-0.1,0.15,0.05)
+    noNIR_mu_m_list, NIR_mu_m_list, noNIR_mu_0_list, NIR_mu_0_list = [],[],[],[]
+    for ysep in ylist:
+        
+        noNIR_mu_0, noNIR_mu_m = do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,
+                                                     x_readout_step=0.0, y_readout_step=ysep,
+                                                     nbins=200,nreps=10)
+        
+        noNIR_mu_m_list.append(noNIR_mu_m)
+        noNIR_mu_0_list.append(noNIR_mu_0)
+        print('NIR off')
+        print(ysep,'  mean NV0=',round(noNIR_mu_m,2))
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_on()
+            power_supply.set_voltage(1.3)
+        time.sleep(1)
+        
+        NIR_mu_0, NIR_mu_m = do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,
+                                                         x_readout_step=0.0, y_readout_step=ysep,
+                                                         nbins=200,nreps=10)
+        
+        NIR_mu_m_list.append(NIR_mu_m)
+        NIR_mu_0_list.append(NIR_mu_0)
+        print('NIR on:')
+        print(ysep, '  mean NV0=',round(NIR_mu_m,2))
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_off()
+        time.sleep(1)
+        
+    import matplotlib.pylab as plt
+    plt.figure()
+    plt.plot(ylist,noNIR_mu_m_list,c='b',label='noNIR')
+    plt.plot(ylist,NIR_mu_m_list,c='r',label='NIR')
+    plt.xlabel('y displacement (V)')
+    plt.ylabel('NV- mean')
+    plt.legend()
+    plt.show()
+    
     # do_image_sample(nv_sig, apd_indices)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -876,12 +936,8 @@ def do_nir_battery(nv_sig, apd_indices):
     # nv_sig["spin_pol_dur"] = 1e6
     # do_t1_dq_knill(nv_sig, apd_indices)
     # do_determine_charge_readout_params(nv_sig,apd_indices)
-    do_determine_standard_readout_params(nv_sig,apd_indices)
-
-    with labrad.connect() as cxn:
-        power_supply = cxn.power_supply_mp710087
-        power_supply.output_off()
-    time.sleep(1)
+    # do_determine_standard_readout_params(nv_sig,apd_indices)
+    
 
 
 def do_nir_temp_differential(nv_sig, apd_indices):
@@ -1104,8 +1160,8 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle(nv_sig, apd_indices)
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)0203c
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_spin_echo(nv_sig, apd_indices)
@@ -1132,8 +1188,17 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
 
         # SCC characterization
-        # do_determine_charge_readout_params(nv_sig,apd_indices)
-        do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,x_readout_step=0.05, y_readout_step=0.05)
+        # do_determine_charge_readout_params(nv_sig,apd_indices,nbins=200,nreps=500)
+        # do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,
+        #                                                   x_readout_step=0.00, y_readout_step=0.00,
+        #                                                   nbins=200,nreps=10)
+        do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
+                                                          x_steps=[0.0], y_steps=np.arange(-.1,0.4,.02), 
+                                                          nbins=200,nreps=500,NIRtest=True)
+        
+        do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
+                                                          x_steps=np.arange(-.1,0.4,.02), y_steps=[0.0], 
+                                                          nbins=200,nreps=500,NIRtest=True)
         # do_scc_pulsed_resonance(nv_sig, apd_indices)
 
         # Automatic T1 setup
@@ -1150,8 +1215,8 @@ if __name__ == "__main__":
         # do_t1_dq_knill(nv_sig, apd_indices)
 
     except Exception as exc:
-        # recipient = "cdfox@wisc.edu"
-        recipient = "cambria@wisc.edu"
+        recipient = "cdfox@wisc.edu"
+        # recipient = "cambria@wisc.edu"
         tool_belt.send_exception_email(email_to=recipient)
         raise exc
 

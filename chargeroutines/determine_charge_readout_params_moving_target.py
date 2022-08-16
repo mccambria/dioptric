@@ -27,7 +27,7 @@ import majorroutines.optimize as optimize
 # %%
 
 
-def calc_histogram(nv0, nvm, dur):
+def calc_histogram(nv0, nvm, dur, bins):
 
     # Counts are in us, readout is in ns
     dur_us = dur / 1e3
@@ -36,12 +36,21 @@ def calc_histogram(nv0, nvm, dur):
     # print(nv0_counts)
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
-    occur_0, bin_edges_0 = np.histogram(
-        nv0_counts, np.linspace(0, max_0, max_0 + 1) #200)  # 
-    )
-    occur_m, bin_edge_m = np.histogram(
-        nvm_counts, np.linspace(0, max_m,  max_m + 1) #200)  #
-    )
+    if bins == None:
+        
+        occur_0, bin_edges_0 = np.histogram(
+            nv0_counts, np.linspace(0, max_0, max_0 + 1) #200)  # 
+        )
+        occur_m, bin_edge_m = np.histogram(
+            nvm_counts, np.linspace(0, max_m,  max_m + 1) #200)  #
+        )
+    elif bins != None:
+        occur_0, bin_edges_0 = np.histogram(
+            nv0_counts, bins# np.linspace(0, max_0, max_0 + 1) #200)  # 
+        )
+        occur_m, bin_edge_m = np.histogram(
+            nvm_counts, bins #np.linspace(0, max_m,  max_m + 1) #200)  #
+        )
 
     # Histogram returns bin edges. A bin is defined with the first point
     # inclusive and the last exclusive - eg a count a 2 will fall into
@@ -117,6 +126,7 @@ def single_nv_photon_statistics_model(readout_time, NV0, NVm, do_plot = True):
         ax.plot(u_value2,curve)
         ax.plot(u_valuem,0.5*np.array(nvm_curve),"green")
         ax.plot(u_value0,0.5*np.array(nv0_curve),"red")
+        
         textstr = '\n'.join((
         r'$g_0(s^{-1}) =%.2f$'% (fit[0]*10**3, ),
         r'$g_1(s^{-1})  =%.2f$'% (fit[1]*10**3, ),
@@ -196,6 +206,7 @@ def calculate_threshold_no_model(readout_time, nv0_hist,nvm_hist,mu_0, mu_m,
     ax.plot(x_vals_m,nvm_hist,  'g-o', label = 'Test green pulse' )
     ax.set_xlabel('Counts')
     ax.set_ylabel('Occur.')
+    ax.set_xlim(0)
     plt.axvline(x=thresh,color = "red")
     textstr = '\n'.join((
         r'$\mu_0=%.2f$' % (mu_0 ),
@@ -213,9 +224,11 @@ def calculate_threshold_no_model(readout_time, nv0_hist,nvm_hist,mu_0, mu_m,
             int(readout_time / 1e6), power
         )
     ax.set_title(title_text)
-    return thresh, fid, fig3
+    print('mean 0', round(mu_0,2))
+    print('mean m', round(mu_m,2))
+    return thresh, fid, fig3, mu_0, mu_m
 
-def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,
+def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,bins,
                    fit_threshold_full_model = False,  nd_filter = None, do_save= False):
     
     '''
@@ -237,7 +250,7 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,
     '''
     
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0_counts, 
-                                                      nvm_counts, readout_dur)
+                                                      nvm_counts, readout_dur,bins)
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
     
@@ -252,7 +265,7 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,
         threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(readout_dur,
                                                    nv0_counts_list, nvm_counts_list,max_x_val, power, nd_filter)
     else:
-        threshold, fidelity, fig = calculate_threshold_no_model(readout_dur, occur_0, 
+        threshold, fidelity, fig, mu_0, mu_m = calculate_threshold_no_model(readout_dur, occur_0, 
                                       occur_m,mean_0, mean_m,x_vals_0, x_vals_m, power, nd_filter)
     
     timestamp = tool_belt.get_time_stamp()
@@ -260,7 +273,7 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,
     if do_save:
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'] + "-threshold")
         tool_belt.save_figure(fig, file_path)
-    return 
+    return mu_0, mu_m
     
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 
@@ -278,7 +291,7 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
     num_reps = len(nv0)
 
     for dur in readout_dur_linspace:
-        occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
+        occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur,bins)
         separation = calc_separation(
             occur_0, x_vals_0, occur_m, x_vals_m, num_reps
         )
@@ -298,13 +311,14 @@ def plot_histogram(
     dur,
     power,
     # total_seq_time_sec,
+    bins,
     nd_filter = None,
     do_save=True,
     report_averages=False,
 ):
 
     num_reps = len(nv0)
-    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
+    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur,bins)
     # overlap = calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m, num_reps)
     # print("fractional overlap: {}".format(overlap))
     separation = calc_separation(
@@ -316,6 +330,7 @@ def plot_histogram(
     fig_hist, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0, occur_0, "r-o", label="Initial red pulse")
     ax.plot(x_vals_m, occur_m, "g-o", label="Initial green pulse")
+    ax.set_xlim(0)
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
     # ax.set_title("{} ms readout, {} V".format(int(dur / 1e6), power))
@@ -433,7 +448,7 @@ def measure_histograms_sub(
         x_points = [init_pulse_x] +  [readout_pulse_x, init_pulse_x]*num_reps_to_run   
         y_points = [init_pulse_y] + [readout_pulse_y, init_pulse_y]*num_reps_to_run    
 
-        xy_server.load_arb_scan_xy(x_points, y_points, int(10e7)) #CF
+        xy_server.load_arb_scan_xy(x_points, y_points, int(period)) #CF
         ################
         
         
@@ -442,7 +457,7 @@ def measure_histograms_sub(
         )
         
 
-        ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run)
+        ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run*2)
         buffer_timetags, buffer_channels = ret_vals
         # We don't care about picosecond resolution here, so just round to us
         # We also don't care about the offset value, so subtract that off
@@ -514,6 +529,7 @@ def measure_histograms_with_cxn(
 
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
+
     timetags, channels, period_sec = measure_histograms_sub(
         cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
     )
@@ -539,6 +555,7 @@ def determine_readout_dur_power(
     apd_indices,
     num_reps=500,
     max_readout_dur=1e9,
+    bins=None,
     readout_powers=None,
     plot_readout_durs=None,
     fit_threshold_full_model= False,
@@ -593,11 +610,11 @@ def determine_readout_dur_power(
                 else:
                     nd_filter = None
                 
-                plot_histogram(nv_sig, nv0, nvm, dur, p,  nd_filter=nd_filter)
+                plot_histogram(nv_sig, nv0, nvm, dur, p, bins,  nd_filter=nd_filter)
                 
                 if fit_threshold_full_model:
                     print('Calculating threshold values...\nMay take up to a few minutes...')
-                plot_threshold(nv_sig, dur, nv0, nvm, p,
+                mu_0, mu_m = plot_threshold(nv_sig, dur, nv0, nvm, p, bins,
                        fit_threshold_full_model, nd_filter=nd_filter,
                        do_save =True)
 
@@ -605,7 +622,7 @@ def determine_readout_dur_power(
         
         
 
-    return
+    return mu_0, mu_m
 
 
 #%%
@@ -643,8 +660,9 @@ if __name__ == "__main__":
         #     do_save=do_save,
         #     report_averages=True,
         # )
+        bins=None
 
-        plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power,
+        plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power, bins,
                         fit_threshold_full_model = False, nd_filter=None)
         # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 

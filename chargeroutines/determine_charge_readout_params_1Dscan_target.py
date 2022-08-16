@@ -6,7 +6,7 @@ difference readout durations.
 
 Created on Thu Apr 22 14:09:39 2021
 
-@author: mccambria
+@author: Carter Fox
 """
 
 import copy
@@ -27,7 +27,7 @@ import majorroutines.optimize as optimize
 # %%
 
 
-def calc_histogram(nv0, nvm, dur,bins):
+def calc_histogram(nv0, nvm, dur, bins):
 
     # Counts are in us, readout is in ns
     dur_us = dur / 1e3
@@ -126,6 +126,7 @@ def single_nv_photon_statistics_model(readout_time, NV0, NVm, do_plot = True):
         ax.plot(u_value2,curve)
         ax.plot(u_valuem,0.5*np.array(nvm_curve),"green")
         ax.plot(u_value0,0.5*np.array(nv0_curve),"red")
+        
         textstr = '\n'.join((
         r'$g_0(s^{-1}) =%.2f$'% (fit[0]*10**3, ),
         r'$g_1(s^{-1})  =%.2f$'% (fit[1]*10**3, ),
@@ -223,7 +224,9 @@ def calculate_threshold_no_model(readout_time, nv0_hist,nvm_hist,mu_0, mu_m,
             int(readout_time / 1e6), power
         )
     ax.set_title(title_text)
-    return thresh, fid, fig3
+    print('mean 0', round(mu_0,2))
+    print('mean m', round(mu_m,2))
+    return thresh, fid, fig3, mu_0, mu_m
 
 def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,bins,
                    fit_threshold_full_model = False,  nd_filter = None, do_save= False):
@@ -262,7 +265,7 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,bins,
         threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(readout_dur,
                                                    nv0_counts_list, nvm_counts_list,max_x_val, power, nd_filter)
     else:
-        threshold, fidelity, fig = calculate_threshold_no_model(readout_dur, occur_0, 
+        threshold, fidelity, fig, mu_0, mu_m = calculate_threshold_no_model(readout_dur, occur_0, 
                                       occur_m,mean_0, mean_m,x_vals_0, x_vals_m, power, nd_filter)
     
     timestamp = tool_belt.get_time_stamp()
@@ -270,7 +273,7 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,bins,
     if do_save:
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'] + "-threshold")
         tool_belt.save_figure(fig, file_path)
-    return 
+    return mu_0, mu_m
     
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 
@@ -307,8 +310,8 @@ def plot_histogram(
     nvm,
     dur,
     power,
-    bins,
     # total_seq_time_sec,
+    bins,
     nd_filter = None,
     do_save=True,
     report_averages=False,
@@ -327,9 +330,9 @@ def plot_histogram(
     fig_hist, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0, occur_0, "r-o", label="Initial red pulse")
     ax.plot(x_vals_m, occur_m, "g-o", label="Initial green pulse")
+    ax.set_xlim(0)
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
-    ax.set_xlim(0)
     # ax.set_title("{} ms readout, {} V".format(int(dur / 1e6), power))
     if nd_filter:
         title_text = "{} ms readout, {} V, {}".format(
@@ -377,17 +380,21 @@ def process_timetags(apd_gate_channel, timetags, channels):
 
 
 def measure_histograms_sub(
-    cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+    cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
 ):
 
+    
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
     period_sec = period / 10 ** 9
+ 
 
+    
     # Some initial parameters
     opti_period = 2.5 * 60
     num_reps_per_cycle = round(opti_period / period_sec)
+
     num_reps_remaining = num_reps
     timetags = []
     channels = []
@@ -406,6 +413,7 @@ def measure_histograms_sub(
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
+        
 
         # Make sure the lasers are at the right powers
         # Initial Calculation and setup
@@ -417,6 +425,8 @@ def measure_histograms_sub(
         _ = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
 
         # Load the APD
+        # xy_server.load_arb_scan_xy(x_points, y_points, int(10e7)) #CF
+        
         cxn.apd_tagger.start_tag_stream(apd_indices)
         cxn.apd_tagger.clear_buffer()
 
@@ -425,12 +435,29 @@ def measure_histograms_sub(
             num_reps_to_run = num_reps_per_cycle
         else:
             num_reps_to_run = num_reps_remaining
+            
+        
+        
+        ##############this is what I mainly added
+        xy_server = tool_belt.get_xy_server(cxn) #CF
+        
+        init_pulse_x = adjusted_nv_coords[0]
+        init_pulse_y = adjusted_nv_coords[1]
+        readout_pulse_x = init_pulse_x + x_readout_step
+        readout_pulse_y = init_pulse_y + y_readout_step
+        x_points = [init_pulse_x] +  [readout_pulse_x, init_pulse_x]*num_reps_to_run   
+        y_points = [init_pulse_y] + [readout_pulse_y, init_pulse_y]*num_reps_to_run    
+
+        xy_server.load_arb_scan_xy(x_points, y_points, int(period)) #CF
+        ################
+        
+        
         cxn.pulse_streamer.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
-        # print(num_reps_to_run)
+        
 
-        ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run)
+        ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run*2)
         buffer_timetags, buffer_channels = ret_vals
         # We don't care about picosecond resolution here, so just round to us
         # We also don't care about the offset value, so subtract that off
@@ -452,18 +479,18 @@ def measure_histograms_sub(
 # Apply a gren or red pulse, then measure the counts under yellow illumination.
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
 # Use with DM on red and green
-def measure_histograms(nv_sig, opti_nv_sig, apd_indices, num_reps):
+def measure_histograms(nv_sig, opti_nv_sig,x_readout_step, y_readout_step, apd_indices, num_reps):
 
     with labrad.connect() as cxn:
         nv0, nvm, total_seq_time_sec = measure_histograms_with_cxn(
-            cxn, nv_sig, opti_nv_sig, apd_indices, num_reps
+            cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, apd_indices, num_reps
         )
 
     return nv0, nvm, total_seq_time_sec
 
 
 def measure_histograms_with_cxn(
-    cxn, nv_sig, opti_nv_sig, apd_indices, num_reps
+    cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, apd_indices, num_reps
 ):
     # Only support a single APD for now
     apd_index = apd_indices[0]
@@ -483,7 +510,7 @@ def measure_histograms_with_cxn(
 
     # Pulse sequence to do a single pulse followed by readout
     readout_on_2nd_pulse = 2
-    seq_file = "simple_readout_two_pulse.py"
+    seq_file = "simple_readout_two_pulse_moving_target.py" #CF
     gen_seq_args = lambda init_laser: [
         nv_sig["{}_dur".format(init_laser)],
         readout_pulse_time,
@@ -502,15 +529,16 @@ def measure_histograms_with_cxn(
 
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
+
     timetags, channels, period_sec = measure_histograms_sub(
-        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+        cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
     )
     nvm = process_timetags(apd_gate_channel, timetags, channels)
 
     # Red measurement
     seq_args = gen_seq_args("nv0_prep_laser")
     timetags, channels, period_sec = measure_histograms_sub(
-        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+        cxn, nv_sig, opti_nv_sig, x_readout_step, y_readout_step, seq_file, seq_args, apd_indices, num_reps
     )
     nv0 = process_timetags(apd_gate_channel, timetags, channels)
 
@@ -519,9 +547,145 @@ def measure_histograms_with_cxn(
     return nv0, nvm, period_sec * 2
 
 
+def main(nv_sig,
+    opti_nv_sig,
+    x_steps, 
+    y_steps, 
+    apd_indices,
+    num_reps=500,
+    max_readout_dur=1e9,
+    bins=None,
+    readout_powers=None,
+    plot_readout_durs=None,
+    fit_threshold_full_model= False,
+    NIR_test = False,
+):
+    
+    xs, ys = [], []
+    mu_0_NIR_list, mu_0_list, mu_m_NIR_list, mu_m_list = [],[],[],[] 
+    for xstep in x_steps:
+        for ystep in y_steps:
+            mu_0, mu_m = determine_readout_dur_power(nv_sig,
+                opti_nv_sig,
+                xstep, 
+                ystep, 
+                apd_indices,
+                num_reps,
+                max_readout_dur,
+                bins,
+                readout_powers,
+                plot_readout_durs,
+                fit_threshold_full_model,
+                )
+            
+            mu_0_list.append(mu_0)
+            mu_m_list.append(mu_m)
+            
+    if NIR_test:
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_on()
+            power_supply.set_voltage(1.3)
+        time.sleep(1)
+        for xstep in x_steps:
+            for ystep in y_steps:
+                mu_0_NIR, mu_m_NIR = determine_readout_dur_power(nv_sig,
+                    opti_nv_sig,
+                    xstep, 
+                    ystep, 
+                    apd_indices,
+                    num_reps,
+                    max_readout_dur,
+                    bins,
+                    readout_powers,
+                    plot_readout_durs,
+                    fit_threshold_full_model,
+                    )
+                mu_0_NIR_list.append(mu_0_NIR)
+                mu_m_NIR_list.append(mu_m_NIR)
+                
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_off()
+        time.sleep(1)
+    
+    plot_and_save_means(nv_sig,num_reps,readout_powers,max_readout_dur,x_steps,y_steps,mu_0_list,mu_m_list,mu_0_NIR_list,mu_m_NIR_list)
+    
+        
+    
+def plot_and_save_means(nv_sig,num_reps,readout_pow,max_readout_dur,x_steps,y_steps,mu_0_list,mu_m_list,mu_0_NIR_list=None,mu_m_NIR_list=None):
+
+    figm0, ax0 = plt.subplots(1,1)
+    figm1, ax1 = plt.subplots(1,1)
+    figm2, ax2 = plt.subplots(1,1)
+    figm3, ax3 = plt.subplots(1,1)
+    
+    if len(x_steps)>1:
+        domain = x_steps
+        ax0.set_xlabel('x displacement (V)')
+        ax1.set_xlabel('x displacement (V)')
+        ax2.set_xlabel('x displacement (V)')
+        ax3.set_xlabel('x displacement (V)')
+    elif len(y_steps)>1:
+        domain = y_steps
+        ax0.set_xlabel('y displacement (V)')
+        ax1.set_xlabel('y displacement (V)')
+        ax2.set_xlabel('y displacement (V)')
+        ax3.set_xlabel('y displacement (V)')
+
+    ax0.set_ylabel(r'$\mu_m$')
+    ax1.set_ylabel(r'$\mu_0$')    
+    ax0.plot(domain,mu_m_list,label='no NIR')
+    ax1.plot(domain,mu_0_list,label='no NIR')
+    if mu_0_NIR_list != None:
+        ax0.plot(domain,mu_m_NIR_list,label='NIR')
+        ax1.plot(domain,mu_0_NIR_list,label='NIR')
+        
+        normed_mu_m = (np.asarray(mu_m_NIR_list) - np.asarray(mu_m_list)) / np.asarray(mu_m_list)
+        normed_mu_0 = (np.asarray(mu_0_NIR_list) - np.asarray(mu_0_list)) / np.asarray(mu_0_list)
+        ax2.plot(domain,normed_mu_m)
+        ax3.plot(domain,normed_mu_0)
+        ax2.set_ylabel(r'($\mu_{mNIR}$ - $\mu_m$)/$\mu_m$')
+        ax3.set_ylabel(r'($\mu_{mNIR}$ - $\mu_m$)/$\mu_m$')
+    ax0.legend()
+    ax1.legend()
+    
+
+    plt.show()
+    
+    timestamp = tool_belt.get_time_stamp()
+
+    rawData = {'timestamp': timestamp,
+               'nv_sig': nv_sig,
+               'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'num_reps': num_reps,
+               'readout_power': readout_pow,
+               'readout_duration':max_readout_dur,
+               'x_steps': x_steps.tolist(),
+               'y_steps':y_steps.tolist(),
+               'mu_0_no_NIR': mu_0_list,
+               'mu_m_no_NIR': mu_m_list,
+               'mu_0_NIR': mu_0_NIR_list,
+               'mu_m_NIR': mu_0_NIR_list,
+               }
+
+    name = nv_sig['name']
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
+    filePath0 = tool_belt.get_file_path(__file__, timestamp, name+'mu_m')
+    filePath1 = tool_belt.get_file_path(__file__, timestamp, name+'mu_0')
+    filePath2 = tool_belt.get_file_path(__file__, timestamp, name+'mu_m_norm')
+    filePath3 = tool_belt.get_file_path(__file__, timestamp, name+'mu_0_norm')
+    tool_belt.save_figure(figm0, filePath0)
+    tool_belt.save_figure(figm1, filePath1)
+    tool_belt.save_figure(figm2, filePath2)
+    tool_belt.save_figure(figm3, filePath3)
+    tool_belt.save_raw_data(rawData, filePath)
+
 def determine_readout_dur_power(
     nv_sig,
     opti_nv_sig,
+    x_readout_step, 
+    y_readout_step, 
     apd_indices,
     num_reps=500,
     max_readout_dur=1e9,
@@ -550,7 +714,7 @@ def determine_readout_dur_power(
         nv_sig_copy["charge_readout_laser_power"] = p
 
         nv0, nvm, total_seq_time_sec = measure_histograms(
-            nv_sig_copy, opti_nv_sig, apd_indices, num_reps
+            nv_sig_copy, opti_nv_sig, x_readout_step, y_readout_step, apd_indices, num_reps
         )
         nv0_power.append(nv0)
         nvm_power.append(nvm)
@@ -580,11 +744,11 @@ def determine_readout_dur_power(
                 else:
                     nd_filter = None
                 
-                plot_histogram(nv_sig, nv0, nvm, dur, p, bins, nd_filter=nd_filter)
+                plot_histogram(nv_sig, nv0, nvm, dur, p, bins,  nd_filter=nd_filter)
                 
                 if fit_threshold_full_model:
                     print('Calculating threshold values...\nMay take up to a few minutes...')
-                plot_threshold(nv_sig, dur, nv0, nvm, p,bins,
+                mu_0, mu_m = plot_threshold(nv_sig, dur, nv0, nvm, p, bins,
                        fit_threshold_full_model, nd_filter=nd_filter,
                        do_save =True)
 
@@ -592,7 +756,7 @@ def determine_readout_dur_power(
         
         
 
-    return
+    return mu_0, mu_m
 
 
 #%%
@@ -630,8 +794,9 @@ if __name__ == "__main__":
         #     do_save=do_save,
         #     report_averages=True,
         # )
+        bins=None
 
-        plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power,
+        plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power, bins,
                         fit_threshold_full_model = False, nd_filter=None)
         # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 
@@ -728,7 +893,6 @@ if __name__ == "__main__":
     # num_reps = 2000
     # num_reps = 1000
     num_reps = 500
-    bins=None
 
     # try:
     #     determine_readout_dur_power(
@@ -736,7 +900,6 @@ if __name__ == "__main__":
     #         nv_sig,
     #         apd_indices,
     #         num_reps,
-    #         bins,
     #         max_readout_dur=max_readout_dur,
     #         readout_powers=readout_powers,
     #         plot_readout_durs=readout_durs,
