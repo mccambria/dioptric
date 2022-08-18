@@ -379,9 +379,9 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, 
             uwave_time_range=[0, 200]):
 
-    num_steps = 151
+    num_steps = 51
     num_reps = int(2e4)
-    num_runs = 15
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -400,13 +400,13 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=10):
 
-    num_reps = 2e4
+    num_reps = 2e3
     # num_runs = 2
-    num_runs = 10
+    num_runs = 2#10
 
-    # discrete_rabi.main(
-    #     nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs
-    # )
+    discrete_rabi.main(
+        nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs
+    )
     
     # discrete_rabi.main(
     #     nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs,
@@ -414,12 +414,12 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=10):
     # )
 
     # for iq_delay in numpy.linspace(298, 732, 15): #448
-    for iq_delay in [450, 485, 515, 545, 580, 608, 645, 680]:
-    # t = 680+35
-    # for iq_delay in numpy.linspace(t-5, t+5, 3):
-        print(iq_delay)
-        discrete_rabi.main(nv_sig, apd_indices,
-                            state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
+    # for iq_delay in [450, 485, 515, 545, 580, 608, 645, 680]:
+    # # t = 680+35
+    # # for iq_delay in numpy.linspace(t-5, t+5, 3):
+    #     print(iq_delay)
+    #     discrete_rabi.main(nv_sig, apd_indices,
+    #                         state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
 
 
@@ -922,7 +922,7 @@ if __name__ == "__main__":
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":13.5,
+        "expected_count_rate":12,
         "correction_collar": 0.12,
 
 
@@ -980,10 +980,10 @@ if __name__ == "__main__":
         "uwave_power_LOW": 15,  # 15.5 max
         
         "resonance_HIGH":2.9592,
-        "rabi_HIGH":69.2,
-        'pi_pulse_HIGH': 36.2,
-        'pi_on_2_pulse_HIGH': 19.2,
-        "uwave_power_HIGH": 10,
+        "rabi_HIGH":178.5,
+        # 'pi_pulse_HIGH': 36.2,
+        # 'pi_on_2_pulse_HIGH': 19.2,
+        "uwave_power_HIGH": 0,
     }  # 14.5 max
 
 
@@ -1029,7 +1029,7 @@ if __name__ == "__main__":
                 
                 # do_pulsed_resonance(nv_sig_i, nv_sig_i, apd_indices, 2.87, 0.30) ###
                 
-        # do_optimize(nv_sig,apd_indices)
+        do_optimize(nv_sig,apd_indices)
         # do_image_sample(nv_sig, apd_indices)
                 
         # do_stationary_count(nv_sig, apd_indices)
@@ -1080,7 +1080,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
         # for a in numpy.linspace(0.2, 0.8, 7):
-        do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 1000])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)

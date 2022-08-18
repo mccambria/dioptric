@@ -177,6 +177,14 @@ class SignalGeneratorSg394(LabradServer):
         Set up external IQ modulation
         """
 
+        # The sg394 only supports up to 10 dBm of power output with IQ modulation
+        # Let's check what the amplitude is set as, and if it's over 10 dBm, 
+        # we'll quit out and save a note in the labrad logging
+        if float(self.sig_gen.query('AMPR?')) > 10:
+            msg= 'IQ modulation on sg394 supports up to 10 dBm. The power was set to {} dBm and the operation was stopped.'.format(self.sig_gen.query('AMPR?'))
+            raise Exception(msg)
+            return
+        
         # QAM is type 7
         self.sig_gen.write('TYPE 7')
         # STYP 1 is vector modulation
@@ -204,25 +212,7 @@ class SignalGeneratorSg394(LabradServer):
         #                                          min_val=-1.0, max_val=1.0)
         #     task.write(0.0)
     
-    @setting(10,
-             returns="i")
-    def querry_err(self, c, option):
-        
-        err = self.sig_gen.write('LERR?')
-        return err
-    
-    @setting(11,
-             returns="i")
-    def querry_mode(self, c):
-        self.sig_gen.write('TYPE 7')
-        self.sig_gen.write('QFNC 1')
-        # boo = self.sig_gen.write('QFNC?')
-        
-        cmd = 'QFNC?'
-        logging.info(cmd)
-        boo = self.sig_gen.write(cmd)
-        logging.info(boo)
-        return boo
+
 
 __server__ = SignalGeneratorSg394()
 
