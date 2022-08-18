@@ -346,7 +346,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Number pi pulses')
     ax.set_ylabel('Contrast (arb. units)')
-
+    
+    if iq_delay:
+        ax.set_title('Discrete rabi with iq delay set to {} ns'.format(iq_delay))
+        # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        # ax.text(0.8, 0.9, text,transform=ax.transAxes,
+        #         verticalalignment='top', bbox=props)
+        
+        
     raw_fig.canvas.draw()
     raw_fig.set_tight_layout(True)
     raw_fig.canvas.flush_events()

@@ -82,6 +82,11 @@ class ArbitraryWaveformGenerator(LabradServer):
         logging.info('Init complete')
 
 
+    @setting(2, amp="v[]")
+    def set_i_full(self, c, amp):
+        
+        self.load_iq([0], amp)
+    
     @setting(3)
     def load_knill(self, c):
 
@@ -95,7 +100,8 @@ class ArbitraryWaveformGenerator(LabradServer):
         #           3*pi/2, pi, 3*pi/2,
         #           pi, pi/2, pi] * 4
 
-        self.load_iq(phases)
+        amp = self.iq_comp_amp
+        self.load_iq(phases, amp)
 
     @setting(10, phases="*v[]")
     def load_arb_phases(self, c, phases):
@@ -105,28 +111,32 @@ class ArbitraryWaveformGenerator(LabradServer):
         for el in phases:
             phases_list.append(el)
             
-        self.load_iq(phases_list)
+        amp = self.iq_comp_amp
+        self.load_iq(phases_list, amp)
         
     @setting(11, num_dd_reps="i")
     def load_xy4n(self, c, num_dd_reps):
 
         # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
-        phases = [0] +  [0, 3*pi/2, pi, pi/2]*8*num_dd_reps + [0]
-        
+        phases = [0] +  [0, pi/2]*4*num_dd_reps + [0]
         phases = phases*4
-        self.load_iq(phases)
+        
+        amp = self.iq_comp_amp
+        self.load_iq(phases, amp)
 
     @setting(12, num_dd_reps="i")
     def load_cpmg(self, c, num_dd_reps):
 
-        # intended phase list: [0, (0)*N, 0]
-        phases = [0] +  [0]*num_dd_reps + [0]
+        # intended phase list: [0, (pi/2)*N, 0]
+        phases = [0] +  [pi/2]*num_dd_reps + [0]
         
         phases = phases*4
-        self.load_iq(phases)
+        amp = self.iq_comp_amp
+        self.load_iq(phases, amp)
         
         
-    def load_iq(self, phases):
+    
+    def load_iq(self, phases, amp):
         """
         Load IQ modulation
         """
@@ -149,17 +159,19 @@ class ArbitraryWaveformGenerator(LabradServer):
         while len(phases) < 32:
             phases *= 2
         
-        amp = self.iq_comp_amp
         phase_comps = iq_comps(phases, amp)
+        # logging.info(phase_comps)
 
         # Shift the last element to first to account for first pulse in seq
         # Then convert to string and trim the brackets
+        # for the I channel
         comps = phase_comps[0]
         last_el = comps.pop()
         comps.insert(0, last_el)
         seq = str(comps)[1:-1]
         self.wave_gen.write('SOUR1:DATA:ARB iqSwitch1, {}'.format(seq))
 
+        # for the Q channel
         comps = phase_comps[1]
         last_el = comps.pop()
         comps.insert(0, last_el)

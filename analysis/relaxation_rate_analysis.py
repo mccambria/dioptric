@@ -343,7 +343,7 @@ def get_data_lists(folder_name, simple_print=False):
                     plus_minus_counts = norm_avg_sig
                     plus_minus_ste = norm_avg_sig_ste
                     plus_minus_time = time_array
-
+                    
                     plus_minus_ref_max_time = max_relaxation_time
                     plus_minus_bool = True
                 else:
@@ -809,15 +809,15 @@ def main(
 if __name__ == "__main__":
 
     temp = 295
-    folder = "2022_08_05"
+    folder = "2022_08_17-nv10"
 
-    # mode = "prediction"
-    mode = "analysis"
+    mode = "prediction"
+    # mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 51#omega_calc(temp)
-        est_gamma = 150#gamma_calc(temp)
+        est_omega = 1821#omega_calc(temp)
+        est_gamma = 4500#gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
