@@ -22,6 +22,7 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_temperature as image_sample_temperature
+import majorroutines.map_rabi_contrast_NIR as map_rabi_contrast_NIR
 import majorroutines.ensemble_image_sample_NIR_differential as ensemble_image_sample_NIR_differential
 import majorroutines.ensemble_image_sample_NIR_differential_faster as ensemble_image_sample_NIR_differential_faster
 import majorroutines.optimize as optimize
@@ -51,7 +52,7 @@ import time
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
+def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False,cbarmin=None,cbarmax=None):
 
     # scan_range = 0.5
     # num_steps = 90
@@ -65,10 +66,10 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     # scan_range = 5.0
     # scan_range = 3.0
     # scan_range = 1.5
-    # scan_range = 1.0
+    # scan_range = 1.2
     # scan_range = 0.75
     # scan_range = 0.3
-    scan_range = 0.2
+    scan_range = 0.8
     # scan_range = 0.15
     # scan_range = 0.1
     # scan_range = 0.075
@@ -92,6 +93,8 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
         num_steps,
         apd_indices,
         nv_minus_initialization=nv_minus_initialization,
+        cmin=cbarmin,
+        cmax=cbarmax,
     )
 
 
@@ -442,36 +445,10 @@ def do_determine_charge_readout_params(nv_sig, apd_indices,nbins=None,nreps=500)
         plot_readout_durs=readout_durs,
     )
 
-def do_determine_charge_readout_params_moving_target(nv_sig, apd_indices, x_readout_step, y_readout_step,nbins=None,nreps=500):
-    
-    readout_durs = [100e6]
-    
-    readout_durs = [int(el) for el in readout_durs]
-    max_readout_dur = max(readout_durs)
-
-   
-    readout_powers = [1.0]
-    readout_powers = [round(val, 3) for val in readout_powers]
-    
-    # num_reps = 1000
-    num_reps = nreps
-    
-    mu_0, mu_m = determine_charge_readout_params_moving_target.determine_readout_dur_power(
-        nv_sig,
-        nv_sig,
-        x_readout_step, 
-        y_readout_step, 
-        apd_indices,
-        num_reps,
-        max_readout_dur=max_readout_dur,
-        bins=nbins,
-        readout_powers=readout_powers,
-        plot_readout_durs=readout_durs,
-    )
-    return mu_0, mu_m
-
  
 def do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, x_steps, y_steps, nbins=None,nreps=500,NIRtest=True):
+    #this only works for a 1d scan. one of x_steps or y_steps should be a list or array with several points. 
+    #The other one should be a list or array with one point, the one to stay at.
     
     readout_dur = [int(100e6)]
     readout_power = [round(1.0,3)]
@@ -873,6 +850,22 @@ def do_spin_echo_battery(nv_sig, apd_indices):
     return angle
 
 
+'''
+def do_map_rabi_contrast_diff_NIR(nv_sig, apd_indices, state, uwave_time_range, image_range, num_steps, rabi_num_reps, rabi_num_runs):
+    
+    nir_laser_voltage = 1.3
+    
+    map_rabi_contrast_NIR.main(nv_sig,
+    image_range,
+    num_steps,
+    apd_indices,
+    nir_laser_voltage,
+    rabi_num_reps,
+    rabi_num_runs,
+    state,
+    uwave_time_range
+    )
+'''
 
 def do_nir_battery(nv_sig, apd_indices):
 
@@ -886,46 +879,20 @@ def do_nir_battery(nv_sig, apd_indices):
     # do_spin_echo(nv_sig, apd_indices)
     # do_determine_charge_readout_params(nv_sig,apd_indices)
     # do_determine_standard_readout_params(nv_sig,apd_indices)
-    ylist = np.arange(-0.1,0.15,0.05)
-    noNIR_mu_m_list, NIR_mu_m_list, noNIR_mu_0_list, NIR_mu_0_list = [],[],[],[]
-    for ysep in ylist:
-        
-        noNIR_mu_0, noNIR_mu_m = do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,
-                                                     x_readout_step=0.0, y_readout_step=ysep,
-                                                     nbins=200,nreps=10)
-        
-        noNIR_mu_m_list.append(noNIR_mu_m)
-        noNIR_mu_0_list.append(noNIR_mu_0)
-        print('NIR off')
-        print(ysep,'  mean NV0=',round(noNIR_mu_m,2))
-        with labrad.connect() as cxn:
-            power_supply = cxn.power_supply_mp710087
-            power_supply.output_on()
-            power_supply.set_voltage(1.3)
-        time.sleep(1)
-        
-        NIR_mu_0, NIR_mu_m = do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,
-                                                         x_readout_step=0.0, y_readout_step=ysep,
-                                                         nbins=200,nreps=10)
-        
-        NIR_mu_m_list.append(NIR_mu_m)
-        NIR_mu_0_list.append(NIR_mu_0)
-        print('NIR on:')
-        print(ysep, '  mean NV0=',round(NIR_mu_m,2))
-        with labrad.connect() as cxn:
-            power_supply = cxn.power_supply_mp710087
-            power_supply.output_off()
-        time.sleep(1)
-        
-    import matplotlib.pylab as plt
-    plt.figure()
-    plt.plot(ylist,noNIR_mu_m_list,c='b',label='noNIR')
-    plt.plot(ylist,NIR_mu_m_list,c='r',label='NIR')
-    plt.xlabel('y displacement (V)')
-    plt.ylabel('NV- mean')
-    plt.legend()
-    plt.show()
+
+    with labrad.connect() as cxn:
+        power_supply = cxn.power_supply_mp710087
+        power_supply.output_on()
+        power_supply.set_voltage(1.3)
+    time.sleep(1)
     
+  
+    with labrad.connect() as cxn:
+        power_supply = cxn.power_supply_mp710087
+        power_supply.output_off()
+    time.sleep(1)
+        
+
     # do_image_sample(nv_sig, apd_indices)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -1116,7 +1083,10 @@ if __name__ == "__main__":
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-
+        # time.sleep(10)
+        # tool_belt.set_xyz(labrad.connect(), [0.0,0.0,0.0])
+     
+                
         # for pos in [-2]:
         #     if tool_belt.safe_stop():
         #         break
@@ -1133,15 +1103,20 @@ if __name__ == "__main__":
         #             cxn.cryo_piezos.write_xy(x, y)
         #             print(x,y)
         #         do_image_sample(nv_sig, apd_indices)
-        # a=time.time()
-        # do_ensemble_image_sample(nv_sig, apd_indices, scan_range=.8, num_steps=50, 
+        # do_ensemble_image_sample(nv_sig, apd_indices, scan_range=1.3, num_steps=100, 
         #                               technique='NIR_counts_diff_faster',nv_minus_initialization=False,
         #                                 cbarmin_percdiff=-.0,cbarmax_percdiff=.125,
         #                                 cbarmin_diffcounts=0,cbarmax_diffcounts=220,
         #                                 cbarmin_counts=0,cbarmax_counts=2200
         #                                 )
-        # print(int((time.time()-a)/60), 'minutes', (time.time()-a) % 60, 'seconds')
-        # do_image_sample(nv_sig, apd_indices)
+        # do_ensemble_image_sample(nv_sig, apd_indices, scan_range=1.3, num_steps=60, 
+        #                               technique='NIR_counts_diff_faster',nv_minus_initialization=False,
+        #                                 cbarmin_percdiff=-.0,cbarmax_percdiff=.125,
+        #                                 cbarmin_diffcounts=0,cbarmax_diffcounts=220,
+        #                                 cbarmin_counts=0,cbarmax_counts=2200
+        #                                 )
+        
+        # do_image_sample(nv_sig, apd_indices,cbarmin=200,cbarmax=740)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1189,16 +1164,15 @@ if __name__ == "__main__":
 
         # SCC characterization
         # do_determine_charge_readout_params(nv_sig,apd_indices,nbins=200,nreps=500)
-        # do_determine_charge_readout_params_moving_target(nv_sig, apd_indices,
-        #                                                   x_readout_step=0.00, y_readout_step=0.00,
-        #                                                   nbins=200,nreps=10)
-        do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
-                                                          x_steps=[0.0], y_steps=np.arange(-.1,0.4,.02), 
-                                                          nbins=200,nreps=500,NIRtest=True)
+       
+        # do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
+        #                                                   x_steps=[0.0], y_steps=np.arange(-.55,0.55,.015), 
+        #                                                   nbins=200,nreps=500,NIRtest=True)
         
-        do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
-                                                          x_steps=np.arange(-.1,0.4,.02), y_steps=[0.0], 
-                                                          nbins=200,nreps=500,NIRtest=True)
+        # do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
+        #                                                   x_steps=np.arange(-.55,0.55,.015), y_steps=[0.0], 
+        #                                                   nbins=200,nreps=500,NIRtest=True)
+        
         # do_scc_pulsed_resonance(nv_sig, apd_indices)
 
         # Automatic T1 setup

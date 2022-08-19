@@ -817,7 +817,7 @@ def calc_image_scan_vals(
         return x_scan_vals, y_scan_vals
 
 
-def update_image_figure(fig, imgArray):
+def update_image_figure(fig, imgArray,cmin=None,cmax=1000):
     """
     Update the image with the passed image array and redraw the figure.
     Intended to update figures created by create_image_figure.
@@ -854,6 +854,8 @@ def update_image_figure(fig, imgArray):
             img.set_clim(None, 1000)
         else:
             img.autoscale()
+    elif (cmax != None) & (cmin != None):
+        img.set_clim(cmin, cmax)
     else:
         img.autoscale()
 

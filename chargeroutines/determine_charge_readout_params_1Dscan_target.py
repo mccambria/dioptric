@@ -16,7 +16,7 @@ import labrad
 import time
 import sys
 import random
-
+import numpy
 import utils.tool_belt as tool_belt
 import chargeroutines.photonstatistics as model
 
@@ -275,7 +275,7 @@ def plot_threshold(nv_sig, readout_dur, nv0_counts, nvm_counts, power,bins,
         tool_belt.save_figure(fig, file_path)
     return mu_0, mu_m
     
-def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
+def determine_opti_readout_dur(nv0, nvm, max_readout_dur,bins):
 
     if max_readout_dur <= 100e6:
         readout_dur_linspace = np.arange(1e6, max_readout_dur, 1e6)
@@ -565,31 +565,8 @@ def main(nv_sig,
     mu_0_NIR_list, mu_0_list, mu_m_NIR_list, mu_m_list = [],[],[],[] 
     for xstep in x_steps:
         for ystep in y_steps:
-            mu_0, mu_m = determine_readout_dur_power(nv_sig,
-                opti_nv_sig,
-                xstep, 
-                ystep, 
-                apd_indices,
-                num_reps,
-                max_readout_dur,
-                bins,
-                readout_powers,
-                plot_readout_durs,
-                fit_threshold_full_model,
-                )
-            
-            mu_0_list.append(mu_0)
-            mu_m_list.append(mu_m)
-            
-    if NIR_test:
-        with labrad.connect() as cxn:
-            power_supply = cxn.power_supply_mp710087
-            power_supply.output_on()
-            power_supply.set_voltage(1.3)
-        time.sleep(1)
-        for xstep in x_steps:
-            for ystep in y_steps:
-                mu_0_NIR, mu_m_NIR = determine_readout_dur_power(nv_sig,
+            try:
+                mu_0, mu_m = determine_readout_dur_power(nv_sig,
                     opti_nv_sig,
                     xstep, 
                     ystep, 
@@ -601,9 +578,41 @@ def main(nv_sig,
                     plot_readout_durs,
                     fit_threshold_full_model,
                     )
-                mu_0_NIR_list.append(mu_0_NIR)
-                mu_m_NIR_list.append(mu_m_NIR)
                 
+                mu_0_list.append(mu_0)
+                mu_m_list.append(mu_m)
+            except:
+                mu_0_list.append(numpy.nan) #if it fails, it just appends None so that when plotted it is am empty space
+                mu_m_list.append(numpy.nan)
+            
+    if NIR_test:
+        with labrad.connect() as cxn:
+            power_supply = cxn.power_supply_mp710087
+            power_supply.output_on()
+            power_supply.set_voltage(1.3)
+        time.sleep(1)
+        for xstep in x_steps:
+            for ystep in y_steps:
+                try:
+                    mu_0_NIR, mu_m_NIR = determine_readout_dur_power(nv_sig,
+                        opti_nv_sig,
+                        xstep, 
+                        ystep, 
+                        apd_indices,
+                        num_reps,
+                        max_readout_dur,
+                        bins,
+                        readout_powers,
+                        plot_readout_durs,
+                        fit_threshold_full_model,
+                        NIR_run="On",
+                        )
+                    mu_0_NIR_list.append(mu_0_NIR)
+                    mu_m_NIR_list.append(mu_m_NIR)
+                except:
+                    mu_0_NIR_list.append(numpy.nan)
+                    mu_m_NIR_list.append(numpy.nan)
+                    
         with labrad.connect() as cxn:
             power_supply = cxn.power_supply_mp710087
             power_supply.output_off()
@@ -646,7 +655,7 @@ def plot_and_save_means(nv_sig,num_reps,readout_pow,max_readout_dur,x_steps,y_st
         ax2.plot(domain,normed_mu_m)
         ax3.plot(domain,normed_mu_0)
         ax2.set_ylabel(r'($\mu_{mNIR}$ - $\mu_m$)/$\mu_m$')
-        ax3.set_ylabel(r'($\mu_{mNIR}$ - $\mu_m$)/$\mu_m$')
+        ax3.set_ylabel(r'($\mu_{0NIR}$ - $\mu_0$)/$\mu_0$')
     ax0.legend()
     ax1.legend()
     
@@ -666,7 +675,7 @@ def plot_and_save_means(nv_sig,num_reps,readout_pow,max_readout_dur,x_steps,y_st
                'mu_0_no_NIR': mu_0_list,
                'mu_m_no_NIR': mu_m_list,
                'mu_0_NIR': mu_0_NIR_list,
-               'mu_m_NIR': mu_0_NIR_list,
+               'mu_m_NIR': mu_m_NIR_list
                }
 
     name = nv_sig['name']
@@ -693,6 +702,7 @@ def determine_readout_dur_power(
     readout_powers=None,
     plot_readout_durs=None,
     fit_threshold_full_model= False,
+    NIR_run="off",
 ):
 
     if readout_powers is None:
@@ -727,6 +737,9 @@ def determine_readout_dur_power(
             "timestamp": timestamp,
             "nv_sig": nv_sig_copy,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "x_step": x_readout_step,
+            "y_step": y_readout_step,
+            "NIR": NIR_run, 
             "num_reps": num_reps,
             "nv0": nv0,
             "nv0-units": "list(list(us))",
@@ -765,150 +778,51 @@ def determine_readout_dur_power(
 if __name__ == "__main__":
 
     ############ Replots ############
+    
+    file_name = "2022_08_18-03_44_11-hopper-search"
+    data = tool_belt.get_raw_data(file_name)
+    nv_sig = data["nv_sig"]
+    
+    x_steps = np.array(data['x_steps'])
+    y_steps = np.array(data['y_steps'])
+    mu_0_list = np.array(data['mu_0_no_NIR'])
+    mu_m_list = np.array(data['mu_m_no_NIR'])
+    mu_0_NIR_list = np.array(data['mu_0_NIR'])
+    mu_m_NIR_list = np.array(data['mu_m_NIR'])
+    
+    
+    figm0, ax0 = plt.subplots(1,1)
+    figm1, ax1 = plt.subplots(1,1)
+    figm2, ax2 = plt.subplots(1,1)
+    figm3, ax3 = plt.subplots(1,1)
+    
+    if len(x_steps)>1:
+        domain = x_steps
+        ax0.set_xlabel('x displacement (V)')
+        ax1.set_xlabel('x displacement (V)')
+        ax2.set_xlabel('x displacement (V)')
+        ax3.set_xlabel('x displacement (V)')
+    elif len(y_steps)>1:
+        domain = y_steps
+        ax0.set_xlabel('y displacement (V)')
+        ax1.set_xlabel('y displacement (V)')
+        ax2.set_xlabel('y displacement (V)')
+        ax3.set_xlabel('y displacement (V)')
 
-    # if False:
-    if True:
-        tool_belt.init_matplotlib()
-        # file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
-        file_name = "2022_08_09-15_22_25-rubin-nv1"
-        data = tool_belt.get_raw_data(file_name)
-        nv_sig = data["nv_sig"]
-        nv0 = data["nv0"]
-        nvm = data["nvm"]
-        readout_power = nv_sig["charge_readout_laser_power"]
-        max_readout_dur = nv_sig["charge_readout_dur"]
-
-        # opti_readout_dur = determine_opti_readout_dur(
-        #     nv0, nvm, max_readout_dur
-        # )
-        # print(opti_readout_dur)
-        opti_readout_dur = 49000000
-        # do_save = True
-        do_save = False
-        # plot_histogram(
-        #     nv_sig,
-        #     nv0,
-        #     nvm,
-        #     opti_readout_dur,
-        #     readout_power,
-        #     do_save=do_save,
-        #     report_averages=True,
-        # )
-        bins=None
-
-        plot_threshold(nv_sig, opti_readout_dur, nv0, nvm, readout_power, bins,
-                        fit_threshold_full_model = False, nd_filter=None)
-        # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
-
-        # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
-        # for dur in readout_durs:
-        #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
-
-        # plt.show(block=True)
-        # sys.exit()
-
-    ########################
-
-    # Rabi
-    apd_indices = [1]
-    sample_name = "johnson"
-
-    green_laser = "integrated_520"
-    yellow_laser = "laserglow_589"
-    red_laser = "cobolt_638"
-
-    nv_sig = {
-        "coords": [-0.748, -0.180, 6.17],
-        "name": "{}-nv1".format(sample_name),
-        "disable_opt": False,
-        "disable_z_opt": False,
-        "expected_count_rate": 32,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": "nd_0.5",
-        "imaging_readout_dur": 1e7,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
-        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-        "spin_laser": green_laser,
-        "spin_laser_filter": "nd_0.5",
-        "spin_pol_dur": 1e4,
-        "spin_readout_dur": 350,
-        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_dur": 1e6,
-        "nv-_reionization_laser_filter": "nd_1.0",
-        # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e6,
-        "nv-_prep_laser_filter": None,  # "nd_1.0",
-        "nv0_ionization_laser": red_laser,
-        "nv0_ionization_dur": 100,
-        "nv0_prep_laser": red_laser,
-        "nv0_prep_laser-power": 0.69,
-        "nv0_prep_laser_dur": 1e6,
-        "spin_shelf_laser": yellow_laser,
-        "spin_shelf_dur": 0,
-        "spin_shelf_laser_power": 1.0,
-        # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-        "initialize_laser": green_laser,
-        "initialize_dur": 1e4,
-        # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_dur": 1840e6,
-        "charge_readout_laser_power": 1.0,
-        "collection_filter": "715_sp+630_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8073,
-        "rabi_LOW": 173.2,
-        "uwave_power_LOW": 16.5,
-        # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-        "resonance_HIGH": 2.9489,
-        "rabi_HIGH": 234.6,
-        "uwave_power_HIGH": 16.5,
-    }
-
-    # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
-    #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
-    #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
-    #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
-    # readout_durs = numpy.linspace(10e6, 50e6, 5)
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [50e6]
-    # readout_durs = numpy.linspace(700e6, 1e9, 7)
-    # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
-    # readout_durs = [2e9]
-    readout_durs = [int(el) for el in readout_durs]
-    max_readout_dur = max(readout_durs)
-
-    # readout_powers = np.linspace(0.6, 1.0, 9)
-    # readout_powers = np.arange(0.75, 1.05, 0.05)
-    # readout_powers = np.arange(0.68, 1.04, 0.04)
-    # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [0.2]
-
-    # num_reps = 2000
-    # num_reps = 1000
-    num_reps = 500
-
-    # try:
-    #     determine_readout_dur_power(
-    #         nv_sig,
-    #         nv_sig,
-    #         apd_indices,
-    #         num_reps,
-    #         max_readout_dur=max_readout_dur,
-    #         readout_powers=readout_powers,
-    #         plot_readout_durs=readout_durs,
-    #     )
-    # finally:
-    #     # Reset our hardware - this should be done in each routine, but
-    #     # let's double check here
-    #     tool_belt.reset_cfm()
-    #     # Kill safe stop
-    #     if tool_belt.check_safe_stop_alive():
-    #         print("\n\nRoutine complete. Press enter to exit.")
-    #         tool_belt.poll_safe_stop()
+    ax0.set_ylabel(r'$\mu_m$')
+    ax1.set_ylabel(r'$\mu_0$')    
+    ax0.plot(domain[np.where(np.isnan(mu_m_list)==False)],mu_m_list[np.where(np.isnan(mu_m_list)==False)],'o-',markersize=3,label='no NIR')
+    ax1.plot(domain[np.where(np.isnan(mu_0_list)==False)],mu_0_list[np.where(np.isnan(mu_0_list)==False)],'o-',markersize=3,label='no NIR')
+    if len(mu_0_NIR_list) != 0:
+        ax0.plot(domain[np.where(np.isnan(mu_m_NIR_list)==False)],mu_m_NIR_list[np.where(np.isnan(mu_m_NIR_list)==False)],'o-',markersize=3,label='NIR')
+        ax1.plot(domain[np.where(np.isnan(mu_0_NIR_list)==False)],mu_0_NIR_list[np.where(np.isnan(mu_0_NIR_list)==False)],'o-',markersize=3,label='NIR')
+        
+        normed_mu_m = (mu_m_NIR_list - mu_m_list) / mu_m_list
+        normed_mu_0 = (mu_0_NIR_list - mu_0_list) / mu_0_list
+        ax2.plot(domain[np.where(np.isnan(normed_mu_m)==False)],normed_mu_m[np.where(np.isnan(normed_mu_m)==False)],'o-',markersize=3)
+        ax3.plot(domain[np.where(np.isnan(normed_mu_0)==False)],normed_mu_0[np.where(np.isnan(normed_mu_0)==False)],'o-',markersize=3)
+        ax2.set_ylabel(r'($\mu_{mNIR}$ - $\mu_m$)/$\mu_m$')
+        ax3.set_ylabel(r'($\mu_{0NIR}$ - $\mu_0$)/$\mu_0$')
+    ax0.legend()
+    ax1.legend()
+    plt.show()
