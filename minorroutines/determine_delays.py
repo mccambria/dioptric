@@ -305,18 +305,22 @@ def iq_delay(
     """
     This will repeatedly run the same sequence with different passed iq
     delays. If there were no delays, the sequence would look like this
+    
     iq    |-|_________________|-|________________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
+    
     The first readout is a reference, the second is a signal. The iq modulation 
     initially is at 0 degrees, and the second pulse changes it to pi/2.
     We should see a normalized signal consistent with the full pi pulse contrast. 
     If there is a delay we'll get this sequence
+    
     iq    __|-|_________________|-|______________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
+    
     and the normalized signal will be higher than the full pi pulse contrast.
     We need to find the minimum passed delay that recovers the full contrast.
     (This function assumes the laser delay and uwave delay are properly set!)
@@ -382,10 +386,10 @@ if __name__ == "__main__":
         "resonance_LOW":2.7809,
         "rabi_LOW":64.9,        
         "resonance_HIGH":2.9592,
-        "rabi_HIGH":178.5,
+        "rabi_HIGH":67.5,
         # 'pi_pulse_HIGH': 36.2,
         # 'pi_on_2_pulse_HIGH': 19.2,
-        "uwave_power_HIGH": 0,
+        "uwave_power_HIGH": 10,
     }  
     
     apd_indices = [1]
@@ -447,9 +451,9 @@ if __name__ == "__main__":
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(1e6)
-    delay_range = [450, 650]
-    num_steps = 201
+    num_reps = int(2e6)
+    delay_range = [545, 565]
+    num_steps = 21
     # bnc 835
     # state = States.LOW
     #  sg394

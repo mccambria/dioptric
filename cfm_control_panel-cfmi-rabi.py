@@ -90,8 +90,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.25
     # scan_range = 0.2
     # scan_range = 0.15
-    # scan_range = 0.1
-    scan_range = 0.05
+    scan_range = 0.1
+    # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
@@ -315,11 +315,11 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.1
+    freq_range = 0.12
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 10
+    num_runs = 5
 
     composite = False
 
@@ -398,11 +398,11 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
 
 
-def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=10):
+def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=5):
 
-    num_reps = 2e3
+    num_reps = 2e4
     # num_runs = 2
-    num_runs = 2#10
+    num_runs = 10
 
     discrete_rabi.main(
         nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs
@@ -467,17 +467,17 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
     )
 
 
-def do_spin_echo(nv_sig, apd_indices):
+def do_spin_echo(nv_sig, apd_indices, state = States.HIGH):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    # max_time = 100  # us
-    # num_steps = int(max_time + 1)  # 1 point per us
-    # precession_time_range = [0, max_time*10**3]
+    max_time = 60  # us
+    num_steps = int(max_time/1 + 1)  # 1 point per 1 us
+    precession_time_range = [0, max_time*10**3]
 
-    revival_time= 28.886e3
-    num_steps = 6
-    precession_time_range = [0, revival_time*(num_steps - 1)]
+    # revival_time= 28.886e3
+    # num_steps = 6
+    # precession_time_range = [0, revival_time*(num_steps - 1)]
 
     num_reps = 1e4
     num_runs =20
@@ -487,7 +487,6 @@ def do_spin_echo(nv_sig, apd_indices):
     #    num_reps = int(10.0 * 10**4)
     #    num_runs = 6
 
-    state = States.LOW
 
 
 
@@ -502,20 +501,23 @@ def do_spin_echo(nv_sig, apd_indices):
     )
     return angle
 
-def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps ):
-
-    max_time = int(100 / pi_pulse_reps)  # us
-    min_time = int(1 / pi_pulse_reps) #us
-    num_steps = int(max_time )  # 1 point per us
-    precession_time_range = [min_time*10**3, max_time*10**3]
+def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
+    # T = 100
     
-    #revival_time= 28.886e3
-    #num_steps = 6
-    #precession_time_range = [0, revival_time*(num_steps - 1)]
+    if T:
+        max_time = T / (2*pi_pulse_reps)  # us
+        min_time =0# 1 / (2*pi_pulse_reps) #us
+        num_steps = int(T/2+1 )  # 1 point per 2 us
+        precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
+    
+    else:
+        revival_time= nv_sig['t2_revival_time']
+        num_revivals = 6
+        precession_time_range = [0, revival_time*(num_revivals - 1)]
     
 
     # num_xy4_reps = 1
-    num_reps = 5e3
+    num_reps = 1e4 #1e3
     num_runs =40
 
 
@@ -536,20 +538,23 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps ):
     return 
 
 
-def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps ):
+def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, T =None ):
 
-    max_time = 100  # us
-    num_steps = int(max_time )  # 1 point per us
-    precession_time_range = [1, max_time*10**3]
+    if T:
+        max_time = T / (2*8*num_xy4_reps)  # us
+        min_time =0# 1 / (2*pi_pulse_reps) #us
+        num_steps = int(T/2+1 )  # 1 point per 2 us
+        precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
     
-    #revival_time= 28.886e3
-    #num_steps = 6
-    #precession_time_range = [0, revival_time*(num_steps - 1)]
+    else:
+        revival_time= 28.886e3
+        num_revivals = 6
+        precession_time_range = [0, revival_time*(num_revivals - 1)]
     
 
     # num_xy4_reps = 1
-    num_reps = 5e3
-    num_runs =40
+    num_reps = 1e4
+    num_runs= 100
 
 
     state = States.HIGH
@@ -975,15 +980,17 @@ if __name__ == "__main__":
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 156,
-        "resonance_LOW":2.7809,
+        "resonance_LOW":2.7061,
         "rabi_LOW":64.9,
         "uwave_power_LOW": 15,  # 15.5 max
         
-        "resonance_HIGH":2.9592,
-        "rabi_HIGH":178.5,
-        # 'pi_pulse_HIGH': 36.2,
-        # 'pi_on_2_pulse_HIGH': 19.2,
-        "uwave_power_HIGH": 0,
+        "resonance_HIGH":3.0407,
+        "rabi_HIGH":68.0,
+        'pi_pulse_HIGH': 36.2,
+        'pi_on_2_pulse_HIGH': 19.2,
+        "uwave_power_HIGH": 10,
+        
+        "t2_revival_time": 28e3,
     }  # 14.5 max
 
 
@@ -1029,7 +1036,7 @@ if __name__ == "__main__":
                 
                 # do_pulsed_resonance(nv_sig_i, nv_sig_i, apd_indices, 2.87, 0.30) ###
                 
-        do_optimize(nv_sig,apd_indices)
+        # do_optimize(nv_sig,apd_indices)
         # do_image_sample(nv_sig, apd_indices)
                 
         # do_stationary_count(nv_sig, apd_indices)
@@ -1073,24 +1080,25 @@ if __name__ == "__main__":
                 do_relaxation(nv_sig_i, apd_indices)
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.2)
-        # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.1)
-        # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
-        # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
 
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
         # for a in numpy.linspace(0.2, 0.8, 7):
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, nv_sig,apd_indices)
 
-        # do_spin_echo(nv_sig, apd_indices
+        do_spin_echo(nv_sig, apd_indices)
         # for n in [2, 3, 4, 5, 6, 8, 9, 10, 25, 50]:
-        #do_dd_cpmg(nv_sig, apd_indices, 2 )
-        # do_dd_xy4(nv_sig, apd_indices, 1 )
+            
+        N = 1
+        T = 500
+        # do_dd_cpmg(nv_sig, apd_indices, N, T )
+        #N=4
+        #do_dd_cpmg(nv_sig, apd_indices, N, T )
+        # do_dd_xy4(nv_sig, apd_indices, N, T )
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
 
         # do_relaxation(nv_sig, apd_indices)
