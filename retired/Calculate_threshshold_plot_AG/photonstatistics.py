@@ -487,30 +487,35 @@ def get_optimized_fidelity(readout_time, power_range, n_threshold_list):
     return optimized_n_threshold, optimized_power, highest_fidelity
 
 # given a power and readout time, find the optimized threshold 
+
+def get_area(x_data,dis, thred):
+    unique_value = x_data
+    prob = dis
+    area_below = 0
+    area_above = 0
+    for i in range(len(unique_value)):
+        # print(i)
+        if unique_value[i] < thred:
+            area_below += prob[i]
+        else: 
+            area_above += prob[i]
+    return [area_below,area_above]
 def calculate_threshold(readout_time,x_data,rate_fit):
+    #calculate mu, the mean count of the Poisson distribution for NV0 and NV-
     tR = readout_time
     mu1 = rate_fit[3]*readout_time
     mu2 = rate_fit[2]*readout_time
+    # Create a list of counts to test between the two mu's
     threshold_list = np.linspace(int(mu1),int(mu2)+2,int(mu2) - int(mu1) +3)
+    #calculate the NV distribution based off the models
     dis1 = np.array(get_PhotonNV0_list(x_data, tR, rate_fit, 1))
     dis2 = np.array(get_PhotonNVm_list(x_data, tR, rate_fit, 1))
     fidelity_list = []
-    def get_area(x_data,dis, thred):
-        unique_value = x_data
-        prob = dis
-        area_below = 0
-        area_above = 0
-        for i in range(len(unique_value)):
-            if unique_value[i] < thred:
-                area_below += prob[i]
-            else: 
-                area_above += prob[i]
-        return [area_below,area_above]
     for i in range(len(threshold_list.tolist())):
         thred = threshold_list[i]
         area_below_nv0 = get_area(x_data,dis1.tolist(),thred)[0]
-        area_below_nvm = get_area(x_data,dis2.tolist(),thred)[0]
-        area_above_nv0 = get_area(x_data,dis1.tolist(),thred)[1]
+        # area_below_nvm = get_area(x_data,dis2.tolist(),thred)[0]
+        # area_above_nv0 = get_area(x_data,dis1.tolist(),thred)[1]
         area_above_nvm = get_area(x_data,dis2.tolist(),thred)[1]
         # prob_below = area_below_nv0 / (area_below_nvm + area_below_nv0)
         # prob_above = area_above_nvm/ (area_above_nvm+ area_above_nv0)
@@ -523,6 +528,30 @@ def calculate_threshold(readout_time,x_data,rate_fit):
     # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
     # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
     return np.array([n_thresh,  max(fidelity_list)])
+
+def calculate_threshold_from_experiment( x_vals_0, x_vals_m, mu0, mu1, nv0_hist, nvm_hist):
+    threshold_list = np.linspace(int(mu0),int(mu1)+2,int(mu1) - int(mu0) +3)
+    # print(threshold_list)
+    dis0 = nv0_hist
+    dis1 = nvm_hist
+    fidelity_list = []
+    for i in range(len(threshold_list.tolist())):
+        thred = threshold_list[i]
+        area_below_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[0]
+        # area_below_nvm = get_area(x_vals_m,dis1.tolist(),thred)[0]
+        # area_above_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[1]
+        area_above_nvm = get_area(x_vals_m,dis1.tolist(),thred)[1]
+        # prob_below = area_below_nv0 / (area_below_nvm + area_below_nv0)
+        # prob_above = area_above_nvm/ (area_above_nvm+ area_above_nv0)
+        # prob_diff_list.append(abs(prob_below - prob_above))
+        pnvm_c = area_above_nvm
+        pnv0_c = area_below_nv0
+        fidelity_list.append( (pnvm_c + pnv0_c)/2 )
+    thre_index = fidelity_list.index(max(fidelity_list))
+    n_thresh = threshold_list[thre_index]
+    # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
+    # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
+    return n_thresh,  max(fidelity_list)
 
 #nv_para = array([g0(P),g1(P),y0(P),y1(P)]) =  [A0,B0,A1,B1,C0,D0,C1,D1]
 def optimize_single_shot_readout(power_range,time_range,nv_para,optimize_steps):

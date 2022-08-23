@@ -99,14 +99,20 @@ def get_seq(pulse_streamer, config, args):
 
 
 if __name__ == '__main__':
-    wiring = {'do_apd_0_gate': 1,
-              'do_532_aom': 2,
-              'sig_gen_gate_chan_name': 3,
-               'do_sample_clock':4,
-               'ao_589_aom': 0,
-               'ao_638_laser': 1,
-               'do_638_laser': 7             }
+    # wiring = {'do_apd_0_gate': 1,
+    #           'do_532_aom': 2,
+    #           'sig_gen_gate_chan_name': 3,
+    #            'do_sample_clock':4,
+    #            'ao_589_aom': 0,
+    #            'ao_638_laser': 1,
+    #            'do_638_laser': 7             }
+    config = tool_belt.get_config_dict()
 
-    args = [600000, 25000, 10000, 1000, 1000, 140, 1080, 90, 0, 1]
-    seq, final, _ = get_seq(wiring, args)
+    args = [600000, 25000, 10000, 1000, 1000, 0, 0, 0, 0, 1, 'integrated_520', 'laserglow_589', 'cobolt_638']
+    seq, final, _ = get_seq(None, config, args)
     seq.plot()
+    
+    # readout_time, init_ion_pulse_time, reion_time, ion_time, \
+    #         wait_time, laser_515_delay, aom_589_delay, laser_638_delay, \
+    #         apd_indices, aom_ao_589_pwr, \
+    #         reion_laser, readout_laser, ion_laser = args  # green, yellow, red

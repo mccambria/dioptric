@@ -244,7 +244,11 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
         return D_of_T(temp)
 
 
-def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+# def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+def cambria_test(temp, zfs0, A1, A2):
+
+    Theta1 = 60
+    Theta2 = 160
 
     ret_val = zfs0
     for ind in range(2):
@@ -340,8 +344,8 @@ def experimental_zfs_versus_t(path, file_name):
         2.87771,
         -8e-2,
         -4e-1,
-        65,
-        165,
+        # 65,
+        # 165,
     ]
     # guess_params = [
     #     2.8778,

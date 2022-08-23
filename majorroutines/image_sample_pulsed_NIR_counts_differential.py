@@ -21,6 +21,13 @@ import utils.common as common
 import os
 
 
+def NIR_offon(cxn,ind,nir_laser_voltage):
+    cxn_power_supply = cxn.power_supply_mp710087
+    if ind == 1:
+        cxn_power_supply.output_on()
+        cxn_power_supply.set_voltage(nir_laser_voltage)
+    elif ind == 0:
+        cxn_power_supply.output_off()
 
 def plot_diff_counts(diff_counts, image_extent,cbarlabel):
 
@@ -128,12 +135,12 @@ def main_with_cxn(
     
     readout_sec = readout / 10**9
 
-    # Start rasterin'
+    ### Start rasterin'
 
     parity = +1  # Determines x scan direction
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     i=0
-    sleep_time = 2
+    sleep_time = 1
     # print("expected run time: ", ((sleep_time*2+.7)*num_steps**2)/3600,'hours')
     for y_ind in range(num_steps):
 
@@ -144,7 +151,7 @@ def main_with_cxn(
         image_y_ind = -1 - y_ind
         
         for x_ind in range(num_steps):
-            a = time.time()
+            # a = time.time()
             i=i+1
             if tool_belt.safe_stop():
                 break
@@ -153,8 +160,48 @@ def main_with_cxn(
             x_voltage = x_voltages_1d[adj_x_ind]
             adjusted_nv_sig["coords"] = [x_voltage, y_voltage, z_center]
             
-               
+            tool_belt.set_xyz(cxn, adjusted_nv_sig["coords"])
+            
+            new_samples = []
+            
+            for ind in range(2):
+                NIR_offon(cxn,ind,nir_laser_voltage)
+                time.sleep(sleep_time)
+                
+                if nv_minus_initialization:
+                    laser_key = "nv-_prep_laser"
+                    tool_belt.set_filter(cxn, nv_sig, laser_key)
+                    init = nv_sig['{}_dur'.format(laser_key)]
+                    init_laser = nv_sig[laser_key]
+                    init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+                    seq_args = [init, readout, apd_indices[0], init_laser, init_power, readout_laser, readout_power]
+                    seq_args_string = tool_belt.encode_seq_args(seq_args)
+                    ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',seq_args_string)
+                    
+                else:
+                    seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]
+                    seq_args_string = tool_belt.encode_seq_args(seq_args)
+                    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',seq_args_string)
 
+                period = ret_vals[0]
+                if i == 1:
+                    print("expected run time: ", round( (num_steps**2 * 2 * (period * 10**(-9) + 2*sleep_time) ) / 60 ,2) , 'minutes')
+                total_num_samples = 1
+                timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+                timeout_inst = time.time() + timeout_duration
+                cxn.apd_tagger.start_tag_stream(apd_indices)
+                
+                ### Collect then read the data
+                cxn.apd_tagger.clear_buffer()
+                cxn.pulse_streamer.stream_start(total_num_samples)
+                new_samples.append( cxn.apd_tagger.read_counter_simple(total_num_samples) )
+                
+            new_samples_noNIR = new_samples[0]
+            new_samples_NIR = new_samples[1]    
+                
+                
+            #%% in this collapsed region is the commented out old version of the code before the loop above
+            '''
             ### Now turn on NIR laser and readout at the same location
             cxn_power_supply.output_on()
             cxn_power_supply.set_voltage(nir_laser_voltage)
@@ -219,17 +266,18 @@ def main_with_cxn(
             cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_start(total_num_samples)            
             new_samples_noNIR = cxn.apd_tagger.read_counter_simple(total_num_samples)
-
+            '''
+            #%%
             
             ### Now populate the image with the subtracted value
-            counts_NIR_img[image_y_ind][adj_x_ind] = new_samples_NIR[0]/(readout_sec)/1000
+            counts_NIR_img[image_y_ind][adj_x_ind] = new_samples_NIR[0] / (readout_sec * 1000)
             counts_noNIR_img[image_y_ind][adj_x_ind] = new_samples_noNIR[0]/(readout_sec)/1000
             diff_counts_img[image_y_ind][adj_x_ind] = (np.int32(new_samples_NIR[0]) - np.int32(new_samples_noNIR[0]))/(readout_sec)/1000
             percent_diff_counts_img[image_y_ind][adj_x_ind] = (np.int32(new_samples_NIR[0]) - np.int32(new_samples_noNIR[0]))/np.int32(new_samples_noNIR[0])
-            print(i,new_samples_NIR,'',new_samples_noNIR)
-            # print(type(new_samples_noNIR[0]))
-            print(diff_counts_img)
-            print(time.time()-a)
+            # print(i,new_samples_NIR,'',new_samples_noNIR)
+            # # print(type(new_samples_noNIR[0]))
+            # print(diff_counts_img)
+            # print(time.time()-a)
 
         parity *= -1
 

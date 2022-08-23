@@ -161,14 +161,17 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 
 
 def main(nv_sig, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs, opti_nv_sig = None):
+         num_steps, num_reps, num_runs, opti_nv_sig = None,return_popt=False):
 
     with labrad.connect() as cxn:
-        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, 
+        rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig, 
                                          apd_indices, uwave_time_range, state,
                                          num_steps, num_reps, num_runs, opti_nv_sig)
 
-        return rabi_per
+        if return_popt:    
+            return rabi_per, popt
+        if not return_popt:
+            return rabi_per
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
@@ -482,7 +485,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     if (fit_func is not None) and (popt is not None):
         return rabi_period, sig_counts, ref_counts
     else:
-        return None, sig_counts, ref_counts
+        return None, sig_counts, ref_counts, popt
 
 
 # %% Run the file

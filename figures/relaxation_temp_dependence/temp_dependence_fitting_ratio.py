@@ -1472,7 +1472,7 @@ def figure_2_raw_data(ax, axins, data_points, plot_ratios=False):
         # rate_ranges = [[-0.1, 4.1]]
         rate_ranges = [[0.9, 4.1]]
         yscales = ["linear", "linear"]
-        ylabels = [r"$\gamma / \Omega$", None]
+        ylabels = [r"$\mathit{\gamma} / \mathrm{\Omega}$", None]
         no_legends = [True]
         ytickss = [
             range(round(rate_ranges[0][0]), round(rate_ranges[0][1]) + 1)
@@ -1824,6 +1824,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode, plot_ratios=False):
             gamma_hopper_fit_func,
             gamma_wu_fit_func,
         ) = fit_simultaneous(data_points, fit_mode)
+        # popt[4] = 0
         omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
         omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
         gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)

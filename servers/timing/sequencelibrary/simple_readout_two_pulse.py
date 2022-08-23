@@ -100,7 +100,8 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    args = [1000000.0, 10000000.0, 'cobolt_638', 'laserglow_589', 0.66, 0.5, 2, 1]
-    # args = [1000.0, 100000000, 'cobolt_515', 'laserglow_589', None, 0.15, 0]
+    # tool_belt.set_delays_to_zero(config)
+    # args = [1000000.0, 50000000, 'cobolt_638', 'laserglow_589', None, 0.2, 2, 1]
+    args = [50e6, 75, 'cobolt_638', 'laserglow_589', None, 1, 2,1 ]
     seq = get_seq(None, config, args)[0]
     seq.plot()

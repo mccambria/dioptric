@@ -110,12 +110,12 @@ def main(
     # bar_gill_label = "[10]"
     # herbschleb_label = "[11]"
     # abobeih_label = "[30]"
-    bar_gill_label = "[2]"
-    herbschleb_label = "[3]"
-    abobeih_label = "[4]"
-    # bar_gill_label = "Bar-Gill"
-    # herbschleb_label = "Herbschleb"
-    # abobeih_label = "Abobeih"
+    # bar_gill_label = "[2]"
+    # herbschleb_label = "[3]"
+    # abobeih_label = "[4]"
+    bar_gill_label = "Bar-Gill"
+    herbschleb_label = "Herbschleb"
+    abobeih_label = "Abobeih"
     # fmt: off
     data_points = [
         #
@@ -258,8 +258,9 @@ def main(
     errorbar_type = matplotlib.container.ErrorbarContainer
     # handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
     handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
-    labels = labels[2:]
-    ax1.legend(
+    if leg1 is not None:
+        labels = labels[2:]
+    leg2 = ax1.legend(
         handles,
         labels,
         title="Prior results",
@@ -269,6 +270,9 @@ def main(
     )
     # Add back in original legend
     if leg1 is not None:
+        # anchor = leg2.get_bbox_to_anchor()
+        # leg1.set_bbox_to_anchor(anchor)
+        leg1.set_bbox_to_anchor((0.687, 1.0))
         ax1.add_artist(leg1)
 
     # ax.legend()
@@ -283,25 +287,32 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_type = "T2_max_supp"
-    y_range = [[7e-4, 30], [-0.02, 0.62]]
-    yscale = ["log", "linear"]
-    temp_range = [[-5, 480], [-5, 310]]
-    xscale = ["linear", "linear"]
-    rates_to_plot = [["hopper", "wu"], ["hopper"]]
+    ### Main
 
     # plot_type = "T2_max"
     # y_range = [7e-4, 30]
     # yscale = "log"
-
-    # plot_type = "T2_frac"
-    # y_range = [0, 1]
-    # yscale = "linear"
-
     # temp_range = [-5, 480]
     # xscale = "linear"
 
-    # rates_to_plot = ["hopper"]
+    plot_type = "T2_frac"
+    y_range = [0, 1]
+    yscale = "linear"
+    temp_range = [-5, 310]
+    xscale = "linear"
+
+    rates_to_plot = ["hopper"]
+
+    ### Supp
+
+    # plot_type = "T2_max_supp"
+    # temp_range = [[-5, 480], [-5, 310]]
+    # xscale = ["linear", "linear"]
+    # yscale = ["log", "linear"]
+    # y_range = [[7e-4, 30], [-0.02, 0.62]]
+    # rates_to_plot = [["hopper", "wu"], ["hopper"]]
+
+    ###
 
     main(
         file_name,

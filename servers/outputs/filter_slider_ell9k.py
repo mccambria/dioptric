@@ -83,8 +83,8 @@ class FilterSliderEll9k(LabradServer):
             # The device returns a status message if it's not done moving. It
             # returns the current position if it is done moving.
             incomplete = ("0GS" in res.decode())
-            if incomplete:
-                logging.info("huh")
+            # if incomplete:
+            #     logging.info("huh")
 
 
 __server__ = FilterSliderEll9k()

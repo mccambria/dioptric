@@ -514,6 +514,16 @@ def set_delays_to_zero(config):
         val = config[key]
         if type(val) is dict:
             set_delays_to_zero(val)
+            
+            
+def seq_train_length_check(train):
+    """
+    Print out the length of a the sequence train for a specific channel. Useful for debugging sequences.
+    """
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
 
 
 def set_feedthroughs_to_false(config):
@@ -673,6 +683,8 @@ def create_image_figure(
     um_scaled=False,
     aspect_ratio=None,
     color_map="inferno",
+    cmin=None,
+    cmax=None,
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
@@ -712,12 +724,13 @@ def create_image_figure(
     fig.set_tight_layout(True)
 
     # Tell the axes to show a grayscale image
-    print(imgArray)
+    # print(imgArray)
     img = ax.imshow(
         imgArray,
         cmap=color_map,
         extent=tuple(imgExtent),
-        vmin=min_value,
+        vmin = cmin ,#min_value,
+        vmax = cmax,
         aspect=aspect_ratio,
     )
 
@@ -804,7 +817,7 @@ def calc_image_scan_vals(
         return x_scan_vals, y_scan_vals
 
 
-def update_image_figure(fig, imgArray):
+def update_image_figure(fig, imgArray,cmin=None,cmax=1000):
     """
     Update the image with the passed image array and redraw the figure.
     Intended to update figures created by create_image_figure.
@@ -841,6 +854,8 @@ def update_image_figure(fig, imgArray):
             img.set_clim(None, 1000)
         else:
             img.autoscale()
+    elif (cmax != None) & (cmin != None):
+        img.set_clim(cmin, cmax)
     else:
         img.autoscale()
 
@@ -1877,6 +1892,8 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
 
 
 def round_sig_figs(val, num_sig_figs):
+    if val == 0:
+        return 0
     func = lambda val, num_sig_figs: round(
         val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
     )
@@ -1891,6 +1908,8 @@ def round_sig_figs(val, num_sig_figs):
 
 
 def presentation_round(val, err):
+    if val == 0: 
+        return [0, None, None]
     err_mag = math.floor(math.log10(err))
     sci_err = err / (10 ** err_mag)
     first_err_digit = int(str(sci_err)[0])
@@ -1906,6 +1925,8 @@ def presentation_round(val, err):
 
 
 def presentation_round_latex(val, err):
+    if val == 0:
+        return "0"
     # if val <= 0 or err > val:
     #     return ""
     rounded_val, rounded_err, power_of_10 = presentation_round(val, err)

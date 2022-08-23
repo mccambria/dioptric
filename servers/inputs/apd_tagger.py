@@ -52,6 +52,7 @@ class ApdTagger(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
+        logging.info("MCCTEST")
         self.reset_tag_stream_state()
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
@@ -128,6 +129,7 @@ class ApdTagger(LabradServer):
         channels = buffer.getChannels()
         return timestamps, channels
 
+    # @jit(nopython=True)
     def read_counter_setting_internal(self, num_to_read):
         if self.stream is None:
             logging.error("read_counter attempted while stream is None.")
@@ -148,6 +150,7 @@ class ApdTagger(LabradServer):
 
         return counts
 
+    # @jit(nopython=True)
     def get_gate_click_inds(self, sample_channels_arr, apd_index):
 
         open_channel = self.tagger_di_gate[self.stream_apd_indices[apd_index]]
@@ -163,6 +166,7 @@ class ApdTagger(LabradServer):
 
         return open_inds, close_inds
 
+    # @jit(nopython=True)
     def append_apd_channel_counts(
         self, gate_inds, apd_index, sample_channels, sample_counts_append
     ):
@@ -181,16 +185,15 @@ class ApdTagger(LabradServer):
         channel_counts = [count_lambda(gate) for gate in gate_zip]
         sample_counts_append(channel_counts)
 
+    # @jit(nopython=True)
     def read_counter_internal(self):
         """
         This is the core counter function for the Time Tagger. It needs to be
         fast since we often have a high data rate (say, 1 million counts per
         second). If it's not fast enough, we may encounter unexpected behavior,
         like certain samples returning 0 counts when clearly they should return
-        something > 0. As such, this function is already highly optimized. The
-        main approach is to use lambda functions and built-ins that map from 
-        Python to some other language (like how list comprehension runs in C) 
-        since Python is so slow. So beware of messing around here. 
+        something > 0. This function is already pretty optimized so if you
+        change it try not to tank its performance.
         """
 
         if self.stream is None:
@@ -378,7 +381,7 @@ class ApdTagger(LabradServer):
     #             num_read = np.count_nonzero(np.array(channels) == self.tagger_di_clock)
     #             # logging.info("num_read: {}".format(num_read))
     #             if num_read >= num_to_read:
-    #                 break 
+    #                 break
     #             timestamps_chunk, channels_chunk = self.read_raw_stream()
     #             timestamps.extend(timestamps_chunk.tolist())
     #             channels.extend(channels_chunk.tolist())
@@ -389,6 +392,7 @@ class ApdTagger(LabradServer):
     #     timestamps = timestamps.astype(str).tolist()
     #     return timestamps, channels
 
+    # @jit(nopython=True)
     @setting(3, num_to_read="i", returns="*s*i")
     def read_tag_stream(self, c, num_to_read=None):
         """Read the stream started with start_tag_stream. Returns two lists,
@@ -413,16 +417,18 @@ class ApdTagger(LabradServer):
                 new_num_read = np.count_nonzero(channels_chunk == self.tagger_di_clock)
                 num_read += new_num_read
                 if num_read >= num_to_read:
-                    break 
+                    break
         # Convert timestamps to strings since labrad does not support int64s
         # It must be converted to int64s back on the client
         timestamps = timestamps.astype(str).tolist()
         return timestamps, channels
 
+    # @jit(nopython=True)
     @setting(4, num_to_read="i", returns="*3w")
     def read_counter_complete(self, c, num_to_read=None):
         return self.read_counter_setting_internal(num_to_read)
 
+    # @jit(nopython=True)
     @setting(5, num_to_read="i", returns="*w")
     def read_counter_simple(self, c, num_to_read=None):
 
@@ -441,6 +447,7 @@ class ApdTagger(LabradServer):
 
         return return_counts
 
+    # @jit(nopython=True)
     @setting(6, num_to_read="i", returns="*2w")
     def read_counter_separate_gates(self, c, num_to_read=None):
 
@@ -461,6 +468,7 @@ class ApdTagger(LabradServer):
 
         return return_counts
 
+    # @jit(nopython=True)
     @setting(11, modulus="i", num_to_read="i", returns="*2w")
     def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
 
@@ -478,7 +486,7 @@ class ApdTagger(LabradServer):
         # with Pool() as p:
         #     separate_gate_counts = p.map(sum_lambda, complete_counts)
         separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
-        
+
         # Run the modulus
         return_counts = []
         for sample in separate_gate_counts:
@@ -489,6 +497,7 @@ class ApdTagger(LabradServer):
 
         return return_counts
 
+    # @jit(nopython=True)
     @setting(7, num_to_read="i", returns="*2w")
     def read_counter_separate_apds(self, c, num_to_read=None):
 
