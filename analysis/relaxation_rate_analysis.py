@@ -778,7 +778,9 @@ def main(
 
         # file_name = "{}-analysis".format(folder)
         # nv_name = nv_sig["name"]
-        file_path = tool_belt.get_file_path('t1_dq_main.py', time_stamp, "analysis", folder)
+        file_path = tool_belt.get_file_path(
+            "t1_dq_main.py", time_stamp, "analysis", folder
+        )
         # print(file_path)
         # file_path = str(data_dir / path_folder / file_name)
         tool_belt.save_raw_data(raw_data, file_path)
@@ -809,15 +811,16 @@ def main(
 if __name__ == "__main__":
 
     temp = 295
-    folder = "2022_08_05"
+    # folder = "2022_08_05"
+    folder = "hopper-search-295K-10mW-carter_adj"
 
-    mode = "prediction"
-    # mode = "analysis"
+    # mode = "prediction"
+    mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 51#omega_calc(temp)
-        est_gamma = 150#gamma_calc(temp)
+        est_omega = 51  # omega_calc(temp)
+        est_gamma = 150  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
@@ -830,7 +833,8 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        path = "pc_rabi/branch_master/t1_dq_main/2022_08/"
+        # path = "pc_rabi/branch_master/t1_dq_main/2022_08/"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
 
         main(
             path,
@@ -842,7 +846,7 @@ if __name__ == "__main__":
             simple_print=True,
         )
 
-        # plt.show(block=True)
+        plt.show(block=True)
 
     elif mode == "batch_analysis":
 
