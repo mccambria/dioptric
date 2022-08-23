@@ -179,7 +179,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == "__main__":
     # fmt: off
-    seq_args =[100000.0, 675, 6000.0, 162, 81, 2, 6, 0, 1, 'laserglow_532', None]
+    seq_args =[100000.0, 0, 6000.0, 162, 81, 2, 6, 0, 1, 'laserglow_532', None]
     # fmt: on
     config = tool_belt.get_config_dict()
     # print(config)

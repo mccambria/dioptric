@@ -118,7 +118,8 @@ def main(nv_sig, scan_range, num_steps, apd_indices, nir_laser_voltage, sleeptim
     
 
 if __name__ == '__main__':
-    filename = '2022_08_12-09_40_21-hopper-search_percentdiff'
+    # filename = '2022_08_16-11_30_45-hopper-search_percentdiff'
+    filename = '2022_08_13-14_01_00-hopper-search_percentdiff'
     data = tool_belt.get_raw_data(filename,path_from_nvdata='pc_hahn/branch_master/ensemble_image_sample_NIR_differential_faster/2022_08')
     NIR_img = data['NIR_img']
     noNIR_img = data['noNIR_img']
@@ -126,11 +127,11 @@ if __name__ == '__main__':
     percdiff_img = data['perc_diff_counts']
     cbarmin_percdiff, cbarmax_percdiff = -0.00,.125
     cbarmin_diffcounts,cbarmax_diffcounts = 0,220.0
-    cbarmin_counts,cbarmax_counts = None,None
+    cbarmin_counts,cbarmax_counts = 0,2500
     title = r'{}, {} ms readout'.format(data['readout_laser'], data['readout']/10**6)
     image_extent = data['img_extent']
-    fig1 = plot_diff_counts(percdiff_img, image_extent,title,'(NIR-noNIR)/noNIR Counts',cbarmin_percdiff,cbarmax_percdiff)
+    # fig1 = plot_diff_counts(percdiff_img, image_extent,title,'(NIR-noNIR)/noNIR Counts',cbarmin_percdiff,cbarmax_percdiff)
     # fig2 = plot_diff_counts(diff_img, image_extent,title,'NIR-noNIR Counts (kcps)',cbarmin_diffcounts,cbarmax_diffcounts)
-    # fig3 = plot_diff_counts(noNIR_img, image_extent,title,'noNIR Counts (kcps)',cbarmin_counts,cbarmax_counts)
+    fig3 = plot_diff_counts(noNIR_img, image_extent,title,'noNIR Counts (kcps)',cbarmin_counts,cbarmax_counts)
     # fig4 = plot_diff_counts(NIR_img, image_extent,title,'NIR Counts (kcps)',cbarmin_counts,cbarmax_counts)
     
