@@ -281,7 +281,7 @@ def fit_data(data):
     amplitude = 0.07
     offset = 0.90
     decay_time = 2000.0
-    revival_time = 35e3
+    revival_time = 10e3
     # dominant_freqs = [1 / (1000*revival_time)]
 
     # %% Fit
@@ -898,8 +898,8 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_07_11-23_56_59-rubin-nv1"
-    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_07')
+    file_name = "2022_08_22-15_07_16-rubin-nv1"
+    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
     ret_vals = plot_resonances_vs_theta_B(data)
 
     # plt.show(block=True)

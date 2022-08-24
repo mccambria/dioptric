@@ -2,7 +2,8 @@
 """
 Dynamical decoupling XY4.
 
-
+One unit of XY4 is defined as:
+    tau - pi_x - tau - tau - pi_y - tau - tau - pi_x - tau - tau - pi_y - tau
 
 Created on Fri Aug 5 2022
 
@@ -92,11 +93,11 @@ def main_with_cxn(
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
 
     # Get pulse frequencies
-    # uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
-    # uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     # pi pulses are slightly different than just half of the rabi period
-    uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
-    uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
+    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
+    # uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -115,7 +116,7 @@ def main_with_cxn(
     )
     # Convert to ms
     #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *8* num_xy4_reps) / 1000
+    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -158,7 +159,7 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    pi_pulse_reps = num_xy4_reps*8
+    pi_pulse_reps = num_xy4_reps*4
     seq_args = [
         min_precession_time,
         polarization_time,
@@ -324,7 +325,7 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
         ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-        ax.set_xlabel(r"Precession time, $T = 2*8*N \tau (\mathrm{\mu s}$)")
+        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
         
@@ -332,7 +333,7 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
         ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-        ax.set_xlabel(r"Precession time, $T = 2*8*N \tau (\mathrm{\mu s}$)")
+        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
@@ -395,7 +396,7 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-    ax.set_xlabel(r"Precession time, $T = 2*8*N \tau (\mathrm{\mu s}$)")
+    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
     ax.legend()
 
@@ -403,7 +404,7 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
     ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    ax.set_xlabel(r"Precession time, $T = 2*8*N \tau (\mathrm{\mu s}$)")
+    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()

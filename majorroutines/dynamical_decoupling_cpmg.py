@@ -92,11 +92,11 @@ def main_with_cxn(
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
 
     # Get pulse frequencies
-    # uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
-    # uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     # pi pulses are slightly different than just half of the rabi period
-    uwave_pi_pulse = round(nv_sig["pi_pulse_{}".format(state.name)] )
-    uwave_pi_on_2_pulse = round(nv_sig["pi_on_2_pulse_{}".format(state.name)] )
+    # uwave_pi_pulse = round(nv_sig["pi_pulse_{}".format(state.name)] )
+    # uwave_pi_on_2_pulse = round(nv_sig["pi_on_2_pulse_{}".format(state.name)] )
 
     seq_file_name = "dynamical_decoupling.py"
 
