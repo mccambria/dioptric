@@ -483,9 +483,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     tool_belt.save_raw_data(raw_data, file_path)
 
     if (fit_func is not None) and (popt is not None):
-        return rabi_period, sig_counts, ref_counts
+        return rabi_period, sig_counts, ref_counts, popt
     else:
-        return None, sig_counts, ref_counts, popt
+        return None, sig_counts, ref_counts
 
 
 # %% Run the file
