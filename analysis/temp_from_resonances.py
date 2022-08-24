@@ -262,6 +262,7 @@ def experimental_zfs_versus_t(path, file_name):
 
     min_temp = 0
     # max_temp = 295
+    # max_temp = 500
     max_temp = 1000
 
     csv_file_path = path / "{}.csv".format(file_name)
