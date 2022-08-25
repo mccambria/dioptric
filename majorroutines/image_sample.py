@@ -231,18 +231,18 @@ def replot_for_analysis(file_name):
 
 def main(nv_sig, x_range, y_range, num_steps, apd_indices,
          save_data=True, plot_data=True,
-         um_scaled=False, nv_minus_initialization=False):
+         um_scaled=False, nv_minus_initialization=False,cmin=None,cmax=None):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
                       y_range, num_steps, apd_indices, save_data, plot_data,
-                      um_scaled, nv_minus_initialization)
+                      um_scaled, nv_minus_initialization,cmin,cmax)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   apd_indices, save_data=True, plot_data=True,
-                  um_scaled=False, nv_minus_initialization=False):
+                  um_scaled=False, nv_minus_initialization=False,cmin=None,cmax=None):
 
     # %% Some initial setup
 
@@ -356,6 +356,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         half_pixel_size = pixel_size / 2
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
+        
+        # img_extent = tool_belt.calc_image_extent(x_center, y_center, x_range, num_steps) # assumes square image
+        
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
@@ -405,7 +408,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             # is easy and readable and probably fine up to some resolution
             if plot_data:
                 img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                tool_belt.update_image_figure(fig, img_array_kcps)
+                tool_belt.update_image_figure(fig, img_array_kcps,cmin,cmax)
             num_read_so_far += num_new_samples
 
     # %% Clean up
@@ -454,9 +457,24 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 if __name__ == '__main__':
 
-    file_name = '2022_08_10-10_45_18-rubin-nv1'
-    scale = 83
+    # file_name = '2022_08_18-16_22_08-hopper-search'
+    # file_name = '2022_08_18-15_37_38-hopper-search'
+    file_name = '2022_08_18-16_54_37-hopper-search'
+    data = tool_belt.get_raw_data(file_name)
+    # img = data['img_array']
+    # y = data['y_voltages']
+    # x = data['x_voltages']
+    # import matplotlib.pylab as plt
+    # plt.figure()
+    # print(numpy.array(x)[30])
+    # d = numpy.array(img)[15:45,30]
+    # ys = numpy.array(y)[15:45]
+    # plt.plot(ys,d/max(d))
+    # plt.xlabel('y [V]')
+    # plt.ylabel('counts/max(counts)')
+    # plt.show()
+    # scale = 83
 
     # replot_for_presentation(file_name, scale)
 
-    replot_for_analysis(file_name)
+    # replot_for_analysis(file_name)

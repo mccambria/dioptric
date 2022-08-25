@@ -120,9 +120,11 @@ class Galvo(LabradServer):
                 samps_per_chan=num_stream_voltages
             )
 
+        # logging.debug(stream_voltages)
         writer.write_many_sample(stream_voltages)
 
         # Close the task once we've written all the samples
+        
         task.register_done_event(self.close_task_internal)
 
         task.start()

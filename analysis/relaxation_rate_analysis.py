@@ -343,7 +343,7 @@ def get_data_lists(folder_name, simple_print=False):
                     plus_minus_counts = norm_avg_sig
                     plus_minus_ste = norm_avg_sig_ste
                     plus_minus_time = time_array
-                    
+
                     plus_minus_ref_max_time = max_relaxation_time
                     plus_minus_bool = True
                 else:
@@ -778,7 +778,9 @@ def main(
 
         # file_name = "{}-analysis".format(folder)
         # nv_name = nv_sig["name"]
-        file_path = tool_belt.get_file_path('t1_dq_main.py', time_stamp, "analysis", folder)
+        file_path = tool_belt.get_file_path(
+            "t1_dq_main.py", time_stamp, "analysis", folder
+        )
         # print(file_path)
         # file_path = str(data_dir / path_folder / file_name)
         tool_belt.save_raw_data(raw_data, file_path)
@@ -830,7 +832,8 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        path = "pc_rabi/branch_master/t1_dq_main/2022_08/"
+        # path = "pc_rabi/branch_master/t1_dq_main/2022_08/"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
 
         main(
             path,
@@ -842,7 +845,7 @@ if __name__ == "__main__":
             simple_print=True,
         )
 
-        # plt.show(block=True)
+        plt.show(block=True)
 
     elif mode == "batch_analysis":
 

@@ -514,6 +514,16 @@ def set_delays_to_zero(config):
         val = config[key]
         if type(val) is dict:
             set_delays_to_zero(val)
+            
+            
+def seq_train_length_check(train):
+    """
+    Print out the length of a the sequence train for a specific channel. Useful for debugging sequences.
+    """
+    total = 0
+    for el in train:
+        total += el[0]
+    print(total)
 
 
 def set_feedthroughs_to_false(config):
@@ -673,6 +683,8 @@ def create_image_figure(
     um_scaled=False,
     aspect_ratio=None,
     color_map="inferno",
+    cmin=None,
+    cmax=None,
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
@@ -717,7 +729,8 @@ def create_image_figure(
         imgArray,
         cmap=color_map,
         extent=tuple(imgExtent),
-        vmin=min_value,
+        vmin = cmin ,#min_value,
+        vmax = cmax,
         aspect=aspect_ratio,
     )
 
@@ -804,7 +817,7 @@ def calc_image_scan_vals(
         return x_scan_vals, y_scan_vals
 
 
-def update_image_figure(fig, imgArray):
+def update_image_figure(fig, imgArray,cmin=None,cmax=1000):
     """
     Update the image with the passed image array and redraw the figure.
     Intended to update figures created by create_image_figure.
@@ -841,6 +854,8 @@ def update_image_figure(fig, imgArray):
             img.set_clim(None, 1000)
         else:
             img.autoscale()
+    elif (cmax != None) & (cmin != None):
+        img.set_clim(cmin, cmax)
     else:
         img.autoscale()
 
