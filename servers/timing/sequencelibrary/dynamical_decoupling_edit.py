@@ -5,17 +5,17 @@ Created on Thur Aug 4, 2022
 This is a sequence for dynamical decoupling sequence for routines that have
 the following family of microwave sequences:
 
-pi/2 - (T - pi - T)*N - pi/2
+oi/2 - (T - pi - T)*N - pi/2
 
 For example, CPMG pulses use this with N>1 repetitions. And XY4 and XY8 use this
-with N = mod 4 (or 8).
+with N = mod 8.
     
 The phase of the microwave pulses are controlled in the actual routine, so this can be used
 for CPMG, XY4, or XY8.
 
 Note that the variable pi_pulse_reps is the number of pi_pulses to perform. 
 For example, if we want to perform XY4-2, we would want the number of pi pulses
-to be 4 * 2. There are 4 pusles in the XY4 pulse sequence, 
+to be 8 * 2. There are 8 pusles in the XY4 pulse sequence, 
 and we want to repeate those 2 times.
 
 @author: Aedan
@@ -69,9 +69,12 @@ def get_seq(pulse_streamer, config, args):
     
     back_buffer = 200
     delay_buffer = max(laser_delay_time,rf_delay_time, iq_delay_time, 100)
+    # shift the iq triggers to half tau before the pi pulses
+    iq_forward_shift_shrt = numpy.int64(tau_shrt/2 )
+    iq_forward_shift_long = numpy.int64(tau_long/2)
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse, 10))
     
-    # we half the tau to put an IQ pulse in between. To create shorthand,
+    # we often half the tau to put a pulse in between.To create shorthand,
     # we define them here. But we need to make sure that the two halves still
     # add up to tau
     half_tau_shrt_st =int(tau_shrt/2)
@@ -85,9 +88,26 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
 
-    # %% Write the microwave sequence to be used. 
-    # Also add up the total time of the uwave experiment and use for other channels
+    # %% Write the microwave sequence to be used.
 
+    # In t1, the sequence is just a pi pulse, wait for a relaxation time, then
+    # then a second pi pulse
+
+    # I define both the time of this experiment, which is useful for the AOM
+    # and gate sequences to dictate the time for them to be LOW
+    # And I define the actual uwave experiement to be plugged into the rf
+    # sequence. I hope that this formatting works.
+
+    # With future protocols--ramsey, spin echo, etc--it will be easy to use
+    # this format of sequence building and just change this section of the file
+
+    # uwave_experiment_dur_shrt = (pi_on_2_pulse + \
+    #                  (tau_shrt + pi_pulse + tau_shrt)*8*num_dd_reps + \
+    #                          pi_on_2_pulse)
+    # uwave_experiment_dur_long = (pi_on_2_pulse + \
+    #                  (tau_long + pi_pulse + tau_long)*8*num_dd_reps + \
+    #                          pi_on_2_pulse)   
+    
     uwave_experiment_train_shrt = [(pi_on_2_pulse, HIGH)]
     rep_train = [(tau_shrt, LOW), (pi_pulse, HIGH), (tau_shrt, LOW)]*pi_pulse_reps
     uwave_experiment_train_shrt.extend(rep_train)
@@ -97,6 +117,7 @@ def get_seq(pulse_streamer, config, args):
     for el in uwave_experiment_train_shrt:
         uwave_experiment_dur_shrt += el[0]
     
+    
     uwave_experiment_train_long = [(pi_on_2_pulse, HIGH)]
     rep_train = [(tau_long, LOW), (pi_pulse, HIGH), (tau_long, LOW)]*pi_pulse_reps
     uwave_experiment_train_long.extend(rep_train)
@@ -105,35 +126,51 @@ def get_seq(pulse_streamer, config, args):
     uwave_experiment_dur_long = 0
     for el in uwave_experiment_train_long:
         uwave_experiment_dur_long += el[0]
-
-    # %% Write the IQ trigger pulse sequence
+        
     # The first IQ pulse will occur right after optical pulse polarization
-    # follwoing IQ pulses will occur half tau before the pi pulse
     uwave_iq_train_shrt = [(iq_trigger_time, HIGH), 
-                           (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
-                           (half_tau_shrt_st, LOW)]
+                            (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
+                            (half_tau_shrt_st, LOW)]
     rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
+              (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
     uwave_iq_train_shrt.extend(rep_train)
     uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
                                 (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
                                 (iq_trigger_time, HIGH), 
                                 (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-    # uwave_iq_train_shrt_dur=0
-    # for el in uwave_iq_train_shrt:
-    #     uwave_iq_train_shrt_dur += el[0]
+    # print(uwave_iq_train_shrt)
+    
+    # first IQ pulse will occur right at start of pi/2 pulse
+    # uwave_iq_train_shrt = [(iq_trigger_time, HIGH), 
+    #                         (pi_on_2_pulse-iq_trigger_time, LOW)]
+    # rep_train = [(tau_shrt, LOW),
+    #               (iq_trigger_time, HIGH),
+    #               (pi_pulse - iq_trigger_time + tau_shrt, LOW)]*(pi_pulse_reps)
+    # uwave_iq_train_shrt.extend(rep_train)
+    # uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
+    #                             (pi_on_2_pulse - iq_trigger_time, LOW)])
     
     
     uwave_iq_train_long = [(iq_trigger_time, HIGH), 
-                           (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
-                           (half_tau_long_st, LOW)]
+                            (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
+                            (half_tau_long_st, LOW)]
     rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
+              (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
     uwave_iq_train_long.extend(rep_train)
     uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
                                 (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
                                 (iq_trigger_time, HIGH), 
                                 (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+    
+    
+    # uwave_iq_train_long = [(iq_trigger_time, HIGH), 
+    #                         (pi_on_2_pulse-iq_trigger_time, LOW)]
+    # rep_train = [(tau_long, LOW),
+    #               (iq_trigger_time, HIGH),
+    #               (pi_pulse - iq_trigger_time + tau_long, LOW)]*(pi_pulse_reps)
+    # uwave_iq_train_long.extend(rep_train)
+    # uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
+    #                             (pi_on_2_pulse - iq_trigger_time, LOW)])
     
 
     # %% Define the sequence
@@ -164,7 +201,7 @@ def get_seq(pulse_streamer, config, args):
     period = 0
     for el in train:
         period += el[0]
-    # print(period)
+    print(period)
 
     # Laser
     train = [(delay_buffer - laser_delay_time, HIGH),
@@ -184,16 +221,17 @@ def get_seq(pulse_streamer, config, args):
              (back_buffer + laser_delay_time, LOW)]   
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 laser_name, laser_power, train)
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # Microwaves
     train = [(delay_buffer - rf_delay_time, LOW),
              (polarization_time,LOW),
              (pre_uwave_exp_wait_time, LOW)]
     train.extend(uwave_experiment_train_shrt)
+    # train.extend([(uwave_experiment_dur_shrt, HIGH)])
     train.extend([
              (post_uwave_exp_wait_time, LOW),
              (signal_time, LOW),
@@ -201,6 +239,7 @@ def get_seq(pulse_streamer, config, args):
              (reference_time, LOW),
              (pre_uwave_exp_wait_time, LOW)])
     train.extend(uwave_experiment_train_long)
+    # train.extend([(uwave_experiment_dur_long, HIGH)])
     train.extend([
              (post_uwave_exp_wait_time, LOW),
              (signal_time, LOW),
@@ -209,22 +248,22 @@ def get_seq(pulse_streamer, config, args):
              (back_buffer + rf_delay_time, LOW)])
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # IQ modulation triggers
     train = [(delay_buffer - iq_delay_time, LOW),
               (polarization_time,LOW),]
-              # (pre_uwave_exp_wait_time, LOW)]
+              # (pre_uwave_exp_wait_time-20, LOW)]
     train.extend(uwave_iq_train_shrt)
     train.extend([
               (post_uwave_exp_wait_time, LOW),
               (signal_time, LOW),
               (sig_to_ref_wait_time_shrt, LOW),
               (reference_time, LOW),])
-              # (pre_uwave_exp_wait_time, LOW)])
+              # (pre_uwave_exp_wait_time-20, LOW)])
     train.extend(uwave_iq_train_long)
     train.extend([
               (post_uwave_exp_wait_time, LOW),
@@ -234,10 +273,10 @@ def get_seq(pulse_streamer, config, args):
               (back_buffer + iq_delay_time, LOW)])
     seq.setDigital(pulser_do_arb_wave_trigger, train)
     # print(train)
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
     
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -248,6 +287,6 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config)   
     # tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long
     #pi_pulse_reps, apd_index, state, laser_name, laser_power
-    seq_args = [100, 1000.0, 350, 36.2, 19.2, 21875, 8, 1, 3, 'integrated_520', None]
+    seq_args = [62, 1000.0, 350, 45, 23, 3062, 8, 1, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

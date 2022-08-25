@@ -2,6 +2,8 @@
 """
 Created on Tue Aug 23 15:17:35 2022
 
+based off this paper: https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.105.077601
+
 @author: kolkowitz
 """
 
@@ -19,6 +21,14 @@ from utils.tool_belt import States
 from scipy.optimize import curve_fit
 
 
+def test_1():
+    '''
+    This pulse sequence consists of pi/2 pulses with the same phase:
+        pi/2 - pi/2
+    '''
+    
+    
+    return
 def test_iq(
     cxn,
     nv_sig,

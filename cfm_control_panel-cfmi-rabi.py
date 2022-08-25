@@ -542,10 +542,10 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, T =None ):
 
     if T:
         max_time = T / (2*4*num_xy4_reps)  # us
-        # min_time =0.062# 1 / (2*pi_pulse_reps) #us
-        # num_steps = int(T/1+1 )-1  # 1 point per 1 us
-        min_time =0.0# 1 / (2*pi_pulse_reps) #us
-        num_steps = int(T/1+1 )  # 1 point per 1 us
+        min_time =0.062# 1 / (2*pi_pulse_reps) #us
+        num_steps = int(T/1+1 )-1  # 1 point per 1 us
+        # min_time =0.0# 1 / (2*pi_pulse_reps) #us
+        # num_steps = int(T/1+1 )  # 1 point per 1 us
         precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
     
     else:
