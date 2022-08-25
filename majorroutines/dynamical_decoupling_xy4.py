@@ -114,6 +114,7 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
+    print(taus)
     # Convert to ms
     #plot_taus = taus / 1000
     plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
@@ -176,7 +177,7 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_args)
+    print(seq_args)
     # return
     #    print(seq_time)
 

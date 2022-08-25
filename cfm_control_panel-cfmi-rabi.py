@@ -102,8 +102,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps =120
     # num_steps = 90
-    num_steps = 60
-    # num_steps = 31
+    # num_steps = 60
+    num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -542,8 +542,10 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, T =None ):
 
     if T:
         max_time = T / (2*4*num_xy4_reps)  # us
-        min_time =0# 1 / (2*pi_pulse_reps) #us
-        num_steps = int(T/1+1 )  # 1 point per 0.5 us
+        # min_time =0.062# 1 / (2*pi_pulse_reps) #us
+        # num_steps = int(T/1+1 )-1  # 1 point per 1 us
+        min_time =0.0# 1 / (2*pi_pulse_reps) #us
+        num_steps = int(T/1+1 )  # 1 point per 1 us
         precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
     
     else:
@@ -554,7 +556,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, T =None ):
 
     # num_xy4_reps = 1
     num_reps = 1e4
-    num_runs= 50
+    num_runs= 25
 
 
     state = States.HIGH
@@ -979,7 +981,7 @@ if __name__ == "__main__":
     nv_sig_1["resonance_LOW"] = 2.6053
     nv_sig_1["rabi_LOW"] = 96
     nv_sig_1["resonance_HIGH"] = 3.1345
-    nv_sig_1["rabi_HIGH"] = 90.1
+    nv_sig_1["rabi_HIGH"] = 94.2
     nv_sig_1["t2_revival_time"] = 9.934e3
 
     nv_sig_4 = copy.deepcopy(sig_base)
