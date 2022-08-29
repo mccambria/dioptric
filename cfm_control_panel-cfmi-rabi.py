@@ -36,6 +36,7 @@ import majorroutines.t1_dq_main as t1_dq_main
 import majorroutines.spin_echo as spin_echo
 import majorroutines.dynamical_decoupling_cpmg as dynamical_decoupling_cpmg
 import majorroutines.dynamical_decoupling_xy4 as dynamical_decoupling_xy4
+import majorroutines.dynamical_decoupling_xy8 as dynamical_decoupling_xy8
 import majorroutines.lifetime_v2 as lifetime_v2
 import minorroutines.time_resolved_readout as time_resolved_readout
 import chargeroutines.SPaCE as SPaCE
@@ -381,7 +382,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 3
+    num_runs = 15
 
     period = rabi.main(
         nv_sig,
@@ -538,25 +539,33 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
     return 
 
 
-def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, T =None ):
+def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
 
-    if T:
-        max_time = T / (2*4*num_xy4_reps)  # us
-        # min_time =0.062# 1 / (2*pi_pulse_reps) #us
-        # num_steps = int(T/1+1 )-1  # 1 point per 1 us
-        min_time =0.0# 1 / (2*pi_pulse_reps) #us
-        num_steps = int(T/1+1 )  # 1 point per 1 us
+    if False:
+        step_size = 2 # us
+        T_min = 1640
+        T_max = 1710
+        # try 340 for XY4-2 to see first revival
+        
+        # T_min = 140
+        # T_max = 180
+        
+        max_time = T_max / (2*4*num_xy4_reps)  # us
+        min_time = T_min / (2*4*num_xy4_reps) #us
+        num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
+        # min_time =0.0# 1 / (2*pi_pulse_reps) #us
+        # num_steps = int(T/1+1 )  # 1 point per 1 us
         precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
     
-    else:
+    if True:
         revival_time= nv_sig['t2_revival_time']
-        num_revivals = 10
+        num_revivals = 8
         precession_time_range = [0, revival_time*(num_revivals - 1)]
         num_steps=num_revivals
 
     # num_xy4_reps = 1
     num_reps = 1e4
-    num_runs= 25
+    num_runs= 100
 
 
     state = States.HIGH
@@ -575,6 +584,50 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, T =None ):
     )
     return 
 
+def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
+
+    if True:
+        step_size = 2 # us
+        T_min = 0
+        T_max = 350
+        # try 340 for XY4-2 to see first revival
+        
+        # T_min = 140
+        # T_max = 180
+        
+        max_time = T_max / (2*8*num_xy8_reps)  # us
+        min_time = T_min / (2*8*num_xy8_reps) #us
+        num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
+        # min_time =0.0# 1 / (2*pi_pulse_reps) #us
+        # num_steps = int(T/1+1 )  # 1 point per 1 us
+        precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
+    
+    if False:
+        revival_time= nv_sig['t2_revival_time']
+        num_revivals = 10
+        precession_time_range = [0, revival_time*(num_revivals - 1)]
+        num_steps=num_revivals
+
+    # num_xy4_reps = 1
+    num_reps = 1e4
+    num_runs= 50
+
+
+    state = States.HIGH
+
+
+
+    dynamical_decoupling_xy8.main(
+        nv_sig,
+        apd_indices,
+        precession_time_range,
+        num_xy8_reps,
+        num_steps,
+        num_reps,
+        num_runs,
+        state,
+    )
+    return 
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
@@ -977,11 +1030,11 @@ if __name__ == "__main__":
     nv_sig_1 = copy.deepcopy(sig_base)
     nv_sig_1["coords"] = [-0.853, -0.593, 6.16]
     nv_sig_1["name"] = "{}-nv1_2022_08_10".format(sample_name,)
-    nv_sig_1["expected_count_rate"] = 12
+    nv_sig_1["expected_count_rate"] = 10
     nv_sig_1["resonance_LOW"] = 2.6053
     nv_sig_1["rabi_LOW"] = 96
     nv_sig_1["resonance_HIGH"] = 3.1345
-    nv_sig_1["rabi_HIGH"] = 94.2
+    nv_sig_1["rabi_HIGH"] = 88.9
     nv_sig_1["t2_revival_time"] = 9.934e3
 
     nv_sig_4 = copy.deepcopy(sig_base)
@@ -1100,7 +1153,7 @@ if __name__ == "__main__":
 
         #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
         # for a in numpy.linspace(0.2, 0.8, 7):
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 100])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 150])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
@@ -1110,11 +1163,12 @@ if __name__ == "__main__":
         #do_spin_echo(nv_sig, apd_indices)
         # for n in [2, 3, 4, 5, 6, 8, 9, 10, 25, 50]:
             
-        T = 50
-        #do_dd_cpmg(nv_sig, apd_indices, 4, 200 ) 
-        # for N in [1]:
-        #   do_dd_xy4(nv_sig, apd_indices, N, T )
-        do_dd_xy4(nv_sig, apd_indices, 2, T )
+        #do_dd_cpmg(nv_sig, apd_indices, 4, 200 )
+        do_dd_xy8(nv_sig, apd_indices, 1 )
+        for N in [3,4,5,6,7,8]:
+          do_dd_xy4(nv_sig, apd_indices, N
+                    ) 
+        #do_dd_xy8(nv_sig, apd_indices, 1 ) 
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
 
         # do_relaxation(nv_sig, apd_indices)
