@@ -2,8 +2,9 @@
 """
 Dynamical decoupling XY4.
 
-One unit of XY4 is defined as:
-    tau - pi_x - tau - tau - pi_y - tau - tau - pi_x - tau - tau - pi_y - tau
+One unit of XY8 is defined as:
+    tau - pi_x - tau - tau - pi_y - tau - tau - pi_x - tau - tau - pi_y - tau -
+        tau - pi_y - tau - tau - pi_x - tau - tau - pi_y - tau - tau - pi_x - tau
 
 Created on Fri Aug 5 2022
 
@@ -43,7 +44,7 @@ def main(
     nv_sig,
     apd_indices,
     precession_dur_range,
-    num_xy4_reps,
+    num_xy8_reps,
     num_steps,
     num_reps,
     num_runs,
@@ -56,7 +57,7 @@ def main(
             nv_sig,
             apd_indices,
             precession_dur_range,
-            num_xy4_reps,
+            num_xy8_reps,
             num_steps,
             num_reps,
             num_runs,
@@ -70,7 +71,7 @@ def main_with_cxn(
     nv_sig,
     apd_indices,
     precession_time_range,
-    num_xy4_reps,
+    num_xy8_reps,
     num_steps,
     num_reps,
     num_runs,
@@ -118,7 +119,7 @@ def main_with_cxn(
     print(taus)
     # Convert to ms
     #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    plot_taus = (taus * 2 *8* num_xy8_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -161,7 +162,7 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    pi_pulse_reps = num_xy4_reps*4
+    pi_pulse_reps = num_xy8_reps*8
     seq_args = [
         taus[0],
         polarization_time,
@@ -191,7 +192,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    #return
+    # return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -225,8 +226,7 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
-        # cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
+        cxn.arbitrary_waveform_generator.load_xy8n(num_xy8_reps)
         
 
         # Set up the laser
@@ -327,15 +327,15 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
         ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+        ax.set_xlabel(r"Precession time, $T = 2*8*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
         
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
-        ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+        ax.set_title("XY8-{} Measurement".format(num_xy8_reps))
+        ax.set_xlabel(r"Precession time, $T = 2*8*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
@@ -354,7 +354,7 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            'num_xy4_reps': num_xy4_reps,
+            'num_xy8_reps': num_xy8_reps,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -400,15 +400,15 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    ax.set_xlabel(r"Precession time, $T = 2*8*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
     ax.legend()
 
     ax = axes_pack[1]
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    ax.set_title("XY8-{} Measurement".format(num_xy8_reps))
+    ax.set_xlabel(r"Precession time, $T = 2*8*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -428,7 +428,7 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
-        'num_xy4_reps': num_xy4_reps,
+        'num_xy8_reps': num_xy8_reps,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,

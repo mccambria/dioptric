@@ -248,6 +248,6 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config)   
     # tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long
     #pi_pulse_reps, apd_index, state, laser_name, laser_power
-    seq_args = [100, 1000.0, 350, 36.2, 19.2, 21875, 8, 1, 3, 'integrated_520', None]
+    seq_args = [500, 1000.0, 350, 44, 22, 6750, 8, 1, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
