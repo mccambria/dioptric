@@ -311,7 +311,7 @@ class PiezoStage(LabradServer):
             
             task.write([xVoltage, yVoltage])
     
-    @setting(32,  xVoltage="v[]", yVoltage="v[]", zVoltage="v[]")
+    @setting(42,  xVoltage="v[]", yVoltage="v[]", zVoltage="v[]")
     def write_xyz(self, c, xVoltage, yVoltage, zVoltage):
         """Write the specified x and y and z voltages to the piezo stage"""
 
@@ -375,7 +375,7 @@ class PiezoStage(LabradServer):
         returns="*v[]*v[]",
     )
     
-    @setting(31, returns="*v[]")
+    @setting(51, returns="*v[]")
     def read_xyz(self, c):
         """Return the current voltages on the piezo's DAQ channels"""
         with nidaqmx.Task() as task:
@@ -401,7 +401,7 @@ class PiezoStage(LabradServer):
 
 
     @setting(
-        2,
+        52,
         x_center="v[]",
         y_center="v[]",
         x_range="v[]",
@@ -492,7 +492,7 @@ class PiezoStage(LabradServer):
         return x_voltages_1d, y_voltages_1d
     
     @setting(
-        2,
+        62,
         x_center="v[]",
         y_center="v[]",
         z_center="v[]",
@@ -770,7 +770,7 @@ class PiezoStage(LabradServer):
         return y_voltages
     
     @setting(
-        5,
+        55,
         x_center="v[]",
         y_center="v[]",
         z_center="v[]",
