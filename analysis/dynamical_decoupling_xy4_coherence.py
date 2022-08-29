@@ -13,6 +13,51 @@ from scipy.optimize import curve_fit
 def stretch_exp(x, o, a, d, n):
     return o + a*numpy.exp(-(x/d)**n)
     
+fig, ax = plt.subplots()
+spin_echo = False
+
+if spin_echo:
+    file_spin_echo = "2022_08_29-13_33_14-rubin-nv1_2022_08_10"
+    folder = 'pc_rabi/branch_master/spin_echo/2022_08'
+    
+    data = tool_belt.get_raw_data(file_spin_echo, folder)
+    sig_counts = numpy.array(data['sig_counts'])
+    ref_counts = numpy.array(data['ref_counts'])
+    precession_time_range = data['precession_time_range']
+    # num_xy4_reps = data['num_xy4_reps']
+    num_runs = data['num_runs']
+    num_steps = data['num_steps']    
+    min_precession_time = int(precession_time_range[0])
+    max_precession_time = int(precession_time_range[1])
+    
+    taus = numpy.linspace(
+        min_precession_time,
+        max_precession_time,
+        num=num_steps,
+    )
+    plot_taus = (2*taus) / 1000
+    
+    norm_sig = sig_counts / ref_counts
+    norm_avg_sig = numpy.average(norm_sig, axis=0)
+    print(norm_avg_sig)
+    norm_avg_coherence = (norm_avg_sig-(1-0.167*2))/(1-(1-0.167*2))
+    print(norm_avg_coherence)
+    norm_avg_coherence_ste =norm_avg_sig/(numpy.average(1))
+      # norm_avg_coherence* numpy.sqrt((norm_avg_sig_ste/norm_avg_sig)**2 + \
+    #                                                         (contrast_err/contrast)**2)
+    
+    ax.errorbar(
+            plot_taus,
+            norm_avg_coherence,
+            yerr=norm_avg_coherence_ste*0,
+            fmt="o-",
+            # color="blue",
+            # label="data",
+            label = "Spin echo"
+        )    
+    ax.legend()
+
+
 folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
 file1 = '2022_08_26-11_14_02-rubin-nv1_2022_08_10' #xy4-1
 file2 = '2022_08_26-12_57_55-rubin-nv1_2022_08_10' #xy4-2
@@ -24,8 +69,6 @@ file6 = '2022_08_29-11_56_25-rubin-nv1_2022_08_10' #xy4-6
 file_list = [file1, file2, file3, file4, file5,file6]
 # file_list = [file2, file3,]
 # contrast = 0.167*2
-
-fig, ax = plt.subplots()
 
 for file in file_list:
     data = tool_belt.get_raw_data(file, folder)
@@ -128,3 +171,5 @@ for file in file_list:
             verticalalignment="top",
             bbox=props,
         )
+   
+

@@ -201,7 +201,7 @@ def mag_B_from_revival_time(revival_time, revival_time_ste=None):
         return mag_B
 
 
-def quartic(tau, offset, revival_time, decay_time, *amplitudes):
+def quartic(tau, offset, revival_time, decay_time, *amplitudes): #??? update this equation to fit spin echo to actual equations
     tally = offset
     for ind in range(0, len(amplitudes)):
         exp_part = numpy.exp(-(((tau - ind * revival_time) / decay_time) ** 4))
@@ -589,7 +589,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    #    return
+    # return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
