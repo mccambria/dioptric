@@ -35,6 +35,7 @@ import os
 import sys
 
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
 import utils.common as common
 from utils.tool_belt import States
 from figures.relaxation_temp_dependence.temp_dependence_fitting import (
@@ -42,6 +43,15 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     gamma_calc,
     get_data_points,
 )
+from utils.kplotlib import (
+    marker_size,
+    line_width,
+    marker_edge_width,
+    KplColors,
+)
+
+edge_color = KplColors.GREEN.value
+face_color = kpl.lighten_color_hex(edge_color)
 
 # %% Constants
 
@@ -411,6 +421,8 @@ def main(
     simple_print=True,
 ):
 
+    no_text = True
+
     slow = True
 
     path_folder = path + folder
@@ -422,7 +434,8 @@ def main(
     # %% Fit the data
 
     if doPlot:
-        fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+        # fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+        fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
         fig.set_tight_layout(True)
 
     omega_fit_failed = False
@@ -495,13 +508,17 @@ def main(
                     zero_zero_time,
                     zero_relaxation_counts,
                     yerr=zero_relaxation_ste,
-                    label="data",
-                    fmt="o",
-                    color="blue",
+                    color=edge_color,
+                    marker="o",
+                    markerfacecolor=face_color,
+                    linestyle="None",
+                    ms=marker_size,
+                    lw=line_width,
+                    markeredgewidth=marker_edge_width,
                 )
-                ax.set_xlabel("Relaxation time (ms)")
-                ax.set_ylabel("Normalized signal Counts")
-                ax.legend()
+                ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
+                ax.set_ylabel("Normalized difference")
+                # ax.legend()
 
         if not omega_fit_failed:
             # Calculate omega nad its ste
@@ -525,41 +542,49 @@ def main(
                     zero_relaxation_counts,
                     yerr=zero_relaxation_ste,
                     label="data",
-                    fmt="o",
-                    color="blue",
+                    marker="o",
+                    color=edge_color,
+                    markerfacecolor=face_color,
+                    linestyle="None",
+                    ms=marker_size,
+                    lw=line_width,
+                    markeredgewidth=marker_edge_width,
                 )
                 if offset:
                     ax.plot(
                         zero_time_linspace,
                         exp_eq_offset(zero_time_linspace, *omega_opti_params),
-                        "r",
                         label="fit",
+                        linewidth=line_width,
+                        color=edge_color,
                     )
                 else:
                     ax.plot(
                         zero_time_linspace,
                         exp_eq_omega(zero_time_linspace, *omega_opti_params),
-                        "r",
                         label="fit",
+                        linewidth=line_width,
+                        color=edge_color,
                     )
-                ax.set_xlabel("Relaxation time (ms)")
-                ax.set_ylabel("Normalized signal Counts")
-                ax.legend()
+                ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
+                ax.set_ylabel("Normalized difference")
+                # ax.legend()
                 units = r"s$^{-1}$"
                 text = r"$\Omega = $ {} $\pm$ {} {}".format(
                     "%.3f" % (omega * 1000), "%.3f" % (omega_ste * 1000), units
                 )
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-                ax.text(
-                    0.55,
-                    0.9,
-                    text,
-                    transform=ax.transAxes,
-                    fontsize=12,
-                    verticalalignment="top",
-                    bbox=props,
-                )
+                if not no_text:
+                    ax.text(
+                        0.55,
+                        0.9,
+                        text,
+                        transform=ax.transAxes,
+                        fontsize=12,
+                        verticalalignment="top",
+                        bbox=props,
+                    )
 
     if omega_fit_failed:
         print("Omega fit failed")
@@ -568,6 +593,9 @@ def main(
     if ax is not None:
         ax.set_title("Omega")
         # ax.set_title('(0,0) - (0,-1)')
+        ax.set_title(
+            "$\mathit{P}_{\mathrm{0,0}} - \mathit{P}_{\mathrm{0,-1}}$"
+        )
         # ax.set_title('(0,0) - (0,+1)')
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
@@ -578,6 +606,27 @@ def main(
     plus_minus_counts = gamma_exp_list[2]
     plus_minus_ste = gamma_exp_list[3]
     plus_plus_time = gamma_exp_list[4]
+
+    fig2, ax2 = plt.subplots(figsize=kpl.figsize)
+    edgec = KplColors.BLUE.value
+    facec = kpl.lighten_color_hex(edgec)
+    ax2.errorbar(
+        plus_plus_time,
+        plus_plus_counts,
+        yerr=plus_plus_ste,
+        label="data",
+        marker="o",
+        color=edgec,
+        markerfacecolor=facec,
+        linestyle="None",
+        ms=marker_size,
+        lw=line_width,
+        markeredgewidth=marker_edge_width,
+    )
+    ax2.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
+    ax2.set_ylabel("Normalized counts")
+    ax2.set_title("$\mathit{P}_{\mathrm{+1,+1}}$")
+    fig2.tight_layout()
 
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts = plus_plus_counts - plus_minus_counts
@@ -663,11 +712,16 @@ def main(
                 plus_relaxation_counts,
                 yerr=plus_relaxation_ste,
                 label="data",
-                fmt="o",
-                color="blue",
+                marker="o",
+                color=edge_color,
+                markerfacecolor=face_color,
+                linestyle="None",
+                ms=marker_size,
+                lw=line_width,
+                markeredgewidth=marker_edge_width,
             )
-            ax.set_xlabel("Relaxation time (ms)")
-            ax.set_ylabel("Normalized signal Counts")
+            ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
+            ax.set_ylabel("Normalized difference")
 
     if not gamma_fit_failed:
 
@@ -697,27 +751,34 @@ def main(
                 plus_relaxation_counts,
                 yerr=plus_relaxation_ste,
                 label="data",
-                fmt="o",
-                color="blue",
+                marker="o",
+                color=edge_color,
+                markerfacecolor=face_color,
+                linestyle="None",
+                ms=marker_size,
+                lw=line_width,
+                markeredgewidth=marker_edge_width,
             )
             if offset:
                 ax.plot(
                     plus_time_linspace,
                     exp_eq_offset(plus_time_linspace, *gamma_opti_params),
-                    "r",
                     label="fit",
+                    linewidth=line_width,
+                    color=edge_color,
                 )
             else:
                 ax.plot(
                     plus_time_linspace,
                     # exp_eq_gamma(plus_time_linspace, *gamma_opti_params),  # MCC
                     gamma_fit_func(plus_time_linspace, *gamma_opti_params),
-                    "r",
                     label="fit",
+                    linewidth=line_width,
+                    color=edge_color,
                 )
-            ax.set_xlabel("Relaxation time (ms)")
-            ax.set_ylabel("Normalized signal Counts")
-            ax.legend()
+            ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
+            ax.set_ylabel("Normalized difference")
+            # ax.legend()
             units = r"s$^{-1}$"
             text = r"$\gamma = $ {} $\pm$ {} {}".format(
                 "%.3f" % (gamma * 1000), "%.3f" % (gamma_ste * 1000), units
@@ -725,19 +786,25 @@ def main(
             #            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-            ax.text(
-                0.55,
-                0.90,
-                text,
-                transform=ax.transAxes,
-                fontsize=12,
-                verticalalignment="top",
-                bbox=props,
-            )
+            if not no_text:
+                ax.text(
+                    0.55,
+                    0.90,
+                    text,
+                    transform=ax.transAxes,
+                    fontsize=12,
+                    verticalalignment="top",
+                    bbox=props,
+                )
 
     if doPlot:
-        ax.set_title("gamma")
+
+        # ax.set_title("gamma")
         # ax.set_title('(+1,+1) - (+1,-1)')
+        # ax.set_title("$P_{+1,+1} - P_{-1,+1}$")
+        ax.set_title(
+            "$\mathit{P}_{\mathrm{+1,+1}} - \mathit{P}_{\mathrm{-1,+1}}$"
+        )
         # ax.set_title('(-1,-1) - (-1,+1)')
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -803,6 +870,8 @@ def main(
     except Exception as exc:
         print(exc)
 
+    fig.tight_layout()
+
     return gamma, gamma_ste
 
 
@@ -810,9 +879,12 @@ def main(
 
 if __name__ == "__main__":
 
+    kpl.init_kplotlib()
+
     temp = 295
     # folder = "2022_08_05"
-    folder = "hopper-search-295K-10mW-carter_adj"
+    # folder = "wu-nv1_2022_03_16-295K"
+    folder = "wu-nv6_2022_04_14-295K"
 
     # mode = "prediction"
     mode = "analysis"
@@ -834,7 +906,8 @@ if __name__ == "__main__":
         plt.ion()
 
         # path = "pc_rabi/branch_master/t1_dq_main/2022_08/"
-        path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
+        # path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
 
         main(
             path,
