@@ -42,6 +42,8 @@ def get_seq(pulse_streamer, config, args):
 
     # Unpack the durations
     tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long = durations
+    
+    
 
     # Get the APD indices
     pi_pulse_reps, apd_index, state, laser_name, laser_power = args[6:12]
@@ -124,33 +126,51 @@ def get_seq(pulse_streamer, config, args):
     uwave_experiment_dur_long = 0
     for el in uwave_experiment_train_long:
         uwave_experiment_dur_long += el[0]
-
+        
     # The first IQ pulse will occur right after optical pulse polarization
     uwave_iq_train_shrt = [(iq_trigger_time, HIGH), 
-                           (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
-                           (half_tau_shrt_st, LOW)]
+                            (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
+                            (half_tau_shrt_st, LOW)]
     rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
+              (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
     uwave_iq_train_shrt.extend(rep_train)
     uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
                                 (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
                                 (iq_trigger_time, HIGH), 
                                 (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-    # uwave_iq_train_shrt_dur=0
-    # for el in uwave_iq_train_shrt:
-    #     uwave_iq_train_shrt_dur += el[0]
+    # print(uwave_iq_train_shrt)
+    
+    # first IQ pulse will occur right at start of pi/2 pulse
+    # uwave_iq_train_shrt = [(iq_trigger_time, HIGH), 
+    #                         (pi_on_2_pulse-iq_trigger_time, LOW)]
+    # rep_train = [(tau_shrt, LOW),
+    #               (iq_trigger_time, HIGH),
+    #               (pi_pulse - iq_trigger_time + tau_shrt, LOW)]*(pi_pulse_reps)
+    # uwave_iq_train_shrt.extend(rep_train)
+    # uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
+    #                             (pi_on_2_pulse - iq_trigger_time, LOW)])
     
     
     uwave_iq_train_long = [(iq_trigger_time, HIGH), 
-                           (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
-                           (half_tau_long_st, LOW)]
+                            (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
+                            (half_tau_long_st, LOW)]
     rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
+              (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
     uwave_iq_train_long.extend(rep_train)
     uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
                                 (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
                                 (iq_trigger_time, HIGH), 
                                 (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+    
+    
+    # uwave_iq_train_long = [(iq_trigger_time, HIGH), 
+    #                         (pi_on_2_pulse-iq_trigger_time, LOW)]
+    # rep_train = [(tau_long, LOW),
+    #               (iq_trigger_time, HIGH),
+    #               (pi_pulse - iq_trigger_time + tau_long, LOW)]*(pi_pulse_reps)
+    # uwave_iq_train_long.extend(rep_train)
+    # uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
+    #                             (pi_on_2_pulse - iq_trigger_time, LOW)])
     
 
     # %% Define the sequence
@@ -236,14 +256,14 @@ def get_seq(pulse_streamer, config, args):
     # IQ modulation triggers
     train = [(delay_buffer - iq_delay_time, LOW),
               (polarization_time,LOW),]
-              # (pre_uwave_exp_wait_time, LOW)]
+              # (pre_uwave_exp_wait_time-20, LOW)]
     train.extend(uwave_iq_train_shrt)
     train.extend([
               (post_uwave_exp_wait_time, LOW),
               (signal_time, LOW),
               (sig_to_ref_wait_time_shrt, LOW),
               (reference_time, LOW),])
-              # (pre_uwave_exp_wait_time, LOW)])
+              # (pre_uwave_exp_wait_time-20, LOW)])
     train.extend(uwave_iq_train_long)
     train.extend([
               (post_uwave_exp_wait_time, LOW),
@@ -252,7 +272,7 @@ def get_seq(pulse_streamer, config, args):
               (reference_time, LOW),
               (back_buffer + iq_delay_time, LOW)])
     seq.setDigital(pulser_do_arb_wave_trigger, train)
-    print(train)
+    # print(train)
     period = 0
     for el in train:
         period += el[0]
@@ -267,6 +287,6 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config)   
     # tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long
     #pi_pulse_reps, apd_index, state, laser_name, laser_power
-    seq_args = [50000, 1000.0, 350, 25, 12, 50000, 1, 1, 3, 'integrated_520', None]
+    seq_args = [62, 1000.0, 350, 45, 23, 3062, 8, 1, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

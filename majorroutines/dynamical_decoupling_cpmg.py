@@ -2,8 +2,7 @@
 """
 Dynamical decoupling XY4.
 
-One unit of XY4 is defined as:
-    tau - pi_x - tau - tau - pi_y - tau - tau - pi_x - tau - tau - pi_y - tau
+
 
 Created on Fri Aug 5 2022
 
@@ -43,7 +42,7 @@ def main(
     nv_sig,
     apd_indices,
     precession_dur_range,
-    num_xy4_reps,
+    pi_pulse_reps,
     num_steps,
     num_reps,
     num_runs,
@@ -56,7 +55,7 @@ def main(
             nv_sig,
             apd_indices,
             precession_dur_range,
-            num_xy4_reps,
+            pi_pulse_reps,
             num_steps,
             num_reps,
             num_runs,
@@ -70,7 +69,7 @@ def main_with_cxn(
     nv_sig,
     apd_indices,
     precession_time_range,
-    num_xy4_reps,
+    pi_pulse_reps,
     num_steps,
     num_reps,
     num_runs,
@@ -96,8 +95,8 @@ def main_with_cxn(
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     # pi pulses are slightly different than just half of the rabi period
-    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
-    # uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
+    # uwave_pi_pulse = round(nv_sig["pi_pulse_{}".format(state.name)] )
+    # uwave_pi_on_2_pulse = round(nv_sig["pi_on_2_pulse_{}".format(state.name)] )
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -114,10 +113,10 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
-    print(taus)
+    # print(taus)
+    # return
     # Convert to ms
-    #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    plot_taus = (taus * 2 * pi_pulse_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -160,7 +159,7 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    pi_pulse_reps = num_xy4_reps*4
+    #pi_pulse_reps = num_xy4_reps*8
     seq_args = [
         min_precession_time,
         polarization_time,
@@ -177,9 +176,9 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    print(seq_args)
+    # print(seq_args)
     # return
-    #    print(seq_time)
+        # print(seq_time)
 
     # %% Let the user know how long this will take
 
@@ -224,8 +223,8 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
-        # cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
+        #cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
+        cxn.arbitrary_waveform_generator.load_cpmg(pi_pulse_reps)
         
 
         # Set up the laser
@@ -326,15 +325,15 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
         ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+        ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
         
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
-        ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+        ax.set_title("CPMG-{} Measurement".format(pi_pulse_reps))
+        ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
@@ -353,7 +352,7 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            'num_xy4_reps': num_xy4_reps,
+            'pi_pulse_reps': pi_pulse_reps,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -397,15 +396,15 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
     ax.legend()
 
     ax = axes_pack[1]
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    ax.set_title("CPMG -{} Measurement".format(pi_pulse_reps))
+    ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -425,7 +424,7 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
-        'num_xy4_reps': num_xy4_reps,
+        'pi_pulse_reps': pi_pulse_reps,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,

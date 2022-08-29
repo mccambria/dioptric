@@ -891,8 +891,8 @@ if __name__ == "__main__":
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 51  # omega_calc(temp)
-        est_gamma = 150  # gamma_calc(temp)
+        est_omega = 1821  # omega_calc(temp)
+        est_gamma = 4500  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))

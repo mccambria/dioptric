@@ -281,7 +281,7 @@ def fit_data(data):
     amplitude = 0.07
     offset = 0.90
     decay_time = 2000.0
-    revival_time = 35e3
+    revival_time = 10e3
     # dominant_freqs = [1 / (1000*revival_time)]
 
     # %% Fit
@@ -515,8 +515,10 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
+    print(taus)
     # Account for the pi/2 pulse on each side of a tau
-    plot_taus = (taus + uwave_pi_pulse) / 1000
+    # plot_taus = (taus + uwave_pi_pulse) / 1000
+    plot_taus = (2*taus) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -714,7 +716,8 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
         ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
+        # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
         
@@ -722,7 +725,8 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
         ax.set_title("Spin Echo Measurement")
-        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
+        # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
@@ -786,7 +790,8 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
+    # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
     ax.legend()
 
@@ -794,7 +799,8 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
     ax.set_title("Spin Echo Measurement")
-    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
+    # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -892,8 +898,8 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_07_11-23_56_59-rubin-nv1"
-    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_07')
+    file_name = "2022_08_22-15_07_16-rubin-nv1"
+    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
     ret_vals = plot_resonances_vs_theta_B(data)
 
     # plt.show(block=True)
