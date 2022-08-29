@@ -55,6 +55,7 @@ double_figsize = [figsize[0] * 2, figsize[1]]
 # region Colors
 # The default color specification is hex, eg "#bcbd22"
 
+
 class KplColors(Enum):
     BLUE = "#1f77b4"
     ORANGE = "#ff7f0e"
@@ -137,8 +138,8 @@ def init_kplotlib(font_size=17):
     preamble += r"\usepackage{lmodern}"
 
     # Sans serif math font, looks better for axis numbers.
-    # Preserves \mathrm and \mathit commands so you can still use serif
-    # Latin modern font for actually variables, equations, or whatever.
+    # We preserve \mathrm and \mathit commands so you can still use
+    # the serif lmodern font for variables, equations, etc
     preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
 
     plt.rcParams["text.latex.preamble"] = preamble
