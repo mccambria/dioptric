@@ -190,7 +190,7 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
     This function will test red pulse lengths between 0 and 600 ns on the LOW
     NV state.
     '''
-    state = States.LOW
+    state = States.HIGH
     if ion_durs is None:
         ion_durs = numpy.linspace(0,1000,11)
   
@@ -528,7 +528,7 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
 
 
 # %%
-def test_esr(nv_sig, apd_indices, num_reps, state = States.LOW):
+def test_esr(nv_sig, apd_indices, num_reps, state = States.HIGH):
     '''
     This function will test red pulse lengths between 0 and 600 ns on the LOW
     NV state.
@@ -541,7 +541,8 @@ def test_esr(nv_sig, apd_indices, num_reps, state = States.LOW):
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
-    freqs =  [freq_center]#numpy.linspace(freq_low, freq_high, 11).tolist()
+    freqs =  numpy.linspace(freq_low, freq_high, 11).tolist()
+    # freqs =  [freq_center]
 
     num_steps = len(freqs)
     
@@ -734,7 +735,7 @@ if __name__ == '__main__':
     nd_yellow = "nd_0"
     green_power =8000
     nd_green = 'nd_0.4'
-    red_power = 120
+    red_power = 180
     sample_name = "rubin"
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
@@ -785,7 +786,7 @@ if __name__ == '__main__':
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 30000,
+        "nv0_ionization_dur": 800,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": 0.0,
@@ -794,27 +795,27 @@ if __name__ == '__main__':
          "charge_readout_laser": yellow_laser,
           "charge_readout_laser_power": 0.2, 
           "charge_readout_laser_filter": "nd_1.0",
-          "charge_readout_dur": 100e6, 
+          "charge_readout_dur": 50e6, 
 
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 156,
         "resonance_LOW":2.6061,
-        "rabi_LOW":0,#96,
+        "rabi_LOW":96,
         "uwave_power_LOW": 15,  # 15.5 max
         "resonance_HIGH":3.1345,
         "rabi_HIGH":88.9,
         "uwave_power_HIGH": 10,
     }  # 14.5 max
     
-    num_reps = 600#500
+    num_reps = 1000 #500
     # Run the program
-    # determine_ionization_dur(nv_sig, apd_indices, num_reps, [600, 650, 700, 750, 800, 850, 900, 950, 1000])
+    determine_ionization_dur(nv_sig, apd_indices, num_reps, [700, 750, 800, 850, 900])
     # determine_reion_dur(nv_sig)
     # determine_shelf_dur(nv_sig)
-    test_esr(nv_sig, apd_indices, num_reps)
-        
+    # test_esr(nv_sig, apd_indices, num_reps)
+        # 
 
 
     

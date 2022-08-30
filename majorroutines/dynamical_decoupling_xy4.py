@@ -473,5 +473,27 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+    
+    folder= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
+    file = '2022_08_29-22_36_53-rubin-nv1_2022_08_10'
+    
+    data = tool_belt.get_raw_data(file, folder)
+    taus = numpy.array(data['taus'])
+    num_xy4_reps = data['num_xy4_reps']
+    norm_avg_sig = data['norm_avg_sig']
+    num_steps=data['num_steps']
+    
+    tau_step = taus[1]-taus[0]
+    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    
+    fig, ax = plt.subplots()
+    ax.plot(plot_taus, norm_avg_sig, "b-")
+    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    ax.set_ylabel("Contrast (arb. units)")
 
-    aa = 1
+    transform = numpy.fft.rfft(norm_avg_sig)
+    freqs = numpy.fft.rfftfreq(num_steps, d=tau_step/1000)
+    transform_mag = numpy.absolute(transform)
+    fig, ax = plt.subplots()
+    ax.plot(freqs, transform_mag)

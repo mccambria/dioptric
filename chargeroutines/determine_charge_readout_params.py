@@ -805,13 +805,13 @@ if __name__ == "__main__":
         # "nv-_reionization_laser_filter": None,
         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
         "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e6,
+        "nv-_prep_laser_dur": 1e4,
         "nv-_prep_laser_filter": None,  # "nd_1.0",
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_dur": 100,
         "nv0_prep_laser": red_laser,
         "nv0_prep_laser-power": None,
-        "nv0_prep_laser_dur": 1e6,
+        "nv0_prep_laser_dur": 1e4,
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_dur": 0,
         "spin_shelf_laser_power": 1.0,
@@ -841,7 +841,7 @@ if __name__ == "__main__":
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [100e6]
+    readout_durs = [50e6]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
     # readout_durs = [2e9]
@@ -852,7 +852,7 @@ if __name__ == "__main__":
     # readout_powers = np.arange(0.75, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [0.25]
+    readout_powers = [0.2]
 
     # num_reps = 2000
     # num_reps = 1000
