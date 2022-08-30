@@ -52,7 +52,7 @@ import time
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False,cbarmin=None,cbarmax=None):
+def do_image_sample(nv_sig, apd_indices, scan_range=.2, num_steps=60, nv_minus_initialization=False,cbarmin=None,cbarmax=None):
 
     # scan_range = 0.5
     # num_steps = 90
@@ -69,7 +69,7 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False,cbarmin=N
     # scan_range = 1.2
     # scan_range = 0.75
     # scan_range = 0.3
-    scan_range = 0.8
+    # scan_range = 0.6
     # scan_range = 0.15
     # scan_range = 0.1
     # scan_range = 0.075
@@ -81,7 +81,7 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False,cbarmin=N
     #    num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
+    # num_steps = 30
     # num_steps = 50
     # num_steps = 20
 
@@ -850,7 +850,7 @@ def do_spin_echo_battery(nv_sig, apd_indices):
     return angle
 
 
-'''
+
 def do_map_rabi_contrast_diff_NIR(nv_sig, apd_indices, state, uwave_time_range, image_range, num_steps, rabi_num_reps, rabi_num_runs):
     
     nir_laser_voltage = 1.3
@@ -865,7 +865,7 @@ def do_map_rabi_contrast_diff_NIR(nv_sig, apd_indices, state, uwave_time_range, 
     state,
     uwave_time_range
     )
-'''
+
 
 def do_nir_battery(nv_sig, apd_indices):
 
@@ -1022,7 +1022,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, 2], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -1036,7 +1036,7 @@ if __name__ == "__main__":
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
         "spin_pol_dur": 100e3,
-        "spin_readout_dur": 6e3,
+        "spin_readout_dur": 2e3,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
@@ -1062,7 +1062,7 @@ if __name__ == "__main__":
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8047, 'rabi_LOW': 250, 'uwave_power_LOW': 16.5,
+        'resonance_LOW': 2.8059, 'rabi_LOW': 226.9, 'uwave_power_LOW': 16.5,
         'resonance_HIGH': 2.9363, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
         }
 
@@ -1076,39 +1076,17 @@ if __name__ == "__main__":
         tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
-        # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(-225,110)
+        with labrad.connect() as cxn:
+            cxn.cryo_piezos.write_xy(150,0) 
+
+        
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-        # time.sleep(10)
         # tool_belt.set_xyz(labrad.connect(), [0.0,0.0,0.0])
      
-                
-        # for pos in [-2]:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     nv_sig["coords"][2] = int(pos)
-        #     # do_image_sample(nv_sig, apd_indices)
-        #     do_ensemble_image_sample(nv_sig, apd_indices, scan_range=.3, num_steps=30, 
-        #                              technique='NIR_counts_diff_faster',nv_minus_initialization=False,
-        #                               cbarmin_percdiff=0,cbarmax_percdiff=.165,cbarmin_diffcounts=0,cbarmax_diffcounts=320,
-        #                               )
-        
-        # for x in [90]:
-        #     for y in [30]:
-        #         with labrad.connect() as cxn:
-        #             cxn.cryo_piezos.write_xy(x, y)
-        #             print(x,y)
-        #         do_image_sample(nv_sig, apd_indices)
-        # do_ensemble_image_sample(nv_sig, apd_indices, scan_range=1.3, num_steps=100, 
-        #                               technique='NIR_counts_diff_faster',nv_minus_initialization=False,
-        #                                 cbarmin_percdiff=-.0,cbarmax_percdiff=.125,
-        #                                 cbarmin_diffcounts=0,cbarmax_diffcounts=220,
-        #                                 cbarmin_counts=0,cbarmax_counts=2200
-        #                                 )
         # do_ensemble_image_sample(nv_sig, apd_indices, scan_range=1.3, num_steps=60, 
         #                               technique='NIR_counts_diff_faster',nv_minus_initialization=False,
         #                                 cbarmin_percdiff=-.0,cbarmax_percdiff=.125,
@@ -1116,7 +1094,7 @@ if __name__ == "__main__":
         #                                 cbarmin_counts=0,cbarmax_counts=2200
         #                                 )
         
-        # do_image_sample(nv_sig, apd_indices,cbarmin=200,cbarmax=740)
+        # do_image_sample(nv_sig, apd_indices,num_steps=40,scan_range=.8)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1135,7 +1113,8 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle(nv_sig, apd_indices)
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)0203c
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
@@ -1163,7 +1142,7 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
 
         # SCC characterization
-        # do_determine_charge_readout_params(nv_sig,apd_indices,nbins=200,nreps=500)
+        # do_determine_charge_readout_params(nv_sig,apd_indices,nbins=200,nreps=100)
        
         # do_determine_charge_readout_params_1Dscan_target(nv_sig, apd_indices, 
         #                                                   x_steps=[0.0], y_steps=np.arange(-.55,0.55,.015), 

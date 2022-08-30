@@ -1939,9 +1939,33 @@ def main(
     # %% Setup
 
     if plot_type == "T2_max_supp":
-        fs = double_figsize
-        fig, axes_pack = plt.subplots(1, 2, figsize=fs)
-        ax1, ax2 = axes_pack
+
+        ### (a) and (b) version
+        # fs = double_figsize
+        # fig, axes_pack = plt.subplots(1, 2, figsize=fs)
+        # ax1, ax2 = axes_pack
+
+        ### Inset version
+        fs = figsize
+        fig, ax1 = plt.subplots(figsize=fs)
+        inset_bottom = 0.56
+        inset_height = 0.45
+        inset_left = 0.475
+        inset_width = 0.53
+        ax2 = inset_axes(
+            ax1,
+            width="100%",
+            height="100%",
+            bbox_to_anchor=(
+                inset_left,
+                inset_bottom,
+                inset_width,
+                inset_height,
+            ),
+            bbox_transform=ax1.transAxes,
+            loc=1,
+        )
+
         _, _, leg1, T2_max_qubit_hopper_temp = main_sub(
             fig,
             ax1,
@@ -1968,23 +1992,23 @@ def main(
             yscale[1],
             dosave,
         )
-        fig.text(
-            -0.16,
-            0.96,
-            "(a)",
-            transform=ax1.transAxes,
-            color="black",
-            fontsize=18,
-        )
-        fig.text(
-            -0.138,
-            0.96,
-            "(b)",
-            transform=ax2.transAxes,
-            color="black",
-            fontsize=18,
-        )
-        fig.subplots_adjust(wspace=0.16)
+        # fig.text(
+        #     -0.16,
+        #     0.96,
+        #     "(a)",
+        #     transform=ax1.transAxes,
+        #     color="black",
+        #     fontsize=18,
+        # )
+        # fig.text(
+        #     -0.138,
+        #     0.96,
+        #     "(b)",
+        #     transform=ax2.transAxes,
+        #     color="black",
+        #     fontsize=18,
+        # )
+        # fig.subplots_adjust(wspace=0.16)
         return fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp
     else:
         fs = figsize
@@ -2128,7 +2152,8 @@ def main_sub(
 
         if plot_type == "T2_max":
             for sample, linestyle, label in [
-                ("hopper", "dotted", r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$"),
+                # ("hopper", "dotted", r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$"),
+                ("hopper", "dotted", "SQ"),
                 ("wu", "dashed", None),
             ]:
                 if sample not in rates_to_plot:
@@ -2156,7 +2181,8 @@ def main_sub(
         )
         if plot_type == "T2_max":
             for sample, linestyle, label in [
-                ("hopper", "dotted", r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$"),
+                # ("hopper", "dotted", r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$"),
+                ("hopper", "dotted", "DQ"),
                 ("wu", "dashed", None),
             ]:
                 if sample not in rates_to_plot:
@@ -2498,7 +2524,12 @@ def main_sub(
             mod_handles,
             labels,
             title="Subspace",
-            bbox_to_anchor=(0.743, 1.0),
+            # bbox_to_anchor=(0.743, 1.0),
+            loc="lower left",
+            handlelength=1.5,
+            handletextpad=0.5,
+            borderpad=0.3,
+            borderaxespad=0.3,
         )
 
     fig.tight_layout(pad=0.3)

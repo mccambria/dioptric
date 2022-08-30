@@ -161,21 +161,28 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 
 
 def main(nv_sig, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs, opti_nv_sig = None,return_popt=False):
+         num_steps, num_reps, num_runs,
+         iq_mod_on = False,
+         opti_nv_sig = None,
+         return_popt=False):
 
     with labrad.connect() as cxn:
-        rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig, 
+        rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
                                          apd_indices, uwave_time_range, state,
-                                         num_steps, num_reps, num_runs, opti_nv_sig)
+                                         num_steps, num_reps, num_runs,
+                                         iq_mod_on,
+                                         opti_nv_sig)
 
-        if return_popt:    
+        if return_popt:
             return rabi_per, popt
         if not return_popt:
             return rabi_per
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
-                  num_steps, num_reps, num_runs, opti_nv_sig = None):
+                  num_steps, num_reps, num_runs,
+                  iq_mod_on = False,
+                  opti_nv_sig = None):
 
     tool_belt.reset_cfm(cxn)
 
@@ -188,7 +195,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
-    
+
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -209,7 +216,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time, apd_indices[0], 
+                readout, max_uwave_time, apd_indices[0],
                 state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
@@ -242,7 +249,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax.plot([], [])
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
-    
+
     ax = axes_pack[1]
     ax.plot([], [])
     ax.set_xlabel('Microwave duration (ns)')
@@ -269,7 +276,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
-            
+
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
@@ -277,9 +284,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
-        # sig_gen_cxn.load_iq()
+        if iq_mod_on:
+            sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
-        # cxn.arbitrary_waveform_generator.iq_switch()
+        if iq_mod_on:
+            cxn.arbitrary_waveform_generator.load_arb_phases([0])
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
@@ -305,7 +314,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
             seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time, apd_indices[0], 
+                        readout, max_uwave_time, apd_indices[0],
                         state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
@@ -337,41 +346,41 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         cxn.apd_tagger.stop_tag_stream()
 
         # %% incremental plotting
-        
+
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-        
+
         norm_avg_sig = avg_sig_counts / avg_ref_counts
-        
-        
+
+
         ax = axes_pack[0]
         ax.cla()
         ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
         ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
-        
+
         ax.set_xlabel('rf time (ns)')
         ax.set_ylabel('Counts')
         ax.legend()
-        
+
         ax = axes_pack[1]
         ax.cla()
         ax.plot(taus , norm_avg_sig, 'b-')
         ax.set_title('Normalized Signal With Varying Microwave Duration')
         ax.set_xlabel('Microwave duration (ns)')
         ax.set_ylabel('Normalized signal')
-        
+
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
                 verticalalignment='top', bbox=props)
-        
+
         raw_fig.canvas.draw()
         raw_fig.set_tight_layout(True)
         raw_fig.canvas.flush_events()
-        
-        
+
+
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
@@ -413,7 +422,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax.cla()
     ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
-    
+
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
@@ -483,9 +492,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     tool_belt.save_raw_data(raw_data, file_path)
 
     if (fit_func is not None) and (popt is not None):
-        return rabi_period, sig_counts, ref_counts
+        return rabi_period, sig_counts, ref_counts, popt
     else:
-        return None, sig_counts, ref_counts, popt
+        return None, sig_counts, ref_counts
 
 
 # %% Run the file
@@ -501,36 +510,36 @@ if __name__ == '__main__':
     # uwave_time_range = data['uwave_time_range']
     # num_steps = data['num_steps']
     # uwave_freq = data['uwave_freq']
-    
+
     # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
     # if (fit_func is not None) and (popt is not None):
     #     create_fit_figure(uwave_time_range, uwave_freq, num_steps,
     #                       norm_avg_sig, fit_func, popt)
-        
+
     sig_counts = data['sig_counts']
     ref_counts = data['ref_counts']
     uwave_time_range = data['uwave_time_range']
     num_steps = data['num_steps']
     num_runs = data['num_runs']
     uwave_freq = data['uwave_freq']
-    
+
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
-        
+
     print(numpy.size(sig_counts))
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
     st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
-    
+
     norm_avg_sig = avg_sig_counts / avg_ref_counts
-    
+
     sig_perc_err = st_err_sig_counts / avg_sig_counts
     ref_perc_err = st_err_ref_counts / avg_ref_counts
     st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
-    
+
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
@@ -538,15 +547,15 @@ if __name__ == '__main__':
     ax.errorbar(taus, avg_sig_counts, yerr = st_err_sig_counts, fmt = 'r-', label = 'signal')
     ax.errorbar(taus, avg_ref_counts, yerr = st_err_ref_counts,fmt = 'g-', label = 'refernece')
     ax.legend()
-    
+
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Counts')
-    
-    
+
+
     ax = axes_pack[1]
     ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'b-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Normalized signal')
-    
+
     # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)

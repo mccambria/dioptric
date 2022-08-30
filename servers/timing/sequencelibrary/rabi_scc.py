@@ -167,7 +167,8 @@ def get_seq(pulse_streamer, config, args):
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
         (shelf_time, LOW),
-        (ion_time, HIGH),
+        # (ion_time, HIGH),
+        (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
         (post_wait_time, LOW),
@@ -267,8 +268,8 @@ if __name__ == "__main__":
     # seq_args = [10000.0, 1000.0, 100, 50, 0, 50, 
     #             'integrated_520', 'laserglow_589', 'cobolt_638', 
     #             'signal_generator_sg394', 1, None, None, 1.0, 0.5]
-    seq_args = [5000.0, 1000.0, 1000, 32, 0, 32, 
-                'integrated_520', 'laserglow_589', 'cobolt_638', 
+    seq_args = [1000.0, 1000.0, 300, 48, 0, 48,
+                'integrated_520', 'laserglow_589', 'cobolt_638',
                 'signal_generator_bnc835', 1, None, None, 0.0, 0.2]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

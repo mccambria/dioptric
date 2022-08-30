@@ -185,6 +185,6 @@ if __name__ == "__main__":
     # print(config)
     tool_belt.set_delays_to_zero(config)
     # seq_args = [0, 1000.0, 350, 23, 12, 100000, 1, 2, 'integrated_520', None]
-    # seq_args = [5000, 0, 1000, 2000, 1000, 2, 3, 0,  3, 'integrated_520', None]
+    seq_args = [5000, 0, 1000, 2000, 1000, 0, 3, 0,  3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

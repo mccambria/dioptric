@@ -2,7 +2,8 @@
 """
 Dynamical decoupling XY4.
 
-
+One unit of XY4 is defined as:
+    tau - pi_x - tau - tau - pi_y - tau - tau - pi_x - tau - tau - pi_y - tau
 
 Created on Fri Aug 5 2022
 
@@ -42,7 +43,7 @@ def main(
     nv_sig,
     apd_indices,
     precession_dur_range,
-    num_dd_reps,
+    num_xy4_reps,
     num_steps,
     num_reps,
     num_runs,
@@ -55,7 +56,7 @@ def main(
             nv_sig,
             apd_indices,
             precession_dur_range,
-            num_dd_reps,
+            num_xy4_reps,
             num_steps,
             num_reps,
             num_runs,
@@ -69,7 +70,7 @@ def main_with_cxn(
     nv_sig,
     apd_indices,
     precession_time_range,
-    num_dd_reps,
+    num_xy4_reps,
     num_steps,
     num_reps,
     num_runs,
@@ -94,6 +95,9 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    # pi pulses are slightly different than just half of the rabi period
+    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
+    # uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -110,8 +114,11 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
+    taus = taus + 500
+    print(taus)
     # Convert to ms
-    plot_taus = taus / 1000
+    #plot_taus = taus / 1000
+    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -154,14 +161,14 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    pi_pulse_reps = 1# num_dd_reps*8
+    pi_pulse_reps = num_xy4_reps*4
     seq_args = [
-        min_precession_time,
+        taus[0],
         polarization_time,
         gate_time,
         uwave_pi_pulse,
         uwave_pi_on_2_pulse,
-        max_precession_time,
+        taus[-1],
         pi_pulse_reps,
         apd_indices[0],
         state.value,
@@ -171,7 +178,7 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_args)
+    print(seq_args)
     # return
     #    print(seq_time)
 
@@ -184,7 +191,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    # return
+    #return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -218,7 +225,9 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        cxn.arbitrary_waveform_generator.load_xy4n(num_dd_reps)
+        cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
+        # cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
+        
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -318,15 +327,15 @@ def main_with_cxn(
         ax.cla()
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
         ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-        ax.set_xlabel(r"$\tau (\mathrm{\mu s}$)")
+        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
         
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
-        ax.set_title("XY4-{} Measurement".format(num_dd_reps))
-        ax.set_xlabel(r"$\tau (\mathrm{\mu s}$)")
+        ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
@@ -345,15 +354,13 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            'num_dd_reps': num_dd_reps,
+            'num_xy4_reps': num_xy4_reps,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
             "uwave_power-units": "dBm",
-            "rabi_period": rabi_period,
-            "rabi_period-units": "ns",
             "uwave_pi_pulse": uwave_pi_pulse,
             "uwave_pi_pulse-units": "ns",
             "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
@@ -364,6 +371,8 @@ def main_with_cxn(
             "num_steps": num_steps,
             "num_reps": num_reps,
             "run_ind": run_ind,
+            "taus": taus.tolist(),
+            "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
@@ -391,15 +400,15 @@ def main_with_cxn(
     ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-    ax.set_xlabel(r"$\tau (\mathrm{\mu s}$)")
+    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
     ax.legend()
 
     ax = axes_pack[1]
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_title("XY4-{} Measurement".format(num_dd_reps))
-    ax.set_xlabel(r"$\tau (\mathrm{\mu s}$)")
+    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -419,15 +428,13 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
-        'num_dd_reps': num_dd_reps,
+        'num_xy4_reps': num_xy4_reps,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
         "uwave_power-units": "dBm",
-        "rabi_period": rabi_period,
-        "rabi_period-units": "ns",
         "uwave_pi_pulse": uwave_pi_pulse,
         "uwave_pi_pulse-units": "ns",
         "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
@@ -438,6 +445,8 @@ def main_with_cxn(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
+        "taus": taus.tolist(),
+        "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
