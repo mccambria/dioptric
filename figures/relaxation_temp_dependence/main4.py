@@ -260,11 +260,14 @@ def main(
     handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
     if leg1 is not None:
         labels = labels[2:]
+    loc = "upper right"
+    if plot_type == "T2_frac":
+        loc = "upper left"
     leg2 = ax1.legend(
         handles,
         labels,
         title="Prior results",
-        loc="upper right",
+        loc=loc,
         # bbox_to_anchor=(1.0, 0.82),
         handlelength=1,
     )
@@ -289,17 +292,17 @@ if __name__ == "__main__":
 
     ### Main
 
-    # plot_type = "T2_max"
-    # y_range = [7e-4, 30]
-    # yscale = "log"
-    # temp_range = [-5, 480]
-    # xscale = "linear"
-
-    plot_type = "T2_frac"
-    y_range = [0, 1]
-    yscale = "linear"
-    temp_range = [-5, 310]
+    plot_type = "T2_max"
+    y_range = [7e-4, 30]
+    yscale = "log"
+    temp_range = [-5, 480]
     xscale = "linear"
+
+    # plot_type = "T2_frac"
+    # y_range = [0, 0.6]
+    # yscale = "linear"
+    # temp_range = [-5, 310]
+    # xscale = "linear"
 
     rates_to_plot = ["hopper"]
 
