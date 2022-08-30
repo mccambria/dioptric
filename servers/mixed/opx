@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+"""
+erver for the Quantum Machines OPX
+
+Created on August 29th, 2022
+
+@author: mccambria
+
+### BEGIN NODE INFO
+[info]
+name = opx
+version = 1.0
+description =
+
+[startup]
+cmdline = %PYTHON% %FILE%
+timeout = 20
+
+[shutdown]
+message = 987654321
+timeout = 5
+### END NODE INFO
+"""
+
+
+from labrad.server import LabradServer
+from labrad.server import setting
+from twisted.internet.defer import ensureDeferred
+from numpy import count_nonzero, nonzero, concatenate
+import numpy as np
+import logging
+import re
+import time
+import socket
+from inputs.interfaces.tagger import Tagger
+from timing.interfaces.pulse_gen import PulseGen
+
+
+class OPX(LabradServer, Tagger, PulseGen):
+    name = "opx"
+    pc_name = socket.gethostname()
+
+    def initServer(self):
+        pass
+
+__server__ = OPX()
+
+if __name__ == "__main__":
+    from labrad import util
+
+    util.runServer(__server__)

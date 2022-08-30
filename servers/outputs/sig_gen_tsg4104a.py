@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the SRS SG394 microwave signal generator.
+Output server for the Tektronix TSG4104A microwave signal generator.
 
 Created on Wed Apr 10 12:53:38 2019
 
@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = signal_generator_sg394
+name = sig_gen_tsg4104a
 version = 1.0
 description =
 
@@ -25,16 +25,18 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
+import socket
+import logging
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
-import socket
-import logging
+import time
+from interfaces.vector_sig_gen import VectorSigGen
 
 
-class SignalGeneratorSg394(LabradServer):
-    name = 'signal_generator_sg394'
+class SigGenTsg4104a(LabradServer, VectorSigGen):
+    name = 'sig_gen_tsg4104a'
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -49,15 +51,17 @@ class SignalGeneratorSg394(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
-        p.get('signal_generator_sg394_visa_address')
+        p.get('signal_generator_tsg4104a_visa_address')
         p.cd(['', 'Config', 'Wiring', 'Daq'])
-        p.get('di_clock')  
+        p.get('di_clock')
+        # p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
         resource_manager = visa.ResourceManager()
-        self.sig_gen = resource_manager.open_resource(config[0])
+        self.sig_gen = resource_manager.open_resource(config[0], 
+                                                      open_timeout=60)
         # Set the VISA read and write termination. This is specific to the
         # instrument - you can find it in the instrument's programming manual
         self.sig_gen.read_termination = '\r\n'
@@ -96,7 +100,7 @@ class SignalGeneratorSg394(LabradServer):
 
         # Determine how many decimal places we need
         precision = len(str(freq).split('.')[1])
-        self.sig_gen.write('FREQ {0:.{1}f} GHZ'.format(freq, precision))
+        self.sig_gen.write('FREQ {0:.{1}f}GHZ'.format(freq, precision))
 
     @setting(3, amp='v[]')
     def set_amp(self, c, amp):
@@ -109,57 +113,69 @@ class SignalGeneratorSg394(LabradServer):
 
         # Determine how many decimal places we need
         precision = len(str(amp).split('.')[1])
-        cmd = 'AMPR {0:.{1}f} DBM'.format(amp, precision)
-        # logging.info(cmd)
-        self.sig_gen.write(cmd)
+        self.sig_gen.write('AMPR {0:.{1}f}DBM'.format(amp, precision))
 
-    # def load_stream_writer(self, task_name, voltages, period):
-    #     # Close the existing task and create a new one
-    #     if self.task is not None:
-    #         self.task.close()
-    #     task = nidaqmx.Task(task_name)
-    #     self.stream_task = task
+    def load_stream_writer(self, task_name, voltages, period):
+        # Close the existing task and create a new one
+        if self.task is not None:
+            self.task.close()
+        task = nidaqmx.Task(task_name)
+        self.stream_task = task
 
-    #     # Set up the output channels
-    #     task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
-    #                                          min_val=-1.0, max_val=1.0)
+        # Set up the output channels
+        task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
+                                             min_val=-1.0, max_val=1.0)
 
-    #     # Set up the output stream
-    #     output_stream = nidaqmx.task.OutStream(task)
-    #     writer = stream_writers.AnalogMultiChannelWriter(output_stream)
+        # Set up the output stream
+        output_stream = nidaqmx.task.OutStream(task)
+        writer = stream_writers.AnalogMultiChannelWriter(output_stream)
 
-    #     # Configure the sample to advance on the rising edge of the PFI input.
-    #     # The frequency specified is just the max expected rate in this case.
-    #     # We'll stop once we've run all the samples.
-    #     freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-    #     task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
-    #                                     sample_mode=AcquisitionType.CONTINUOUS)
+        # Configure the sample to advance on the rising edge of the PFI input.
+        # The frequency specified is just the max expected rate in this case.
+        # We'll stop once we've run all the samples.
+        freq = float(1/(period*(10**-9)))  # freq in seconds as a float
+        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
+                                        sample_mode=AcquisitionType.CONTINUOUS)
 
-    #     # Start the task before writing so that the channel will sit on
-    #     # the last value when the task stops. The first sample won't actually
-    #     # be written until the first clock signal.
-    #     task.start()
+        # Start the task before writing so that the channel will sit on
+        # the last value when the task stops. The first sample won't actually
+        # be written until the first clock signal.
+        task.start()
 
-    #     writer.write_many_sample(voltages)
+        writer.write_many_sample(voltages)
 
-    # @setting(4, fm_range='v[]', voltages='*v[]', period='i')
-    # def load_fm(self, c, fm_range, voltages, period):
-    #     """Set up frequency modulation via an external voltage. This has never
-    #     been used or tested and needs work.
-    #     """
+    @setting(4, fm_range='v[]', voltages='*v[]', period='i')
+    def load_fm(self, c, fm_range, voltages, period):
+        """Set up frequency modulation via an external voltage. This has never
+        been used or tested and needs work.
+        """
 
-    #     # Set up the DAQ AO that will control the modulation
-    #     self.load_stream_writer('UwaveSigGen-load_fm', voltages, period)
-    #     # Simple FM is type 1, subtype 0
-    #     self.sig_gen.write('TYPE 1')
-    #     self.sig_gen.write('STYP 0')
-    #     # Set the range of the modulation
-    #     precision = len(str(fm_range).split('.')[1])
-    #     self.sig_gen.write('FDEV {0:.{1}f}GHZ'.format(fm_range, precision))
-    #     # Set to an external source
-    #     self.sig_gen.write('MFNC 5')
-    #     # Turn on FM
-    #     self.sig_gen.write('MODL 1')
+        # Set up the DAQ AO that will control the modulation
+        self.load_stream_writer('UwaveSigGen-load_fm', voltages, period)
+        # Simple FM is type 1, subtype 0
+        self.sig_gen.write('TYPE 1')
+        self.sig_gen.write('STYP 0')
+        # Set the range of the modulation
+        precision = len(str(fm_range).split('.')[1])
+        self.sig_gen.write('FDEV {0:.{1}f}GHZ'.format(fm_range, precision))
+        # Set to an external source
+        self.sig_gen.write('MFNC 5')
+        # Turn on FM
+        self.sig_gen.write('MODL 1')
+
+    @setting(7)
+    def load_iq(self, c):
+        """
+        Set up external IQ modulation
+        """
+
+        # QAM is type 7
+        self.sig_gen.write('TYPE 7')
+        # self.sig_gen.write('STYP 1')
+        # External mode is modulation function 5
+        self.sig_gen.write('QFNC 5')
+        # Turn on modulation
+        self.sig_gen.write('MODL 1')
 
 
     @setting(5)
@@ -171,50 +187,23 @@ class SignalGeneratorSg394(LabradServer):
         if task is not None:
             task.close()
 
-    @setting(7)
-    def load_iq(self, c):
-        """
-        Set up external IQ modulation
-        """
-
-        # The sg394 only supports up to 10 dBm of power output with IQ modulation
-        # Let's check what the amplitude is set as, and if it's over 10 dBm, 
-        # we'll quit out and save a note in the labrad logging
-        if float(self.sig_gen.query('AMPR?')) > 10:
-            msg= 'IQ modulation on sg394 supports up to 10 dBm. The power was set to {} dBm and the operation was stopped.'.format(self.sig_gen.query('AMPR?'))
-            raise Exception(msg)
-            return
-        
-        # QAM is type 7
-        self.sig_gen.write('TYPE 7')
-        # STYP 1 is vector modulation
-        # self.sig_gen.write('STYP 1')
-        # External mode is modulation function 5
-        self.sig_gen.write('QFNC 5')
-        # Turn on modulation
-        cmd = 'MODL 1'
-        self.sig_gen.write(cmd)
-        # logging.info(cmd)
-        
-
     @setting(6)
     def reset(self, c):
         self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
         self.mod_off(c)
-        # Clean up the DAQ task!
+        # # Clean up the DAQ task!
         # if self.task is not None:
         #     crash = 1/0
-        # Set the DAQ AO to 0
+        # # Set the DAQ AO to 0
         # with nidaqmx.Task() as task:
         #     # Set up the output channels
         #     task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
         #                                          min_val=-1.0, max_val=1.0)
         #     task.write(0.0)
-    
 
 
-__server__ = SignalGeneratorSg394()
+__server__ = SigGenTsg4104a()
 
 if __name__ == '__main__':
     from labrad import util
