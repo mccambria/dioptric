@@ -260,12 +260,14 @@ def main(
     handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
     if leg1 is not None:
         labels = labels[2:]
+    loc = "upper right"
+    if plot_type == "T2_frac":
+        loc = "upper left"
     leg2 = ax1.legend(
         handles,
         labels,
         title="Prior results",
-        # loc="upper right",
-        loc="lower left",
+        loc=loc,
         # bbox_to_anchor=(1.0, 0.82),
         handlelength=1,
         handletextpad=0.5,
