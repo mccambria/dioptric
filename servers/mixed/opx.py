@@ -53,7 +53,7 @@ class OPX(LabradServer, Tagger, PulseGen):
    
     #%% sequence loading and executing functions ###
         
-    def get_seq(self, seq_file, seq_args_string): # from pulse streamer. DONE
+    def get_seq(self, seq_file, seq_args_string): # this returns the qua sequence without repeats. from pulse streamer. DONE
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == ".py":  # py: import as a module
@@ -63,11 +63,28 @@ class OPX(LabradServer, Tagger, PulseGen):
             seq, final, ret_vals = seq_module.get_seq(        # here seq is the qua program. refer to opx sequence template      
                 self, self.config_dict, args
             )
+        
+        self.qua_program = seq
+        
+        return seq, final, ret_vals
+
+    def get_full_seq(self, seq_file, seq_args_string, num_repeat): # this one returns the full qua sequence with repeats, such as rabi with nreps=1e5. DONE
+        seq = None
+        file_name, file_ext = os.path.splitext(seq_file)
+        if file_ext == ".py":  # py: import as a module
+            seq_module = importlib.import_module(file_name)
+            args = tool_belt.decode_seq_args(seq_args_string)
             
+            seq, final, ret_vals = seq_module.get_full_seq(        # here seq is the qua program. refer to opx sequence template      
+                self, self.config_dict, args, num_repeat
+            )
+        
+        self.qua_program = seq
+        
         return seq, final, ret_vals
     
     @setting(1, seq_file="s", seq_args_string="s", returns="*?")
-    def stream_load(self, c, seq_file, seq_args_string=""): #from pulse streamer. for the opx all this function does is return back some property(s) of the sequence you want
+    def stream_load(self, c, seq_file, seq_args_string=""): #from pulse streamer. for the opx all this function does is return back some property(s) of the sequence you want. DONE
         """For the OPX, this will just initiate the communication with the QOP
         Params
             seq_file: str
@@ -86,13 +103,16 @@ class OPX(LabradServer, Tagger, PulseGen):
         return ret_vals
 
     @setting(2, num_repeat="i")
-    def stream_start(self, c, num_repeat=1): # from pulse streamer. The OPX doesn't use this because it needs the program to be inputted, so it only uses stream_immediate(). 
-                                             # If someone tries to use this, it will spit out an error telling them to change stream_start() to stream_immediate()
-        print("Error: Must use stream_immediate() instead. You are using the OPX, which requires that. Update the routine so it uses stream_immediate(), which should have no effect on the routine.")
-        return
+    def stream_start(self, c, num_repeat=1): # from pulse streamer. It will start the full sequence. DONE
+        seq, final, ret_vals = self.get_full_seq(seq_file, seq_args_string, num_repeat)
+        self.qmm = QuantumMachinesManager(qop_ip) #open communication with the QOP
+        self.qm = qmm.open_qm(config)          
+        # execute QUA program
+        self.job = qm.execute(self.qua_program)#maybe I handle num_repeats by having the program have an input for number of iterations and do self.qua_program(num_repeats)                
+        return 
     
     @setting(0, seq_file="s", num_repeat="i", seq_args_string="s", returns="*?")
-    def stream_immediate(self, c, seq_file, num_repeat=1, seq_args_string=""): # from pulse streamer. For the OPX this will get the sequence we want and run it. 
+    def stream_immediate(self, c, seq_file, num_repeat=1, seq_args_string=""): # from pulse streamer. For the OPX this will get the full sequence we want and run it. DONE
         """Load the sequence from seq_file and immediately run it for
         the specified number of repitions. End in the specified
         final output state.
@@ -112,29 +132,40 @@ class OPX(LabradServer, Tagger, PulseGen):
                 Arbitrary list returned by the sequence file
         """
         
-        qua_seq, final, ret_vals = self.get_seq(self, seq_file, seq_args_string)
+        seq, final, ret_vals = self.get_full_seq(seq_file, seq_args_string, num_repeat)
         
-        qmm = QuantumMachinesManager(qop_ip) #open communication with the QOP
-        qm = qmm.open_qm(config)
+        self.qmm = QuantumMachinesManager(qop_ip) #open communication with the QOP
+        self.qm = qmm.open_qm(config)          
         # execute QUA program
-        job = qm.execute(qua_seq)
-        
-        return job ## In the pulse streamer server, this function just returns the ret vals but its not even used usually. We will want something like read_counter_simple to have the job as an input. 
-    
+        self.job = qm.execute(self.qua_program)     
+        return ret_vals
     
     #%% counting and time tagging functions ### 
         
     
     # @jit(nopython=True)
     @setting(5, num_to_read="i", returns="*w")
-    def read_counter_simple(self, c, num_to_read=None): #from apd tagger
-
+    def read_counter_simple(self, c, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
+    
+        results = fetching_tool(self.job, data_list=["sig_counts"], mode="wait_for_all")
+        
+        while results.is_processing():
+            # Fetch results
+            return_counts = results.fetch_all()
+        
         return return_counts
 
     # @jit(nopython=True)
     @setting(6, num_to_read="i", returns="*2w")
     def read_counter_separate_gates(self, c, num_to_read=None): #from apd tagger
-
+    
+        results = fetching_tool(self.job, data_list=["sig_counts","ref_counts"], mode="wait_for_all")
+        
+        while results.is_processing():
+            # Fetch results
+            sig_counts, ref_counts = results.fetch_all()
+            return_counts = [sig_counts, ref_counts]
+        
         return return_counts
 
     # @jit(nopython=True)
