@@ -47,6 +47,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
 ):
 
@@ -60,6 +61,7 @@ def main(
             num_steps,
             num_reps,
             num_runs,
+            taus,
             state,
         )
         return angle
@@ -74,6 +76,7 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
+    taus = [],
     state=States.LOW,
 ):
 
@@ -107,18 +110,19 @@ def main_with_cxn(
     # Must be ints
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
-
-    taus = numpy.linspace(
-        min_precession_time,
-        max_precession_time,
-        num=num_steps,
-        dtype=numpy.int32,
-    )
-    taus = taus + 500
+    
+    if len(taus) == 0:
+        taus = numpy.linspace(
+            min_precession_time,
+            max_precession_time,
+            num=num_steps,
+            dtype=numpy.int32,
+        )
+    # taus = taus + 500
     print(taus)
     # Convert to ms
     #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    plot_taus = (taus * 2 *4 * num_xy4_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -314,8 +318,9 @@ def main_with_cxn(
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        # print(numpy.average(avg_ref_counts))
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -372,6 +377,7 @@ def main_with_cxn(
             "num_reps": num_reps,
             "run_ind": run_ind,
             "taus": taus.tolist(),
+            "plot_taus":plot_taus.tolist(),
             "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
@@ -446,6 +452,7 @@ def main_with_cxn(
         "num_reps": num_reps,
         "num_runs": num_runs,
         "taus": taus.tolist(),
+        "plot_taus":plot_taus.tolist(),
         "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
@@ -475,25 +482,41 @@ def main_with_cxn(
 if __name__ == "__main__":
     
     folder= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
-    file = '2022_08_29-22_36_53-rubin-nv1_2022_08_10'
+    file1 = '2022_08_31-01_53_17-rubin-nv1_2022_08_10'
+    file4 = '2022_08_31-02_41_31-rubin-nv4_2022_08_10'
+    file5 = '2022_08_31-03_29_44-rubin-nv5_2022_08_10'
+    file8 = '2022_08_31-04_18_27-rubin-nv8_2022_08_10'
     
+    file = '2022_08_31-23_31_16-rubin-nv4_2022_08_10'
+    
+    file_list = []
+    fig, ax = plt.subplots()
+    
+    # for file in file_list:
     data = tool_belt.get_raw_data(file, folder)
     taus = numpy.array(data['taus'])
     num_xy4_reps = data['num_xy4_reps']
     norm_avg_sig = data['norm_avg_sig']
     num_steps=data['num_steps']
+    nv_sig = data['nv_sig']
+    
     
     tau_step = taus[1]-taus[0]
     plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
     
-    fig, ax = plt.subplots()
-    ax.plot(plot_taus, norm_avg_sig, "b-")
+    ax.plot(plot_taus, norm_avg_sig, 'bo')
     ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
     ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
+    # ax.legend()
+    
+    revival_t = nv_sig['t2_revival_time']/1e3
+    for i in range(6+1):
+        rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
+        ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
 
-    transform = numpy.fft.rfft(norm_avg_sig)
-    freqs = numpy.fft.rfftfreq(num_steps, d=tau_step/1000)
-    transform_mag = numpy.absolute(transform)
-    fig, ax = plt.subplots()
-    ax.plot(freqs, transform_mag)
+    # transform = numpy.fft.rfft(norm_avg_sig)
+    # freqs = numpy.fft.rfftfreq(num_steps, d=tau_step/1000)
+    # transform_mag = numpy.absolute(transform)
+    # fig, ax = plt.subplots()
+    # ax.plot(freqs, transform_mag)

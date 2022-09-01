@@ -382,7 +382,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 5
+    num_runs = 3
 
     period = rabi.main(
         nv_sig,
@@ -472,8 +472,8 @@ def do_spin_echo(nv_sig, apd_indices, state = States.HIGH):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 30  # us
-    num_steps = int(max_time/1+ 1)  # 1 point per 0.5 us
+    max_time = 4  # us
+    num_steps = int(max_time/0.05+ 1)  # 1 point per 1 us
     precession_time_range = [0, max_time*10**3]
 
     # revival_time= 9.934e3
@@ -541,52 +541,23 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
 
 def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
 
-    step_size = 1 # us
-    # T_min = 1640
-    # T_max = 1710
-    # try 340 for XY4-2 to see first revival
+    step_size = 0.5 # us
+    shift = 100 #ns
+    T_min = 0
+    T_max = 220
     
-    revival_time= nv_sig['t2_revival_time']
-    T_min = (revival_time/1e3 - 3)*(2*4*num_xy4_reps) 
-    T_max = (revival_time/1e3 + 3)*(2*4*num_xy4_reps)
+    # revival_time= nv_sig['t2_revival_time']
+    # T_min = (revival_time/1e3 - 3)*(2*4*num_xy4_reps) 
+    # T_max = (revival_time/1e3 + 3)*(2*4*num_xy4_reps)
     
     max_time = T_max / (2*4*num_xy4_reps)  # us
     min_time = T_min / (2*4*num_xy4_reps) #us
     num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
     # min_time =0.0# 1 / (2*pi_pulse_reps) #us
     # num_steps = int(T/1+1 )  # 1 point per 1 us
-    precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
+    precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
 
-    # num_xy4_reps = 1
-    num_reps = 1e4
-    num_runs= 40
-
-
-    state = States.HIGH
-
-
-
-    dynamical_decoupling_xy4.main(
-        nv_sig,
-        apd_indices,
-        precession_time_range,
-        num_xy4_reps,
-        num_steps,
-        num_reps,
-        num_runs,
-        state,
-    )
-    return 
-
-def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
-
-    revival_time= nv_sig['t2_revival_time']
-    num_revivals = 2
-    precession_time_range = [0, revival_time*(num_revivals - 1)]
-    num_steps= int(num_revivals * 2 - 1)
-
-    # num_xy4_reps = 1
     num_reps = 1e4
     num_runs= 75
 
@@ -603,7 +574,64 @@ def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
         num_steps,
         num_reps,
         num_runs,
-        state,
+        state=state,
+    )
+    return 
+
+def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
+
+    revival_time= nv_sig['t2_revival_time']
+    num_revivals = 6
+    precession_time_range = [0, revival_time*(num_revivals - 1)]
+    #num_steps= int(num_revivals * 2 - 1)
+    
+    dt = 5e3 #us
+    dt_xy4 = dt/(2*4*num_xy4_reps)
+    taus = [0, dt_xy4]
+    for ind in range(num_revivals-1):
+        # print(ind)
+        i = ind+1
+        t0 = revival_time*(i-0.5)
+        t1 = revival_time*i - dt_xy4
+        t2 = revival_time*i
+        t3 = revival_time*i + dt_xy4
+        taus = taus + [t0, t1, t2, t3]
+    
+    i = num_revivals
+    t0 = revival_time*(i-0.5)
+    t1 = revival_time*i - dt_xy4
+    t2 = revival_time*i
+    taus = taus + [t0, t1, t2]
+    # print(taus)
+    
+    taus = numpy.array(taus)
+    num_steps=len(taus)
+    # taus = numpy.linspace(
+    #     precession_time_range[0],
+    #     precession_time_range[1],
+    #     num=num_steps,
+    #     dtype=numpy.int32,
+    # )
+    # taus[0] = 500
+
+    # num_xy4_reps = 1
+    num_reps = 1e4
+    num_runs= 75
+
+
+
+
+
+    dynamical_decoupling_xy4.main(
+        nv_sig,
+        apd_indices,
+        precession_time_range,
+        num_xy4_reps,
+        num_steps,
+        num_reps,
+        num_runs,
+        taus = taus,
+        state = States.HIGH,
     )
     return 
 
@@ -1096,8 +1124,8 @@ if __name__ == "__main__":
     nv_sig_10["expected_count_rate"] = 13
     nv_sig_10["resonance_LOW"] = 2.6053
     nv_sig_10["rabi_LOW"] = 96
-    nv_sig_10["resonance_HIGH"] = 3.1345
-    nv_sig_10["rabi_HIGH"] = 90.1
+    nv_sig_10["resonance_HIGH"] = 3.1352
+    nv_sig_10["rabi_HIGH"] = 87.9
     nv_sig_10["t2_revival_time"] = 9.934e3
 
 
@@ -1188,9 +1216,10 @@ if __name__ == "__main__":
         #do_dd_cpmg(nv_sig, apd_indices, 4, 200 )
         # do_dd_xy8(nv_sig, apd_indices, 1 )
         
-        for N in [1]:
-            do_dd_xy4(nv_sig, apd_indices, N) 
-        #     do_dd_xy4_revivals(nv_sig, apd_indices, N)
+        for N in [2,3, 4]:
+              do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
+        for nv_sig in [nv_sig_4, nv_sig_1, nv_sig_5, nv_sig_8]:
+            do_dd_xy4(nv_sig, apd_indices,2) 
         
         #do_dd_xy8(nv_sig, apd_indices, 1 ) 
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
