@@ -442,8 +442,7 @@ class ApdTagger(LabradServer):
 
         # Just find the sum of each sample in complete_counts
         return_counts = [
-            np.sum(sample, dtype=int) for sample in complete_counts
-        ]
+            np.sum(sample, dtype=int) for sample in complete_counts ]
 
         return return_counts
 
@@ -462,9 +461,7 @@ class ApdTagger(LabradServer):
 
         # Add the APD counts as vectors for each sample in complete_counts
         return_counts = [
-            np.sum(sample, 0, dtype=int).tolist()
-            for sample in complete_counts
-        ]
+            np.sum(sample, 0, dtype=int).tolist() for sample in complete_counts ]
 
         return return_counts
 
