@@ -45,7 +45,8 @@ def qua_program(args, num_reps):
         
         # I make two of each because we can have up to two APDs (two analog inputs), It will save all the streams that are actually used
         
-        counts_gate1 = declare(int)
+        apd_indices_st = declare_stream()
+        save(apd_indices,apd_indices_st)
         counts_gate1_apd_0 = declare(int)  # variable for number of counts
         counts_gate1_apd_1 = declare(int)
         counts_gate1 = [counts_gate1_apd_0,counts_gate1_apd_1]
@@ -55,6 +56,8 @@ def qua_program(args, num_reps):
         times_gate1_apd_0 = declare(int, size=100)  # why input a size??
         times_gate1_apd_1 = declare(int, size=100)
         times = [times_gate1_apd_0,times_gate1_apd_1]
+        
+        times_st = declare_stream()
         
         n = declare(int)
         
@@ -76,18 +79,24 @@ def qua_program(args, num_reps):
             # in all sequences, these lists need to be populated with however many gates we have. In this case 2. 
             counts_apd_0 = [counts_gate1[0]]
             counts_apd_1 = [counts_gate1[1]]
+            times_apd_0 = [times[0]]
+            times_apd_1 = [times[1]]
             
             # the code below should apply to all sequences. It takes all the counts from both possible apds and saves it based on which apds are actually in use
             counts_all_apds = [counts_apd_0,counts_apd_1]
             counts_cur_apds = []
+            times_all_apds = [times_apd_0,times_apd_1]
+            times_cur_apds = []
             for apd_ind in apd_indices:
                 counts_cur_apds.append(counts_all_apds[apd_ind])
-                save(counts_cur_apds, counts_st) 
-        # save time tags too?
-            
+                times_cur_apds.append(times_all_apds[apd_ind])
+            save(counts_cur_apds, counts_st) 
+            save(times_cur_apds, times_st) 
+
         with stream_processing():
             counts_st.save("counts")
             times_st.save("times")
+            apd_indices_st.save("apd_indices")
         
     return seq
 

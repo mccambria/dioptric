@@ -275,15 +275,28 @@ class OPX(LabradServer, Tagger, PulseGen):
 
     
     @setting(7, num_to_read="i", returns="*s*i")
-    def read_tag_stream(self, c, num_to_read=None): #from apd tagger . channels??? Also need this to work with however I save the data
+    def read_tag_stream(self, c, num_to_read=None): #from apd tagger 
     
-        results = fetching_tool(self.job, data_list=["counts", "time_tags"], mode="wait_for_all")
+        results = fetching_tool(self.job, data_list=["times_st", "apd_indices"], mode="wait_for_all")
+        
+        channels_list = []
         
         while results.is_processing():
             # Fetch results
-            total_counts, time_tags = results.fetch_all()
+            times, apds = results.fetch_all()
+            times_list = []
+            for i in range(len(times)):
+                times_list = times_list + times[i]
+                channels_list = channels_list + np.full(len(times[i]),apd_indices[i]).tolist()
+            times_array = np.array(times_list)
+            channels_array = np.array(channels_list)
+            ind_order = np.argsort(times_array)
+            time_tags = times_array[ind_order]
+            channels = channels_array[ind_order]
+            time_tags = time_tags.tolist()
+            channels = channels.tolist()
             
-        return time_tags, channels
+        return time_tags, channels 
 
     
     @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
