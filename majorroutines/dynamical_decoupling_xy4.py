@@ -230,7 +230,6 @@ def main_with_cxn(
         sig_gen_cxn.uwave_on()
         
         cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
-        # cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
         
 
         # Set up the laser
@@ -481,39 +480,57 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     
-    folder= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
-    file1 = '2022_08_31-01_53_17-rubin-nv1_2022_08_10'
-    file4 = '2022_08_31-02_41_31-rubin-nv4_2022_08_10'
-    file5 = '2022_08_31-03_29_44-rubin-nv5_2022_08_10'
-    file8 = '2022_08_31-04_18_27-rubin-nv8_2022_08_10'
+    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
+    file1 = '2022_09_03-11_48_06-rubin-nv4_2022_08_10'
+    file2 = '2022_09_03-21_49_14-rubin-nv4_2022_08_10'
+    folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
+    file8 = '2022_09_04-07_49_33-rubin-nv4_2022_08_10'
     
-    file = '2022_08_31-23_31_16-rubin-nv4_2022_08_10'
     
-    file_list = []
+    file_list = [file1, file2]
     fig, ax = plt.subplots()
     
-    # for file in file_list:
-    data = tool_belt.get_raw_data(file, folder)
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, folder4)
+        taus = numpy.array(data['taus'])
+        num_xy4_reps = data['num_xy4_reps']
+        norm_avg_sig = data['norm_avg_sig']
+        num_steps=data['num_steps']
+        nv_sig = data['nv_sig']
+        plot_taus =data['plot_taus']
+    
+    
+    # tau_step = taus[1]-taus[0]
+    # plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    
+        ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+        # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        # ax.legend()
+        
+    data = tool_belt.get_raw_data(file8, folder8)
     taus = numpy.array(data['taus'])
-    num_xy4_reps = data['num_xy4_reps']
+    num_xy8_reps = data['num_xy8_reps']
     norm_avg_sig = data['norm_avg_sig']
     num_steps=data['num_steps']
     nv_sig = data['nv_sig']
+    plot_taus =data['plot_taus']
+
+
+# tau_step = taus[1]-taus[0]
+# plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+
+    ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY8-{}".format(num_xy8_reps))
+    # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+    # ax.set_ylabel("Contrast (arb. units)")
+    ax.legend()
     
-    
-    tau_step = taus[1]-taus[0]
-    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
-    
-    ax.plot(plot_taus, norm_avg_sig, 'bo')
-    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("Contrast (arb. units)")
-    # ax.legend()
-    
-    revival_t = nv_sig['t2_revival_time']/1e3
-    for i in range(6+1):
-        rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
-        ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
+    # revival_t = nv_sig['t2_revival_time']/1e3
+    # for i in range(6+1):
+    #     rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
+    #     ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
 
     # transform = numpy.fft.rfft(norm_avg_sig)
     # freqs = numpy.fft.rfftfreq(num_steps, d=tau_step/1000)

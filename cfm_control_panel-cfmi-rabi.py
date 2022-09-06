@@ -91,8 +91,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.25
     # scan_range = 0.2
     # scan_range = 0.15
-    # scan_range = 0.1
-    scan_range = 0.05
+    scan_range = 0.1
+    # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
@@ -103,8 +103,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps =120
     # num_steps = 90
-    # num_steps = 60
-    num_steps = 31
+    num_steps = 60
+    # num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -541,17 +541,17 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
 
 def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
 
-    step_size = 0.5 # us
+    step_size = 0.02 # us
     shift = 100 #ns
     T_min = 0
-    T_max = 220
+    T_max = 2
     
     # revival_time= nv_sig['t2_revival_time']
     # T_min = (revival_time/1e3 - 3)*(2*4*num_xy4_reps) 
     # T_max = (revival_time/1e3 + 3)*(2*4*num_xy4_reps)
     
-    max_time = T_max / (2*4*num_xy4_reps)  # us
-    min_time = T_min / (2*4*num_xy4_reps) #us
+    max_time = T_max #/ (2*4*num_xy4_reps)  # us
+    min_time = T_min #/ (2*4*num_xy4_reps) #us
     num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
     # min_time =0.0# 1 / (2*pi_pulse_reps) #us
     # num_steps = int(T/1+1 )  # 1 point per 1 us
@@ -637,31 +637,21 @@ def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
 
 def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
 
-    if True:
-        step_size = 2 # us
-        T_min = 0
-        T_max = 350
-        # try 340 for XY4-2 to see first revival
-        
-        # T_min = 140
-        # T_max = 180
-        
-        max_time = T_max / (2*8*num_xy8_reps)  # us
-        min_time = T_min / (2*8*num_xy8_reps) #us
-        num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
-        # min_time =0.0# 1 / (2*pi_pulse_reps) #us
-        # num_steps = int(T/1+1 )  # 1 point per 1 us
-        precession_time_range = [int(min_time*10**3), int(max_time*10**3)]
+    step_size = 0.02 # us
+    shift = 100 #ns
+    T_min = 0
+    T_max = 2
     
-    if False:
-        revival_time= nv_sig['t2_revival_time']
-        num_revivals = 10
-        precession_time_range = [0, revival_time*(num_revivals - 1)]
-        num_steps=num_revivals
-
-    # num_xy4_reps = 1
+    
+    max_time = T_max# / (2*8*num_xy8_reps)  # us
+    min_time = T_min# / (2*8*num_xy8_reps) #us
+    num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
+    # min_time =0.0# 1 / (2*pi_pulse_reps) #us
+    # num_steps = int(T/1+1 )  # 1 point per 1 us
+    precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
+    
     num_reps = 1e4
-    num_runs= 50
+    num_runs= 75
 
 
     state = States.HIGH
@@ -1014,16 +1004,6 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
 
-    nv_coords_list = [
-        [-0.853, -0.593, 6.16], # 1 
-        [-0.823, -0.597, 6.18], # 4
-        [-0.831, -0.609, 6.15], # 5
-        [-0.892, -0.619, 6.15], # 8
-        [-0.905, -0.601, 6.18], # 10
-        ]
-    nv_name_list = ['nv1', 'nv4', 'nv5', 'nv8', 'nv10']
-    
-    expected_count_rate_list = [12, 13, 15,  12, 13]
     sig_base = {
         "disable_opt":False,
         "ramp_voltages": False,
@@ -1091,7 +1071,7 @@ if __name__ == "__main__":
     nv_sig_4 = copy.deepcopy(sig_base)
     nv_sig_4["coords"] = [-0.823, -0.597, 6.18]
     nv_sig_4["name"] = "{}-nv4_2022_08_10".format(sample_name,)
-    nv_sig_4["expected_count_rate"] = 13
+    nv_sig_4["expected_count_rate"] = 12
     nv_sig_4["resonance_LOW"] = 2.6066
     nv_sig_4["rabi_LOW"] = 96
     nv_sig_4["resonance_HIGH"] = 3.1362
@@ -1216,10 +1196,16 @@ if __name__ == "__main__":
         #do_dd_cpmg(nv_sig, apd_indices, 4, 200 )
         # do_dd_xy8(nv_sig, apd_indices, 1 )
         
-        for N in [2,3, 4]:
-              do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
+        # for N in [2,3, 4]:
+        #       do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
+        
         for nv_sig in [nv_sig_4, nv_sig_1, nv_sig_5, nv_sig_8]:
-            do_dd_xy4(nv_sig, apd_indices,2) 
+            for N in [1, 2,3,4]:
+               do_dd_xy4(nv_sig, apd_indices, N) 
+            #do_dd_xy4(nv_sig, apd_indices, 2)  
+            #do_dd_xy4(nv_sig, apd_indices, 4)
+            for N in [1, 2]:
+               do_dd_xy8(nv_sig, apd_indices, N)
         
         #do_dd_xy8(nv_sig, apd_indices, 1 ) 
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)

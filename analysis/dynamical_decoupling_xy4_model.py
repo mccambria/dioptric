@@ -9,6 +9,7 @@ import numpy
 import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.integrate import quad
 from numpy import pi
 
 uN = 0.762e-3 #MHz/G
@@ -43,23 +44,40 @@ Bz= 94.6 #G
 # def pop_S_decay(t, N, Ax, Az, T):
 #     return (S_decay(t, N, Ax, Az, T) + 1)/2
 
-def S_bath(t, w0, a0, a1, a2, a3, a4):
-    # a0 =1
-    # a1 = 1
-    # a2=1
-    # a3=1
-    # a4=1
+# def S_bath(t, w0):
+#     # for XY4
+#     a_list = [18, -8, -24, 8, 16, -8, -8, 8, -2]
     
-    sum_expr = a0
-    a_vals = [a1, a2, a3, a4]
-    lambd = 0.25
-    sigma = 0.1 * w0 #/ (2*pi)
-    for i in range(4):
-        n=i+1
-        sum_expr += a_vals[i]*numpy.exp(1/8*n**2 * t**2 * sigma**2) * numpy.cos(n*t*w0)
+#     sum_expr = a_list[0]
+#     lambd = 0.25
+#     sigma = 0.1 * w0 #/ (2*pi)
+#     for i in range(len(a_list)-1):
+#         n=i+1
+#         sum_expr += a_list[n]*numpy.exp(1/8*n**2 * t**2 * sigma**2) * numpy.cos(n*t*w0*2*pi)
+#     print(sum_expr)
+#     X = lambd**2 * sum_expr
+#     return numpy.exp(-X)
+
+def F(w, t):
+    # return 2*numpy.sin(N*w*2*pi*t/2)**2 * (1 - 1/numpy.cos(w*2*pi*t/2))**2
+    return 8*numpy.sin(w*t/2)**4
+
+def SS(w ,t):
+    sigma = 0.1 * w
+    lamd = 0.25
+    wL = 0.10 * 2*pi
+    return numpy.sqrt(2*pi)/sigma * lamd**2 * (w*2*pi)**2 * numpy.exp(-(w*2*pi - wL)**2 / (2*sigma**2))
+
+def S_bath_SE(t, fL):
+    # F = 8*numpy.sin(w*t/2)**4
+    # S = numpy.sqrt(2*pi)/sigma * lamd**2 * (w*2*pi)**2 * numpy.exp(-(w*2*pi - wL)**2 / (2*sigma**2))
     
-    X = lambd**2 * sum_expr
-    return numpy.exp(-X)
+    integrand = lambda w:-F(w, t)*SS(w, t)/(2*pi*(w*2*pi)**2)
+    # arg = lambda w:-F(w, t)*SS(w, t)/(2*pi*(w*2*pi)**2)
+    
+    res, _ = quad(lambda w:integrand, 0,numpy.infty)
+
+    return numpy.exp(-res)
 
 def S(t, N, Ax, Az):
     B_vec = numpy.array([0,0,Bz])
@@ -86,8 +104,8 @@ def pop_S(t, N, Ax, Az):
 
     
 # file0 = "2022_08_31-15_13_26-rubin-nv4_2022_08_10"
-file0 = '2022_08_26-10_11_36-rubin-nv1_2022_08_10' 
-folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
+file0 = '2022_09_01-17_57_59-rubin-nv4_2022_08_10' 
+folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 file_list = [file0]
 master_plot_taus = []
@@ -99,14 +117,14 @@ for file in file_list:
     ref_counts = numpy.array(data['ref_counts'])
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
-    taus = numpy.linspace(
-        precession_time_range[0],
-        precession_time_range[-1],
-        num=num_steps,
-    )
-    plot_taus = taus*8/1000
+    # taus = numpy.linspace(
+    #     precession_time_range[0],
+    #     precession_time_range[-1],
+    #     num=num_steps,
+    # )
+    # plot_taus = taus*8/1000
     
-    # plot_taus = numpy.array(data['plot_taus'])
+    plot_taus = numpy.array(data['plot_taus'])
     
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
@@ -161,18 +179,21 @@ taus_lin = numpy.linspace(master_plot_taus[0], master_plot_taus[-1],600)
 #     ) 
 
 # taus_lin = numpy.linspace(0, 4/(Bz*uN_13C),600)
-fit_func = lambda  t, w0, a0, a1, a2, a3, a4: (S_bath(t, w0, a0, a1, a2, a3, a4) + 1)/2
-init_params = [0.005, 3, 2, -1, 0.5, 0.03]
-popt, pcov = curve_fit(
-    fit_func,
-    numpy.array(master_plot_taus),
-    master_norm_sig,
-    # sigma=norm_avg_sig_ste,
-    # absolute_sigma=True,
-    p0=init_params,
-    # bounds=(min_bounds, max_bounds),
-)
-print(popt)
+
+print(S_bath_SE(80, 0.1))
+
+fit_func = lambda  t, w: (S_bath_SE(t, w ) + 1)/2
+init_params = [500]
+# popt, pcov = curve_fit(
+#     fit_func,
+#     numpy.array(master_plot_taus),
+#     master_norm_sig,
+#     # sigma=norm_avg_sig_ste,
+#     # absolute_sigma=True,
+#     p0=init_params,
+#     # bounds=(min_bounds, max_bounds),
+# )
+# print(popt)
 ax.plot(
         taus_lin,
         fit_func(taus_lin, *init_params),
@@ -191,6 +212,6 @@ ax.plot(
     )    
 ax.set_xlabel("Coherence time, T (us)")
 ax.set_ylabel("Normalized signal Counts")
-ax.set_title('XY4-N')
+ax.set_title('XY4-2')
 
 

@@ -29,6 +29,27 @@ def S_1(t, a, b, f0, T):
 def S_2(t, a, b, f0, f1, T):
     term_ss = numpy.sin(f0*t*2*pi/2)**2 * numpy.sin(f1*t*2*pi/2)**2
     return (a - b* term_ss)*numpy.exp((-t/T)**3)
+
+def X_SE(t, fL, lambd, sigma_per ):
+    sigma= sigma_per*fL
+    # lambd = 0.25
+    a0 = 3
+    a1 = -4
+    a2 = 1
+    a_list = [a1, a2]
+    a_sum = a0
+    
+    for i in range(len(a_list)):
+        n = i+1
+        a_sum += a_list[i]*numpy.exp(n**2 * t**2 * sigma**2 / 8) * numpy.cos(n*t*fL*2*pi)
+
+    return lambd**2 * a_sum
+
+def S_bath_SE(t, fL, lambd, sigma_per, T2):
+    # I = quad(integrand, -numpy.inf, numpy.inf, args=(t, fL))
+    
+    return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(t/T2)**3)
+
     
 def pop_S_1(t, a, b, f0, T):
     return (S_1(t, a, b, f0,  T) + 1)/2
@@ -66,10 +87,10 @@ norm_avg_sig = (norm_avg_sig - (1-contrast))/(contrast)
 
 # norm_avg_sig = (max_ref- avg_sig_counts) / (1 - contrast) 
     
-fit_func = lambda t, b, f0, T: pop_S_1(t, 1, b, f0, T)
-init_params = [1,  0.1, 200]
-# fit_func = lambda t, b, f0,f1, T: pop_S_2(t, 1, b, f0, f1, T)
-# init_params = [1,  0.6, 9, 200]
+# fit_func = lambda t, b, f0, T: pop_S_1(t, 1, b, f0, T)
+# init_params = [1,  0.1, 200]
+fit_func = lambda t, fL, lambd, sigma_per, T2: (S_bath_SE(t,fL, lambd, sigma_per, T2) + 1)/2
+init_params = [0.1, 0.25, 0.1, 100]
 
 popt, pcov = curve_fit(
     fit_func,
