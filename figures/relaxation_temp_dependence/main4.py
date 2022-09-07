@@ -260,19 +260,27 @@ def main(
     handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
     if leg1 is not None:
         labels = labels[2:]
+    loc = "upper right"
+    if plot_type == "T2_frac":
+        loc = "upper left"
     leg2 = ax1.legend(
         handles,
         labels,
         title="Prior results",
-        loc="upper right",
+        loc=loc,
         # bbox_to_anchor=(1.0, 0.82),
         handlelength=1,
+        handletextpad=0.5,
+        borderpad=0.3,
+        borderaxespad=0.3,
     )
     # Add back in original legend
     if leg1 is not None:
         # anchor = leg2.get_bbox_to_anchor()
         # leg1.set_bbox_to_anchor(anchor)
-        leg1.set_bbox_to_anchor((0.687, 1.0))
+        # leg1.set_bbox_to_anchor((0.687, 1.0))
+        leg1.set_bbox_to_anchor((0.285, 0.0))
+        # leg1.set_bbox_to_anchor((0.0, 0.3))
         ax1.add_artist(leg1)
 
     # ax.legend()
@@ -295,13 +303,13 @@ if __name__ == "__main__":
     # temp_range = [-5, 480]
     # xscale = "linear"
 
-    plot_type = "T2_frac"
-    y_range = [0, 1]
-    yscale = "linear"
-    temp_range = [-5, 310]
-    xscale = "linear"
+    # plot_type = "T2_frac"
+    # y_range = [0, 1]
+    # yscale = "linear"
+    # temp_range = [-5, 310]
+    # xscale = "linear"
 
-    rates_to_plot = ["hopper"]
+    # rates_to_plot = ["hopper"]
 
     ### Supp
 
@@ -311,6 +319,13 @@ if __name__ == "__main__":
     # yscale = ["log", "linear"]
     # y_range = [[7e-4, 30], [-0.02, 0.62]]
     # rates_to_plot = [["hopper", "wu"], ["hopper"]]
+
+    plot_type = "T2_max_supp"
+    temp_range = [[-5, 480], [-8, 315]]
+    xscale = ["linear", "linear"]
+    yscale = ["log", "linear"]
+    y_range = [[7e-4, 30], [-0.02, 0.62]]
+    rates_to_plot = [["hopper"], ["hopper"]]
 
     ###
 

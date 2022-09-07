@@ -107,7 +107,7 @@ def get_seq(pulse_streamer, config, args):
     period = 0
     for el in train:
         period += el[0]
-    # print(period)
+    print(period)
 
     # Reionization pulse (green)
     delay = common_delay - green_delay_time
@@ -125,8 +125,8 @@ def get_seq(pulse_streamer, config, args):
         (post_wait_time, LOW),
         (sig_ref_buffer, LOW),
         # Reference
-        (reion_time, LOW),
         (reion_time, HIGH),
+        (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
         (shelf_time, LOW),
@@ -141,10 +141,10 @@ def get_seq(pulse_streamer, config, args):
     tool_belt.process_laser_seq(
         pulse_streamer, seq, config, green_laser_name,power_list , train
     )
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # Ionization pulse (red)
     delay = common_delay - red_delay_time
@@ -168,6 +168,7 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (shelf_time, LOW),
         (ion_time, HIGH),
+        # (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
         (post_wait_time, LOW),
@@ -178,10 +179,10 @@ def get_seq(pulse_streamer, config, args):
     tool_belt.process_laser_seq(
         pulse_streamer, seq, config, red_laser_name, power_list, train
     )
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # uwave pulses
     delay = common_delay - rf_delay_time
@@ -212,10 +213,10 @@ def get_seq(pulse_streamer, config, args):
         (rf_delay_time, LOW)
     ]
     seq.setDigital(pulser_do_sig_gen_gate, train)
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # Shelf/Readout with yellow
     delay = common_delay - yellow_delay_time
@@ -250,10 +251,10 @@ def get_seq(pulse_streamer, config, args):
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 yellow_laser_name, 
                                 power_list, train)
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -267,9 +268,7 @@ if __name__ == "__main__":
     # seq_args = [10000.0, 1000.0, 100, 50, 0, 50, 
     #             'integrated_520', 'laserglow_589', 'cobolt_638', 
     #             'signal_generator_sg394', 1, None, None, 1.0, 0.5]
-    seq_args = [5000.0, 1000.0, 1000, 32, 0, 32, 
-                'integrated_520', 'laserglow_589', 'cobolt_638', 
-                'signal_generator_bnc835', 1, None, None, 0.0, 0.2]
+    seq_args = [50000000.0, 20000.0, 20000.0, 0, 0, 0, 'integrated_520', 'laserglow_589', 'cobolt_638', 'signal_generator_bnc835', 1, None, None, 0.0, 0.2]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
     

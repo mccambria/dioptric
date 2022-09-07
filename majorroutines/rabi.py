@@ -163,7 +163,8 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          iq_mod_on = False,
-         opti_nv_sig = None):
+         opti_nv_sig = None,
+         return_popt=False):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,

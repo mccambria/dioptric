@@ -128,7 +128,7 @@ class ArbitraryWaveformGenerator(LabradServer):
     def load_xy8n(self, c, num_dd_reps):
 
         # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
-        phases = [0] +  [0, pi/2,0, pi/2, pi/2, 0, pi/2, 0]*num_dd_reps + [0]
+        phases = [0] +  [0, pi/2, 0, pi/2, pi/2, 0, pi/2, 0]*num_dd_reps + [0]
         phases = phases*4
         
         amp = self.iq_comp_amp

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 
-Sequence for determining the delay beween the rf and the AOM
+based off this paper: https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.105.077601
+
 
 Created on Sun Aug 6 11:22:40 2019
 
@@ -39,11 +40,11 @@ def get_seq(pulse_streamer, config, args):
     
     # Extract the delay (that the rf is applied from the start of the seq),
     # the readout time, and the pi pulse duration
-    durations = args[0:4]
+    durations = args[0:6]
     durations = [numpy.int64(el) for el in durations]
-    readout, pi_pulse, pi_on_2_pulse, polarization = durations
+    readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, polarization = durations
     
-    num_pi_pulse, state, apd_index, laser_name, laser_power = args[4:9]
+    num_uwave_pulses, state, apd_index, laser_name, laser_power = args[6:11]
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
     
@@ -51,7 +52,10 @@ def get_seq(pulse_streamer, config, args):
     aom_delay_time = config['Optics'][laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
     iq_delay_time = config['Microwaves']['iq_delay']
-    iq_trigger_time = numpy.int64(min(pi_on_2_pulse, 10))
+    iq_trigger_time = numpy.int64(min(pi_pulse/2, 10))
+    # make this twice the iq trigger time, and ensure it's even
+    uwave_sig_wait = int(iq_trigger_time*4 //2)
+    half_uwave_sig_wait = int(uwave_sig_wait/2)
     
     pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
@@ -65,17 +69,36 @@ def get_seq(pulse_streamer, config, args):
     
     seq = Sequence()
     
-    reference_microwave_train = [(pi_pulse, HIGH)]
-    if num_pi_pulse == 0: 
-        micorwave_duration = pi_pulse
-        signal_iq_train = [(iq_trigger_time, HIGH), (pi_pulse - iq_trigger_time, LOW)]
-    else:
-        micorwave_duration = pi_on_2_pulse + (pi_pulse)*num_pi_pulse + pi_on_2_pulse
-        signal_iq_train = [(iq_trigger_time, HIGH), (pi_on_2_pulse- iq_trigger_time, LOW)]
-        rep_pi_pulse_train = [(iq_trigger_time, HIGH), (pi_pulse - iq_trigger_time, LOW)]*num_pi_pulse
-        signal_iq_train = signal_iq_train + rep_pi_pulse_train + signal_iq_train
+    if num_uwave_pulses == 1:
+        micowave_signal_train = [(uwave_pulse_dur_1, HIGH)]
+        iq_signal_train = [(iq_trigger_time, HIGH),
+                           (wait_time - iq_trigger_time + uwave_pulse_dur_1, LOW)]
+    elif num_uwave_pulses == 2:
+        micowave_signal_train = [(uwave_pulse_dur_1, HIGH), 
+                                (uwave_sig_wait, LOW), 
+                                (uwave_pulse_dur_2, HIGH)]
+        iq_signal_train = [(iq_trigger_time, HIGH),
+                                (wait_time - iq_trigger_time + uwave_pulse_dur_1 + half_uwave_sig_wait, LOW),
+                                (iq_trigger_time, HIGH),
+                                (half_uwave_sig_wait - iq_trigger_time + uwave_pulse_dur_2, LOW),]
+    elif num_uwave_pulses == 3:
+        micowave_signal_train = [(uwave_pulse_dur_1, HIGH), 
+                                 (20, LOW), 
+                                 (uwave_pulse_dur_2, HIGH),
+                                 (20, LOW), 
+                                 (uwave_pulse_dur_3, HIGH)]
+        iq_signal_train = [(iq_trigger_time, HIGH),
+                                (wait_time - iq_trigger_time + uwave_pulse_dur_1 + half_uwave_sig_wait, LOW),
+                                (iq_trigger_time, HIGH),
+                                (half_uwave_sig_wait - iq_trigger_time + uwave_pulse_dur_2 + half_uwave_sig_wait, LOW),
+                                (iq_trigger_time, HIGH),
+                                (half_uwave_sig_wait - iq_trigger_time + uwave_pulse_dur_3, LOW),]
+    
         
-    signal_microwave_train = [(micorwave_duration , HIGH) ]
+    micowave_signal_dur = 0
+    for el in micowave_signal_train:
+        micowave_signal_dur += el[0]
+
     
     
     # The readout windows are what everything else is relative to so keep
@@ -83,12 +106,16 @@ def get_seq(pulse_streamer, config, args):
     train = [(front_buffer, LOW),
              (polarization, LOW),
              (wait_time, LOW),
+             (wait_time, LOW),
+             (readout, HIGH),
+             (polarization - readout, LOW),
+             (wait_time, LOW),
              (pi_pulse, LOW), 
              (wait_time, LOW),
              (readout, HIGH),
              (polarization - readout, LOW),
              (wait_time, LOW),
-             (micorwave_duration, LOW), 
+             (micowave_signal_dur, LOW), 
              (wait_time, LOW),
              (readout, HIGH),
              (100, LOW)
@@ -103,11 +130,14 @@ def get_seq(pulse_streamer, config, args):
     train = [(front_buffer-aom_delay_time, LOW),
              (polarization, HIGH),
              (wait_time, LOW),
+             (wait_time, LOW),
+             (polarization, HIGH),
+             (wait_time, LOW),
              (pi_pulse, LOW), 
              (wait_time, LOW),
              (polarization, HIGH),
              (wait_time, LOW),
-             (micorwave_duration, LOW), 
+             (micowave_signal_dur, LOW), 
              (wait_time, LOW),
              (readout, HIGH),
              (100 + aom_delay_time, LOW)
@@ -123,12 +153,16 @@ def get_seq(pulse_streamer, config, args):
     # uwave sequence
     train = [(front_buffer-rf_delay_time, LOW),
              (polarization, LOW),
-             (wait_time, LOW)]
-    train.extend(reference_microwave_train)
-    train.extend([(wait_time, LOW),
+             (wait_time, LOW),
+             (wait_time, LOW),
              (polarization, LOW),
-             (wait_time, LOW)])
-    train.extend(signal_microwave_train)
+             (wait_time, LOW),
+             (pi_pulse, HIGH),
+             (wait_time, LOW),
+             (polarization, LOW),
+             (wait_time, LOW)
+             ]
+    train.extend(micowave_signal_train)
     train.extend([(wait_time, LOW),
              (readout, LOW),
              (100 + rf_delay_time, LOW)
@@ -139,17 +173,19 @@ def get_seq(pulse_streamer, config, args):
     for el in train:
         period += el[0]
     print(period)
-    
+        
     # Vary the position of the iq pulses
     train = [(front_buffer-iq_delay_time, LOW),
              (polarization, LOW),
              (wait_time, LOW),
-             (iq_trigger_time, HIGH),
-             (pi_pulse - iq_trigger_time, LOW), 
              (wait_time, LOW),
              (polarization, LOW),
-             (wait_time, LOW)]
-    train.extend(signal_iq_train)
+             (iq_trigger_time, HIGH),
+             (wait_time- iq_trigger_time, LOW),
+             (pi_pulse, LOW), 
+             (wait_time, LOW),
+             (polarization, LOW)]
+    train.extend(iq_signal_train)
     train.extend([
              (wait_time, LOW),
              (readout, LOW),
@@ -177,9 +213,9 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config) 
     
-    # readout, pi_pulse, pi_on_2_pulse, polarization = durations
-    # num_pi_pulse, state, apd_index, laser_name, laser_power = args[5:9]
-    args = [350, 100, 50, 1000, 0, 3, 1, 'integrated_520', None]
+    # readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, polarization
+    # num_uwave_pulses, state, apd_index, laser_name, laser_power = args[6:11]
+    args = [350, 44, 22, 0, 0, 1000.0, 1, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

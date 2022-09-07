@@ -47,6 +47,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
 ):
 
@@ -60,6 +61,7 @@ def main(
             num_steps,
             num_reps,
             num_runs,
+            taus,
             state,
         )
         return angle
@@ -74,6 +76,7 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
+    taus = [],
     state=States.LOW,
 ):
 
@@ -107,17 +110,19 @@ def main_with_cxn(
     # Must be ints
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
-
-    taus = numpy.linspace(
-        min_precession_time,
-        max_precession_time,
-        num=num_steps,
-        dtype=numpy.int32,
-    )
+    
+    if len(taus) == 0:
+        taus = numpy.linspace(
+            min_precession_time,
+            max_precession_time,
+            num=num_steps,
+            dtype=numpy.int32,
+        )
+    # taus = taus + 500
     print(taus)
     # Convert to ms
     #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    plot_taus = (taus * 2 *4 * num_xy4_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -162,12 +167,12 @@ def main_with_cxn(
 
     pi_pulse_reps = num_xy4_reps*4
     seq_args = [
-        min_precession_time,
+        taus[0],
         polarization_time,
         gate_time,
         uwave_pi_pulse,
         uwave_pi_on_2_pulse,
-        max_precession_time,
+        taus[-1],
         pi_pulse_reps,
         apd_indices[0],
         state.value,
@@ -190,7 +195,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    # return
+    #return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -225,7 +230,6 @@ def main_with_cxn(
         sig_gen_cxn.uwave_on()
         
         cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
-        # cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
         
 
         # Set up the laser
@@ -313,8 +317,9 @@ def main_with_cxn(
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        # print(numpy.average(avg_ref_counts))
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -370,6 +375,9 @@ def main_with_cxn(
             "num_steps": num_steps,
             "num_reps": num_reps,
             "run_ind": run_ind,
+            "taus": taus.tolist(),
+            "plot_taus":plot_taus.tolist(),
+            "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
@@ -442,6 +450,9 @@ def main_with_cxn(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
+        "taus": taus.tolist(),
+        "plot_taus":plot_taus.tolist(),
+        "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
@@ -468,5 +479,61 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+    
+    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
+    file1 = '2022_09_03-11_48_06-rubin-nv4_2022_08_10'
+    file2 = '2022_09_03-21_49_14-rubin-nv4_2022_08_10'
+    folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
+    file8 = '2022_09_04-07_49_33-rubin-nv4_2022_08_10'
+    
+    
+    file_list = [file1, file2]
+    fig, ax = plt.subplots()
+    
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, folder4)
+        taus = numpy.array(data['taus'])
+        num_xy4_reps = data['num_xy4_reps']
+        norm_avg_sig = data['norm_avg_sig']
+        num_steps=data['num_steps']
+        nv_sig = data['nv_sig']
+        plot_taus =data['plot_taus']
+    
+    
+    # tau_step = taus[1]-taus[0]
+    # plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    
+        ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+        # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        # ax.legend()
+        
+    data = tool_belt.get_raw_data(file8, folder8)
+    taus = numpy.array(data['taus'])
+    num_xy8_reps = data['num_xy8_reps']
+    norm_avg_sig = data['norm_avg_sig']
+    num_steps=data['num_steps']
+    nv_sig = data['nv_sig']
+    plot_taus =data['plot_taus']
 
-    aa = 1
+
+# tau_step = taus[1]-taus[0]
+# plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+
+    ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY8-{}".format(num_xy8_reps))
+    # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+    # ax.set_ylabel("Contrast (arb. units)")
+    ax.legend()
+    
+    # revival_t = nv_sig['t2_revival_time']/1e3
+    # for i in range(6+1):
+    #     rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
+    #     ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
+
+    # transform = numpy.fft.rfft(norm_avg_sig)
+    # freqs = numpy.fft.rfftfreq(num_steps, d=tau_step/1000)
+    # transform_mag = numpy.absolute(transform)
+    # fig, ax = plt.subplots()
+    # ax.plot(freqs, transform_mag)

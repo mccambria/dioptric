@@ -1076,8 +1076,8 @@ if __name__ == "__main__":
         tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
-        with labrad.connect() as cxn:
-            cxn.cryo_piezos.write_xy(150,0) 
+        # with labrad.connect() as cxn:
+        #     cxn.cryo_piezos.write_xy(150,0) 
 
         
 
@@ -1094,7 +1094,7 @@ if __name__ == "__main__":
         #                                 cbarmin_counts=0,cbarmax_counts=2200
         #                                 )
         
-        # do_image_sample(nv_sig, apd_indices,num_steps=40,scan_range=.8)
+        do_image_sample(nv_sig, apd_indices,num_steps=40,scan_range=.8)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1114,7 +1114,7 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
 
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)0203c
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)

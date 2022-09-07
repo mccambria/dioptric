@@ -89,8 +89,10 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
 
     tool_belt.reset_cfm(cxn)
 
-    # Initial Calculation and setup
-    tool_belt.reset_cfm(cxn)
+    # Optimize
+    opti_coords_list = []
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords_list.append(opti_coords)
 
     # Initial Calculation and setup
     tool_belt.set_filter(cxn, nv_sig, "charge_readout_laser")
@@ -128,7 +130,6 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
     sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)
     
     num_reps = int(num_reps)
-    opti_coords_list = []
 
     # Estimate the lenth of the sequance            
     file_name = 'rabi_scc.py'        
@@ -153,9 +154,6 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
 
     # Collect data
 
-    # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-    opti_coords_list.append(opti_coords)
     
     # Turn on the microwaves
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
@@ -192,7 +190,7 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
     This function will test red pulse lengths between 0 and 600 ns on the LOW
     NV state.
     '''
-    state = States.LOW
+    state = States.HIGH
     if ion_durs is None:
         ion_durs = numpy.linspace(0,1000,11)
   
@@ -529,8 +527,113 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
 #     return
 
 
-# # %%
-# def test_esr(nv_sig):
+# %%
+def test_esr(nv_sig, apd_indices, num_reps, state = States.HIGH):
+    '''
+    This function will test red pulse lengths between 0 and 600 ns on the LOW
+    NV state.
+    '''
+    from random import shuffle
+    
+    freq_center = nv_sig['resonance_LOW']
+    freq_range = 0.12
+    
+    half_freq_range = freq_range / 2
+    freq_low = freq_center - half_freq_range
+    freq_high = freq_center + half_freq_range
+    freqs =  numpy.linspace(freq_low, freq_high, 11).tolist()
+    # freqs =  [freq_center]
+
+    num_steps = len(freqs)
+    
+    # create some arrays for data
+    sig_counts_array = numpy.zeros(num_steps)
+    sig_counts_ste_array = numpy.copy(sig_counts_array)
+    ref_counts_array = numpy.copy(sig_counts_array)
+    ref_counts_ste_array = numpy.copy(sig_counts_array)
+    snr_array = numpy.copy(sig_counts_array)
+    
+
+    freq_ind_master_list = []
+    
+    freq_ind_list = list(range(0, num_steps))
+    shuffle(freq_ind_list)
+    
+    # Step through the pulse lengths for the test laser
+    for f in freq_ind_list:
+        print('Freq : {} GHz'.format(freqs[f]))
+        nv_sig_copy = copy.deepcopy(nv_sig)
+        nv_sig_copy['resonance_LOW'] = freqs[f]
+        freq_ind_master_list.append(f)
+        sig_counts, ref_counts = measure(nv_sig_copy, apd_indices, num_reps,
+                                    state, plot = False)
+        # print(sig_counts)
+        
+        sig_count_avg = numpy.average(sig_counts)
+        sig_counts_ste = stats.sem(sig_counts)
+        ref_count_avg = numpy.average(ref_counts)
+        ref_counts_ste = stats.sem(ref_counts)
+            
+        sig_counts_array[f] = sig_count_avg
+        sig_counts_ste_array[f] = sig_counts_ste
+        ref_counts_array[f] = ref_count_avg
+        ref_counts_ste_array[f] = ref_counts_ste
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        snr_array[f] = avg_snr
+ 
+    #plot
+    title = 'SCC ESR'
+    # fig = plot_snr_v_dur(freqs, sig_counts_array, ref_counts_array, 
+    #                      sig_counts_ste_array, ref_counts_ste_array,
+    #                       snr_array, title)
+    
+    freqs = numpy.array(freqs)
+    
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.errorbar(freqs, sig_counts_array, yerr=sig_counts_ste, fmt= 'ro', 
+           label = 'W/ pi-pulse')
+    ax.errorbar(freqs, ref_counts_array, yerr=ref_counts_ste, fmt= 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Microwave freq (GHz)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title(title)
+    ax.legend()
+    
+    ax = axes[1]    
+    ax.plot(freqs, snr_array, 'ro')
+    ax.set_xlabel('Microwave freq (GHz)')
+    ax.set_ylabel('SNR')
+    ax.set_title(title)
+    # if text:
+    #     ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    # Save
+    
+    freqs = numpy.array(freqs)
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'freqs': freqs.tolist(),
+            'freqs-units': 'GHz',
+            'num_reps':num_reps,            
+            'sig_counts_array': sig_counts_array.tolist(),
+            'sig_counts_ste_array': sig_counts_ste_array.tolist(),
+            'ref_counts_array': ref_counts_array.tolist(),
+            'ref_counts_ste_array': ref_counts_ste_array.tolist(),
+            'snr_list': snr_array.tolist(),
+            'freq_ind_master_list': freq_ind_master_list
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'] + '-scc_esr')
+    
+    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig, file_path)
+    
+    print(' \nRoutine complete!')
+    return
+    
 #     from random import shuffle
 #     apd_indices = [0]
 #     num_reps =10**3
@@ -632,7 +735,7 @@ if __name__ == '__main__':
     nd_yellow = "nd_0"
     green_power =8000
     nd_green = 'nd_0.4'
-    red_power = 120
+    red_power = 180
     sample_name = "rubin"
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
@@ -641,12 +744,11 @@ if __name__ == '__main__':
 
 
     nv_sig = {
-            "coords":[-0.855, -0.591,  6.177],
-            # "coords": [-0.874, -0.612, 6.177],
-        "name": "{}-nv1".format(sample_name,),
+            "coords":[-0.853, -0.593, 6.16],
+        "name": "{}-nv1_2022_08_10".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":13.5,
+        "expected_count_rate":10,
         "correction_collar": 0.12,
 
 
@@ -684,7 +786,7 @@ if __name__ == '__main__':
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 300,
+        "nv0_ionization_dur": 800,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": 0.0,
@@ -693,26 +795,27 @@ if __name__ == '__main__':
          "charge_readout_laser": yellow_laser,
           "charge_readout_laser_power": 0.2, 
           "charge_readout_laser_filter": "nd_1.0",
-          "charge_readout_dur": 100e6, 
+          "charge_readout_dur": 50e6, 
 
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 156,
-        "resonance_LOW":2.7809,
-        "rabi_LOW":64.9,
+        "resonance_LOW":2.6061,
+        "rabi_LOW":96,
         "uwave_power_LOW": 15,  # 15.5 max
-        "resonance_HIGH":2.9592,
-        "rabi_HIGH":49.5,
-        "uwave_power_HIGH": 15,
+        "resonance_HIGH":3.1345,
+        "rabi_HIGH":88.9,
+        "uwave_power_HIGH": 10,
     }  # 14.5 max
     
-    num_reps = 500
+    num_reps = 1000 #500
     # Run the program
-    determine_ionization_dur(nv_sig, apd_indices, num_reps, [600, 650, 700, 750, 800, 850, 900, 950, 1000])
+    determine_ionization_dur(nv_sig, apd_indices, num_reps, [700, 750, 800, 850, 900])
     # determine_reion_dur(nv_sig)
     # determine_shelf_dur(nv_sig)
-        
+    # test_esr(nv_sig, apd_indices, num_reps)
+        # 
 
 
     

@@ -304,6 +304,7 @@ def plot_threshold(
     nv0_counts,
     nvm_counts,
     power,
+    bins,
     fit_threshold_full_model=False,
     nd_filter=None,
     do_save=False,
@@ -328,7 +329,7 @@ def plot_threshold(
     """
 
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
-        nv0_counts, nvm_counts, readout_dur
+        nv0_counts, nvm_counts, readout_dur, bins
     )
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
@@ -687,7 +688,8 @@ def determine_readout_dur_power(
             for dur in plot_readout_durs:
                 nd_filter = nv_sig["charge_readout_laser_filter"]
 
-                plot_histogram(nv_sig, nv0, nvm, dur, p, nd_filter=nd_filter)
+                plot_histogram(nv_sig, nv0, nvm, dur, p,
+                               bins, nd_filter=nd_filter)
 
                 if fit_threshold_full_model:
                     print(
@@ -700,6 +702,7 @@ def determine_readout_dur_power(
                     nv0,
                     nvm,
                     p,
+                    bins,
                     fit_threshold_full_model,
                     nd_filter=nd_filter,
                     do_save=True,
@@ -717,8 +720,8 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    # if False:
-    if True:
+    if False:
+    # if True:
         tool_belt.init_matplotlib()
         file_name = "2022_08_14-21_00_42-hopper-search"
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
@@ -753,6 +756,7 @@ if __name__ == "__main__":
         #     nv0,
         #     nvm,
         #     readout_power,
+        #     bins = None,
         #     fit_threshold_full_model=False,
         #     nd_filter=None,
         # )
@@ -769,18 +773,19 @@ if __name__ == "__main__":
 
     # Rabi
     apd_indices = [1]
-    sample_name = "johnson"
+    sample_name = "rubin"
 
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords": [-0.748, -0.180, 6.17],
-        "name": "{}-nv1".format(sample_name),
-        "disable_opt": False,
-        "disable_z_opt": False,
-        "expected_count_rate": 32,
+        "coords":[-0.853, -0.593, 6.16],
+        "name": "{}-nv1_2022_08_10".format(sample_name,),
+        "disable_opt":False,
+        "ramp_voltages": False,
+        "expected_count_rate":10,
+        "correction_collar": 0.12,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
         "imaging_laser": green_laser,
@@ -797,16 +802,16 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
-        "nv-_reionization_laser_filter": "nd_1.0",
+        # "nv-_reionization_laser_filter": None,
         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
         "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e6,
+        "nv-_prep_laser_dur": 1e4,
         "nv-_prep_laser_filter": None,  # "nd_1.0",
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_dur": 100,
         "nv0_prep_laser": red_laser,
-        "nv0_prep_laser-power": 0.69,
-        "nv0_prep_laser_dur": 1e6,
+        "nv0_prep_laser-power": None,
+        "nv0_prep_laser_dur": 1e4,
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_dur": 0,
         "spin_shelf_laser_power": 1.0,
@@ -815,8 +820,9 @@ if __name__ == "__main__":
         "initialize_dur": 1e4,
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
         "charge_readout_laser": yellow_laser,
-        "charge_readout_dur": 1840e6,
-        "charge_readout_laser_power": 1.0,
+        "charge_readout_dur": 50e6,
+        # "charge_readout_laser_power": 1.0,
+        "charge_readout_laser_filter": 'nd_1.0',
         "collection_filter": "715_sp+630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8073,
@@ -841,7 +847,7 @@ if __name__ == "__main__":
     # readout_durs = [2e9]
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
-
+    
     # readout_powers = np.linspace(0.6, 1.0, 9)
     # readout_powers = np.arange(0.75, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
@@ -854,16 +860,17 @@ if __name__ == "__main__":
     bins = None
 
     # try:
-    #     determine_readout_dur_power(
-    #         nv_sig,
-    #         nv_sig,
-    #         apd_indices,
-    #         num_reps,
-    #         bins,
-    #         max_readout_dur=max_readout_dur,
-    #         readout_powers=readout_powers,
-    #         plot_readout_durs=readout_durs,
-    #     )
+    determine_readout_dur_power(
+        nv_sig,
+        nv_sig,
+        apd_indices,
+        num_reps,
+        max_readout_dur=max_readout_dur,
+        bins=bins,
+        readout_powers=readout_powers,
+        plot_readout_durs=readout_durs,
+        fit_threshold_full_model=False,
+    )
     # finally:
     #     # Reset our hardware - this should be done in each routine, but
     #     # let's double check here
