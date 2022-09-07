@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI E-727 3 axis nanocube piezo. 
+Output server for the PI P-616.3C 3-axis nanocube piezo. 
 
 Created on Wed Nov  3 15:58:30 2021
 
@@ -8,7 +8,7 @@ Created on Wed Nov  3 15:58:30 2021
 
 ### BEGIN NODE INFO
 [info]
-name = piezo_stage_727
+name = piezo_stage_616
 version = 1.0
 description =
 
@@ -36,7 +36,7 @@ from pathlib import Path
 
 
 class PiezoStage(LabradServer):
-    name = "piezo_stage_727"
+    name = "piezo_stage_616_3c"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -70,9 +70,9 @@ class PiezoStage(LabradServer):
     async def get_config_xyz(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"]) # change this in registry
-        p.get("piezo_stage_727_model")
-        p.get("piezo_stage_727_serial")
-        p.cd(["", "Config", "Wiring", "Piezo_stage_E727"])
+        p.get("piezo_stage_616_3c_model")
+        p.get("piezo_stage_616_3c_serial")
+        p.cd(["", "Config", "Wiring", "Piezo_stage_E616"])
         p.get("piezo_stage_channel_x")
         p.get("piezo_stage_channel_y")
         p.get("piezo_stage_channel_z")
@@ -82,9 +82,9 @@ class PiezoStage(LabradServer):
         p.get("piezo_stage_scaling_offset")
         p.get("piezo_stage_scaling_gain")
         p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_piezo_stage_727_x")
-        p.get("ao_piezo_stage_727_y")
-        p.get("ao_piezo_stage_727_z")
+        p.get("ao_piezo_stage_616_3c_x")
+        p.get("ao_piezo_stage_616_3c_y")
+        p.get("ao_piezo_stage_616_3c_z")
         p.get("di_clock")
         # p.cd(["", "Config", "Positioning"])
         # p.get("x_hysteresis_linearity")
@@ -311,7 +311,7 @@ class PiezoStage(LabradServer):
             
             task.write([xVoltage, yVoltage])
     
-    @setting(32,  xVoltage="v[]", yVoltage="v[]", zVoltage="v[]")
+    @setting(42,  xVoltage="v[]", yVoltage="v[]", zVoltage="v[]")
     def write_xyz(self, c, xVoltage, yVoltage, zVoltage):
         """Write the specified x and y and z voltages to the piezo stage"""
 
@@ -375,7 +375,7 @@ class PiezoStage(LabradServer):
         returns="*v[]*v[]",
     )
     
-    @setting(31, returns="*v[]")
+    @setting(51, returns="*v[]")
     def read_xyz(self, c):
         """Return the current voltages on the piezo's DAQ channels"""
         with nidaqmx.Task() as task:
@@ -401,7 +401,7 @@ class PiezoStage(LabradServer):
 
 
     @setting(
-        2,
+        52,
         x_center="v[]",
         y_center="v[]",
         x_range="v[]",
@@ -492,7 +492,7 @@ class PiezoStage(LabradServer):
         return x_voltages_1d, y_voltages_1d
     
     @setting(
-        2,
+        62,
         x_center="v[]",
         y_center="v[]",
         z_center="v[]",
@@ -770,7 +770,7 @@ class PiezoStage(LabradServer):
         return y_voltages
     
     @setting(
-        5,
+        55,
         x_center="v[]",
         y_center="v[]",
         z_center="v[]",
