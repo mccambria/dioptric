@@ -114,13 +114,13 @@ ax.plot(
         label="model",
     ) 
 
-ax.plot(
-        plot_taus,
-        norm_avg_sig,
-        "o",
-        color="blue",
-        label="data",
-    )    
+# ax.plot(
+#         plot_taus,
+#         norm_avg_sig,
+#         "o",
+#         color="blue",
+#         label="data",
+#     )    
 ax.set_xlabel("Inter pulse wait time, tau (us)")
 ax.set_ylabel("Normalized signal Counts")
 ax.set_title('Spin echo')
