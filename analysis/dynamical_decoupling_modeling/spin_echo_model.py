@@ -41,7 +41,7 @@ def X_SE(t, fL, lambd, sigma_per ):
     
     for i in range(len(a_list)):
         n = i+1
-        a_sum += a_list[i]*numpy.exp(n**2 * t**2 * sigma**2 / 8) * numpy.cos(n*t*fL*2*pi)
+        a_sum += a_list[i]*numpy.exp(-n**2 * t**2 * sigma**2 / 8) * numpy.cos(n*t*fL*2*pi)
 
     return lambd**2 * a_sum
 
