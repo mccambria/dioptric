@@ -535,13 +535,13 @@ def test_esr(nv_sig, apd_indices, num_reps, state = States.HIGH):
     '''
     from random import shuffle
     
-    freq_center = nv_sig['resonance_LOW']
+    freq_center = nv_sig['resonance_{}'.format(state.name)]
     freq_range = 0.12
     
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
-    freqs =  numpy.linspace(freq_low, freq_high, 5).tolist()
+    freqs =  numpy.linspace(freq_low, freq_high, 7).tolist()
     # freqs =  [freq_center]
 
     num_steps = len(freqs)
@@ -563,7 +563,8 @@ def test_esr(nv_sig, apd_indices, num_reps, state = States.HIGH):
     for f in freq_ind_list:
         print('Freq : {} GHz'.format(freqs[f]))
         nv_sig_copy = copy.deepcopy(nv_sig)
-        nv_sig_copy['resonance_LOW'] = freqs[f]
+        
+        nv_sig_copy['resonance_{}'.format(state.name)] = freqs[f]
         freq_ind_master_list.append(f)
         sig_counts, ref_counts = measure(nv_sig_copy, apd_indices, num_reps,
                                     state, plot = False)
@@ -786,7 +787,7 @@ if __name__ == '__main__':
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": red_power,
-        "nv0_ionization_dur": 200,
+        "nv0_ionization_dur": 300,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": 0.0,
@@ -811,10 +812,10 @@ if __name__ == '__main__':
     
     num_reps = 500
     # Run the program
-    determine_ionization_dur(nv_sig, apd_indices, num_reps, numpy.linspace(0, 1500, 16))
+    # determine_ionization_dur(nv_sig, apd_indices, num_reps, numpy.linspace(0, 1500, 16))
     # determine_reion_dur(nv_sig)
     # determine_shelf_dur(nv_sig)
-    # test_esr(nv_sig, apd_indices, num_reps)
+    test_esr(nv_sig, apd_indices, num_reps)
         # 
 
 

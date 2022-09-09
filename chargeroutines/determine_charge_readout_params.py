@@ -780,11 +780,11 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords":[0.126, -0.455, 5.484],
-        "name": "{}-nv1_2022_08_10".format(sample_name,),
+        "coords":[0.088, -0.481, 5.484],
+        "name": "{}-nv8_2022_08_10".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":10,
+        "expected_count_rate":11,
         "correction_collar": 0.12,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
@@ -841,7 +841,7 @@ if __name__ == "__main__":
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [100e6, 150e6, 200e6]
+    readout_durs = [ 150e6, 200e6]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
     # readout_durs = [2e9]
@@ -852,7 +852,7 @@ if __name__ == "__main__":
     # readout_powers = np.arange(0.75, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [0.15, 0.2, 0.25]
+    readout_powers = [0.15]
 
     # num_reps = 2000
     # num_reps = 1000

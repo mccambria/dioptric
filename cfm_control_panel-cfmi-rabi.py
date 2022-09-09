@@ -91,8 +91,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.25
     # scan_range = 0.2
     # scan_range = 0.15
-    scan_range = 0.1
-    # scan_range = 0.05
+    # scan_range = 0.1
+    scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
@@ -102,9 +102,9 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 160
     # num_steps = 135
     # num_steps =120
-    num_steps = 90
+    # num_steps = 90
     # num_steps = 60
-    # num_steps = 31
+    num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -317,11 +317,11 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.2
+    freq_range = 0.12
     # freq_range = 0.120
-    num_steps = 101
+    num_steps = 11
     num_reps = int(1e4)
-    num_runs = 15
+    num_runs = 5
 
     composite = False
 
@@ -1133,13 +1133,13 @@ if __name__ == "__main__":
 
 
 
-    nv_sig = nv_sig_1
+    nv_sig = nv_sig_8
 
 
     # %% Functions to run
 #
     try:
-
+        # print(nv_sig['coords'])
         #tool_belt.init_safe_stop()
         # for dz in [0, 0.15,0.3, 0.45, 0.6, 0.75,0.9, 1.05, 1.2, 1.5, 1.7, 1.85, 2, 2.15, 2.3, 2.45]: #0.5,0.4, 0.3, 0.2, 0.1,0, -0.1,-0.2,-0.3, -0.4, -0.5
             # nv_sig_copy = copy.deepcopy(nv_sig)
@@ -1169,8 +1169,8 @@ if __name__ == "__main__":
                 # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
                 # do_rabi(nv_sig, nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 100])
                 
-        # do_optimize(nv_sig,apd_indices)
-        #do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig,apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
                 
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -1221,10 +1221,10 @@ if __name__ == "__main__":
         #       do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
         
         #do_dd_xy8(nv_sig_1, apd_indices, 1) 
-        for nv_sig in [nv_sig_1]:
+        # for nv_sig in [nv_sig_1]:
         #      for N in [1, 2,3,4]:
         #         do_dd_xy4(nv_sig, apd_indices, N) 
-            do_dd_xy4(nv_sig, apd_indices, 2)  
+            # do_dd_xy4(nv_sig, apd_indices, 2)  
         # #     #do_dd_xy4(nv_sig, apd_indices, 4)
         #      for N in [1, 2]:
         #         do_dd_xy8(nv_sig, apd_indices, N)

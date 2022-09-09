@@ -12,19 +12,7 @@ from scipy.optimize import curve_fit
 from scipy.integrate import quad
 from numpy import pi
 
-dd_model_coeff_dict = {
-    '1': [6, -8, 2],
-    '2': [10, -8, -8, 8, -2],
-    '4': [18, -8, -24, 8, 16, -8, -8, 8, -2],
-    '8': [34, -8, -56, 8, 48, 
-               -8, -40, 8, 32,  -8, -24, 8, 16, -8, -8, 8, -2]
-    }
-# a_list_se = [6, -8, 2]
-# a_list_2 = [10, -8, -8, 8, -2]
-# a_list_4 = [18, -8, -24, 8, 16, -8, -8, 8, -2]
-# a_list_8 = [34, -8, -56, 8, 48, 
-#            -8, -40, 8, 32,  -8, -24, 8, 16, -8, -8, 8, -2]
-
+dd_model_coeff_dict = tool_belt.get_dd_model_coeff_dict()
 
 def S_bath_test(t, lambd, sigma, a_list ):
     sum_expr = a_list[0]
