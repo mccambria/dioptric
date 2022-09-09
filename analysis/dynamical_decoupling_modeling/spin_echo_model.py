@@ -31,24 +31,23 @@ def S_2(t, a, b, f0, f1, T):
     return (a - b* term_ss)*numpy.exp((-t/T)**3)
 
 def X_SE(t, fL, lambd, sigma_per ):
-    sigma= sigma_per*fL
-    # lambd = 0.25
-    a0 = 3
-    a1 = -4
-    a2 = 1
-    a_list = [a1, a2]
-    a_sum = a0
+    a_list = [6, -8, 2]
     
-    for i in range(len(a_list)):
-        n = i+1
-        a_sum += a_list[i]*numpy.exp(-n**2 * t**2 * sigma**2 / 8) * numpy.cos(n*t*fL*2*pi)
+    sum_expr = a_list[0]
+    # lambd = 0.25
+    # sigma = 0.1 * fL #/ (2*pi)
+    for i in range(len(a_list)-1):
+        n=i+1
+        # print(n)
+        sum_expr += a_list[n]*numpy.exp(-n**2 * (t)**2 * sigma_per**2 / 2) * numpy.cos(n*t*(fL*2*pi))
 
-    return lambd**2 * a_sum
+    # X =
+    return 4* lambd**2 * sum_expr
 
 def S_bath_SE(t, fL, lambd, sigma_per, T2):
     # I = quad(integrand, -numpy.inf, numpy.inf, args=(t, fL))
     
-    return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(t/T2)**3)
+    return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(2*t/T2)**3)
 
     
 def pop_S_1(t, a, b, f0, T):
@@ -90,7 +89,7 @@ norm_avg_sig = (norm_avg_sig - (1-contrast))/(contrast)
 # fit_func = lambda t, b, f0, T: pop_S_1(t, 1, b, f0, T)
 # init_params = [1,  0.1, 200]
 fit_func = lambda t, fL, lambd, sigma_per, T2: (S_bath_SE(t,fL, lambd, sigma_per, T2) + 1)/2
-init_params = [0.1, 0.25, 0.1, 100]
+init_params = [0.1, 0.19, 0.02, 100]
 
 popt, pcov = curve_fit(
     fit_func,
@@ -114,13 +113,13 @@ ax.plot(
         label="model",
     ) 
 
-# ax.plot(
-#         plot_taus,
-#         norm_avg_sig,
-#         "o",
-#         color="blue",
-#         label="data",
-#     )    
+ax.plot(
+        plot_taus,
+        norm_avg_sig,
+        "o",
+        color="blue",
+        label="data",
+    )    
 ax.set_xlabel("Inter pulse wait time, tau (us)")
 ax.set_ylabel("Normalized signal Counts")
 ax.set_title('Spin echo')

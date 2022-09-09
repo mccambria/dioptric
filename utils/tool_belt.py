@@ -679,7 +679,6 @@ def create_image_figure(
     clickHandler=None,
     title=None,
     color_bar_label="Counts",
-    min_value=None,
     um_scaled=False,
     aspect_ratio=None,
     color_map="inferno",

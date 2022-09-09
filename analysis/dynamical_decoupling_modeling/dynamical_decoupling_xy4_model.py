@@ -19,14 +19,8 @@ Bz= 94.6 #G
 # Ax = 100 #MHz
 # Ay = 0 #MHz
 # Az = -75 #MHz
-a_list_se = [3, -4, 1]
-a_list_2 = [5, -4, -4, 4, -1]
-a_list_4 = [9, -4, -12, 4, 8, -4, -4, 4, -1]
-a_list_8 = [17, -4, -28, 4, 24, 
-          -4, -20, 4, 16, -4,
-          -12, 4, 8, -4,
-          -4, 4, -1]
 
+dd_model_coeff_dict = tool_belt.get_dd_model_coeff_dict()
 
 # def S_decay(t, N, Ax, Az, T):
 #     B_vec = numpy.array([0,0,Bz])
@@ -52,19 +46,13 @@ a_list_8 = [17, -4, -28, 4, 24,
 #     return (S_decay(t, N, Ax, Az, T) + 1)/2
 
 def S_bath(t, fL, lambd, sigma,T2, a_list  ):
-    # for XY4
-    # a_list = [9, -4, -12, 4, 8, -4, -4, 4, -1]
-    
     sum_expr = a_list[0]
-    # lambd = 0.25
-    # sigma = 0.1 * fL #/ (2*pi)
     for i in range(len(a_list)-1):
         n=i+1
-        # print(n)
-        sum_expr += a_list[n]*numpy.exp(-n**2 * (t)**2 * sigma**2 / 8) * numpy.cos(n*2*t*fL/(2*pi))
+        sum_expr += a_list[n]*numpy.exp(-n**2 * (t)**2 * sigma**2 / 2) * numpy.cos(n*t*(fL*2*pi))
 
-    X = lambd**2 * sum_expr
-    return numpy.exp(-X)* numpy.exp(-(2*t/T2)**3)
+    X =4* lambd**2 * sum_expr
+    return numpy.exp(-X) * numpy.exp(-(2*t/T2)**3)
 
 def S_bath_test(t, fL, lambd, sigma,T2, a_list ):
     # for XY4
@@ -76,9 +64,9 @@ def S_bath_test(t, fL, lambd, sigma,T2, a_list ):
     for i in range(len(a_list)-1):
         n=i+1
         # print(n)
-        sum_expr += a_list[n]*numpy.exp(-n**2 * (t)**2 * sigma**2 / 8) * numpy.cos(n*t*pi)#*fL*2*pi)
+        sum_expr += a_list[n]*numpy.exp(-n**2 * (t*2*pi)**2 * (sigma)**2 / 2) * numpy.cos(n*t*2*pi)#*fL*2*pi)
 
-    X = lambd**2 * sum_expr
+    X = 4*lambd**2 * sum_expr
     return numpy.exp(-X)#* numpy.exp(-(t/T2)**3)
 
 # def S_bath_8(t, fL, lambd, sigma,T2 ):
@@ -161,9 +149,9 @@ def pop_S(t, N, Ax, Az):
 
     
 # file0 = "2022_08_31-15_13_26-rubin-nv4_2022_08_10"
-file0 = '2022_08_26-10_11_36-rubin-nv1_2022_08_10' # XY4
-# file0='2022_09_01-17_57_59-rubin-nv4_2022_08_10' #XY4-2
-folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
+# file0 = '2022_08_26-10_11_36-rubin-nv1_2022_08_10' # XY4
+file0='2022_09_08-08_19_09-rubin-nv4_2022_08_10' #XY4-1
+folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 file_list = [file0]
 master_plot_taus = []
@@ -175,12 +163,13 @@ for file in file_list:
     ref_counts = numpy.array(data['ref_counts'])
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
-    taus = numpy.linspace(
-        precession_time_range[0],
-        precession_time_range[-1],
-        num=num_steps,
-    )
-    plot_taus = taus*8/1e3 
+    # taus = numpy.linspace(
+    #     precession_time_range[0],
+    #     precession_time_range[-1],
+    #     num=num_steps,
+    # )
+    taus = numpy.array(data['taus'])
+    plot_taus = taus/1e3 
     
     # plot_taus = numpy.array(data['plot_taus'])
     
@@ -216,7 +205,7 @@ for file in file_list:
 
 fig, ax = plt.subplots()
 taus_lin = numpy.linspace(master_plot_taus[0], master_plot_taus[-1],600)
-# taus_lin = numpy.linspace(0, 5,600)
+# taus_lin = numpy.linspace(0, 2.5,600)
 
 # fit_func = lambda t, Ax, Az: pop_S(t, 4, Ax, Az)
 # init_params = [100e-3, -75e-3]
@@ -238,31 +227,31 @@ taus_lin = numpy.linspace(master_plot_taus[0], master_plot_taus[-1],600)
 #     ) 
 
 # taus_lin = numpy.linspace(0, 4/(Bz*uN_13C),600)
-
 # print(S_bath(0, 0.1, 0.25, 0.01, 0))
 
-fit_func = lambda  t, fL, lambd, sigma, T2: (S_bath(t,fL, lambd, sigma, T2, a_list_4 )  +1)/2
-init_params = [0.26, 0.35, 5e-3, 600]
-# init_params = [0.131, 0.6, 7e-3, 1100]
-popt, pcov = curve_fit(
-    fit_func,
-    numpy.array(master_plot_taus),
-    master_norm_sig,
-    # sigma=norm_avg_sig_ste,
-    # absolute_sigma=True,
-    p0=init_params,
-    # bounds=([0,0,0,100], [numpy.inf,numpy.inf, numpy.inf, numpy.inf]),
-)
-print(popt)
-ax.plot(
-        taus_lin,
-        fit_func(taus_lin, *popt),
-        "-",
-        color="red",
-        label="Spin bath, XY4",
-    ) 
+#######________________________#############
+# fit_func = lambda  t, fL, lambd, sigma, T2: (S_bath(t,fL/(2*4), lambd, sigma, T2, a_list_4 )   +1)/2
+# init_params = [0.1, 2, 0.001, 500]
+# popt, pcov = curve_fit(
+#     fit_func,
+#     numpy.array(master_plot_taus),
+#     master_norm_sig,
+#     # sigma=norm_avg_sig_ste,
+#     # absolute_sigma=True,
+#     p0=init_params,
+#     # bounds=([0,0,0,100], [numpy.inf,numpy.inf, numpy.inf, numpy.inf]),
+# )
+# print(popt)
+# ax.plot(
+#         taus_lin,
+#         fit_func(taus_lin, *popt),
+#         "-",
+#         color="red",
+#         label="Spin bath, XY4",
+#     ) 
+#######________________________#############
 
-# fit_func = lambda  t, lambd, sigma: (S_bath_test(t,0, lambd, sigma, 0, a_list_2 ) )#+1)/2
+# fit_func = lambda  t, fL, lambd, sigma: (S_bath_test(t,fL, lambd, sigma, 0, a_list_2 ) )#+1)/2
 # # init_params = [0.25, 0.1]
 # ax.plot(
 #         taus_lin,
@@ -272,14 +261,35 @@ ax.plot(
 #         label="Spin bath, XY2",
 #     ) 
 
-# fit_func = lambda  t, lambd, sigma: (S_bath_test(t,0, lambd, sigma, 0, a_list_4 ) )#+1)/2
+#######________________________#############
+fit_func = lambda  t, fL, lambd, sigma, T2: (S_bath(t,fL, lambd, sigma, T2, a_list_4 ) +1)/2
+init_params = [0.1, 0.4, 0.003, 400]
+popt, pcov = curve_fit(
+    fit_func,
+    numpy.array(master_plot_taus),
+    master_norm_sig,
+    # sigma=norm_avg_sig_ste,
+    # absolute_sigma=True,
+    p0=init_params,
+    bounds=(0, numpy.inf),
+)
+print(popt)
+ax.plot(
+        taus_lin,
+        fit_func(taus_lin, *popt),
+        "-",
+        color="red",
+        label="Spin bath, XY4-2",
+    ) 
+    #######________________________#############
+# fit_func = lambda  t, fL, lambd, sigma: (S_bath_test(t,fL,lambd, sigma, 0, a_list_se ) )#+1)/2
 # # # init_params = [0.75, 0.1]
 # ax.plot(
 #         taus_lin,
 #         fit_func(taus_lin, *init_params),
 #         "-",
-#         color="blue",
-#         label="Spin bath, XY4",
+#         color="green",
+#         label="Spin bath, Spin Echo",
 #     ) 
 
 # ax.set_xlabel("Evolution time (1/w)")
@@ -293,8 +303,8 @@ ax.plot(
         color="blue",
         label="data",
     )    
-ax.set_xlabel("Coherence time, T (us)")
+ax.set_xlabel("Inter-pulse time, tau (us)")
 ax.set_ylabel("Normalized signal Counts")
 ax.set_title('XY4-1')
-
+ax.legend()
 

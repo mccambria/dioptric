@@ -541,7 +541,7 @@ def test_esr(nv_sig, apd_indices, num_reps, state = States.HIGH):
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
-    freqs =  numpy.linspace(freq_low, freq_high, 11).tolist()
+    freqs =  numpy.linspace(freq_low, freq_high, 5).tolist()
     # freqs =  [freq_center]
 
     num_steps = len(freqs)
@@ -744,7 +744,7 @@ if __name__ == '__main__':
 
 
     nv_sig = {
-            "coords":[-0.853, -0.593, 6.16],
+            "coords":[0.126, -0.455, 5.484],
         "name": "{}-nv1_2022_08_10".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -782,36 +782,36 @@ if __name__ == '__main__':
         
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_laser_power": green_power,
-        "nv-_reionization_dur": 1e3,
+        "nv-_reionization_dur": 1e6,
         
         "nv0_ionization_laser": red_laser,
-        "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 800,
+        "nv0_ionization_laser_power": red_power,
+        "nv0_ionization_dur": 200,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": 0.0,
         "spin_shelf_dur": 0,
         
          "charge_readout_laser": yellow_laser,
-          "charge_readout_laser_power": 0.2, 
+          "charge_readout_laser_power": 0.15, 
           "charge_readout_laser_filter": "nd_1.0",
-          "charge_readout_dur": 50e6, 
+          "charge_readout_dur": 200e6, 
 
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 156,
+        "magnet_angle": 150,
         "resonance_LOW":2.6061,
         "rabi_LOW":96,
         "uwave_power_LOW": 15,  # 15.5 max
-        "resonance_HIGH":3.1345,
-        "rabi_HIGH":88.9,
+        "resonance_HIGH":3.1098,
+        "rabi_HIGH":82.4,
         "uwave_power_HIGH": 10,
     }  # 14.5 max
     
-    num_reps = 1000 #500
+    num_reps = 500
     # Run the program
-    determine_ionization_dur(nv_sig, apd_indices, num_reps, [700, 750, 800, 850, 900])
+    determine_ionization_dur(nv_sig, apd_indices, num_reps, numpy.linspace(0, 1500, 16))
     # determine_reion_dur(nv_sig)
     # determine_shelf_dur(nv_sig)
     # test_esr(nv_sig, apd_indices, num_reps)
