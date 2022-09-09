@@ -1368,19 +1368,15 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
-<<<<<<< HEAD
     ax_a.legend(
         handlelength=1,
         handletextpad=0.5,
+        ncol=2,
     )
     ax_b.legend(
         handlelength=1,
         handletextpad=0.5,
     )
-=======
-    ax_a.legend(ncol=2)
-    ax_b.legend()
->>>>>>> 263822b709f3a253f8889fadae1e5573ecee357b
     fig.tight_layout(pad=0.3)
     fig.subplots_adjust(wspace=0.18)
 

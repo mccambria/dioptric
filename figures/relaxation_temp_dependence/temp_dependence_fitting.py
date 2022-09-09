@@ -2654,11 +2654,7 @@ if __name__ == "__main__":
             y_range,
             xscale,
             yscale,
-<<<<<<< HEAD
-            dosave=True,
-=======
             dosave=False,
->>>>>>> 263822b709f3a253f8889fadae1e5573ecee357b
         )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
