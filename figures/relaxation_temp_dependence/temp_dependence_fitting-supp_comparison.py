@@ -285,7 +285,7 @@ def get_past_results(res):
     elif res == r"Jarmola, S8":
         omega_temps = [9.950478138502218, 19.80060613286093, 29.800477508344034, 39.67414115937397, 49.680800221318, 59.72553858233379, 79.56130794778521, 119.89239992311232, 160.83993406671632, 200.15014817692008, 252.45338834977025, 293.3848300819487, 322.81046691031594, 352.7565006568838, 429.97927603430963, 479.60160376778975, 375.1233628312281, 398.8864136467382, ]
         omega_rates = [0.014813307038192704, 0.015886067264611867, 0.0178494025680193, 0.019593386907583058, 0.023609194738400396, 0.033489066108904834, 0.10014091119973172, 0.9381482177041631, 4.169123278855502, 12.760705818733683, 31.667336635581677, 60.81522929409823, 86.26491741142065, 111.47314222093364, 219.12529332802444, 318.15285902458135, 147.44421348369355, 177.66398252665408, ]
-    elif res == r"Liu":
+    elif res == r"Lin":
         omega_temps = [300, 325, 350, 375, 400, 425, 450, 500, 550, 600]
         omega_rates = [0.09401709401709413, 0.14102564102564097, 0.170940170940171, 0.20512820512820507, 0.2435897435897436, 0.30341880341880345, 0.3547008547008548, 0.5256410256410258, 0.777777777777778, 1.153846153846154, ]
         omega_rates = [1000*el for el in omega_rates]
@@ -1266,7 +1266,7 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     figure_2_raw_data(ax_a, ax_b, data_points)
 
     past_results = [
-        "Liu",
+        "Lin",
         "Redman",
         "Takahashi",
         "Jarmola, S2",
@@ -1317,6 +1317,23 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
                 zorder=z_order,
             )
 
+    fig.text(
+        -0.18,
+        0.96,
+        "(a)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
+    fig.text(
+        1.025,
+        0.96,
+        "(b)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
+
     # fig.tight_layout(pad=0.3)
     # tool_belt.non_math_ticks(ax_a)
     # for el in scatter_axes_b:
@@ -1329,9 +1346,16 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
-    ax_a.legend()
-    ax_b.legend()
+    ax_a.legend(
+        handlelength=1,
+        handletextpad=0.5,
+    )
+    ax_b.legend(
+        handlelength=1,
+        handletextpad=0.5,
+    )
     fig.tight_layout(pad=0.3)
+    fig.subplots_adjust(wspace=0.18)
 
 
 # def figure_2_raw_data(ax_a, ax_b, axins_a, axins_b, data_points):
@@ -1354,7 +1378,7 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
     temp_ranges = [[-10, 620], [-10, 620]]
     rate_ranges = [[0.001, 1500], [0.001, 1500]]
     yscales = ["log", "log"]
-    rate_ranges = [[-30, 1240], [-20, 820]]
+    rate_ranges = [[-30, 1240], [-20, 830]]
     yscales = ["linear", "linear"]
     ytickss = [None, None]
 

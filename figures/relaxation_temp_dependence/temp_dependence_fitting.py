@@ -282,7 +282,7 @@ def get_past_results(res):
     elif res == r"jarmola\_s8":
         omega_temps = [9.950478138502218, 19.80060613286093, 29.800477508344034, 39.67414115937397, 49.680800221318, 59.72553858233379, 79.56130794778521, 119.89239992311232, 160.83993406671632, 200.15014817692008, 252.45338834977025, 293.3848300819487, 322.81046691031594, 352.7565006568838, 429.97927603430963, 479.60160376778975, 375.1233628312281, 398.8864136467382, ]
         omega_rates = [0.014813307038192704, 0.015886067264611867, 0.0178494025680193, 0.019593386907583058, 0.023609194738400396, 0.033489066108904834, 0.10014091119973172, 0.9381482177041631, 4.169123278855502, 12.760705818733683, 31.667336635581677, 60.81522929409823, 86.26491741142065, 111.47314222093364, 219.12529332802444, 318.15285902458135, 147.44421348369355, 177.66398252665408, ]
-    elif res == r"liu":
+    elif res == r"lin":
         omega_temps = [300, 325, 350, 375, 400, 425, 450, 500, 550, 600]
         omega_rates = [0.09401709401709413, 0.14102564102564097, 0.170940170940171, 0.20512820512820507, 0.2435897435897436, 0.30341880341880345, 0.3547008547008548, 0.5256410256410258, 0.777777777777778, 1.153846153846154, ]
         omega_rates = [1000*el for el in omega_rates]
@@ -1233,7 +1233,7 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
     # figsize = (figsize[0], 2 * figsize[1])
     # adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
     adj_figsize = (2 * figsize[0], figsize[1])
-    fig_a, ax_a = plt.subplots(figsize=figsize)
+    fig_a, ax_a = plt.subplots(figsize=adj_figsize)
     if not supp_comparison:
         fig_b = plt.figure(figsize=figsize)
     # gs_sep = 0.09
@@ -1386,7 +1386,7 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
             r"jarmola\_s2",
             r"jarmola\_s3",
             r"jarmola\_s8",
-            r"liu",
+            r"lin",
         ]
         for res in past_results:
             (
@@ -2384,7 +2384,8 @@ def main_sub(
 
     # %% Plot past data
     leg0 = None
-    plot_past_data = False
+    # plot_past_data = False
+    plot_past_data = True
     if plot_past_data:
         past_results = [
             "redman",
@@ -2571,12 +2572,14 @@ def main_sub(
 if __name__ == "__main__":
 
     # temp = 300
+    # delta1 = 4
     # delta1 = 68.2
     # delta2 = 167
     # A_1 = 580
     # A_2 = 9000
     # n1 = bose(delta1, temp)
     # n2 = bose(delta2, temp)
+    # print(n1)
     # print(A_1 * n1 * (n1 + 1))
     # print(A_2 * n2 * (n2 + 1))
     # # print(bose(0.01241, 150))
@@ -2641,23 +2644,23 @@ if __name__ == "__main__":
         y_range, yscale = el
         # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
         # continue
-        # main(
-        #     file_name,
-        #     path,
-        #     plot_type,
-        #     rates_to_plot,
-        #     temp_range,
-        #     y_range,
-        #     xscale,
-        #     yscale,
-        #     dosave=True,
-        # )
+        main(
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            y_range,
+            xscale,
+            yscale,
+            dosave=True,
+        )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    supp_comparison = True
+    # supp_comparison = True
     # supp_comparison = False
-    figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
+    # figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
