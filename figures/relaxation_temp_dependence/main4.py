@@ -20,11 +20,15 @@ import temp_dependence_fitting
 from temp_dependence_fitting import qutrit_color, qubit_color
 import csv
 import utils.kplotlib as kpl
+from utils.kplotlib import (
+    marker_size,
+    line_width,
+    marker_size_inset,
+    line_width_inset,
+)
 
-marker_size = 7
-line_width = 1.5
-# line_width = 2.5
 marker_edge_width = line_width
+marker_edge_width_inset = line_width_inset
 
 
 def round_base_2(val):
@@ -179,6 +183,17 @@ def main(
 
     if plot_type == "T2_max_supp":
         fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp = ret_vals
+        min_temp = temp_range[1][0]
+        max_temp = temp_range[1][1]
+        inset_ticks = np.arange(
+            round(min_temp, -2),
+            round(max_temp + 50, -2),
+            100,
+        )
+        ax2.set_xticks(inset_ticks)
+        # ax2.set_yticks([0.0, 0.2, 0.4, 0.6])
+        # ax2.set_yticks([0.0, 0.1, 0.3, 0.5])
+        ax2.set_yticks([0.0, 0.25, 0.5])
     else:
         fig, ax1, leg1, T2_max_qubit_hopper_temp = ret_vals
 
@@ -211,8 +226,14 @@ def main(
 
     if plot_type == "T2_max_supp":
         sub_plot_types = ["T2_max", "T2_frac"]
+        mss = [marker_size, marker_size_inset]
+        lws = [line_width, line_width_inset]
+        mews = [marker_edge_width, marker_edge_width_inset]
     else:
         sub_plot_types = [plot_type]
+        mss = [marker_size]
+        lws = [line_width]
+        mews = [marker_edge_width]
 
     ms = marker_size ** 2
     used_authors = []
@@ -247,9 +268,9 @@ def main(
                 markerfacecolor=kpl.lighten_color_hex(qubit_color),
                 label=label,
                 marker=marker,
-                ms=marker_size,
-                lw=line_width,
-                markeredgewidth=marker_edge_width,
+                ms=mss[ind - 1],
+                lw=lws[ind - 1],
+                markeredgewidth=mews[ind - 1],
                 linestyle="None",
             )
 
@@ -267,20 +288,25 @@ def main(
         handles,
         labels,
         title="Prior results",
+<<<<<<< HEAD
         loc=loc,
+=======
+        loc="upper right",
+        # loc="lower left",
+>>>>>>> 263822b709f3a253f8889fadae1e5573ecee357b
         # bbox_to_anchor=(1.0, 0.82),
         handlelength=1,
         handletextpad=0.5,
-        borderpad=0.3,
-        borderaxespad=0.3,
+        # borderpad=0.3,
+        # borderaxespad=0.3,
     )
     # Add back in original legend
     if leg1 is not None:
         # anchor = leg2.get_bbox_to_anchor()
         # leg1.set_bbox_to_anchor(anchor)
-        # leg1.set_bbox_to_anchor((0.687, 1.0))
-        leg1.set_bbox_to_anchor((0.285, 0.0))
-        # leg1.set_bbox_to_anchor((0.0, 0.3))
+        leg1.set_bbox_to_anchor((0.70, 1.0))
+        # leg1.set_bbox_to_anchor((0.285, 0.0))
+        # leg1.set_bbox_to_anchor((0.0, 0.325))
         ax1.add_artist(leg1)
 
     # ax.legend()
@@ -297,11 +323,11 @@ if __name__ == "__main__":
 
     ### Main
 
-    # plot_type = "T2_max"
-    # y_range = [7e-4, 30]
-    # yscale = "log"
-    # temp_range = [-5, 480]
-    # xscale = "linear"
+    plot_type = "T2_max"
+    y_range = [7e-4, 30]
+    yscale = "log"
+    temp_range = [-5, 480]
+    xscale = "linear"
 
     # plot_type = "T2_frac"
     # y_range = [0, 1]
@@ -310,6 +336,7 @@ if __name__ == "__main__":
     # xscale = "linear"
 
     # rates_to_plot = ["hopper"]
+    rates_to_plot = ["hopper", "wu"]
 
     ### Supp
 
@@ -320,12 +347,12 @@ if __name__ == "__main__":
     # y_range = [[7e-4, 30], [-0.02, 0.62]]
     # rates_to_plot = [["hopper", "wu"], ["hopper"]]
 
-    plot_type = "T2_max_supp"
-    temp_range = [[-5, 480], [-8, 315]]
-    xscale = ["linear", "linear"]
-    yscale = ["log", "linear"]
-    y_range = [[7e-4, 30], [-0.02, 0.62]]
-    rates_to_plot = [["hopper"], ["hopper"]]
+    # plot_type = "T2_max_supp"
+    # temp_range = [[-5, 480], [-9, 315]]
+    # xscale = ["linear", "linear"]
+    # yscale = ["log", "linear"]
+    # y_range = [[6e-4, 40], [0, 0.58]]
+    # rates_to_plot = [["hopper"], ["hopper"]]
 
     ###
 
