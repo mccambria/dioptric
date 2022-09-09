@@ -1948,10 +1948,10 @@ def main(
         ### Inset version
         fs = figsize
         fig, ax1 = plt.subplots(figsize=fs)
-        inset_bottom = 0.56
-        inset_height = 0.45
-        inset_left = 0.475
-        inset_width = 0.53
+        inset_bottom = 0.58
+        inset_height = 0.43
+        inset_left = 0.52
+        inset_width = 0.485
         ax2 = inset_axes(
             ax1,
             width="100%",
@@ -2525,11 +2525,12 @@ def main_sub(
             labels,
             title="Subspace",
             # bbox_to_anchor=(0.743, 1.0),
-            loc="lower left",
+            # loc="lower left",
+            loc="upper right",
             handlelength=1.5,
             handletextpad=0.5,
-            borderpad=0.3,
-            borderaxespad=0.3,
+            # borderpad=0.3,
+            # borderaxespad=0.3,
         )
 
     fig.tight_layout(pad=0.3)
@@ -2593,8 +2594,8 @@ if __name__ == "__main__":
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # plot_type = "rates"
-    plot_type = "T2_max"
+    plot_type = "rates"
+    # plot_type = "T2_max"
     # plot_type = "ratios"
     # plot_type = "ratio_fits"
     # plot_type = 'residuals'
@@ -2641,23 +2642,23 @@ if __name__ == "__main__":
         y_range, yscale = el
         # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
         # continue
-        # main(
-        #     file_name,
-        #     path,
-        #     plot_type,
-        #     rates_to_plot,
-        #     temp_range,
-        #     y_range,
-        #     xscale,
-        #     yscale,
-        #     dosave=True,
-        # )
+        main(
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            y_range,
+            xscale,
+            yscale,
+            dosave=False,
+        )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    supp_comparison = True
+    # supp_comparison = True
     # supp_comparison = False
-    figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
+    # figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
