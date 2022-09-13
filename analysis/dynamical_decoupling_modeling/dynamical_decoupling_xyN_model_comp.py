@@ -15,6 +15,7 @@ from numpy import pi
 dd_model_coeff_dict = tool_belt.get_dd_model_coeff_dict()
 
 def S_bath_test(t, lambd, sigma, a_list ):
+    # t= t/2
     sum_expr = a_list[0]
     
     for i in range(len(a_list)-1):

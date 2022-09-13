@@ -46,7 +46,7 @@ def X_SE(t, fL, lambd, sigma_per ):
 
 def S_bath_SE(t, fL, lambd, sigma_per, T2):
     # I = quad(integrand, -numpy.inf, numpy.inf, args=(t, fL))
-    
+    # t = t/2
     return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(2*t/T2)**3)
 
     
