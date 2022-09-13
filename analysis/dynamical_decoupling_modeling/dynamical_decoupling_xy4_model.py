@@ -33,6 +33,34 @@ def S_bath(t, fL, lambd, sigma, T2, a_list  ):
     return numpy.exp(-X) #* numpy.exp(-(2*t/T2)**3)
 
 
+def S_13C(t, N, fL, fh, theta):
+    '''
+    T tamineau equations
+    '''
+    wh = fh * 2*pi
+    wL = fL * 2*pi
+    A = wh*numpy.cos(theta)
+    B = wh*numpy.sin(theta)
+    
+    w_tild = numpy.sqrt((A+wL)**2 + B**2)
+    mz = (A + wL) / w_tild
+    mx = B/w_tild
+    
+    alpha = w_tild*t
+    beta = wL*t
+    
+    term_c = numpy.cos(alpha) * numpy.cos(beta)
+    term_s = numpy.sin(alpha) * numpy.sin(beta)
+    cosphi=  term_c - mz * term_s
+
+    # print(alpha)
+    num = (1-numpy.cos(alpha))*(1-numpy.cos(beta))
+    den = (1 + numpy.cos(alpha)*numpy.cos(beta) - mz*numpy.sin(alpha)*numpy.sin(beta))
+    onemdot = mx**2 * num / den
+
+    k = int((N/2)-1)
+    return 1 - onemdot * eval_chebyu(k, cosphi)**2 * (1 - cosphi**2)
+
 # def S_13C(t, N, Ax, Az):
 #     t = 2*t
 #     B_vec = numpy.array([0,0,Bz])
@@ -43,48 +71,27 @@ def S_bath(t, fL, lambd, sigma, T2, a_list  ):
 #     n0 = uN_13C*B_vec/w0
 #     n1 = (uN_13C*B_vec + A_vec)/w1
     
+#     p0 = w0 * t / 2
+#     p1 = w1 * t / 2
+    
     
 #     term_c = numpy.cos(w0*t*2*pi/2) * numpy.cos(w1*t*2*pi/2)
 #     term_s = numpy.sin(w0*t*2*pi/2) * numpy.sin(w1*t*2*pi/2)
-#     phi=  numpy.arccos(term_c - numpy.dot(n0, n1) * term_s) # maybe try to avoid doing this ???
+#     cosphi=  term_c - numpy.dot(n0, n1) * term_s
 
 
-#     cross_n = numpy.cross(n0, n1)
-#     term_ss = numpy.sin(w0*t*2*pi/2)**2 * numpy.sin(w1*t*2*pi/2)**2
-#     term_phi = numpy.sin(N*phi/2)**2 / numpy.cos(phi / 2)**2
-#     return (1 - numpy.linalg.norm(cross_n)**2 * term_ss * term_phi)
-
-def S_13C(t, N, Ax, Az):
-    t = 2*t
-    B_vec = numpy.array([0,0,Bz])
-    A_vec = numpy.array([Ax, 0, Az])
-    
-    w0 = numpy.linalg.norm(uN_13C*B_vec)
-    w1 = numpy.linalg.norm(uN_13C*B_vec + A_vec)
-    n0 = uN_13C*B_vec/w0
-    n1 = (uN_13C*B_vec + A_vec)/w1
-    
-    p0 = w0 * t / 2
-    p1 = w1 * t / 2
-    
-    
-    term_c = numpy.cos(w0*t*2*pi/2) * numpy.cos(w1*t*2*pi/2)
-    term_s = numpy.sin(w0*t*2*pi/2) * numpy.sin(w1*t*2*pi/2)
-    cosphi=  term_c - numpy.dot(n0, n1) * term_s
-
-
-    dot_n = numpy.dot(n0, n1)
-    # print(dot_n)
-    # print(n1)
-    # term_ss = numpy.sin(w0*t*2*pi/2)**2 * numpy.sin(w1*t*2*pi/2)**2
-    # term_phi = numpy.sin(N*phi/2)**2 / numpy.cos(phi / 2)**2
-    k = int((N/2))
-    return 1 - 4*(1 - dot_n**2) * numpy.sin(p0/2)**2 * numpy.sin(p1/2)**2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
-    # return 1 - 4*(1 - dot_n**2) * numpy.sin(p0)**2/2 * numpy.sin(p1)**2/2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
+#     dot_n = numpy.dot(n0, n1)
+#     # print(dot_n)
+#     # print(n1)
+#     # term_ss = numpy.sin(w0*t*2*pi/2)**2 * numpy.sin(w1*t*2*pi/2)**2
+#     # term_phi = numpy.sin(N*phi/2)**2 / numpy.cos(phi / 2)**2
+#     k = int((N/2))
+#     return 1 - 4*(1 - dot_n**2) * numpy.sin(p0/2)**2 * numpy.sin(p1/2)**2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
+#     # return 1 - 4*(1 - dot_n**2) * numpy.sin(p0)**2/2 * numpy.sin(p1)**2/2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
 
     
-def pop_S(t, N_pi, Ax, Az, fL, lambd, sigma,T2, a_list):
-    return (S_13C(t, N_pi, Ax, Az)*S_bath(t, fL, lambd, sigma,T2, a_list) + 1)/2
+def pop_S(t, N, fh, theta, fL, lambd, sigma,T2, a_list):
+    return (S_13C(t, N, fL, fh, theta)*S_bath(t, fL, lambd, sigma,T2, a_list) + 1)/2
 
     
 # file = '2022_08_26-10_11_36-rubin-nv1_2022_08_10' # XY4-1
@@ -93,8 +100,8 @@ def pop_S(t, N_pi, Ax, Az, fL, lambd, sigma,T2, a_list):
 # file = '2022_09_08-09_20_15-rubin-nv1_2022_08_10' # XY4-1
 # file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
 # file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
-# file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' #xy4-2
-file = '2022_09_01-17_57_59-rubin-nv4_2022_08_10' #XY4-2
+file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' #xy4-2
+# file = '2022_09_01-17_57_59-rubin-nv4_2022_08_10' #XY4-2
 folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 
@@ -141,31 +148,31 @@ c13_coupling = True
 
 if c13_coupling:
     ###____ include single 13C coupling ____###
-    fit_func = lambda  t, Ax, Az: pop_S(t,num_pi_pulses, Ax, Az,0.09836647,  0.6, 0.04, 0, 
+    fit_func = lambda  t, fh, theta: pop_S(t,num_pi_pulses, fh, theta, 0.09536647,  0.6, 0.04, 0, 
                                                       dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
     
     # fit_func = lambda  t, Ax, Az: (S_13C(t, num_pi_pulses, Ax, Az) + 1)/2
     A_amp = 10
     # A_ang = 0
-    for amp in [1.8]:
-        for theta in [90 *pi/180]:
+    for amp in [1]:
+        for theta in [22 *pi/180]:
     # for amp in numpy.linspace(0.01, 1, 6):
     #     for theta in numpy.linspace(0,pi/2,4):
             fig, ax = plt.subplots()
-            Ax = amp*numpy.sin(theta)
-            Az = amp*numpy.cos(theta)
-            init_params = [Ax, Az,]
-            # popt, pcov = curve_fit(
-            #     fit_func,
-            #     numpy.array(plot_taus),
-            #     norm_avg_sig,
-            #     # sigma=norm_avg_sig_ste,
-            #     # absolute_sigma=True,
-            #     p0=init_params,
-            #     # bounds=(0, numpy.inf),
-            # )
-            # print(popt)
-            popt = init_params
+            # Ax = amp*numpy.sin(theta)
+            # Az = amp*numpy.cos(theta)
+            init_params = [amp, theta]
+            popt, pcov = curve_fit(
+                fit_func,
+                numpy.array(plot_taus),
+                norm_avg_sig,
+                # sigma=norm_avg_sig_ste,
+                # absolute_sigma=True,
+                p0=init_params,
+                # bounds=(0, numpy.inf),
+            )
+            print(popt)
+            # popt = init_params
             ax.plot(
                     taus_lin,
                     fit_func(taus_lin, *popt),

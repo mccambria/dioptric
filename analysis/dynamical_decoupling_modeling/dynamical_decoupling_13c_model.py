@@ -71,6 +71,33 @@ def S_13C(t, N, Ax, Az):
     k = int((N/2)-1)
     return 1 - 4*(1 - dot_n**2) * numpy.sin(p0)**2/2 * numpy.sin(p1)**2/2 *(1-cosphi) * eval_chebyu(k, cosphi)**2
 
+
+def S_13C(t, N, wL, wh, theta):
+    '''
+    T tamineau equations
+    '''
+    A = wh*numpy.cos(theta)
+    B = wh*numpy.sin(theta)
+    
+    w_tild = numpy.sqrt((A+wL)**2 + B**2)
+    mz = (A + wL) / w_tild
+    mx = B/w_tild
+    
+    alpha = w_tild*t
+    beta = wL*t
+    
+    term_c = numpy.cos(alpha) * numpy.cos(beta)
+    term_s = numpy.sin(alpha) * numpy.sin(beta)
+    cosphi=  term_c - mz * term_s
+
+    # print(alpha)
+    num = (1-numpy.cos(alpha))*(1-numpy.cos(beta))
+    den = (1 + numpy.cos(alpha)*numpy.cos(beta) - mz*numpy.sin(alpha)*numpy.sin(beta))
+    onemdot = mx**2 * num / den
+
+    k = int((N/2)-1)
+    return 1 - onemdot * eval_chebyu(k, cosphi)**2 * (1 - cosphi**2)
+
 def vect_mult(vector, numbers):
     '''
     mutiply a vector (numpy array) and an array of numbers
@@ -155,7 +182,7 @@ def eval_chebyu_plot(t, N, Ax, Az ):
     k = int((N/2))
     return eval_chebyu(k-1, cosphi)**2 
     
-taus_lin = numpy.linspace(0, 10,600)
+taus_lin = numpy.linspace(0, 15,600)
 
 
 
@@ -163,24 +190,24 @@ taus_lin = numpy.linspace(0, 10,600)
 # fit_func = lambda  t, Ax, Az: pop_S(t,num_pi_pulses, Ax, Az,0.09836647,  0.6, 0.04, 0, 
 #                                                   dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
 
-fit_func = lambda  t,N, Ax, Az: (S_13C(t, N, Ax, Az) + 1)/2
-A_amp = 1
-A_ang = 0.2
+fit_func = lambda  t,N: (S_13C(t, N, 16*2*pi/1e3, 126*2*pi/1e3, 37*pi/180) + 1)/2
+# A_amp = 1
+# A_ang = 0.2
 
 fig, ax = plt.subplots()
-Ax = A_amp*numpy.sin(A_ang)
-Az = A_amp*numpy.cos(A_ang)
-init_params = [6, Ax, Az,]
+# Ax = A_amp*numpy.sin(A_ang)
+# Az = A_amp*numpy.cos(A_ang)
+init_params = [8]
 
 ax.plot(
         taus_lin,
         fit_func(taus_lin, *init_params),
         "-",
         color="red",
-        label="XY4-6",
+        label="XY4-8",
     ) 
 
-init_params = [4, Ax, Az,]
+init_params = [4]
 
 ax.plot(
         taus_lin,
@@ -191,14 +218,14 @@ ax.plot(
     ) 
 
  
-init_params = [2, Ax, Az,]
+init_params = [2]
 
 ax.plot(
         taus_lin,
         fit_func(taus_lin, *init_params),
         "-",
         color="black",
-        label="XY4-3",
+        label="XY4-2",
     ) 
 
 # ax.plot(
@@ -210,7 +237,7 @@ ax.plot(
 #     ) 
 
 ax.set_xlabel(r"Inter-pulse time, $\tau$ (us)")
-ax.set_ylabel("Coherence")
+ax.set_ylabel("Population")
 
 ax.legend()
 
