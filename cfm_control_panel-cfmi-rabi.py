@@ -542,24 +542,22 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
 
 def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
 
-    step_size = 0.5 # us
-    shift = 100 #ns
-    T_min = 0
-    T_max = 200
+    # step_size = 0.5 # us
+    # shift = 100 #ns
+    # T_min = 0
+    # T_max = 200
+    
+    # max_time = T_max / (2*4*num_xy4_reps)  # us
+    # min_time = T_min / (2*4*num_xy4_reps) #us
+    
+    
+    step_size = 2 # us
+    shift = 0 #ns
+    T_min = 260-50
+    T_max = 260+50
     
     max_time = T_max / (2*4*num_xy4_reps)  # us
     min_time = T_min / (2*4*num_xy4_reps) #us
-    
-    
-    #step_size = 5 # us
-    #shift = 0 #ns
-    # T_min = 620-30
-    # T_max = 620+30
-    #T_min = 310-30
-    #T_max = 310+30
-    
-    #max_time = T_max / (2*4*num_xy4_reps)  # us
-    #min_time = T_min / (2*4*num_xy4_reps) #us
     
     # # revival_time= nv_sig['t2_revival_time']
     # # T_min = (revival_time/1e3 - 3)*(2*4*num_xy4_reps) 
@@ -571,12 +569,12 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     #conventional readout
-    # num_reps = 1e4
-    # num_runs= 50
+    num_reps = 1e4
+    num_runs= 25
     
     # # scc readout
-    num_reps = 4 #should optimize every 10 min
-    num_runs= 3750
+    # num_reps = 4 #should optimize every 10 min
+    # num_runs= 3750
 
     state = States.HIGH
 
@@ -591,7 +589,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
         num_reps,
         num_runs,
         state=state,
-        scc_readout=True,
+        scc_readout=False,
     )
     return 
 

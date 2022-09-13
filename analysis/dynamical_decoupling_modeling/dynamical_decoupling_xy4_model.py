@@ -10,13 +10,15 @@ import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.integrate import quad
+from scipy.special import eval_chebyt
+from scipy.special import eval_chebyu
 from numpy import pi
 
 # uN = 0.762e-3 #MHz/G
 # uN_13C = 0.7*uN
 uN_13C = 2*pi*1.07e-3 #MH/G
 
-Bz= 15#94.6 #G
+Bz= 94.6 #G
 f_La = 0.098 #MHz
 
 dd_model_coeff_dict = tool_belt.get_dd_model_coeff_dict()
@@ -31,6 +33,27 @@ def S_bath(t, fL, lambd, sigma, T2, a_list  ):
     return numpy.exp(-X) #* numpy.exp(-(2*t/T2)**3)
 
 
+# def S_13C(t, N, Ax, Az):
+#     t = 2*t
+#     B_vec = numpy.array([0,0,Bz])
+#     A_vec = numpy.array([Ax, 0, Az])
+    
+#     w0 = numpy.linalg.norm(uN_13C*B_vec)
+#     w1 = numpy.linalg.norm(uN_13C*B_vec + A_vec)
+#     n0 = uN_13C*B_vec/w0
+#     n1 = (uN_13C*B_vec + A_vec)/w1
+    
+    
+#     term_c = numpy.cos(w0*t*2*pi/2) * numpy.cos(w1*t*2*pi/2)
+#     term_s = numpy.sin(w0*t*2*pi/2) * numpy.sin(w1*t*2*pi/2)
+#     phi=  numpy.arccos(term_c - numpy.dot(n0, n1) * term_s) # maybe try to avoid doing this ???
+
+
+#     cross_n = numpy.cross(n0, n1)
+#     term_ss = numpy.sin(w0*t*2*pi/2)**2 * numpy.sin(w1*t*2*pi/2)**2
+#     term_phi = numpy.sin(N*phi/2)**2 / numpy.cos(phi / 2)**2
+#     return (1 - numpy.linalg.norm(cross_n)**2 * term_ss * term_phi)
+
 def S_13C(t, N, Ax, Az):
     t = 2*t
     B_vec = numpy.array([0,0,Bz])
@@ -41,16 +64,24 @@ def S_13C(t, N, Ax, Az):
     n0 = uN_13C*B_vec/w0
     n1 = (uN_13C*B_vec + A_vec)/w1
     
+    p0 = w0 * t / 2
+    p1 = w1 * t / 2
+    
     
     term_c = numpy.cos(w0*t*2*pi/2) * numpy.cos(w1*t*2*pi/2)
     term_s = numpy.sin(w0*t*2*pi/2) * numpy.sin(w1*t*2*pi/2)
-    phi=  numpy.arccos(term_c - numpy.dot(n0, n1) * term_s)
+    cosphi=  term_c - numpy.dot(n0, n1) * term_s
 
 
-    cross_n = numpy.cross(n0, n1)
-    term_ss = numpy.sin(w0*t*2*pi/2)**2 * numpy.sin(w1*t*2*pi/2)**2
-    term_phi = numpy.sin(N*phi/2)**2 / numpy.cos(phi / 2)**2
-    return (1 - numpy.linalg.norm(cross_n)**2 * term_ss * term_phi)
+    dot_n = numpy.dot(n0, n1)
+    # print(dot_n)
+    # print(n1)
+    # term_ss = numpy.sin(w0*t*2*pi/2)**2 * numpy.sin(w1*t*2*pi/2)**2
+    # term_phi = numpy.sin(N*phi/2)**2 / numpy.cos(phi / 2)**2
+    k = int((N/2))
+    return 1 - 4*(1 - dot_n**2) * numpy.sin(p0/2)**2 * numpy.sin(p1/2)**2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
+    # return 1 - 4*(1 - dot_n**2) * numpy.sin(p0)**2/2 * numpy.sin(p1)**2/2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
+
     
 def pop_S(t, N_pi, Ax, Az, fL, lambd, sigma,T2, a_list):
     return (S_13C(t, N_pi, Ax, Az)*S_bath(t, fL, lambd, sigma,T2, a_list) + 1)/2
@@ -60,10 +91,10 @@ def pop_S(t, N_pi, Ax, Az, fL, lambd, sigma,T2, a_list):
 # folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
 # file='2022_09_08-08_19_09-rubin-nv4_2022_08_10' #XY4-1
 # file = '2022_09_08-09_20_15-rubin-nv1_2022_08_10' # XY4-1
-file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
+# file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
 # file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
 # file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' #xy4-2
-# file = '2022_09_01-17_57_59-rubin-nv4_2022_08_10' #XY4-2
+file = '2022_09_01-17_57_59-rubin-nv4_2022_08_10' #XY4-2
 folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 
@@ -110,24 +141,20 @@ c13_coupling = True
 
 if c13_coupling:
     ###____ include single 13C coupling ____###
-    # fit_func = lambda  t, Ax, Az: pop_S(t,num_pi_pulses, Ax, Az,0.086,  0.33, 0.04, 0, 
-    #                                                  dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
+    fit_func = lambda  t, Ax, Az: pop_S(t,num_pi_pulses, Ax, Az,0.09836647,  0.6, 0.04, 0, 
+                                                      dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
     
-    lambd =  0.33
-    sigma = 0.04
-    f_L = 0.016
-    fit_func = lambda  t, N, Ax, Az, a_list: pop_S(t,N, Ax, Az,f_L,  lambd, sigma, 0, 
-                                                     a_list ) 
-    A_amp = 1
+    # fit_func = lambda  t, Ax, Az: (S_13C(t, num_pi_pulses, Ax, Az) + 1)/2
+    A_amp = 10
     # A_ang = 0
-    for amp in [0.53]:
-        for theta in [2 *pi/180]:
+    for amp in [1.8]:
+        for theta in [90 *pi/180]:
     # for amp in numpy.linspace(0.01, 1, 6):
     #     for theta in numpy.linspace(0,pi/2,4):
             fig, ax = plt.subplots()
-            Ax = 0.100#amp*numpy.cos(theta)
-            Az = -0.075#amp*numpy.sin(theta)
-            init_params = [8, Ax, Az, dd_model_coeff_dict['{}'.format(8)] ]
+            Ax = amp*numpy.sin(theta)
+            Az = amp*numpy.cos(theta)
+            init_params = [Ax, Az,]
             # popt, pcov = curve_fit(
             #     fit_func,
             #     numpy.array(plot_taus),
@@ -147,22 +174,22 @@ if c13_coupling:
                     label="XY4-2",
                 ) 
             
-            popt = [4, Ax, Az, dd_model_coeff_dict['{}'.format(4)] ]
-            ax.plot(
-                    taus_lin,
-                    fit_func(taus_lin, *popt),
-                    "-",
-                    color="orange",
-                    label="XY4-1",
-                ) 
-            popt = [2, Ax, Az, dd_model_coeff_dict['{}'.format(2)] ]
-            ax.plot(
-                        taus_lin,
-                        fit_func(taus_lin, *popt),
-                        "-",
-                        color="black",
-                        label="SE",
-                    ) 
+            # popt = [4, Ax, Az, dd_model_coeff_dict['{}'.format(4)] ]
+            # ax.plot(
+            #         taus_lin,
+            #         fit_func(taus_lin, *popt),
+            #         "-",
+            #         color="orange",
+            #         label="XY4-1",
+            #     ) 
+            # popt = [2, Ax, Az, dd_model_coeff_dict['{}'.format(2)] ]
+            # ax.plot(
+            #             taus_lin,
+            #             fit_func(taus_lin, *popt),
+            #             "-",
+            #             color="black",
+            #             label="SE",
+            #         ) 
             # text_popt = '\n'.join((
             #                     r'$A_x = $' + '%.3f'%(popt[0]) + ' MHz',
             #                   r'$A_z = $' + '%.3f'%(popt[1]) + ' MHz'
@@ -173,26 +200,26 @@ if c13_coupling:
             #         verticalalignment='top', bbox=props)
                
             
-            fit_func = lambda  t: (S_bath(t,f_L,  lambd, sigma, 0,dd_model_coeff_dict['{}'.format(8)] ) +1)/2
-            ax.plot(
-                    taus_lin,
-                    fit_func(taus_lin),
-                    "-",
-                    color="blue",
-                    label="Spin bath",
-                ) 
-            ax.set_ylim([-0.1,1.1])
+            # fit_func = lambda  t: (S_bath(t,f_L,  lambd, sigma, 0,dd_model_coeff_dict['{}'.format(8)] ) +1)/2
             # ax.plot(
-            #         plot_taus,
-            #         norm_avg_sig,
-            #         ".-",
+            #         taus_lin,
+            #         fit_func(taus_lin),
+            #         "-",
             #         color="blue",
-            #         label="data",
-            #     )    
-            # ax.set_xlabel(r"Inter-pulse time, $\tau$ (us)")
-            # ax.set_ylabel("Normalized signal Counts")
-            # ax.set_title(title)
-            # ax.legend()
+            #         label="Spin bath",
+            #     ) 
+            # ax.set_ylim([-0.1,1.1])
+            ax.plot(
+                    plot_taus,
+                    norm_avg_sig,
+                    ".-",
+                    color="blue",
+                    label="data",
+                )    
+            ax.set_xlabel(r"Inter-pulse time, $\tau$ (us)")
+            ax.set_ylabel("Normalized signal Counts")
+            ax.set_title(title)
+            ax.legend()
 else:
 
     fig, ax = plt.subplots()
