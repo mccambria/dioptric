@@ -357,11 +357,11 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
     
     nv_sig = { 
-            "coords":[-0.854, -0.592,  6.177],
+            "coords":[0.244, 0.035, 4.921],
         "name": "{}-nv1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":12,
+        "expected_count_rate":9,
         "correction_collar": 0.12,
         
         
@@ -382,9 +382,10 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 156,
-        "resonance_LOW":2.7809,
-        "rabi_LOW":64.9,        
+        "magnet_angle": 100,
+        "resonance_LOW":2.7422,
+        "rabi_LOW":60,        
+        "uwave_power_LOW": 15,
         "resonance_HIGH":2.9592,
         "rabi_HIGH":67.5,
         # 'pi_pulse_HIGH': 36.2,
@@ -431,8 +432,8 @@ if __name__ == "__main__":
 
 
     # laser delay
-    # num_steps = 11
-    # num_reps = int(1e4)
+    num_steps = 101
+    num_reps = int(5e4)
     # laser_name = 'laserglow_532'
     # delay_range = [600, 1400]
     # num_reps = int(1e5)
@@ -445,15 +446,15 @@ if __name__ == "__main__":
     # laser_power = None
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
-    # delay_range = [0,2e3]
+    # delay_range = [0,1e3]
     # with labrad.connect() as cxn:
     #     aom_delay(cxn, nv_sig, apd_indices,
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(2e6)
-    delay_range = [545, 565]
-    num_steps = 21
+    num_reps = int(1e4)
+    delay_range = [0, 200]
+    num_steps = 101
     # bnc 835
     # state = States.LOW
     #  sg394
@@ -468,5 +469,14 @@ if __name__ == "__main__":
             num_steps,
             num_reps,
         )
+    #     uwave_delay(
+    #         cxn,
+    #         nv_sig,
+    #         apd_indices,
+    #         state,
+    #         delay_range,
+    #         num_steps,
+    #         num_reps,
+    #     )
 
  

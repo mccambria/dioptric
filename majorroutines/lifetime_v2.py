@@ -83,15 +83,15 @@ def process_raw_buffer(new_tags, new_channels,
 
 
 def main(nv_sig, apd_indices, readout_time_range,
-         num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference = False):
+         num_reps, num_runs, num_bins,  polarization_time = None):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
-                      num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference)
+                      num_reps, num_runs, num_bins, polarization_time)
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
-                  num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference = False):
+                  num_reps, num_runs, num_bins,  polarization_time = None):
 
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
@@ -101,8 +101,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
 
     # %% Define the times to be used in the sequence
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
+    laser_tag = "initialize"
+    laser_key = "{}_laser".format(laser_tag)
+    init_laser_name = nv_sig[laser_key]
+    init_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    if polarization_time:
+        nv_sig["{}_dur".format(laser_tag)] = polarization_time
+        
+    initialization_dur = nv_sig["{}_dur".format(laser_tag)]
+    
+    
     # In ns
 #    polarization_time = 25 * 10**3
     start_readout_time = int(readout_time_range[0])
@@ -115,15 +123,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
 #    readout_time = polarization_time + int(readout_time)
 #    inter_exp_wait_time = 500  # time between experiments
 
-    aom_delay_time = shared_params['532_aom_delay']
+
 
     # %% Analyze the sequence
 
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
-    seq_args = [start_readout_time, end_readout_time, polarization_time,
-                aom_delay_time, apd_indices[0]]
-    seq_args = [int(el) for el in seq_args]
+    seq_args = [start_readout_time, end_readout_time, initialization_dur,
+                init_laser_name, init_laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -131,7 +138,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     # %% Report the expected run time
 
     seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_reps * num_runs * seq_time_s  # s
+    expected_run_time = num_runs * (num_reps *  seq_time_s + 1)  # s
     expected_run_time_m = expected_run_time / 60 # m
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
 #    return
@@ -145,21 +152,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     opti_coords_list = []
 
     # %% Set the filters
-
-
-    if reference:
-        # shutter the objective
-        cxn.filter_slider_ell9k.set_filter('nd_0.5')
-        # put the correct color filter on
-        cxn.filter_slider_ell9k_color.set_filter(filter)
-    else:
-        # Optimize along z
-        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
-        opti_coords_list.append(opti_coords)
-        # do not shutter the objective
-        cxn.filter_slider_ell9k.set_filter('nd_0')
-        # put the correct color filter on
-        cxn.filter_slider_ell9k_color.set_filter(filter)
+    
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    tool_belt.set_filter(cxn, nv_sig, 'collection')
 
     # %% Collect the data
 
@@ -177,8 +172,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
             break
 
         # Optimize
-#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
-#        opti_coords_list.append(opti_coords)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords_list.append(opti_coords)
 
 
         # Expose the stream
@@ -191,9 +186,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
         gate_close_channel = channel_mapping[2]
 
         # Stream the sequence
-        seq_args = [start_readout_time, end_readout_time, polarization_time,
-                aom_delay_time, apd_indices[0]]
-        seq_args = [int(el) for el in seq_args]
+        # seq_args = [start_readout_time, end_readout_time, polarization_time,
+        #         aom_delay_time, apd_indices[0]]
+        # seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
 
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
@@ -234,8 +229,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'filter': filter,
-                    'reference_measurement?': reference,
+                    # 'filter': filter,
+                    # 'reference_measurement?': reference,
                     'start_readout_time': start_readout_time,
                     'start_readout_time-units': 'ns',
                     'end_readout_time': end_readout_time,
@@ -281,10 +276,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
-    ax.semilogy(numpy.array(bin_centers)/10**6, binned_samples, 'r-')
+    bin_size = calc_readout_time / num_bins
+    bin_size_s = bin_size / 1e9
+    
+    binned_samples_kcps = binned_samples / bin_size_s / 1e3 / num_reps / num_runs
+    
+    
+    ax2 = ax.twinx()
+    ax.plot(numpy.array(bin_centers)/10**3, binned_samples_kcps, 'r-')
+    ax2.plot(numpy.array(bin_centers)/10**3, binned_samples, 'r-')
+    
+    ax.set_xlabel('X data')
+    ax.set_ylabel('kcps', color='k')
+    ax2.set_ylabel('total raw counts', color='k')
+
     ax.set_title('Lifetime')
-    ax.set_xlabel('Time after illumination (ms)')
-    ax.set_ylabel('Counts')
+    ax.set_xlabel('Time after illumination (us)')
+    # ax.set_ylabel('kcps')
 
     fig.canvas.draw()
     fig.set_tight_layout(True)
@@ -300,9 +308,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
                 'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'filter': filter,
-                'reference_measurement?': reference,
-                'voltage': voltage,
+                # 'filter': filter,
+                # 'reference_measurement?': reference,
+                # 'voltage': voltage,
                 'polarization_time': polarization_time,
                 'polarization_time-units': 'ns',
                 'start_readout_time': start_readout_time,
