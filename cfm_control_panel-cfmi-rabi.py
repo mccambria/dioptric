@@ -425,27 +425,22 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=5):
 
 
 
-def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
+def do_lifetime(nv_sig, apd_indices):
 
-    #    num_reps = 100 #MM
-    num_reps = 500  # SM
-    num_bins = 101
-    num_runs = 5
-    readout_time_range = [0, 1.0 * 10 ** 6]  # ns
-    polarization_time = 60 * 10 ** 3  # ns
+    num_reps = 2e4 # SM
+    num_bins = 201
+    num_runs = 500
+    readout_time_range = [0.95e3, 1.15e3]  # ns
+    polarization_time = 1e3 # ns
 
     lifetime_v2.main(
-        nv_sig,
-        apd_indices,
+        nv_sig, 
+        apd_indices, 
         readout_time_range,
-        num_reps,
-        num_runs,
-        num_bins,
-        filter,
-        voltage,
-        polarization_time,
-        reference,
-    )
+        num_reps, 
+        num_runs, 
+        num_bins, 
+        polarization_time )
 
 
 
@@ -540,21 +535,21 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
     return 
 
 
-def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
+def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, shift, T_min, T_max):
 
-    # step_size = 0.5 # us
-    # shift = 100 #ns
-    # T_min = 0
-    # T_max = 200
+    #step_size = 1 # us
+    #shift = 100 #ns
+    #T_min = 0
+    #T_max = 200
     
     # max_time = T_max / (2*4*num_xy4_reps)  # us
     # min_time = T_min / (2*4*num_xy4_reps) #us
     
     
-    step_size = 2 # us
-    shift = 0 #ns
-    T_min = 260-50
-    T_max = 260+50
+    #step_size = 2 # us
+    #shift = 0 #ns
+    #T_min = 350-50
+    #T_max = 350+50
     
     max_time = T_max / (2*4*num_xy4_reps)  # us
     min_time = T_min / (2*4*num_xy4_reps) #us
@@ -570,7 +565,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
     
     #conventional readout
     num_reps = 1e4
-    num_runs= 25
+    num_runs= 50
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -1076,7 +1071,7 @@ if __name__ == "__main__":
     nv_sig_1 = copy.deepcopy(sig_base)
     nv_sig_1["coords"] = [0.126, -0.455, 5.484]
     nv_sig_1["name"] = "{}-nv1_2022_08_10".format(sample_name,)
-    nv_sig_1["expected_count_rate"] = 10
+    nv_sig_1["expected_count_rate"] = 11
     nv_sig_1["resonance_LOW"] = 2.6290
     nv_sig_1["rabi_LOW"] = 91.7
     nv_sig_1["resonance_HIGH"] = 3.1081
@@ -1135,7 +1130,7 @@ if __name__ == "__main__":
 
 
 
-    nv_sig = nv_sig_1
+    nv_sig = nv_sig_4
 
 
     # %% Functions to run
@@ -1199,8 +1194,9 @@ if __name__ == "__main__":
             # do_SPaCE(nv_sig, nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b,
             #  img_range_1D,img_range_2D, offset)
             
-
-                
+        #for nv_sig in [nv_sig_1, nv_sig_4, nv_sig_5, nv_sig_8, nv_sig_10]:
+        #   do_lifetime(nv_sig, apd_indices)
+            
         # do_relaxation(nv_sig, apd_indices)
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -1222,16 +1218,9 @@ if __name__ == "__main__":
         # for N in [2,3, 4]:
         #       do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
         
-        do_dd_xy4(nv_sig, apd_indices, 1) 
-        # for nv_sig in [nv_sig_8]:
-            # for N in [1, 2]:
-                # do_dd_xy4(nv_sig, apd_indices, N) 
-                # do_dd_xy4(nv_sig, apd_indices, 1, 100)  
-                # do_dd_xy4(nv_sig, apd_indices, 2, 200)  
-        # #     #do_dd_xy4(nv_sig, apd_indices, 4)
-        #      for N in [1, 2]:
-        #         do_dd_xy8(nv_sig, apd_indices, N)
-        
+        do_dd_xy4(nv_sig_4, apd_indices, 2, 0.5,100, 0, 50) 
+        do_dd_xy4(nv_sig_1, apd_indices, 2, 5,0, 350-50, 350+50) 
+
         #do_dd_xy8(nv_sig, apd_indices, 1 ) 
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
 
