@@ -17,7 +17,7 @@ from qm.qua import *
 from qm import SimulationConfig
 from configuration import *
 
-def qua_program(args, num_reps):
+def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
 
@@ -25,6 +25,11 @@ def qua_program(args, num_reps):
     readout_time = numpy.int64(readout_time)
 
     period = numpy.int64(delay + readout_time + 300)
+    
+    num_gates = 1
+    num_apds = len(apd_indices)
+    first_apd = apd_indices[0]
+    last_apd = apd_indices[-1]
   
     
     """ from pulse streamer version. just to look at for now
@@ -41,62 +46,64 @@ def qua_program(args, num_reps):
 
     """
     
+    
     with program() as seq:
         
         # I make two of each because we can have up to two APDs (two analog inputs), It will save all the streams that are actually used
         
-        apd_indices_st = declare_stream()
-        save(apd_indices,apd_indices_st)
-        counts_gate1_apd_0 = declare(int)  # variable for number of counts
-        counts_gate1_apd_1 = declare(int)
-        counts_gate1 = [counts_gate1_apd_0,counts_gate1_apd_1]
-        
+        counts_apd_0 = declare(int)  # variable for number of counts
+        counts_apd_1 = declare(int)
         counts_st = declare_stream()  # stream for counts
         
-        times_gate1_apd_0 = declare(int, size=100)  # why input a size??
-        times_gate1_apd_1 = declare(int, size=100)
-        times_gate1 = [times_gate1_apd_0,times_gate1_apd_1]
-        
+        times_apd_0 = declare(int, size=100)  # why input a size??
+        times_apd_1 = declare(int, size=100)
         times_st = declare_stream()
-        
+                
         n = declare(int)
+        apd_ind = declare(int)
         
         with for_(n, 0, n < num_reps, n + 1):
+            
+            ###piezos
+            with if_(len(x_voltage_list) > 0):
+                play("cw"*x_voltage_list[n],"x_channel")
+            with if_(len(y_voltage_list) > 0):
+                play("cw"*y_voltage_list[n],"y_channel")
+            with if_(len(z_voltage_list) > 0):
+                play("cw"*z_voltage_list[n],"z_channel")
         
-            # there must be an element for the laser_name 
+            ###green laser
             play(laser_ON,laser_name,duration=int(period))  
             #Either we make this statement turn on the laser with an indefinite pulse, 
             #or we need the sequence to populate a pulse in the configuration for the play statement to grab
             
-            wait(delay) # wait for the delay before starting apds
-    
-            for apd_ind in apd_indices:   #readout during the readout time on all apds
-                measure("readout", "APD_".format(apd_ind), None, time_tagging.analog(times_gate1[apd_ind], readout_time, counts_gate1[apd_ind]))
-                    
+            ###apds
+            with for_each_(apd_ind, apd_indices): 
+                
+                with if_(apd_ind = 0):
+                    wait(delay, "APD_0") # wait for the delay before starting apds
+                    measure("readout", "APD_0", None, time_tagging.analog(times_apd_0, readout_time, counts_apd_0))
+                with if_(apd_ind = 1):
+                    wait(delay, "APD_1") # wait for the delay before starting apds
+                    measure("readout", "APD_1", None, time_tagging.analog(times_apd_1, readout_time, counts_apd_1))
+            
+            
             # save the sample to the count stream. sample is a list of gates, which is a list of counts from each apd
             # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
            
             # in all sequences, these lists need to be populated with however many gates we have. In this case 2. 
-            counts_apd_0 = [counts_gate1[0]]
-            counts_apd_1 = [counts_gate1[1]]
-            times_apd_0 = [times_gate1[0]]
-            times_apd_1 = [times_gate1[1]]
-            
-            # the code below should apply to all sequences. It takes all the counts from both possible apds and saves it based on which apds are actually in use
-            counts_all_apds = [counts_apd_0,counts_apd_1]
-            counts_cur_apds = []
-            times_all_apds = [times_apd_0,times_apd_1]
-            times_cur_apds = []
-            for apd_ind in apd_indices:
-                counts_cur_apds.append(counts_all_apds[apd_ind])
-                times_cur_apds.append(times_all_apds[apd_ind])
-            save(counts_cur_apds, counts_st) 
-            save(times_cur_apds, times_st) 
-
+            with for_each_(apd_ind, apd_indices): 
+                
+                with if_(apd_ind = 0):
+                    save(counts_apd_0, counts_st)
+                    save(times_apd_0, times_st)
+                with if_(apd_ind = 1):
+                    save(counts_apd_1, counts_st)
+                    save(times_apd_1, times_st)
+                
         with stream_processing():
-            counts_st.save("counts")
-            times_st.save("times")
-            apd_indices_st.save("apd_indices")
+            counts_st.buffer(num_gates).buffer(num_apds).save_all("counts")
+            times_st.buffer(num_gates).save_all("times")
         
     return seq
 
@@ -107,9 +114,13 @@ def get_seq(opx, config, args): #so this will give just the sequence, no repeats
     
     return seq, final, [period]
 
-def get_full_seq(opx, config, args, num_repeat): #so this will give the full desired sequence, with however many repeats are intended repeats
+def get_full_seq(opx, config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq = qua_program(args, num_reps)
+    seq = qua_program(args, num_reps, x_voltage_list,y_voltage_list,z_voltage_list)
 
     return seq, final, [period]
     
+
+if __name__ == '__main__':
+    
+    print('hi')
