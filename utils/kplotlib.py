@@ -45,6 +45,8 @@ from enum import Enum
 
 marker_size = 7
 line_width = 1.5
+marker_size_inset = marker_size - 1
+line_width_inset = line_width - 0.25
 marker_edge_width = line_width
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]

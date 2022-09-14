@@ -292,6 +292,17 @@ def get_past_results(res):
         gamma_temps = [300, 350, 400, 450, 500, 550, 600]
         gamma_rates = [0.19264214046822736, 0.24882943143812708, 0.33177257525083614, 0.38795986622073575, 0.4655518394648829, 0.6555183946488294, 0.7785953177257525, ]
         gamma_rates = [1000*el for el in gamma_rates]
+    elif res == r"Cambria":
+        omega_temps = [295]
+        omega_rates = [59]
+        gamma_temps = [295]
+        gamma_rates = [117]
+    elif res == r"Taminiau":
+        omega_temps = [295]
+        omega_rates = [61]
+        gamma_temps = [295]
+        gamma_rates = [133]
+
     # fmt: on
 
     return omega_temps, omega_rates, gamma_temps, gamma_rates
@@ -1272,9 +1283,20 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
         "Jarmola, S2",
         "Jarmola, S3",
         "Jarmola, S8",
+        "Cambria",
+        "Taminiau",
     ]
-    markers = ["^", "D", "p", "H", "X", "d"]
-    colors = ["red", "pink", "brown", "yellow", "purple", "orange"]
+    markers = ["^", "D", "p", "H", "X", "d", "P", "h"]
+    colors = [
+        "red",
+        "pink",
+        "brown",
+        "yellow",
+        "purple",
+        "orange",
+        "gray",
+        "cyan",
+    ]
     colors = [kpl.KplColors[el.upper()].value for el in colors]
     for res, marker, color in zip(past_results, markers, colors):
 
@@ -1329,7 +1351,7 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
-    ax_a.legend()
+    ax_a.legend(ncol=2)
     ax_b.legend()
     fig.tight_layout(pad=0.3)
 
