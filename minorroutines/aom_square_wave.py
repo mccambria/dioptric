@@ -73,7 +73,7 @@ def main(cxn, laser_name, laser_power=None):
     seq_file = 'square_wave.py'
     period = int(2e8)
     # period = int(350*2)
-    # period = int(500)
+    # period = int(1000)
     # period = int(0.25e6)
     # period = int(10000)
     seq_args = [period, laser_name, laser_power]
@@ -96,14 +96,14 @@ def arb_duty_cycle(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
 
     seq_file = 'square_wave_arb_duty_cycle.py'
-    period_1 = 350
+    period_1 = 400
     wait_1 = 1e6
-    period_2 = 350
+    period_2 = 400
     wait_2 = 1e6
     seq_args = [wait_1,period_1 ,wait_2,period_2 ,laser_name, laser_power]
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_immediate(seq_file, int(1e5), seq_args_string)
+    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
 
     input('Press enter to stop...')
 
@@ -130,9 +130,9 @@ if __name__ == '__main__':
     # pos = [-0.025, -0.009, 4.89]
 
     # Hahn
-    # laser_names = ['cobolt_638']
+    laser_names = ['cobolt_638']
     # laser_names = ['integrated_520']
-    laser_names = ['laserglow_589']
+    # laser_names = ['laserglow_589']
     # laser_names = ['laserglow_532']
     # laser_names = ['cobolt_638', 'laserglow_532']
     # laser_names = ['laserglow_532', 'laserglow_589']
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
     filter_name = 'nd_1.0'
-    pos = [0.0, 0.0, 0.0]
+    pos = [0.0, 0.0, 5.0]
     # laser_powers = None
     
     with labrad.connect() as cxn:
@@ -155,21 +155,21 @@ if __name__ == '__main__':
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
         # constant(cxn, laser_names, laser_powers)
         # main(cxn, laser_names[0])
-        # arb_duty_cycle(cxn, laser_names[0])
+        arb_duty_cycle(cxn, laser_names[0])
 
 
 
         # cxn.pulse_streamer.constant([])
         # cxn.pulse_streamer.constant([], 1.0)
-        cxn_power_supply = cxn.power_supply_mp710087
-        tool_belt.init_safe_stop()
-        while True:
-            time.sleep(10)
-            if tool_belt.safe_stop():
-                break
-            cxn_power_supply.output_on()
-            time.sleep(5)
-            cxn_power_supply.output_off()
+        # cxn_power_supply = cxn.power_supply_mp710087
+        # tool_belt.init_safe_stop()
+        # while False:
+        #     time.sleep(10)
+        #     if tool_belt.safe_stop():
+        #         break
+        #     cxn_power_supply.output_on()
+        #     time.sleep(5)
+        #     cxn_power_supply.output_off()
             
             
                 
@@ -177,4 +177,4 @@ if __name__ == '__main__':
         # cxn.pulse_streamer.constant([], 1.0)
         # input('Press enter to stop...')
 
-        cxn.pulse_streamer.constant()
+        # cxn.pulse_streamer.constant()

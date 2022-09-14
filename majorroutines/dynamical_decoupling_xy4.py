@@ -47,7 +47,9 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
+    scc_readout=False,
 ):
 
     with labrad.connect() as cxn:
@@ -60,7 +62,9 @@ def main(
             num_steps,
             num_reps,
             num_runs,
+            taus,
             state,
+            scc_readout,
         )
         return angle
 
@@ -74,19 +78,48 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
+    taus = [],
     state=States.LOW,
+    scc_readout=False,
 ):
 
     tool_belt.reset_cfm(cxn)
 
     # %% Sequence setup
+    if scc_readout:
 
-    laser_key = "spin_laser"
-    laser_name = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        laser_tag = "nv-_reionization"
+        laser_key = "{}_laser".format(laser_tag)
+        pol_laser_name = nv_sig[laser_key]
+        pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        polarization_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "nv0_ionization"
+        laser_key = "{}_laser".format(laser_tag)
+        ion_laser_name = nv_sig[laser_key]
+        ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        ionization_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "spin_shelf"
+        laser_key = "{}_laser".format(laser_tag)
+        shelf_laser_name = nv_sig[laser_key]
+        shelf_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        shelf_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "charge_readout"
+        laser_key = "{}_laser".format(laser_tag)
+        readout_laser_name = nv_sig[laser_key]
+        readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        readout_dur = nv_sig["{}_dur".format(laser_tag)]
+        
+    else:
+        laser_key = "spin_laser"
+        laser_name = nv_sig[laser_key]
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        gate_time = nv_sig["spin_readout_dur"]
+        
     polarization_time = nv_sig["spin_pol_dur"]
-    gate_time = nv_sig["spin_readout_dur"]
 
     rabi_period = nv_sig["rabi_{}".format(state.name)]
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
@@ -95,11 +128,7 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
-    # pi pulses are slightly different than just half of the rabi period
-    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
-    # uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
-
-    seq_file_name = "dynamical_decoupling.py"
+    
 
     # %% Create the array of relaxation times
 
@@ -107,18 +136,19 @@ def main_with_cxn(
     # Must be ints
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
-
-    taus = numpy.linspace(
-        min_precession_time,
-        max_precession_time,
-        num=num_steps,
-        dtype=numpy.int32,
-    )
-    taus = taus + 500
+    
+    if len(taus) == 0:
+        taus = numpy.linspace(
+            min_precession_time,
+            max_precession_time,
+            num=num_steps,
+            dtype=numpy.int32,
+        )
+    # taus = taus + 500
     print(taus)
     # Convert to ms
     #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    plot_taus = (taus * 2 *4 * num_xy4_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -162,19 +192,48 @@ def main_with_cxn(
     num_reps = int(num_reps)
 
     pi_pulse_reps = num_xy4_reps*4
-    seq_args = [
-        taus[0],
-        polarization_time,
-        gate_time,
-        uwave_pi_pulse,
-        uwave_pi_on_2_pulse,
-        taus[-1],
-        pi_pulse_reps,
-        apd_indices[0],
-        state.value,
-        laser_name,
-        laser_power,
-    ]
+    
+    if scc_readout:
+        seq_file_name = "dynamical_decoupling_scc.py"
+
+        seq_args = [
+               taus[0],
+               polarization_dur,
+               ionization_dur,
+               shelf_dur,
+               readout_dur,
+               uwave_pi_pulse,
+               uwave_pi_on_2_pulse,
+               taus[-1],
+               pi_pulse_reps,
+               apd_indices[0],
+               state.value,
+               pol_laser_name,
+               pol_laser_power,
+               ion_laser_name,
+               ion_laser_power,
+               shelf_laser_name,
+               shelf_laser_power,
+               readout_laser_name,
+               readout_laser_power
+           ]   
+      
+    else:
+        seq_file_name = "dynamical_decoupling.py"  
+        seq_args = [
+              taus[0],
+              polarization_time,
+              gate_time,
+              uwave_pi_pulse,
+              uwave_pi_on_2_pulse,
+              taus[-1],
+              pi_pulse_reps,
+              apd_indices[0],
+              state.value,
+              laser_name,
+              laser_power,
+          ]
+        
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -191,7 +250,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    #return
+    # return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -226,7 +285,6 @@ def main_with_cxn(
         sig_gen_cxn.uwave_on()
         
         cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
-        # cxn.arbitrary_waveform_generator.load_cpmg(num_dd_reps)
         
 
         # Set up the laser
@@ -262,19 +320,47 @@ def main_with_cxn(
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
-            seq_args = [
-                taus[tau_ind_first],
-                polarization_time,
-                gate_time,
-                uwave_pi_pulse,
-                uwave_pi_on_2_pulse,
-                taus[tau_ind_second],
-                pi_pulse_reps,
-                apd_indices[0],
-                state.value,
-                laser_name,
-                laser_power,
-            ]
+            if scc_readout:
+                seq_file_name = "dynamical_decoupling_scc.py"
+        
+                seq_args = [
+                       taus[tau_ind_first],
+                       polarization_dur,
+                       ionization_dur,
+                       shelf_dur,
+                       readout_dur,
+                       uwave_pi_pulse,
+                       uwave_pi_on_2_pulse,
+                       taus[tau_ind_second],
+                       pi_pulse_reps,
+                       apd_indices[0],
+                       state.value,
+                       pol_laser_name,
+                       pol_laser_power,
+                       ion_laser_name,
+                       ion_laser_power,
+                       shelf_laser_name,
+                       shelf_laser_power,
+                       readout_laser_name,
+                       readout_laser_power
+                   ]   
+              
+            else:
+                seq_file_name = "dynamical_decoupling.py"  
+                seq_args = [
+                      taus[tau_ind_first],
+                      polarization_time,
+                      gate_time,
+                      uwave_pi_pulse,
+                      uwave_pi_on_2_pulse,
+                      taus[tau_ind_second],
+                      pi_pulse_reps,
+                      apd_indices[0],
+                      state.value,
+                      laser_name,
+                      laser_power,
+                  ]
+        
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -314,8 +400,9 @@ def main_with_cxn(
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        # print(numpy.average(avg_ref_counts))
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -355,8 +442,8 @@ def main_with_cxn(
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             'num_xy4_reps': num_xy4_reps,
-            "gate_time": gate_time,
-            "gate_time-units": "ns",
+            # "gate_time": gate_time,
+            # "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -372,6 +459,7 @@ def main_with_cxn(
             "num_reps": num_reps,
             "run_ind": run_ind,
             "taus": taus.tolist(),
+            "plot_taus":plot_taus.tolist(),
             "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
@@ -429,8 +517,8 @@ def main_with_cxn(
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         'num_xy4_reps': num_xy4_reps,
-        "gate_time": gate_time,
-        "gate_time-units": "ns",
+        # "gate_time": gate_time,
+        # "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
@@ -446,6 +534,7 @@ def main_with_cxn(
         "num_reps": num_reps,
         "num_runs": num_runs,
         "taus": taus.tolist(),
+        "plot_taus":plot_taus.tolist(),
         "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
@@ -473,5 +562,61 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+    
+    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
+    file1 = '2022_09_03-11_48_06-rubin-nv4_2022_08_10'
+    file2 = '2022_09_03-21_49_14-rubin-nv4_2022_08_10'
+    folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
+    file8 = '2022_09_04-07_49_33-rubin-nv4_2022_08_10'
+    
+    
+    file_list = [file1, file2]
+    fig, ax = plt.subplots()
+    
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, folder4)
+        taus = numpy.array(data['taus'])
+        num_xy4_reps = data['num_xy4_reps']
+        norm_avg_sig = data['norm_avg_sig']
+        num_steps=data['num_steps']
+        nv_sig = data['nv_sig']
+        plot_taus =data['plot_taus']
+    
+    
+    # tau_step = taus[1]-taus[0]
+    # plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+    
+        ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+        # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        # ax.legend()
+        
+    data = tool_belt.get_raw_data(file8, folder8)
+    taus = numpy.array(data['taus'])
+    num_xy8_reps = data['num_xy8_reps']
+    norm_avg_sig = data['norm_avg_sig']
+    num_steps=data['num_steps']
+    nv_sig = data['nv_sig']
+    plot_taus =data['plot_taus']
 
-    aa = 1
+
+# tau_step = taus[1]-taus[0]
+# plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
+
+    ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY8-{}".format(num_xy8_reps))
+    # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+    # ax.set_ylabel("Contrast (arb. units)")
+    ax.legend()
+    
+    # revival_t = nv_sig['t2_revival_time']/1e3
+    # for i in range(6+1):
+    #     rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
+    #     ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
+
+    # transform = numpy.fft.rfft(norm_avg_sig)
+    # freqs = numpy.fft.rfftfreq(num_steps, d=tau_step/1000)
+    # transform_mag = numpy.absolute(transform)
+    # fig, ax = plt.subplots()
+    # ax.plot(freqs, transform_mag)

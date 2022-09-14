@@ -218,7 +218,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2021_12_10-19_55_40-wu-nv3_2021_12_03'
+    file = '2022_09_09-00_29_36-rubin-nv1_2022_08_10'
     data = tool_belt.get_raw_data(file)
     splittings = data['splittings']
 

@@ -679,7 +679,6 @@ def create_image_figure(
     clickHandler=None,
     title=None,
     color_bar_label="Counts",
-    min_value=None,
     um_scaled=False,
     aspect_ratio=None,
     color_map="inferno",
@@ -1148,6 +1147,18 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     scan_vals = np.unique(scan_vals)
     return scan_vals
 
+# %% COEFFICEINT DICTIONARIES
+
+def get_dd_model_coeff_dict():
+    dd_model_coeff_dict = {
+            '1': [6, -8, 2],
+            '2': [10, -8, -8, 8, -2],
+            '4': [18, -8, -24, 8, 16, -8, -8, 8, -2],
+            '8': [34, -8, -56, 8, 48, 
+                       -8, -40, 8, 32,  -8, -24, 8, 16, -8, -8, 8, -2]
+            }
+    
+    return dd_model_coeff_dict
 
 # %% LabRAD utils
 

@@ -437,7 +437,7 @@ if __name__ == "__main__":
     config["CommonDurations"]["scc_ion_readout_buffer"] = 1000
     
     args = [100, None, None, 50, 50, 1000, 0, 1, 1, None, None, 
-            'laserglow_532', None, 1000.0, 'cobolt_638', None, 0, 
+            'integrated_520', None, 1000.0, 'cobolt_638', None, 0, 
             'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 100.0]
     # args = [2000, None, None, 67, 91, 4000, 1, 1, 3, None, None, 
     #         'laserglow_532', None, 1000.0, 'cobolt_638', None, 200, 

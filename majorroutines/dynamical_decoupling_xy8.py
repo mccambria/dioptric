@@ -115,7 +115,7 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
-    taus = taus + 500
+    # taus = taus + 500
     print(taus)
     # Convert to ms
     #plot_taus = taus / 1000
@@ -314,8 +314,9 @@ def main_with_cxn(
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        # print(numpy.average(avg_ref_counts))
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -372,6 +373,7 @@ def main_with_cxn(
             "num_reps": num_reps,
             "run_ind": run_ind,
             "taus": taus.tolist(),
+            "plot_taus":plot_taus.tolist(),
             "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
@@ -446,6 +448,7 @@ def main_with_cxn(
         "num_reps": num_reps,
         "num_runs": num_runs,
         "taus": taus.tolist(),
+        "plot_taus":plot_taus.tolist(),
         "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
