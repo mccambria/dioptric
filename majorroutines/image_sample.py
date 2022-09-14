@@ -459,7 +459,7 @@ if __name__ == '__main__':
 
     # file_name = '2022_08_18-16_22_08-hopper-search'
     # file_name = '2022_08_18-15_37_38-hopper-search'
-    file_name = '2022_09_08-16_18_46-rubin-nv1_2022_08_10'
+    file_name = '2022_09_08-12_24_14-rubin-nv1_2022_08_10'
     data = tool_belt.get_raw_data(file_name)
     # img = data['img_array']
     # y = data['y_voltages']
