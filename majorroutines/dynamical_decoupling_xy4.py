@@ -563,37 +563,38 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     
-    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09/incremental'
-    file1 = '2022_09_12-17_39_21-rubin-nv1_2022_08_10'
-    file2 = '2022_09_03-21_49_14-rubin-nv4_2022_08_10'
+    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
+    file1 = '2022_09_15-11_58_02-rubin-nv1_2022_08_10'
+    file2 = '2022_09_15-07_40_55-rubin-nv1_2022_08_10'
+    file4= '2022_09_15-03_22_50-rubin-nv1_2022_08_10'
     folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
     file8 = '2022_09_04-07_49_33-rubin-nv4_2022_08_10'
     
     
-    file_list = [file1]
+    file_list = [file1, file2 ,file4]
     fig, ax = plt.subplots()
     
     for file in file_list:
         data = tool_belt.get_raw_data(file, folder4)
         taus = numpy.array(data['taus'])
         num_xy4_reps = data['num_xy4_reps']
-        # norm_avg_sig = data['norm_avg_sig']
+        norm_avg_sig = data['norm_avg_sig']
         num_steps=data['num_steps']
         nv_sig = data['nv_sig']
         plot_taus =data['plot_taus']
-        run_ind = data['run_ind']
-        sig_counts = data['sig_counts']
-        ref_counts = data['ref_counts']
+        # run_ind = data['run_ind']
+        # sig_counts = data['sig_counts']
+        # ref_counts = data['ref_counts']
     
     
     # tau_step = taus[1]-taus[0]
     # plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
     
-        # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
-        # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-        # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
-        # ax.set_ylabel("Contrast (arb. units)")
-        # ax.legend()
+        ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+        # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+    ax.legend()
         
     # data = tool_belt.get_raw_data(file8, folder8)
     # taus = numpy.array(data['taus'])
@@ -603,37 +604,37 @@ if __name__ == "__main__":
     # nv_sig = data['nv_sig']
     # plot_taus =data['plot_taus']
 
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    avg_sig_counts = numpy.average(sig_counts[:(run_ind)], axis=0)
-    avg_ref_counts = numpy.average(ref_counts[:(run_ind)], axis=0)
-    # print(numpy.average(avg_ref_counts))
-    try:
-        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(norm_avg_sig)
-        # Assign to 0 based on the passed conditional array
-        norm_avg_sig[inf_mask] = 0
+    # raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    # avg_sig_counts = numpy.average(sig_counts[:(run_ind)], axis=0)
+    # avg_ref_counts = numpy.average(ref_counts[:(run_ind)], axis=0)
+    # # print(numpy.average(avg_ref_counts))
+    # try:
+    #     norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+    # except RuntimeWarning as e:
+    #     print(e)
+    #     inf_mask = numpy.isinf(norm_avg_sig)
+    #     # Assign to 0 based on the passed conditional array
+    #     norm_avg_sig[inf_mask] = 0
     
     
-    ax = axes_pack[0]
-    ax.cla()
-    ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
-    ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("Counts")
-    ax.legend()
+    # ax = axes_pack[0]
+    # ax.cla()
+    # ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
+    # ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+    # ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    # ax.set_ylabel("Counts")
+    # ax.legend()
     
-    ax = axes_pack[1]
-    ax.cla()
-    ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("Contrast (arb. units)")
+    # ax = axes_pack[1]
+    # ax.cla()
+    # ax.plot(plot_taus, norm_avg_sig, "b-")
+    # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    # ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+    # ax.set_ylabel("Contrast (arb. units)")
     
-    raw_fig.canvas.draw()
-    raw_fig.set_tight_layout(True)
-    raw_fig.canvas.flush_events()
+    # raw_fig.canvas.draw()
+    # raw_fig.set_tight_layout(True)
+    # raw_fig.canvas.flush_events()
        
 
 # tau_step = taus[1]-taus[0]

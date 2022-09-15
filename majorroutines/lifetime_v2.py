@@ -417,14 +417,15 @@ if __name__ == '__main__':
     file_8 = '2022_09_13-18_44_50-rubin-nv8_2022_08_10'
     file_10 = '2022_09_13-19_10_05-rubin-nv10_2022_08_10'
     file_bckg = '2022_09_14-12_39_05-rubin-no_nv'
+    file_laser = '2022_09_15-16_16_13-rubin-no_nv'
     
     color_list = ['red','blue','green','orange','black']
     file_list = [file_1, file_4, file_5, file_8, file_10 ]
-    # file_list = [file_1, ]
+    file_list = [file_laser]
     # t1_exponential_decay(file_name)
     
     data = tool_belt.get_raw_data(file_bckg, folder)
-    bkgd= numpy.array(data['binned_samples'])
+    bkgd= numpy.array(data['binned_samples'])*0
         
     
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
@@ -446,6 +447,8 @@ if __name__ == '__main__':
         end_ind = 80
         bin_centers_shift = bin_centers[start_ind:end_ind] - bin_centers[start_ind] 
         norm_samples_shift = norm_samples[start_ind:end_ind]
+        bin_centers_shift = bin_centers
+        norm_samples_shift = norm_samples
         
         
         ax.plot(numpy.array(bin_centers_shift), norm_samples_shift, 'o', color=color_list[f], 
@@ -467,14 +470,14 @@ if __name__ == '__main__':
         print('{} +/- {} ns'.format(popt[0], numpy.sqrt(pcov[0][0])))
         # print(popt)
         # print(pcov)
-        ax.plot(
-                centers_lin,
-                fit_func(centers_lin, *popt),
-                "-",
-                color=color_list[f],
-                linestyle = '-'
-                # label="fit",
-            ) 
+        # ax.plot(
+        #         centers_lin,
+        #         fit_func(centers_lin, *popt),
+        #         "-",
+        #         color=color_list[f],
+        #         linestyle = '-'
+        #         # label="fit",
+        #     ) 
         
         
         
