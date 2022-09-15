@@ -886,13 +886,13 @@ if __name__ == "__main__":
     # folder = "wu-nv1_2022_03_16-295K"
     folder = "wu-nv6_2022_04_14-295K"
 
-    # mode = "prediction"
-    mode = "analysis"
+    mode = "prediction"
+    # mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 1821  # omega_calc(temp)
-        est_gamma = 4500  # gamma_calc(temp)
+        est_omega = 1520  # omega_calc(temp)
+        est_gamma = 3300  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))

@@ -468,8 +468,8 @@ def do_spin_echo(nv_sig, apd_indices, state = States.HIGH):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 40  # us
-    num_steps = int(max_time/0.5+ 1)  # 1 point per 1 us
+    max_time = 120  # us
+    num_steps = int(max_time/2+ 1)  # 1 point per 1 us
     precession_time_range = [0, max_time*10**3]
 
     # revival_time= 9.934e3
@@ -565,7 +565,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, shift, T_min, T_max)
     
     #conventional readout
     num_reps = 1e4
-    num_runs= 50
+    num_runs= 75
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -682,12 +682,12 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 0.5e6#20e6
-    max_tau_gamma = 0.5e6# 8e6
+    max_tau_omega = 0.7e6#20e6
+    max_tau_gamma = 0.4e6# 8e6
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2000
-    num_runs = 60
+    num_runs = 200
     
     if False:
      t1_exp_array = numpy.array(
@@ -722,19 +722,19 @@ def do_relaxation(nv_sig, apd_indices, ):
                 num_steps_omega,
                 num_reps,
                 num_runs,
-       #     ],
-       #         [
-       #         [States.HIGH, States.HIGH],
-       #         [min_tau, max_tau_gamma],
-       #         num_steps_gamma,
-       #         num_reps,
-       #         num_runs,
-       #     ],
-        #            [
-        #        [States.HIGH, States.LOW],
-        #        [min_tau, max_tau_gamma],
-        #        num_steps_gamma,
-        #        num_reps,
+            ],
+                [
+                [States.HIGH, States.HIGH],
+                [min_tau, max_tau_gamma],
+                num_steps_gamma,
+                num_reps,
+                num_runs,
+            ],
+                    [
+                [States.HIGH, States.LOW],
+                [min_tau, max_tau_gamma],
+                num_steps_gamma,
+                num_reps,
         #        num_runs,
             ]] )
 
@@ -1123,9 +1123,15 @@ if __name__ == "__main__":
     nv_sig_10["resonance_LOW"] = 2.6290
     nv_sig_10["rabi_LOW"] = 91.7
     nv_sig_10["resonance_HIGH"] = 3.1081
-    nv_sig_10["rabi_HIGH"] = 81.1
+    nv_sig_10["rabi_HIGH"] = 82.7
     nv_sig_10["t2_revival_time"] =10.945e3
 
+
+    nv_sig_none = copy.deepcopy(sig_base)
+    nv_sig_none["coords"] = [0.115, -0.472,
+                          nv_sig_1["coords"][2]]
+    nv_sig_none["name"] = "{}-no_nv".format(sample_name,)
+    nv_sig_none["disable_opt"] = True
 
 
 
@@ -1160,7 +1166,7 @@ if __name__ == "__main__":
                 do_optimize(nv_sig,apd_indices)
     
                 # do_image_sample(nv_sig, apd_indices)
-                
+                     
                 # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
                 # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
                 # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
@@ -1194,10 +1200,9 @@ if __name__ == "__main__":
             # do_SPaCE(nv_sig, nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b,
             #  img_range_1D,img_range_2D, offset)
             
-        #for nv_sig in [nv_sig_1, nv_sig_4, nv_sig_5, nv_sig_8, nv_sig_10]:
-        #   do_lifetime(nv_sig, apd_indices)
+        # for nv_sig in [nv_sig_4,nv_sig_8]:
+        # do_lifetime(nv_sig, apd_indices)
             
-        # do_relaxation(nv_sig, apd_indices)
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
 
@@ -1209,17 +1214,19 @@ if __name__ == "__main__":
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, nv_sig,apd_indices)
 
-        # do_spin_echo(nv_sig, apd_indices)
+        #do_spin_echo(nv_sig_4, apd_indices)
+        #do_relaxation(nv_sig_10, apd_indices)
+        
         # for n in [2, 3, 4, 5, 6, 8, 9, 10, 25, 50]:
             
         #do_dd_cpmg(nv_sig, apd_indices, 4, 200 )
         # do_dd_xy8(nv_sig, apd_indices, 1 )
         
-        # for N in [2,3, 4]:
+        for N in [4, 2, 1]:
         #       do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
         
-        do_dd_xy4(nv_sig_4, apd_indices, 2, 0.5,100, 0, 50) 
-        do_dd_xy4(nv_sig_1, apd_indices, 2, 5,0, 350-50, 350+50) 
+        # do_dd_xy4(nv_sig_4, apd_indices, 2, 0.5,100, 0, 50) 
+          do_dd_xy4(nv_sig_1, apd_indices, N, 2, 0, 360-50, 360+50) 
 
         #do_dd_xy8(nv_sig, apd_indices, 1 ) 
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
