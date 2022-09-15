@@ -18,12 +18,13 @@ from numpy import pi
 # uN_13C = 0.7*uN
 uN_13C = 2*pi*1.07e-3 #MH/G
 
-Bz= 94.6 #G
+Bz= 15#G
 f_La = 0.098 #MHz
 
 dd_model_coeff_dict = tool_belt.get_dd_model_coeff_dict()
 
 def S_bath(t, fL, lambd, sigma, T2, a_list  ):
+    
     sum_expr = a_list[0]
     for i in range(len(a_list)-1):
         n=i+1
@@ -35,7 +36,7 @@ def S_bath(t, fL, lambd, sigma, T2, a_list  ):
 
 def S_13C(t, N, fL, fh, theta):
     '''
-    T tamineau equations
+    T taminiau equations
     '''
     wh = fh * 2*pi
     wL = fL * 2*pi
@@ -100,8 +101,11 @@ def pop_S(t, N, fh, theta, fL, lambd, sigma,T2, a_list):
 # file = '2022_09_08-09_20_15-rubin-nv1_2022_08_10' # XY4-1
 # file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
 # file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
-file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' #xy4-2
-# file = '2022_09_01-17_57_59-rubin-nv4_2022_08_10' #XY4-2
+
+file = '2022_09_14-01_56_22-rubin-nv4_2022_08_10' #xy4-2
+# file = '2022_09_14-09_53_52-rubin-nv4_2022_08_10' #XY4-2
+
+# file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' # XY4-2
 folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 
@@ -143,25 +147,25 @@ norm_avg_sig = (avg_sig_counts - max_ref) / contrast
 taus_lin = numpy.linspace(plot_taus[0], plot_taus[-1],600)
 
 
-c13_coupling = True
+c13_coupling = False
 
 
 if c13_coupling:
     ###____ include single 13C coupling ____###
-    fit_func = lambda  t, fh, theta: pop_S(t,num_pi_pulses, fh, theta, 0.09536647,  0.6, 0.04, 0, 
+    fit_func = lambda  t, fh, theta, lambd, sigma: pop_S(t,num_pi_pulses, fh, theta, 0.089, lambd, sigma,  0, 
                                                       dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
     
     # fit_func = lambda  t, Ax, Az: (S_13C(t, num_pi_pulses, Ax, Az) + 1)/2
     A_amp = 10
     # A_ang = 0
-    for amp in [1]:
-        for theta in [22 *pi/180]:
+    for amp in [0.3]:
+        for theta in [45*pi/180]:
     # for amp in numpy.linspace(0.01, 1, 6):
     #     for theta in numpy.linspace(0,pi/2,4):
             fig, ax = plt.subplots()
             # Ax = amp*numpy.sin(theta)
             # Az = amp*numpy.cos(theta)
-            init_params = [amp, theta]
+            init_params = [amp, theta, 2, 0.04]
             popt, pcov = curve_fit(
                 fit_func,
                 numpy.array(plot_taus),
@@ -169,10 +173,10 @@ if c13_coupling:
                 # sigma=norm_avg_sig_ste,
                 # absolute_sigma=True,
                 p0=init_params,
-                # bounds=(0, numpy.inf),
+                bounds=(0, [numpy.inf,pi,numpy.inf,numpy.inf]),
             )
             print(popt)
-            # popt = init_params
+            popt = init_params
             ax.plot(
                     taus_lin,
                     fit_func(taus_lin, *popt),
@@ -233,7 +237,7 @@ else:
     ###____ exclude single 13C coupling ____###
     fit_func = lambda  t,f_L, lambd, sigma:( S_bath(t,f_L, lambd, sigma, 0, 
                                                     dd_model_coeff_dict['{}'.format(num_pi_pulses)]) +1)/2
-    init_params = [ 0.094, 0.4, 0.005]
+    init_params = [ 0.088, 0.2, 0.03]
     popt, pcov = curve_fit(
         fit_func,
         numpy.array(plot_taus),

@@ -409,9 +409,78 @@ def t1_exponential_decay(open_file_name):
 #    fig_fit.savefig(open_file_name + '-replot.svg')
 
 # %%
-
-
 if __name__ == '__main__':
-    file_name = '2019_11/2019_11_26-17_22_11-undoped_Y2O3-633_bandpass'
-
-    t1_exponential_decay(file_name)
+    folder = 'pc_rabi/branch_master/lifetime_v2/2022_09'
+    file_1 = '2022_09_13-17_07_24-rubin-nv1_2022_08_10'
+    file_4 = '2022_09_13-17_51_35-rubin-nv4_2022_08_10'
+    file_5 = '2022_09_13-18_17_53-rubin-nv5_2022_08_10'
+    file_8 = '2022_09_13-18_44_50-rubin-nv8_2022_08_10'
+    file_10 = '2022_09_13-19_10_05-rubin-nv10_2022_08_10'
+    file_bckg = '2022_09_14-12_39_05-rubin-no_nv'
+    
+    color_list = ['red','blue','green','orange','black']
+    file_list = [file_1, file_4, file_5, file_8, file_10 ]
+    # file_list = [file_1, ]
+    # t1_exponential_decay(file_name)
+    
+    data = tool_belt.get_raw_data(file_bckg, folder)
+    bkgd= numpy.array(data['binned_samples'])
+        
+    
+    fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
+    for f in range(len(file_list)):
+        file = file_list[f]
+        data = tool_belt.get_raw_data(file, folder)
+        bin_centers = numpy.array(data['bin_centers'])
+        binned_samples = numpy.array(data['binned_samples'])
+        nv_sig = data['nv_sig']
+        nv_name = nv_sig['name']
+        
+        binned_samples_sub = binned_samples - bkgd
+        nn = 15
+        one = numpy.average(binned_samples_sub[:nn])
+        zero = numpy.average(binned_samples_sub[-nn:])
+        norm_samples = (binned_samples_sub - zero) / (one - zero)
+        
+        start_ind =29
+        end_ind = 80
+        bin_centers_shift = bin_centers[start_ind:end_ind] - bin_centers[start_ind] 
+        norm_samples_shift = norm_samples[start_ind:end_ind]
+        
+        
+        ax.plot(numpy.array(bin_centers_shift), norm_samples_shift, 'o', color=color_list[f], 
+                    label = nv_name)
+        
+        centers_lin = numpy.linspace(bin_centers_shift[0], bin_centers_shift[-1], 100)
+        # print(centers_lin)
+        fit_func = lambda t, d: decayExp(t, 1, d)
+        init_params = [ 20]
+        popt, pcov = curve_fit(
+            fit_func,
+            bin_centers_shift,
+            norm_samples_shift,
+            # sigma=norm_avg_sig_ste,
+            # absolute_sigma=True,
+            p0=init_params,
+            # bounds=(0, numpy.inf),
+        )
+        print('{} +/- {} ns'.format(popt[0], numpy.sqrt(pcov[0][0])))
+        # print(popt)
+        # print(pcov)
+        ax.plot(
+                centers_lin,
+                fit_func(centers_lin, *popt),
+                "-",
+                color=color_list[f],
+                linestyle = '-'
+                # label="fit",
+            ) 
+        
+        
+        
+        ax.set_xlabel('Time after illumination (ns)')
+        ax.set_ylabel('Normalized signal')
+        # ax.set_title('Lifetime')
+        ax.set_yscale("log")
+        ax.legend()
+    
