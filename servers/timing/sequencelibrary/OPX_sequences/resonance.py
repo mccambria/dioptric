@@ -34,18 +34,25 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
 
     # Get what we need out of the wiring dictionary
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
-
+    
+    timetag_list_size = 10000000
+    num_apds = len(apd_indices)
+    num_gates = 2
     
     with program() as seq:
         
         # I make two of each because we can have up to two APDs (two analog inputs), It will save all the streams that are actually used
         
-        counts_apd_0 = declare(int)  # variable for number of counts
-        counts_apd_1 = declare(int)
+        counts_gate1_apd_0 = declare(int)  # variable for number of counts
+        counts_gate1_apd_1 = declare(int)
+        counts_gate2_apd_0 = declare(int)  # variable for number of counts
+        counts_gate2_apd_1 = declare(int)
         counts_st = declare_stream()  # stream for counts
         
-        times_apd_0 = declare(int, size=100)  # why input a size??
-        times_apd_1 = declare(int, size=100)
+        times_gate1_apd_0 = declare(int, size=timetag_list_size)  # why input a size??
+        times_gate1_apd_1 = declare(int, size=timetag_list_size)
+        times_gate2_apd_0 = declare(int, size=timetag_list_size)  # why input a size??
+        times_gate12_apd_1 = declare(int, size=timetag_list_size)
         times_st = declare_stream()
                 
         n = declare(int)
@@ -72,14 +79,14 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
                 
                 with if_(apd_ind = 0):
                     wait(front_buffer + transient, "APD_0") # wait for the delay before starting apds
-                    measure("readout", "APD_0", None, time_tagging.analog(times_apd_0, readout_time, counts_apd_0))
+                    measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                     wait(uwave_delay, "APD_0") # wait for the delay before starting apds
-                    measure("readout", "APD_0", None, time_tagging.analog(times_apd_0, readout_time, counts_apd_0))
+                    measure("readout", "APD_0", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 with if_(apd_ind = 1):
                     wait(front_buffer + transient, "APD_1") # wait for the delay before starting apds
-                    measure("readout", "APD_1", None, time_tagging.analog(times_apd_1, readout_time, counts_apd_1))
+                    measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
                     wait(uwave_delay, "APD_1") # wait for the delay before starting apds
-                    measure("readout", "APD_1", None, time_tagging.analog(times_apd_1, readout_time, counts_apd_1))
+                    measure("readout", "APD_1", None, time_tagging.analog(times_gate2_apd_1, readout_time, counts_gate2_apd_1))
                     
                     
             ###microwaves
@@ -94,15 +101,21 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
             with for_each_(apd_ind, apd_indices):
                 
                 with if_(apd_ind = 0):
-                    save(counts_apd_0, counts_st)
-                    save(times_apd_0, times_st)
+                    save(counts_gate1_apd_0, counts_st)
+                    save(counts_gate2_apd_0, counts_st)
+                    save(times_gate1_apd_0, times_st)
+                    save(times_gate2_apd_0, times_st)
+                    
                 with if_(apd_ind = 1):
-                    save(counts_apd_1, counts_st)
-                    save(times_apd_1, times_st)
+                    save(counts_gate1_apd_1, counts_st)
+                    save(counts_gate2_apd_1, counts_st)
+                    save(times_gate1_apd_1, times_st)
+                    save(times_gate2_apd_1, times_st)
+                    
                 
         with stream_processing():
             counts_st.buffer(num_gates).buffer(num_apds).save_all("counts")
-            times_st.buffer(num_gates).save_all("times")
+            times_st.buffer(timetag_list_size).buffer(num_gates).buffer(num_apds).save_all("times")
         
     return seq
 

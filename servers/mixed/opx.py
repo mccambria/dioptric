@@ -347,27 +347,50 @@ class OPX(LabradServer, Tagger, PulseGen):
     
     @setting(7, num_to_read="i", returns="*s*i")
     def read_tag_stream(self, c, num_to_read=None): #from apd tagger ###need to update
-    
-        results = fetching_tool(self.pending_experiment_job, data_list=["times_st", "apd_indices"], mode="wait_for_all")
+        """This will take in the same three level list as read_counter_internal, but the third level is not a number of counts, but actually a list of time tags
+            It will return a list of samples. Each sample is a list of gates. Each gates is a list of time tags
+            It will also return a list of channels. Each channel is a list of gates. In each gate is a list of the channel associated to each time tag
+        """
+        results = fetching_tool(self.pending_experiment_job, data_list=["times"], mode="wait_for_all")
         
-        channels_list = []
+        all_channels_list = []
+        all_times_list = []
         
         while results.is_processing():
             # Fetch results
             times, apds = results.fetch_all()
-            times_list = []
-            for i in range(len(times)):
-                times_list = times_list + times[i]
-                channels_list = channels_list + np.full(len(times[i]),apd_indices[i]).tolist()
-            times_array = np.array(times_list)
-            channels_array = np.array(channels_list)
-            ind_order = np.argsort(times_array)
-            time_tags = times_array[ind_order]
-            channels = channels_array[ind_order]
-            time_tags = time_tags.tolist()
-            channels = channels.tolist()
             
-        return time_tags, channels 
+            for j in range(len(times)):
+                cur_sample = times[j]
+                sample_gates = []
+                sample_channels = []
+                
+                for k in range(len(cur_sample)):
+                    cur_gate = cur_sample[k]
+                    cur_gate_times = []
+                    cur_gate_channels = []
+                    
+                    for i in range(len(cur_gate)):
+                        cur_apd_times = cur_gate[i]
+                        cur_apd_channel_label = apd_indices[i]
+                        cur_gate_times = cur_gate_times + cur_apd_times
+                        cur_gate_channels = cur_gate_channels + np.full(len(cur_apd),cur_apd_channel_label).tolist()
+                    
+                    cur_gate_times_array = np.array(cur_gate_times)
+                    cur_gate_channels_array = np.array(cur_gate_channels)
+                    sorting_indices = np.argsort(cur_gate_times_array)
+                    cur_gate_times_array_sorted = cur_gate_times_array[sorting_indices]
+                    cur_gate_channels_array_sorted = cur_gate_channels_array[sorting_indices]
+                    cur_gate_times = cur_gate_times_array_sorted.tolist()
+                    cur_gate_channels = cur_gate_channels_array_sorted.tolist()
+                    
+                    sample_gates.append(cur_gate_times)
+                    sample_channels.append(cur_gate_channels)
+                
+                all_channels_list.append(sample_channels)
+                all_times_list.append(sample_gates)
+            
+        return all_times_list, all_channels_list 
 
     
     @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
