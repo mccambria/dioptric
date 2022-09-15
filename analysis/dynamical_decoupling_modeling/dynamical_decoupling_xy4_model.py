@@ -31,7 +31,7 @@ def S_bath(t, fL, lambd, sigma, T2, a_list  ):
         sum_expr += a_list[n]*numpy.exp(-n**2 * (t)**2 * sigma**2 / 2) * numpy.cos(n*t*(fL*2*pi))
 
     X =4* lambd**2 * sum_expr
-    return numpy.exp(-X) #* numpy.exp(-(2*t/T2)**3)
+    return numpy.exp(-X) * numpy.exp(-(2*t/T2)**3)
 
 
 def S_13C(t, N, fL, fh, theta):
@@ -100,12 +100,13 @@ def pop_S(t, N, fh, theta, fL, lambd, sigma,T2, a_list):
 # file='2022_09_08-08_19_09-rubin-nv4_2022_08_10' #XY4-1
 # file = '2022_09_08-09_20_15-rubin-nv1_2022_08_10' # XY4-1
 # file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
-# file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
+file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
 
-file = '2022_09_14-01_56_22-rubin-nv4_2022_08_10' #xy4-2
+# file = '2022_09_14-01_56_22-rubin-nv4_2022_08_10' #xy4-2
 # file = '2022_09_14-09_53_52-rubin-nv4_2022_08_10' #XY4-2
 
 # file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' # XY4-2
+# file = '2022_09_11-15_02_12-rubin-nv8_2022_08_10'
 folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 
@@ -147,25 +148,19 @@ norm_avg_sig = (avg_sig_counts - max_ref) / contrast
 taus_lin = numpy.linspace(plot_taus[0], plot_taus[-1],600)
 
 
-c13_coupling = False
+c13_coupling = True
 
 
 if c13_coupling:
     ###____ include single 13C coupling ____###
-    fit_func = lambda  t, fh, theta, lambd, sigma: pop_S(t,num_pi_pulses, fh, theta, 0.089, lambd, sigma,  0, 
+    fit_func = lambda  t, fh, theta, lambd, sigma: pop_S(t,num_pi_pulses, fh, theta, 0.096, lambd, sigma,  40, 
                                                       dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
-    
-    # fit_func = lambda  t, Ax, Az: (S_13C(t, num_pi_pulses, Ax, Az) + 1)/2
-    A_amp = 10
-    # A_ang = 0
-    for amp in [0.3]:
-        for theta in [45*pi/180]:
-    # for amp in numpy.linspace(0.01, 1, 6):
-    #     for theta in numpy.linspace(0,pi/2,4):
+
+    for amp in [0.1]:#1.4
+        for theta in [60*pi/180]:
             fig, ax = plt.subplots()
-            # Ax = amp*numpy.sin(theta)
-            # Az = amp*numpy.cos(theta)
-            init_params = [amp, theta, 2, 0.04]
+            init_params = [amp, theta, 0.3, 0.01]
+            # init_params = [0.32661016, 0.98844318, 0.5221769,  0.04097683]
             popt, pcov = curve_fit(
                 fit_func,
                 numpy.array(plot_taus),
@@ -176,7 +171,7 @@ if c13_coupling:
                 bounds=(0, [numpy.inf,pi,numpy.inf,numpy.inf]),
             )
             print(popt)
-            popt = init_params
+            # popt = init_params
             ax.plot(
                     taus_lin,
                     fit_func(taus_lin, *popt),
@@ -185,41 +180,6 @@ if c13_coupling:
                     label="XY4-2",
                 ) 
             
-            # popt = [4, Ax, Az, dd_model_coeff_dict['{}'.format(4)] ]
-            # ax.plot(
-            #         taus_lin,
-            #         fit_func(taus_lin, *popt),
-            #         "-",
-            #         color="orange",
-            #         label="XY4-1",
-            #     ) 
-            # popt = [2, Ax, Az, dd_model_coeff_dict['{}'.format(2)] ]
-            # ax.plot(
-            #             taus_lin,
-            #             fit_func(taus_lin, *popt),
-            #             "-",
-            #             color="black",
-            #             label="SE",
-            #         ) 
-            # text_popt = '\n'.join((
-            #                     r'$A_x = $' + '%.3f'%(popt[0]) + ' MHz',
-            #                   r'$A_z = $' + '%.3f'%(popt[1]) + ' MHz'
-            #                   ))
-        
-            # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            # ax.text(0.1, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
-            #         verticalalignment='top', bbox=props)
-               
-            
-            # fit_func = lambda  t: (S_bath(t,f_L,  lambd, sigma, 0,dd_model_coeff_dict['{}'.format(8)] ) +1)/2
-            # ax.plot(
-            #         taus_lin,
-            #         fit_func(taus_lin),
-            #         "-",
-            #         color="blue",
-            #         label="Spin bath",
-            #     ) 
-            # ax.set_ylim([-0.1,1.1])
             ax.plot(
                     plot_taus,
                     norm_avg_sig,
@@ -235,9 +195,9 @@ else:
 
     fig, ax = plt.subplots()
     ###____ exclude single 13C coupling ____###
-    fit_func = lambda  t,f_L, lambd, sigma:( S_bath(t,f_L, lambd, sigma, 0, 
+    fit_func = lambda  t,f_L, lambd, sigma:( S_bath(t,f_L, lambd, sigma, 100, 
                                                     dd_model_coeff_dict['{}'.format(num_pi_pulses)]) +1)/2
-    init_params = [ 0.088, 0.2, 0.03]
+    init_params = [ 0.1, 0.2, 0.01]
     popt, pcov = curve_fit(
         fit_func,
         numpy.array(plot_taus),

@@ -47,7 +47,7 @@ def X_SE(t, fL, lambd, sigma_per ):
 def S_bath_SE(t, fL, lambd, sigma_per, T2):
     # I = quad(integrand, -numpy.inf, numpy.inf, args=(t, fL))
     # t = t/2
-    return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(2*t/T2)**3)
+    return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(t/T2)**3)
 
     
 def pop_S_1(t, a, b, f0, T):
@@ -56,8 +56,10 @@ def pop_S_1(t, a, b, f0, T):
 def pop_S_2(t, a, b, f0, f1, T):
     return (S_2(t, a, b, f0, f1, T) + 1)/2
     
-file = "2022_08_22-17_48_47-rubin-nv1"
-folder = 'pc_rabi/branch_master/spin_echo/2022_08'
+file = "2022_09_14-16_11_46-rubin-nv5_2022_08_10"
+# file = '2022_09_14-16_53_25-rubin-nv4_2022_08_10'
+# file = '2022_09_14-19_08_40-rubin-nv4_2022_08_10'
+folder = 'pc_rabi/branch_master/spin_echo/2022_09'
 
 data = tool_belt.get_raw_data(file, folder)
 sig_counts = numpy.array(data['sig_counts'])
@@ -89,7 +91,7 @@ norm_avg_sig = (norm_avg_sig - (1-contrast))/(contrast)
 # fit_func = lambda t, b, f0, T: pop_S_1(t, 1, b, f0, T)
 # init_params = [1,  0.1, 200]
 fit_func = lambda t, fL, lambd, sigma_per, T2: (S_bath_SE(t,fL, lambd, sigma_per, T2) + 1)/2
-init_params = [0.1, 0.19, 0.02, 100]
+init_params = [0.1, 0.3, 0.02, 50]
 
 popt, pcov = curve_fit(
     fit_func,
@@ -101,7 +103,7 @@ popt, pcov = curve_fit(
     # bounds=(min_bounds, max_bounds),
 )
 print(popt)
-
+# popt=init_params
 fig, ax = plt.subplots()
 taus_lin = numpy.linspace(plot_taus[0], plot_taus[-1],600)
 # taus_lin = numpy.linspace(0, 4,600)
