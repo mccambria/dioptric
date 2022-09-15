@@ -45,7 +45,7 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
        ### need to figure out what we need to do with this tool_belt function for analog controls of lasers on the opx
 
     """
-    timetag_list_size = 10000000
+    timetag_list_size = 15000
     num_apds = len(apd_indices)
     num_gates = 1
     
@@ -63,6 +63,7 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
         times_st = declare_stream()
                 
         n = declare(int)
+        i = declare(int)
         apd_ind = declare(int)
         
         with for_(n, 0, n < num_reps, n + 1):
@@ -99,14 +100,17 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
                 
                 with if_(apd_ind = 0):
                     save(counts_gate1_apd_0, counts_st)
-                    save(times_gate1_apd_0, times_st)
+                    with for_(i, 0, i < counts_gate1_apd_0, i + 1):
+                        save(times_gate1_apd_0[i], times_st)
+                        
                 with if_(apd_ind = 1):
                     save(counts_gate1_apd_1, counts_st)
-                    save(times_gate1_apd_1, times_st)
+                    with for_(i, 0, i < counts_gate1_apd_1, i + 1):
+                        save(times_gate1_apd_1[i], times_st)
                 
         with stream_processing():
-            counts_st.buffer(num_gates).buffer(num_apds).save_all("counts")
-            times_st.buffer(timetag_list_size).buffer(num_gates).buffer(num_apds).save_all("times")
+            counts_st.buffer(num_gates).buffer(num_apds).buffer(num_reps).save_all("counts")
+            times_st.save_all("times")
         
     return seq
 

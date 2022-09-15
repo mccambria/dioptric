@@ -191,6 +191,53 @@ class PiezoStageDigital(LabradServer):
     #         task.close()
     #         self.task = None
     #     return 0
+    
+    def load_stream_writer_xy(self, c, task_name, voltages, period):
+        
+        num_voltages = voltages.shape[1]
+        
+        
+        x_voltages = voltages[0]
+        y_voltages = voltages[1]
+        
+        xaxis = 1
+        yaxis = 2
+        xwavetable = 1
+        ywavetable = 2
+        self.piezo.WSL(self,xaxis,xwavetable)
+        self.piezo.WSL(self,yaxis,ywavetable)
+        
+        appendwave = "&"
+        speedupdown = 0
+        seglength = self.num_steps
+        numpoints = seglength
+        
+        for step in range(self.num_steps):
+            if step == 0:
+                firstpointx = 1
+            elif step != 0:
+                firstpointx = self.num_steps * step
+                
+            wavetableID = 1
+            line_x_voltages = x_voltages[int(self.num_steps*step):int(self.num_steps*(step+1))]
+            amplitude = line_x_voltages[-1] - line_x_voltages[0]
+            offset = line_x_voltages[0]
+            self.piezo.WAV_LIN(xwavetable,firstpointx,numpoints,appendwave,speedupdown,amplitude,offset,seglength)
+            
+        
+        for step in range(self.num_steps):
+            if step == 0:
+                firstpointy = 1
+            elif step != 0:
+                firstpointy = self.num_steps * step
+                
+            line_y_voltages = y_voltages[int(self.num_steps*step):int(self.num_steps*(step+1))]
+            amplitude = line_y_voltages[-1] - line_y_voltages[0]
+            offset = line_y_voltages[0]
+            self.piezo.WAV_LIN(ywavetable,firstpointy,numpoints,appendwave,speedupdown,amplitude,offset,seglength)
+            
+        self.piezo.WGO(1,2)
+        self.piezo.WGO(2,2)
 
     @setting(32,  xPosition="v[]", yPosition="v[]", returns="v[]",)
     def write_xy(self, c, xPosition, yPosition):
@@ -358,6 +405,7 @@ class PiezoStageDigital(LabradServer):
         """
 
         ######### Assumes x_range == y_range #########
+        self.num_steps = num_steps
 
         if x_range != y_range:
             raise ValueError("x_range must equal y_range for now")

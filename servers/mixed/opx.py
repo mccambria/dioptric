@@ -83,6 +83,8 @@ class OPX(LabradServer, Tagger, PulseGen):
     
    
     #%% sequence loading and executing functions ###
+    ### looks good. It's ready to queue up both the experiment job and the infinite loop job. I can test it with simple programs and config
+    
         
     def get_seq(self, seq_file, seq_args_string): # this returns the qua sequence without repeats. from pulse streamer. DONE
         """For the OPX, this will grab a single iteration of the desired sequence
@@ -252,6 +254,9 @@ class OPX(LabradServer, Tagger, PulseGen):
         return ret_vals
     
     #%% counting and time tagging functions ### 
+    ### currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
+    ### these also need to be tested once I get the opx up and running again
+    
         
     @setting(47, num_to_read="i", returns="*3w")
     def read_counter_complete(self, c, num_to_read=None):
@@ -277,8 +282,9 @@ class OPX(LabradServer, Tagger, PulseGen):
         
         while results.is_processing():
             # Fetch results
-            return_counts = results.fetch_all(flat_struct=True) #just not sure if its gonna put it into the list structure we want
-        
+            return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
+            return_counts = return_counts.tolist()
+            
         return return_counts
 
     @setting(5, num_to_read="i", returns="*w")
@@ -351,46 +357,52 @@ class OPX(LabradServer, Tagger, PulseGen):
             It will return a list of samples. Each sample is a list of gates. Each gates is a list of time tags
             It will also return a list of channels. Each channel is a list of gates. In each gate is a list of the channel associated to each time tag
         """
-        results = fetching_tool(self.pending_experiment_job, data_list=["times"], mode="wait_for_all")
+        results = fetching_tool(self.pending_experiment_job, data_list=["counts","times"], mode="wait_for_all")
         
         all_channels_list = []
         all_times_list = []
         
         while results.is_processing():
             # Fetch results
-            times, apds = results.fetch_all()
+            counts, times = results.fetch_all()
+            num_samples = len(counts)
+            num_apds = len(counts[0])
+            num_gates = len(counts[0][0])
+            last_ind = 0
             
-            for j in range(len(times)):
-                cur_sample = times[j]
-                sample_gates = []
-                sample_channels = []
-                
-                for k in range(len(cur_sample)):
-                    cur_gate = cur_sample[k]
-                    cur_gate_times = []
-                    cur_gate_channels = []
-                    
-                    for i in range(len(cur_gate)):
-                        cur_apd_times = cur_gate[i]
-                        cur_apd_channel_label = apd_indices[i]
-                        cur_gate_times = cur_gate_times + cur_apd_times
-                        cur_gate_channels = cur_gate_channels + np.full(len(cur_apd),cur_apd_channel_label).tolist()
-                    
-                    cur_gate_times_array = np.array(cur_gate_times)
-                    cur_gate_channels_array = np.array(cur_gate_channels)
-                    sorting_indices = np.argsort(cur_gate_times_array)
-                    cur_gate_times_array_sorted = cur_gate_times_array[sorting_indices]
-                    cur_gate_channels_array_sorted = cur_gate_channels_array[sorting_indices]
-                    cur_gate_times = cur_gate_times_array_sorted.tolist()
-                    cur_gate_channels = cur_gate_channels_array_sorted.tolist()
-                    
-                    sample_gates.append(cur_gate_times)
-                    sample_channels.append(cur_gate_channels)
-                
-                all_channels_list.append(sample_channels)
-                all_times_list.append(sample_gates)
+            ordered_time_tags = [] #this will be a list of sample. each sample is a list of gates. each gate is a list of sorted time tags
+            ordered_channels = [] #this will be a list of samples. each sample is a list of gates. each gate is a list of channels for the corresponding time tags
             
-        return all_times_list, all_channels_list 
+            for i in range(num_samples):
+                sample_counts = counts[i]
+                all_gate_time_tags = []
+                all_gate_channels = []
+                
+                for j in range(num_gates):
+                    gate_counts = sample_counts[i]
+                    all_apd_time_tags = []
+                    channels = []
+                    
+                    for k in range(num_apd):
+                        apd_counts = gate_counts[k] #gate_counts will be a single number
+                        apd_time_tags = times[last_ind:last_ind+apd_counts]
+                        all_apd_time_tags = all_apd_time_tags + apd_time_tags
+                        channels = channels+np.full(len(apd_time_tags),apd_indices[k]).tolist()
+                        last_ind = last_ind+apd_counts
+                    
+                    sorting = np.argsort(np.array(all_apd_time_tags))
+                    all_apd_time_tags = np.array(all_apd_time_tags)[sorting]
+                    all_apd_time_tags = all_apd_time_tags.tolist()
+                    channels = np.array(channels)[sorting]
+                    channels = channels.tolist()
+                    
+                    all_gate_time_tags.append(all_apd_time_tags)
+                    all_gate_channels.append(channels)
+                
+                ordered_time_tags.append(all_gate_time_tags)
+                ordered_channels.append(all_gate_channels)
+            
+        return ordered_time_tags, ordered_channels 
 
     
     @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
@@ -409,6 +421,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         pass
 
     #%% xy server functions
+    ### looking into piezo controller to see if it can be given a stream of voltages, like we do with the daq, and triggered digitally
     @setting(41, xVoltage="v[]")
     def write_x(self, c, xVoltage):
         """Write the specified voltages to the xy positioning outputs.
@@ -643,6 +656,8 @@ class OPX(LabradServer, Tagger, PulseGen):
         return
     
     #%% z positioning functions
+    ### same as above. In the long term we should get a daq so we can use that with the z piezo in the new setup
+    
     @setting(17, voltage="v[]")
     def write_z(self, c, voltage):
         """Write the specified voltage to the z channel"""
@@ -769,6 +784,8 @@ class OPX(LabradServer, Tagger, PulseGen):
     
     
     #%% arbitary waveform generator functions. 
+    ### mostly just pass
+
     #all the 'load' functions are not necessary on the OPX
     #the pulses need to exist in the configuration file and they are used in the qua sequence
     

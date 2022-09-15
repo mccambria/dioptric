@@ -35,7 +35,7 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
     # Get what we need out of the wiring dictionary
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     
-    timetag_list_size = 10000000
+    timetag_list_size = 15000
     num_apds = len(apd_indices)
     num_gates = 2
     
@@ -56,6 +56,7 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
         times_st = declare_stream()
                 
         n = declare(int)
+        i = declare(int)
         
         with for_(n, 0, n < num_reps, n + 1):
         
@@ -98,24 +99,30 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
             # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
             
             # in all sequences, these lists need to be populated with however many gates we have. In this case 2. 
+        
+            
             with for_each_(apd_ind, apd_indices):
                 
                 with if_(apd_ind = 0):
                     save(counts_gate1_apd_0, counts_st)
                     save(counts_gate2_apd_0, counts_st)
-                    save(times_gate1_apd_0, times_st)
-                    save(times_gate2_apd_0, times_st)
+                    with for_(i, 0, i < counts_gate1_apd_0, i + 1):
+                        save(times_gate1_apd_0[i], times_st)  # save time tags to stream
+                    with for_(i, 0, i < counts_gate2_apd_0, i + 1):
+                        save(times_gate2_apd_0[i], times_st)
                     
                 with if_(apd_ind = 1):
                     save(counts_gate1_apd_1, counts_st)
                     save(counts_gate2_apd_1, counts_st)
-                    save(times_gate1_apd_1, times_st)
-                    save(times_gate2_apd_1, times_st)
+                    with for_(i, 0, i < counts_gate1_apd_1, i + 1):
+                        save(times_gate1_apd_1[i], times_st)  # save time tags to stream
+                    with for_(i, 0, i < counts_gate2_apd_1, i + 1):
+                        save(times_gate2_apd_1[i], times_st)
                     
                 
         with stream_processing():
-            counts_st.buffer(num_gates).buffer(num_apds).save_all("counts")
-            times_st.buffer(timetag_list_size).buffer(num_gates).buffer(num_apds).save_all("times")
+            counts_st.buffer(num_gates).buffer(num_apds).buffer(num_reps).save_all("counts")
+            times_st.save_all("times")
         
     return seq
 
