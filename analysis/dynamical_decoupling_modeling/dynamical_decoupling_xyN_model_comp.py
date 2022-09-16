@@ -30,7 +30,7 @@ def S_bath_test(t, lambd, sigma, a_list ):
 
 fig, ax = plt.subplots()
 taus_lin = numpy.linspace(0, 3,600)
-params = [0.4, 0.03]
+params = [0.25, 0.03]
 
 #######________________________#############
 fit_func = lambda  t, lambd, sigma: S_bath_test(t, lambd, sigma,  dd_model_coeff_dict['2'] ) 
@@ -60,8 +60,18 @@ ax.plot(
         label=r'8 $\pi$-pulses',
     ) 
 
+fit_func = lambda  t, lambd, sigma: S_bath_test(t, lambd, sigma,  dd_model_coeff_dict['1'] ) 
+ax.plot(
+            taus_lin,
+            fit_func(taus_lin, *params),
+            "-",
+            color="green",
+            label=r'1 $\pi$-pulse (spin echo)',
+        ) 
+
+
 ax.set_xlabel(r"Evolution time ($2 \pi/ \omega_L$)")
 ax.set_ylabel("Coherence")
 
-# ax.legend()
+ax.legend()
 
