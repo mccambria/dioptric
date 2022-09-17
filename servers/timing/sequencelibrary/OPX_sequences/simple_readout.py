@@ -22,32 +22,15 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
     delay, readout_time, apd_index, laser_name, laser_power = args
 
     delay = numpy.int64(delay)
+    delay_cc = delay // 4
     readout_time = numpy.int64(readout_time)
 
     period = numpy.int64(delay + readout_time + 300)
+    period_cc = period // 4 
     
     num_gates = 1
     num_apds = len(apd_indices)
-    first_apd = apd_indices[0]
-    last_apd = apd_indices[-1]
-  
-    
-    """ from pulse streamer version. just to look at for now
-    train = [(period-200, LOW), (100, HIGH), (100, LOW)]
-    seq.setDigital(pulser_do_daq_clock, train)
-
-    train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
-    seq.setDigital(pulser_do_daq_gate, train)
-
-    train = [(period, HIGH)]
-    #tool_belt.process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train)  
-       ### only applies to analog because we won't use feedthrough.
-       ### need to figure out what we need to do with this tool_belt function for analog controls of lasers on the opx
-
-    """
-    timetag_list_size = 15000
-    num_apds = len(apd_indices)
-    num_gates = 1
+    timetag_list_size = int(15900 / num_gates / num_apds)
     
     with program() as seq:
         
@@ -57,57 +40,56 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
         counts_gate1_apd_1 = declare(int)
         counts_st = declare_stream()  # stream for counts
         
-        
         times_gate1_apd_0 = declare(int, size=timetag_list_size)  # why input a size??
         times_gate1_apd_1 = declare(int, size=timetag_list_size)
         times_st = declare_stream()
                 
         n = declare(int)
         i = declare(int)
-        apd_ind = declare(int)
         
         with for_(n, 0, n < num_reps, n + 1):
             
-            ###piezos
-            with if_(len(x_voltage_list) > 0):
-                play("cw"*x_voltage_list[n],"x_channel")
-            with if_(len(y_voltage_list) > 0):
-                play("cw"*y_voltage_list[n],"y_channel")
-            with if_(len(z_voltage_list) > 0):
-                play("cw"*z_voltage_list[n],"z_channel")
-        
+            align()  
+            
             ###green laser
-            play(laser_ON,laser_name,duration=int(period))  
-            #Either we make this statement turn on the laser with an indefinite pulse, 
-            #or we need the sequence to populate a pulse in the configuration for the play statement to grab
+            play(laser_ON,laser_name,duration=int(period_cc))  
             
             ###apds
-            with for_each_(apd_ind, apd_indices): 
+            if 0 in apd_indices:
+                wait(delay_cc, "APD_0") # wait for the delay before starting apds
+                measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                 
-                with if_(apd_ind = 0):
-                    wait(delay, "APD_0") # wait for the delay before starting apds
-                    measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
-                with if_(apd_ind = 1):
-                    wait(delay, "APD_1") # wait for the delay before starting apds
-                    measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
-            
+            if 1 in apd_indices:
+                wait(delay_cc, "APD_1") # wait for the delay before starting apds
+                measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
+        
             
             # save the sample to the count stream. sample is a list of gates, which is a list of counts from each apd
             # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
            
-            # in all sequences, these lists need to be populated with however many gates we have. In this case 2. 
-            with for_each_(apd_ind, apd_indices): 
+            ###trigger piezos
+            if (len(x_voltage_list) > 0):
+                wait((period - 200) // 4, "x_channel")
+                play("ON", "x_channel", duration=100)  
+            if (len(y_voltage_list) > 0):
+                wait((period - 200) // 4, "y_channel")
+                play("ON", "y_channel", duration=100)  
+            if (len(z_voltage_list) > 0):
+                wait((period - 200) // 4, "z_channel")
+                play("ON", "z_channel", duration=100)  
                 
-                with if_(apd_ind = 0):
-                    save(counts_gate1_apd_0, counts_st)
-                    with for_(i, 0, i < counts_gate1_apd_0, i + 1):
-                        save(times_gate1_apd_0[i], times_st)
+            
+            ###saving
+            if 0 in apd_indices:
+                save(counts_gate1_apd_0, counts_st)
+                with for_(i, 0, i < counts_gate1_apd_0, i + 1):
+                    save(times_gate1_apd_0[i], times_st)
                         
-                with if_(apd_ind = 1):
-                    save(counts_gate1_apd_1, counts_st)
-                    with for_(i, 0, i < counts_gate1_apd_1, i + 1):
-                        save(times_gate1_apd_1[i], times_st)
-                
+            if 1 in apd_indices:
+                save(counts_gate1_apd_1, counts_st)
+                with for_(i, 0, i < counts_gate1_apd_1, i + 1):
+                    save(times_gate1_apd_1[i], times_st)
+            
         with stream_processing():
             counts_st.buffer(num_gates).buffer(num_apds).buffer(num_reps).save_all("counts")
             times_st.save_all("times")
