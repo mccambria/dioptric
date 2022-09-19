@@ -318,54 +318,9 @@ if __name__ == "__main__":
 
     ### Main
 
-    plot_type = "T2_max"
-    y_range = [7e-4, 30]
-    yscale = "log"
-    temp_range = [-5, 480]
-    xscale = "linear"
-
-    # plot_type = "T2_frac"
-    # y_range = [0, 1]
-    # yscale = "linear"
-    # temp_range = [-5, 310]
-    # xscale = "linear"
-
-    # rates_to_plot = ["hopper"]
-    rates_to_plot = ["hopper", "wu"]
-
-    ### Supp
-
-    # plot_type = "T2_max_supp"
-    # temp_range = [[-5, 480], [-5, 310]]
-    # xscale = ["linear", "linear"]
-    # yscale = ["log", "linear"]
-    # y_range = [[7e-4, 30], [-0.02, 0.62]]
-    # rates_to_plot = [["hopper", "wu"], ["hopper"]]
-
-    # plot_type = "T2_max_supp"
-    # temp_range = [[-5, 480], [-9, 315]]
-    # xscale = ["linear", "linear"]
-    # yscale = ["log", "linear"]
-    # y_range = [[6e-4, 40], [0, 0.58]]
-    # rates_to_plot = [["hopper"], ["hopper"]]
-
     ###
 
     main(
-        file_name,
-        path,
-        plot_type,
-        rates_to_plot,
-        temp_range,
-        y_range,
-        xscale,
-        yscale,
-        dosave=False,
     )
-
-    # file_name = "bar_gill_2012-2a.csv"
-    # home = common.get_nvdata_dir()
-    # path = home / "paper_materials/relaxation_temp_dependence/ripped_T2_plots"
-    # bar_gill_replot(file_name, path)
 
     plt.show(block=True)
