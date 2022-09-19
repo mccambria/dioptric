@@ -336,17 +336,18 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 # %% User functions
 
 
-def optimize_list(nv_sig_list, apd_indices, laser_ind=532, aom_ao_589_pwr=1.0):
+def optimize_list(nv_sig_list, apd_indices):
 
     with labrad.connect() as cxn:
-        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind, aom_ao_589_pwr)
+        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices)
 
 
-def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind, aom_ao_589_pwr):
+def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices):
 
     tool_belt.init_safe_stop()
 
     opti_coords_list = []
+    opti_counts_list = []
     for ind in range(len(nv_sig_list)):
 
         print("Optimizing on NV {}...".format(ind))
@@ -355,21 +356,24 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind, aom_ao_589_
             break
 
         nv_sig = nv_sig_list[ind]
-        opti_coords = main_with_cxn(
+        opti_coords, opti_counts = main_with_cxn(
             cxn,
             nv_sig,
             apd_indices,
-            laser_ind,
             set_to_opti_coords=False,
             set_drift=False,
         )
+        
         if opti_coords is not None:
             opti_coords_list.append("[{:.3f}, {:.3f}, {:.2f}],".format(*opti_coords))
+            opti_counts_list.append("{},".format(opti_counts))
         else:
             opti_coords_list.append("Optimization failed for NV {}.".format(ind))
 
     for coords in opti_coords_list:
         print(coords)
+    for counts in opti_counts_list:
+        print(counts)
 
 
 def prepare_microscope(cxn, nv_sig, coords=None):
@@ -652,4 +656,4 @@ def main_with_cxn(
 
     # %% Return the optimized coordinates we found
 
-    return opti_coords
+    return opti_coords, opti_count_rate
