@@ -288,12 +288,7 @@ def main(
         handles,
         labels,
         title="Prior results",
-<<<<<<< HEAD
         loc=loc,
-=======
-        loc="upper right",
-        # loc="lower left",
->>>>>>> 263822b709f3a253f8889fadae1e5573ecee357b
         # bbox_to_anchor=(1.0, 0.82),
         handlelength=1,
         handletextpad=0.5,

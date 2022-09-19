@@ -83,27 +83,27 @@ def do_image_sample(nv_sig, apd_indices):
     #
     # scan_range = 5.0
     # scan_range = 3
-    scan_range = 1
+    # scan_range = 1
     # scan_range =4
     # scan_range = 2
     # scan_range = 0.5
-    #scan_range = 0.35
+    # scan_range = 0.35
     # scan_range = 0.25
     # scan_range = 0.2
-    # scan_range = 0.15
+    #scan_range = 0.15
     # scan_range = 0.1
-    # scan_range = 0.05
+    scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
     #num_steps = 400
     # num_steps = 300
     # num_steps = 200
-    num_steps = 160
+    # num_steps = 160
     # num_steps = 135
     # num_steps =120
     # num_steps = 90
-    # num_steps = 60
+    num_steps = 60
     # num_steps = 31
     # num_steps = 21
 
@@ -171,7 +171,7 @@ def do_image_sample_xz(nv_sig, apd_indices):
 
     scan_range_x = .25
 # z code range 3 to 7 if centered at 5
-    scan_range_z =1
+    scan_range_z =2
     num_steps = 60
 
     image_sample_xz.main(
@@ -290,9 +290,9 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
 
     num_steps =101
     num_reps = 1e4
-    num_runs = 10
-    uwave_power = 15
-    uwave_pulse_dur = int(30)
+    num_runs = 15
+    uwave_power = 10
+    uwave_pulse_dur = int(45)
 
     pulsed_resonance.main(
         nv_sig,
@@ -304,6 +304,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
         num_runs,
         uwave_power,
         uwave_pulse_dur,
+        state=States.HIGH,
         opti_nv_sig = opti_nv_sig
     )
 
@@ -316,7 +317,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.1
+    freq_range = 0.12
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(1e4)
@@ -348,9 +349,9 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     angle_range = [0, 150]
     #    num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.3
-    num_freq_steps = 101
-    num_freq_runs = 10
+    freq_range = 0.6
+    num_freq_steps = 121
+    num_freq_runs = 25
 
     # Pulsed
     uwave_power = 10#14.5
@@ -382,7 +383,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 3
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -424,27 +425,22 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=5):
 
 
 
-def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
+def do_lifetime(nv_sig, apd_indices):
 
-    #    num_reps = 100 #MM
-    num_reps = 500  # SM
-    num_bins = 101
-    num_runs = 5
-    readout_time_range = [0, 1.0 * 10 ** 6]  # ns
-    polarization_time = 60 * 10 ** 3  # ns
+    num_reps = 2e4 # SM
+    num_bins = 201
+    num_runs = 500
+    readout_time_range = [0.95e3, 1.15e3]  # ns
+    polarization_time = 1e3 # ns
 
     lifetime_v2.main(
-        nv_sig,
-        apd_indices,
+        nv_sig, 
+        apd_indices, 
         readout_time_range,
-        num_reps,
-        num_runs,
-        num_bins,
-        filter,
-        voltage,
-        polarization_time,
-        reference,
-    )
+        num_reps, 
+        num_runs, 
+        num_bins, 
+        polarization_time )
 
 
 
@@ -472,8 +468,11 @@ def do_spin_echo(nv_sig, apd_indices, state = States.HIGH):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 4  # us
-    num_steps = int(max_time/0.05+ 1)  # 1 point per 1 us
+    # max_time = 30  # us
+    # num_steps = int(max_time/1+ 1)  # 1 point per 1 us
+    max_time = 8.352*8
+    # max_time = 8*8
+    num_steps = (8*2)+1
     precession_time_range = [0, max_time*10**3]
 
     # revival_time= 9.934e3
@@ -481,7 +480,7 @@ def do_spin_echo(nv_sig, apd_indices, state = States.HIGH):
     # precession_time_range = [0, revival_time*(num_steps - 1)]
 
     num_reps = 1e4
-    num_runs =40
+    num_runs =100
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -539,26 +538,24 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
     return 
 
 
-def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
+def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, shift, T_min, T_max):
 
-    step_size = 0.5 # us
-    shift = 100 #ns
-    T_min = 0
-    T_max = 90
+    #step_size = 1 # us
+    #shift = 100 #ns
+    #T_min = 0
+    #T_max = 200
+    
+    # max_time = T_max / (2*4*num_xy4_reps)  # us
+    # min_time = T_min / (2*4*num_xy4_reps) #us
+    
+    
+    #step_size = 2 # us
+    #shift = 0 #ns
+    #T_min = 350-50
+    #T_max = 350+50
     
     max_time = T_max / (2*4*num_xy4_reps)  # us
     min_time = T_min / (2*4*num_xy4_reps) #us
-    
-    
-    #step_size = 5 # us
-    #shift = 0 #ns
-    # T_min = 620-30
-    # T_max = 620+30
-    #T_min = 310-30
-    #T_max = 310+30
-    
-    #max_time = T_max / (2*4*num_xy4_reps)  # us
-    #min_time = T_min / (2*4*num_xy4_reps) #us
     
     # # revival_time= nv_sig['t2_revival_time']
     # # T_min = (revival_time/1e3 - 3)*(2*4*num_xy4_reps) 
@@ -569,10 +566,13 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
     # num_steps = int(T/1+1 )  # 1 point per 1 us
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
-
+    #conventional readout
     num_reps = 1e4
-    num_runs= 200
-
+    num_runs= 25
+    
+    # # scc readout
+    # num_reps = 4 #should optimize every 10 min
+    # num_runs= 3750
 
     state = States.HIGH
 
@@ -587,13 +587,14 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps):
         num_reps,
         num_runs,
         state=state,
+        scc_readout=False,
     )
     return 
 
 def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
 
     revival_time= nv_sig['t2_revival_time']
-    num_revivals = 6
+    num_revivals = 5
     precession_time_range = [0, revival_time*(num_revivals - 1)]
     #num_steps= int(num_revivals * 2 - 1)
     
@@ -684,12 +685,12 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 0.5e6#20e6
-    max_tau_gamma = 0.5e6# 8e6
+    max_tau_omega = 0.7e6#20e6
+    max_tau_gamma = 0.4e6# 8e6
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2000
-    num_runs = 60
+    num_runs = 200
     
     if False:
      t1_exp_array = numpy.array(
@@ -724,19 +725,19 @@ def do_relaxation(nv_sig, apd_indices, ):
                 num_steps_omega,
                 num_reps,
                 num_runs,
-       #     ],
-       #         [
-       #         [States.HIGH, States.HIGH],
-       #         [min_tau, max_tau_gamma],
-       #         num_steps_gamma,
-       #         num_reps,
-       #         num_runs,
-       #     ],
-        #            [
-        #        [States.HIGH, States.LOW],
-        #        [min_tau, max_tau_gamma],
-        #        num_steps_gamma,
-        #        num_reps,
+            ],
+                [
+                [States.HIGH, States.HIGH],
+                [min_tau, max_tau_gamma],
+                num_steps_gamma,
+                num_reps,
+                num_runs,
+            ],
+                    [
+                [States.HIGH, States.LOW],
+                [min_tau, max_tau_gamma],
+                num_steps_gamma,
+                num_reps,
         #        num_runs,
             ]] )
 
@@ -1020,6 +1021,7 @@ if __name__ == "__main__":
         "disable_opt":False,
         "ramp_voltages": False,
         "correction_collar": 0.12,
+        'expected_count_rate': None,
 
         "spin_laser":green_laser,
         "spin_laser_power": green_power,
@@ -1054,83 +1056,96 @@ if __name__ == "__main__":
         "nv0_ionization_laser_power": None,
         "nv0_ionization_dur": 300,
         
-        "spin_shelf_laser": red_laser,
+        "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": None,
         "spin_shelf_dur": 0,
         
         "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_power": 0.2, 
+        "charge_readout_laser_power": 0.15, 
         "charge_readout_laser_filter": "nd_1.0",
-        "charge_readout_dur": 100e6, 
+        "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 156,
+        "magnet_angle":  157,
         "uwave_power_LOW": 15,  
         "uwave_power_HIGH": 10,
     } 
 
 
     nv_sig_1 = copy.deepcopy(sig_base)
-    nv_sig_1["coords"] = [-0.853, -0.593, 6.16]
+    nv_sig_1["coords"] = [0.126, -0.452, 5.207]
     nv_sig_1["name"] = "{}-nv1_2022_08_10".format(sample_name,)
-    nv_sig_1["expected_count_rate"] = 10
-    nv_sig_1["resonance_LOW"] = 2.6053
-    nv_sig_1["rabi_LOW"] = 96
-    nv_sig_1["resonance_HIGH"] = 3.1345
-    nv_sig_1["rabi_HIGH"] = 88.9
-    nv_sig_1["t2_revival_time"] = 9.934e3
+    nv_sig_1["expected_count_rate"] = 11
+    nv_sig_1["resonance_LOW"] = 2.5512
+    nv_sig_1["rabi_LOW"] = 118.6
+    nv_sig_1["resonance_HIGH"] = 3.1916
+    nv_sig_1["rabi_HIGH"] =102.3
+    nv_sig_1["t2_revival_time"] = 8.352e3
 
     nv_sig_4 = copy.deepcopy(sig_base)
-    nv_sig_4["coords"] = [-0.823, -0.597, 6.18]
+    nv_sig_4["coords"] = [nv_sig_1["coords"][0] + 0.031, 
+                          nv_sig_1["coords"][1] - 0.005,
+                          nv_sig_1["coords"][2]]
     nv_sig_4["name"] = "{}-nv4_2022_08_10".format(sample_name,)
-    nv_sig_4["expected_count_rate"] = 12
-    nv_sig_4["resonance_LOW"] = 2.6066
-    nv_sig_4["rabi_LOW"] = 96
-    nv_sig_4["resonance_HIGH"] = 3.1362
-    nv_sig_4["rabi_HIGH"] = 89.6
-    nv_sig_4["t2_revival_time"] = 9.934e3
+    nv_sig_4["expected_count_rate"] = 10
+    nv_sig_4["resonance_LOW"] =2.5512
+    nv_sig_4["rabi_LOW"] = 118.6
+    nv_sig_4["resonance_HIGH"] = 3.1916
+    nv_sig_4["rabi_HIGH"] =102.3
+    nv_sig_4["t2_revival_time"] = 8.352e3
 
     nv_sig_5 = copy.deepcopy(sig_base)
-    nv_sig_5["coords"] = [-0.831, -0.609, 6.15]
+    nv_sig_5["coords"] =  [nv_sig_1["coords"][0] + 0.023, 
+                          nv_sig_1["coords"][1] -0.015,
+                          nv_sig_1["coords"][2]]
     nv_sig_5["name"] = "{}-nv5_2022_08_10".format(sample_name,)
     nv_sig_5["expected_count_rate"] = 15
-    nv_sig_5["resonance_LOW"] = 2.6053
-    nv_sig_5["rabi_LOW"] = 96
-    nv_sig_5["resonance_HIGH"] = 3.1345
-    nv_sig_5["rabi_HIGH"] = 87.6
-    nv_sig_5["t2_revival_time"] = 9.934e3
+    nv_sig_5["resonance_LOW"] = 2.5512
+    nv_sig_5["rabi_LOW"] = 118.6
+    nv_sig_5["resonance_HIGH"] = 3.1916
+    nv_sig_5["rabi_HIGH"] = 102.3
+    nv_sig_5["t2_revival_time"] = 8.352e3
 
     nv_sig_8 = copy.deepcopy(sig_base)
-    nv_sig_8["coords"] = [-0.892, -0.619, 6.15]
+    nv_sig_8["coords"] = [nv_sig_1["coords"][0] -0.038, 
+                          nv_sig_1["coords"][1] -0.026,
+                          nv_sig_1["coords"][2]]
     nv_sig_8["name"] = "{}-nv8_2022_08_10".format(sample_name,)
-    nv_sig_8["expected_count_rate"] = 12
-    nv_sig_8["resonance_LOW"] = 2.6053
-    nv_sig_8["rabi_LOW"] = 96
-    nv_sig_8["resonance_HIGH"] = 3.1345
-    nv_sig_8["rabi_HIGH"] = 90.1
-    nv_sig_8["t2_revival_time"] = 9.934e3
+    nv_sig_8["expected_count_rate"] = 11
+    nv_sig_8["resonance_LOW"] =  2.5512
+    nv_sig_8["rabi_LOW"] = 118.6
+    nv_sig_8["resonance_HIGH"] = 3.1916
+    nv_sig_8["rabi_HIGH"] = 102.3
+    nv_sig_8["t2_revival_time"] = 8.352e3
 
     nv_sig_10 = copy.deepcopy(sig_base)
-    nv_sig_10["coords"] = [-0.905, -0.601, 6.18]
+    nv_sig_10["coords"] = [nv_sig_1["coords"][0] -0.050, 
+                          nv_sig_1["coords"][1] -0.008,
+                          nv_sig_1["coords"][2]]
     nv_sig_10["name"] = "{}-nv10_2022_08_10".format(sample_name,)
-    nv_sig_10["expected_count_rate"] = 13
-    nv_sig_10["resonance_LOW"] = 2.6053
-    nv_sig_10["rabi_LOW"] = 96
-    nv_sig_10["resonance_HIGH"] = 3.1352
-    nv_sig_10["rabi_HIGH"] = 87.9
-    nv_sig_10["t2_revival_time"] = 9.934e3
+    nv_sig_10["expected_count_rate"] = 12
+    nv_sig_10["resonance_LOW"] = 2.5512
+    nv_sig_10["rabi_LOW"] = 118.6
+    nv_sig_10["resonance_HIGH"] = 3.1916
+    nv_sig_10["rabi_HIGH"] = 102.3
+    nv_sig_10["t2_revival_time"] = 8.352e3
 
 
+    nv_sig_none = copy.deepcopy(sig_base)
+    nv_sig_none["coords"] = [0.115, -0.472,
+                          nv_sig_1["coords"][2]]
+    nv_sig_none["name"] = "{}-no_nv".format(sample_name,)
+    nv_sig_none["disable_opt"] = True
+    nv_sig_none['collection_filter'] = 'no_filter'
 
 
-
+        
     nv_sig = nv_sig_1
-
-
+    
     # %% Functions to run
 #
     try:
-
+        # print(nv_sig['coords'])
         #tool_belt.init_safe_stop()
         # for dz in [0, 0.15,0.3, 0.45, 0.6, 0.75,0.9, 1.05, 1.2, 1.5, 1.7, 1.85, 2, 2.15, 2.3, 2.45]: #0.5,0.4, 0.3, 0.2, 0.1,0, -0.1,-0.2,-0.3, -0.4, -0.5
             # nv_sig_copy = copy.deepcopy(nv_sig)
@@ -1142,26 +1157,33 @@ if __name__ == "__main__":
             # do_image_sample(nv_sig_copy, apd_indices)
          #
         #
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        #tool_belt.set_drift([0.001, -0.004, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
+        # do_optimize_list(nv_sig_list, apd_indices)
         # if True:
         if False:
             
-            for nv_sig in [nv_sig_1, nv_sig_4, nv_sig_5, nv_sig_8, nv_sig_10]:
-                
-                # do_optimize(nv_sig,apd_indices)
-    
+            #for n in [0]:
+            #for n in range(12,21):
+            #for n in range(38,41):
+            #for n in range(41,61):
+            for n in range(61,81):
+            # for n in range(len(nv_coords_list)):
+                nv_sig = copy.deepcopy(sig_base)
+                nv_sig['coords'] = nv_coords_list[n]
+                nv_sig['expected_count_rate'] = nv_expect_counts[n]
+                nv_sig["name"] = "{}-nv{}_2022_09_16".format(sample_name,n)
+                # print(nv_sig['name'])
+                do_optimize(nv_sig,apd_indices)
                 do_image_sample(nv_sig, apd_indices)
-                
-                # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-                # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-                # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
-                # do_rabi(nv_sig, nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 100])
+                do_lifetime(nv_sig, apd_indices)
+                do_image_sample(nv_sig, apd_indices)
+                     
                 
         # do_optimize(nv_sig,apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
                 
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -1188,38 +1210,40 @@ if __name__ == "__main__":
             # do_SPaCE(nv_sig, nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b,
             #  img_range_1D,img_range_2D, offset)
             
-
-                
-        # do_relaxation(nv_sig, apd_indices)
+        # for nv_sig in [nv_sig_4,nv_sig_8]:
+        # do_lifetime(nv_sig, apd_indices)
+            
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
 
-        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 100])
         # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 150])
 
-        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.30) ###
+        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.6) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, nv_sig,apd_indices)
 
-        # do_spin_echo(nv_sig, apd_indices)
+        #for nv_sig in [nv_sig_1, nv_sig_4, nv_sig_8]:
+        #  do_spin_echo(nv_sig, apd_indices)
+        #do_relaxation(nv_sig_10, apd_indices)
+        
         # for n in [2, 3, 4, 5, 6, 8, 9, 10, 25, 50]:
             
         #do_dd_cpmg(nv_sig, apd_indices, 4, 200 )
         # do_dd_xy8(nv_sig, apd_indices, 1 )
         
-        # for N in [2,3, 4]:
-        #       do_dd_xy4_revivals(nv_sig_4, apd_indices, N)
+        # for N in [4, 2, 1]:
+        do_dd_xy4_revivals(nv_sig_1, apd_indices, 4)
         
-        #do_dd_xy8(nv_sig_1, apd_indices, 1) 
-        # for nv_sig in [nv_sig_4, nv_sig_1]:
-        #      for N in [1, 2,3,4]:
-        #         do_dd_xy4(nv_sig, apd_indices, N) 
-           # do_dd_xy4(nv_sig, apd_indices, 1)  
-        # #     #do_dd_xy4(nv_sig, apd_indices, 4)
-        #      for N in [1, 2]:
-        #         do_dd_xy8(nv_sig, apd_indices, N)
+        #do_dd_xy4(nv_sig, apd_indices, 1, 1, 100, 0, 90)
         
+        ################## to run
+        # do_dd_xy4_revivals(nv_sig_1, apd_indices, 1)
+        # do_dd_xy4_revivals(nv_sig_1, apd_indices, 2)
+
+
+
         #do_dd_xy8(nv_sig, apd_indices, 1 ) 
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
 

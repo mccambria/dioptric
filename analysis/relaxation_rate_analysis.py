@@ -882,17 +882,17 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     temp = 295
-    # folder = "2022_08_05"
+    folder = "2022_09_14-nv10"
     # folder = "wu-nv1_2022_03_16-295K"
-    folder = "wu-nv6_2022_04_14-295K"
+    # folder = "wu-nv6_2022_04_14-295K"
 
     # mode = "prediction"
     mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 1821  # omega_calc(temp)
-        est_gamma = 4500  # gamma_calc(temp)
+        est_omega = 1520  # omega_calc(temp)
+        est_gamma = 3300  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
@@ -905,9 +905,9 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        # path = "pc_rabi/branch_master/t1_dq_main/2022_08/"
+        path = "pc_rabi/branch_master/t1_dq_main/2022_09/"
         # path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
-        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
+        # path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
 
         main(
             path,

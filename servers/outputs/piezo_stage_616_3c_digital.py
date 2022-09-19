@@ -462,6 +462,7 @@ class PiezoStageDigital(LabradServer):
     @setting(
         92,
         x_center="v[]",
+        y_center="v[]",
         z_center="v[]",
         x_range="v[]",
         z_range="v[]",
@@ -469,8 +470,8 @@ class PiezoStageDigital(LabradServer):
         period="i",
         returns="*v[]*v[]",
     )
-    def load_sweep_scan_xy(
-        self, c, x_center, z_center, x_range, z_range, num_steps, period
+    def load_sweep_scan_xz(
+        self, c, x_center, y_center, z_center, x_range, z_range, num_steps, period
     ):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
@@ -482,6 +483,8 @@ class PiezoStageDigital(LabradServer):
         Params
             x_center: float
                 Center x voltage of the scan
+            y_center: float
+                Center y voltage of the scan
             z_center: float
                 Center z voltage of the scan
             x_range: float
@@ -542,8 +545,10 @@ class PiezoStageDigital(LabradServer):
 
         # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
         z_voltages = numpy.repeat(z_voltages_1d, x_num_steps)
+        y_voltages = numpy.empty(len(z_voltages))
+        y_voltages.fill(y_center)
 
-        voltages = numpy.vstack((x_voltages, z_voltages))
+        voltages = numpy.vstack((x_voltages, y_voltages, z_voltages))
 
         # logging.debug(voltages)
         # self.load_stream_writer_xz(c, "Piezo_stage-load_sweep_scan_xy", voltages, period)

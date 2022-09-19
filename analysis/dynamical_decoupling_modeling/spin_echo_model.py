@@ -31,23 +31,22 @@ def S_2(t, a, b, f0, f1, T):
     return (a - b* term_ss)*numpy.exp((-t/T)**3)
 
 def X_SE(t, fL, lambd, sigma_per ):
-    sigma= sigma_per*fL
-    # lambd = 0.25
-    a0 = 3
-    a1 = -4
-    a2 = 1
-    a_list = [a1, a2]
-    a_sum = a0
+    a_list = [6, -8, 2]
     
-    for i in range(len(a_list)):
-        n = i+1
-        a_sum += a_list[i]*numpy.exp(-n**2 * t**2 * sigma**2 / 8) * numpy.cos(n*t*fL*2*pi)
+    sum_expr = a_list[0]
+    # lambd = 0.25
+    # sigma = 0.1 * fL #/ (2*pi)
+    for i in range(len(a_list)-1):
+        n=i+1
+        # print(n)
+        sum_expr += a_list[n]*numpy.exp(-n**2 * (t)**2 * sigma_per**2 / 2) * numpy.cos(n*t*(fL*2*pi))
 
-    return lambd**2 * a_sum
+    # X =
+    return 4* lambd**2 * sum_expr
 
 def S_bath_SE(t, fL, lambd, sigma_per, T2):
     # I = quad(integrand, -numpy.inf, numpy.inf, args=(t, fL))
-    
+    # t = t/2
     return numpy.exp(-X_SE(t, fL, lambd, sigma_per )) * numpy.exp(-(t/T2)**3)
 
     
@@ -57,8 +56,10 @@ def pop_S_1(t, a, b, f0, T):
 def pop_S_2(t, a, b, f0, f1, T):
     return (S_2(t, a, b, f0, f1, T) + 1)/2
     
-file = "2022_08_22-17_48_47-rubin-nv1"
-folder = 'pc_rabi/branch_master/spin_echo/2022_08'
+file = "2022_09_14-16_11_46-rubin-nv5_2022_08_10"
+# file = '2022_09_14-16_53_25-rubin-nv4_2022_08_10'
+# file = '2022_09_14-19_08_40-rubin-nv4_2022_08_10'
+folder = 'pc_rabi/branch_master/spin_echo/2022_09'
 
 data = tool_belt.get_raw_data(file, folder)
 sig_counts = numpy.array(data['sig_counts'])
@@ -90,7 +91,7 @@ norm_avg_sig = (norm_avg_sig - (1-contrast))/(contrast)
 # fit_func = lambda t, b, f0, T: pop_S_1(t, 1, b, f0, T)
 # init_params = [1,  0.1, 200]
 fit_func = lambda t, fL, lambd, sigma_per, T2: (S_bath_SE(t,fL, lambd, sigma_per, T2) + 1)/2
-init_params = [0.1, 0.25, 0.1, 100]
+init_params = [0.1, 0.3, 0.02, 50]
 
 popt, pcov = curve_fit(
     fit_func,
@@ -102,7 +103,7 @@ popt, pcov = curve_fit(
     # bounds=(min_bounds, max_bounds),
 )
 print(popt)
-
+# popt=init_params
 fig, ax = plt.subplots()
 taus_lin = numpy.linspace(plot_taus[0], plot_taus[-1],600)
 # taus_lin = numpy.linspace(0, 4,600)
@@ -114,13 +115,13 @@ ax.plot(
         label="model",
     ) 
 
-# ax.plot(
-#         plot_taus,
-#         norm_avg_sig,
-#         "o",
-#         color="blue",
-#         label="data",
-#     )    
+ax.plot(
+        plot_taus,
+        norm_avg_sig,
+        "o",
+        color="blue",
+        label="data",
+    )    
 ax.set_xlabel("Inter pulse wait time, tau (us)")
 ax.set_ylabel("Normalized signal Counts")
 ax.set_title('Spin echo')
