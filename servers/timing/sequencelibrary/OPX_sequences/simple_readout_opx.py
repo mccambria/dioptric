@@ -17,7 +17,7 @@ from qm.qua import *
 from qm import SimulationConfig
 from configuration import *
 
-def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
+def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
 
@@ -97,13 +97,13 @@ def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
     return seq
 
 
-def get_seq(opx, config, args): #so this will give just the sequence, no repeats
+def get_seq(config, args): #so this will give just the sequence, no repeats
     
     seq = qua_program(args, num_reps=1)
     
     return seq, final, [period]
 
-def get_full_seq(opx, config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
+def get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
 
     seq = qua_program(args, num_reps, x_voltage_list,y_voltage_list,z_voltage_list)
 

@@ -32,9 +32,11 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 from numpy import count_nonzero, nonzero, concatenate
 import numpy as np
+import importlib
 import numpy
 import logging
 import re
+import sys
 import time
 import socket
 from numpy import pi
@@ -47,6 +49,10 @@ class OPX(LabradServer, Tagger, PulseGen):
     name = "opx"
     pc_name = socket.gethostname()
     steady_state_program_file = 'steady_state_program.py'
+    opx_configuration_file_path = "/Users/carterfox/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
+    sys.path.append(opx_configuration_file_path)
+    from opx_configuration_file import *
+    
 
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
@@ -69,7 +75,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         self.iq_comp_amp = config[0]
         logging.info('Init complete')
         self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
-        self.qm = qmm.open_qm(config)             # makes a quantum machine with the specific configuration
+        self.qm = qmm.open_qm(config_opx)             # makes a quantum machine with the specific configuration
         ####in the future we could make this start the infinite loop program. But we can always just run the program too.
         
     def stopServer(self):
@@ -201,12 +207,12 @@ class OPX(LabradServer, Tagger, PulseGen):
             
         try:
             self.pending_steady_state_job.halt()
-            self.pending_experiment_job = qm.queue.add(self.experiment_program_id)
-            self.pending_steady_state_job = qm.queue.add(self.steady_state_program_id) # executes the qua program on the quantum machine  
+            self.pending_experiment_job = qm.queue.add_compiled(self.experiment_program_id)
+            self.pending_steady_state_job = qm.queue.add_compiled(self.steady_state_program_id) # executes the qua program on the quantum machine  
             
         except:
-            self.pending_experiment_job = qm.queue.add(self.experiment_program_id)
-            self.pending_steady_state_job = qm.queue.add(self.steady_state_program_id) # executes the qua program on the quantum machine   
+            self.pending_experiment_job = qm.queue.add_compiled(self.experiment_program_id)
+            self.pending_steady_state_job = qm.queue.add_compiled(self.steady_state_program_id) # executes the qua program on the quantum machine   
            
         return 
     
@@ -244,12 +250,12 @@ class OPX(LabradServer, Tagger, PulseGen):
         
         try:
             self.pending_steady_state_job.halt()
-            self.pending_experiment_job = qm.queue.add(self.experiment_program_id)
-            self.pending_steady_state_job = qm.queue.add(self.steady_state_program_id) # executes the qua program on the quantum machine  
+            self.pending_experiment_job = qm.queue.add_compiled(self.experiment_program_id)
+            self.pending_steady_state_job = qm.queue.add_compiled(self.steady_state_program_id) # executes the qua program on the quantum machine  
             
         except:
-            self.pending_experiment_job = qm.queue.add(self.experiment_program_id)
-            self.pending_steady_state_job = qm.queue.add(self.steady_state_program_id) # executes the qua program on the quantum machine   
+            self.pending_experiment_job = qm.queue.add_compiled(self.experiment_program_id)
+            self.pending_steady_state_job = qm.queue.add_compiled(self.steady_state_program_id) # executes the qua program on the quantum machine   
         
         return ret_vals
     
