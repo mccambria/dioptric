@@ -57,8 +57,8 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    # args = [500000, 10000000.0, 0, "laserglow_532", None]
-    args = [5000, 10000.0, 1, 'integrated_520',None]
+    args = [200, 400, 0, "laserglow_532", 1]
+    # args = [5000, 10000.0, 1, 'integrated_520',None]
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(None, config, args)
     seq.plot()

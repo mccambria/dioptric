@@ -93,7 +93,8 @@ def get_seq(pulse_streamer, config, args):
     # for el in train:
     #     total_dur += el[0]
     # print(total_dur)
-
+    # print(polarization_time+uwave_delay_time+signal_wait_time + tau + signal_wait_time)
+    # print(pre_duration)
     # Pulse the microwave for tau
     pre_duration = aom_delay_time + polarization_time + signal_wait_time #- uwave_delay_time
     post_duration = signal_wait_time + polarization_time+ \
@@ -108,12 +109,23 @@ def get_seq(pulse_streamer, config, args):
 
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
+    
+    
+    
     return seq, final, [period]
 
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    args = [25, 50000.0, 6000, 25, 1, 3, 'laserglow_532', None]
+    # uwave_pulse_dur,
+    # polarization_time,
+    # readout,
+    # uwave_pulse_dur,
+    # apd_indices[0],
+    # state.value,
+    # laser_name,
+    # laser_power,
+    args = [200, 800.0, 350, 25, 1, 3, 'laserglow_532', 1]
     seq = get_seq(None, config, args)[0]
     seq.plot()
