@@ -29,6 +29,7 @@ import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import copy
+import utils.kplotlib as kpl
 from utils.tool_belt import presentation_round, presentation_round_latex
 from utils.kplotlib import figsize, double_figsize
 
@@ -2384,8 +2385,8 @@ def main_sub(
 
     # %% Plot past data
     leg0 = None
-    # plot_past_data = False
-    plot_past_data = True
+    plot_past_data = False
+    # plot_past_data = True
     if plot_past_data:
         past_results = [
             "redman",
@@ -2594,7 +2595,8 @@ if __name__ == "__main__":
     # # print(presentation_round_latex(0.0288999, 0.0000167))
     # sys.exit()
 
-    tool_belt.init_matplotlib()
+    # tool_belt.init_matplotlib()
+    kpl.init_kplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
     plot_type = "rates"
