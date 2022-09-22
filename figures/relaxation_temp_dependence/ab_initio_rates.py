@@ -8,7 +8,7 @@ import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
 import utils.tool_belt as tool_belt
-from utils.kplotlib import color_mpl_to_color_hex, lighten_color_hex
+from utils.kplotlib import KplColors, color_mpl_to_color_hex, lighten_color_hex
 import utils.common as common
 from scipy.odr import ODR, Model, RealData
 import sys
@@ -17,7 +17,14 @@ import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import temp_dependence_fitting
-from temp_dependence_fitting import qutrit_color, qubit_color
+from temp_dependence_fitting import (
+    gamma_face_color,
+    gamma_edge_color,
+    omega_face_color,
+    omega_edge_color,
+    ratio_face_color,
+    ratio_edge_color,
+)
 import csv
 import utils.kplotlib as kpl
 from utils.kplotlib import (
@@ -31,296 +38,179 @@ marker_edge_width = line_width
 marker_edge_width_inset = line_width_inset
 
 
-def round_base_2(val):
-    power = round(np.log2(val))
-    rounded_val = 2 ** power
-    return rounded_val
+def main():
 
+    ### Params
 
-def bar_gill_replot(file_name, path):
+    # rates_y_range = [1e-2, 1000]
+    # rates_yscale = "log"
+    # ratio_y_range = [0, 1]
+    # ratio_yscale = "linear"
+    # temp_range = [125, 480]
+    # xscale = "linear"
 
-    data_points = []
-    with open(path / file_name, newline="") as f:
-        raw_data = csv.reader(f)
-        prev_point_ind = -1
-        new_point = None
-        header = True
-        for row in raw_data:
-            if header:
-                header = False
-                continue
-            point_ind = int(row[3])
-            if point_ind != prev_point_ind:
-                prev_point_ind = point_ind
-                if new_point is not None:
-                    data_points.append(new_point)
-                new_point = {
-                    "temp": int(row[0]),
-                    "num_pulses": round_base_2(float(row[1])),
-                }
-            row_type = row[4].strip()
-            val = float(row[2])
-            new_point[row_type] = val
+    rates_y_range = [0.5e-2, 800]
+    rates_yscale = "log"
+    ratio_y_range = [0, 0.78]
+    ratio_yscale = "linear"
+    # temp_range = [-5, 480]
+    temp_range = [-5, 1000]
+    xscale = "linear"
 
-    for point in data_points:
-        T2 = point["main"]
-        if ("ste_above" in point) and ("ste_below" in point):
-            avg_ste = (
-                (point["ste_above"] - T2) + (T2 - point["ste_below"])
-            ) / 2
-            point["ste"] = avg_ste
-        elif "ste_above" in point:
-            point["ste"] = point["ste_above"] - T2
-        elif "ste_below" in point:
-            point["ste"] = T2 - point["ste_below"]
-        else:
-            point["ste"] = None
+    ### Setup
 
-    colors = {
-        300: "blue",
-        240: "green",
-        190: "purple",
-        160: "cyan",
-        120: "red",
-        77: "yellow",
-    }
-    fig, ax = plt.subplots(figsize=[6.5, 5.0])
-    for point in data_points:
-        ax.errorbar(
-            point["num_pulses"],
-            point["main"],
-            point["ste"],
-            color=colors[point["temp"]],
-            marker="o",
-        )
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
 
-    ax.set_yscale("log")
-    ax.set_xscale("log")
-    fig.tight_layout()
+    # Fit to Omega and gamma simultaneously
+    data_file_name = "compiled_data"
+    data_points = temp_dependence_fitting.get_data_points(
+        path, data_file_name, temp_range
+    )
+    (
+        popt,
+        pvar,
+        beta_desc,
+        omega_hopper_fit_func,
+        omega_wu_fit_func,
+        gamma_hopper_fit_func,
+        gamma_wu_fit_func,
+    ) = temp_dependence_fitting.fit_simultaneous(data_points, "double_orbach")
+    omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
+    omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
+    gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
+    gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
 
+    sim_file_name = "Tdep_512_PBE.dat"
 
-def main(
-    file_name,
-    path,
-    plot_type,
-    rates_to_plot,
-    temp_range,
-    y_range,
-    xscale,
-    yscale,
-    dosave=False,
-):
+    min_temp = temp_range[0]
+    max_temp = temp_range[1]
+    linspace_min_temp = max(0, min_temp)
+    temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
 
-    # bar_gill_label = "[10]"
-    # herbschleb_label = "[11]"
-    # abobeih_label = "[30]"
-    # bar_gill_label = "[2]"
-    # herbschleb_label = "[3]"
-    # abobeih_label = "[4]"
-    bar_gill_label = "Bar-Gill"
-    herbschleb_label = "Herbschleb"
-    abobeih_label = "Abobeih"
-    # fmt: off
-    data_points = [
-        #
-        #
-        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar-Gill", "label": bar_gill_label},
-        # {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar-Gill 2013"},
-        #
-        # Spin echo
-        # {"val": 183.83e-6, "err": 13.0e-6, "temp": 300, "author": "Lin"},
-        # {"val": 158.15e-6, "err": 10.9e-6, "temp": 350, "author": "Lin"},
-        # {"val": 125.50e-6, "err": 7.61e-6, "temp": 400, "author": "Lin"},
-        # {"val": 80.480e-6, "err": 6.02e-6, "temp": 450, "author": "Lin"},
-        # {"val": 59.239e-6, "err": 5.07e-6, "temp": 500, "author": "Lin"},
-        # {"val": 38.315e-6, "err": 4.12e-6, "temp": 550, "author": "Lin"},
-        # {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
-        #
-        # Also report gamma and Omega at room temps
-        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb", "label": herbschleb_label},
-        #
-        # Record, T1 exceeds expected value from one-phonon calculations
-        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih", "label": abobeih_label},
-        #
-        # 
-        # {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
-        #
-        # Isotopically purified, just spin echo
-        # {"val": 1.82e-3, "err": 0.16e-3, "temp": 300, "author": "Balasubramanian"},
-        #
-        # Original DD?
-        # {"val": 88e-6, "err": None, "temp": 300, "author": "de Lange"},
-        #
-        # 
-        # {"val": 1.6e-3, "err": None, "temp": 300, "author": "Ryan"},
-        #
-        # 
-        # {"val": 2.44e-3, "err": 0.44e-3, "temp": 300, "author": "Naydenov"},
-    ]
-    # fmt: on
+    ### Get temps/rates from simulation dat file
 
-    # Sekiguchi Dynamical Decoupling of a Geometric Qubit
-    # Optimizing a dynamical decoupling protocol for solid-state electronic spin ensembles in diamon
-    # Robust Quantum-Network Memory Using Decoherence-Protected Subspaces of Nuclear Spins
-    # Randomization of Pulse Phases for Unambiguous and Robust Quantum Sensing, Why not try T2 limits?
-    # Robust quantum control for the manipulation of solid-state spins, Likewise
-
-    ret_vals = temp_dependence_fitting.main(
-        file_name,
-        path,
-        plot_type,
-        rates_to_plot,
-        temp_range,
-        y_range,
-        xscale,
-        yscale,
-        dosave=False,
+    sim_data = np.genfromtxt(
+        path / sim_file_name,
+        skip_header=1,
+        skip_footer=1,
+        names=True,
+        dtype=None,
+        delimiter=" ",
     )
 
-    if plot_type == "T2_max_supp":
-        fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp = ret_vals
-        min_temp = temp_range[1][0]
-        max_temp = temp_range[1][1]
-        inset_ticks = np.arange(
-            round(min_temp, -2),
-            round(max_temp + 50, -2),
-            100,
-        )
-        ax2.set_xticks(inset_ticks)
-        # ax2.set_yticks([0.0, 0.2, 0.4, 0.6])
-        # ax2.set_yticks([0.0, 0.1, 0.3, 0.5])
-        ax2.set_yticks([0.0, 0.25, 0.5])
-    else:
-        fig, ax1, leg1, T2_max_qubit_hopper_temp = ret_vals
+    sim_temps = []
+    sim_omega = []
+    sim_gamma = []
+    for el in sim_data:
+        sim_temps.append(el[0])
+        sim_omega.append(el[1])
+        sim_gamma.append(el[2])
+    sim_temps = np.array(sim_temps)
+    sim_omega = np.array(sim_omega)
+    sim_gamma = np.array(sim_gamma)
 
-    # colors = {
-    #     "Bar-Gill 2013": "green",
-    #     "Lin": "red",
-    #     "Abobeih 2018": "purple",
-    #     "Balasubramanian": "orange",
-    #     "Pham": "blue",
-    # }Gill
-    # markers = [
-    #     "o",
-    #     "^",
-    #     "s",
-    #     "X",
-    #     "D",
-    #     "H",
-    # ]
-    markers = {
-        "Bar-Gill": "o",
-        "Lin": "H",
-        "Abobeih": "^",
-        "Pham": "s",
-        "Herbschleb": "D",
-        "Balasubramanian": "v",
-        "de Lange": "P",
-        "Ryan": "p",
-        "Naydenov": "d",
-    }
+    ### Figure prep
 
-    if plot_type == "T2_max_supp":
-        sub_plot_types = ["T2_max", "T2_frac"]
-        mss = [marker_size, marker_size_inset]
-        lws = [line_width, line_width_inset]
-        mews = [marker_edge_width, marker_edge_width_inset]
-    else:
-        sub_plot_types = [plot_type]
-        mss = [marker_size]
-        lws = [line_width]
-        mews = [marker_edge_width]
+    fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
+    ax_rates, ax_ratio = axes_pack
 
-    ms = marker_size ** 2
-    used_authors = []
-    ind = 0
-    for sub_plot_type in sub_plot_types:
-        ind += 1
-        ax = eval(f"ax{ind}")
-        for point in data_points:
-            temp = point["temp"]
-            T2 = point["val"]
-            frac = T2 / T2_max_qubit_hopper_temp(temp)
-            if sub_plot_type == "T2_max":
-                val = T2
-            elif sub_plot_type == "T2_frac":
-                val = frac
-            # err = point["err"]
-            err = None
-            author = point["author"]
-            # color = colors[author]
-            marker = markers[author]
-            label = None
-            if author not in used_authors:
-                used_authors.append(author)
-                label = point["label"]
-            ax.errorbar(
-                temp,
-                val,
-                err,
-                # color="black",
-                # markerfacecolor="gray",
-                color=qubit_color,
-                markerfacecolor=kpl.lighten_color_hex(qubit_color),
-                label=label,
-                marker=marker,
-                ms=mss[ind - 1],
-                lw=lws[ind - 1],
-                markeredgewidth=mews[ind - 1],
-                linestyle="None",
-            )
+    for ax in [ax_rates, ax_ratio]:
+        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+        ax.set_xscale(xscale)
+        ax.set_xlim(min_temp, max_temp)
+        ax.axvline(x=125, color="silver", zorder=-10, lw=line_width)
 
-    # Legend without errorbars
-    handles, labels = ax1.get_legend_handles_labels()
-    errorbar_type = matplotlib.container.ErrorbarContainer
-    # handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
-    handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
-    if leg1 is not None:
-        labels = labels[2:]
-    loc = "upper right"
-    if plot_type == "T2_frac":
-        loc = "upper left"
-    leg2 = ax1.legend(
-        handles,
-        labels,
-        title="Prior results",
-        loc=loc,
-        # bbox_to_anchor=(1.0, 0.82),
-        handlelength=1,
-        handletextpad=0.5,
-        # borderpad=0.3,
-        # borderaxespad=0.3,
+    ax_rates.set_yscale(rates_yscale)
+    ax_rates.set_ylim(rates_y_range[0], rates_y_range[1])
+    ax_rates.set_ylabel(r"Relaxation rates (s$^{-1}$)")
+
+    ax_ratio.set_yscale(ratio_yscale)
+    ax_ratio.set_ylim(ratio_y_range[0], ratio_y_range[1])
+    ax_ratio.set_ylabel(r"$\textit{Ab initio}$ rates / model rates")
+
+    ### Plot
+
+    # gamma model
+    ax_rates.plot(
+        temp_linspace,
+        gamma_hopper_lambda(temp_linspace),
+        label=r"$\mathrm{\gamma}$ model",
+        color=gamma_edge_color,
+        linewidth=line_width,
+        linestyle="dashed",
     )
-    # Add back in original legend
-    if leg1 is not None:
-        # anchor = leg2.get_bbox_to_anchor()
-        # leg1.set_bbox_to_anchor(anchor)
-        leg1.set_bbox_to_anchor((0.70, 1.0))
-        # leg1.set_bbox_to_anchor((0.285, 0.0))
-        # leg1.set_bbox_to_anchor((0.0, 0.325))
-        ax1.add_artist(leg1)
+    # gamma ab initio
+    ax_rates.plot(
+        sim_temps,
+        sim_gamma,
+        label=r"$\mathrm{\gamma}$ $\textit{ab initio}$",
+        color=gamma_edge_color,
+        linewidth=line_width,
+        linestyle="dotted",
+    )
+    # Omega model
+    ax_rates.plot(
+        temp_linspace,
+        omega_hopper_lambda(temp_linspace),
+        label=r"$\mathrm{\Omega}$ model",
+        color=omega_edge_color,
+        linewidth=line_width,
+        linestyle="dashed",
+    )
+    # Omega ab initio
+    ax_rates.plot(
+        sim_temps,
+        sim_omega,
+        label=r"$\mathrm{\Omega}$ $\textit{ab initio}$",
+        color=omega_edge_color,
+        linewidth=line_width,
+        linestyle="dotted",
+    )
 
-    # ax.legend()
+    # Ratio
+    ax_ratio.plot(
+        sim_temps,
+        sim_gamma / gamma_hopper_lambda(sim_temps),
+        label=r"$\mathrm{\gamma}$",
+        color=gamma_edge_color,
+        linewidth=line_width,
+    )
+    ax_ratio.plot(
+        sim_temps,
+        sim_omega / omega_hopper_lambda(sim_temps),
+        label=r"$\mathrm{\Omega}$",
+        color=omega_edge_color,
+        linewidth=line_width,
+    )
+
+    ### Wrap up
+
+    fig.text(
+        -0.16,
+        0.96,
+        "(a)",
+        transform=ax_rates.transAxes,
+        color="black",
+        fontsize=18,
+    )
+    fig.text(
+        -0.138,
+        0.96,
+        "(b)",
+        transform=ax_ratio.transAxes,
+        color="black",
+        fontsize=18,
+    )
+
+    ax_rates.legend()
+    ax_ratio.legend()
+    fig.tight_layout(pad=0.3)
+    fig.subplots_adjust(wspace=0.16)
 
 
 if __name__ == "__main__":
 
-    tool_belt.init_matplotlib()
-    # matplotlib.rcParams["axes.linewidth"] = 1.0
-
-    file_name = "compiled_data"
-    home = common.get_nvdata_dir()
-    path = home / "paper_materials/relaxation_temp_dependence"
-
-    ### Main
-
-    ###
-
-    main(
-    )
-
+    kpl.init_kplotlib()
+    main()
     plt.show(block=True)
