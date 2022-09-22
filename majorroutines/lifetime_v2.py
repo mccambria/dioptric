@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
 import labrad
+import csv
 
 
 # %% Functions
@@ -336,11 +337,33 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
 
 # %%
 
+def lifetime_json_to_csv(file, folder, nv_data_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata'):
+    
+
+    data = tool_belt.get_raw_data(file, folder)
+    # data = json.load(json_file)
+    binned_samples = data['binned_samples']
+    bin_centers = data['bin_centers']
+
+    # Populate the data to save
+    csv_data = []
+    
+    for bin_ind in range(len(bin_centers)):
+        row = []
+        row.append(bin_centers[bin_ind])
+        row.append(binned_samples[bin_ind])
+        csv_data.append(row)
+
+    tool_belt.write_csv(csv_data, file, folder)
+    
+    
+# %%
+
 def decayExp(t, amplitude, decay):
     return amplitude * numpy.exp(- t / decay)
 
-def triple_decay(t, a1, d1, a2, d2, a3, d3):
-    return decayExp(t, a1, d1) + decayExp(t, a2, d2) + decayExp(t, a3, d3)
+def dobule_decay(t, a1, d1, a2, d2):
+    return decayExp(t, a1, d1) + decayExp(t, a2, d2)
 
 # %% Fitting the data
 
@@ -362,7 +385,7 @@ def fit_decay(file_name, date_folder, sub_folder =None,bkgd_sig = []):
     timestamp = data['timestamp']
     
     if len(bkgd_sig) == len(binned_samples):
-        binned_samples_sub = binned_samples - bkgd
+        binned_samples_sub = binned_samples - bkgd_sig
     else:
         binned_samples_sub = binned_samples
         
@@ -372,8 +395,11 @@ def fit_decay(file_name, date_folder, sub_folder =None,bkgd_sig = []):
     norm_samples = (binned_samples_sub - zero) / (one - zero)
     
     #specific for this data set, choose the range of data to fit to
-    start_ind =29 
-    end_ind = 80
+    start_ind =28
+    print(bin_centers[start_ind] )
+    # start_ind =29 
+    # end_ind = 80
+    end_ind = 40
     bin_centers_shift = bin_centers[start_ind:end_ind] - bin_centers[start_ind] 
     norm_samples_shift = norm_samples[start_ind:end_ind]
         
@@ -383,7 +409,8 @@ def fit_decay(file_name, date_folder, sub_folder =None,bkgd_sig = []):
     centers_lin = numpy.linspace(bin_centers_shift[0], bin_centers_shift[-1], 100)
     # print(centers_lin)
     fit_func = lambda t, d: decayExp(t, 1, d)
-    init_params = [ 18]
+    # fit_func = lambda t, a1, d1,a2, d2: dobule_decay(t, a1, d1, a2, d2)
+    init_params = [10]
     popt, pcov = curve_fit(
         fit_func,
         bin_centers_shift,
@@ -394,6 +421,7 @@ def fit_decay(file_name, date_folder, sub_folder =None,bkgd_sig = []):
         # bounds=(0, numpy.inf),
     )
     print('{} +/- {} ns'.format(popt[0], numpy.sqrt(pcov[0][0])))
+    # print(popt)
     # print(popt)
     # print(pcov)
     ax.plot(
@@ -417,6 +445,7 @@ def fit_decay(file_name, date_folder, sub_folder =None,bkgd_sig = []):
     ax.set_xlabel('Time after illumination, t (ns)')
     ax.set_ylabel('Normalized signal')
     ax.set_title('Lifetime for {}'.format(nv_name))
+    ax.set_ylim([5e-4, 1.7])
     ax.set_yscale("log")
     ax.legend()
     
@@ -428,21 +457,48 @@ def fit_decay(file_name, date_folder, sub_folder =None,bkgd_sig = []):
     
     return popt
 
+def replot(file_name, date_folder, sub_folder =None,semilog = False):
+    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+
+    directory = 'pc_rabi/branch_master/lifetime_v2/'
+
+    folder_path = directory + date_folder
+    if sub_folder:
+       folder_path = folder_path + '/' + sub_folder 
+       
+    data = tool_belt.get_raw_data(file_name, folder_path)
+    
+    bin_centers = numpy.array(data['bin_centers'])
+    binned_samples = numpy.array(data['binned_samples'])
+    nv_sig = data['nv_sig']
+    nv_name = nv_sig['name']
+    timestamp = data['timestamp']
+    
+        
+    ax.plot(numpy.array(bin_centers), binned_samples, 'bo', 
+                label = 'data')
+                
+    ax.set_xlabel('Time (ns)')
+    ax.set_ylabel('Signal')
+    ax.set_title('Lifetime for {}'.format(nv_name))
+    # ax.set_ylim([5e-4, 1.7])
+    if semilog:
+        ax.set_yscale("log")
+    ax.legend()
+    
+    
 # %%
 if __name__ == '__main__':
-    folder = 'pc_rabi/branch_master/lifetime_v2/2022_09'
-    file_1 = '2022_09_13-17_07_24-rubin-nv1_2022_08_10'
-    file_4 = '2022_09_17-00_12_47-rubin-nv0_2022_09_16'
-    file_5 = '2022_09_13-18_17_53-rubin-nv5_2022_08_10'
-    file_8 = '2022_09_13-18_44_50-rubin-nv8_2022_08_10'
-    file_10 = '2022_09_13-19_10_05-rubin-nv10_2022_08_10'
+    folder = 'pc_rabi/branch_master/lifetime_v2/2022_09/2022_09_18'
+    file = '2022_09_17-00_12_47-rubin-nv0_2022_09_16'
     
     file_bckg = '2022_09_14-12_39_05-rubin-no_nv'
     
+    lifetime_json_to_csv(file, folder)
         
-    data = tool_belt.get_raw_data(file_bckg, folder)
-    bkgd= numpy.array(data['binned_samples'])
-    decay_list = []
+    # data = tool_belt.get_raw_data(file_bckg, folder)
+    # bkgd= numpy.array(data['binned_samples'])
+    # decay_list = []
     
     file_list = tool_belt.get_file_list(
         'pc_rabi/branch_master/lifetime_v2/2022_09/2022_09_18',
@@ -451,29 +507,31 @@ if __name__ == '__main__':
     
     # for file_name in file_list:
     #     file = file_name[:-4]
+    #     lifetime_json_to_csv(file, folder)
     
-    
+    fit_decay('2022_09_22-13_48_04-rubin_al-no_nv', '2022_09' )
+    # replot('2022_09_22-13_48_04-rubin_al-no_nv', '2022_09' ,semilog=True)
     #     [d] = fit_decay(file, '2022_09', '2022_09_18', bkgd_sig = bkgd)
     #     decay_list.append(d)
     
     # print(decay_list)
     
-    decay_list = [19.059485988628694, 18.408959908485883, 18.55644393743853, 15.910078181399864, 13.08983621888649, 17.440854238724143, 19.30161420123414, 20.456542286541925, 15.912223911467104, 18.152678848095103, 14.313007642378626, 15.866427084210091, 16.72573476040746, 17.574747894434203, 17.513620268161343, 17.503002305697688, 16.656257218411735, 18.265675680041735, 16.79152908738018, 17.904080947608154, 19.433017398759024, 17.34069666788826, 19.841424506854693, 16.668763794591644, 17.13078827352994, 17.476590885736066, 16.86830852746903, 16.590796937894723, 16.013673974819014, 11.537271394243945, 19.084253795519004, 14.654132348217287, 17.46338812789775, 18.127077732677453, 14.448578102795235, 11.615328005874195, 15.54952874102039, 19.901513230609066, 18.32889038526471, 19.215021743145453, 19.786860442848795, 16.82717791950751, 20.276692444486795, 11.816717939596048, 16.87455264792951, 16.326218893577735, 20.284876689476707, 17.194885555367666, 17.287883285697095, 16.799133784460565, 17.55195383542611, 15.829957603452579, 15.275008538092347, 20.254799450822183, 17.315973777464702, 21.149714900343255, 13.385583837307996, 16.636295449014685, 18.964838435427424, 18.237687452278028, 16.717049274858894, 18.41685955207426, 18.435945938825476, 16.479269430502107, 19.521043461525338, 16.875025550498478, 17.573642129599666, 21.91975468229476, 23.90868882778355, 20.943797037806874, 17.79330452146329, 19.719794945954863, 16.71025220732571, 18.298791719421786, 18.546361840159932, 19.00512891239648, 17.224093709222057, 15.815145838866146]
+    # # decay_list = [19.059485988628694, 18.408959908485883, 18.55644393743853, 15.910078181399864, 13.08983621888649, 17.440854238724143, 19.30161420123414, 20.456542286541925, 15.912223911467104, 18.152678848095103, 14.313007642378626, 15.866427084210091, 16.72573476040746, 17.574747894434203, 17.513620268161343, 17.503002305697688, 16.656257218411735, 18.265675680041735, 16.79152908738018, 17.904080947608154, 19.433017398759024, 17.34069666788826, 19.841424506854693, 16.668763794591644, 17.13078827352994, 17.476590885736066, 16.86830852746903, 16.590796937894723, 16.013673974819014, 11.537271394243945, 19.084253795519004, 14.654132348217287, 17.46338812789775, 18.127077732677453, 14.448578102795235, 11.615328005874195, 15.54952874102039, 19.901513230609066, 18.32889038526471, 19.215021743145453, 19.786860442848795, 16.82717791950751, 20.276692444486795, 11.816717939596048, 16.87455264792951, 16.326218893577735, 20.284876689476707, 17.194885555367666, 17.287883285697095, 16.799133784460565, 17.55195383542611, 15.829957603452579, 15.275008538092347, 20.254799450822183, 17.315973777464702, 21.149714900343255, 13.385583837307996, 16.636295449014685, 18.964838435427424, 18.237687452278028, 16.717049274858894, 18.41685955207426, 18.435945938825476, 16.479269430502107, 19.521043461525338, 16.875025550498478, 17.573642129599666, 21.91975468229476, 23.90868882778355, 20.943797037806874, 17.79330452146329, 19.719794945954863, 16.71025220732571, 18.298791719421786, 18.546361840159932, 19.00512891239648, 17.224093709222057, 15.815145838866146]
     
-    occur, bin_edges = numpy.histogram(
-        decay_list)
-    x_vals = bin_edges[:-1]
+    # occur, bin_edges = numpy.histogram(
+    #     decay_list)
+    # x_vals = bin_edges[:-1]
     
     
-    fig, ax= plt.subplots(1, 1, figsize=(8, 8))
-    ax.plot(
-            x_vals,
-            occur,
-            "k-",
-        ) 
-    ax.set_xlabel('Lifetime decay time, t (ns)')
-    ax.set_ylabel('Occurrences')
-    ax.set_title('Histogram of lifetime decay times')
+    # fig, ax= plt.subplots(1, 1, figsize=(8, 8))
+    # ax.plot(
+    #         x_vals,
+    #         occur,
+    #         "ko",
+    #     ) 
+    # ax.set_xlabel('Lifetime decay time, t (ns)')
+    # ax.set_ylabel('Occurrences')
+    # ax.set_title('Histogram of lifetime decay times')
         
     
     

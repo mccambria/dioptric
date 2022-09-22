@@ -564,53 +564,121 @@ def main_with_cxn(
 if __name__ == "__main__":
     
     folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
-    file1 = '2022_09_16-08_53_47-rubin-nv8_2022_08_10'
-    file2 = '2022_09_16-05_35_29-rubin-nv8_2022_08_10'
-    file4= '2022_09_16-03_36_16-rubin-nv8_2022_08_10'
+    file1 = '2022_09_16-19_46_11-rubin-nv1_2022_08_10-edit'
+    file2 = '2022_09_16-12_33_42-rubin-nv8_2022_08_10'
+    file4= '2022_09_19-13_28_29-rubin-nv1_2022_08_10'
     folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
     file8 = '2022_09_04-07_49_33-rubin-nv4_2022_08_10'
     
     
     file_list = [file1]
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
 
-    for file in file_list:
-        data = tool_belt.get_raw_data(file, folder4)
-        taus = numpy.array(data['taus'])
-        num_xy4_reps = data['num_xy4_reps']
-        norm_avg_sig = data['norm_avg_sig']
-        num_steps=data['num_steps']
-        nv_sig = data['nv_sig']
-        plot_taus =data['plot_taus']
-        # run_ind = data['run_ind']
-        # sig_counts = data['sig_counts']
-        # ref_counts = data['ref_counts']
+    # for file in file_list:
+    #     data = tool_belt.get_raw_data(file, folder4)
+    #     taus = numpy.array(data['taus'])
+    #     num_xy4_reps = data['num_xy4_reps']
+    #     norm_avg_sig = data['norm_avg_sig']
+    #     num_steps=data['num_steps']
+    #     nv_sig = data['nv_sig']
+    #     plot_taus =data['plot_taus']
+    #     # run_ind = data['run_ind']
+    #     sig_counts = data['sig_counts']
+    #     ref_counts = data['ref_counts']
     
     
     
-        # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
-        # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-        # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
-        # ax.set_ylabel("Contrast (arb. units)")
-        # ax.legend()
+    #     # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+    #     # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    #     # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+    #     # ax.set_ylabel("Contrast (arb. units)")
+    #     # ax.legend()
         
 
-       
-
-
-    #### just plot revivials
+    # #### just plot revivials
     # tau_step = taus[1]-taus[0]
     # plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
     
-    ax.plot(plot_taus, norm_avg_sig, 'bo', label = "XY4-{}".format(num_xy4_reps))
-    ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
-    ax.set_ylabel("Contrast (arb. units)")
-    ax.legend()
+    # ax.plot(plot_taus, norm_avg_sig, 'bo', label = "XY4-{}".format(num_xy4_reps))
+    # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    # ax.set_xlabel(r"Precession time, T ($\mathrm{\mu s}$)")
+    # ax.set_ylabel("Contrast (arb. units)")
+    # ax.legend()
     
-    revival_t = nv_sig['t2_revival_time']/1e3
-    for i in range(6+1):
-        rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
-        ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
+    # revival_t = nv_sig['t2_revival_time']/1e3
+    # for i in range(6+1):
+    #     rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
+    #     ax.axvline(x=rev_t_mod, c='grey', linestyle='--')
 
+    ### just revivals ###
+    # This data set took measurements at the revivals and midway between them
+    
+    if True:
+        file_name = "2022_09_19-13_28_29-rubin-nv1_2022_08_10"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09')
+        norm_avg_sig = data['norm_avg_sig']
+        ref_counts = numpy.array(data['ref_counts'])
+        
+        avg_ref_counts = numpy.average(ref_counts, axis=0)
+        
+        plot_taus = data["plot_taus"]
+        
+        plot_taus = [0] + plot_taus
+        norm_avg_sig = [0] + norm_avg_sig
+        
+        # high_t = plot_taus[0::4] + plot_taus[1::4] + plot_taus[2::4]
+        high_t = plot_taus[1::4]
+        
+        # high_s = norm_avg_sig[0::4] + norm_avg_sig[1::4] + norm_avg_sig[2::4]
+        high_s = norm_avg_sig[1::4]
+        # low_s = norm_avg_sig[3::4]
+        
+        #remove the first fake point we put in
+        # high_t.pop(0) 
+        # high_s.pop(0)
+        
+        high_s = numpy.array(high_s)
+        
+        low_avg = 1 # numpy.average(avg_ref_counts)
+        
+        contrast =  min(high_s) - low_avg #??? not a great fix to get the first point, I should come back and sort the values and tke the first value...
+        
+        norm_high_s = (high_s - low_avg) / contrast 
 
+        
+        tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 100)
+        
+        fig, ax = plt.subplots()
+        ax.plot(high_t, norm_high_s, "o")
+        
+        fit_func = lambda x, decay:tool_belt.exp_stretch_decay(x, 0.5, decay, 0.5, 3)
+        init_params = [ 200]
+        popt, pcov = curve_fit(
+            fit_func,
+            high_t,
+            norm_high_s,
+            p0=init_params,
+        )
+        print('{} +/- {} us'.format(popt[0], numpy.sqrt(pcov[0][0])))
+        ax.plot(
+                tau_lin,
+                fit_func(tau_lin, *popt),
+                "r-",
+                label="fit",
+            ) 
+        
+        text_popt = '\n'.join((
+                            r'y = 0.5 + 0.5 exp(-(T / d)^3)',
+                            r'd = ' + '%.2f'%(popt[0]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[0][0])) + ' us'
+                            ))
+    
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+        
+        
+        
+        ax.set_title("Revivals of XY4")
+        ax.set_xlabel(r"Coherence time, T ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Population (arb. units)")
+        

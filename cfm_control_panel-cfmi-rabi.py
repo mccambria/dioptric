@@ -90,9 +90,9 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.35
     # scan_range = 0.25
     # scan_range = 0.2
-    #scan_range = 0.15
-    # scan_range = 0.1
-    scan_range = 0.05
+    # scan_range = 0.15
+    scan_range = 0.1
+    # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
@@ -102,8 +102,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 160
     # num_steps = 135
     # num_steps =120
-    # num_steps = 90
-    num_steps = 60
+    num_steps = 90
+    # num_steps = 60
     # num_steps = 31
     # num_steps = 21
 
@@ -429,7 +429,8 @@ def do_lifetime(nv_sig, apd_indices):
 
     num_reps = 2e4 # SM
     num_bins = 201
-    num_runs = 500
+    # num_runs = 500
+    num_runs = 10
     readout_time_range = [0.95e3, 1.15e3]  # ns
     polarization_time = 1e3 # ns
 
@@ -1009,9 +1010,10 @@ if __name__ == "__main__":
 
     nd_yellow = "nd_0"
     green_power =8000
-    nd_green = 'nd_0.4'
+    # nd_green = 'nd_0.4'
+    nd_green = 'nd_1.3'
     red_power = 120
-    sample_name = "rubin"
+    sample_name = "rubin_al"
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
@@ -1073,9 +1075,9 @@ if __name__ == "__main__":
 
 
     nv_sig_1 = copy.deepcopy(sig_base)
-    nv_sig_1["coords"] = [0.126, -0.452, 5.207]
+    nv_sig_1["coords"] = [0.661, 1.234, 5.377]
     nv_sig_1["name"] = "{}-nv1_2022_08_10".format(sample_name,)
-    nv_sig_1["expected_count_rate"] = 11
+    nv_sig_1["expected_count_rate"] = None
     nv_sig_1["resonance_LOW"] = 2.5512
     nv_sig_1["rabi_LOW"] = 118.6
     nv_sig_1["resonance_HIGH"] = 3.1916
@@ -1132,7 +1134,7 @@ if __name__ == "__main__":
 
 
     nv_sig_none = copy.deepcopy(sig_base)
-    nv_sig_none["coords"] = [0.115, -0.472,
+    nv_sig_none["coords"] = [0.675, 1.232,
                           nv_sig_1["coords"][2]]
     nv_sig_none["name"] = "{}-no_nv".format(sample_name,)
     nv_sig_none["disable_opt"] = True
@@ -1140,7 +1142,7 @@ if __name__ == "__main__":
 
 
         
-    nv_sig = nv_sig_1
+    nv_sig = nv_sig_none
     
     # %% Functions to run
 #
@@ -1161,25 +1163,7 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
-        # do_optimize_list(nv_sig_list, apd_indices)
-        # if True:
-        if False:
-            
-            #for n in [0]:
-            #for n in range(12,21):
-            #for n in range(38,41):
-            #for n in range(41,61):
-            for n in range(61,81):
-            # for n in range(len(nv_coords_list)):
-                nv_sig = copy.deepcopy(sig_base)
-                nv_sig['coords'] = nv_coords_list[n]
-                nv_sig['expected_count_rate'] = nv_expect_counts[n]
-                nv_sig["name"] = "{}-nv{}_2022_09_16".format(sample_name,n)
-                # print(nv_sig['name'])
-                do_optimize(nv_sig,apd_indices)
-                do_image_sample(nv_sig, apd_indices)
-                do_lifetime(nv_sig, apd_indices)
-                do_image_sample(nv_sig, apd_indices)
+
                      
                 
         # do_optimize(nv_sig,apd_indices)
@@ -1211,7 +1195,7 @@ if __name__ == "__main__":
             #  img_range_1D,img_range_2D, offset)
             
         # for nv_sig in [nv_sig_4,nv_sig_8]:
-        # do_lifetime(nv_sig, apd_indices)
+        do_lifetime(nv_sig, apd_indices)
             
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -1234,7 +1218,7 @@ if __name__ == "__main__":
         # do_dd_xy8(nv_sig, apd_indices, 1 )
         
         # for N in [4, 2, 1]:
-        do_dd_xy4_revivals(nv_sig_1, apd_indices, 4)
+        # do_dd_xy4_revivals(nv_sig_1, apd_indices, 4)
         
         #do_dd_xy4(nv_sig, apd_indices, 1, 1, 100, 0, 90)
         
