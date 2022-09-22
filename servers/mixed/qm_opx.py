@@ -53,6 +53,7 @@ u = unit()
 
 # class OPX(LabradServer, Tagger, PulseGen):
     
+
 class OPX(LabradServer):
     name = "qm_opx"
     pc_name = socket.gethostname()
@@ -853,7 +854,7 @@ class OPX(LabradServer):
     # def reset(self, c):
     #     pass
         
-    
+
     #%%
 
 
