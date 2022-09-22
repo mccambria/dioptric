@@ -35,7 +35,7 @@ import utils.tool_belt as tool_belt
 import logging
 import socket
 from pathlib import Path
-from interfaces.pulse_gen import PulseGen
+from servers.timing.interfaces.pulse_gen import PulseGen
 
 
 class PulseStreamer(LabradServer, PulseGen):

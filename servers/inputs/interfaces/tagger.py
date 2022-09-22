@@ -8,7 +8,7 @@ Created on August 29th, 2022
 """
 
 from abc import ABC, abstractmethod
-from counter import Counter
+from servers.inputs.interfaces.counter import Counter
 
 
 class Tagger(Counter):

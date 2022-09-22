@@ -15,7 +15,7 @@ import utils.tool_belt as tool_belt
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
-from configuration import *
+from opx_configuration_file import *
 
 def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
     
@@ -63,7 +63,8 @@ def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_
                 wait(delay_cc, "APD_1") # wait for the delay before starting apds
                 measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
         
-            
+            if num_apds == 2:  # wait for them both to finish if we are using two apds
+                align("APD_0","APD_1")
             # save the sample to the count stream. sample is a list of gates, which is a list of counts from each apd
             # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
            

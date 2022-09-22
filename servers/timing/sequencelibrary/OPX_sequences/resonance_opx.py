@@ -78,16 +78,23 @@ def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_
             if 0 in apd_indices:
                 wait((front_buffer + transient)//4, "APD_0") # wait for the delay before starting apds
                 measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
-                wait(time_between_gates_cc, "APD_0") # wait for the delay before starting apds
-                measure("readout", "APD_0", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 
             if 1 in apd_indices:
                 wait((front_buffer + transient)//4, "APD_1") # wait for the delay before starting apds
                 measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
+                
+            if num_apds == 2:  # wait for them both to finish if we are using two apds
+                align("APD_0","APD_1")
+            
+            if 0 in apd_indices:
+                wait(time_between_gates_cc, "APD_0") # wait for the delay before starting apds
+                measure("readout", "APD_0", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
+                
+            if 1 in apd_indices:
                 wait(time_between_gates_cc, "APD_1") # wait for the delay before starting apds
                 measure("readout", "APD_1", None, time_tagging.analog(times_gate2_apd_1, readout_time, counts_gate2_apd_1))
                     
-                    
+            
             ###microwaves
             wait((front_buffer - uwave_delay + transient + readout + meas_buffer + transient)//4, "sig_gen_gate_chan_name")
             play("ON", "sig_gen_gate_chan_name", duration=int(readout))  # play microwave pulse. the freq is set from outside the opx. in the opx it should just have the digital switch for the sig gen

@@ -28,7 +28,7 @@ from twisted.internet.defer import ensureDeferred
 import socket
 import logging
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
-from interfaces.vector_sig_gen import VectorSigGen
+from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
 
 
 class SigGenSg394(LabradServer, VectorSigGen):

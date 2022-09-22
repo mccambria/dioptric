@@ -32,7 +32,7 @@ import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
 import time
-from interfaces.vector_sig_gen import VectorSigGen
+from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
 
 
 class SigGenTsg4104a(LabradServer, VectorSigGen):

@@ -27,9 +27,9 @@ from qm.qua import *
 from qm import SimulationConfig
 from qualang_tools.results import fetching_tool
 import matplotlib.pyplot as plt
-# from labrad.server import LabradServer
-# from labrad.server import setting
-# from twisted.internet.defer import ensureDeferred
+from labrad.server import LabradServer
+from labrad.server import setting
+from twisted.internet.defer import ensureDeferred
 from numpy import count_nonzero, nonzero, concatenate
 import numpy as np
 import importlib
@@ -39,58 +39,63 @@ import re
 import sys
 import time
 import os
-# import utils.tool_belt as tool_belt
+import utils.tool_belt as tool_belt
 import socket
 from numpy import pi
 root2_on_2 = numpy.sqrt(2) / 2
-# from inputs.interfaces.tagger import Tagger
-# from timing.interfaces.pulse_gen import PulseGen
+from qualang_tools.units import unit
+
+u = unit()
+# from servers.inputs.interfaces.tagger import Tagger
+# from servers.timing.interfaces.pulse_gen import PulseGen
 # from opx_configuration_file import *
 
 
 # class OPX(LabradServer, Tagger, PulseGen):
-class OPX():
-    name = "opx"
+    
+class OPX(LabradServer):
+    name = "qm_opx"
     pc_name = socket.gethostname()
     # steady_state_program_file = 'steady_state_program_test_opx.py'
     
     
 
     def initServer(self):
-    #     filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
-    #     filename = filename.format(self.pc_name, self.name)
-    #     logging.basicConfig(level=logging.INFO, 
-    #                 format='%(asctime)s %(levelname)-8s %(message)s',
-    #                 datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
-    #     config = ensureDeferred(self.get_config())
-    #     config.addCallback(self.on_get_config)
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
+        config = ensureDeferred(self.get_config())
+        config.addCallback(self.on_get_config)
         self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
         self.qm = self.qmm.open_qm(config_opx)
         self.steady_state_program_file = 'steady_state_program_test_opx.py'
         self.x_voltages_1d = []
         self.y_voltages_1d = []
         self.z_voltages_1d = []
+        self.steady_state_option = False
         
-    # async def get_config(self):  ### async???
-    #     p = self.client.registry.packet()
-    #     p.cd(['', 'Config', 'Microwaves'])
-    #     p.get('iq_comp_amp') #this is needed for arbitrary waveform generator functions
-    #     result = await p.send()
-    #     return result['get']
+    async def get_config(self):  ### async???
+        p = self.client.registry.packet()
+        p.cd(['', 'Config', 'Microwaves'])
+        # p.get('iq_comp_amp') #this is needed for arbitrary waveform generator functions
+        p.get('iq_delay') #this is needed for arbitrary waveform generator functions
+        result = await p.send()
+        return result['get']
 
-    # def on_get_config(self, config):
-    #     resource_manager = visa.ResourceManager()
-    #     self.iq_comp_amp = config[0]
-    #     logging.info('Init complete')
-    #     self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
-    #     self.qm = self.qmm.open_qm(config_opx)             # makes a quantum machine with the specific configuration
-    #     ####in the future we could make this start the infinite loop program. But we can always just run the program too.
+    def on_get_config(self, config):
+        # resource_manager = visa.ResourceManager()
+        # self.iq_comp_amp = config[0]
+        logging.info('Init complete')
         
-    # def stopServer(self):
-    #     self.qmm.close_all_quantum_machines()
-    #     self.qmm.close()
+    def stopServer(self):
+        self.qmm.close_all_quantum_machines()
+        self.qmm.close()
     
-   
+    def set_steadty_state_option_on_off(self, selection): #selection should be true or false
+        self.steady_state_option = selection
+        
     #%% sequence loading and executing functions ###
     ### looks good. It's ready to queue up both the experiment job and the infinite loop job. I can test it with simple programs and config
     
@@ -120,14 +125,11 @@ class OPX():
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            args = seq_args_string
-            # args = tool_belt.decode_seq_args(seq_args_string)
-            
-            seq, final, ret_vals = seq_module.get_seq(args)
-            
-            # seq, final, ret_vals = seq_module.get_seq(        # here seq is the qua program. refer to opx sequence template      
-            #     self.config_dict, args
-            # )
+            args = tool_belt.decode_seq_args(seq_args_string)
+                        
+            seq, final, ret_vals = seq_module.get_seq(        # here seq is the qua program. refer to opx sequence template      
+                self.config_dict, args
+            )
         
         self.qua_program = seq
         self.seq_file = seq_file
@@ -157,15 +159,11 @@ class OPX():
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            args = seq_args_string
-            # args = tool_belt.decode_seq_args(seq_args_string)
-            
+            args = tool_belt.decode_seq_args(seq_args_string)
+        
             seq, final, ret_vals = seq_module.get_full_seq(        # here seq is the qua program. refer to opx sequence template      
-                args, num_repeat, x_voltages, y_voltages, z_voltages
+                self.config_dict, args, num_repeat, x_voltages, y_voltages, z_voltages
             )
-            # seq, final, ret_vals = seq_module.get_full_seq(        # here seq is the qua program. refer to opx sequence template      
-            #     self.config_dict, args, num_repeat
-            # )
         
         self.qua_program = seq
         self.seq_file = seq_file
@@ -177,13 +175,13 @@ class OPX():
             
             seq_steady_state = seq_module_steady_state.get_steady_state_seq(self)
         
-        self.steady_state_program = seq_steady_state
+        if self.steady_state_option:
+            self.steady_state_program = seq_steady_state
         
         return seq, final, ret_vals
     
-    # @setting(1, seq_file="s", seq_args_string="s", returns="*?")
-    # def stream_load(self, c, seq_file, seq_args_string=""): #from pulse streamer. for the opx all this function does is return back some property(s) of the sequence you want. DONE
-    def stream_load(self, seq_file, seq_args_string=""): #from pulse streamer. for the opx all this function does is return back some property(s) of the sequence you want. DONE
+    @setting(1, seq_file="s", seq_args_string="s", returns="*?")
+    def stream_load(self, c, seq_file, seq_args_string=""): #from pulse streamer. for the opx all this function does is return back some property(s) of the sequence you want. DONE
         """For the OPX, this will just grab a single iteration of the desired sequence and return the parameter of interest
         Params
             seq_file: str
@@ -201,9 +199,8 @@ class OPX():
         
         return ret_vals
 
-    # @setting(2, num_repeat="i")
-    def stream_start(self, num_repeat=1): # from pulse streamer. It will start the full sequence. DONE
-    # def stream_start(self, c, num_repeat=1): # from pulse streamer. It will start the full sequence. DONE
+    @setting(2, num_repeat="i")
+    def stream_start(self, c, num_repeat=1): # from pulse streamer. It will start the full sequence. DONE
         """For the OPX, this will run the qua program already grabbed by stream_load(). It opens communication with the QOP and executes the program, creating the job 
         Params
             num_repeat: int
@@ -225,15 +222,16 @@ class OPX():
         
         #queue up both the interesting program and the steady state program
         self.pending_experiment_job = self.compile_program_and_add_to_qm_queue(self.qm,self.qua_program)
-        self.pending_steady_state_job = self.compile_program_and_add_to_qm_queue(self.qm,self.steady_state_program)
         self.experiment_job = self.pending_experiment_job.wait_for_execution()
-        self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
+        
+        if self.steady_state_option:
+            self.pending_steady_state_job = self.compile_program_and_add_to_qm_queue(self.qm,self.steady_state_program)
+            self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
        
         return 
         
-    # @setting(3, seq_file="s", num_repeat="i", seq_args_string="s", returns="*?")
-    def stream_immediate(self, seq_file, num_repeat=1, seq_args_string=""): # from pulse streamer. For the OPX this will get the full sequence we want and run it. DONE
-    # def stream_immediate(self, c, seq_file, num_repeat=1, seq_args_string=""): # from pulse streamer. For the OPX this will get the full sequence we want and run it. DONE
+    @setting(3, seq_file="s", num_repeat="i", seq_args_string="s", returns="*?")
+    def stream_immediate(self, c, seq_file, num_repeat=1, seq_args_string=""): # from pulse streamer. For the OPX this will get the full sequence we want and run it. DONE
         """Load the sequence from seq_file and immediately run it for
         the specified number of repitions. End in the specified
         final output state.
@@ -266,10 +264,13 @@ class OPX():
         self.qm = self.qmm.open_qm(config_opx)
         
         #queue up both the interesting program and the steady state program
+        
         self.pending_experiment_job = self.compile_program_and_add_to_qm_queue(self.qm,self.qua_program)
-        self.pending_steady_state_job = self.compile_program_and_add_to_qm_queue(self.qm,self.steady_state_program)
         self.experiment_job = self.pending_experiment_job.wait_for_execution()
-        self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
+        
+        if self.steady_state_option:
+            self.pending_steady_state_job = self.compile_program_and_add_to_qm_queue(self.qm,self.steady_state_program)
+            self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
        
         return ret_vals
     
@@ -278,12 +279,10 @@ class OPX():
     ### these also need to be tested once I get the opx up and running again
     
         
-    # @setting(47, num_to_read="i", returns="*3w")
-    # def read_counter_complete(self, c, num_to_read=None):
-    def read_counter_complete(self, num_to_read=None):
+    @setting(47, num_to_read="i", returns="*3w")
+    def read_counter_complete(self, c, num_to_read=None):
         return self.read_counter_setting_internal(num_to_read)
     
-    # def read_counter_setting_internal(self, c, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
     def read_counter_setting_internal(self, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
         """This is the core function that any tagger we have needs. 
         For the OPX this fetches the data from the job that was created when the program was executed. 
@@ -300,21 +299,23 @@ class OPX():
             return_counts: array
                 This is an array of the counts 
         """
+        
         results = fetching_tool(self.experiment_job, data_list = ["counts"], mode="wait_for_all")
         return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
         return_counts = return_counts[0][0].tolist()
+        # print(return_counts)
         return return_counts
 
-    # @setting(5, num_to_read="i", returns="*w")
+    @setting(5, num_to_read="i", returns="*w")
     def read_counter_simple(self, c, num_to_read=None):
-
+        
         complete_counts = self.read_counter_setting_internal(num_to_read)
 
         # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
+        # gate_channels = list(self.tagger_di_gate.values())
+        # first_gate_channel = gate_channels[0]
+        # if not all(val == first_gate_channel for val in gate_channels):
+        #     logging.critical("Combined counts from APDs with different gates.")
 
         # Just find the sum of each sample in complete_counts
         return_counts = [
@@ -322,17 +323,17 @@ class OPX():
 
         return return_counts
 
-    # @setting(6, num_to_read="i", returns="*2w")
+    @setting(6, num_to_read="i", returns="*2w")
     def read_counter_separate_gates(self, c, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
         # logging.info(complete_counts)
 
         # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
+        # gate_channels = list(self.tagger_di_gate.values())
+        # first_gate_channel = gate_channels[0]
+        # if not all(val == first_gate_channel for val in gate_channels):
+        #     logging.critical("Combined counts from APDs with different gates.")
 
         # Add the APD counts as vectors for each sample in complete_counts
         return_counts = [
@@ -340,7 +341,7 @@ class OPX():
 
         return return_counts
     
-    # @setting(11, modulus="i", num_to_read="i", returns="*2w")
+    @setting(11, modulus="i", num_to_read="i", returns="*2w")
     def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
@@ -369,41 +370,44 @@ class OPX():
         return return_counts
 
     
-    # @setting(7, num_to_read="i", returns="*s*i")
+    @setting(7, num_to_read="i", returns="*s*i")
     def read_tag_stream(self, c, num_to_read=None): #from apd tagger ###need to update
         """This will take in the same three level list as read_counter_internal, but the third level is not a number of counts, but actually a list of time tags
             It will return a list of samples. Each sample is a list of gates. Each gates is a list of time tags
             It will also return a list of channels. Each channel is a list of gates. In each gate is a list of the channel associated to each time tag
         """
         results = fetching_tool(self.experiment_job, data_list=["counts","times"], mode="wait_for_all")
+        counts = results.res_handles.counts.fetch_all()
+        times = results.res_handles.counts.fetch_all()
+        counts = counts[0][0].tolist()
+        times = times.tolist()
         
         all_channels_list = []
         all_times_list = []
         
-        
-        counts, times = results.fetch_all()
-        counts = counts[0][0].tolist()
-        times = times[0][0].tolist()
         num_samples = len(counts)
         num_apds = len(counts[0])
         num_gates = len(counts[0][0])
         last_ind = 0
         
+        # print(counts[0][0])
+        
         ordered_time_tags = [] #this will be a list of sample. each sample is a list of gates. each gate is a list of sorted time tags
         ordered_channels = [] #this will be a list of samples. each sample is a list of gates. each gate is a list of channels for the corresponding time tags
-        
+
         for i in range(num_samples):
             sample_counts = counts[i]
             all_gate_time_tags = []
             all_gate_channels = []
             
             for j in range(num_gates):
-                gate_counts = sample_counts[i]
+                # gate_counts = sample_counts[j]
                 all_apd_time_tags = []
                 channels = []
                 
-                for k in range(num_apd):
-                    apd_counts = gate_counts[k] #gate_counts will be a single number
+                for k in range(num_apds):
+                    
+                    apd_counts = sample_counts[k][j] #gate_counts will be a single number
                     apd_time_tags = times[last_ind:last_ind+apd_counts]
                     all_apd_time_tags = all_apd_time_tags + apd_time_tags
                     channels = channels+np.full(len(apd_time_tags),apd_indices[k]).tolist()
@@ -424,17 +428,17 @@ class OPX():
         return ordered_time_tags, ordered_channels 
 
     
-    # @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
+    @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
     def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
         """opx doesn't need it"""
         pass
     
-    # @setting(9, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
+    @setting(9, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
     def stop_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
         """OPX doesn't need it"""
         pass
     
-    # @setting(10)
+    @setting(10)
     def clear_buffer(self, c): # from apd tagger
         """OPX doesn't need it"""
         pass
@@ -809,45 +813,45 @@ class OPX():
     #all the 'load' functions are not necessary on the OPX
     #the pulses need to exist in the configuration file and they are used in the qua sequence
     
-    def iq_comps(phase, amp):
-        if type(phase) is list:
-            ret_vals = []
-            for val in phase:
-                ret_vals.append(numpy.round(amp * numpy.exp((0+1j) * val), 5))
-            return (numpy.real(ret_vals).tolist(), numpy.imag(ret_vals).tolist())
-        else:
-            ret_val = numpy.round(amp * numpy.exp((0+1j) * phase), 5)
-            return (numpy.real(ret_val), numpy.imag(ret_val))
+    # def iq_comps(phase, amp):
+    #     if type(phase) is list:
+    #         ret_vals = []
+    #         for val in phase:
+    #             ret_vals.append(numpy.round(amp * numpy.exp((0+1j) * val), 5))
+    #         return (numpy.real(ret_vals).tolist(), numpy.imag(ret_vals).tolist())
+    #     else:
+    #         ret_val = numpy.round(amp * numpy.exp((0+1j) * phase), 5)
+    #         return (numpy.real(ret_val), numpy.imag(ret_val))
         
     # @setting(13, amp="v[]")
-    def set_i_full(self, c, amp):
-        pass
+    # def set_i_full(self, c, amp):
+    #     pass
     
     # @setting(14)
-    def load_knill(self, c):
-        pass
+    # def load_knill(self, c):
+    #     pass
         
     # @setting(15, phases="*v[]")
-    def load_arb_phases(self, c, phases):
-        pass
+    # def load_arb_phases(self, c, phases):
+    #     pass
         
     # @setting(16, num_dd_reps="i")
-    def load_xy4n(self, c, num_dd_reps):
-        pass
+    # def load_xy4n(self, c, num_dd_reps):
+    #     pass
         
     # @setting(17, num_dd_reps="i")
-    def load_xy8n(self, c, num_dd_reps):
-        pass
+    # def load_xy8n(self, c, num_dd_reps):
+    #     pass
 
     # @setting(18, num_dd_reps="i")
-    def load_cpmg(self, c, num_dd_reps):
-        pass
+    # def load_cpmg(self, c, num_dd_reps):
+    #     pass
     
     
     #%% reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
-    
-    def reset(self, c):
-        pass
+    # @setting(199, num_dd_reps="i")
+    # def reset(self, c):
+    #     pass
         
     
     #%%
@@ -856,20 +860,43 @@ class OPX():
 __server__ = OPX()
 
 if __name__ == "__main__":
-    opx_configuration_file_path = "/Users/carterfox/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
+    
+    opx_configuration_file_path = "C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
     sys.path.append(opx_configuration_file_path)
-    sys.path.append("/Users/carterfox/Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences")
+
     from opx_configuration_file import *
-    opx = OPX()
-    opx.initServer()
+    sys.path.append("C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences")
+    
+    from labrad import util
+
+    util.runServer(__server__)
+    
+    # opx = OPX()
+    # opx.initServer()
+
+    # opx.set_steadty_state_option_on_off(True)
     # delay, readout_time, apd_index, laser_name, laser_power = args
-    args_test = [1000,400,0,'green_laser_do',1]
-    opx.stream_load('test_program_opx.py',args_test)
-    opx.stream_start(5)
-    counts = opx.read_counter_complete()
-    print(counts)
+    # args_test = [1000,1000,0,'green_laser_do',1]
+    # args_test_str = tool_belt.encode_seq_args(args_test)
+    # opx.stream_load('test_program_opx.py',args_test_str)
+    # opx.stream_start(5)
+    # all_counts = opx.read_counter_complete()
+    # counts_simple = opx.read_counter_simple()
+    # counts_gates = opx.read_counter_separate_gates()
+    # times, channels = opx.read_tag_stream()
+    # print('')
+    # print('')
+    # print(all_counts)
+    # print('')
+    # print(counts_simple)
+    # print('')
+    # print(counts_gates)
+    # print('')
+    # print(times)
+    # print('')
+    # print(channels)
     # opx.stream_immediate('test_program_opx.py')
-    print('hi')
+    # print('hi')
 #     from labrad import util
 
 #     util.runServer(__server__)

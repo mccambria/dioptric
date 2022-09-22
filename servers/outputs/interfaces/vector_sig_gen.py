@@ -8,7 +8,7 @@ Created on August 29th, 2022
 """
 
 from abc import ABC, abstractmethod
-from sig_gen import SigGen
+from servers.outputs.interfaces.sig_gen import SigGen
 
 
 class VectorSigGen(SigGen):

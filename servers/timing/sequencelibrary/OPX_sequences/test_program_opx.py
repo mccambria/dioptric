@@ -30,38 +30,12 @@ time_of_flight_delay_cc = time_of_flight_delay // 4
 dead_time = 200
 dead_time_cc = dead_time // 4
 
-desired_time_between_gates = 324
+desired_time_between_gates = 2600
 
-intrinsic_time_between_gates = 124 - 16  #124ns delay + 16ns because the first 16ns in the wait command here don't contribute
+intrinsic_time_between_gates = 124 - 12   #124ns delay + 12ns because the first 16ns in the wait command here don't contribute
 time_between_gates = desired_time_between_gates - intrinsic_time_between_gates
 time_between_gates_cc = time_between_gates // 4
 
-# def qua_program(args, num_reps, x_voltage_list=None, y_voltage_list=None, z_voltage_list=None):
-    
-#     with program() as seq:
-        
-#         # counts_gate1_apd_0 = declare(int)  # variable for number of counts
-#         # counts_gate1_apd_1 = declare(int)
-#         # counts_gate2_apd_0 = declare(int)  # variable for number of counts
-#         # counts_gate2_apd_1 = declare(int)
-#         # counts_st = declare_stream() 
-        
-#         # times = declare(int, size=int(15900 / num_apds / num_gates ))  
-#         # times2 = declare(int, size=int(15900 / num_apds / num_gates))  
-#         # times_st = declare_stream()
-        
-#         n = declare(int)
-#         # i = declare(int)
-            
-#         # with for_(n, 0, n < num_reps, n + 1):
-            
-#             # align()  
-            
-#         with for_(n,0,n<100,n+1):
-#             play("laser_ON",green_laser_name,duration=int(5000 // 4))
-#             wait(5000//4)
-
-#     return seq
 
 # def qua_program(args, num_reps, x_voltage_list, y_voltage_list, z_voltage_list):
 def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
@@ -75,9 +49,10 @@ def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_
     period = numpy.int64(delay + readout_time + 300)
     period_cc = int(period // 4)
     
-    num_gates = 1
+    num_gates = 2
     num_apds = len(apd_indices)
-    timetag_list_size = int(15900 / num_gates / num_apds)
+    timetag_list_size = int(100 / num_gates / num_apds)
+    print(config_opx['pulses']['readout_pulse']['length'])
     
     with program() as seq:
         
@@ -85,10 +60,18 @@ def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_
         
         counts_gate1_apd_0 = declare(int)  # variable for number of counts
         counts_gate1_apd_1 = declare(int)
+        counts_gate2_apd_0 = declare(int)  # variable for number of counts
+        counts_gate2_apd_1 = declare(int)
+        counts_gate3_apd_0 = declare(int)  # variable for number of counts
+        counts_gate3_apd_1 = declare(int)
         counts_st = declare_stream()  # stream for counts
         
         times_gate1_apd_0 = declare(int, size=timetag_list_size)  # why input a size??
         times_gate1_apd_1 = declare(int, size=timetag_list_size)
+        times_gate2_apd_0 = declare(int, size=timetag_list_size)  # why input a size??
+        times_gate2_apd_1 = declare(int, size=timetag_list_size)
+        times_gate3_apd_0 = declare(int, size=timetag_list_size)  # why input a size??
+        times_gate3_apd_1 = declare(int, size=timetag_list_size)
         times_st = declare_stream()
                 
         n = declare(int)
@@ -99,44 +82,56 @@ def qua_program(args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_
             align()  
             
             ###green laser
-            play("laser_ON",laser_name,duration=int(period_cc))  
+            # play("laser_ON",laser_name,duration=int(period_cc))  
             
-            ###apds
+            ###gate 1 of apds
+            # wait(time_between_gates_cc)
             if 0 in apd_indices:
-                wait(delay_cc, "APD_0") # wait for the delay before starting apds
-                measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
-                
+                # wait(time_between_gates_cc) # wait for the delay before starting apds
+                measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))  
             if 1 in apd_indices:
-                wait(delay_cc, "APD_1") # wait for the delay before starting apds
+                # wait(time_between_gates_cc,"APD_1")
                 measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
-        
-            wait(100,laser_name)
-            # save the sample to the count stream. sample is a list of gates, which is a list of counts from each apd
-            # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
-           
-            ###trigger piezos
-            if (len(x_voltage_list) > 0):
-                wait((period - 200) // 4, "x_channel")
-                play("ON", "x_channel", duration=100)  
-            if (len(y_voltage_list) > 0):
-                wait((period - 200) // 4, "y_channel")
-                play("ON", "y_channel", duration=100)  
-            if (len(z_voltage_list) > 0):
-                wait((period - 200) // 4, "z_channel")
-                play("ON", "z_channel", duration=100)  
                 
             
-            ###saving
+            
+            ###gate 2 of apds
+            if num_apds == 2:  # wait for them both to finish if we are using two apds
+                align("APD_0","APD_1")
+                
+            wait(time_between_gates_cc) #make the total wait time between gates the desired time
+            if 0 in apd_indices:
+                measure("readout", "APD_0", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
+            if 1 in apd_indices:
+                measure("readout", "APD_1", None, time_tagging.analog(times_gate2_apd_1, readout_time, counts_gate2_apd_1))
+            
+                
+            # save all the data
             if 0 in apd_indices:
                 save(counts_gate1_apd_0, counts_st)
-                with for_(i, 0, i < counts_gate1_apd_0, i + 1):
+                with for_(i, 0, i < (counts_gate1_apd_0), i + 1):
                     save(times_gate1_apd_0[i], times_st)
-                        
+                save(counts_gate2_apd_0, counts_st)
+                with for_(i, 0, i < (counts_gate2_apd_0), i + 1):
+                    save(times_gate2_apd_0[i], times_st)
+                    
             if 1 in apd_indices:
                 save(counts_gate1_apd_1, counts_st)
-                with for_(i, 0, i < counts_gate1_apd_1, i + 1):
+                with for_(i, 0, i < (counts_gate1_apd_1), i + 1):
                     save(times_gate1_apd_1[i], times_st)
-                    
+                save(counts_gate2_apd_1, counts_st)
+                with for_(i, 0, i < (counts_gate2_apd_1), i + 1):
+                    save(times_gate2_apd_1[i], times_st)
+            
+            # if 0 in apd_indices:
+            #     save(counts_gate2_apd_0, counts_st)
+            #     with for_(i, 0, i < (counts_gate2_apd_0), i + 1):
+            #         save(times_gate2_apd_0[i], times_st)
+            # if 1 in apd_indices:
+            #     save(counts_gate2_apd_1, counts_st)
+            #     with for_(i, 0, i < (counts_gate2_apd_1), i + 1):
+            #         save(times_gate2_apd_1[i], times_st)
+            
             
             
         with stream_processing():
@@ -153,7 +148,7 @@ def get_seq(args): #so this will give just the sequence, no repeats
 
 def get_full_seq(args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq = qua_program(args, num_reps, x_voltage_list,y_voltage_list,z_voltage_list)
+    seq = qua_program(args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
     final = ''
     return seq, final, [period]
     
@@ -162,17 +157,20 @@ if __name__ == '__main__':
     
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
+    readout_time = 12000
+    config_opx['pulses']['readout_pulse']['length']=readout_time
     qm = qmm.open_qm(config_opx)
-    simulation_duration = 12000 // 4 # clock cycle units - 4ns
+    simulation_duration = 30000 // 4 # clock cycle units - 4ns
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
     num_repeat=1
-    args = [1000,400,0,'green_laser_do',1]
     
-    seq , f, p = get_full_seq('opx', args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
+    args = [200,readout_time,0,'green_laser_do',1]
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    seq , f, p = get_full_seq(args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
+    
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     # Simulate blocks python until the simulation is done
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.xlim(100,12000)
 
 # job = qm.execute(seq)

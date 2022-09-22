@@ -28,7 +28,7 @@ def IQ_imbalance(g, phi):
 qop_ip = "128.104.160.117"
 analog_output_delay = 136 #ns
 # APD indices, telling you which of the two APDs we are actually using right now
-apd_indices = [0, 1]
+apd_indices = [0,1]
 
 # Frequencies
 NV_IF_freq = 40e6  # in units of Hz
@@ -38,7 +38,7 @@ NV_LO_freq = 2.83e9  # in units of Hz
 # Pulses lengths
 initialization_len = 200  # in ns
 meas_len = 100  # in ns
-long_meas_len = 5e2  # in ns
+long_meas_len = 100  # in ns
 
 # MW parameters
 mw_amp_NV = 0.2  # in units of volts
@@ -51,7 +51,7 @@ pi_half_amp_NV = pi_amp_NV / 2  # in units of volts
 pi_half_len_NV = pi_len_NV  # in units of ns
 
 # Readout parameters
-signal_threshold = -500
+signal_threshold = -200
 
 # Delays
 detection_delay = 36 # keep at 36ns minimum
@@ -68,7 +68,9 @@ apd_1_delay = 0
 uwave_delay = 0
 delays = [green_laser_delay,apd_0_delay,apd_1_delay,uwave_delay]
 
-common_delay = analog_output_delay + max(delays)
+min_delay = 150 #we use 100 with the pulse streamer. doesn't matter. just wanted it higher than 136 analog delay
+
+common_delay = max(delays) + min_delay 
 
 green_laser_total_delay = common_delay - green_laser_delay
 red_laser_total_delay = common_delay - red_laser_delay
@@ -175,9 +177,9 @@ config_opx = {
             "outputs": {"out1": ("con1", 1)},
             "outputPulseParameters": {
                 "signalThreshold": signal_threshold,
-                "signalPolarity": "Descending",
-                "derivativeThreshold": 1023,
-                "derivativePolarity": "Descending",
+                "signalPolarity": "Below",
+                "derivativeThreshold": 1800,
+                "derivativePolarity": "Below",
             },
             "time_of_flight": detection_delay,
             "smearing": 18, #tries to account for length of count pulses being finite. 
@@ -198,9 +200,9 @@ config_opx = {
             "outputs": {"out1": ("con1", 1)},
             "outputPulseParameters": {
                 "signalThreshold": signal_threshold,
-                "signalPolarity": "Descending",
-                "derivativeThreshold": 1023,
-                "derivativePolarity": "Descending",
+                "signalPolarity": "Below",
+                "derivativeThreshold": 1800,
+                "derivativePolarity": "Below",
             },
             "time_of_flight": detection_delay,
             "smearing": 18,
@@ -241,7 +243,7 @@ config_opx = {
         "long_readout_pulse": {
             "operation": "measurement",
             "length": long_meas_len,
-            "digital_marker": "OFF",
+            "digital_marker": "ON",
             "waveforms": {"single": "zero_wf"},
         },
     },

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI PIHera P-625.2CD objective piezo. 
+Output server for the PI P-616.3c 3 axis piezo
 Sending commands over usb
 
 Created on Wed Nov  3 15:58:30 2021
@@ -9,7 +9,7 @@ Created on Wed Nov  3 15:58:30 2021
 
 ### BEGIN NODE INFO
 [info]
-name = piezo_stage_626_2cd_digital
+name = piezo_stage_616_3c_digital
 version = 1.0
 description =
 
@@ -38,7 +38,7 @@ import time
 
 
 class PiezoStageDigital(LabradServer):
-    name = "piezo_stage_626_2cd_digital"
+    name = "piezo_stage_616_3c_digital"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -54,23 +54,20 @@ class PiezoStageDigital(LabradServer):
         )
         self.task = None
         self.sub_init_server_xy()
+        self.sub_init_server_z()
 
-    def sub_init_server_xy(self):
+    def sub_init_server_xyz(self):
         """Sub-routine to be called by xyz server"""
-        self.x_last_position = None
-        self.x_current_direction = None
-        self.x_last_turning_position = None
-        self.y_last_position = None
-        self.y_current_direction = None
-        self.y_last_turning_position = None
-        config = ensureDeferred(self.get_config_xy())
-        config.addCallback(self.on_get_config_xy)
-
-    async def get_config_xy(self):
+    
+        config = ensureDeferred(self.get_config_xyz())
+        config.addCallback(self.on_get_config_xyz)
+        
+    
+    async def get_config_xyz(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"]) # change this in registry
-        p.get("piezo_stage_626_2cd_model")
-        p.get("piezo_stage_626_2cd_serial")
+        p.get("piezo_stage_616_2c_model")
+        p.get("piezo_stage_616_2c_serial")
         # p.cd(["", "Config", "Wiring", "Piezo_stage_E727"])
         # p.get("piezo_stage_channel_x")
         # p.get("piezo_stage_channel_y")
@@ -80,8 +77,8 @@ class PiezoStageDigital(LabradServer):
         # p.get("piezo_stage_scaling_offset")
         # p.get("piezo_stage_scaling_gain")
         # p.cd(["", "Config", "Wiring", "Daq"])
-        # p.get("ao_piezo_stage_626_2cd_x")
-        # p.get("ao_piezo_stage_626_2cd_y")
+        # p.get("ao_piezo_stage_616_2cd_x")
+        # p.get("ao_piezo_stage_616_2cd_y")
         # p.get("di_clock")
         p.cd(["", "Config", "Positioning"])
         p.get("xy_positional_accuracy")
@@ -91,7 +88,8 @@ class PiezoStageDigital(LabradServer):
         result = await p.send()
         return result["get"]
 
-    def on_get_config_xy(self, config):
+
+    def on_get_config_xyz(self, config):
         # Load the generic device
         gcs_dll_path = str(Path.home())
         gcs_dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
@@ -104,6 +102,7 @@ class PiezoStageDigital(LabradServer):
         # Axis for device
         self.axis_0 = self.piezo.axes[0] 
         self.axis_1 = self.piezo.axes[1]
+        self.axis_2 = self.piezo.axes[2]
         self.positioning_accuracy = config[2]
         self.timeout = config[3]
         # self.piezo_stage_channel_x = config[2]
@@ -144,6 +143,7 @@ class PiezoStageDigital(LabradServer):
         # Disconnect axis from analog channels
         self.piezo.SPA(self.axis_0, 0x06000500, 0)  # Disconnect axis 0
         self.piezo.SPA(self.axis_1, 0x06000500, 0)  # Disconnect axis 1
+        self.piezo.SPA(self.axis_2, 0x06000500, 0)  # Disconnect axis 2
         # logging.debug("Piezo axis {} disconnected from analog signal".format(self.axis_0))
         # logging.debug("Piezo axis {} disconnected from analog signal".format(self.axis_1))
         
@@ -282,6 +282,35 @@ class PiezoStageDigital(LabradServer):
                 break 
             
         return flag
+    
+    @setting(366,   zPosition="v[]", returns="v[]",)
+    def write_z(self, c, zPosition):
+        """Write the specified  z voltage to the piezo stage"""
+        if zPosition > 500:
+            logging.info("Piezo stage position must not exceed 500 um")
+            raise ValueError("Piezo stage position must not exceed 500 um")
+        if zPosition < 0:
+            logging.info("Piezo stage position must be above 0 um")
+            raise ValueError("Piezo stage position must be above 0 um")
+            
+        # manually send voltage task to controller
+        self.piezo.MOV(self.axis_2, zPosition) 
+        
+        # Then check that we made it to the actual position, to within some threshold
+        z_diff = 1000
+        flag = 0
+        time_start_check = time.time()
+        while z_diff > self.positioning_accuracy:
+            
+            actual_z_pos = self.read_z(c)
+            z_diff = abs(actual_z_pos - zPosition)
+            time_check = time.time()
+            if time_check - time_start_check > self.timeout:
+                logging.info("Target position not reached!")
+                flag = 1
+                break 
+            
+        return flag
 
     @setting(31, returns="*v[]")
     def read_xy(self, c):
@@ -292,6 +321,14 @@ class PiezoStageDigital(LabradServer):
         ordered_dict = self.piezo.qPOS(self.axis_1)
         yPosition = ordered_dict["{}".format(self.axis_1)]
         return xPosition, yPosition
+    
+    @setting(311, returns="*v[]")
+    def read_z(self, c):
+        """Return the current voltages on the piezo's DAQ channels"""
+        
+        ordered_dict = self.piezo.qPOS(self.axis_2)
+        zPosition = ordered_dict["{}".format(self.axis_2)]
+        return zPosition
 
     @setting(33, returns="*v[]")
     def check_on_target(self, c):
@@ -302,8 +339,10 @@ class PiezoStageDigital(LabradServer):
         on_target_x = ordered_dict["{}".format(self.axis_0)]
         ordered_dict = self.piezo.qONT(self.axis_1)
         on_target_y = ordered_dict["{}".format(self.axis_1)]
+        ordered_dict = self.piezo.qONT(self.axis_2)
+        on_target_z = ordered_dict["{}".format(self.axis_2)]
         
-        return on_target_x, on_target_y
+        return on_target_x, on_target_y, on_target_z
     
     @setting(34, returns="*v[]")
     def check_servo_mode(self, c):
@@ -313,9 +352,11 @@ class PiezoStageDigital(LabradServer):
         servo_mode_x = ordered_dict["{}".format(self.axis_0)]
         ordered_dict = self.piezo.qSVO(self.axis_1)
         servo_mode_y = ordered_dict["{}".format(self.axis_1)]
+        ordered_dict = self.piezo.qSVO(self.axis_2)
+        servo_mode_z = ordered_dict["{}".format(self.axis_2)]
         
-        logging.info(servo_mode_x, servo_mode_y)
-        return servo_mode_x, servo_mode_y
+        logging.info(servo_mode_x, servo_mode_y, servo_mode_z)
+        return servo_mode_x, servo_mode_y, servo_mode_z
 
     @setting(
         2,
@@ -408,6 +449,98 @@ class PiezoStageDigital(LabradServer):
         # self.load_stream_writer_xy(c, "Piezo_stage-load_sweep_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
+    
+    @setting(
+        222,
+        x_center="v[]",
+        z_center="v[]",
+        x_range="v[]",
+        z_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]*v[]",
+    )
+    def load_sweep_scan_xz(
+        self, c, x_center, z_center, x_range, z_range, num_steps, period
+    ):
+        """Load a scan that will wind through the grid defined by the passed
+        parameters. Samples are advanced by the clock. Currently x_range
+        must equal z_range.
+
+        Normal scan performed, starts in bottom right corner, and starts
+        heading left
+
+        Params
+            x_center: float
+                Center x voltage of the scan
+            z_center: float
+                Center z voltage of the scan
+            x_range: float
+                Full scan range in x
+            z_range: float
+                Full scan range in z
+            num_steps: int
+                Number of steps the break the ranges into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+            list(float)
+                The z voltages that make up the scan
+        """
+
+        ######### Assumes x_range == z_range #########
+        self.num_steps = num_steps
+
+        if x_range != z_range:
+            raise ValueError("x_range must equal z_range for now")
+
+        x_num_steps = num_steps
+        z_num_steps = num_steps
+
+        # Force the scan to have square pixels by only applying num_steps
+        # to the shorter axis
+        half_x_range = x_range / 2
+        half_z_range = z_range / 2
+
+        x_low = x_center - half_x_range
+        x_high = x_center + half_x_range
+        z_low = z_center - half_z_range
+        z_high = z_center + half_z_range
+
+        # Apply scale and offset to get the voltages we'll apply to the stage
+        # Note that the polar/azimuthal angles, not the actual x/y positions
+        # are linear in these voltages. For a small range, however, we don't
+        # really care.
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        z_voltages_1d = numpy.linspace(z_low, z_high, num_steps)
+
+        ######### Works for any x_range, y_range #########
+
+        # Winding cartesian product
+        # The x values are repeated and the y values are mirrored and tiled
+        # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
+
+        # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
+        x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
+        # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
+        if z_num_steps % 2 == 0:  # Even x size
+            x_voltages = numpy.tile(x_inter, int(z_num_steps / 2))
+        else:  # Odd x size
+            x_voltages = numpy.tile(x_inter, int(numpy.floor(z_num_steps / 2)))
+            x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+
+        # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
+        z_voltages = numpy.repeat(z_voltages_1d, x_num_steps)
+
+        # voltages = numpy.vstack((x_voltages, z_voltages))
+
+        # logging.debug(voltages)
+        # self.load_stream_writer_xy(c, "Piezo_stage-load_sweep_scan_xy", voltages, period)
+
+        return x_voltages_1d, z_voltages_1d
 
     # @setting(
     #     3,
@@ -589,6 +722,43 @@ class PiezoStageDigital(LabradServer):
         # self.load_stream_writer_xy(c, "Piezo_stage-load_scan_y", voltages, period)
 
         return y_voltages
+    
+    @setting(
+        555,
+        z_center="v[]",
+        scan_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]",
+    )
+    def load_scan_z(self, c, z_center, scan_range, num_steps, period):
+        """Load a scan that will step through scan_range in y keeping x
+        constant at its center.
+
+        Params
+            z_center: float
+                Center z voltage of the scan
+            scan_range: float
+                Full scan range in x/y
+            num_steps: int
+                Number of steps the break the z range into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The z voltages that make up the scan
+        """
+
+        half_scan_range = scan_range / 2
+
+        z_low = z_center - half_scan_range
+        z_high = z_center + half_scan_range
+
+        z_voltages = numpy.linspace(z_low, z_high, num_steps)
+        # self.load_stream_writer_xy(c, "Piezo_stage-load_scan_y", voltages, period)
+
+        return z_voltages
 
     # @setting(6, x_points="*v[]", y_points="*v[]", period="i")
     # def load_arb_scan_xy(self, c, x_points, y_points, period):
