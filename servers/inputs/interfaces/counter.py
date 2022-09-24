@@ -11,19 +11,131 @@ from abc import ABC, abstractmethod
 
 
 class Counter(ABC):
+    
     @abstractmethod
-    def read_counter_simple(self, c, num_to_read=None):
-        """Return the number of TTL pulses that during each sampling period
+    def reset(self, c):
+        """
+        Reset the tagger
+        """
+        pass
+    
+    # @abstractmethod
+    # def get_channel_mapping(self, c):
+    #     """
+    #     do we need this???
+    #     """
+    #     pass
+
+
+    @abstractmethod
+    def clear_buffer(self, c):
+        """
+        Clear the buffer of the time tagger if necessary
+        """
+        pass
+    
+    @abstractmethod
+    def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
+        """
+        Read the counts in the form of the three level list structure then sum the counts from different apds, keeping different gates distinct.
+        Then assemble the data structure according to the modulus. If the modulus is the same as the number of gates, then it is the same
+        as read_counter_separate_gates. If modulus is 1, it is the same as read_counter_simple. It essentially grabs up to the gate of interest
+        The output is therefore a 2 level list, where the first level is samples and the second level is gates. 
 
         Parameters
         ----------
+    
         num_to_read : int, optional
-            Polls the hardware until we get num_to_read samples. If
-            None, just poll once and return
-        
+            Tells the hardware how many samples we want to read
+            
+        modulus : int
+            The number of gates of interest to include in the returned data structure of counts
+
         Returns
-        ----------
-        list
-            list of counts for each sample
+        -------
+        return_counts : list
+            Two level list. First level is samples, second is gates.
         """
+        pass
+
+
+    @abstractmethod
+    def read_counter_separate_apds(self, c, num_to_read=None):
+        """
+        Read the counts in the form of the three level list structure then sum the gates for each apd. 
+        The output is therefore a two level list. The first level is samples, the second is apds. 
+
+        Parameters
+        ----------
+    
+        num_to_read : int, optional
+            Tells the hardware how many samples we want to read
+            
+        Returns
+        -------
+        return_counts : list
+            Two level list. First level is samples, second is apd.
+        """
+        pass
+    
+    @abstractmethod
+    def read_counter_complete(self, c, num_to_read=None):
+        """
+        Read the counts and return them in the form of the three level list described below
+
+        Parameters
+        ----------
+        
+        num_to_read : int, optional
+            Tells the hardware how many samples we want to read
+
+        Returns 
+        -------
+        
+        list 
+            Three level list. First level is samples), second is apds, third is gates, as shown below for 2 samples (s), 2 apds (a), 3 gates (g)
+            [  [ [s1_a1_g1, s1_a1_g2, s1_a1_g3] , [s1_a2_g1, s1_a2_g2, s1_a2_g3] ],  [ [s2_a1_g1, s2_a1_g2, s2_a1_g3] , [s2_a2_g1, s2_a2_g2, s2_a2_g3] ]  ]
+
+        """
+        pass
+    
+    @abstractmethod
+    def read_counter_simple(self, c, num_to_read=None):
+        """
+        Read the counts in the form of the three level list structure then sum the counts from different apds and different gates within each sample
+        The output is therefore a one level list of counts for each sample
+
+        Parameters
+        ----------
+    
+        num_to_read : int, optional
+            Tells the hardware how many samples we want to read
+
+        Returns
+        -------
+        return_counts : list
+            List of counts for each sample
+
+        """
+        pass
+
+    @abstractmethod
+    def read_counter_separate_gates(self, c, num_to_read=None):
+        """
+        Read the counts in the form of the three level list structure then sum the counts from different apds, keeping different gates distinct.
+        The output is therefore a 2 level list, where the first level is samples and the second level is gates. 
+
+        Parameters
+        ----------
+    
+        num_to_read : int, optional
+            Tells the hardware how many samples we want to read
+
+        Returns
+        -------
+        return_counts : list
+            Two level list. First level is samples, second is gates.
+
+        """
+        
         pass

@@ -10,7 +10,9 @@ from qualang_tools.units import unit
 u = unit()
 
 
-readout_time = 120000
+readout_time = 100000
+config_opx['pulses']['readout_pulse']['length'] = readout_time
+
 #readout pulse length is 200
 
 with program() as seq:
@@ -45,7 +47,6 @@ job = qm.execute(seq)
 # job_sim.get_simulated_samples().con1.plot()
 # job_sim.get_simulated_samples().adc_trace.plot()
 
-
 res_handles = job.result_handles
 res_handles.wait_for_all_values()
 counts = res_handles.get("counts").fetch_all()
@@ -56,7 +57,6 @@ print(counts)
 print('')
 print(times)
 plt.figure()
-plt.subplot(121)
 plt.title("Single run")
 plt.plot(adc1_single_run, label="Input 1")
 plt.xlabel("Time [ns]")

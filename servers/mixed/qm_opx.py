@@ -8,7 +8,7 @@ Created on August 29th, 2022
 
 ### BEGIN NODE INFO
 [info]
-name = opx
+name = qm_opx
 version = 1.0
 description =
 
@@ -44,17 +44,15 @@ import socket
 from numpy import pi
 root2_on_2 = numpy.sqrt(2) / 2
 from qualang_tools.units import unit
+from pathlib import Path
+# u = unit()
+from servers.inputs.interfaces.tagger import Tagger
+from servers.timing.interfaces.pulse_gen import PulseGen
+from opx_configuration_file import *
 
-u = unit()
-# from servers.inputs.interfaces.tagger import Tagger
-# from servers.timing.interfaces.pulse_gen import PulseGen
-# from opx_configuration_file import *
 
-
-# class OPX(LabradServer, Tagger, PulseGen):
-    
-
-class OPX(LabradServer):
+class OPX(LabradServer, Tagger, PulseGen):
+# class OPX(LabradServer):
     name = "qm_opx"
     pc_name = socket.gethostname()
     # steady_state_program_file = 'steady_state_program_test_opx.py'
@@ -69,6 +67,7 @@ class OPX(LabradServer):
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
+        logging.info(qop_ip)
         self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
         self.qm = self.qmm.open_qm(config_opx)
         self.steady_state_program_file = 'steady_state_program_test_opx.py'
@@ -83,16 +82,95 @@ class OPX(LabradServer):
         # p.get('iq_comp_amp') #this is needed for arbitrary waveform generator functions
         p.get('iq_delay') #this is needed for arbitrary waveform generator functions
         result = await p.send()
+        logging.info('Init complete 2')
         return result['get']
 
     def on_get_config(self, config):
         # resource_manager = visa.ResourceManager()
         # self.iq_comp_amp = config[0]
+        opx_sequence_library_path = (
+            Path.home()
+            / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences"
+        )
+        sys.path.append(str(opx_sequence_library_path))
+        self.get_config_dict()
         logging.info('Init complete')
         
+    
+    def get_config_dict(self):
+        """
+        Get the config dictionary on the registry recursively. Very similar
+        to the function of the same name in tool_belt.
+        """
+        config_dict = {}
+        _ = ensureDeferred(
+            self.populate_config_dict(["", "Config"], config_dict)
+        )
+        _.addCallback(self.on_get_config_dict, config_dict)
+
+    async def populate_config_dict(self, reg_path, dict_to_populate):
+        """Populate the config dictionary recursively"""
+
+        # Sub-folders
+        p = self.client.registry.packet()
+        p.cd(reg_path)
+        p.dir()
+        result = await p.send()
+        sub_folders, keys = result["dir"]
+        for el in sub_folders:
+            sub_dict = {}
+            sub_path = reg_path + [el]
+            await self.populate_config_dict(sub_path, sub_dict)
+            dict_to_populate[el] = sub_dict
+
+        # Keys
+        if len(keys) == 1:
+            p = self.client.registry.packet()
+            p.cd(reg_path)
+            key = keys[0]
+            p.get(key)
+            result = await p.send()
+            val = result["get"]
+            dict_to_populate[key] = val
+
+        elif len(keys) > 1:
+            p = self.client.registry.packet()
+            p.cd(reg_path)
+            for key in keys:
+                p.get(key)
+            result = await p.send()
+            vals = result["get"]
+
+            for ind in range(len(keys)):
+                key = keys[ind]
+                val = vals[ind]
+                dict_to_populate[key] = val
+
+    def on_get_config_dict(self, _, config_dict):
+        self.config_dict = config_dict
+        # self.pulser_wiring = self.config_dict["Wiring"]["PulseStreamer"]
+        # self.feedthrough_lasers = []
+        # optics_dict = config_dict["Optics"]
+        # for key in optics_dict:
+            # optic = optics_dict[key]
+            # feedthrough_str = optic["feedthrough"]
+            # if eval(feedthrough_str):
+                # self.feedthrough_lasers.append(key)
+        # logging.info(self.feedthrough_lasers)
+        # Initialize state variables and reset
+        self.seq = None
+        # self.loaded_seq_streamed = False
+        # self.reset(None)
+        logging.info("Init complete")
+        
+        
+        
     def stopServer(self):
-        self.qmm.close_all_quantum_machines()
-        self.qmm.close()
+        try:
+            self.qmm.close_all_quantum_machines()
+            self.qmm.close()
+        except:
+            pass
     
     def set_steadty_state_option_on_off(self, selection): #selection should be true or false
         self.steady_state_option = selection
@@ -217,7 +295,7 @@ class OPX(LabradServer):
         if len(self.z_voltages_1d) >0 :
             self.write_z(c, self.z_voltages_1d[0])
             
-        #close all quantum machines to kill and active job and open a new one 
+        #close all quantum machines to kill any active job and open a new one 
         self.qmm.close_all_quantum_machines()
         self.qm = self.qmm.open_qm(config_opx)
         
@@ -260,7 +338,7 @@ class OPX(LabradServer):
         if len(self.z_voltages_1d) >0 :
             self.write_z(c, self.z_voltages_1d[0]) 
         
-        #close all quantum machines to kill and active job and open a new one 
+        #close all quantum machines to kill any active job and open a new one 
         self.qmm.close_all_quantum_machines()
         self.qm = self.qmm.open_qm(config_opx)
         
@@ -275,6 +353,19 @@ class OPX(LabradServer):
        
         return ret_vals
     
+    
+    @setting(444, digital_channels="*i", analog_0_voltage="v[]", analog_1_voltage="v[]")
+    def constant(self,c,digital_channels=[],analog_0_voltage=0.0,analog_1_voltage=0.0):
+        """Set the OPX to an infinite loop."""
+        """ This function is not finished. I made a starting file (constant_program_opx.py) but it needs to be finished """
+        high_digital_channels = digital_channels
+        analog_channels_to_set = [0, 1]
+        analog_channel_values = [analog_0_voltage, analog_1_voltage]
+        args = [high_digital_channels,analog_channels_to_set,analog_channel_values]
+        
+        args_string = tool_belt.encode_seq_args(args)
+        self.stream_immediate(seq_file='constant_program_opx.py', num_repeat=1, seq_args_string=args_string)
+        
     #%% counting and time tagging functions ### 
     ### currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
     ### these also need to be tested once I get the opx up and running again
@@ -369,6 +460,20 @@ class OPX(LabradServer):
             return_counts.append(sample_list)
 
         return return_counts
+    
+    @setting(777, num_to_read="i", returns="*2w")
+    def read_counter_separate_apds(self, c, num_to_read=None):
+
+        complete_counts = self.read_counter_setting_internal(num_to_read)
+
+        # Just find the sum of the counts for each APD for each
+        # sample in complete_counts
+        return_counts = [
+            [np.sum(apd_counts, dtype=int) for apd_counts in sample]
+            for sample in complete_counts
+        ]
+
+        return return_counts
 
     
     @setting(7, num_to_read="i", returns="*s*i")
@@ -377,62 +482,71 @@ class OPX(LabradServer):
             It will return a list of samples. Each sample is a list of gates. Each gates is a list of time tags
             It will also return a list of channels. Each channel is a list of gates. In each gate is a list of the channel associated to each time tag
         """
-        results = fetching_tool(self.experiment_job, data_list=["counts","times"], mode="wait_for_all")
-        counts = results.res_handles.counts.fetch_all()
-        times = results.res_handles.counts.fetch_all()
-        counts = counts[0][0].tolist()
-        times = times.tolist()
+        # results = fetching_tool(self.experiment_job, data_list=["counts","times"], mode="wait_for_all")
         
-        all_channels_list = []
-        all_times_list = []
+        res_handles_tagstream = self.experiment_job.result_handles
+        res_handles_tagstream.wait_for_all_values()
+        counts_data = res_handles_tagstream.get("counts").fetch_all()
+        times_data = res_handles_tagstream.get("times").fetch_all()
         
-        num_samples = len(counts)
-        num_apds = len(counts[0])
-        num_gates = len(counts[0][0])
+        # counts_data = results.res_handles.counts.fetch_all()
+        # times_data = results.res_handles.times.fetch_all()
+        
+        counts_data = counts_data[0][0].tolist()
+
+        times_data = (times_data).tolist()
+        times_data = np.asarray(times_data)*1e3
+        # times_data = times_data.astype(int)
+        times_data = times_data.tolist()
+        times_data = [np.int64(val) for val in times_data]
+        times_data = [t[0] for t in times_data]
+        
+        logging.info('test')
+        logging.info(counts_data)
+        logging.info(times_data)
+        
+        num_samples = len(counts_data)
+        num_apds = len(counts_data[0])
         last_ind = 0
-        
-        # print(counts[0][0])
         
         ordered_time_tags = [] #this will be a list of sample. each sample is a list of gates. each gate is a list of sorted time tags
         ordered_channels = [] #this will be a list of samples. each sample is a list of gates. each gate is a list of channels for the corresponding time tags
 
         for i in range(num_samples):
-            sample_counts = counts[i]
-            all_gate_time_tags = []
-            all_gate_channels = []
-            
-            for j in range(num_gates):
-                # gate_counts = sample_counts[j]
-                all_apd_time_tags = []
-                channels = []
+            sample_counts = counts_data[i]
+            all_apd_time_tags = []
+            channels = []
                 
-                for k in range(num_apds):
-                    
-                    apd_counts = sample_counts[k][j] #gate_counts will be a single number
-                    apd_time_tags = times[last_ind:last_ind+apd_counts]
-                    all_apd_time_tags = all_apd_time_tags + apd_time_tags
-                    channels = channels+np.full(len(apd_time_tags),apd_indices[k]).tolist()
-                    last_ind = last_ind+apd_counts
+            for k in range(num_apds):
                 
-                sorting = np.argsort(np.array(all_apd_time_tags))
-                all_apd_time_tags = np.array(all_apd_time_tags)[sorting]
-                all_apd_time_tags = all_apd_time_tags.tolist()
-                channels = np.array(channels)[sorting]
-                channels = channels.tolist()
-                
-                all_gate_time_tags.append(all_apd_time_tags)
-                all_gate_channels.append(channels)
+                apd_counts = sample_counts[k][0] #gate_counts will be a single number
+                apd_time_tags = times_data[last_ind:last_ind+apd_counts]
+                all_apd_time_tags = all_apd_time_tags + apd_time_tags
+                channels = channels+np.full(len(apd_time_tags),apd_indices[k]).tolist()
+                last_ind = last_ind+apd_counts
             
-            ordered_time_tags.append(all_gate_time_tags)
-            ordered_channels.append(all_gate_channels)
+            sorting = np.argsort(np.array(all_apd_time_tags))
+            all_apd_time_tags = np.array(all_apd_time_tags)[sorting]
+            all_apd_time_tags = all_apd_time_tags.tolist()
+            channels = np.array(channels)[sorting]
+            channels = channels.tolist()
             
-        return ordered_time_tags, ordered_channels 
+            ordered_time_tags.append(all_apd_time_tags)
+            ordered_channels.append(channels)
+            
+        ordered_time_tags = np.asarray(ordered_time_tags).astype('str').tolist()
+        
+            
+        flat_ordered_channels_list = [item for sublist in ordered_channels for item in sublist]
+        flat_ordered_time_tags_list = [item for sublist in ordered_time_tags for item in sublist]
+
+        return flat_ordered_time_tags_list, flat_ordered_channels_list 
+        # return ordered_time_tags, ordered_channels 
 
     
     @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
     def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
-        """opx doesn't need it"""
-        pass
+        pass        
     
     @setting(9, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
     def stop_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
@@ -849,10 +963,10 @@ class OPX(LabradServer):
     #     pass
     
     
-    #%% reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
-    # @setting(199, num_dd_reps="i")
-    # def reset(self, c):
-    #     pass
+    # %% reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
+    @setting(199)
+    def reset(self, c):
+        pass
         
 
     #%%
@@ -862,11 +976,11 @@ __server__ = OPX()
 
 if __name__ == "__main__":
     
-    opx_configuration_file_path = "C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
-    sys.path.append(opx_configuration_file_path)
+    # opx_configuration_file_path = "C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
+    # sys.path.append(opx_configuration_file_path)
 
-    from opx_configuration_file import *
-    sys.path.append("C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences")
+    # from opx_configuration_file import *
+    # sys.path.append("C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences")
     
     from labrad import util
 
@@ -874,17 +988,18 @@ if __name__ == "__main__":
     
     # opx = OPX()
     # opx.initServer()
-
-    # opx.set_steadty_state_option_on_off(True)
-    # delay, readout_time, apd_index, laser_name, laser_power = args
-    # args_test = [1000,1000,0,'green_laser_do',1]
+    # # meas_len=1000
+    # # opx.set_steadty_state_option_on_off(True)
+    # # delay, readout_time, apd_index, laser_name, laser_power = args
+    # readout_time = 120000
+    # args_test = [200,readout_time,0,'green_laser_do',1]
     # args_test_str = tool_belt.encode_seq_args(args_test)
     # opx.stream_load('test_program_opx.py',args_test_str)
-    # opx.stream_start(5)
+    # opx.stream_start(1)
     # all_counts = opx.read_counter_complete()
     # counts_simple = opx.read_counter_simple()
     # counts_gates = opx.read_counter_separate_gates()
-    # times, channels = opx.read_tag_stream()
+    # # times, channels = opx.read_tag_stream()
     # print('')
     # print('')
     # print(all_counts)
@@ -893,11 +1008,8 @@ if __name__ == "__main__":
     # print('')
     # print(counts_gates)
     # print('')
-    # print(times)
+    # # print(times)
     # print('')
-    # print(channels)
-    # opx.stream_immediate('test_program_opx.py')
-    # print('hi')
-#     from labrad import util
-
-#     util.runServer(__server__)
+    # # print(channels)
+    # # opx.stream_immediate('test_program_opx.py')
+    # # print('hi')

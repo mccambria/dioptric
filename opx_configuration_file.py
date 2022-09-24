@@ -188,7 +188,7 @@ config_opx = {
             "singleInput": {"port": ("con1", 2)},  
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 2),
+                    "port": ("con1", 3),
                     "delay": apd_1_total_delay,
                     "buffer": 0,
                 },
@@ -197,7 +197,7 @@ config_opx = {
                 "readout": "readout_pulse",
                 "long_readout": "long_readout_pulse",
             },
-            "outputs": {"out1": ("con1", 1)},
+            "outputs": {"out1": ("con1", 2)},
             "outputPulseParameters": {
                 "signalThreshold": signal_threshold,
                 "signalPolarity": "Below",

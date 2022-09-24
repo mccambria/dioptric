@@ -126,6 +126,7 @@ class PulseStreamer(LabradServer, PulseGen):
     def on_get_config_dict(self, _, config_dict):
         self.config_dict = config_dict
         self.pulser_wiring = self.config_dict["Wiring"]["PulseStreamer"]
+        logging.info(self.config_dict["Wiring"]["PulseStreamer"])
         self.feedthrough_lasers = []
         optics_dict = config_dict["Optics"]
         for key in optics_dict:
