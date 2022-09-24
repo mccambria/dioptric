@@ -58,7 +58,7 @@ def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_
         
         
         num_readouts=1
-        max_readout_time = 1000
+        max_readout_time = 1000000
         apd_readout_time = readout_time
         laser_on_time = readout_time
         if readout_time > max_readout_time:
