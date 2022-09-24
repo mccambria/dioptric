@@ -20,21 +20,41 @@ from opx_configuration_file import *
 def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
+    
+    # opx_wiring = config['Wiring']['QmOpx']
+    
+    # apd_indices = config['']
+    apd_indices = [0,1]
+    
 
     delay = numpy.int64(delay)
-    delay_cc = delay // 4
     readout_time = numpy.int64(readout_time)
 
-    period = numpy.int64(delay + readout_time + 300)
-    period_cc = period // 4 
-    apd_indices = [0,1]
+   
     num_gates = 1
     num_apds = len(apd_indices)
     timetag_list_size = int(15900 / num_gates / num_apds)
     
-    common_delay = 400 #get it from config
-    laser_delay = ( common_delay - green_laser_delay ) //4 #get laser and apd delays from config
-    meas_delay = ( common_delay - apd_1_delay ) //4
+    
+    max_readout_time = 1000000
+   
+    
+    if readout_time > max_readout_time:
+        num_readouts = int(readout_time / max_readout_time)
+        apd_readout_time = max_readout_time
+        laser_on_time = readout_time + 200*num_readouts
+        
+    elif readout_time<= max_readout_time:
+        num_readouts=1
+        apd_readout_time = readout_time
+        laser_on_time = readout_time + delay
+    
+    period = numpy.int64(delay + laser_on_time + 300)
+    period_cc = int(period//4)
+    
+    delay_cc = int(delay // 4)
+    clock_delay_cc = int((period-200)//4)
+    
     with program() as seq:
         
         # I make two of each because we can have up to two APDs (two analog inputs), It will save all the streams that are actually used
@@ -55,39 +75,31 @@ def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_
                 
         n = declare(int)
         i = declare(int)
-        
-        
-        num_readouts=1
-        max_readout_time = 1000000
-        apd_readout_time = readout_time
-        laser_on_time = readout_time
-        if readout_time > max_readout_time:
-            num_readouts = int(readout_time / max_readout_time)
-            apd_readout_time = max_readout_time
-            laser_on_time = readout_time + 200*num_readouts
             
         
         with for_(n, 0, n < num_reps, n + 1):
             
-            align()  
+            # align()  
             
             ###green laser
             # wait(laser_delay, laser_name)
-            play("laser_ON",laser_name,duration=int(laser_on_time //4))  
+            play("laser_ON",laser_name,duration=period_cc)  
             
             ###apds
+            if num_apds == 2:
+                wait(delay_cc, "APD_0","APD_1")
+            if num_apds == 1:
+                wait(delay_cc,"APD_{}".format(apd_indices[0]))
         
             with for_(i,0,i<num_readouts,i+1):  
                 
                 if num_apds == 2:
-                    # wait(meas_delay, "APD_0","APD_1") # wait for the delay before starting apds
                     measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_cur0))
                     assign(counts_gate1_apd_0,counts_cur0+counts_gate1_apd_0)
                     measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_cur1))
                     assign(counts_gate1_apd_1,counts_cur1+counts_gate1_apd_1)
                     
                 if num_apds == 1:
-                    # wait(meas_delay, "APD_{}".format(apd_indices[0])) # wait for the delay before starting apds
                     measure("readout", "APD_{}".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, apd_readout_time, counts_cur))
                     assign(counts_gate1_apd,counts_cur+counts_gate1_apd)
             
@@ -97,8 +109,9 @@ def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_
             # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
            
             ###trigger piezos
+            wait(clock_delay_cc,"clock")
+            play("clock_pulse","clock")
             align()
-            wait(500)
                 
             
             ###saving
@@ -136,12 +149,12 @@ if __name__ == '__main__':
 
         print('hi')
         qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-        readout_time = 30000
+        readout_time = 1000
         qm = qmm.open_qm(config_opx)
         simulation_duration =  120000 // 4 # clock cycle units - 4ns
         x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
         num_repeat=5
-        delay = 200
+        delay = 20000
         args = [delay, readout_time, 0,'green_laser_do',1]
         config = []
         seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)

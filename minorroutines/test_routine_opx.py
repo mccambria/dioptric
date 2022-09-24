@@ -46,7 +46,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'test_program3_opx.py'
+    seq_file = 'simple_readout_opx.py'
     
     cxn.qm_opx.stream_load(seq_file, seq_args_string)
     cxn.qm_opx.stream_start(num_reps)

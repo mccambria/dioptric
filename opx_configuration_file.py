@@ -91,9 +91,11 @@ config_opx = {
             },
             "digital_outputs": {
                 1: {},  # green_laser_do/Laser
-                2: {},  #
-                3: {}, 
-                4: {},   # red laser
+                2: {},  # apd 1 virtual gate
+                3: {},  # apd 2 virtual gate
+                4: {},  # red laser
+                5: {},  # clock
+                6: {},  # sig gen switch
             },
             "analog_inputs": {
                 1: {"offset": 0},  # APD0
@@ -127,7 +129,7 @@ config_opx = {
         "do_signal_generator": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 3),
+                    "port": ("con1", 6),
                     "delay": uwave_total_delay,
                     "buffer": 0,
                 },
@@ -159,6 +161,19 @@ config_opx = {
             },
             "operations": {
                 "laser_ON": "laser_ON",
+            },
+        },
+        
+        "clock": {
+            "digitalInputs": {
+                "marker": {
+                    "port": ("con1", 5),
+                    "delay": common_delay,
+                    "buffer": 0,
+                },
+            },
+            "operations": {
+                "clock_pulse": "clock_pulse",
             },
         },
         "APD_0": {
@@ -227,6 +242,11 @@ config_opx = {
         "laser_ON": {
             "operation": "control",
             "length": initialization_len,
+            "digital_marker": "ON",
+        },
+        "clock_pulse": {
+            "operation": "control",
+            "length": 100,
             "digital_marker": "ON",
         },
         "uwave_ON": {
