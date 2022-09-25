@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    readout_time = 500
+    readout_time = 3000
     qm = qmm.open_qm(config_opx)
     simulation_duration =  12000 // 4 # clock cycle units - 4ns
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]

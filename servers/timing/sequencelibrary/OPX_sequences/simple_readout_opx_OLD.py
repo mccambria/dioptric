@@ -22,33 +22,38 @@ def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_
     delay, readout_time, apd_index, laser_name, laser_power = args
     
     # opx_wiring = config['Wiring']['QmOpx']
+    
     # apd_indices = config['']
     apd_indices = [0,1]
-    num_apds = len(apd_indices)
-    num_gates = 1
-    timetag_list_size = int(15900 / num_gates / num_apds)
-    readout_time = numpy.int64(readout_time)
     
-    
-    delay = numpy.int64(delay)
-    delay_cc = int(delay // 4)
-    clock_delay_cc = int((period-200)//4)
 
+    delay = numpy.int64(delay)
+    readout_time = numpy.int64(readout_time)
+
+   
+    num_gates = 1
+    num_apds = len(apd_indices)
+    timetag_list_size = int(15900 / num_gates / num_apds)
+    
+    
     max_readout_time = 1000000
    
+    
     if readout_time > max_readout_time:
         num_readouts = int(readout_time / max_readout_time)
         apd_readout_time = max_readout_time
+        laser_on_time = readout_time + 200*num_readouts
         
     elif readout_time<= max_readout_time:
         num_readouts=1
         apd_readout_time = readout_time
-    
-    laser_on_time = delay + (readout_time + 200*num_readouts ) * num_gates
+        laser_on_time = readout_time + delay
     
     period = numpy.int64(delay + laser_on_time + 300)
     period_cc = int(period//4)
     
+    delay_cc = int(delay // 4)
+    clock_delay_cc = int((period-200)//4)
     
     with program() as seq:
         
@@ -58,49 +63,69 @@ def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_
             counts_gate1_apd_1 = declare(int)
             times_gate1_apd_0 = declare(int,size=timetag_list_size)
             times_gate1_apd_1 = declare(int,size=timetag_list_size)
-    
+            counts_cur0 = declare(int)
+            counts_cur1 = declare(int)
+            
         if num_apds == 1:
             counts_gate1_apd = declare(int) 
             times_gate1_apd = declare(int,size=timetag_list_size)
-            
+            counts_cur = declare(int)
         
-        counts_st = declare_stream()          
-        counts_st_apd0 = declare_stream()
-        counts_st_apd1 = declare_stream()
+        counts_st = declare_stream()  # stream for counts
                 
         n = declare(int)
         i = declare(int)
             
         
-        
         with for_(n, 0, n < num_reps, n + 1):
             
-            align()  
+            # align()  
             
             ###green laser
+            # wait(laser_delay, laser_name)
             play("laser_ON",laser_name,duration=period_cc)  
             
+            ###apds
+            if num_apds == 2:
+                wait(delay_cc, "APD_0","APD_1")
+            if num_apds == 1:
+                wait(delay_cc,"APD_{}".format(apd_indices[0]))
+        
+            with for_(i,0,i<num_readouts,i+1):  
+                
+                if num_apds == 2:
+                    measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_cur0))
+                    assign(counts_gate1_apd_0,counts_cur0+counts_gate1_apd_0)
+                    measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_cur1))
+                    assign(counts_gate1_apd_1,counts_cur1+counts_gate1_apd_1)
+                    
+                if num_apds == 1:
+                    measure("readout", "APD_{}".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, apd_readout_time, counts_cur))
+                    assign(counts_gate1_apd,counts_cur+counts_gate1_apd)
             
-            ##trigger piezos
+                # if num_apds == 2:  # wait for them both to finish if we are using two apds
+                #     align("APD_0","APD_1")
+            # save the sample to the count stream. sample is a list of gates, which is a list of counts from each apd
+            # if there is only one gate, it will be in the same structure as read_counter_simple wants so we are good
+           
+            ###trigger piezos
             wait(clock_delay_cc,"clock")
             play("clock_pulse","clock")
-            
-            
-            ###apds
-            wait(delay_cc, "APD_0","APD_1")
-            
-            with for_(i,0,i<num_readouts,i+1):  
-                measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd0))
-                measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd1))
+            align()
                 
-                save(counts_gate1_apd0, counts_st_apd0)
-                save(counts_gate1_apd1, counts_st_apd1)
-     
-        
-        with stream_processing():
             
-            counts_st_apd0.buffer(num_readouts).buffer(num_gates).save_all("counts_apd0") 
-            counts_st_apd1.buffer(num_readouts).buffer(num_gates).save_all("counts_apd1")
+            ###saving
+            if num_apds == 2:
+                save(counts_gate1_apd_0, counts_st)
+                save(counts_gate1_apd_1, counts_st)
+                        
+            if num_apds == 1:
+                save(counts_gate1_apd, counts_st)
+                        
+            # wait(500)
+            
+        with stream_processing():
+            counts_st.buffer(num_gates).buffer(num_apds).buffer(num_reps).save_all("counts")
         
     return seq
 
@@ -122,15 +147,13 @@ def get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_volta
 
 if __name__ == '__main__':
     
-    from qualang_tools.results import fetching_tool, progress_counter
+    from qualang_tools.results import fetching_tool
     import matplotlib.pylab as plt
-    
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    
-    readout_time = 3000
+    readout_time = 1000
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  100000 // 4 # clock cycle units - 4ns
+    simulation_duration =  12000 // 4 # clock cycle units - 4ns
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
     num_repeat=5
     delay = 200
@@ -141,18 +164,7 @@ if __name__ == '__main__':
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
     plt.xlim(100,12000)
-
-    job = qm.execute(seq)
-    
-    results_end = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
-    counts_apd0, counts_apd1 = results_end.fetch_all()
-    counts_apd0 = np.sum(counts_apd0,2).tolist()
-    counts_apd1 = np.sum(counts_apd1,2).tolist()
-    counts_full = []
-    for i in range(len(counts_apd0)):
-        counts_full.append([counts_apd0[i],counts_apd1[i]])
-    print(counts_full)
-    #this gives the counts_full as a list of samples. Each sample is a list of 
-    
-    
-        
+    # job = qm.execute(seq)
+    # results = fetching_tool(job, data_list = ["counts"], mode="wait_for_all")
+    # return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
+    # return_counts = return_counts[0][0].tolist()    

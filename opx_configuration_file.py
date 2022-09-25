@@ -28,7 +28,7 @@ def IQ_imbalance(g, phi):
 qop_ip = "128.104.160.117"
 analog_output_delay = 136 #ns
 # APD indices, telling you which of the two APDs we are actually using right now
-apd_indices = [0,1]
+apd_indices = [1]
 
 # Frequencies
 NV_IF_freq = 40e6  # in units of Hz
