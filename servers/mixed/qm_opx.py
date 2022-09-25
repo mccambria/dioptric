@@ -25,7 +25,7 @@ timeout = 5
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
-from qualang_tools.results import fetching_tool
+from qualang_tools.results import fetching_tool, progress_counter
 import matplotlib.pyplot as plt
 from labrad.server import LabradServer
 from labrad.server import setting
@@ -375,6 +375,29 @@ class OPX(LabradServer, Tagger, PulseGen):
     def read_counter_complete(self, c, num_to_read=None):
         return self.read_counter_setting_internal(num_to_read)
     
+    # def read_counter_setting_internal(self, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
+    #     """This is the core function that any tagger we have needs. 
+    #     For the OPX this fetches the data from the job that was created when the program was executed. 
+    #     Assumes "counts" is one of the data streams
+    #     The count stream should be a three level list. First level is the sample, second is the gates, third is the different apds. 
+    #     first index gives the sample. next level gives the gate. next level gives which apd
+    #     [  [ [],[] ] , [ [],[] ], [ [],[] ]  ]
+    #     ##### This may be slightly wrong. It may be apds then gate, in which I need to slightly change the sequence code
+        
+    #     Params
+    #         num_to_read: int
+    #             This is not needed for the OPX
+    #     Returns
+    #         return_counts: array
+    #             This is an array of the counts 
+    #     """
+        
+    #     results = fetching_tool(self.experiment_job, data_list = ["counts"], mode="wait_for_all")
+    #     return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
+    #     return_counts = return_counts[0][0].tolist()
+    #     # print(return_counts)
+    #     return return_counts
+    
     def read_counter_setting_internal(self, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
         """This is the core function that any tagger we have needs. 
         For the OPX this fetches the data from the job that was created when the program was executed. 
@@ -391,11 +414,22 @@ class OPX(LabradServer, Tagger, PulseGen):
             return_counts: array
                 This is an array of the counts 
         """
+            
+        results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    
+        counts_apd0, counts_apd1 = results.fetch_all() #just not sure if its gonna put it into the list structure we want
         
-        results = fetching_tool(self.experiment_job, data_list = ["counts"], mode="wait_for_all")
-        return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
-        return_counts = return_counts[0][0].tolist()
-        # print(return_counts)
+        if 0 not in apd_indices:
+            counts_apd0 = np.zeros(np.shape(counts_apd1))
+        if 1 not in apd_indices:
+            counts_apd1 = np.zeros(np.shape(counts_apd0))
+            
+        counts_apd0 = np.sum(counts_apd0,2).tolist()
+        counts_apd1 = np.sum(counts_apd1,2).tolist()
+        return_counts = []
+        for i in range(len(counts_apd0)):
+            return_counts.append([counts_apd0[i],counts_apd1[i]])
+            
         return return_counts
 
     @setting(5, num_to_read="i", returns="*w")
