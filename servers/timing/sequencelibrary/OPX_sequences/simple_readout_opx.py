@@ -146,19 +146,24 @@ def get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_volta
     
 
 if __name__ == '__main__':
+    from qualang_tools.results import fetching_tool
 
-        print('hi')
-        qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-        readout_time = 1000
-        qm = qmm.open_qm(config_opx)
-        simulation_duration =  120000 // 4 # clock cycle units - 4ns
-        x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
-        num_repeat=5
-        delay = 20000
-        args = [delay, readout_time, 0,'green_laser_do',1]
-        config = []
-        seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
-        
-        job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-        job_sim.get_simulated_samples().con1.plot()
-        # plt.xlim(100,12000)
+    print('hi')
+    qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
+    readout_time = 1000
+    qm = qmm.open_qm(config_opx)
+    simulation_duration =  12000 // 4 # clock cycle units - 4ns
+    x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
+    num_repeat=5
+    delay = 200
+    args = [delay, readout_time, 0,'green_laser_do',1]
+    config = []
+    seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
+    
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    plt.xlim(100,12000)
+    # job = qm.execute(seq)
+    # results = fetching_tool(job, data_list = ["counts"], mode="wait_for_all")
+    # return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
+    # return_counts = return_counts[0][0].tolist()    

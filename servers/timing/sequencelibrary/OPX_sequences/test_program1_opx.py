@@ -114,7 +114,8 @@ def get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_volta
     
 
 if __name__ == '__main__':
-    
+    from qualang_tools.results import fetching_tool
+
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     readout_time = 500

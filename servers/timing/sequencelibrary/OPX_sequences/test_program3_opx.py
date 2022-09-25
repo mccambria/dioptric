@@ -57,8 +57,9 @@ def qua_sequence(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z
         n = declare(int)
         
         num_readouts=1
-        if readout_time > 1000000:
-            num_readouts = int(readout_time / 1000000)
+        max_readout = 1000 #1000000
+        if readout_time > max_readout:
+            num_readouts = int(readout_time / max_readout)
             readout_time = int(readout_time / num_readouts)
     
         with for_(n,0,n<num_reps,n+1): 
@@ -69,9 +70,11 @@ def qua_sequence(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z
                 
                 if (len(apd_indices) == 2):
                     measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_cur0))
+                    # assign(counts_cur0,1)
                     assign(counts_gate1_apd_0,counts_cur0+counts_gate1_apd_0)
                     
                     measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_cur1))
+                    # assign(counts_cur1,10)
                     assign(counts_gate1_apd_1,counts_cur1+counts_gate1_apd_1)
                     
                 if (len(apd_indices) == 1):
@@ -114,7 +117,7 @@ if __name__ == '__main__':
     
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    readout_time = 4000000
+    readout_time = 6000
     qm = qmm.open_qm(config_opx)
     simulation_duration = 8000 // 4 # clock cycle units - 4ns
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
@@ -124,17 +127,17 @@ if __name__ == '__main__':
     config = []
     seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.xlim(100,12000)
 
-    # job = qm.execute(seq)
+    job = qm.execute(seq)
     
-    # res_handles = job.result_handles
-    # res_handles.wait_for_all_values()
-    # counts = res_handles.get("counts").fetch_all()
+    res_handles = job.result_handles
+    res_handles.wait_for_all_values()
+    counts = res_handles.get("counts").fetch_all()
     # times = res_handles.get("times").fetch_all()
-    
+    print(counts)
     # counts = res_handles.get("counts").fetch_all()
     
     
