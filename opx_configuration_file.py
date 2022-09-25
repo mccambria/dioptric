@@ -28,7 +28,7 @@ def IQ_imbalance(g, phi):
 qop_ip = "128.104.160.117"
 analog_output_delay = 136 #ns
 # APD indices, telling you which of the two APDs we are actually using right now
-apd_indices = [1]
+# apd_indices = [0,1]
 
 # Frequencies
 NV_IF_freq = 40e6  # in units of Hz
@@ -86,8 +86,8 @@ config_opx = {
         "con1": {
             "type": "opx1",
             "analog_outputs": {
-                1: {"offset": 0.0, "delay": NV_total_delay},  # NV I  
-                2: {"offset": 0.0, "delay": NV2_total_delay},  # NV Q
+                1: {"offset": 0.0, "delay": NV_total_delay}, 
+                2: {"offset": 0.0, "delay": NV2_total_delay},  
             },
             "digital_outputs": {
                 1: {},  # green_laser_do/Laser
@@ -104,28 +104,28 @@ config_opx = {
         }
     },
     "elements": {
-        "NV": {
-            "mixInputs": {"I": ("con1", 1), "Q": ("con1", 2), "lo_frequency": NV_LO_freq, "mixer": "mixer_NV"},
-            "intermediate_frequency": NV_IF_freq,
-            "operations": {
-                "cw": "const_pulse",
-                "pi": "x180_pulse",
-                "pi_half": "x90_pulse",
-                "x180": "x180_pulse",
-                "x90": "x90_pulse",
-            },
-        },
-        "NV2": {
-            "mixInputs": {"I": ("con1", 1), "Q": ("con1", 2), "lo_frequency": NV_LO_freq, "mixer": "mixer_NV2"},
-            "intermediate_frequency": NV2_IF_freq,
-            "operations": {
-                "cw": "const_pulse",
-                "pi": "x180_pulse",
-                "pi_half": "x90_pulse",
-                "x180": "x180_pulse",
-                "x90": "x90_pulse",
-            },
-        },
+        # "NV": {
+        #     "mixInputs": {"I": ("con1", 1), "Q": ("con1", 2), "lo_frequency": NV_LO_freq, "mixer": "mixer_NV"},
+        #     "intermediate_frequency": NV_IF_freq,
+        #     "operations": {
+        #         "cw": "const_pulse",
+        #         "pi": "x180_pulse",
+        #         "pi_half": "x90_pulse",
+        #         "x180": "x180_pulse",
+        #         "x90": "x90_pulse",
+        #     },
+        # },
+        # "NV2": {
+        #     "mixInputs": {"I": ("con1", 1), "Q": ("con1", 2), "lo_frequency": NV_LO_freq, "mixer": "mixer_NV2"},
+        #     "intermediate_frequency": NV2_IF_freq,
+        #     "operations": {
+        #         "cw": "const_pulse",
+        #         "pi": "x180_pulse",
+        #         "pi_half": "x90_pulse",
+        #         "x180": "x180_pulse",
+        #         "x90": "x90_pulse",
+        #     },
+        # },
         "do_signal_generator": {
             "digitalInputs": {
                 "marker": {
@@ -138,7 +138,7 @@ config_opx = {
                 "uwave_ON": "uwave_ON",    
             },
         },
-        "green_laser_do": {
+        "do_laserglow_532_dm": {
             "digitalInputs": {
                 "marker": {
                     "port": ("con1", 1),
@@ -150,21 +150,7 @@ config_opx = {
                 "laser_ON": "laser_ON",
             },
         },
-        
-        "red_laser_do": {
-            "digitalInputs": {
-                "marker": {
-                    "port": ("con1", 4),
-                    "delay": red_laser_total_delay,
-                    "buffer": 0,
-                },
-            },
-            "operations": {
-                "laser_ON": "laser_ON",
-            },
-        },
-        
-        "clock": {
+        "do_sample_clock": {
             "digitalInputs": {
                 "marker": {
                     "port": ("con1", 5),
@@ -176,7 +162,7 @@ config_opx = {
                 "clock_pulse": "clock_pulse",
             },
         },
-        "APD_0": {
+        "do_apd_0_gate": {
             "singleInput": {"port": ("con1", 1)},  
             "digitalInputs": {
                 "marker": {
@@ -199,7 +185,7 @@ config_opx = {
             "time_of_flight": detection_delay,
             "smearing": 18, #tries to account for length of count pulses being finite. 
         },
-        "APD_1": {
+        "do_apd_1_gate": {
             "singleInput": {"port": ("con1", 2)},  
             "digitalInputs": {
                 "marker": {
@@ -277,12 +263,12 @@ config_opx = {
         "ON": {"samples": [(1, 0)]},  # [(on/off, ns)]
         "OFF": {"samples": [(0, 0)]},  # [(on/off, ns)]
     },
-    "mixers": {
-        "mixer_NV": [
-            {"intermediate_frequency": NV_IF_freq, "lo_frequency": NV_LO_freq, "correction": IQ_imbalance(0.0, 0.0)},
-        ],
-        "mixer_NV2": [
-            {"intermediate_frequency": NV2_IF_freq, "lo_frequency": NV_LO_freq, "correction": IQ_imbalance(0.0, 0.0)},
-        ],
-    },
+    # "mixers": {
+    #     "mixer_NV": [
+    #         {"intermediate_frequency": NV_IF_freq, "lo_frequency": NV_LO_freq, "correction": IQ_imbalance(0.0, 0.0)},
+    #     ],
+    #     "mixer_NV2": [
+    #         {"intermediate_frequency": NV2_IF_freq, "lo_frequency": NV_LO_freq, "correction": IQ_imbalance(0.0, 0.0)},
+    #     ],
+    # },
 }

@@ -17,22 +17,20 @@ from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
 
-def qua_program(opx, config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
+def qua_program(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
     
-    opx_wiring = config['Wiring']['QmOpx']
-    # apd_indices = config['apd_indices']
-    
+    # opx_wiring = config['Wiring']['QmOpx']
     # apd_indices = config['']
-    apd_indices = opx.apd_indices
+    # apd_indices = [0,1]
     num_apds = len(apd_indices)
     num_gates = 1
     timetag_list_size = int(15900 / num_gates / num_apds)
     readout_time = numpy.int64(readout_time)
     
     
-    max_readout_time = 1000000
+    max_readout_time = 1000
    
     if readout_time > max_readout_time:
         num_readouts = int(readout_time / max_readout_time)
@@ -82,51 +80,42 @@ def qua_program(opx, config, args, num_reps, x_voltage_list=[], y_voltage_list=[
             
             
             ##trigger piezos
-            wait(clock_delay_cc,"do_sample_clock")
-            play("clock_pulse","do_sample_clock")
+            wait(clock_delay_cc,"clock")
+            play("clock_pulse","clock")
             
             
             ###apds
-            wait(delay_cc, "do_apd_0_gate","do_apd_1_gate")
+            wait(delay_cc, "APD_0","APD_1")
             
             with for_(i,0,i<num_readouts,i+1):  
                 
                 if num_apds == 2:
                 
-                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
-                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
-                    save(counts_gate1_apd_0, counts_st_apd_0)
-                    save(counts_gate1_apd_1, counts_st_apd_1)
-                    
-                if num_apds == 1:
+                    measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
+                    measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
+                    save(5, counts_st_apd_0)
+                    save(2, counts_st_apd_1)
                 
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, apd_readout_time, counts_gate1_apd))
-                    save(counts_gate1_apd, counts_st_apd)
-                    save(empty_var,empty_stream)
      
         if num_apds == 2:
             with stream_processing():
-                counts_st_apd_0.buffer(num_readouts).buffer(num_gates).save_all("counts_apd0") 
-                counts_st_apd_1.buffer(num_readouts).buffer(num_gates).save_all("counts_apd1")
+                counts_st_apd_0.buffer(num_readouts).average().save("counts_apd0") 
+                counts_st_apd_1.buffer(num_readouts).save("counts_apd1")
                 
-        if num_apds == 1:    
-            with stream_processing():
-                counts_st_apd.buffer(num_readouts).buffer(num_gates).save_all("counts_apd0") 
-                empty_stream.buffer(num_readouts).buffer(num_gates).save_all("counts_apd1") 
-            
+        
     return seq
 
 
-def get_seq(opx, config, args): #so this will give just the sequence, no repeats
+def get_seq(config, args): #so this will give just the sequence, no repeats
     
-    seq = qua_program(opx, config, args, num_reps=1)
+    seq = qua_program(config, args, num_reps=1)
     final =''
     period = 0
     return seq, final, [period]
 
-def get_full_seq(opx, config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
+def get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq = qua_program(opx,config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
+    seq = qua_program(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
     final = ''
     period = 0
     return seq, final, [period]
@@ -140,49 +129,46 @@ if __name__ == '__main__':
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     
-    readout_time = 3000
+    readout_time = 4000
     qm = qmm.open_qm(config_opx)
     simulation_duration =  10000 // 4 # clock cycle units - 4ns
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
-    num_repeat=5
+    num_repeat=50000
     delay = 200
     args = [delay, readout_time, 0,'green_laser_do',1]
     config = []
     seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.xlim(100,12000)
 
     job = qm.execute(seq)
     
-    results_end = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
-    # counts_apd0, counts_apd1 = results_end.fetch_all()
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
+    
+    while results.is_processing():
+
+        counts_apd0, counts_apd1 = results.fetch_all()
+    
+        print(counts_apd0)
+    
+    
+    # counts_apd0, counts_apd1 = results_end.fetch_all() #just not sure if its gonna put it into the list structure we want
+    
+    # if len(apd_indices)==2:
+    #     pass
+    # elif 0 not in apd_indices:
+    #     counts_apd1 = np.copy(counts_apd0)
+    #     counts_apd0 = np.zeros(np.shape(counts_apd1))
+    # elif 1 not in apd_indices:
+    #     counts_apd0 = np.copy(counts_apd0)
+    #     counts_apd1 = np.zeros(np.shape(counts_apd0))
+        
     # counts_apd0 = np.sum(counts_apd0,2).tolist()
     # counts_apd1 = np.sum(counts_apd1,2).tolist()
-    # counts_full = []
+    # return_counts = []
     # for i in range(len(counts_apd0)):
-    #     counts_full.append([counts_apd0[i],counts_apd1[i]])
-    # print(counts_full)
-    # #this gives the counts_full as a list of samples. Each sample is a list of 
-    
-    # results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
-
-    counts_apd0, counts_apd1 = results_end.fetch_all() #just not sure if its gonna put it into the list structure we want
-    
-    if len(apd_indices)==2:
-        pass
-    elif 0 not in apd_indices:
-        counts_apd1 = np.copy(counts_apd0)
-        counts_apd0 = np.zeros(np.shape(counts_apd1))
-    elif 1 not in apd_indices:
-        counts_apd0 = np.copy(counts_apd0)
-        counts_apd1 = np.zeros(np.shape(counts_apd0))
-        
-    counts_apd0 = np.sum(counts_apd0,2).tolist()
-    counts_apd1 = np.sum(counts_apd1,2).tolist()
-    return_counts = []
-    for i in range(len(counts_apd0)):
-        return_counts.append([counts_apd0[i],counts_apd1[i]])
-    print(return_counts)
+    #     return_counts.append([counts_apd0[i],counts_apd1[i]])
+    # print(return_counts)
         

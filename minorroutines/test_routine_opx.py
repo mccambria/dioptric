@@ -46,7 +46,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'simple_readout_opx_new.py'
+    seq_file = 'simple_readout_opx.py'
     
     cxn.qm_opx.stream_load(seq_file, seq_args_string)
     cxn.qm_opx.stream_start(num_reps)
@@ -71,7 +71,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 3000, 0, 'green_laser_do', 1
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 3000, 0, 'do_laserglow_532_dm', 1
     num_reps=4
     counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')

@@ -75,12 +75,15 @@ class OPX(LabradServer, Tagger, PulseGen):
         self.y_voltages_1d = []
         self.z_voltages_1d = []
         self.steady_state_option = False
+        self.apd_indices = [0,1]
         
     async def get_config(self):  ### async???
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'Microwaves'])
         # p.get('iq_comp_amp') #this is needed for arbitrary waveform generator functions
         p.get('iq_delay') #this is needed for arbitrary waveform generator functions
+        # p.cd(['','Config'])
+        # p.get('apd_indices')
         result = await p.send()
         logging.info('Init complete 2')
         return result['get']
@@ -94,6 +97,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         )
         sys.path.append(str(opx_sequence_library_path))
         self.get_config_dict()
+        # self.apd_indices = config[1]
         logging.info('Init complete')
         
     
@@ -206,9 +210,7 @@ class OPX(LabradServer, Tagger, PulseGen):
             seq_module = importlib.import_module(file_name)
             args = tool_belt.decode_seq_args(seq_args_string)
                         
-            seq, final, ret_vals = seq_module.get_seq(        # here seq is the qua program. refer to opx sequence template      
-                self.config_dict, args
-            )
+            seq, final, ret_vals = seq_module.get_seq(self,self.config_dict, args )
         
         self.qua_program = seq
         self.seq_file = seq_file
@@ -240,9 +242,7 @@ class OPX(LabradServer, Tagger, PulseGen):
             seq_module = importlib.import_module(file_name)
             args = tool_belt.decode_seq_args(seq_args_string)
         
-            seq, final, ret_vals = seq_module.get_full_seq(        # here seq is the qua program. refer to opx sequence template      
-                self.config_dict, args, num_repeat, x_voltages, y_voltages, z_voltages
-            )
+            seq, final, ret_vals = seq_module.get_full_seq(self, self.config_dict, args, num_repeat, x_voltages, y_voltages, z_voltages)
         
         self.qua_program = seq
         self.seq_file = seq_file
@@ -421,11 +421,11 @@ class OPX(LabradServer, Tagger, PulseGen):
         counts_apd1 = np.sum(counts_apd1,2).tolist()
         return_counts = []
         
-        if len(apd_indices)==2:
+        if len(self.apd_indices)==2:
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i],counts_apd1[i]])
                 
-        elif len(apd_indices)==1:
+        elif len(self.apd_indices)==1:
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i]])
                 
@@ -555,7 +555,7 @@ class OPX(LabradServer, Tagger, PulseGen):
                 apd_counts = sample_counts[k][0] #gate_counts will be a single number
                 apd_time_tags = times_data[last_ind:last_ind+apd_counts]
                 all_apd_time_tags = all_apd_time_tags + apd_time_tags
-                channels = channels+np.full(len(apd_time_tags),apd_indices[k]).tolist()
+                channels = channels+np.full(len(apd_time_tags),self.apd_indices[k]).tolist()
                 last_ind = last_ind+apd_counts
             
             sorting = np.argsort(np.array(all_apd_time_tags))
