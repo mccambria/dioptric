@@ -1075,7 +1075,7 @@ if __name__ == "__main__":
 
 
     nv_sig_1 = copy.deepcopy(sig_base)
-    nv_sig_1["coords"] = [0.661, 1.234, 5.377]
+    nv_sig_1["coords"] = [-0.582, 0.767,6.119]
     nv_sig_1["name"] = "{}-nv1_2022_08_10".format(sample_name,)
     nv_sig_1["expected_count_rate"] = None
     nv_sig_1["resonance_LOW"] = 2.5512
@@ -1138,11 +1138,11 @@ if __name__ == "__main__":
                           nv_sig_1["coords"][2]]
     nv_sig_none["name"] = "{}-no_nv".format(sample_name,)
     nv_sig_none["disable_opt"] = True
-    nv_sig_none['collection_filter'] = 'no_filter'
+    # nv_sig_none['collection_filter'] = 'no_filter'
 
 
         
-    nv_sig = nv_sig_none
+    nv_sig = nv_sig_1
     
     # %% Functions to run
 #
@@ -1159,15 +1159,15 @@ if __name__ == "__main__":
             # do_image_sample(nv_sig_copy, apd_indices)
          #
         #
-        #tool_belt.set_drift([0.001, -0.004, tool_belt.get_drift()[2]])  # Keep z
+        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
 
                      
                 
-        # do_optimize(nv_sig,apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig,apd_indices)
+        do_image_sample(nv_sig, apd_indices)
                 
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -1195,7 +1195,7 @@ if __name__ == "__main__":
             #  img_range_1D,img_range_2D, offset)
             
         # for nv_sig in [nv_sig_4,nv_sig_8]:
-        do_lifetime(nv_sig, apd_indices)
+        # do_lifetime(nv_sig, apd_indices)
             
 
         #do_optimize_magnet_angle(nv_sig, apd_indices)
