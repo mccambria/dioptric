@@ -14,6 +14,7 @@ from scipy.odr import ODR, Model, RealData
 import sys
 from pathlib import Path
 import math
+import matplotlib.lines as mlines
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import temp_dependence_fitting
@@ -274,6 +275,27 @@ def main(
                 linestyle="None",
             )
 
+    # Legend shenanigans
+
+    loc = "upper right"
+
+    sample_A_patch = mlines.Line2D(
+        [], [], label="A", lw=marker_edge_width, ls="dotted", color="black"
+    )
+    sample_B_patch = mlines.Line2D(
+        [], [], label="B", lw=marker_edge_width, ls="dashed", color="black"
+    )
+    leg3 = ax1.legend(
+        handles=[sample_A_patch, sample_B_patch],
+        title="Sample",
+        loc=loc,
+        bbox_to_anchor=(0.492, 1.0),
+        handlelength=1.5,
+        handletextpad=0.5,
+        # borderpad=0.3,
+        # borderaxespad=0.3,
+    )
+
     # Legend without errorbars
     handles, labels = ax1.get_legend_handles_labels()
     errorbar_type = matplotlib.container.ErrorbarContainer
@@ -281,7 +303,6 @@ def main(
     handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
     if leg1 is not None:
         labels = labels[2:]
-    loc = "upper right"
     if plot_type == "T2_frac":
         loc = "upper left"
     leg2 = ax1.legend(
@@ -303,6 +324,8 @@ def main(
         # leg1.set_bbox_to_anchor((0.285, 0.0))
         # leg1.set_bbox_to_anchor((0.0, 0.325))
         ax1.add_artist(leg1)
+
+    ax1.add_artist(leg3)
 
     # ax.legend()
 

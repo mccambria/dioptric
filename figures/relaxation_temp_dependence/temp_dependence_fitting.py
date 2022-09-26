@@ -2573,15 +2573,15 @@ def main_sub(
 
 if __name__ == "__main__":
 
-    # temp = 300
-    # delta1 = 4
+    temp = 300
+    delta1 = 20
     # delta1 = 68.2
     # delta2 = 167
     # A_1 = 580
     # A_2 = 9000
-    # n1 = bose(delta1, temp)
+    n1 = bose(delta1, temp)
     # n2 = bose(delta2, temp)
-    # print(n1)
+    print(n1)
     # print(A_1 * n1 * (n1 + 1))
     # print(A_2 * n2 * (n2 + 1))
     # # print(bose(0.01241, 150))
@@ -2593,7 +2593,7 @@ if __name__ == "__main__":
     # # print(presentation_round_latex(145.88999, 0.002))
     # # print(presentation_round_latex(15.88999, 0.00167))
     # # print(presentation_round_latex(0.0288999, 0.0000167))
-    # sys.exit()
+    sys.exit()
 
     # tool_belt.init_matplotlib()
     kpl.init_kplotlib()
