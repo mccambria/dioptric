@@ -1052,6 +1052,9 @@ def lorentzian(x, x0, A, L, offset):
 def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
 
+def exp_stretch_decay(x, amp, decay, offset, B):
+    return offset + amp * np.exp(-(x / decay)**B)
+
 
 def gaussian(x, *params):
     """
@@ -1665,35 +1668,10 @@ def get_nv_sig_units():
     }
 
 
-# Error messages
-
-
-def color_ind_err(color_ind):
-    if color_ind != 532 or color_ind != 589:
-        raise RuntimeError(
-            "Value of color_ind must be 532 or 589."
-            + "\nYou entered {}".format(color_ind)
-        )
-
 
 def check_laser_power(laser_name, laser_power):
     pass
 
-
-def aom_ao_589_pwr_err(aom_ao_589_pwr):
-    if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
-        raise RuntimeError(
-            "Value for 589 aom must be within 0 to +1 V."
-            + "\nYou entered {} V".format(aom_ao_589_pwr)
-        )
-
-
-def ao_638_pwr_err(ao_638_pwr):
-    if ao_638_pwr < 0 or ao_638_pwr > 0.9:
-        raise RuntimeError(
-            "Value for 638 ao must be within 0 to 0.9 V."
-            + "\nYou entered {} V".format(ao_638_pwr)
-        )
 
 
 def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
@@ -1743,6 +1721,13 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
 
     return x_voltages, y_voltages
 
+def write_csv(csv_data, file, folder_path,
+              nvdata_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",):
+    with open('{}/{}/{}.csv'.format(nvdata_dir, folder_path, file),
+              'w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',',
+                                quoting=csv.QUOTE_NONE)
+        csv_writer.writerows(csv_data)
 
 def save_image_data_csv(
     img_array,

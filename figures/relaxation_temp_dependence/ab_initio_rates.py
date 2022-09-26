@@ -54,7 +54,8 @@ def main():
     ratio_y_range = [0, 1.35]
     # ratio_y_range = [0, 0.78]
     ratio_yscale = "linear"
-    temp_range = [-5, 480]
+    # temp_range = [-5, 480]
+    temp_range = [-5, 1000]
     xscale = "linear"
 
     ### Setup
