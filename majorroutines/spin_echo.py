@@ -898,8 +898,82 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_08_22-15_07_16-rubin-nv1"
-    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
-    ret_vals = plot_resonances_vs_theta_B(data)
+    
+    
+    
+    # file_name = "2022_08_22-15_07_16-rubin-nv1"
+    # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
+    # ret_vals = plot_resonances_vs_theta_B(data)
 
     # plt.show(block=True)
+    
+    ### just revivals ###
+    # This data set took measurements at the revivals and midway between them
+    
+    if False:
+        file_name = "2022_09_16-14_15_30-rubin-nv5_2022_08_10"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_09')
+        norm_avg_sig = numpy.array(data['norm_avg_sig'])
+        num_steps = data['num_steps']
+        
+        precession_dur_range = data["precession_time_range"]
+        min_precession_dur = precession_dur_range[0]
+        max_precession_dur = precession_dur_range[1]
+        taus = numpy.linspace(
+            min_precession_dur,
+            max_precession_dur,
+            num=num_steps,
+        )
+        taus = taus / 1e3
+        low_t = taus[1::2]
+        high_t = taus[0::2]
+        
+        low_s = norm_avg_sig[1::2]
+        high_s = norm_avg_sig[0::2]
+        
+        low_avg = numpy.average(low_s)
+        
+        contrast = high_s[0] - low_avg
+        
+        norm_high_s = ((high_s - low_avg) / contrast) / 2 + 0.5
+        
+        tau_lin = numpy.linspace(taus[0], taus[-1], 100)
+        
+        fig, ax = plt.subplots()
+        ax.plot(high_t, norm_high_s, "o")
+        
+        fit_func = lambda x, decay:tool_belt.exp_stretch_decay(x, 0.5, decay, 0.5, 3)
+        init_params = [ 20]
+        popt, pcov = curve_fit(
+            fit_func,
+            high_t,
+            norm_high_s,
+            p0=init_params,
+        )
+        print('{} +/- {} us'.format(popt[0], numpy.sqrt(pcov[0][0])))
+        ax.plot(
+                tau_lin,
+                fit_func(tau_lin, *popt),
+                "r-",
+                label="fit",
+            ) 
+        
+        text_popt = '\n'.join((
+                            r'y = 0.5 + 0.5 exp(-(t / d)^3)',
+                            r'd = ' + '%.2f'%(popt[0]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[0][0])) + ' us'
+                            ))
+    
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+        
+        
+        
+        ax.set_title("Revivals of spin echo")
+        ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Population (arb. units)")
+        
+        # print(low_t)
+        # print(high_t)
+    
+    

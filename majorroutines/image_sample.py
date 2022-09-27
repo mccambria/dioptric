@@ -459,7 +459,7 @@ if __name__ == '__main__':
 
     # file_name = '2022_08_18-16_22_08-hopper-search'
     # file_name = '2022_08_18-15_37_38-hopper-search'
-    file_name = '2022_09_16-17_40_59-rubin-nv4_2022_08_10'
+    file_name = '2022_09_23-13_00_27-rubin_al-nv1_2022_08_10'
     data = tool_belt.get_raw_data(file_name)
     # img = data['img_array']
     # y = data['y_voltages']
@@ -477,4 +477,4 @@ if __name__ == '__main__':
 
     # replot_for_presentation(file_name, scale)
 
-    replot_for_analysis(file_name, 0, 30)
+    replot_for_analysis(file_name, 0, 20)

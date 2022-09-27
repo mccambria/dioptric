@@ -80,7 +80,8 @@ def main():
 
     rates_y_range = [0.5e-2, 800]
     rates_yscale = "log"
-    ratio_y_range = [0, 0.78]
+    ratio_y_range = [0, 1.35]
+    # ratio_y_range = [0, 0.78]
     ratio_yscale = "linear"
     # temp_range = [-5, 480]
     temp_range = [-5, 1000]
@@ -105,6 +106,11 @@ def main():
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
     ) = temp_dependence_fitting.fit_simultaneous(data_points, "double_orbach")
+    # Set sample-dependent constants to 0
+    popt[-1] = 0
+    popt[-2] = 0
+    popt[-3] = 0
+    popt[-4] = 0
     omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
     omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
     gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
