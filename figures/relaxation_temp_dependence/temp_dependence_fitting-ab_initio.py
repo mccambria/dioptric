@@ -32,6 +32,7 @@ import copy
 import utils.kplotlib as kpl
 from utils.tool_belt import presentation_round, presentation_round_latex
 from utils.kplotlib import figsize, double_figsize
+from ab_initio_rates import get_ab_initio_rates
 
 
 # %% Constants
@@ -1939,7 +1940,7 @@ def main(
 
     # %% Setup
 
-    if plot_type == "T2_max_supp":
+    if plot_type in "T2_max_supp":
 
         ### (a) and (b) version
         # fs = double_figsize
@@ -2011,6 +2012,54 @@ def main(
         # )
         # fig.subplots_adjust(wspace=0.16)
         return fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp
+    elif plot_type == "rates":
+        fs = figsize
+        fig, ax1 = plt.subplots(figsize=fs)
+        inset_bottom = 0.1
+        inset_height = 0.43
+        inset_left = 0.52
+        inset_width = 0.485
+        ax2 = inset_axes(
+            ax1,
+            width="100%",
+            height="100%",
+            bbox_to_anchor=(
+                inset_left,
+                inset_bottom,
+                inset_width,
+                inset_height,
+            ),
+            bbox_transform=ax1.transAxes,
+            loc=1,
+        )
+
+        main_sub(
+            fig,
+            ax1,
+            file_name,
+            path,
+            "rates",
+            rates_to_plot[0],
+            temp_range[0],
+            rate_range[0],
+            xscale[0],
+            yscale[0],
+            dosave,
+        )
+        main_sub(
+            fig,
+            ax2,
+            file_name,
+            path,
+            "rates",
+            rates_to_plot[1],
+            temp_range[1],
+            rate_range[1],
+            xscale[1],
+            yscale[1],
+            dosave,
+            inset=True,
+        )
     else:
         fs = figsize
         fig, ax = plt.subplots(figsize=fs)
@@ -2041,6 +2090,7 @@ def main_sub(
     xscale,
     yscale,
     dosave,
+    inset=False,
 ):
 
     data_points = get_data_points(path, file_name, temp_range)
@@ -2079,6 +2129,9 @@ def main_sub(
     #     gamma = round(gamma_lambda(temp))
     #     print(boilerplate.format(temp, omega, gamma))
 
+    sim_temps, sim_omega, sim_gamma = get_ab_initio_rates()
+    sim_ls = "solid"
+
     print("parameter description: popt, psd")
     for ind in range(len(popt)):
         desc = beta_desc[ind]
@@ -2105,6 +2158,15 @@ def main_sub(
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
+        # Ab initio plot
+        ax.plot(
+            sim_temps,
+            sim_omega,
+            linestyle=sim_ls,
+            label=r"$\mathrm{\Omega}$ fit",
+            color=omega_face_color,
+            linewidth=line_width,
+        )
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         for sample in samples_to_plot:
@@ -2114,10 +2176,17 @@ def main_sub(
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\mathit{\gamma}$ fit",
                 color=gamma_edge_color,
                 linewidth=line_width,
             )
+        # Ab initio plot
+        ax.plot(
+            sim_temps,
+            sim_gamma,
+            linestyle=sim_ls,
+            color=gamma_face_color,
+            linewidth=line_width,
+        )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
 
@@ -2202,23 +2271,24 @@ def main_sub(
 
         ax.axvline(x=125, color="silver", zorder=-10)
 
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-    if plot_type == "rates":
-        ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
-    elif plot_type == "ratios":
-        ax.set_ylabel(r"Ratios")
-    elif plot_type == "ratio_fits":
-        ax.set_ylabel(r"Ratio of fits")
-    elif plot_type == "residuals":
-        ax.set_ylabel(r"Residuals (s$^{-1}$)")
-    elif plot_type == "normalized_residuals":
-        ax.set_ylabel(r"Normalized residuals")
-    elif plot_type == "T2_max":
-        ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
-    elif plot_type == "T2_frac":
-        ax.set_ylabel(
-            r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$"
-        )
+    if not inset:
+        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+        if plot_type == "rates":
+            ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
+        elif plot_type == "ratios":
+            ax.set_ylabel(r"Ratios")
+        elif plot_type == "ratio_fits":
+            ax.set_ylabel(r"Ratio of fits")
+        elif plot_type == "residuals":
+            ax.set_ylabel(r"Residuals (s$^{-1}$)")
+        elif plot_type == "normalized_residuals":
+            ax.set_ylabel(r"Normalized residuals")
+        elif plot_type == "T2_max":
+            ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
+        elif plot_type == "T2_frac":
+            ax.set_ylabel(
+                r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$"
+            )
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -2440,100 +2510,107 @@ def main_sub(
         )
 
     # %% Legend
-
     leg1 = None
+    if not inset:
 
-    if plot_type in ["rates", "residuals", "normalized_residuals"]:
-        omega_patch = patches.Patch(
-            label=r"$\mathrm{\Omega}$",
-            facecolor=omega_face_color,
-            edgecolor=omega_edge_color,
-            lw=marker_edge_width,
-        )
-        gamma_patch = patches.Patch(
-            label=r"$\mathit{\gamma}$",
-            facecolor=gamma_face_color,
-            edgecolor=gamma_edge_color,
-            lw=marker_edge_width,
-        )
-        leg1 = ax.legend(
-            handles=[omega_patch, gamma_patch], loc="upper left", title="Rates"
-        )
-
-    elif plot_type == "ratios":
-        ratio_patch = patches.Patch(
-            label=r"$\mathit{\gamma}/\mathrm{\Omega}$",
-            facecolor=ratio_face_color,
-            edgecolor=ratio_edge_color,
-            lw=marker_edge_width,
-        )
-        leg1 = ax.legend(handles=[ratio_patch], loc="upper left")
-
-    # Samples
-    if plot_type in ["rates", "ratios", "residuals", "normalized_residuals"]:
-        nv_patches = []
-        for ind in range(len(markers_list)):
-            nv_name = nv_names[ind].replace("_", "\_")
-            sample = nv_name.split("-")[0]
-            if sample == "prresearch":
-                nv_name = "[1]"
-            # else:
-            #     label = "New results"
-            ls = linestyles[sample]
-            if marker_type == "nv":
-                label = nv_name
-                title = "sample-nv"
-            elif marker_type == "sample":
-                label = sample[0].upper() + sample[1:]
-                title = "Sample"
-            patch = mlines.Line2D(
-                [],
-                [],
-                color="black",
-                marker=markers_list[ind],
-                linestyle=linestyles[sample],
-                markersize=marker_size,
-                markeredgewidth=marker_edge_width,
-                label=label,
+        if plot_type in ["rates", "residuals", "normalized_residuals"]:
+            omega_patch = patches.Patch(
+                label=r"$\mathrm{\Omega}$",
+                facecolor=omega_face_color,
+                edgecolor=omega_edge_color,
+                lw=marker_edge_width,
             )
-            nv_patches.append(patch)
-        ax.legend(
-            handles=nv_patches,
-            loc="upper left",
-            title=title,
-            # title="Samples",
-            bbox_to_anchor=(x_loc, 1.0),
-        )
-
-    if leg0 is not None:
-        ax.add_artist(leg0)
-    if leg1 is not None:
-        ax.add_artist(leg1)
-
-    if plot_type == "T2_max":
-        handles, labels = ax.get_legend_handles_labels()
-        mod_handles = []
-        for el in handles:
-            mod_handle = mlines.Line2D(
-                [],
-                [],
-                color=el.get_color(),
-                linewidth=line_width,
-                linestyle="solid",
+            gamma_patch = patches.Patch(
+                label=r"$\mathit{\gamma}$",
+                facecolor=gamma_face_color,
+                edgecolor=gamma_edge_color,
+                lw=marker_edge_width,
             )
-            mod_handles.append(mod_handle)
-        leg1 = ax.legend(
-            mod_handles,
-            labels,
-            title="Subspace",
-            # bbox_to_anchor=(0.743, 1.0),
-            # loc="lower left",
-            loc="upper right",
-            handlelength=1.5,
-            handletextpad=0.5,
-            # borderpad=0.3,
-            # borderaxespad=0.3,
-        )
+            leg1 = ax.legend(
+                handles=[omega_patch, gamma_patch],
+                loc="upper left",
+                title="Rates",
+            )
+
+        elif plot_type == "ratios":
+            ratio_patch = patches.Patch(
+                label=r"$\mathit{\gamma}/\mathrm{\Omega}$",
+                facecolor=ratio_face_color,
+                edgecolor=ratio_edge_color,
+                lw=marker_edge_width,
+            )
+            leg1 = ax.legend(handles=[ratio_patch], loc="upper left")
+
+        # Samples
+        if plot_type in [
+            "rates",
+            "ratios",
+            "residuals",
+            "normalized_residuals",
+        ]:
+            nv_patches = []
+            for ind in range(len(markers_list)):
+                nv_name = nv_names[ind].replace("_", "\_")
+                sample = nv_name.split("-")[0]
+                if sample == "prresearch":
+                    nv_name = "[1]"
+                # else:
+                #     label = "New results"
+                ls = linestyles[sample]
+                if marker_type == "nv":
+                    label = nv_name
+                    title = "sample-nv"
+                elif marker_type == "sample":
+                    label = sample[0].upper() + sample[1:]
+                    title = "Sample"
+                patch = mlines.Line2D(
+                    [],
+                    [],
+                    color="black",
+                    marker=markers_list[ind],
+                    linestyle=linestyles[sample],
+                    markersize=marker_size,
+                    markeredgewidth=marker_edge_width,
+                    label=label,
+                )
+                nv_patches.append(patch)
+            ax.legend(
+                handles=nv_patches,
+                loc="upper left",
+                title=title,
+                # title="Samples",
+                bbox_to_anchor=(x_loc, 1.0),
+            )
+
+        if leg0 is not None:
+            ax.add_artist(leg0)
+        if leg1 is not None:
+            ax.add_artist(leg1)
+
+        if plot_type == "T2_max":
+            handles, labels = ax.get_legend_handles_labels()
+            mod_handles = []
+            for el in handles:
+                mod_handle = mlines.Line2D(
+                    [],
+                    [],
+                    color=el.get_color(),
+                    linewidth=line_width,
+                    linestyle="solid",
+                )
+                mod_handles.append(mod_handle)
+            leg1 = ax.legend(
+                mod_handles,
+                labels,
+                title="Subspace",
+                # bbox_to_anchor=(0.743, 1.0),
+                # loc="lower left",
+                loc="upper right",
+                handlelength=1.5,
+                handletextpad=0.5,
+                # borderpad=0.3,
+                # borderaxespad=0.3,
+            )
 
     fig.tight_layout(pad=0.3)
 
@@ -2573,27 +2650,27 @@ def main_sub(
 
 if __name__ == "__main__":
 
-    temp = 300
-    # delta1 = 4
-    delta1 = 68.2
-    # delta2 = 167
-    # A_1 = 580
-    # A_2 = 9000
-    n1 = bose(delta1, temp)
-    # n2 = bose(delta2, temp)
-    print(n1)
-    # print(A_1 * n1 * (n1 + 1))
-    # print(A_2 * n2 * (n2 + 1))
-    # # print(bose(0.01241, 150))
-    # # print(bose(65, 450) * (bose(65, 450) + 1))
-    # # print(presentation_round_latex(145.88, 26.55))
-    # # print(presentation_round_latex(145.88, 16.55))
-    # # print(presentation_round_latex(145.88, 1.2))
-    # # print(presentation_round_latex(145.88, 6.55))
-    # # print(presentation_round_latex(145.88999, 0.002))
-    # # print(presentation_round_latex(15.88999, 0.00167))
-    # # print(presentation_round_latex(0.0288999, 0.0000167))
-    sys.exit()
+    # temp = 300
+    # # delta1 = 4
+    # delta1 = 68.2
+    # # delta2 = 167
+    # # A_1 = 580
+    # # A_2 = 9000
+    # n1 = bose(delta1, temp)
+    # # n2 = bose(delta2, temp)
+    # print(n1)
+    # # print(A_1 * n1 * (n1 + 1))
+    # # print(A_2 * n2 * (n2 + 1))
+    # # # print(bose(0.01241, 150))
+    # # # print(bose(65, 450) * (bose(65, 450) + 1))
+    # # # print(presentation_round_latex(145.88, 26.55))
+    # # # print(presentation_round_latex(145.88, 16.55))
+    # # # print(presentation_round_latex(145.88, 1.2))
+    # # # print(presentation_round_latex(145.88, 6.55))
+    # # # print(presentation_round_latex(145.88999, 0.002))
+    # # # print(presentation_round_latex(15.88999, 0.00167))
+    # # # print(presentation_round_latex(0.0288999, 0.0000167))
+    # sys.exit()
 
     # tool_belt.init_matplotlib()
     kpl.init_kplotlib()
@@ -2643,21 +2720,38 @@ if __name__ == "__main__":
         rates_to_plot = "gamma"
     # y_params = [y_params[1]]
     # y_params = [[None, "linear"], [[0.001, 20], "log"]]
-    for el in y_params:
-        y_range, yscale = el
-        # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
-        # continue
-        main(
-            file_name,
-            path,
-            plot_type,
-            rates_to_plot,
-            temp_range,
-            y_range,
-            xscale,
-            yscale,
-            dosave=False,
-        )
+    # for el in y_params:
+    #     y_range, yscale = el
+    #     # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
+    #     # continue
+    #     main(
+    #         file_name,
+    #         path,
+    #         plot_type,
+    #         rates_to_plot,
+    #         temp_range,
+    #         y_range,
+    #         xscale,
+    #         yscale,
+    #         dosave=False,
+    #     )
+
+    rates_to_plot = ["both", "both"]
+    temp_ranges = [[100, 480], [-10, 490]]
+    y_ranges = [[5e-3, 1000], [-20, 650]]
+    yscales = ["log", "linear"]
+    xscales = ["log", "linear"]
+    main(
+        file_name,
+        path,
+        plot_type,
+        rates_to_plot,
+        temp_ranges,
+        y_ranges,
+        xscales,
+        yscales,
+        dosave=False,
+    )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 

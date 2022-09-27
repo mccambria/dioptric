@@ -38,6 +38,35 @@ marker_edge_width = line_width
 marker_edge_width_inset = line_width_inset
 
 
+def get_ab_initio_rates():
+
+    sim_file_name = "Tdep_512_PBE.dat"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
+
+    sim_data = np.genfromtxt(
+        path / sim_file_name,
+        skip_header=1,
+        skip_footer=1,
+        names=True,
+        dtype=None,
+        delimiter=" ",
+    )
+
+    sim_temps = []
+    sim_omega = []
+    sim_gamma = []
+    for el in sim_data:
+        sim_temps.append(el[0])
+        sim_omega.append(el[1])
+        sim_gamma.append(el[2])
+    sim_temps = np.array(sim_temps)
+    sim_omega = np.array(sim_omega)
+    sim_gamma = np.array(sim_gamma)
+
+    return sim_temps, sim_omega, sim_gamma
+
+
 def main():
 
     ### Params
@@ -81,8 +110,6 @@ def main():
     gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
     gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
 
-    sim_file_name = "Tdep_512_PBE.dat"
-
     min_temp = temp_range[0]
     max_temp = temp_range[1]
     linspace_min_temp = max(0, min_temp)
@@ -90,25 +117,7 @@ def main():
 
     ### Get temps/rates from simulation dat file
 
-    sim_data = np.genfromtxt(
-        path / sim_file_name,
-        skip_header=1,
-        skip_footer=1,
-        names=True,
-        dtype=None,
-        delimiter=" ",
-    )
-
-    sim_temps = []
-    sim_omega = []
-    sim_gamma = []
-    for el in sim_data:
-        sim_temps.append(el[0])
-        sim_omega.append(el[1])
-        sim_gamma.append(el[2])
-    sim_temps = np.array(sim_temps)
-    sim_omega = np.array(sim_omega)
-    sim_gamma = np.array(sim_gamma)
+    sim_temps, sim_omega, sim_gamma = get_ab_initio_rates()
 
     ### Figure prep
 
