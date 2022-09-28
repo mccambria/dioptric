@@ -65,8 +65,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
+        self.get_config_dict()
         logging.info(qop_ip)
         self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
         self.qm = self.qmm.open_qm(config_opx)
@@ -74,31 +73,13 @@ class OPX(LabradServer, Tagger, PulseGen):
         self.x_voltages_1d = []
         self.y_voltages_1d = []
         self.z_voltages_1d = []
-        self.steady_state_option = False
-        self.apd_indices = [0,1]
-        
-    async def get_config(self):  ### async???
-        p = self.client.registry.packet()
-        p.cd(['', 'Config', 'Microwaves'])
-        # p.get('iq_comp_amp') #this is needed for arbitrary waveform generator functions
-        p.get('iq_delay') #this is needed for arbitrary waveform generator functions
-        # p.cd(['','Config'])
-        # p.get('apd_indices')
-        result = await p.send()
-        logging.info('Init complete 2')
-        return result['get']
-
-    def on_get_config(self, config):
-        # resource_manager = visa.ResourceManager()
-        # self.iq_comp_amp = config[0]
+        self.seq = None
         opx_sequence_library_path = (
             Path.home()
             / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences"
         )
         sys.path.append(str(opx_sequence_library_path))
-        self.get_config_dict()
-        # self.apd_indices = config[1]
-        logging.info('Init complete')
+        self.steady_state_option = False
         
     
     def get_config_dict(self):
@@ -152,19 +133,7 @@ class OPX(LabradServer, Tagger, PulseGen):
 
     def on_get_config_dict(self, _, config_dict):
         self.config_dict = config_dict
-        # self.pulser_wiring = self.config_dict["Wiring"]["PulseStreamer"]
-        # self.feedthrough_lasers = []
-        # optics_dict = config_dict["Optics"]
-        # for key in optics_dict:
-            # optic = optics_dict[key]
-            # feedthrough_str = optic["feedthrough"]
-            # if eval(feedthrough_str):
-                # self.feedthrough_lasers.append(key)
-        # logging.info(self.feedthrough_lasers)
-        # Initialize state variables and reset
-        self.seq = None
-        # self.loaded_seq_streamed = False
-        # self.reset(None)
+        self.apd_indices = config_dict["apd_indices"]
         logging.info("Init complete")
         
         
@@ -302,6 +271,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         #queue up both the interesting program and the steady state program
         self.pending_experiment_job = self.compile_program_and_add_to_qm_queue(self.qm,self.qua_program)
         self.experiment_job = self.pending_experiment_job.wait_for_execution()
+        self.counter_index = 0
         
         if self.steady_state_option:
             self.pending_steady_state_job = self.compile_program_and_add_to_qm_queue(self.qm,self.steady_state_program)
@@ -346,6 +316,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         
         self.pending_experiment_job = self.compile_program_and_add_to_qm_queue(self.qm,self.qua_program)
         self.experiment_job = self.pending_experiment_job.wait_for_execution()
+        self.counter_index = 0
         
         if self.steady_state_option:
             self.pending_steady_state_job = self.compile_program_and_add_to_qm_queue(self.qm,self.steady_state_program)
@@ -398,7 +369,32 @@ class OPX(LabradServer, Tagger, PulseGen):
     #     # print(return_counts)
     #     return return_counts
     
-    def read_counter_setting_internal(self, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
+    def read_counter_setting_internal(self, num_to_read):
+        """ this function reads to counter until it has gotten num_to_read number of samples.
+        If that is none, it just reads whatever new samples are there
+        """
+        if self.stream is None:
+            logging.error("read_counter attempted while stream is None.")
+            return
+        if num_to_read is None:
+            # Poll once and return the result
+            counts = self.read_counter_internal()
+        else:
+            # Poll until we've read the requested number of samples
+            counts = []
+            
+            while len(counts) < num_to_read:
+                counts.extend(self.read_counter_internal())
+                # logging.info(len(counts))
+            if len(counts) > num_to_read:
+                msg = "Read {} samples, only requested {}".format(
+                    len(counts), num_to_read
+                )
+                logging.error(msg)
+
+        return counts
+    
+    def read_counter_internal(self): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
         """This is the core function that any tagger we have needs. 
         For the OPX this fetches the data from the job that was created when the program was executed. 
         Assumes "counts" is one of the data streams
@@ -413,12 +409,24 @@ class OPX(LabradServer, Tagger, PulseGen):
             return_counts: array
                 This is an array of the counts 
         """
-            
-        results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+        
+
+        results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     
         counts_apd0, counts_apd1 = results.fetch_all() #just not sure if its gonna put it into the list structure we want
+        
+        #now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
         counts_apd0 = np.sum(counts_apd0,2).tolist()
         counts_apd1 = np.sum(counts_apd1,2).tolist()
+        
+
+        #now we need to combine into our data structure. they have different lengths because the fpga may 
+        #save one faster than the other. So just go as far as we have samples on both
+        max_length = min(len(counts_apd0),len(counts_apd1))
+        
+        counts_apd0 = counts_apd0[self.counter_index:max_length]
+        counts_apd1 = counts_apd1[self.counter_index:max_length]
+
         return_counts = []
         
         if len(self.apd_indices)==2:
@@ -428,7 +436,9 @@ class OPX(LabradServer, Tagger, PulseGen):
         elif len(self.apd_indices)==1:
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i]])
-                
+            
+        self.counter_index = max_length #make the counter indix the new max length (-1) so the samples start there
+
         return return_counts
 
     @setting(5, num_to_read="i", returns="*w")
@@ -509,6 +519,19 @@ class OPX(LabradServer, Tagger, PulseGen):
         return return_counts
 
     
+    def read_raw_stream(self):
+        if self.stream is None:
+            logging.error("read_raw_stream attempted while stream is None.")
+            return
+        # buffer = self.stream.getData()
+        results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="live")
+        counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
+        
+        # timestamps = buffer.getTimestamps()
+        # channels = buffer.getChannels()
+        return timestamps, channels
+    
+    
     @setting(7, num_to_read="i", returns="*s*i")
     def read_tag_stream(self, c, num_to_read=None): #from apd tagger ###need to update
         """This will take in the same three level list as read_counter_internal, but the third level is not a number of counts, but actually a list of time tags
@@ -579,11 +602,12 @@ class OPX(LabradServer, Tagger, PulseGen):
     
     @setting(8, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
     def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
+        self.stream = True
         pass        
     
     @setting(9, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
     def stop_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
-        """OPX doesn't need it"""
+        self.stream = None
         pass
     
     @setting(10)

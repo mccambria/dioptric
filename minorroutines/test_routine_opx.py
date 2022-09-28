@@ -48,13 +48,26 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     
     seq_file = 'simple_readout_opx.py'
     
+    cxn.qm_opx.start_tag_stream([0])
     cxn.qm_opx.stream_load(seq_file, seq_args_string)
     cxn.qm_opx.stream_start(num_reps)
+    num_read_so_far = 0
+    total_num_samples = num_reps
+    total_counts = []
     
-    new_counts = cxn.qm_opx.read_counter_complete()
-    new_times, new_channels =  [],[] #cxn.qm_opx.read_tag_stream(num_reps)
-
-    return new_counts, new_times, new_channels
+    while num_read_so_far < total_num_samples:
+        new_counts = cxn.qm_opx.read_counter_complete()
+        num_new_samples = len(new_counts)
+        # print(num_new_samples)
+        if num_new_samples > 0:
+            new_times, new_channels =  [],[] #cxn.qm_opx.read_tag_stream(num_reps)
+            total_counts.extend(new_counts.tolist())
+            num_read_so_far += num_new_samples
+        
+        
+    # cxn.qm_opx.stop_tag_stream(apd_index)
+     
+    return total_counts, new_times, new_channels
 
     # %% Collect the data
 
@@ -71,7 +84,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 3000, 0, 'do_laserglow_532_dm', 1
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 300000, 0, 'do_laserglow_532_dm', 1
     num_reps=4
     counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')

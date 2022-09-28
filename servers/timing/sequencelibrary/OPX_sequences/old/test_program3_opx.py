@@ -69,21 +69,22 @@ def qua_sequence(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z
             with for_(i,0,i<num_readouts,i+1):    
                 
                 if (len(apd_indices) == 2):
-                    measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_cur0))
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_cur0))
                     # assign(counts_cur0,1)
                     assign(counts_gate1_apd_0,counts_cur0+counts_gate1_apd_0)
                     
-                    measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_cur1))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_cur1))
                     # assign(counts_cur1,10)
                     assign(counts_gate1_apd_1,counts_cur1+counts_gate1_apd_1)
                     
                 if (len(apd_indices) == 1):
-                    measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd, readout_time, counts_cur))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, readout_time, counts_cur))
                     assign(counts_gate1_apd,counts_cur+counts_gate1_apd)
                         
                 
                 # align()
-                wait(time_between_gates_cc)
+                # wait(time_between_gates_cc)
+                wait(100)  #how do i control this time?
             ###
             
             if (len(apd_indices) == 2):
@@ -117,18 +118,18 @@ if __name__ == '__main__':
     
     print('hi')
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    readout_time = 6000
+    readout_time = 4000
     qm = qmm.open_qm(config_opx)
     simulation_duration = 8000 // 4 # clock cycle units - 4ns
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
     num_repeat=1
     
-    args = [200,readout_time,0,'green_laser_do',1]
+    args = [200,readout_time,0,'do_laserglow_532_dm',1]
     config = []
     seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
     
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
     # plt.xlim(100,12000)
 
     job = qm.execute(seq)

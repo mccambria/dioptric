@@ -67,16 +67,17 @@ def qua_sequence(config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z
             align()  
           
             if (num_apds == 2):
-                measure("readout", "APD_0", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))  
-                measure("readout", "APD_1", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
+                measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))  
+                measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
             
             if (num_apds == 1):
-                measure("readout", "APD_{}".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, readout_time, counts_gate1_apd))  
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, readout_time, counts_gate1_apd))  
                 
                 
             align()  
-            wait(time_between_gates_cc)
-           
+            # wait(time_between_gates_cc)
+            wait(100)
+            
             if (num_apds == 2):
                 save(counts_gate1_apd_0, counts_st)
                 with for_(i, 0, i < (counts_gate1_apd_0), i + 1):
@@ -124,7 +125,7 @@ if __name__ == '__main__':
     x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
     num_repeat=5
     
-    args = [200,readout_time,0,'green_laser_do',1]
+    args = [200,readout_time,0,'do_laserglow_532_dm',1]
     config = []
     seq , f, p = get_full_seq(config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
     
