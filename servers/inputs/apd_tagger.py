@@ -130,25 +130,25 @@ class ApdTagger(LabradServer):
         return timestamps, channels
 
     # @jit(nopython=True)
-    def read_counter_setting_internal(self, num_to_read):
-        if self.stream is None:
-            logging.error("read_counter attempted while stream is None.")
-            return
-        if num_to_read is None:
-            # Poll once and return the result
-            counts = self.read_counter_internal()
-        else:
-            # Poll until we've read the requested number of samples
-            counts = []
-            while len(counts) < num_to_read:
-                counts.extend(self.read_counter_internal())
-            if len(counts) > num_to_read:
-                msg = "Read {} samples, only requested {}".format(
-                    len(counts), num_to_read
-                )
-                logging.error(msg)
+    # def read_counter_setting_internal(self, num_to_read):
+    #     if self.stream is None:
+    #         logging.error("read_counter attempted while stream is None.")
+    #         return
+    #     if num_to_read is None:
+    #         # Poll once and return the result
+    #         counts = self.read_counter_internal()
+    #     else:
+    #         # Poll until we've read the requested number of samples
+    #         counts = []
+    #         while len(counts) < num_to_read:
+    #             counts.extend(self.read_counter_internal())
+    #         if len(counts) > num_to_read:
+    #             msg = "Read {} samples, only requested {}".format(
+    #                 len(counts), num_to_read
+    #             )
+    #             logging.error(msg)
 
-        return counts
+    #     return counts
 
     # @jit(nopython=True)
     def get_gate_click_inds(self, sample_channels_arr, apd_index):

@@ -48,18 +48,24 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     
     seq_file = 'simple_readout_opx.py'
     
-    cxn.qm_opx.start_tag_stream([0])
-    cxn.qm_opx.stream_load(seq_file, seq_args_string)
-    cxn.qm_opx.stream_start(num_reps)
+    counter_server = tool_belt.get_counter_server(cxn)
+    tagger_server = tool_belt.get_tagger_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    
+    tagger_server.start_tag_stream([0])
+    pulsegen_server.stream_load(seq_file, seq_args_string)
+    pulsegen_server.stream_start(num_reps)
+    
     num_read_so_far = 0
     total_num_samples = num_reps
     total_counts = []
     
     while num_read_so_far < total_num_samples:
-        new_counts = cxn.qm_opx.read_counter_complete()
+        new_counts = counter_server.read_counter_complete()
         num_new_samples = len(new_counts)
         # print(num_new_samples)
         if num_new_samples > 0:
+            print(numpy.shape(new_counts))
             new_times, new_channels =  [],[] #cxn.qm_opx.read_tag_stream(num_reps)
             total_counts.extend(new_counts.tolist())
             num_read_so_far += num_new_samples
@@ -84,11 +90,11 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 80000, 0, 'do_laserglow_532_dm', 1
-    num_reps=4
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 20000, 0, 'do_laserglow_532_dm', 1
+    num_reps=40000
     counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')
-    print(counts)
+    # print(counts)
     # print()
     # print(times)
     # print('')

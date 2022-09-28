@@ -8,9 +8,30 @@ Created on August 29th, 2022
 """
 
 from abc import ABC, abstractmethod
-
+import logging
 
 class Counter(ABC):
+    
+    
+    def read_counter_setting_internal(self, num_to_read):
+        if self.stream is None:
+            logging.error("read_counter attempted while stream is None.")
+            return
+        if num_to_read is None:
+            # Poll once and return the result
+            counts = self.read_counter_internal()
+        else:
+            # Poll until we've read the requested number of samples
+            counts = []
+            while len(counts) < num_to_read:
+                counts.extend(self.read_counter_internal())
+            if len(counts) > num_to_read:
+                msg = "Read {} samples, only requested {}".format(
+                    len(counts), num_to_read
+                )
+                logging.error(msg)
+
+        return counts
     
     @abstractmethod
     def reset(self, c):

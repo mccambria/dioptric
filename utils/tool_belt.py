@@ -1240,6 +1240,46 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 def get_nv_sig_units():
     return "in config"
 
+def get_pulsegen_server(cxn):
+    """
+    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
+    """
+    pulsegen_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "pulsegen_server", ["", "Config", "PulseGeneration"]),
+    )
+    
+    if pulsegen_server_return == "":
+        raise RuntimeError
+    
+    return pulsegen_server_return
+
+def get_counter_server(cxn):
+    """
+    Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
+    """
+    counter_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "counter_server", ["", "Config", "PhotonCollection"]),
+    )
+    if counter_server_return == "":
+        raise RuntimeError
+        
+    return counter_server_return
+
+
+def get_tagger_server(cxn):
+    """
+    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    """
+    tagger_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "tagger_server", ["", "Config", "PhotonCollection"]),
+    )
+    if tagger_server_return == "":
+        raise RuntimeError
+        
+    return tagger_server_return
 
 def get_xy_server(cxn):
     """

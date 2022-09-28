@@ -143,7 +143,7 @@ class OPX(LabradServer, Tagger, PulseGen):
         except:
             pass
     
-    def set_steadty_state_option_on_off(self, selection): #selection should be true or false
+    def set_steady_state_option_on_off(self, selection): #selection should be true or false
         self.steady_state_option = selection
         
     #%% sequence loading and executing functions ###
@@ -331,53 +331,6 @@ class OPX(LabradServer, Tagger, PulseGen):
     def read_counter_complete(self, c, num_to_read=None):
         return self.read_counter_setting_internal(num_to_read)
     
-    # def read_counter_setting_internal(self, num_to_read=None): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
-    #     """This is the core function that any tagger we have needs. 
-    #     For the OPX this fetches the data from the job that was created when the program was executed. 
-    #     Assumes "counts" is one of the data streams
-    #     The count stream should be a three level list. First level is the sample, second is the gates, third is the different apds. 
-    #     first index gives the sample. next level gives the gate. next level gives which apd
-    #     [  [ [],[] ] , [ [],[] ], [ [],[] ]  ]
-    #     ##### This may be slightly wrong. It may be apds then gate, in which I need to slightly change the sequence code
-        
-    #     Params
-    #         num_to_read: int
-    #             This is not needed for the OPX
-    #     Returns
-    #         return_counts: array
-    #             This is an array of the counts 
-    #     """
-        
-    #     results = fetching_tool(self.experiment_job, data_list = ["counts"], mode="wait_for_all")
-    #     return_counts = results.fetch_all() #just not sure if its gonna put it into the list structure we want
-    #     return_counts = return_counts[0][0].tolist()
-    #     # print(return_counts)
-    #     return return_counts
-    
-    def read_counter_setting_internal(self, num_to_read):
-        """ this function reads to counter until it has gotten num_to_read number of samples.
-        If that is none, it just reads whatever new samples are there
-        """
-        if self.stream is None:
-            logging.error("read_counter attempted while stream is None.")
-            return
-        if num_to_read is None:
-            # Poll once and return the result
-            counts = self.read_counter_internal()
-        else:
-            # Poll until we've read the requested number of samples
-            counts = []
-            
-            while len(counts) < num_to_read:
-                counts.extend(self.read_counter_internal())
-                # logging.info(len(counts))
-            if len(counts) > num_to_read:
-                msg = "Read {} samples, only requested {}".format(
-                    len(counts), num_to_read
-                )
-                logging.error(msg)
-
-        return counts
     
     def read_counter_internal(self): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
         """This is the core function that any tagger we have needs. 
@@ -400,10 +353,6 @@ class OPX(LabradServer, Tagger, PulseGen):
     
         counts_apd0, counts_apd1 = results.fetch_all() #just not sure if its gonna put it into the list structure we want
         
-        #now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
-        counts_apd0 = np.sum(counts_apd0,2).tolist()
-        counts_apd1 = np.sum(counts_apd1,2).tolist()
-        
 
         #now we need to combine into our data structure. they have different lengths because the fpga may 
         #save one faster than the other. So just go as far as we have samples on both
@@ -411,6 +360,10 @@ class OPX(LabradServer, Tagger, PulseGen):
         
         counts_apd0 = counts_apd0[self.counter_index:max_length]
         counts_apd1 = counts_apd1[self.counter_index:max_length]
+        
+        #now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
+        counts_apd0 = np.sum(counts_apd0,2).tolist()
+        counts_apd1 = np.sum(counts_apd1,2).tolist()
 
         return_counts = []
         
@@ -668,7 +621,7 @@ if __name__ == "__main__":
     # opx = OPX()
     # opx.initServer()
     # # meas_len=1000
-    # # opx.set_steadty_state_option_on_off(True)
+    # # opx.set_steady_state_option_on_off(True)
     # # delay, readout_time, apd_index, laser_name, laser_power = args
     # readout_time = 120000
     # args_test = [200,readout_time,0,'green_laser_do',1]

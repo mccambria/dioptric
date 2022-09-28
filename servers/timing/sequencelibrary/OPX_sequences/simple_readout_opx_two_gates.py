@@ -29,7 +29,7 @@ def qua_program(opx, config, args, num_reps):
     apd_indices = opx.apd_indices
     
     num_apds = len(apd_indices)
-    num_gates = 1
+    num_gates = 2
     timetag_list_size = int(15900 / num_gates / 2)
     readout_time = numpy.int64(readout_time)
     
@@ -60,9 +60,15 @@ def qua_program(opx, config, args, num_reps):
         counts_gate1_apd_0 = declare(int)  # variable for number of counts
         counts_gate1_apd_1 = declare(int)
         counts_gate1_apd = declare(int)
+        counts_gate2_apd_0 = declare(int)  # variable for number of counts
+        counts_gate2_apd_1 = declare(int)
+        counts_gate2_apd = declare(int)
         times_gate1_apd_0 = declare(int,size=timetag_list_size)
         times_gate1_apd_1 = declare(int,size=timetag_list_size)
         times_gate1_apd = declare(int,size=timetag_list_size)
+        times_gate2_apd_0 = declare(int,size=timetag_list_size)
+        times_gate2_apd_1 = declare(int,size=timetag_list_size)
+        times_gate2_apd = declare(int,size=timetag_list_size)
         times_st_apd_0 = declare_stream()
         times_st_apd_1 = declare_stream()
         times_st_apd = declare_stream()
@@ -71,6 +77,8 @@ def qua_program(opx, config, args, num_reps):
         counts_st_apd_1 = declare_stream()
         counts_st_apd = declare_stream()
         empty_stream = declare_stream()
+        empty_var = declare(int)
+        assign(empty_var,0)
         n = declare(int)
         i = declare(int)
         j = declare(int)
@@ -87,8 +95,8 @@ def qua_program(opx, config, args, num_reps):
             
             
             ##trigger piezos
-            wait(clock_delay_cc,"do_sample_clock")
-            play("clock_pulse","do_sample_clock")
+            # wait(clock_delay_cc,"do_sample_clock")
+            # play("clock_pulse","do_sample_clock")
             
             
             ###apds
@@ -101,8 +109,8 @@ def qua_program(opx, config, args, num_reps):
                 
                     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
-                    save(counts_gate1_apd_0, counts_st_apd_0)
-                    save(counts_gate1_apd_1, counts_st_apd_1)
+                    save(2, counts_st_apd_0)
+                    save(8, counts_st_apd_1)
                     
                     with for_(j, 0, j < counts_gate1_apd_0, j + 1):
                         save(times_gate1_apd_0[j], times_st_apd_0) 
@@ -115,11 +123,43 @@ def qua_program(opx, config, args, num_reps):
                 
                     measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, apd_readout_time, counts_gate1_apd))
                     save(counts_gate1_apd, counts_st_apd)
-                    save(0,empty_stream)
+                    save(empty_var,empty_stream)
                     
                     with for_(k, 0, k < counts_gate1_apd, k + 1):
                         save(times_gate1_apd[k], times_st_apd) 
                         save(0, empty_time_stream) 
+                        
+                        
+            align()
+            play("laser_ON",laser_name,duration=period_cc)              
+            with for_(i,0,i<num_readouts,i+1):  
+                
+                if num_apds == 2:
+                # with if_(num_apds==2):
+                
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, apd_readout_time, counts_gate2_apd_1))
+                    save(1, counts_st_apd_0)
+                    save(5, counts_st_apd_1)
+                    
+                    with for_(j, 0, j < counts_gate2_apd_0, j + 1):
+                        save(times_gate2_apd_0[j], times_st_apd_0) 
+                    with for_(k, 0, k < counts_gate2_apd_1, k + 1):
+                        save(times_gate2_apd_1[k], times_st_apd_1)
+                    
+                    # align("do_apd_0_gate","do_apd_1_gate")
+                    
+                if num_apds == 1:
+                
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd, apd_readout_time, counts_gate2_apd))
+                    save(counts_gate2_apd, counts_st_apd)
+                    save(empty_var,empty_stream)
+                    
+                    with for_(k, 0, k < counts_gate1_apd, k + 1):
+                        save(times_gate2_apd[k], times_st_apd) 
+                        save(0, empty_time_stream) 
+                        
+                        
      
         if num_apds == 2:
             with stream_processing():
