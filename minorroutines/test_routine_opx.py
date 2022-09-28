@@ -84,7 +84,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 300000, 0, 'do_laserglow_532_dm', 1
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 80000, 0, 'do_laserglow_532_dm', 1
     num_reps=4
     counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')

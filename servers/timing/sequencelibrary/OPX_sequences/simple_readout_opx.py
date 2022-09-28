@@ -17,7 +17,7 @@ from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
 
-def qua_program(opx, config, args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
+def qua_program(opx, config, args, num_reps):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
     
@@ -30,7 +30,7 @@ def qua_program(opx, config, args, num_reps, x_voltage_list=[], y_voltage_list=[
     
     num_apds = len(apd_indices)
     num_gates = 1
-    timetag_list_size = int(15900 / num_gates / num_apds)
+    timetag_list_size = int(15900 / num_gates / 2)
     readout_time = numpy.int64(readout_time)
     
     
@@ -65,6 +65,7 @@ def qua_program(opx, config, args, num_reps, x_voltage_list=[], y_voltage_list=[
         times_gate1_apd = declare(int,size=timetag_list_size)
         times_st_apd_0 = declare_stream()
         times_st_apd_1 = declare_stream()
+        times_st_apd = declare_stream()
         empty_time_stream = declare_stream()
         counts_st_apd_0 = declare_stream()
         counts_st_apd_1 = declare_stream()
@@ -120,6 +121,7 @@ def qua_program(opx, config, args, num_reps, x_voltage_list=[], y_voltage_list=[
                     
                     with for_(k, 0, k < counts_gate1_apd, k + 1):
                         save(times_gate1_apd[k], times_st_apd) 
+                        save(0, empty_time_stream) 
      
         if num_apds == 2:
             with stream_processing():
@@ -145,9 +147,9 @@ def get_seq(opx, config, args): #so this will give just the sequence, no repeats
     period = 0
     return seq, final, [period]
 
-def get_full_seq(opx, config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
+def get_full_seq(opx, config, args, num_repeat): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq = qua_program(opx,config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
+    seq = qua_program(opx,config, args, num_repeat)
     final = ''
     period = 0
     return seq, final, [period]
@@ -164,13 +166,13 @@ if __name__ == '__main__':
     readout_time = 3000
     qm = qmm.open_qm(config_opx)
     simulation_duration =  10000 // 4 # clock cycle units - 4ns
-    x_voltage_list,y_voltage_list,z_voltage_list = [],[],[]
+    
     num_repeat=5
     delay = 200
     args = [delay, readout_time, 0,'do_laserglow_532_dm',1]
     config = []
     apd_indices = [0,1]
-    seq , f, p = get_full_seq(apd_indices,config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
+    seq , f, p = get_full_seq(apd_indices,config, args, num_repeat)
     
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
