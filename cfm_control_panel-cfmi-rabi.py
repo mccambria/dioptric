@@ -1010,8 +1010,8 @@ if __name__ == "__main__":
 
     nd_yellow = "nd_0"
     green_power =8000
-    # nd_green = 'nd_0.4'
-    nd_green = 'nd_1.3'
+    nd_green = 'nd_0.4'
+    # nd_green = 'nd_1.3'
     red_power = 120
     sample_name = "rubin_al"
     green_laser = "integrated_520"
@@ -1160,14 +1160,14 @@ if __name__ == "__main__":
          #
         #
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0, 0.0, 0.0])
-        # tool_belt.set_xyz(labrad.connect(), [0,0,5])
+        tool_belt.set_drift([0.0, 0.0, 0.0])
+        tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
 
                      
                 
-        do_optimize(nv_sig,apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_optimize(nv_sig,apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
                 
         # do_stationary_count(nv_sig, apd_indices)
 
