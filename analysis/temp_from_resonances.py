@@ -206,7 +206,37 @@ def zfs_from_temp_barson(temp):
     )
 
 
-def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
+def zfs_from_temp_li(temp):
+    """
+    Li 2017, table I for ensemble
+    """
+
+    zfs0 = 2.87769  # GHz
+    A = 5.6e-7  # GHz / K**2
+    B = 490  # K
+
+    zfs = zfs0 - A * temp ** 4 / ((temp + B) ** 2)
+
+    return zfs
+
+
+def fractional_thermal_expansion(temp):
+
+    X1 = 0.4369e-7  # 1 / K
+    X2 = 15.7867e-7  # 1 / K
+    X3 = 42.5598e-7  # 1 / K
+    Theta1 = 200  # K
+    Theta2 = 880  # K
+    Theta3 = 2137.5  # K
+
+    return fractional_thermal_expansion_free(
+        temp, X1, X2, X3, Theta1, Theta2, Theta3
+    )
+
+
+def fractional_thermal_expansion_free(
+    temp, X1, X2, X3, Theta1, Theta2, Theta3
+):
 
     dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (
         np.exp(Theta / T) - 1
@@ -221,6 +251,15 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
             )
         )
         - 1
+    )
+
+    return dV_over_V
+
+
+def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
+
+    dV_over_V = lambda temp: fractional_thermal_expansion_free(
+        temp, X1, X2, X3, Theta1, Theta2, Theta3
     )
 
     A = 14.6  # MHz /GPa
@@ -244,11 +283,38 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
         return D_of_T(temp)
 
 
-# def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
-def cambria_test(temp, zfs0, A1, A2):
+def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+    # def cambria_test(temp, zfs0, A1, A2):
 
-    Theta1 = 60
-    Theta2 = 160
+    # Theta1 = 60
+    # Theta2 = 160
+
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
+def cambria_test2(temp, A1, A2, Theta1, Theta2):
+
+    # Fix the ZFS at T=0 to the accepted value
+    zfs0 = 2.8777
+
+    # Calculate A2 by fixing to Toyli at 700 K
+    # toyli_700 = 2.81461
+    # A2 = (toyli_700 - zfs0 - A1 * bose(Theta1, 700)) / bose(Theta2, 700)
+
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
+def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
 
     ret_val = zfs0
     for ind in range(2):
@@ -260,15 +326,19 @@ def cambria_test(temp, zfs0, A1, A2):
 
 def experimental_zfs_versus_t(path, file_name):
 
-    min_temp = 0
-    # max_temp = 295
-    # max_temp = 500
-    max_temp = 1000
+    temp_range = [-10, 1000]
+    y_range = [2.74, 2.883]
+    # temp_range = [-10, 200]
+    # y_range = [2.8755, 2.8787]
+    plot_data = False
 
+    min_temp, max_temp = temp_range
+    min_temp = 0.1 if min_temp <= 0 else min_temp
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
     csv_file_path = path / "{}.csv".format(file_name)
+    fig, ax = plt.subplots(figsize=kpl.figsize)
 
     data_points = get_data_points(path, file_name)
-
     zfs_list = []
     zfs_err_list = []
     temp_list = []
@@ -276,13 +346,12 @@ def experimental_zfs_versus_t(path, file_name):
         if el[low_res_file_column_title] == "":
             continue
         reported_temp = el[reported_temp_column_title]
-        if not (min_temp <= reported_temp <= max_temp):
-            # if not (min_temp <= reported_temp <= 300):
-            continue
+        # if not (min_temp <= reported_temp <= max_temp):
+        # if not (min_temp <= reported_temp <= 300):
+        # continue
         temp_list.append(reported_temp)
         low_res_file = el[low_res_file_column_title]
         high_res_file = el[high_res_file_column_title]
-
         resonances = []
         res_errs = []
         for f in [low_res_file, high_res_file]:
@@ -290,63 +359,29 @@ def experimental_zfs_versus_t(path, file_name):
             res, res_err = return_res_with_error(data)
             resonances.append(res)
             res_errs.append(res_err)
-
         zfs = (resonances[0] + resonances[1]) / 2
         zfs_err = np.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
-
         zfs_list.append(zfs)
         zfs_err_list.append(zfs_err)
 
-    color = kpl.KplColors.RED.value
+    color = kpl.KplColors.BLUE.value
     facecolor = kpl.lighten_color_hex(color)
+    if plot_data:
+        ax.errorbar(
+            temp_list,
+            zfs_list,
+            zfs_err_list,
+            linestyle="None",
+            marker="o",
+            ms=kpl.marker_size,
+            color=color,
+            markerfacecolor=facecolor,
+            lw=kpl.line_width,
+            markeredgewidth=kpl.line_width,
+        )
 
-    fig, ax = plt.subplots(figsize=kpl.figsize)
-    ax.errorbar(
-        temp_list,
-        zfs_list,
-        zfs_err_list,
-        linestyle="None",
-        marker="o",
-        ms=kpl.marker_size,
-        color=color,
-        markerfacecolor=facecolor,
-        lw=kpl.line_width,
-        markeredgewidth=kpl.line_width,
-    )
+    ### New model
 
-    temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    ax.plot(
-        temp_linspace,
-        sub_room_zfs_from_temp(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Chen",
-    )
-    ax.plot(
-        temp_linspace,
-        super_room_zfs_from_temp(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Toyli",
-    )
-    ax.plot(
-        temp_linspace,
-        zfs_from_temp_barson(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Barson",
-    )
-
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-    ax.set_ylabel("Zero field splitting (GHz)")
-
-    guess_params = [
-        2.87771,
-        -8e-2,
-        -4e-1,
-        # 65,
-        # 165,
-    ]
     # guess_params = [
     #     2.8778,
     #     0,  # -3.287e-15,
@@ -374,6 +409,13 @@ def experimental_zfs_versus_t(path, file_name):
     # ]
     # fit_func = sub_room_zfs_from_temp_free
     # fit_func = zfs_from_temp_barson_free
+    guess_params = [
+        2.87771,
+        -8e-2,
+        -4e-1,
+        65,
+        165,
+    ]
     fit_func = cambria_test
     popt, pcov = curve_fit(
         fit_func,
@@ -395,21 +437,59 @@ def experimental_zfs_versus_t(path, file_name):
         temp_linspace,
         cambria_lambda(temp_linspace),
         lw=kpl.line_width,
-        color=kpl.KplColors.RED.value,
         label="Cambria",
     )
-
     ssr = 0
+    num_points = len(temp_list)
+    num_params = len(guess_params)
     for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
         calc_zfs = cambria_lambda(temp)
         ssr += ((zfs - calc_zfs) / zfs_err) ** 2
-    print(ssr)
+    dof = num_points - num_params
+    red_chi_sq = ssr / dof
+    print(red_chi_sq)
 
-    ax.legend()
+    ### Prior models
 
-    # ax.set_yticks([2.85, 2.855, 2.86, 2.865, 2.87])
-    fig.tight_layout()
-    fig.tight_layout()
+    ax.plot(
+        temp_linspace,
+        sub_room_zfs_from_temp(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Chen",
+    )
+    # print(super_room_zfs_from_temp(700))
+    # return
+    ax.plot(
+        temp_linspace,
+        super_room_zfs_from_temp(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Toyli",
+    )
+    ax.plot(
+        temp_linspace,
+        zfs_from_temp_barson(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Barson",
+    )
+    ax.plot(
+        temp_linspace,
+        zfs_from_temp_li(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Li",
+    )
+
+    ### Plot wrap up
+
+    ax.legend(loc="lower left")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    ax.set_ylabel("D (GHz)")
+    ax.set_xlim(*temp_range)
+    ax.set_ylim(*y_range)
+    kpl.tight_layout(fig)
 
 
 # %% Main
@@ -559,7 +639,7 @@ if __name__ == "__main__":
     # # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
     # # ax.legend()
 
-    tool_belt.init_matplotlib()
+    kpl.init_kplotlib()
 
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"

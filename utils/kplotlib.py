@@ -155,3 +155,8 @@ def init_kplotlib(font_size=17):
     # plt.rcParams["font.size"] = 15
 
     plt.rc("text", usetex=True)
+
+def tight_layout(fig):
+    
+    fig.tight_layout(pad=0.3)
+    
