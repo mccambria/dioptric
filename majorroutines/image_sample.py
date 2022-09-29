@@ -224,7 +224,7 @@ def replot_for_analysis(file_name, cmin = None, cmax = None):
 
     tool_belt.create_image_figure(img_array, numpy.array(img_extent), clickHandler=on_click_image,
                         title=None, color_bar_label='kcps',
-                        um_scaled=False, cmin = cmin, cmax = cmax)
+                        axes_labels=["x","y"], cmin = cmin, cmax = cmax)
 
 # %% Main
 

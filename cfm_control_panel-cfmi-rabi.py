@@ -40,7 +40,7 @@ import majorroutines.dynamical_decoupling_xy8 as dynamical_decoupling_xy8
 import majorroutines.lifetime_v2 as lifetime_v2
 import minorroutines.time_resolved_readout as time_resolved_readout
 import chargeroutines.SPaCE as SPaCE
-import chargeroutines.SPaCE_simplified as SPaCE_simplified
+# import chargeroutines.SPaCE_simplified as SPaCE_simplified
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import chargeroutines.scc_spin_echo as scc_spin_echo
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
@@ -171,7 +171,7 @@ def do_image_sample_xz(nv_sig, apd_indices):
 
     scan_range_x = .25
 # z code range 3 to 7 if centered at 5
-    scan_range_z =2
+    scan_range_z =5
     num_steps = 60
 
     image_sample_xz.main(
@@ -838,37 +838,6 @@ def do_SPaCE(nv_sig, opti_nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b
                charge_state_threshold, img_range_1D, img_range_2D, offset )
 
 
-def do_SPaCE_simplified(nv_sig, source_coords, apd_indices):
-
-    # pulse_durs = numpy.linspace(0,0.7e9, 3)
-    # pulse_durs = numpy.linspace(0,1.5e9, 30)
-    # pulse_durs = numpy.linspace(1e2,1e9, 5)
-    # pulse_durs = numpy.array([0,  0.1, ])*1e9
-    pulse_powers = numpy.array([0, 0.565])
-    pulse_durs= None
-
-    num_reps =int(100)
-
-    SPaCE_simplified.main(nv_sig, source_coords, num_reps, apd_indices,
-         pulse_durs, pulse_powers)
-
-def do_SPaCE_simplified_time_resolved_readout(nv_sig, source_coords, apd_indices):
-
-    num_reps =int(1000)
-    num_runs = 10
-    num_bins = 52
-    bin_centers, binned_samples_sig = SPaCE_simplified.main_time_resolved_readout(nv_sig, source_coords,
-                                                num_reps, num_runs,num_bins,apd_indices)
-    return bin_centers, binned_samples_sig
-
-def do_SPaCE_simplified_scan_init(nv_sig, source_coords_list, init_scan_range,
-                                  init_scan_steps, num_runs, apd_indices):
-
-
-
-    SPaCE_simplified.main_scan_init(nv_sig, source_coords_list, init_scan_range, init_scan_steps,
-                   num_runs,  apd_indices)
-
 
 def do_scc_resonance(nv_sig, opti_nv_sig, apd_indices, state=States.LOW):
     freq_center = nv_sig['resonance_{}'.format(state.name)]
@@ -1013,7 +982,7 @@ if __name__ == "__main__":
     nd_green = 'nd_0.4'
     # nd_green = 'nd_1.3'
     red_power = 120
-    sample_name = "rubin_al"
+    sample_name = "siena"
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
@@ -1075,8 +1044,8 @@ if __name__ == "__main__":
 
 
     nv_sig_1 = copy.deepcopy(sig_base)
-    nv_sig_1["coords"] = [-0.582, 0.767,6.119]
-    nv_sig_1["name"] = "{}-nv1_2022_08_10".format(sample_name,)
+    nv_sig_1["coords"] = [0,0,5.0]
+    nv_sig_1["name"] = "{}-nv0_2022_09_29".format(sample_name,)
     nv_sig_1["expected_count_rate"] = None
     nv_sig_1["resonance_LOW"] = 2.5512
     nv_sig_1["rabi_LOW"] = 118.6
@@ -1160,8 +1129,8 @@ if __name__ == "__main__":
          #
         #
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        tool_belt.set_drift([0.0, 0.0, 0.0])
-        tool_belt.set_xyz(labrad.connect(), [0,0,5])
+        # tool_belt.set_drift([0.0, 0.0, 0.0])
+        # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
 
                      
@@ -1172,7 +1141,7 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices)
 
 
-        # do_image_sample_xz(nv_sig, apd_indices)
+        do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
 
 
