@@ -33,6 +33,7 @@ import utils.kplotlib as kpl
 from utils.tool_belt import presentation_round, presentation_round_latex
 from utils.kplotlib import figsize, double_figsize
 from ab_initio_rates import get_ab_initio_rates
+from matplotlib.ticker import ScalarFormatter
 
 
 # %% Constants
@@ -2015,10 +2016,13 @@ def main(
     elif plot_type == "rates":
         fs = figsize
         fig, ax1 = plt.subplots(figsize=fs)
-        inset_bottom = 0.1
-        inset_height = 0.43
-        inset_left = 0.52
+        inset_bottom = 0.103
+        inset_height = 0.425
+        inset_left = 0.525
         inset_width = 0.485
+        adj = 0.05
+        inset_left += adj
+        inset_width -= adj
         ax2 = inset_axes(
             ax1,
             width="100%",
@@ -2046,6 +2050,10 @@ def main(
             yscale[0],
             dosave,
         )
+        xticks = [125, 200, 300, 400]
+        ax1.set_xticks(xticks)
+        ax1.xaxis.set_major_formatter(ScalarFormatter())
+        # ax1.yaxis.set_major_formatter(ScalarFormatter())
         main_sub(
             fig,
             ax2,
@@ -2060,6 +2068,7 @@ def main(
             dosave,
             inset=True,
         )
+        # ax2.set_yticks([0, 200, 400, 600])
     else:
         fs = figsize
         fig, ax = plt.subplots(figsize=fs)
@@ -2092,6 +2101,13 @@ def main_sub(
     dosave,
     inset=False,
 ):
+
+    if inset:
+        ms = kpl.marker_size_inset
+        lw = kpl.line_width_inset
+    else:
+        ms = kpl.marker_size
+        lw = kpl.line_width
 
     data_points = get_data_points(path, file_name, temp_range)
 
@@ -2153,7 +2169,7 @@ def main_sub(
                 linestyle=ls,
                 label=r"$\mathrm{\Omega}$ fit",
                 color=omega_edge_color,
-                linewidth=line_width,
+                linewidth=lw,
             )
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
@@ -2165,7 +2181,7 @@ def main_sub(
             linestyle=sim_ls,
             label=r"$\mathrm{\Omega}$ fit",
             color=omega_face_color,
-            linewidth=line_width,
+            linewidth=lw,
         )
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
@@ -2177,7 +2193,7 @@ def main_sub(
                 fit_func(temp_linspace),
                 linestyle=ls,
                 color=gamma_edge_color,
-                linewidth=line_width,
+                linewidth=lw,
             )
         # Ab initio plot
         ax.plot(
@@ -2185,7 +2201,7 @@ def main_sub(
             sim_gamma,
             linestyle=sim_ls,
             color=gamma_face_color,
-            linewidth=line_width,
+            linewidth=lw,
         )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
@@ -2236,7 +2252,7 @@ def main_sub(
                     func(temp_linspace),
                     label=label,
                     color=qubit_color,
-                    linewidth=line_width,
+                    linewidth=lw,
                     ls=linestyle,
                 )
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
@@ -2265,7 +2281,7 @@ def main_sub(
                     func(temp_linspace),
                     label=label,
                     color=qutrit_color,
-                    linewidth=line_width,
+                    linewidth=lw,
                     ls=linestyle,
                 )
 
@@ -2350,9 +2366,9 @@ def main_sub(
                     color=omega_edge_color,
                     markerfacecolor=omega_face_color,
                     linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
-                    markeredgewidth=marker_edge_width,
+                    ms=ms,
+                    lw=lw,
+                    markeredgewidth=lw,
                 )
             # gamma
             rate = point[gamma_column_title]
@@ -2378,9 +2394,9 @@ def main_sub(
                     color=gamma_edge_color,
                     markerfacecolor=gamma_face_color,
                     linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
-                    markeredgewidth=marker_edge_width,
+                    ms=ms,
+                    lw=lw,
+                    markeredgewidth=lw,
                 )
             # print(omega_lambda(475))
             # print(gamma_lambda(475))
@@ -2406,8 +2422,8 @@ def main_sub(
                     color=ratio_edge_color,
                     markerfacecolor=ratio_face_color,
                     linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
+                    ms=ms,
+                    lw=lw,
                 )
         # elif plot_type == "T2_max":
         #     omega_val = point[omega_column_title]
@@ -2447,11 +2463,6 @@ def main_sub(
         #             ms=marker_size,
         #             lw=line_width,
         #         )
-
-    # Legend x location
-    x_loc = 0.14
-    # x_loc = 0.16
-    # x_loc = 0.22
 
     # %% Plot past data
     leg0 = None
@@ -2513,6 +2524,11 @@ def main_sub(
     leg1 = None
     if not inset:
 
+        # Legend x location
+        # x_loc = 0.14
+        x_loc = 0.18
+        # x_loc = 0.22
+
         if plot_type in ["rates", "residuals", "normalized_residuals"]:
             omega_patch = patches.Patch(
                 label=r"$\mathrm{\Omega}$",
@@ -2530,6 +2546,10 @@ def main_sub(
                 handles=[omega_patch, gamma_patch],
                 loc="upper left",
                 title="Rates",
+                handlelength=1.5,
+                handletextpad=0.75,
+                # borderpad=0.3,
+                # borderaxespad=0.3,
             )
 
         elif plot_type == "ratios":
@@ -2550,6 +2570,7 @@ def main_sub(
         ]:
             nv_patches = []
             for ind in range(len(markers_list)):
+                sample_dict = {"Hopper": "A", "Wu": "B"}
                 nv_name = nv_names[ind].replace("_", "\_")
                 sample = nv_name.split("-")[0]
                 if sample == "prresearch":
@@ -2562,13 +2583,15 @@ def main_sub(
                     title = "sample-nv"
                 elif marker_type == "sample":
                     label = sample[0].upper() + sample[1:]
+                    label = sample_dict[label]
                     title = "Sample"
                 patch = mlines.Line2D(
                     [],
                     [],
                     color="black",
                     marker=markers_list[ind],
-                    linestyle=linestyles[sample],
+                    # linestyle=linestyles[sample],
+                    linestyle="None",
                     markersize=marker_size,
                     markeredgewidth=marker_edge_width,
                     label=label,
@@ -2580,6 +2603,10 @@ def main_sub(
                 title=title,
                 # title="Samples",
                 bbox_to_anchor=(x_loc, 1.0),
+                handlelength=1,
+                handletextpad=0.75,
+                # borderpad=0.3,
+                # borderaxespad=0.3,
             )
 
         if leg0 is not None:
@@ -2611,6 +2638,11 @@ def main_sub(
                 # borderpad=0.3,
                 # borderaxespad=0.3,
             )
+
+    if plot_type == "rates":
+        # Sample-dependent vs phonon-limited line
+        if (min_temp < 125 < max_temp) and inset:
+            ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
 
     fig.tight_layout(pad=0.3)
 
@@ -2650,15 +2682,16 @@ def main_sub(
 
 if __name__ == "__main__":
 
-    # temp = 300
+    # temp = 475
     # # delta1 = 4
     # delta1 = 68.2
-    # # delta2 = 167
+    # delta2 = 167
     # # A_1 = 580
     # # A_2 = 9000
     # n1 = bose(delta1, temp)
-    # # n2 = bose(delta2, temp)
-    # print(n1)
+    # n2 = bose(delta2, temp)
+    # print(580 * n1)
+    # print(9000 * n2)
     # # print(A_1 * n1 * (n1 + 1))
     # # print(A_2 * n2 * (n2 + 1))
     # # # print(bose(0.01241, 150))
@@ -2737,8 +2770,11 @@ if __name__ == "__main__":
     #     )
 
     rates_to_plot = ["both", "both"]
-    temp_ranges = [[100, 480], [-10, 490]]
-    y_ranges = [[5e-3, 1000], [-20, 650]]
+    temp_ranges = [[95, 485], [-10, 490]]
+    temp_ranges = [[120, 485], [-10, 490]]
+    temp_ranges = [[120, 500], [-10, 500]]
+    y_ranges = [[0.03, 750], [-25, 675]]
+    # y_ranges = [[7e-3, 725], [-25, 675]]
     yscales = ["log", "linear"]
     xscales = ["log", "linear"]
     main(

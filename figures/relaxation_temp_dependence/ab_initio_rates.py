@@ -64,6 +64,10 @@ def get_ab_initio_rates():
     sim_omega = np.array(sim_omega)
     sim_gamma = np.array(sim_gamma)
 
+    # Correct for missing factor of 2 in calculations
+    sim_omega *= 2
+    sim_gamma *= 2
+
     return sim_temps, sim_omega, sim_gamma
 
 
@@ -115,6 +119,11 @@ def main():
     omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
     gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
     gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
+
+    # temp = 500
+    # print(omega_hopper_lambda(temp))
+    # print(gamma_hopper_lambda(temp))
+    # return
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
