@@ -680,6 +680,7 @@ def create_image_figure(
     title=None,
     color_bar_label="Counts",
     um_scaled=False,
+    axes_labels = None,# ["V", "V"],
     aspect_ratio=None,
     color_map="inferno",
     cmin=None,
@@ -703,17 +704,18 @@ def create_image_figure(
 
     # plt.rcParams.update({'font.size': 22})
 
-    if um_scaled:
-        axes_label = r"$\mu$m"
-    else:
+    # if um_scaled:
+    #     axes_label = r"$\mu$m"
+    # else:
+    if axes_labels == None:
         try:
-            axes_label = get_registry_entry_no_cxn(
+            a = get_registry_entry_no_cxn(
                 "xy_units", ["", "Config", "Positioning"]
             )
+            axes_labels = [a, a]
         except Exception as exc:
             print(exc)
-            axes_label = None
-
+            axes_label = ["V", "V"]
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
@@ -744,8 +746,8 @@ def create_image_figure(
     #    clb.set_label('kcounts/sec', rotation=270)
 
     # Label axes
-    plt.xlabel(axes_label)
-    plt.ylabel(axes_label)
+    plt.xlabel(axes_labels[0])
+    plt.ylabel(axes_labels[1])
     if title:
         plt.title(title)
 
