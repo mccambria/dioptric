@@ -33,10 +33,11 @@ import logging
 import re
 import time
 import socket
+from servers.inputs.interfaces.tagger import Tagger
 # from pathos.multiprocessing import ProcessingPool as Pool
 
 
-class ApdTagger(LabradServer):
+class ApdTagger(Tagger, LabradServer):
     name = "apd_tagger"
     pc_name = socket.gethostname()
 
@@ -286,7 +287,7 @@ class ApdTagger(LabradServer):
         self.stream_channels = []
         self.leftover_channels = []
 
-    @setting(0, returns="*i")
+    @setting(27, returns="*i")
     def get_channel_mapping(self, c):
         """As a regexp, the order is:
         [+APD, *[gate open, gate close], ?clock]
@@ -296,7 +297,7 @@ class ApdTagger(LabradServer):
         """
         return self.stream_channels
 
-    @setting(1, apd_indices="*i", gate_indices="*i", clock="b")
+    @setting(28, apd_indices="*i", gate_indices="*i", clock="b")
     def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
         """Expose a raw tag stream which can be read with read_tag_stream and
         closed with stop_tag_stream.
@@ -342,14 +343,14 @@ class ApdTagger(LabradServer):
         active_gates = [self.tagger_di_gate[ind] for ind in apd_indices]
         self.stream_single_gate = len(set(active_gates)) == 1
 
-    @setting(2)
+    @setting(29)
     def stop_tag_stream(self, c):
         """Closes the stream started with start_tag_stream. Resets
         leftovers.
         """
         self.stop_tag_stream_internal()
 
-    @setting(9)
+    @setting(30)
     def clear_buffer(self, c):
         """Clear the hardware's internal buffer. Should be called before
         starting a pulse sequence."""
@@ -393,7 +394,7 @@ class ApdTagger(LabradServer):
     #     return timestamps, channels
 
     # @jit(nopython=True)
-    @setting(3, num_to_read="i", returns="*s*i")
+    @setting(31, num_to_read="i", returns="*s*i")
     def read_tag_stream(self, c, num_to_read=None):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the
@@ -423,93 +424,8 @@ class ApdTagger(LabradServer):
         timestamps = timestamps.astype(str).tolist()
         return timestamps, channels
 
-    # @jit(nopython=True)
-    @setting(4, num_to_read="i", returns="*3w")
-    def read_counter_complete(self, c, num_to_read=None):
-        return self.read_counter_setting_internal(num_to_read)
 
-    # @jit(nopython=True)
-    @setting(5, num_to_read="i", returns="*w")
-    def read_counter_simple(self, c, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
-
-        # Just find the sum of each sample in complete_counts
-        return_counts = [
-            np.sum(sample, dtype=int) for sample in complete_counts ]
-
-        return return_counts
-
-    # @jit(nopython=True)
-    @setting(6, num_to_read="i", returns="*2w")
-    def read_counter_separate_gates(self, c, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        # logging.info(complete_counts)
-
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
-
-        # Add the APD counts as vectors for each sample in complete_counts
-        return_counts = [
-            np.sum(sample, 0, dtype=int).tolist() for sample in complete_counts ]
-
-        return return_counts
-
-    # @jit(nopython=True)
-    @setting(11, modulus="i", num_to_read="i", returns="*2w")
-    def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        # logging.info(complete_counts)
-
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
-
-        # Add the APD counts as vectors for each sample in complete_counts
-        # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
-        # with Pool() as p:
-        #     separate_gate_counts = p.map(sum_lambda, complete_counts)
-        separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
-
-        # Run the modulus
-        return_counts = []
-        for sample in separate_gate_counts:
-            sample_list = []
-            for ind in range(modulus):
-                sample_list.append(np.sum(sample[ind::modulus]))
-            return_counts.append(sample_list)
-
-        return return_counts
-
-    # @jit(nopython=True)
-    @setting(7, num_to_read="i", returns="*2w")
-    def read_counter_separate_apds(self, c, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-
-        # Just find the sum of the counts for each APD for each
-        # sample in complete_counts
-        return_counts = [
-            [np.sum(apd_counts, dtype=int) for apd_counts in sample]
-            for sample in complete_counts
-        ]
-
-        return return_counts
-
-    @setting(8)
+    @setting(32)
     def reset(self, c):
         self.stop_tag_stream_internal()
 

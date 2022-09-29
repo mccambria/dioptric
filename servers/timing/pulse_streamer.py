@@ -38,7 +38,7 @@ from pathlib import Path
 from servers.timing.interfaces.pulse_gen import PulseGen
 
 
-class PulseStreamer(LabradServer, PulseGen):
+class PulseStreamer(PulseGen, LabradServer):
     name = "pulse_streamer"
     pc_name = socket.gethostname()
 
@@ -152,34 +152,8 @@ class PulseStreamer(LabradServer, PulseGen):
             )
         return seq, final, ret_vals
 
-    @setting(
-        0, seq_file="s", num_repeat="i", seq_args_string="s", returns="*?"
-    )
-    def stream_immediate(self, c, seq_file, num_repeat=1, seq_args_string=""):
-        """Load the sequence from seq_file and immediately run it for
-        the specified number of repitions. End in the specified
-        final output state.
 
-        Params
-            seq_file: str
-                A sequence file from the sequence library
-            num_repeat: int
-                Number of times to repeat the sequence. Default is 1
-            args: list(any)
-                Arbitrary list used to modulate a sequence from the sequence
-                library - see simple_readout.py for an example. Default is
-                None. All values in list must have same type.
-
-        Returns
-            list(any)
-                Arbitrary list returned by the sequence file
-        """
-
-        ret_vals = self.stream_load(c, seq_file, seq_args_string)
-        self.stream_start(c, num_repeat)
-        return ret_vals
-
-    @setting(1, seq_file="s", seq_args_string="s", returns="*?")
+    @setting(2, seq_file="s", seq_args_string="s", returns="*?")
     def stream_load(self, c, seq_file, seq_args_string=""):
         """Load the sequence from seq_file. Set it to end in the specified
         final output state. The sequence will not run until you call
@@ -206,7 +180,7 @@ class PulseStreamer(LabradServer, PulseGen):
             self.final = final
         return ret_vals
 
-    @setting(2, num_repeat="i")
+    @setting(3, num_repeat="i")
     def stream_start(self, c, num_repeat=1):
         """Run the currently loaded stream for the specified number of
         repitions.
@@ -230,7 +204,7 @@ class PulseStreamer(LabradServer, PulseGen):
         self.pulser.startNow()
 
     @setting(
-        3,
+        4,
         digital_channels="*i",
         analog_0_voltage="v[]",
         analog_1_voltage="v[]",
@@ -250,7 +224,7 @@ class PulseStreamer(LabradServer, PulseGen):
         )
         self.pulser.constant(state)
 
-    @setting(4)
+    @setting(5)
     def force_final(self, c):
         """Force the PulseStreamer its current final output state.
         Essentially a stop command.

@@ -11,8 +11,10 @@ from abc import ABC, abstractmethod
 from servers.inputs.interfaces.counter import Counter
 import logging
 import numpy as np
+from labrad.server import LabradServer
+from labrad.server import setting
 
-class Tagger(Counter):
+class Tagger(Counter, ABC):
     
     @abstractmethod
     def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):

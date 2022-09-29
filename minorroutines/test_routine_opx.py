@@ -53,8 +53,9 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     
     tagger_server.start_tag_stream([0])
-    pulsegen_server.stream_load(seq_file, seq_args_string)
-    pulsegen_server.stream_start(num_reps)
+    # pulsegen_server.stream_load(seq_file, seq_args_string)
+    # pulsegen_server.stream_start(num_reps)
+    pulsegen_server.stream_immediate(seq_file, num_reps, seq_args_string)
     
     num_read_so_far = 0
     total_num_samples = num_reps
@@ -90,7 +91,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 20000, 0, 'do_laserglow_532_dm', 1
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 8000, 0, 'do_laserglow_532_dm', 1
     num_reps=40000
     counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')

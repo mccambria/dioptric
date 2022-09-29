@@ -24,17 +24,18 @@ def qua_program(opx, config, args, num_reps):
     # opx_wiring = config['Wiring']['QmOpx']
     # apd_indices = config['apd_indices']
     
-    # apd_indices = config['']
+    apd_indices =  config['apd_indices']
     # apd_indices = opx#.apd_indices
-    apd_indices = opx.apd_indices
+    # apd_indices = opx.apd_indices
     
     num_apds = len(apd_indices)
     num_gates = 1
     timetag_list_size = int(15900 / num_gates / 2)
     readout_time = numpy.int64(readout_time)
     
+    delay_between_readouts_iterations = 244 
     
-    max_readout_time = 1000#000
+    max_readout_time = 1000
    
     if readout_time > max_readout_time:
         num_readouts = int(readout_time / max_readout_time)
@@ -44,7 +45,11 @@ def qua_program(opx, config, args, num_reps):
         num_readouts=1
         apd_readout_time = readout_time
     
-    laser_on_time = delay + (readout_time + 200*num_readouts ) * num_gates
+    apd_readout_time_cc = int(apd_readout_time // 4)
+    
+    # laser_on_time = delay + (readout_time + delay_between_readouts_iterations*num_readouts ) * num_gates
+    laser_on_time = delay + apd_readout_time
+    laser_on_time_cc = laser_on_time // 4
     
     period = numpy.int64(delay + laser_on_time + 300)
     period_cc = int(period//4)
@@ -75,51 +80,60 @@ def qua_program(opx, config, args, num_reps):
         i = declare(int)
         j = declare(int)
         k = declare(int)
-        num_apd = declare(int)
-            
     
         with for_(n, 0, n < num_reps, n + 1):
-            
+            align()  
+            wait(clock_delay_cc)
             align()  
             
             ###green laser
-            play("laser_ON",laser_name,duration=period_cc)  
-            
-            
-            ##trigger piezos
-            wait(clock_delay_cc,"do_sample_clock")
-            play("clock_pulse","do_sample_clock")
+            # play("laser_ON",laser_name,duration=period_cc)  
             
             
             ###apds
-            wait(delay_cc, "do_apd_0_gate","do_apd_1_gate")
+            # wait(delay_cc, "do_apd_0_gate","do_apd_1_gate")
             
             with for_(i,0,i<num_readouts,i+1):  
                 
                 if num_apds == 2:
                 # with if_(num_apds==2):
-                
+                    play("laser_ON",laser_name,duration=laser_on_time_cc) 
+                    wait(delay_cc, "do_apd_0_gate","do_apd_1_gate")
+                    
                     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(counts_gate1_apd_1, counts_st_apd_1)
                     
                     with for_(j, 0, j < counts_gate1_apd_0, j + 1):
-                        save(times_gate1_apd_0[j], times_st_apd_0) 
+                        save(counts_gate1_apd_0, times_st_apd_0) 
                     with for_(k, 0, k < counts_gate1_apd_1, k + 1):
-                        save(times_gate1_apd_1[k], times_st_apd_1)
+                        save(counts_gate1_apd_1, times_st_apd_1)
                     
-                    # align("do_apd_0_gate","do_apd_1_gate")
+                    align()
                     
                 if num_apds == 1:
-                
+                    play("laser_ON",laser_name,duration=laser_on_time_cc)  
+                    wait(delay_cc, "do_apd_0_gate","do_apd_1_gate")
+                    
                     measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, apd_readout_time, counts_gate1_apd))
                     save(counts_gate1_apd, counts_st_apd)
                     save(0,empty_stream)
                     
                     with for_(k, 0, k < counts_gate1_apd, k + 1):
-                        save(times_gate1_apd[k], times_st_apd) 
+                        save(counts_gate1_apd, times_st_apd) 
                         save(0, empty_time_stream) 
+                        
+                    align()
+                    
+                    
+            
+            ##trigger piezos
+            align()
+            wait(25,"do_sample_clock")
+            play("clock_pulse","do_sample_clock")
+                        
+                        
      
         if num_apds == 2:
             with stream_processing():
@@ -135,21 +149,15 @@ def qua_program(opx, config, args, num_reps):
                 times_st_apd.save_all("times_apd0")
                 empty_time_stream.save_all("times_apd1")
             
-    return seq
+    return seq, period
 
 
-def get_seq(opx, config, args): #so this will give just the sequence, no repeats
-    
-    seq = qua_program(opx, config, args, num_reps=1)
-    final =''
-    period = 0
-    return seq, final, [period]
 
-def get_full_seq(opx, config, args, num_repeat): #so this will give the full desired sequence, with however many repeats are intended repeats
+def get_seq(opx, config, args, num_repeat): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq = qua_program(opx,config, args, num_repeat)
+    seq, period = qua_program(opx,config, args, num_repeat)
     final = ''
-    period = 0
+    # period = 0
     return seq, final, [period]
     
 
@@ -158,48 +166,35 @@ if __name__ == '__main__':
     from qualang_tools.results import fetching_tool, progress_counter
     import matplotlib.pylab as plt
     
-    print('hi')
+    
+    config = tool_belt.get_config_dict()
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     
     readout_time = 3000
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  10000 // 4 # clock cycle units - 4ns
+    simulation_duration =  100000 // 4 # clock cycle units - 4ns
     
-    num_repeat=5
+    num_repeat=1
     delay = 200
     args = [delay, readout_time, 0,'do_laserglow_532_dm',1]
-    config = []
-    apd_indices = [0,1]
-    seq , f, p = get_full_seq(apd_indices,config, args, num_repeat)
+
+    seq , f, p = get_seq([],config, args, num_repeat)
     
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
     # plt.xlim(100,12000)
-
-    # job = qm.execute(seq)
+# 
+    job = qm.execute(seq)
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    # counts_apd0, counts_apd1 = results.fetch_all() 
+    counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
+    print('')
+    print(counts_apd0)
+    print('')
+    print(counts_apd1)
+    print('')
+    print(times_apd0)
+    print('')
+    print(times_apd1)
     
-    # results_end = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
-    
-    # while results_end.is_processing():
-        
-    # #     counts1, counts2 = results_end.fetch_all()
-    # #     # print(np.shape(counts1),np.shape(counts2))
-    #     counts_apd0, counts_apd1 = results_end.fetch_all() #just not sure if its gonna put it into the list structure we want
-    #     counts_apd0 = np.sum(counts_apd0,2).tolist()
-    #     counts_apd1 = np.sum(counts_apd1,2).tolist()
-        
-    #     max_ind = max(len(counts_apd0),len(counts_apd1))
-    #     counts_apd0 = counts_apd0[0:max_ind]
-    #     counts_apd1 = counts_apd1[0:max_ind]
-        
-    #     return_counts = []
-        
-    #     if len(apd_indices)==2:
-    #         for i in range(len(counts_apd0)):
-    #             return_counts.append([counts_apd0[i],counts_apd1[i]])
-                
-    #     elif len(apd_indices)==1:
-    #         for i in range(len(counts_apd0)):
-    #             return_counts.append([counts_apd0[i]])
-                
-    #     print(return_counts)

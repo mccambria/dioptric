@@ -53,8 +53,8 @@ class PiezoStageDigital(LabradServer):
             filename=filename,
         )
         self.task = None
-        self.sub_init_server_xy()
-        self.sub_init_server_z()
+        self.sub_init_server_xyz()
+        # self.sub_init_server_z()
 
     def sub_init_server_xyz(self):
         """Sub-routine to be called by xyz server"""

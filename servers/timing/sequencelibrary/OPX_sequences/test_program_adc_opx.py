@@ -10,7 +10,7 @@ from qualang_tools.units import unit
 u = unit()
 
 
-readout_time = 50000
+readout_time = 5000
 config_opx['pulses']['readout_pulse']['length'] = readout_time
 
 #readout pulse length is 200
