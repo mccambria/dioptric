@@ -175,7 +175,7 @@ class OPX(Tagger, PulseGen, LabradServer):
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == ".py":  # py: import as a module
-            seq_module = importlib.import_module(file_name)
+            seq_module = importlib.import_module(file_name+"_opx")
             args = tool_belt.decode_seq_args(seq_args_string)
                         
             seq, final, ret_vals = seq_module.get_seq(self,self.config_dict, args, num_repeat )
@@ -306,7 +306,9 @@ class OPX(Tagger, PulseGen, LabradServer):
         # buffer = self.stream.getData()
         results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="live")
         counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
-        
+        times_apd0 = times_apd0[1:1+np.sum(counts_apd0)]
+        times_apd1 = times_apd1[1:1+np.sum(counts_apd1)]
+            
         # timestamps = buffer.getTimestamps()
         # channels = buffer.getChannels()
         return timestamps, channels

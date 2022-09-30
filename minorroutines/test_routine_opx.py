@@ -46,7 +46,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'simple_readout_opx.py'
+    seq_file = 'simple_readout.py'
     
     counter_server = tool_belt.get_counter_server(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
