@@ -62,7 +62,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     total_counts = []
     
     while num_read_so_far < total_num_samples:
-        new_counts = counter_server.read_counter_complete()
+        new_counts = counter_server.read_counter_simple()
         num_new_samples = len(new_counts)
         # print(num_new_samples)
         if num_new_samples > 0:

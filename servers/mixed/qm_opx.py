@@ -300,18 +300,29 @@ class OPX(Tagger, PulseGen, LabradServer):
    
     
     def read_raw_stream(self):
-        if self.stream is None:
-            logging.error("read_raw_stream attempted while stream is None.")
-            return
-        # buffer = self.stream.getData()
-        results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="live")
-        counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
-        times_apd0 = times_apd0[1:1+np.sum(counts_apd0)]
-        times_apd1 = times_apd1[1:1+np.sum(counts_apd1)]
+        # if self.stream is None:
+        #     logging.error("read_raw_stream attempted while stream is None.")
+        #     return
+        # # buffer = self.stream.getData()
+        # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1","rep_readout_delay"], mode="live")
+        # counts_apd0, counts_apd1, times_apd0, times_apd1, rep_readout_delay = results.fetch_all() 
+        # times_apd0 = times_apd0[1:1+np.sum(counts_apd0)]
+        # times_apd1 = times_apd1[1:1+np.sum(counts_apd1)]
+        
+        
+        # for i in range(0,len(counts_apd0[0][0])):
+        #     start_index = np.sum(counts_apd0[0][0][0:i])
+        #     end_index = np.sum(counts_apd0[0][0][0:i+1])
+        #     times_apd0[start_index:end_index] = ( times_apd0[start_index:end_index] + ( i* (rep_readout_delay + max_readout_time)) )
             
-        # timestamps = buffer.getTimestamps()
-        # channels = buffer.getChannels()
+        # for i in range(0,len(counts_apd1[0][0])):
+        #     start_index = np.sum(counts_apd1[0][0][0:i])
+        #     end_index = np.sum(counts_apd1[0][0][0:i+1])
+        #     times_apd1[start_index:end_index] = ( times_apd1[start_index:end_index] + ( i* (rep_readout_delay + max_readout_time)) )
+        logging.info('TIMETAGGING NOT SET UP YET FOR OPX')
+        raise RuntimeError
         return timestamps, channels
+        
     
     
     @setting(16, num_to_read="i", returns="*s*i")
@@ -322,64 +333,67 @@ class OPX(Tagger, PulseGen, LabradServer):
         """
         # results = fetching_tool(self.experiment_job, data_list=["counts","times"], mode="wait_for_all")
         
-        res_handles_tagstream = self.experiment_job.result_handles
-        res_handles_tagstream.wait_for_all_values()
-        counts_data = res_handles_tagstream.get("counts").fetch_all()
-        times_data = res_handles_tagstream.get("times").fetch_all()
+        # res_handles_tagstream = self.experiment_job.result_handles
+        # res_handles_tagstream.wait_for_all_values()
+        # counts_data = res_handles_tagstream.get("counts").fetch_all()
+        # times_data = res_handles_tagstream.get("times").fetch_all()
         
-        # counts_data = results.res_handles.counts.fetch_all()
-        # times_data = results.res_handles.times.fetch_all()
+        # # counts_data = results.res_handles.counts.fetch_all()
+        # # times_data = results.res_handles.times.fetch_all()
         
-        counts_data = counts_data[0][0].tolist()
+        # counts_data = counts_data[0][0].tolist()
 
-        times_data = (times_data).tolist()
-        times_data = np.asarray(times_data)*1e3
-        # times_data = times_data.astype(int)
-        times_data = times_data.tolist()
-        times_data = [np.int64(val) for val in times_data]
-        times_data = [t[0] for t in times_data]
+        # times_data = (times_data).tolist()
+        # times_data = np.asarray(times_data)*1e3
+        # # times_data = times_data.astype(int)
+        # times_data = times_data.tolist()
+        # times_data = [np.int64(val) for val in times_data]
+        # times_data = [t[0] for t in times_data]
         
-        logging.info('test')
-        logging.info(counts_data)
-        logging.info(times_data)
+        # logging.info('test')
+        # logging.info(counts_data)
+        # logging.info(times_data)
         
-        num_samples = len(counts_data)
-        num_apds = len(counts_data[0])
-        last_ind = 0
+        # num_samples = len(counts_data)
+        # num_apds = len(counts_data[0])
+        # last_ind = 0
         
-        ordered_time_tags = [] #this will be a list of sample. each sample is a list of gates. each gate is a list of sorted time tags
-        ordered_channels = [] #this will be a list of samples. each sample is a list of gates. each gate is a list of channels for the corresponding time tags
+        # ordered_time_tags = [] #this will be a list of sample. each sample is a list of gates. each gate is a list of sorted time tags
+        # ordered_channels = [] #this will be a list of samples. each sample is a list of gates. each gate is a list of channels for the corresponding time tags
 
-        for i in range(num_samples):
-            sample_counts = counts_data[i]
-            all_apd_time_tags = []
-            channels = []
+        # for i in range(num_samples):
+        #     sample_counts = counts_data[i]
+        #     all_apd_time_tags = []
+        #     channels = []
                 
-            for k in range(num_apds):
+        #     for k in range(num_apds):
                 
-                apd_counts = sample_counts[k][0] #gate_counts will be a single number
-                apd_time_tags = times_data[last_ind:last_ind+apd_counts]
-                all_apd_time_tags = all_apd_time_tags + apd_time_tags
-                channels = channels+np.full(len(apd_time_tags),self.apd_indices[k]).tolist()
-                last_ind = last_ind+apd_counts
+        #         apd_counts = sample_counts[k][0] #gate_counts will be a single number
+        #         apd_time_tags = times_data[last_ind:last_ind+apd_counts]
+        #         all_apd_time_tags = all_apd_time_tags + apd_time_tags
+        #         channels = channels+np.full(len(apd_time_tags),self.apd_indices[k]).tolist()
+        #         last_ind = last_ind+apd_counts
             
-            sorting = np.argsort(np.array(all_apd_time_tags))
-            all_apd_time_tags = np.array(all_apd_time_tags)[sorting]
-            all_apd_time_tags = all_apd_time_tags.tolist()
-            channels = np.array(channels)[sorting]
-            channels = channels.tolist()
+        #     sorting = np.argsort(np.array(all_apd_time_tags))
+        #     all_apd_time_tags = np.array(all_apd_time_tags)[sorting]
+        #     all_apd_time_tags = all_apd_time_tags.tolist()
+        #     channels = np.array(channels)[sorting]
+        #     channels = channels.tolist()
             
-            ordered_time_tags.append(all_apd_time_tags)
-            ordered_channels.append(channels)
+        #     ordered_time_tags.append(all_apd_time_tags)
+        #     ordered_channels.append(channels)
             
-        ordered_time_tags = np.asarray(ordered_time_tags).astype('str').tolist()
+        # ordered_time_tags = np.asarray(ordered_time_tags).astype('str').tolist()
         
             
-        flat_ordered_channels_list = [item for sublist in ordered_channels for item in sublist]
-        flat_ordered_time_tags_list = [item for sublist in ordered_time_tags for item in sublist]
+        # flat_ordered_channels_list = [item for sublist in ordered_channels for item in sublist]
+        # flat_ordered_time_tags_list = [item for sublist in ordered_time_tags for item in sublist]
 
+        # return flat_ordered_time_tags_list, flat_ordered_channels_list 
+        # return ordered_time_tags, ordered_channels
+        logging.info('TIMETAGGING NOT SET UP YET FOR OPX')
+        raise RuntimeError
         return flat_ordered_time_tags_list, flat_ordered_channels_list 
-        # return ordered_time_tags, ordered_channels 
 
     
     @setting(17, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
