@@ -132,7 +132,7 @@ def qua_program(opx, config, args, num_reps):
                     
                     with for_(k, 0, k < counts_gate1_apd, k + 1):
                         save(times_gate1_apd[k], times_st_apd) 
-                        save(times_gate1_apd[k], empty_time_stream) 
+                        save(0, empty_time_stream) 
                         
                     align()
                     
