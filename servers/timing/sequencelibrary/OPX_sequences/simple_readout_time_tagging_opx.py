@@ -111,14 +111,18 @@ def qua_program(opx, config, args, num_reps):
                     
                     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
+                    
+                    assign(counts_gate1_apd_0,2)
+                    assign(counts_gate1_apd_1,4)
+
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(counts_gate1_apd_1, counts_st_apd_1)
                     
                     with for_(j, 0, j < counts_gate1_apd_0, j + 1):
-                        save(times_gate1_apd_0[j], times_st_apd_0) 
+                        save(j, times_st_apd_0) 
                         
                     with for_(k, 0, k < counts_gate1_apd_1, k + 1):
-                        save(times_gate1_apd_1[k], times_st_apd_1)
+                        save(k, times_st_apd_1)
                     
                     align()
                     
@@ -179,30 +183,36 @@ if __name__ == '__main__':
     
     config = tool_belt.get_config_dict()
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    
     readout_time = 3000
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  8000 // 4 # clock cycle units - 4ns
-    num_repeat=1
+    simulation_duration =  80000 // 4 # clock cycle units - 4ns
+    num_repeat=3
     delay = 1000
     args = [delay, readout_time, 0,'do_laserglow_532_dm',1]
     seq , f, p = get_seq([],config, args, num_repeat)
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # # plt.xlim(100,12000)
 # 
-    # job = qm.execute(seq)
+    job = qm.execute(seq)
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     # counts_apd0, counts_apd1 = results.fetch_all() 
     
     
     # while num_count_samples_read < num_repeat:
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1","rep_readout_delay"], mode="live")
-    # counts_apd0, counts_apd1, times_apd0, times_apd1, rep_readout_delay = results.fetch_all() 
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
+    counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
+    print(np.shape(counts_apd0))
+    print(np.shape(counts_apd1))
+    print(np.shape(times_apd0))
+    print(np.shape(times_apd1))
+    print(counts_apd0)
+    
+    
     
     
     

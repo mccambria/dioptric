@@ -46,7 +46,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'simple_readout.py'
+    seq_file = 'simple_readout_time_tagging.py'
     
     counter_server = tool_belt.get_counter_server(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
@@ -66,12 +66,13 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
         num_new_samples = len(new_counts)
         # print(num_new_samples)
         if num_new_samples > 0:
-            print(numpy.shape(new_counts))
-            new_times, new_channels =  [],[] #cxn.qm_opx.read_tag_stream(num_reps)
+            # print(numpy.shape(new_counts))
+            
             total_counts.extend(new_counts.tolist())
             num_read_so_far += num_new_samples
         
-        
+    new_times, new_channels =  tagger_server.read_tag_stream()  
+    print(new_times)
     # cxn.qm_opx.stop_tag_stream(apd_index)
      
     return total_counts, new_times, new_channels
@@ -91,8 +92,8 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 8000, 0, 'do_laserglow_532_dm', 1
-    num_reps=40000
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 2000, 0, 'do_laserglow_532_dm', 1
+    num_reps=3
     counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')
     # print(counts)
