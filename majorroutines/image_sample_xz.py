@@ -159,7 +159,7 @@ def replot_for_presentation(file_name, scale_um_to_V, centered_at_0 = False):
     x_range= data['x_range']
     y_range= data['y_range']
     x_voltages = data['x_voltages']
-    y_voltages = data['y_voltages']
+    y_voltages = data['z_voltages']
     readout = nv_sig['imaging_readout_dur']
 
     readout_sec = readout / 10**9
@@ -191,7 +191,8 @@ def replot_for_presentation(file_name, scale_um_to_V, centered_at_0 = False):
 
     tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
                         title=None, color_bar_label='kcps',
-                        min_value=None, um_scaled=True)
+                        min_value=None, axes_labels = ["x (um)","z (um)"], 
+                        aspect_ratio = "auto")
 
 
 def replot_for_analysis(file_name, cmin = None, cmax = None):
@@ -202,7 +203,7 @@ def replot_for_analysis(file_name, cmin = None, cmax = None):
     nv_sig = data['nv_sig']
     img_array = numpy.array(data['img_array'])
     x_voltages = data['x_voltages']
-    y_voltages = data['y_voltages']
+    y_voltages = data['z_voltages']
     readout = nv_sig['imaging_readout_dur']
 
     readout_sec = readout / 10**9
@@ -224,7 +225,8 @@ def replot_for_analysis(file_name, cmin = None, cmax = None):
 
     tool_belt.create_image_figure(img_array, numpy.array(img_extent), clickHandler=on_click_image,
                         title=None, color_bar_label='kcps',
-                        um_scaled=False, cmin = cmin, cmax = cmax)    
+                        axes_labels = ["x (V)","z (V)"], cmin = cmin, cmax = cmax,
+                        aspect_ratio = "auto")    
 # %% Main
     
 
@@ -430,45 +432,11 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
 
 if __name__ == '__main__':
 
+    
+    
+    file_name = '2022_09_29-14_16_11-siena-nv0_2022_09_29'
 
-    path = 'pc_rabi/branch_master/image_sample_xz/2021_08'
-    file_name = '2021_08_27-15_58_12-johnson-nv2_2021_08_27'
-
-    data = tool_belt.get_raw_data( file_name, path)
-    nv_sig = data['nv_sig']
-    readout = nv_sig['imaging_readout_dur']
-    timestamp = data['timestamp']
-    img_array = numpy.array(data['img_array'])
-    x_voltages = data['x_voltages']
-    z_voltages = data['z_voltages']
-    num_steps = data['num_steps']
-    half_num_steps = int(num_steps/2)
-    print(z_voltages[half_num_steps])
-    
-    x_low = x_voltages[0]
-    x_high = x_voltages[-1]
-    z_low = z_voltages[0]
-    z_high = z_voltages[-1]
-    pixel_size_x = x_voltages[1] - x_voltages[0]
-    pixel_size_z = z_voltages[1] - z_voltages[0]
-    
-    half_pixel_size_x = pixel_size_x / 2
-    half_pixel_size_z = pixel_size_z / 2
-    img_extent = [x_high + half_pixel_size_x, x_low - half_pixel_size_x,
-                  z_low - half_pixel_size_z, z_high + half_pixel_size_z]
-    
-    
-    
-    
-    readout_sec = readout / 10**9
-    img_array_kcps = numpy.copy(img_array)
-    img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-    
-    title = r'Confocal scan X and Z'
-    tool_belt.create_image_figure(img_array_kcps, img_extent,
-                        clickHandler=on_click_image, color_bar_label='kcps',
-                        title=title, um_scaled=False, aspect_ratio = "auto")
-    
+    replot_for_analysis(file_name, cmin = 0, cmax = 100)
     
     
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
