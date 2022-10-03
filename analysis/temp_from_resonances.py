@@ -253,7 +253,7 @@ def fractional_thermal_expansion_free(
         - 1
     )
 
-    return dV_over_V
+    return dV_over_V(temp)
 
 
 def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
@@ -267,11 +267,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b4 = -1.44e-9
     b5 = 3.1e-12
     b6 = -1.8e-15
-    D_of_T = (
-        lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
-        / 1000
-    )
+    D_of_T = lambda T: zfs0 + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6)) / 1000
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
     if type(temp) in [list, np.ndarray]:
         ret_vals = []
@@ -283,16 +279,20 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
         return D_of_T(temp)
 
 
+# def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2, A3):
 def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
-    # def cambria_test(temp, zfs0, A1, A2):
+# def cambria_test(temp, zfs0, A1, A2):
 
-    # Theta1 = 60
-    # Theta2 = 160
+    # Theta1 = 65
+    # Theta2 = 155
 
     ret_val = zfs0
     for ind in range(2):
         adj_ind = ind + 1
         ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+        
+    A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
+    ret_val += A3 * fractional_thermal_expansion(temp)
 
     return ret_val
 
@@ -330,7 +330,8 @@ def experimental_zfs_versus_t(path, file_name):
     y_range = [2.74, 2.883]
     # temp_range = [-10, 200]
     # y_range = [2.8755, 2.8787]
-    plot_data = False
+    plot_data = True
+    plot_prior_models = False
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
@@ -415,6 +416,7 @@ def experimental_zfs_versus_t(path, file_name):
         -4e-1,
         65,
         165,
+        # 6.5,
     ]
     fit_func = cambria_test
     popt, pcov = curve_fit(
@@ -451,40 +453,42 @@ def experimental_zfs_versus_t(path, file_name):
 
     ### Prior models
 
-    ax.plot(
-        temp_linspace,
-        sub_room_zfs_from_temp(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Chen",
-    )
-    # print(super_room_zfs_from_temp(700))
-    # return
-    ax.plot(
-        temp_linspace,
-        super_room_zfs_from_temp(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Toyli",
-    )
-    ax.plot(
-        temp_linspace,
-        zfs_from_temp_barson(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Barson",
-    )
-    ax.plot(
-        temp_linspace,
-        zfs_from_temp_li(temp_linspace),
-        lw=kpl.line_width,
-        # color=kpl.kpl_colors["blue"],
-        label="Li",
-    )
+    if plot_prior_models:
+        ax.plot(
+            temp_linspace,
+            sub_room_zfs_from_temp(temp_linspace),
+            lw=kpl.line_width,
+            # color=kpl.kpl_colors["blue"],
+            label="Chen",
+        )
+        # print(super_room_zfs_from_temp(700))
+        # return
+        ax.plot(
+            temp_linspace,
+            super_room_zfs_from_temp(temp_linspace),
+            lw=kpl.line_width,
+            # color=kpl.kpl_colors["blue"],
+            label="Toyli",
+        )
+        ax.plot(
+            temp_linspace,
+            zfs_from_temp_barson(temp_linspace),
+            lw=kpl.line_width,
+            # color=kpl.kpl_colors["blue"],
+            label="Barson",
+        )
+        ax.plot(
+            temp_linspace,
+            zfs_from_temp_li(temp_linspace),
+            lw=kpl.line_width,
+            # color=kpl.kpl_colors["blue"],
+            label="Li",
+        )
 
     ### Plot wrap up
-
-    ax.legend(loc="lower left")
+    
+    if plot_prior_models:
+        ax.legend(loc="lower left")
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     ax.set_ylabel("D (GHz)")
     ax.set_xlim(*temp_range)
@@ -647,4 +651,4 @@ if __name__ == "__main__":
 
     experimental_zfs_versus_t(path, file_name)
 
-    plt.show(block=True)
+    # plt.show(block=True)
