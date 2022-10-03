@@ -1158,7 +1158,7 @@ def normalized_residuals_histogram(rates_to_plot):
     norm_res_linspace = np.linspace(*x_range, 1000)
     ax.plot(norm_res_linspace, norm_gaussian(norm_res_linspace), lw=line_width)
 
-    fig.tight_layout(pad=0.3)
+    kpl.tight_layout()
 
 
 def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
