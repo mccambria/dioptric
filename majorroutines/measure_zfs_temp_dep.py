@@ -8,7 +8,6 @@ Created on October 3rd, 2022
 """
 
 ### Imports
-set_drift_from_ref_image
 
 from isort import file
 import utils.tool_belt as tool_belt
@@ -100,6 +99,9 @@ def main_with_cxn(
     zfs_err_list = []
     zfs_file_list = []
     
+    temp_controller.set_temp(temp_linspace[0])
+    temp_controller.activate_temp_control()
+    
     for set_point in temp_linspace:
         
         ### Switch the temperature
@@ -122,14 +124,23 @@ def main_with_cxn(
             
         ### Relocate NVs
         
-        drift = tool_belt.get_drift(cxn)
-        z_drift = drift[2]
-        adj_z_drift = z_drift + d_z
-        adj_drift = [drift[0], drift[1], adj_z_drift]
-        tool_belt.set_drift(adj_drift, cxn)
-        
-        set_drift_from_ref_image.main()
-    
+        success = False
+        attempt_count = 0
+        while attempt_count < 10:
+            attempt_count += 1
+            drift = tool_belt.get_drift(cxn)
+            z_drift = drift[2]
+            adj_z_drift = z_drift + d_z
+            adj_drift = [drift[0], drift[1], adj_z_drift]
+            tool_belt.set_drift(adj_drift, cxn)
+            success = set_drift_from_ref_image.main_with_cxn(cxn, ref_image, apd_indices)
+            if success: 
+                break
+            
+        if not success:
+            print("Failed to relocate NVs. Stopping...")
+            break
+            
         ### Measure the zfs
         
         # Set up sub-lists
@@ -170,16 +181,36 @@ def main_with_cxn(
         zfs_err_list.append(zfs_err_list_sub)
         zfs_file_list.append(zfs_file_list_sub)
         
+    temp_controller.deactivate_temp_control()
+    
+    if len(controller_temp_list_sub) == 0:
+        print("Crashed out before any data was collected!")
+        return
+    
     ### Plot the results
     
+    # Average over NVs
+    avg_temp = [np.average(el) for el in monitor_temp_list]
+    avg_zfs = [np.average(el) for el in zfs_list]
+    avg_zfs_std = [np.std(el) for el in zfs_list]
+    
     kpl.init_kplotlib()
+    raw_fig, ax = plt.subplots()
+    kpl.plot_data(avg_temp, avg_zfs, avg_zfs_std)
             
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,}
+    raw_data = {
+        'timestamp': timestamp,
+        "controller_temp_list": controller_temp_list,
+        "monitor_temp_list": monitor_temp_list,
+        "zfs_list": zfs_list,
+        "zfs_err_list": zfs_err_list,
+        "zfs_file_list": zfs_file_list,
+    }
 
     name = "D_vs_T"
     file_path = tool_belt.get_file_path(__file__, timestamp, name)

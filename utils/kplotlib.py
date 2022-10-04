@@ -12,40 +12,18 @@ Created on June 22nd, 2022
 # region Imports
 
 
-import matplotlib
 import matplotlib.pyplot as plt
-import threading
-import os
-import csv
-import datetime
-import numpy as np
-from numpy import exp
-import json
-import time
-import labrad
-from tkinter import Tk
-from tkinter import filedialog
-from git import Repo
-from pathlib import Path, PurePath
-from enum import Enum, auto
-import socket
-import smtplib
-from email.mime.text import MIMEText
-import traceback
-import keyring
-import math
-import utils.common as common
-from colorutils import Color
 from enum import Enum
+from colorutils import Color
 
 # endregion
 
 # region Constants
 # These standard values are intended for single-column figures
-
-marker_size = {"normal": 7, "small": 6}
-line_width = {"normal": 1.5, "small": 1.25}
-marker_edge_width = line_width.copy()
+    
+marker_sizes = {"normal": 7, "small": 6}
+line_widths = {"normal": 1.5, "small": 1.25}
+marker_edge_widths = line_widths.copy()
 
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]
@@ -126,7 +104,7 @@ def init_kplotlib():
     of matplotlib
     """
     
-    global data_color_cycler
+    global data_color_cycler, line_color_cycler
     data_color_cycler = [
         KplColors.BLUE.value,
         KplColors.ORANGE.value,
@@ -139,7 +117,6 @@ def init_kplotlib():
         KplColors.YELLOW.value,
         KplColors.CYAN.value,
     ]
-    global line_color_cycler
     line_color_cycler = data_color_cycler.copy()
 
     # Interactive mode so plots update as soon as the event loop runs
@@ -178,6 +155,10 @@ def tight_layout(fig):
     fig.tight_layout(pad=0.3)
     
 def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
+    """
+    Same as matplotlib's errorbar, but with our defaults. Use for plotting 
+    data points.
+    """
     
     global data_color_cycler
     
@@ -195,8 +176,8 @@ def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
     params = {
         "linestyle": "none",
         "marker": marker_style,
-        "markersize": marker_size[size],
-        "markeredgewidth": marker_edge_width[size],
+        "markersize": marker_sizes[size],
+        "markeredgewidth": marker_edge_widths[size],
     }
     
     # Combine passed args and defaults
@@ -207,6 +188,10 @@ def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
     ax.errorbar(x, y, xerr=x_err, yerr=y_err, **params)
     
 def plot_line(ax, x, y, color=None, size="normal", **kwargs):
+    """
+    Same as matplotlib's plot, but with our defaults. Use for plotting 
+    continuous lines.
+    """
     
     global line_color_cycler
     
@@ -219,7 +204,7 @@ def plot_line(ax, x, y, color=None, size="normal", **kwargs):
     # Defaults
     params = {
         "linestyle": line_style,
-        "linewidth": line_width[size],
+        "linewidth": line_widths[size],
     }
     
     # Combine passed args and defaults
