@@ -43,13 +43,15 @@ from enum import Enum
 # region Constants
 # These standard values are intended for single-column figures
 
-marker_size = 7
-line_width = 1.5
-marker_size_inset = marker_size - 1
-line_width_inset = line_width - 0.25
-marker_edge_width = line_width
+marker_size = {"normal": 7, "small": 6}
+line_width = {"normal": 1.5, "small": 1.25}
+marker_edge_width = line_width.copy()
+
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]
+font_size = 17
+line_style = "solid"
+marker_style = "o"
 
 # endregion
 
@@ -118,11 +120,27 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib(font_size=17):
+def init_kplotlib():
     """
     Runs the default initialization for kplotlib, our default configuration
     of matplotlib
     """
+    
+    global data_color_cycler
+    data_color_cycler = [
+        KplColors.BLUE.value,
+        KplColors.ORANGE.value,
+        KplColors.GREEN.value,
+        KplColors.RED.value,
+        KplColors.PURPLE.value,
+        KplColors.BROWN.value,
+        KplColors.PINK.value,
+        KplColors.GRAY.value,
+        KplColors.YELLOW.value,
+        KplColors.CYAN.value,
+    ]
+    global line_color_cycler
+    line_color_cycler = data_color_cycler.copy()
 
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
@@ -151,12 +169,62 @@ def init_kplotlib(font_size=17):
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_size
-    # plt.rcParams["font.size"] = 17
-    # plt.rcParams["font.size"] = 15
-
+    plt.rcParams['figure.figsize'] = figsize
+    
     plt.rc("text", usetex=True)
 
 def tight_layout(fig):
     
     fig.tight_layout(pad=0.3)
+    
+def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
+    
+    global data_color_cycler
+    
+    # Color handling
+    if "color" in kwargs:
+        color = kwargs["color"]
+    else:
+        color = data_color_cycler.pop(0)
+    if "facecolor" in kwargs:
+        face_color = kwargs["markerfacecolor"]
+    else:
+        face_color = lighten_color_hex(color)
+        
+    # Defaults
+    params = {
+        "linestyle": "none",
+        "marker": marker_style,
+        "markersize": marker_size[size],
+        "markeredgewidth": marker_edge_width[size],
+    }
+    
+    # Combine passed args and defaults
+    params = {**params, **kwargs}
+    params["color"] = color
+    params["markerfacecolor"] = face_color
+    
+    ax.errorbar(x, y, xerr=x_err, yerr=y_err, **params)
+    
+def plot_line(ax, x, y, color=None, size="normal", **kwargs):
+    
+    global line_color_cycler
+    
+    # Color handling
+    if color in kwargs:
+        color = kwargs["color"]
+    else:
+        color = line_color_cycler.pop(0)
+    
+    # Defaults
+    params = {
+        "linestyle": line_style,
+        "linewidth": line_width[size],
+    }
+    
+    # Combine passed args and defaults
+    params = {**params, **kwargs}
+    params["color"] = color
+    
+    ax.plot(x, y, **params)
     

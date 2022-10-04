@@ -24,6 +24,7 @@ import labrad
 from utils.tool_belt import States
 from random import shuffle
 import sys
+from utils import kplotlib as kpl
 
 
 # region Functions
@@ -148,7 +149,7 @@ def main_with_cxn(
             monitor_temp_list_sub.append(monitor_temp)
             
             # Measure the zfs
-            pesr_low_lambda = lambda adj_nv_sig: pulsed_resonance.state(
+            pesr_lambda = lambda adj_nv_sig: pulsed_resonance.state(
                 nv_sig,
                 apd_indices,
                 States.LOW,
@@ -158,7 +159,7 @@ def main_with_cxn(
                 esr_num_runs,
                 ret_file_name=True,
             )
-            res, res_err, file_name = pesr_low_lambda(nv_sig)
+            res, res_err, file_name = pesr_lambda(nv_sig)
             zfs_list_sub.append(res)
             zfs_err_list_sub.append(res_err)
             zfs_file_list_sub.append(file_name)

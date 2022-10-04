@@ -331,7 +331,7 @@ def experimental_zfs_versus_t(path, file_name):
     # temp_range = [-10, 200]
     # y_range = [2.8755, 2.8787]
     plot_data = True
-    plot_prior_models = False
+    plot_prior_models = True
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
@@ -368,18 +368,19 @@ def experimental_zfs_versus_t(path, file_name):
     color = kpl.KplColors.BLUE.value
     facecolor = kpl.lighten_color_hex(color)
     if plot_data:
-        ax.errorbar(
-            temp_list,
-            zfs_list,
-            zfs_err_list,
-            linestyle="None",
-            marker="o",
-            ms=kpl.marker_size,
-            color=color,
-            markerfacecolor=facecolor,
-            lw=kpl.line_width,
-            markeredgewidth=kpl.line_width,
-        )
+        # ax.errorbar(
+        #     temp_list,
+        #     zfs_list,
+        #     zfs_err_list,
+        #     linestyle="None",
+        #     marker="o",
+        #     ms=kpl.marker_size,
+        #     color=color,
+        #     markerfacecolor=facecolor,
+        #     lw=kpl.line_width,
+        #     markeredgewidth=kpl.line_width,
+        # )
+        kpl.plot_data(ax, temp_list, zfs_list, zfs_err_list)
 
     ### New model
 
@@ -435,12 +436,7 @@ def experimental_zfs_versus_t(path, file_name):
         *popt,
         # *guess_params,
     )
-    ax.plot(
-        temp_linspace,
-        cambria_lambda(temp_linspace),
-        lw=kpl.line_width,
-        label="Cambria",
-    )
+    kpl.plot_line(ax, temp_linspace, cambria_lambda(temp_linspace), label="Cambria")
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
@@ -454,36 +450,12 @@ def experimental_zfs_versus_t(path, file_name):
     ### Prior models
 
     if plot_prior_models:
-        ax.plot(
-            temp_linspace,
-            sub_room_zfs_from_temp(temp_linspace),
-            lw=kpl.line_width,
-            # color=kpl.kpl_colors["blue"],
-            label="Chen",
-        )
+        kpl.plot_line(ax, temp_linspace, sub_room_zfs_from_temp(temp_linspace), label="Chen")
         # print(super_room_zfs_from_temp(700))
         # return
-        ax.plot(
-            temp_linspace,
-            super_room_zfs_from_temp(temp_linspace),
-            lw=kpl.line_width,
-            # color=kpl.kpl_colors["blue"],
-            label="Toyli",
-        )
-        ax.plot(
-            temp_linspace,
-            zfs_from_temp_barson(temp_linspace),
-            lw=kpl.line_width,
-            # color=kpl.kpl_colors["blue"],
-            label="Barson",
-        )
-        ax.plot(
-            temp_linspace,
-            zfs_from_temp_li(temp_linspace),
-            lw=kpl.line_width,
-            # color=kpl.kpl_colors["blue"],
-            label="Li",
-        )
+        kpl.plot_line(ax, temp_linspace, super_room_zfs_from_temp(temp_linspace), label="Toyli")
+        kpl.plot_line(ax, temp_linspace, zfs_from_temp_barson(temp_linspace), label="Barson")
+        kpl.plot_line(ax, temp_linspace, zfs_from_temp_li(temp_linspace), label="Li")
 
     ### Plot wrap up
     

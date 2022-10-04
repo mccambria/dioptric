@@ -39,11 +39,10 @@ def main(cxn, ref_file_name, nv_sig, nd_filter, apd_indices):
             main_with_cxn(cxn, ref_file_name, nv_sig, nd_filter, apd_indices)
 
 def main_with_cxn(cxn, ref_file_name, nv_sig, nd_filter, apd_indices):
-    """Main entry point."""
 
     # %% Get the reference image
 
-    ref_data = tool_belt.get_raw_data('image_sample', ref_file_name)
+    ref_data = tool_belt.get_raw_data(ref_file_name)
 
     # %% Get a new image
 
@@ -53,18 +52,12 @@ def main_with_cxn(cxn, ref_file_name, nv_sig, nd_filter, apd_indices):
     ref_y_range = ref_data['y_range']
     ref_num_steps = ref_data['num_steps']
     # Use the last known in-focus z
-    current_drift = tool_belt.get_drift()
     coords = [*ref_coords[0:2], nv_sig[2] + current_drift[2]]
     new_data = image_sample.main_with_cxn(cxn, coords, nd_filter,
                            ref_x_range, ref_y_range,
                            ref_num_steps, apd_indices,
                            save_data=False, plot_data=False)
 
-    # Test data
-#    new_data = tool_belt.get_raw_data('image_sample',
-#                                      '2019-06-14_16-36-48_ayrton12')
-#    new_data = tool_belt.get_raw_data('image_sample',
-#                                      '2019-06-02_13-39-23_ayrton12')
 
     # %% Calculate and set the x/y shift
 
