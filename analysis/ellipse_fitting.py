@@ -16,6 +16,7 @@ import time
 import matplotlib.pyplot as plt
 from utils import common
 from utils import kplotlib as kpl
+from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 import csv
 
@@ -42,9 +43,11 @@ def ellipse_cost(phi, points, debug=False):
     # run another minimization for it
     cost = 0
     for point in points:
+
         theta_cost = lambda theta: sum(
             [(el[0] - el[1]) ** 2 for el in zip(ellipse_lambda(theta), point)]
         )
+
         # Guess theta by assuming theta and the ellipse amplitude are free and
         # solving for the position of the point on the ellipse
         # x = cent + amp * np.cos(theta + phi)
@@ -56,26 +59,27 @@ def ellipse_cost(phi, points, debug=False):
         #     = 2cent - (x-y) cot(theta) cot(phi)
         x, y = point
         guess_arg = ((x - y)) / (np.tan(phi) * (2 * cent - (x + y)))
-        # guess_arg = abs(guess_arg)
-        guess_theta_p = np.arctan(guess_arg)
-        guess_theta_m = np.pi - guess_theta_p
-        # guess_theta = np.arctan(point[1] / point[0])
-        # bounds = (guess_theta - np.pi / 4, guess_theta + np.pi / 4)
-        # res = minimize_scalar(theta_cost, bounds=bounds)
-        # res = minimize_scalar(theta_cost)
-        res_p = minimize(theta_cost, guess_theta_p)
-        point_cost_p = res_p.fun
-        res_m = minimize(theta_cost, guess_theta_m)
-        point_cost_m = res_m.fun
-        if point_cost_p < point_cost_m:
-            opti_theta = res_p.x
-            point_cost = point_cost_p
-        else:
-            opti_theta = res_m.x
-            point_cost = point_cost_m
-        if debug and point_cost > 0.005:
+        base_guess = np.arctan(abs(guess_arg)) % np.pi
+        # Check the guess and its compliments
+        guesses = [
+            base_guess,
+            np.pi - base_guess,
+            base_guess + np.pi,
+            2 * np.pi - base_guess,
+        ]
+
+        best_cost = None
+        for guess in guesses:
+            res = minimize(theta_cost, guess)
+            opti_theta = res.x
+            opti_cost = res.fun
+            if (best_cost is None) or (opti_cost < best_cost):
+                best_cost = opti_cost
+
+        # Error checking
+        if debug and best_cost > 0.005:
             test = 1
-        cost += point_cost
+        cost += best_cost
 
     return cost
 
@@ -84,7 +88,7 @@ def gen_ellipses():
 
     num_ellipses = 20
     theta_linspace = np.linspace(0, 2 * np.pi, 20)
-    phi_linspace = np.linspace(0, np.pi, num_ellipses)
+    phi_linspace = np.linspace(0, np.pi / 2, num_ellipses)
     phis = phi_linspace.tolist()
 
     ellipses = []
@@ -140,21 +144,24 @@ def import_ellipses(path):
 
 def main(path):
 
-    # ellipses = import_ellipses(path)
-    ellipses = gen_ellipses()
+    ellipses = import_ellipses(path)
+    # ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
 
-    if True:
-        ellipse = ellipses[1]
-        # for ellipse in ellipses[0]:
+    # if True:
+    #     ellipse = ellipses[15]
+    for ellipse in ellipses[::10]:
+        
+        fig, ax = plt.subplots()
+        
         true_phi = ellipse[0]
         points = ellipse[1:]
 
-        res = minimize_scalar(ellipse_cost, args=(points,), bounds=(0, np.pi))
-        opti_phi = res.x
+        res = minimize(ellipse_cost, np.pi / 4, args=(points,))
+        opti_phi = res.x[0]
 
         for point in points:
-            plt.scatter(*point, color=kpl.KplColors.BLUE.value)
+            kpl.plot_data(ax, *point, color=KplColors.BLUE.value)
         ellipse_lambda = lambda theta: ellipse_point(theta, opti_phi)
         # ellipse_points = ellipse_lambda(theta_linspace)
         # for el in ellipse_points:
@@ -162,12 +169,15 @@ def main(path):
         x_vals, y_vals = zip(ellipse_lambda(theta_linspace))
         x_vals = x_vals[0]
         y_vals = y_vals[0]
-        plt.plot(x_vals, y_vals)
+        kpl.plot_line(ax, x_vals, y_vals)
+        
+        kpl.tight_layout(fig)
 
         print(true_phi)
         print(opti_phi)
         print(ellipse_cost(true_phi, points, True))
         print(ellipse_cost(opti_phi, points))
+        print()
 
 
 # endregion

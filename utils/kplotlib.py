@@ -56,6 +56,20 @@ class KplColors(Enum):
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
 
+data_color_cycler = [
+        KplColors.BLUE.value,
+        KplColors.ORANGE.value,
+        KplColors.GREEN.value,
+        KplColors.RED.value,
+        KplColors.PURPLE.value,
+        KplColors.BROWN.value,
+        KplColors.PINK.value,
+        KplColors.GRAY.value,
+        KplColors.YELLOW.value,
+        KplColors.CYAN.value,
+    ]
+line_color_cycler = data_color_cycler.copy()
+
 
 def color_mpl_to_color_hex(color_mpl):
 
@@ -104,21 +118,10 @@ def init_kplotlib():
     of matplotlib
     """
     
-    global data_color_cycler, line_color_cycler
-    data_color_cycler = [
-        KplColors.BLUE.value,
-        KplColors.ORANGE.value,
-        KplColors.GREEN.value,
-        KplColors.RED.value,
-        KplColors.PURPLE.value,
-        KplColors.BROWN.value,
-        KplColors.PINK.value,
-        KplColors.GRAY.value,
-        KplColors.YELLOW.value,
-        KplColors.CYAN.value,
-    ]
-    line_color_cycler = data_color_cycler.copy()
-
+    global active_axes, color_cyclers
+    active_axes = []
+    color_cyclers = []
+    
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
 
@@ -154,19 +157,29 @@ def tight_layout(fig):
     
     fig.tight_layout(pad=0.3)
     
+def get_default_color(ax, plot_type):
+    """plot_type is data or line"""
+    
+    global active_axes, color_cyclers
+    if ax not in active_axes:
+        active_axes.append(ax)
+        color_cyclers.append({"data": data_color_cycler.copy(), "line": line_color_cycler.copy()})
+    ax_ind = active_axes.index(ax)
+    cycler = color_cyclers[ax_ind][plot_type]
+    color = cycler.pop(0)
+    return color
+    
 def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
     """
     Same as matplotlib's errorbar, but with our defaults. Use for plotting 
     data points.
     """
     
-    global data_color_cycler
-    
     # Color handling
     if "color" in kwargs:
         color = kwargs["color"]
     else:
-        color = data_color_cycler.pop(0)
+        color = get_default_color(ax, "data")
     if "facecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
@@ -193,13 +206,11 @@ def plot_line(ax, x, y, color=None, size="normal", **kwargs):
     continuous lines.
     """
     
-    global line_color_cycler
-    
     # Color handling
     if color in kwargs:
         color = kwargs["color"]
     else:
-        color = line_color_cycler.pop(0)
+        color = get_default_color(ax, "line")
     
     # Defaults
     params = {
