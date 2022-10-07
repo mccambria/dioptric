@@ -46,7 +46,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'simple_readout_time_tagging.py'
+    seq_file = 'simple_readout_time_tagging_two_gates.py'
     
     counter_server = tool_belt.get_counter_server(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
@@ -59,7 +59,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     
     num_read_so_far = 0
     total_num_samples = num_reps
-    total_counts = tagger_server.read_counter_complete().tolist()
+    total_counts = tagger_server.read_counter_separate_gates(2)
 
     
     times, channels = tagger_server.read_tag_stream(1)  

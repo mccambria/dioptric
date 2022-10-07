@@ -57,7 +57,7 @@ def qua_program(opx, config, args, num_reps):
     delay_cc = int(delay // 4)
     clock_delay_cc = int((period-200)//4)
     
-    time_between_readouts = 1000
+    time_between_readouts = 500
     time_between_readouts_cc = int(time_between_readouts // 4)
         
     with program() as seq:
@@ -97,7 +97,7 @@ def qua_program(opx, config, args, num_reps):
         j = declare(int)
         k = declare(int)
         
-        i1 = declare(int)
+        ii = declare(int)
         jj = declare(int)
         kk = declare(int)
     
@@ -118,6 +118,9 @@ def qua_program(opx, config, args, num_reps):
                     
                     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
+                    
+                    # assign(counts_gate1_apd_0,2)
+                    # assign(counts_gate1_apd_1,3)
                     
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(counts_gate1_apd_1, counts_st_apd_1)
@@ -146,6 +149,9 @@ def qua_program(opx, config, args, num_reps):
             align()
             wait(time_between_readouts_cc)
             
+            play("laser_ON",laser_name,duration=meas_delay_cc) 
+            wait(meas_delay_cc, "do_apd_0_gate","do_apd_1_gate")
+            
             with for_(ii,0,ii<num_readouts,ii+1):  
                 
                 if num_apds == 2:
@@ -154,6 +160,9 @@ def qua_program(opx, config, args, num_reps):
                     
                     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
                     measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, apd_readout_time, counts_gate2_apd_1))
+                    
+                    # assign(counts_gate2_apd_0,4)
+                    # assign(counts_gate2_apd_1,6)
                     
                     save(counts_gate2_apd_0, counts_st_apd_0)
                     save(counts_gate2_apd_1, counts_st_apd_1)
@@ -222,13 +231,13 @@ if __name__ == '__main__':
     
     config = tool_belt.get_config_dict()
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    readout_time = 1000000
+    readout_time = 10000
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  80000 // 4 # clock cycle units - 4ns
-    num_repeat=10
-    delay = 1000
+    simulation_duration =  180000 // 4 # clock cycle units - 4ns
+    num_repeat=5
+    delay = 6000
     args = [delay, readout_time, 0,'do_laserglow_532_dm',1]
     seq , f, p = get_seq([],config, args, num_repeat)
     
@@ -237,17 +246,17 @@ if __name__ == '__main__':
     # # plt.xlim(100,12000)
 # 
     job = qm.execute(seq)
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     # counts_apd0, counts_apd1 = results.fetch_all() 
     
     
     # while num_count_samples_read < num_repeat:
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
-    # counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
-    # print((counts_apd0))
+    counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
+    print(counts_apd0.tolist())
     # print((counts_apd1))
-    # print(times_apd0)
+    print(times_apd0)
     # print(times_apd1)
     # print(counts_apd0.tolist())
     
