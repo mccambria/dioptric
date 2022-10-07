@@ -12,44 +12,24 @@ Created on June 22nd, 2022
 # region Imports
 
 
-import matplotlib
 import matplotlib.pyplot as plt
-import threading
-import os
-import csv
-import datetime
-import numpy as np
-from numpy import exp
-import json
-import time
-import labrad
-from tkinter import Tk
-from tkinter import filedialog
-from git import Repo
-from pathlib import Path, PurePath
-from enum import Enum, auto
-import socket
-import smtplib
-from email.mime.text import MIMEText
-import traceback
-import keyring
-import math
-import utils.common as common
-from colorutils import Color
 from enum import Enum
+from colorutils import Color
 
 # endregion
 
 # region Constants
 # These standard values are intended for single-column figures
+    
+marker_sizes = {"normal": 7, "small": 6}
+line_widths = {"normal": 1.5, "small": 1.25}
+marker_edge_widths = line_widths.copy()
 
-marker_size = 7
-line_width = 1.5
-marker_size_inset = marker_size - 1
-line_width_inset = line_width - 0.25
-marker_edge_width = line_width
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]
+font_size = 17
+line_style = "solid"
+marker_style = "o"
 
 # endregion
 
@@ -75,6 +55,20 @@ class KplColors(Enum):
     # If marking an interesting point with a confidence interval, use dark_gray for the main line and light_gray for the interval
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
+
+data_color_cycler = [
+        KplColors.BLUE.value,
+        KplColors.ORANGE.value,
+        KplColors.GREEN.value,
+        KplColors.RED.value,
+        KplColors.PURPLE.value,
+        KplColors.BROWN.value,
+        KplColors.PINK.value,
+        KplColors.GRAY.value,
+        KplColors.YELLOW.value,
+        KplColors.CYAN.value,
+    ]
+line_color_cycler = data_color_cycler.copy()
 
 
 def color_mpl_to_color_hex(color_mpl):
@@ -118,12 +112,16 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib(font_size=17):
+def init_kplotlib():
     """
     Runs the default initialization for kplotlib, our default configuration
     of matplotlib
     """
-
+    
+    global active_axes, color_cyclers
+    active_axes = []
+    color_cyclers = []
+    
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
 
@@ -151,12 +149,78 @@ def init_kplotlib(font_size=17):
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_size
-    # plt.rcParams["font.size"] = 17
-    # plt.rcParams["font.size"] = 15
-
+    plt.rcParams['figure.figsize'] = figsize
+    
     plt.rc("text", usetex=True)
 
 def tight_layout(fig):
     
     fig.tight_layout(pad=0.3)
+    
+def get_default_color(ax, plot_type):
+    """plot_type is data or line"""
+    
+    global active_axes, color_cyclers
+    if ax not in active_axes:
+        active_axes.append(ax)
+        color_cyclers.append({"data": data_color_cycler.copy(), "line": line_color_cycler.copy()})
+    ax_ind = active_axes.index(ax)
+    cycler = color_cyclers[ax_ind][plot_type]
+    color = cycler.pop(0)
+    return color
+    
+def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
+    """
+    Same as matplotlib's errorbar, but with our defaults. Use for plotting 
+    data points.
+    """
+    
+    # Color handling
+    if "color" in kwargs:
+        color = kwargs["color"]
+    else:
+        color = get_default_color(ax, "data")
+    if "facecolor" in kwargs:
+        face_color = kwargs["markerfacecolor"]
+    else:
+        face_color = lighten_color_hex(color)
+        
+    # Defaults
+    params = {
+        "linestyle": "none",
+        "marker": marker_style,
+        "markersize": marker_sizes[size],
+        "markeredgewidth": marker_edge_widths[size],
+    }
+    
+    # Combine passed args and defaults
+    params = {**params, **kwargs}
+    params["color"] = color
+    params["markerfacecolor"] = face_color
+    
+    ax.errorbar(x, y, xerr=x_err, yerr=y_err, **params)
+    
+def plot_line(ax, x, y, color=None, size="normal", **kwargs):
+    """
+    Same as matplotlib's plot, but with our defaults. Use for plotting 
+    continuous lines.
+    """
+    
+    # Color handling
+    if color in kwargs:
+        color = kwargs["color"]
+    else:
+        color = get_default_color(ax, "line")
+    
+    # Defaults
+    params = {
+        "linestyle": line_style,
+        "linewidth": line_widths[size],
+    }
+    
+    # Combine passed args and defaults
+    params = {**params, **kwargs}
+    params["color"] = color
+    
+    ax.plot(x, y, **params)
     

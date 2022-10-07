@@ -1271,6 +1271,32 @@ def get_xy_server(cxn):
     )
 
 
+def get_temp_controller(cxn):
+    """
+    Get the server controlling the temp
+    """
+
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(
+        cxn,
+        get_registry_entry(cxn, "temp_controller", ["", "Config", "Temperature"]),
+    )
+
+
+def get_temp_monitor(cxn):
+    """
+    Get the server controlling the temp
+    """
+
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(
+        cxn,
+        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Temperature"]),
+    )
+
+
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
 
@@ -2015,14 +2041,12 @@ def reset_safe_stop():
 # properly.
 
 
-def get_drift():
-    with labrad.connect() as cxn:
-        cxn.registry.cd(["", "State"])
-        drift = cxn.registry.get("DRIFT")
-        # MCC where should this stuff live?
-        cxn.registry.cd(["", "Config", "Positioning"])
-        xy_dtype = eval(cxn.registry.get("xy_dtype"))
-        z_dtype = eval(cxn.registry.get("z_dtype"))
+def get_drift(cxn=None):
+    if cxn is None:
+        with labrad.connect() as cxn:
+            drift, xy_dtype, z_dtype = get_drift_sub(cxn)
+    else:
+        drift, xy_dtype, z_dtype = get_drift_sub(cxn)
     len_drift = len(drift)
     if len_drift != 3:
         print("Got drift of length {}.".format(len_drift))
@@ -2042,7 +2066,18 @@ def get_drift():
     return drift_to_return
 
 
-def set_drift(drift):
+def get_drift_sub(cxn):
+    cxn.registry.cd(["", "State"])
+    drift = cxn.registry.get("DRIFT")
+    # MCC where should this stuff live?
+    cxn.registry.cd(["", "Config", "Positioning"])
+    xy_dtype = eval(cxn.registry.get("xy_dtype"))
+    z_dtype = eval(cxn.registry.get("z_dtype"))
+    return drift, xy_dtype, z_dtype
+    
+
+
+def set_drift(drift, cxn=None):
     len_drift = len(drift)
     if len_drift != 3:
         print("Attempted to set drift of length {}.".format(len_drift))
@@ -2056,7 +2091,11 @@ def set_drift(drift):
     #     get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"])
     # )
     # drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
-    with labrad.connect() as cxn:
+    if cxn is None:
+        with labrad.connect() as cxn:
+            cxn.registry.cd(["", "State"])
+            return cxn.registry.set("DRIFT", drift)
+    else:
         cxn.registry.cd(["", "State"])
         return cxn.registry.set("DRIFT", drift)
 
