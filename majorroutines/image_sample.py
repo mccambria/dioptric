@@ -191,7 +191,7 @@ def replot_for_presentation(file_name, scale_um_to_V, centered_at_0 = False):
 
     tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
                         title=None, color_bar_label='kcps',
-                        min_value=None, axes_labels = ["x (um)","y (um)"])
+                     axes_labels = ["x (um)","y (um)"])
 
 
 def replot_for_analysis(file_name, cmin = None, cmax = None):
@@ -459,7 +459,8 @@ if __name__ == '__main__':
 
     # file_name = '2022_08_18-16_22_08-hopper-search'
     # file_name = '2022_08_18-15_37_38-hopper-search'
-    file_name = '2022_09_30-14_41_55-siena-nv2_9_30_2022'
+    file_name = '2022_10_07-10_22_39-siena-nv1_10_06_2022'
+    # file_name = '2022_10_06-18_33_05-siena-nv1_10_06_2022'
     data = tool_belt.get_raw_data(file_name)
     # img = data['img_array']
     # y = data['y_voltages']
@@ -473,9 +474,9 @@ if __name__ == '__main__':
     # plt.xlabel('y [V]')
     # plt.ylabel('counts/max(counts)')
     # plt.show()
-    # scale = 83
+    scale = 83
 
-    # replot_for_presentation(file_name, scale)
+    replot_for_presentation(file_name, scale, centered_at_0 = True)
 
-    replot_for_analysis(file_name,)
+    # replot_for_analysis(file_name,)
                         # 0, 20)
