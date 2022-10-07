@@ -13,7 +13,7 @@ Created on Sun Jun 16 11:38:17 2019
 
 import utils.tool_belt as tool_belt
 import labrad
-import numpy 
+import numpy as np
 import time
 # %% Functions
 
@@ -46,7 +46,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'simple_readout.py'
+    seq_file = 'simple_readout_time_tagging.py'
     
     counter_server = tool_belt.get_counter_server(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
@@ -59,23 +59,17 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     
     num_read_so_far = 0
     total_num_samples = num_reps
-    total_counts = []
+    total_counts = tagger_server.read_counter_complete().tolist()
+
     
-    while num_read_so_far < total_num_samples:
-        new_counts = counter_server.read_counter_complete()
-        num_new_samples = len(new_counts)
-        # print(num_new_samples)
-        if num_new_samples > 0:
-            # print(numpy.shape(new_counts))
-            
-            total_counts.extend(new_counts.tolist())
-            num_read_so_far += num_new_samples
-        
-    new_times, new_channels = [], []# tagger_server.read_tag_stream()  
+    times, channels = tagger_server.read_tag_stream(1)  
+    # print(times)
+    
+    
     # print(new_times)
     # cxn.qm_opx.stop_tag_stream(apd_index)
-    # tool_belt.reset_cfm()
-    return total_counts, new_times, new_channels
+     
+    return total_counts, times, channels
 
     # %% Collect the data
 
@@ -92,12 +86,13 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 3e9, 0, 'do_laserglow_532_dm', 1
-    num_reps=1
-    counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 20000, 0, 'do_laserglow_532_dm', 1
+    num_reps=3
+    counts, times, channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')
     print(counts)
     # print()
-    # print(times)
+    print(times)
     # print('')
-    # print(numpy.asarray(times).astype(float).astype(int)/1000)
+    print(channels)
+    # print(np.asarray(times).astype(float).astype(int)/1000)

@@ -100,7 +100,7 @@ if __name__ == '__main__':
     # go through that here.
 
     config = tool_belt.get_config_dict()
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    # pulser_wiring = config['Wiring']['PulseStreamer']
     # print(pulser_wiring)
 
     # Set up a dummy args list

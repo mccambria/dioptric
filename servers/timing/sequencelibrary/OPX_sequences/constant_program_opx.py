@@ -5,41 +5,68 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from opx_configuration_file import *
 import matplotlib.pyplot as plt
 import numpy as np
+import utils.tool_belt as tool_belt
 import numpy
 from qualang_tools.units import unit
 
 period =0
 
-def qua_program(opx, config,args, num_reps, x_voltage_list=[], y_voltage_list=[], z_voltage_list=[]):
+def qua_program(opx, config,args, num_reps):
     
-    opx_wiring = config['Wiring']['QM_OPX']
+    opx_wiring = config['Wiring']['QmOpx']
     
     # need to figure out how to grab to elements from the opx wiring and the channel numbers
     
     high_digital_channels = args[0]
-    analog_channels_to_set = args[1]
-    analog_channel_values = args[2]
-        
+    analog_elements_to_set = args[1]
+    analog_frequencies = args[2]
+    analog_amplitudes = args[3]
+    
     
     with program() as seq:
-                
-        for element in channel:
-            
+    
+        for dig_element in high_digital_channels:
             with infinite_loop_():
-                play('cw',element)
-            
+                play('constant_HIGH',dig_element)
+                
+        for an_element,an_freq,an_amp in zip(analog_elements_to_set, analog_frequencies, analog_amplitudes):
+            update_frequency(an_element,an_freq)
+            with infinite_loop_():
+                play("cw"*amp(an_amp),an_element)
+       
     return seq
         
         
-def get_seq(opx,config, args): #so this will give just the sequence, no repeats
+def get_seq(opx,config, args, num_repeat): #so this will give just the sequence, no repeats
     
-    seq = qua_program(opx, config,args, num_reps=1)
+    seq = qua_program(opx, config,args, num_reps=num_repeat)
     final = ''
+    period = ''
     return seq, final, [period]
 
-def get_full_seq(opx,config, args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq = qua_program(opx,config,args, num_repeat, x_voltage_list,y_voltage_list,z_voltage_list)
-    final = ''
-    return seq, final, [period]
+if __name__ == '__main__':
+    from opx_configuration_file import *
 
+    from qualang_tools.results import fetching_tool, progress_counter
+    import matplotlib.pylab as plt
+    import time
+    
+    config = tool_belt.get_config_dict()
+    qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
+    qm = qmm.open_qm(config_opx)
+    
+    simulation_duration =  10000 // 4 # clock cycle units - 4ns
+    num_repeat=3
+    delay = 1000
+    args = [['do_laserglow_532_dm', 'do_signal_generator'], ['AOD_1X', 'AOD_1Y'], [0.0, 10000000.0], [1.0, 0.5]]
+    seq , f, p = get_seq([],config, args, num_repeat)
+    
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    # plt.show()
+# 
+    job = qm.execute(seq)
+    
+    # print('job.halt() to end infinite loop')
+    

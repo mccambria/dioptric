@@ -68,14 +68,17 @@ class OPX(Tagger, PulseGen, LabradServer):
         logging.info(qop_ip)
         self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
         self.qm = self.qmm.open_qm(config_opx)
-        self.steady_state_program_file = 'steady_state_program_test_opx.py'
+        self.steady_state_program_file = 'constant_program.py'
         
         opx_sequence_library_path = (
             Path.home()
             / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences"
         )
         sys.path.append(str(opx_sequence_library_path))
-        self.steady_state_option = False
+        self.steady_state_option = True
+        
+        # steady_state_seq, final_ss, period_ss = get_seq(self, self.steady_state_program_file, self.steady_state_seq_args_string, 1)
+        # self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,steady_state_seq)
         
     
     def get_config_dict(self):
@@ -128,11 +131,19 @@ class OPX(Tagger, PulseGen, LabradServer):
                 dict_to_populate[key] = val
 
     def on_get_config_dict(self, _, config_dict):
+        
         self.config_dict = config_dict
         self.apd_indices = config_dict["apd_indices"]
+        self.steady_state_digital_on = config_dict["SteadyStateParameters"]["QmOpx"]["steady_state_digital_on"]
+        self.steady_state_analog_on = config_dict["SteadyStateParameters"]["QmOpx"]["steady_state_analog_on"]
+        self.steady_state_analog_freqs = np.array(config_dict["SteadyStateParameters"]["QmOpx"]["steady_state_analog_freqs"]).astype(float).tolist()
+        self.steady_state_analog_amps = np.array(config_dict["SteadyStateParameters"]["QmOpx"]["steady_state_analog_amps"]).astype(float).tolist()
+        
+        self.steady_state_seq_args = [ self.steady_state_digital_on, self.steady_state_analog_on, self.steady_state_analog_freqs, self.steady_state_analog_amps ]
+        self.steady_state_seq_args_string = tool_belt.encode_seq_args(self.steady_state_seq_args)
+
+        self.steady_state_seq, final_ss, period_ss = self.get_seq(self.steady_state_program_file, self.steady_state_seq_args_string, 1)
         logging.info("Init complete")
-        
-        
         
     def stopServer(self):
         try:
@@ -171,15 +182,17 @@ class OPX(Tagger, PulseGen, LabradServer):
             final: unsure. 
             list(any)
                 Arbitrary list returned by the sequence file
-        """    
+        """
+        
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
+
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name+"_opx")
             args = tool_belt.decode_seq_args(seq_args_string)
                         
             seq, final, ret_vals = seq_module.get_seq(self,self.config_dict, args, num_repeat )
-        
+            
         return seq, final, ret_vals
 
 
@@ -206,9 +219,6 @@ class OPX(Tagger, PulseGen, LabradServer):
         seq, final, ret_vals = self.get_seq(self.seq_file, seq_args_string, 1)
         self.pending_experiment_compiled_program_id = self.compile_qua_sequence(self.qm, seq)
         
-        # if self.steady_state_option:
-        #     self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,self.steady_state_program)
-        
         return ret_vals
 
     @setting(14, num_repeat="i")
@@ -228,24 +238,22 @@ class OPX(Tagger, PulseGen, LabradServer):
             
         self.pending_experiment_job = self.add_qua_sequence_to_qm_queue(self.qm,self.pending_experiment_compiled_program_id)
         self.experiment_job = self.pending_experiment_job.wait_for_execution()
+        
         self.counter_index = 0
-        # if self.steady_state_option:
-        #     self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,self.steady_state_program)
         
         return 
     
     
-    @setting(15, digital_channels="*i", analog_0_voltage="v[]", analog_1_voltage="v[]")
-    def constant(self,c,digital_channels=[],analog_0_voltage=0.0,analog_1_voltage=0.0):
+    @setting(15, high_digital_channels="*s", analog_elements_to_set="*s",analog_frequencies="*v[]",analog_amplitudes="*v[]")
+    def constant(self,c,high_digital_channels=[],analog_elements_to_set=[],analog_frequencies=[],analog_amplitudes=[]):
         """Set the OPX to an infinite loop."""
         """ This function is not finished. I made a starting file (constant_program_opx.py) but it needs to be finished """
-        high_digital_channels = digital_channels
-        analog_channels_to_set = [0, 1]
-        analog_channel_values = [analog_0_voltage, analog_1_voltage]
-        args = [high_digital_channels,analog_channels_to_set,analog_channel_values]
+                
+        args = [digital_channels,analog_elements_to_set,analog_frequencies,analog_amplitudes]
+        
         
         args_string = tool_belt.encode_seq_args(args)
-        self.stream_immediate(seq_file='constant_program_opx.py', num_repeat=1, seq_args_string=args_string)
+        self.stream_immediate(seq_file='constant_program.py', num_repeat=1, seq_args_string=args_string)
         
     #%% counting and time tagging functions ### 
     ### currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
@@ -309,61 +317,72 @@ class OPX(Tagger, PulseGen, LabradServer):
         counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all()
         c1 = counts_apd0.tolist()
         c2 = counts_apd1.tolist()
-        t1 = times_apd0[1::].tolist()
-        t2 = times_apd1[1::].tolist()
+        t1 = (times_apd0[1::]*1000).tolist()
+        t2 = (times_apd1[1::]*1000).tolist()
         
-        # new_max_length = min(len(c1),len(c2))
-        
-        # c1 = c1[ cur_max_length : new_max_length ]
-        # c2 = c2[ cur_max_length : new_max_length ]
-        
-        # tags_already_read_a1 = np.sum(c1[0:cur_max_length], dtype=int)
-        # tags_already_read_a2 = np.sum(c2[0:cur_max_length], dtype=int)
-        
-        # t1 = t1[tags_already_read_a1::]
-        # t2 = t2[tags_already_read_a2::]
-        
-        # cur_max_length = new_max_length
-        
+        max_readout = 1000*self.config_dict["PhotonCollection"]["qm_opx_max_readout_time"]
+
+        cur_max_length = 0
+
+        new_max_length = min(len(c1),len(c2))
+
+        c1 = c1[ cur_max_length : new_max_length ]
+        c2 = c2[ cur_max_length : new_max_length ]
+
+        tags_already_read_a1 = np.sum(c1[0:cur_max_length], dtype=int)
+        tags_already_read_a2 = np.sum(c2[0:cur_max_length], dtype=int)
+
+        t1 = t1[tags_already_read_a1::]
+        t2 = t2[tags_already_read_a2::]
+
+        cur_max_length = new_max_length
+
         t_return = []
         channels_return = []
-        max_readout = self.config_dict["PhotonCollection"]["qm_opx_max_readout_time"]
-        
-        
+
         for i in range(len(c1)):
             
-            cur_sample_counts_a1 = c1[i][0]
-            num_past_sample_counts_a1 = np.sum(c1[0:i], dtype=int)
-            num_new_sample_counts_a1 = np.sum(c1[i], dtype=int)
+            for k in range(len(c1[0])):
             
-            cur_sample_counts_a2= c2[i][0]
-            num_past_sample_counts_a2 = np.sum(c2[0:i], dtype=int)
-            num_new_sample_counts_a2 = np.sum(c2[i], dtype=int)
-            
-            sample_tags_a1, sample_tags_a2 = [], []
-            
-            cur_sample_timetags_a1 = t1[num_past_sample_counts_a1 : num_past_sample_counts_a1+num_new_sample_counts_a1]
-            cur_sample_timetags_a2 = t1[num_past_sample_counts_a2 : num_past_sample_counts_a2+num_new_sample_counts_a2]
-            
-            for j in range(len(cur_sample_counts_a1)):
+                cur_sample_counts_a1 = c1[i][k]
+                # print(cur_sample_counts_a1)
+                num_past_sample_counts_a1 = np.sum(c1[0:i], dtype=int) + np.sum(c1[i][0:k], dtype=int)
+                num_new_sample_counts_a1 = np.sum(c1[i][k], dtype=int)
+                # print(num_past_sample_counts_a1,num_new_sample_counts_a1)
+                cur_sample_counts_a2= c2[i][k]
+                num_past_sample_counts_a2 = np.sum(c2[0:i], dtype=int) + np.sum(c2[i][0:k], dtype=int)
+                num_new_sample_counts_a2 = np.sum(c2[i][k], dtype=int)
                 
-                num_past_gate_counts_a1 = np.sum(cur_sample_counts_a1[0:j], dtype=int)
-                num_cur_gate_counts_a1 = cur_sample_counts_a1[j]
-                cur_gate_timetags_a1 = cur_sample_timetags_a1[num_past_gate_counts_a1 : num_past_gate_counts_a1+num_cur_gate_counts_a1]
-                cur_gate_timetags_a1 = (np.array(cur_gate_timetags_a1) + ( j * max_readout)).tolist()
-                sample_tags_a1 = sample_tags_a1 + cur_gate_timetags_a1
+                sample_tags_a1, sample_tags_a2 = [], []
                 
-                num_past_gate_counts_a2 = np.sum(cur_sample_counts_a2[0:j], dtype=int)
-                num_cur_gate_counts_a2 = cur_sample_counts_a2[j]
-                cur_gate_timetags_a2 = cur_sample_timetags_a2[num_past_gate_counts_a2 : num_past_gate_counts_a2+num_cur_gate_counts_a2]
-                cur_gate_timetags_a2 = (np.array(cur_gate_timetags_a2) + ( j * max_readout)).tolist()
-                sample_tags_a2 = sample_tags_a2 + cur_gate_timetags_a2
-            
-            t_return.append(sample_tags_a1+sample_tags_a2)
-            channels_return.append( np.full(len(sample_tags_a1),1,dtype=int).tolist() + np.full(len(sample_tags_a2),2,dtype=int).tolist() )
-            
-        # logging.info(t_return)
-        # logging.info(channels_return)
+                cur_sample_timetags_a1 = t1[num_past_sample_counts_a1 : num_past_sample_counts_a1+num_new_sample_counts_a1]
+                cur_sample_timetags_a2 = t1[num_past_sample_counts_a2 : num_past_sample_counts_a2+num_new_sample_counts_a2]
+                # print('')
+                # print(cur_sample_timetags_a1)
+
+                for j in range(len(cur_sample_counts_a1)):
+
+                    num_past_gate_counts_a1 = np.sum(cur_sample_counts_a1[0:j], dtype=int)# + np.sum(c1[i][0:k], dtype=int)
+                    num_cur_gate_counts_a1 = cur_sample_counts_a1[j]
+                    cur_gate_timetags_a1 = cur_sample_timetags_a1[num_past_gate_counts_a1 : num_past_gate_counts_a1+num_cur_gate_counts_a1]
+                    cur_gate_timetags_a1 = (np.array(cur_gate_timetags_a1) + ( j * max_readout)).tolist()
+                    sample_tags_a1 = sample_tags_a1 + cur_gate_timetags_a1
+                    
+                    
+                    num_past_gate_counts_a2 = np.sum(cur_sample_counts_a2[0:j], dtype=int)# + np.sum(c2[i][0:k], dtype=int)
+                    num_cur_gate_counts_a2 = cur_sample_counts_a2[j]
+                    cur_gate_timetags_a2 = cur_sample_timetags_a2[num_past_gate_counts_a2 : num_past_gate_counts_a2+num_cur_gate_counts_a2]
+                    cur_gate_timetags_a2 = (np.array(cur_gate_timetags_a2) + ( j * max_readout)).tolist()
+                    sample_tags_a2 = sample_tags_a2 + cur_gate_timetags_a2
+                sample_time_tags = np.array(sample_tags_a1+sample_tags_a2).astype(str).tolist()
+                
+                # t_return.append(sample_time_tags)
+                t_return = t_return + ['0'] + sample_time_tags + ['0']
+                channels_return = channels_return + [10] + np.full(len(sample_tags_a1),1,dtype=int).tolist() \
+                    + np.full(len(sample_tags_a2),2,dtype=int).tolist() +[-10]
+
+        logging.info(t1)    
+        logging.info(c1)
         return t_return, channels_return
         
     
@@ -442,6 +461,15 @@ class OPX(Tagger, PulseGen, LabradServer):
     # %% reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
     @setting(26)
     def reset(self, c):
+        
+        self.qmm.close_all_quantum_machines()
+        self.qm = self.qmm.open_qm(config_opx)
+        
+        if self.steady_state_option:
+            self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,self.steady_state_seq)
+            self.pending_steady_state_job = self.add_qua_sequence_to_qm_queue(self.qm,self.pending_steady_state_compiled_program_id)
+            self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
+        
         pass
         
 

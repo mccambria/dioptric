@@ -43,7 +43,7 @@ def qua_program(opx, config, args, num_reps):
     meas_delay_cc = meas_delay // 4
     
     delay_between_readouts_iterations = 200 #simulated - conservative estimate
-    laser_on_time = meas_delay + readout_time + delay_between_readouts_iterations*num_readouts 
+    laser_on_time =  apd_readout_time + delay_between_readouts_iterations
     laser_on_time_cc = laser_on_time // 4
     
     delay_cc = int(delay // 4)
@@ -60,6 +60,7 @@ def qua_program(opx, config, args, num_reps):
         
         n = declare(int)
         i = declare(int)
+        j = declare(int)
         
         with for_(n, 0, n < num_reps, n + 1):
             
@@ -67,14 +68,15 @@ def qua_program(opx, config, args, num_reps):
             wait(delay_cc)
             align()  
             
-            ###readout laser
-            play("laser_ON",laser_name,duration=laser_on_time_cc)  
             
+            # start the laser a little earlier than the apds
+            play("laser_ON",laser_name,duration=meas_delay_cc)
+            wait(meas_delay_cc,"do_apd_0_gate","do_apd_1_gate")
             
-            ##wait time between readout and laser on
-            wait(meas_delay_cc, "do_apd_0_gate","do_apd_1_gate")
             
             with for_(i,0,i<num_readouts,i+1):  
+                
+                play("laser_ON",laser_name,duration=laser_on_time_cc) 
                 
                 if num_apds == 2:
                     
@@ -94,9 +96,7 @@ def qua_program(opx, config, args, num_reps):
                     align("do_apd_0_gate","do_apd_1_gate")
                     
             ##trigger piezos
-            
             align()
-
             play("clock_pulse","do_sample_clock")
         
         with stream_processing():
@@ -124,26 +124,26 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     
-    readout_time = 3000
+    readout_time = 1000000000
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  120000 // 4 # clock cycle units - 4ns
-    num_repeat=3
-    delay = 4000
+    simulation_duration =  55000 // 4 # clock cycle units - 4ns
+    num_repeat=10
+    delay = 1000
     args = [delay, readout_time, 0,'do_laserglow_532_dm',1]
     seq , f, p = get_seq([],config, args, num_repeat)
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
-    # # plt.xlim(100,12000)
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
+    # plt.show()
 # 
     job = qm.execute(seq)
 
-    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
-    counts_apd0, counts_apd1 = results.fetch_all() 
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
+    # counts_apd0, counts_apd1 = results.fetch_all() 
     
-    # print('')
-    print(counts_apd0)
-    # print('')
-    print(counts_apd1)
+    # # print('')
+    # print(counts_apd0.tolist())
+    # # print('')
+    # print(counts_apd1.tolist())

@@ -41,7 +41,7 @@ meas_len = 100  # in ns
 long_meas_len = 100  # in ns
 
 # MW parameters
-mw_amp_NV = 0.2  # in units of volts
+mw_amp_NV = .5  # in units of volts
 mw_len_NV = 200  # in units of ns
 
 pi_amp_NV = 0.1  # in units of volts
@@ -66,6 +66,7 @@ red_laser_delay = 0
 apd_0_delay = 0
 apd_1_delay = 0
 uwave_delay = 0
+aod_delay = 0
 delays = [green_laser_delay,apd_0_delay,apd_1_delay,uwave_delay]
 
 min_delay = 150 #we use 100 with the pulse streamer. doesn't matter. just wanted it higher than 136 analog delay
@@ -79,6 +80,7 @@ apd_1_total_delay = common_delay - apd_0_delay
 uwave_total_delay = common_delay - uwave_delay
 NV_total_delay = common_delay + mw_delay
 NV2_total_delay = common_delay + mw_delay
+AOD_total_delay = common_delay + aod_delay
 
 config_opx = {
     "version": 1,
@@ -86,8 +88,10 @@ config_opx = {
         "con1": {
             "type": "opx1",
             "analog_outputs": {
-                1: {"offset": 0.0, "delay": NV_total_delay}, 
-                2: {"offset": 0.0, "delay": NV2_total_delay},  
+                1: {"offset": 0.0, "delay": NV_total_delay}, # will be I for sig gen 
+                2: {"offset": 0.0, "delay": NV_total_delay}, # will be Q for sig gen
+                3: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1X
+                4: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1Y
             },
             "digital_outputs": {
                 1: {},  # green_laser_do/Laser
@@ -104,28 +108,20 @@ config_opx = {
         }
     },
     "elements": {
-        # "NV": {
-        #     "mixInputs": {"I": ("con1", 1), "Q": ("con1", 2), "lo_frequency": NV_LO_freq, "mixer": "mixer_NV"},
-        #     "intermediate_frequency": NV_IF_freq,
-        #     "operations": {
-        #         "cw": "const_pulse",
-        #         "pi": "x180_pulse",
-        #         "pi_half": "x90_pulse",
-        #         "x180": "x180_pulse",
-        #         "x90": "x90_pulse",
-        #     },
-        # },
-        # "NV2": {
-        #     "mixInputs": {"I": ("con1", 1), "Q": ("con1", 2), "lo_frequency": NV_LO_freq, "mixer": "mixer_NV2"},
-        #     "intermediate_frequency": NV2_IF_freq,
-        #     "operations": {
-        #         "cw": "const_pulse",
-        #         "pi": "x180_pulse",
-        #         "pi_half": "x90_pulse",
-        #         "x180": "x180_pulse",
-        #         "x90": "x90_pulse",
-        #     },
-        # },
+        "AOD_1X": {
+            "singleInput": {"port": ("con1", 3)},
+            "intermediate_frequency": NV_IF_freq,
+            "operations": {
+                "cw": "const_freq_out",
+            },
+        },
+        "AOD_1Y": {
+            "singleInput": {"port": ("con1", 4)},
+            "intermediate_frequency": NV_IF_freq,
+            "operations": {
+                "cw": "const_freq_out",
+            },
+        },
         "do_signal_generator": {
             "digitalInputs": {
                 "marker": {
@@ -135,7 +131,8 @@ config_opx = {
                 },
             },
             "operations": {
-                "uwave_ON": "uwave_ON",    
+                "uwave_ON": "uwave_ON",
+                "constant_HIGH": "constant_HIGH",
             },
         },
         "do_laserglow_532_dm": {
@@ -148,6 +145,7 @@ config_opx = {
             },
             "operations": {
                 "laser_ON": "laser_ON",
+                "constant_HIGH": "constant_HIGH",
             },
         },
         "do_sample_clock": {
@@ -183,7 +181,7 @@ config_opx = {
                 "derivativePolarity": "Below",
             },
             "time_of_flight": detection_delay,
-            "smearing": 18, #tries to account for length of count pulses being finite. 
+            "smearing": 15, #tries to account for length of count pulses being finite. 
         },
         "do_apd_1_gate": {
             "singleInput": {"port": ("con1", 2)},  
@@ -206,26 +204,21 @@ config_opx = {
                 "derivativePolarity": "Below",
             },
             "time_of_flight": detection_delay,
-            "smearing": 18,
+            "smearing": 15,
         },
     },
     "pulses": {
-        "const_pulse": {
+        "const_freq_out": {
             "operation": "control",
             "length": mw_len_NV,
-            "waveforms": {"I": "cw_wf", "Q": "zero_wf"},
-        },
-        "x180_pulse": {
-            "operation": "control",
-            "length": pi_len_NV,
-            "waveforms": {"I": "pi_wf", "Q": "zero_wf"},
-        },
-        "x90_pulse": {
-            "operation": "control",
-            "length": pi_half_len_NV,
-            "waveforms": {"I": "pi_half_wf", "Q": "zero_wf"},
+            "waveforms": {"single": "cw_wf"},
         },
         "laser_ON": {
+            "operation": "control",
+            "length": initialization_len,
+            "digital_marker": "ON",
+        },
+        "constant_HIGH": {
             "operation": "control",
             "length": initialization_len,
             "digital_marker": "ON",
@@ -255,20 +248,10 @@ config_opx = {
     },
     "waveforms": {
         "cw_wf": {"type": "constant", "sample": mw_amp_NV},
-        "pi_wf": {"type": "constant", "sample": pi_amp_NV},
-        "pi_half_wf": {"type": "constant", "sample": pi_half_amp_NV},
         "zero_wf": {"type": "constant", "sample": 0.0},
     },
     "digital_waveforms": {
         "ON": {"samples": [(1, 0)]},  # [(on/off, ns)]
         "OFF": {"samples": [(0, 0)]},  # [(on/off, ns)]
     },
-    # "mixers": {
-    #     "mixer_NV": [
-    #         {"intermediate_frequency": NV_IF_freq, "lo_frequency": NV_LO_freq, "correction": IQ_imbalance(0.0, 0.0)},
-    #     ],
-    #     "mixer_NV2": [
-    #         {"intermediate_frequency": NV2_IF_freq, "lo_frequency": NV_LO_freq, "correction": IQ_imbalance(0.0, 0.0)},
-    #     ],
-    # },
 }

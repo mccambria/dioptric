@@ -95,21 +95,21 @@ class PulseGen(LabradServer,ABC):
         """
         pass
     
-    @abstractmethod
-    def constant(self, c, digital_channels=[], analog_0_voltage=0.0, analog_1_voltage=0.0):
-        """
-        Set the outputs to constant values; defaulta are everything off
+    # @abstractmethod
+    # def constant(self, c, digital_channels=[], analog_0_voltage=0.0, analog_1_voltage=0.0):
+    #     """
+    #     Set the outputs to constant values; defaulta are everything off
 
-        Parameters
-        ----------
-        digital_channels : list(int), optional
-            Digital channels to set high
-        analog_channels : list(int), optional
-            Analog channels to set nonzero
-        analog_voltages : list(float), optional
-            Voltages to assign to analog_channels
-        """
-        pass
+    #     Parameters
+    #     ----------
+    #     digital_channels : list(int), optional
+    #         Digital channels to set high
+    #     analog_channels : list(int), optional
+    #         Analog channels to set nonzero
+    #     analog_voltages : list(float), optional
+    #         Voltages to assign to analog_channels
+    #     """
+    #     pass
     
     # @abstractmethod
     # def force_final(self, c):
