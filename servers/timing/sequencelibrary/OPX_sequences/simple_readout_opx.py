@@ -37,7 +37,6 @@ def qua_program(opx, config, args, num_reps):
         num_readouts=1
         apd_readout_time = readout_time
     
-    apd_readout_time_cc = int(apd_readout_time // 4)
     
     meas_delay = 100
     meas_delay_cc = meas_delay // 4
