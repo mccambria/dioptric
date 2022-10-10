@@ -52,8 +52,12 @@ import time
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices, scan_range=.2, num_steps=60, nv_minus_initialization=False,cbarmin=None,cbarmax=None):
+def do_image_sample(nv_sig, apd_indices, 
+                    nv_minus_initialization=False,cbarmin=None,cbarmax=None):
 
+    scan_range = 0.2
+    num_steps = 60
+    
     # scan_range = 0.5
     # num_steps = 90
 
@@ -1022,12 +1026,12 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        'coords': [0.0, 0.0, 2], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
+        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e9,
         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
@@ -1035,8 +1039,8 @@ if __name__ == "__main__":
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 2e3, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 100e3,
-        "spin_readout_dur": 2e3,
+        "spin_pol_dur": 10e3,
+        "spin_readout_dur": 350,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
@@ -1094,7 +1098,7 @@ if __name__ == "__main__":
         #                                 cbarmin_counts=0,cbarmax_counts=2200
         #                                 )
         
-        do_image_sample(nv_sig, apd_indices,num_steps=40,scan_range=.8)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1168,8 +1172,8 @@ if __name__ == "__main__":
         # do_t1_dq_knill(nv_sig, apd_indices)
 
     except Exception as exc:
-        recipient = "cdfox@wisc.edu"
-        # recipient = "cambria@wisc.edu"
+        # recipient = "cdfox@wisc.edu"
+        recipient = "cambria@wisc.edu"
         tool_belt.send_exception_email(email_to=recipient)
         raise exc
 

@@ -14,7 +14,7 @@ Created on Sun Jun 16 11:22:40 2019
 from pulsestreamer import PulseStreamer as Pulser
 from pulsestreamer import TriggerStart
 from pulsestreamer import OutputState
-import numpy
+import numpy as np
 from pulsestreamer import Sequence
 import labrad
 import utils.tool_belt as tool_belt
@@ -29,6 +29,38 @@ LOW = 0
 HIGH = 1
 
 
+def sweep(cxn, uwave_freqs, uwave_power):
+    
+    tool_belt.init_safe_stop()
+    
+    sig_gen_cxn = cxn.signal_generator_sg394
+    sig_gen_cxn.set_freq(uwave_freqs[0])
+    sig_gen_cxn.set_amp(uwave_power)
+    sig_gen_cxn.uwave_on()
+    
+    time.sleep(5)
+    
+    for freq in uwave_freqs:
+        if tool_belt.safe_stop():
+            break
+        sig_gen_cxn.set_freq(freq)
+        time.sleep(3)
+        
+    sig_gen_cxn.uwave_off()
+    tool_belt.reset_cfm(cxn)
+
+
+def constant(cxn, uwave_freq, uwave_power):
+
+    sig_gen_cxn = cxn.signal_generator_sg394
+    sig_gen_cxn.set_freq(uwave_freq)
+    sig_gen_cxn.set_amp(uwave_power)
+    sig_gen_cxn.uwave_on()
+
+    input('Press enter to stop...')
+
+    sig_gen_cxn.uwave_off()
+    tool_belt.reset_cfm(cxn)
 
 # %% Main
 
@@ -40,9 +72,10 @@ def main(cxn, uwave_freq, uwave_power, state = States.LOW):
 
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+    sig_gen_cxn = cxn.signal_generator_sg394
     sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.set_amp(uwave_power)
-    sig_gen_cxn.load_iq()
+    # sig_gen_cxn.load_iq()
     sig_gen_cxn.uwave_on()
 
 
@@ -74,6 +107,9 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     with labrad.connect() as cxn:
-        uwave_freq = 0.05 #GHz
-        uwave_power = -2 #dBm
-        main(cxn,uwave_freq, uwave_power, States.HIGH)
+        uwave_freq = 2.87 #GHz
+        uwave_power = 0 #dBm
+        # main(cxn,uwave_freq, uwave_power, States.HIGH)
+        constant(cxn,uwave_freq, uwave_power)
+        # uwave_freqs = np.linspace(2.37, 3.37, 20)
+        # sweep(cxn, uwave_freqs, uwave_power)
