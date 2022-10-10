@@ -435,7 +435,7 @@ def main_with_cxn(
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -613,8 +613,8 @@ def main_with_cxn(
 if __name__ == "__main__":
 
 
-    folder = "pc_rabi/branch_master/ramsey/2022_08"
-    file = '2022_08_04-12_59_05-rubin-nv1'
+    folder = "pc_rabi/branch_master/ramsey/2022_10"
+    file = '2022_10_07-17_23_09-siena-native_layer'
     
     # detuning = 0
     data = tool_belt.get_raw_data(file, folder)

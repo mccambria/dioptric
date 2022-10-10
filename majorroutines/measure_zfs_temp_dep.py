@@ -9,7 +9,6 @@ Created on October 3rd, 2022
 
 ### Imports
 
-from isort import file
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import majorroutines.pulsed_resonance as pulsed_resonance
