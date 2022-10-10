@@ -334,12 +334,12 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     #    num_angle_steps = 6
     freq_center = 2.87
     freq_range = 0.4
-    num_freq_steps = 101
-    num_freq_runs = 5
+    num_freq_steps = 151
+    num_freq_runs = 30
 
     # Pulsed
     uwave_power = 10#14.5
-    uwave_pulse_dur = 200/2
+    uwave_pulse_dur = 290/2
     num_freq_reps = int(1e4)
 
     # CW
@@ -432,8 +432,8 @@ def do_lifetime(nv_sig, apd_indices):
 def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
     detuning = 6  # MHz
-    precession_time_range = [0, 2 * 10 ** 3]
-    num_steps = 201
+    precession_time_range = [0, 1 * 10 ** 3]
+    num_steps = 101
     num_reps = int( 10 ** 4)
     num_runs = 40
 
@@ -553,7 +553,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, shift, T_min, T_max)
     
     #conventional readout
     num_reps = 1e4
-    num_runs= 25
+    num_runs= 400
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -670,11 +670,11 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 0.7e6#20e6
-    max_tau_gamma = 0.4e6# 8e6
+    max_tau_omega = 10e6
+    max_tau_gamma = 10e6
     num_steps_omega = 21
     num_steps_gamma = 21
-    num_reps = 2000
+    num_reps = 400
     num_runs = 200
     
     if False:
@@ -723,7 +723,7 @@ def do_relaxation(nv_sig, apd_indices, ):
                 [min_tau, max_tau_gamma],
                 num_steps_gamma,
                 num_reps,
-        #        num_runs,
+                num_runs,
             ]] )
 
     t1_dq_main.main(
@@ -1040,9 +1040,9 @@ if __name__ == "__main__":
     native_layer["name"] = "{}-native_layer".format(sample_name,)
     native_layer["expected_count_rate"] = None
     native_layer["disable_opt"] = False
-    native_layer["resonance_LOW"]=2.7507
+    native_layer["resonance_LOW"]=2.7473
     native_layer["rabi_LOW"]=364.0
-    native_layer["resonance_HIGH"]=2.9991
+    native_layer["resonance_HIGH"]=2.9999
     native_layer["rabi_HIGH"]=294.5
     
     
@@ -1063,7 +1063,7 @@ if __name__ == "__main__":
             # do_image_sample(nv_sig_copy, apd_indices)
          #
         #
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        #tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # tool_belt.set_drift([0.044, 0.057, 0.17])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
@@ -1071,7 +1071,7 @@ if __name__ == "__main__":
 
                      
                 
-        # do_optimize(nv_sig,apd_indices)
+        #do_optimize(nv_sig,apd_indices)
         # z_0 = 4.6
         # for x in [-0.375, 0, 0.375]:
         #     for y in [-0.375,0.375]:
@@ -1117,15 +1117,15 @@ if __name__ == "__main__":
         # do_lifetime(nv_sig, apd_indices)
             
 
-        # do_optimize_magnet_angle(nv_sig, apd_indices)
+        do_optimize_magnet_angle(nv_sig, apd_indices)
 
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 400])
 
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.2) ###
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        do_ramsey(nv_sig, nv_sig,apd_indices)
+        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        #do_ramsey(nv_sig, nv_sig,apd_indices)
 
         #for nv_sig in [nv_sig_1, nv_sig_4, nv_sig_8]:
         # do_spin_echo(nv_sig, apd_indices)
@@ -1139,7 +1139,7 @@ if __name__ == "__main__":
         # for N in [4, 2, 1]:
         # do_dd_xy4_revivals(nv_sig_1, apd_indices, 4)
         
-        #do_dd_xy4(nv_sig, apd_indices, 1, 1, 100, 0, 90)
+        #do_dd_xy4(nv_sig, apd_indices, 1, 1, 100, 0, 100)
         
         ################## to run
         # do_dd_xy4_revivals(nv_sig_1, apd_indices, 1)
