@@ -20,6 +20,8 @@ from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 import csv
 import sys
+import random
+from pathos.multiprocessing import ProcessingPool as Pool
 
 cent = 0.5
 amp = 0.65 / 2
@@ -31,6 +33,52 @@ def ellipse_point(theta, phi):
     return (cent + amp * np.cos(theta + phi), cent + amp * np.cos(theta - phi))
 
 
+def theta_cost(phi, ellipse_point, test_point):
+
+    theta_cost = lambda theta: sum(
+        [(el[0] - el[1]) ** 2 for el in zip(ellipse_point(theta), test_point)]
+    )
+
+    # Guess theta by assuming theta and the ellipse amplitude are free and
+    # solving for the position of the point on the ellipse
+    # x = cent + amp * np.cos(theta + phi)
+    # y = cent + amp * np.cos(theta - phi)
+    # x-y = amp * (np.cos(theta + phi) - np.cos(theta - phi))
+    #     = -2 amp sin(theta) sin(phi)
+    # amp = (x-y) / (-2 sin(theta) sin(phi))
+    # x+y = 2cent + 2 amp cos(theta) cos(phi)
+    #     = 2cent - (x-y) cot(theta) cot(phi)
+    x, y = test_point
+    # Avoid divide by zero
+    guess_denom = np.tan(phi) * (2 * cent - (x + y))
+    if guess_denom < 0.01:
+        base_guess = np.pi / 2
+        # Check the guess and its compliment
+        guesses = [
+            base_guess % (2 * np.pi),
+            (2 * np.pi - base_guess) % (2 * np.pi),
+        ]
+    else:
+        guess_arg = (x - y) / guess_denom
+        base_guess = np.arctan(abs(guess_arg)) % np.pi
+        # Check the guess and its compliments
+        guesses = [
+            base_guess % (2 * np.pi),
+            (np.pi - base_guess) % (2 * np.pi),
+            (base_guess + np.pi) % (2 * np.pi),
+            (2 * np.pi - base_guess) % (2 * np.pi),
+        ]
+
+    best_cost = None
+    for guess in guesses:
+        res = minimize(theta_cost, guess)
+        opti_theta = res.x
+        opti_cost = res.fun
+        if (best_cost is None) or (opti_cost < best_cost):
+            best_cost = opti_cost
+    return best_cost
+
+
 def ellipse_cost(phi, points, debug=False):
 
     if debug:
@@ -38,51 +86,15 @@ def ellipse_cost(phi, points, debug=False):
 
     ellipse_lambda = lambda theta: ellipse_point(theta, phi)
 
-    # The cost is the root mean square distance between the
-    # point and the ellipse
+    # The cost is the rms distance between the point and the ellipse
     # Finding the closest distance between an arbitary point and an ellipse,
     # of course, turns out to be a hard problem, so let's just run another
     # minimization for it
-    cost = 0
-    for point in points:
+    theta_cost_lambda = lambda point: theta_cost(phi, ellipse_lambda, point)
+    with Pool() as p:
+        theta_costs = p.map(theta_cost_lambda, points)
 
-        theta_cost = lambda theta: sum(
-            [(el[0] - el[1]) ** 2 for el in zip(ellipse_lambda(theta), point)]
-        )
-
-        # Guess theta by assuming theta and the ellipse amplitude are free and
-        # solving for the position of the point on the ellipse
-        # x = cent + amp * np.cos(theta + phi)
-        # y = cent + amp * np.cos(theta - phi)
-        # x-y = amp * (np.cos(theta + phi) - np.cos(theta - phi))
-        #     = -2 amp sin(theta) sin(phi)
-        # amp = (x-y) / (-2 sin(theta) sin(phi))
-        # x+y = 2cent + 2 amp cos(theta) cos(phi)
-        #     = 2cent - (x-y) cot(theta) cot(phi)
-        x, y = point
-        guess_arg = ((x - y)) / (np.tan(phi) * (2 * cent - (x + y)))
-        base_guess = np.arctan(abs(guess_arg)) % np.pi
-        # Check the guess and its compliments
-        guesses = [
-            base_guess,
-            np.pi - base_guess,
-            base_guess + np.pi,
-            2 * np.pi - base_guess,
-        ]
-
-        best_cost = None
-        for guess in guesses:
-            res = minimize(theta_cost, guess)
-            opti_theta = res.x
-            opti_cost = res.fun
-            if (best_cost is None) or (opti_cost < best_cost):
-                best_cost = opti_cost
-
-        # Error checking
-        if debug and best_cost > 0.005:
-            test = 1
-        cost += best_cost
-
+    cost = sum(theta_costs)
     num_points = len(points)
     cost = np.sqrt(cost / num_points)
 
@@ -90,20 +102,25 @@ def ellipse_cost(phi, points, debug=False):
 
 
 def gen_ellipses():
-
-    num_ellipses = 20
-    theta_linspace = np.linspace(0, 2 * np.pi, 20)
-    phi_linspace = np.linspace(0, np.pi / 2, num_ellipses)
-    phis = phi_linspace.tolist()
-
+    # phis = [0, np.pi / 2, np.pi / 4]
+    phis = [0.0]
+    num_points = 100
     ellipses = []
-    for phi in phi_linspace:
+    noise_amp = 0.05
+    for phi in phis:
         ellipse = [[phi]]
         ellipse_lambda = lambda theta: ellipse_point(theta, phi)
-        points = [ellipse_lambda(val) for val in theta_linspace]
-        ellipse.extend(points)
+        points = []
+        for ind in range(num_points):
+            theta = 2 * np.pi * random.random()
+            point = ellipse_lambda(theta)
+            noisy_point = (
+                point[0] + noise_amp * random.random(),
+                point[1] + noise_amp * random.random(),
+            )
+            points.append(noisy_point)
+            ellipse.extend(points)
         ellipses.append(ellipse)
-
     return ellipses
 
 
@@ -171,12 +188,12 @@ def import_ellipses(path):
 
 def main(path):
 
-    ellipses = import_ellipses(path)
-    # ellipses = gen_ellipses()
+    # ellipses = import_ellipses(path)
+    ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
     phi_errors = []
 
-    do_plot = False
+    do_plot = True
 
     # ellipses = ellipses[::10]
     # ellipses = [ellipses[35]]  # 34, 38
@@ -193,34 +210,39 @@ def main(path):
         thresh = 0.1
         if thresh < true_phi < (np.pi / 2) - thresh:
             continue
-        print("Ellipse index: {ind}")
+        print(f"Ellipse index: {ind}")
 
         # Avoid local minima by using multiple guesses
-        guesses = [0, np.pi / 2, np.pi / 4]
-        for guess in guesses:
-            res = minimize(ellipse_cost, guess, args=(points,))
-            opti_phi = res.x[0]
-            # Remove degeneracies
-            opti_phi = opti_phi % np.pi
-            if opti_phi > np.pi / 2:
-                opti_phi = np.pi - opti_phi
-            cost = ellipse_cost(opti_phi, points, True)
-            if cost < 0.1:
-                break
+        # guesses = [0, np.pi / 2, np.pi / 4]
+        # for guess in guesses:
+        #     res = minimize(ellipse_cost, guess, args=(points,))
+        #     opti_phi = res.x[0]
+        #     # Remove degeneracies
+        #     opti_phi = opti_phi % np.pi
+        #     if opti_phi > np.pi / 2:
+        #         opti_phi = np.pi - opti_phi
+        #     cost = ellipse_cost(opti_phi, points, True)
+        #     if cost < 0.1:
+        #         break
+        opti_phi = 0
         algo_phis.insert(0, opti_phi)
 
         if do_plot:
             fig, ax = plt.subplots()
-            # Plot the data points
-            for point in points:
-                kpl.plot_data(ax, *point, color=KplColors.BLUE.value)
-            # Plot the fit
-            ellipse_lambda = lambda theta: ellipse_point(theta, opti_phi)
-            x_vals, y_vals = zip(ellipse_lambda(theta_linspace))
-            x_vals = x_vals[0]
-            y_vals = y_vals[0]
-            kpl.plot_line(ax, x_vals, y_vals)
-            kpl.tight_layout(fig)
+            for test_phi in [0.0, 0.03]:
+                # Plot the data points
+                for point in points:
+                    color = KplColors.BLUE.value
+                    kpl.plot_data(ax, *point, color=color)
+                # Plot the fit
+                ellipse_lambda = lambda theta: ellipse_point(theta, test_phi)
+                x_vals, y_vals = zip(ellipse_lambda(theta_linspace))
+                x_vals = x_vals[0]
+                y_vals = y_vals[0]
+                kpl.plot_line(ax, x_vals, y_vals)
+                kpl.tight_layout(fig)
+                cost = ellipse_cost(test_phi, points, True)
+                print(f"Phi: {round(test_phi, 3)}; cost: {round(cost, 6)}")
 
         # Get the costs
         # test_phis = [true_phi]
@@ -240,15 +262,16 @@ def main(path):
             phi_errors_sub.append(phi - true_phi)
         phi_errors.append(phi_errors_sub)
 
-    print("Summary for ellipse with true phi {true_phi}")
-    for row in phi_errors:
-        rounded_errs = [round(el, 6) for el in row]
-        print(
-            f"Algo: {rounded_errs[0]}; LS: {rounded_errs[1]}; NN:"
-            f" {rounded_errs[2]}"
-        )
-    print()
-    print("RMS phase errors for algorithm, least squares, neural net: ")
+    print(f"Summary for ellipse with true phi {true_phi}")
+    # for row in phi_errors:
+    #     rounded_errs = [round(el, 6) for el in row]
+    #     print(
+    #         f"Algo: {rounded_errs[0]}; LS: {rounded_errs[1]}; NN:"
+    #         f" {rounded_errs[2]}"
+    #     )
+    # print()
+    # print("RMS phase errors for algorithm, least squares, neural net: ")
+    print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
     rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
@@ -263,11 +286,11 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "ellipse_data"
 
-    # main(path)
+    main(path)
 
-    # plt.show(block=True)
+    plt.show(block=True)
 
-    # sys.exit()
+    sys.exit()
 
     ellipses = import_ellipses(path)
 
@@ -393,19 +416,16 @@ if __name__ == "__main__":
     ls_errs = np.array(ls_errs)
     nn_errs = np.array(nn_errs)
 
-    # fig, ax = plt.subplots()
-    # # kpl.plot_data(ax, true_phis, algo_errs, label="Algo", color=kpl.data_color_cycler[0])
-    # # kpl.plot_data(
-    # #     ax, true_phis, ls_errs, label="LS", color=kpl.data_color_cycler[1]
-    # # )
-    # # kpl.plot_data(
-    # #     ax, true_phis, nn_errs, label="NN", color=kpl.data_color_cycler[2]
-    # # )
-    # ax.set_xlabel("True phase")
-    # ax.set_ylabel("Error")
-    # ax.legend()
-    # kpl.tight_layout(fig)
-    # plt.show(block=True)
+    fig, ax = plt.subplots()
+    colors = kpl.data_color_cycler
+    kpl.plot_data(ax, true_phis, algo_errs, label="Algo", color=colors[0])
+    # kpl.plot_data(ax, true_phis, ls_errs, label="LS", color=colors[1])
+    # kpl.plot_data(ax, true_phis, nn_errs, label="NN", color=colors[2])
+    ax.set_xlabel("True phase")
+    ax.set_ylabel("Error")
+    ax.legend()
+    kpl.tight_layout(fig)
+    plt.show(block=True)
 
     inds = []
     for ind in range(len(true_phis)):
