@@ -166,15 +166,15 @@ class ApdTagger(LabradServer):
         logging.info(tagger_di_gate)
         
         # Do the hard work in the fast sub function
-        self.leftover_channels.append(0)
         apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]
-        return_counts = read_counter_internal_sub(
+        return_counts, leftover_channels = read_counter_internal_sub(
             buffer_channels,
             self.tagger_di_clock,
             tagger_di_gate,
             apd_channels,
             self.leftover_channels,
         )
+        self.leftover_channels = leftover_channels
         return return_counts
 
     def stop_tag_stream_internal(self):
@@ -186,7 +186,7 @@ class ApdTagger(LabradServer):
         self.stream = None
         self.stream_apd_indices = []
         self.stream_channels = []
-        self.leftover_channels = []
+        self.leftover_channels = np.empty((0), dtype=np.int32)
 
     @setting(0, returns="*i")
     def get_channel_mapping(self, c):
@@ -435,7 +435,7 @@ def read_counter_internal_sub(
         # Get leftovers and make sure we've got an array for comparison
         # to find click indices
         if previous_sample_end_ind is None:
-            join_tuple = (leftover_channels[:-1], buffer_channels[0:sample_end_ind])
+            join_tuple = (leftover_channels, buffer_channels[0:sample_end_ind])
             sample_channels = np.concatenate(join_tuple)
         else:
             sample_channels = buffer_channels[
@@ -446,7 +446,7 @@ def read_counter_internal_sub(
         # gate open channel, signifying the falling edge)
         open_inds = np.flatnonzero(sample_channels == open_channel)
         close_inds = np.flatnonzero(sample_channels == close_channel)
-        gates = np.dstack(open_inds, close_inds)
+        gates = np.column_stack((open_inds, close_inds))
 
         for dim2 in range(num_apds):
             apd_channel = apd_channels[dim2]
@@ -459,14 +459,14 @@ def read_counter_internal_sub(
 
         previous_sample_end_ind = sample_end_ind
 
+    # No samples were clocked - add everything to leftovers
     if sample_end_ind is None:
-        # No samples were clocked - add everything to leftovers
-        leftover_channels.extend(buffer_channels)
+        leftover_channels = np.append(leftover_channels, buffer_channels)
+    # Reset leftovers from the last sample clock
     else:
-        # Reset leftovers from the last sample clock
-        leftover_channels = buffer_channels[sample_end_ind:].tolist()
+        leftover_channels = buffer_channels[sample_end_ind:]
 
-    return return_counts
+    return return_counts, leftover_channels
 
 
 __server__ = ApdTagger()
