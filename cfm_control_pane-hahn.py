@@ -1090,7 +1090,7 @@ if __name__ == "__main__":
         #         break
         #     nv_sig["coords"][2] = int(z)
         #     do_image_sample(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1110,7 +1110,7 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
 
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)0203c
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)

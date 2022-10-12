@@ -163,7 +163,8 @@ class ApdTagger(LabradServer):
             buffer_channels,
             self.tagger_di_clock,
             self.tagger_di_gate,
-            self.apd_indices,
+            self.tagger_di_apd,
+            self.stream_apd_indices,
             self.leftover_channels,
         )
         return return_counts
@@ -398,16 +399,14 @@ def read_counter_internal_sub(
     """
 
     # Find clock clicks (sample breaks)
-    clock_click_inds = np.nonzero(buffer_channels == tagger_di_clock)[
-        0
-    ].tolist()
+    clock_click_inds = np.flatnonzero(buffer_channels == tagger_di_clock)
 
     previous_sample_end_ind = None
     sample_end_ind = None
 
     # Counts will be a list of lists - the first dimension will divide
     # samples and the second will divide gatings within samples
-    return_counts = []
+    return_counts = [[[1]]]
 
     for clock_click_ind in clock_click_inds:
 
@@ -425,11 +424,11 @@ def read_counter_internal_sub(
                 previous_sample_end_ind:sample_end_ind
             ]
 
-        sample_counts = []
+        sample_counts = [[1]]
 
         # Assume a single gate for both APDs: get all the gates once and then
         # count for each APD individually
-        open_channel = tagger_di_gate[tagger_di_apd[apd_index]]
+        open_channel = tagger_di_gate[tagger_di_apd[0]]
         close_channel = -open_channel
         # Find gate open and close clicks (gate close channel is negative of
         # gate open channel, signifying the falling edge)
@@ -438,15 +437,17 @@ def read_counter_internal_sub(
         gates = np.dstack(open_inds, close_inds)
 
         for apd_index in apd_indices:
-            channel_counts = []
+            channel_counts = [1]
             apd_channel = tagger_di_apd[apd_index]
             for gate in gates:
                 num_counts = np.count_nonzero(
                     sample_channels[gate[0] : gate[1]] == apd_channel
                 )
                 channel_counts.append(num_counts)
+            channel_counts.pop(0)
             sample_counts.append(channel_counts)
 
+        sample_counts.pop(0)
         return_counts.append(sample_counts)
         previous_sample_end_ind = sample_end_ind
 
@@ -457,6 +458,7 @@ def read_counter_internal_sub(
         # Reset leftovers from the last sample clock
         leftover_channels = buffer_channels[sample_end_ind:].tolist()
 
+    return_counts.pop(0)
     return return_counts
 
 
