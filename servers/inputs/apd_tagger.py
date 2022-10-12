@@ -398,17 +398,28 @@ def read_counter_internal_sub(
     so that the compiler has no trouble understanding what to do.
     """
 
+    # Assume a single gate for both APDs: get all the gates once and then
+    # count for each APD individually
+    open_channel = tagger_di_gate[tagger_di_apd[0]]
+    close_channel = -open_channel
+
     # Find clock clicks (sample breaks)
     clock_click_inds = np.flatnonzero(buffer_channels == tagger_di_clock)
 
     previous_sample_end_ind = None
     sample_end_ind = None
 
-    # Counts will be a list of lists - the first dimension will divide
-    # samples and the second will divide gatings within samples
-    return_counts = [[[1]]]
+    # Figure out the number of everything and pre-allocate the data structure
+    num_samples = len(clock_click_inds)
+    num_apds = len(apd_indices)
+    num_reps = len(np.flatnonzero(buffer_channels == close_channel))
 
-    for clock_click_ind in clock_click_inds:
+    # The data structure is 3D array - the first dimension is for
+    # samples, the second is for APDs, and the third is for reps/gates
+    return_counts = np.empty((num_samples, num_apds, num_reps), dtpye=np.int32)
+
+    for dim1 in range(num_samples):
+        clock_click_ind = clock_click_inds[dim1]
 
         # Clock clicks end samples, so they should be included with the
         # sample itself
@@ -424,31 +435,22 @@ def read_counter_internal_sub(
                 previous_sample_end_ind:sample_end_ind
             ]
 
-        sample_counts = [[1]]
-
-        # Assume a single gate for both APDs: get all the gates once and then
-        # count for each APD individually
-        open_channel = tagger_di_gate[tagger_di_apd[0]]
-        close_channel = -open_channel
         # Find gate open and close clicks (gate close channel is negative of
         # gate open channel, signifying the falling edge)
         open_inds = np.flatnonzero(sample_channels == open_channel)
         close_inds = np.flatnonzero(sample_channels == close_channel)
         gates = np.dstack(open_inds, close_inds)
 
-        for apd_index in apd_indices:
-            channel_counts = [1]
+        for dim2 in range(num_apds):
+            apd_index = apd_indices[dim2]
             apd_channel = tagger_di_apd[apd_index]
-            for gate in gates:
+            for dim3 in range(num_reps):
+                gate = gates[dim3]
                 num_counts = np.count_nonzero(
                     sample_channels[gate[0] : gate[1]] == apd_channel
                 )
-                channel_counts.append(num_counts)
-            channel_counts.pop(0)
-            sample_counts.append(channel_counts)
+                return_counts[dim1, dim2, dim3] = num_counts
 
-        sample_counts.pop(0)
-        return_counts.append(sample_counts)
         previous_sample_end_ind = sample_end_ind
 
     if sample_end_ind is None:
@@ -458,7 +460,6 @@ def read_counter_internal_sub(
         # Reset leftovers from the last sample clock
         leftover_channels = buffer_channels[sample_end_ind:].tolist()
 
-    return_counts.pop(0)
     return return_counts
 
 
