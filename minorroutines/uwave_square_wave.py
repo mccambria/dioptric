@@ -53,11 +53,13 @@ def sweep(cxn, uwave_freqs, uwave_power):
 def constant(cxn, uwave_freq, uwave_power):
 
     sig_gen_cxn = cxn.signal_generator_sg394
-    sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.set_amp(uwave_power)
+    sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.uwave_on()
 
+    cxn.pulse_streamer.constant([7])
     input('Press enter to stop...')
+    cxn.pulse_streamer.constant()
 
     sig_gen_cxn.uwave_off()
     tool_belt.reset_cfm(cxn)
@@ -73,10 +75,10 @@ def main(cxn, uwave_freq, uwave_power, state = States.LOW):
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
     sig_gen_cxn = cxn.signal_generator_sg394
-    sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.set_amp(uwave_power)
+    sig_gen_cxn.set_freq(uwave_freq)
     # sig_gen_cxn.load_iq()
-    sig_gen_cxn.uwave_on()
+    # sig_gen_cxn.uwave_on()
 
 
     seq_file = 'uwave_square_wave.py'
@@ -107,7 +109,7 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     with labrad.connect() as cxn:
-        uwave_freq = 2.87 #GHz
+        uwave_freq = 2.867 #GHz
         uwave_power = 0 #dBm
         # main(cxn,uwave_freq, uwave_power, States.HIGH)
         constant(cxn,uwave_freq, uwave_power)

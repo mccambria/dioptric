@@ -423,22 +423,22 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     timestamp = tool_belt.get_time_stamp()
     # print(nv_sig['coords'])
     rawData = {'timestamp': timestamp,
-               'nv_sig': nv_sig,
-               'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'drift': drift,
-               'x_range': x_range,
-               'x_range-units': 'V',
-               'y_range': y_range,
-               'y_range-units': 'V',
-               'num_steps': num_steps,
-               'readout': readout,
-               'readout-units': 'ns',
-               'x_voltages': x_voltages.tolist(),
-               'x_voltages-units': 'V',
-               'y_voltages': y_voltages.tolist(),
-               'y_voltages-units': 'V',
-               'img_array': img_array.astype(int).tolist(),
-               'img_array-units': 'counts'}
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'drift': drift,
+                'x_range': x_range,
+                'x_range-units': 'V',
+                'y_range': y_range,
+                'y_range-units': 'V',
+                'num_steps': num_steps,
+                'readout': readout,
+                'readout-units': 'ns',
+                'x_voltages': x_voltages.tolist(),
+                'x_voltages-units': 'V',
+                'y_voltages': y_voltages.tolist(),
+                'y_voltages-units': 'V',
+                'img_array': img_array.astype(int).tolist(),
+                'img_array-units': 'counts'}
 
     if save_data:
 

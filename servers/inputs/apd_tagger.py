@@ -33,6 +33,8 @@ import logging
 import re
 import time
 import socket
+import numba
+from numba import jit, njit
 # from pathos.multiprocessing import ProcessingPool as Pool
 
 
@@ -129,11 +131,10 @@ class ApdTagger(LabradServer):
         channels = buffer.getChannels()
         return timestamps, channels
 
-    # @jit(nopython=True)
     def read_counter_setting_internal(self, num_to_read):
-        if self.stream is None:
-            logging.error("read_counter attempted while stream is None.")
-            return
+    #     # if self.stream is None:
+    #     #     logging.error("read_counter attempted while stream is None.")
+    #     #     return
         if num_to_read is None:
             # Poll once and return the result
             counts = self.read_counter_internal()
@@ -150,42 +151,6 @@ class ApdTagger(LabradServer):
 
         return counts
 
-    # @jit(nopython=True)
-    def get_gate_click_inds(self, sample_channels_arr, apd_index):
-
-        open_channel = self.tagger_di_gate[self.stream_apd_indices[apd_index]]
-        close_channel = -open_channel
-
-        # Find gate open clicks
-        open_inds = nonzero(sample_channels_arr == open_channel)[0].tolist()
-
-        # Find gate close clicks
-        # Gate close channel is negative of gate open channel,
-        # signifying the falling edge
-        close_inds = nonzero(sample_channels_arr == close_channel)[0].tolist()
-
-        return open_inds, close_inds
-
-    # @jit(nopython=True)
-    def append_apd_channel_counts(
-        self, gate_inds, apd_index, sample_channels, sample_counts_append
-    ):
-        # The zip must be recreated each time we want to use it
-        # since the generator it returns is a single-use object for
-        # memory reasons.
-        gate_zip = zip(gate_inds[0], gate_inds[1])
-        apd_channel = self.tagger_di_apd[apd_index]
-        count_lambda = lambda gate: count_nonzero(sample_channels[gate[0]: gate[1]] == apd_channel)
-        # with Pool() as p:
-        #     channel_counts = p.map(count_lambda, gate_zip)
-        # channel_counts = [
-        #     count_nonzero(sample_channels[open_ind:close_ind] == apd_channel)
-        #     for open_ind, close_ind in gate_zip
-        # ]
-        channel_counts = [count_lambda(gate) for gate in gate_zip]
-        sample_counts_append(channel_counts)
-
-    # @jit(nopython=True)
     def read_counter_internal(self):
         """
         This is the core counter function for the Time Tagger. It needs to be
@@ -204,77 +169,9 @@ class ApdTagger(LabradServer):
 
         # channels is an array
         _, channels = self.read_raw_stream()
-
-        # Find clock clicks (sample breaks)
-        result = nonzero(channels == self.tagger_di_clock)
-        clock_click_inds = result[0].tolist()
-
-        previous_sample_end_ind = None
-        sample_end_ind = None
-
-        # Counts will be a list of lists - the first dimension will divide
-        # samples and the second will divide gatings within samples
-        return_counts = []
-        return_counts_append = return_counts.append
-
-        for clock_click_ind in clock_click_inds:
-
-            # Clock clicks end samples, so they should be included with the
-            # sample itself
-            sample_end_ind = clock_click_ind + 1
-
-            # Get leftovers and make sure we've got an array for comparison
-            # to find click indices
-            if previous_sample_end_ind is None:
-                join_tuple = (
-                    self.leftover_channels,
-                    channels[0:sample_end_ind],
-                )
-                sample_channels = concatenate(join_tuple)
-            else:
-                sample_channels = channels[
-                    previous_sample_end_ind:sample_end_ind
-                ]
-
-            sample_counts = []
-            sample_counts_append = sample_counts.append
-
-            # Get all the gates once and then count for each APD individually
-            if self.stream_single_gate:
-                gate_inds = self.get_gate_click_inds(sample_channels, 0)
-                for apd_index in self.stream_apd_indices:
-                    self.append_apd_channel_counts(
-                        gate_inds,
-                        apd_index,
-                        sample_channels,
-                        sample_counts_append,
-                    )
-
-            # Loop through the APDs, getting the gates for each APD
-            else:
-                for apd_index in self.stream_apd_indices:
-                    gate_inds = self.get_gate_click_inds(
-                        sample_channels, apd_index
-                    )
-                    self.append_apd_channel_counts(
-                        gate_inds,
-                        apd_index,
-                        sample_channels,
-                        sample_counts_append,
-                    )
-
-            return_counts_append(sample_counts)
-            previous_sample_end_ind = sample_end_ind
-
-        if sample_end_ind is None:
-            # No samples were clocked - add everything to leftovers
-            self.leftover_channels.extend(channels)
-        else:
-            # Reset leftovers from the last sample clock
-            self.leftover_channels = channels[sample_end_ind:].tolist()
-
-        return return_counts
-
+        
+        return self.read_counter_internal_sub(channels)
+        
     def stop_tag_stream_internal(self):
         if self.stream is not None:
             self.stream.stop()
@@ -515,6 +412,95 @@ class ApdTagger(LabradServer):
     @setting(8)
     def reset(self, c):
         self.stop_tag_stream_internal()
+        
+@njit
+def get_gate_click_inds(tagger_di_gate, stream_apd_indices, sample_channels_arr, apd_index):
+
+    open_channel = tagger_di_gate[stream_apd_indices[apd_index]]
+    close_channel = -open_channel
+
+    # Find gate open clicks
+    open_inds = nonzero(sample_channels_arr == open_channel)[0].tolist()
+
+    # Find gate close clicks
+    # Gate close channel is negative of gate open channel,
+    # signifying the falling edge
+    close_inds = nonzero(sample_channels_arr == close_channel)[0].tolist()
+
+    return open_inds, close_inds
+
+@njit
+def read_counter_internal_sub(channels):
+
+    # Find clock clicks (sample breaks)
+    clock_click_inds = []
+    for el in channels:
+        if el == tagger_di_clock:
+            clock_click_inds.append(el)
+
+    previous_sample_end_ind = None
+    sample_end_ind = None
+
+    # Counts will be a list of lists - the first dimension will divide
+    # samples and the second will divide gatings within samples
+    return_counts = []
+    return_counts_append = return_counts.append
+
+    for clock_click_ind in clock_click_inds:
+
+        # Clock clicks end samples, so they should be included with the
+        # sample itself
+        sample_end_ind = clock_click_ind + 1
+
+        # Get leftovers and make sure we've got an array for comparison
+        # to find click indices
+        if previous_sample_end_ind is None:
+            join_tuple = (
+                self.leftover_channels,
+                channels[0:sample_end_ind],
+            )
+            sample_channels = concatenate(join_tuple)
+        else:
+            sample_channels = channels[
+                previous_sample_end_ind:sample_end_ind
+            ]
+
+        sample_counts = []
+        sample_counts_append = sample_counts.append
+
+        # Assume a single gate for both APDs: get all the gates once and then 
+        # count for each APD individually
+        
+        open_channel = tagger_di_gate[stream_apd_indices[apd_index]]
+        close_channel = -open_channel
+        # Find gate open clicks
+        open_inds = nonzero(sample_channels == open_channel)[0].tolist()
+        # Find gate close clicks (gate close channel is negative of gate open 
+        # channel, signifying the falling edge)
+        close_inds = nonzero(sample_channels_arr == close_channel)[0].tolist()
+        
+        for apd_index in self.stream_apd_indices:
+            # Append APD channel counts
+            # The zip must be recreated each time we want to use it
+            # since the generator it returns is a single-use object for
+            # memory reasons.
+            gate_zip = zip(gate_inds[0], gate_inds[1])
+            apd_channel = tagger_di_apd[apd_index]
+            count_lambda = lambda gate: count_nonzero(sample_channels[gate[0]: gate[1]] == apd_channel)
+            channel_counts = [count_lambda(gate) for gate in gate_zip]
+            sample_counts_append(channel_counts)
+
+        return_counts_append(sample_counts)
+        previous_sample_end_ind = sample_end_ind
+
+    if sample_end_ind is None:
+        # No samples were clocked - add everything to leftovers
+        self.leftover_channels.extend(channels)
+    else:
+        # Reset leftovers from the last sample clock
+        self.leftover_channels = channels[sample_end_ind:].tolist()
+
+    return return_counts
 
 __server__ = ApdTagger()
 
