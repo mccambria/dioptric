@@ -176,7 +176,7 @@ class ApdTagger(LabradServer):
         )
         self.leftover_channels = leftover_channels
         return return_counts
-
+    
     def stop_tag_stream_internal(self):
         if self.stream is not None:
             self.stream.stop()
@@ -187,6 +187,7 @@ class ApdTagger(LabradServer):
         self.stream_apd_indices = []
         self.stream_channels = []
         self.leftover_channels = np.empty((0), dtype=np.int32)
+        # self.leftover_channels = []
 
     @setting(0, returns="*i")
     def get_channel_mapping(self, c):
@@ -400,9 +401,13 @@ def read_counter_internal_sub(
     This is the core counter function for the Time Tagger. It needs to be
     fast - if it's not fast enough, we may encounter unexpected behavior,
     like certain samples returning 0 counts when clearly they should return
-    something > 0. This function lives outside the class so that it can be
-    compiled by numba. It's written in very basic (and slow, natively) python
-    so that the compiler has no trouble understanding what to do.
+    something > 0. For that reason, this function lives outside the class so 
+    that it can be compiled by numba. It's written in very basic (and slow, 
+    natively) python so that the compiler has no trouble understanding what 
+    to do.
+    
+    The data structure (return_counts) is 3D array - the first dimension is 
+    for samples, the second is for APDs, and the third is for reps/gates.
     """
     
     # Assume a single gate for both APDs: get all the gates once and then
@@ -416,14 +421,12 @@ def read_counter_internal_sub(
     previous_sample_end_ind = None
     sample_end_ind = None
 
-    # Figure out the number of everything and pre-allocate the data structure
+    # Figure out the number of samples and APDs
     num_samples = len(clock_click_inds)
     num_apds = len(apd_channels)
-    num_reps = len(np.flatnonzero(buffer_channels == close_channel))
-
-    # The data structure is 3D array - the first dimension is for
-    # samples, the second is for APDs, and the third is for reps/gates
-    return_counts = np.empty((num_samples, num_apds, num_reps), dtype=np.int32)
+    
+    # Allocate the data structure inside the loop so we know we have a sample
+    data_structure_allocated = False
 
     for dim1 in range(num_samples):
         clock_click_ind = clock_click_inds[dim1]
@@ -447,6 +450,11 @@ def read_counter_internal_sub(
         open_inds = np.flatnonzero(sample_channels == open_channel)
         close_inds = np.flatnonzero(sample_channels == close_channel)
         gates = np.column_stack((open_inds, close_inds))
+        
+        if not data_structure_allocated:
+            num_reps = len(open_inds)
+            return_counts = np.empty((num_samples, num_apds, num_reps), dtype=np.int32)
+            data_structure_allocated = True
 
         for dim2 in range(num_apds):
             apd_channel = apd_channels[dim2]
@@ -459,8 +467,9 @@ def read_counter_internal_sub(
 
         previous_sample_end_ind = sample_end_ind
 
-    # No samples were clocked - add everything to leftovers
+    # No samples were clocked - make a dummy return_counts and add everything to leftovers
     if sample_end_ind is None:
+        return_counts = np.empty((0, 0, 0), dtype=np.int32)
         leftover_channels = np.append(leftover_channels, buffer_channels)
     # Reset leftovers from the last sample clock
     else:
