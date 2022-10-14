@@ -382,7 +382,7 @@ def process_counts(ref_counts, sig_counts, num_runs):
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
     # New style, single reference
-    if False:
+    if True:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2

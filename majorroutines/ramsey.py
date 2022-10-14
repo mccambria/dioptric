@@ -87,10 +87,11 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
     return fig_fft, FreqParams
 
 def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
+    half_ind = 200
     
     taus_us = numpy.array(taus)/1e3
     # Guess the other params for fitting
-    amp_1 = 0.1
+    amp_1 = 0.2
     amp_2 = amp_1
     amp_3 = amp_1
     decay = 1
@@ -103,9 +104,13 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     # guess_params_fixed_freq = (offset, decay, amp_1,
     #                     amp_2, 
     #                     amp_3, )
+    
+    # guess_params_fixed_freq = (0.95, 0.3, 0.05,
+    #                     0.05, 
+    #                     0.05, )
     # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
     
-    # Try the fit to a sum of three cosines
+    ### Try the fit to a sum of three cosines
     
     fit_func = tool_belt.cosine_sum
     init_params = guess_params
@@ -113,24 +118,22 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     # fit_func = cosine_sum_fixed_freq
     # init_params = guess_params_fixed_freq
     try:
-        popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
+        popt,pcov = curve_fit(fit_func, taus_us[:half_ind], norm_avg_sig[:half_ind],
                       p0=init_params,
-                        bounds=(0, [numpy.infty, numpy.infty, numpy.infty, numpy.infty,
-                                    numpy.infty, numpy.infty,
-                                    numpy.infty, numpy.infty, ])
+                        # bounds=(0, numpy.infty)
                       )
     except Exception:
         print('Something went wrong!')
         popt = guess_params
     print(popt)
-
+    
     taus_us_linspace = numpy.linspace(precession_time_range[0]/1e3, precession_time_range[1]/1e3,
                           num=1000)
 
     fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus_us, norm_avg_sig,'b',label='data')
+    ax.plot(taus_us[:half_ind], norm_avg_sig[:half_ind],'b',label='data')
     ax.plot(taus_us_linspace, fit_func(taus_us_linspace,*popt),'r',label='fit')
-    ax.set_xlabel('Free precesion time (ns)')
+    ax.set_xlabel('Free precesion time (us)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend()
     # text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
@@ -154,6 +157,45 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     
     return fig_fit
 
+#%%
+
+def replot(sig_counts, ref_counts, plot_taus):
+    plot_taus = numpy.array(plot_taus)/1e3
+    run_ind = 20
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    
+    avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+    avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+    try:
+        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig[inf_mask] = 0
+    
+    half_ind = len(plot_taus)
+    ax = axes_pack[0]
+    ax.cla()
+    ax.plot(plot_taus[:half_ind], avg_sig_counts[:half_ind], "r-", label="signal")
+    ax.plot(plot_taus[:half_ind], avg_ref_counts[:half_ind], "g-", label="reference")
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_ylabel("Counts")
+    ax.legend()
+    
+    ax = axes_pack[1]
+    ax.cla()
+    ax.plot(plot_taus[:half_ind], norm_avg_sig[:half_ind], "b-")
+    ax.set_title("Ramsey Measurement")
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_ylabel("Contrast (arb. units)")
+    
+    
+    raw_fig.canvas.draw()
+    raw_fig.set_tight_layout(True)
+    raw_fig.canvas.flush_events()
+        
+        
 # %% Main
 
 
@@ -165,7 +207,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    state=States.LOW,
+    state=States.HIGH,
     opti_nv_sig = None
 ):
 
@@ -194,7 +236,7 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
-    state=States.LOW,
+    state=States.HIGH,
     opti_nv_sig = None
 ):
 
@@ -607,6 +649,7 @@ def main_with_cxn(
     return 
 
 
+
 # %% Run the file
 
 
@@ -614,12 +657,15 @@ if __name__ == "__main__":
 
 
     folder = "pc_rabi/branch_master/ramsey/2022_10"
-    file = '2022_10_07-17_23_09-siena-native_layer'
+    file = '2022_10_13-15_40_32-siena-nv1_2022_10_13'
+    
+    # folder = "pc_rabi/branch_master/ramsey/2022_08"
+    # file = '2022_08_04-12_59_05-rubin-nv1'
     
     # detuning = 0
     data = tool_belt.get_raw_data(file, folder)
     detuning= data['detuning']
-    norm_avg_sig = data['norm_avg_sig']
+    # norm_avg_sig = data['norm_avg_sig']
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
     try:
@@ -631,9 +677,15 @@ if __name__ == "__main__":
             precession_time_range[1],
             num=num_steps,
         )
-        
+    sig_counts = numpy.array(data['sig_counts'])
+    ref_counts = numpy.array(data['ref_counts'])
+    replot(sig_counts, ref_counts, taus)
+    run_ind =20
+    avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+    avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+    norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         
     _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
-    print(FreqParams)
-
+    # print(FreqParams)
+    # # FreqParams = [4.9, 6.83, 8.89]
     fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)

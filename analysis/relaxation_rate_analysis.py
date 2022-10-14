@@ -44,11 +44,12 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     get_data_points,
 )
 from utils.kplotlib import (
-    marker_size,
-    line_width,
-    marker_edge_width,
+    marker_sizes,
+    line_widths,
+    marker_edge_widths,
     KplColors,
 )
+# marker_sizes = marker_sizes['normal']
 
 edge_color = KplColors.GREEN.value
 face_color = kpl.lighten_color_hex(edge_color)
@@ -512,9 +513,9 @@ def main(
                     marker="o",
                     markerfacecolor=face_color,
                     linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
-                    markeredgewidth=marker_edge_width,
+                    ms=marker_sizes['normal'],
+                    lw=line_widths['normal'],
+                    markeredgewidth=marker_edge_widths['normal'],
                 )
                 ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
                 ax.set_ylabel("Normalized difference")
@@ -546,16 +547,16 @@ def main(
                     color=edge_color,
                     markerfacecolor=face_color,
                     linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
-                    markeredgewidth=marker_edge_width,
+                    ms=marker_sizes['normal'],
+                    lw=line_widths['normal'],
+                    markeredgewidth=marker_edge_widths['normal'],
                 )
                 if offset:
                     ax.plot(
                         zero_time_linspace,
                         exp_eq_offset(zero_time_linspace, *omega_opti_params),
                         label="fit",
-                        linewidth=line_width,
+                        linewidth=line_widths['normal'],
                         color=edge_color,
                     )
                 else:
@@ -563,7 +564,7 @@ def main(
                         zero_time_linspace,
                         exp_eq_omega(zero_time_linspace, *omega_opti_params),
                         label="fit",
-                        linewidth=line_width,
+                        linewidth=line_widths['normal'],
                         color=edge_color,
                     )
                 ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
@@ -619,9 +620,9 @@ def main(
         color=edgec,
         markerfacecolor=facec,
         linestyle="None",
-        ms=marker_size,
-        lw=line_width,
-        markeredgewidth=marker_edge_width,
+        ms=marker_sizes['normal'],
+        lw=line_widths['normal'],
+        markeredgewidth=marker_edge_widths['normal'],
     )
     ax2.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
     ax2.set_ylabel("Normalized counts")
@@ -716,9 +717,9 @@ def main(
                 color=edge_color,
                 markerfacecolor=face_color,
                 linestyle="None",
-                ms=marker_size,
-                lw=line_width,
-                markeredgewidth=marker_edge_width,
+                ms=marker_sizes['normal'],
+                lw=line_widths['normal'],
+                markeredgewidth=marker_edge_widths['normal'],
             )
             ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
             ax.set_ylabel("Normalized difference")
@@ -755,16 +756,16 @@ def main(
                 color=edge_color,
                 markerfacecolor=face_color,
                 linestyle="None",
-                ms=marker_size,
-                lw=line_width,
-                markeredgewidth=marker_edge_width,
+                ms=marker_sizes['normal'],
+                lw=line_widths['normal'],
+                markeredgewidth=marker_edge_widths['normal'],
             )
             if offset:
                 ax.plot(
                     plus_time_linspace,
                     exp_eq_offset(plus_time_linspace, *gamma_opti_params),
                     label="fit",
-                    linewidth=line_width,
+                    linewidth=line_widths['normal'],
                     color=edge_color,
                 )
             else:
@@ -773,7 +774,7 @@ def main(
                     # exp_eq_gamma(plus_time_linspace, *gamma_opti_params),  # MCC
                     gamma_fit_func(plus_time_linspace, *gamma_opti_params),
                     label="fit",
-                    linewidth=line_width,
+                    linewidth=line_widths['normal'],
                     color=edge_color,
                 )
             ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
