@@ -62,15 +62,18 @@ def update_figure(fig, axis_ind, voltages, count_rates, text=None):
 
 
 def read_timed_counts(cxn, num_steps, period, apd_indices):
-
-    cxn.apd_tagger.start_tag_stream(apd_indices)
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    
+    counter_server.start_tag_stream(apd_indices)
     num_read_so_far = 0
     counts = []
 
     timeout_duration = ((period * (10 ** -9)) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
-    cxn.pulse_streamer.stream_start(num_steps)
+    pulsegen_server.stream_start(num_steps)
 
     while num_read_so_far < num_steps:
 
@@ -82,20 +85,23 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        new_samples = counter_server.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             counts.extend(new_samples)
             num_read_so_far += num_new_samples
 
-    cxn.apd_tagger.stop_tag_stream()
+    counter_server.stop_tag_stream()
 
     return numpy.array(counts, dtype=int)
 
 
 def read_manual_counts(cxn, period, apd_indices, axis_write_func, scan_vals):
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
-    cxn.apd_tagger.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream(apd_indices)
     counts = []
 
     for ind in range(len(scan_vals)):
@@ -110,18 +116,22 @@ def read_manual_counts(cxn, period, apd_indices, axis_write_func, scan_vals):
         # are synchronous so if the write function has a built-in wait until
         # the write completes, then no delay is necessary in the sequence
         axis_write_func(scan_vals[ind])
-        cxn.pulse_streamer.stream_start(1)
+        pulsegen_server.stream_start(1)
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple(1)
+        new_samples = counter_server.read_counter_simple(1)
         counts.extend(new_samples)
 
-    cxn.apd_tagger.stop_tag_stream()
+    counter_server.stop_tag_stream()
 
     return numpy.array(counts, dtype=int)
 
 
 def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+
 
     seq_file_name = "simple_readout.py"
 
@@ -142,20 +152,23 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     delay = config["Positioning"]["xy_small_response_delay"]
     seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+    pulsegen_server.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
-    cxn.apd_tagger.start_tag_stream(apd_indices)
-    cxn.pulse_streamer.stream_start(total_num_samples)
-    new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+    counter_server.start_tag_stream(apd_indices)
+    pulsegen_server.stream_start(total_num_samples)
+    new_samples = counter_server.read_counter_simple(1)
     new_samples_avg = numpy.average(new_samples)
-    cxn.apd_tagger.stop_tag_stream()
+    counter_server.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10 ** 9)
 
     return counts_kcps
 
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
     seq_file_name = "simple_readout.py"
     coords = nv_sig["coords"]
@@ -195,7 +208,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
             
         seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+        ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
         
         auto_scan = False
@@ -231,20 +244,20 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         
         seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+        ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
         
-        if hasattr(z_server, "load_scan_z"):
-            scan_vals = z_server.load_scan_z(z_center, scan_range, num_steps, period)
-            auto_scan = True
-        else:
-            manual_write_func = z_server.write_z
-            adj_z_center = z_center
+        # if hasattr(z_server, "load_scan_z"):
+        #     scan_vals = z_server.load_scan_z(z_center, scan_range, num_steps, period)
+        #     auto_scan = True
+    # else:
+        manual_write_func = z_server.write_z
+        adj_z_center = z_center
 
-            scan_vals = tool_belt.get_scan_vals(
-                adj_z_center, scan_range, num_steps, scan_dtype
-            )
-            auto_scan = False
+        scan_vals = tool_belt.get_scan_vals(
+            adj_z_center, scan_range, num_steps, scan_dtype
+        )
+        auto_scan = False
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     else:
@@ -453,11 +466,39 @@ def main_with_cxn(
 
     opti_succeeded = False
 
+     # %% Check if we need to optimize
+
+    print("Expected count rate: {}".format(expected_count_rate))
+
+    if expected_count_rate is not None:
+        lower_threshold = expected_count_rate * 9 / 10
+        upper_threshold = expected_count_rate * 6 / 5
+    
+    # Check the count rate
+    opti_count_rate = stationary_count_lite(cxn, nv_sig, adjusted_coords,
+                                            config, apd_indices)
+    
+    print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
+    
+    # If the count rate close to what we expect, we succeeded!
+    if (expected_count_rate is not None) and (lower_threshold <= opti_count_rate <= upper_threshold):
+        print("No need to optimize.")
+        opti_unnecessary = True
+        # opti_unnecessary = False
+        opti_coords = adjusted_coords
+    else:
+        print("Count rate at optimized coordinates out of bounds.")
+        opti_unnecessary = False
+
+
     # %% Try to optimize
 
     num_attempts = 4
 
     for ind in range(num_attempts):
+        
+        if opti_unnecessary:
+            break
 
         if ind > 0:
             print("Trying again...")
@@ -473,14 +514,21 @@ def main_with_cxn(
         counts_by_axis = []
 
         # xy
-        for axis_ind in range(2):
-            # print(axis_ind)
-            ret_vals = optimize_on_axis(
-                cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
-            )
-            opti_coords.append(ret_vals[0])
-            scan_vals_by_axis.append(ret_vals[1])
-            counts_by_axis.append(ret_vals[2])
+        if "only_z_opt" in nv_sig and nv_sig["only_z_opt"]:
+            opti_coords = [adjusted_coords[0], adjusted_coords[1]]
+            for i in range(2):
+                scan_vals_by_axis.append(numpy.array([]))
+                counts_by_axis.append(numpy.array([]))
+                
+        else:
+            for axis_ind in range(2):
+                # print(axis_ind)
+                ret_vals = optimize_on_axis(
+                    cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
+                )
+                opti_coords.append(ret_vals[0])
+                scan_vals_by_axis.append(ret_vals[1])
+                counts_by_axis.append(ret_vals[2])
         # ret_vals = optimize_on_axis(
         #     cxn, adjusted_nv_sig, 1, config, apd_indices, fig
         # )

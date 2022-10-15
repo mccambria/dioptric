@@ -188,7 +188,7 @@ if __name__ == '__main__':
     simulation_duration =  80000 // 4 # clock cycle units - 4ns
     num_repeat=10
     delay = 1000
-    args = [delay, readout_time, 0,'do_laserglow_532_dm',1]
+    args = [delay, readout_time,0, 'do_cobolt_515_dm',1]
     seq , f, p = get_seq([],config, args, num_repeat)
     
     # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

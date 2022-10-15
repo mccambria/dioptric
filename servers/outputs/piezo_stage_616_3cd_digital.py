@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI P-616.3c 3 axis piezo
+Output server for the PI P-616.3cd 3 axis piezo
 Sending commands over usb
 
-Created on Wed Nov  3 15:58:30 2021
+Created summer 2022
 
-@author: agardill
+@author: carter fox
 
 ### BEGIN NODE INFO
 [info]
-name = piezo_stage_616_3c_digital
+name = piezo_stage_616_3cd_digital
 version = 1.0
 description =
 
@@ -38,7 +38,7 @@ import time
 
 
 class PiezoStageDigital(LabradServer):
-    name = "piezo_stage_616_3c_digital"
+    name = "piezo_stage_616_3cd_digital"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -55,10 +55,14 @@ class PiezoStageDigital(LabradServer):
         self.task = None
         self.sub_init_server_xyz()
         # self.sub_init_server_z()
-
+        
+    def stopServer(self):
+        logging.info('closing connection')
+        self.piezo.CloseConnection()
+    
+    
     def sub_init_server_xyz(self):
         """Sub-routine to be called by xyz server"""
-    
         config = ensureDeferred(self.get_config_xyz())
         config.addCallback(self.on_get_config_xyz)
         
@@ -66,23 +70,12 @@ class PiezoStageDigital(LabradServer):
     async def get_config_xyz(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"]) # change this in registry
-        p.get("piezo_stage_616_2c_model")
-        p.get("piezo_stage_616_2c_serial")
-        # p.cd(["", "Config", "Wiring", "Piezo_stage_E727"])
-        # p.get("piezo_stage_channel_x")
-        # p.get("piezo_stage_channel_y")
-        # p.cd(["", "Config", "Positioning"])
-        # p.get("piezo_stage_voltage_range_factor")
-        # p.get("daq_voltage_range_factor")
-        # p.get("piezo_stage_scaling_offset")
-        # p.get("piezo_stage_scaling_gain")
-        # p.cd(["", "Config", "Wiring", "Daq"])
-        # p.get("ao_piezo_stage_616_2cd_x")
-        # p.get("ao_piezo_stage_616_2cd_y")
-        # p.get("di_clock")
+        p.get("piezo_stage_616_3cd_model")
+        p.get("piezo_stage_616_3cd_serial")
+        
         p.cd(["", "Config", "Positioning"])
-        p.get("xy_positional_accuracy")
-        p.get("xy_timeout")
+        p.get("xyz_positional_accuracy")
+        p.get("xyz_timeout")
         # p.get("x_hysteresis_linearity")
         # p.get("y_hysteresis_linearity")
         result = await p.send()
@@ -97,48 +90,20 @@ class PiezoStageDigital(LabradServer):
         
         self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
         # Connect the specific device with the serial number
-        self.piezo.ConnectUSB(config[1])        
-        
+        self.piezo.ConnectUSB(config[1])      
+        # logging.info('test7')        
         # Axis for device
+        # logging.info('herehere')
+
         self.axis_0 = self.piezo.axes[0] 
-        self.axis_1 = self.piezo.axes[1]
-        self.axis_2 = self.piezo.axes[2]
+        # logging.info('here')
+        logging.info(self.axis_0)
+        # logging.info('here')
+        self.axis_1 = self.piezo.axes[2]
+        self.axis_2 = self.piezo.axes[1]
         self.positioning_accuracy = config[2]
         self.timeout = config[3]
-        # self.piezo_stage_channel_x = config[2]
-        # self.piezo_stage_channel_y = config[3]
-        
-        # self.piezo_stage_voltage_range_factor = config[4]
-        # self.daq_voltage_range_factor = config[5]
-        
-        # self.piezo_stage_scaling_offset = config[6]
-        # self.piezo_stage_scaling_gain = config[7]
-        # The command SPA allows us to rewrite volatile memory parameters.
-        # The inputs are {item ID, Parameter ID, PArameter Value}
-        
-        # First, we need to make sure the input range on the piezo stage is accepting +/-5 volts
-
-        # if self.piezo_stage_voltage_range_factor == 5.0:
-        #     psvrf_value = 1
-        # elif self.piezo_stage_voltage_range_factor  == 10.0:
-        #     psvrf_value = 2
-        # else:
-        #     logging.debug("Piezo stage voltage range factor must be either 5.0 or 10.0")
-        #     raise ValueError("Piezo stage voltage range factor must be either 5.0 or 10.0")
-        # self.piezo.SPA(self.piezo_stage_channel_x, 0x02000100, psvrf_value)
-        # self.piezo.SPA(self.piezo_stage_channel_y, 0x02000100, psvrf_value)
-        # logging.debug("Piezo stage voltage range factor set to: {}".format(config[4]))
-        
-        
-        # NExt, we need to set the right scaling for the input voltage to what the controller sends the piezo stage.
-        # This is all defined in the E727 manual. The values below are for a stage
-        # that travels between 0 and 500 um, and the input signal's range matching that of the controller's range (both 5 or 10 V)
-        # self.piezo.SPA(self.piezo_stage_channel_x, 0x02000200, self.piezo_stage_scaling_offset) #offset
-        # self.piezo.SPA(self.piezo_stage_channel_x, 0x02000300, self.piezo_stage_scaling_gain) #gain
-        # self.piezo.SPA(self.piezo_stage_channel_y, 0x02000200, self.piezo_stage_scaling_offset) #offset
-        # self.piezo.SPA(self.piezo_stage_channel_y, 0x02000300, self.piezo_stage_scaling_gain) #gain
-        # logging.debug("Piezo stage scaling OFFSET set to: {}".format(self.piezo_stage_scaling_offset))
-        # logging.debug("Piezo stage scaling GAIN set to: {}".format(config[7]))
+       
         
         # Disconnect axis from analog channels
         self.piezo.SPA(self.axis_0, 0x06000500, 0)  # Disconnect axis 0
@@ -196,9 +161,9 @@ class PiezoStageDigital(LabradServer):
     @setting(32,  xPosition="v[]", yPosition="v[]", returns="v[]",)
     def write_xy(self, c, xPosition, yPosition):
         """Write the specified x and y voltages to the piezo stage"""
-        if xPosition > 500 or yPosition > 500:
-            logging.info("Piezo stage position must not exceed 500 um")
-            raise ValueError("Piezo stage position must not exceed 500 um")
+        if xPosition > 100 or yPosition > 100:
+            logging.info("Piezo stage position must not exceed 100 um")
+            raise ValueError("Piezo stage position must not exceed 100 um")
         if xPosition < 0 or yPosition < 0:
             logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
@@ -225,12 +190,47 @@ class PiezoStageDigital(LabradServer):
             
         return flag
     
+    @setting(1032,  xPosition="v[]", yPosition="v[]", zPosition="v[]", returns="v[]",)
+    def write_xyz(self, c, xPosition, yPosition, zPosition):
+        """Write the specified x and y voltages to the piezo stage"""
+        if xPosition > 100 or yPosition > 100 or zPosition > 100:
+            logging.info("Piezo stage position must not exceed 100 um")
+            raise ValueError("Piezo stage position must not exceed 100 um")
+        if xPosition < 0 or yPosition < 0 or zPosition < 0:
+            logging.info("Piezo stage position must be above 0 um")
+            raise ValueError("Piezo stage position must be above 0 um")
+            
+        # manually send voltage task to controller
+        self.piezo.MOV(self.axis_0, xPosition)
+        self.piezo.MOV(self.axis_1, yPosition) 
+        self.piezo.MOV(self.axis_2, zPosition) 
+        
+        # Then check that we made it to the actual position, to within some threshold
+        x_diff = 1000
+        y_diff = 1000
+        z_diff = 1000
+        flag = 0
+        time_start_check = time.time()
+        while x_diff > self.positioning_accuracy or y_diff > self.positioning_accuracy or z_diff > self.positioning_accuracy:
+            
+            actual_x_pos, actual_y_pos, actual_z_pos = self.read_xyz(c)
+            x_diff = abs(actual_x_pos - xPosition)
+            y_diff = abs(actual_y_pos - yPosition)
+            z_diff = abs(actual_z_pos - zPosition)
+            time_check = time.time()
+            if time_check - time_start_check > self.timeout:
+                logging.info("Target position not reached!")
+                flag = 1
+                break 
+            
+        return flag
+    
     @setting(35,  xPosition="v[]", returns="v[]",)
     def write_x(self, c, xPosition):
         """Write the specified x  voltage to the piezo stage"""
-        if xPosition > 500 :
-            logging.info("Piezo stage position must not exceed 500 um")
-            raise ValueError("Piezo stage position must not exceed 500 um")
+        if xPosition > 100 :
+            logging.info("Piezo stage position must not exceed 100 um")
+            raise ValueError("Piezo stage position must not exceed 100 um")
         if xPosition < 0:
             logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
@@ -257,9 +257,9 @@ class PiezoStageDigital(LabradServer):
     @setting(36,   yPosition="v[]", returns="v[]",)
     def write_y(self, c, yPosition):
         """Write the specified  y voltage to the piezo stage"""
-        if yPosition > 500:
-            logging.info("Piezo stage position must not exceed 500 um")
-            raise ValueError("Piezo stage position must not exceed 500 um")
+        if yPosition > 100:
+            logging.info("Piezo stage position must not exceed 100 um")
+            raise ValueError("Piezo stage position must not exceed 100 um")
         if yPosition < 0:
             logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
@@ -286,9 +286,9 @@ class PiezoStageDigital(LabradServer):
     @setting(366,   zPosition="v[]", returns="v[]",)
     def write_z(self, c, zPosition):
         """Write the specified  z voltage to the piezo stage"""
-        if zPosition > 500:
-            logging.info("Piezo stage position must not exceed 500 um")
-            raise ValueError("Piezo stage position must not exceed 500 um")
+        if zPosition > 100:
+            logging.info("Piezo stage position must not exceed 100 um")
+            raise ValueError("Piezo stage position must not exceed 100 um")
         if zPosition < 0:
             logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
@@ -322,7 +322,19 @@ class PiezoStageDigital(LabradServer):
         yPosition = ordered_dict["{}".format(self.axis_1)]
         return xPosition, yPosition
     
-    @setting(311, returns="*v[]")
+    @setting(2031, returns="*v[]")
+    def read_xyz(self, c):
+        """Return the current voltages on the piezo's DAQ channels"""
+        
+        ordered_dict = self.piezo.qPOS(self.axis_0)
+        xPosition = ordered_dict["{}".format(self.axis_0)]
+        ordered_dict = self.piezo.qPOS(self.axis_1)
+        yPosition = ordered_dict["{}".format(self.axis_1)]
+        ordered_dict = self.piezo.qPOS(self.axis_2)
+        zPosition = ordered_dict["{}".format(self.axis_2)]
+        return xPosition, yPosition, zPosition
+    
+    @setting(311, returns="v[]")
     def read_z(self, c):
         """Return the current voltages on the piezo's DAQ channels"""
         
@@ -723,14 +735,7 @@ class PiezoStageDigital(LabradServer):
 
         return y_voltages
     
-    @setting(
-        555,
-        z_center="v[]",
-        scan_range="v[]",
-        num_steps="i",
-        period="i",
-        returns="*v[]",
-    )
+    @setting(555, z_center="v[]",  scan_range="v[]", num_steps="i", period="i", returns="*v[]")
     def load_scan_z(self, c, z_center, scan_range, num_steps, period):
         """Load a scan that will step through scan_range in y keeping x
         constant at its center.

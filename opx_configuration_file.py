@@ -78,9 +78,9 @@ red_laser_total_delay = common_delay - red_laser_delay
 apd_0_total_delay = common_delay - apd_0_delay
 apd_1_total_delay = common_delay - apd_0_delay
 uwave_total_delay = common_delay - uwave_delay
-NV_total_delay = common_delay + mw_delay
-NV2_total_delay = common_delay + mw_delay
-AOD_total_delay = common_delay + aod_delay
+NV_total_delay = common_delay - mw_delay
+NV2_total_delay = common_delay - mw_delay
+AOD_total_delay = common_delay - aod_delay
 
 config_opx = {
     "version": 1,
@@ -94,12 +94,12 @@ config_opx = {
                 4: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1Y
             },
             "digital_outputs": {
-                1: {},  # green_laser_do/Laser
+                1: {},  # 
                 2: {},  # apd 1 virtual gate
                 3: {},  # apd 2 virtual gate
-                4: {},  # red laser
                 5: {},  # clock
-                6: {},  # sig gen switch
+                7: {},  # tsg4104 sig gen switch
+                9: {},  # cobolt 515 
             },
             "analog_inputs": {
                 1: {"offset": 0},  # APD0
@@ -122,10 +122,10 @@ config_opx = {
                 "cw": "const_freq_out",
             },
         },
-        "do_signal_generator": {
+        "signal_generator_tsg4104a_gate": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 6),
+                    "port": ("con1", 7),
                     "delay": uwave_total_delay,
                     "buffer": 0,
                 },
@@ -135,10 +135,10 @@ config_opx = {
                 "constant_HIGH": "constant_HIGH",
             },
         },
-        "do_laserglow_532_dm": {
+        "cobolt_515": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 1),
+                    "port": ("con1", 9),
                     "delay": green_laser_total_delay,
                     "buffer": 0,
                 },
@@ -158,6 +158,7 @@ config_opx = {
             },
             "operations": {
                 "clock_pulse": "clock_pulse",
+                "zero_clock_pulse": "zero_clock_pulse",
             },
         },
         "do_apd_0_gate": {
@@ -227,6 +228,11 @@ config_opx = {
             "operation": "control",
             "length": 100,
             "digital_marker": "ON",
+        },
+        "zero_clock_pulse": {
+            "operation": "control",
+            "length": 100,
+            "digital_marker": "OFF",
         },
         "uwave_ON": {
             "operation": "control",

@@ -22,8 +22,9 @@ def qua_program(opx, config,args, num_reps):
     analog_frequencies = args[2]
     analog_amplitudes = args[3]
     
-    
     with program() as seq:
+        
+        play('zero_clock_pulse',"do_sample_clock")
     
         for dig_element in high_digital_channels:
             with infinite_loop_():
@@ -42,7 +43,8 @@ def get_seq(opx,config, args, num_repeat): #so this will give just the sequence,
     seq = qua_program(opx, config,args, num_reps=num_repeat)
     final = ''
     period = ''
-    return seq, final, [period]
+    num_gates = 0
+    return seq, final, [period], num_gates
 
 
 if __name__ == '__main__':
@@ -60,13 +62,14 @@ if __name__ == '__main__':
     num_repeat=3
     delay = 1000
     args = [['do_laserglow_532_dm', 'do_signal_generator'], ['AOD_1X', 'AOD_1Y'], [0.0, 10000000.0], [1.0, 0.5]]
-    seq , f, p = get_seq([],config, args, num_repeat)
+    # args = [[], [], [], []]
+    seq , f, p, ng = get_seq([],config, args, num_repeat)
     
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
     
     # print('job.halt() to end infinite loop')
     

@@ -164,7 +164,11 @@ class OPX(Tagger, PulseGen, LabradServer):
         return compilied_program_id
     
     def add_qua_sequence_to_qm_queue(self,quantum_machine,compilied_program_id):
+        # logging.info('start here')
+        # a = time.time()
         program_job = quantum_machine.queue.add_compiled(compilied_program_id)
+        # logging.info(time.time()-a)
+        # logging.info('end here')
         return program_job
         
     def get_seq(self, seq_file, seq_args_string, num_repeat): # this returns the qua sequence without repeats. from pulse streamer. DONE
@@ -191,8 +195,8 @@ class OPX(Tagger, PulseGen, LabradServer):
             seq_module = importlib.import_module(file_name+"_opx")
             args = tool_belt.decode_seq_args(seq_args_string)
                         
-            seq, final, ret_vals = seq_module.get_seq(self,self.config_dict, args, num_repeat )
-            
+            seq, final, ret_vals, self.num_gates = seq_module.get_seq(self,self.config_dict, args, num_repeat )
+        
         return seq, final, ret_vals
 
 
@@ -212,11 +216,14 @@ class OPX(Tagger, PulseGen, LabradServer):
             list(any)
                 Arbitrary list returned by the sequence file
         """
+        # logging.info('made it here')
         self.qmm.close_all_quantum_machines()
         self.qm = self.qmm.open_qm(config_opx)
         self.seq_file = seq_file
         self.seq_args_string = seq_args_string
+        # logging.info(seq_args_string)
         seq, final, ret_vals = self.get_seq(self.seq_file, seq_args_string, 1)
+        # logging.info('hi')
         self.pending_experiment_compiled_program_id = self.compile_qua_sequence(self.qm, seq)
         
         return ret_vals
@@ -228,6 +235,12 @@ class OPX(Tagger, PulseGen, LabradServer):
             num_repeat: int
                 The number of times the sequence is repeated, such as the number of reps in a rabi routine
         """
+        self.num_reps = num_repeat
+        
+        if num_repeat == -1:
+            num_repeat = 1000000  # just make it go a bunch of times for now. canceling it will just kill the operation
+            self.num_reps = 1
+            logging.info('repeating 1000000 times instead of indefinitely')
         
         if num_repeat >= 2:   # if we want to repeat it, get the sequence again but with all the repetitions.
             self.qmm.close_all_quantum_machines()
@@ -235,9 +248,15 @@ class OPX(Tagger, PulseGen, LabradServer):
             
             seq, final, ret_vals = self.get_seq(self.seq_file, self.seq_args_string, num_repeat) #gets the full sequence
             self.pending_experiment_compiled_program_id = self.compile_qua_sequence(self.qm, seq)
-            
+        
+        logging.info('starting here')
+        # st = time.time()
         self.pending_experiment_job = self.add_qua_sequence_to_qm_queue(self.qm,self.pending_experiment_compiled_program_id)
+        # logging.info(time.time() - st)
+        
         self.experiment_job = self.pending_experiment_job.wait_for_execution()
+        # logging.info(time.time() - st)
+        # logging.info('ending')
         
         self.counter_index = 0
         
@@ -246,14 +265,18 @@ class OPX(Tagger, PulseGen, LabradServer):
     
     @setting(15, high_digital_channels="*s", analog_elements_to_set="*s",analog_frequencies="*v[]",analog_amplitudes="*v[]")
     def constant(self,c,high_digital_channels=[],analog_elements_to_set=[],analog_frequencies=[],analog_amplitudes=[]):
-        """Set the OPX to an infinite loop."""
-        """ This function is not finished. I made a starting file (constant_program_opx.py) but it needs to be finished """
-                
-        args = [digital_channels,analog_elements_to_set,analog_frequencies,analog_amplitudes]
+        """Set the OPX to an infinite loop, ouputing the desired things on each channel."""
         
+        high_digital_channels = np.asarray(high_digital_channels)
+        analog_amplitudes = np.asarray(analog_amplitudes)
+        analog_elements_to_set = np.asarray(analog_elements_to_set)
+        analog_frequencies = np.asarray(analog_frequencies)
+                
+        args = [high_digital_channels.tolist(),analog_elements_to_set.tolist(),analog_frequencies.tolist(),analog_amplitudes.tolist()]
+        logging.info(args)
         
         args_string = tool_belt.encode_seq_args(args)
-        self.stream_immediate(seq_file='constant_program.py', num_repeat=1, seq_args_string=args_string)
+        self.stream_immediate(c,seq_file='constant_program.py', num_repeat=1, seq_args_string=args_string)
         
     #%% counting and time tagging functions ### 
     ### currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
@@ -275,21 +298,35 @@ class OPX(Tagger, PulseGen, LabradServer):
                 This is an array of the counts 
         """
         
+        num_sample_gates = (self.num_reps * self.num_gates)
 
         results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     
         counts_apd0, counts_apd1 = results.fetch_all() #just not sure if its gonna put it into the list structure we want
-        
+        # logging.info('checkpoint')
+        logging.info(counts_apd0)
+        logging.info(counts_apd1)
         #now we need to combine into our data structure. they have different lengths because the fpga may 
         #save one faster than the other. So just go as far as we have samples on both
-        max_length = min(len(counts_apd0),len(counts_apd1))
+        num_new_samples_both = min( int (len(counts_apd0) / num_sample_gates) , int (len(counts_apd1) / num_sample_gates) )
+        max_length = num_new_samples_both*num_sample_gates
         
         counts_apd0 = counts_apd0[self.counter_index:max_length]
         counts_apd1 = counts_apd1[self.counter_index:max_length]
         
         #now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
-        counts_apd0 = np.sum(counts_apd0,2).tolist()
-        counts_apd1 = np.sum(counts_apd1,2).tolist()
+        counts_apd0 = np.sum(counts_apd0,1).tolist()
+        counts_apd1 = np.sum(counts_apd1,1).tolist()
+        
+        ### now I buffer the list
+        n = num_sample_gates
+        
+        counts_apd0 = [counts_apd0[i * n:(i + 1) * n] for i in range((len(counts_apd0) + n - 1) // n )]
+        counts_apd1 = [counts_apd1[i * n:(i + 1) * n] for i in range((len(counts_apd1) + n - 1) // n )]
+        # logging.info(counts_apd0)
+        # logging.info(counts_apd1)
+        # logging.info('checkpoint 2')
+
 
         return_counts = []
         
@@ -300,7 +337,9 @@ class OPX(Tagger, PulseGen, LabradServer):
         elif len(self.apd_indices)==1:
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i]])
-            
+                
+        logging.info('checkpoint1')
+        logging.info(return_counts)
         self.counter_index = max_length #make the counter indix the new max length (-1) so the samples start there
 
         return return_counts
@@ -406,8 +445,8 @@ class OPX(Tagger, PulseGen, LabradServer):
         self.stream = True
         pass        
     
-    @setting(18, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
-    def stop_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
+    @setting(18) # from apd tagger. 
+    def stop_tag_stream(self, c):
         self.stream = None
         pass
     

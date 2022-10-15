@@ -13,7 +13,7 @@ Created on Sun Jun 16 11:38:17 2019
 
 import utils.tool_belt as tool_belt
 import labrad
-import numpy 
+import numpy as np
 import time
 # %% Functions
 
@@ -26,7 +26,7 @@ def clean_up(cxn):
 # %% Main
 
 
-def main(delay, readout_time, apd_index, laser_name, laser_power, num_reps ):
+def main(nv_sig, delay, readout_time, apd_index, laser_name, laser_power, num_reps ):
     """When you run the file, we'll call into main, which should contain the
     body of the routine.
     """
@@ -42,8 +42,10 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     # %% Initial set up here
     
     # tool_belt.reset_cfm(cxn)
-    
-    seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
+
+    # seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
+    seq_args = [int(delay), int(readout_time), int(apd_index), laser_name, int(laser_power) ]
+    # print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
     seq_file = 'simple_readout.py'
@@ -58,18 +60,20 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     pulsegen_server.stream_immediate(seq_file, num_reps, seq_args_string)
     
     num_read_so_far = 0
-    total_num_samples = num_reps
+    total_num_samples = 1
     total_counts = []
-    
-    while num_read_so_far < total_num_samples:
-        new_counts = counter_server.read_counter_complete()
-        num_new_samples = len(new_counts)
-        # print(num_new_samples)
-        if num_new_samples > 0:
-            # print(numpy.shape(new_counts))
+    # time.sleep(.12)
+    a=counter_server.read_counter_complete() 
+    print(a)
+    # while num_read_so_far < total_num_samples:
+    #     new_counts = counter_server.read_counter_complete() 
+    #     num_new_samples = len(new_counts)
+    #     # print(new_counts)
+    #     if num_new_samples > 0:
+    #         print(np.shape(new_counts))
             
-            total_counts.extend(new_counts.tolist())
-            num_read_so_far += num_new_samples
+    #         total_counts.extend(new_counts.tolist())
+    #         num_read_so_far += num_new_samples
         
     new_times, new_channels = [], []# tagger_server.read_tag_stream()  
     # print(new_times)
@@ -92,12 +96,13 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 3e9, 0, 'do_laserglow_532_dm', 1
-    num_reps=1
-    counts, times, new_channels = main( delay, readout_time, apd_index, laser_name, laser_power, num_reps )
+    delay, readout_time, apd_index, laser_name, laser_power = 200, 3e7, 0, 'cobolt_515', 1
+    num_reps=700
+    nv_sig = []
+    counts, times, new_channels = main( nv_sig, delay, readout_time, apd_index, laser_name, laser_power, num_reps )
     print('hi')
     print(counts)
     # print()
     # print(times)
     # print('')
-    # print(numpy.asarray(times).astype(float).astype(int)/1000)
+    # print(np.asarray(times).astype(float).astype(int)/1000)

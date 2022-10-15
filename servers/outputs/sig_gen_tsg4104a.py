@@ -52,22 +52,22 @@ class SigGenTsg4104a(LabradServer, VectorSigGen):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('signal_generator_tsg4104a_visa_address')
-        p.cd(['', 'Config', 'Wiring', 'Daq'])
-        p.get('di_clock')
+        # p.cd(['', 'Config', 'Wiring', 'Daq'])
+        # p.get('di_clock')
         # p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
+        
         resource_manager = visa.ResourceManager()
-        self.sig_gen = resource_manager.open_resource(config[0], 
-                                                      open_timeout=60)
+        self.sig_gen = resource_manager.open_resource(config, open_timeout=60)
         # Set the VISA read and write termination. This is specific to the
         # instrument - you can find it in the instrument's programming manual
         self.sig_gen.read_termination = '\r\n'
         self.sig_gen.write_termination = '\r\n'
         # Set our channels for FM
-        self.daq_di_pulser_clock = config[1]
+        # self.daq_di_pulser_clock = config[1]
         # self.daq_ao_sig_gen_mod = config[2]
         self.task = None    # Initialize state variable
         self.reset(None)

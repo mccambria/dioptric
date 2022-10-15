@@ -1222,6 +1222,8 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
         key = keys[0]
         p.get(key)
         val = p.send()["get"]
+        if type(val) == np.ndarray:
+            val = val.tolist()
         dict_to_populate[key] = val
 
     elif len(keys) > 1:
@@ -1234,6 +1236,8 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
         for ind in range(len(keys)):
             key = keys[ind]
             val = vals[ind]
+            if type(val) == np.ndarray:
+                val = val.tolist()
             dict_to_populate[key] = val
 
 

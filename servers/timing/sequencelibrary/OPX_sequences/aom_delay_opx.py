@@ -29,6 +29,7 @@ def qua_program(opx, config, args, num_reps):
     
     num_apds = len(apd_indices)
     num_gates = 2
+    total_num_gates = int(num_gates*num_reps)
     timetag_list_size = int(15900 / num_gates / 2)    
     
     num_readouts = 1
@@ -85,19 +86,18 @@ def qua_program(opx, config, args, num_reps):
             wait(inter_time_cc)
             
             play("laser_ON",laser_name,duration=illumination_cc) 
-            
-            for index in apd_indices:
-                wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_{}_gate".format(index))
                             
             if num_apds == 2:
+                wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_0_gate","do_apd_1_gate")
                 measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, readout_time, counts_gate2_apd_1))
-                assign(counts_gate2_apd_0,50)
-                assign(counts_gate2_apd_1,40)
+                # assign(counts_gate2_apd_0,50)
+                # assign(counts_gate2_apd_1,40)
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(counts_gate2_apd_1, counts_st_apd_1)
                 
             if num_apds == 1:
+                wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
                 measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
@@ -106,18 +106,20 @@ def qua_program(opx, config, args, num_reps):
             wait(back_buffer_cc)
         
         with stream_processing():
-            counts_st_apd_0.buffer(num_readouts).buffer(num_gates).save_all("counts_apd0") 
-            counts_st_apd_1.buffer(num_readouts).buffer(num_gates).save_all("counts_apd1")
+            counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
+            counts_st_apd_1.buffer(num_readouts).save_all("counts_apd1")
+            # counts_st_apd_0.buffer(num_readouts).buffer(total_num_gates).save_all("counts_apd0") 
+            # counts_st_apd_1.buffer(num_readouts).buffer(total_num_gates).save_all("counts_apd1")
             
-    return seq, period
+    return seq, period, num_gates
 
 
 
 def get_seq(opx, config, args, num_repeat): #so this will give the full desired sequence, with however many repeats are intended repeats
 
-    seq, period = qua_program(opx,config, args, num_repeat)
+    seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = ''
-    return seq, final, [period]
+    return seq, final, [period], num_gates
     
 
 if __name__ == '__main__':
@@ -130,22 +132,22 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     qm = qmm.open_qm(config_opx)
     
-    simulation_duration =  55000 // 4 # clock cycle units - 4ns
+    # simulation_duration =  55000 // 4 # clock cycle units - 4ns
     
-    num_repeat=3
+    num_repeat=3000
 
-    args = [200, 500.0, 500.0, 1, 'do_laserglow_532_dm', 1]
-    seq , f, p = get_seq([],config, args, num_repeat)
-    
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    args = [200, 500.0, 5000.0, 0,'cobolt_515', 1]
+    seq , f, p, num_gates = get_seq([],config, args, num_repeat)
+
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    # job = qm.execute(seq)
+    job = qm.execute(seq)
 
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     
-    # counts_apd0, counts_apd1 = results.fetch_all() 
+    counts_apd0, counts_apd1 = results.fetch_all() 
     
     # # print('')
     # print(counts_apd0.tolist())

@@ -28,6 +28,7 @@ class Counter(LabradServer, ABC):
             counts = []
             while len(counts) < num_to_read:
                 counts.extend(self.read_counter_internal())
+                
             if len(counts) > num_to_read:
                 msg = "Read {} samples, only requested {}".format(
                     len(counts), num_to_read

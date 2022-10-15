@@ -97,6 +97,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     # %% Load the PulseStreamer
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
     if nv_minus_initialization:
         laser_key = 'nv-_prep_laser'
@@ -107,7 +108,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         seq_args = [init, readout, apd_indices[0], init_laser, init_power,
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout_background_subtraction.py',
+        ret_vals = pulsegen_server.stream_load('charge_initialization-simple_readout_background_subtraction.py',
                                                   seq_args_string)
     elif nv_zero_initialization:
         laser_key = 'nv0_prep_laser'
@@ -120,20 +121,22 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         # print(seq_args)
         # return
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout_background_subtraction.py',
+        ret_vals = pulsegen_server.stream_load('charge_initialization-simple_readout_background_subtraction.py',
                                                   seq_args_string)
     else:
         seq_args = [0, readout, apd_indices[0], readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+        ret_vals = pulsegen_server.stream_load('simple_readout.py',
                                                   seq_args_string)
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
 
     # %% Set up the APD
+    
+    counter_server = tool_belt.get_counter_server(cxn)
 
-    cxn.apd_tagger.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream(apd_indices)
 
     # %% Initialize the figure
 
@@ -164,7 +167,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     # %% Collect the data
 
-    cxn.pulse_streamer.stream_start(-1)
+    pulsegen_server.stream_start(-1)
 
     # timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
     # timeout_inst = time.time() + timeout_duration
@@ -187,10 +190,11 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
         # Read the samples and update the image
         if charge_initialization:
-            new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
+            new_samples = counter_server.read_counter_modulo_gates(2)
             # print(new_samples)
         else:
-            new_samples = cxn.apd_tagger.read_counter_simple()
+            new_samples = counter_server.read_counter_simple()
+            # print(new_samples)
 
         # Read the samples and update the image
 #        print(new_samples)

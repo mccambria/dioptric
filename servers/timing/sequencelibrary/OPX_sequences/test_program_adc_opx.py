@@ -10,7 +10,7 @@ from qualang_tools.units import unit
 u = unit()
 
 
-readout_time = 5000
+readout_time = 5000000
 config_opx['pulses']['readout_pulse']['length'] = readout_time
 
 #readout pulse length is 200
@@ -28,19 +28,22 @@ with program() as seq:
     adc_st1 = declare_stream(adc_trace=True)
     adc_st2 = declare_stream(adc_trace=True)
     
-
+    laseron = int(readout_time // 4)
+    
+    play("laser_ON","cobolt_515",duration=laseron)
+    
     measure('readout', 'do_apd_0_gate', adc_st1, time_tagging.analog(times1, readout_time, counts1))
-    measure('readout', 'do_apd_1_gate', adc_st2, time_tagging.analog(times2, readout_time, counts2))
-    # save(counts, counts_st)
+    # measure('readout', 'do_apd_1_gate', adc_st2, time_tagging.analog(times2, readout_time, counts2))
+    save(counts1, counts_st)
     # with for_(i, 0, i < counts, i + 1):
     #     save(times[i], times_st)
     
 
     with stream_processing():
-        # counts_st.save_all('counts')
+        counts_st.save_all('counts')
         # times_st.save_all('times')
         adc_st1.input1().save('adc1')
-        adc_st2.input2().save('adc2')
+        # adc_st2.input2().save('adc2')
         
         
 qmm = QuantumMachinesManager(qop_ip)
@@ -55,18 +58,18 @@ job = qm.execute(seq)
 
 res_handles = job.result_handles
 res_handles.wait_for_all_values()
-# counts = res_handles.get("counts").fetch_all()
+counts = res_handles.get("counts").fetch_all()
 # times = res_handles.get("times").fetch_all()
 adc1_single_run = u.raw2volts(res_handles.get("adc1").fetch_all())
-adc2_single_run = u.raw2volts(res_handles.get("adc2").fetch_all())
+# adc2_single_run = u.raw2volts(res_handles.get("adc2").fetch_all())
 print('')
-# print(counts)
+print(counts)
 # print('')
 # print(times)
 plt.figure()
 plt.title("Single run")
 plt.plot(adc1_single_run, label="Input 1")
-plt.plot(adc2_single_run, label="Input 2")
+# plt.plot(adc2_single_run, label="Input 2")
 plt.xlabel("Time [ns]")
 plt.ylabel("Signal amplitude [V]")
 plt.legend()
