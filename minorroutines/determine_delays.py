@@ -160,11 +160,11 @@ def measure_delay(
         pulsegen_server.stream_immediate(
             seq_file, num_reps, seq_args_string
         )
-        print('here')
+        # print('here')
         # complete_counts = counter_server.read_counter_complete()
 
         new_counts = counter_server.read_counter_separate_gates(1)
-        print('here2')
+        # print('here2')
         sample_counts = new_counts[0]
         # print(sample_counts)
         if len(sample_counts) != 2 * num_reps:
@@ -374,7 +374,7 @@ if __name__ == "__main__":
         'coords': [84.605, 37.951, 69.28], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False,
         "only_z_opt": False,
-        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 87,
+        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 47,
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
@@ -394,8 +394,8 @@ if __name__ == "__main__":
         }
     
     # laser_delay
-    num_reps = int(1e6)
-    delay_range = [100, 500]
+    num_reps = int(5e6)
+    delay_range = [100, 550]
     num_steps = 21
     # bnc 835
     # state = States.LOW

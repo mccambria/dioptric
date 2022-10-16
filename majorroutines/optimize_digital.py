@@ -157,7 +157,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     # Collect the data
     counter_server.start_tag_stream(apd_indices)
     pulsegen_server.stream_start(total_num_samples)
-    new_samples = counter_server.read_counter_simple(1)
+    new_samples = counter_server.read_counter_simple(total_num_samples)
     new_samples_avg = numpy.average(new_samples)
     counter_server.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10 ** 9)

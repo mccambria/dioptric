@@ -44,7 +44,8 @@ def get_seq(opx,config, args, num_repeat): #so this will give just the sequence,
     final = ''
     period = ''
     num_gates = 0
-    return seq, final, [period], num_gates
+    sample_size = None
+    return seq, final, [period], num_gates, sample_size
 
 
 if __name__ == '__main__':
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     delay = 1000
     args = [['do_laserglow_532_dm', 'do_signal_generator'], ['AOD_1X', 'AOD_1Y'], [0.0, 10000000.0], [1.0, 0.5]]
     # args = [[], [], [], []]
-    seq , f, p, ng = get_seq([],config, args, num_repeat)
+    seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()

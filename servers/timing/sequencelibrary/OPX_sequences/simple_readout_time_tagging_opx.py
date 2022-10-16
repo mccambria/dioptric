@@ -140,10 +140,10 @@ def qua_program(opx, config, args, num_reps):
                     
                     
             
-            ##trigger piezos
+            ##clock pulse
             align()
             wait(25,"do_sample_clock")
-            play("clock_pulse","do_sample_clock")
+            play("clock_pulse","do_sample_clock") #clock pulse that triggers piezos and advances sample in the tagger after each rep
                         
                         
      

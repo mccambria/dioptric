@@ -105,6 +105,8 @@ def qua_program(opx, config, args, num_reps):
             align()
             wait(back_buffer_cc)
         
+        play("clock_pulse","do_sample_clock") # clock pulse after all the reos so the tagger sees all reps as one sample
+        
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
             counts_st_apd_1.buffer(num_readouts).save_all("counts_apd1")
@@ -119,7 +121,8 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = ''
-    return seq, final, [period], num_gates
+    sample_size = 'all_reps'
+    return seq, final, [period], num_gates, sample_size
     
 
 if __name__ == '__main__':
@@ -137,7 +140,7 @@ if __name__ == '__main__':
     num_repeat=3000
 
     args = [200, 500.0, 5000.0, 0,'cobolt_515', 1]
-    seq , f, p, num_gates = get_seq([],config, args, num_repeat)
+    seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     # job_sim.get_simulated_samples().con1.plot()

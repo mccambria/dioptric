@@ -37,7 +37,6 @@ def qua_program(opx, config, args, num_reps):
         num_readouts=1
         apd_readout_time = readout_time
     
-    
     meas_delay = 100
     meas_delay_cc = meas_delay // 4
     
@@ -47,7 +46,7 @@ def qua_program(opx, config, args, num_reps):
     
     delay_cc = max(int(delay // 4),4)
     period = delay + laser_on_time + 100
-    
+            
     with program() as seq:
         
         counts_gate1_apd_0 = declare(int)  
@@ -94,9 +93,10 @@ def qua_program(opx, config, args, num_reps):
                     
                     align("do_apd_0_gate","do_apd_1_gate")
                     
-            ##trigger piezos
+            ##clock pulse that advances piezos and ends a sample in the tagger
             align()
             play("clock_pulse","do_sample_clock")
+            
         
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
@@ -111,8 +111,10 @@ def qua_program(opx, config, args, num_reps):
 def get_seq(opx, config, args, num_repeat): #so this will give the full desired sequence, with however many repeats are intended repeats
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
-    final = ''
-    return seq, final, [period], num_gates
+    final = '' 
+    sample_size = 'one_rep' # 'all_reps
+    
+    return seq, final, [period], num_gates, sample_size
     
 
 if __name__ == '__main__':
@@ -129,10 +131,10 @@ if __name__ == '__main__':
     
     qm = qmm.open_qm(config_opx)
     simulation_duration =  550000 // 4 # clock cycle units - 4ns
-    num_repeat=100
+    num_repeat=7
     delay = 100
     args = [delay, readout_time, 0,'cobolt_515',1]
-    seq , f, p, num_gates = get_seq([],config, args, num_repeat)
+    seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     
     # start_t = time.time()
     compilied_program_id = qm.compile(seq)
@@ -157,14 +159,15 @@ if __name__ == '__main__':
     counts_apd0, counts_apd1 = results.fetch_all() 
     
     # print('')
-    print(np.shape(counts_apd0.tolist()))
-    # print('')
-    print(np.shape(counts_apd1.tolist()))
-    time.sleep(2)
-    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
-    counts_apd0, counts_apd1 = results.fetch_all() 
+    # print(np.shape(counts_apd0.tolist()))
+    # # print('')
+    # print(np.shape(counts_apd1.tolist()))
+    # time.sleep(2)
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
+    # counts_apd0, counts_apd1 = results.fetch_all() 
     
-    # print('')
-    print(np.shape(counts_apd0.tolist()))
-    # print('')
-    print(np.shape(counts_apd1.tolist()))
+    # # print('')
+    # print(np.shape(counts_apd0.tolist()))
+    # # print('')
+    # print(np.shape(counts_apd1.tolist()))
+    print(counts_apd0.tolist())

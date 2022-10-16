@@ -195,7 +195,7 @@ class OPX(Tagger, PulseGen, LabradServer):
             seq_module = importlib.import_module(file_name+"_opx")
             args = tool_belt.decode_seq_args(seq_args_string)
                         
-            seq, final, ret_vals, self.num_gates = seq_module.get_seq(self,self.config_dict, args, num_repeat )
+            seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = seq_module.get_seq(self,self.config_dict, args, num_repeat )
         
         return seq, final, ret_vals
 
@@ -297,32 +297,37 @@ class OPX(Tagger, PulseGen, LabradServer):
             return_counts: array
                 This is an array of the counts 
         """
-        
-        num_sample_gates = (self.num_reps * self.num_gates)
+        if self.sample_size == 'one_rep':
+            num_gates_per_sample = self.num_gates_per_rep
+            
+        elif self.sample_size == 'all_reps':
+            num_gates_per_sample = self.num_reps * self.num_gates_per_rep
 
         results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     
         counts_apd0, counts_apd1 = results.fetch_all() #just not sure if its gonna put it into the list structure we want
         # logging.info('checkpoint')
-        logging.info(counts_apd0)
-        logging.info(counts_apd1)
+        # logging.info(counts_apd1)
         #now we need to combine into our data structure. they have different lengths because the fpga may 
         #save one faster than the other. So just go as far as we have samples on both
-        num_new_samples_both = min( int (len(counts_apd0) / num_sample_gates) , int (len(counts_apd1) / num_sample_gates) )
-        max_length = num_new_samples_both*num_sample_gates
+        num_new_samples_both = min( int (len(counts_apd0) / num_gates_per_sample) , int (len(counts_apd1) / num_gates_per_sample) )
+        max_length = num_new_samples_both*num_gates_per_sample
         
+        # get only the number of samples that both have
         counts_apd0 = counts_apd0[self.counter_index:max_length]
         counts_apd1 = counts_apd1[self.counter_index:max_length]
-        
+        # logging.info(counts_apd0)
         #now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
         counts_apd0 = np.sum(counts_apd0,1).tolist()
         counts_apd1 = np.sum(counts_apd1,1).tolist()
         
         ### now I buffer the list
-        n = num_sample_gates
+        n = num_gates_per_sample
         
         counts_apd0 = [counts_apd0[i * n:(i + 1) * n] for i in range((len(counts_apd0) + n - 1) // n )]
         counts_apd1 = [counts_apd1[i * n:(i + 1) * n] for i in range((len(counts_apd1) + n - 1) // n )]
+        # logging.info(counts_apd0)
+
         # logging.info(counts_apd0)
         # logging.info(counts_apd1)
         # logging.info('checkpoint 2')
@@ -338,13 +343,33 @@ class OPX(Tagger, PulseGen, LabradServer):
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i]])
                 
-        logging.info('checkpoint1')
-        logging.info(return_counts)
+        # logging.info('checkpoint1')
+        # logging.info(return_counts)
         self.counter_index = max_length #make the counter indix the new max length (-1) so the samples start there
 
         return return_counts
     
    
+    def read_counter_setting_internal(self, num_to_read):
+        if self.stream is None:
+            logging.error("read_counter attempted while stream is None.")
+            return
+        if num_to_read is None:
+            # Poll once and return the result
+            counts = self.read_counter_internal()
+        else:
+            # Poll until we've read the requested number of samples
+            counts = []
+            while len(counts) < num_to_read:
+                counts.extend(self.read_counter_internal())
+                
+            if len(counts) > num_to_read:
+                msg = "Read {} samples, only requested {}".format(
+                    len(counts), num_to_read
+                )
+                logging.error(msg)
+
+        return counts
     
     def read_raw_stream(self):
         """

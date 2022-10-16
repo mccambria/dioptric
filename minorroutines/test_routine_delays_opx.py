@@ -44,11 +44,10 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     # tool_belt.reset_cfm(cxn)
 
     # seq_args = [delay, readout_time, apd_index, laser_name, laser_power ]
-    seq_args = [int(delay), int(readout_time), int(apd_index), laser_name, int(laser_power) ]
-    # print(seq_args)
+    seq_args = [ int(500), int(500),  int(5e3),  int(0), 'cobolt_515',  int(1)]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    seq_file = 'simple_readout.py'
+    seq_file = 'aom_delay.py'
     
     counter_server = tool_belt.get_counter_server(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
@@ -57,19 +56,12 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     tagger_server.start_tag_stream([0])
     # pulsegen_server.stream_load(seq_file, seq_args_string)
     # pulsegen_server.stream_start(num_reps)
+    num_reps = 50
     pulsegen_server.stream_immediate(seq_file, num_reps, seq_args_string)
     
-    num_read_so_far = 0
-    total_num_samples = num_reps
-    total_counts = []
-    # time.sleep(.12)
-    while num_read_so_far < total_num_samples:
-        total_counts = counter_server.read_counter_complete()
-        print(np.shape(total_counts))
-        print("")
-        num_new_samples = len(total_counts)
-        num_read_so_far += num_new_samples
-        
+    new_counts = counter_server.read_counter_separate_gates(1)
+    print(np.shape(new_counts))
+    print(new_counts)
     
     # while num_read_so_far < total_num_samples:
     #     new_counts = counter_server.read_counter_complete() 
@@ -85,7 +77,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
     # print(new_times)
     # cxn.qm_opx.stop_tag_stream(apd_index)
     # tool_belt.reset_cfm()
-    return total_counts, new_times, new_channels
+    return new_counts, new_times, new_channels
 
     # %% Collect the data
 
@@ -102,10 +94,7 @@ def main_with_cxn(cxn, delay, readout_time, apd_index, laser_name, laser_power, 
 # the script that you set up here.
 if __name__ == '__main__':
     
-    delay, readout_time, apd_index, laser_name, laser_power = 200, 3e6, 0, 'cobolt_515', 1
-    num_reps=100
-    nv_sig = []
-    counts, times, new_channels = main( nv_sig, delay, readout_time, apd_index, laser_name, laser_power, num_reps )
+    counts, times, new_channels = main( [], 0, 0, 0, '', 1, 0 )
     print('hi')
     # print(counts.tolist())
     # print()

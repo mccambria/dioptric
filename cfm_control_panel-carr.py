@@ -162,7 +162,7 @@ if __name__ == "__main__":
                             # delay=2e9, readout_time=1e9, num_reps=10)
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=50,scan_range=10)#,cmin=0,cmax=50)
         # do_image_sample(nv_sig, apd_indices,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
-        # do_optimize(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
         # do_optimize_z(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices,disable_opt=True)
 
