@@ -200,14 +200,14 @@ def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
     
     ax.errorbar(x, y, xerr=x_err, yerr=y_err, **params)
     
-def plot_line(ax, x, y, color=None, size="normal", **kwargs):
+def plot_line(ax, x, y, size="normal", **kwargs):
     """
     Same as matplotlib's plot, but with our defaults. Use for plotting 
     continuous lines.
     """
     
     # Color handling
-    if color in kwargs:
+    if "color" in kwargs:
         color = kwargs["color"]
     else:
         color = get_default_color(ax, "line")
