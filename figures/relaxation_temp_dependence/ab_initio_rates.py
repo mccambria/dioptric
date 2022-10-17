@@ -28,11 +28,13 @@ from temp_dependence_fitting import (
 import csv
 import utils.kplotlib as kpl
 from utils.kplotlib import (
-    marker_size,
-    line_width,
-    marker_size_inset,
-    line_width_inset,
+    marker_sizes,
+    line_widths,
 )
+marker_size = marker_sizes["normal"]
+marker_size_inset = marker_sizes["small"]
+line_width = line_widths["normal"]
+line_width_inset = line_widths["small"]
 
 marker_edge_width = line_width
 marker_edge_width_inset = line_width_inset

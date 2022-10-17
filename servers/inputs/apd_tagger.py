@@ -187,7 +187,6 @@ class ApdTagger(LabradServer):
         self.stream_apd_indices = []
         self.stream_channels = []
         self.leftover_channels = np.empty((0), dtype=np.int32)
-        # self.leftover_channels = []
 
     @setting(0, returns="*i")
     def get_channel_mapping(self, c):

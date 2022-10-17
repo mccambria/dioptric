@@ -20,10 +20,11 @@ import matplotlib.image as mpimg
 import matplotlib.gridspec as gridspec
 import utils.common as common
 import utils.kplotlib as kpl
+from utils.kplotlib import marker_sizes
+from utils.kplotlib import line_widths
 
-ms = 7
-lw = 1.75
-
+ms = marker_sizes["normal"]
+lw = line_widths["normal"]
 
 # %% Functions
 
@@ -225,46 +226,48 @@ def main(
 
     # plt.rcParams.update({'font.size': 18})  # Increase font size
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.75, 7.5))
-    gs = gridspec.GridSpec(2, 2, width_ratios=[2, 3])
+    # fig = plt.figure(figsize=(6.75, 7.5))
+    # gs = gridspec.GridSpec(2, 2, width_ratios=[2, 3])
 
+    home = common.get_nvdata_dir()
     source = "pc_rabi/branch_master/t1_double_quantum/data_collections/paper_data/bulk_dq/"
     path = source + folder
 
-    # %% Level structure
+    # # %% Level structure
 
-    # Add a new axes, make it invisible, steal its rect
-    ax = fig.add_subplot(gs[0, 0])
-    ax.set_axis_off()
-    ax.text(
-        -0.43, 1.05, "(a)", transform=ax.transAxes, color="black", fontsize=18
-    )
-
-    ax = plt.Axes(fig, [-0.03, 0.51, 0.5, 0.43])
-    ax.set_axis_off()
-    fig.add_axes(ax)
-    # print(gs)
-    # fig.add_axes(gs[0, 0])
+    # # Add a new axes, make it invisible, steal its rect
     # ax = fig.add_subplot(gs[0, 0])
-
-    # ax = axes_pack[0]
     # ax.set_axis_off()
-    home = common.get_nvdata_dir()
-    file = (
-        home
-        / "/home/mccambria/E/nvdata/paper_materials/State-dependent_phonon-limited_spin_relaxation_of_nitrogen-vacancy_centers/figures_revision6/main1/level_structure.png"
-    )
-    img = mpimg.imread(file)
-    img_plot = ax.imshow(img)
+    # ax.text(
+    #     -0.43, 1.05, "(a)", transform=ax.transAxes, color="black", fontsize=18
+    # )
 
-    # l, b, w, h = ax.get_position().bounds
-    # ax.set_position([l, b -1.0, w, h])
+    # ax = plt.Axes(fig, [-0.03, 0.51, 0.5, 0.43])
     # ax.set_axis_off()
-    # ax.axis('off')
+    # fig.add_axes(ax)
+    # # print(gs)
+    # # fig.add_axes(gs[0, 0])
+    # # ax = fig.add_subplot(gs[0, 0])
+
+    # # ax = axes_pack[0]
+    # # ax.set_axis_off()
+    # home = common.get_nvdata_dir()
+    # file = (
+    #     home
+    #     / "/home/mccambria/E/nvdata/paper_materials/State-dependent_phonon-limited_spin_relaxation_of_nitrogen-vacancy_centers/figures_revision6/main1/level_structure.png"
+    # )
+    # img = mpimg.imread(file)
+    # img_plot = ax.imshow(img)
+
+    # # l, b, w, h = ax.get_position().bounds
+    # # ax.set_position([l, b -1.0, w, h])
+    # # ax.set_axis_off()
+    # # ax.axis('off')
 
     # %% Relaxation out of plots
 
-    ax = fig.add_subplot(gs[0, 1])
+    fig, ax = plt.subplots()
+    # ax = fig.add_subplot(gs[0, 1])
     # ax = axes_pack[1]
 
     # Get reference values for to convert fluorescence to population
@@ -308,82 +311,60 @@ def main(
 
     # Plot zero
     color = "#0D83C5"
-    facecolor = "#56B4E9"
-    zero_label = "Relaxation \nout of {}".format(r"$\ket{0}$")
-    # zero_label = "Relaxation \nout of {}".format(r"$\pi_{0}$")
-    zero_patch = mlines.Line2D(
-        [],
-        [],
-        label=zero_label,
-        linewidth=lw,
-        marker="s",
-        color=color,
-        markerfacecolor=facecolor,
-        markersize=ms,
+    zero_label = "Relaxation out of {}".format(
+        r"$\ket{0}$"
     )
-    ax.plot(smooth_t, fit_zero, color=color, linewidth=lw)
+    kpl.plot_line(ax, smooth_t, fit_zero, color=color)
     try:
         times_15 = numpy.where(times_zero > 15.0)[0][0]
     except:
         times_15 = None
-    ax.scatter(
+    kpl.plot_data(
+        ax,
         times_zero[:times_15],
         signal_zero[:times_15],
         label=zero_label,
         zorder=5,
         marker="s",
         color=color,
-        facecolor=facecolor,
-        s=ms ** 2,
     )
 
     # Plot high
     color = "#D2C40E"
-    facecolor = "#F0E442"
-    high_label = "Relaxation \nout of {}".format(r"$\ket{+1}$")
-    # high_label = "Relaxation \nout of {}".format(r"$\pi_{1}$")
-    high_patch = mlines.Line2D(
-        [],
-        [],
-        label=high_label,
-        linewidth=lw,
-        marker="D",
-        color=color,
-        markerfacecolor=facecolor,
-        markersize=ms,
-    )
-    ax.plot(smooth_t, fit_high, color=color, linewidth=lw)
+    high_label = "Relaxation out of {}".format(r"$\ket{+1}$")
+    kpl.plot_line(ax, smooth_t, fit_high, color=color)
     try:
         times_15 = numpy.where(times_high > 15.0)[0][0]
     except:
         times_15 = None
-    ax.scatter(
-        times_high[:times_15],
+    kpl.plot_data(
+        ax,
+        times_zero[:times_15],
         signal_high[:times_15],
         label=high_label,
         zorder=5,
-        marker="D",
+        marker="s",
         color=color,
-        facecolor=facecolor,
-        s=ms ** 2,
     )
-    # ax.legend(handles=[zero_patch, high_patch], handlelength=lw)
-    ax.legend(handleheight=2.0, handlelength=0.6)
 
-    ax.text(
-        -0.25, 1.05, "(b)", transform=ax.transAxes, color="black", fontsize=18
-    )
+    ax.legend(handlelength=0.6)
+    ax.set_ylim([0.31, 1.03])
+
+    # ax.text(
+    #     -0.25, 1.05, "(b)", transform=ax.transAxes, color="black", fontsize=18
+    # )
 
     # %% Subtraction plots
 
-    ax = fig.add_subplot(gs[1, :])
-    analysis_file_path = home / path / analysis_file
-    subtraction_plot(ax, analysis_file_path)
+    # ax = fig.add_subplot(gs[1, :])
+    # analysis_file_path = home / path / analysis_file
+    # subtraction_plot(ax, analysis_file_path)
 
     # %% Wrap up
 
-    fig.tight_layout(pad=0.5)
+    # fig.tight_layout(pad=0.5)
     # fig.tight_layout()
+    kpl.tight_layout(fig)
 
 
 # %% Run

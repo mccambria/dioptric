@@ -217,12 +217,15 @@ def main_with_cxn(
             break
 
         # Read the samples and update the image
+        # start = time.time()
         if charge_initialization:
             new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
-            # print(new_samples)
         else:
             new_samples = cxn.apd_tagger.read_counter_simple()
-
+        # stop = time.time()
+        # print(f"Collection time: {stop - start}")
+        # print(new_samples)
+        
         # Read the samples and update the image
         #        print(new_samples)
         num_new_samples = len(new_samples)
@@ -234,7 +237,10 @@ def main_with_cxn(
                     max(int(el[0]) - int(el[1]), 0) for el in new_samples
                 ]
 
+            # start = time.time()
             update_line_plot(new_samples, num_read_so_far, *args)
+            # stop = time.time()
+            # print(f"Plot time: {stop - start}")
             num_read_so_far += num_new_samples
 
     # %% Clean up and report the data
