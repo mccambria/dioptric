@@ -7,24 +7,14 @@ Created on Fri Apr 12 09:25:24 2019
 @author: mccambria
 """
 
-
-# %% Imports
-
-
 import utils.tool_belt as tool_belt
 import numpy
 import matplotlib.pyplot as plt
 import time
 import labrad
-
-# Hmm, we need to figure out a better way to handle optimizing with different
-# setups. Having two nearly identical versions of the same file just ain't
-# gonna cut it.
-# import majorroutines.optimize_digital as optimize
 import majorroutines.optimize as optimize
 
-
-# %% Functions
+# region Functions
 
 
 def update_line_plot(new_samples, num_read_so_far, *args):
@@ -39,33 +29,57 @@ def update_line_plot(new_samples, num_read_so_far, *args):
     overflow = (num_samples + num_new_samples) - total_num_samples
     if overflow > 0:
         num_nans = max(total_num_samples - num_samples, 0)
-        samples[::] = numpy.append(samples[num_new_samples-num_nans:
-                                           total_num_samples-num_nans],
-                                   new_samples)
+        samples[::] = numpy.append(
+            samples[num_new_samples - num_nans : total_num_samples - num_nans],
+            new_samples,
+        )
     else:
         cur_write_pos = write_pos[0]
         new_write_pos = cur_write_pos + num_new_samples
-        samples[cur_write_pos: new_write_pos] = new_samples
+        samples[cur_write_pos:new_write_pos] = new_samples
         write_pos[0] = new_write_pos
 
     # Update the figure in k counts per sec
-    tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
+    tool_belt.update_line_plot_figure(fig, (samples / (10 ** 3 * readout_sec)))
 
 
-# %% Main
+# endregion
+
+# region Main
 
 
-def main(nv_sig, run_time, apd_indices, disable_opt=None,
-         nv_minus_initialization=False, nv_zero_initialization=False):
+def main(
+    nv_sig,
+    run_time,
+    apd_indices,
+    disable_opt=None,
+    nv_minus_initialization=False,
+    nv_zero_initialization=False,
+):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt,
-                                        nv_minus_initialization, nv_zero_initialization)
+        average, st_dev = main_with_cxn(
+            cxn,
+            nv_sig,
+            run_time,
+            apd_indices,
+            disable_opt,
+            nv_minus_initialization,
+            nv_zero_initialization,
+        )
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
-                  nv_minus_initialization=False, nv_zero_initialization=False):
+
+def main_with_cxn(
+    cxn,
+    nv_sig,
+    run_time,
+    apd_indices,
+    disable_opt=None,
+    nv_minus_initialization=False,
+    nv_zero_initialization=False,
+):
 
     # %% Some initial setup
 
@@ -74,13 +88,13 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     tool_belt.reset_cfm(cxn)
 
-    readout = nv_sig['imaging_readout_dur']
-    readout_sec = readout / 10**9
+    readout = nv_sig["imaging_readout_dur"]
+    readout_sec = readout / 10 ** 9
 
     # %% Optimize
 
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-    coords = nv_sig['coords']
+    coords = nv_sig["coords"]
     drift = tool_belt.get_drift()
     adj_coords = []
     for i in range(3):
@@ -89,7 +103,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     # %% Set up the imaging laser
 
-    laser_key = 'imaging_laser'
+    laser_key = "imaging_laser"
     readout_laser = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -97,34 +111,53 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     # %% Load the PulseStreamer
 
     if nv_minus_initialization:
-        laser_key = 'nv-_prep_laser'
+        laser_key = "nv-_prep_laser"
         tool_belt.set_filter(cxn, nv_sig, laser_key)
-        init = nv_sig['{}_dur'.format(laser_key)]
+        init = nv_sig["{}_dur".format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
-                    readout_laser, readout_power]
+        seq_args = [
+            init,
+            readout,
+            apd_indices[0],
+            init_laser,
+            init_power,
+            readout_laser,
+            readout_power,
+        ]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout_background_subtraction.py',
-                                                  seq_args_string)
+        ret_vals = cxn.pulse_streamer.stream_load(
+            "charge_initialization-simple_readout_background_subtraction.py",
+            seq_args_string,
+        )
     elif nv_zero_initialization:
-        laser_key = 'nv0_prep_laser'
+        laser_key = "nv0_prep_laser"
         tool_belt.set_filter(cxn, nv_sig, laser_key)
-        init = nv_sig['{}_dur'.format(laser_key)]
+        init = nv_sig["{}_dur".format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
-                    readout_laser, readout_power]
+        seq_args = [
+            init,
+            readout,
+            apd_indices[0],
+            init_laser,
+            init_power,
+            readout_laser,
+            readout_power,
+        ]
         # print(seq_args)
         # return
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout_background_subtraction.py',
-                                                  seq_args_string)
+        ret_vals = cxn.pulse_streamer.stream_load(
+            "charge_initialization-simple_readout_background_subtraction.py",
+            seq_args_string,
+        )
     else:
         seq_args = [0, readout, apd_indices[0], readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                                  seq_args_string)
+        ret_vals = cxn.pulse_streamer.stream_load(
+            "simple_readout.py", seq_args_string
+        )
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
@@ -141,7 +174,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     # Set up the line plot
     x_vals = numpy.arange(total_num_samples) + 1
-    x_vals = x_vals / (10**9) * period   # Elapsed time in s
+    x_vals = x_vals / (10 ** 9) * period  # Elapsed time in s
 
     fig = tool_belt.create_line_plot_figure(samples, x_vals)
     # fig = tool_belt.create_line_plot_figure(samples)
@@ -149,9 +182,9 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     # Set labels
     axes = fig.get_axes()
     ax = axes[0]
-    ax.set_title('Stationary Counts')
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('kcps')
+    ax.set_title("Stationary Counts")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("kcps")
 
     # Maximize the window
     fig_manager = plt.get_current_fig_manager()
@@ -171,7 +204,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     tool_belt.init_safe_stop()
 
-    charge_initialization = (nv_minus_initialization or nv_zero_initialization)
+    charge_initialization = nv_minus_initialization or nv_zero_initialization
     charge_initialization = False
     # print(charge_initialization)
 
@@ -194,13 +227,15 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         # print(new_samples)
         
         # Read the samples and update the image
-#        print(new_samples)
+        #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
 
             # If we did charge initialization, subtract out the background
             if charge_initialization:
-                new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
+                new_samples = [
+                    max(int(el[0]) - int(el[1]), 0) for el in new_samples
+                ]
 
             # start = time.time()
             update_line_plot(new_samples, num_read_so_far, *args)
@@ -214,8 +249,10 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     # Replace x/0=inf with 0
     try:
-        average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-        print('average: {}'.format(average))
+        average = numpy.mean(samples[0 : write_pos[0]]) / (
+            10 ** 3 * readout_sec
+        )
+        print("average: {}".format(average))
     except RuntimeWarning as e:
         print(e)
         inf_mask = numpy.isinf(average)
@@ -223,8 +260,8 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         average[inf_mask] = 0
 
     try:
-        st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-        print('st_dev: {}'.format(st_dev))
+        st_dev = numpy.std(samples[0 : write_pos[0]]) / (10 ** 3 * readout_sec)
+        print("st_dev: {}".format(st_dev))
     except RuntimeWarning as e:
         print(e)
         inf_mask = numpy.isinf(st_dev)
@@ -232,3 +269,6 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         st_dev[inf_mask] = 0
 
     return average, st_dev
+
+
+# endregion

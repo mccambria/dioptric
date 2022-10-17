@@ -2163,46 +2163,46 @@ def main_sub(
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
             ls = linestyles[sample]
-            ax.plot(
-                temp_linspace,
-                fit_func(temp_linspace),
-                linestyle=ls,
-                label=r"$\mathrm{\Omega}$ fit",
-                color=omega_edge_color,
-                linewidth=lw,
-            )
+            # ax.plot(
+            #     temp_linspace,
+            #     fit_func(temp_linspace),
+            #     linestyle=ls,
+            #     label=r"$\mathrm{\Omega}$ fit",
+            #     color=omega_edge_color,
+            #     linewidth=lw,
+            # )
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
         # Ab initio plot
-        ax.plot(
-            sim_temps,
-            sim_omega,
-            linestyle=sim_ls,
-            label=r"$\mathrm{\Omega}$ fit",
-            color=omega_face_color,
-            linewidth=lw,
-        )
+        # ax.plot(
+        #     sim_temps,
+        #     sim_omega,
+        #     linestyle=sim_ls,
+        #     label=r"$\mathrm{\Omega}$ fit",
+        #     color=omega_face_color,
+        #     linewidth=lw,
+        # )
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
             ls = linestyles[sample]
-            ax.plot(
-                temp_linspace,
-                fit_func(temp_linspace),
-                linestyle=ls,
-                color=gamma_edge_color,
-                linewidth=lw,
-            )
+            # ax.plot(
+            #     temp_linspace,
+            #     fit_func(temp_linspace),
+            #     linestyle=ls,
+            #     color=gamma_edge_color,
+            #     linewidth=lw,
+            # )
         # Ab initio plot
-        ax.plot(
-            sim_temps,
-            sim_gamma,
-            linestyle=sim_ls,
-            color=gamma_face_color,
-            linewidth=lw,
-        )
+        # ax.plot(
+        #     sim_temps,
+        #     sim_gamma,
+        #     linestyle=sim_ls,
+        #     color=gamma_face_color,
+        #     linewidth=lw,
+        # )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
 

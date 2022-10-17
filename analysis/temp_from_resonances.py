@@ -267,7 +267,11 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b4 = -1.44e-9
     b5 = 3.1e-12
     b6 = -1.8e-15
-    D_of_T = lambda T: zfs0 + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6)) / 1000
+    D_of_T = (
+        lambda T: zfs0
+        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
+        / 1000
+    )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
     if type(temp) in [list, np.ndarray]:
         ret_vals = []
@@ -280,17 +284,17 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
 
 
 # def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2, A3):
-def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
-# def cambria_test(temp, zfs0, A1, A2):
+# def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
+def cambria_test(temp, zfs0, A1, A2):
 
-    # Theta1 = 65
-    # Theta2 = 155
+    Theta1 = 65
+    Theta2 = 160
 
     ret_val = zfs0
     for ind in range(2):
         adj_ind = ind + 1
         ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
-        
+
     A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
     ret_val += A3 * fractional_thermal_expansion(temp)
 
@@ -330,7 +334,7 @@ def experimental_zfs_versus_t(path, file_name):
     y_range = [2.74, 2.883]
     # temp_range = [-10, 200]
     # y_range = [2.8755, 2.8787]
-    plot_data = True
+    plot_data = False
     plot_prior_models = True
 
     min_temp, max_temp = temp_range
@@ -415,8 +419,8 @@ def experimental_zfs_versus_t(path, file_name):
         2.87771,
         -8e-2,
         -4e-1,
-        65,
-        165,
+        # 65,
+        # 165,
         # 6.5,
     ]
     fit_func = cambria_test
@@ -436,7 +440,9 @@ def experimental_zfs_versus_t(path, file_name):
         *popt,
         # *guess_params,
     )
-    kpl.plot_line(ax, temp_linspace, cambria_lambda(temp_linspace), label="Cambria")
+    kpl.plot_line(
+        ax, temp_linspace, cambria_lambda(temp_linspace), label="Cambria"
+    )
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
@@ -450,15 +456,32 @@ def experimental_zfs_versus_t(path, file_name):
     ### Prior models
 
     if plot_prior_models:
-        kpl.plot_line(ax, temp_linspace, sub_room_zfs_from_temp(temp_linspace), label="Chen")
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            sub_room_zfs_from_temp(temp_linspace),
+            label="Chen",
+        )
         # print(super_room_zfs_from_temp(700))
         # return
-        kpl.plot_line(ax, temp_linspace, super_room_zfs_from_temp(temp_linspace), label="Toyli")
-        kpl.plot_line(ax, temp_linspace, zfs_from_temp_barson(temp_linspace), label="Barson")
-        kpl.plot_line(ax, temp_linspace, zfs_from_temp_li(temp_linspace), label="Li")
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            super_room_zfs_from_temp(temp_linspace),
+            label="Toyli",
+        )
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            zfs_from_temp_barson(temp_linspace),
+            label="Barson",
+        )
+        kpl.plot_line(
+            ax, temp_linspace, zfs_from_temp_li(temp_linspace), label="Li"
+        )
 
     ### Plot wrap up
-    
+
     if plot_prior_models:
         ax.legend(loc="lower left")
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
@@ -623,4 +646,4 @@ if __name__ == "__main__":
 
     experimental_zfs_versus_t(path, file_name)
 
-    # plt.show(block=True)
+    plt.show(block=True)
