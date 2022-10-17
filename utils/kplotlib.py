@@ -24,6 +24,13 @@ from colorutils import Color
 marker_sizes = {"normal": 7, "small": 6}
 line_widths = {"normal": 1.5, "small": 1.25}
 marker_edge_widths = line_widths.copy()
+# Just the defaul sizes here
+marker_size = marker_sizes["normal"]
+marker_size_inset = marker_sizes["small"]
+line_width = line_widths["normal"]
+line_width_inset = line_widths["small"]
+marker_edge_width = marker_edge_widths["normal"]
+marker_edge_width_inset = marker_edge_widths["small"]
 
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]
