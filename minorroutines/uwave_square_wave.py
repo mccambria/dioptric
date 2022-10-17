@@ -37,15 +37,17 @@ def sweep(cxn, uwave_freqs, uwave_power):
     sig_gen_cxn.set_freq(uwave_freqs[0])
     sig_gen_cxn.set_amp(uwave_power)
     sig_gen_cxn.uwave_on()
+    cxn.pulse_streamer.constant([7])
     
-    time.sleep(5)
+    time.sleep(2)
     
     for freq in uwave_freqs:
         if tool_belt.safe_stop():
             break
         sig_gen_cxn.set_freq(freq)
-        time.sleep(3)
+        time.sleep(0.03)
         
+    cxn.pulse_streamer.constant()
     sig_gen_cxn.uwave_off()
     tool_belt.reset_cfm(cxn)
 
@@ -109,9 +111,10 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     with labrad.connect() as cxn:
-        uwave_freq = 2.867 #GHz
+        uwave_freq = 2.65 #GHz
         uwave_power = 0 #dBm
-        # main(cxn,uwave_freq, uwave_power, States.HIGH)
+        # # main(cxn,uwave_freq, uwave_power, States.HIGH)
         constant(cxn,uwave_freq, uwave_power)
-        # uwave_freqs = np.linspace(2.37, 3.37, 20)
+        half_range = 0.5
+        uwave_freqs = np.linspace(uwave_freq - half_range, uwave_freq + half_range, 1000)
         # sweep(cxn, uwave_freqs, uwave_power)

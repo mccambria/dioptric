@@ -24,10 +24,12 @@ from colorutils import Color
 marker_sizes = {"normal": 7, "small": 6}
 line_widths = {"normal": 1.5, "small": 1.25}
 marker_edge_widths = line_widths.copy()
+font_sizes = {"normal": 17, "small": 13}
+default_font_size = "normal"
+default_data_size = "normal"
 
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]
-font_size = 17
 line_style = "solid"
 marker_style = "o"
 
@@ -58,9 +60,9 @@ class KplColors(Enum):
 
 data_color_cycler = [
         KplColors.BLUE.value,
-        KplColors.ORANGE.value,
-        KplColors.GREEN.value,
         KplColors.RED.value,
+        KplColors.GREEN.value,
+        KplColors.ORANGE.value,
         KplColors.PURPLE.value,
         KplColors.BROWN.value,
         KplColors.PINK.value,
@@ -112,15 +114,17 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib():
+def init_kplotlib(font_size="normal", data_size="normal"):
     """
     Runs the default initialization for kplotlib, our default configuration
     of matplotlib
     """
     
-    global active_axes, color_cyclers
+    global active_axes, color_cyclers, default_font_size, default_data_size
     active_axes = []
     color_cyclers = []
+    default_font_size = font_size
+    default_data_size = data_size
     
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
@@ -148,7 +152,7 @@ def init_kplotlib():
 
     # plt.rcParams["savefig.format"] = "svg"
 
-    plt.rcParams["font.size"] = font_size
+    plt.rcParams["font.size"] = font_sizes[default_font_size]
     plt.rcParams['figure.figsize'] = figsize
     
     plt.rc("text", usetex=True)
@@ -163,23 +167,27 @@ def get_default_color(ax, plot_type):
     global active_axes, color_cyclers
     if ax not in active_axes:
         active_axes.append(ax)
-        color_cyclers.append({"data": data_color_cycler.copy(), "line": line_color_cycler.copy()})
+        color_cyclers.append({"points": data_color_cycler.copy(), "line": line_color_cycler.copy()})
     ax_ind = active_axes.index(ax)
     cycler = color_cyclers[ax_ind][plot_type]
     color = cycler.pop(0)
     return color
     
-def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
+def plot_points(ax, x, y, size=None, **kwargs):
     """
     Same as matplotlib's errorbar, but with our defaults. Use for plotting 
     data points.
     """
     
+    global default_data_size
+    if size is None:
+        size = default_data_size
+    
     # Color handling
     if "color" in kwargs:
         color = kwargs["color"]
     else:
-        color = get_default_color(ax, "data")
+        color = get_default_color(ax, "points")
     if "facecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
@@ -187,7 +195,7 @@ def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
         
     # Defaults
     params = {
-        "linestyle": "none",
+        "linestyle": line_style,
         "marker": marker_style,
         "markersize": marker_sizes[size],
         "markeredgewidth": marker_edge_widths[size],
@@ -198,16 +206,20 @@ def plot_data(ax, x, y, y_err=None, x_err=None, size="normal", **kwargs):
     params["color"] = color
     params["markerfacecolor"] = face_color
     
-    ax.errorbar(x, y, xerr=x_err, yerr=y_err, **params)
+    ax.errorbar(x, y, **params)
     
-def plot_line(ax, x, y, color=None, size="normal", **kwargs):
+def plot_line(ax, x, y, size=None, **kwargs):
     """
     Same as matplotlib's plot, but with our defaults. Use for plotting 
     continuous lines.
     """
     
+    global default_data_size
+    if size is None:
+        size = default_data_size
+    
     # Color handling
-    if color in kwargs:
+    if "color" in kwargs:
         color = kwargs["color"]
     else:
         color = get_default_color(ax, "line")
@@ -223,4 +235,23 @@ def plot_line(ax, x, y, color=None, size="normal", **kwargs):
     params["color"] = color
     
     ax.plot(x, y, **params)
+    
+def text(ax, x, y, text, size=None, **kwargs):
+    """x, y are relative to plot dimensions and start from lower left corner"""
+    
+    global default_font_size
+    if size is None:
+        size = default_font_size
+        
+    bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    font_size = font_sizes[size]
+    ax.text(
+        x, 
+        y,
+        text,
+        transform=ax.transAxes,
+        fontsize=font_size,
+        # verticalalignment="top",
+        bbox=bbox_props,
+    )
     

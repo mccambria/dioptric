@@ -22,6 +22,7 @@ import labrad
 from utils.tool_belt import States
 from random import shuffle
 import sys
+import utils.kplotlib as kpl
 
 
 # %% Figure functions
@@ -40,28 +41,18 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    if norm_avg_sig_ste is not None:
-        ax.errorbar(
-            freqs,
-            norm_avg_sig,
-            yerr=norm_avg_sig_ste,
-            fmt="bo",
-            label="data",
-            ls="None",
-        )
-    else:
-        ax.plot(freqs, norm_avg_sig, "b", label="data")
-    ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), "r-", label="fit")
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, freqs, norm_avg_sig)
+    kpl.plot_line(ax, smooth_freqs, fit_func(smooth_freqs, *popt))
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
-    ax.legend(loc="lower right")
+    # ax.legend(loc="lower right")
 
     text = "\n".join(
         (
-            "Contrast = {:.3f}",
-            "Standard deviation = {:.4f} GHz",
-            "Frequency = {:.4f} GHz",
+            "A = {:.3f}",
+            r"$\sigma$ = {:.4f} GHz",
+            "f = {:.4f} GHz",
         )
     )
     if fit_func == single_gaussian_dip:
@@ -71,29 +62,12 @@ def create_fit_figure(
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
 
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(
-        0.05,
-        0.15,
-        low_text,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment="top",
-        bbox=props,
-    )
+    kpl.text(ax, 0.05, 0.05, low_text)
     if high_text is not None:
-        ax.text(
-            0.55,
-            0.15,
-            high_text,
-            transform=ax.transAxes,
-            fontsize=12,
-            verticalalignment="top",
-            bbox=props,
-        )
+        kpl.text(ax, 0.74, 0.05, high_text)
 
+    kpl.tight_layout(fig)
     fig.canvas.draw()
-    fig.set_tight_layout(True)
     fig.canvas.flush_events()
 
     return fig
@@ -254,8 +228,8 @@ def get_guess_params(
         low_freq_guess = freq_center
         high_freq_guess = None
 
-    # low_freq_guess = 2.8620
-    # high_freq_guess = 2.8936
+    low_freq_guess = 2.861
+    high_freq_guess = 2.882
 
     if low_freq_guess is None:
         return None, None
@@ -382,7 +356,7 @@ def process_counts(ref_counts, sig_counts, num_runs):
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
     # New style, single reference
-    if False:
+    if True:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
@@ -504,6 +478,8 @@ def main_with_cxn(
 ):
 
     # %% Initial calculations and setup
+    
+    kpl.init_kplotlib(font_size="small")
 
     tool_belt.reset_cfm(cxn)
 
@@ -687,20 +663,11 @@ def main_with_cxn(
         ax.cla()
         ax.plot(freqs, norm_avg_sig, "b-")
 
-        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+        text_popt = f"Run # {run_ind + 1}/{num_runs}"
+        kpl.text(ax, 0.8, 0.9, text_popt)
 
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(
-            0.8,
-            0.9,
-            text_popt,
-            transform=ax.transAxes,
-            verticalalignment="top",
-            bbox=props,
-        )
-
+        kpl.tight_layout(fig)
         fig.canvas.draw()
-        fig.set_tight_layout(True)
         fig.canvas.flush_events()
 
         # %% Save the data we have incrementally for long measurements
@@ -871,70 +838,27 @@ if __name__ == "__main__":
     # print(__file__)
     # sys.exit()
 
-    file = "2022_07_12-10_08_45-hopper-search"
+    # file = "2022_10_13-16_05_00-hopper-nv4_2022_10_13"
 
-    data = tool_belt.get_raw_data(file)
-
-    freq_center = data["freq_center"]
-    freq_range = data["freq_range"]
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    norm_avg_sig = np.array(data["norm_avg_sig"])
-    norm_avg_sig_ste = np.array(data["norm_avg_sig_ste"])
-
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
-
-    # ax.plot(freqs, norm_avg_sig, label=label_list[f])
-    # ax.set_xlabel("Frequency (GHz)")
-    # ax.set_ylabel("Contrast (arb. units)")
-    # ax.legend(loc="lower right")
-
-    fit_func, popt, pcov = fit_resonance(
-        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
-    )
-    create_fit_figure(
-        freq_range,
-        freq_center,
-        num_steps,
-        norm_avg_sig,
-        fit_func,
-        popt,
-    )
-    print(popt)
-    print(pcov)
-
-    # tool_belt.init_matplotlib()
-    # # matplotlib.rcParams["axes.linewidth"] = 1.0
-
-    # file = "2022_06_30-23_27_50-hopper-search"
     # data = tool_belt.get_raw_data(file)
+
     # freq_center = data["freq_center"]
     # freq_range = data["freq_range"]
     # num_steps = data["num_steps"]
-    # ref_counts = data["ref_counts"]
-    # sig_counts = data["sig_counts"]
     # num_runs = data["num_runs"]
-    # ret_vals = process_counts(ref_counts, sig_counts, num_runs)
-    # (
-    #     avg_ref_counts,
-    #     avg_sig_counts,
-    #     norm_avg_sig,
-    #     ste_ref_counts,
-    #     ste_sig_counts,
-    #     norm_avg_sig_ste,
-    # ) = ret_vals
+    # norm_avg_sig = np.array(data["norm_avg_sig"])
+    # norm_avg_sig_ste = np.array(data["norm_avg_sig_ste"])
+
+    # freqs = calculate_freqs(freq_range, freq_center, num_steps)
+
+    # # ax.plot(freqs, norm_avg_sig, label=label_list[f])
+    # # ax.set_xlabel("Frequency (GHz)")
+    # # ax.set_ylabel("Contrast (arb. units)")
+    # # ax.legend(loc="lower right")
 
     # fit_func, popt, pcov = fit_resonance(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     norm_avg_sig_ste,
-    #     ref_counts,
+    #     freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
     # )
-
-    # # popt[2] -= np.sqrt(pcov[2, 2])
-
     # create_fit_figure(
     #     freq_range,
     #     freq_center,
@@ -942,8 +866,51 @@ if __name__ == "__main__":
     #     norm_avg_sig,
     #     fit_func,
     #     popt,
-    #     norm_avg_sig_ste=norm_avg_sig_ste,
     # )
+    # print(popt)
+    # print(pcov)
+
+    kpl.init_kplotlib(font_size="small")
+    # matplotlib.rcParams["axes.linewidth"] = 1.0
+
+    file = "2022_10_13-18_23_57-hopper-nv4_2022_10_13"
+    data = tool_belt.get_raw_data(file)
+    freq_center = data["freq_center"]
+    freq_range = data["freq_range"]
+    num_steps = data["num_steps"]
+    ref_counts = data["ref_counts"]
+    sig_counts = data["sig_counts"]
+    num_runs = data["num_runs"]
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    (
+        avg_ref_counts,
+        avg_sig_counts,
+        norm_avg_sig,
+        ste_ref_counts,
+        ste_sig_counts,
+        norm_avg_sig_ste,
+    ) = ret_vals
+
+    fit_func, popt, pcov = fit_resonance(
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        ref_counts,
+    )
+
+    # popt[2] -= np.sqrt(pcov[2, 2])
+
+    create_fit_figure(
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        fit_func,
+        popt,
+        norm_avg_sig_ste=norm_avg_sig_ste,
+    )
 
     # plt.show(block=True)
 
