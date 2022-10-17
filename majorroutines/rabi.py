@@ -357,7 +357,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         ax = axes_pack[0]
         ax.cla()
         ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-        ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
+        ax.plot(taus, avg_ref_counts, 'g-', label = 'reference')
 
         ax.set_xlabel('rf time (ns)')
         ax.set_ylabel('Counts')
@@ -494,7 +494,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     if (fit_func is not None) and (popt is not None):
         return rabi_period, sig_counts, ref_counts, popt
     else:
-        return None, sig_counts, ref_counts
+        return None, sig_counts, ref_counts, []
 
 
 # %% Run the file

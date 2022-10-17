@@ -817,7 +817,7 @@ if __name__ == "__main__":
     # b_matrix_elements(name, res_descs)
     # plot_components(mag_B, popt)
     # plot_resonances([0,0.2], *popt)
-    print(calc_res_pair(mag_B, *popt))
+    print(np.mean(calc_res_pair(mag_B, *popt)))
 
     # Fake data
     # bounds: ((0, pi/2), (-0.050, 0.050), (0, 0.050), (0, pi/3), (0, 2*pi/3))

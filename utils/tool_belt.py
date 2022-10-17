@@ -14,8 +14,9 @@ Created on Fri Nov 23 14:57:08 2018
 # %% Imports
 
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.style as mplstyle
 import threading
 import os
 import csv
@@ -879,6 +880,11 @@ def create_line_plot_figure(vals, xVals=None):
     Returns:
         matplotlib.figure.Figure
     """
+    
+    # mplstyle.use('fast')
+    # mpl.rcParams['path.simplify'] = True
+    # mpl.rcParams['path.simplify_threshold'] = 1.0
+    # mpl.rcParams['agg.path.chunksize'] = 10000
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
@@ -914,6 +920,7 @@ def create_line_plots_figure(vals, xVals=None):
     Returns:
         matplotlib.figure.Figure
     """
+    
 
     # Tell matplotlib to generate a figure with len(vals) plots
     fig, ax = plt.subplots(len(vals))
@@ -941,7 +948,7 @@ def update_line_plot_figure(fig, vals):
             1D np array containing the values to plot
     """
 
-    # Get the line - Assume it's the first line in the first axes
+    # Get the line - Assume it's  the first line in the first axes
     axes = fig.get_axes()
     ax = axes[0]
     lines = ax.get_lines()
@@ -953,8 +960,11 @@ def update_line_plot_figure(fig, vals):
     ax.autoscale_view(scalex=False)
 
     # Redraw the canvas and flush the changes to the backend
+    # start = time.time()
     fig.canvas.draw()
     fig.canvas.flush_events()
+    # stop = time.time()
+    # print(f"Tool time: {stop - start}")
 
 
 def radial_distrbution_data(
@@ -1238,6 +1248,8 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
         key = keys[0]
         p.get(key)
         val = p.send()["get"]
+        if type(val) == np.ndarray:
+            val = val.tolist()
         dict_to_populate[key] = val
 
     elif len(keys) > 1:
@@ -1250,6 +1262,8 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
         for ind in range(len(keys)):
             key = keys[ind]
             val = vals[ind]
+            if type(val) == np.ndarray:
+                val = val.tolist()
             dict_to_populate[key] = val
 
 
