@@ -305,7 +305,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 75
     num_reps = int(1e4)
-    num_runs = 5
+    num_runs = 10
 
     composite = False
 
@@ -533,10 +533,10 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None):
     return 
 
 
-def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, shift, T_min, T_max):
+def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size,  T_min, T_max):
 
     #step_size = 1 # us
-    #shift = 100 #ns
+    shift = 100 #ns
     #T_min = 0
     #T_max = 200
     
@@ -685,7 +685,7 @@ def do_relaxation(nv_sig, apd_indices, ):
     num_steps_omega = 15#31
     num_steps_gamma = 15
     num_reps = 2000
-    num_runs = 10
+    num_runs = 20
     
     if False:
      t1_exp_array = numpy.array(
@@ -1060,30 +1060,14 @@ if __name__ == "__main__":
     nv_sig = nv_search
     
     # %% Functions to run
-#
+
     try:
-        # print(nv_sig['coords'])
-        #tool_belt.init_safe_stop()
-        # for dz in [0, 0.15,0.3, 0.45, 0.6, 0.75,0.9, 1.05, 1.2, 1.5, 1.7, 1.85, 2, 2.15, 2.3, 2.45]: #0.5,0.4, 0.3, 0.2, 0.1,0, -0.1,-0.2,-0.3, -0.4, -0.5
-            # nv_sig_copy = copy.deepcopy(nv_sig)
-            # coords = nv_sig["coords"]
-            # new_coords= list(numpy.array(coords)+ numpy.array([0, 0, dz]))
-            # # new_coords = numpy.array(coords) +[0, 0, dz]
-            # # print(new_coords)
-            # nv_sig_copy['coords'] = new_coords
-            # do_image_sample(nv_sig_copy, apd_indices)
-         #
-        #
+
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0,0.0,0.0])
         # tool_belt.set_drift([0.044, 0.057, 0.17])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
-
-                     
-                
-        # do_optimize(nv_sig,apd_indices)
-        # z_0 = 4.6
         for x in [-0.25, 0.25]:
             for y in [-0.25, 0.25]:
         
@@ -1092,96 +1076,53 @@ if __name__ == "__main__":
                     nv_sig["coords"] =[x,y, z ]
                     do_image_sample(nv_sig, apd_indices)
 
-        # for dz in numpy.linspace(-0.5, 0.5, 5):
-        #       coords= nv_sig["coords"]
-        #       nv_sig["coords"] =[coords[0], coords[1], coords[2] + dz ]
-        #       do_image_sample(nv_sig, apd_indices)
-     
-        # for z in numpy.linspace(4.2,5.0, 5):
-        #             coords= nv_sig["coords"]
-        #             nv_sig["coords"] =[coords[0], coords[1], z ]
-        #             do_image_sample(nv_sig, apd_indices)
                     
         # do_image_sample(nv_sig, apd_indices)
-        # for nv_sig in [nv_sig_0, nv_sig_off]:
+        # do_image_sample_xz(nv_sig, apd_indices)
+        
         # do_stationary_count(nv_sig, apd_indices)
 
-
-        # do_image_sample_xz(nv_sig, apd_indices)
-        # do_image_charge_states(nv_sig, apd_indices)
-
-
-        # do_subtract_filter_image(nv_sig, apd_indices)
-        # nv_sig["collection_filter"] = "740_bp"
-        # do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
-
-        # num_runs = 20
-        # num_steps_a = 81
-        # num_steps_b = num_steps_a
-        # img_range_1D = None#[[0.042, 0, 0],[0,0,0]]
-
-        # img_range_2D = [0.1, 0.1, 0]
-        # offset = [-0.22/83,0.25/83,0]
-        # for t in [5e8]:
-        #     nv_sig["CPG_laser_dur"] = t
-
-            # do_SPaCE(nv_sig, nv_sig, apd_indices,num_runs, num_steps_a, num_steps_b,
-            #  img_range_1D,img_range_2D, offset)
             
-        # for nv_sig in [nv_sig_4,nv_sig_8]:
         # do_lifetime(nv_sig, apd_indices)
             
-
         # do_optimize_magnet_angle(nv_sig, apd_indices)
 
-        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
-        #do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
+        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.4) 
         
-        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.4) ###
-        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
+        
 
-        #for nv_sig in [nv_sig_1, nv_sig_4, nv_sig_8]:
-        # do_spin_echo(nv_sig, apd_indices)
         #do_ramsey(nv_sig, nv_sig,apd_indices)
+        
+        # do_spin_echo(nv_sig, apd_indices)
 
+        do_relaxation(nv_sig, apd_indices)  # gamma and omega
+                
+        num_xy4_reps = 1
+        step_size = 1500 #us
+        T_min = 0 #us
+        T_max = 15000 #us
+        
+        do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, T_min, T_max)
         
         
-        # do_relaxation(nv_sig, apd_indices)
-        
-        #for n in [1]:
-            
-        # do_dd_xy4(nv_sig, apd_indices, 1, 1500, 100, 0, 15000)
-        #do_dd_xy4(nv_sig, apd_indices, 2, 1000, 100, 0, 10000)
-        # do_dd_xy8(nv_sig, apd_indices, 1 )
-        
-        # do_relaxation(nv_sig, apd_indices)
-        
-        # for N in [4, 2, 1]:
-        # do_dd_xy4_revivals(nv_sig_1, apd_indices, 4)
         
         
-        ################## to run
-        # do_dd_xy4_revivals(nv_sig_1, apd_indices, 1)
-        # do_dd_xy4_revivals(nv_sig_1, apd_indices, 2)
-
-
-
-        #do_dd_xy8(nv_sig, apd_indices, 1 ) 
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH)
-
-        # do_relaxation(nv_sig, apd_indices)
+        # num_xy8_reps = 1
+        # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps )
+        
+        
+        
+        ################## 
         
         # do_determine_standard_readout_params(nv_sig, apd_indices)
         # do_determine_charge_readout_params(nv_sig, apd_indices)
 
-        # Operations that don't need an NV#
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_xyz(labrad.connect(), [0,0,5])
-#-0.243, -0.304,5.423
-#ML -0.216, -0.115,5.417
+
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it
         if not debug_mode:

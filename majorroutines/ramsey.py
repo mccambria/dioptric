@@ -169,11 +169,11 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     offset = 1
     
     # offset = 0.92774594 
-    amp_1 = -0.02093022  
+    # amp_1 = -0.02093022  
     # freq_1 = 1.71676105 
-    amp_2 = -0.02068354  
+    # amp_2 = -0.02068354  
     # freq_2 = 3.96882203
-    amp_3= -0.01847937
+    # amp_3= -0.01847937
     # freq_3 = 6.17611092
     
 
@@ -181,10 +181,10 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
                         amp_2, FreqParams[1],
                         amp_3, FreqParams[2])
     
-    guess_params_fixed_amps = (offset, decay, FreqParams[0],
-                         FreqParams[1],
-                        FreqParams[2])
-    cosine_sum_fixed_amps = lambda t, offset, decay, freq_1, freq_2, freq_3:tool_belt.cosine_sum(t, offset, decay,  amp_1, freq_1, amp_2,  freq_2, amp_3, freq_3)
+    # guess_params_fixed_amps = (offset, decay, FreqParams[0],
+    #                      FreqParams[1],
+    #                     FreqParams[2])
+    # cosine_sum_fixed_amps = lambda t, offset, decay, freq_1, freq_2, freq_3:tool_belt.cosine_sum(t, offset, decay,  amp_1, freq_1, amp_2,  freq_2, amp_3, freq_3)
     
     
     # guess_params_fixed_freq = (0.95, 0.3, 0.05,
@@ -194,11 +194,11 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     
     ### Try the fit to a sum of three cosines
     
-    # fit_func = tool_belt.cosine_sum
-    # init_params = guess_params
+    fit_func = tool_belt.cosine_sum
+    init_params = guess_params
     
-    fit_func = cosine_sum_fixed_amps
-    init_params = guess_params_fixed_amps
+    # fit_func = cosine_sum_fixed_amps
+    # init_params = guess_params_fixed_amps
     
     # fit_func = cosine_sum_decay
     # init_params = guess_params
