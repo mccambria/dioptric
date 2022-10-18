@@ -12,7 +12,7 @@ Created on Tue Apr 23 11:49:23 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize_digital
 import numpy
 import os
 import time
@@ -184,6 +184,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   iq_mod_on = False,
                   opti_nv_sig = None):
 
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    
     tool_belt.reset_cfm(cxn)
 
     # %% Get the starting time of the function, to be used to calculate run time
@@ -223,7 +226,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    pulsegen_server.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -269,12 +272,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
@@ -297,7 +300,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #        sig_gen_cxn.uwave_on()
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream(apd_indices)
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
@@ -319,12 +322,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+            counter_server.clear_buffer()
+            pulsegen_server.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = counter_server.read_counter_separate_gates(1)
 
             sample_counts = new_counts[0]
 
@@ -343,7 +346,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #            start_time = run_time
 #            print('Tau: {} ns'.format(taus[tau_ind]))
 #            print('Elapsed time {}'.format(run_elapsed_time))
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% incremental plotting
 

@@ -28,17 +28,18 @@ with program() as hello_qua:
     counts_gate2_apd_0 = declare(int)
     
     counts_st = declare_stream()
-    times_st = declare_stream()
-    j = declare(int)
-    n = declare(int)
-    k = declare(int)
+    # times_st = declare_stream()
+    # j = declare(int)
+    # n = declare(int)
+    # k = declare(int)
     
     # with for_(n, 0, n < 100, n + 1):
     #     play("laser_ON","do_laserglow_532_dm",duration=1000 // 4)
-    play("cw","AOD_1X",duration=1000 // 4)
+    # play("cw","AOD_1X",duration=1000 // 4)
+    play('uwave_ON','signal_generator_tsg4104a',duration=100)
     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
     
-    # save(counts_gate1_apd_0,counts_st)
+    save(counts_gate1_apd_0,counts_st)
     # with for_(j, 0, j < counts_gate1_apd_0, j + 1):
     #     save(j, times_st) 
     # measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))

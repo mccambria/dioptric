@@ -40,16 +40,16 @@ def get_seq(pulse_streamer, config, args):
     laser_power = args[7]
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    # pulser_wiring = config['Wiring']['PulseStreamer']
     key = 'do_apd_{}_gate'.format(apd_index)
-    pulser_do_apd_gate = pulser_wiring[key]
+    pulser_do_apd_gate = 1#pulser_wiring[key]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
-    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    pulser_do_sig_gen_gate = 2#pulser_wiring[sig_gen_gate_chan_name]
 
     # %% Couple calculated values
     
-    aom_delay_time =  config['Optics'][laser_name]['delay']
-    uwave_delay_time = config['Microwaves'][sig_gen_name]['delay']
+    aom_delay_time =  0#config['Optics'][laser_name]['delay']
+    uwave_delay_time = 0#config['Microwaves'][sig_gen_name]['delay']
     signal_wait_time = config['CommonDurations']['uwave_buffer']
     background_wait_time = 0*signal_wait_time
     reference_wait_time = 2 * signal_wait_time
@@ -80,6 +80,8 @@ def get_seq(pulse_streamer, config, args):
     for el in train:
         period += el[0]
     # print(period)
+    # print(pre_duration)
+    # print(polarization_time+uwave_delay_time + signal_wait_time + tau + signal_wait_time)
 
     # Pulse the laser with the AOM for polarization and readout
     train = [(polarization_time+uwave_delay_time, HIGH),
@@ -87,8 +89,9 @@ def get_seq(pulse_streamer, config, args):
              (polarization_time, HIGH),
              (reference_wait_time, LOW),
               (reference_time + background_wait_time + end_rest_time + aom_delay_time, HIGH)]
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                laser_name, laser_power, train)
+    seq.setDigital(3, train)
+    # tool_belt.process_laser_seq(pulse_streamer, seq, config,
+    #                             laser_name, laser_power, train)
     # total_dur = 0
     # for el in train:
     #     total_dur += el[0]
@@ -107,7 +110,7 @@ def get_seq(pulse_streamer, config, args):
     #     total_dur += el[0]
     # print(total_dur)
 
-    final_digital = [pulser_wiring['do_sample_clock']]
+    final_digital = [4]
     final = OutputState(final_digital, 0.0, 0.0)
     
     
@@ -126,6 +129,6 @@ if __name__ == '__main__':
     # state.value,
     # laser_name,
     # laser_power,
-    args = [200, 800.0, 350, 25, 1, 3, 'laserglow_532', 1]
+    args = [200, 800.0, 350, 25, 1, 3, 'cobolt_515', 1]
     seq = get_seq(None, config, args)[0]
     seq.plot()

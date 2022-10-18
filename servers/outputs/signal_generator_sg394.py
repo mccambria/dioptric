@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = sig_gen_sg394
+name = signal_generator_sg394
 version = 1.0
 description =
 
@@ -31,8 +31,8 @@ import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
 
 
-class SigGenSg394(LabradServer, VectorSigGen):
-    name = "sig_gen_sg394"
+class SignalGeneratorSg394(LabradServer, VectorSigGen):
+    name = "signal_generator_sg394"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -163,7 +163,7 @@ class SigGenSg394(LabradServer, VectorSigGen):
         self.mod_off(c)
 
 
-__server__ = SigGenSg394()
+__server__ = SignalGeneratorSg394()
 
 if __name__ == "__main__":
     from labrad import util

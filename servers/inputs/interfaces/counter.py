@@ -16,26 +16,26 @@ import numpy as np
 class Counter(LabradServer, ABC):
     
     
-    # def read_counter_setting_internal(self, num_to_read):
-    #     if self.stream is None:
-    #         logging.error("read_counter attempted while stream is None.")
-    #         return
-    #     if num_to_read is None:
-    #         # Poll once and return the result
-    #         counts = self.read_counter_internal()
-    #     else:
-    #         # Poll until we've read the requested number of samples
-    #         counts = []
-    #         while len(counts) < num_to_read:
-    #             counts.extend(self.read_counter_internal())
+    def read_counter_setting_internal(self, num_to_read):
+        if self.stream is None:
+            logging.error("read_counter attempted while stream is None.")
+            return
+        if num_to_read is None:
+            # Poll once and return the result
+            counts = self.read_counter_internal()
+        else:
+            # Poll until we've read the requested number of samples
+            counts = []
+            while len(counts) < num_to_read:
+                counts.extend(self.read_counter_internal())
                 
-    #         if len(counts) > num_to_read:
-    #             msg = "Read {} samples, only requested {}".format(
-    #                 len(counts), num_to_read
-    #             )
-    #             logging.error(msg)
+            if len(counts) > num_to_read:
+                msg = "Read {} samples, only requested {}".format(
+                    len(counts), num_to_read
+                )
+                logging.error(msg)
 
-    #     return counts
+        return counts
     
     
     @setting(7, num_to_read="i", returns="*3w")
@@ -78,33 +78,33 @@ class Counter(LabradServer, ABC):
 
         return return_counts
     
-    @setting(10, modulus="i", num_to_read="i", returns="*2w")
-    def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
+    # @setting(10, modulus="i", num_to_read="i", returns="*2w")
+    # def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
 
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        # logging.info(complete_counts)
+    #     complete_counts = self.read_counter_setting_internal(num_to_read)
+    #     # logging.info(complete_counts)
 
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
+    #     # To combine APDs we assume all the APDs have the same gate
+    #     gate_channels = list(self.tagger_di_gate.values())
+    #     first_gate_channel = gate_channels[0]
+    #     if not all(val == first_gate_channel for val in gate_channels):
+    #         logging.critical("Combined counts from APDs with different gates.")
 
-        # Add the APD counts as vectors for each sample in complete_counts
-        # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
-        # with Pool() as p:
-        #     separate_gate_counts = p.map(sum_lambda, complete_counts)
-        separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
+    #     # Add the APD counts as vectors for each sample in complete_counts
+    #     # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
+    #     # with Pool() as p:
+    #     #     separate_gate_counts = p.map(sum_lambda, complete_counts)
+    #     separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
 
-        # Run the modulus
-        return_counts = []
-        for sample in separate_gate_counts:
-            sample_list = []
-            for ind in range(modulus):
-                sample_list.append(np.sum(sample[ind::modulus]))
-            return_counts.append(sample_list)
+    #     # Run the modulus
+    #     return_counts = []
+    #     for sample in separate_gate_counts:
+    #         sample_list = []
+    #         for ind in range(modulus):
+    #             sample_list.append(np.sum(sample[ind::modulus]))
+    #         return_counts.append(sample_list)
 
-        return return_counts
+    #     return return_counts
     
     @setting(11, num_to_read="i", returns="*2w")
     def read_counter_separate_apds(self, c, num_to_read=None):

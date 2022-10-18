@@ -58,7 +58,7 @@ detection_delay = 36 # keep at 36ns minimum
 mw_delay = 0
 
 #uwave length. doesn't really matter
-uwave_len = 16
+uwave_len = 100
 
 
 green_laser_delay = 0
@@ -122,7 +122,7 @@ config_opx = {
                 "cw": "const_freq_out",
             },
         },
-        "signal_generator_tsg4104a_gate": {
+        "signal_generator_tsg4104a": {
             "digitalInputs": {
                 "marker": {
                     "port": ("con1", 7),

@@ -179,12 +179,18 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     charge_initialization = (nv_minus_initialization or nv_zero_initialization)
     charge_initialization = False
     # print(charge_initialization)
+    
+    b=0
 
     while True:
-
-        # if time.time() > timeout_inst:
-        #     break
-
+        b=b+1
+        if (b % 50) == 0:
+            tool_belt.reset_cfm(cxn)
+            counter_server.start_tag_stream(apd_indices)
+            pulsegen_server.stream_start(-1)
+            print('restarting')
+    
+        st = time.time()
         if tool_belt.safe_stop():
             break
 
@@ -193,20 +199,32 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
             new_samples = counter_server.read_counter_modulo_gates(2)
             # print(new_samples)
         else:
+            # st = time.time()
             new_samples = counter_server.read_counter_simple()
+            # print(time.time() -st)
             # print(new_samples)
 
         # Read the samples and update the image
 #        print(new_samples)
         num_new_samples = len(new_samples)
+        # print(len(new_samples))
+        # t1 = time.time()
+        # print(t1-st)
+        st=time.time()
         if num_new_samples > 0:
 
             # If we did charge initialization, subtract out the background
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-
+                
+            
+            # st = time.time()
             update_line_plot(new_samples, num_read_so_far, *args)
+            # print(time.time() -st)
             num_read_so_far += num_new_samples
+        
+        # print(time.time()-st)
+        # print('')
 
     # %% Clean up and report the data
 

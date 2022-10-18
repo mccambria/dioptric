@@ -238,7 +238,7 @@ class OPX(Tagger, PulseGen, LabradServer):
         self.num_reps = num_repeat
         
         if num_repeat == -1:
-            num_repeat = 1000000  # just make it go a bunch of times for now. canceling it will just kill the operation
+            num_repeat = 10000  # just make it go a bunch of times for now. canceling it will just kill the operation
             self.num_reps = 1
             logging.info('repeating 1000000 times instead of indefinitely')
         
@@ -249,7 +249,7 @@ class OPX(Tagger, PulseGen, LabradServer):
             seq, final, ret_vals = self.get_seq(self.seq_file, self.seq_args_string, num_repeat) #gets the full sequence
             self.pending_experiment_compiled_program_id = self.compile_qua_sequence(self.qm, seq)
         
-        logging.info('starting here')
+        # logging.info('starting here')
         # st = time.time()
         self.pending_experiment_job = self.add_qua_sequence_to_qm_queue(self.qm,self.pending_experiment_compiled_program_id)
         # logging.info(time.time() - st)
@@ -273,7 +273,7 @@ class OPX(Tagger, PulseGen, LabradServer):
         analog_frequencies = np.asarray(analog_frequencies)
                 
         args = [high_digital_channels.tolist(),analog_elements_to_set.tolist(),analog_frequencies.tolist(),analog_amplitudes.tolist()]
-        logging.info(args)
+        # logging.info(args)
         
         args_string = tool_belt.encode_seq_args(args)
         self.stream_immediate(c,seq_file='constant_program.py', num_repeat=1, seq_args_string=args_string)
@@ -297,15 +297,21 @@ class OPX(Tagger, PulseGen, LabradServer):
             return_counts: array
                 This is an array of the counts 
         """
+        # st = time.time()
         if self.sample_size == 'one_rep':
             num_gates_per_sample = self.num_gates_per_rep
-            
-        elif self.sample_size == 'all_reps':
-            num_gates_per_sample = self.num_reps * self.num_gates_per_rep
-
-        results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="live")
+            results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     
+        elif self.sample_size == 'all_reps':
+            # logging.info('waiting for all')
+            num_gates_per_sample = self.num_reps * self.num_gates_per_rep
+            results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+            # logging.info('got them')
+            # logging.info(time.time()-st)
+        
         counts_apd0, counts_apd1 = results.fetch_all() #just not sure if its gonna put it into the list structure we want
+        # logging.info('fetched them')
+        # logging.info(time.time()-st)
         # logging.info('checkpoint')
         # logging.info(counts_apd1)
         #now we need to combine into our data structure. they have different lengths because the fpga may 
@@ -326,11 +332,6 @@ class OPX(Tagger, PulseGen, LabradServer):
         
         counts_apd0 = [counts_apd0[i * n:(i + 1) * n] for i in range((len(counts_apd0) + n - 1) // n )]
         counts_apd1 = [counts_apd1[i * n:(i + 1) * n] for i in range((len(counts_apd1) + n - 1) // n )]
-        # logging.info(counts_apd0)
-
-        # logging.info(counts_apd0)
-        # logging.info(counts_apd1)
-        # logging.info('checkpoint 2')
 
 
         return_counts = []
@@ -346,41 +347,62 @@ class OPX(Tagger, PulseGen, LabradServer):
         # logging.info('checkpoint1')
         # logging.info(return_counts)
         self.counter_index = max_length #make the counter indix the new max length (-1) so the samples start there
-
+        # logging.info('done processing counts')
+        # logging.info(time.time()-st)
         return return_counts
     
-   
-    def read_counter_setting_internal(self, num_to_read):
-        if self.stream is None:
-            logging.error("read_counter attempted while stream is None.")
-            return
-        if num_to_read is None:
-            # Poll once and return the result
-            counts = self.read_counter_internal()
-        else:
-            # Poll until we've read the requested number of samples
-            counts = []
-            while len(counts) < num_to_read:
-                counts.extend(self.read_counter_internal())
-                
-            if len(counts) > num_to_read:
-                msg = "Read {} samples, only requested {}".format(
-                    len(counts), num_to_read
-                )
-                logging.error(msg)
+    # @setting(10, modulus="i", num_to_read="i", returns="*2w")
+    # def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
 
-        return counts
+    #     complete_counts = self.read_counter_setting_internal(num_to_read)
+    #     # logging.info(complete_counts)
+
+    #     # To combine APDs we assume all the APDs have the same gate
+    #     gate_channels = list(self.tagger_di_gate.values())
+    #     first_gate_channel = gate_channels[0]
+    #     if not all(val == first_gate_channel for val in gate_channels):
+    #         logging.critical("Combined counts from APDs with different gates.")
+
+    #     # Add the APD counts as vectors for each sample in complete_counts
+    #     # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
+    #     # with Pool() as p:
+    #     #     separate_gate_counts = p.map(sum_lambda, complete_counts)
+    #     separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
+
+    #     # Run the modulus
+    #     return_counts = []
+    #     for sample in separate_gate_counts:
+    #         sample_list = []
+    #         for ind in range(modulus):
+    #             sample_list.append(np.sum(sample[ind::modulus]))
+    #         return_counts.append(sample_list)
+
+    #     return return_counts
     
+   
     def read_raw_stream(self):
         """
         read the raw stream. currently it waits for all data in the job to come in and reports it all. Ideally it would do it live
         """
-        
+            
         results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
 
         counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all()
+        
+        ###added but not tested
+        if self.sample_size == 'one_rep':
+            num_gates_per_sample = self.num_gates_per_rep
+            
+        elif self.sample_size == 'all_reps':
+            num_gates_per_sample = self.num_reps * self.num_gates_per_rep
+        
+        num_new_samples_both = min( int (len(counts_apd0) / num_gates_per_sample) , int (len(counts_apd1) / num_gates_per_sample) )
+        max_length = num_new_samples_both*num_gates_per_sample
+        ###
+        
         c1 = counts_apd0.tolist()
         c2 = counts_apd1.tolist()
+        
         t1 = (times_apd0[1::]*1000).tolist()
         t2 = (times_apd1[1::]*1000).tolist()
         

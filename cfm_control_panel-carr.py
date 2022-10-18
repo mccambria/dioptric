@@ -26,7 +26,10 @@ import majorroutines.optimize_digital as optimize_digital
 # import chargeroutines.SPaCE_digital_annulus as SPaCE_digital_annulus
 # import chargeroutines.g2_measurement as g2_SCC_branch
 import majorroutines.stationary_count as stationary_count
+import majorroutines.resonance as resonance
+import majorroutines.rabi as rabi
 import minorroutines.test_routine_opx as test_routine_opx
+import minorroutines.determine_delays as determine_delays
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 # import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
@@ -90,6 +93,57 @@ def do_stationary_count(nv_sig, apd_indices,disable_opt=False):
     run_time = 1 * 60 * 10 ** 9  # ns
 
     stationary_count.main(nv_sig, run_time, apd_indices,disable_opt)
+    
+def do_laser_delay_calibration(nv_sig,laser_name,apd_indices,num_reps = int(2e6),
+                              delay_range = [50, 500],num_steps=21):
+    # laser_delay
+    # num_reps = int(2e6)
+    # delay_range = [50, 500]
+    # num_steps = 21
+    with labrad.connect() as cxn:
+        determine_delays.aom_delay(
+            cxn,
+            nv_sig,
+            apd_indices,
+            delay_range,
+            num_steps,
+            num_reps,
+            laser_name,
+            1,
+        )
+        
+def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2,num_steps = 51, num_runs = 20):
+
+    # num_steps = 51
+    # num_runs = 20
+    uwave_power = -5.0
+
+    resonance.main(
+        nv_sig,
+        apd_indices,
+        freq_center,
+        freq_range,
+        num_steps,
+        num_runs,
+        uwave_power,
+        state=States.HIGH,
+    )
+    
+def do_rabi(nv_sig, apd_indices, uwave_time_range, state ,num_steps = 51, num_reps = 1e4, num_runs = 20):
+
+    # num_steps = 51
+    # num_runs = 20
+
+    rabi.main(
+        nv_sig,
+        apd_indices,
+        uwave_time_range,
+        state,
+        num_steps,
+        num_reps,
+        num_runs,
+    )
+
 
 # def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
@@ -120,36 +174,26 @@ if __name__ == "__main__":
     green_laser = "cobolt_515"
 
     nv_sig = {
-        'coords': [84.605, 37.951, 69.28], 'name': '{}-search'.format(sample_name),
-        'ramp_voltages': False,
-        "only_z_opt": False,
-        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': None,
-        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
+        'coords': [84.086, 38.164, 68.17], 'name': '{}-search'.format(sample_name),
+        'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
+        'expected_count_rate': 48,
+        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
+        "imaging_readout_dur": 10e6,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
         "spin_pol_dur": 100e3,
-        "spin_readout_dur": 2e3,
+        "spin_readout_dur": 350,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
         "nv-_reionization_laser_filter": "nd_0",
         "nv-_prep_laser": green_laser,
         "nv-_prep_laser_dur": 1e6,
         "nv-_prep_laser_filter": "nd_0",
-        # "nv0_ionization_laser": red_laser,
-        # "nv0_ionization_dur": 75,
-        # "nv0_prep_laser": red_laser,
-        # "nv0_prep_laser_dur": 75,
-        # "spin_shelf_laser": yellow_laser,
-        # "spin_shelf_dur": 0,
-        # "spin_shelf_laser_power": 1.0,
         "initialize_laser": green_laser,
         "initialize_dur": 1e4,
-        # "charge_readout_laser": yellow_laser,
-        # "charge_readout_dur": 100e6,
-        # "charge_readout_laser_power": 1.0,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8059, 'rabi_LOW': 226.9, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9363, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.87, 'rabi_LOW': 250.0, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.87, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
         }
     
     
@@ -157,14 +201,24 @@ if __name__ == "__main__":
 
     try:
         # tool_belt.reset_drift()
+
         tool_belt.init_safe_stop()
         # do_test_routine_opx(nv_sig, apd_indices, laser_name=green_laser, laser_power=1, 
                             # delay=2e9, readout_time=1e9, num_reps=10)
+                            
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=50,scan_range=10)#,cmin=0,cmax=50)
         # do_image_sample(nv_sig, apd_indices,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
+        
         do_optimize(nv_sig, apd_indices)
         # do_optimize_z(nv_sig, apd_indices)
+        
         # do_stationary_count(nv_sig, apd_indices,disable_opt=True)
+        
+        # do_laser_delay_calibration(nv_sig,'cobolt_515',apd_indices,num_reps=int(5e5),
+        #                             delay_range=[50,1000],num_steps=41)
+        
+        # do_resonance(nv_sig, apd_indices,num_steps = 51, num_runs = 100)
+        do_rabi(nv_sig, apd_indices, uwave_time_range = [50,500], state=States.LOW,num_reps=1e5,num_runs=10,num_steps=51)
 
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it

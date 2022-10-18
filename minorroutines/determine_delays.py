@@ -72,12 +72,13 @@ def measure_delay(
     
     n= 0
     for tau_ind in tau_ind_list:
-        
+        st = time.time()
         # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
         # Turn on the microwaves for determining microwave delay
         sig_gen = None
         if seq_file == "uwave_delay.py":
+            delayed_element = 'uwave'
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
             sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
@@ -85,6 +86,7 @@ def measure_delay(
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
             
         if seq_file == "iq_delay.py":
+            delayed_element = 'iq'
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
             sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
@@ -105,6 +107,7 @@ def measure_delay(
         n+=1
         # print(tau)
         if seq_file == "aom_delay.py":
+            delayed_element = 'laser'
             readout = 5e3#,nv_sig["imaging_readout_dur"]
             seq_args = [
                 tau,
@@ -131,6 +134,7 @@ def measure_delay(
                 laser_name,
                 laser_power,
             ]
+            # print(seq_args)
         # elif seq_file == "iq_delay.py":
         #     laser_key = "spin_laser"
         #     laser_name = nv_sig[laser_key]
@@ -171,6 +175,8 @@ def measure_delay(
             print("Error!")
         ref_counts[tau_ind] = sum(sample_counts[0::2])
         sig_counts[tau_ind] = sum(sample_counts[1::2])
+        
+        print('run time:',time.time()-st)
 
     counter_server.stop_tag_stream()
 
@@ -186,7 +192,7 @@ def measure_delay(
     ax.plot(taus, sig_counts, "r-", label="signal")
     ax.plot(taus, ref_counts, "g-", label="reference")
     ax.set_title("Counts vs Delay Time")
-    ax.set_xlabel("Delay time (ns)")
+    ax.set_xlabel("{} Delay time (ns)".format(delayed_element))
     ax.set_ylabel("Counts")
     ax.legend()
     ax = axes_pack[1]
@@ -371,7 +377,7 @@ if __name__ == "__main__":
     green_laser = "cobolt_515"
 
     nv_sig = {
-        'coords': [84.605, 37.951, 69.28], 'name': '{}-search'.format(sample_name),
+        'coords': [84.086, 38.164, 68.17], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False,
         "only_z_opt": False,
         'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 47,
@@ -379,7 +385,7 @@ if __name__ == "__main__":
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
         "spin_pol_dur": 100e3,
-        "spin_readout_dur": 2e3,
+        "spin_readout_dur": 350,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
         "nv-_reionization_laser_filter": "nd_0",
@@ -389,13 +395,13 @@ if __name__ == "__main__":
         "initialize_laser": green_laser,
         "initialize_dur": 1e4,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8059, 'rabi_LOW': 226.9, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9363, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.87, 'rabi_LOW': 250, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.87, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
         }
-    
+    """
     # laser_delay
-    num_reps = int(5e6)
-    delay_range = [100, 550]
+    num_reps = int(2e6)
+    delay_range = [50, 500]
     num_steps = 21
     # bnc 835
     # state = States.LOW
@@ -412,3 +418,23 @@ if __name__ == "__main__":
             green_laser,
             1,
         )
+    """
+    # uwave delay
+    state = States.LOW
+    delay_range = [16, 150]
+    num_steps = 3
+    num_reps = int(2e5)
+    with labrad.connect() as cxn:
+        uwave_delay(cxn,
+            nv_sig, 
+            apd_indices, 
+            state,
+            delay_range,
+            num_steps, 
+            num_reps,
+            )
+    
+    
+    
+    
+    

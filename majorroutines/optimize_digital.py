@@ -626,21 +626,24 @@ def main_with_cxn(
         if opti_succeeded:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
-            # Let the user know something went wrong
-            print(
-                "Optimization failed. Resetting to coordinates "
-                "about which we attempted to optimize."
-            )
+            if not opti_unnecessary:
+                # Let the user know something went wrong
+                print(
+                    "Optimization failed. Resetting to coordinates "
+                    "about which we attempted to optimize."
+                )
             prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
-        if opti_succeeded:
-            print("Optimized coordinates: ")
-            print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
+        if opti_succeeded or opti_unnecessary:
+            if opti_succeeded:
+                print("Optimized coordinates: ")
+                print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*drift))
         else:
             print("Optimization failed.")
             prepare_microscope(cxn, nv_sig)
+            
 
     print("\n")
 
@@ -652,7 +655,7 @@ def main_with_cxn(
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
-    if save_data:
+    if save_data and not opti_unnecessary:
 
         timestamp = tool_belt.get_time_stamp()
 

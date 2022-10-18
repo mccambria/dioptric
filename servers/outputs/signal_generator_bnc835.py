@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = sig_gen_bnc835
+name = signal_generator_bnc835
 version = 1.0
 description =
 
@@ -30,8 +30,8 @@ import logging
 import socket
 
 
-class SigGenBnc835(LabradServer):
-    name = "sig_gen_bnc835"
+class SignalGeneratorBnc835(LabradServer):
+    name = "signal_generator_bnc835"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -155,7 +155,7 @@ class SigGenBnc835(LabradServer):
         self.set_amp(c, 0.0)
 
 
-__server__ = SigGenBnc835()
+__server__ = SignalGeneratorBnc835()
 
 if __name__ == "__main__":
     from labrad import util

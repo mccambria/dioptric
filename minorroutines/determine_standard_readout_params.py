@@ -36,6 +36,7 @@ def process_raw_tags(apd_gate_channel, raw_tags, channels):
     Take a raw timetag signal with tags in units of ns since the tagger
     started and convert the tags into relative times from when the gate opened
     """
+    # at this point it looks like one big samples of all the reps. So we just loop through all the reps
 
     sig_tags = []
     ref_tags = []

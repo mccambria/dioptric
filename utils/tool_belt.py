@@ -267,30 +267,40 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         # Digital, no feedthrough
         else:
             if turn_on:
+                try:
+                    laser_chan = get_registry_entry(
+                        cxn,
+                        "do_{}_dm".format(laser_name),
+                        ["", "Config", "Wiring", "PulseStreamer"],
+                    )
+                    cxn.pulse_streamer.constant([laser_chan])
+                except:
+                    print('digital laser on using opx')
+                    cxn.qm_opx.constant([laser_name],[],[],[])
+    # Analog
+    elif mod_type is Mod_types.ANALOG:
+        if turn_on:
+            try:
                 laser_chan = get_registry_entry(
                     cxn,
                     "do_{}_dm".format(laser_name),
                     ["", "Config", "Wiring", "PulseStreamer"],
                 )
-                cxn.pulse_streamer.constant([laser_chan])
-    # Analog
-    elif mod_type is Mod_types.ANALOG:
-        if turn_on:
-            laser_chan = get_registry_entry(
-                cxn,
-                "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseStreamer"],
-            )
-            if laser_chan == 0:
-                cxn.pulse_streamer.constant([], 0.0, laser_power)
-            elif laser_chan == 1:
-                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                if laser_chan == 0:
+                    cxn.pulse_streamer.constant([], 0.0, laser_power)
+                elif laser_chan == 1:
+                    cxn.pulse_streamer.constant([], laser_power, 0.0)
+                    
+            except:
+                # print('analog laser on using opx')
+                cxn.qm_opx.constant([],[laser_name],[0.0],[laser_power])
 
     # If we're turning things off, turn everything off. If we wanted to really
     # do this nicely we'd find a way to only turn off the specific channel,
     # but it's not worth the effort.
     if not turn_on:
-        cxn.pulse_streamer.constant([])
+        pulsegen_server = get_pulsegen_server(cxn)
+        pulsegen_server.constant([])
 
 
 def set_laser_power(

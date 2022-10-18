@@ -16,35 +16,59 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
+from utils.tool_belt import States
 
 def qua_program(opx, config, args, num_reps):
     
-    durations = args[0:3]
-    durations = [numpy.int64(el) for el in durations]
-    tau, max_tau, readout_time = durations
-
-    apd_index, laser_name, laser_power = args[3:6]
-        
     apd_indices =  config['apd_indices']
-    
     num_apds = len(apd_indices)
     num_gates = 2
     total_num_gates = int(num_gates*num_reps)
     timetag_list_size = int(15900 / num_gates / 2)    
-    
     num_readouts = 1
 
-    illumination = 10*readout_time
-    half_illumination = illumination // 2
-    inter_time = max(10**3, max_tau) + 100
-    inter_time_cc = int(inter_time // 4)
-    illumination_cc = int(illumination // 4 )
-    half_illumination_cc = int(half_illumination // 4 )
+    durations = []
+    for ind in range(4):
+        durations.append(numpy.int64(args[ind]))
+        
+    # Unpack the durations
+    tau, polarization, readout_time, max_tau = durations
+
+    # Get the APD indices
+    apd_index = args[4]
+
+    # Signify which signal generator to use
+    state = args[5]
+    state = States(state)
+    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    
+    # Laser specs
+    laser_name = args[6]
+    laser_power = args[7]
+    
+    laser_delay_time =  16#config['Optics'][laser_name]['delay']
+    uwave_delay_time = 0#config['Microwaves'][sig_gen]['delay']
+    signal_wait_time = config['CommonDurations']['uwave_buffer']
+    background_wait_time = 0*signal_wait_time
+    reference_wait_time = 2 * signal_wait_time
+    reference_time = readout_time#signal_wait_time
+
+    prep_time = polarization + signal_wait_time + tau + signal_wait_time
+    end_rest_time = max_tau - tau + 16 # 8/3/2022 issue with PESR and rabi, an not collecting counts if end time is 0 ns. Adding just a bit of buffer to this.
+    mid_duration = polarization + reference_wait_time - readout_time
+     
+    # Include a buffer on the front end so that we can delay channels that
+    # should start off the sequence HIGH
+    reference_laser_on = reference_time + background_wait_time + end_rest_time    
+    polarization_cc = int(polarization // 4)
+    laser_delay_time_cc = int(laser_delay_time // 4)
+    mid_duration_cc = int(mid_duration // 4)
+
     readout_time_cc = int(readout_time // 4)
     tau_cc = int(tau // 4)
-    back_buffer_cc = inter_time_cc
-
-    period = illumination_cc + inter_time_cc + tau_cc + illumination + back_buffer_cc    
+    reference_laser_on_cc = int(reference_laser_on // 4)
+    signal_wait_time_cc = int(signal_wait_time // 4)
+    period = polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on
     
     with program() as seq:
         
@@ -66,52 +90,57 @@ def qua_program(opx, config, args, num_reps):
         with for_(n, 0, n < num_reps, n + 1):
             
             align()    
+            
+            play("laser_ON",laser_name,duration=polarization_cc) 
+            
+            align()
+            wait(signal_wait_time_cc)
+            
+            play("uwave_ON",sig_gen, duration=tau_cc)
+            
+            align()
+            wait(signal_wait_time_cc)
                            
-            play("laser_ON",laser_name,duration=illumination_cc) 
+            play("laser_ON",laser_name,duration=polarization_cc) 
             
             if num_apds == 2:
-                wait(half_illumination_cc ,"do_apd_0_gate","do_apd_1_gate" )
+                wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate" )
                 measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                 measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, readout_time, counts_gate1_apd_1))
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(counts_gate1_apd_1, counts_st_apd_1)
                 
             if num_apds == 1:
-                wait(half_illumination_cc ,"do_apd_{}_gate".format(apd_indices[0]))
+                wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
                 measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, readout_time, counts_gate1_apd))
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
             align()
-            wait(inter_time_cc)
+            wait(mid_duration_cc)
             
-            play("laser_ON",laser_name,duration=illumination_cc) 
+            play("laser_ON",laser_name,duration=reference_laser_on_cc) 
                             
             if num_apds == 2:
-                wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_0_gate","do_apd_1_gate")
+                wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate")
                 measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, readout_time, counts_gate2_apd_1))
-                # assign(counts_gate2_apd_0,50)
-                # assign(counts_gate2_apd_1,40)
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(counts_gate2_apd_1, counts_st_apd_1)
                 
             if num_apds == 1:
-                wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
+                wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
                 measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
             align()
-            wait(back_buffer_cc)
         
-        play("clock_pulse","do_sample_clock") # clock pulse after all the reos so the tagger sees all reps as one sample
+        play("clock_pulse","do_sample_clock") # clock pulse after all the reps so the tagger sees all reps as one sample
         
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
             counts_st_apd_1.buffer(num_readouts).save_all("counts_apd1")
-            # counts_st_apd_0.buffer(num_readouts).buffer(total_num_gates).save_all("counts_apd0") 
-            # counts_st_apd_1.buffer(num_readouts).buffer(total_num_gates).save_all("counts_apd1")
             
     return seq, period, num_gates
 
@@ -135,18 +164,18 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     qm = qmm.open_qm(config_opx)
     
-    simulation_duration =  55000 // 4 # clock cycle units - 4ns
+    simulation_duration =  15000 // 4 # clock cycle units - 4ns
     
-    num_repeat=3000
+    num_repeat=3
 
-    args = [200, 500.0, 5000.0, 0,'cobolt_515', 1]
+    args = [200, 800.0, 350, 25, 1, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
 
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     

@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = sig_gen_tsg4104a
+name = signal_generator_tsg4104a
 version = 1.0
 description =
 
@@ -35,19 +35,23 @@ import time
 from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
 
 
-class SigGenTsg4104a(LabradServer, VectorSigGen):
-    name = 'sig_gen_tsg4104a'
+class SignalGeneratorTsg4104a(LabradServer, VectorSigGen):
+    name = 'signal_generator_tsg4104a'
     pc_name = socket.gethostname()
 
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
+        # logging.info('here')
         logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
+    # def stopServer(self):
+    #     self.sig_gen.close()
+        
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
@@ -192,6 +196,7 @@ class SigGenTsg4104a(LabradServer, VectorSigGen):
         self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
         self.mod_off(c)
+        # self.sig_gen.close()
         # # Clean up the DAQ task!
         # if self.task is not None:
         #     crash = 1/0
@@ -203,7 +208,7 @@ class SigGenTsg4104a(LabradServer, VectorSigGen):
         #     task.write(0.0)
 
 
-__server__ = SigGenTsg4104a()
+__server__ = SignalGeneratorTsg4104a()
 
 if __name__ == '__main__':
     from labrad import util
