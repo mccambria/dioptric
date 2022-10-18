@@ -442,11 +442,11 @@ if __name__ == '__main__':
 
     
     
-    file_name = '2022_10_05-10_25_30-siena-nv_search'
+    file_name = '2022_10_12-15_05_10-ayrton_12-nv_search'
 
-    # replot_for_analysis(file_name, cmin = 0, cmax = 100)
+    replot_for_analysis(file_name, cmin = 0, cmax = 30)
     
-    replot_for_presentation(file_name, 80, 16, centered_at_0 = True)
+    # replot_for_presentation(file_name, 80, 16, centered_at_0 = True)
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
     #
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
