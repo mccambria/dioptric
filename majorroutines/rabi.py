@@ -351,7 +351,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
 
-        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+        # norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
 
 
         ax = axes_pack[0]
