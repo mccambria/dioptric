@@ -13,6 +13,7 @@ Created on Thu Apr 11 15:39:23 2019
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize_digital
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -504,6 +505,9 @@ def main_with_cxn(
 ):
 
     # %% Initial calculations and setup
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -598,12 +602,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig["coords"] + np.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
@@ -617,16 +621,16 @@ def main_with_cxn(
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         if composite:
-            ret_vals = cxn.pulse_streamer.stream_load(
+            ret_vals = pulsegen_server.stream_load(
                 "discrete_rabi2.py", seq_args_string
             )
         else:
-            ret_vals = cxn.pulse_streamer.stream_load(
+            ret_vals = pulsegen_server.stream_load(
                 "rabi.py", seq_args_string
             )
 
         # Start the tagger stream
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream(apd_indices)
 
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)
@@ -644,26 +648,31 @@ def main_with_cxn(
             # switch frequencies so allow 1 ms total
             #            time.sleep(0.001)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
+            counter_server.clear_buffer()
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(int(num_reps))
+            pulsegen_server.stream_start(int(num_reps))
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = counter_server.read_counter_modulo_gates(2)
 
             sample_counts = new_counts[0]
+            cur_run_sig_counts_summed = sample_counts[0]
+            cur_run_ref_counts_summed = sample_counts[1]
+            
+            sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
+            ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
 
             # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            # sig_gate_counts = sample_counts[0::2]
+            # sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
             # print(sum(sig_gate_counts))
 
             # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
+            # ref_gate_counts = sample_counts[1::2]
+            # ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
             # print(sum(ref_gate_counts))
 
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% incremental plotting
 

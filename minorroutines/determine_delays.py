@@ -167,14 +167,16 @@ def measure_delay(
         # print('here')
         # complete_counts = counter_server.read_counter_complete()
 
-        new_counts = counter_server.read_counter_separate_gates(1)
+        # new_counts = counter_server.read_counter_separate_gates(1)
+        new_counts = counter_server.read_counter_modulo_gates(2)
+
         # print('here2')
         sample_counts = new_counts[0]
         # print(sample_counts)
-        if len(sample_counts) != 2 * num_reps:
-            print("Error!")
-        ref_counts[tau_ind] = sum(sample_counts[0::2])
-        sig_counts[tau_ind] = sum(sample_counts[1::2])
+        # if len(sample_counts) != 2 * num_reps:
+        #     print("Error!")
+        ref_counts[tau_ind] = sample_counts[0] # sum(sample_counts[0::2])
+        sig_counts[tau_ind] = sample_counts[1] # sum(sample_counts[1::2])
         
         print('run time:',time.time()-st)
 
@@ -377,14 +379,14 @@ if __name__ == "__main__":
     green_laser = "cobolt_515"
 
     nv_sig = {
-        'coords': [84.086, 38.164, 68.17], 'name': '{}-search'.format(sample_name),
-        'ramp_voltages': False,
-        "only_z_opt": False,
-        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 47,
-        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
+        'coords': [84.308, 36.44, 77.24], 'name': '{}-search'.format(sample_name),
+        'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
+        'expected_count_rate': 48,
+        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
+        "imaging_readout_dur": 10e6,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 100e3,
+        "spin_pol_dur": 1e3,
         "spin_readout_dur": 350,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
@@ -395,8 +397,8 @@ if __name__ == "__main__":
         "initialize_laser": green_laser,
         "initialize_dur": 1e4,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.87, 'rabi_LOW': 250, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.87, 'rabi_HIGH': 300, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8091, 'rabi_LOW': 193.3, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9287, 'rabi_HIGH': 148.6, 'uwave_power_HIGH': 16.5,
         }
     """
     # laser_delay
@@ -420,10 +422,10 @@ if __name__ == "__main__":
         )
     """
     # uwave delay
-    state = States.LOW
-    delay_range = [16, 150]
-    num_steps = 3
-    num_reps = int(2e5)
+    state = States.HIGH
+    delay_range = [-500, 100]
+    num_steps = 201
+    num_reps = int(3e5)
     with labrad.connect() as cxn:
         uwave_delay(cxn,
             nv_sig, 

@@ -275,7 +275,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
                     )
                     cxn.pulse_streamer.constant([laser_chan])
                 except:
-                    print('digital laser on using opx')
+                    # print('digital laser on using opx')
                     cxn.qm_opx.constant([laser_name],[],[],[])
     # Analog
     elif mod_type is Mod_types.ANALOG:

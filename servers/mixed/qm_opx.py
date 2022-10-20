@@ -351,33 +351,39 @@ class OPX(Tagger, PulseGen, LabradServer):
         # logging.info(time.time()-st)
         return return_counts
     
-    # @setting(10, modulus="i", num_to_read="i", returns="*2w")
+    
+    # @setting(10002, modulus="i", num_to_read="i", returns="*2w")
     # def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
-
-    #     complete_counts = self.read_counter_setting_internal(num_to_read)
-    #     # logging.info(complete_counts)
-
-    #     # To combine APDs we assume all the APDs have the same gate
-    #     gate_channels = list(self.tagger_di_gate.values())
-    #     first_gate_channel = gate_channels[0]
-    #     if not all(val == first_gate_channel for val in gate_channels):
-    #         logging.critical("Combined counts from APDs with different gates.")
-
-    #     # Add the APD counts as vectors for each sample in complete_counts
-    #     # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
-    #     # with Pool() as p:
-    #     #     separate_gate_counts = p.map(sum_lambda, complete_counts)
-    #     separate_gate_counts = [np.sum(el, 0, dtype=int).tolist() for el in complete_counts]
-
-    #     # Run the modulus
-    #     return_counts = []
-    #     for sample in separate_gate_counts:
-    #         sample_list = []
-    #         for ind in range(modulus):
-    #             sample_list.append(np.sum(sample[ind::modulus]))
-    #         return_counts.append(sample_list)
-
-    #     return return_counts
+        
+    #     # logging.info('at modulo counter')
+    #     # st=time.time()
+    #     if (num_to_read != None) and (num_to_read != 1):
+    #         logging.info('this function only supports grabbing one sample because it assumes the one sample has all we need')
+    #         raise RuntimeError
+    #     # doesn't matter how many num_reps there are. This function assumes the sequence averages over all of them. 
+    #     # currently this is only set up for one sample, which is fine because we only do that with modulo gates and I'm not sure how to buffer 
+    #     # the opx stream in a way to have multiple samples that have averages in them.
+        
+    #     list_of_streams_apd0 = []
+    #     list_of_streams_apd1 = []
+        
+    #     for i in range(modulus):
+    #         list_of_streams_apd0.append('counts_apd0_gate{}'.format(i+1))
+    #         list_of_streams_apd1.append('counts_apd1_gate{}'.format(i+1))
+        
+    #     results_apd0 = fetching_tool(self.experiment_job, data_list = list_of_streams_apd0, mode="wait_for_all")
+    #     results_apd1 = fetching_tool(self.experiment_job, data_list = list_of_streams_apd1, mode="wait_for_all")
+    #     logging.info('at modulo counter before fetching')
+    #     st=time.time()
+    #     count_sums_list_apd0 = results_apd0.fetch_all()
+    #     count_sums_list_apd1 = results_apd1.fetch_all()
+        
+    #     logging.info(time.time()-st)
+    #     logging.info(count_sums_list_apd0)
+        
+    #     separate_gate_counts = [[ int(c1+c2) for c1,c2 in zip(count_sums_list_apd0,count_sums_list_apd1) ]]
+        
+    #     return separate_gate_counts
     
    
     def read_raw_stream(self):

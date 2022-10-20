@@ -217,7 +217,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # Analyze the sequence
     num_reps = int(num_reps)
-    file_name = os.path.basename(__file__)
+    # file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
                 readout, max_uwave_time, apd_indices[0],
                 state.value, laser_name, laser_power]
@@ -226,6 +226,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    file_name = 'rabi.py'
     pulsegen_server.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
@@ -305,7 +306,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
 
-#        start_time = time.time()
+        # start_time = time.time()
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
             # print('Tau: {} ns'. format(taus[tau_ind]))
@@ -323,24 +324,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
+            
+            start_time = time.time()
             pulsegen_server.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
-
-            # Get the counts
-            new_counts = counter_server.read_counter_separate_gates(1)
-
+            # print(t1-start_time)
+            # # Get the counts
+            # new_counts = counter_server.read_counter_modulo_gates(2)
+            # t2=time.time()
+            # print(t2-t1)
+            # sample_counts = new_counts[0]
+            
+            # cur_run_sig_counts_summed = sample_counts[0]
+            # cur_run_ref_counts_summed = sample_counts[1]
+            
+            # sig_counts[run_ind, tau_ind] = cur_run_sig_counts_summed
+            # ref_counts[run_ind, tau_ind] = cur_run_ref_counts_summed
+            new_counts = counter_server.read_counter_modulo_gates(2)
             sample_counts = new_counts[0]
-
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-            # print('Sig counts: {}'.format(sum(sig_gate_counts)))
-
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            # print('Ref counts: {}'.format(sum(ref_gate_counts)))
-
+            
+            cur_run_sig_counts_summed = sample_counts[0]
+            cur_run_ref_counts_summed = sample_counts[1]
+            
+            sig_counts[run_ind, tau_ind] = cur_run_sig_counts_summed
+            ref_counts[run_ind, tau_ind] = cur_run_ref_counts_summed
+            
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
 #            start_time = run_time
@@ -353,14 +361,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
 
 
         ax = axes_pack[0]
         ax.cla()
         ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-        ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
+        ax.plot(taus, avg_ref_counts, 'g-', label = 'reference')
 
         ax.set_xlabel('rf time (ns)')
         ax.set_ylabel('Counts')
@@ -420,6 +427,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
 
     # %% Plot the Rabi signal
+    
 
     ax = axes_pack[0]
     ax.cla()

@@ -37,7 +37,11 @@ def qua_program(opx, config, args, num_reps):
     
     wait_time = config['CommonDurations']['uwave_buffer']
     laser_delay_time = config['Optics'][laser_name]['delay']
-     
+    
+    common_delay = max(laser_delay_time, pi_pulse + abs(tau)) + 24
+    common_delay_cc = int(common_delay // 4 )
+    uwave_wait_cc = int( (common_delay_cc*4 - (pi_pulse - tau)) // 4 )
+    laser_wait_cc = int( (common_delay_cc*4 - laser_delay_time) // 4 )
     # Include a buffer on the front end so that we can delay channels that
     # should start off the sequence HIGH
     front_buffer = max(max_tau+pi_pulse, laser_delay_time)
@@ -48,8 +52,12 @@ def qua_program(opx, config, args, num_reps):
     wait_time_cc = int(wait_time //4)
     readout_time_cc = int(readout_time // 4)
     pi_pulse_cc = int(pi_pulse // 4)
-    pi_pulse_p_tau_cc = int( (pi_pulse + tau) // 4 )
     period = front_buffer + wait_time*2 + polarization*2 
+    
+    # print(pi_pulse)
+    # print(common_delay - laser_delay_time)
+    # print(common_delay - pi_pulse - tau)
+    # print(common_delay)
     
     with program() as seq:
         
@@ -64,9 +72,6 @@ def qua_program(opx, config, args, num_reps):
         
         counts_st_apd_0 = declare_stream()
         counts_st_apd_1 = declare_stream()     
-  
-    
-  
 
         n = declare(int)
         
@@ -93,21 +98,24 @@ def qua_program(opx, config, args, num_reps):
                 
             align()
             wait(wait_time_cc)
+            align()
             
+            wait(laser_wait_cc, laser_name)
+            play("laser_ON",laser_name,duration=polarization_cc)
+            
+            wait(uwave_wait_cc,sig_gen)
             play("uwave_ON",sig_gen, duration=pi_pulse_cc)
             
-            wait(pi_pulse_p_tau_cc, laser_name, "do_apd_0_gate","do_apd_1_gate")
-            play("laser_ON",laser_name,duration=polarization_cc) 
-                            
+            
             if num_apds == 2:
-                wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate")
+                wait(common_delay_cc,"do_apd_0_gate","do_apd_1_gate" )
                 measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, readout_time, counts_gate2_apd_1))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(counts_gate2_apd_1, counts_st_apd_1)
                 
             if num_apds == 1:
-                wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
+                wait(common_delay_cc,"do_apd_{}_gate".format(apd_indices[0]))
                 measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
@@ -147,18 +155,18 @@ if __name__ == '__main__':
     
     simulation_duration =  15000 // 4 # clock cycle units - 4ns
     
-    num_repeat=3
+    num_repeat=1#4e4
 
-    args = [100, 150, 350, 250, 10000.0, 1, 0, 'cobolt_515', None]
+    args = [-500, 100, 350, 80, 1000.0, 1, 0, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
 
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     
     # counts_apd0, counts_apd1 = results.fetch_all() 
     

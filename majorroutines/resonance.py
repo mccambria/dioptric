@@ -144,14 +144,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             pulsegen_server.stream_start() 
 
             # Read the counts using parity to distinguish signal vs ref
-            new_counts = counter_server.read_counter_separate_gates(1)
-            # print(new_counts)
+            new_counts = counter_server.read_counter_modulo_gates(2)
             sample_counts = new_counts[0]
-            ref_gate_counts = sample_counts[0::2]
-            ref_counts[run_ind, freq_ind]  = sum(ref_gate_counts)
-
-            sig_gate_counts = sample_counts[1::2]
-            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            
+            cur_run_sig_counts_summed = sample_counts[1]
+            cur_run_ref_counts_summed = sample_counts[0]
+            
+            sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
+            ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
             # break
             # norm= sum(sig_gate_counts) / sum(ref_gate_counts)
             # print(norm)
