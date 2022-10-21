@@ -319,7 +319,7 @@ def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     num_reps = 2e4
     num_runs = 32
     uwave_power = 16.5
-    uwave_pulse_dur = 250
+    uwave_pulse_dur = 500
 
     pulsed_resonance.main(
         nv_sig,
@@ -1024,8 +1024,8 @@ if __name__ == "__main__":
         # 'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
         # 'coords': [0.205, -0.111, 0], 'name': '{}-search'.format(sample_name),
         # 'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 15,
-        'coords': [0.255, -0.072, 12], 'name': '{}-nv4_2022_10_19'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 21,
+        'coords': [0.218, -0.067, -1], 'name': '{}-nv2_2022_10_20'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 12,
 
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
@@ -1076,7 +1076,7 @@ if __name__ == "__main__":
         #                                 )
         
         # for z in np.arange(-15, -100, -5):
-        # for z in np.arange(0, 40, 5):
+        # for z in np.arange(20, -50, -5):
         # # while True:
         #     if tool_belt.safe_stop():
         #         break
@@ -1102,7 +1102,7 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
 
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 1000])
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)0203c
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
