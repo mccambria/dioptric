@@ -45,13 +45,13 @@ def get_seq(pulse_streamer, config, args):
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
     aom_delay_time = config['Optics'][laser_name]['delay']
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
+    rf_delay_time = 0*config['Microwaves'][sig_gen_name]['delay']
     back_buffer = 200
 
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    # pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_do_apd_gate = 1#pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
-    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    pulser_do_sig_gen_gate = 2#pulser_wiring[sig_gen_gate_chan_name]
 
     # %% Write the microwave sequence to be used.
 
@@ -123,8 +123,9 @@ def get_seq(pulse_streamer, config, args):
              (sig_to_ref_wait_time_long, LOW),
              (reference_time + aom_delay_time, HIGH),
              (back_buffer, LOW)]
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                laser_name, laser_power, train)
+    seq.setDigital(4, train)
+    # tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                # laser_name, laser_power, train)
 
     # Pulse the microwave for tau
     pre_duration = aom_delay_time + polarization_time + pre_uwave_exp_wait_time
@@ -144,12 +145,12 @@ def get_seq(pulse_streamer, config, args):
     train.extend([(post_duration, LOW)])
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    final_digital = [pulser_wiring['do_sample_clock']]
+    final_digital = [0]#[pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    seq_args = [0, 1000.0, 350, 32, 16, 10000, 1, 1, 'integrated_520', None]
+    seq_args = [0, 1000.0, 350, 32, 16, 10000, 1, 1, 'cobolt_515', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

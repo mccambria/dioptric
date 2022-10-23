@@ -24,6 +24,8 @@ def qua_program(opx, config, args, num_reps):
     tau, max_tau, readout_time = durations
 
     apd_index, laser_name, laser_power = args[3:6]
+    
+    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
         
     apd_indices =  config['apd_indices']
     
@@ -67,7 +69,7 @@ def qua_program(opx, config, args, num_reps):
             
             align()    
                            
-            play("laser_ON",laser_name,duration=illumination_cc) 
+            play(laser_pulse,laser_name,duration=illumination_cc) 
             
             if num_apds == 2:
                 wait(half_illumination_cc ,"do_apd_0_gate","do_apd_1_gate" )
@@ -85,7 +87,7 @@ def qua_program(opx, config, args, num_reps):
             align()
             wait(inter_time_cc)
             
-            play("laser_ON",laser_name,duration=illumination_cc) 
+            play(laser_pulse,laser_name,duration=illumination_cc) 
                             
             if num_apds == 2:
                 wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_0_gate","do_apd_1_gate")
@@ -146,7 +148,7 @@ if __name__ == '__main__':
     job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
 
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
     

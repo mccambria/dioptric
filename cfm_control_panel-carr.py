@@ -191,7 +191,7 @@ if __name__ == "__main__":
     green_laser = "cobolt_515"
 
     nv_sig = {
-        'coords': [84.293, 36.573, 77.225], 'name': '{}-search'.format(sample_name),
+        'coords': [84.486, 36.663, 77.45], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
         'expected_count_rate': 48,
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
@@ -223,14 +223,14 @@ if __name__ == "__main__":
     # %% Functions to run
 
     try:
-        # tool_belt.reset_drift()
+        tool_belt.reset_drift()
 
         # tool_belt.init_safe_stop()
         # do_test_routine_opx(nv_sig, apd_indices, laser_name=green_laser, laser_power=1, 
                             # delay=2e9, readout_time=1e9, num_reps=10)
                             
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=20,scan_range=10)#,cmin=0,cmax=50)
-        # do_image_sample(nv_sig, apd_indices,num_steps=50,scan_range=5)#,cmin=0,cmax=75)
+        do_image_sample(nv_sig, apd_indices,num_steps=40,scan_range=4)#,cmin=0,cmax=75)
         
         # do_optimize(nv_sig, apd_indices)
         # do_optimize_z(nv_sig, apd_indices)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         # do_resonance_modulo(nv_sig, apd_indices,num_steps = 51, num_runs = 5)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,800], state=States.HIGH,num_reps=2e4,num_runs=10,num_steps=101)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,1000], state=States.LOW,num_reps=2e4,num_runs=10,num_steps=201)
-        do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=84, num_steps=76, num_reps=8e4, num_runs=20)
+        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=84, num_steps=76, num_reps=8e4, num_runs=20)
 
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it

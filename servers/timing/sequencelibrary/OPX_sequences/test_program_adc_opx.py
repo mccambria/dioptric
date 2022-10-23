@@ -30,7 +30,7 @@ with program() as seq:
     
     laseron = int(readout_time // 4)
     
-    play("laser_ON","cobolt_515",duration=laseron)
+    play("laser_ON_DIGITAL","cobolt_515",duration=laseron)
     
     measure('readout', 'do_apd_0_gate', adc_st1, time_tagging.analog(times1, readout_time, counts1))
     # measure('readout', 'do_apd_1_gate', adc_st2, time_tagging.analog(times2, readout_time, counts2))

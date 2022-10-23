@@ -235,6 +235,14 @@ def set_xyz_on_nv(cxn, nv_sig):
 
 # %% Laser utils
 
+def get_mod_type(laser_name):
+    with labrad.connect() as cxn:
+        mod_type = get_registry_entry(
+            cxn, "mod_type", ["", "Config", "Optics", laser_name]
+        )
+    mod_type = eval(mod_type)
+    return mod_type.name
+
 
 def laser_off(cxn, laser_name):
     laser_switch_sub(cxn, False, laser_name)

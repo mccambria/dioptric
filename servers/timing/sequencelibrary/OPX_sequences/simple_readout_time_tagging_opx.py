@@ -21,6 +21,7 @@ def qua_program(opx, config, args, num_reps):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
     
+    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
     # opx_wiring = config['Wiring']['QmOpx']
     # apd_indices = config['apd_indices']
     
@@ -99,14 +100,14 @@ def qua_program(opx, config, args, num_reps):
             # play("laser_ON",laser_name,duration=period_cc)  
             
             
-            play("laser_ON",laser_name,duration=meas_delay_cc) 
+            play(laser_pulse,laser_name,duration=meas_delay_cc) 
             wait(meas_delay_cc, "do_apd_0_gate","do_apd_1_gate")
             
             with for_(i,0,i<num_readouts,i+1):  
                 
                 if num_apds == 2:
                 # with if_(num_apds==2):
-                    play("laser_ON",laser_name,duration=laser_on_time_cc) 
+                    play(laser_pulse,laser_name,duration=laser_on_time_cc) 
                     
                     measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
@@ -126,7 +127,7 @@ def qua_program(opx, config, args, num_reps):
                     align("do_apd_0_gate","do_apd_1_gate")
                     
                 if num_apds == 1:
-                    play("laser_ON",laser_name,duration=laser_on_time_cc)  
+                    play(laser_pulse,laser_name,duration=laser_on_time_cc)  
                     
                     measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd, apd_readout_time, counts_gate1_apd))
                     save(counts_gate1_apd, counts_st_apd)
@@ -188,14 +189,14 @@ if __name__ == '__main__':
     simulation_duration =  80000 // 4 # clock cycle units - 4ns
     num_repeat=10
     delay = 1000
-    args = [delay, readout_time,0, 'do_cobolt_515_dm',1]
+    args = [delay, readout_time,0, 'cobolt_515',1]
     seq , f, p = get_seq([],config, args, num_repeat)
     
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
     # # plt.xlim(100,12000)
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     # counts_apd0, counts_apd1 = results.fetch_all() 

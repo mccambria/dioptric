@@ -20,6 +20,9 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
+    
+    laser_mod_type = config["Optics"][laser_name]["mod_type"]
+    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
 
     apd_indices =  config['apd_indices']
     
@@ -66,7 +69,7 @@ def qua_program(opx, config, args, num_reps):
             wait(delay_cc,"do_apd_0_gate","do_apd_1_gate","do_sample_clock")            
             
             # start the laser a little earlier than the apds
-            play("laser_ON",laser_name,duration=laser_on_time_cc)
+            play(laser_pulse,laser_name,duration=laser_on_time_cc)
             wait(meas_delay_cc,"do_apd_0_gate","do_apd_1_gate")
             
             # play("laser_ON",laser_name,duration=laser_on_time_cc) 

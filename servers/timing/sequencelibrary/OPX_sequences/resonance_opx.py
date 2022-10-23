@@ -21,6 +21,8 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     readout, state, laser_name, laser_power, apd_index = args
+
+    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
     
     state = States(state)
     opx_wiring = config['Wiring']['QmOpx']
@@ -87,7 +89,7 @@ def qua_program(opx, config, args, num_reps):
             align()              
             
             # start the laser a little earlier than the apds
-            play("laser_ON",laser_name,duration=period_cc)
+            play(laser_pulse,laser_name,duration=period_cc)
             
             wait(front_buffer_m_uwave_delay_cc, sig_gen_name)
             wait(front_buffer_cc,"do_apd_0_gate","do_apd_1_gate")

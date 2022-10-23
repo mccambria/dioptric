@@ -34,6 +34,7 @@ def qua_program(opx, config, args, num_reps):
     state, apd_index, laser_name, laser_power = args[5:9]
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
     
     wait_time = config['CommonDurations']['uwave_buffer']
     laser_delay_time = config['Optics'][laser_name]['delay']
@@ -81,7 +82,7 @@ def qua_program(opx, config, args, num_reps):
             
             wait(front_buffer_cc)
                            
-            play("laser_ON",laser_name,duration=polarization_cc) 
+            play(laser_pulse,laser_name,duration=polarization_cc) 
             
             if num_apds == 2:
                 wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate" )
@@ -101,7 +102,7 @@ def qua_program(opx, config, args, num_reps):
             align()
             
             wait(laser_wait_cc, laser_name)
-            play("laser_ON",laser_name,duration=polarization_cc)
+            play(laser_pulse,laser_name,duration=polarization_cc)
             
             wait(uwave_wait_cc,sig_gen)
             play("uwave_ON",sig_gen, duration=pi_pulse_cc)
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     
     num_repeat=1#4e4
 
-    args = [-500, 100, 350, 80, 1000.0, 1, 0, 'cobolt_515', None]
+    args = [-100, 100, 350, 80, 1000.0, 1, 0, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

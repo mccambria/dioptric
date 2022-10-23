@@ -80,7 +80,10 @@ class RotationStageEll18k(LabradServer):
         
     @setting(0, angle='v[]')
     def set_angle(self, c, angle):
+        
         current_angle = self.get_angle()
+        # logging.info(current_angle)
+        # logging.info(angle)
         # Max speed is 430 deg/s
         min_response_time = abs(angle - current_angle) / 430
         # Convert the angle to a command - angles are digitized at a

@@ -44,6 +44,8 @@ long_meas_len = 100  # in ns
 mw_amp_NV = .5  # in units of volts
 mw_len_NV = 200  # in units of ns
 
+aom_amp = 0.5
+
 pi_amp_NV = 0.1  # in units of volts
 pi_len_NV = 100  # in units of ns
 
@@ -67,6 +69,7 @@ apd_0_delay = 0
 apd_1_delay = 0
 uwave_delay = 0
 aod_delay = 0
+yellow_aom_delay = 0
 delays = [green_laser_delay,apd_0_delay,apd_1_delay,uwave_delay]
 
 min_delay = 150 #we use 100 with the pulse streamer. doesn't matter. just wanted it higher than 136 analog delay
@@ -81,6 +84,7 @@ uwave_total_delay = common_delay - uwave_delay
 NV_total_delay = common_delay - mw_delay
 NV2_total_delay = common_delay - mw_delay
 AOD_total_delay = common_delay - aod_delay
+yellow_AOM_total_delay = common_delay - yellow_aom_delay
 
 config_opx = {
     "version": 1,
@@ -92,6 +96,7 @@ config_opx = {
                 2: {"offset": 0.0, "delay": NV_total_delay}, # will be Q for sig gen
                 3: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1X
                 4: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1Y
+                5: {"offset": 0.0, "delay": yellow_AOM_total_delay}, #yellow AOM
             },
             "digital_outputs": {
                 1: {},  # 
@@ -122,6 +127,14 @@ config_opx = {
                 "cw": "const_freq_out",
             },
         },
+        "laserglow_589": {
+            "singleInput": {"port": ("con1", 5)},
+            "intermediate_frequency": 0,
+            "operations": {
+                "laser_ON_ANALOG": "laser_ON_ANALOG",
+                "cw": "const_freq_out",
+            },
+        },
         "signal_generator_tsg4104a": {
             "digitalInputs": {
                 "marker": {
@@ -144,7 +157,7 @@ config_opx = {
                 },
             },
             "operations": {
-                "laser_ON": "laser_ON",
+                "laser_ON_DIGITAL": "laser_ON_DIGITAL",
                 "constant_HIGH": "constant_HIGH",
             },
         },
@@ -214,7 +227,12 @@ config_opx = {
             "length": mw_len_NV,
             "waveforms": {"single": "cw_wf"},
         },
-        "laser_ON": {
+        "laser_ON_ANALOG": {
+            "operation": "control",
+            "length": initialization_len,
+            "waveforms": {"single": "cw_wf"},
+        },
+        "laser_ON_DIGITAL": {
             "operation": "control",
             "length": initialization_len,
             "digital_marker": "ON",
