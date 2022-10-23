@@ -8,8 +8,8 @@ Created on Sat May  4 08:34:08 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
-import utils.tool_belt as tool_belt
-from utils.tool_belt import States
+# import utils.tool_belt as tool_belt
+# from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
@@ -29,28 +29,28 @@ def get_seq(pulse_streamer, config, args):
 
     # Get the APD indices
     apd_index, state, laser_name, laser_power = args[6:10]
-    state = States(state)
+    # state = States(state)
         
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs
     reference_time = polarization_time
-    pre_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
-    post_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
+    pre_uwave_exp_wait_time = 1000#config['CommonDurations']['uwave_buffer']
+    post_uwave_exp_wait_time = 1000#config['CommonDurations']['uwave_buffer']
     # time between signal and reference without illumination
     sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
 #    sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base + 2*tau_shrt 
 #    sig_to_ref_wait_time_long = sig_to_ref_wait_time_base + 2*tau_long
     sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
-    aom_delay_time = config['Optics'][laser_name]['delay']
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    rf_delay_time = 0*config['Microwaves'][sig_gen_name]['delay']
+    aom_delay_time = 0#config['Optics'][laser_name]['delay']
+    # sig_gen_name = config['Microwaves']['sig_gen_{}'.format("LOW")]
+    rf_delay_time = 0#*config['Microwaves'][sig_gen_name]['delay']
     back_buffer = 200
 
     # pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = 1#pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
+    # sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = 2#pulser_wiring[sig_gen_gate_chan_name]
 
     # %% Write the microwave sequence to be used.
@@ -150,7 +150,7 @@ def get_seq(pulse_streamer, config, args):
     return seq, final, [period]
 
 if __name__ == '__main__':
-    config = tool_belt.get_config_dict()
-    seq_args = [0, 1000.0, 350, 32, 16, 10000, 1, 1, 'cobolt_515', None]
-    seq, final, ret_vals = get_seq(None, config, seq_args)
+    # config = tool_belt.get_config_dict()
+    seq_args = [800, 1000.0, 350, 320, 160, 500, 1, 1, 'cobolt_515', None]
+    seq, final, ret_vals = get_seq(None, [], seq_args)
     seq.plot()
