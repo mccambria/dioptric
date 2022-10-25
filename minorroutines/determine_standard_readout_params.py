@@ -291,7 +291,7 @@ def main(nv_sig, apd_indices, num_reps,
                       max_readouts, powers, filters, state)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, 
-              max_readouts, powers=None, filters=None, state=States.LOW):
+                  max_readouts, powers=None, filters=None, state=States.LOW):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
     Ie we'll test max_readout[i] and power[i]/filter[i] at the same time. For 
@@ -328,7 +328,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps,
 
 if __name__ == '__main__':
     
-    file = "2022_07_14-18_29_49-hopper-search"
+    file = "2022_10_25-14_40_14-wu-nv3_2022_10_24"
     data = tool_belt.get_raw_data(file)
     
     nv_sig = data["nv_sig"]
