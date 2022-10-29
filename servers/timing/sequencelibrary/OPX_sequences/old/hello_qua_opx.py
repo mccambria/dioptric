@@ -33,7 +33,7 @@ with program() as hello_qua:
     # j = declare(int)
     # n = declare(int)
     # k = declare(int)
-    play("cw",'laserglow_589',duration=100)
+    play("laser_ON_ANALOG"*amp(1),'laserglow_589',duration=100)
     
     # with for_(n, 0, n < 100, n + 1):
     #     play("laser_ON","do_laserglow_532_dm",duration=1000 // 4)

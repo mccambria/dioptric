@@ -16,13 +16,14 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
+from utils.tool_belt import Mod_types
 
 def qua_program(opx, config, args, num_reps):
     
     delay, readout_time, apd_index, laser_name, laser_power = args
     
-    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
-    # opx_wiring = config['Wiring']['QmOpx']
+    laser_mod_type = config["Optics"][laser_name]["mod_type"]
+    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)# opx_wiring = config['Wiring']['QmOpx']
     # apd_indices = config['apd_indices']
     
     apd_indices =  config['apd_indices']

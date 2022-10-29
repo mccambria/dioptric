@@ -63,7 +63,7 @@ if __name__ == '__main__':
     num_repeat=3
     delay = 1000
     args = [['do_laserglow_532_dm', 'do_signal_generator'], ['AOD_1X', 'AOD_1Y'], [0.0, 10000000.0], [1.0, 0.5]]
-    # args = [[], [], [], []]
+    args = [],['laserglow_589'],[0],[.5]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

@@ -16,7 +16,8 @@ Created on Wed Apr 24 15:01:04 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize_digital
+# import majorroutines.optimize as optimize
 from scipy.optimize import minimize_scalar
 from numpy import pi
 import numpy
@@ -110,6 +111,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     resonance_HIGH = nv_sig["resonance_HIGH"]
     # resonance_LOW = 2.7979
     # resonance_HIGH = 2.9456
+    # print('test',popt)
 
     revival_time = popt[1]
     revival_time_ste = stes[1]
@@ -203,6 +205,7 @@ def mag_B_from_revival_time(revival_time, revival_time_ste=None):
 
 def quartic(tau, offset, revival_time, decay_time, *amplitudes):
     tally = offset
+    # print(len(amplitudes))
     for ind in range(0, len(amplitudes)):
         exp_part = numpy.exp(-(((tau - ind * revival_time) / decay_time) ** 4))
         tally += amplitudes[ind] * exp_part
@@ -278,10 +281,10 @@ def fit_data(data):
     # return
 
     # Hard guess
-    amplitude = 0.07
-    offset = 0.90
-    decay_time = 2000.0
-    revival_time = 10e3
+    # amplitude = 0.07
+    # offset = 0.90
+    # decay_time = 2000.0
+    # revival_time = 10e3
     # dominant_freqs = [1 / (1000*revival_time)]
 
     # %% Fit
@@ -301,12 +304,14 @@ def fit_data(data):
     max_bounds_tests = []
     best_scaled_chi_sq = None
     best_popt = None
+    # print(dominant_freqs)
     for freq in dominant_freqs:
         # print(freq)
-        # revival_time = 1 / freq
+        revival_time = 1 / freq
         # print(revival_time)
         num_revivals = max_precession_dur / revival_time
-        amplitudes = [amplitude for el in range(0, int(1.0 * num_revivals))]
+        amplitudes = [amplitude for el in range(0, int(1.0 + num_revivals))]
+        # print('amps',amplitudes)
         # print(num_revivals)
 
         revival_time_us = revival_time / 1000
@@ -326,6 +331,8 @@ def fit_data(data):
         min_bounds_tests.append(min_bounds)
         max_bounds_tests.append(max_bounds)
         init_params_tests.append(init_params)
+        # print(freq)
+        # print(init_params)
 
         try:
             popt, pcov = curve_fit(
@@ -337,22 +344,29 @@ def fit_data(data):
                 p0=init_params,
                 bounds=(min_bounds, max_bounds),
             )
+            print(popt)
 
             fit_func_lambda = lambda tau: fit_func(tau, *popt)
             residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
             chi_sq = numpy.sum((residuals ** 2) / (norm_avg_sig_ste ** 2))
             scaled_chi_sq = chi_sq * len(popt)
             # print(scaled_chi_sq)
+            # print('test1',popt)
             if best_scaled_chi_sq is None or (
                 scaled_chi_sq < best_scaled_chi_sq
             ):
+                # print('here')
                 best_scaled_chi_sq = scaled_chi_sq
                 best_popt = popt
+                # print('test1',best_popt)
 
         except Exception as e:
             print(e)
+            
+    # print(popt)
 
     popt = best_popt
+    # print(popt)
     # popt[1] = 35
     popt[1] *= 1000
     popt[2] *= 1000
@@ -369,7 +383,8 @@ def fit_data(data):
             fit_func,
             popt,
         )
-
+        
+\
     return fit_func, popt, stes, fit_fig
 
 
@@ -481,6 +496,10 @@ def main_with_cxn(
     state=States.LOW,
 ):
 
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    
     tool_belt.reset_cfm(cxn)
 
     # %% Sequence setup
@@ -515,7 +534,7 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
-    print(taus)
+    # print(taus)
     # Account for the pi/2 pulse on each side of a tau
     # plot_taus = (taus + uwave_pi_pulse) / 1000
     plot_taus = (2*taus) / 1000
@@ -574,7 +593,7 @@ def main_with_cxn(
         laser_power,
     ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+    ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     # print(seq_args)
     # return
@@ -613,7 +632,7 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -627,7 +646,7 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream(apd_indices)
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -649,8 +668,8 @@ def main_with_cxn(
             tau_index_master_list[run_ind].append(tau_ind_second)
 
             # Break out of the while if the user says stop
-            if tool_belt.safe_stop():
-                break
+            # if tool_belt.safe_stop():
+            #     break
 
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
@@ -669,34 +688,43 @@ def main_with_cxn(
             ]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(
+            counter_server.clear_buffer()
+            pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
             # parse the returned list into what we want.
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            # new_counts = counter_server.read_counter_separate_gates(1)
+            # sample_counts = new_counts[0]
+
+            # count = sum(sample_counts[0::4])
+            # sig_counts[run_ind, tau_ind_first] = count
+            # print("First signal = " + str(count))
+
+            # count = sum(sample_counts[1::4])
+            # ref_counts[run_ind, tau_ind_first] = count
+            # print("First Reference = " + str(count))
+
+            # count = sum(sample_counts[2::4])
+            # sig_counts[run_ind, tau_ind_second] = count
+            # print("Second Signal = " + str(count))
+
+            # count = sum(sample_counts[3::4])
+            # ref_counts[run_ind, tau_ind_second] = count
+            # print("Second Reference = " + str(count))
+            
+            new_counts = counter_server.read_counter_modulo_gates(4)
             sample_counts = new_counts[0]
+            
+            sig_counts[run_ind, tau_ind_first] = sample_counts[0]
+            ref_counts[run_ind, tau_ind_first] = sample_counts[1]
+            sig_counts[run_ind, tau_ind_second] = sample_counts[2]
+            ref_counts[run_ind, tau_ind_second] = sample_counts[3]
+            
 
-            count = sum(sample_counts[0::4])
-            sig_counts[run_ind, tau_ind_first] = count
-            print("First signal = " + str(count))
-
-            count = sum(sample_counts[1::4])
-            ref_counts[run_ind, tau_ind_first] = count
-            print("First Reference = " + str(count))
-
-            count = sum(sample_counts[2::4])
-            sig_counts[run_ind, tau_ind_second] = count
-            print("Second Signal = " + str(count))
-
-            count = sum(sample_counts[3::4])
-            ref_counts[run_ind, tau_ind_second] = count
-            print("Second Reference = " + str(count))
-
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% incremental plotting
         
@@ -704,7 +732,7 @@ def main_with_cxn(
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -898,8 +926,16 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_08_22-15_07_16-rubin-nv1"
-    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
+    file_name = "2022_10_28-13_34_55-johnson-search"
+    data = tool_belt.get_raw_data(file_name, 'pc_carr/branch_opx-setup/spin_echo/2022_10')
+    nv_name = data['nv_sig']["name"]
+    timestamp = data['timestamp']
+    # data['sig_counts'] = data['sig_counts'][:5]
+    # data['ref_counts'] = data['ref_counts'][:5]
+    # data['num_runs'] = 5
+    
     ret_vals = plot_resonances_vs_theta_B(data)
-
-    # plt.show(block=True)
+    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
+    plt.show()
+    tool_belt.save_figure(fit_fig, file_path_fit)

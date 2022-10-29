@@ -13,6 +13,7 @@ simple readout sequence for the opx in qua
 import numpy
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
+from utils.tool_belt import Mod_types
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
@@ -22,7 +23,8 @@ def qua_program(opx, config, args, num_reps):
     
     readout, state, laser_name, laser_power, apd_index = args
 
-    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
+    laser_mod_type = config["Optics"][laser_name]["mod_type"]
+    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)
     
     state = States(state)
     opx_wiring = config['Wiring']['QmOpx']

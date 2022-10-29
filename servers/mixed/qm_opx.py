@@ -76,6 +76,7 @@ class OPX(Tagger, PulseGen, LabradServer):
         )
         sys.path.append(str(opx_sequence_library_path))
         self.steady_state_option = True
+        # logging.info(tool_belt.get_mod_type('cobolt_515'))
         
         # steady_state_seq, final_ss, period_ss = get_seq(self, self.steady_state_program_file, self.steady_state_seq_args_string, 1)
         # self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,steady_state_seq)
@@ -394,6 +395,11 @@ class OPX(Tagger, PulseGen, LabradServer):
         results = fetching_tool(self.experiment_job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
 
         counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all()
+        logging.info('new counts')
+        logging.info(counts_apd0)
+        logging.info(counts_apd1)
+        logging.info(times_apd0)
+        logging.info(times_apd1)
         
         ###added but not tested
         if self.sample_size == 'one_rep':
@@ -402,8 +408,8 @@ class OPX(Tagger, PulseGen, LabradServer):
         elif self.sample_size == 'all_reps':
             num_gates_per_sample = self.num_reps * self.num_gates_per_rep
         
-        num_new_samples_both = min( int (len(counts_apd0) / num_gates_per_sample) , int (len(counts_apd1) / num_gates_per_sample) )
-        max_length = num_new_samples_both*num_gates_per_sample
+        # num_new_samples_both = min( int (len(counts_apd0) / num_gates_per_sample) , int (len(counts_apd1) / num_gates_per_sample) )
+        # max_length = num_new_samples_both*num_gates_per_sample
         ###
         
         c1 = counts_apd0.tolist()
@@ -414,25 +420,26 @@ class OPX(Tagger, PulseGen, LabradServer):
         
         max_readout = 1000*self.config_dict["PhotonCollection"]["qm_opx_max_readout_time"]
 
-        cur_max_length = 0
+        # cur_max_length = 0
 
-        new_max_length = min(len(c1),len(c2))
+        # new_max_length = min(len(c1),len(c2))
 
-        c1 = c1[ cur_max_length : new_max_length ]
-        c2 = c2[ cur_max_length : new_max_length ]
+        # c1 = c1[ cur_max_length : new_max_length ]
+        # c2 = c2[ cur_max_length : new_max_length ]
 
-        tags_already_read_a1 = np.sum(c1[0:cur_max_length], dtype=int)
-        tags_already_read_a2 = np.sum(c2[0:cur_max_length], dtype=int)
+        # tags_already_read_a1 = np.sum(c1[0:cur_max_length], dtype=int)
+        # tags_already_read_a2 = np.sum(c2[0:cur_max_length], dtype=int)
 
-        t1 = t1[tags_already_read_a1::]
-        t2 = t2[tags_already_read_a2::]
+        # t1 = t1[tags_already_read_a1::]
+        # t2 = t2[tags_already_read_a2::]
 
-        cur_max_length = new_max_length
+        # cur_max_length = new_max_length
 
         t_return = []
         channels_return = []
 
         for i in range(len(c1)):
+            
             
             for k in range(len(c1[0])):
             
@@ -452,7 +459,7 @@ class OPX(Tagger, PulseGen, LabradServer):
                 # print('')
                 # print(cur_sample_timetags_a1)
 
-                for j in range(len(cur_sample_counts_a1)):
+                for j in range(cur_sample_counts_a1):
 
                     num_past_gate_counts_a1 = np.sum(cur_sample_counts_a1[0:j], dtype=int)# + np.sum(c1[i][0:k], dtype=int)
                     num_cur_gate_counts_a1 = cur_sample_counts_a1[j]
@@ -473,8 +480,8 @@ class OPX(Tagger, PulseGen, LabradServer):
                 channels_return = channels_return + [10] + np.full(len(sample_tags_a1),1,dtype=int).tolist() \
                     + np.full(len(sample_tags_a2),2,dtype=int).tolist() +[-10]
 
-        logging.info(t1)    
-        logging.info(c1)
+        # logging.info(t1)    
+        # logging.info(c1)
         return t_return, channels_return
         
     

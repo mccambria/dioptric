@@ -24,7 +24,8 @@ Created on Wed Apr 24 15:01:04 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
+# import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize_digital 
 from scipy.signal import find_peaks
 from numpy import pi
 import numpy
@@ -197,6 +198,10 @@ def main_with_cxn(
     state=States.LOW,
     opti_nv_sig = None
 ):
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    
 
     tool_belt.reset_cfm(cxn)
 
@@ -287,8 +292,9 @@ def main_with_cxn(
         laser_name,
         laser_power,
     ]
+    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+    ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     #    print(seq_args)
     #    return
@@ -339,12 +345,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -358,7 +364,7 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream(apd_indices)
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -399,16 +405,16 @@ def main_with_cxn(
                 laser_power,
             ]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
-            # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(
+            # Clear the counter/tagger buffer of any excess counts
+            counter_server.clear_buffer()
+            pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
             # parse the returned list into what we want.
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = counter_server.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
 
             count = sum(sample_counts[0::4])
@@ -427,15 +433,16 @@ def main_with_cxn(
             ref_counts[run_ind, tau_ind_second] = count
             print("Second Reference = " + str(count))
 
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
         
         # %% incremental plotting
         
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)

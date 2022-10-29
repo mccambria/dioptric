@@ -313,7 +313,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_carr/branch_opx-setup/image_sample_digital/2022_10'
-    file_name = '2022_10_13-16_46_41-johnson-search'
+    file_name = '2022_10_26-08_12_46-johnson-search'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -348,7 +348,7 @@ if __name__ == '__main__':
     fig = tool_belt.create_image_figure(img_array, numpy.array(img_extent), 
                                   clickHandler=image_sample.on_click_image,
                         title=None, color_bar_label='kcps', 
-                        min_value=None, um_scaled=True)
+                        min_value=None, um_scaled=True,cmin=0,cmax=100)
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, filePath)
     

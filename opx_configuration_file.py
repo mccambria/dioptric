@@ -104,6 +104,7 @@ config_opx = {
                 3: {},  # apd 2 virtual gate
                 5: {},  # clock
                 7: {},  # tsg4104 sig gen switch
+                8: {},  # cobolt 638
                 9: {},  # cobolt 515 
             },
             "analog_inputs": {
@@ -153,6 +154,19 @@ config_opx = {
                 "marker": {
                     "port": ("con1", 9),
                     "delay": green_laser_total_delay,
+                    "buffer": 0,
+                },
+            },
+            "operations": {
+                "laser_ON_DIGITAL": "laser_ON_DIGITAL",
+                "constant_HIGH": "constant_HIGH",
+            },
+        },
+        "cobolt_638": {
+            "digitalInputs": {
+                "marker": {
+                    "port": ("con1", 8),
+                    "delay": red_laser_total_delay,
                     "buffer": 0,
                 },
             },

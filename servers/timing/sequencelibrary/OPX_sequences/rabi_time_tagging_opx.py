@@ -87,8 +87,18 @@ def qua_program(opx, config, args, num_reps):
         counts_st_apd_0 = declare_stream()
         counts_st_apd_1 = declare_stream()     
         
+        times_st_apd_0 = declare_stream()
+        times_st_apd_1 = declare_stream()
+        
+        save(0,times_st_apd_0)
+        save(0,times_st_apd_1)
 
         n = declare(int)
+        j = declare(int)
+        k = declare(int)
+        
+        jj = declare(int)
+        kk = declare(int)
         
         with for_(n, 0, n < num_reps, n + 1):
             
@@ -120,6 +130,12 @@ def qua_program(opx, config, args, num_reps):
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
+            with for_(j, 0, j < counts_gate1_apd_0, j + 1):
+                save(times_gate1_apd_0[j], times_st_apd_0) 
+                
+            with for_(k, 0, k < counts_gate1_apd_1, k + 1):
+                save(times_gate1_apd_1[k], times_st_apd_1)
+                
             align()
             wait(mid_duration_cc)
             align()
@@ -139,6 +155,12 @@ def qua_program(opx, config, args, num_reps):
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
+            with for_(jj, 0, jj < counts_gate2_apd_0, jj + 1):
+                save(times_gate2_apd_0[jj], times_st_apd_0) 
+                
+            with for_(kk, 0, kk < counts_gate2_apd_1, kk + 1):
+                save(times_gate2_apd_1[kk], times_st_apd_1)
+                
             align()
         
         play("clock_pulse","do_sample_clock") # clock pulse after all the reps so the tagger sees all reps as one sample
@@ -146,6 +168,8 @@ def qua_program(opx, config, args, num_reps):
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
             counts_st_apd_1.buffer(num_readouts).save_all("counts_apd1")
+            times_st_apd_0.save_all("times_apd0") 
+            times_st_apd_1.save_all("times_apd1")
             
     return seq, period, num_gates
 
@@ -173,19 +197,19 @@ if __name__ == '__main__':
     
     num_repeat=1
 
-    args = [0, 1000.0, 350, 0, 1, 3, 'cobolt_515', 1]
+    args = [100, 100000.0, 95000, 100, 1, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    # job = qm.execute(seq)
+    job = qm.execute(seq)
 
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
     
     # a = time.time()
-    # counts_apd0, counts_apd1 = results.fetch_all() 
+    counts_apd0, counts_apd1, times0, times1  = results.fetch_all() 
     # counts_apd0 = np.sum(counts_apd0,1)
     # ref_counts = np.sum(counts_apd0[0::2])
     # sig_counts = np.sum(counts_apd0[1::2])

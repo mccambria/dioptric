@@ -17,6 +17,7 @@ from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
 from utils.tool_belt import States
+from utils.tool_belt import Mod_types
 
 def qua_program(opx, config, args, num_reps):
     
@@ -39,21 +40,21 @@ def qua_program(opx, config, args, num_reps):
     
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    signal_time = polarization_time
+    signal_time = polarization
     
     reference_time = polarization
-    pre_uwave_exp_wait_time = 1000 #config['CommonDurations']['uwave_buffer']
-    post_uwave_exp_wait_time = 1000 #config['CommonDurations']['uwave_buffer']
+    pre_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
+    post_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
     # time between signal and reference without illumination
     sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
-    laser_delay_time = 0#config['Optics'][laser_name]['delay']
+    laser_delay_time = config['Optics'][laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
     back_buffer = 200    
     
-    laser_pulse = 'laser_ON_{}'.format(tool_belt.get_mod_type(laser_name))
-    
+    laser_mod_type = config["Optics"][laser_name]["mod_type"]
+    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)
     
     uwave_experiment_shrt = pi_on_2_pulse + tau_shrt + pi_pulse + tau_shrt + pi_on_2_pulse
     uwave_experiment_long = pi_on_2_pulse + tau_long + pi_pulse + tau_long + pi_on_2_pulse
@@ -62,10 +63,11 @@ def qua_program(opx, config, args, num_reps):
     # should start off the sequence HIGH
     polarization_cc = int(polarization // 4)
     laser_delay_time_cc = int(laser_delay_time // 4)
-    mid_duration_cc = int(mid_duration // 4)
 
     readout_time_cc = int(readout_time // 4)
     period = 0 # polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on
+    
+    # print(pi_on_2_pulse)
     
     with program() as seq:
         
@@ -97,17 +99,18 @@ def qua_program(opx, config, args, num_reps):
             
             align()    
             
-            play(laser_pulse,laser_name,duration=int((rf_delay_time + polarization) //4) ) 
-            
-            wait(int( (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time) //4 ), laser_name)
-            
-            wait(int( (aom_delay_time + polarization_time + pre_uwave_exp_wait_time) //4 ), sig_gen)
+            play(laser_pulse,laser_name,duration=int((polarization) //4) ) 
+                        
+            wait(int( (laser_delay_time - rf_delay_time + polarization + pre_uwave_exp_wait_time) //4 ), sig_gen)
             play("uwave_ON",sig_gen, duration=int(pi_on_2_pulse // 4))
-            wait(int(tau_shrt //4) ,sig_gen)
-            play("uwave_ON",sig_gen, duration=int(pi_pulse // 4))
-            wait(int(tau_shrt //4) ,sig_gen)
+            if tau_shrt >= 16:
+                wait(int(tau_shrt //4) ,sig_gen)
+            if pi_pulse >= 16:
+                play("uwave_ON",sig_gen, duration=int(pi_pulse // 4))
+            if tau_shrt >= 16:
+                wait(int(tau_shrt //4) ,sig_gen)
             play("uwave_ON",sig_gen, duration=int(pi_on_2_pulse // 4))
-            wait(int( (aom_delay_time + polarization_time + pre_uwave_exp_wait_time) //4) ,sig_gen)
+            wait(int(post_uwave_exp_wait_time //4))
             
             
             align()
@@ -128,10 +131,10 @@ def qua_program(opx, config, args, num_reps):
                 save(0, counts_st_apd_1)
                 
             align()
-            wait(int(sig_to_ref_wait_time_shrt //4))
+            wait(int(sig_to_ref_wait_time_long //4))
             align()
             
-            play(laser_pulse,laser_name,duration=reference_laser_on_cc) 
+            play(laser_pulse,laser_name,duration=polarization_cc) 
                             
             if num_apds == 2:
                 wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate")
@@ -146,7 +149,64 @@ def qua_program(opx, config, args, num_reps):
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
+            align()    
+                        
+            
+            # play(laser_pulse,laser_name,duration=int((rf_delay_time + polarization) //4) ) 
+            
+            # wait(int( (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time) //4 ), laser_name)
+            
+            wait(int( (laser_delay_time - rf_delay_time + pre_uwave_exp_wait_time) //4 ), sig_gen)
+            play("uwave_ON",sig_gen, duration=int(pi_on_2_pulse // 4))
+            if tau_long >= 16:
+                wait(int(tau_long //4) ,sig_gen)
+            if pi_pulse >= 16:
+                play("uwave_ON",sig_gen, duration=int(pi_pulse // 4))
+            if tau_long >= 16:
+                wait(int(tau_long //4) ,sig_gen)
+            play("uwave_ON",sig_gen, duration=int(pi_on_2_pulse // 4))
+            wait(int(post_uwave_exp_wait_time//4))
+            # wait(int( (laser_delay_time + polarization + pre_uwave_exp_wait_time) //4) ,sig_gen)
+            
+            
             align()
+                           
+            play(laser_pulse,laser_name,duration=polarization_cc) 
+            
+            if num_apds == 2:
+                wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate" )
+                measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate3_apd_0, readout_time, counts_gate3_apd_0))
+                measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate3_apd_1, readout_time, counts_gate3_apd_1))
+                save(counts_gate3_apd_0, counts_st_apd_0)
+                save(counts_gate3_apd_1, counts_st_apd_1)
+                
+            if num_apds == 1:
+                wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate3_apd_0, readout_time, counts_gate3_apd))
+                save(counts_gate3_apd_0, counts_st_apd_0)
+                save(0, counts_st_apd_1)
+                
+            align()
+            wait(int(sig_to_ref_wait_time_shrt //4))
+            align()
+            
+            play(laser_pulse,laser_name,duration=polarization_cc) 
+                            
+            if num_apds == 2:
+                wait(laser_delay_time_cc ,"do_apd_0_gate","do_apd_1_gate")
+                measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate4_apd_0, readout_time, counts_gate4_apd_0))
+                measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate4_apd_1, readout_time, counts_gate4_apd_1))
+                save(counts_gate4_apd_0, counts_st_apd_0)
+                save(counts_gate4_apd_1, counts_st_apd_1)
+                
+            if num_apds == 1:
+                wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate4_apd_0, readout_time, counts_gate4_apd))
+                save(counts_gate4_apd_0, counts_st_apd_0)
+                save(0, counts_st_apd_1)
+                
+            align()
+            wait(int(back_buffer//4))
         
         play("clock_pulse","do_sample_clock") # clock pulse after all the reps so the tagger sees all reps as one sample
         
@@ -179,8 +239,8 @@ if __name__ == '__main__':
     simulation_duration =  35000 // 4 # clock cycle units - 4ns
     
     num_repeat=1
-
-    args = [0, 1000.0, 350, 0, 1, 3, 'cobolt_515', 1]
+# tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
+    args = [0, 3000.0, 350, 200, 100, 600, 0, 1, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
