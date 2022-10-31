@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Dynamical decoupling XY4.
+Dynamical decoupling CPMG
 
 
 
@@ -46,6 +46,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
 ):
 
@@ -59,6 +60,7 @@ def main(
             num_steps,
             num_reps,
             num_runs,
+            taus,
             state,
         )
         return angle
@@ -73,6 +75,7 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
 ):
 
@@ -94,9 +97,6 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
-    # pi pulses are slightly different than just half of the rabi period
-    # uwave_pi_pulse = round(nv_sig["pi_pulse_{}".format(state.name)] )
-    # uwave_pi_on_2_pulse = round(nv_sig["pi_on_2_pulse_{}".format(state.name)] )
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -107,13 +107,15 @@ def main_with_cxn(
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
 
-    taus = numpy.linspace(
-        min_precession_time,
-        max_precession_time,
-        num=num_steps,
-        dtype=numpy.int32,
-    )
-    # print(taus)
+    if len(taus) == 0:
+        taus = numpy.linspace(
+            min_precession_time,
+            max_precession_time,
+            num=num_steps,
+            dtype=numpy.int32,
+        )
+    # taus = taus + 500
+    print(taus)
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
@@ -159,20 +161,19 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    #pi_pulse_reps = num_xy4_reps*8
     seq_args = [
-        min_precession_time,
-        polarization_time,
-        gate_time,
-        uwave_pi_pulse,
-        uwave_pi_on_2_pulse,
-        max_precession_time,
-        pi_pulse_reps,
-        apd_indices[0],
-        state.value,
-        laser_name,
-        laser_power,
-    ]
+          taus[0],
+          polarization_time,
+          gate_time,
+          uwave_pi_pulse,
+          uwave_pi_on_2_pulse,
+          taus[-1],
+          pi_pulse_reps,
+          apd_indices[0],
+          state.value,
+          laser_name,
+          laser_power,
+      ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -223,7 +224,6 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        #cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
         cxn.arbitrary_waveform_generator.load_cpmg(pi_pulse_reps)
         
 
@@ -261,18 +261,18 @@ def main_with_cxn(
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
             seq_args = [
-                taus[tau_ind_first],
-                polarization_time,
-                gate_time,
-                uwave_pi_pulse,
-                uwave_pi_on_2_pulse,
-                taus[tau_ind_second],
-                pi_pulse_reps,
-                apd_indices[0],
-                state.value,
-                laser_name,
-                laser_power,
-            ]
+                  taus[tau_ind_first],
+                  polarization_time,
+                  gate_time,
+                  uwave_pi_pulse,
+                  uwave_pi_on_2_pulse,
+                  taus[tau_ind_second],
+                  pi_pulse_reps,
+                  apd_indices[0],
+                  state.value,
+                  laser_name,
+                  laser_power,
+              ]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -313,7 +313,7 @@ def main_with_cxn(
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -353,8 +353,6 @@ def main_with_cxn(
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             'pi_pulse_reps': pi_pulse_reps,
-            "gate_time": gate_time,
-            "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -368,7 +366,10 @@ def main_with_cxn(
             "state": state.name,
             "num_steps": num_steps,
             "num_reps": num_reps,
-            "run_ind": run_ind,
+            "run_ind": run_ind,	
+            "taus": taus.tolist(),	
+            "plot_taus":plot_taus.tolist(),	
+            "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
@@ -425,8 +426,6 @@ def main_with_cxn(
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         'pi_pulse_reps': pi_pulse_reps,
-        "gate_time": gate_time,
-        "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
@@ -440,7 +439,10 @@ def main_with_cxn(
         "state": state.name,
         "num_steps": num_steps,
         "num_reps": num_reps,
-        "num_runs": num_runs,
+        "num_runs": num_runs,	
+        "taus": taus.tolist(),	
+        "plot_taus":plot_taus.tolist(),	
+        "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
