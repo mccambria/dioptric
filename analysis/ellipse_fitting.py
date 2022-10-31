@@ -25,6 +25,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 cent = 0.5
 amp = 0.65 / 2
+num_atoms = 1000
 
 # region Functions
 
@@ -103,23 +104,21 @@ def ellipse_cost(phi, points, debug=False):
 
 def gen_ellipses():
     # phis = [0, np.pi / 2, np.pi / 4]
-    phis = [0.0]
-    num_points = 100
+    phis = [0.01]
+    num_points = 1000
     ellipses = []
-    noise_amp = 0.05
     for phi in phis:
+        theta_vals = 2 * np.pi * np.random.random(size=num_points)
         ellipse = [[phi]]
         ellipse_lambda = lambda theta: ellipse_point(theta, phi)
         points = []
         for ind in range(num_points):
-            theta = 2 * np.pi * random.random()
+            theta = theta_vals[ind]
             point = ellipse_lambda(theta)
-            noisy_point = (
-                point[0] + noise_amp * random.random(),
-                point[1] + noise_amp * random.random(),
-            )
+            noisy_point = (np.random.binomial(num_atoms, point[0]) / num_atoms,
+                           np.random.binomial(num_atoms, point[1]) / num_atoms)
             points.append(noisy_point)
-            ellipse.extend(points)
+        ellipse.extend(points)
         ellipses.append(ellipse)
     return ellipses
 
@@ -192,11 +191,17 @@ def main(path):
     ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
     phi_errors = []
+    covariances = []
+    cov_phis = []
+    true_phis = []
 
     do_plot = True
 
     # ellipses = ellipses[::10]
     # ellipses = [ellipses[35]]  # 34, 38
+    num_points = 100
+    x_locs = np.linspace(0, 1, num_points)
+    y_locs = np.linspace(0, 1, num_points)
     for ind in range(len(ellipses)):
 
         ellipse = ellipses[ind]
@@ -204,8 +209,35 @@ def main(path):
         # for ellipse in ellipses[0]:
         ellipse_phis = ellipse[0]
         true_phi = ellipse_phis.pop(0)
+        true_phis.append(true_phi)
+
         algo_phis = ellipse_phis
         points = ellipse[1:]
+        x_vals = np.array([point[0] for point in points])
+        y_vals = np.array([point[1] for point in points])
+        corr = np.corrcoef(x_vals, y_vals)[0, 1]
+        covariances.append(corr)
+        cov_phi = np.arccos(corr) / 2
+        cov_phis.append(cov_phi)
+
+        image = np.zeros((num_points, num_points))
+        for point in points:
+            gaussian_lambda = lambda loc_x, loc_y: np.exp(
+                - (((loc_x - point[0]) ** 2) * np.sqrt(num_atoms) / (2 * (loc_x*(1-loc_x)))**2)
+                - (((loc_y - point[1]) ** 2) * np.sqrt(num_atoms) / (2 * (loc_y*(1-loc_y)))**2)
+            )
+            gaussian_matrix = [
+                [gaussian_lambda(x_loc, y_loc) for x_loc in x_locs]
+                for y_loc in y_locs
+            ]
+            gaussian_matrix = np.array(gaussian_matrix)
+            image += gaussian_matrix
+        fig, axes_pack = plt.subplots(1, 2)
+        ax0, ax1 = axes_pack
+        ax0.imshow(image, origin="lower")
+        kpl.plot_points(ax1, x_vals, y_vals)
+        plt.show(block=True)
+        continue
 
         thresh = 0.1
         if thresh < true_phi < (np.pi / 2) - thresh:
@@ -213,17 +245,17 @@ def main(path):
         print(f"Ellipse index: {ind}")
 
         # Avoid local minima by using multiple guesses
-        # guesses = [0, np.pi / 2, np.pi / 4]
-        # for guess in guesses:
-        #     res = minimize(ellipse_cost, guess, args=(points,))
-        #     opti_phi = res.x[0]
-        #     # Remove degeneracies
-        #     opti_phi = opti_phi % np.pi
-        #     if opti_phi > np.pi / 2:
-        #         opti_phi = np.pi - opti_phi
-        #     cost = ellipse_cost(opti_phi, points, True)
-        #     if cost < 0.1:
-        #         break
+        guesses = [0, np.pi / 2, np.pi / 4]
+        for guess in guesses:
+            res = minimize(ellipse_cost, guess, args=(points,))
+            opti_phi = res.x[0]
+            # Remove degeneracies
+            opti_phi = opti_phi % np.pi
+            if opti_phi > np.pi / 2:
+                opti_phi = np.pi - opti_phi
+            cost = ellipse_cost(opti_phi, points, True)
+            if cost < 0.1:
+                break
         opti_phi = 0
         algo_phis.insert(0, opti_phi)
 
@@ -262,6 +294,18 @@ def main(path):
             phi_errors_sub.append(phi - true_phi)
         phi_errors.append(phi_errors_sub)
 
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, true_phis, cov_phis)
+    kpl.tight_layout(fig)
+
+    plt.show(block=True)
+
+    phi_errors = [ela - elb for ela, elb in zip(cov_phis, true_phis)]
+
+    print(phi_errors)
+
+    return
+
     print(f"Summary for ellipse with true phi {true_phi}")
     # for row in phi_errors:
     #     rounded_errs = [round(el, 6) for el in row]
@@ -273,7 +317,7 @@ def main(path):
     # print("RMS phase errors for algorithm, least squares, neural net: ")
     print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
-    rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
+    rms_phi_errors = np.sqrt(np.mean(phi_errors**2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
 
 
@@ -296,6 +340,7 @@ if __name__ == "__main__":
 
     true_phis = [el[0][0] for el in ellipses]
 
+    # fmt: off
     phi_errs = [
         [-0.002696, -0.006651, -0.014066],
         [-0.005236, -0.025661, 0.013953],
@@ -398,6 +443,11 @@ if __name__ == "__main__":
         [0.000721, -0.018711, -0.053612],
         [0.007917, -0.007447, 0.035453],
     ]
+    
+    corr_errs = [0.025123958742006236, -0.014869564576668992, -0.034285634271992826, 0.0012830802773810546, -0.011119612184689376, 0.01341739247644605, -0.039752726230330104, -0.0013671677486478684, -0.00746382736564577, -0.00484106136879453, 0.02832041028889154, -0.06375076231478857, -0.08557881382382082, -0.06117408602601393, 0.1120558998725526, 0.06845208311342321, -0.061114972164303616, 0.04973095143537398, 0.010578632913241959, -0.06497858533377188, -0.004782830294254525, -0.01563794100660186, -0.04733573419323678, -0.06258971127051971, -0.03131546645306493, -0.006963848250139737, 0.003424439527336176, 0.01171670142630818, 0.05762413521338994, -0.013187150629633937, 0.0037907747218515198, 0.033423931537272966, 0.030941368697900984, 0.005685296955907304, -0.03841905964313419, 0.022388038445002374, 0.003801580858107223, 0.02917019248669933, -0.027185271911346343, 0.055429510718068675, 0.005300080256147366, 0.014183004126155474, -0.004936784005852318, -0.02713496477876043, 0.017314548074129466, -0.035081139275089074, 0.005924533470652138, 0.02713890015707951, -0.15280740659650327, 0.006325651359583961, 0.03525771032806557, 0.051819752692171095, 0.07176171696645806, 0.04307597825284659, 0.016657393723439717, 0.07239620589293683, -0.021115135908077898, -0.009232759241348365, 0.07923182688724739, -0.01514975969636563, 0.02159736114663291, 0.018385914865301667, -0.1192219291627184, 0.07993637695121558, -0.09346198830345509, -0.037918606028478186, 0.0961599822942596, 0.0053951292663565464, -0.057666178669276646, 0.09355654689332371, 0.04108339525029803, -0.03916218195323701, -0.020798369812875306, -0.0020074630047057784, 0.005111936961794239, -0.017590898072012917, 0.009416729514774236, -0.15942550527794874, 0.11139493469343775, 0.00532015339125827, -0.021138001272778872, 0.027444357156846233, 0.0197185305049686, 0.032679176715255, -0.017356657103021478, 0.004855450414589346, -0.035271105091023436, -0.11342516109354794, -0.036995524516857226, -0.01267403781053078, -0.04868194689561256, -0.030833601058370408, 0.027836465226693613, 0.0055433895091344665, 0.029923348715277943, 0.0018076366414709888, -0.006199321767995425, 0.058419539019826994, -0.09275353655292218, 0.0709073062290646]
+    corr_errs = np.array(corr_errs)
+
+    # fmt: on
 
     # num_fails = 0
     # for ind in range(len(phi_errs)):
@@ -418,14 +468,14 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     colors = kpl.data_color_cycler
-    kpl.plot_data(ax, true_phis, algo_errs, label="Algo", color=colors[0])
-    # kpl.plot_data(ax, true_phis, ls_errs, label="LS", color=colors[1])
-    # kpl.plot_data(ax, true_phis, nn_errs, label="NN", color=colors[2])
+    kpl.plot_points(ax, true_phis, algo_errs, label="Algo", color=colors[0])
+    kpl.plot_points(ax, true_phis, ls_errs, label="LS", color=colors[1])
+    kpl.plot_points(ax, true_phis, nn_errs, label="NN", color=colors[2])
+    kpl.plot_points(ax, true_phis, corr_errs, label="Corr", color=colors[3])
     ax.set_xlabel("True phase")
     ax.set_ylabel("Error")
     ax.legend()
     kpl.tight_layout(fig)
-    plt.show(block=True)
 
     inds = []
     for ind in range(len(true_phis)):
@@ -437,6 +487,10 @@ if __name__ == "__main__":
     algo_rms = np.sqrt(np.mean(algo_errs[inds] ** 2))
     ls_rms = np.sqrt(np.mean(ls_errs[inds] ** 2))
     nn_rms = np.sqrt(np.mean(nn_errs[inds] ** 2))
+    corr_rms = np.sqrt(np.mean(corr_errs[inds] ** 2))
     print(f"Alorithm rms error: {round(algo_rms, 6)}")
     print(f"Least squares rms error: {round(ls_rms, 6)}")
     print(f"Neural net rms error: {round(nn_rms, 6)}")
+    print(f"Correlation rms error: {round(corr_rms, 6)}")
+
+    plt.show(block=True)
