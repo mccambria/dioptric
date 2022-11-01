@@ -36,6 +36,19 @@ sin_theta_linspace = np.sin(theta_linspace)
 # region Functions
 
 
+def corr_gaussian(data_point, ellipse_sample):
+    data_point_x, data_point_y = data_point
+    ellipse_sample_x, ellipse_sample_y = ellipse_sample
+    varx = ellipse_sample_x * (1 - ellipse_sample_x) / num_atoms
+    vary = ellipse_sample_y * (1 - ellipse_sample_y) / num_atoms
+    sdx = np.sqrt(varx)
+    sdy = np.sqrt(vary)
+    z = (((data_point_x - ellipse_sample_x) / sdx) ** 2) + (
+        ((data_point_y - ellipse_sample_y) / sdy) ** 2
+    )
+    return (1 / (2 * np.pi * sdx * sdy)) * np.exp(-z / 2)
+
+
 def image_cost(phi, image):
     """ """
 
@@ -55,6 +68,23 @@ def image_cost(phi, image):
     # )
 
     cost = integrand / num_ellipse_samples
+    cost = 1 - cost  # Best should be minimum
+
+    return cost
+
+
+def corr_cost(phi, points):
+    """ """
+
+    ellipse_samples = ellipse_point(theta_linspace, phi)
+    ellipse_samples = np.column_stack(ellipse_samples)
+
+    integrand = 0
+    for point in points:
+        for ellipse_sample in ellipse_samples:
+            integrand += corr_gaussian(point, ellipse_sample)
+
+    cost = integrand / (len(ellipse_samples) * len(points))
     cost = 1 - cost  # Best should be minimum
 
     return cost
@@ -228,10 +258,10 @@ def main(path):
     true_phis = []
     image_phis = []
 
-    do_plot = True
+    do_plot = False
 
     # ellipses = ellipses[::10]
-    # ellipses = [ellipses[35]]  # 34, 38
+    # ellipses = [ellipses[-1]]
     num_points = 100
     x_locs = np.linspace(0, 1, num_points)
     y_locs = np.linspace(0, 1, num_points)
@@ -248,32 +278,33 @@ def main(path):
         points = ellipse[1:]
         x_vals = np.array([point[0] for point in points])
         y_vals = np.array([point[1] for point in points])
-        corr = np.corrcoef(x_vals, y_vals)[0, 1]
-        covariances.append(corr)
-        cov_phi = np.arccos(corr) / 2
-        cov_phis.append(cov_phi)
 
-        image = np.zeros((num_points, num_points))
-        for point in points:
-            gaussian_lambda = lambda loc_x, loc_y: np.exp(
-                -(
-                    ((loc_x - point[0]) ** 2)
-                    * np.sqrt(num_atoms)
-                    / (2 * (loc_x * (1 - loc_x))) ** 2
-                )
-                - (
-                    ((loc_y - point[1]) ** 2)
-                    * np.sqrt(num_atoms)
-                    / (2 * (loc_y * (1 - loc_y))) ** 2
-                )
-            )
-            gaussian_matrix = [
-                [gaussian_lambda(x_loc, y_loc) for x_loc in x_locs]
-                for y_loc in y_locs
-            ]
-            gaussian_matrix = np.array(gaussian_matrix)
-            image += gaussian_matrix
-        image = np.flipud(image)
+        # corr = np.corrcoef(x_vals, y_vals)[0, 1]
+        # covariances.append(corr)
+        # cov_phi = np.arccos(corr) / 2
+        # cov_phis.append(cov_phi)
+
+        # image = np.zeros((num_points, num_points))
+        # for point in points:
+        #     gaussian_lambda = lambda loc_x, loc_y: np.exp(
+        #         -(
+        #             ((loc_x - point[0]) ** 2)
+        #             * np.sqrt(num_atoms)
+        #             / (2 * (loc_x * (1 - loc_x))) ** 2
+        #         )
+        #         - (
+        #             ((loc_y - point[1]) ** 2)
+        #             * np.sqrt(num_atoms)
+        #             / (2 * (loc_y * (1 - loc_y))) ** 2
+        #         )
+        #     )
+        #     gaussian_matrix = [
+        #         [gaussian_lambda(x_loc, y_loc) for x_loc in x_locs]
+        #         for y_loc in y_locs
+        #     ]
+        #     gaussian_matrix = np.array(gaussian_matrix)
+        #     image += gaussian_matrix
+        # image = np.flipud(image)
         # fig, axes_pack = plt.subplots(1, 2)
         # ax0, ax1 = axes_pack
         # ax0.imshow(image)
@@ -291,16 +322,36 @@ def main(path):
         # costs = [image_cost((phi,), image) for phi in phi_lin]
         # plt.plot(phi_lin, costs)
         # plt.show(block=True)
+        bounds = (0, np.pi / 2)
+        best_cost = None
+        while True:
+            opti_phi = brute(
+                # image_cost,
+                corr_cost,
+                (bounds,),
+                Ns=20,
+                # args=(image,),
+                args=(points,),
+                finish=None,
+                workers=-1,  # Multiprocessing: -1 means use as many cores as available
+            )
+            new_best_cost = corr_cost(opti_phi, points)
 
-        res = brute(
-            image_cost,
-            ((0, np.pi / 2),),
-            Ns=100,
-            args=(image,),
-            finish=None,
-            workers=-1,  # Multiprocessing: -1 means use as many cores as available
-        )
-        opti_phi = res
+            # threshold = 0.0001 * best_cost
+            if best_cost is None:
+                best_cost = new_best_cost
+            else:
+                threshold = 0.001 * abs(best_cost)
+                if best_cost - new_best_cost < threshold:
+                    break
+                best_cost = new_best_cost
+
+            bounds_span = bounds[1] - bounds[0]
+            bounds = (
+                opti_phi - 0.1 * bounds_span,
+                opti_phi + 0.1 * bounds_span,
+            )
+
         # Remove degeneracies
         opti_phi = opti_phi % np.pi
         if opti_phi > np.pi / 2:
@@ -317,15 +368,15 @@ def main(path):
         # y_vals = y_vals[0]
         # kpl.plot_line(ax1, x_vals, y_vals)
         # plt.show(block=True)
-        continue
+        # continue
 
         if do_plot:
             fig, ax = plt.subplots()
-            for test_phi in [0.0, 0.03]:
+            for test_phi in [opti_phi]:
                 # Plot the data points
                 for point in points:
                     color = KplColors.BLUE.value
-                    kpl.plot_data(ax, *point, color=color)
+                    kpl.plot_points(ax, *point, color=color)
                 # Plot the fit
                 ellipse_lambda = lambda theta: ellipse_point(theta, test_phi)
                 x_vals, y_vals = zip(ellipse_lambda(theta_linspace))
@@ -333,8 +384,11 @@ def main(path):
                 y_vals = y_vals[0]
                 kpl.plot_line(ax, x_vals, y_vals)
                 kpl.tight_layout(fig)
-                cost = ellipse_cost(test_phi, points, True)
+                cost = corr_cost(test_phi, points)
+                # cost = ellipse_cost(test_phi, points, True)
                 print(f"Phi: {round(test_phi, 3)}; cost: {round(cost, 6)}")
+            plt.show(block=True)
+        continue
 
         # Get the costs
         # test_phis = [true_phi]
@@ -377,7 +431,7 @@ def main(path):
     # print("RMS phase errors for algorithm, least squares, neural net: ")
     print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
-    rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
+    rms_phi_errors = np.sqrt(np.mean(phi_errors**2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
 
 
@@ -390,11 +444,11 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "ellipse_data"
 
-    # main(path)
+    main(path)
 
-    # plt.show(block=True)
+    plt.show(block=True)
 
-    # sys.exit()
+    sys.exit()
 
     ellipses = import_ellipses(path)
 
@@ -406,12 +460,14 @@ if __name__ == "__main__":
     nn_errs = [-0.014066, 0.013953, -0.172563, 0.013603, 0.01627, -0.023009, -0.085988, -0.039819, -0.007913, 0.018008, -0.004063, -0.00584, -0.188581, -0.15544, 0.03117, 0.014923, -0.050193, -0.022615, -0.002615, -0.021856, -0.001479, -0.020141, -0.031364, -0.060448, -0.039629, -0.105871, 0.008865, 0.003506, 0.081942, 0.002916, 0.022175, -0.034657, 0.026548, 0.004461, -0.025558, -0.004031, 0.024522, 0.016392, -0.006209, 0.034737, 0.022379, 0.011969, -0.021362, -0.026672, 0.02229, -0.016773, -0.032711, 0.008744, -0.224467, -0.028047, -0.032582, 0.011764, 0.01255, -0.008026, 0.024754, 0.039537, 0.015747, 0.005508, 0.063291, -0.020051, 0.018704, -0.006485, -0.12445, -0.020867, -0.088132, -0.142866, 0.064274, -0.040068, -0.115205, 0.069389, -0.097154, -0.090545, 0.006695, -0.011963, 0.011854, -0.003998, 0.018181, -0.140684, -0.00384, -0.001536, -0.036581, -0.009636, -0.003184, -0.030662, 0.019089, -0.049583, -0.010491, -0.099624, -0.001683, -0.015948, -0.029186, -0.056644, 0.00774, 0.027986, 0.015959, -0.106259, -0.024237, -0.018905, -0.053612, 0.035453]
     corr_errs = [0.025123958742006236, -0.014869564576668992, -0.034285634271992826, 0.0012830802773810546, -0.011119612184689376, 0.01341739247644605, -0.039752726230330104, -0.0013671677486478684, -0.00746382736564577, -0.00484106136879453, 0.02832041028889154, -0.06375076231478857, -0.08557881382382082, -0.06117408602601393, 0.1120558998725526, 0.06845208311342321, -0.061114972164303616, 0.04973095143537398, 0.010578632913241959, -0.06497858533377188, -0.004782830294254525, -0.01563794100660186, -0.04733573419323678, -0.06258971127051971, -0.03131546645306493, -0.006963848250139737, 0.003424439527336176, 0.01171670142630818, 0.05762413521338994, -0.013187150629633937, 0.0037907747218515198, 0.033423931537272966, 0.030941368697900984, 0.005685296955907304, -0.03841905964313419, 0.022388038445002374, 0.003801580858107223, 0.02917019248669933, -0.027185271911346343, 0.055429510718068675, 0.005300080256147366, 0.014183004126155474, -0.004936784005852318, -0.02713496477876043, 0.017314548074129466, -0.035081139275089074, 0.005924533470652138, 0.02713890015707951, -0.15280740659650327, 0.006325651359583961, 0.03525771032806557, 0.051819752692171095, 0.07176171696645806, 0.04307597825284659, 0.016657393723439717, 0.07239620589293683, -0.021115135908077898, -0.009232759241348365, 0.07923182688724739, -0.01514975969636563, 0.02159736114663291, 0.018385914865301667, -0.1192219291627184, 0.07993637695121558, -0.09346198830345509, -0.037918606028478186, 0.0961599822942596, 0.0053951292663565464, -0.057666178669276646, 0.09355654689332371, 0.04108339525029803, -0.03916218195323701, -0.020798369812875306, -0.0020074630047057784, 0.005111936961794239, -0.017590898072012917, 0.009416729514774236, -0.15942550527794874, 0.11139493469343775, 0.00532015339125827, -0.021138001272778872, 0.027444357156846233, 0.0197185305049686, 0.032679176715255, -0.017356657103021478, 0.004855450414589346, -0.035271105091023436, -0.11342516109354794, -0.036995524516857226, -0.01267403781053078, -0.04868194689561256, -0.030833601058370408, 0.027836465226693613, 0.0055433895091344665, 0.029923348715277943, 0.0018076366414709888, -0.006199321767995425, 0.058419539019826994, -0.09275353655292218, 0.0709073062290646]
     image_errs = [0.0071748023003264105, 0.06726295767556012, 0.0017847463537432606, -0.045689813547463626, -0.041794497031525435, -0.10461077449878407, 0.005590792136189071, -0.021348543830269073, 0.11776812648480739, -0.01691172417169623, 0.0008413352946567976, -0.03359153630476425, -0.008275275585405306, 0.0013714405133193885, -0.005126708543271463, 0.01981681729153273, -0.02398736382205735, -0.0041451274061689025, -0.03225698764465823, -0.02831111379847795, 0.1365809018091304, -0.12897466821489295, 0.034244323760272755, -0.020504968710820692, -0.005767326226283842, 0.017498091379794745, 0.07056661525587726, -0.15808812917458637, -0.0032148713557651476, 0.1509112835386428, 0.1431455447416019, -0.021945707564240524, 0.03815409716384277, -0.009555035860292105, 0.0025323862241084516, -0.0619877324312127, -0.01288471935453972, -0.021877072169955658, 0.11094427282961794, -0.00022568642744102974, 0.10160442994183772, 0.09426944598571874, -0.11464876537605329, -0.001980418086396263, -0.025779306900936882, -0.06684791154877906, 0.02647864218871998, -0.08552802400449953, 0.010350617606127988, -0.006540369505939614, 0.030625517370290956, 0.01419234015197457, 0.016378136857716385, 0.005467952075993154, -0.08939438255066649, 0.03419094685569046, 0.08072921760477758, 0.03605748892762595, 0.07396576319263559, -0.12754970274354893, 0.08517121085516566, -0.0879414236730781, -0.018526968146884426, 0.014699911236986996, 0.0029363542801617015, -0.03475487584566883, 0.034592352290159445, -0.04472282929309501, -0.00996065731072382, -0.011109709565560122, 0.014627689998938043, 0.009424742494993033, 0.0393571178719232, -0.17423711394258598, 0.10609868082227236, -0.14839718728402396, 0.08089574410407985, 0.004280831027939858, 0.024892326512852447, -0.14069671161336414, 0.005757102604354358, -0.02688032250661787, -0.027187046455985645, 0.007784251976486911, 0.07834456656937094, -0.0073283703372989395, -0.08674475235347415, 0.0027881500591995234, -0.022547985394327175, 0.03401220921697434, 0.0266631315894863, -0.0011263413437027636, -0.05380255614412549, 0.005755857773659723, -0.01184717792858247, 0.0016947685955887026, 0.013709962146361665, 0.023204296002524827, 0.002196747186773873, 0.10518906600799349]
+    corr2_errs = [0.0071748023003264105, 0.06726295767556012, 0.0017847463537432606, -0.029823183983878815, -0.010061237904355813, -0.009410997117275194, 0.02145742169977405, -0.021348543830269073, -0.009164910023871098, 0.014821534955473392, 0.016707964858241553, -0.001858277177594625, 0.007591353978179449, -0.030361818613850233, 0.010739921020313292, -0.011916441835637004, -0.02398736382205735, -0.02001175696975377, -0.0005237285174886086, -0.012444484234893083, -0.022085393826717592, -0.0020416317062144362, 0.018377694196688, -0.0046383391472358815, -0.005767326226283842, 0.017498091379794745, 0.022966726565122775, -0.015288463102323041, -0.0032148713557651476, -0.007755012097205194, 0.016212508232923417, -0.006079078000655658, 0.022287467600258015, -0.009555035860292105, 0.0025323862241084516, -0.014387843740458255, 0.0029819102090450356, -0.021877072169955658, -0.00012213411547579156, -0.016092315991025785, 0.03813791168749847, 0.014936298167794737, -0.019448987994544392, -0.017847047649981018, -0.009912677337352016, -0.0192480228580246, -0.021121246502034507, -0.006194876186575465, 0.010350617606127988, -0.006540369505939614, -0.0011077417568785553, -0.0016742894116101859, 0.0005115072941316301, 0.005467952075993154, -0.010061234732742425, 0.00245768772852073, 0.08072921760477758, 0.03605748892762595, 0.010499244938296348, -0.03234992536204004, 0.03757132216441117, -0.00860827585515403, -0.002660338583299615, 0.014699911236986996, 0.0029363542801617015, -0.018888246282083965, 0.01872572272657469, 0.0028770593976594205, 0.005905972252861047, -0.011109709565560122, -0.01710556912823158, 0.0252913720585779, 0.0393571178719232, 0.0002958112568469673, 0.04263216256793312, -0.005597521211760631, 0.08089574410407985, -0.011585798535644898, -0.0068409326143170635, -0.029630304668270435, -0.010109526959230397, -0.011013692943033004, -0.027187046455985645, 0.007784251976486911, 0.030744677878616677, -0.0073283703372989395, -0.023278234099134876, -0.013078479504385232, 0.009185273732842503, 0.018145579653389587, 0.010796502025901544, 0.014740288219882047, -0.006202667453371058, -0.010110771789925144, -0.01184717792858247, 0.0016947685955887026, -0.0021566674172230904, 0.00733766643893996, 0.002196747186773873, 0.2955886207710112]
     # fmt: on
     algo_errs = np.array(algo_errs)
     ls_errs = np.array(ls_errs)
     nn_errs = np.array(nn_errs)
     corr_errs = np.array(corr_errs)
     image_errs = np.array(image_errs)
+    corr2_errs = np.array(corr2_errs)
 
     # num_fails = 0
     # for ind in range(len(phi_errs)):
@@ -427,30 +483,34 @@ if __name__ == "__main__":
     colors = kpl.data_color_cycler
     kpl.plot_points(ax, true_phis, algo_errs, label="Algo", color=colors[0])
     kpl.plot_points(ax, true_phis, ls_errs, label="LS", color=colors[1])
-    kpl.plot_points(ax, true_phis, nn_errs, label="NN", color=colors[2])
-    kpl.plot_points(ax, true_phis, corr_errs, label="Corr", color=colors[3])
-    kpl.plot_points(ax, true_phis, image_errs, label="Img", color=colors[4])
+    # kpl.plot_points(ax, true_phis, nn_errs, label="NN", color=colors[2])
+    # kpl.plot_points(ax, true_phis, corr_errs, label="Corr", color=colors[3])
+    # kpl.plot_points(ax, true_phis, image_errs, label="Img", color=colors[4])
+    kpl.plot_points(ax, true_phis, corr2_errs, label="Corr", color=colors[5])
     ax.set_xlabel("True phase")
     ax.set_ylabel("Error")
     ax.legend()
     kpl.tight_layout(fig)
 
-    inds = []
-    for ind in range(len(true_phis)):
-        val = true_phis[ind]
-        thresh = 0.2
-        if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
-            inds.append(ind)
-    print(len(inds))
+    # inds = []
+    # for ind in range(len(true_phis)):
+    #     val = true_phis[ind]
+    #     thresh = 0.2
+    #     if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
+    #         inds.append(ind)
+    # print(len(inds))
+    inds = range(len(algo_errs))
     algo_rms = np.sqrt(np.mean(algo_errs[inds] ** 2))
     ls_rms = np.sqrt(np.mean(ls_errs[inds] ** 2))
     nn_rms = np.sqrt(np.mean(nn_errs[inds] ** 2))
     corr_rms = np.sqrt(np.mean(corr_errs[inds] ** 2))
     image_rms = np.sqrt(np.mean(image_errs[inds] ** 2))
+    corr2_rms = np.sqrt(np.mean(corr2_errs[inds] ** 2))
     print(f"Alorithm rms error: {round(algo_rms, 6)}")
     print(f"Least squares rms error: {round(ls_rms, 6)}")
     print(f"Neural net rms error: {round(nn_rms, 6)}")
     print(f"Correlation rms error: {round(corr_rms, 6)}")
     print(f"Image rms error: {round(image_rms, 6)}")
+    print(f"Correlation2 rms error: {round(corr2_rms, 6)}")
 
     plt.show(block=True)
