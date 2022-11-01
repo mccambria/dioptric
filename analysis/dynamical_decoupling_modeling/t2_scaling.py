@@ -18,8 +18,8 @@ import labrad
 def T2_scale(N, T2_0):
     return (N/2)**(2/3)*T2_0
     
-N = [4,8,16]
-T2=[191, 247, 295]
+N = [1, 4, 8]
+T2=[1, 20, 23]
  
 fig, ax = plt.subplots()   
 ax.plot(N, T2, 'bo', 

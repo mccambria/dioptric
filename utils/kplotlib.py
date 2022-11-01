@@ -202,7 +202,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
     # Defaults
     params = {
-        "linestyle": line_style,
+        "linestyle": "none",
         "marker": marker_style,
         "markersize": marker_sizes[size],
         "markeredgewidth": marker_edge_widths[size],
