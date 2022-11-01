@@ -479,11 +479,11 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "ellipse_data"
 
-    main(path)
+    # main(path)
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
-    sys.exit()
+    # sys.exit()
 
     ellipses = import_ellipses(path)
 
@@ -527,20 +527,21 @@ if __name__ == "__main__":
     # kpl.plot_points(ax, true_phis, corr_errs, label="Corr", color=colors[3])
     # kpl.plot_points(ax, true_phis, image_errs, label="Img", color=colors[4])
     # kpl.plot_points(ax, true_phis, corr2_errs, label="Corr", color=colors[5])
-    kpl.plot_points(ax, true_phis, ml_errs, label="ML", color=colors[5])
+    kpl.plot_points(ax, true_phis, ml_errs, label="ML", color=colors[6])
+    # kpl.plot_points(ax, true_phis, abs(ml_errs) - abs(algo_errs), label="ML_diff", color=colors[7])
     ax.set_xlabel("True phase")
     ax.set_ylabel("Error")
     ax.legend()
     kpl.tight_layout(fig)
 
-    inds = []
-    for ind in range(len(true_phis)):
-        val = true_phis[ind]
-        thresh = 0.5
-        if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
-            inds.append(ind)
-    print(len(inds))
-    # inds = range(len(algo_errs))
+    # inds = []
+    # for ind in range(len(true_phis)):
+    #     val = true_phis[ind]
+    #     thresh = 0.5
+    #     if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
+    #         inds.append(ind)
+    # print(len(inds))
+    inds = range(len(algo_errs))
     algo_rms = np.sqrt(np.mean(algo_errs[inds] ** 2))
     ls_rms = np.sqrt(np.mean(ls_errs[inds] ** 2))
     nn_rms = np.sqrt(np.mean(nn_errs[inds] ** 2))
