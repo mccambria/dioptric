@@ -253,8 +253,8 @@ def import_ellipses(path):
 
 def main(path):
 
-    ellipses = import_ellipses(path)
-    # ellipses = gen_ellipses()
+    # ellipses = import_ellipses(path)
+    ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
     phi_errors = []
     covariances = []
@@ -262,7 +262,7 @@ def main(path):
     true_phis = []
     image_phis = []
 
-    do_plot = False
+    do_plot = True
 
     # ellipses = ellipses[::10]
     # ellipses = [ellipses[-1]]
@@ -479,11 +479,11 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "ellipse_data"
 
-    # main(path)
+    main(path)
 
-    # plt.show(block=True)
+    plt.show(block=True)
 
-    # sys.exit()
+    sys.exit()
 
     ellipses = import_ellipses(path)
 
