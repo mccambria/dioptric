@@ -79,12 +79,16 @@ def corr_cost(phi, points):
     ellipse_samples = ellipse_point(theta_linspace, phi)
     ellipse_samples = np.column_stack(ellipse_samples)
 
-    integrand = 0
+    integrand = 1
     for point in points:
+        point_prob = 0
         for ellipse_sample in ellipse_samples:
-            integrand += corr_gaussian(point, ellipse_sample)
+            point_theta_prob = corr_gaussian(point, ellipse_sample)
+            point_prob += point_theta_prob
+        integrand *= point_prob
 
-    cost = integrand / (len(ellipse_samples) * len(points))
+    # cost = integrand / (len(ellipse_samples) * len(points))
+    cost = integrand
     cost = 1 - cost  # Best should be minimum
 
     return cost
@@ -267,6 +271,7 @@ def main(path):
     y_locs = np.linspace(0, 1, num_points)
     for ind in range(len(ellipses)):
 
+        print(f"Ellipse index: {ind}")
         ellipse = ellipses[ind]
         phi_errors_sub = []
         # for ellipse in ellipses[0]:
@@ -316,41 +321,71 @@ def main(path):
         # thresh = 0.1
         # if thresh < true_phi < (np.pi / 2) - thresh:
         #     continue
-        print(f"Ellipse index: {ind}")
 
         # phi_lin = np.linspace(0, np.pi / 2, 50)
-        # costs = [image_cost((phi,), image) for phi in phi_lin]
+        # costs = [corr_cost((phi,), points) for phi in phi_lin]
         # plt.plot(phi_lin, costs)
         # plt.show(block=True)
+
         bounds = (0, np.pi / 2)
-        best_cost = None
-        while True:
-            opti_phi = brute(
-                # image_cost,
-                corr_cost,
-                (bounds,),
-                Ns=20,
-                # args=(image,),
-                args=(points,),
-                finish=None,
-                workers=-1,  # Multiprocessing: -1 means use as many cores as available
-            )
-            new_best_cost = corr_cost(opti_phi, points)
+        opti_phi = brute(
+            # image_cost,
+            corr_cost,
+            (bounds,),
+            Ns=100,
+            # args=(image,),
+            args=(points,),
+            finish=None,
+            # finish=minimize,
+            workers=-1,  # Multiprocessing: -1 means use as many cores as available
+        )
+        # best_cost = None
+        # while True:
+        #     opti_phi = brute(
+        #         # image_cost,
+        #         corr_cost,
+        #         (bounds,),
+        #         Ns=20,
+        #         # args=(image,),
+        #         args=(points,),
+        #         finish=minimize,
+        #         workers=-1,  # Multiprocessing: -1 means use as many cores as available
+        #     )
+        #     new_best_cost = corr_cost(opti_phi, points)
 
-            # threshold = 0.0001 * best_cost
-            if best_cost is None:
-                best_cost = new_best_cost
-            else:
-                threshold = 0.001 * abs(best_cost)
-                if best_cost - new_best_cost < threshold:
-                    break
-                best_cost = new_best_cost
+        #     if best_cost is None:
+        #         best_cost = new_best_cost
+        #     else:
+        #         # threshold = 0.0001 * best_cost
+        #         threshold = 0.001 * abs(best_cost)
+        #         if best_cost - new_best_cost < threshold:
+        #             break
+        #         best_cost = new_best_cost
 
-            bounds_span = bounds[1] - bounds[0]
-            bounds = (
-                opti_phi - 0.1 * bounds_span,
-                opti_phi + 0.1 * bounds_span,
-            )
+        #     bounds_span = bounds[1] - bounds[0]
+        #     bounds = (
+        #         opti_phi - 0.1 * bounds_span,
+        #         opti_phi + 0.1 * bounds_span,
+        #     )
+
+        # img = np.zeros((num_points, num_points))
+        # ellipse_samples = ellipse_point(theta_linspace, opti_phi)
+        # ellipse_samples_column = np.column_stack(ellipse_samples)
+        # for ellipse_sample in ellipse_samples_column:
+        #     gaussian_matrix = [
+        #         [
+        #             corr_gaussian((x_loc, y_loc), ellipse_sample)
+        #             for x_loc in x_locs
+        #         ]
+        #         for y_loc in y_locs
+        #     ]
+        #     img += gaussian_matrix
+
+        # plt.imshow(img)
+        # for point in points:
+        #     plt.scatter(100 * point[0], 100 * point[1])
+        # plt.show(block=True)
+        # continue
 
         # Remove degeneracies
         opti_phi = opti_phi % np.pi
@@ -468,6 +503,7 @@ if __name__ == "__main__":
     corr_errs = np.array(corr_errs)
     image_errs = np.array(image_errs)
     corr2_errs = np.array(corr2_errs)
+    corr2_errs *= -1
 
     # num_fails = 0
     # for ind in range(len(phi_errs)):
@@ -492,14 +528,14 @@ if __name__ == "__main__":
     ax.legend()
     kpl.tight_layout(fig)
 
-    # inds = []
-    # for ind in range(len(true_phis)):
-    #     val = true_phis[ind]
-    #     thresh = 0.2
-    #     if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
-    #         inds.append(ind)
-    # print(len(inds))
-    inds = range(len(algo_errs))
+    inds = []
+    for ind in range(len(true_phis)):
+        val = true_phis[ind]
+        thresh = 0.2
+        if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
+            inds.append(ind)
+    print(len(inds))
+    # inds = range(len(algo_errs) - 1)
     algo_rms = np.sqrt(np.mean(algo_errs[inds] ** 2))
     ls_rms = np.sqrt(np.mean(ls_errs[inds] ** 2))
     nn_rms = np.sqrt(np.mean(nn_errs[inds] ** 2))
