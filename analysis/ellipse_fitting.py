@@ -81,10 +81,10 @@ def corr_cost(phi, points):
 
     integrand = 1
     for point in points:
-        point_prob = 0
-        for ellipse_sample in ellipse_samples:
-            point_theta_prob = corr_gaussian(point, ellipse_sample)
-            point_prob += point_theta_prob
+        point_theta_probs = [
+            corr_gaussian(point, el) for el in ellipse_samples
+        ]
+        point_prob = np.sum(point_theta_probs) / num_ellipse_samples
         integrand *= point_prob
 
     # cost = integrand / (len(ellipse_samples) * len(points))
@@ -479,11 +479,11 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "ellipse_data"
 
-    main(path)
+    # main(path)
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
-    sys.exit()
+    # sys.exit()
 
     ellipses = import_ellipses(path)
 
@@ -505,6 +505,8 @@ if __name__ == "__main__":
     image_errs = np.array(image_errs)
     corr2_errs = np.array(corr2_errs)
     corr2_errs *= -1
+    ml_errs = np.array(ml_errs)
+    ml_errs *= -1
 
     # num_fails = 0
     # for ind in range(len(phi_errs)):
@@ -519,11 +521,12 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     colors = kpl.data_color_cycler
     kpl.plot_points(ax, true_phis, algo_errs, label="Algo", color=colors[0])
-    kpl.plot_points(ax, true_phis, ls_errs, label="LS", color=colors[1])
+    # kpl.plot_points(ax, true_phis, ls_errs, label="LS", color=colors[1])
     # kpl.plot_points(ax, true_phis, nn_errs, label="NN", color=colors[2])
     # kpl.plot_points(ax, true_phis, corr_errs, label="Corr", color=colors[3])
     # kpl.plot_points(ax, true_phis, image_errs, label="Img", color=colors[4])
-    kpl.plot_points(ax, true_phis, corr2_errs, label="Corr", color=colors[5])
+    # kpl.plot_points(ax, true_phis, corr2_errs, label="Corr", color=colors[5])
+    kpl.plot_points(ax, true_phis, ml_errs, label="ML", color=colors[5])
     ax.set_xlabel("True phase")
     ax.set_ylabel("Error")
     ax.legend()
@@ -532,22 +535,24 @@ if __name__ == "__main__":
     inds = []
     for ind in range(len(true_phis)):
         val = true_phis[ind]
-        thresh = 0.2
+        thresh = 0.5
         if (np.pi / 4) - thresh < val < (np.pi / 4) + thresh:
             inds.append(ind)
     print(len(inds))
-    # inds = range(len(algo_errs) - 1)
+    # inds = range(len(algo_errs))
     algo_rms = np.sqrt(np.mean(algo_errs[inds] ** 2))
     ls_rms = np.sqrt(np.mean(ls_errs[inds] ** 2))
     nn_rms = np.sqrt(np.mean(nn_errs[inds] ** 2))
     corr_rms = np.sqrt(np.mean(corr_errs[inds] ** 2))
     image_rms = np.sqrt(np.mean(image_errs[inds] ** 2))
     corr2_rms = np.sqrt(np.mean(corr2_errs[inds] ** 2))
+    ml_rms = np.sqrt(np.mean(ml_errs[inds] ** 2))
     print(f"Alorithm rms error: {round(algo_rms, 6)}")
     print(f"Least squares rms error: {round(ls_rms, 6)}")
     print(f"Neural net rms error: {round(nn_rms, 6)}")
     print(f"Correlation rms error: {round(corr_rms, 6)}")
     print(f"Image rms error: {round(image_rms, 6)}")
     print(f"Correlation2 rms error: {round(corr2_rms, 6)}")
+    print(f"ML rms error: {round(ml_rms, 6)}")
 
     plt.show(block=True)
