@@ -76,6 +76,7 @@ def image_cost(phi, image):
 def corr_cost(phi, points):
     """ """
 
+    num_points = len(points)
     ellipse_samples = ellipse_point(theta_linspace, phi)
     ellipse_samples = np.column_stack(ellipse_samples)
 
@@ -85,7 +86,7 @@ def corr_cost(phi, points):
             corr_gaussian(point, el) for el in ellipse_samples
         ]
         point_prob = np.sum(point_theta_probs) / num_ellipse_samples
-        integrand *= point_prob
+        integrand *= np.power(point_prob, 1 / num_points)
 
     # cost = integrand / (len(ellipse_samples) * len(points))
     cost = integrand
@@ -474,7 +475,7 @@ def main(path):
     # print("RMS phase errors for algorithm, least squares, neural net: ")
     print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
-    rms_phi_errors = np.sqrt(np.mean(phi_errors**2, axis=0))
+    rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
 
 
