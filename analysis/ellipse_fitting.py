@@ -66,10 +66,10 @@ def ellipse_point(theta, phi):
 
 def gen_ellipses():
     # phis = [0, np.pi / 2, np.pi / 4]
-    phis = [0.01] * 100
-    # phis = np.linspace(0, np.pi / 2, 100)
+    # phis = [0.01] * 100
+    phis = np.linspace(0, np.pi / 2, 1000)
     # phis = np.linspace(np.pi / 4 - 0.1, np.pi / 4 + 0.1, 100)
-    num_points = 10000
+    num_points = 30
     ellipses = []
     for phi in phis:
         theta_vals = 2 * np.pi * np.random.random(size=num_points)
@@ -250,8 +250,8 @@ def main_sub(ellipse, do_plot=False):
 
 def main(path):
 
-    ellipses = import_ellipses(path)
-    # ellipses = gen_ellipses()
+    # ellipses = import_ellipses(path)
+    ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
     phi_errors = []
     true_phis = []
@@ -306,7 +306,7 @@ def main(path):
     # print("RMS phase errors for algorithm, least squares, neural net: ")
     print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
-    rms_phi_errors = np.sqrt(np.mean(phi_errors**2, axis=0))
+    rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
 
 
