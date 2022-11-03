@@ -23,6 +23,7 @@ import csv
 import sys
 import random
 from pathos.multiprocessing import ProcessingPool as Pool
+import ellipse_fitting_api as api
 
 cent = 0.5
 amp = 0.65 / 2
@@ -50,31 +51,14 @@ def corr_gaussian(data_point, ellipse_sample):
 
 
 def corr_cost(phi, points):
-    """ """
-
-    num_points = len(points)
-    ellipse_samples = ellipse_point(theta_linspace, phi)
-    ellipse_samples = np.column_stack(ellipse_samples)
-
-    log_likelihood = 0
-    # likelihood = 1
-    for point in points:
-        point_theta_probs = [
-            corr_gaussian(point, el) for el in ellipse_samples
-        ]
-        point_prob = np.sum(point_theta_probs) / num_ellipse_samples
-        if point_prob == 1e-10:
-            log_likelihood += -10
-        else:
-            log_likelihood += np.log10(point_prob)
-        # likelihood *= point_prob
-        # likelihood *= np.power(point_prob, 1 / num_points)
-
-    # cost = integrand / (len(ellipse_samples) * len(points))
-    cost = log_likelihood
-    # cost = likelihood
-    cost = -cost  # Best should be minimum
-
+    ellipse_samples = ellipse_point(theta_linspace, phi, amp)
+    all_probs = [
+        corr_gaussian(point, ellipse_samples) for point in points
+    ]
+    point_probs = [np.sum(el) / num_ellipse_samples for el in all_probs]
+    point_probs = [-10 if (el < 1e-10) else np.log10(el) for el in point_probs]
+    log_likelihood = np.sum(point_probs)
+    cost = -log_likelihood  # Best should be minimum
     return cost
 
 
@@ -268,8 +252,8 @@ def main_sub(ellipse, do_plot=False):
 
 def main(path):
 
-    # ellipses = import_ellipses(path)
-    ellipses = gen_ellipses()
+    ellipses = import_ellipses(path)
+    # ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
     phi_errors = []
     true_phis = []
@@ -278,7 +262,7 @@ def main(path):
     # ellipses = [ellipses[48], ellipses[77]]
     # ellipses = [ellipses[-1]]
 
-    parallel = True
+    parallel = False
     do_plot = False
 
     for ind in range(len(ellipses)):
@@ -289,7 +273,8 @@ def main(path):
         if not parallel:
             print(f"Ellipse index: {ind}")
             ellipse = ellipses[ind]
-            opti_phi = main_sub(ellipse, do_plot=do_plot)
+            # opti_phi = main_sub(ellipse, do_plot=do_plot)
+            opti_phi = api.main(ellipse[1:], amp * 2, num_atoms)
             algo_phis.append(opti_phi)
 
     if parallel:
@@ -323,7 +308,7 @@ def main(path):
     # print("RMS phase errors for algorithm, least squares, neural net: ")
     print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
-    rms_phi_errors = np.sqrt(np.mean(phi_errors**2, axis=0))
+    rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
 
 
