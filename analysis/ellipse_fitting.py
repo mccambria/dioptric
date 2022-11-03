@@ -51,10 +51,8 @@ def corr_gaussian(data_point, ellipse_sample):
 
 
 def corr_cost(phi, points):
-    ellipse_samples = ellipse_point(theta_linspace, phi, amp)
-    all_probs = [
-        corr_gaussian(point, ellipse_samples) for point in points
-    ]
+    ellipse_samples = ellipse_point(theta_linspace, phi)
+    all_probs = [corr_gaussian(point, ellipse_samples) for point in points]
     point_probs = [np.sum(el) / num_ellipse_samples for el in all_probs]
     point_probs = [-10 if (el < 1e-10) else np.log10(el) for el in point_probs]
     log_likelihood = np.sum(point_probs)
@@ -262,7 +260,7 @@ def main(path):
     # ellipses = [ellipses[48], ellipses[77]]
     # ellipses = [ellipses[-1]]
 
-    parallel = False
+    parallel = True
     do_plot = False
 
     for ind in range(len(ellipses)):
@@ -308,7 +306,7 @@ def main(path):
     # print("RMS phase errors for algorithm, least squares, neural net: ")
     print("RMS phase errors for algorithm")
     phi_errors = np.array(phi_errors)
-    rms_phi_errors = np.sqrt(np.mean(phi_errors ** 2, axis=0))
+    rms_phi_errors = np.sqrt(np.mean(phi_errors**2, axis=0))
     print([round(el, 6) for el in rms_phi_errors])
 
 
