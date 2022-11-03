@@ -87,7 +87,7 @@ def gen_ellipses():
     phis = [0.01] * 100
     # phis = np.linspace(0, np.pi / 2, 100)
     # phis = np.linspace(np.pi / 4 - 0.1, np.pi / 4 + 0.1, 100)
-    num_points = 1000
+    num_points = 10000
     ellipses = []
     for phi in phis:
         theta_vals = 2 * np.pi * np.random.random(size=num_points)
