@@ -21,8 +21,8 @@ from colorutils import Color
 # region Constants
 # These standard values are intended for single-column figures
 
-marker_sizes = {"normal": 7, "small": 6}
-line_widths = {"normal": 1.5, "small": 1.25}
+marker_sizes = {"normal": 7, "small": 6, "tiny": 4}
+line_widths = {"normal": 1.5, "small": 1.25, "tiny": 1.0}
 marker_edge_widths = line_widths.copy()
 font_sizes = {"normal": 17, "small": 13}
 figsize = [6.5, 5.0]
@@ -202,7 +202,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
     # Defaults
     params = {
-        "linestyle": line_style,
+        "linestyle": "none",
         "marker": marker_style,
         "markersize": marker_sizes[size],
         "markeredgewidth": marker_edge_widths[size],
