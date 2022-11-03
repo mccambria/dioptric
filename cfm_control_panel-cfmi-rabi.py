@@ -305,7 +305,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 75
     num_reps = int(1e4)
-    num_runs = 10
+    num_runs = 5
 
     composite = False
 
@@ -367,7 +367,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -431,10 +431,10 @@ def do_lifetime(nv_sig, apd_indices):
 
 def do_ramsey(nv_sig, opti_nv_sig, apd_indices, state = States.HIGH):
 
-    detuning = 6 # MHz
+    detuning = 0 # MHz
     
     precession_time_range = [0, 2 * 10 ** 3]
-    num_steps = 201
+    num_steps = 101
     
     # code to collect data at the Nyquist frequency
     # step_size = 75 #ns
@@ -445,7 +445,7 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices, state = States.HIGH):
 
 
     num_reps = int( 10 ** 4)
-    num_runs = int(10)
+    num_runs = int(40)
     
     ramsey.main(
         nv_sig,
@@ -456,7 +456,8 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices, state = States.HIGH):
         num_reps,
         num_runs,
         state,
-        opti_nv_sig = opti_nv_sig
+        opti_nv_sig = opti_nv_sig,
+        do_fm = True
     )
 
 
@@ -673,12 +674,12 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 20e6
-    max_tau_gamma = 20e6
+    max_tau_omega = 10e6# 20e6
+    max_tau_gamma = 10e6
     num_steps_omega = 15#31
     num_steps_gamma = 15
-    num_reps = 2000
-    num_runs = 20
+    num_reps = 2e4
+    num_runs = 10
     
     if False:
      t1_exp_array = numpy.array(
@@ -700,13 +701,14 @@ def do_relaxation(nv_sig, apd_indices, ):
              ])
     if True:
      t1_exp_array = numpy.array(
-        [ [
-                [States.ZERO, States.ZERO],
-                [min_tau, max_tau_omega],
-                num_steps_omega,
-                num_reps,
-                num_runs,
-            ],
+        [ 
+            #[
+            #    [States.ZERO, States.ZERO],
+            #    [min_tau, max_tau_omega],
+           #     num_steps_omega,
+            #    num_reps,
+            #    num_runs,
+           # ],
         [
                 [States.ZERO, States.HIGH],
                 [min_tau, max_tau_omega],
@@ -1026,6 +1028,7 @@ if __name__ == "__main__":
         "collection_filter": "715_sp+630_lp", # NV band only
         # "magnet_angle": 90,
         "uwave_power_LOW": 15,  
+        # "uwave_power_HIGH": 9.55,#10,
         "uwave_power_HIGH": 10,
     } 
 
@@ -1058,8 +1061,9 @@ if __name__ == "__main__":
     nv_sig_1['magnet_angle'] = 90
     nv_sig_1["resonance_LOW"]= 2.7728
     nv_sig_1["rabi_LOW"]=118.7
-    nv_sig_1["resonance_HIGH"]= 2.9796
+    nv_sig_1["resonance_HIGH"]= 2.9797
     nv_sig_1["rabi_HIGH"]=105.4
+    # nv_sig_1["rabi_HIGH"]=109.7
     
     
     nv_sig_2 = copy.deepcopy(sig_base) # haven't looked at esr yet
@@ -1068,9 +1072,9 @@ if __name__ == "__main__":
     nv_sig_2["name"] = "{}-nv2_2022_10_18".format(sample_name,)
     nv_sig_2["expected_count_rate"] =None
     nv_sig_2['magnet_angle'] = 90
-    nv_sig_2["resonance_LOW"]= 2.826#2.7560
+    nv_sig_2["resonance_LOW"]= 2.826
     nv_sig_2["rabi_LOW"]=210.1
-    nv_sig_2["resonance_HIGH"]= 2.936#3.0055
+    nv_sig_2["resonance_HIGH"]= 2.936
     nv_sig_2["rabi_HIGH"]=160
     
     
@@ -1121,10 +1125,15 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
         
-
-        # do_ramsey(nv_sig, nv_sig,apd_indices)
+        # with labrad.connect() as cxn:
+        #     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
+            # sig_gen_cxn.set_freq(uwave_freq_detuned)
+            # sig_gen_cxn.set_amp(uwave_power)
+            # sig_gen_cxn.load_fsk(4)
+            
+        do_ramsey(nv_sig, nv_sig,apd_indices)
         
-        do_spin_echo(nv_sig, apd_indices)
+        # do_spin_echo(nv_sig, apd_indices)
 
         # do_relaxation(nv_sig, apd_indices)  # gamma and omega
                 
@@ -1136,11 +1145,13 @@ if __name__ == "__main__":
         # do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, T_min, T_max)
         
         
-        pi_pulse_reps = 1  
-        step_size = 200 #us
-        T_min = 0 #us
-        T_max = 5000 #us      
-        do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size, T_min, T_max)
+        # pi_pulse_reps = 4  
+        # step_size = 200 #us
+        # T_min = 0 #us
+        # T_max = 5000 #us      
+        # for n in [4,8]:
+        #     do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps )
         

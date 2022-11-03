@@ -145,6 +145,16 @@ class ArbitraryWaveformGenerator(LabradServer):
         self.load_iq(phases, amp)
         
         
+    # @setting(14)
+    # def load_fsk_test(self, c):
+
+    #     # phases = [pi/2] 
+    #     phases = [0] 
+        
+    #     phases = phases*4
+    #     amp = self.iq_comp_amp
+    #     self.load_iq(phases, amp)
+    
     
     def load_iq(self, phases, amp):
         """

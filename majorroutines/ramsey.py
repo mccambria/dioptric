@@ -295,7 +295,8 @@ def main(
     num_reps,
     num_runs,
     state=States.HIGH,
-    opti_nv_sig = None
+    opti_nv_sig = None,
+    do_fm = False
 ):
 
     with labrad.connect() as cxn:
@@ -309,7 +310,8 @@ def main(
             num_reps,
             num_runs,
             state,
-            opti_nv_sig
+            opti_nv_sig,
+            do_fm
         )
         return angle
 
@@ -324,7 +326,8 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state=States.HIGH,
-    opti_nv_sig = None
+    opti_nv_sig = None,
+    do_fm  =False
 ):
 
     tool_belt.reset_cfm(cxn)
@@ -348,7 +351,13 @@ def main_with_cxn(
     uwave_pi_pulse = 0
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
-    seq_file_name = "spin_echo.py"
+    if do_fm == False:
+        seq_file_name = "spin_echo.py"
+        deviation = 0
+    else:
+        seq_file_name = "spin_echo_fm_test.py"
+        deviation = 6
+        
 
     # %% Create the array of relaxation times
 
@@ -419,8 +428,8 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    #    print(seq_args)
-    #    return
+    # print(seq_args)
+    # return
     #    print(seq_time)
 
     # %% Let the user know how long this will take
@@ -480,6 +489,10 @@ def main_with_cxn(
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq_detuned)
         sig_gen_cxn.set_amp(uwave_power)
+        if do_fm:
+            sig_gen_cxn.load_fm(deviation)
+        else: 
+            sig_gen_cxn.mod_off()
         sig_gen_cxn.uwave_on()
 
         # Set up the laser
@@ -605,6 +618,8 @@ def main_with_cxn(
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             'detuning': detuning,
             'detuning-units': 'MHz',
+            "do_fm": do_fm,
+            "deviation":deviation,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq_detuned,
@@ -683,6 +698,8 @@ def main_with_cxn(
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         'detuning': detuning,
         'detuning-units': 'MHz',
+        "do_fm": do_fm,
+        "deviation": deviation,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq_detuned,

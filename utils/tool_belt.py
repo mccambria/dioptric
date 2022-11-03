@@ -1128,6 +1128,10 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     )
 
 
+def t2_func(t, amplitude, offset, t2):
+    n = 3
+    return amplitude * np.exp(-(t/t2)**n) + offset
+
 def calc_snr(sig_count, ref_count):
     """
     Take a list of signal and reference counts, and take their average, then
