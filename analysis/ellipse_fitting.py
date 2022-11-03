@@ -250,8 +250,8 @@ def main_sub(ellipse, do_plot=False):
 
 def main(path):
 
-    ellipses = import_ellipses(path)
-    # ellipses = gen_ellipses()
+    # ellipses = import_ellipses(path)
+    ellipses = gen_ellipses()
     theta_linspace = np.linspace(0, 2 * np.pi, 100)
     phi_errors = []
     true_phis = []
