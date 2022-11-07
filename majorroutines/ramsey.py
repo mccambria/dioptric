@@ -162,11 +162,11 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     
     taus_us = numpy.array(taus)/1e3
     # Guess the other params for fitting
-    amp_1 = 0.2
+    amp_1 = 0.1
     amp_2 = amp_1
     amp_3 = amp_1
-    decay =40
-    offset = 1
+    decay =20
+    offset = 0.99
     
     # offset = 0.92774594 
     # amp_1 = -0.02093022  
@@ -177,7 +177,7 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     # freq_3 = 6.17611092
     
 
-    guess_params = (offset, decay, amp_1, FreqParams[0],
+    guess_params = (offset, decay, amp_1,FreqParams[0],
                         amp_2, FreqParams[1],
                         amp_3, FreqParams[2])
     
@@ -187,21 +187,21 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     # cosine_sum_fixed_amps = lambda t, offset, decay, freq_1, freq_2, freq_3:tool_belt.cosine_sum(t, offset, decay,  amp_1, freq_1, amp_2,  freq_2, amp_3, freq_3)
     
     
-    # guess_params_fixed_freq = (0.95, 0.3, 0.05,
-    #                     0.05, 
-    #                     0.05, )
-    # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    guess_params_fixed_freq = (0.99, -0.05,
+                        0.05, 
+                        0.01, )
+    cosine_sum_fixed_freq = lambda t, offset, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, 20, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
     
     ### Try the fit to a sum of three cosines
     
-    fit_func = tool_belt.cosine_sum
-    init_params = guess_params
+    # fit_func = tool_belt.cosine_sum
+    # init_params = guess_params
     
     # fit_func = cosine_sum_fixed_amps
     # init_params = guess_params_fixed_amps
     
-    # fit_func = cosine_sum_decay
-    # init_params = guess_params
+    fit_func = cosine_sum_fixed_freq
+    init_params = guess_params_fixed_freq
     
     try:
         popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
@@ -760,13 +760,18 @@ def main_with_cxn(
 if __name__ == "__main__":
 
 
-    folder = "pc_rabi/branch_master/ramsey/2022_10"
-    file = '2022_10_15-02_09_19-siena-nv1_2022_10_13'
+    folder = "pc_rabi/branch_master/ramsey/2022_11"
+    file = '2022_11_03-14_01_47-siena-nv1_2022_10_27'
+    file = '2022_11_03-14_42_21-siena-nv1_2022_10_27'
+    # folder = "pc_rabi/branch_master/ramsey/2022_10"
+    # file = '2022_10_13-16_45_10-siena-nv1_2022_10_13'
     
     
     # detuning = 0
     data = tool_belt.get_raw_data(file, folder)
-    detuning= data['detuning']
+    detune = data['detuning']
+    fm_deviation = data['deviation']
+    detuning = detune + fm_deviation
     norm_avg_sig = data['norm_avg_sig']
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
@@ -780,7 +785,7 @@ if __name__ == "__main__":
             num=num_steps,
         )
     # sig_counts = numpy.array(data['sig_counts'])
-    ref_counts = numpy.array(data['ref_counts'])
+    # ref_counts = numpy.array(data['ref_counts'])
     # replot(sig_counts, ref_counts, taus)
     # run_ind =20
     # avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
@@ -789,8 +794,8 @@ if __name__ == "__main__":
         
     fft_fig, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range,
                                          num_steps, detuning, do_plot = False)
-    # print(FreqParams)
-    # # FreqParams = [4.9, 6.83, 8.89]
+    print(FreqParams)
+    # FreqParams = [4.9, 6.83, 8.89]
     fig, params = fit_ramsey(norm_avg_sig,taus,  precession_time_range, 
                              FreqParams, do_plot = True)
     

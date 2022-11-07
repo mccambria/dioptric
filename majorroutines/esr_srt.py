@@ -23,7 +23,7 @@ import labrad
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+def main(nv_sig, apd_indices, freq_center, freq_range, deviation_high, deviation_low, 
          num_steps, num_reps, num_runs,
          readout_state = States.HIGH,
          initial_state = States.HIGH,
@@ -33,7 +33,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
    
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation_high, deviation_low, 
+        main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,  deviation_high, deviation_low, 
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
@@ -42,7 +42,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
 
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range, deviation_high, deviation_low, 
                      num_steps, num_reps, num_runs,
                      readout_state = States.HIGH,
                      initial_state = States.HIGH,
@@ -81,18 +81,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     readout = nv_sig['spin_readout_dur']
     readout_sec = readout / (10**9)
 
-    # Array of times to sweep through
-    # Must be ints since the pulse streamer only works with int64s
-    min_uwave_time = uwave_time_range[0]
-    max_uwave_time = uwave_time_range[1]
-    taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=num_steps, dtype=numpy.int32)
+    # Array of freqs to sweep through
+    # Calculate the frequencies we need to set
+    half_freq_range = freq_range / 2
+    freq_low = freq_center - half_freq_range
+    freq_high = freq_center + half_freq_range
+    freqs = numpy.linspace(freq_low, freq_high, num_steps)
 
     # Analyze the sequence
     num_reps = int(num_reps)
-    file_name = os.path.basename(__file__)
-    seq_args = [taus[0], polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
+    file_name = 'rabi_srt.py'
+    seq_args = [pi_pulse_high, polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, pi_pulse_high, 
                 apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
@@ -119,7 +119,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     tau_index_master_list = [[] for i in range(num_runs)]
 
     # Create a list of indices to step through the taus. This will be shuffled
-    tau_ind_list = list(range(0, num_steps))
+    freq_ind_list = list(range(0, num_steps))
 
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -158,38 +158,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-        # Set up the microwaves for the low and high states
-        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
-            cxn, States.LOW
-        )
-        low_sig_gen_cxn.set_freq(uwave_freq_low_detune)
-        low_sig_gen_cxn.set_amp(uwave_power_low)
-        low_sig_gen_cxn.uwave_on()
-
-        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
-            cxn, States.HIGH
-        )
-        high_sig_gen_cxn.set_freq(uwave_freq_high)
-        high_sig_gen_cxn.set_amp(uwave_power_high)
-        # Maybe check the name of the signal generator??
-        high_sig_gen_cxn.load_fm(deviation_high)
-        high_sig_gen_cxn.uwave_on()
         
 
-        # TEST for split resonance
-#        sig_gen_cxn = cxn.signal_generator_bnc835
-#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
-#        sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Shuffle the list of indices to use for stepping through the taus
-        shuffle(tau_ind_list)
+        shuffle(freq_ind_list)
 
 #        start_time = time.time()
-        for tau_ind in tau_ind_list:
+        for freq_ind in freq_ind_list:
 #        for tau_ind in range(len(taus)):
             # print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
@@ -197,23 +176,30 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                 break
 #            print(taus[tau_ind])
 
-            # 'Flip a coin' to determine which tau (long/shrt) is used first
-            rand_boolean = numpy.random.randint(0, high=2)
-
-            if rand_boolean == 1:
-                tau_ind_first = tau_ind
-                tau_ind_second = -tau_ind - 1
-            elif rand_boolean == 0:
-                tau_ind_first = -tau_ind - 1
-                tau_ind_second = tau_ind
-
-            # add the tau indexxes used to a list to save at the end
-            tau_index_master_list[run_ind].append(tau_ind_first)
-            tau_index_master_list[run_ind].append(tau_ind_second)
+            tau_index_master_list[run_ind].append(freq_ind)
             # Stream the sequence
             
-            seq_args = [taus[tau_ind_first], polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], 
+            
+            # Set up the microwaves for the low and high states
+            low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+                cxn, States.LOW
+            )
+            low_sig_gen_cxn.set_freq(uwave_freq_low_detune)
+            low_sig_gen_cxn.set_amp(uwave_power_low)
+            low_sig_gen_cxn.uwave_on()
+    
+            high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+                cxn, States.HIGH
+            )
+            high_sig_gen_cxn.set_freq(freqs[freq_ind])
+            high_sig_gen_cxn.set_amp(uwave_power_high)
+            # Maybe check the name of the signal generator??
+            high_sig_gen_cxn.load_fm(deviation_high)
+            high_sig_gen_cxn.uwave_on()
+            
+            
+            seq_args = [pi_pulse_high, polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, pi_pulse_high, 
                 apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
@@ -232,19 +218,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 
             
             count = sum(sample_counts[0::4])
-            sig_counts[run_ind, tau_ind_first] = count
+            sig_counts[run_ind, freq_ind] = count
             # print("First signal = " + str(count))
 
             count = sum(sample_counts[1::4])
-            ref_counts[run_ind, tau_ind_first] = count
+            ref_counts[run_ind, freq_ind] = count
             # print("First Reference = " + str(count))
 
-            count = sum(sample_counts[2::4])
-            sig_counts[run_ind, tau_ind_second] = count
-            # print("Second Signal = " + str(count))
+            # count = sum(sample_counts[2::4])
+            # sig_counts[run_ind, tau_ind_second] = count
+            # # print("Second Signal = " + str(count))
 
-            count = sum(sample_counts[3::4])
-            ref_counts[run_ind, tau_ind_second] = count
+            # count = sum(sample_counts[3::4])
+            # ref_counts[run_ind, tau_ind_second] = count
             # print("Second Reference = " + str(count))
 
 #            run_time = time.time()
@@ -265,16 +251,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 
         ax = axes_pack[0]
         ax.cla()
-        ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-        ax.plot(taus, avg_ref_counts, 'g-', label = 'reference')
+        ax.plot(freqs, avg_sig_counts, 'r-', label = 'signal')
+        ax.plot(freqs, avg_ref_counts, 'g-', label = 'reference')
 
-        ax.set_xlabel('rf time (ns)')
+        ax.set_xlabel('Microwave duration (ns)')
         ax.set_ylabel('Counts')
         ax.legend()
 
         ax = axes_pack[1]
         ax.cla()
-        ax.plot(taus , norm_avg_sig, 'b-')
+        ax.plot(freqs , norm_avg_sig, 'b-')
         ax.set_title('Normalized Signal With Varying Microwave Duration')
         ax.set_xlabel('Microwave duration (ns)')
         ax.set_ylabel('Normalized signal')
@@ -299,9 +285,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                     'deviation_low-units': 'MHz',
                     'deviation_high': deviation_high,
                     'deviation_high-units': 'MHz',
-                    'uwave_time_range': uwave_time_range,
-                    'uwave_time_range-units': 'ns',
-                    'taus': taus.tolist(),
+                    'freq_center': freq_center,
+                    'freq_range': freq_range,
+                    'freqs': freqs.tolist(),
                     'initial_state': initial_state.name,
                     'readout_state': readout_state.name,
                     'num_steps': num_steps,
@@ -331,17 +317,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 
     ax = axes_pack[0]
     ax.cla()
-    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
+    ax.plot(freqs, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(freqs, avg_ref_counts, 'g-', label = 'refernece')
 
     # ax.plot(tauArray, countsBackground, 'o-')
-    ax.set_xlabel('rf time (ns)')
+    ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Counts')
     ax.legend()
 
     ax = axes_pack[1]
     ax.cla()
-    ax.plot(taus , norm_avg_sig, 'b-')
+    ax.plot(freqs , norm_avg_sig, 'b-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Normalized signal')
@@ -383,7 +369,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
-                'taus': taus.tolist(),
+                'freq_center': freq_center,
+                'freq_range': freq_range,
+                'freqs': freqs.tolist(),
                 'tau_index_master_list':tau_index_master_list,
                 'opti_coords_list': opti_coords_list,
                 'opti_coords_list-units': 'V',

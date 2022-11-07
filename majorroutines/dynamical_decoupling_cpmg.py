@@ -122,6 +122,7 @@ def fit_t2_decay(data, do_plot = True):
 
     # Divide signal by reference to get normalized counts and st error
     norm_avg_sig = avg_sig_counts / avg_ref
+    # print(list(norm_avg_sig))
     norm_avg_sig_ste = ste_sig_counts / avg_ref
 
     # Hard guess
@@ -129,7 +130,7 @@ def fit_t2_decay(data, do_plot = True):
     offset = 0.931
     amplitude = 2/3 * 2*A0
     offset = 1 - amplitude
-    decay_time = 1e6
+    decay_time = 6e6
     # dominant_freqs = [1 / (1000*revival_time)]
 
     #  Fit
@@ -612,91 +613,96 @@ if __name__ == "__main__":
     file2 = '2022_11_01-13_37_22-siena-nv1_2022_10_27'
     file4 = '2022_11_01-23_15_48-siena-nv1_2022_10_27'
     file8 = '2022_11_02-06_35_38-siena-nv1_2022_10_27'
+    file16 = '2022_11_03-16_37_21-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
     file_t1 = '2022_11_02-20_37_45-siena-nv1_2022_10_27'
-    # data = tool_belt.get_raw_data(file2, folder)
-    # fit_t2_decay(data)
     
-    file_list = [file1, file2, file4, file8, file_t1]
-    color_list = ['red', 'blue', 'orange', 'green', 'black']
+    data = tool_belt.get_raw_data(file16, folder)
+    fit_t2_decay(data)
     
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    # amplitude = 0.069
-    # offset = 0.931
-    for f in range(len(file_list)):
-        file = file_list[f]
-         
-        if f == 4: 
-            data = tool_belt.get_raw_data(file, folder_relaxation)  
-            relaxation_time_range = data['relaxation_time_range']
-            min_relaxation_time = int(relaxation_time_range[0])
-            max_relaxation_time = int(relaxation_time_range[1])
-            num_steps = data['num_steps']
-            tau_T = numpy.linspace(
-                min_relaxation_time,
-                max_relaxation_time,
-                num=num_steps,
-             )  
-            tau_T_us = tau_T / 1000
-            norm_avg_sig = data['norm_avg_sig']
-            ax.plot([],[],"-o", color= color_list[f], label = "T1")
+    file_list = [file1, file2, file4, file8, file16, file_t1]
+    color_list = ['red', 'blue', 'orange', 'green','purple', 'black']
+    
+    
+    # if True:
+    if False:
+        fig, ax = plt.subplots(figsize=(8.5, 8.5))
+        # amplitude = 0.069
+        # offset = 0.931
+        for f in range(len(file_list)):
+            file = file_list[f]
+             
+            if f == 5: 
+                data = tool_belt.get_raw_data(file, folder_relaxation)  
+                relaxation_time_range = data['relaxation_time_range']
+                min_relaxation_time = int(relaxation_time_range[0])
+                max_relaxation_time = int(relaxation_time_range[1])
+                num_steps = data['num_steps']
+                tau_T = numpy.linspace(
+                    min_relaxation_time,
+                    max_relaxation_time,
+                    num=num_steps,
+                 )  
+                tau_T_us = tau_T / 1000
+                norm_avg_sig = data['norm_avg_sig']
+                ax.plot([],[],"-o", color= color_list[f], label = "T1")
+                
+                A0 = 0.069
+                amplitude = 2/3 * 2*A0
+                offset = 1 - amplitude
+                
+                fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
+                init_params = [0.069, 5000]
+                
+                popt, pcov = curve_fit(
+                    fit_func,
+                    tau_T_us,
+                    norm_avg_sig,
+                    # sigma=norm_avg_sig_ste,
+                    # absolute_sigma=True,
+                    p0=init_params,
+                )
+                print(popt)
+                print(numpy.sqrt(numpy.diag(pcov)))
+                
+            else:  
+                data = tool_belt.get_raw_data(file, folder)  
+                popt, fit_func = fit_t2_decay(data, do_plot= False)
             
-            A0 = 0.069
-            amplitude = 2/3 * 2*A0
-            offset = 1 - amplitude
+                taus = numpy.array(data['taus'])
+                num_steps = data['num_steps']
+                norm_avg_sig = data['norm_avg_sig']
+                pi_pulse_reps = data['pi_pulse_reps']
             
-            fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
-            init_params = [0.069, 5000]
-            
-            popt, pcov = curve_fit(
-                fit_func,
-                tau_T_us,
-                norm_avg_sig,
-                # sigma=norm_avg_sig_ste,
-                # absolute_sigma=True,
-                p0=init_params,
-            )
-            print(popt)
-            print(numpy.sqrt(numpy.diag(pcov)))
-            
-        else:  
-            data = tool_belt.get_raw_data(file, folder)  
-            popt, fit_func = fit_t2_decay(data, do_plot= False)
-        
-            taus = numpy.array(data['taus'])
-            num_steps = data['num_steps']
-            norm_avg_sig = data['norm_avg_sig']
-            pi_pulse_reps = data['pi_pulse_reps']
-        
-            tau_T = 2*taus*pi_pulse_reps
+                tau_T = 2*taus*pi_pulse_reps
+                   
                
-           
-            # for legend
-            ax.plot([],[],"-o", color= color_list[f], label = "CPMG-{}".format(pi_pulse_reps))
+                # for legend
+                ax.plot([],[],"-o", color= color_list[f], label = "CPMG-{}".format(pi_pulse_reps))
+            
+            # linspace_T = numpy.linspace(
+            #     tau_T[0], tau_T[-1], num=1000
+            linspace_T = numpy.linspace(
+                    tau_T[0], tau_T[-1], num=1000
+            )
+            ax.plot(tau_T / 1000, norm_avg_sig, "o", color= color_list[f])
+            # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
+            #             fmt='bo', label='data')
+            ax.plot(
+                linspace_T / 1000,
+                fit_func(linspace_T/1000, *popt),
+                "-", color= color_list[f]
+            )
+            
+        ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        ax.set_title("CPMG-N")
+        ax.legend()
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         
-        # linspace_T = numpy.linspace(
-        #     tau_T[0], tau_T[-1], num=1000
-        linspace_T = numpy.linspace(
-                tau_T[0], 10e7, num=1000
-        )
-        ax.plot(tau_T / 1000, norm_avg_sig, "o", color= color_list[f])
-        # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
-        #             fmt='bo', label='data')
-        ax.plot(
-            linspace_T / 1000,
-            fit_func(linspace_T/1000, *popt),
-            "-", color= color_list[f]
-        )
-        
-    ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
-    ax.set_ylabel("Contrast (arb. units)")
-    ax.set_title("CPMG-N")
-    ax.legend()
-    ax.set_xscale('log')
-    ax.set_yscale('log')
     
-
-
-
-
+    
+    
+    
