@@ -126,8 +126,8 @@ def fit_t2_decay(data, do_plot = True):
     norm_avg_sig_ste = ste_sig_counts / avg_ref
 
     # Hard guess
-    A0 = 0.069
-    offset = 0.931
+    A0 = 0.098
+    offset = 0.902
     amplitude = 2/3 * 2*A0
     offset = 1 - amplitude
     decay_time = 6e6
@@ -609,20 +609,30 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_11'
-    file1 = '2022_11_01-06_01_38-siena-nv1_2022_10_27'
-    file2 = '2022_11_01-13_37_22-siena-nv1_2022_10_27'
-    file4 = '2022_11_01-23_15_48-siena-nv1_2022_10_27'
-    file8 = '2022_11_02-06_35_38-siena-nv1_2022_10_27'
-    file16 = '2022_11_03-16_37_21-siena-nv1_2022_10_27'
+    file1 = '2022_11_07-04_51_10-siena-nv1_2022_10_27'
+    file2 = '2022_11_07-09_03_23-siena-nv1_2022_10_27'
+    file4 = '2022_11_06-20_26_00-siena-nv1_2022_10_27'
+    # file8 = '2022_11_02-06_35_38-siena-nv1_2022_10_27'
+    # file16 = '2022_11_05-22_14_27-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
-    file_t1 = '2022_11_02-20_37_45-siena-nv1_2022_10_27'
+    file_t1 = '2022_11_06-10_49_30-siena-nv1_2022_10_27'
     
-    data = tool_belt.get_raw_data(file16, folder)
+    data = tool_belt.get_raw_data(file2, folder)
     fit_t2_decay(data)
     
-    file_list = [file1, file2, file4, file8, file16, file_t1]
-    color_list = ['red', 'blue', 'orange', 'green','purple', 'black']
+    file_list = [file1, 
+                  file2, 
+                 file4, 
+                 # file8, 
+                  # file16, 
+                 file_t1]
+    color_list = ['red', 
+                   'blue', 
+                  'orange', 
+                  # 'green',
+                   # 'purple', 
+                  'black']
     
     
     # if True:
@@ -633,7 +643,7 @@ if __name__ == "__main__":
         for f in range(len(file_list)):
             file = file_list[f]
              
-            if f == 5: 
+            if f == len(file_list)-1: 
                 data = tool_belt.get_raw_data(file, folder_relaxation)  
                 relaxation_time_range = data['relaxation_time_range']
                 min_relaxation_time = int(relaxation_time_range[0])
@@ -648,7 +658,7 @@ if __name__ == "__main__":
                 norm_avg_sig = data['norm_avg_sig']
                 ax.plot([],[],"-o", color= color_list[f], label = "T1")
                 
-                A0 = 0.069
+                A0 = 0.098
                 amplitude = 2/3 * 2*A0
                 offset = 1 - amplitude
                 
