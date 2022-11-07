@@ -91,19 +91,10 @@ def S_13C(t, N, fL, fh, theta):
 #     # return 1 - 4*(1 - dot_n**2) * numpy.sin(p0)**2/2 * numpy.sin(p1)**2/2 *(1-cosphi) * eval_chebyu(k-1, cosphi)**2
 
     
-def pop_S(t, N, fh, theta, fL, lambd, sigma,T2, a_list):
-    return (S_13C(t, N, fL, fh, theta)*S_bath(t, fL, lambd, sigma,T2, a_list) + 1)/2
+def pop_S(t, N, fh1, theta1, fh2, theta2, fL, lambd, sigma,T2, a_list):
+    return (S_13C(t, N, fL, fh1, theta1)*S_13C(t, N, fL, fh2, theta2)*S_bath(t, fL, lambd, sigma,T2, a_list) + 1)/2
 
     
-# file = '2022_08_26-10_11_36-rubin-nv1_2022_08_10' # XY4-1
-# folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_08'
-# file='2022_09_08-08_19_09-rubin-nv4_2022_08_10' #XY4-1
-# file = '2022_09_08-09_20_15-rubin-nv1_2022_08_10' # XY4-1
-# file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
-# file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
-
-# file = '2022_09_14-01_56_22-rubin-nv4_2022_08_10' #xy4-2
-# file = '2022_09_14-09_53_52-rubin-nv4_2022_08_10' #XY4-2
 
 # file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' # XY4-2
 file = '2022_09_11-15_02_12-rubin-nv8_2022_08_10'
@@ -153,44 +144,42 @@ c13_coupling = True
 
 if c13_coupling:
     ###____ include single 13C coupling ____###
-    fit_func = lambda  t, fh, theta, lambd, sigma: pop_S(t,num_pi_pulses, fh, theta, 0.096, lambd, sigma,  40, 
+    fit_func = lambda  t, fh1, theta1,fh2, theta2,  lambd, sigma: pop_S(t,num_pi_pulses, fh1, theta1,fh2, theta2, 0.0895, lambd, sigma,  40, 
                                                       dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
 
-    for amp in [10]:#1.4
-        for theta in [60*pi/180]:
-            fig, ax = plt.subplots()
-            init_params = [amp, theta, 0.3, 0.01]
-            # init_params = [0.32661016, 0.98844318, 0.5221769,  0.04097683]
-            popt, pcov = curve_fit(
-                fit_func,
-                numpy.array(plot_taus),
-                norm_avg_sig,
-                # sigma=norm_avg_sig_ste,
-                # absolute_sigma=True,
-                p0=init_params,
-                bounds=(0, [numpy.inf,pi,numpy.inf,numpy.inf]),
-            )
-            print(popt)
-            # popt = init_params
-            ax.plot(
-                    taus_lin,
-                    fit_func(taus_lin, *popt),
-                    "-",
-                    color="red",
-                    label="XY4-2",
-                ) 
-            
-            ax.plot(
-                    plot_taus,
-                    norm_avg_sig,
-                    ".-",
-                    color="blue",
-                    label="data",
-                )    
-            ax.set_xlabel(r"Inter-pulse time, $\tau$ (us)")
-            ax.set_ylabel("Normalized signal Counts")
-            ax.set_title(title)
-            ax.legend()
+    fig, ax = plt.subplots()
+    init_params = [1.4, 60*pi/180, 1.2, 10*pi/180, 0.3, 0.01]
+    # init_params = [0.32661016, 0.98844318, 0.5221769,  0.04097683]
+    popt, pcov = curve_fit(
+        fit_func,
+        numpy.array(plot_taus),
+        norm_avg_sig, 
+        # sigma=norm_avg_sig_ste,
+        # absolute_sigma=True,
+        p0=init_params,
+        # bounds=(0, [numpy.inf,pi,numpy.inf,numpy.inf]),
+    )
+    print(popt)
+    popt = init_params
+    ax.plot(
+            taus_lin,
+            fit_func(taus_lin, *popt),
+            "-",
+            color="red",
+            label="XY4-2",
+        ) 
+    
+    ax.plot(
+            plot_taus,
+            norm_avg_sig,
+            ".-",
+            color="blue",
+            label="data",
+        )    
+    ax.set_xlabel(r"Inter-pulse time, $\tau$ (us)")
+    ax.set_ylabel("Normalized signal Counts")
+    ax.set_title(title)
+    ax.legend()
 else:
 
     fig, ax = plt.subplots()
