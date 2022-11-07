@@ -393,7 +393,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps = 51
     num_reps = int(2e4)
-    num_runs = 15
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -567,7 +567,7 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 2e3
-    num_runs= 200
+    num_runs= 100
 
     state = States.HIGH
 
@@ -1113,13 +1113,12 @@ if __name__ == "__main__":
     nv_sig_1 = copy.deepcopy(sig_base) # 
     nv_sig_1["coords"] = [-0.277, 0.006, 4.40]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
-    nv_sig_1["expected_count_rate"] =14.5
+    nv_sig_1["expected_count_rate"] =13
     nv_sig_1['magnet_angle'] = 90
     nv_sig_1["resonance_LOW"]= 2.7728
-    nv_sig_1["rabi_LOW"]=118.7
+    nv_sig_1["rabi_LOW"]=120.1
     nv_sig_1["resonance_HIGH"]= 2.9797
     nv_sig_1["rabi_HIGH"]=108.4
-    # nv_sig_1["rabi_HIGH"]=109.7
     
     
     nv_sig_2 = copy.deepcopy(sig_base) # haven't looked at esr yet
@@ -1161,7 +1160,7 @@ if __name__ == "__main__":
                     
         
         
-        #do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         
@@ -1208,8 +1207,8 @@ if __name__ == "__main__":
         step_size = 200 #us
         T_min = 0 #us
         T_max = 5000 #us      
-        for n in [1,2,8]:
-           do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        for n in [16]:
+            do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
         
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps )
