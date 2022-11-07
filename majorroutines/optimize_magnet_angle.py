@@ -218,7 +218,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2022_09_09-00_29_36-rubin-nv1_2022_08_10'
+    file = '2022_10_10-00_03_28-siena-native_layer'
     data = tool_belt.get_raw_data(file)
     splittings = data['splittings']
 

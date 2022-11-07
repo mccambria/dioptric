@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
 import shutil
-import analysis.relaxation_rate_analysis as relaxation_rate_analysis
+# import analysis.relaxation_rate_analysis as relaxation_rate_analysis
 from pathlib import Path
 from scipy.optimize import curve_fit
 

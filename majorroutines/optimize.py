@@ -336,17 +336,18 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 # %% User functions
 
 
-def optimize_list(nv_sig_list, apd_indices, laser_ind=532, aom_ao_589_pwr=1.0):
+def optimize_list(nv_sig_list, apd_indices):
 
     with labrad.connect() as cxn:
-        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind, aom_ao_589_pwr)
+        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices)
 
 
-def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind, aom_ao_589_pwr):
+def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices):
 
     tool_belt.init_safe_stop()
 
     opti_coords_list = []
+    opti_counts_list = []
     for ind in range(len(nv_sig_list)):
 
         print("Optimizing on NV {}...".format(ind))
@@ -355,21 +356,24 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind, aom_ao_589_
             break
 
         nv_sig = nv_sig_list[ind]
-        opti_coords = main_with_cxn(
+        opti_coords, opti_counts = main_with_cxn(
             cxn,
             nv_sig,
             apd_indices,
-            laser_ind,
             set_to_opti_coords=False,
             set_drift=False,
         )
+        
         if opti_coords is not None:
             opti_coords_list.append("[{:.3f}, {:.3f}, {:.2f}],".format(*opti_coords))
+            opti_counts_list.append("{},".format(opti_counts))
         else:
             opti_coords_list.append("Optimization failed for NV {}.".format(ind))
 
     for coords in opti_coords_list:
         print(coords)
+    for counts in opti_counts_list:
+        print(counts)
 
 
 def prepare_microscope(cxn, nv_sig, coords=None):
@@ -498,28 +502,34 @@ def main_with_cxn(
         counts_by_axis = []
 
         # xy
-        for axis_ind in range(2):
-            # print(axis_ind)
-            ret_vals = optimize_on_axis(
-                cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
-            )
-            opti_coords.append(ret_vals[0])
-            scan_vals_by_axis.append(ret_vals[1])
-            counts_by_axis.append(ret_vals[2])
-
-        # Check the count rate before moving on to z
-        if expected_count_rate is not None:
-            test_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-            opti_count_rate = stationary_count_lite(
-                cxn, nv_sig, test_coords, config, apd_indices
-            )
-            if lower_threshold <= opti_count_rate <= upper_threshold:
-                opti_coords = test_coords
-                print("Z optimization unnecessary.")
-                print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
-                print("Optimization succeeded!")
-                opti_succeeded = True
-                break
+        if "only_z_opt" in nv_sig and nv_sig["only_z_opt"]:
+            opti_coords = [adjusted_coords[0], adjusted_coords[1]]
+            for i in range(2):
+                scan_vals_by_axis.append(numpy.array([]))
+                counts_by_axis.append(numpy.array([]))
+        else:
+            for axis_ind in range(2):
+                # print(axis_ind)
+                ret_vals = optimize_on_axis(
+                    cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
+                )
+                opti_coords.append(ret_vals[0])
+                scan_vals_by_axis.append(ret_vals[1])
+                counts_by_axis.append(ret_vals[2])
+    
+            # Check the count rate before moving on to z
+            if expected_count_rate is not None:
+                test_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
+                opti_count_rate = stationary_count_lite(
+                    cxn, nv_sig, test_coords, config, apd_indices
+                )
+                if lower_threshold <= opti_count_rate <= upper_threshold:
+                    opti_coords = test_coords
+                    print("Z optimization unnecessary.")
+                    print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
+                    print("Optimization succeeded!")
+                    opti_succeeded = True
+                    break
 
         # z
         if "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]:
@@ -652,4 +662,4 @@ def main_with_cxn(
 
     # %% Return the optimized coordinates we found
 
-    return opti_coords
+    return opti_coords, opti_count_rate

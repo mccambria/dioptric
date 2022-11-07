@@ -14,8 +14,9 @@ Created on Fri Nov 23 14:57:08 2018
 # %% Imports
 
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.style as mplstyle
 import threading
 import os
 import csv
@@ -680,6 +681,7 @@ def create_image_figure(
     title=None,
     color_bar_label="Counts",
     um_scaled=False,
+    axes_labels = None,# ["V", "V"],
     aspect_ratio=None,
     color_map="inferno",
     cmin=None,
@@ -703,17 +705,18 @@ def create_image_figure(
 
     # plt.rcParams.update({'font.size': 22})
 
-    if um_scaled:
-        axes_label = r"$\mu$m"
-    else:
+    # if um_scaled:
+    #     axes_label = r"$\mu$m"
+    # else:
+    if axes_labels == None:
         try:
-            axes_label = get_registry_entry_no_cxn(
+            a = get_registry_entry_no_cxn(
                 "xy_units", ["", "Config", "Positioning"]
             )
+            axes_labels = [a, a]
         except Exception as exc:
             print(exc)
-            axes_label = None
-
+            axes_label = ["V", "V"]
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
@@ -744,8 +747,8 @@ def create_image_figure(
     #    clb.set_label('kcounts/sec', rotation=270)
 
     # Label axes
-    plt.xlabel(axes_label)
-    plt.ylabel(axes_label)
+    plt.xlabel(axes_labels[0])
+    plt.ylabel(axes_labels[1])
     if title:
         plt.title(title)
 
@@ -877,6 +880,11 @@ def create_line_plot_figure(vals, xVals=None):
     Returns:
         matplotlib.figure.Figure
     """
+    
+    # mplstyle.use('fast')
+    # mpl.rcParams['path.simplify'] = True
+    # mpl.rcParams['path.simplify_threshold'] = 1.0
+    # mpl.rcParams['agg.path.chunksize'] = 10000
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
@@ -912,6 +920,7 @@ def create_line_plots_figure(vals, xVals=None):
     Returns:
         matplotlib.figure.Figure
     """
+    
 
     # Tell matplotlib to generate a figure with len(vals) plots
     fig, ax = plt.subplots(len(vals))
@@ -939,7 +948,7 @@ def update_line_plot_figure(fig, vals):
             1D np array containing the values to plot
     """
 
-    # Get the line - Assume it's the first line in the first axes
+    # Get the line - Assume it's  the first line in the first axes
     axes = fig.get_axes()
     ax = axes[0]
     lines = ax.get_lines()
@@ -951,8 +960,11 @@ def update_line_plot_figure(fig, vals):
     ax.autoscale_view(scalex=False)
 
     # Redraw the canvas and flush the changes to the backend
+    # start = time.time()
     fig.canvas.draw()
     fig.canvas.flush_events()
+    # stop = time.time()
+    # print(f"Tool time: {stop - start}")
 
 
 def radial_distrbution_data(
@@ -1052,6 +1064,9 @@ def lorentzian(x, x0, A, L, offset):
 def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
 
+def exp_stretch_decay(x, amp, decay, offset, B):
+    return offset + amp * np.exp(-(x / decay)**B)
+
 
 def gaussian(x, *params):
     """
@@ -1112,6 +1127,10 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
+
+def t2_func(t, amplitude, offset, t2):
+    n = 3
+    return amplitude * np.exp(-(t/t2)**n) + offset
 
 def calc_snr(sig_count, ref_count):
     """
@@ -1233,6 +1252,8 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
         key = keys[0]
         p.get(key)
         val = p.send()["get"]
+        if type(val) == np.ndarray:
+            val = val.tolist()
         dict_to_populate[key] = val
 
     elif len(keys) > 1:
@@ -1245,6 +1266,8 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
         for ind in range(len(keys)):
             key = keys[ind]
             val = vals[ind]
+            if type(val) == np.ndarray:
+                val = val.tolist()
             dict_to_populate[key] = val
 
 
@@ -1263,6 +1286,32 @@ def get_xy_server(cxn):
     return getattr(
         cxn,
         get_registry_entry(cxn, "xy_server", ["", "Config", "Positioning"]),
+    )
+
+
+def get_temp_controller(cxn):
+    """
+    Get the server controlling the temp
+    """
+
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(
+        cxn,
+        get_registry_entry(cxn, "temp_controller", ["", "Config", "Temperature"]),
+    )
+
+
+def get_temp_monitor(cxn):
+    """
+    Get the server controlling the temp
+    """
+
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(
+        cxn,
+        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Temperature"]),
     )
 
 
@@ -1665,35 +1714,10 @@ def get_nv_sig_units():
     }
 
 
-# Error messages
-
-
-def color_ind_err(color_ind):
-    if color_ind != 532 or color_ind != 589:
-        raise RuntimeError(
-            "Value of color_ind must be 532 or 589."
-            + "\nYou entered {}".format(color_ind)
-        )
-
 
 def check_laser_power(laser_name, laser_power):
     pass
 
-
-def aom_ao_589_pwr_err(aom_ao_589_pwr):
-    if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
-        raise RuntimeError(
-            "Value for 589 aom must be within 0 to +1 V."
-            + "\nYou entered {} V".format(aom_ao_589_pwr)
-        )
-
-
-def ao_638_pwr_err(ao_638_pwr):
-    if ao_638_pwr < 0 or ao_638_pwr > 0.9:
-        raise RuntimeError(
-            "Value for 638 ao must be within 0 to 0.9 V."
-            + "\nYou entered {} V".format(ao_638_pwr)
-        )
 
 
 def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
@@ -1743,6 +1767,13 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
 
     return x_voltages, y_voltages
 
+def write_csv(csv_data, file, folder_path,
+              nvdata_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",):
+    with open('{}/{}/{}.csv'.format(nvdata_dir, folder_path, file),
+              'w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',',
+                                quoting=csv.QUOTE_NONE)
+        csv_writer.writerows(csv_data)
 
 def save_image_data_csv(
     img_array,
@@ -2028,14 +2059,12 @@ def reset_safe_stop():
 # properly.
 
 
-def get_drift():
-    with labrad.connect() as cxn:
-        cxn.registry.cd(["", "State"])
-        drift = cxn.registry.get("DRIFT")
-        # MCC where should this stuff live?
-        cxn.registry.cd(["", "Config", "Positioning"])
-        xy_dtype = eval(cxn.registry.get("xy_dtype"))
-        z_dtype = eval(cxn.registry.get("z_dtype"))
+def get_drift(cxn=None):
+    if cxn is None:
+        with labrad.connect() as cxn:
+            drift, xy_dtype, z_dtype = get_drift_sub(cxn)
+    else:
+        drift, xy_dtype, z_dtype = get_drift_sub(cxn)
     len_drift = len(drift)
     if len_drift != 3:
         print("Got drift of length {}.".format(len_drift))
@@ -2055,7 +2084,18 @@ def get_drift():
     return drift_to_return
 
 
-def set_drift(drift):
+def get_drift_sub(cxn):
+    cxn.registry.cd(["", "State"])
+    drift = cxn.registry.get("DRIFT")
+    # MCC where should this stuff live?
+    cxn.registry.cd(["", "Config", "Positioning"])
+    xy_dtype = eval(cxn.registry.get("xy_dtype"))
+    z_dtype = eval(cxn.registry.get("z_dtype"))
+    return drift, xy_dtype, z_dtype
+    
+
+
+def set_drift(drift, cxn=None):
     len_drift = len(drift)
     if len_drift != 3:
         print("Attempted to set drift of length {}.".format(len_drift))
@@ -2069,7 +2109,11 @@ def set_drift(drift):
     #     get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"])
     # )
     # drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
-    with labrad.connect() as cxn:
+    if cxn is None:
+        with labrad.connect() as cxn:
+            cxn.registry.cd(["", "State"])
+            return cxn.registry.set("DRIFT", drift)
+    else:
         cxn.registry.cd(["", "State"])
         return cxn.registry.set("DRIFT", drift)
 

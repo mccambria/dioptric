@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Dynamical decoupling XY4.
+Dynamical decoupling CPMG
 
 
 
@@ -33,6 +33,144 @@ im = 0 + 1j
 inv_sqrt_2 = 1 / numpy.sqrt(2)
 gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
 
+def create_fit_figure(
+    taus,
+    num_steps,
+    norm_avg_sig,
+    norm_avg_sig_ste,
+    pi_pulse_reps,
+    fit_func,
+    popt,
+):
+
+    tau_T = 2*taus*pi_pulse_reps
+
+    linspace_taus = numpy.linspace(
+        tau_T[0], tau_T[-1], num=1000
+    )
+
+    fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    fit_fig.set_tight_layout(True)
+    ax.plot(tau_T / 1000, norm_avg_sig, "bo", label="data")
+    # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
+    #             fmt='bo', label='data')
+    ax.plot(
+        linspace_taus / 1000,
+        fit_func(linspace_taus/1000, *popt),
+        "r-",
+        label="fit",
+    )
+    ax.set_ylabel("Contrast (arb. units)")
+    ax.set_title("CPMG-{}".format(pi_pulse_reps))
+    ax.legend()
+    
+    ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
+    t2_time = popt[-1]
+    text_popt = "\n".join(
+        (
+            r"$S(T) = exp(- (T/T_2)^3)$",
+            r"$T_2=$%.3f us" % (t2_time),
+        )
+    )
+
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(
+        0.70,
+        0.85,
+        text_popt,
+        transform=ax.transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=props,
+    )
+
+     
+
+
+
+    fit_fig.canvas.draw()
+    fit_fig.set_tight_layout(True)
+    fit_fig.canvas.flush_events()
+
+    return fit_fig
+
+def fit_t2_decay(data, do_plot = True):
+    '''
+    either pass in only the revivals, or for isotopically pure samples, this will fit t2
+    '''
+    
+    precession_dur_range = data["precession_time_range"]
+    sig_counts = data["sig_counts"]
+    ref_counts = data["ref_counts"]
+    num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
+    pi_pulse_reps = data['pi_pulse_reps']
+    taus = numpy.array(data['taus'])
+    
+    tau_T = 2*taus*pi_pulse_reps
+
+
+    #  Normalization and uncertainty
+
+    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
+    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
+        num_runs
+    )
+
+    # Assume reference is constant and can be approximated to one value
+    avg_ref = numpy.average(ref_counts[::])
+
+    # Divide signal by reference to get normalized counts and st error
+    norm_avg_sig = avg_sig_counts / avg_ref
+    # print(list(norm_avg_sig))
+    norm_avg_sig_ste = ste_sig_counts / avg_ref
+
+    # Hard guess
+    A0 = 0.069
+    offset = 0.931
+    amplitude = 2/3 * 2*A0
+    offset = 1 - amplitude
+    decay_time = 6e6
+    # dominant_freqs = [1 / (1000*revival_time)]
+
+    #  Fit
+
+    # The fit doesn't like dealing with vary large numbers. We'll convert to
+    # us here and then convert back to ns after the fit for consistency.
+
+    tau_T_us = tau_T / 1000
+    decay_time_us = decay_time / 1000
+
+    init_params = [
+        amplitude,
+        # offset,
+        decay_time_us,
+    ]
+    
+    fit_func = tool_belt.t2_func
+    fit_func = lambda t, amplitude, t2: tool_belt.t2_func(t, amplitude, offset, t2)
+    popt, pcov = curve_fit(
+        fit_func,
+        tau_T_us,
+        norm_avg_sig,
+        sigma=norm_avg_sig_ste,
+        absolute_sigma=True,
+        p0=init_params,
+    )
+    print(popt)
+    print(numpy.sqrt(numpy.diag(pcov)))
+    if do_plot:
+        create_fit_figure(
+            taus,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            pi_pulse_reps,
+            fit_func,
+        popt,)
+    
+    return popt, fit_func
+
 
 
 # %% Main
@@ -46,6 +184,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
 ):
 
@@ -59,6 +198,7 @@ def main(
             num_steps,
             num_reps,
             num_runs,
+            taus,
             state,
         )
         return angle
@@ -73,6 +213,7 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
+    taus=[],
     state=States.LOW,
 ):
 
@@ -94,9 +235,6 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
-    # pi pulses are slightly different than just half of the rabi period
-    # uwave_pi_pulse = round(nv_sig["pi_pulse_{}".format(state.name)] )
-    # uwave_pi_on_2_pulse = round(nv_sig["pi_on_2_pulse_{}".format(state.name)] )
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -107,13 +245,15 @@ def main_with_cxn(
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
 
-    taus = numpy.linspace(
-        min_precession_time,
-        max_precession_time,
-        num=num_steps,
-        dtype=numpy.int32,
-    )
-    # print(taus)
+    if len(taus) == 0:
+        taus = numpy.linspace(
+            min_precession_time,
+            max_precession_time,
+            num=num_steps,
+            dtype=numpy.int32,
+        )
+    # taus = taus + 500
+    print(taus)
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
@@ -159,20 +299,19 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    #pi_pulse_reps = num_xy4_reps*8
     seq_args = [
-        min_precession_time,
-        polarization_time,
-        gate_time,
-        uwave_pi_pulse,
-        uwave_pi_on_2_pulse,
-        max_precession_time,
-        pi_pulse_reps,
-        apd_indices[0],
-        state.value,
-        laser_name,
-        laser_power,
-    ]
+          taus[0],
+          polarization_time,
+          gate_time,
+          uwave_pi_pulse,
+          uwave_pi_on_2_pulse,
+          taus[-1],
+          pi_pulse_reps,
+          apd_indices[0],
+          state.value,
+          laser_name,
+          laser_power,
+      ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -223,7 +362,6 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        #cxn.arbitrary_waveform_generator.load_xy4n(num_xy4_reps)
         cxn.arbitrary_waveform_generator.load_cpmg(pi_pulse_reps)
         
 
@@ -261,18 +399,18 @@ def main_with_cxn(
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
             seq_args = [
-                taus[tau_ind_first],
-                polarization_time,
-                gate_time,
-                uwave_pi_pulse,
-                uwave_pi_on_2_pulse,
-                taus[tau_ind_second],
-                pi_pulse_reps,
-                apd_indices[0],
-                state.value,
-                laser_name,
-                laser_power,
-            ]
+                  taus[tau_ind_first],
+                  polarization_time,
+                  gate_time,
+                  uwave_pi_pulse,
+                  uwave_pi_on_2_pulse,
+                  taus[tau_ind_second],
+                  pi_pulse_reps,
+                  apd_indices[0],
+                  state.value,
+                  laser_name,
+                  laser_power,
+              ]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -313,7 +451,7 @@ def main_with_cxn(
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
         try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
         except RuntimeWarning as e:
             print(e)
             inf_mask = numpy.isinf(norm_avg_sig)
@@ -353,8 +491,6 @@ def main_with_cxn(
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             'pi_pulse_reps': pi_pulse_reps,
-            "gate_time": gate_time,
-            "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -368,7 +504,10 @@ def main_with_cxn(
             "state": state.name,
             "num_steps": num_steps,
             "num_reps": num_reps,
-            "run_ind": run_ind,
+            "run_ind": run_ind,	
+            "taus": taus.tolist(),	
+            "plot_taus":plot_taus.tolist(),	
+            "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
@@ -425,8 +564,6 @@ def main_with_cxn(
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         'pi_pulse_reps': pi_pulse_reps,
-        "gate_time": gate_time,
-        "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
@@ -440,7 +577,10 @@ def main_with_cxn(
         "state": state.name,
         "num_steps": num_steps,
         "num_reps": num_reps,
-        "num_runs": num_runs,
+        "num_runs": num_runs,	
+        "taus": taus.tolist(),	
+        "plot_taus":plot_taus.tolist(),	
+        "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
@@ -468,4 +608,101 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    aa = 1
+    folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_11'
+    file1 = '2022_11_01-06_01_38-siena-nv1_2022_10_27'
+    file2 = '2022_11_01-13_37_22-siena-nv1_2022_10_27'
+    file4 = '2022_11_01-23_15_48-siena-nv1_2022_10_27'
+    file8 = '2022_11_02-06_35_38-siena-nv1_2022_10_27'
+    file16 = '2022_11_03-16_37_21-siena-nv1_2022_10_27'
+    
+    folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
+    file_t1 = '2022_11_02-20_37_45-siena-nv1_2022_10_27'
+    
+    data = tool_belt.get_raw_data(file16, folder)
+    fit_t2_decay(data)
+    
+    file_list = [file1, file2, file4, file8, file16, file_t1]
+    color_list = ['red', 'blue', 'orange', 'green','purple', 'black']
+    
+    
+    # if True:
+    if False:
+        fig, ax = plt.subplots(figsize=(8.5, 8.5))
+        # amplitude = 0.069
+        # offset = 0.931
+        for f in range(len(file_list)):
+            file = file_list[f]
+             
+            if f == 5: 
+                data = tool_belt.get_raw_data(file, folder_relaxation)  
+                relaxation_time_range = data['relaxation_time_range']
+                min_relaxation_time = int(relaxation_time_range[0])
+                max_relaxation_time = int(relaxation_time_range[1])
+                num_steps = data['num_steps']
+                tau_T = numpy.linspace(
+                    min_relaxation_time,
+                    max_relaxation_time,
+                    num=num_steps,
+                 )  
+                tau_T_us = tau_T / 1000
+                norm_avg_sig = data['norm_avg_sig']
+                ax.plot([],[],"-o", color= color_list[f], label = "T1")
+                
+                A0 = 0.069
+                amplitude = 2/3 * 2*A0
+                offset = 1 - amplitude
+                
+                fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
+                init_params = [0.069, 5000]
+                
+                popt, pcov = curve_fit(
+                    fit_func,
+                    tau_T_us,
+                    norm_avg_sig,
+                    # sigma=norm_avg_sig_ste,
+                    # absolute_sigma=True,
+                    p0=init_params,
+                )
+                print(popt)
+                print(numpy.sqrt(numpy.diag(pcov)))
+                
+            else:  
+                data = tool_belt.get_raw_data(file, folder)  
+                popt, fit_func = fit_t2_decay(data, do_plot= False)
+            
+                taus = numpy.array(data['taus'])
+                num_steps = data['num_steps']
+                norm_avg_sig = data['norm_avg_sig']
+                pi_pulse_reps = data['pi_pulse_reps']
+            
+                tau_T = 2*taus*pi_pulse_reps
+                   
+               
+                # for legend
+                ax.plot([],[],"-o", color= color_list[f], label = "CPMG-{}".format(pi_pulse_reps))
+            
+            # linspace_T = numpy.linspace(
+            #     tau_T[0], tau_T[-1], num=1000
+            linspace_T = numpy.linspace(
+                    tau_T[0], tau_T[-1], num=1000
+            )
+            ax.plot(tau_T / 1000, norm_avg_sig, "o", color= color_list[f])
+            # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
+            #             fmt='bo', label='data')
+            ax.plot(
+                linspace_T / 1000,
+                fit_func(linspace_T/1000, *popt),
+                "-", color= color_list[f]
+            )
+            
+        ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        ax.set_title("CPMG-N")
+        ax.legend()
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        
+    
+    
+    
+    

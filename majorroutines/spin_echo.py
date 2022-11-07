@@ -381,6 +381,7 @@ def create_fit_figure(
     norm_avg_sig_ste,
     fit_func,
     popt,
+    t2_envelope_fit = False
 ):
 
     min_precession_dur = precession_dur_range[0]
@@ -408,39 +409,155 @@ def create_fit_figure(
     #             fmt='bo', label='data')
     ax.plot(
         linspace_tau_pis / 1000,
-        fit_func(linspace_tau_pis, *popt),
+        fit_func(linspace_tau_pis/1000, *popt),
         "r-",
         label="fit",
     )
-    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
     ax.set_title("Spin Echo")
     ax.legend()
-
-    revival_time = popt[1]
-    text_popt = "\n".join(
-        (
-            r"$\tau_{r}=$%.3f $\mathrm{\mu s}$" % (revival_time / 1000),
-            r"$B=$%.3f G" % (mag_B_from_revival_time(revival_time)),
+    
+    if t2_envelope_fit == True:
+        ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
+        t2_time = popt[2]
+        text_popt = "\n".join(
+            (
+                r"$S(T) = exp(- (T/T_2)^3)$",
+                r"$T_2=$%.3f us" % (t2_time),
+            )
         )
-    )
+    
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.70,
+            0.85,
+            text_popt,
+            transform=ax.transAxes,
+            fontsize=12,
+            verticalalignment="top",
+            bbox=props,
+        )
+        
+    else:
+        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+        revival_time = popt[1]
+        text_popt = "\n".join(
+            (
+                r"$\tau_{r}=$%.3f $\mathrm{\mu s}$" % (revival_time / 1000),
+                r"$B=$%.3f G" % (mag_B_from_revival_time(revival_time)),
+            )
+        )
+    
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.80,
+            0.85,
+            text_popt,
+            transform=ax.transAxes,
+            fontsize=12,
+            verticalalignment="top",
+            bbox=props,
+        )
+     
 
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(
-        0.80,
-        0.85,
-        text_popt,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment="top",
-        bbox=props,
-    )
+
 
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
     fit_fig.canvas.flush_events()
 
     return fit_fig
+
+    
+def fit_t2_decay(data):
+    '''
+    either pass in only the revivals, or for isotopically pure samples, this will fit t2
+    '''
+    
+    precession_dur_range = data["precession_time_range"]
+    sig_counts = data["sig_counts"]
+    ref_counts = data["ref_counts"]
+    num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
+
+    # Get the pi pulse duration
+    state = data["state"]
+    nv_sig = data["nv_sig"]
+    rabi_period = nv_sig["rabi_{}".format(state)]
+
+    #  Set up
+
+    min_precession_dur = precession_dur_range[0]
+    max_precession_dur = precession_dur_range[1]
+    taus, tau_step = numpy.linspace(
+        min_precession_dur,
+        max_precession_dur,
+        num=num_steps,
+        dtype=numpy.int32,
+        retstep=True,
+    )
+
+    # Account for the pi/2 pulse on each side of a tau
+    pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
+    tau_pis = 2*taus + pi_pulse_dur
+
+
+    #  Normalization and uncertainty
+
+    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
+    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
+        num_runs
+    )
+
+    # Assume reference is constant and can be approximated to one value
+    avg_ref = numpy.average(ref_counts[::])
+
+    # Divide signal by reference to get normalized counts and st error
+    norm_avg_sig = avg_sig_counts / avg_ref
+    norm_avg_sig_ste = ste_sig_counts / avg_ref
+
+    # Hard guess
+    amplitude = 0.07
+    offset = 0.90
+    decay_time = 1e6
+    # dominant_freqs = [1 / (1000*revival_time)]
+
+    #  Fit
+
+    # The fit doesn't like dealing with vary large numbers. We'll convert to
+    # us here and then convert back to ns after the fit for consistency.
+
+    tau_pis_us = tau_pis / 1000
+    decay_time_us = decay_time / 1000
+    max_precession_dur_us = max_precession_dur / 1000
+
+    init_params = [
+        amplitude,
+        offset,
+        decay_time_us,
+    ]
+    
+    fit_func = tool_belt.t2_func
+    popt, pcov = curve_fit(
+        fit_func,
+        tau_pis_us,
+        norm_avg_sig,
+        sigma=norm_avg_sig_ste,
+        absolute_sigma=True,
+        p0=init_params,
+    )
+    print(popt)
+    print(numpy.sqrt(numpy.diag(pcov)))
+    create_fit_figure(
+        numpy.array(precession_dur_range)*2,
+        rabi_period,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        fit_func,
+        popt,
+        t2_envelope_fit = True)
+
 
 
 # %% Main
@@ -884,7 +1001,12 @@ if __name__ == "__main__":
     #     "2021_09_04-11_31_49-hopper-search",
     #     "2021_09_04-13_00_14-hopper-search",
     # ]
-
+    
+    folder = 'pc_rabi/branch_master/spin_echo/2022_10'
+    file = '2022_10_31-22_28_17-siena-nv1_2022_10_27'
+    data = tool_belt.get_raw_data(file, folder)
+    fit_t2_decay(data)
+    
     # for f in file_names:
 
     #     # start = time.time()
@@ -898,8 +1020,82 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_08_22-15_07_16-rubin-nv1"
-    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
-    ret_vals = plot_resonances_vs_theta_B(data)
+    
+    
+    
+    # file_name = "2022_08_22-15_07_16-rubin-nv1"
+    # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
+    # ret_vals = plot_resonances_vs_theta_B(data)
 
     # plt.show(block=True)
+    
+    ### just revivals ###
+    # This data set took measurements at the revivals and midway between them
+    
+    if False:
+        file_name = "2022_09_16-14_15_30-rubin-nv5_2022_08_10"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_09')
+        norm_avg_sig = numpy.array(data['norm_avg_sig'])
+        num_steps = data['num_steps']
+        
+        precession_dur_range = data["precession_time_range"]
+        min_precession_dur = precession_dur_range[0]
+        max_precession_dur = precession_dur_range[1]
+        taus = numpy.linspace(
+            min_precession_dur,
+            max_precession_dur,
+            num=num_steps,
+        )
+        taus = taus / 1e3
+        low_t = taus[1::2]
+        high_t = taus[0::2]
+        
+        low_s = norm_avg_sig[1::2]
+        high_s = norm_avg_sig[0::2]
+        
+        low_avg = numpy.average(low_s)
+        
+        contrast = high_s[0] - low_avg
+        
+        norm_high_s = ((high_s - low_avg) / contrast) / 2 + 0.5
+        
+        tau_lin = numpy.linspace(taus[0], taus[-1], 100)
+        
+        fig, ax = plt.subplots()
+        ax.plot(high_t, norm_high_s, "o")
+        
+        fit_func = lambda x, decay:tool_belt.exp_stretch_decay(x, 0.5, decay, 0.5, 3)
+        init_params = [ 20]
+        popt, pcov = curve_fit(
+            fit_func,
+            high_t,
+            norm_high_s,
+            p0=init_params,
+        )
+        print('{} +/- {} us'.format(popt[0], numpy.sqrt(pcov[0][0])))
+        ax.plot(
+                tau_lin,
+                fit_func(tau_lin, *popt),
+                "r-",
+                label="fit",
+            ) 
+        
+        text_popt = '\n'.join((
+                            r'y = 0.5 + 0.5 exp(-(t / d)^3)',
+                            r'd = ' + '%.2f'%(popt[0]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[0][0])) + ' us'
+                            ))
+    
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+        
+        
+        
+        ax.set_title("Revivals of spin echo")
+        ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Population (arb. units)")
+        
+        # print(low_t)
+        # print(high_t)
+    
+    

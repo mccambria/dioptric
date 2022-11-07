@@ -8,7 +8,7 @@ Created on Tue Dec 29 2020
 
 ### BEGIN NODE INFO
 [info]
-name = cryostat
+name = cryostat_attodry800
 version = 1.0
 description =
 
@@ -31,8 +31,8 @@ import logging
 import cryostat_dll.attoDRYLib as attoDRYLib
 
 
-class Cryostat(LabradServer):
-    name = 'cryostat'
+class CryostatAttodry800(LabradServer):
+    name = 'cryostat_attodry800'
     pc_name = socket.gethostname()
     logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
@@ -61,21 +61,54 @@ class Cryostat(LabradServer):
         logging.debug('Init complete')
 
 
-    @setting(2, pos_in_steps='i')
-    def write_z(self, c, pos_in_steps):
-        """
-        Specify the absolute position in steps relative to 0. There will be 
-        hysteresis on this value, but it's repeatable enough for the 
-        common and important routines (eg optimize)
+    @setting(1)
+    def activate_temp_control(self, c):
         """
         
-        self.write_ax(pos_in_steps, 3)
-
+        """
+        
+        pass
+    
+    
+    @setting(2)
+    def deactivate_temp_control(self, c):
+        """
+        
+        """
+        
+        pass
+    
+    
+    @setting(3, temp="v[]")
+    def set_temp(self, c, temp):
+        """
+        
+        """
+        
+        pass
+    
+    
+    @setting(4, returns="v[]")
+    def get_temp(self, c, temp):
+        """
+        
+        """
+        
+        pass
+    
+        
+    @setting(6)
+    def reset_cfm_opt_out(self, c):
+        """This setting is just a flag for the client. If you include this 
+        setting on a server, then the server won't be reset along with the 
+        rest of the instruments when we call tool_belt.reset_cfm.
+        """
+        pass
 
         
 
 
-__server__ = Cryostat()
+__server__ = CryostatAttodry800()
 
 if __name__ == '__main__':
     from labrad import util

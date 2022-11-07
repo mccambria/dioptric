@@ -121,7 +121,8 @@ def main(path, file_name, override_skips=False):
 
     # Sort the entries, first by NV name (and so sample), then by temp
     sorted_key_lambda = (
-        lambda point: paper_nv_name_lambda(point) + f"{get_temp(point):05.1f}"
+        lambda point: paper_nv_name_lambda(point)[0:3]
+        + f"{get_temp(point):05.1f}"
     )
     sorted_data_points = sorted(data_points, key=sorted_key_lambda)
 

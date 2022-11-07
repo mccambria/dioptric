@@ -18,6 +18,8 @@ For example, if we want to perform XY4-2, we would want the number of pi pulses
 to be 4 * 2. There are 4 pusles in the XY4 pulse sequence, 
 and we want to repeate those 2 times.
 
+10/26/2022 IK added pi pulse to the readout pulse, so that normalized population starts at 1
+
 @author: Aedan
 """
 
@@ -91,7 +93,8 @@ def get_seq(pulse_streamer, config, args):
     uwave_experiment_train_shrt = [(pi_on_2_pulse, HIGH)]
     rep_train = [(tau_shrt, LOW), (pi_pulse, HIGH), (tau_shrt, LOW)]*pi_pulse_reps
     uwave_experiment_train_shrt.extend(rep_train)
-    uwave_experiment_train_shrt.extend([(pi_on_2_pulse, HIGH)])
+    # uwave_experiment_train_shrt.extend([(pi_on_2_pulse, HIGH)])
+    uwave_experiment_train_shrt.extend([(pi_on_2_pulse + pi_pulse, HIGH)]) # adding a pi pulse to readout
     
     uwave_experiment_dur_shrt = 0
     for el in uwave_experiment_train_shrt:
@@ -100,8 +103,9 @@ def get_seq(pulse_streamer, config, args):
     uwave_experiment_train_long = [(pi_on_2_pulse, HIGH)]
     rep_train = [(tau_long, LOW), (pi_pulse, HIGH), (tau_long, LOW)]*pi_pulse_reps
     uwave_experiment_train_long.extend(rep_train)
-    uwave_experiment_train_long.extend([(pi_on_2_pulse, HIGH)])
-    
+    # uwave_experiment_train_long.extend([(pi_on_2_pulse, HIGH)])
+    uwave_experiment_train_long.extend([(pi_on_2_pulse + pi_pulse, HIGH)]) # adding a pi pulse to readout
+        
     uwave_experiment_dur_long = 0
     for el in uwave_experiment_train_long:
         uwave_experiment_dur_long += el[0]
@@ -118,7 +122,8 @@ def get_seq(pulse_streamer, config, args):
     uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
                                 (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
                                 (iq_trigger_time, HIGH), 
-                                (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                (half_tau_shrt_en - iq_trigger_time + pi_pulse + pi_on_2_pulse, LOW)])
     # uwave_iq_train_shrt_dur=0
     # for el in uwave_iq_train_shrt:
     #     uwave_iq_train_shrt_dur += el[0]
@@ -133,7 +138,8 @@ def get_seq(pulse_streamer, config, args):
     uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
                                 (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
                                 (iq_trigger_time, HIGH), 
-                                (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                # (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                (half_tau_long_en - iq_trigger_time + pi_pulse + pi_on_2_pulse, LOW)])
     
 
     # %% Define the sequence

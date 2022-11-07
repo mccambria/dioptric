@@ -40,7 +40,7 @@ def calc_resonance_from_file(f):
     nv_sig = data["nv_sig"]
     state = data["state"]
     passed_res = nv_sig[f"resonance_{state}"]
-    
+
     ret_vals = pulsed_resonance.process_counts(
         ref_counts, sig_counts, num_runs
     )
@@ -338,24 +338,42 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    temp_file = "2022_07_18-14_34_21-hopper-search"
-    temp_data = tool_belt.get_raw_data(temp_file)
-    sig_files = temp_data["sig_files"]
-    ref_files = temp_data["ref_files"]
-    files_to_run = [*sig_files[2][3], *ref_files[2][3]]
-    # f = "2022_07_16-16_33_11-hopper-search"
-    for f in files_to_run:
-        data = tool_belt.get_raw_data(f)
+    # ZFS imaging routine
 
-        norm_avg_sig = data["norm_avg_sig"]
-        norm_avg_sig_ste = data["norm_avg_sig_ste"]
-        detuning = data["detuning"]
-        d_omega = data["d_omega"]
-        nv_sig = data["nv_sig"]
-        state = data["state"]
-        passed_res = nv_sig[f"resonance_{state}"]
+    # temp_file = "2022_07_25-14_44_53-hopper-search"
+    # temp_data = tool_belt.get_raw_data(temp_file)
+    # sig_files = temp_data["sig_files"]
+    # ref_files = temp_data["ref_files"]
+    # files_to_run = [*sig_files[2][3], *ref_files[2][3]]
+    # # f = "2022_07_16-16_33_11-hopper-search"
+    # for f in files_to_run:
+    #     data = tool_belt.get_raw_data(f)
 
-        resonance, resonance_err = calc_resonance(
-            norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
-        )
-        print(resonance, resonance_err)
+    #     norm_avg_sig = data["norm_avg_sig"]
+    #     norm_avg_sig_ste = data["norm_avg_sig_ste"]
+    #     detuning = data["detuning"]
+    #     d_omega = data["d_omega"]
+    #     nv_sig = data["nv_sig"]
+    #     state = data["state"]
+    #     passed_res = nv_sig[f"resonance_{state}"]
+
+    #     resonance, resonance_err = calc_resonance(
+    #         norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+    #     )
+    #     print(resonance, resonance_err)
+
+    # One-off
+
+    file_name = "2022_07_25-14_44_53-hopper-search"
+    data = tool_belt.get_raw_data(file_name)
+    norm_avg_sig = data["norm_avg_sig"]
+    norm_avg_sig_ste = data["norm_avg_sig_ste"]
+    detuning = data["detuning"]
+    d_omega = data["d_omega"]
+    nv_sig = data["nv_sig"]
+    state = data["state"]
+    passed_res = nv_sig[f"resonance_{state}"]
+    resonance, resonance_err = calc_resonance(
+        norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
+    )
+    print(resonance, resonance_err)
