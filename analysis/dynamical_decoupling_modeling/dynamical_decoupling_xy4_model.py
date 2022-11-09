@@ -100,13 +100,13 @@ def pop_S(t, N, fh, theta, fL, lambd, sigma,T2, a_list):
 # file='2022_09_08-08_19_09-rubin-nv4_2022_08_10' #XY4-1
 # file = '2022_09_08-09_20_15-rubin-nv1_2022_08_10' # XY4-1
 # file = '2022_09_11-00_27_23-rubin-nv8_2022_08_10' # XY4-1
-file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
+# file = '2022_09_02-07_01_43-rubin-nv1_2022_08_10' # XY4-2f
 
 # file = '2022_09_14-01_56_22-rubin-nv4_2022_08_10' #xy4-2
 # file = '2022_09_14-09_53_52-rubin-nv4_2022_08_10' #XY4-2
 
 # file = '2022_09_07-09_06_55-rubin-nv8_2022_08_10' # XY4-2
-# file = '2022_09_11-15_02_12-rubin-nv8_2022_08_10'
+file = '2022_09_11-15_02_12-rubin-nv8_2022_08_10'
 folder = 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
 
 
@@ -156,7 +156,7 @@ if c13_coupling:
     fit_func = lambda  t, fh, theta, lambd, sigma: pop_S(t,num_pi_pulses, fh, theta, 0.096, lambd, sigma,  40, 
                                                       dd_model_coeff_dict['{}'.format(num_pi_pulses)] ) 
 
-    for amp in [0.1]:#1.4
+    for amp in [10]:#1.4
         for theta in [60*pi/180]:
             fig, ax = plt.subplots()
             init_params = [amp, theta, 0.3, 0.01]

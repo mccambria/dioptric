@@ -241,6 +241,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
                     'num_reps': num_reps,
                     'num_runs': num_runs,
                     'run_ind': run_ind,
+                    'num_bins': num_bins,
                     'opti_coords_list': opti_coords_list,
                     'opti_coords_list-units': 'V',
                     'processed_tags': processed_tags,
@@ -489,7 +490,7 @@ def replot(file_name, date_folder, sub_folder =None,semilog = False):
     
 # %%
 if __name__ == '__main__':
-    folder = 'pc_rabi/branch_master/lifetime_v2/2022_09/2022_09_18'
+    folder = 'pc_rabi/branch_master/lifetime_v2/2022_09'
     file = '2022_09_17-00_12_47-rubin-nv0_2022_09_16'
     
     file_bckg = '2022_09_14-12_39_05-rubin-no_nv'
@@ -500,19 +501,24 @@ if __name__ == '__main__':
     # bkgd= numpy.array(data['binned_samples'])
     # decay_list = []
     
-    file_list = tool_belt.get_file_list(
-        'pc_rabi/branch_master/lifetime_v2/2022_09/2022_09_18',
-        'txt',
-    )
+    # file_list = tool_belt.get_file_list(
+    #     'pc_rabi/branch_master/lifetime_v2/2022_09/2022_09_18',
+    #     'txt',
+    # )
+    file_list = ['2022_09_13-17_07_24-rubin-nv1_2022_08_10.txt',
+                 '2022_09_13-17_51_35-rubin-nv4_2022_08_10.txt',
+                 '2022_09_13-18_17_53-rubin-nv5_2022_08_10.txt',
+                 '2022_09_13-18_17_55-rubin-nv8_2022_08_10.txt',
+                 '2022_09_13-19_10_05-rubin-nv10_2022_08_10.txt']
     
-    # for file_name in file_list:
-    #     file = file_name[:-4]
-    #     lifetime_json_to_csv(file, folder)
+    for file_name in file_list:
+        file = file_name[:-4]
+        lifetime_json_to_csv(file, folder)
     
-    fit_decay('2022_09_22-13_48_04-rubin_al-no_nv', '2022_09' )
-    # replot('2022_09_22-13_48_04-rubin_al-no_nv', '2022_09' ,semilog=True)
-    #     [d] = fit_decay(file, '2022_09', '2022_09_18', bkgd_sig = bkgd)
-    #     decay_list.append(d)
+    # fit_decay('2022_09_22-13_48_04-rubin_al-no_nv', '2022_09' )
+    # replot('2022_09_13-18_17_55-rubin-nv8_2022_08_10', '2022_09/incremental' ,semilog=True)
+        # [d] = fit_decay(file, '2022_09', '2022_09_18', bkgd_sig = bkgd)
+        # decay_list.append(d)
     
     # print(decay_list)
     
@@ -533,5 +539,5 @@ if __name__ == '__main__':
     # ax.set_ylabel('Occurrences')
     # ax.set_title('Histogram of lifetime decay times')
         
-    
+
     

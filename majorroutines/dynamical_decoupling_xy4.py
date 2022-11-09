@@ -533,6 +533,7 @@ def main_with_cxn(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
+        "run_ind" : run_ind,
         "taus": taus.tolist(),
         "plot_taus":plot_taus.tolist(),
         "taus-units": "ns",
@@ -563,8 +564,8 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     
-    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09'
-    file1 = '2022_09_16-19_46_11-rubin-nv1_2022_08_10-edit'
+    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_10/incremental'
+    file1 = '2022_10_30-00_01_51-siena-nv1_2022_10_27'
     file2 = '2022_09_16-12_33_42-rubin-nv8_2022_08_10'
     file4= '2022_09_19-13_28_29-rubin-nv1_2022_08_10'
     folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
@@ -574,25 +575,51 @@ if __name__ == "__main__":
     file_list = [file1]
     # fig, ax = plt.subplots()
 
-    # for file in file_list:
-    #     data = tool_belt.get_raw_data(file, folder4)
-    #     taus = numpy.array(data['taus'])
-    #     num_xy4_reps = data['num_xy4_reps']
-    #     norm_avg_sig = data['norm_avg_sig']
-    #     num_steps=data['num_steps']
-    #     nv_sig = data['nv_sig']
-    #     plot_taus =data['plot_taus']
-    #     # run_ind = data['run_ind']
-    #     sig_counts = data['sig_counts']
-    #     ref_counts = data['ref_counts']
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, folder4)
+        taus = numpy.array(data['taus'])
+        num_xy4_reps = data['num_xy4_reps']
+        # norm_avg_sig = data['norm_avg_sig']
+        num_steps=data['num_steps']
+        nv_sig = data['nv_sig']
+        plot_taus =data['plot_taus']
+        # run_ind = data['run_ind']
+        run_ind = 25
+        sig_counts = data['sig_counts']
+        ref_counts = data['ref_counts']
+        
+        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+        # print(numpy.average(avg_ref_counts))
+        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
     
+        fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+        ax = axes_pack[0]
+        ax.cla()
+        ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
+        ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+        ax.set_ylabel("Counts")
+        ax.legend()
+        
+        ax = axes_pack[1]
+        ax.cla()
+        ax.plot(plot_taus, norm_avg_sig, "b-")
+        ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+        
+        
+        fig.canvas.draw()
+        fig.set_tight_layout(True)
+        fig.canvas.flush_events()
+        
     
-    
-    #     # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
-    #     # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-    #     # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
-    #     # ax.set_ylabel("Contrast (arb. units)")
-    #     # ax.legend()
+        # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+        # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+        # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+        # ax.set_ylabel("Contrast (arb. units)")
+        # ax.legend()
         
 
     # #### just plot revivials
@@ -613,9 +640,9 @@ if __name__ == "__main__":
     ### just revivals ###
     # This data set took measurements at the revivals and midway between them
     
-    if True:
-        file_name = "2022_09_19-13_28_29-rubin-nv1_2022_08_10"
-        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_09')
+    if False:
+        file_name = "2022_10_30-00_01_51-siena-nv1_2022_10_27"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_10/incremental')
         norm_avg_sig = data['norm_avg_sig']
         ref_counts = numpy.array(data['ref_counts'])
         

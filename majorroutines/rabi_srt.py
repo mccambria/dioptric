@@ -23,15 +23,17 @@ import labrad
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, detuning, 
+def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
          num_steps, num_reps, num_runs,
-         readout_state,
+         readout_state = States.HIGH,
          initial_state = States.HIGH,
          opti_nv_sig = None,
          ):
+        #Right now, make sure SRS is set as State HIGH
+   
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  detuning, 
+        main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation_high, deviation_low, 
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
@@ -40,9 +42,9 @@ def main(nv_sig, apd_indices, uwave_time_range, detuning,
 
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning, 
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
                      num_steps, num_reps, num_runs,
-                     readout_state,
+                     readout_state = States.HIGH,
                      initial_state = States.HIGH,
                      opti_nv_sig = None):
 
@@ -54,9 +56,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
     start_timestamp = tool_belt.get_time_stamp()
 
     # %% Initial calculations and setup
+    state_high = States.HIGH
+    state_low = States.LOW
+    uwave_freq_high = nv_sig['resonance_{}'.format(state_high.name)]
+    uwave_freq_low = nv_sig['resonance_{}'.format(state_low.name)]
+    
+    uwave_freq_high_detune = uwave_freq_high + deviation_high / 1e3
+    uwave_freq_low_detune = uwave_freq_low + deviation_low / 1e3
+    
+    uwave_power_high = nv_sig['uwave_power_{}'.format(state_high.name)]
+    uwave_power_low = nv_sig['uwave_power_{}'.format(state_low.name)]
+    rabi_high = nv_sig['rabi_{}'.format(state_high.name)]
+    rabi_low = nv_sig['rabi_{}'.format(state_low.name)]
 
-    uwave_freq = nv_sig['resonance_{}'.format(state.name)]
-    uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
+    pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_high)
+    pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_low)
 
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
@@ -78,11 +92,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time, apd_indices[0],
-                state.value, laser_name, laser_power]
+                readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
+                apd_indices[0],
+                initial_state.value, readout_state.value, 
+                laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
-    # print(seq_args)
+    print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -142,15 +158,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-        # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_freq(uwave_freq)
-        sig_gen_cxn.set_amp(uwave_power)
-        if iq_mod_on:
-            sig_gen_cxn.load_iq()
-        sig_gen_cxn.uwave_on()
-        if iq_mod_on:
-            cxn.arbitrary_waveform_generator.load_arb_phases([0])
+        # Set up the microwaves for the low and high states
+        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+            cxn, States.LOW
+        )
+        low_sig_gen_cxn.set_freq(uwave_freq_low_detune)
+        low_sig_gen_cxn.set_amp(uwave_power_low)
+        low_sig_gen_cxn.uwave_on()
+
+        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+            cxn, States.HIGH
+        )
+        high_sig_gen_cxn.set_freq(uwave_freq_high)
+        high_sig_gen_cxn.set_amp(uwave_power_high)
+        # Maybe check the name of the signal generator??
+        high_sig_gen_cxn.load_fm(deviation_high)
+        high_sig_gen_cxn.uwave_on()
+        
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
@@ -172,12 +196,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
             if tool_belt.safe_stop():
                 break
 #            print(taus[tau_ind])
+
+            # 'Flip a coin' to determine which tau (long/shrt) is used first
+            rand_boolean = numpy.random.randint(0, high=2)
+
+            if rand_boolean == 1:
+                tau_ind_first = tau_ind
+                tau_ind_second = -tau_ind - 1
+            elif rand_boolean == 0:
+                tau_ind_first = -tau_ind - 1
+                tau_ind_second = tau_ind
+
             # add the tau indexxes used to a list to save at the end
-            tau_index_master_list[run_ind].append(tau_ind)
+            tau_index_master_list[run_ind].append(tau_ind_first)
+            tau_index_master_list[run_ind].append(tau_ind_second)
             # Stream the sequence
-            seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time, apd_indices[0],
-                        state.value, laser_name, laser_power]
+            
+            seq_args = [taus[tau_ind_first], polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], 
+                apd_indices[0],
+                initial_state.value, readout_state.value, 
+                laser_name, laser_power]
+    
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
@@ -190,15 +230,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
 
             sample_counts = new_counts[0]
 
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-            # print('Sig counts: {}'.format(sum(sig_gate_counts)))
+            
+            count = sum(sample_counts[0::4])
+            sig_counts[run_ind, tau_ind_first] = count
+            # print("First signal = " + str(count))
 
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            # print('Ref counts: {}'.format(sum(ref_gate_counts)))
+            count = sum(sample_counts[1::4])
+            ref_counts[run_ind, tau_ind_first] = count
+            # print("First Reference = " + str(count))
+
+            count = sum(sample_counts[2::4])
+            sig_counts[run_ind, tau_ind_second] = count
+            # print("Second Signal = " + str(count))
+
+            count = sum(sample_counts[3::4])
+            ref_counts[run_ind, tau_ind_second] = count
+            # print("Second Reference = " + str(count))
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
@@ -248,13 +295,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'uwave_freq': uwave_freq,
-                    'uwave_freq-units': 'GHz',
-                    'uwave_power': uwave_power,
-                    'uwave_power-units': 'dBm',
+                    'deviation_low': deviation_low,
+                    'deviation_low-units': 'MHz',
+                    'deviation_high': deviation_high,
+                    'deviation_high-units': 'MHz',
                     'uwave_time_range': uwave_time_range,
                     'uwave_time_range-units': 'ns',
-                    'state': state.name,
+                    'taus': taus.tolist(),
+                    'initial_state': initial_state.name,
+                    'readout_state': readout_state.name,
                     'num_steps': num_steps,
                     'num_reps': num_reps,
                     'num_runs': num_runs,
@@ -274,9 +323,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
         tool_belt.save_figure(raw_fig, file_path)
 
 
-    # %% Fit the data and extract piPulse
+    # # %% Fit the data and extract piPulse
 
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
 
     # %% Plot the Rabi signal
 
@@ -303,12 +352,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
 
     # %% Plot the data itself and the fitted curve
 
-    fit_fig = None
-    if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(uwave_time_range, uwave_freq, num_steps,
-                                    norm_avg_sig, fit_func, popt)
-        rabi_period = 1/popt[1]
-        print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
+    # fit_fig = None
+    # if (fit_func is not None) and (popt is not None):
+    #     fit_fig = create_fit_figure(uwave_time_range, uwave_freq, num_steps,
+    #                                 norm_avg_sig, fit_func, popt)
+    #     rabi_period = 1/popt[1]
+    #     print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
 
     # %% Clean up and save the data
 
@@ -325,16 +374,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'uwave_freq': uwave_freq,
-                'uwave_freq-units': 'GHz',
-                'uwave_power': uwave_power,
-                'uwave_power-units': 'dBm',
-                'uwave_time_range': uwave_time_range,
-                'uwave_time_range-units': 'ns',
-                'state': state.name,
+                'deviation_low': deviation_low,
+                'deviation_low-units': 'MHz',
+                'deviation_high': deviation_high,
+                'deviation_high-units': 'MHz',
+                'initial_state': initial_state.name,
+                'readout_state': readout_state.name,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
+                'taus': taus.tolist(),
                 'tau_index_master_list':tau_index_master_list,
                 'opti_coords_list': opti_coords_list,
                 'opti_coords_list-units': 'V',
@@ -348,15 +397,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, detuning,
     nv_name = nv_sig["name"]
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     tool_belt.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-        tool_belt.save_figure(fit_fig, file_path_fit)
+    # if fit_fig is not None:
+    #     file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+    #     tool_belt.save_figure(fit_fig, file_path_fit)
     tool_belt.save_raw_data(raw_data, file_path)
 
-    if (fit_func is not None) and (popt is not None):
-        return rabi_period, sig_counts, ref_counts, popt
-    else:
-        return None, sig_counts, ref_counts, []
+    # if (fit_func is not None) and (popt is not None):
+    #     return rabi_period, sig_counts, ref_counts, popt
+    # else:
+    #     return None, sig_counts, ref_counts, []
 
 
 # %% Run the file
