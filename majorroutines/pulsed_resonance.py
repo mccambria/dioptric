@@ -61,10 +61,21 @@ def create_fit_figure(
     elif fit_func == double_gaussian_dip:
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
+    elif fit_func == quad_gaussian_dip:
+        low_text1 = text.format(*popt[0:3])
+        low_text2 = text.format(*popt[3:6])
+        high_text1 = text.format(*popt[6:9])
+        high_text2 = text.format(*popt[9:12])
 
-    kpl.text(ax, 0.05, 0.05, low_text)
-    if high_text is not None:
-        kpl.text(ax, 0.74, 0.05, high_text)
+
+    kpl.text(ax, 0.05, 0.3, low_text1)
+    kpl.text(ax, 0.05, 0.05, low_text2)
+    kpl.text(ax, 0.74, 0.05, high_text1)
+    kpl.text(ax, 0.74, 0.3, high_text2)
+    
+    # kpl.text(ax, 0.05, 0.05, low_text)
+    # if high_text is not None:
+    #     kpl.text(ax, 0.74, 0.05, high_text)
 
     kpl.tight_layout(fig)
     fig.canvas.draw()
@@ -143,6 +154,28 @@ def double_gaussian_dip(
 
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
+
+
+def quad_gaussian_dip(
+    freq,
+    low_constrast1,
+    low_sigma1,
+    low_center1,
+    low_constrast2,
+    low_sigma2,
+    low_center2,
+    high_constrast1,
+    high_sigma1,
+    high_center1,
+    high_constrast2,
+    high_sigma2,
+    high_center2,
+):
+    low_gauss1 = gaussian(freq, low_constrast1, low_sigma1, low_center1)
+    low_gauss2 = gaussian(freq, low_constrast2, low_sigma2, low_center2)
+    high_gauss1 = gaussian(freq, high_constrast1, high_sigma1, high_center1)
+    high_gauss2 = gaussian(freq, high_constrast2, high_sigma2, high_center2)
+    return 1.0 - low_gauss1 - high_gauss1- low_gauss2 - high_gauss2
 
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
@@ -271,6 +304,12 @@ def fit_resonance(
     # fit_func = single_gaussian_dip
     # guess_params = [0.2, 0.004, freq_center]
 
+    fit_func = quad_gaussian_dip
+    guess_params = [0.2, 0.004, freq_center-0.09,
+                    0.2,0.004, freq_center-0.03,
+                   0.2, 0.004, freq_center+0.03,
+                   0.2, 0.004, freq_center+0.09,]
+    
     # try:
     if norm_avg_sig_ste is not None:
         popt, pcov = curve_fit(
@@ -356,7 +395,7 @@ def process_counts(ref_counts, sig_counts, num_runs):
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
     # New style, single reference
-    if False:
+    if True:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
@@ -663,6 +702,9 @@ def main_with_cxn(
         ax.cla()
         ax.plot(freqs, norm_avg_sig, "b-")
 
+        # ax.axvline(2.8424, color = 'gray')
+        # ax.axvline(2.8976, color = 'gray')
+
         text_popt = f"Run # {run_ind + 1}/{num_runs}"
         kpl.text(ax, 0.8, 0.9, text_popt)
 
@@ -735,9 +777,12 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(freqs, norm_avg_sig, "b-")
-    ax.set_title("Normalized Count Rate vs Frequency")
+    ax.set_title("Normalized Count Rate vs Frequency, {} deg".format(nv_sig['magnet_angle']))
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Contrast (arb. units)")
+    
+    # ax.axvline(2.8424, color = 'gray')
+    # ax.axvline(2.8976, color = 'gray')
 
     fig.canvas.draw()
     fig.tight_layout()
@@ -873,7 +918,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib(font_size="small")
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_10_13-18_23_57-hopper-nv4_2022_10_13"
+    file = "2022_11_09-15_17_06-siena-nv_13c"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]

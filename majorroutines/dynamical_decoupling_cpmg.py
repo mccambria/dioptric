@@ -613,30 +613,30 @@ if __name__ == "__main__":
     file2 = '2022_11_07-09_03_23-siena-nv1_2022_10_27'
     file4 = '2022_11_06-20_26_00-siena-nv1_2022_10_27'
     # file8 = '2022_11_02-06_35_38-siena-nv1_2022_10_27'
-    # file16 = '2022_11_05-22_14_27-siena-nv1_2022_10_27'
+    file16 = '2022_11_07-13_12_06-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
     file_t1 = '2022_11_06-10_49_30-siena-nv1_2022_10_27'
     
-    data = tool_belt.get_raw_data(file2, folder)
-    fit_t2_decay(data)
+    # data = tool_belt.get_raw_data(file16, folder)
+    # fit_t2_decay(data)
     
     file_list = [file1, 
                   file2, 
                  file4, 
                  # file8, 
-                  # file16, 
+                   file16, 
                  file_t1]
     color_list = ['red', 
                    'blue', 
                   'orange', 
-                  # 'green',
-                   # 'purple', 
+                   # 'green',
+                    'purple', 
                   'black']
     
     
-    # if True:
-    if False:
+    if True:
+    # if False:
         fig, ax = plt.subplots(figsize=(8.5, 8.5))
         # amplitude = 0.069
         # offset = 0.931

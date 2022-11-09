@@ -72,7 +72,7 @@ def get_seq(pulse_streamer, config, args):
              (max_tau, LOW),
              (uwave_buffer, LOW),
              (readout, HIGH),
-             (short_buffer, LOW)]
+             (readout_pol_min - readout + short_buffer, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     period = 0
     for el in train:
@@ -89,7 +89,7 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, LOW),
              (max_tau, LOW),
              (uwave_buffer, LOW),
-             (readout, HIGH),
+             (readout_pol_min, HIGH),
              (short_buffer, LOW),
              (laser_delay, LOW)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
@@ -110,7 +110,7 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, LOW),
              (max_tau, LOW),
              (uwave_buffer, LOW),
-             (readout, LOW),
+             (readout_pol_min, LOW),
              (short_buffer, LOW),
              (uwave_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
@@ -127,6 +127,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    args = [175, 10000.0, 50000, 175, 0, 1, 'laserglow_532', None]
+    args = [100, 10000.0, 350, 200, 1, 3, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()

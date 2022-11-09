@@ -19,6 +19,7 @@ import time
 import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.optimize import curve_fit
+from scipy.stats import sem
 import labrad
 
 
@@ -348,11 +349,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         # %% incremental plotting
 
         #Average the counts over the iterations
+        single_ref_avg = numpy.average(ref_counts[: (run_ind + 1)])
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
 
-        #norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        
+        # norm_avg_sig = avg_sig_counts / avg_ref_counts
+        norm_avg_sig = avg_sig_counts / single_ref_avg
 
 
         ax = axes_pack[0]
@@ -415,7 +418,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # %% Fit the data and extract piPulse
 
+    # calculate the noise
+    st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
+    st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
+    sig_perc_err = st_err_sig_counts / avg_sig_counts
+    ref_perc_err = st_err_ref_counts / avg_ref_counts
+    st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
+    noise = numpy.average(st_err_norm_avg_sig)
+    # print(numpy.average(st_err_norm_avg_sig))
+        
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    
+    A_0 = 1- popt[0]
+    signal = 2*A_0
+    
+    print('snr = {}'.format(signal/noise))
 
     # %% Plot the Rabi signal
 
@@ -503,8 +520,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi/2021_09'
-    file = '2021_09_20-16_49_16-johnson-nv1_2021_09_07'
+    path = 'pc_rabi/branch_master/rabi/2022_11'
+    file = '2022_11_04-16_21_00-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
     # norm_avg_sig = data['norm_avg_sig']
@@ -528,19 +545,32 @@ if __name__ == '__main__':
     max_uwave_time = uwave_time_range[1]
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
-
-    print(numpy.size(sig_counts))
+    
+    
+    # print(numpy.average(sem(ref_counts)))
+    # print(numpy.size(sig_counts))
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
     st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
-
+    
+    
+    # print(numpy.average(st_err_ref_counts))
     norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     sig_perc_err = st_err_sig_counts / avg_sig_counts
     ref_perc_err = st_err_ref_counts / avg_ref_counts
     st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
-
+    noise = numpy.average(st_err_norm_avg_sig)
+    # print(numpy.average(st_err_norm_avg_sig))
+    
+    
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    A_0 = 1- popt[0]
+    signal = 2*A_0
+    
+    snr = signal/noise
+    print('snr = {}'.format(snr))
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
