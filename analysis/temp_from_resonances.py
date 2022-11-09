@@ -376,8 +376,8 @@ def experimental_zfs_versus_t(path, file_name):
     y_range = [2.74, 2.883]
     # temp_range = [-10, 510]
     # y_range = [2.843, 2.881]
-    plot_data = True
-    plot_prior_models = False
+    plot_data = False
+    plot_prior_models = True
     plot_my_model = True
 
     min_temp, max_temp = temp_range
@@ -504,6 +504,16 @@ def experimental_zfs_versus_t(path, file_name):
     red_chi_sq = ssr / dof
     print(red_chi_sq)
 
+    # Plot mine last for the reveal
+    if plot_my_model:
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            cambria_lambda(temp_linspace),
+            label="Proposed",
+            color=color,
+        )
+
     ### Prior models
 
     if plot_prior_models:
@@ -531,31 +541,23 @@ def experimental_zfs_versus_t(path, file_name):
             ax, temp_linspace, zfs_from_temp_li(temp_linspace), label="Li"
         )
 
-    # Plot mine last for the reveal
-    if plot_my_model:
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            cambria_lambda(temp_linspace),
-            label="Proposed",
-            color=color,
-        )
-
     # Generated experimental
+    temp_linspace_clip = temp_linspace[(temp_linspace < 700)]
     kpl.plot_line(
         ax,
-        temp_linspace,
-        expt_guess(temp_linspace),
-        label="expt",
+        temp_linspace_clip,
+        expt_guess(temp_linspace_clip),
+        label="Expt",
         color="black",
         linestyle="dotted",
     )
 
     ### Plot wrap up
-    if plot_prior_models:
-        ax.legend(loc="lower left")
-        # ax.legend(bbox_to_anchor=(0.37, 0.46))
-        # ax.legend(bbox_to_anchor=(0.329, 0.46))
+    # if plot_prior_models:
+    #     ax.legend(loc="lower left")
+    # ax.legend(bbox_to_anchor=(0.37, 0.46))
+    # ax.legend(bbox_to_anchor=(0.329, 0.46))
+    ax.legend(loc="lower left")
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     ax.set_ylabel("D (GHz)")
     ax.set_xlim(*temp_range)
