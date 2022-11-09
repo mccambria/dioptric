@@ -356,7 +356,7 @@ def process_counts(ref_counts, sig_counts, num_runs):
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
     # New style, single reference
-    if False:
+    if True:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
@@ -625,18 +625,14 @@ def main_with_cxn(
             cxn.pulse_streamer.stream_start(int(num_reps))
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = cxn.apd_tagger.read_counter_modulo_gates(2, 1)
 
             sample_counts = new_counts[0]
 
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            sig_counts[run_ind, freq_ind] = sample_counts[0]
             # print(sum(sig_gate_counts))
 
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
+            ref_counts[run_ind, freq_ind] = sample_counts[1]
             # print(sum(ref_gate_counts))
 
         cxn.apd_tagger.stop_tag_stream()
@@ -873,7 +869,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib(font_size="small")
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_10_13-18_23_57-hopper-nv4_2022_10_13"
+    file = "2022_11_02-19_10_55-15micro-nv2_2022_11_02"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -900,7 +896,7 @@ if __name__ == "__main__":
         ref_counts,
     )
 
-    # popt[2] -= np.sqrt(pcov[2, 2])
+    print(popt)
 
     create_fit_figure(
         freq_range,

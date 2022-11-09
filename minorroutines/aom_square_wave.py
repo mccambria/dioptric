@@ -139,7 +139,8 @@ if __name__ == '__main__':
     # laser_powers = [None, 1.0]
     laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
-    filter_name = 'nd_0.5'
+    filter_name = 'nd_1.0'
+    # filter_name = 'nd_0.5'
     pos = [0.0, 0.0, 0]
     # laser_powers = None
     

@@ -107,7 +107,7 @@ def get_seq(pulse_streamer, config, args):
              (tau, HIGH),
              (uwave_buffer, LOW),
              (readout_pol_min, LOW), 
-             (uwave_buffer, LOW),
+             (uwave_buffer, LOW), 
              (max_tau, LOW),
              (uwave_buffer, LOW),
              (readout, LOW),
