@@ -83,11 +83,26 @@ def process_temp_dep_res_files():
         # print()
 
 
+def expt_guess(temp):
+    if type(temp) in [list, np.ndarray]:
+        ret_vals = [expt_guess_sub(el) for el in temp]
+        return ret_vals
+    else:
+        return expt_guess_sub(temp)
+
+
+def expt_guess_sub(temp):
+    if temp < 300:  # Chen
+        return sub_room_zfs_from_temp(temp)
+    else:  # Toyli
+        return super_room_zfs_from_temp(temp)
+
+
 def sub_room_zfs_from_temp(temp):
     coeffs = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
     ret_val = 0
     for ind in range(6):
-        ret_val += coeffs[ind] * (temp ** ind)
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
@@ -126,7 +141,7 @@ def sub_room_zfs_from_temp_free(
         # zfs
         exp = ind
         # exp = ind * 2
-        ret_val += coeffs[ind] * (temp ** exp)
+        ret_val += coeffs[ind] * (temp**exp)
 
         # if not skip_derivatives_check:
         #     # First derivative
@@ -158,7 +173,7 @@ def super_room_zfs_from_temp(temp):
     coeff_errs = [0.0009, 0.6e-5, 0.1e-7, 0.1e-10]
     ret_val = 0
     for ind in range(4):
-        ret_val += coeffs[ind] * (temp ** ind)
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
@@ -215,7 +230,7 @@ def zfs_from_temp_li(temp):
     A = 5.6e-7  # GHz / K**2
     B = 490  # K
 
-    zfs = zfs0 - A * temp ** 4 / ((temp + B) ** 2)
+    zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
 
     return zfs
 
@@ -269,7 +284,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b6 = -1.8e-15
     D_of_T = (
         lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
+        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
         / 1000
     )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
@@ -328,14 +343,44 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
     return ret_val
 
 
+def cambria_test4(temp, zfs0, A1):
+
+    Theta1 = 65
+    Theta2 = 150
+    A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
+
+    ret_val = zfs0
+    ret_val += A1 * bose(Theta1, temp)
+    # ret_val += A3 * fractional_thermal_expansion(temp)
+
+    # Constrain A2 to match Toyli's 700 K value of 2.81461 GHz
+    test_temp = 700
+    A2 = (
+        super_room_zfs_from_temp(test_temp)
+        - zfs0
+        - A1 * bose(Theta1, test_temp)
+        # - A3 * fractional_thermal_expansion(test_temp)
+    ) / bose(Theta2, test_temp)
+    ret_val += A2 * bose(Theta2, temp)
+
+    return ret_val
+
+
+# def get_fake_data()
+# expt_guess(temp_linspace)
+
+
 def experimental_zfs_versus_t(path, file_name):
 
-    # temp_range = [-10, 1000]
-    # y_range = [2.74, 2.883]
-    temp_range = [-10, 510]
-    y_range = [2.843, 2.881]
-    plot_data = True
+    # print(super_room_zfs_from_temp(700))
+    # return
+    temp_range = [-10, 1000]
+    y_range = [2.74, 2.883]
+    # temp_range = [-10, 510]
+    # y_range = [2.843, 2.881]
+    plot_data = False
     plot_prior_models = False
+    plot_my_model = True
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
@@ -343,7 +388,15 @@ def experimental_zfs_versus_t(path, file_name):
     csv_file_path = path / "{}.csv".format(file_name)
     fig, ax = plt.subplots(figsize=kpl.figsize)
 
+    filter_temp_range = [0, 300]
     data_points = get_data_points(path, file_name)
+    filtered_data_points = []
+    for el in data_points:
+        el_temp = el["Reported temp (K)"]
+        if filter_temp_range[0] < el_temp < filter_temp_range[1]:
+            filtered_data_points.append(el)
+    data_points = filtered_data_points
+    # data_points = get_fake_data(path, file_name)
     zfs_list = []
     zfs_err_list = []
     temp_list = []
@@ -420,12 +473,13 @@ def experimental_zfs_versus_t(path, file_name):
     guess_params = [
         2.87771,
         -8e-2,
-        -4e-1,
+        # -4e-1,
         # 65,
         # 165,
         # 6.5,
     ]
-    fit_func = cambria_test
+    # fit_func = cambria_test
+    fit_func = cambria_test4
     popt, pcov = curve_fit(
         fit_func,
         temp_list,
@@ -480,12 +534,23 @@ def experimental_zfs_versus_t(path, file_name):
         )
 
     # Plot mine last for the reveal
+    if plot_my_model:
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            cambria_lambda(temp_linspace),
+            label="Proposed",
+            color=color,
+        )
+
+    # Generated experimental
     kpl.plot_line(
         ax,
         temp_linspace,
-        cambria_lambda(temp_linspace),
-        label="Proposed",
-        color=color,
+        expt_guess(temp_linspace),
+        label="expt",
+        color="black",
+        linestyle="dotted",
     )
 
     ### Plot wrap up
