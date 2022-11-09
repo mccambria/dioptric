@@ -310,8 +310,8 @@ def cambria_test(temp, zfs0, A1, A2):
         adj_ind = ind + 1
         ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
 
-    A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
-    ret_val += A3 * fractional_thermal_expansion(temp)
+    # A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
+    # ret_val += A3 * fractional_thermal_expansion(temp)
 
     return ret_val
 
@@ -372,13 +372,11 @@ def cambria_test4(temp, zfs0, A1):
 
 def experimental_zfs_versus_t(path, file_name):
 
-    # print(super_room_zfs_from_temp(700))
-    # return
     temp_range = [-10, 1000]
     y_range = [2.74, 2.883]
     # temp_range = [-10, 510]
     # y_range = [2.843, 2.881]
-    plot_data = False
+    plot_data = True
     plot_prior_models = False
     plot_my_model = True
 

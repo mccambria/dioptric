@@ -21,8 +21,8 @@ from colorutils import Color
 # region Constants
 # These standard values are intended for single-column figures
 
-marker_sizes = {"normal": 7, "small": 6}
-line_widths = {"normal": 1.5, "small": 1.25}
+marker_sizes = {"normal": 7, "small": 6, "tiny": 4}
+line_widths = {"normal": 1.5, "small": 1.25, "tiny": 1.0}
 marker_edge_widths = line_widths.copy()
 font_sizes = {"normal": 17, "small": 13}
 figsize = [6.5, 5.0]
@@ -65,18 +65,19 @@ class KplColors(Enum):
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
 
+
 data_color_cycler = [
-        KplColors.BLUE.value,
-        KplColors.RED.value,
-        KplColors.GREEN.value,
-        KplColors.ORANGE.value,
-        KplColors.PURPLE.value,
-        KplColors.BROWN.value,
-        KplColors.PINK.value,
-        KplColors.GRAY.value,
-        KplColors.YELLOW.value,
-        KplColors.CYAN.value,
-    ]
+    KplColors.BLUE.value,
+    KplColors.RED.value,
+    KplColors.GREEN.value,
+    KplColors.ORANGE.value,
+    KplColors.PURPLE.value,
+    KplColors.BROWN.value,
+    KplColors.PINK.value,
+    KplColors.GRAY.value,
+    KplColors.YELLOW.value,
+    KplColors.CYAN.value,
+]
 line_color_cycler = data_color_cycler.copy()
 
 
@@ -154,19 +155,22 @@ def init_kplotlib(font_size="normal", data_size="normal"):
     preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
 
     plt.rcParams["text.latex.preamble"] = preamble
+    plt.rc("text", usetex=True)
 
     ###########################
 
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_sizes[default_font_size]
-    plt.rcParams['figure.figsize'] = figsize
+    plt.rcParams["figure.figsize"] = figsize
+    # plt.rcParams["figure.dpi"] = 300
+    plt.rcParams["savefig.dpi"] = 300
 
-    plt.rc("text", usetex=True)
 
 def tight_layout(fig):
 
     fig.tight_layout(pad=0.3)
+
 
 def get_default_color(ax, plot_type):
     """plot_type is data or line"""
@@ -174,11 +178,17 @@ def get_default_color(ax, plot_type):
     global active_axes, color_cyclers
     if ax not in active_axes:
         active_axes.append(ax)
-        color_cyclers.append({"points": data_color_cycler.copy(), "line": line_color_cycler.copy()})
+        color_cyclers.append(
+            {
+                "points": data_color_cycler.copy(),
+                "line": line_color_cycler.copy(),
+            }
+        )
     ax_ind = active_axes.index(ax)
     cycler = color_cyclers[ax_ind][plot_type]
     color = cycler.pop(0)
     return color
+
 
 def plot_points(ax, x, y, size=None, **kwargs):
     """
@@ -215,6 +225,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
     ax.errorbar(x, y, **params)
 
+
 def plot_line(ax, x, y, size=None, **kwargs):
     """
     Same as matplotlib's plot, but with our defaults. Use for plotting
@@ -242,6 +253,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
     params["color"] = color
 
     ax.plot(x, y, **params)
+
 
 def text(ax, x, y, text, size=None, **kwargs):
     """x, y are relative to plot dimensions and start from lower left corner"""

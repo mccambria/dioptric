@@ -170,7 +170,51 @@ class SignalGeneratorSg394(LabradServer):
         task = self.task
         if task is not None:
             task.close()
+            
+    @setting(8, deviation='v[]')
+    def load_fm(self, c, deviation):
+        """
+        Set up frequency modulation using a nexternal analog source
+        Parameters
+        ----------
+        deviation : float
+            The deviation ofthe frequency, in MHz. Max value is 6 MHz.
 
+        Returns
+        -------
+        None.
+
+        """
+        # logging.info("test")
+        # The sg394 only supports up to 10 dBm of power output with vector modulation
+        # Let's check what the amplitude is set as, and if it's over 10 dBm, 
+        # we'll quit out and save a note in the labrad logging
+        if float(self.sig_gen.query('AMPR?')) > 10:
+            msg= 'IQ modulation on sg394 supports up to 10 dBm. The power was set to {} dBm and the operation was stopped.'.format(self.sig_gen.query('AMPR?'))
+            raise Exception(msg)
+            return
+        
+        if float(deviation) > 32:
+            msg= 'FSK on sg394 supports up to 6 MHz deviation. The deviation was set to {} MHz and the operation was stopped.'.format(deviation)
+            raise Exception(msg)
+            return
+        
+        # FM is type 1
+        self.sig_gen.write('TYPE 1')
+        # STYP 1 is analog modulation
+        self.sig_gen.write('STYP 0')
+        # external is 5
+        self.sig_gen.write('MFNC 5')
+        #set the rate? For external this is 100 kHz
+        # self.sig_gen.write('RATE 100 kHz')
+        #set the deviation
+        cmd = 'FDEV {} MHz'.format(deviation)
+        self.sig_gen.write(cmd)
+        # Turn on modulation
+        cmd = 'MODL 1'
+        self.sig_gen.write(cmd)
+        
+        
     @setting(7)
     def load_iq(self, c):
         """
