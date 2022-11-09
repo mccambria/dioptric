@@ -806,18 +806,21 @@ if __name__ == "__main__":
 
     # popt: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
 
-    mag_B = 0.5 * gmuB_GHz
+    # "resonance_LOW": 2.7728,
+    # "resonance_HIGH": 2.9797,
+
+    mag_B = 53 * gmuB_GHz
     # popt = [55*(pi/180), 0, 0, 0, 0]
-    popt = [np.pi / 2, 0, 0, 0, 0]
+    popt = [0.8, 0, 0, 0, 0]
     # print(calc_eigenvectors(mag_B, *popt))
-    # vecs = calc_eigenvectors(mag_B, *popt)
-    # for vec in vecs:
-    #     vec = np.array(vec)
-    #     print(np.abs(vec)**2)
+    vecs = calc_eigenvectors(mag_B, *popt)
+    for vec in vecs:
+        vec = np.array(vec)
+        print(np.abs(vec) ** 2)
     # b_matrix_elements(name, res_descs)
     # plot_components(mag_B, popt)
     # plot_resonances([0,0.2], *popt)
-    print(np.mean(calc_res_pair(mag_B, *popt)))
+    # print([round(el, 4) for el in calc_res_pair(mag_B, *popt)])
 
     # Fake data
     # bounds: ((0, pi/2), (-0.050, 0.050), (0, 0.050), (0, pi/3), (0, 2*pi/3))
