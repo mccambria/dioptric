@@ -41,6 +41,7 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
+
     fig, ax = plt.subplots()
     kpl.plot_line(ax, freqs, norm_avg_sig)
     kpl.plot_line(ax, smooth_freqs, fit_func(smooth_freqs, *popt))
@@ -61,21 +62,10 @@ def create_fit_figure(
     elif fit_func == double_gaussian_dip:
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
-    elif fit_func == quad_gaussian_dip:
-        low_text1 = text.format(*popt[0:3])
-        low_text2 = text.format(*popt[3:6])
-        high_text1 = text.format(*popt[6:9])
-        high_text2 = text.format(*popt[9:12])
 
-
-    kpl.text(ax, 0.05, 0.3, low_text1)
-    kpl.text(ax, 0.05, 0.05, low_text2)
-    kpl.text(ax, 0.74, 0.05, high_text1)
-    kpl.text(ax, 0.74, 0.3, high_text2)
-    
-    # kpl.text(ax, 0.05, 0.05, low_text)
-    # if high_text is not None:
-    #     kpl.text(ax, 0.74, 0.05, high_text)
+    kpl.text(ax, 0.05, 0.05, low_text)
+    if high_text is not None:
+        kpl.text(ax, 0.74, 0.05, high_text)
 
     kpl.tight_layout(fig)
     fig.canvas.draw()
@@ -156,26 +146,6 @@ def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
 
-def quad_gaussian_dip(
-    freq,
-    low_constrast1,
-    low_sigma1,
-    low_center1,
-    low_constrast2,
-    low_sigma2,
-    low_center2,
-    high_constrast1,
-    high_sigma1,
-    high_center1,
-    high_constrast2,
-    high_sigma2,
-    high_center2,
-):
-    low_gauss1 = gaussian(freq, low_constrast1, low_sigma1, low_center1)
-    low_gauss2 = gaussian(freq, low_constrast2, low_sigma2, low_center2)
-    high_gauss1 = gaussian(freq, high_constrast1, high_sigma1, high_center1)
-    high_gauss2 = gaussian(freq, high_constrast2, high_sigma2, high_center2)
-    return 1.0 - low_gauss1 - high_gauss1- low_gauss2 - high_gauss2
 
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
@@ -303,13 +273,7 @@ def fit_resonance(
 
     # fit_func = single_gaussian_dip
     # guess_params = [0.2, 0.004, freq_center]
-
-    fit_func = quad_gaussian_dip
-    guess_params = [0.2, 0.004, freq_center-0.09,
-                    0.2,0.004, freq_center-0.03,
-                   0.2, 0.004, freq_center+0.03,
-                   0.2, 0.004, freq_center+0.09,]
-    
+    # print(guess_params)
     # try:
     if norm_avg_sig_ste is not None:
         popt, pcov = curve_fit(
@@ -918,7 +882,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib(font_size="small")
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_09-15_17_06-siena-nv_13c"
+    file = "2022_11_09-19_19_55-siena-nv1_2022_10_27"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]

@@ -357,12 +357,11 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
     
     nv_sig = { 
-            "coords":[-0.277, 0.006, 6.54],
-        "name": "{}-nv_13c".format(sample_name,),
+            "coords":[-0.222, 0.027, 3.83],
+        "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
-        "only_z_opt":  True,
         "ramp_voltages": False,
-        "expected_count_rate":265,
+        "expected_count_rate":14,
         "correction_collar": None,
         
         
@@ -383,12 +382,12 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 66,
-        "resonance_LOW":2.7874 ,
-        "rabi_LOW":114.5,        
+        "magnet_angle": 68,
+        "resonance_LOW":2.7805 ,
+        "rabi_LOW":111.6,        
         "uwave_power_LOW": 15,
-        "resonance_HIGH":2.9529,
-        "rabi_HIGH":110,
+        "resonance_HIGH":2.9597,
+        "rabi_HIGH":127,
         "uwave_power_HIGH": 10,
     }  
     
@@ -432,7 +431,7 @@ if __name__ == "__main__":
 
     # laser delay
     num_steps = 101
-    num_reps = int(5e3)
+    num_reps = int(5e4)
     # laser_name = 'laserglow_532'
     delay_range = [0, 600]
     # num_reps = int(1e5)

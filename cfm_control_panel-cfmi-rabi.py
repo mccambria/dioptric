@@ -75,10 +75,10 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range =4
     # scan_range = 2
     # scan_range = 0.5
-    scan_range = 0.35
-    # scan_range = 0.2
+    # scan_range = 0.35
+    #scan_range = 0.2
     # scan_range = 0.15
-    # scan_range = 0.1
+    scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
@@ -88,8 +88,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 200
     # num_steps = 135
     # num_steps =120
-    num_steps = 90
-    # num_steps = 60
+   # num_steps = 90
+    num_steps = 60
     # num_steps = 31
     # num_steps = 21
 
@@ -157,7 +157,7 @@ def do_image_sample_xz(nv_sig, apd_indices):
 
     scan_range_x = .1
 # z code range 3 to 7 if centered at 5
-    scan_range_z =1
+    scan_range_z =0.2
     num_steps = 60
 
     image_sample_xz.main(
@@ -276,7 +276,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
 
     num_steps =151
     num_reps = 1e4
-    num_runs = 10
+    num_runs = 5
     uwave_power = 10
     uwave_pulse_dur = int(104.2/2)
 
@@ -307,7 +307,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 75
     num_reps = int(1e4)
-    num_runs = 1
+    num_runs = 15
 
     composite = False
 
@@ -486,9 +486,9 @@ def do_lifetime(nv_sig, apd_indices):
 
 
 
-def do_ramsey(nv_sig, opti_nv_sig, apd_indices, state = States.HIGH):
+def do_ramsey(nv_sig, opti_nv_sig, apd_indices, detuning, state = States.HIGH):
 
-    detuning = 0 # MHz
+    # detuning = 0 # MHz
     
     precession_time_range = [0, 2 * 10 ** 3]
     num_steps = 201
@@ -502,7 +502,7 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices, state = States.HIGH):
 
 
     num_reps = int( 10 ** 4)
-    num_runs = int(40)
+    num_runs = int(20)
     
     ramsey.main(
         nv_sig,
@@ -514,7 +514,7 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices, state = States.HIGH):
         num_runs,
         state,
         opti_nv_sig = opti_nv_sig,
-        do_fm = True
+        do_fm = False
     )
 
 
@@ -1111,20 +1111,21 @@ if __name__ == "__main__":
     
     
     nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.240, 0.017, 4.27]
+    nv_sig_1["coords"] = [-0.222, 0.027, 3.83]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
-    nv_sig_1["expected_count_rate"] = 15
+    nv_sig_1["expected_count_rate"] = 14
     nv_sig_1['magnet_angle'] = 68
-    nv_sig_1["resonance_LOW"]= 2.7820
-    nv_sig_1["rabi_LOW"]= 114.5 
+    nv_sig_1["resonance_LOW"]= 2.7805
+    nv_sig_1["rabi_LOW"]= 111.6
     nv_sig_1["resonance_HIGH"]= 2.9597
-    nv_sig_1["rabi_HIGH"]=124.2
+    nv_sig_1["rabi_HIGH"]=127.0
     
     
-    nv_sig_2 = copy.deepcopy(sig_base) # haven't looked at esr yet
-    nv_sig_2["coords"] = [-0.379, 0.076, 4.40] 
+    nv_sig_2 = copy.deepcopy(sig_base) 
+    new_coords = numpy.array(nv_sig_1["coords"]) + [-0.139, 0.061, 0.11] 
+    nv_sig_2["coords"] = new_coords.tolist()
     nv_sig_2["name"] = "{}-nv2_2022_10_18".format(sample_name,)
-    nv_sig_2["expected_count_rate"] =19
+    nv_sig_2["expected_count_rate"] =None
     nv_sig_2['magnet_angle'] = 68
     nv_sig_2["resonance_LOW"]= 2.826
     nv_sig_2["rabi_LOW"]=210.1
@@ -1150,7 +1151,7 @@ if __name__ == "__main__":
     try:
 
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0,0.0,0.0])
+        #tool_belt.set_drift([0.0,0.0,0.0])
         #tool_belt.set_drift([0.0, 0.06, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
@@ -1165,16 +1166,16 @@ if __name__ == "__main__":
         #                      do_image_sample(nv_sig, apd_indices)
 
         
-        # for dz in numpy.linspace(-0.2, 00.2, 11):
-        #     nv_copy = copy.deepcopy(nv_sig)
-        #     coords= nv_sig["coords"]
-        #     nv_copy["coords"] =[coords[0], coords[1], coords[2] + dz ]
-        #     do_image_sample(nv_copy, apd_indices)
+        #for dz in numpy.linspace(-0.2, 0.2, 11):
+           # nv_copy = copy.deepcopy(nv_sig)
+           # coords= nv_sig["coords"]
+           # nv_copy["coords"] =[coords[0], coords[1], coords[2] + dz ]
+           # do_image_sample(nv_copy, apd_indices)
                     
         
         
-        # do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        #do_optimize(nv_sig, apd_indices)
+        #do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         
         # do_stationary_count(nv_sig, apd_indices)
@@ -1185,12 +1186,12 @@ if __name__ == "__main__":
              
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         
-        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.25) 
+        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.25) 
         
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        #do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
@@ -1201,8 +1202,8 @@ if __name__ == "__main__":
             # sig_gen_cxn.set_freq(uwave_freq_detuned)
             # sig_gen_cxn.set_amp(uwave_power)
             # sig_gen_cxn.load_fsk(4)
-            
-        #do_ramsey(nv_sig, nv_sig,apd_indices)
+        for det in numpy.linspace(-2.2, 2.2, 11):
+            do_ramsey(nv_sig, nv_sig,apd_indices, det)
         
         # do_spin_echo(nv_sig, apd_indices)
 
