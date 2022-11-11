@@ -126,6 +126,11 @@ toyli_digitized = [
 toyli_temps = toyli_digitized[0::2]
 toyli_temps = [round(val, -1) for val in toyli_temps]
 toyli_zfss = toyli_digitized[1::2]
+# Adjust for my poor digitization
+toyli_zfss = np.array(toyli_zfss)
+toyli_zfss -= 2.87
+toyli_zfss *= 0.9857
+toyli_zfss += 2.8701
 
 
 # %% Functions
@@ -178,7 +183,7 @@ def sub_room_zfs_from_temp(temp):
     coeffs = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
     ret_val = 0
     for ind in range(6):
-        ret_val += coeffs[ind] * (temp ** ind)
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
@@ -217,7 +222,7 @@ def sub_room_zfs_from_temp_free(
         # zfs
         exp = ind
         # exp = ind * 2
-        ret_val += coeffs[ind] * (temp ** exp)
+        ret_val += coeffs[ind] * (temp**exp)
 
         # if not skip_derivatives_check:
         #     # First derivative
@@ -249,7 +254,7 @@ def super_room_zfs_from_temp(temp):
     coeff_errs = [0.0009, 0.6e-5, 0.1e-7, 0.1e-10]
     ret_val = 0
     for ind in range(4):
-        ret_val += coeffs[ind] * (temp ** ind)
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
@@ -306,7 +311,7 @@ def zfs_from_temp_li(temp):
     A = 5.6e-7  # GHz / K**2
     B = 490  # K
 
-    zfs = zfs0 - A * temp ** 4 / ((temp + B) ** 2)
+    zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
 
     return zfs
 
@@ -360,7 +365,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b6 = -1.8e-15
     D_of_T = (
         lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
+        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
         / 1000
     )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
@@ -426,9 +431,9 @@ def experimental_zfs_versus_t(path, file_name):
     # temp_range = [-10, 510]
     # y_range = [2.843, 2.881]
     plot_data = True
-    plot_prior_models = False
-    plot_mine = False
+    plot_prior_models = True
     desaturate_prior = True
+    plot_mine = True
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
