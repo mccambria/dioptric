@@ -354,7 +354,7 @@ def cambria_test4(temp, zfs0, A1):
     # ret_val += A3 * fractional_thermal_expansion(temp)
 
     # Constrain A2 to match Toyli's 700 K value of 2.81461 GHz
-    test_temp = 700
+    test_temp = 600
     A2 = (
         super_room_zfs_from_temp(test_temp)
         - zfs0
@@ -512,6 +512,7 @@ def experimental_zfs_versus_t(path, file_name):
             cambria_lambda(temp_linspace),
             label="Proposed",
             color=color,
+            zorder=7,
         )
 
     ### Prior models
@@ -550,6 +551,7 @@ def experimental_zfs_versus_t(path, file_name):
         label="Expt",
         color="black",
         linestyle="dotted",
+        zorder=10,
     )
 
     ### Plot wrap up
