@@ -613,12 +613,12 @@ if __name__ == "__main__":
     file2 = '2022_11_11-01_04_24-siena-nv1_2022_10_27'
     file4 = '2022_11_11-04_54_24-siena-nv1_2022_10_27'
     file8 = '2022_11_11-08_43_45-siena-nv1_2022_10_27'
-    # file16 = '2022_11_07-13_12_06-siena-nv1_2022_10_27'
+    file16 = '2022_11_11-12_33_19-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
     file_t1 = '2022_11_06-10_49_30-siena-nv1_2022_10_27'
     
-    data = tool_belt.get_raw_data(file4, folder)
+    data = tool_belt.get_raw_data(file16, folder)
     fit_t2_decay(data)
     
     file_list = [file1, 

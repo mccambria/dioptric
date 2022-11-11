@@ -307,7 +307,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 75
     num_reps = int(1e4)
-    num_runs = 15
+    num_runs = 3
 
     composite = False
 
@@ -365,10 +365,11 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     
 def do_pesr_srt(nv_sig,  apd_indices, initial_state, readout_state):
     
-    deviation_high = 30
-    deviation_low = 0
+    deviation_high = 0#30
+    # freq_center = nv_sig['resonance_HIGH']
+    deviation_low = 30
+    freq_center = nv_sig['resonance_LOW']
     
-    freq_center = nv_sig['resonance_HIGH']
     freq_range = 0.12
     
     num_steps = 51
@@ -393,7 +394,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -1110,7 +1111,7 @@ if __name__ == "__main__":
     nv_sig_1["resonance_LOW"]= 2.7805
     nv_sig_1["rabi_LOW"]= 111.6
     nv_sig_1["resonance_HIGH"]= 2.9597
-    nv_sig_1["rabi_HIGH"]=125.0
+    nv_sig_1["rabi_HIGH"]=128.3
     
     
     
@@ -1183,10 +1184,10 @@ if __name__ == "__main__":
         
         #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.25) 
         
-        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        #do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
@@ -1216,7 +1217,7 @@ if __name__ == "__main__":
         step_size = 200 #us
         T_min = 0 #us
         T_max = 5000 #us      
-        for n in [2, 4, 8, 16]:
+        for n in [8]:
             do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
         
         # num_xy8_reps = 1
