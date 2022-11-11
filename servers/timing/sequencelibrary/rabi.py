@@ -54,7 +54,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     # Keep the laser on for only as long as we need
     readout_pol_min = max(readout, polarization_time) + short_buffer
-
+    final_readout_buffer = 500
 
     # %% Define the sequence
 
@@ -72,7 +72,7 @@ def get_seq(pulse_streamer, config, args):
              (max_tau, LOW),
              (uwave_buffer, LOW),
              (readout, HIGH),
-             (readout_pol_min - readout + short_buffer, LOW)]
+             (final_readout_buffer + short_buffer, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     period = 0
     for el in train:
@@ -89,7 +89,7 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, LOW),
              (max_tau, LOW),
              (uwave_buffer, LOW),
-             (readout_pol_min, HIGH),
+             (readout + final_readout_buffer, HIGH),
              (short_buffer, LOW),
              (laser_delay, LOW)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
@@ -110,7 +110,7 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, LOW),
              (max_tau, LOW),
              (uwave_buffer, LOW),
-             (readout_pol_min, LOW),
+             (readout + final_readout_buffer, LOW),
              (short_buffer, LOW),
              (uwave_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)

@@ -78,9 +78,9 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.35
     #scan_range = 0.2
     # scan_range = 0.15
-    scan_range = 0.1
+    # scan_range = 0.1
     # scan_range = 0.05
-    # scan_range = 0.025
+    scan_range = 0.025
     # scan_range = 0.012
 
     #num_steps = 400
@@ -89,8 +89,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps =120
    # num_steps = 90
-    num_steps = 60
-    # num_steps = 31
+    # num_steps = 60
+    num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -392,8 +392,8 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
             uwave_time_range=[0, 200]):
 
     num_steps =51
-    num_reps = int(2e4)
-    num_runs = 5
+    num_reps = int(2e4)    
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -799,9 +799,9 @@ def do_relaxation(nv_sig, apd_indices, ):
 
 def do_determine_standard_readout_params(nv_sig, apd_indices):
     
-    num_reps = 7e4
-    max_readouts = [6e3]
-    state = States.LOW
+    num_reps = 5e5
+    max_readouts = [1e3]
+    state = States.HIGH
     
     determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
                                            max_readouts, state=state)
@@ -1025,7 +1025,7 @@ if __name__ == "__main__":
 
     nd_yellow = "nd_0"
     green_power =8000
-    nd_green = 'nd_1.5'
+    nd_green = 'nd_1.1'
     red_power = 120
     sample_name = "siena"
     # sample_name = "hopper"
@@ -1043,7 +1043,7 @@ if __name__ == "__main__":
         "spin_laser":green_laser,
         "spin_laser_power": green_power,
         "spin_laser_filter": nd_green,
-        "spin_readout_dur": 350,
+        "spin_readout_dur": 300,
         "spin_pol_dur": 10000.0,
 
         "imaging_laser":green_laser,
@@ -1100,25 +1100,20 @@ if __name__ == "__main__":
     nv_search["rabi_HIGH"]=300
     
     
-    # nv_sig_0 = copy.deepcopy(sig_base) #  
-    # nv_sig_0["coords"] = [0.200, 0.461, 4.5-0.1]  # 
-    # nv_sig_0["name"] = "{}-nv0_2022_10_18".format(sample_name,)
-    # nv_sig_0["expected_count_rate"] =35
-    # nv_sig_0["resonance_LOW"]= 2.7560
-    # nv_sig_0["rabi_LOW"]=210.1
-    # nv_sig_0["resonance_HIGH"]= 2.9954
-    # nv_sig_0["rabi_HIGH"]=140
-    
-    
     nv_sig_1 = copy.deepcopy(sig_base) # 
     nv_sig_1["coords"] = [-0.222, 0.027, 3.83]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
-    nv_sig_1["expected_count_rate"] = 14
+    nv_sig_1[ "green_power_mW"] = 1.0
+    nv_sig_1["expected_count_rate"] = 25
+    nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7805
     nv_sig_1["rabi_LOW"]= 111.6
     nv_sig_1["resonance_HIGH"]= 2.9597
-    nv_sig_1["rabi_HIGH"]=127.0
+    nv_sig_1["rabi_HIGH"]=125.0
+    
+    
+    
     
     
     nv_sig_2 = copy.deepcopy(sig_base) 
@@ -1174,8 +1169,8 @@ if __name__ == "__main__":
                     
         
         
-        #do_optimize(nv_sig, apd_indices)
-        #do_image_sample(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         
         # do_stationary_count(nv_sig, apd_indices)
@@ -1202,8 +1197,8 @@ if __name__ == "__main__":
             # sig_gen_cxn.set_freq(uwave_freq_detuned)
             # sig_gen_cxn.set_amp(uwave_power)
             # sig_gen_cxn.load_fsk(4)
-        for det in numpy.linspace(-2.2, 2.2, 11):
-            do_ramsey(nv_sig, nv_sig,apd_indices, det)
+        # for det in numpy.linspace(-2.2, 2.2, 11):
+            # do_ramsey(nv_sig, nv_sig,apd_indices, det)
         
         # do_spin_echo(nv_sig, apd_indices)
 
@@ -1221,8 +1216,8 @@ if __name__ == "__main__":
         step_size = 200 #us
         T_min = 0 #us
         T_max = 5000 #us      
-        # for n in [16]:
-        #     do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        for n in [2, 4, 8, 16]:
+            do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
         
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps )

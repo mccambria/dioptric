@@ -424,7 +424,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     sig_perc_err = st_err_sig_counts / avg_sig_counts
     ref_perc_err = st_err_ref_counts / avg_ref_counts
     st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
-    noise = numpy.average(st_err_norm_avg_sig)
+    noise = numpy.sqrt(single_ref_avg) 
+    norm_noise = noise / single_ref_avg
     # print(numpy.average(st_err_norm_avg_sig))
         
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
@@ -432,7 +433,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     A_0 = 1- popt[0]
     signal = 2*A_0
     
-    print('snr = {}'.format(signal/noise))
+    print('snr = {}'.format(signal/norm_noise))
+    print('contrast = {}'.format(signal))
 
     # %% Plot the Rabi signal
 
@@ -521,7 +523,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi/2022_11'
-    file = '2022_11_04-16_21_00-siena-nv1_2022_10_27'
+    file = '2022_11_10-11_54_09-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
     # norm_avg_sig = data['norm_avg_sig']
@@ -552,6 +554,7 @@ if __name__ == '__main__':
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
+    single_ref_avg = numpy.average(ref_counts)
     st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
     
     
@@ -561,7 +564,8 @@ if __name__ == '__main__':
     sig_perc_err = st_err_sig_counts / avg_sig_counts
     ref_perc_err = st_err_ref_counts / avg_ref_counts
     st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
-    noise = numpy.average(st_err_norm_avg_sig)
+    noise = numpy.sqrt(single_ref_avg)
+    norm_noise = noise / single_ref_avg
     # print(numpy.average(st_err_norm_avg_sig))
     
     
@@ -569,7 +573,7 @@ if __name__ == '__main__':
     A_0 = 1- popt[0]
     signal = 2*A_0
     
-    snr = signal/noise
+    snr = signal/norm_noise
     print('snr = {}'.format(snr))
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
