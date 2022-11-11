@@ -64,6 +64,7 @@ class KplColors(Enum):
     # If marking an interesting point with a confidence interval, use dark_gray for the main line and light_gray for the interval
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
+    BLACK = "000000"
 
 
 data_color_cycler = [
