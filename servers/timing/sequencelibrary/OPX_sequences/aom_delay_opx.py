@@ -27,6 +27,10 @@ def qua_program(opx, config, args, num_reps):
     apd_index, laser_name, laser_power = args[3:6]
     
     laser_mod_type = config["Optics"][laser_name]["mod_type"]
+    if eval(laser_mod_type).name == 'ANALOG':
+        laser_amplitude = laser_power
+    if eval(laser_mod_type).name == 'DIGITAL':
+        laser_amplitude = 1
     laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)        
     apd_indices =  config['apd_indices']
     
@@ -70,7 +74,7 @@ def qua_program(opx, config, args, num_reps):
             
             align()    
                            
-            play(laser_pulse,laser_name,duration=illumination_cc) 
+            play(laser_pulse*amp(laser_amplitude),laser_name,duration=illumination_cc) 
             
             if num_apds == 2:
                 wait(half_illumination_cc ,"do_apd_0_gate","do_apd_1_gate" )
@@ -88,7 +92,7 @@ def qua_program(opx, config, args, num_reps):
             align()
             wait(inter_time_cc)
             
-            play(laser_pulse,laser_name,duration=illumination_cc) 
+            play(laser_pulse*amp(laser_amplitude),laser_name,duration=illumination_cc) 
                             
             if num_apds == 2:
                 wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_0_gate","do_apd_1_gate")
@@ -138,11 +142,11 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     qm = qmm.open_qm(config_opx)
     
-    simulation_duration =  55000 // 4 # clock cycle units - 4ns
+    simulation_duration =  105000 // 4 # clock cycle units - 4ns
     
-    num_repeat=3000
+    num_repeat=1
 
-    args = [200, 500.0, 5000.0, 0,'cobolt_515', 1]
+    args = [100, 100.0, 5000.0, 0,'laserglow_589', 0]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

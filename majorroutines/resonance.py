@@ -285,16 +285,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2021_08_27-00_25_11-hopper-search'
-    file_path = "pc_hahn/branch_KPZ101-z-control/resonance/2021_08"
+    file = '2022_11_10-11_17_33-johnson-search'
+    file_path = "pc_carr/branch_opx-setup/resonance/2022_11/incremental"
     data = tool_belt.get_raw_data(file, file_path)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
     num_runs = data['num_runs']
-    ref_counts = data['ref_counts']
-    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts'][0:6]
+    sig_counts = data['sig_counts'][0:6]
     print(len(ref_counts))
     ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
     avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals

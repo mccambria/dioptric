@@ -49,10 +49,10 @@ def get_seq(pulse_streamer, config, args):
     sig_ref_buffer = 1000
 
     # delays
-    green_delay_time = config["Optics"][green_laser_name]["delay"]
-    yellow_delay_time = config["Optics"][yellow_laser_name]["delay"]
-    red_delay_time = config["Optics"][red_laser_name]["delay"]
-    rf_delay_time = config["Microwaves"][sig_gen_name]["delay"]
+    green_delay_time = 0#config["Optics"][green_laser_name]["delay"]
+    yellow_delay_time = 0#config["Optics"][yellow_laser_name]["delay"]
+    red_delay_time = 0# config["Optics"][red_laser_name]["delay"]
+    rf_delay_time = 0# config["Microwaves"][sig_gen_name]["delay"]
     # green_delay_time = 0
     # yellow_delay_time = 0
     # red_delay_time = 0
@@ -93,18 +93,18 @@ def get_seq(pulse_streamer, config, args):
     )
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config["Wiring"]["PulseStreamer"]
-    pulser_do_apd_gate = pulser_wiring["do_apd_{}_gate".format(apd_indices)]
-    pulser_do_clock = pulser_wiring["do_sample_clock"]
+    # pulser_wiring = config["Wiring"]["PulseStreamer"]
+    pulser_do_apd_gate = 1#pulser_wiring["do_apd_{}_gate".format(apd_indices)]
+    pulser_do_clock = 0#pulser_wiring["do_sample_clock"]
     analog_key = "ao_{}_am".format(yellow_laser_name)
     digital_key = "do_{}_dm".format(yellow_laser_name)
-    analog_yellow = analog_key in pulser_wiring
-    if analog_yellow:
-        pulser_ao_589_aom = pulser_wiring[analog_key]
-    else:
-        pulser_do_589_dm = pulser_wiring[digital_key]
+    # analog_yellow = analog_key in pulser_wiring
+    # if analog_yellow:
+    #     pulser_ao_589_aom = pulser_wiring[analog_key]
+    # else:
+    #     pulser_do_589_dm = pulser_wiring[digital_key]
     sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
-    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    pulser_do_sig_gen_gate = 2#pulser_wiring[sig_gen_gate_chan_name]
 
     # Make sure the ao_aom voltage to the 589 aom is within 0 and 1 V
     if readout_power is not None:
@@ -170,9 +170,10 @@ def get_seq(pulse_streamer, config, args):
         (sig_ref_buffer, LOW),
         (green_delay_time, LOW)
     ]
-    tool_belt.process_laser_seq(
-        pulse_streamer, seq, config, green_laser_name, None, train
-    )
+    seq.setDigital(3, train)
+    # tool_belt.process_laser_seq(
+    #     pulse_streamer, seq, config, green_laser_name, None, train
+    # )
 
     # Ionization pulse (red)
     dummy_high = HIGH
@@ -203,9 +204,10 @@ def get_seq(pulse_streamer, config, args):
         (sig_ref_buffer, LOW),
         (red_delay_time, LOW)
     ]
-    tool_belt.process_laser_seq(
-        pulse_streamer, seq, config, red_laser_name, None, train
-    )
+    seq.setDigital(4, train)
+    # tool_belt.process_laser_seq(
+    #     pulse_streamer, seq, config, red_laser_name, None, train
+    # )
 
     # uwave pulses
     delay = common_delay - rf_delay_time
@@ -239,9 +241,9 @@ def get_seq(pulse_streamer, config, args):
 
     # Readout with yellow
     # Dummy values for digital modulation
-    if not analog_yellow:
-        shelf_power = HIGH
-        readout_power = HIGH
+    # if not analog_yellow:
+    #     shelf_power = HIGH
+    #     readout_power = HIGH
     delay = common_delay - yellow_delay_time
     train = [
         (delay, LOW),
@@ -269,10 +271,11 @@ def get_seq(pulse_streamer, config, args):
         (sig_ref_buffer, LOW),
         (yellow_delay_time, LOW)
     ]
-    if analog_yellow:
-        seq.setAnalog(pulser_ao_589_aom, train)
-    else:
-        seq.setDigital(pulser_do_589_dm, train)
+    seq.setDigital(5, train)
+    # if analog_yellow:
+    #     seq.setAnalog(pulser_ao_589_aom, train)
+    # else:
+    #     seq.setDigital(pulser_do_589_dm, train)
     # tool_belt.process_laser_seq(pulse_streamer, seq, config,
     #                             yellow_laser_name, readout_power, train)
 
@@ -285,8 +288,8 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == "__main__":
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    seq_args = [11000.0, 1000.0, 100, 87, 0, 87, 
-                'integrated_520', 'laserglow_589', 'cobolt_638', 
-                'signal_generator_sg394', 1, 1.0, 1.0]
+    seq_args = [11000.0, 1000.0, 1000, 87, 0, 87, 
+                'cobolt_515', 'laserglow_589', 'cobolt_638', 
+                'signal_generator_tsg4104a', 1, 1.0, 1.0]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

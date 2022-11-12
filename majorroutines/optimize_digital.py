@@ -19,7 +19,7 @@ import time
 import copy
 import labrad
 
-num_steps =61
+num_steps =31
 # %% Plotting functions
 
 

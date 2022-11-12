@@ -173,7 +173,7 @@ if __name__ == '__main__':
     
     num_repeat=1
 
-    args = [0, 1000.0, 350, 0, 1, 3, 'cobolt_515', 1]
+    args = [50, 1000.0, 350, 50, 1, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

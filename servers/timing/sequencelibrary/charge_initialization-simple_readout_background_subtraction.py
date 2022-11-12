@@ -20,13 +20,13 @@ def get_seq(pulse_streamer, config, args):
     init_time, readout_time, apd_index, init_laser_name, init_laser_power, readout_laser_name, readout_laser_power = args
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_daq_clock = pulser_wiring['do_sample_clock']
-    pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    # pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_do_daq_clock = 0#pulser_wiring['do_sample_clock']
+    pulser_do_daq_gate = 1#pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     
     # And the config dictionary
-    init_delay = config["Optics"][init_laser_name]["delay"]
-    readout_delay = config["Optics"][readout_laser_name]["delay"]
+    init_delay = 0#config["Optics"][init_laser_name]["delay"]
+    readout_delay = 0#config["Optics"][readout_laser_name]["delay"]
     # init_delay = 0
     # readout_delay = 0
 
@@ -46,7 +46,7 @@ def get_seq(pulse_streamer, config, args):
 
     # chop_factor = 1
     # chop_factor = 1000  # For yellow 1e8 readouts
-    chop_factor = int(1e4)  # For green 1e7 readouts
+    chop_factor = 1#int(1e4)  # For green 1e7 readouts
     # chop_factor = int(1e5)  # For green 1e8 readouts
     readout_time /= chop_factor
 
@@ -77,8 +77,9 @@ def get_seq(pulse_streamer, config, args):
     train *= chop_factor * 2
     train[0] = (train[0][0] + common_delay - init_delay, train[0][1])
     train.append((300 + init_delay, LOW))
-    tool_belt.process_laser_seq(pulse_streamer, seq, config, 
-                                init_laser_name, init_laser_power, train)
+    seq.setDigital(2, train)
+    # tool_belt.process_laser_seq(pulse_streamer, seq, config, 
+                                # init_laser_name, init_laser_power, train)
 
     # Readout laser
     # train = [(init_time + init_readout_buffer, LOW), (readout_time, HIGH), (readout_init_buffer, LOW)]
@@ -88,8 +89,9 @@ def get_seq(pulse_streamer, config, args):
     train *= chop_factor
     train[0] = (train[0][0] + common_delay - readout_delay, train[0][1])
     train.append((300 + readout_delay, LOW))
-    tool_belt.process_laser_seq(pulse_streamer, seq, config, 
-                                readout_laser_name, readout_laser_power, train)
+    seq.setDigital(3, train)
+    # tool_belt.process_laser_seq(pulse_streamer, seq, config, 
+    #                             readout_laser_name, readout_laser_power, train)
 
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -99,7 +101,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    args = [1000.0, 10000.0, 1, 'laserglow_532', None, 'laserglow_589', 1.0]
+    args = [1000.0, 10000.0, 1, 'cobolt_515', None, 'laserglow_589', 1.0]
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(None, config, args)
     seq.plot()

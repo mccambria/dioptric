@@ -117,6 +117,7 @@ def measure_delay(
                 laser_name,
                 laser_power,
             ]
+            print(seq_args)
         elif seq_file == "uwave_delay.py" or seq_file == "iq_delay.py":
             laser_key = "spin_laser"
             laser_name = nv_sig[laser_key]
@@ -187,7 +188,7 @@ def measure_delay(
     # kcps
     #    sig_count_rates = (sig_counts / (num_reps * 1000)) / (readout / (10**9))
     #    ref_count_rates = (ref_counts / (num_reps * 1000)) / (readout / (10**9))
-    norm_avg_sig = sig_counts / ref_counts
+    norm_avg_sig = sig_counts / numpy.average(ref_counts)
 
     fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     ax = axes_pack[0]

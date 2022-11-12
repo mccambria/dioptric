@@ -250,7 +250,22 @@ def laser_off(cxn, laser_name):
 
 def laser_on(cxn, laser_name, laser_power=None):
     laser_switch_sub(cxn, True, laser_name, laser_power)
+    
 
+def get_opx_laser_pulse_info(config,laser_name,laser_power):
+    
+    mod_type = config['Optics'][laser_name]['mod_type']
+    laser_delay = config['Optics'][laser_name]['delay']
+    
+    laser_pulse_name = 'laser_ON_{}'.format(eval(mod_type).name)
+    
+    if eval(mod_type).name == 'ANALOG':
+        laser_pulse_amplitude = laser_power
+    
+    elif eval(mod_type).name == 'DIGITAL':
+        laser_pulse_amplitude = 1
+    
+    return laser_pulse_name, laser_delay, laser_pulse_amplitude
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
@@ -533,6 +548,21 @@ def set_delays_to_zero(config):
         if type(val) is dict:
             set_delays_to_zero(val)
             
+def set_delays_to_sixteen(config):
+    """
+    Pass this a config dictionary and it'll set all the delays to 16ns, which is the minimum wait() time for the OPX.
+    Useful for testing sequences without having to worry about delays.
+    """
+
+    for key in config:
+        # Check if any entries are delays and set them to 0
+        if key.endswith("delay"):
+            config[key] = 16
+            return
+        # Check if we're at a sublevel - if so, recursively set its delay to 0
+        val = config[key]
+        if type(val) is dict:
+            set_delays_to_sixteen(val)            
             
 def seq_train_length_check(train):
     """
@@ -1131,6 +1161,13 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
+def cosine_one(t, offset, decay, amp_1, freq_1):
+    two_pi = 2 * np.pi
+
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+    )
+
 
 def calc_snr(sig_count, ref_count):
     """
@@ -1302,6 +1339,17 @@ def get_tagger_server(cxn):
         raise RuntimeError
         
     return tagger_server_return
+
+def get_optimization_style():
+    """
+    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    """
+    optimization_style_return = get_registry_entry_no_cxn("optimization_style", ["", "Config", "Positioning"])
+    if optimization_style_return == "":
+        raise RuntimeError
+        
+    return optimization_style_return
+
 
 def get_xy_server(cxn):
     """

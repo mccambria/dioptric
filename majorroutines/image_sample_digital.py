@@ -312,8 +312,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_carr/branch_opx-setup/image_sample_digital/2022_10'
-    file_name = '2022_10_26-08_12_46-johnson-search'
+    path = 'pc_carr/branch_opx-setup/image_sample_digital/2022_11'
+    file_name = '2022_11_10-09_12_21-johnson-search'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']

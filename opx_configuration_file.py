@@ -70,7 +70,10 @@ apd_1_delay = 0
 uwave_delay = 0
 aod_delay = 0
 yellow_aom_delay = 0
-delays = [green_laser_delay,apd_0_delay,apd_1_delay,uwave_delay]
+tsg4104_I_delay = 0
+tsg4104_Q_delay = 0
+delays = [green_laser_delay, red_laser_delay, apd_0_delay,apd_1_delay, uwave_delay, aod_delay,
+          yellow_aom_delay, tsg4104_I_delay, tsg4104_Q_delay]
 
 min_delay = 150 #we use 100 with the pulse streamer. doesn't matter. just wanted it higher than 136 analog delay
 
@@ -85,6 +88,9 @@ NV_total_delay = common_delay - mw_delay
 NV2_total_delay = common_delay - mw_delay
 AOD_total_delay = common_delay - aod_delay
 yellow_AOM_total_delay = common_delay - yellow_aom_delay
+tsg4104_I_total_delay = common_delay - tsg4104_I_delay
+tsg4104_Q_total_delay = common_delay - tsg4104_Q_delay 
+
 
 config_opx = {
     "version": 1,
@@ -97,6 +103,8 @@ config_opx = {
                 3: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1X
                 4: {"offset": 0.0, "delay": AOD_total_delay}, #AOD_1Y
                 5: {"offset": 0.0, "delay": yellow_AOM_total_delay}, #yellow AOM
+                6: {"offset": 0.0, "delay": tsg4104_I_total_delay}, #I for tsg4104 signal generator
+                7: {"offset": 0.0, "delay": tsg4104_Q_total_delay}, #Q for tsg4104 signal generator
             },
             "digital_outputs": {
                 1: {},  # 
@@ -124,6 +132,20 @@ config_opx = {
         "AOD_1Y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": NV_IF_freq,
+            "operations": {
+                "cw": "const_freq_out",
+            },
+        },
+        "signal_generator_tsg4104a_I": {
+            "singleInput": {"port": ("con1", 6)},
+            "intermediate_frequency": 0.0,
+            "operations": {
+                "cw": "const_freq_out",
+            },
+        },
+        "signal_generator_tsg4104a_Q": {
+            "singleInput": {"port": ("con1", 7)},
+            "intermediate_frequency": 0.0,
             "operations": {
                 "cw": "const_freq_out",
             },

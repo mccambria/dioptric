@@ -203,8 +203,12 @@ if __name__ == '__main__':
     # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     # job_sim.get_simulated_samples().con1.plot()
     # plt.show()
+    compilied_program_id = qm.compile(seq)
+    program_job = qm.queue.add_compiled(compilied_program_id)
+    
+    job = program_job.wait_for_execution()
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
 
     results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
     

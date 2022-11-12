@@ -47,25 +47,38 @@ class Tagger(Counter, ABC):
         """
         pass
     
-    @abstractmethod
-    def read_tag_stream(self, c, num_to_read=None):
-        """
-        Read the tag stream. Returns the tags and channels for all
-        the counts that have occurred since the buffer was cleared. 
 
-        Parameters
-        ----------
-        num_to_read : int, optional
-            Tells the hardware how many samples we want to read
-            
-        Returns
-        ----------
-        list
-            Time tags in ps
-        list
-            Channel names
+    @setting(16, num_to_read="i", returns="*s*i")
+    def read_tag_stream(self, c, num_to_read=None):
+        """Read the stream started with start_tag_stream. Returns two lists,
+        each as long as the number of counts that have occurred since the
+        buffer was refreshed. First list is timestamps in ps, second is
+        channel names
         """
-        pass
+        if self.stream is None:
+            logging.error("read_tag_stream attempted while stream is None.")
+            return
+        if num_to_read is None:
+            timestamps, channels = self.read_raw_stream()
+        else:
+            timestamps = np.array([], dtype=np.int64)
+            channels = np.array([], dtype=int)
+            num_read = 0
+            while True:
+                # logging.info('in the while loop')
+                # logging.info(num_read)
+                timestamps_chunk, channels_chunk = self.read_raw_stream()
+                timestamps = np.append(timestamps, timestamps_chunk)
+                channels = np.append(channels, channels_chunk)
+                # Check if we've read enough samples
+                new_num_read = np.count_nonzero(channels_chunk == self.tagger_di_clock)
+                num_read += new_num_read
+                if num_read >= num_to_read:
+                    break
+        # Convert timestamps to strings since labrad does not support int64s
+        # It must be converted to int64s back on the client
+        timestamps = timestamps.astype(str).tolist()
+        return timestamps, channels
     
     
     

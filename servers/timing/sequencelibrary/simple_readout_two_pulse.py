@@ -23,17 +23,17 @@ def get_seq(pulse_streamer, config, args):
       init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_daq_clock = pulser_wiring['do_sample_clock']
-    pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    # pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_do_daq_clock = 0#pulser_wiring['do_sample_clock']
+    pulser_do_daq_gate = 1#pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
     positioning = config['Positioning']
     if 'xy_small_response_delay' in positioning:
-        galvo_move_time = positioning['xy_small_response_delay']
+        galvo_move_time = 500#positioning['xy_small_response_delay']
     else:
-        galvo_move_time = positioning['xy_delay']
-    init_pulse_aom_delay_time = config['Optics'][init_laser_key]['delay']
-    read_pulse_aom_delay_time = config['Optics'][readout_laser_key]['delay']
+        galvo_move_time = 500# positioning['xy_delay']
+    init_pulse_aom_delay_time = 100#config['Optics'][init_laser_key]['delay']
+    read_pulse_aom_delay_time = 100#config['Optics'][readout_laser_key]['delay']
     # init_pulse_aom_delay_time = 0
     # read_pulse_aom_delay_time = 0
     # galvo_move_time = 0
@@ -75,22 +75,24 @@ def get_seq(pulse_streamer, config, args):
         train = [(galvo_move_time, LOW), (init_pulse_time, HIGH),
                  (intra_pulse_delay, LOW),
                  (readout_time, HIGH), (100 ,LOW )]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                laser_key, laser_power, train)
+        # tool_belt.process_laser_seq(pulse_streamer, seq, config,
+        #                         laser_key, laser_power, train)
+        seq.setDigital(3, train)
 
     else:
         train_init_laser = [(galvo_move_time + read_pulse_aom_delay_time, LOW),
                             (init_pulse_time, HIGH),
                             (100  + intra_pulse_delay + readout_time,LOW )]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                init_laser_key, [init_laser_power], train_init_laser)
-
+        # tool_belt.process_laser_seq(pulse_streamer, seq, config,
+        #                         init_laser_key, [init_laser_power], train_init_laser)
+        seq.setDigital(2, train_init_laser)
 
         train_read_laser = [(galvo_move_time + init_pulse_aom_delay_time + init_pulse_time + intra_pulse_delay, LOW),
                             (readout_time, HIGH), 
                             (100 ,LOW )]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, read_laser_power, train_read_laser)
+        # tool_belt.process_laser_seq(pulse_streamer, seq, config,
+        #                         readout_laser_key, read_laser_power, train_read_laser)
+        seq.setDigital(3, train_read_laser)
 
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -100,8 +102,11 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
+    
+    # init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
+    #   init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
     # tool_belt.set_delays_to_zero(config)
     # args = [1000000.0, 50000000, 'cobolt_638', 'laserglow_589', None, 0.2, 2, 1]
-    args = [50e6, 75, 'cobolt_638', 'laserglow_589', None, 1, 2,1 ]
+    args = [1000, 3000, 'cobolt_638', 'cobolt_515', 1, 1, 2,1 ]
     seq = get_seq(None, config, args)[0]
     seq.plot()

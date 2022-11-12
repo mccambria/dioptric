@@ -34,6 +34,12 @@ def qua_program(opx, config, args, num_reps):
         
     # Unpack the durations
     tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
+    '''
+    
+    need to add ion pulse dur, and other laser powers. 
+    will need to have iterative readouts. 
+    
+    '''
 
     # Get the APD indices
     apd_index, state, laser_name, laser_power = args[6:10]
@@ -73,7 +79,9 @@ def qua_program(opx, config, args, num_reps):
     delay3_cc = int( (laser_delay_time - rf_delay_time + pre_uwave_exp_wait_time) //4 )
     delay4_cc = int((laser_delay_time+sig_to_ref_wait_time_shrt) //4)
     tau_shrt_cc = int(tau_shrt//4)
+    double_tau_shrt_cc = int(2*tau_shrt_cc)
     tau_long_cc = int(tau_long//4)
+    double_tau_long_cc = int(2*tau_long_cc)
     post_uwave_exp_wait_time_cc = int(post_uwave_exp_wait_time//4)
     pi_on_2_pulse_cc = int(pi_on_2_pulse//4)
     pi_pulse_cc = int(pi_pulse//4)
@@ -112,12 +120,7 @@ def qua_program(opx, config, args, num_reps):
                         
             wait(delay1_cc, sig_gen)
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
-            if tau_shrt >= 16:
-                wait(tau_shrt_cc ,sig_gen)
-            if pi_pulse >= 16:
-                play("uwave_ON",sig_gen, duration=pi_pulse_cc)
-            if tau_shrt >= 16:
-                wait(tau_shrt_cc ,sig_gen)
+            wait(double_tau_shrt_cc ,sig_gen)
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
             align()
             wait(delay21_cc)
@@ -166,12 +169,7 @@ def qua_program(opx, config, args, num_reps):
             
             wait(delay3_cc, sig_gen)
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
-            if tau_long >= 16:
-                wait(tau_long_cc ,sig_gen)
-            if pi_pulse >= 16:
-                play("uwave_ON",sig_gen, duration=pi_pulse_cc)
-            if tau_long >= 16:
-                wait(tau_long_cc ,sig_gen)
+            wait(double_tau_long_cc ,sig_gen)
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
             align()
             wait(delay21_cc)
@@ -247,11 +245,12 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     qm = qmm.open_qm(config_opx)
     
-    simulation_duration =  205500 // 4 # clock cycle units - 4ns
+    simulation_duration =  85000 // 4 # clock cycle units - 4ns
     
-    num_repeat=3
+    num_repeat=1
+    # 20.0, 3000.0, 340, 0, 46, 1270.0, 0, 1, 'cobolt_515', None]
 # tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
-    args = [40, 1000.0, 350, 0, 100, 100, 0, 1, 'cobolt_515', None]
+    args = [20.0, 3000.0, 340, 0, 46, 1270.0, 0, 1, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

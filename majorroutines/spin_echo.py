@@ -102,6 +102,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     # %% Setup
 
     fit_func, popt, stes, fit_fig = fit_data(data)
+    print(popt)
     if (fit_func is None) or (popt is None):
         print("Fit failed!")
         return
@@ -307,11 +308,12 @@ def fit_data(data):
     # print(dominant_freqs)
     for freq in dominant_freqs:
         # print(freq)
-        revival_time = 1 / freq
+        revival_time = 60e3#1 / freq
         # print(revival_time)
-        num_revivals = max_precession_dur / revival_time
+        num_revivals = 2#round(max_precession_dur / revival_time)
+        # print(num_revivals)
         amplitudes = [amplitude for el in range(0, int(1.0 + num_revivals))]
-        # print('amps',amplitudes)
+        print('amps',amplitudes)
         # print(num_revivals)
 
         revival_time_us = revival_time / 1000
@@ -344,7 +346,7 @@ def fit_data(data):
                 p0=init_params,
                 bounds=(min_bounds, max_bounds),
             )
-            print(popt)
+            # print(popt)
 
             fit_func_lambda = lambda tau: fit_func(tau, *popt)
             residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
@@ -358,6 +360,7 @@ def fit_data(data):
                 # print('here')
                 best_scaled_chi_sq = scaled_chi_sq
                 best_popt = popt
+                # print('here')
                 # print('test1',best_popt)
 
         except Exception as e:
@@ -926,8 +929,8 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_10_28-13_34_55-johnson-search"
-    data = tool_belt.get_raw_data(file_name, 'pc_carr/branch_opx-setup/spin_echo/2022_10')
+    file_name = "2022_11_09-19_27_55-johnson-search"
+    data = tool_belt.get_raw_data(file_name, 'pc_carr/branch_opx-setup/spin_echo/2022_11')
     nv_name = data['nv_sig']["name"]
     timestamp = data['timestamp']
     # data['sig_counts'] = data['sig_counts'][:5]
@@ -938,4 +941,4 @@ if __name__ == "__main__":
     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
     plt.show()
-    tool_belt.save_figure(fit_fig, file_path_fit)
+    # tool_belt.save_figure(fit_fig, file_path_fit)

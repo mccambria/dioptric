@@ -51,10 +51,10 @@ def get_seq(pulse_streamer, config, args):
     sig_ref_buffer = uwave_buffer
 
     # delays
-    green_delay_time = config["Optics"][green_laser_name]["delay"]
-    yellow_delay_time = config["Optics"][yellow_laser_name]["delay"]
-    red_delay_time = config["Optics"][red_laser_name]["delay"]
-    rf_delay_time = config["Microwaves"][sig_gen_name]["delay"]
+    green_delay_time = 0#config["Optics"][green_laser_name]["delay"]
+    yellow_delay_time = 0#config["Optics"][yellow_laser_name]["delay"]
+    red_delay_time = 0#config["Optics"][red_laser_name]["delay"]
+    rf_delay_time = 0#config["Microwaves"][sig_gen_name]["delay"]
 
     common_delay = (
         max(green_delay_time, yellow_delay_time, red_delay_time, rf_delay_time)
@@ -68,11 +68,11 @@ def get_seq(pulse_streamer, config, args):
 
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config["Wiring"]["PulseStreamer"]
-    pulser_do_apd_gate = pulser_wiring["do_apd_{}_gate".format(apd_indices)]
-    pulser_do_clock = pulser_wiring["do_sample_clock"]
+    # pulser_wiring = config["Wiring"]["PulseStreamer"]
+    pulser_do_apd_gate = 1#pulser_wiring["do_apd_{}_gate".format(apd_indices)]
+    pulser_do_clock = 0#pulser_wiring["do_sample_clock"]
     sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
-    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    pulser_do_sig_gen_gate = 2#pulser_wiring[sig_gen_gate_chan_name]
 
 # %%
     seq = Sequence()
@@ -138,9 +138,10 @@ def get_seq(pulse_streamer, config, args):
         (green_delay_time, LOW)
     ]
     power_list = reion_power
-    tool_belt.process_laser_seq(
-        pulse_streamer, seq, config, green_laser_name,power_list , train
-    )
+    seq.setDigital(3, train)
+    # tool_belt.process_laser_seq(
+    #     pulse_streamer, seq, config, green_laser_name,power_list , train
+    # )
     # period = 0
     # for el in train:
     #     period += el[0]
@@ -175,9 +176,10 @@ def get_seq(pulse_streamer, config, args):
         (red_delay_time, LOW)
     ]
     power_list = [ion_power, ion_power]
-    tool_belt.process_laser_seq(
-        pulse_streamer, seq, config, red_laser_name, power_list, train
-    )
+    seq.setDigital(4, train)
+    # tool_belt.process_laser_seq(
+        # pulse_streamer, seq, config, red_laser_name, power_list, train
+    # )
     # period = 0
     # for el in train:
     #     period += el[0]
@@ -247,9 +249,10 @@ def get_seq(pulse_streamer, config, args):
     ]
     power_list= [shelf_power, readout_power, shelf_power, readout_power]
     # power_list= readout_power
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                yellow_laser_name, 
-                                power_list, train)
+    seq.setDigital(5, train)
+    # tool_belt.process_laser_seq(pulse_streamer, seq, config,
+    #                             yellow_laser_name, 
+    #                             power_list, train)
     # period = 0
     # for el in train:
     #     period += el[0]
@@ -268,7 +271,7 @@ if __name__ == "__main__":
     #             'integrated_520', 'laserglow_589', 'cobolt_638', 
     #             'signal_generator_sg394', 1, None, None, 1.0, 0.5]
     seq_args = [5000.0, 1000.0, 1000, 32, 0, 32, 
-                'integrated_520', 'laserglow_589', 'cobolt_638', 
+                'cobolt_515', 'laserglow_589', 'cobolt_638', 
                 'signal_generator_bnc835', 1, None, None, 0.0, 0.2]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

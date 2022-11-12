@@ -9,7 +9,8 @@ Created on Tue Sep 21 10:52:28 2021
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
+# import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize_digital
 import numpy
 import matplotlib.pyplot as plt
 import time
@@ -87,10 +88,14 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, do_plot = True,
               state=States.LOW):
 
-    # %% Initial calculations and setup
+    # %% Initial calculations and 
+    tagger_server = tool_belt.get_tagger_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+
 
     tool_belt.reset_cfm(cxn)
-    seq_file = 'SCC_optimize_pulses_w_uwaves.py'
+    # seq_file = 'SCC_optimize_pulses_w_uwaves.py'
+    seq_file = 'rabi_scc.py'
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -127,8 +132,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     readout_time = nv_sig['charge_readout_dur']
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
     ionization_time = nv_sig['nv0_ionization_dur']
+    ion_power = 1
+    reion_power = 1
     reionization_time = nv_sig['nv-_reionization_dur']
-    shelf_time = nv_sig['spin_shelf_dur']
+    shelf_time = 0 #nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power'] if 'spin_shelf_laser_power' in nv_sig else None
     
     magnet_angle = nv_sig['magnet_angle']
@@ -141,11 +148,13 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)    
             
     
+    # seq_args = [readout_time, reionization_time, ionization_time, uwave_pulse_dur,
+    #     shelf_time ,  uwave_pulse_dur, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
+    #     apd_indices[0], readout_power, shelf_power]
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pulse_dur,
         shelf_time ,  uwave_pulse_dur, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-        apd_indices[0], readout_power, shelf_power]
-    
-    # print(seq_args)
+        apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+    print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -174,7 +183,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+        optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
         drift = tool_belt.get_drift()
         drift_list.append(drift)
         adjusted_nv_coords = numpy.array(nv_coords) + drift
@@ -189,7 +198,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         
-        ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+        ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
         
         period = numpy.int64(ret_vals[0])
         
@@ -214,7 +223,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             
             current_time = time.time()
             if current_time - last_opti_time > opti_interval * 60:
-                optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+                optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
                 drift = tool_belt.get_drift()
                 drift_list.append(drift)
                 adjusted_nv_coords = numpy.array(nv_coords) + drift
@@ -232,11 +241,11 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             sig_gen_cxn.uwave_on()
 
             # Start the tagger stream
-            cxn.apd_tagger.start_tag_stream(apd_indices)
+            tagger_server.start_tag_stream(apd_indices)
             
-            cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
+            pulsegen_server.stream_immediate(seq_file, num_reps, seq_args_string)
         
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = tagger_server.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
         
             # signal counts are even - get every second element starting from 0
@@ -246,7 +255,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             ref_counts[run_ind, freq_ind] = sum(sample_counts[1::2])
     
 
-        cxn.apd_tagger.stop_tag_stream()
+        tagger_server.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
 
