@@ -36,6 +36,7 @@ import chargeroutines.determine_charge_readout_params as determine_charge_readou
 import chargeroutines.determine_scc_pulse_params as determine_scc_pulse_params
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import majorroutines.charge_majorroutines.rabi_SCC as rabi_SCC
+import majorroutines.charge_majorroutines.ramsey_SCC as ramsey_SCC
 from utils.tool_belt import States
 import time
 import copy
@@ -304,8 +305,6 @@ def do_scc_pulsed_resonance(nv_sig,apd_indices):
     
 def do_rabi_SCC(nv_sig, apd_indices):
     
-    
-    
     state = States.LOW
     
     num_steps = 51
@@ -316,6 +315,27 @@ def do_rabi_SCC(nv_sig, apd_indices):
     rabi_SCC.main(nv_sig, apd_indices, uwave_time_range, state,
              num_steps, num_reps, num_runs)
     
+def do_ramsey_SCC(nv_sig, opti_nv_sig, apd_indices,detuning=4):
+
+    # detuning = 5  # MHz
+    precession_time_range = [20, 1220]
+    num_steps = 51
+    num_reps = int(1e3)
+    num_runs = 10
+
+    ramsey_SCC.main(
+        nv_sig,
+        apd_indices,
+        detuning,
+        precession_time_range,
+        num_steps,
+        num_reps,
+        num_runs,
+        opti_nv_sig = opti_nv_sig
+    )
+    
+    
+
 def do_determine_reion_dur(nv_sig, apd_indices):
     
     reion_durs = numpy.arange(240,556,16)
@@ -384,7 +404,7 @@ if __name__ == "__main__":
         "nv-_reionization_dur": 1e6,
         "nv-_reionization_laser_filter": "nd_0",
         "nv0_ionization_laser": red_laser,
-        "nv0_ionization_dur": 2000,
+        "nv0_ionization_dur": 140,
         "nv0_ionization_laser_filter": "nd_0",
         "nv-spin_reinit_laser": green_laser,
         "nv-spin_reinit_laser_dur": 1e3,
@@ -443,6 +463,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)
         for det in [-.77,-.76,-.75,-.73,-.72,-.71,-0.70]:
             do_ramsey(nv_sig, nv_sig, apd_indices,detuning=det)
+        
         # do_ramsey(nv_sig, nv_sig, apd_indices,detuning=3)
         # do_ramsey(nv_sig, nv_sig, apd_indices,detuning=0)
         # do_spin_echo(nv_sig, apd_indices,max_time=140,num_reps=2e4,num_runs=80,state=States.LOW)

@@ -43,7 +43,6 @@ def qua_program(opx, config, args, num_reps):
     green_laser_pulse, green_laser_delay_time, green_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,green_laser_name,reion_power)
     red_laser_pulse, red_laser_delay_time, red_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,red_laser_name,ion_power)
     yellow_laser_pulse, yellow_laser_delay_time, yellow_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,yellow_laser_name,readout_power)
-    
         
     uwave_delay_time = config['Microwaves'][sig_gen]['delay']
     signal_wait_time = config['CommonDurations']['uwave_buffer']
