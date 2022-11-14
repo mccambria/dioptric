@@ -54,8 +54,8 @@ import time
 def do_image_sample(nv_sig, apd_indices, 
                     nv_minus_initialization=False,cbarmin=None,cbarmax=None):
 
-    # scan_range = 0.2
-    # num_steps = 60
+    scan_range = 0.2
+    num_steps = 60
     
     # scan_range = 0.5
     # num_steps = 90
@@ -63,8 +63,8 @@ def do_image_sample(nv_sig, apd_indices,
     # scan_range = 0.3
     # num_steps = 80
 
-    scan_range = 1.0
-    num_steps = 240
+    # scan_range = 1.0
+    # num_steps = 240
 
     # scan_range = 5.0
     # scan_range = 3.0
@@ -1024,10 +1024,10 @@ if __name__ == "__main__":
 
     sample_name = "wu"
     nv_sig = {
-        'coords': [0.0, 0.0, -80], 'name': '{}-search'.format(sample_name),
+        'coords': [0.5, 0.2, +14], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 15,
-        # 'coords': [-0.058, 0.074, -52], 'name': '{}-nv1_2022_11_08'.format(sample_name),
-        # 'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 11,
+        # 'coords': [0.747, 0.123, +14], 'name': '{}-nv4_2022_11_09'.format(sample_name),
+        # 'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 12,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 5e7,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -1094,7 +1094,7 @@ if __name__ == "__main__":
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(20, -10) 
+        #     cxn.cryo_piezos.write_xy(0, -20) 
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
@@ -1110,12 +1110,12 @@ if __name__ == "__main__":
         #                                 )
         
         # for z in np.arange(-24, 20, 4):
-        # for z in np.arange(20, -80, -4):
+        # for z in np.arange(0, -100, -5):
         # # while True:
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(z)
-        #     do_image_sample(nv_sig, apd_indices)
+            # do_image_sample(nv_sig, apd_indices)
         do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -1137,7 +1137,7 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
 
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 500])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 500])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)

@@ -104,6 +104,8 @@ def populate_img_array(valsToAdd, imgArray, writePos):
     headingLeft = ((yDim - 1 - yPos) % 2 == 0)
 
     for val in valsToAdd:
+        if val == 0:
+            print("got a zero!")
         if headingLeft:
             # Determine if we're at the left x edge
             if (xPos == 0):

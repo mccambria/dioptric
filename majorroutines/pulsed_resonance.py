@@ -282,17 +282,17 @@ def fit_resonance(
             absolute_sigma=True,
         )
         # popt = guess_params
-        # if len(popt) == 6:
-        #     zfs = (popt[2] + popt[5]) / 2
-        #     low_res_err = np.sqrt(pcov[2,2])
-        #     hig_res_err = np.sqrt(pcov[5,5])
-        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        # else:
-        #     zfs = popt[2]
-        #     zfs_err = np.sqrt(pcov[2,2])
+        if len(popt) == 6:
+            zfs = (popt[2] + popt[5]) / 2
+            low_res_err = np.sqrt(pcov[2,2])
+            hig_res_err = np.sqrt(pcov[5,5])
+            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        else:
+            zfs = popt[2]
+            zfs_err = np.sqrt(pcov[2,2])
 
-        # print(zfs)
-        # print(zfs_err)
+        print(zfs)
+        print(zfs_err)
         # temp_from_resonances.main(zfs, zfs_err)
 
     else:
@@ -869,7 +869,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib(font_size="small")
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_02-19_10_55-15micro-nv2_2022_11_02"
+    file = "2022_05_01-10_57_42-wu-nv6_2022_04_14"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]

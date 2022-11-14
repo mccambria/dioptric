@@ -655,4 +655,4 @@ if __name__ == "__main__":
 
     experimental_zfs_versus_t(path, file_name)
 
-    plt.show(block=True)
+    # plt.show(block=True)
