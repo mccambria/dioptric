@@ -107,7 +107,7 @@ def main_with_cxn(cxn, channel, do_plot):
                 fig.canvas.flush_events()
 
                 # Notify the user once the temp is stable (ptp < 0.1 over current plot history)
-                if max(plot_temps) - min(plot_temps) < 0.1:
+                if (max(plot_temps) - min(plot_temps) < 0.1) and (len(plot_times) == max_plot_vals):
                     msg = "Temp is stable!"
                     recipient = "cambria@wisc.edu"
                     tool_belt.send_email(msg, email_to=recipient)
