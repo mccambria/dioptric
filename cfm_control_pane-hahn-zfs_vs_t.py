@@ -398,7 +398,7 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        # wait_for_stable_temp()
+        wait_for_stable_temp()
         # temp = 20
         # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
 
