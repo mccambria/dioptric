@@ -16,12 +16,12 @@ import socket
 import os
 
 
-def main(channel=1, do_plot=True):
+def main(channel=1, do_plot=True, do_email=True):
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, channel, do_plot)
+        main_with_cxn(cxn, channel, do_plot, do_email)
 
 
-def main_with_cxn(cxn, channel, do_plot):
+def main_with_cxn(cxn, channel, do_plot, do_email):
 
     # We'll log all the plotted data to this file. (If plotting is turned off,
     # we'll log the data that we would've plotted.) The format is:
@@ -41,6 +41,8 @@ def main_with_cxn(cxn, channel, do_plot):
     cycle_dur = 0.1
     start_time = now
     prev_time = now
+    
+    email_sent = False
 
     plot_log_period = 2  # Plot and log every plot_period seconds
     last_plot_log_time = now
@@ -107,10 +109,13 @@ def main_with_cxn(cxn, channel, do_plot):
                 fig.canvas.flush_events()
 
                 # Notify the user once the temp is stable (ptp < 0.1 over current plot history)
-                if (max(plot_temps) - min(plot_temps) < 0.1) and (len(plot_times) == max_plot_vals):
+                temp_check = (max(plot_temps) - min(plot_temps) < 0.1)
+                time_check = (len(plot_times) == max_plot_vals)
+                if do_email and temp_check and time_check and not email_sent:
                     msg = "Temp is stable!"
                     recipient = "cambria@wisc.edu"
                     tool_belt.send_email(msg, email_to=recipient)
+                    email_sent = True
 
             with open(logging_file, "a+") as f:
                 f.write("{}, {} \n".format(round(now), round(actual, 3)))
@@ -127,12 +132,13 @@ if __name__ == "__main__":
     channel = 1
     sensor_serial = "X162689"
     do_plot = True
+    
+    main(channel, do_plot, do_email=False)
 
-    with labrad.connect() as cxn:
+    # with labrad.connect() as cxn:
 
         # temp = cxn.temp_monitor_lakeshore218.measure(channel)
         # print(temp)
 
         # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
 
-        main_with_cxn(cxn, channel, do_plot)

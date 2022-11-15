@@ -45,6 +45,7 @@ from utils.tool_belt import States
 import time
 import services.calibrated_temp_monitor as calibrated_temp_monitor
 from analysis.temp_from_resonances import cambria_fixed
+from random import shuffle
 
 
 ### Major Routines
@@ -218,15 +219,18 @@ def do_pulsed_resonance_batch(nv_list, apd_indices, temp):
 
     num_steps = 51
     num_reps = 2e4
-    num_runs = 16
+    num_runs = 32
 
     uwave_power = 16.5
     uwave_pulse_dur = 75
 
     freq_center = cambria_fixed(temp)
+    freq_center = 2.8773
     freq_range = 0.020
 
     for nv_sig in nv_list:
+        if tool_belt.safe_stop():
+            break
         pulsed_resonance.main(
             nv_sig,
             apd_indices,
@@ -262,6 +266,28 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     nv_sig["rabi_{}".format(state.name)] = period
 
 
+def do_rabi_batch(nv_list, apd_indices):
+
+    num_steps = 51
+    num_reps = 2e4
+    num_runs = 32
+    uwave_time_range=[0, 200]
+    state = States.LOW
+
+    for nv_sig in nv_list:
+        if tool_belt.safe_stop():
+            break
+        rabi.main(
+            nv_sig,
+            apd_indices,
+            uwave_time_range,
+            state,
+            num_steps,
+            num_reps,
+            num_runs,
+        )
+
+
 def wait_for_stable_temp():
 
     calibrated_temp_monitor.main()
@@ -286,45 +312,56 @@ if __name__ == "__main__":
 
     sample_name = "wu"
     
+    nv3_coords = [0.244, -0.425, 1]
+    nv3_coords = np.array(nv3_coords)
+    freq = 2.8773
+    rabi_per = 150
+    uwave_power = 16.5
+    
     nv1 = {
-        'coords': [0.421, -0.315, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'coords': nv3_coords + np.array([0.174, 0.108, 0]), 
+        'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 11,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
     nv2 = {
-        'coords': [0.113, -0.288, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'coords': nv3_coords + np.array([-0.134, 0.195, 0]), 
+        'name': '{}-nv2_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 9,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
     nv3 = {
-        'coords': [0.247, -0.423, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'coords': nv3_coords + np.array([0.0, 0.0, 0]),
+        'name': '{}-nv3_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 12,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
     nv4 = {
-        'coords': [0.010, -0.397, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'coords': nv3_coords + np.array([-0.237, 0.026, 0]), 
+        'name': '{}-nv4_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 12,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
     nv5 = {
-        'coords': [0.321, -0.473, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'coords': nv3_coords + np.array([0.074, -0.050, 0]), 
+        'name': '{}-nv5_zfs_vs_t'.format(sample_name),
         'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
 
     # sample_name = "15micro"
@@ -358,8 +395,10 @@ if __name__ == "__main__":
 
     # fmt: on
 
-    nv_sig = nv1
+    nv_sig = nv3
     nv_list = [nv1, nv2, nv3, nv4, nv5]
+    # nv_list = [nv2, nv3, nv4, nv5]
+    shuffle(nv_list)
 
     ### Functions to run
 
@@ -398,16 +437,22 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        wait_for_stable_temp()
-        # temp = 20
+        # wait_for_stable_temp()
+        # Relocate NVs!
+        # temp = 14
         # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
+        do_rabi_batch(nv_list, apd_indices)
 
-    # except Exception as exc:
-    #     recipient = "cambria@wisc.edu"
-    #     tool_belt.send_exception_email(email_to=recipient)
-    #     raise exc
+    except Exception as exc:
+        recipient = "cambria@wisc.edu"
+        tool_belt.send_exception_email(email_to=recipient)
+        raise exc
 
     finally:
+        
+        msg = "Experiment complete!"
+        recipient = "cambria@wisc.edu"
+        tool_belt.send_email(msg, email_to=recipient)
 
         # Make sure everything is reset
         tool_belt.reset_cfm()

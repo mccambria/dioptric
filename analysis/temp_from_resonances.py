@@ -399,7 +399,7 @@ def cambria_test(temp, zfs0, A1, A2):
 
 def cambria_fixed(temp):
 
-    zfs0, A1, A2 = 2.87781899 -0.08271508 -0.22871962
+    zfs0, A1, A2 = [2.87781899, -0.08271508, -0.22871962]
     Theta1 = 65
     Theta2 = 150
 
