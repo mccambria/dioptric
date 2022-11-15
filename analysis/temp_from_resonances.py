@@ -384,7 +384,24 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
 def cambria_test(temp, zfs0, A1, A2):
 
     Theta1 = 65
-    Theta2 = 160
+    Theta2 = 150
+
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    # A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
+    # ret_val += A3 * fractional_thermal_expansion(temp)
+
+    return ret_val
+
+
+def cambria_fixed(temp):
+
+    zfs0, A1, A2 = 2.87781899 -0.08271508 -0.22871962
+    Theta1 = 65
+    Theta2 = 150
 
     ret_val = zfs0
     for ind in range(2):
@@ -771,4 +788,4 @@ if __name__ == "__main__":
 
     experimental_zfs_versus_t(path, file_name)
 
-    # plt.show(block=True)
+    plt.show(block=True)

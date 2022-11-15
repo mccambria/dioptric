@@ -16,6 +16,11 @@ import socket
 import os
 
 
+def main(channel=1, do_plot=True):
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, channel, do_plot)
+
+
 def main_with_cxn(cxn, channel, do_plot):
 
     # We'll log all the plotted data to this file. (If plotting is turned off,
@@ -93,13 +98,19 @@ def main_with_cxn(cxn, channel, do_plot):
                     min_plot_time = min(plot_times)
                     ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
                 ax.set_ylim(min(plot_temps) - 2, max(plot_temps) + 2)
-                
+
                 cur_temp_str = "Current temp: {} K".format(actual)
                 cur_temp_text_box.set_text(cur_temp_str)
 
                 # Redraw the plot with the new data
                 fig.canvas.draw()
                 fig.canvas.flush_events()
+
+                # Notify the user once the temp is stable (ptp < 0.1 over current plot history)
+                if max(plot_temps) - min(plot_temps) < 0.1:
+                    msg = "Temp is stable!"
+                    recipient = "cambria@wisc.edu"
+                    tool_belt.send_email(msg, email_to=recipient)
 
             with open(logging_file, "a+") as f:
                 f.write("{}, {} \n".format(round(now), round(actual, 3)))
@@ -114,9 +125,9 @@ if __name__ == "__main__":
 
     with labrad.connect() as cxn:
 
-        temp = cxn.temp_monitor_lakeshore218.measure(channel)
-        print(temp)
-        
+        # temp = cxn.temp_monitor_lakeshore218.measure(channel)
+        # print(temp)
+
         # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
 
-        # main_with_cxn(cxn, channel, do_plot)
+        main_with_cxn(cxn, channel, do_plot)

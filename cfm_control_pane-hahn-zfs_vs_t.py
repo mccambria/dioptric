@@ -8,7 +8,7 @@ Created on November 15th, 2022
 """
 
 
-# %% Imports
+### Imports
 
 
 import labrad
@@ -43,17 +43,24 @@ import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
 import time
+import services.calibrated_temp_monitor as calibrated_temp_monitor
+from analysis.temp_from_resonances import cambria_fixed
 
 
-# %% Major Routines
+### Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices, 
-                    nv_minus_initialization=False,cbarmin=None,cbarmax=None):
+def do_image_sample(
+    nv_sig,
+    apd_indices,
+    nv_minus_initialization=False,
+    cbarmin=None,
+    cbarmax=None,
+):
 
     # scan_range = 0.2
     # num_steps = 60
-    
+
     scan_range = 0.5
     num_steps = 90
 
@@ -63,27 +70,8 @@ def do_image_sample(nv_sig, apd_indices,
     # scan_range = 1.0
     # num_steps = 240
 
-    # scan_range = 5.0
     # scan_range = 3.0
-    # scan_range = 1.5
-    # scan_range = 1.2
-    # scan_range = 0.75
-    # scan_range = 0.3
-    # scan_range = 0.6
-    # scan_range = 0.15
-    # scan_range = 0.1
-    # scan_range = 0.075
-    #    scan_range = 0.025
-
     # num_steps = 300
-    # num_steps = 200
-    # num_steps = 150
-    #    num_steps = 135
-    # num_steps = 120
-    # num_steps = 90
-    # num_steps = 30
-    # num_steps = 50
-    # num_steps = 20
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(
@@ -131,7 +119,7 @@ def do_stationary_count(
     nv_zero_initialization=False,
 ):
 
-    run_time = 3 * 60 * 10 ** 9  # ns
+    run_time = 3 * 60 * 10**9  # ns
 
     stationary_count.main(
         nv_sig,
@@ -163,8 +151,8 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
 def do_four_point_esr(nv_sig, apd_indices, state):
 
-    detuning=0.004
-    d_omega=0.002
+    detuning = 0.004
+    d_omega = 0.002
     num_reps = 1e5
     num_runs = 4
 
@@ -178,32 +166,38 @@ def do_four_point_esr(nv_sig, apd_indices, state):
         d_omega,
         ret_file_name=True,
     )
-    
+
     # print(resonance, res_err)
     return ret_vals
 
 
 def do_determine_standard_readout_params(nv_sig, apd_indices):
-    
+
     num_reps = 1e5
     max_readouts = [1e6]
     filters = ["nd_0"]
     state = States.LOW
-    
-    determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
-                               max_readouts, filters=filters, state=state)
+
+    determine_standard_readout_params.main(
+        nv_sig,
+        apd_indices,
+        num_reps,
+        max_readouts,
+        filters=filters,
+        state=state,
+    )
 
 
 def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    
+
     num_reps = 2e4
     num_runs = 16
-    
+
     # num_reps = 1e3
     # num_runs = 8
-    
+
     uwave_power = 16.5
     uwave_pulse_dur = 400
 
@@ -220,13 +214,39 @@ def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     )
 
 
+def do_pulsed_resonance_batch(nv_list, apd_indices, temp):
+
+    num_steps = 51
+    num_reps = 2e4
+    num_runs = 16
+
+    uwave_power = 16.5
+    uwave_pulse_dur = 75
+
+    freq_center = cambria_fixed(temp)
+    freq_range = 0.020
+
+    for nv_sig in nv_list:
+        pulsed_resonance.main(
+            nv_sig,
+            apd_indices,
+            freq_center,
+            freq_range,
+            num_steps,
+            num_reps,
+            num_runs,
+            uwave_power,
+            uwave_pulse_dur,
+        )
+
+
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
-    
+
     num_reps = 2e4
     num_runs = 16
-    
+
     # num_reps = 1e3
     # num_runs = 8
 
@@ -240,18 +260,19 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
         num_runs,
     )
     nv_sig["rabi_{}".format(state.name)] = period
-    
-    
+
+
 def wait_for_stable_temp():
-    pass
+
+    calibrated_temp_monitor.main()
 
 
-# %% Run the file
+### Run the file
 
 
 if __name__ == "__main__":
 
-    # %% Shared parameters
+    ### Shared parameters
 
     apd_indices = [0]
     # apd_indices = [1]
@@ -260,7 +281,7 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-    
+
     # fmt: off
 
     sample_name = "wu"
@@ -305,7 +326,7 @@ if __name__ == "__main__":
         'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
         }
-    
+
     # sample_name = "15micro"
     # nv_sig = {
     #     # 'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
@@ -318,7 +339,7 @@ if __name__ == "__main__":
     #     # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 5e7,
     #     # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
     #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 1e6, "spin_readout_dur": 200e3,
-        
+
     #     "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
     #     # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
     #     "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
@@ -334,38 +355,37 @@ if __name__ == "__main__":
     #     'resonance_LOW': 2.878, 'rabi_LOW': 300, 'uwave_power_LOW': 16.5,
     #     'resonance_HIGH': 2.882, 'rabi_HIGH': 400, 'uwave_power_HIGH': 16.5,
     #     }
-    
+
     # fmt: on
-    
+
     nv_sig = nv1
     nv_list = [nv1, nv2, nv3, nv4, nv5]
 
-
-    # %% Functions to run
+    ### Functions to run
 
     try:
-        
+
         # pass
 
         tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, -20) 
+        #     cxn.cryo_piezos.write_xy(0, -20)
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-     
+
         # for z in np.arange(-24, 20, 4):
         # for z in np.arange(0, -100, -5):
         # # while True:
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(z)
-            # do_image_sample(nv_sig, apd_indices)
-            
+        # do_image_sample(nv_sig, apd_indices)
+
         # nv_sig['imaging_readout_dur'] = 5e7
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
@@ -373,12 +393,14 @@ if __name__ == "__main__":
         # nv_sig['imaging_readout_dur'] = 5e7
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_determine_standard_readout_params(nv_sig, apd_indices)
-        
-        wait_for_stable_temp()
-        
+
         # do_pulsed_resonance(nv_sig, apd_indices, 2.878, 0.020)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
+
+        # wait_for_stable_temp()
+        # temp = 20
+        # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
 
     # except Exception as exc:
     #     recipient = "cambria@wisc.edu"

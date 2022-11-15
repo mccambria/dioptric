@@ -282,17 +282,17 @@ def fit_resonance(
             absolute_sigma=True,
         )
         # popt = guess_params
-        if len(popt) == 6:
-            zfs = (popt[2] + popt[5]) / 2
-            low_res_err = np.sqrt(pcov[2,2])
-            hig_res_err = np.sqrt(pcov[5,5])
-            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        else:
-            zfs = popt[2]
-            zfs_err = np.sqrt(pcov[2,2])
+        # if len(popt) == 6:
+        #     zfs = (popt[2] + popt[5]) / 2
+        #     low_res_err = np.sqrt(pcov[2,2])
+        #     hig_res_err = np.sqrt(pcov[5,5])
+        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        # else:
+        #     zfs = popt[2]
+        #     zfs_err = np.sqrt(pcov[2,2])
 
-        print(zfs)
-        print(zfs_err)
+        # print(zfs)
+        # print(zfs_err)
         # temp_from_resonances.main(zfs, zfs_err)
 
     else:
