@@ -24,8 +24,8 @@ def T2_scale_alt(N,n, T2_0): #https://www.nature.com/articles/s41467-019-11776-8
     return (N)**(n)*T2_0
     
 
-N = [1, 2, 4, 8]
-T2=[1105, 1663, 1830, 2763]
+N = [1, 2, 4, 8, 16]
+T2=[1105, 1663, 1830, 2763, 3380]
  
 #Bar Gill T=300 K
 # N = [1, 8, 16, 32]
@@ -76,7 +76,7 @@ ax.plot(
     ) 
 
 text_popt = '\n'.join((
-                    r'$T_2 = (N/2)^2 * T_{2,0}$',
+                    r'$T_2 = (N/2)^n * T_{2,0}$',
                     r'n = ' + '%.2f'%(popt[0]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[0][0])),
                     r'$T_{2,0} = $' + '%.0f'%(popt[1]) + ' +/- ' + '%.0f'%(numpy.sqrt(pcov[1][1])) + ' us',
                     

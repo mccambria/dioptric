@@ -163,13 +163,14 @@ if __name__ == "__main__":
     sensor_serial = "X162689"
     do_plot = True
 
-    # main(channel, do_plot, do_email=False)
-
     nvdata_dir = common.get_nvdata_dir()
     path_to_file = (
         nvdata_dir / "pc_hahn/service_logging/calibrated_temp_monitor.log"
     )
     replot(path_to_file)
+    
+    # main(channel, do_plot, do_email=False)
+    # main(channel, do_plot, do_email=True)
 
     # with labrad.connect() as cxn:
 

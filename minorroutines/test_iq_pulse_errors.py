@@ -23,7 +23,7 @@ from utils.tool_belt import States
 from scipy.optimize import curve_fit
 
 
-def measure(cxn, 
+def measurement(cxn, 
             nv_sig,
             uwave_pi_pulse,
             num_uwave_pulses,
@@ -32,10 +32,11 @@ def measure(cxn,
             pulse_2_dur,
             pulse_3_dur,
             apd_indices,
-            state=States.HIGH,):
+            state=States.HIGH,
+            num_reps = int(5e4)):
     
     # print(iq_phases)
-    num_reps = int(5e6)
+    # num_reps = int(5e4)
     
     tool_belt.reset_cfm(cxn)
     seq_file = 'test_iq_pulse_errors.py'
@@ -88,16 +89,17 @@ def measure(cxn,
     
     tool_belt.reset_cfm(cxn)
     
-    # print(ref_0_counts)
-    # print(ref_H_counts)
-    # print(sig_counts)
+    
     # analysis
-    ref_0_avg = numpy.average(ref_0_counts)
-    ref_H_avg = numpy.average(ref_H_counts)
-    sig_avg = numpy.average(sig_counts)
-    # print(ref_0_avg)
-    # print(ref_H_avg)
-    # print(sig_avg)
+    # ref_0_avg = numpy.average(ref_0_counts)
+    # ref_H_avg = numpy.average(ref_H_counts)
+    # sig_avg = numpy.average(sig_counts)
+    
+    ref_0_avg = sum(ref_0_counts)
+    ref_H_avg = sum(ref_H_counts)
+    sig_avg =sum(sig_counts)
+    
+    
     
     ref_0_ste = numpy.std(
         ref_0_counts, ddof=1
@@ -108,6 +110,52 @@ def measure(cxn,
     sig_ste = numpy.std(
         sig_counts, ddof=1
         ) / numpy.sqrt(num_reps)
+    
+    # contrast = ref_0_avg-ref_H_avg
+    # contrast_ste = numpy.sqrt(ref_0_ste**2 + ref_H_ste**2)
+    # signal_m_H = sig_avg-ref_H_avg
+    # signal_m_H_ste = numpy.sqrt(sig_ste**2 + ref_H_ste**2)
+    # half_contrast = 0.5
+    
+    # signal_perc = signal_m_H / contrast
+    # # print(signal_perc)
+    # signal_perc_ste = signal_perc*numpy.sqrt((contrast_ste/contrast)**2 + \
+    #                                          (signal_m_H_ste/signal_m_H)**2)
+        
+    # # half_contrast_counts = contrast/2 + ref_H_avg
+    # # print(half_contrast_counts)
+    # # half_contrast_ste = numpy.sqrt(ref_H_ste**2 + (contrast_ste/2)**2)
+    
+    # pulse_error = signal_perc - half_contrast
+    # pulse_error_ste = signal_perc_ste
+    
+        
+    return ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste
+
+def measure_pulse_error(cxn, 
+            nv_sig,
+            uwave_pi_pulse,
+            num_uwave_pulses,
+            iq_phases,
+            pulse_1_dur,
+            pulse_2_dur,
+            pulse_3_dur,
+            apd_indices,
+            state=States.HIGH,):
+    
+    
+    ret_vals = measurement(cxn, 
+                nv_sig,
+                uwave_pi_pulse,
+                num_uwave_pulses,
+                iq_phases,
+                pulse_1_dur,
+                pulse_2_dur,
+                pulse_3_dur,
+                apd_indices,
+                state=States.HIGH,)
+    
+    ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
     
     contrast = ref_0_avg-ref_H_avg
     contrast_ste = numpy.sqrt(ref_0_ste**2 + ref_H_ste**2)
@@ -127,7 +175,6 @@ def measure(cxn,
     pulse_error = signal_perc - half_contrast
     pulse_error_ste = signal_perc_ste
     
-        
     return pulse_error, pulse_error_ste
 
 def test_1_pulse(cxn, 
@@ -157,7 +204,7 @@ def test_1_pulse(cxn,
     
     ##### 1
     iq_phases = phases_x
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -174,7 +221,7 @@ def test_1_pulse(cxn,
     
     #### 2
     iq_phases = phases_y
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -221,7 +268,7 @@ def test_2_pulse(cxn,
     pulse_3_dur = 0
     
     iq_phases = phases_yx
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -241,7 +288,7 @@ def test_2_pulse(cxn,
     pulse_3_dur = 0
     
     iq_phases = phases_xy
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -260,7 +307,7 @@ def test_2_pulse(cxn,
     pulse_3_dur = 0
     
     iq_phases = phases_xy
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -279,7 +326,7 @@ def test_2_pulse(cxn,
     pulse_3_dur = 0
     
     iq_phases = phases_yx
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -298,7 +345,7 @@ def test_2_pulse(cxn,
     pulse_3_dur = 0
     
     iq_phases = phases_xy
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -317,7 +364,7 @@ def test_2_pulse(cxn,
     pulse_3_dur = 0
     
     iq_phases = phases_yx
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -365,7 +412,7 @@ def test_3_pulse(cxn,
     pulse_3_dur = uwave_pi_on_2_pulse
     
     iq_phases = [0, pi/2, 0, 0]
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -384,7 +431,7 @@ def test_3_pulse(cxn,
     pulse_3_dur = uwave_pi_on_2_pulse
     
     iq_phases = [0, 0, 0, pi/2]
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -403,7 +450,7 @@ def test_3_pulse(cxn,
     pulse_3_dur = uwave_pi_on_2_pulse
     
     iq_phases = [0,  pi/2, pi/2, 0]
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -422,7 +469,7 @@ def test_3_pulse(cxn,
     pulse_3_dur = uwave_pi_on_2_pulse
     
     iq_phases = [0,  0, pi/2, pi/2]
-    pulse_error, pulse_error_ste = measure(cxn, 
+    pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 uwave_pi_pulse,
                 num_uwave_pulses,
@@ -470,11 +517,151 @@ def full_test(cxn,
     
     return
 
+
+def custom(cxn, 
+                 nv_sig,
+                 apd_indices,
+                 init_phase,
+                 state=States.HIGH,):
+    
+    num_uwave_pulses = 2
+    
+    rabi_period = nv_sig["rabi_{}".format(state.name)]
+
+    # Get pulse frequencies
+    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    
+    num_steps = 31
+    num_reps = int(1e6)
+    phi_range = [0, 360*2]
+    ref_0_list = numpy.zeros([num_steps])
+    ref_0_list[:] = numpy.nan
+    ref_H_list =  numpy.copy(ref_0_list)
+    sig_list = numpy.copy(ref_0_list)
+    
+    phi_list = numpy.linspace(phi_range[0],phi_range[-1], num_steps)
+    # print(phi_list)
+    # return
+    # Create a list of indices to step through the taus. This will be shuffled
+    phi_ind_list = list(range(0, num_steps))
+    shuffle(phi_ind_list)
+    
+    for p in phi_ind_list:
+        phi = phi_list[p]
+        print('phase = {} deg'.format(phi))
+        # iq_phases = [0, 0, phi*pi/180]
+        iq_phases = [init_phase, init_phase, phi*pi/180]
+        
+        ### 1
+        # pulse_1_dur = uwave_pi_on_2_pulse
+        # pulse_2_dur = uwave_pi_on_2_pulse
+        pulse_1_dur = uwave_pi_pulse
+        pulse_2_dur = uwave_pi_pulse
+        pulse_3_dur = 0
+        
+        ret_vals = measurement(cxn, 
+                    nv_sig,
+                    uwave_pi_pulse,
+                    num_uwave_pulses,
+                    iq_phases,
+                    pulse_1_dur,
+                    pulse_2_dur,
+                    pulse_3_dur,
+                    apd_indices,
+                    state,
+                    num_reps)
+            
+        ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
+        
+        ref_0_list[p] = ref_0_avg
+        ref_H_list[p] = ref_H_avg
+        sig_list[p] = sig_avg
+          
+    
+    population = (sig_list - ref_H_list) / (ref_0_list - ref_H_list)
+    
+    fig, axes = plt.subplots(1,2, figsize=(17, 8.5))
+    ax = axes[0]
+    ax.plot(phi_list, ref_0_list, "r--", label="low reference")
+    ax.plot(phi_list, ref_H_list, "g--", label="high reference")
+    ax.plot(phi_list, sig_list, "b-", label="signal")
+    ax.set_xlabel(r"Relative phase of second pi pulse (degrees)")
+    # ax.set_xlabel(r"Relative phase of second pi/2 pulse (degrees)")
+    ax.set_ylabel("Counts")
+    ax.legend()
+    ax = axes[1]
+    ax.plot(phi_list, population, "b-")
+    ax.set_xlabel(r"Relative phase of second pi pulse (degrees)")
+    # ax.set_xlabel(r"Relative phase of second pi/2 pulse (degrees)")
+    ax.set_ylabel("Population")
+    ax.set_title('two consecutive pi pulses')
+        
+    
+    timestamp = tool_belt.get_time_stamp()
+
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'phi_range': phi_range,
+                'phi_range-units': 'degrees',
+                "init_phase": init_phase,
+                'phi_list': phi_list.tolist(),
+                'phi_list-units': 'degrees',
+                'state': state.name,
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'phi_ind_list':phi_ind_list,
+                'sig_list': sig_list.astype(int).tolist(),
+                'sig_list-units': 'counts',
+                'ref_0_list': ref_0_list.astype(int).tolist(),
+                'ref_0_list-units': 'counts',
+                'ref_H_list': ref_H_list.astype(int).tolist(),
+                'ref_H_list-units': 'counts',
+                "population" : population.tolist()}
+
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+    
+
+
+def fit_custom_data(population,phi_list ):
+    init_params = [0.2, 0.4, 0]
+    
+    fit_func = lambda t, amp, offset, phase: tool_belt.sin_1_at_0_phase(t, amp, offset, 1, phase)
+    
+    phi_list_rads = numpy.array(phi_list)*pi/180
+    popt, _ = curve_fit(fit_func, phi_list_rads, population,
+                            p0=init_params,
+                            bounds = ([0,0,-numpy.infty], numpy.infty))
+    # print(popt)
+    phis_lin = numpy.linspace(phi_list_rads[0], phi_list_rads[-1], 100)
+    fig, ax = plt.subplots()
+    ax.plot(phi_list_rads, population, "ko", label="data")
+    ax.plot(phis_lin, fit_func(phis_lin, *popt), "r-", label="fit")
+    ax.set_xlabel(r"Relative phase of second pi/2 pulse (radians)")
+    ax.set_ylabel("Population")
+    
+    text_popt = '\n'.join((r'$C + A_0 \mathrm{sin}(\nu t + \phi)$',
+                      r'$C = $' + '%.3f'%(popt[1]),
+                      r'$A_0 = $' + '%.3f'%(popt[0]),
+                      # r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[2]) + ' ns',
+                      r'$\phi = $' + '%.2f'%(popt[2]) + ' ' + r'$ rad$'))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.45, text_popt, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    ax.legend()
+    
+
 # %%
 if __name__ == "__main__":
-    sample_name = "rubin"
+    sample_name = "siena"
     green_power = 8000
-    nd_green = "nd_0.4"
+    nd_green = "nd_1.1"
     green_laser = 'integrated_520'
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
@@ -482,12 +669,11 @@ if __name__ == "__main__":
     apd_indices = [1]
     
     nv_sig = { 
-            "coords":[-0.853, -0.593, 6.16],
-        "name": "{}-nv1".format(sample_name,),
+            "coords":[-0.222, 0.027, 3.83],
+        "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":12,
-        "correction_collar": 0.12,
+        "expected_count_rate":23,
         
         
           "spin_laser":green_laser,
@@ -507,22 +693,32 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 156,
-        "resonance_LOW":2.6053,
-        "rabi_LOW":96.2,     
+        "magnet_angle": 68,
+        "resonance_LOW":2.7805,
+        "rabi_LOW":111.6,     
         "uwave_power_LOW": 15,   
-        "resonance_HIGH":3.1345,
-        "rabi_HIGH":88.9,
+        "resonance_HIGH":2.9597,
+        "rabi_HIGH":127.0,
         "uwave_power_HIGH": 10,
     }  
     
     with labrad.connect() as cxn:
-        full_test(cxn, 
-                      nv_sig,
-                      apd_indices,
-                      state=States.HIGH)
-        # test_1_pulse(cxn, 
-        #                 nv_sig,
-        #                 apd_indices,
-        #                 States.HIGH)
+        # full_test(cxn, 
+        #               nv_sig,
+        #               apd_indices,
+        #               state=States.HIGH)
+        init_phase =0
+        custom(cxn, 
+                          nv_sig,
+                          apd_indices,
+                          init_phase,
+                          States.HIGH)
+        
+        file = '2022_11_15-11_32_01-siena-nv1_2022_10_27'
+        folder = 'pc_rabi/branch_master/test_iq_pulse_errors/2022_11'
+        
+        data = tool_belt.get_raw_data(file, folder)
+        population = data['population']
+        phi_list = data['phi_list']
+        # fit_custom_data(population,phi_list )
         
