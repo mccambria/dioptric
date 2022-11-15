@@ -111,8 +111,8 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     with labrad.connect() as cxn:
-        uwave_freq = 2.65 #GHz
-        uwave_power = 0 #dBm
+        uwave_freq = 2.87 #GHz
+        uwave_power = 16.5 #dBm
         # # main(cxn,uwave_freq, uwave_power, States.HIGH)
         constant(cxn,uwave_freq, uwave_power)
         half_range = 0.5

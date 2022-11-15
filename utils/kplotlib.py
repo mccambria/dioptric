@@ -15,6 +15,7 @@ Created on June 22nd, 2022
 import matplotlib.pyplot as plt
 from enum import Enum
 from colorutils import Color
+import re
 
 # endregion
 
@@ -64,19 +65,21 @@ class KplColors(Enum):
     # If marking an interesting point with a confidence interval, use dark_gray for the main line and light_gray for the interval
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
+    BLACK = "000000"
+
 
 data_color_cycler = [
-        KplColors.BLUE.value,
-        KplColors.RED.value,
-        KplColors.GREEN.value,
-        KplColors.ORANGE.value,
-        KplColors.PURPLE.value,
-        KplColors.BROWN.value,
-        KplColors.PINK.value,
-        KplColors.GRAY.value,
-        KplColors.YELLOW.value,
-        KplColors.CYAN.value,
-    ]
+    KplColors.BLUE.value,
+    KplColors.RED.value,
+    KplColors.GREEN.value,
+    KplColors.ORANGE.value,
+    KplColors.PURPLE.value,
+    KplColors.BROWN.value,
+    KplColors.PINK.value,
+    KplColors.GRAY.value,
+    KplColors.YELLOW.value,
+    KplColors.CYAN.value,
+]
 line_color_cycler = data_color_cycler.copy()
 
 
@@ -121,11 +124,13 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib(font_size="normal", data_size="normal"):
+def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
     """
     Runs the default initialization for kplotlib, our default configuration
-    of matplotlib
+    of matplotlib. Pass no_latex for faster plotting
     """
+    
+    ### Misc setup
 
     global active_axes, color_cyclers, default_font_size, default_data_size
     active_axes = []
@@ -136,37 +141,42 @@ def init_kplotlib(font_size="normal", data_size="normal"):
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
 
-    ####### Latex setup #######
+    ### Latex setup
+    
+    if not no_latex:
 
-    preamble = r""
-    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
-    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+        preamble = r""
+        preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+        preamble += r"\usepackage{physics} \usepackage{upgreek}"
+    
+        # Fonts
+        # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+        preamble += r"\usepackage{helvet}"
+        # Latin mdoern is default math font but let's be safe
+        preamble += r"\usepackage{lmodern}"
+    
+        # Sans serif math font, looks better for axis numbers.
+        # We preserve \mathrm and \mathit commands so you can still use
+        # the serif lmodern font for variables, equations, etc
+        preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+    
+        plt.rcParams["text.latex.preamble"] = preamble
+        plt.rc("text", usetex=True)
 
-    # Fonts
-    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-    preamble += r"\usepackage{helvet}"
-    # Latin mdoern is default math font but let's be safe
-    preamble += r"\usepackage{lmodern}"
-
-    # Sans serif math font, looks better for axis numbers.
-    # We preserve \mathrm and \mathit commands so you can still use
-    # the serif lmodern font for variables, equations, etc
-    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
-
-    plt.rcParams["text.latex.preamble"] = preamble
-
-    ###########################
+    ### Other rcparams
 
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_sizes[default_font_size]
-    plt.rcParams['figure.figsize'] = figsize
+    plt.rcParams["figure.figsize"] = figsize
+    # plt.rcParams["figure.dpi"] = 300
+    plt.rcParams["savefig.dpi"] = 300
 
-    plt.rc("text", usetex=True)
 
 def tight_layout(fig):
 
     fig.tight_layout(pad=0.3)
+
 
 def get_default_color(ax, plot_type):
     """plot_type is data or line"""
@@ -174,11 +184,17 @@ def get_default_color(ax, plot_type):
     global active_axes, color_cyclers
     if ax not in active_axes:
         active_axes.append(ax)
-        color_cyclers.append({"points": data_color_cycler.copy(), "line": line_color_cycler.copy()})
+        color_cyclers.append(
+            {
+                "points": data_color_cycler.copy(),
+                "line": line_color_cycler.copy(),
+            }
+        )
     ax_ind = active_axes.index(ax)
     cycler = color_cyclers[ax_ind][plot_type]
     color = cycler.pop(0)
     return color
+
 
 def plot_points(ax, x, y, size=None, **kwargs):
     """
@@ -215,6 +231,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
     ax.errorbar(x, y, **params)
 
+
 def plot_line(ax, x, y, size=None, **kwargs):
     """
     Same as matplotlib's plot, but with our defaults. Use for plotting
@@ -243,6 +260,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
 
     ax.plot(x, y, **params)
 
+
 def text(ax, x, y, text, size=None, **kwargs):
     """x, y are relative to plot dimensions and start from lower left corner"""
 
@@ -261,3 +279,22 @@ def text(ax, x, y, text, size=None, **kwargs):
         # verticalalignment="top",
         bbox=bbox_props,
     )
+
+def latex_escape(text):
+    """Escape LaTeX characters in the passed text"""
+    conv = {
+        '&': r'\&',
+        '%': r'\%',
+        '$': r'\$',
+        '#': r'\#',
+        '_': r'\_',
+        '{': r'\{',
+        '}': r'\}',
+        '~': r'\textasciitilde{}',
+        '^': r'\^{}',
+        '\\': r'\textbackslash{}',
+        '<': r'\textless{}',
+        '>': r'\textgreater{}',
+    }
+    regex = re.compile('|'.join(re.escape(str(key)) for key in sorted(conv.keys(), key = lambda item: - len(item))))
+    return regex.sub(lambda match: conv[match.group()], text)

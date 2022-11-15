@@ -1690,6 +1690,12 @@ def save_raw_data(rawData, filePath):
         ] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
+        
+    # Cast any numpy arrays in the sig to lists
+    nv_sig = rawData["nv_sig"]
+    for key in nv_sig:
+        if type(nv_sig[key]) == np.ndarray:
+            nv_sig[key] = nv_sig[key].tolist()
 
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)

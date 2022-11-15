@@ -125,7 +125,7 @@ def calculate_freqs(freq_range, freq_center, num_steps):
 
 
 def gaussian(freq, constrast, sigma, center):
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma ** 2)))
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
 
 
 def double_gaussian_dip(
@@ -285,17 +285,17 @@ def fit_resonance(
             absolute_sigma=True,
         )
         # popt = guess_params
-        # if len(popt) == 6:
-        #     zfs = (popt[2] + popt[5]) / 2
-        #     low_res_err = np.sqrt(pcov[2,2])
-        #     hig_res_err = np.sqrt(pcov[5,5])
-        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        # else:
-        #     zfs = popt[2]
-        #     zfs_err = np.sqrt(pcov[2,2])
+        if len(popt) == 6:
+            zfs = (popt[2] + popt[5]) / 2
+            low_res_err = np.sqrt(pcov[2, 2])
+            hig_res_err = np.sqrt(pcov[5, 5])
+            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        else:
+            zfs = popt[2]
+            zfs_err = np.sqrt(pcov[2, 2])
 
-        # print(zfs)
-        # print(zfs_err)
+        print(zfs)
+        print(zfs_err)
         # temp_from_resonances.main(zfs, zfs_err)
 
     else:
@@ -317,11 +317,11 @@ def fit_resonance(
 
 def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
-    rabi_freq = rabi_period ** -1
+    rabi_freq = rabi_period**-1
 
     smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
 
-    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq ** 2)
+    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq**2)
     amp = (rabi_freq / omega) ** 2
     angle = (
         omega * 2 * np.pi * uwave_pulse_dur / 2
@@ -507,7 +507,7 @@ def main_with_cxn(
 
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10 ** 9)
+    readout_sec = readout / (10**9)
     if composite:
         uwave_pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
         uwave_pi_on_2_pulse = round(nv_sig["rabi_{}".format(state.name)] / 4)
@@ -628,18 +628,14 @@ def main_with_cxn(
             cxn.pulse_streamer.stream_start(int(num_reps))
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = cxn.apd_tagger.read_counter_modulo_gates(2, 1)
 
             sample_counts = new_counts[0]
 
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            sig_counts[run_ind, freq_ind] = sample_counts[0]
             # print(sum(sig_gate_counts))
 
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
+            ref_counts[run_ind, freq_ind] = sample_counts[1]
             # print(sum(ref_gate_counts))
 
         cxn.apd_tagger.stop_tag_stream()
@@ -744,7 +740,7 @@ def main_with_cxn(
     ax.set_title("Normalized Count Rate vs Frequency, {} deg".format(nv_sig['magnet_angle']))
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Contrast (arb. units)")
-    
+
     # ax.axvline(2.8424, color = 'gray')
     # ax.axvline(2.8976, color = 'gray')
 
@@ -879,7 +875,8 @@ if __name__ == "__main__":
     # print(popt)
     # print(pcov)
 
-    kpl.init_kplotlib(font_size="small")
+    # kpl.init_kplotlib(font_size="small")
+    kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
     file = "2022_11_09-19_19_55-siena-nv1_2022_10_27"
@@ -909,7 +906,7 @@ if __name__ == "__main__":
         ref_counts,
     )
 
-    # popt[2] -= np.sqrt(pcov[2, 2])
+    print(popt)
 
     create_fit_figure(
         freq_range,
@@ -921,7 +918,7 @@ if __name__ == "__main__":
         norm_avg_sig_ste=norm_avg_sig_ste,
     )
 
-    # plt.show(block=True)
+    plt.show(block=True)
 
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
     # simulate(2.8351, 0.035, 0.02, 170, 170/2)

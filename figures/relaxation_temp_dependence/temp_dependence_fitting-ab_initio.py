@@ -138,33 +138,33 @@ def orbach_free(temp, coeff, activation):
 
 
 def raman(temp):
-    return A_3 * (temp ** 5)
+    return A_3 * (temp**5)
 
 
 def test_T_cubed(temp):
-    return A_4 * (temp ** 3)
+    return A_4 * (temp**3)
 
 
 def test_T_seventh(temp):
-    return A_7 * (temp ** 7)
+    return A_7 * (temp**7)
 
 
 def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     # activation = 78
     # coeff_T5 = 0
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
 
 
 def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
     full_scaling = True
     if full_scaling:
         n1 = bose(activation, temp)
-        return const + (coeff_orbach * n1 * (n1 + 1)) + (coeff_T5 * temp ** 5)
+        return const + (coeff_orbach * n1 * (n1 + 1)) + (coeff_T5 * temp**5)
     else:
         return (
             const
             + (coeff_orbach * bose(activation, temp))
-            + (coeff_T5 * temp ** 5)
+            + (coeff_T5 * temp**5)
         )
 
 
@@ -177,13 +177,13 @@ def orbach_variable_exp_const(
         return (
             const
             + (coeff_orbach * n1 * (n1 + 1))
-            + (coeff_power * temp ** exp)
+            + (coeff_power * temp**exp)
         )
     else:
         return (
             const
             + (coeff_orbach * bose(activation, temp))
-            + (coeff_power * temp ** exp)
+            + (coeff_power * temp**exp)
         )
 
 
@@ -242,21 +242,21 @@ def orbach_T5_free_linear(
 ):
     return (
         (coeff_orbach * bose(activation, temp))
-        + (coeff_T5 * temp ** 5)
+        + (coeff_T5 * temp**5)
         + (coeff_linear * temp)
     )
 
 
 def orbach_T7_free(temp, coeff_orbach, activation, coeff_T7):
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp ** 7)
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp**7)
 
 
 def orbach_T3_free(temp, coeff_orbach, activation, coeff_T3):
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T3 * temp ** 3)
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T3 * temp**3)
 
 
 def T5_free(temp, coeff_T5):
-    return coeff_T5 * temp ** 5
+    return coeff_T5 * temp**5
 
 
 # %% Other functions
@@ -894,7 +894,7 @@ def fit_simultaneous(data_points, fit_mode=None):
     output = odr.run()
     popt = output.beta
     pcov = output.cov_beta
-    pvar = output.sd_beta ** 2
+    pvar = output.sd_beta**2
     red_chi_square = output.res_var
     red_chi_square_report = tool_belt.round_sig_figs(red_chi_square, 3)
     print("Reduced chi squared: {}".format(red_chi_square_report))
@@ -1036,7 +1036,7 @@ def plot_scalings(
 
     if process_to_plot in ["Walker", "both"]:
         process_lambda = lambda temp: orbach_T5_free(
-            temp, 0, 75, 1 / (300 ** 5)
+            temp, 0, 75, 1 / (300**5)
         )
         process_edge_color = "blue"
         ax.plot(
@@ -1153,7 +1153,7 @@ def normalized_residuals_histogram(rates_to_plot):
 
     inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
     norm_gaussian = lambda norm_res: inv_root_2_pi * np.exp(
-        -(norm_res ** 2) / 2
+        -(norm_res**2) / 2
     )
     norm_res_linspace = np.linspace(*x_range, 1000)
     ax.plot(norm_res_linspace, norm_gaussian(norm_res_linspace), lw=line_width)
@@ -1914,7 +1914,7 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
     # if fit_mode == "T5":
     #     hist_ax.set_xlim(hist_xlim[::-1])
     inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
-    normal_density = lambda x: inv_root_2_pi * np.exp(-(x ** 2) / 2)
+    normal_density = lambda x: inv_root_2_pi * np.exp(-(x**2) / 2)
     err_linspace = np.linspace(hist_ylim[0], hist_ylim[1], 1000)
     hist_ax.plot(
         normal_density(err_linspace), err_linspace, color=edgecolor, zorder=1
@@ -2050,7 +2050,8 @@ def main(
             yscale[0],
             dosave,
         )
-        xticks = [125, 200, 300, 400]
+        # xticks = [125, 200, 300, 400]
+        xticks = [0, 100, 200, 300, 400]
         ax1.set_xticks(xticks)
         ax1.xaxis.set_major_formatter(ScalarFormatter())
         # ax1.yaxis.set_major_formatter(ScalarFormatter())
@@ -2233,8 +2234,8 @@ def main_sub(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
         T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
-            (T2max ** 2) / 2
-        ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
+            (T2max**2) / 2
+        ) * np.sqrt((3 * omega_err) ** 2 + gamma_err**2)
 
         if plot_type == "T2_max":
             for sample, linestyle, label in [
@@ -2257,8 +2258,8 @@ def main_sub(
                 )
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
         T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
-            T2max ** 2
-        ) * np.sqrt(omega_err ** 2 + gamma_err ** 2)
+            T2max**2
+        ) * np.sqrt(omega_err**2 + gamma_err**2)
         T2_max_qutrit_hopper_temp = lambda temp: T2_max_qutrit(
             omega_hopper_lambda(temp), gamma_hopper_lambda(temp)
         )
@@ -2543,9 +2544,9 @@ def main_sub(
                 lw=marker_edge_width,
             )
             leg1 = ax.legend(
-                handles=[omega_patch, gamma_patch],
+                handles=[gamma_patch, omega_patch],
                 loc="upper left",
-                title="Rates",
+                title="Rate",
                 handlelength=1.5,
                 handletextpad=0.75,
                 # borderpad=0.3,
@@ -2770,13 +2771,16 @@ if __name__ == "__main__":
     #     )
 
     rates_to_plot = ["both", "both"]
-    temp_ranges = [[95, 485], [-10, 490]]
-    temp_ranges = [[120, 485], [-10, 490]]
     temp_ranges = [[120, 500], [-10, 500]]
     y_ranges = [[0.03, 750], [-25, 675]]
-    # y_ranges = [[7e-3, 725], [-25, 675]]
     yscales = ["log", "linear"]
     xscales = ["log", "linear"]
+
+    temp_ranges = [[-5, 500], [-10, 500]]
+    y_ranges = [[5e-3, 750], [-25, 675]]
+    yscales = ["log", "linear"]
+    xscales = ["linear", "linear"]
+
     main(
         file_name,
         path,

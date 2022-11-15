@@ -14,6 +14,7 @@ import utils.tool_belt as tool_belt
 import time
 import labrad
 import majorroutines.optimize as optimize
+import utils.kplotlib as kpl
 
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
@@ -104,6 +105,8 @@ def populate_img_array(valsToAdd, imgArray, writePos):
     headingLeft = ((yDim - 1 - yPos) % 2 == 0)
 
     for val in valsToAdd:
+        if val == 0:
+            print("got a zero!")
         if headingLeft:
             # Determine if we're at the left x edge
             if (xPos == 0):
@@ -347,6 +350,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Set up the image display
 
     if plot_data:
+        
+        kpl.init_kplotlib(font_size="small", no_latex=True)
 
         img_array_kcps = numpy.copy(img_array)
 
@@ -362,7 +367,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
-        title = r'Confocal scan, {}, {} us readout'.format(readout_laser, readout_us)
+        # readout_laser_text = kpl.latex_escape(readout_laser)
+        title = f'Confocal scan, {readout_laser}, {readout_us} us readout'
         fig = tool_belt.create_image_figure(img_array, img_extent,
                         clickHandler=on_click_image, color_bar_label='kcps',
                         title=title, um_scaled=um_scaled)

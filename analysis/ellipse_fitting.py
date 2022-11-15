@@ -260,7 +260,7 @@ def main(path):
     # ellipses = [ellipses[48], ellipses[77]]
     # ellipses = [ellipses[-1]]
 
-    parallel = True
+    parallel = False
     do_plot = False
 
     for ind in range(len(ellipses)):
