@@ -151,18 +151,12 @@ def index_on_the_fly(data_file_name):
 if __name__ == "__main__":
 
     # gen_search_index()
-    index_on_the_fly("2022_07_06-16_38_20-hopper-search")
+    # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
-    # root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2021_09"
-    # # root = nvdata_dir / PurePath("pc_hahn", "branch_master", "pulsed_resonance", "2021_09")
-    # files = [
-    #     "2021_09_13-15_29_34-hopper-search.txt",
-    #     "2021_09_13-15_41_02-hopper-search.txt",
-    # ]
-    # paths = [root / el for el in files]
-
-    # # print(search_index_glob)
-    # for el in paths:
-    #     # print(el)
-    #     # print(el.match(search_index_glob))
-    #     add_to_search_index(el)
+    root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2022_11"
+    files = [
+        "2022_11_04-16_38_24-wu-nv5_2022_11_04.txt",
+    ]
+    paths = [root / el for el in files]
+    for el in paths:
+        add_to_search_index(el)

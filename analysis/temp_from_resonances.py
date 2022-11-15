@@ -34,6 +34,7 @@ from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 from numpy import inf
+import sys
 
 bad_zfs_temps = 350
 
@@ -399,7 +400,7 @@ def cambria_test(temp, zfs0, A1, A2):
 
 def cambria_fixed(temp):
 
-    zfs0, A1, A2 = 2.87781899 -0.08271508 -0.22871962
+    zfs0, A1, A2 = [2.87781899, -0.08271508, -0.22871962]
     Theta1 = 65
     Theta2 = 150
 
@@ -728,6 +729,9 @@ def main(zfs, zfs_err=None, no_print=None):
 
 
 if __name__ == "__main__":
+
+    print(cambria_fixed(15))
+    sys.exit()
 
     # files = [
     #     "2022_07_06-17_07_38-hopper-search",
