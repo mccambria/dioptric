@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 # %% Constants
 
 
-d_gs = 2.87  # ground state zfs in GHz
+d_gs = 2.8705  # ground state zfs in GHz
 # d_gs = 1.42  # excited state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
 gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
@@ -516,7 +516,7 @@ def plot_resonances(
     res_pairs = calc_res_pair(
         smooth_mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
     )
-
+    theta_B_deg = theta_B*180 / pi
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
     ax.set_title("Generating fit vector: {}".format(name))
@@ -524,10 +524,10 @@ def plot_resonances(
     ax.plot(smooth_mag_B, res_pairs[1])
     ax.set_xlabel("B magnitude (GHz)")
     ax.set_ylabel("Resonance (GHz)")
-
+    
     textstr = "\n".join(
         (
-            r"$\theta_{B}=%.3f \ rad$" % (theta_B,),
+            r"$\theta_{B}=%.3f \ deg$" % (theta_B_deg,),
             r"$\Pi_{\parallel}=%.3f \ GHz$" % (par_Pi,),
             r"$\Pi_{\perp}=%.3f \ GHz$" % (perp_Pi,),
         )
@@ -736,21 +736,21 @@ if __name__ == "__main__":
     #                 [None, 2.8155, 2.9171],
     #                 ]
 
-    name = "nv2_2019_04_30_take2"
+    name = "siena-nv1_2022_10_27"
     popt = [
-        1.1162003323335492,
+        0.25,
         -0.0031494625116033634,
         0.007006402029975579,
         0.0,
         0.0,
     ]
     res_descs = [
-        [0.0, 2.8584, 2.8725],
-        [None, 2.8512, 2.8804],
-        [None, 2.8435, 2.8990],
-        [None, 2.8265, 2.9117],
-        [None, 2.7726, 3.0530],
-        [None, 2.7738, 3.4712],
+        [0.0, 2.8705, None],
+        [None, 2.7874 ,2.9529 ],
+        # [None, 2.8435, 2.8990],
+        # [None, 2.8265, 2.9117],
+        # [None, 2.7726, 3.0530],
+        # [None, 2.7738, 3.4712],
     ]
 
     # name = 'nv1_2019_05_10'  # NV1
@@ -802,7 +802,7 @@ if __name__ == "__main__":
     #               ]
 
     # Run the script
-    # main(name, res_descs)
+    main(name, res_descs)
 
     # popt: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
 

@@ -218,9 +218,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2022_10_10-00_03_28-siena-native_layer'
+    file = '2022_11_07-17_44_17-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file)
     splittings = data['splittings']
+    print(splittings)
 
     angle_range = data['angle_range']
     num_angle_steps = data['num_angle_steps']

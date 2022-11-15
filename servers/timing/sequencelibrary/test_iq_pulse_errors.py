@@ -55,6 +55,7 @@ def get_seq(pulse_streamer, config, args):
     iq_trigger_time = numpy.int64(min(pi_pulse/2, 10))
     # make this twice the iq trigger time, and ensure it's even
     uwave_sig_wait = int(iq_trigger_time*4 //2)
+    # uwave_sig_wait = int(iq_trigger_time*16 //2)
     half_uwave_sig_wait = int(uwave_sig_wait/2)
     
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -215,7 +216,7 @@ if __name__ == '__main__':
     
     # readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, polarization
     # num_uwave_pulses, state, apd_index, laser_name, laser_power = args[6:11]
-    args = [350, 44, 22, 0, 0, 1000.0, 1, 3, 1, 'integrated_520', None]
+    args = [350, 64, 32, 32, 0, 1000.0, 2, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

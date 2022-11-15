@@ -41,6 +41,7 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
+
     fig, ax = plt.subplots()
     kpl.plot_line(ax, freqs, norm_avg_sig)
     kpl.plot_line(ax, smooth_freqs, fit_func(smooth_freqs, *popt))
@@ -143,6 +144,8 @@ def double_gaussian_dip(
 
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
+
+
 
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
@@ -270,7 +273,7 @@ def fit_resonance(
 
     # fit_func = single_gaussian_dip
     # guess_params = [0.2, 0.004, freq_center]
-
+    # print(guess_params)
     # try:
     if norm_avg_sig_ste is not None:
         popt, pcov = curve_fit(
@@ -659,6 +662,9 @@ def main_with_cxn(
         ax.cla()
         ax.plot(freqs, norm_avg_sig, "b-")
 
+        # ax.axvline(2.8424, color = 'gray')
+        # ax.axvline(2.8976, color = 'gray')
+
         text_popt = f"Run # {run_ind + 1}/{num_runs}"
         kpl.text(ax, 0.8, 0.9, text_popt)
 
@@ -731,9 +737,12 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(freqs, norm_avg_sig, "b-")
-    ax.set_title("Normalized Count Rate vs Frequency")
+    ax.set_title("Normalized Count Rate vs Frequency, {} deg".format(nv_sig['magnet_angle']))
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Contrast (arb. units)")
+
+    # ax.axvline(2.8424, color = 'gray')
+    # ax.axvline(2.8976, color = 'gray')
 
     fig.canvas.draw()
     fig.tight_layout()
@@ -870,7 +879,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_15-10_19_47-wu-nv1_zfs_vs_t"
+    file = "2022_11_09-19_19_55-siena-nv1_2022_10_27"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]

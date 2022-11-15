@@ -87,12 +87,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range, deviation_h
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
     freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    
+    freqs_detuned = freqs + deviation_low / 1e3
 
     # Analyze the sequence
     num_reps = int(num_reps)
     file_name = 'rabi_srt.py'
-    seq_args = [pi_pulse_high, polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, pi_pulse_high, 
+    seq_args = [pi_pulse_low, polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, pi_pulse_low, 
                 apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
@@ -184,7 +186,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range, deviation_h
             low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
                 cxn, States.LOW
             )
-            low_sig_gen_cxn.set_freq(uwave_freq_low_detune)
+            low_sig_gen_cxn.set_freq(freqs_detuned[freq_ind])
             low_sig_gen_cxn.set_amp(uwave_power_low)
             low_sig_gen_cxn.uwave_on()
     
@@ -198,8 +200,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range, deviation_h
             high_sig_gen_cxn.uwave_on()
             
             
-            seq_args = [pi_pulse_high, polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, pi_pulse_high, 
+            seq_args = [pi_pulse_low, polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, pi_pulse_low, 
                 apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
