@@ -142,6 +142,7 @@ class ArbitraryWaveformGenerator(LabradServer):
         # phases = [0] +  [pi/2]*num_dd_reps + [0]###
         half_num_dd_reps = int(num_dd_reps/2)
         phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
+        # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
         
         phases = phases*4
         amp = self.iq_comp_amp

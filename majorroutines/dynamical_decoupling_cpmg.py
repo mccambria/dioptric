@@ -603,82 +603,89 @@ def main_with_cxn(
     return 
 
 
+    
 # %% Run the file
 
 
 if __name__ == "__main__":
 
-    folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_11'
-    file1 = '2022_11_10-20_14_27-siena-nv1_2022_10_27'
-    file2 = '2022_11_11-01_04_24-siena-nv1_2022_10_27'
-    file4 = '2022_11_11-04_54_24-siena-nv1_2022_10_27'
-    file8 = '2022_11_11-08_43_45-siena-nv1_2022_10_27'
-    file16 = '2022_11_11-12_33_19-siena-nv1_2022_10_27'
+    folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_11'   
+    
+    file1 = '2022_11_14-11_02_50-siena-nv1_2022_10_27'
+    file2 = '2022_11_14-11_02_59-siena-nv1_2022_10_27'
+    file4 = '2022_11_14-11_03_05-siena-nv1_2022_10_27'
+    file8 = '2022_11_14-11_00_01-siena-nv1_2022_10_27'
+    file16 = '2022_11_14-11_03_13-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
-    file_t1 = '2022_11_06-10_49_30-siena-nv1_2022_10_27'
+    file_t1 = '2022_11_12-22_17_47-siena-nv1_2022_10_27'
     
-    data = tool_belt.get_raw_data(file16, folder)
-    fit_t2_decay(data)
+    # data = tool_belt.get_raw_data(file16, folder)
+    # fit_t2_decay(data)
     
-    file_list = [file1, 
+    # file_list = [file16_1, file16_2, file16_3]
+    # folder_list = [folder, folder, folder]
+    # tool_belt.save_combine_data(file_list, folder_list, 'dynamical_decoupling_cpmg.py')
+    
+    file_list = [
+                file1, 
                   file2, 
-                 file4, 
+                  file4, 
                   file8, 
-                   # file16, 
-                 # file_t1
+                    file16, 
+                  file_t1
                  ]
     color_list = ['red', 
                    'blue', 
                   'orange', 
                     'green',
-                    # 'purple', 
-                  # 'black'
+                    'purple', 
+                   'black'
                   ]
     
     
-    # if True:
-    if False:
+    if True:
+    # if False:
         fig, ax = plt.subplots(figsize=(8.5, 8.5))
         # amplitude = 0.069
         # offset = 0.931
         for f in range(len(file_list)):
             file = file_list[f]
              
-            if f == 10:
-                w = 1
-            # if f == len(file_list)-1: 
-                # data = tool_belt.get_raw_data(file, folder_relaxation)  
-            #     relaxation_time_range = data['relaxation_time_range']
-            #     min_relaxation_time = int(relaxation_time_range[0])
-            #     max_relaxation_time = int(relaxation_time_range[1])
-            #     num_steps = data['num_steps']
-            #     tau_T = numpy.linspace(
-            #         min_relaxation_time,
-            #         max_relaxation_time,
-            #         num=num_steps,
-            #      )  
-            #     tau_T_us = tau_T / 1000
-            #     norm_avg_sig = data['norm_avg_sig']
-            #     ax.plot([],[],"-o", color= color_list[f], label = "T1")
+            # if f == 10:
+            #     w = 1
+            if f == len(file_list)-1: 
+                data = tool_belt.get_raw_data(file, folder_relaxation)  
+                relaxation_time_range = data['relaxation_time_range']
+                min_relaxation_time = int(relaxation_time_range[0])
+                max_relaxation_time = int(relaxation_time_range[1])
+                num_steps = data['num_steps']
+                tau_T = numpy.linspace(
+                    min_relaxation_time,
+                    max_relaxation_time,
+                    num=num_steps,
+                  )  
+                tau_T_us = tau_T / 1000
+                norm_avg_sig = data['norm_avg_sig']
+                ax.plot([],[],"-o", color= color_list[f], label = "T1")
                 
-            #     A0 = 0.098
-            #     amplitude = 2/3 * 2*A0
-            #     offset = 1 - amplitude
+                A0 = 0.098
+                amplitude = 2/3 * 2*A0
+                offset = 1 - amplitude
                 
-            #     fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
-            #     init_params = [0.069, 5000]
+                fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
+                init_params = [0.069, 5000]
                 
-            #     popt, pcov = curve_fit(
-            #         fit_func,
-            #         tau_T_us,
-            #         norm_avg_sig,
-            #         # sigma=norm_avg_sig_ste,
-            #         # absolute_sigma=True,
-            #         p0=init_params,
-            #     )
-            #     print(popt)
-            #     print(numpy.sqrt(numpy.diag(pcov)))
+                popt, pcov = curve_fit(
+                    fit_func,
+                    tau_T_us,
+                    norm_avg_sig,
+                    # sigma=norm_avg_sig_ste,
+                    # absolute_sigma=True,
+                    p0=init_params,
+                )
+                print(popt)
+                print(numpy.sqrt(numpy.diag(pcov)))
                 
             else:  
                 data = tool_belt.get_raw_data(file, folder)  

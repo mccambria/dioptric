@@ -457,7 +457,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 if __name__ == '__main__':
 
-    file_name = '2022_05_05-16_38_57-sandia-R21'
+    file_name = '2022_09_08-13_02_34-rubin-nv1_2022_08_10'
     # file_name = '2022_08_18-15_37_38-hopper-search'
     # file_name = '2022_10_18-17_16_48-siena-nv_search'
     # file_name = '2022_10_06-18_33_05-siena-nv1_10_06_2022'

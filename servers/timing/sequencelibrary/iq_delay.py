@@ -147,7 +147,7 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config) 
     
     #tau, max_tau, readout, pi_pulse, polarization = durations
-    args = [500, 500, 350, 89, 1000.0, 3, 1, 'integrated_520', None]
+    args = [100, 500, 350, 89, 1000.0, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

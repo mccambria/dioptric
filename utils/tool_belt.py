@@ -1117,6 +1117,12 @@ def cosexp_1_at_0(t, offset, freq, decay):
         np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
     )
 
+def sin_1_at_0_phase(t, amp, offset, freq, phase):
+    two_pi = 2 * np.pi
+    # amp = 1 - offset
+    return offset + (
+         abs(amp) * np.sin((freq * t + phase))
+    )
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2 * np.pi
@@ -1693,6 +1699,82 @@ def save_raw_data(rawData, filePath):
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
 
+def save_combine_data(file_list, folder_list, py_file_name):
+    '''
+    This routine takes any number of files and attempts to combine the data,
+    then saves them in one array.
+    
+    Only use this for data that was collected under the same conditions. Works
+    best for measurements that save data like Rabi, PESR, etc.
+    
+    It will throw an error if the num_steps of the data files do not match!
+    
+    py_file_name is the string of the name of the file, ex: 'rabi.py'
+    '''
+    
+    # do an initial check if the num_steps all match.If they do, we can add
+    # the data together.
+    num_steps_list = []
+    for f in range(len(file_list)):
+        file = file_list[f]
+        folder = folder_list[f]
+        data1 = get_raw_data(file, folder)
+        num_steps = data1['num_steps']
+        num_steps_list.append(num_steps)
+    # check that all num_steps of the files match
+    num_steps_result = all(element == num_steps_list[0] for element in num_steps_list)
+    
+    if (num_steps_result):
+        # create initial empty arrays to add data to
+        sig_counts = np.zeros([1, num_steps])
+        ref_counts = np.zeros([1, num_steps])
+        num_runs = 0
+    
+        for f in range(len(file_list)):
+            file = file_list[f]
+            folder = folder_list[f]
+            data1 = get_raw_data(file, folder)
+            
+            sig_counts1 = np.array(data1['sig_counts'])
+            ref_counts1 = np.array(data1['ref_counts'])
+            nv_sig = data1['nv_sig']
+            num_runs1 = data1['num_runs']
+            
+            sig_counts = np.concatenate((sig_counts, sig_counts1), axis = 0)
+            ref_counts = np.concatenate((ref_counts, ref_counts1), axis = 0)
+            num_runs += num_runs1
+        
+        # delete the first row of data that was a placeholder.
+        sig_counts = sig_counts[1:]
+        ref_counts = ref_counts[1:]
+        
+        # Calc the norm avg sig
+        avg_sig_counts = np.average(sig_counts, axis=0)
+        avg_ref_counts = np.average(ref_counts, axis=0)
+        norm_avg_sig = avg_sig_counts / np.average(avg_ref_counts)
+                
+        timestamp = get_time_stamp()
+    
+        #take the dictionary from the last file, add the entry for 
+        # file_list and folder_list, and update:
+            # sig counts
+            # ref counts
+            # norm_avg_sig
+            # num_runs
+    
+        raw_data = data1
+        raw_data['file_list'] = file_list
+        raw_data['folder_list'] = folder_list
+        
+        raw_data['num_runs'] = num_runs
+        raw_data['sig_counts'] = sig_counts.tolist()
+        raw_data['ref_counts'] = ref_counts.tolist()
+        raw_data['norm_avg_sig'] = norm_avg_sig.tolist()
+        
+        nv_name = nv_sig["name"]
+        file_path = get_file_path(py_file_name, timestamp, nv_name)
+        save_raw_data(raw_data, file_path)
+        
 
 def get_nv_sig_units():
     return {

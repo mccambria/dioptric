@@ -389,12 +389,12 @@ def do_pesr_srt(nv_sig,  apd_indices, initial_state, readout_state):
               initial_state,
     )
 
-def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, 
+def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, phase,
             uwave_time_range=[0, 200]):
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 5
+    num_runs = 15
 
     period = rabi.main(
         nv_sig,
@@ -404,7 +404,8 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
         num_steps,
         num_reps,
         num_runs,
-        iq_mod_on = False,
+        iq_mod_on = True,
+        iq_phase = phase,
         opti_nv_sig = opti_nv_sig
     )
     nv_sig["rabi_{}".format(state.name)] = period
@@ -737,7 +738,7 @@ def do_relaxation(nv_sig, apd_indices, ):
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2e3
-    num_runs = 200
+    num_runs = 100
     
     if True:
      t1_exp_array = numpy.array(
@@ -1105,13 +1106,13 @@ if __name__ == "__main__":
     nv_sig_1["coords"] = [-0.222, 0.027, 3.83]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = 25
+    nv_sig_1["expected_count_rate"] = 23
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7805
     nv_sig_1["rabi_LOW"]= 111.6
     nv_sig_1["resonance_HIGH"]= 2.9597
-    nv_sig_1["rabi_HIGH"]=128.3
+    nv_sig_1["rabi_HIGH"]=127.0
     
     
     
@@ -1185,9 +1186,10 @@ if __name__ == "__main__":
         #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
+        #do_pulsed_resonance_state(nv_sig, nnumpy.pi/2,v_sig,apd_indices, States.HIGH)
+        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        for phase in [0, numpy.pi/2,numpy.pi,3*numpy.pi/2, ]:
+            do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, phase, uwave_time_range=[0, 300])
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
@@ -1203,7 +1205,7 @@ if __name__ == "__main__":
         
         # do_spin_echo(nv_sig, apd_indices)
 
-        # do_relaxation(nv_sig, apd_indices)  # gamma and omega
+        #do_relaxation(nv_sig, apd_indices)  # gamma and omega
                 
         # num_xy4_reps = 1
         # step_size = 100 #us
@@ -1217,8 +1219,9 @@ if __name__ == "__main__":
         step_size = 200 #us
         T_min = 0 #us
         T_max = 5000 #us      
-        for n in [8]:
-            do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        # for n in [2]:
+        #      do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        # do_relaxation(nv_sig, apd_indices)  # gamma and omega
         
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps )

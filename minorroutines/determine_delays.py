@@ -325,15 +325,22 @@ def iq_delay(
     The first readout is a reference, the second is a signal. The iq modulation 
     initially is at 0 degrees, and the second pulse changes it to pi/2.
     We should see a normalized signal consistent with the full pi pulse contrast. 
-    If there is a delay we'll get this sequence
+    If there is a positive delay we'll get this sequence
     
-    iq    __|-|_________________|-|______________
+    iq    __|-|______________|-|______________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
     
     and the normalized signal will be higher than the full pi pulse contrast.
-    We need to find the minimum passed delay that recovers the full contrast.
+    The signal will reduce in contrast as the iq trigger passes over the pi pulse.
+    The correct delay is when the counts return to their full contrast. 
+    
+    |      __
+    |     /  \
+    |____/    \___
+    -----------------
+              * This is the value of the correct delay  
     (This function assumes the laser delay and uwave delay are properly set!)
     """
 
@@ -417,8 +424,7 @@ if __name__ == "__main__":
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":25,
-        "correction_collar": None,
+        "expected_count_rate":23,
         
         
           "spin_laser":green_laser,
@@ -439,12 +445,12 @@ if __name__ == "__main__":
         
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 68,
-        "resonance_LOW":2.7805 ,
-        "rabi_LOW":111.6,        
-        "uwave_power_LOW": 15,
+        "resonance_LOW":2.7805,
+        "rabi_LOW":111.6,     
+        "uwave_power_LOW": 15,   
         "resonance_HIGH":2.9597,
-        "rabi_HIGH":125,
-        "uwave_power_HIGH": 10,
+        "rabi_HIGH":325.7,
+        "uwave_power_HIGH": -5,
     }  
     
     apd_indices = [1]
@@ -506,23 +512,23 @@ if __name__ == "__main__":
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(1e4)
-    delay_range = [0, 200]
-    num_steps = 101
+    num_reps = int(5e6)
+    delay_range = [350,600]
+    num_steps = 251
     # bnc 835
     # state = States.LOW
     #  sg394
     state = States.HIGH
     with labrad.connect() as cxn:
-    #     iq_delay(
-    #         cxn,
-    #         nv_sig,
-    #         apd_indices,
-    #         state,
-    #         delay_range,
-    #         num_steps,
-    #         num_reps,
-    #     )
+        iq_delay(
+            cxn,
+            nv_sig,
+            apd_indices,
+            state,
+            delay_range,
+            num_steps,
+            num_reps,
+        )
     #     uwave_delay(
     #         cxn,
     #         nv_sig,
@@ -532,14 +538,14 @@ if __name__ == "__main__":
     #         num_steps,
     #         num_reps,
     #     )
-        fm_delay(
-            cxn,
-            nv_sig,
-            apd_indices,
-            state,
-            delay_range,
-            num_steps,
-            num_reps,
-        )
+        # fm_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
 
  
