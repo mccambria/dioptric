@@ -133,7 +133,8 @@ if __name__ == "__main__":
     sensor_serial = "X162689"
     do_plot = True
     
-    main(channel, do_plot, do_email=False)
+    # main(channel, do_plot, do_email=False)
+    main(channel, do_plot, do_email=True)
 
     # with labrad.connect() as cxn:
 
