@@ -178,7 +178,7 @@ if __name__ == '__main__':
         # constant(cxn, laser_names, laser_powers)
         # main(cxn, laser_names[0])
         # arb_duty_cycle(cxn, laser_names[0])
-        circle(cxn, laser_names[0])
+        # circle(cxn, laser_names[0])
 
 
 
@@ -196,8 +196,8 @@ if __name__ == '__main__':
             
             
                 
-        # cxn.pulse_streamer.constant([3])
-        # # cxn.pulse_streamer.constant([], 1.0)
-        # input('Press enter to stop...')
+        cxn.pulse_streamer.constant([3])
+        # cxn.pulse_streamer.constant([], 1.0)
+        input('Press enter to stop...')
 
-        # cxn.pulse_streamer.constant()
+        cxn.pulse_streamer.constant()

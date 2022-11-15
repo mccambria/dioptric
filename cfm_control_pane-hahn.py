@@ -54,11 +54,11 @@ import time
 def do_image_sample(nv_sig, apd_indices, 
                     nv_minus_initialization=False,cbarmin=None,cbarmax=None):
 
-    scan_range = 0.2
-    num_steps = 60
+    # scan_range = 0.2
+    # num_steps = 60
     
-    # scan_range = 0.5
-    # num_steps = 90
+    scan_range = 0.5
+    num_steps = 90
 
     # scan_range = 0.3
     # num_steps = 80
@@ -1023,33 +1023,75 @@ if __name__ == "__main__":
     # fmt: off
 
     sample_name = "wu"
-    nv_sig = {
-        'coords': [0.5, 0.2, +14], 'name': '{}-search'.format(sample_name),
-        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 15,
-        # 'coords': [0.747, 0.123, +14], 'name': '{}-nv4_2022_11_09'.format(sample_name),
-        # 'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 12,
+    # nv_sig = {
+    #     # 'coords': [0.5, 0.5, 0], 'name': '{}-search'.format(sample_name),
+    #     # 'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 15,
+    #     'coords': [0.240, -0.426, 1], 'name': '{}-nv8_2022_11_14'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
 
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 5e7,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 5e7,
-        # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E3, 'spin_readout_dur': 350,
+    #     # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 5e7,
+    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+    #     # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 5e7,
+    #     # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E3, 'spin_readout_dur': 350,
         
-        "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
-        # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-        "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
-        # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
-        "nv0_ionization_laser": red_laser, "nv0_ionization_dur": 75, "nv0_prep_laser": red_laser, "nv0_prep_laser_dur": 75,
-        "spin_shelf_laser": yellow_laser, "spin_shelf_dur": 0, "spin_shelf_laser_power": 1.0,
-        # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-        "initialize_laser": green_laser, "initialize_dur": 1e4,
-        "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 1.0,
-        # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
+    #     "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
+    #     # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+    #     "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
+    #     # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
+    #     "nv0_ionization_laser": red_laser, "nv0_ionization_dur": 75, "nv0_prep_laser": red_laser, "nv0_prep_laser_dur": 75,
+    #     "spin_shelf_laser": yellow_laser, "spin_shelf_dur": 0, "spin_shelf_laser_power": 1.0,
+    #     # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
+    #     "initialize_laser": green_laser, "initialize_dur": 1e4,
+    #     "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 1.0,
+    #     # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
+    #     'collection_filter': None, 'magnet_angle': None,
+    #     'resonance_LOW': 2.878, 'rabi_LOW': 400, 'uwave_power_LOW': 16.5,
+    #     'resonance_HIGH': 2.882, 'rabi_HIGH': 400, 'uwave_power_HIGH': 16.5,
+    #     }
+    
+    
+    nv1 = {
+        'coords': [0.421, -0.315, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.878, 'rabi_LOW': 400, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.882, 'rabi_HIGH': 400, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        }
+    nv2 = {
+        'coords': [0.113, -0.288, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+        'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        }
+    nv3 = {
+        'coords': [0.247, -0.423, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+        'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        }
+    nv4 = {
+        'coords': [0.010, -0.397, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+        'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+        }
+    nv5 = {
+        'coords': [0.321, -0.473, 1], 'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 13,
+        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+        'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.878, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
         }
     
     # sample_name = "15micro"
@@ -1082,6 +1124,8 @@ if __name__ == "__main__":
     #     }
     
     # fmt: on
+    
+    nv_list = [nv1, nv2, nv3, nv4, nv5]
 
 
     # %% Functions to run
@@ -1116,19 +1160,20 @@ if __name__ == "__main__":
         #         break
         #     nv_sig["coords"][2] = int(z)
             # do_image_sample(nv_sig, apd_indices)
+        # nv_sig['imaging_readout_dur'] = 5e7
         do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_optimize(nv_sig, apd_indices)
-        # nv_sig['imaging_readout_dur'] =  5e7
+        # nv_sig['imaging_readout_dur'] = 5e7
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_zero_initialization=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_resonance_state(nv_sig , apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.020)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.878, 0.020)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # # # do_scc_resonance(nv_sig, apd_indices, States.LOW)
