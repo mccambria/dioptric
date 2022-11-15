@@ -116,6 +116,11 @@ def main_with_cxn(cxn, channel, do_plot):
                 f.write("{}, {} \n".format(round(now), round(actual, 3)))
             last_plot_log_time = now
 
+    sample_name = "wu"
+    timestamp = tool_belt.get_time_stamp()
+    file_path = tool_belt.get_file_path(__file__, timestamp, sample_name)
+    tool_belt.save_figure(fig, file_path)
+
 
 if __name__ == "__main__":
 
