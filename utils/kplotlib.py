@@ -129,7 +129,7 @@ def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
     Runs the default initialization for kplotlib, our default configuration
     of matplotlib. Pass no_latex for faster plotting
     """
-    
+
     ### Misc setup
 
     global active_axes, color_cyclers, default_font_size, default_data_size
@@ -142,24 +142,24 @@ def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
     plt.ion()
 
     ### Latex setup
-    
+
     if not no_latex:
 
         preamble = r""
         preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
         preamble += r"\usepackage{physics} \usepackage{upgreek}"
-    
+
         # Fonts
         # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
         preamble += r"\usepackage{helvet}"
         # Latin mdoern is default math font but let's be safe
         preamble += r"\usepackage{lmodern}"
-    
+
         # Sans serif math font, looks better for axis numbers.
         # We preserve \mathrm and \mathit commands so you can still use
         # the serif lmodern font for variables, equations, etc
         preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
-    
+
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
 
@@ -280,21 +280,27 @@ def text(ax, x, y, text, size=None, **kwargs):
         bbox=bbox_props,
     )
 
+
 def latex_escape(text):
     """Escape LaTeX characters in the passed text"""
     conv = {
-        '&': r'\&',
-        '%': r'\%',
-        '$': r'\$',
-        '#': r'\#',
-        '_': r'\_',
-        '{': r'\{',
-        '}': r'\}',
-        '~': r'\textasciitilde{}',
-        '^': r'\^{}',
-        '\\': r'\textbackslash{}',
-        '<': r'\textless{}',
-        '>': r'\textgreater{}',
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\^{}",
+        "\\": r"\textbackslash{}",
+        "<": r"\textless{}",
+        ">": r"\textgreater{}",
     }
-    regex = re.compile('|'.join(re.escape(str(key)) for key in sorted(conv.keys(), key = lambda item: - len(item))))
+    regex = re.compile(
+        "|".join(
+            re.escape(str(key))
+            for key in sorted(conv.keys(), key=lambda item: -len(item))
+        )
+    )
     return regex.sub(lambda match: conv[match.group()], text)

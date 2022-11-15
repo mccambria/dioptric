@@ -10,10 +10,40 @@ Temperature monitoring code
 
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
+import utils.common as common
 import time
 import labrad
 import socket
+import csv
 import os
+import numpy as np
+
+
+def replot(path_to_file):
+               
+    min_time = 1668528524  # 1668529208 expt end
+    max_time = 1668529208 + 100
+
+    times = []
+    temps = []
+
+    with open(path_to_file) as csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            time = int(row[0])
+            if min_time <= time <= max_time:
+                times.append(time - min_time)
+                temp = float(row[1])
+                temps.append(temp)
+
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Temp (K)")
+    kpl.plot_line(ax, times, temps)
+    kpl.tight_layout(fig)
+    plt.show(block=True)
 
 
 def main(channel=1, do_plot=True, do_email=True):
@@ -41,7 +71,7 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
     cycle_dur = 0.1
     start_time = now
     prev_time = now
-    
+
     email_sent = False
 
     plot_log_period = 2  # Plot and log every plot_period seconds
@@ -109,8 +139,8 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
                 fig.canvas.flush_events()
 
                 # Notify the user once the temp is stable (ptp < 0.1 over current plot history)
-                temp_check = (max(plot_temps) - min(plot_temps) < 0.1)
-                time_check = (len(plot_times) == max_plot_vals)
+                temp_check = max(plot_temps) - min(plot_temps) < 0.1
+                time_check = len(plot_times) == max_plot_vals
                 if do_email and temp_check and time_check and not email_sent:
                     msg = "Temp is stable!"
                     recipient = "cambria@wisc.edu"
@@ -132,13 +162,18 @@ if __name__ == "__main__":
     channel = 1
     sensor_serial = "X162689"
     do_plot = True
-    
-    main(channel, do_plot, do_email=False)
+
+    # main(channel, do_plot, do_email=False)
+
+    nvdata_dir = common.get_nvdata_dir()
+    path_to_file = (
+        nvdata_dir / "pc_hahn/service_logging/calibrated_temp_monitor.log"
+    )
+    replot(path_to_file)
 
     # with labrad.connect() as cxn:
 
-        # temp = cxn.temp_monitor_lakeshore218.measure(channel)
-        # print(temp)
+    # temp = cxn.temp_monitor_lakeshore218.measure(channel)
+    # print(temp)
 
-        # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
-
+    # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
