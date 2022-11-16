@@ -19,6 +19,7 @@ import time
 import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.optimize import curve_fit
+from scipy.stats import sem
 import labrad
 
 
@@ -82,7 +83,7 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
 
     A_0 = 1- popt[0]
 
-    text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
+    text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t)$',
                       r'$C = $' + '%.3f'%(popt[0]),
                       r'$A_0 = $' + '%.3f'%(A_0),
                       r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[1]) + ' ns',
@@ -163,6 +164,7 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          iq_mod_on = False,
+         iq_phase = 0,
          opti_nv_sig = None,
          return_popt=False):
 
@@ -171,6 +173,7 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
                                          apd_indices, uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
                                          iq_mod_on,
+                                         iq_phase,
                                          opti_nv_sig)
 
         if return_popt:
@@ -182,6 +185,7 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   iq_mod_on = False,
+                  iq_phase = 0,
                   opti_nv_sig = None):
 
     tool_belt.reset_cfm(cxn)
@@ -288,7 +292,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         if iq_mod_on:
-            cxn.arbitrary_waveform_generator.load_arb_phases([0])
+            cxn.arbitrary_waveform_generator.load_arb_phases([iq_phase])
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
@@ -324,19 +328,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                                                 seq_args_string)
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-
+            new_counts = cxn.apd_tagger.read_counter_modulo_gates(2, 1)
             sample_counts = new_counts[0]
-
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-            # print('Sig counts: {}'.format(sum(sig_gate_counts)))
-
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            # print('Ref counts: {}'.format(sum(ref_gate_counts)))
+            sig_counts[run_ind, tau_ind] = sample_counts[0]
+            ref_counts[run_ind, tau_ind] = sample_counts[1]
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
@@ -348,11 +343,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         # %% incremental plotting
 
         #Average the counts over the iterations
+        single_ref_avg = numpy.average(ref_counts[: (run_ind + 1)])
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
 
-        #norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        
+        # norm_avg_sig = avg_sig_counts / avg_ref_counts
+        norm_avg_sig = avg_sig_counts / single_ref_avg
 
 
         ax = axes_pack[0]
@@ -415,7 +412,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # %% Fit the data and extract piPulse
 
+    # calculate the noise
+    st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
+    st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
+    sig_perc_err = st_err_sig_counts / avg_sig_counts
+    ref_perc_err = st_err_ref_counts / avg_ref_counts
+    st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
+    noise = numpy.sqrt(single_ref_avg) 
+    norm_noise = noise / single_ref_avg
+    # print(numpy.average(st_err_norm_avg_sig))
+        
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    
+    A_0 = 1- popt[0]
+    signal = 2*A_0
+    
+    print('snr = {}'.format(signal/norm_noise))
+    print('contrast = {}'.format(signal))
 
     # %% Plot the Rabi signal
 
@@ -503,8 +516,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi/2021_09'
-    file = '2021_09_20-16_49_16-johnson-nv1_2021_09_07'
+    path = 'pc_rabi/branch_master/rabi/2022_11'
+    file = '2022_11_10-11_54_09-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
     # norm_avg_sig = data['norm_avg_sig']
@@ -517,46 +530,90 @@ if __name__ == '__main__':
     #     create_fit_figure(uwave_time_range, uwave_freq, num_steps,
     #                       norm_avg_sig, fit_func, popt)
 
-    sig_counts = data['sig_counts']
-    ref_counts = data['ref_counts']
-    uwave_time_range = data['uwave_time_range']
-    num_steps = data['num_steps']
-    num_runs = data['num_runs']
-    uwave_freq = data['uwave_freq']
+    # sig_counts = data['sig_counts']
+    # ref_counts = data['ref_counts']
+    # uwave_time_range = data['uwave_time_range']
+    # num_steps = data['num_steps']
+    # num_runs = data['num_runs']
+    # uwave_freq = data['uwave_freq']
 
-    min_uwave_time = uwave_time_range[0]
-    max_uwave_time = uwave_time_range[1]
-    taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=num_steps, dtype=numpy.int32)
+    # min_uwave_time = uwave_time_range[0]
+    # max_uwave_time = uwave_time_range[1]
+    # taus = numpy.linspace(min_uwave_time, max_uwave_time,
+    #                       num=num_steps, dtype=numpy.int32)
+    
+    
+    # # print(numpy.average(sem(ref_counts)))
+    # # print(numpy.size(sig_counts))
+    # avg_sig_counts = numpy.average(sig_counts, axis=0)
+    # st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
+    # avg_ref_counts = numpy.average(ref_counts, axis=0)
+    # single_ref_avg = numpy.average(ref_counts)
+    # st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
+    
+    
+    # # print(numpy.average(st_err_ref_counts))
+    # norm_avg_sig = avg_sig_counts / avg_ref_counts
 
-    print(numpy.size(sig_counts))
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
+    # sig_perc_err = st_err_sig_counts / avg_sig_counts
+    # ref_perc_err = st_err_ref_counts / avg_ref_counts
+    # st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
+    # noise = numpy.sqrt(single_ref_avg)
+    # norm_noise = noise / single_ref_avg
+    # # print(numpy.average(st_err_norm_avg_sig))
+    
+    
+    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    # A_0 = 1- popt[0]
+    # signal = 2*A_0
+    
+    # snr = signal/norm_noise
+    # print('snr = {}'.format(snr))
 
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    # raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
-    sig_perc_err = st_err_sig_counts / avg_sig_counts
-    ref_perc_err = st_err_ref_counts / avg_ref_counts
-    st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
+    # ax = axes_pack[0]
+    # ax.errorbar(taus, avg_sig_counts, yerr = st_err_sig_counts, fmt = 'r-', label = 'signal')
+    # ax.errorbar(taus, avg_ref_counts, yerr = st_err_ref_counts,fmt = 'g-', label = 'refernece')
+    # ax.legend()
 
-
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
-    ax = axes_pack[0]
-    ax.errorbar(taus, avg_sig_counts, yerr = st_err_sig_counts, fmt = 'r-', label = 'signal')
-    ax.errorbar(taus, avg_ref_counts, yerr = st_err_ref_counts,fmt = 'g-', label = 'refernece')
-    ax.legend()
-
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Counts')
+    # ax.set_xlabel('Microwave duration (ns)')
+    # ax.set_ylabel('Counts')
 
 
-    ax = axes_pack[1]
-    ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'b-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Normalized signal')
+    # ax = axes_pack[1]
+    # ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'b-')
+    # ax.set_title('Normalized Signal With Varying Microwave Duration')
+    # ax.set_xlabel('Microwave duration (ns)')
+    # ax.set_ylabel('Normalized signal')
 
     # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
+    
+    
+    file_0 = '2022_11_15-12_13_40-siena-nv1_2022_10_27'
+    file_90 = '2022_11_15-12_25_11-siena-nv1_2022_10_27'
+    file_180 = '2022_11_15-12_36_31-siena-nv1_2022_10_27'
+    file_270 = '2022_11_15-12_47_54-siena-nv1_2022_10_27'
+    
+    file_list = [file_0, file_90,file_180, file_270 ]
+    label_list = [0, 90, 180, 270]
+    
+    fig, ax = plt.subplots()
+    for f in range(len(file_list)):
+        file = file_list[f]
+        data = tool_belt.get_raw_data(file, path)
+        uwave_time_range = data['uwave_time_range']
+        num_steps = data['num_steps']
+        norm_avg_sig = data['norm_avg_sig']
+        
+        min_uwave_time = uwave_time_range[0]
+        max_uwave_time = uwave_time_range[1]
+        taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                              num=num_steps)
+        
+        ax.plot(taus, norm_avg_sig, label = 'Pi pulse phase {} deg'.format(label_list[f]))
+    ax.set_xlabel('Microwave duration (ns)')
+    ax.set_ylabel('Normalized signal')
+    ax.legend()
+        
+        

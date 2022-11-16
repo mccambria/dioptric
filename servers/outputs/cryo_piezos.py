@@ -94,27 +94,6 @@ class CryoPiezos(LabradServer):
         # Done
         logging.debug("Init complete")
 
-    @setting(2, pos_in_steps="i")
-    def write_z(self, c, pos_in_steps):
-        """
-        Specify the absolute position in steps relative to 0. There will be
-        hysteresis on this value, but it's repeatable enough for the
-        common and important routines (eg optimize)
-        """
-
-        self.write_ax(pos_in_steps, 3)
-
-    @setting(3, x_pos_in_steps="i", y_pos_in_steps="i")
-    def write_xy(self, c, x_pos_in_steps, y_pos_in_steps):
-        """
-        Specify the absolute position in steps relative to 0. There will be
-        hysteresis on this value, but it's repeatable enough for the
-        common and important routines (eg optimize)
-        """
-
-        self.write_ax(x_pos_in_steps, 1)
-        self.write_ax(y_pos_in_steps, 2)
-
     def write_ax(self, pos_in_steps, ax):
 
         steps_to_move = pos_in_steps - self.pos[ax - 1]
@@ -183,6 +162,37 @@ class CryoPiezos(LabradServer):
         """Send a command to all three axes"""
         for axis in [1, 2, 3]:
             self.send_cmd(cmd, axis, arg)
+
+    @setting(2, pos_in_steps="i")
+    def write_z(self, c, pos_in_steps):
+        """
+        Specify the absolute position in steps relative to 0. There will be
+        hysteresis on this value, but it's repeatable enough for the
+        common and important routines (eg optimize)
+        """
+
+        self.write_ax(pos_in_steps, 3)
+
+    @setting(3, x_pos_in_steps="i", y_pos_in_steps="i")
+    def write_xy(self, c, x_pos_in_steps, y_pos_in_steps):
+        """
+        Specify the absolute position in steps relative to 0. There will be
+        hysteresis on this value, but it's repeatable enough for the
+        common and important routines (eg optimize)
+        """
+
+        self.write_ax(x_pos_in_steps, 1)
+        self.write_ax(y_pos_in_steps, 2)
+
+    @setting(4, voltage="i", axes="*i")
+    def set_voltage(self, c, voltage, axes=[1,2,3]):
+        """
+        Set the voltage of the sawtooth wave used to drive a piezo
+        """
+
+        self.send_cmd_all("setm", "gnd")
+        for axis in axes:
+            self.send_cmd("setv", axis, voltage)
 
 
 __server__ = CryoPiezos()

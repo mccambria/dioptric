@@ -41,6 +41,7 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
+
     fig, ax = plt.subplots()
     kpl.plot_line(ax, freqs, norm_avg_sig)
     kpl.plot_line(ax, smooth_freqs, fit_func(smooth_freqs, *popt))
@@ -143,6 +144,8 @@ def double_gaussian_dip(
 
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
+
+
 
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
@@ -270,7 +273,7 @@ def fit_resonance(
 
     # fit_func = single_gaussian_dip
     # guess_params = [0.2, 0.004, freq_center]
-
+    # print(guess_params)
     # try:
     if norm_avg_sig_ste is not None:
         popt, pcov = curve_fit(
@@ -282,17 +285,17 @@ def fit_resonance(
             absolute_sigma=True,
         )
         # popt = guess_params
-        # if len(popt) == 6:
-        #     zfs = (popt[2] + popt[5]) / 2
-        #     low_res_err = np.sqrt(pcov[2,2])
-        #     hig_res_err = np.sqrt(pcov[5,5])
-        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        # else:
-        #     zfs = popt[2]
-        #     zfs_err = np.sqrt(pcov[2,2])
+        if len(popt) == 6:
+            zfs = (popt[2] + popt[5]) / 2
+            low_res_err = np.sqrt(pcov[2, 2])
+            hig_res_err = np.sqrt(pcov[5, 5])
+            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        else:
+            zfs = popt[2]
+            zfs_err = np.sqrt(pcov[2, 2])
 
-        # print(zfs)
-        # print(zfs_err)
+        print(zfs)
+        print(zfs_err)
         # temp_from_resonances.main(zfs, zfs_err)
 
     else:
@@ -356,7 +359,7 @@ def process_counts(ref_counts, sig_counts, num_runs):
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
     # New style, single reference
-    if False:
+    if True:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
@@ -625,18 +628,14 @@ def main_with_cxn(
             cxn.pulse_streamer.stream_start(int(num_reps))
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = cxn.apd_tagger.read_counter_modulo_gates(2, 1)
 
             sample_counts = new_counts[0]
 
-            # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            sig_counts[run_ind, freq_ind] = sample_counts[0]
             # print(sum(sig_gate_counts))
 
-            # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
+            ref_counts[run_ind, freq_ind] = sample_counts[1]
             # print(sum(ref_gate_counts))
 
         cxn.apd_tagger.stop_tag_stream()
@@ -662,6 +661,9 @@ def main_with_cxn(
         ax = axes_pack[1]
         ax.cla()
         ax.plot(freqs, norm_avg_sig, "b-")
+
+        # ax.axvline(2.8424, color = 'gray')
+        # ax.axvline(2.8976, color = 'gray')
 
         text_popt = f"Run # {run_ind + 1}/{num_runs}"
         kpl.text(ax, 0.8, 0.9, text_popt)
@@ -735,9 +737,12 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(freqs, norm_avg_sig, "b-")
-    ax.set_title("Normalized Count Rate vs Frequency")
+    ax.set_title("Normalized Count Rate vs Frequency, {} deg".format(nv_sig['magnet_angle']))
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Contrast (arb. units)")
+
+    # ax.axvline(2.8424, color = 'gray')
+    # ax.axvline(2.8976, color = 'gray')
 
     fig.canvas.draw()
     fig.tight_layout()
@@ -874,7 +879,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2021_02_26-15_26_52-johnson-nv6_2021_02_26"
+    file = "2022_11_09-19_19_55-siena-nv1_2022_10_27"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -901,7 +906,7 @@ if __name__ == "__main__":
         ref_counts,
     )
 
-    # popt[2] -= np.sqrt(pcov[2, 2])
+    print(popt)
 
     create_fit_figure(
         freq_range,

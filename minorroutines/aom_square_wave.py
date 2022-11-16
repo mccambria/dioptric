@@ -14,7 +14,7 @@ Created on Sun Jun 16 11:22:40 2019
 from pulsestreamer import PulseStreamer as Pulser
 from pulsestreamer import TriggerStart
 from pulsestreamer import OutputState
-import numpy
+import numpy as np
 from pulsestreamer import Sequence
 import labrad
 import utils.tool_belt as tool_belt
@@ -111,6 +111,27 @@ def arb_duty_cycle(cxn, laser_name, laser_power=None):
     tool_belt.laser_off(cxn, laser_name)
 
 
+def circle(cxn, laser_name, laser_power=None):
+    """Run a laser around in a circle"""
+
+    seq_file = 'simple_readout.py'
+    period = int(10e6)
+    seq_args = [period, period, 0, laser_name, laser_power]
+    # print(seq_args)
+
+    radius = 1.0
+    num_steps = 300
+    cxn.galvo.load_circle_scan_xy(radius, num_steps, period)
+
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+
+    input('Press enter to stop...')
+
+    cxn.pulse_streamer.constant()
+    tool_belt.laser_off(cxn, laser_name)
+
+
 # %% Run the file
 
 
@@ -130,7 +151,7 @@ if __name__ == '__main__':
     # pos = [-0.025, -0.009, 4.89]
 
     # Hahn
-    laser_names = ['cobolt_638']
+    laser_names = ['laserglow_532']
     # laser_names = ['integrated_520']
     # laser_names = ['laserglow_589']
     # laser_names = ['laserglow_532']
@@ -139,7 +160,8 @@ if __name__ == '__main__':
     # laser_powers = [None, 1.0]
     laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
-    filter_name = 'nd_0.5'
+    filter_name = 'nd_1.0'
+    # filter_name = 'nd_0.5'
     pos = [0.0, 0.0, 0]
     # laser_powers = None
     
@@ -156,6 +178,7 @@ if __name__ == '__main__':
         # constant(cxn, laser_names, laser_powers)
         # main(cxn, laser_names[0])
         # arb_duty_cycle(cxn, laser_names[0])
+        # circle(cxn, laser_names[0])
 
 
 

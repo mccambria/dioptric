@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 
-Sequence for determining the delay beween the rf and the AOM
+Sequence for determining the delay beween the fm of the sig gen and the other pulses
 
 Created on Sun Aug 6 11:22:40 2019
 
@@ -50,27 +50,32 @@ def get_seq(pulse_streamer, config, args):
     wait_time = config['CommonDurations']['uwave_buffer']
     aom_delay_time = config['Optics'][laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
-    iq_trigger_time = numpy.int64(min(pi_pulse, 10))
+    fm_mod_bandwidth = 100e3#config['CommonDurations']['fm_mod_bandwidth'] # in Hz
+    fm_bandwidth_buffer = 1/fm_mod_bandwidth * 1e9
     
     pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
-    pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
+    pulser_ao_fm = pulser_wiring['ao_fm']
     
     
     # Include a buffer on the front end so that we can delay channels that
     # should start off the sequence HIGH
     front_buffer = max(max_tau+pi_pulse, aom_delay_time, rf_delay_time)
+    short_buffer = 10
+    fm_pol_sub = max(fm_bandwidth_buffer, polarization) + short_buffer
     
     seq = Sequence()
     
     # The readout windows are what everything else is relative to so keep
     # those fixed
     train = [(front_buffer, LOW),
-             (readout, HIGH),
-             (polarization  - readout, LOW),
+             (polarization, LOW),
+             (fm_pol_sub - polarization, LOW),
              (wait_time, LOW),
-             (pi_pulse, LOW), 
+             (readout, HIGH),
+             (polarization - readout, LOW),
+             (fm_pol_sub - polarization, LOW),
              (wait_time, LOW),
              (readout, HIGH),
              (polarization - readout, LOW),
@@ -84,8 +89,10 @@ def get_seq(pulse_streamer, config, args):
     # Laser sequence
     train = [(front_buffer - aom_delay_time, LOW),
              (polarization, HIGH),
+             (fm_pol_sub - polarization, LOW),
              (wait_time, LOW),
-             (pi_pulse, LOW), 
+             (polarization, HIGH),
+             (fm_pol_sub - polarization, LOW),
              (wait_time, LOW),
              (polarization, HIGH),
              (aom_delay_time, LOW), 
@@ -100,9 +107,10 @@ def get_seq(pulse_streamer, config, args):
     
     # uwave sequence
     train = [(front_buffer - rf_delay_time, LOW),
-             (polarization, LOW),
-             (wait_time, LOW),
+             (fm_pol_sub - pi_pulse, LOW),
              (pi_pulse, HIGH), 
+             (wait_time, LOW),
+             (fm_pol_sub, LOW),
              (wait_time, LOW),
              (polarization, LOW),
              (rf_delay_time, LOW), 
@@ -114,17 +122,15 @@ def get_seq(pulse_streamer, config, args):
         period += el[0]
     print(period)
     
-    # Vary the position of the iq pulses
-    train = [(front_buffer  - tau, LOW),
-             (iq_trigger_time, HIGH),
-             (polarization - iq_trigger_time, LOW),
+    # Vary the position of the fm
+    train = [(front_buffer - tau, LOW),
+             (fm_pol_sub, HIGH),
              (wait_time, LOW),
-             (iq_trigger_time, HIGH),
-             (pi_pulse - iq_trigger_time, LOW), 
+             (fm_pol_sub, HIGH),
              (wait_time, LOW),
              (polarization + tau, LOW)
              ]
-    seq.setDigital(pulser_do_arb_wave_trigger, train)
+    seq.setAnalog(pulser_ao_fm, train)
     
     period = 0
     for el in train:
@@ -147,7 +153,7 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config) 
     
     #tau, max_tau, readout, pi_pulse, polarization = durations
-    args = [100, 500, 350, 89, 1000.0, 3, 1, 'integrated_520', None]
+    args = [200, 500, 350, 89, 1000.0, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

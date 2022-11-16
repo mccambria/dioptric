@@ -34,6 +34,7 @@ from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 from numpy import inf
+import sys
 
 bad_zfs_temps = 350
 
@@ -384,7 +385,24 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
 def cambria_test(temp, zfs0, A1, A2):
 
     Theta1 = 65
-    Theta2 = 160
+    Theta2 = 150
+
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    # A3 = -14.6 * 442 / 1000  # (MHz/GPa) * (GPa/strain)
+    # ret_val += A3 * fractional_thermal_expansion(temp)
+
+    return ret_val
+
+
+def cambria_fixed(temp):
+
+    zfs0, A1, A2 = [2.87781899, -0.08271508, -0.22871962]
+    Theta1 = 65
+    Theta2 = 150
 
     ret_val = zfs0
     for ind in range(2):
@@ -712,6 +730,9 @@ def main(zfs, zfs_err=None, no_print=None):
 
 
 if __name__ == "__main__":
+
+    print(cambria_fixed(15))
+    sys.exit()
 
     # files = [
     #     "2022_07_06-17_07_38-hopper-search",

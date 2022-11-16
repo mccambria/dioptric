@@ -162,11 +162,11 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     
     taus_us = numpy.array(taus)/1e3
     # Guess the other params for fitting
-    amp_1 = 0.1
+    amp_1 = -0.03
     amp_2 = amp_1
     amp_3 = amp_1
     decay =20
-    offset = 0.99
+    offset = 0.9
     
     # offset = 0.92774594 
     # amp_1 = -0.02093022  
@@ -187,26 +187,25 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams, do_plot = 
     # cosine_sum_fixed_amps = lambda t, offset, decay, freq_1, freq_2, freq_3:tool_belt.cosine_sum(t, offset, decay,  amp_1, freq_1, amp_2,  freq_2, amp_3, freq_3)
     
     
-    guess_params_fixed_freq = (0.99, -0.05,
-                        0.05, 
-                        0.01, )
-    cosine_sum_fixed_freq = lambda t, offset, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, 20, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    # guess_params_fixed_freq = (0.99, -0.05,
+    #                     0.05, 
+    #                     0.01, )
+    # cosine_sum_fixed_freq = lambda t, offset, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, 20, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
     
     ### Try the fit to a sum of three cosines
     
-    # fit_func = tool_belt.cosine_sum
-    # init_params = guess_params
+    fit_func = tool_belt.cosine_sum
+    init_params = guess_params
     
     # fit_func = cosine_sum_fixed_amps
     # init_params = guess_params_fixed_amps
     
-    fit_func = cosine_sum_fixed_freq
-    init_params = guess_params_fixed_freq
+    # fit_func = cosine_sum_fixed_freq
+    # init_params = guess_params_fixed_freq
     
     try:
         popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
                       p0=init_params,
-                        # bounds=(0, numpy.infty)
                       )
     except Exception:
         print('Something went wrong!')
@@ -761,10 +760,7 @@ if __name__ == "__main__":
 
 
     folder = "pc_rabi/branch_master/ramsey/2022_11"
-    file = '2022_11_03-14_01_47-siena-nv1_2022_10_27'
-    file = '2022_11_03-14_42_21-siena-nv1_2022_10_27'
-    # folder = "pc_rabi/branch_master/ramsey/2022_10"
-    # file = '2022_10_13-16_45_10-siena-nv1_2022_10_13'
+    file = '2022_11_09-23_08_13-siena-nv1_2022_10_27'
     
     
     # detuning = 0

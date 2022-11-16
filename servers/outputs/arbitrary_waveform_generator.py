@@ -138,7 +138,11 @@ class ArbitraryWaveformGenerator(LabradServer):
     def load_cpmg(self, c, num_dd_reps):
 
         # intended phase list: [0, (pi/2)*N, 0]
-        phases = [0] +  [pi/2]*num_dd_reps + [0]
+        
+        # phases = [0] +  [pi/2]*num_dd_reps + [0]###
+        half_num_dd_reps = int(num_dd_reps/2)
+        phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
+        # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
         
         phases = phases*4
         amp = self.iq_comp_amp

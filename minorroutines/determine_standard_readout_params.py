@@ -179,8 +179,7 @@ def optimize_readout_duration_sub(
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
     
-    
-    opti_period = 2.5 * 60  # Optimize every opti_period seconds
+    opti_period = 1 * 60  # Optimize every opti_period seconds
 
     # Some initial parameters
     num_reps_per_cycle = round(opti_period / period_sec)
@@ -237,8 +236,6 @@ def optimize_readout_duration_sub(
         ]
         timetags.extend(buffer_timetags)
         channels.extend(buffer_channels)
-
-        cxn.apd_tagger.stop_tag_stream()
 
         num_reps_remaining -= num_reps_per_cycle
 

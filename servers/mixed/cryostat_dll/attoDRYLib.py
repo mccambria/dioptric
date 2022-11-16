@@ -28,8 +28,11 @@ def load():
     # cdll.LoadLibrary('attoDRYLib') 
     # print(cdll.attoDRYLib)
     try:
-        dll = CDLL('cryostat_dll/attoDRYLib.dll')
+        dll = CDLL('attoDRYLib.dll')
         return 'yeah!'
     except Exception as e:
         return e
+    
+if __name__ == "__main__":
+    print(load())
     

@@ -15,6 +15,7 @@ Created on June 22nd, 2022
 import matplotlib.pyplot as plt
 from enum import Enum
 from colorutils import Color
+import re
 
 # endregion
 
@@ -123,11 +124,13 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib(font_size="normal", data_size="normal"):
+def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
     """
     Runs the default initialization for kplotlib, our default configuration
-    of matplotlib
+    of matplotlib. Pass no_latex for faster plotting
     """
+
+    ### Misc setup
 
     global active_axes, color_cyclers, default_font_size, default_data_size
     active_axes = []
@@ -138,27 +141,29 @@ def init_kplotlib(font_size="normal", data_size="normal"):
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
 
-    ####### Latex setup #######
+    ### Latex setup
 
-    preamble = r""
-    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
-    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+    if not no_latex:
 
-    # Fonts
-    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-    preamble += r"\usepackage{helvet}"
-    # Latin mdoern is default math font but let's be safe
-    preamble += r"\usepackage{lmodern}"
+        preamble = r""
+        preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+        preamble += r"\usepackage{physics} \usepackage{upgreek}"
 
-    # Sans serif math font, looks better for axis numbers.
-    # We preserve \mathrm and \mathit commands so you can still use
-    # the serif lmodern font for variables, equations, etc
-    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+        # Fonts
+        # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+        preamble += r"\usepackage{helvet}"
+        # Latin mdoern is default math font but let's be safe
+        preamble += r"\usepackage{lmodern}"
 
-    plt.rcParams["text.latex.preamble"] = preamble
-    plt.rc("text", usetex=True)
+        # Sans serif math font, looks better for axis numbers.
+        # We preserve \mathrm and \mathit commands so you can still use
+        # the serif lmodern font for variables, equations, etc
+        preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
 
-    ###########################
+        plt.rcParams["text.latex.preamble"] = preamble
+        plt.rc("text", usetex=True)
+
+    ### Other rcparams
 
     # plt.rcParams["savefig.format"] = "svg"
 
@@ -274,3 +279,28 @@ def text(ax, x, y, text, size=None, **kwargs):
         # verticalalignment="top",
         bbox=bbox_props,
     )
+
+
+def latex_escape(text):
+    """Escape LaTeX characters in the passed text"""
+    conv = {
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\^{}",
+        "\\": r"\textbackslash{}",
+        "<": r"\textless{}",
+        ">": r"\textgreater{}",
+    }
+    regex = re.compile(
+        "|".join(
+            re.escape(str(key))
+            for key in sorted(conv.keys(), key=lambda item: -len(item))
+        )
+    )
+    return regex.sub(lambda match: conv[match.group()], text)

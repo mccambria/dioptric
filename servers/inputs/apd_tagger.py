@@ -54,7 +54,6 @@ class ApdTagger(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        logging.info("MCCTEST")
         self.reset_tag_stream_state()
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
@@ -163,7 +162,6 @@ class ApdTagger(LabradServer):
         # Assume a single gate for both APDs: get all the gates once and then
         # count for each APD individually
         tagger_di_gate = self.tagger_di_gate[self.stream_apd_indices[0]]
-        logging.info(tagger_di_gate)
         
         # Do the hard work in the fast sub function
         apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]

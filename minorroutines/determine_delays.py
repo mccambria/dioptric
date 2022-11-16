@@ -44,6 +44,7 @@ def measure_delay(
     num_reps,
     seq_file,
     state=States.LOW,
+    deviation_MHz = 32,
     laser_name=None,
     laser_power=None,
 ):
@@ -87,6 +88,16 @@ def measure_delay(
             sig_gen_cxn.uwave_on()
             cxn.arbitrary_waveform_generator.load_arb_phases([0, numpy.pi/2])
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
+        if seq_file == "fm_delay.py":
+            deviation_GHz = deviation_MHz/1e3
+            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+            freq = nv_sig["resonance_{}".format(state.name)]
+            detuned_freq = freq - deviation_GHz
+            sig_gen_cxn.set_freq(detuned_freq)
+            sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
+            sig_gen_cxn.load_fm(deviation_MHz)
+            sig_gen_cxn.uwave_on()
+            pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
 
         cxn.apd_tagger.start_tag_stream(apd_indices)
         ###########
@@ -109,7 +120,7 @@ def measure_delay(
                 laser_name,
                 laser_power,
             ]
-        elif seq_file == "uwave_delay.py" or seq_file == "iq_delay.py":
+        elif seq_file == "uwave_delay.py" or seq_file == "iq_delay.py" or seq_file == 'fm_delay.py':
             laser_key = "spin_laser"
             laser_name = nv_sig[laser_key]
             laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -314,15 +325,22 @@ def iq_delay(
     The first readout is a reference, the second is a signal. The iq modulation 
     initially is at 0 degrees, and the second pulse changes it to pi/2.
     We should see a normalized signal consistent with the full pi pulse contrast. 
-    If there is a delay we'll get this sequence
+    If there is a positive delay we'll get this sequence
     
-    iq    __|-|_________________|-|______________
+    iq    __|-|______________|-|______________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
     
     and the normalized signal will be higher than the full pi pulse contrast.
-    We need to find the minimum passed delay that recovers the full contrast.
+    The signal will reduce in contrast as the iq trigger passes over the pi pulse.
+    The correct delay is when the counts return to their full contrast. 
+    
+    |      __
+    |     /  \
+    |____/    \___
+    -----------------
+              * This is the value of the correct delay  
     (This function assumes the laser delay and uwave delay are properly set!)
     """
 
@@ -339,6 +357,50 @@ def iq_delay(
         state=state,
     )
 
+def fm_delay(
+    cxn, nv_sig, apd_indices, state, delay_range, num_steps, num_reps
+):
+
+    """
+    This will repeatedly run the same sequence with different passed fm
+    delays. If there were no delays, the sequence would look like this
+    
+    fm    ________|------------------|___________________________
+    uwave _______________________|---|___________________________
+    laser ________|--------|___________|--------|______|--------|
+    APD   _____________________________|----|__________|----|____
+    
+    The first readout is the signal, the second  is a reference. The frequency
+    with no modulation is detuned, such that the contrast shoudl change only
+    when the freq is modulated and restored to the correct freq. With no
+    fm delay, the pi pulse ends right as the modulation end. 
+    We should see a normalized signal consistent with the full pi pulse contrast. 
+    If there is a delay we'll get this sequence
+    
+    fm    __|------------------|_________________________________
+    uwave _______________________|---|___________________________
+    laser ________|--------|___________|--------|______|--------|
+    APD   _____________________________|----|__________|----|____
+    
+    and the normalized signal will be higher than the full pi pulse contrast.
+    We need to find the minimum passed delay that recovers the full contrast.
+    (This function assumes the laser delay and uwave delay are properly set!)
+    """
+
+    seq_file = "fm_delay.py"
+
+    measure_delay(
+        cxn,
+        nv_sig,
+        apd_indices,
+        delay_range,
+        num_steps,
+        num_reps,
+        seq_file,
+        state=state,
+        deviation_MHz = 32
+    )
+
 
 # %% Run the file
 
@@ -351,18 +413,18 @@ if __name__ == "__main__":
     # Rabi parameters
     sample_name = "rubin"
     green_power = 8000
-    nd_green = "nd_0.4"
+    nd_green = "nd_1.1"
     green_laser = 'integrated_520'
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
+    
     nv_sig = { 
-            "coords":[0.244, 0.035, 4.921],
-        "name": "{}-nv1".format(sample_name,),
+            "coords":[-0.222, 0.027, 3.83],
+        "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":9,
-        "correction_collar": 0.12,
+        "expected_count_rate":23,
         
         
           "spin_laser":green_laser,
@@ -382,15 +444,13 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 100,
-        "resonance_LOW":2.7422,
-        "rabi_LOW":60,        
-        "uwave_power_LOW": 15,
-        "resonance_HIGH":2.9592,
-        "rabi_HIGH":67.5,
-        # 'pi_pulse_HIGH': 36.2,
-        # 'pi_on_2_pulse_HIGH': 19.2,
-        "uwave_power_HIGH": 10,
+        "magnet_angle": 68,
+        "resonance_LOW":2.7805,
+        "rabi_LOW":111.6,     
+        "uwave_power_LOW": 15,   
+        "resonance_HIGH":2.9597,
+        "rabi_HIGH":325.7,
+        "uwave_power_HIGH": -5,
     }  
     
     apd_indices = [1]
@@ -435,15 +495,15 @@ if __name__ == "__main__":
     num_steps = 101
     num_reps = int(5e4)
     # laser_name = 'laserglow_532'
-    # delay_range = [600, 1400]
+    delay_range = [0, 600]
     # num_reps = int(1e5)
     # laser_name = 'laserglow_589'
     # delay_range = [800, 1700]
     # num_reps = int(1e4)
-    # laser_name = 'integrated_520'
+    laser_name = 'integrated_520'
     # laser_power = 0.65
     # laser_name = 'cobolt_638'
-    # laser_power = None
+    laser_power = None
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
     # delay_range = [0,1e3]
@@ -452,9 +512,9 @@ if __name__ == "__main__":
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(1e4)
-    delay_range = [0, 200]
-    num_steps = 101
+    num_reps = int(5e6)
+    delay_range = [350,600]
+    num_steps = 251
     # bnc 835
     # state = States.LOW
     #  sg394
@@ -478,5 +538,14 @@ if __name__ == "__main__":
     #         num_steps,
     #         num_reps,
     #     )
+        # fm_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
 
  
