@@ -85,7 +85,11 @@ class Galvo(LabradServer):
         # Write the initial voltages and stream the rest
         num_voltages = voltages.shape[1]
         self.write_xy(c, voltages[0, 0], voltages[1, 0])
-        stream_voltages = voltages[:, 1:num_voltages]
+        if continuous:
+            # Perfect loop for continuous
+            stream_voltages = numpy.roll(voltages, -1, axis=1)
+        else:
+            stream_voltages = voltages[:, 1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1
         # Create a new task
@@ -326,47 +330,6 @@ class Galvo(LabradServer):
         return x_voltages_1d, y_voltages_1d
 
     @setting(
-        7,
-        radius="v[]",
-        num_steps="i",
-        period="i",
-        returns="*v[]*v[]",
-    )
-    def load_circle_scan_xy(self, c, radius, num_steps, period):
-        """Load a circle scan centered about 0,0. Useful for testing cat's eye
-        stationary point. For this reason, the scan runs continuously, not
-        just until it makes it through all the samples once. 
-
-        Params
-            radius: float
-                Radius of the circle in V
-            num_steps: int
-                Number of steps the break the x/y range into
-            period: int
-                Expected period between clock signals in ns
-
-        Returns
-            list(float)
-                The x voltages that make up the scan
-            list(float)
-                The y voltages that make up the scan
-        """
-        
-        angles = numpy.linspace(0, 2*numpy.pi, num_steps)
-
-        x_voltages = radius * numpy.sin(angles)
-
-        y_voltages = radius * numpy.cos(angles)
-        # y_voltages = numpy.zeros(len(angles))
-
-        voltages = numpy.vstack((x_voltages, y_voltages))
-
-        self.load_stream_writer_xy(c, "Galvo-load_circle_scan_xy", voltages, 
-                                   period, True)
-
-        return x_voltages, y_voltages
-
-    @setting(
         4,
         x_center="v[]",
         y_center="v[]",
@@ -476,6 +439,48 @@ class Galvo(LabradServer):
         self.load_stream_writer_xy(c, "Galvo-load_arb_scan_xy", voltages, period)
 
         return
+
+    @setting(
+        7, radius="v[]", num_steps="i", period="i", returns="*v[]*v[]"
+    )
+    def load_circle_scan_xy(self, c, radius, num_steps, period):
+        """Load a circle scan centered about 0,0. Useful for testing cat's eye
+        stationary point. For this reason, the scan runs continuously, not
+        just until it makes it through all the samples once. 
+
+        Params
+            radius: float
+                Radius of the circle in V
+            num_steps: int
+                Number of steps the break the x/y range into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+            list(float)
+                The y voltages that make up the scan
+        """
+        
+        angles = numpy.linspace(0, 2*numpy.pi, num_steps)
+        x_voltages = radius * numpy.sin(angles)
+        y_voltages = radius * numpy.cos(angles)
+        voltages = numpy.vstack((x_voltages, y_voltages))
+        self.load_stream_writer_xy(c, "Galvo-load_circle_scan_xy", voltages, period, True)
+        return x_voltages, y_voltages
+    
+    @setting(
+        8, x1="v[]", y1="v[]", x2="v[]", y2="v[]", period="i", returns="*v[]*v[]"
+    )
+    def load_two_point_xy(self, c, x1, y1, x2, y2, period):
+        """Flip back an forth continuously between two points"""
+        
+        x_voltages = [x1, x2] * 32
+        y_voltages = [y1, y2] * 32
+        voltages = numpy.vstack((x_voltages, y_voltages))
+        self.load_stream_writer_xy(c, "Galvo-load_two_point_xy", voltages, period, True)
+        return x_voltages, y_voltages
 
 
 __server__ = Galvo()

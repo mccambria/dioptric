@@ -163,6 +163,9 @@ class ApdTagger(LabradServer):
         # count for each APD individually
         tagger_di_gate = self.tagger_di_gate[self.stream_apd_indices[0]]
         
+        # clock_inds = np.where(buffer_channels == self.tagger_di_clock)
+        # logging.info(clock_inds)
+        
         # Do the hard work in the fast sub function
         apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]
         return_counts, leftover_channels = read_counter_internal_sub(
@@ -312,7 +315,7 @@ class ApdTagger(LabradServer):
         return_counts = [
             np.sum(sample, dtype=int) for sample in complete_counts
         ]
-
+        # logging.info(return_counts)
         return return_counts
 
     # @jit(nopython=True)

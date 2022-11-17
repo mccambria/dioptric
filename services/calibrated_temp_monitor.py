@@ -131,15 +131,15 @@ if __name__ == "__main__":
 
     channel = 1
     sensor_serial = "X162689"
+    # sensor_serial = "X162690"
     do_plot = True
     
     # main(channel, do_plot, do_email=False)
-    main(channel, do_plot, do_email=True)
+    # main(channel, do_plot, do_email=True)
 
-    # with labrad.connect() as cxn:
+    with labrad.connect() as cxn:
 
-        # temp = cxn.temp_monitor_lakeshore218.measure(channel)
-        # print(temp)
-
-        # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
+        cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
+        temp = cxn.temp_monitor_lakeshore218.measure(channel)
+        print(temp)
 
