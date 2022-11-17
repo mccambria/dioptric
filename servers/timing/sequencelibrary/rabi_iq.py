@@ -45,13 +45,18 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_apd_gate = pulser_wiring[key]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
 
     # Get the other durations we need
     laser_delay =  config['Optics'][laser_name]['delay']
     uwave_delay = config['Microwaves'][sig_gen_name]['delay']
+    iq_trigger_delay = config['Microwaves']['iq_delay']
     short_buffer = 10  # Helps avoid weird things that happen for ~0 ns pulses 
-    common_delay = max(laser_delay, uwave_delay) + short_buffer
+    iq_trigger_time = 10
+    common_delay = max(laser_delay, uwave_delay, iq_trigger_delay) + short_buffer
     uwave_buffer = config['CommonDurations']['uwave_buffer']
+    half_uwave_buffer = int(uwave_buffer/2)
+    
     # Keep the laser on for only as long as we need
     readout_pol_min = max(readout, polarization_time) + short_buffer
     final_readout_buffer = 500
@@ -94,10 +99,10 @@ def get_seq(pulse_streamer, config, args):
              (laser_delay, LOW)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 laser_name, laser_power, train)
-    # total_dur = 0
-    # for el in train:
-    #     total_dur += el[0]
-    # print(total_dur)
+    total_dur = 0
+    for el in train:
+        total_dur += el[0]
+    print(total_dur)
 
     # Pulse the microwave for tau
     train = [(common_delay - uwave_delay, LOW),
@@ -114,10 +119,33 @@ def get_seq(pulse_streamer, config, args):
              (short_buffer, LOW),
              (uwave_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
-    # total_dur = 0
-    # for el in train:
-    #     total_dur += el[0]
-    # print(total_dur)
+    total_dur = 0
+    for el in train:
+        total_dur += el[0]
+    print(total_dur)
+    
+    # IQ modulation
+    train = [(common_delay - iq_trigger_delay, LOW),
+             (iq_trigger_time, HIGH),
+             (polarization_time - iq_trigger_time, LOW),
+             (half_uwave_buffer, LOW),
+             (iq_trigger_time, HIGH),
+             (uwave_buffer - half_uwave_buffer - iq_trigger_time, LOW),
+             (max_tau, LOW),
+             (uwave_buffer, LOW),
+             (iq_trigger_time, HIGH),
+             (readout_pol_min - iq_trigger_time, LOW), 
+             (uwave_buffer, LOW), 
+             (max_tau, LOW),
+             (uwave_buffer, LOW),
+             (readout + final_readout_buffer, LOW),
+             (short_buffer, LOW),
+             (uwave_delay, LOW)]
+    seq.setDigital(pulser_do_arb_wave_trigger, train)
+    total_dur = 0
+    for el in train:
+        total_dur += el[0]
+    print(total_dur)
 
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)

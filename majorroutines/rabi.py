@@ -219,11 +219,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # Analyze the sequence
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
+    if iq_mod_on:
+        file_name = 'rabi_iq.py'
     seq_args = [taus[0], polarization_time,
                 readout, max_uwave_time, apd_indices[0],
                 state.value, laser_name, laser_power]
-#    for arg in seq_args:
-#        print(type(arg))
+
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -292,13 +293,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         if iq_mod_on:
-            cxn.arbitrary_waveform_generator.load_arb_phases([iq_phase])
-
-        # TEST for split resonance
-#        sig_gen_cxn = cxn.signal_generator_bnc835
-#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
-#        sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
+            cxn.arbitrary_waveform_generator.load_arb_phases([0, iq_phase, 0])
+        # print([0, iq_phase, 0])
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -384,6 +380,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'iq_mod_on':iq_mod_on,
+                    'iq_phase': iq_phase,
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -477,6 +475,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'iq_mod_on':iq_mod_on,
+                'iq_phase': iq_phase,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,
@@ -590,12 +590,13 @@ if __name__ == '__main__':
     # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
     
     
-    file_0 = '2022_11_15-12_13_40-siena-nv1_2022_10_27'
-    file_90 = '2022_11_15-12_25_11-siena-nv1_2022_10_27'
-    file_180 = '2022_11_15-12_36_31-siena-nv1_2022_10_27'
-    file_270 = '2022_11_15-12_47_54-siena-nv1_2022_10_27'
+    file_0 = '2022_11_17-13_02_41-siena-nv1_2022_10_27'
+    # file_45 = '2022_11_15-13_06_56-siena-nv1_2022_10_27'
+    file_90 = '2022_11_17-12_55_38-siena-nv1_2022_10_27'
+    file_180 = '2022_11_17-13_09_46-siena-nv1_2022_10_27'
+    file_270 = '2022_11_17-13_16_44-siena-nv1_2022_10_27'
     
-    file_list = [file_0, file_90,file_180, file_270 ]
+    file_list = [file_0,file_90,file_180, file_270 ]
     label_list = [0, 90, 180, 270]
     
     fig, ax = plt.subplots()
