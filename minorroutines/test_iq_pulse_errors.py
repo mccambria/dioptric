@@ -37,7 +37,8 @@ def measurement(cxn,
             state=States.HIGH,
             do_plot = False,
             title = None,
-            num_reps = int(2e5)):
+            num_reps = int(1e5),
+            inter_pulse_time = 20):
     
     # print(iq_phases)
     # num_reps = int(5e4)
@@ -77,7 +78,7 @@ def measurement(cxn,
             
         seq_args = [gate_time, uwave_pi_pulse, 
                 pulse_1_dur, pulse_2_dur, pulse_3_dur, 
-                polarization_time, num_uwave_pulses, state.value, apd_indices[0], laser_name, laser_power]
+                polarization_time, inter_pulse_time, num_uwave_pulses, state.value, apd_indices[0], laser_name, laser_power]
         # print(seq_args)
         # return
         cxn.apd_tagger.clear_buffer()
@@ -202,8 +203,8 @@ def measure_pulse_error(cxn,
     
     ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
     
-    # ref_0_avg = 15088
-    # ref_H_avg = 11868
+    # ref_0_avg = 29766 # 10 runs, 4e5 reps
+    # ref_H_avg = 23106
     
     # print(ref_0_avg, ref_H_avg, sig_avg)
     
@@ -237,16 +238,9 @@ def solve_errors(meas_list):
     A3 = meas_list[4]
     B3 = meas_list[5]
     
-    # S1 = meas_list[6]
-    # S2 = meas_list[7]
-    # S3 = meas_list[8]
-    # S4 = meas_list[9]
-    # S5 = meas_list[10]
-    # S6 = meas_list[11]
-    # S = [S1, S2, S4, S5, S6]
-    
     S = meas_list[6:11]
-    # print(S)
+    
+    
     phi_p = -A1/2
     chi_p = -B1/2
     
@@ -655,10 +649,10 @@ def matrix_test(cxn,
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     
-    pi_x_phase = 0
+    pi_x_phase = 0 + int_phase
     pi_2_x_phase = 0
-    pi_y_phase = pi/2
-    pi_2_y_phase = pi/2 + int_phase
+    pi_y_phase = pi/2 
+    pi_2_y_phase = pi/2
     
    
     ### 5
@@ -843,20 +837,21 @@ def full_test(cxn,
     
     pe9, pe9e, pe10, pe10e, pe11, pe11e, pe12, pe12e = ret_vals
     
-    print([pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9, pe10,
-           pe11, pe12])
+    # print([pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9, pe10,
+    #        pe11, pe12])
     
     return [pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9, pe10,
            pe11, pe12]
 
-
-def custom(cxn, 
+def sweep_inter_pulse_time(cxn, 
                  nv_sig,
                  apd_indices,
                  init_phase,
                  state=States.HIGH,):
     
-    num_uwave_pulses = 1
+    num_uwave_pulses = 2
+    
+    phi = 180
     
     rabi_period = nv_sig["rabi_{}".format(state.name)]
 
@@ -864,10 +859,122 @@ def custom(cxn,
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     
-    num_steps = 15
-    num_steps = 2
+    num_steps = 11
+    # num_steps = 2
     num_reps = int(1e5)
     num_runs = 10
+    t_range = [0, 100]
+    ref_0_list = numpy.zeros([num_steps])
+    ref_0_list[:] = numpy.nan
+    ref_H_list =  numpy.copy(ref_0_list)
+    sig_list = numpy.copy(ref_0_list)
+    
+    t_list = numpy.linspace(t_range[0],t_range[-1], num_steps)
+    # print(phi_list)
+    # return
+    # Create a list of indices to step through the taus. This will be shuffled
+    t_ind_list = list(range(0, num_steps))
+    shuffle(t_ind_list)
+    
+    for ti in t_ind_list:
+        t = t_list[ti]
+        print('wait time = {} ns'.format(t))
+        # iq_phases = [0, 0, phi*pi/180]
+        iq_phases = [init_phase, init_phase, phi*pi/180]
+        
+        ### 1
+        pulse_1_dur = uwave_pi_pulse
+        pulse_2_dur = uwave_pi_pulse
+        pulse_3_dur = 0
+    
+        ret_vals = measurement(cxn, 
+                    nv_sig,
+                    uwave_pi_pulse,
+                    num_uwave_pulses,
+                    iq_phases,
+                    pulse_1_dur,
+                    pulse_2_dur,
+                    pulse_3_dur,
+                    apd_indices,
+                    num_runs,
+                    state,
+                    num_reps = num_reps,
+                    do_plot = False,
+                    inter_pulse_time = t)
+            
+        ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
+        
+        ref_0_list[ti] = ref_0_avg
+        ref_H_list[ti] = ref_H_avg
+        sig_list[ti] = sig_avg
+          
+    
+    population = (sig_list - ref_H_list) / (ref_0_list - ref_H_list)
+    
+    fig, axes = plt.subplots(1,2, figsize=(17, 8.5))
+    ax = axes[0]
+    ax.plot(t_list, ref_0_list, "r--", label="low reference")
+    ax.plot(t_list, ref_H_list, "g--", label="high reference")
+    ax.plot(t_list, sig_list, "b-", label="signal")
+    ax.set_xlabel(r"Inter pulse wait time for MW pusles (ns)")
+    # ax.set_xlabel(r"Relative phase of second pi/2 pulse (degrees)")
+    ax.set_ylabel("Counts")
+    ax.legend()
+    ax = axes[1]
+    ax.plot(t_list, population, "b-")
+    ax.set_xlabel(r"Inter pulse wait time for MW pusles (ns)")
+    # ax.set_xlabel(r"Relative phase of second pi/2 pulse (degrees)")
+    ax.set_ylabel("Population")
+    ax.set_title('Two pi pulses, {} deg out of phase'.format(phi))
+        
+    
+    timestamp = tool_belt.get_time_stamp()
+
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'phi':phi,
+                'phi-units': 'degrees',
+                't_range': t_range,
+                't_range-units': 'ns',
+                "init_phase": init_phase,
+                't_list': t_list.tolist(),
+                't_list-units': 'ns',
+                'state': state.name,
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                't_ind_list':t_ind_list,
+                'sig_list': sig_list.astype(int).tolist(),
+                'sig_list-units': 'counts',
+                'ref_0_list': ref_0_list.astype(int).tolist(),
+                'ref_0_list-units': 'counts',
+                'ref_H_list': ref_H_list.astype(int).tolist(),
+                'ref_H_list-units': 'counts',
+                "population" : population.tolist()}
+
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+
+def custom_phase(cxn, 
+                 nv_sig,
+                 apd_indices,
+                 init_phase,
+                 state=States.HIGH,):
+    
+    num_uwave_pulses = 2
+    
+    rabi_period = nv_sig["rabi_{}".format(state.name)]
+
+    # Get pulse frequencies
+    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    
+    num_steps = 11
+    # num_steps = 2
+    num_reps = int(1e5)
+    num_runs = 5
     phi_range = [0, 360]
     ref_0_list = numpy.zeros([num_steps])
     ref_0_list[:] = numpy.nan
@@ -889,9 +996,9 @@ def custom(cxn,
         
         ### 1
         pulse_1_dur = uwave_pi_pulse
-        pulse_2_dur = 0
+        pulse_2_dur = uwave_pi_pulse
         pulse_3_dur = 0
-        
+    
         ret_vals = measurement(cxn, 
                     nv_sig,
                     uwave_pi_pulse,
@@ -903,7 +1010,8 @@ def custom(cxn,
                     apd_indices,
                     num_runs,
                     state,
-                    num_reps)
+                    num_reps = num_reps,
+                    do_plot = False)
             
         ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
         
@@ -936,6 +1044,8 @@ def custom(cxn,
     raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'pi_2_interpulse_delay': 10,
+                'pi_2_interpulse_delay-units': 'ns',
                 'phi_range': phi_range,
                 'phi_range-units': 'degrees',
                 "init_phase": init_phase,
@@ -959,6 +1069,115 @@ def custom(cxn,
     tool_belt.save_raw_data(raw_data, file_path)
     
 
+def custom_dur(cxn, 
+                 nv_sig,
+                 apd_indices,
+                 init_phase,
+                 state=States.HIGH,):
+    
+    num_uwave_pulses = 2
+    
+    rabi_period = nv_sig["rabi_{}".format(state.name)]
+
+    # Get pulse frequencies
+    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    
+    
+    # num_steps = 15
+    num_steps = 11
+    num_reps = int(1e5)
+    num_runs = 10
+    dt_range = [-20, 20]
+    ref_0_list = numpy.zeros([num_steps])
+    ref_0_list[:] = numpy.nan
+    ref_H_list =  numpy.copy(ref_0_list)
+    sig_list = numpy.copy(ref_0_list)
+    
+    dt_durs = numpy.linspace(dt_range[0],dt_range[-1], num_steps)
+    # print(phi_list)
+    # return
+    # Create a list of indices to step through the taus. This will be shuffled
+    dt_ind_list = list(range(0, num_steps))
+    shuffle(dt_ind_list)
+    
+    for  ind in dt_ind_list:
+        dt = dt_durs[ind]
+        uwave_pi_on_2_pulse_dt = uwave_pi_on_2_pulse + dt
+        print('pi/2 pulse duration = {} ns'.format(uwave_pi_on_2_pulse_dt))
+        # iq_phases = [0, 0, phi*pi/180]
+        iq_phases = [init_phase, init_phase, init_phase]
+        
+        ### 1
+        pulse_1_dur = uwave_pi_on_2_pulse_dt
+        pulse_2_dur = uwave_pi_on_2_pulse_dt
+        pulse_3_dur = 0
+        
+        ret_vals = measurement(cxn, 
+                    nv_sig,
+                    uwave_pi_pulse,
+                    num_uwave_pulses,
+                    iq_phases,
+                    pulse_1_dur,
+                    pulse_2_dur,
+                    pulse_3_dur,
+                    apd_indices,
+                    num_runs,
+                    state,
+                    num_reps)
+            
+        ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
+        
+        ref_0_list[ind] = ref_0_avg
+        ref_H_list[ind] = ref_H_avg
+        sig_list[ind] = sig_avg
+          
+    
+    population = (sig_list - ref_H_list) / (ref_0_list - ref_H_list)
+    
+    fig, axes = plt.subplots(1,2, figsize=(17, 8.5))
+    ax = axes[0]
+    ax.plot(dt_durs, ref_0_list, "r--", label="low reference")
+    ax.plot(dt_durs, ref_H_list, "g--", label="high reference")
+    ax.plot(dt_durs, sig_list, "b-", label="signal")
+    ax.set_xlabel(r"Change in duration of pi/2 pulse (ns)")
+    # ax.set_xlabel(r"Relative phase of second pi/2 pulse (degrees)")
+    ax.set_ylabel("Counts")
+    ax.legend()
+    ax = axes[1]
+    ax.plot(dt_durs, population, "b-")
+    ax.set_xlabel(r"Change in duration of pi/2 pulse (ns)")
+    # ax.set_xlabel(r"Relative phase of second pi/2 pulse (degrees)")
+    ax.set_ylabel("Population")
+    ax.set_title('two consecutive pi/2 pulses')
+        
+    
+    timestamp = tool_belt.get_time_stamp()
+
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'dt_range': dt_range,
+                'dt_range-units': 'ns',
+                "init_phase": init_phase,
+                'dt_durs': dt_durs.tolist(),
+                'dt_durs-units': 'ns',
+                'state': state.name,
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'dt_ind_list':dt_ind_list,
+                'sig_list': sig_list.astype(int).tolist(),
+                'sig_list-units': 'counts',
+                'ref_0_list': ref_0_list.astype(int).tolist(),
+                'ref_0_list-units': 'counts',
+                'ref_H_list': ref_H_list.astype(int).tolist(),
+                'ref_H_list-units': 'counts',
+                "population" : population.tolist()}
+
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
 
 def fit_custom_data(population,phi_list ):
     init_params = [0.2, 0.4, 0]
@@ -977,7 +1196,7 @@ def fit_custom_data(population,phi_list ):
     ax.set_xlabel(r"Relative phase of second pi/2 pulse (radians)")
     ax.set_ylabel("Population")
     
-    text_popt = '\n'.join((r'$C + A_0 \mathrm{sin}(\nu t + \phi)$',
+    text_popt = '\n'.join((r'$C + A_0 \mathrm{sin}(\nu t + \phi - \pi/2)$',
                       r'$C = $' + '%.3f'%(popt[1]),
                       r'$A_0 = $' + '%.3f'%(popt[0]),
                       # r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[2]) + ' ns',
@@ -1226,7 +1445,7 @@ def do_impose_phase(cxn,
         
         errs_list = []
         
-        phases = numpy.linspace(-30, 30, 3)
+        phases = numpy.linspace(-30, 30, 7)
         # print(phases*pi/180)
         # return
         shuffle(phases)
@@ -1331,35 +1550,35 @@ def do_change_freq(cxn,
         
         plot_freqs = []
         
-        d_freq = numpy.linspace(-0.01, 0.01, 5)
+        d_freq = numpy.linspace(-0.01, 0.01, 7)
         
         freq = nv_sig['resonance_{}'.format(state.name)]
         
-        # shuffle(d_freq)
+        shuffle(d_freq)
         for df in d_freq:
             adjusted_freq = freq + df
             plot_freqs.append(adjusted_freq)
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['resonance_{}'.format(state.name)] = adjusted_freq
-            s_list = matrix_test(cxn, 
-            # s_list = full_test(cxn, 
+            # s_list = matrix_test(cxn, 
+            s_list = full_test(cxn, 
                           nv_sig_copy,
                           apd_indices,
                           state=state,
                           int_phase = 0,
                           plot = False)
             
-            s_list = [0,0,0,0,0,0] + s_list
+            # s_list = [0,0,0,0,0,0] + s_list
             errs = solve_errors(s_list )  
             errs_list.append(errs)
             
-            # phi_p_list.append(errs[0])
-            # chi_p_list.append(errs[1])
-            # phi_list.append(errs[2])
-            # chi_list.append(errs[3])
+            phi_p_list.append(errs[0])
+            chi_p_list.append(errs[1])
+            phi_list.append(errs[2])
+            chi_list.append(errs[3])
             
-            # v_z_list.append(errs[4])
-            # e_z_list.append(errs[5])
+            v_z_list.append(errs[4])
+            e_z_list.append(errs[5])
             
             e_y_p_list.append(errs[6])
             
@@ -1430,7 +1649,7 @@ if __name__ == "__main__":
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":21,
+        "expected_count_rate":22,
         
         
           "spin_laser":green_laser,
@@ -1462,8 +1681,8 @@ if __name__ == "__main__":
     with labrad.connect() as cxn:
         
         # do_impose_phase(cxn, 
-                      # nv_sig,
-                      # apd_indices)
+        #               nv_sig,
+        #               apd_indices)
         
         # do_change_freq(cxn, 
         #               nv_sig,
@@ -1473,7 +1692,7 @@ if __name__ == "__main__":
         #               nv_sig,
         #               apd_indices,
         #               state=States.HIGH,
-        #               int_phase = -30)
+        #               int_phase = 0)
         # errs = solve_errors(s_list )  
         # print(errs)
         
@@ -1485,29 +1704,36 @@ if __name__ == "__main__":
         #               plot = False)
         # print(s_list)
             
-        # init_phase =0
-        custom(cxn, 
-                          nv_sig,
-                          apd_indices,
-                          init_phase,
-                          States.HIGH)
+        init_phase =0
+        # custom_phase(cxn, 
+        #                   nv_sig,
+        #                   apd_indices,
+        #                   init_phase,
+        #                   States.HIGH)
+        
+        sweep_inter_pulse_time(cxn, 
+                         nv_sig,
+                         apd_indices,
+                         init_phase,
+                         States.HIGH,)
         
         # test_1_pulse(cxn, 
         #                   nv_sig,
         #                   apd_indices,
         #                   state=States.HIGH,)
         
-        file = '2022_11_17-13_39_38-siena-nv1_2022_10_27'
+        file = '2022_11_18-12_53_20-siena-nv1_2022_10_27'
         folder = 'pc_rabi/branch_master/test_iq_pulse_errors/2022_11'
         
         # replot_imposed_phases(file, folder)
         # replot_change_f1req(file, folder)
         
         
-        # data = tool_belt.get_raw_data(file, folder)
-        # population = data['population']
-        # phi_list = data['phi_list']
-        # # fit_custom_data(population,phi_list )
+        data = tool_belt.get_raw_data(file, folder)
+        population = data['population']
+        phi_list = data['phi_list']
+        # fit_custom_data(population,phi_list )
+        
         
         # phases = data['phases']
         

@@ -492,8 +492,9 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices, detuning, state = States.HIGH):
 
     # detuning = 0 # MHz
     
-    precession_time_range = [0, 2 * 10 ** 3]
-    num_steps = 201
+    # precession_time_range = [0, 2 * 10 ** 3]
+    precession_time_range = [0, 100]
+    num_steps = 51
     
     # code to collect data at the Nyquist frequency
     # step_size = 75 #ns
@@ -504,7 +505,7 @@ def do_ramsey(nv_sig, opti_nv_sig, apd_indices, detuning, state = States.HIGH):
 
 
     num_reps = int( 10 ** 4)
-    num_runs = int(20)
+    num_runs = int(10)
     
     ramsey.main(
         nv_sig,
@@ -1201,7 +1202,7 @@ if __name__ == "__main__":
             # sig_gen_cxn.set_amp(uwave_power)
             # sig_gen_cxn.load_fsk(4)
         # for det in numpy.linspace(-2.2, 2.2, 11):
-            # do_ramsey(nv_sig, nv_sig,apd_indices, det)
+        do_ramsey(nv_sig, nv_sig,apd_indices, 0)
         
         # do_spin_echo(nv_sig, apd_indices)
 
