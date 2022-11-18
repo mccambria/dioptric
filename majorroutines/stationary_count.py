@@ -235,7 +235,7 @@ def main_with_cxn(
     charge_initialization = False
     # print(charge_initialization)
     leftover_sample = None
-    snr = lambda nv, bg: (nv - bg) / np.sqrt(nv)
+    snr = lambda nv, bg: (nv - bg) / np.sqrt(nv + bg)
 
     while True:
 

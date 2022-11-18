@@ -879,7 +879,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_09-19_19_55-siena-nv1_2022_10_27"
+    file = "2022_11_17-13_21_11-wu-nv5_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -906,19 +906,19 @@ if __name__ == "__main__":
         ref_counts,
     )
 
-    print(popt)
+    # print(popt)
 
-    create_fit_figure(
-        freq_range,
-        freq_center,
-        num_steps,
-        norm_avg_sig,
-        fit_func,
-        popt,
-        norm_avg_sig_ste=norm_avg_sig_ste,
-    )
+    # create_fit_figure(
+    #     freq_range,
+    #     freq_center,
+    #     num_steps,
+    #     norm_avg_sig,
+    #     fit_func,
+    #     popt,
+    #     norm_avg_sig_ste=norm_avg_sig_ste,
+    # )
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
     # simulate(2.8351, 0.035, 0.02, 170, 170/2)

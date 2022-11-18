@@ -160,23 +160,21 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
 if __name__ == "__main__":
 
     channel = 1
-    sensor_serial = "X162689"
-    # sensor_serial = "X162690"
+    # sensor_serial = "X162689"
+    sensor_serial = "X162690"
     do_plot = True
 
-    nvdata_dir = common.get_nvdata_dir()
-    path_to_file = (
-        nvdata_dir / "pc_hahn/service_logging/calibrated_temp_monitor.log"
-    )
-    replot(path_to_file)
+    # nvdata_dir = common.get_nvdata_dir()
+    # path_to_file = (
+    #     nvdata_dir / "pc_hahn/service_logging/calibrated_temp_monitor.log"
+    # )
+    # replot(path_to_file)
 
     # main(channel, do_plot, do_email=False)
-    # main(channel, do_plot, do_email=True)
+    main(channel, do_plot, do_email=True)
 
-    with labrad.connect() as cxn:
+    # with labrad.connect() as cxn:
 
-        cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
-        temp = cxn.temp_monitor_lakeshore218.measure(channel)
-        print(temp)
-
-    # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
+    #     cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
+    #     temp = cxn.temp_monitor_lakeshore218.measure(channel)
+    #     print(temp)

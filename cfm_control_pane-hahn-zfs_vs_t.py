@@ -329,7 +329,8 @@ if __name__ == "__main__":
 
     sample_name = "wu"
     
-    ref_coords = [0.268, -0.421, 8]
+    z_coord = 11
+    ref_coords = [0.345, -0.397, z_coord]
     ref_coords = np.array(ref_coords)
     freq = 2.8773
     rabi_per = 200
@@ -346,16 +347,18 @@ if __name__ == "__main__":
         'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
     nv1 = {
-        'coords': ref_coords + np.array([0.174, 0.108, 0]), 
+        'coords': ref_coords + np.array([0.174, 0.108, 0]),  
+        # "coords": [0.467, -0.285, z_coord],
         'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.5,
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
         }
     nv2 = {
-        'coords': ref_coords + np.array([0.157, -0.021, 0]), 
+        'coords': ref_coords + np.array([0.157, -0.021, 0]),
+        # "coords": [0.429, -0.423 , z_coord],
         'name': '{}-nv2_zfs_vs_t'.format(sample_name),
         'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.5,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -365,8 +368,9 @@ if __name__ == "__main__":
         }
     nv3 = {
         'coords': ref_coords + np.array([0.052, 0.147, 0]),
+        # "coords": [0.360, -0.247, z_coord],
         'name': '{}-nv3_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.5,
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
@@ -374,8 +378,9 @@ if __name__ == "__main__":
         }
     nv4 = {
         'coords': ref_coords + np.array([-0.237, 0.026, 0]), 
+        # "coords": [0.051, -0.372, z_coord],
         'name': '{}-nv4_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.5,
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
@@ -383,9 +388,9 @@ if __name__ == "__main__":
         }
     nv5 = {
         'coords': ref_coords + np.array([0.074, -0.050, 0]), 
-        # "coords": [0.343, -0.467, 6],
+        # "coords": [0.362, -0.443, z_coord],
         'name': '{}-nv5_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 7,
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         'collection_filter': None, 'magnet_angle': None,
@@ -423,13 +428,13 @@ if __name__ == "__main__":
 
     # fmt: on
 
-    nv_sig = nv5
-    # nv_sig = nvref
+    # nv_sig = nv3
+    nv_sig = nvref
     bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
     nv_list = [nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv2, nv3, nv4, nv5]
     shuffle(nv_list)
-    nv_list.append(nv_list[0])
+    # nv_list.append(nv_list[0])
 
     ### Functions to run
 
@@ -457,7 +462,7 @@ if __name__ == "__main__":
         # do_image_sample(nv_sig, apd_indices)
 
         # nv_sig['imaging_readout_dur'] = 5e7
-        # nv3["coords"] = ref_coords
+        # nv_sig = nvref
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
@@ -467,11 +472,11 @@ if __name__ == "__main__":
         # do_determine_standard_readout_params(nv_sig, apd_indices)
 
         # do_pulsed_resonance(nv_sig, apd_indices, 2.878, 0.020)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        # temp = 45
-        # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
+        temp = 63
+        do_pulsed_resonance_batch(nv_list, apd_indices, temp)
         # do_rabi_batch(nv_list, apd_indices)
 
     except Exception as exc:

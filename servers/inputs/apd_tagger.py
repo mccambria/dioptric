@@ -316,6 +316,8 @@ class ApdTagger(LabradServer):
             np.sum(sample, dtype=int) for sample in complete_counts
         ]
         # logging.info(return_counts)
+        if 0 in return_counts:
+            logging.info(complete_counts)
         return return_counts
 
     # @jit(nopython=True)
