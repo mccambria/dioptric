@@ -281,8 +281,8 @@ def text(ax, x, y, text, size=None, **kwargs):
     )
 
 
-def latex_escape(text):
-    """Escape LaTeX characters in the passed text"""
+def tex_escape(text):
+    """Escape TeX characters in the passed text"""
     conv = {
         "&": r"\&",
         "%": r"\%",
