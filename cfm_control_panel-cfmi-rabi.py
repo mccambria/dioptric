@@ -394,7 +394,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, phase,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 10
+    num_runs = 15
 
     period = rabi.main(
         nv_sig,
@@ -570,7 +570,7 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 2e3
-    num_runs= 100
+    num_runs= 40
 
     state = States.HIGH
 
@@ -1190,7 +1190,7 @@ if __name__ == "__main__":
         #do_pulsed_resonance_state(nv_sig, nnumpy.pi/2,v_sig,apd_indices, States.HIGH)
         #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
         # for p in [90,0, 180, 270]:
-        #     do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH,  p, uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH,  0, uwave_time_range=[0, 300])
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
@@ -1202,7 +1202,7 @@ if __name__ == "__main__":
             # sig_gen_cxn.set_amp(uwave_power)
             # sig_gen_cxn.load_fsk(4)
         # for det in numpy.linspace(-2.2, 2.2, 11):
-        do_ramsey(nv_sig, nv_sig,apd_indices, 0)
+        # do_ramsey(nv_sig, nv_sig,apd_indices, 0)
         
         # do_spin_echo(nv_sig, apd_indices)
 
@@ -1217,11 +1217,11 @@ if __name__ == "__main__":
         
         
         # pi_pulse_reps = 4  
-        step_size = 200 #us
+        step_size = 25 #us
         T_min = 0 #us
-        T_max = 5000 #us      
-        # for n in [2]:
-        #      do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        T_max = 500 #us      
+        for n in [2]:
+          do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
         # do_relaxation(nv_sig, apd_indices)  # gamma and omega
         
         # num_xy8_reps = 1

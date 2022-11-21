@@ -315,8 +315,8 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_args)
-    # return
+    print(seq_args)
+    return
         # print(seq_time)
 
     # %% Let the user know how long this will take

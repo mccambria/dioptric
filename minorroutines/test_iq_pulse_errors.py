@@ -38,7 +38,7 @@ def measurement(cxn,
             do_plot = False,
             title = None,
             num_reps = int(1e5),
-            inter_pulse_time = 20):
+            inter_pulse_time = 90):
     
     # print(iq_phases)
     # num_reps = int(5e4)
@@ -859,11 +859,11 @@ def sweep_inter_pulse_time(cxn,
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     
-    num_steps = 11
+    num_steps = 16
     # num_steps = 2
     num_reps = int(1e5)
     num_runs = 10
-    t_range = [0, 100]
+    t_range = [0, 150]
     ref_0_list = numpy.zeros([num_steps])
     ref_0_list[:] = numpy.nan
     ref_H_list =  numpy.copy(ref_0_list)
@@ -971,11 +971,12 @@ def custom_phase(cxn,
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     
-    num_steps = 11
+    num_steps = 31
+    inter_pulse=90
     # num_steps = 2
-    num_reps = int(1e5)
-    num_runs = 5
-    phi_range = [0, 360]
+    num_reps = int(5e5)
+    num_runs = 10
+    phi_range = [0, 360*2]
     ref_0_list = numpy.zeros([num_steps])
     ref_0_list[:] = numpy.nan
     ref_H_list =  numpy.copy(ref_0_list)
@@ -1011,7 +1012,8 @@ def custom_phase(cxn,
                     num_runs,
                     state,
                     num_reps = num_reps,
-                    do_plot = False)
+                    do_plot = False,
+                    inter_pulse_time =inter_pulse)
             
         ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
         
@@ -1044,8 +1046,8 @@ def custom_phase(cxn,
     raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'pi_2_interpulse_delay': 10,
-                'pi_2_interpulse_delay-units': 'ns',
+                'mw_interpulse_delay': inter_pulse,
+                'mw_interpulse_delay-units': 'ns',
                 'phi_range': phi_range,
                 'phi_range-units': 'degrees',
                 "init_phase": init_phase,
@@ -1705,17 +1707,17 @@ if __name__ == "__main__":
         # print(s_list)
             
         init_phase =0
-        # custom_phase(cxn, 
-        #                   nv_sig,
-        #                   apd_indices,
-        #                   init_phase,
-        #                   States.HIGH)
+        custom_phase(cxn, 
+                           nv_sig,
+                           apd_indices,
+                           init_phase,
+                           States.HIGH)
         
-        sweep_inter_pulse_time(cxn, 
-                         nv_sig,
-                         apd_indices,
-                         init_phase,
-                         States.HIGH,)
+        #sweep_inter_pulse_time(cxn, 
+        #                 nv_sig,
+        #                 apd_indices,
+        #                 init_phase,
+        #                 States.HIGH,)
         
         # test_1_pulse(cxn, 
         #                   nv_sig,

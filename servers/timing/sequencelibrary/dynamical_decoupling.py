@@ -170,7 +170,7 @@ def get_seq(pulse_streamer, config, args):
     period = 0
     for el in train:
         period += el[0]
-    # print(period)
+    print(period)
 
     # Laser
     train = [(delay_buffer - laser_delay_time, HIGH),
@@ -190,10 +190,10 @@ def get_seq(pulse_streamer, config, args):
              (back_buffer + laser_delay_time, LOW)]   
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 laser_name, laser_power, train)
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # Microwaves
     train = [(delay_buffer - rf_delay_time, LOW),
@@ -215,10 +215,10 @@ def get_seq(pulse_streamer, config, args):
              (back_buffer + rf_delay_time, LOW)])
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
     # IQ modulation triggers
     train = [(delay_buffer - iq_delay_time, LOW),
@@ -240,10 +240,10 @@ def get_seq(pulse_streamer, config, args):
               (back_buffer + iq_delay_time, LOW)])
     seq.setDigital(pulser_do_arb_wave_trigger, train)
     # print(train)
-    # period = 0
-    # for el in train:
-    #     period += el[0]
-    # print(period)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
     
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -254,6 +254,6 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config)   
     # tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long
     #pi_pulse_reps, apd_index, state, laser_name, laser_power
-    seq_args = [500, 1000.0, 350, 44, 22, 6750, 8, 1, 3, 'integrated_520', None]
+    seq_args = [100, 10000.0, 300, 64, 32, 125100, 1, 1, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
