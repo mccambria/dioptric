@@ -194,11 +194,15 @@ def calc_zfs_from_compiled_data():
     print(zfs_err_list)
 
 
+# endregion
+# region Fitting functions
+
+
 def sub_room_zfs_from_temp(temp):
     coeffs = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
     ret_val = 0
     for ind in range(6):
-        ret_val += coeffs[ind] * (temp ** ind)
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
@@ -237,7 +241,7 @@ def sub_room_zfs_from_temp_free(
         # zfs
         exp = ind
         # exp = ind * 2
-        ret_val += coeffs[ind] * (temp ** exp)
+        ret_val += coeffs[ind] * (temp**exp)
 
         # if not skip_derivatives_check:
         #     # First derivative
@@ -269,7 +273,7 @@ def super_room_zfs_from_temp(temp):
     coeff_errs = [0.0009, 0.6e-5, 0.1e-7, 0.1e-10]
     ret_val = 0
     for ind in range(4):
-        ret_val += coeffs[ind] * (temp ** ind)
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
@@ -326,7 +330,7 @@ def zfs_from_temp_li(temp):
     A = 5.6e-7  # GHz / K**2
     B = 490  # K
 
-    zfs = zfs0 - A * temp ** 4 / ((temp + B) ** 2)
+    zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
 
     return zfs
 
@@ -380,7 +384,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b6 = -1.8e-15
     D_of_T = (
         lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
+        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
         / 1000
     )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
@@ -463,10 +467,10 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
 
 def main():
 
-    temp_range = [-10, 1000]
-    y_range = [2.74, 2.883]
-    # temp_range = [-10, 250]
-    # y_range = [2.872, 2.88]
+    # temp_range = [-10, 1000]
+    # y_range = [2.74, 2.883]
+    temp_range = [-10, 300]
+    y_range = [2.868, 2.88]
     # temp_range = [-10, 250]
     # y_range = [-0.0015, 0.0015]
 
