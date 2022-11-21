@@ -3,7 +3,7 @@
 Here are functions for our search index, which allows us to quickly look up
 data files without specifying the file path. All you need is the file name!
 
-Created 2021_09_10
+Created September 10th, 2021
 
 @author: mccambria
 """
