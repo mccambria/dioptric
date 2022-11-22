@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-This file contains functions to control the CFM. Just change the function call
+"""This file contains functions to control the CFM. Just change the function call
 in the main section at the bottom of this file and run the file. Shared or
 frequently changed parameters are in the __main__ body and relatively static
 parameters are in the function definitions.
@@ -20,27 +19,17 @@ import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
-import majorroutines.image_sample_temperature as image_sample_temperature
-import majorroutines.map_rabi_contrast_NIR as map_rabi_contrast_NIR
-import majorroutines.ensemble_image_sample_NIR_differential as ensemble_image_sample_NIR_differential
-import majorroutines.ensemble_image_sample_NIR_differential_faster as ensemble_image_sample_NIR_differential_faster
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
-import majorroutines.four_point_esr as four_point_esr
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
-import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_dq_main as t1_dq_main
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import majorroutines.lifetime as lifetime
-import majorroutines.lifetime_v2 as lifetime_v2
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
-import chargeroutines.determine_charge_readout_params_moving_target as determine_charge_readout_params_moving_target
-import chargeroutines.determine_charge_readout_params_1Dscan_target as determine_charge_readout_params_1Dscan_target
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 from utils.tool_belt import States
@@ -149,9 +138,9 @@ def do_resonance_state(nv_sig, state):
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = -5.0
 
-    #    freq_range = 0.200
-    #    num_steps = 51
-    #    num_runs = 2
+    # freq_range = 0.200
+    # num_steps = 51
+    # num_runs = 2
 
     # Zoom
     freq_range = 0.05
@@ -166,27 +155,6 @@ def do_resonance_state(nv_sig, state):
         num_runs,
         uwave_power,
     )
-
-
-def do_four_point_esr(nv_sig, state):
-
-    detuning = 0.004
-    d_omega = 0.002
-    num_reps = 1e5
-    num_runs = 4
-
-    ret_vals = four_point_esr.main(
-        nv_sig,
-        num_reps,
-        num_runs,
-        state,
-        detuning,
-        d_omega,
-        ret_file_name=True,
-    )
-
-    # print(resonance, res_err)
-    return ret_vals
 
 
 def do_determine_standard_readout_params(nv_sig):
@@ -259,28 +227,18 @@ def do_pulsed_resonance_state(nv_sig, state):
     return res
 
 
-def do_scc_pulsed_resonance(nv_sig, state=States.LOW):
+def do_scc_pulsed_resonance(nv_sig, state):
 
     opti_nv_sig = nv_sig
-    state = "LOW"
     freq_center = nv_sig["resonance_{}".format(state)]
     uwave_power = nv_sig["uwave_power_{}".format(state)]
     uwave_pulse_dur = tool_belt.get_pi_pulse_dur(
         nv_sig["rabi_{}".format(state)]
     )
-    freq_range = 0.040
-    # num_steps = 21
-    num_steps = 1
+    freq_range = 0.020
+    num_steps = 25
     num_reps = int(1e3)
-    # num_runs = 80
     num_runs = 5
-
-    # for red_dur in np.linspace(75, 300, 10):
-    #     nv_sig["nv0_ionization_dur"] = red_dur
-    #     scc_pulsed_resonance.main(nv_sig, opti_nv_sig,
-    #                               freq_center, freq_range,
-    #                               num_steps, num_reps, num_runs,
-    #                               uwave_power, uwave_pulse_dur)
 
     scc_pulsed_resonance.main(
         nv_sig,
@@ -306,13 +264,11 @@ def do_determine_charge_readout_params(nv_sig):
 
     num_reps = 1000
 
-    determine_charge_readout_params.determine_readout_dur_power(
-        nv_sig,
+    determine_charge_readout_params.main(
         nv_sig,
         num_reps,
-        max_readout_dur=max_readout_dur,
-        bins=nbins,
-        readout_powers=readout_powers,
+        readout_powers,
+        max_readout_dur,
         plot_readout_durs=readout_durs,
     )
 

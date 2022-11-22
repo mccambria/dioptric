@@ -1,51 +1,57 @@
 # -*- coding: utf-8 -*-
-"""
-This file contains standardized functions intended to simplify the
-creation of plots for publications in a consistent style.
+"""This file contains standardized functions intended to simplify the
+creation of publication-quality plots in a visually appealing, unique,
+and consistent style.
 
 Created on June 22nd, 2022
 
 @author: mccambria
 """
 
-
-# region Imports
-
+# region Imports and constants
 
 import matplotlib.pyplot as plt
-from enum import Enum
 from colorutils import Color
 import re
+from enum import Enum, auto
 
-# endregion
 
-# region Constants
+class Size(Enum):
+    NORMAL = auto()
+    SMALL = auto()
+    TINY = auto()
+
+
+class PlotType(Enum):
+    DATA = auto()
+    LINE = auto()
+
+
 # These standard values are intended for single-column figures
-
-marker_sizes = {"normal": 7, "small": 6, "tiny": 4}
-line_widths = {"normal": 1.5, "small": 1.25, "tiny": 1.0}
+marker_Size = {Size.NORMAL: 7, Size.SMALL: 6, Size.TINY: 4}
+line_widths = {Size.NORMAL: 1.5, Size.SMALL: 1.25, Size.TINY: 1.0}
 marker_edge_widths = line_widths.copy()
-font_sizes = {"normal": 17, "small": 13}
+font_Size = {Size.NORMAL: 17, Size.SMALL: 13}
 figsize = [6.5, 5.0]
 double_figsize = [figsize[0] * 2, figsize[1]]
 line_style = "solid"
 marker_style = "o"
 
-# Default sizes here
-marker_size = marker_sizes["normal"]
-marker_size_inset = marker_sizes["small"]
-line_width = line_widths["normal"]
-line_width_inset = line_widths["small"]
-marker_edge_width = marker_edge_widths["normal"]
-marker_edge_width_inset = marker_edge_widths["small"]
-default_font_size = "normal"
-default_data_size = "normal"
+# Default Size here
+marker_size = marker_Size[Size.NORMAL]
+marker_size_inset = marker_Size[Size.SMALL]
+line_width = line_widths[Size.NORMAL]
+line_width_inset = line_widths[Size.SMALL]
+marker_edge_width = marker_edge_widths[Size.NORMAL]
+marker_edge_width_inset = marker_edge_widths[Size.SMALL]
+default_font_size = Size.NORMAL
+default_data_size = Size.NORMAL
 
 # endregion
 
-
 # region Colors
 # The default color specification is hex, eg "#bcbd22"
+# Get a KplColors hex with KplColors.<COLOR>.value
 
 
 class KplColors(Enum):
@@ -84,7 +90,7 @@ line_color_cycler = data_color_cycler.copy()
 
 
 def color_mpl_to_color_hex(color_mpl):
-
+    """Convert a named color from a matplotlib color map into hex"""
     # Trim the alpha value and convert from 0:1 to 0:255
     color_rgb = [255 * val for val in color_mpl[0:3]]
     color_Color = Color(tuple(color_rgb))
@@ -93,6 +99,7 @@ def color_mpl_to_color_hex(color_mpl):
 
 
 def lighten_color_hex(color_hex, saturation_factor=0.3, value_factor=1.2):
+    """Algorithmically lighten the passed hex color"""
 
     color_Color = Color(hex=color_hex)
     color_hsv = color_Color.hsv
@@ -124,10 +131,12 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
+def init_kplotlib(
+    font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False
+):
     """
     Runs the default initialization for kplotlib, our default configuration
-    of matplotlib. Pass no_latex for faster plotting
+    of matplotlib. Make sure no_latex is True for faster plotting.
     """
 
     ### Misc setup
@@ -168,7 +177,7 @@ def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
     # plt.rcParams["savefig.format"] = "svg"
 
     # plt.rcParams["legend.handlelength"] = 0.5
-    plt.rcParams["font.size"] = font_sizes[default_font_size]
+    plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
     # plt.rcParams["figure.dpi"] = 300
     plt.rcParams["savefig.dpi"] = 300
@@ -177,10 +186,13 @@ def init_kplotlib(font_size="normal", data_size="normal", no_latex=False):
 def tight_layout(fig):
 
     fig.tight_layout(pad=0.3)
-    
+
 
 def get_default_color(ax, plot_type):
-    """plot_type is data or line"""
+    """Get the default color according to the cycler of the passed plot type.
+
+    plot_type : PlotType(enum)
+    """
 
     global active_axes, color_cyclers
     if ax not in active_axes:
@@ -198,9 +210,10 @@ def get_default_color(ax, plot_type):
 
 
 def plot_points(ax, x, y, size=None, **kwargs):
-    """
-    Same as matplotlib's errorbar, but with our defaults. Use for plotting
-    data points.
+    """Same as matplotlib's errorbar, but with our defaults. Use for plotting
+    data points
+
+    size : Size(enum)
     """
 
     global default_data_size
@@ -221,7 +234,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
     params = {
         "linestyle": "none",
         "marker": marker_style,
-        "markersize": marker_sizes[size],
+        "markersize": marker_Size[size],
         "markeredgewidth": marker_edge_widths[size],
     }
 
@@ -234,9 +247,10 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
 
 def plot_line(ax, x, y, size=None, **kwargs):
-    """
-    Same as matplotlib's plot, but with our defaults. Use for plotting
-    continuous lines.
+    """Same as matplotlib's plot, but with our defaults. Use for plotting
+    continuous lines
+
+    size : Size(enum)
     """
 
     global default_data_size
@@ -263,14 +277,20 @@ def plot_line(ax, x, y, size=None, **kwargs):
 
 
 def text(ax, x, y, text, size=None, **kwargs):
-    """x, y are relative to plot dimensions and start from lower left corner"""
+    """Add text in default style to the passed ax
+
+    x : float
+        x coordinate of textbox relative to plot dimensions starting from lower left corner
+    y : float
+        y coordinate of textbox relative to plot dimensions starting from lower left corner
+    """
 
     global default_font_size
     if size is None:
         size = default_font_size
 
     bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    font_size = font_sizes[size]
+    font_size = font_Size[size]
     ax.text(
         x,
         y,
