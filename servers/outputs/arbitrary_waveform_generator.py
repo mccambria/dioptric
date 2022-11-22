@@ -139,9 +139,10 @@ class ArbitraryWaveformGenerator(LabradServer):
 
         # intended phase list: [0, (pi/2)*N, 0]
         
-        # phases = [0] +  [pi/2]*num_dd_reps + [0]###
-        half_num_dd_reps = int(num_dd_reps/2)
-        phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
+        phases = [0] +  [pi/2]*num_dd_reps + [0]###
+        # 11/20/2022 Tried alternating phase, but for N>4, state is not coherent
+        # half_num_dd_reps = int(num_dd_reps/2)
+        # phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
         # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
         
         phases = phases*4

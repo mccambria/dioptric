@@ -315,8 +315,8 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    print(seq_args)
-    return
+    # print(seq_args)
+    # return
         # print(seq_time)
 
     # %% Let the user know how long this will take
@@ -618,7 +618,7 @@ if __name__ == "__main__":
     file16 = '2022_11_14-11_03_13-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
-    file_t1 = '2022_11_12-22_17_47-siena-nv1_2022_10_27'
+    file_t1 = '2022_11_22-08_15_49-siena-nv1_2022_10_27'
     
     # data = tool_belt.get_raw_data(file16, folder)
     # fit_t2_decay(data)

@@ -570,7 +570,7 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 2e3
-    num_runs= 40
+    num_runs= 150
 
     state = States.HIGH
 
@@ -616,8 +616,8 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     #conventional readout
-    num_reps = 1e4
-    num_runs= 50
+    num_reps = 2e3
+    num_runs= 150
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -697,24 +697,41 @@ def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
     )
     return 
 
-def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps):
+def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
 
-    step_size = 0.02 # us
+    #step_size = 1 # us
     shift = 100 #ns
-    T_min = 0
-    T_max = 2
+    #T_min = 0
+    #T_max = 200
     
-    max_time = T_max #/ (2*8*num_xy8_reps)  # us
-    min_time = T_min #/ (2*8*num_xy8_reps) #us
+    # max_time = T_max / (2*4*num_xy4_reps)  # us
+    # min_time = T_min / (2*4*num_xy4_reps) #us
+    
+    
+    #step_size = 2 # us
+    #shift = 0 #ns
+    #T_min = 350-50
+    #T_max = 350+50
+    
+    max_time = T_max / (2*8*num_xy8_reps)  # us
+    min_time = T_min / (2*8*num_xy8_reps) #us
+    
+    # # revival_time= nv_sig['t2_revival_time']
+    # # T_min = (revival_time/1e3 - 3)*(2*4*num_xy4_reps) 
+    # # T_max = (revival_time/1e3 + 3)*(2*4*num_xy4_reps)
     
     num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
     # min_time =0.0# 1 / (2*pi_pulse_reps) #us
     # num_steps = int(T/1+1 )  # 1 point per 1 us
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
-    num_reps = 1e4
-    num_runs= 75
-
+    #conventional readout
+    num_reps = 2e3
+    num_runs= 150
+    
+    # # scc readout
+    # num_reps = 4 #should optimize every 10 min
+    # num_runs= 3750
 
     state = States.HIGH
 
@@ -739,7 +756,7 @@ def do_relaxation(nv_sig, apd_indices, ):
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2e3
-    num_runs = 100
+    num_runs = 200
     
     if True:
      t1_exp_array = numpy.array(
@@ -1172,7 +1189,7 @@ if __name__ == "__main__":
                     
         
         
-        # do_optimize(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         
@@ -1206,26 +1223,27 @@ if __name__ == "__main__":
         
         # do_spin_echo(nv_sig, apd_indices)
 
-        #do_relaxation(nv_sig, apd_indices)  # gamma and omega
+        # do_relaxation(nv_sig, apd_indices)  # gamma and omega
                 
         # num_xy4_reps = 1
         # step_size = 100 #us
         # T_min = 0 #us
         # T_max = 10000 #us
         
-        # do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, T_min, T_max)
         
         
         # pi_pulse_reps = 4  
         step_size = 25 #us
         T_min = 0 #us
         T_max = 500 #us      
-        for n in [2]:
-          do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
+        # for n in [8]:
+          # do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
         # do_relaxation(nv_sig, apd_indices)  # gamma and omega
         
+        # num_xy4_reps = 2
+        # do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, T_min, T_max)
         # num_xy8_reps = 1
-        # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps )
+        # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max)
         
         # pi_pulse_rep = 1
         # do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None)

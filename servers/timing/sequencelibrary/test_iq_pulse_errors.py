@@ -42,7 +42,8 @@ def get_seq(pulse_streamer, config, args):
     # the readout time, and the pi pulse duration
     durations = args[0:7]
     durations = [numpy.int64(el) for el in durations]
-    readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, polarization, inter_pulse_time = durations
+    readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, \
+        polarization, inter_pulse_time = durations
     
     num_uwave_pulses, state, apd_index, laser_name, laser_power = args[7:12]
     state = States(state)
@@ -53,11 +54,9 @@ def get_seq(pulse_streamer, config, args):
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
     iq_delay_time = config['Microwaves']['iq_delay']
     iq_trigger_time = numpy.int64(min(pi_pulse/2, 10))
-    # make this twice the iq trigger time, and ensure it's even
+    
+    # make sure uwave_sig_wait_time is a factor of two!
     uwave_sig_wait =inter_pulse_time # int(iq_trigger_time*2 //2)
-    print(uwave_sig_wait)
-    # uwave_sig_wait = 10
-    # uwave_sig_wait = int(iq_trigger_time*16 //2)
     half_uwave_sig_wait = int(uwave_sig_wait/2)
     
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -86,9 +85,9 @@ def get_seq(pulse_streamer, config, args):
                                 (half_uwave_sig_wait - iq_trigger_time + uwave_pulse_dur_2, LOW),]
     elif num_uwave_pulses == 3:
         micowave_signal_train = [(uwave_pulse_dur_1, HIGH), 
-                                 (20, LOW), 
+                                 (uwave_sig_wait, LOW), 
                                  (uwave_pulse_dur_2, HIGH),
-                                 (20, LOW), 
+                                 (uwave_sig_wait, LOW), 
                                  (uwave_pulse_dur_3, HIGH)]
         iq_signal_train = [(iq_trigger_time, HIGH),
                                 (wait_time - iq_trigger_time + uwave_pulse_dur_1 + half_uwave_sig_wait, LOW),
