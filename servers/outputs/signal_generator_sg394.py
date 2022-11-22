@@ -186,18 +186,6 @@ class SignalGeneratorSg394(LabradServer):
 
         """
         # logging.info("test")
-        # The sg394 only supports up to 10 dBm of power output with vector modulation
-        # Let's check what the amplitude is set as, and if it's over 10 dBm, 
-        # we'll quit out and save a note in the labrad logging
-        if float(self.sig_gen.query('AMPR?')) > 10:
-            msg= 'IQ modulation on sg394 supports up to 10 dBm. The power was set to {} dBm and the operation was stopped.'.format(self.sig_gen.query('AMPR?'))
-            raise Exception(msg)
-            return
-        
-        if float(deviation) > 32:
-            msg= 'FSK on sg394 supports up to 6 MHz deviation. The deviation was set to {} MHz and the operation was stopped.'.format(deviation)
-            raise Exception(msg)
-            return
         
         # FM is type 1
         self.sig_gen.write('TYPE 1')

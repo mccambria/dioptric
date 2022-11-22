@@ -516,19 +516,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi/2022_11'
-    file = '2022_11_10-11_54_09-siena-nv1_2022_10_27'
+    path = 'pc_rabi/branch_master/rabi_srt/2022_11'
+    file = '2022_11_22-14_31_35-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
-    # norm_avg_sig = data['norm_avg_sig']
+    norm_avg_sig = data['norm_avg_sig']
     # uwave_time_range = data['uwave_time_range']
-    # num_steps = data['num_steps']
+    taus = data['taus']
+    uwave_time_range = [taus[0], taus[-1]]
+    num_steps = data['num_steps']
     # uwave_freq = data['uwave_freq']
+    nv_sig = data['nv_sig']
+    uwave_freq = nv_sig['resonance_HIGH']
 
-    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(uwave_time_range, uwave_freq, num_steps,
-    #                       norm_avg_sig, fit_func, popt)
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    if (fit_func is not None) and (popt is not None):
+        create_fit_figure(uwave_time_range, uwave_freq, num_steps,
+                          norm_avg_sig, fit_func, popt)
 
     # sig_counts = data['sig_counts']
     # ref_counts = data['ref_counts']
@@ -552,7 +556,7 @@ if __name__ == '__main__':
     # st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
     
     
-    # # print(numpy.average(st_err_ref_counts))
+    # # # print(numpy.average(st_err_ref_counts))
     # norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # sig_perc_err = st_err_sig_counts / avg_sig_counts
@@ -590,31 +594,31 @@ if __name__ == '__main__':
     # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
     
     
-    file_0 = '2022_11_17-13_02_41-siena-nv1_2022_10_27'
-    # file_45 = '2022_11_15-13_06_56-siena-nv1_2022_10_27'
-    file_90 = '2022_11_17-12_55_38-siena-nv1_2022_10_27'
-    file_180 = '2022_11_17-13_09_46-siena-nv1_2022_10_27'
-    file_270 = '2022_11_17-13_16_44-siena-nv1_2022_10_27'
+    # file_0 = '2022_11_17-13_02_41-siena-nv1_2022_10_27'
+    # # file_45 = '2022_11_15-13_06_56-siena-nv1_2022_10_27'
+    # file_90 = '2022_11_17-12_55_38-siena-nv1_2022_10_27'
+    # file_180 = '2022_11_17-13_09_46-siena-nv1_2022_10_27'
+    # file_270 = '2022_11_17-13_16_44-siena-nv1_2022_10_27'
     
-    file_list = [file_0,file_90,file_180, file_270 ]
-    label_list = [0, 90, 180, 270]
+    # file_list = [file_0,file_90,file_180, file_270 ]
+    # label_list = [0, 90, 180, 270]
     
-    fig, ax = plt.subplots()
-    for f in range(len(file_list)):
-        file = file_list[f]
-        data = tool_belt.get_raw_data(file, path)
-        uwave_time_range = data['uwave_time_range']
-        num_steps = data['num_steps']
-        norm_avg_sig = data['norm_avg_sig']
+    # fig, ax = plt.subplots()
+    # for f in range(len(file_list)):
+    #     file = file_list[f]
+    #     data = tool_belt.get_raw_data(file, path)
+    #     uwave_time_range = data['uwave_time_range']
+    #     num_steps = data['num_steps']
+    #     norm_avg_sig = data['norm_avg_sig']
         
-        min_uwave_time = uwave_time_range[0]
-        max_uwave_time = uwave_time_range[1]
-        taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                              num=num_steps)
+    #     min_uwave_time = uwave_time_range[0]
+    #     max_uwave_time = uwave_time_range[1]
+    #     taus = numpy.linspace(min_uwave_time, max_uwave_time,
+    #                           num=num_steps)
         
-        ax.plot(taus, norm_avg_sig, label = 'Pi pulse phase {} deg'.format(label_list[f]))
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Normalized signal')
-    ax.legend()
+    #     ax.plot(taus, norm_avg_sig, label = 'Pi pulse phase {} deg'.format(label_list[f]))
+    # ax.set_xlabel('Microwave duration (ns)')
+    # ax.set_ylabel('Normalized signal')
+    # ax.legend()
         
         

@@ -307,7 +307,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 75
     num_reps = int(1e4)
-    num_runs = 3
+    num_runs = 10
 
     composite = False
 
@@ -389,12 +389,12 @@ def do_pesr_srt(nv_sig,  apd_indices, initial_state, readout_state):
               initial_state,
     )
 
-def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, phase,
+def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, 
             uwave_time_range=[0, 200]):
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 15
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -405,42 +405,35 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, phase,
         num_reps,
         num_runs,
         iq_mod_on = False,
-        iq_phase = phase*numpy.pi/180,
         opti_nv_sig = opti_nv_sig
     )
     nv_sig["rabi_{}".format(state.name)] = period
 
 
-def do_rabi_srt(nv_sig,  apd_indices, initial_state, readout_state, 
-            uwave_time_range=[0, 200]):
+def do_rabi_srt(nv_sig,  apd_indices, deviation,  uwave_time_range=[0, 200]):
     
-    deviation_high = 10
-    deviation_low = 0
+    # deviation_high = 0
+    # deviation_low = 0
     
-    # initial_state = States.ZERO
-    # readout_state = States.HIGH
+    # deviation = 0
     
-    # initial_state = States.ZERO
-    # readout_state = States.ZERO
-    
-    # initial_state = States.HIGH
-    # readout_state = States.HIGH
-    
-    num_steps = 51
-    num_reps = int(2e4)
-    num_runs = 10
+    num_steps = 101
+    num_reps = int(1e3)
+    num_runs = 100
 
-    rabi_srt.main(nv_sig, 
-              apd_indices, 
-              uwave_time_range, 
-              deviation_high,
-              deviation_low, 
-              num_steps, 
-              num_reps,
-              num_runs,
-              readout_state,
-              initial_state,
-    )
+    # rabi_srt.main(nv_sig, 
+    #           apd_indices, 
+    #           uwave_time_range, 
+    #           deviation_high,
+    #           deviation_low, 
+    #           num_steps, 
+    #           num_reps,
+    #           num_runs,
+    #           readout_state,
+    #           initial_state,
+    # )
+    rabi_srt.full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation, 
+             num_steps, num_reps, num_runs)
 
 
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=5):
@@ -1103,10 +1096,9 @@ if __name__ == "__main__":
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        # "magnet_angle": 90,
-        "uwave_power_LOW": 15,  
-        # "uwave_power_HIGH": 9.55,#10,
-        "uwave_power_HIGH": 10, # should be able to set these to 20 dBm with combiner
+        "uwave_power_LOW": 13.5,  
+        # "uwave_power_HIGH": 10,
+        "uwave_power_HIGH": 16.5, # should be able to set these to 16.5 dBm with combiner
     } 
 
     
@@ -1127,10 +1119,10 @@ if __name__ == "__main__":
     nv_sig_1["expected_count_rate"] = 21
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
-    nv_sig_1["resonance_LOW"]= 2.7805
-    nv_sig_1["rabi_LOW"]= 111.6
-    nv_sig_1["resonance_HIGH"]= 2.9597
-    nv_sig_1["rabi_HIGH"]=127.0
+    nv_sig_1["resonance_LOW"]= 2.7813
+    nv_sig_1["rabi_LOW"]= 129.5
+    nv_sig_1["resonance_HIGH"]= 2.9591 #- 0.010
+    nv_sig_1["rabi_HIGH"]=129.5
     
     
     
@@ -1189,7 +1181,7 @@ if __name__ == "__main__":
                     
         
         
-        do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         
@@ -1204,14 +1196,14 @@ if __name__ == "__main__":
         #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
-        #do_pulsed_resonance_state(nv_sig, nnumpy.pi/2,v_sig,apd_indices, States.HIGH)
-        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        # for p in [90,0, 180, 270]:
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH,  0, uwave_time_range=[0, 300])
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH,   uwave_time_range=[0, 200])
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
-        # do_rabi_srt(nv_sig, apd_indices,States.ZERO, States.ZERO, uwave_time_range=[0, 200])
+        for d in [0, 2, 4, 8]:
+            do_rabi_srt(nv_sig, apd_indices, d, uwave_time_range=[0, 1000])
         
         # with labrad.connect() as cxn:
         #     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)

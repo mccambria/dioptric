@@ -215,12 +215,12 @@ def get_seq(pulse_streamer, config, args):
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_high, HIGH), ####
+            (init_pi_high, LOW), ####
             (uwave_detune_buffer + init_pi_low, LOW),
             (fm_bandwidth_buffer, LOW),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
-            (read_pi_high, HIGH), ####
+            (read_pi_high, LOW), ####
             (uwave_laser_buffer + read_pi_low, LOW),
             
             (polarization_time, LOW),
@@ -236,17 +236,17 @@ def get_seq(pulse_streamer, config, args):
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_high, HIGH), ####
+            (init_pi_high, LOW), ####
             (uwave_detune_buffer + init_pi_low, LOW),
             (fm_bandwidth_buffer, LOW),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
-            (read_pi_high, HIGH), ####
+            (read_pi_high, LOW), ####
             (uwave_laser_buffer + read_pi_low, LOW),
             (polarization_time, LOW) ,
             (back_buffer + rf_high_delay, LOW)
             ]
-    # seq.setDigital(pulser_do_sig_gen_high_gate, train)
+    seq.setDigital(pulser_do_sig_gen_high_gate, train)
     period = 0
     for el in train:
         period += el[0]
@@ -342,7 +342,7 @@ def get_seq(pulse_streamer, config, args):
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
             (init_pi_high, LOW),
-            (uwave_detune_buffer + init_pi_low, LOW),
+            (uwave_detune_buffer + init_pi_low, LOW), 
             (fm_bandwidth_buffer, LOW),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
@@ -372,6 +372,6 @@ if __name__ == '__main__':
     tool_belt.set_feedthroughs_to_false(config)
     
     
-    seq_args = [62, 10000.0, 300, 56, 62, 62, 1, 2, 2, 'integrated_520', None]
+    seq_args = [0, 10000.0, 300, 65, 65, 500, 1, 3, 3, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
