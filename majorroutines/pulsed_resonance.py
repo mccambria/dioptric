@@ -41,7 +41,6 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
-
     fig, ax = plt.subplots()
     kpl.plot_line(ax, freqs, norm_avg_sig)
     kpl.plot_line(ax, smooth_freqs, fit_func(smooth_freqs, *popt))
@@ -125,7 +124,7 @@ def calculate_freqs(freq_range, freq_center, num_steps):
 
 
 def gaussian(freq, constrast, sigma, center):
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma ** 2)))
 
 
 def double_gaussian_dip(
@@ -144,8 +143,6 @@ def double_gaussian_dip(
 
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
-
-
 
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
@@ -231,8 +228,8 @@ def get_guess_params(
         low_freq_guess = freq_center
         high_freq_guess = None
 
-    # low_freq_guess = 2.861
-    # high_freq_guess = 2.882
+    # low_freq_guess = 2.877
+    # high_freq_guess = None
 
     if low_freq_guess is None:
         return None, None
@@ -289,13 +286,13 @@ def fit_resonance(
             zfs = (popt[2] + popt[5]) / 2
             low_res_err = np.sqrt(pcov[2, 2])
             hig_res_err = np.sqrt(pcov[5, 5])
-            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+            zfs_err = np.sqrt(low_res_err ** 2 + hig_res_err ** 2) / 2
         else:
             zfs = popt[2]
             zfs_err = np.sqrt(pcov[2, 2])
 
-        print(zfs)
-        print(zfs_err)
+        # print(zfs)
+        # print(zfs_err)
         # temp_from_resonances.main(zfs, zfs_err)
 
     else:
@@ -317,11 +314,11 @@ def fit_resonance(
 
 def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
-    rabi_freq = rabi_period**-1
+    rabi_freq = rabi_period ** -1
 
     smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
 
-    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq**2)
+    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq ** 2)
     amp = (rabi_freq / omega) ** 2
     angle = (
         omega * 2 * np.pi * uwave_pulse_dur / 2
@@ -507,7 +504,7 @@ def main_with_cxn(
 
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10**9)
+    readout_sec = readout / (10 ** 9)
     if composite:
         uwave_pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
         uwave_pi_on_2_pulse = round(nv_sig["rabi_{}".format(state.name)] / 4)
@@ -737,7 +734,11 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(freqs, norm_avg_sig, "b-")
-    ax.set_title("Normalized Count Rate vs Frequency, {} deg".format(nv_sig['magnet_angle']))
+    ax.set_title(
+        "Normalized Count Rate vs Frequency, {} deg".format(
+            nv_sig["magnet_angle"]
+        )
+    )
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Contrast (arb. units)")
 
@@ -879,8 +880,10 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_09-19_19_55-siena-nv1_2022_10_27"
+    file = "2022_11_17-00_31_03-wu-nv3_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
+    print(return_res_with_error(data))
+    # sys.exit()
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
@@ -906,7 +909,7 @@ if __name__ == "__main__":
         ref_counts,
     )
 
-    print(popt)
+    # print(popt)
 
     create_fit_figure(
         freq_range,

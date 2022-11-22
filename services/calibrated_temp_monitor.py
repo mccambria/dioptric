@@ -2,7 +2,7 @@
 """
 Created on August 9th, 2021
 
-Temperature monitoring code 
+Temperature monitoring code
 
 @author: mccambria
 """
@@ -10,10 +10,14 @@ Temperature monitoring code
 
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
+import utils.common as common
 import time
 import labrad
 import socket
+import csv
 import os
+import numpy as np
 
 
 def main(channel=1, do_plot=True, do_email=True):
@@ -41,7 +45,7 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
     cycle_dur = 0.1
     start_time = now
     prev_time = now
-    
+
     email_sent = False
 
     plot_log_period = 2  # Plot and log every plot_period seconds
@@ -109,8 +113,8 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
                 fig.canvas.flush_events()
 
                 # Notify the user once the temp is stable (ptp < 0.1 over current plot history)
-                temp_check = (max(plot_temps) - min(plot_temps) < 0.1)
-                time_check = (len(plot_times) == max_plot_vals)
+                temp_check = max(plot_temps) - min(plot_temps) < 0.1
+                time_check = len(plot_times) == max_plot_vals
                 if do_email and temp_check and time_check and not email_sent:
                     msg = "Temp is stable!"
                     recipient = "cambria@wisc.edu"
@@ -130,15 +134,15 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
 if __name__ == "__main__":
 
     channel = 1
-    sensor_serial = "X162689"
+    # sensor_serial = "X162689"
+    sensor_serial = "X162690"
     do_plot = True
-    
-    main(channel, do_plot, do_email=False)
+
+    # main(channel, do_plot, do_email=False)
+    # main(channel, do_plot, do_email=True)
 
     # with labrad.connect() as cxn:
 
-        # temp = cxn.temp_monitor_lakeshore218.measure(channel)
-        # print(temp)
-
-        # cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
-
+    #     cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
+    #     temp = cxn.temp_monitor_lakeshore218.measure(channel)
+    #     print(temp)
