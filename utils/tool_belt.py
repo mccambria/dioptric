@@ -1336,6 +1336,12 @@ def get_xyz_server(cxn):
         cxn,
         get_registry_entry(cxn, "xyz_server", ["", "Config", "Positioning"]),
     )
+    
+    
+def get_apd_indices(cxn):
+    "Get a list of the APD indices in use from the registry"
+    
+    return get_registry_entry(cxn, "apd_indices", ["", ])
 
 
 def get_registry_entry(cxn, key, directory):

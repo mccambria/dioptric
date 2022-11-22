@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-
 Calculate the estimated time for the t1 experiment, how often we optimize, and
 the expected error
 
-Created on Thu Aug  1 17:32:46 2019
+Created on August 1st 2019
 
 @author: agardill
 """
@@ -83,31 +82,6 @@ t1_exp_array = numpy.array([
         [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
         ], dtype=object)
 
-
-# Figure 1 data
-# num_runs = 400  # 200
-# num_reps = 3000
-# num_steps = 12
-# min_tau = int(500e3)
-# max_tau = int(15e6)
-# t1_exp_array = numpy.array([
-#         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
-#         [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
-#         # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
-#         ], dtype=object)
-# num_runs = 600  # 200
-# num_reps = 2000
-# num_steps = 12
-# min_tau = int(500e3)
-# max_tau = int(15e6)
-# tau_linspace = numpy.linspace(min_tau, max_tau, num_steps)
-# num_steps = num_steps - 2
-# max_tau = tau_linspace[-3]
-# t1_exp_array = numpy.array([
-#         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
-#         # [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
-#         # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
-#         ], dtype=object)
 
 contrast = 0.05  # arb
 exp_count_rate = 2500  # kcps
