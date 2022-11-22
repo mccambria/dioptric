@@ -202,7 +202,7 @@ def sub_room_zfs_from_temp(temp):
     coeffs = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
     ret_val = 0
     for ind in range(6):
-        ret_val += coeffs[ind] * (temp**ind)
+        ret_val += coeffs[ind] * (temp ** ind)
     return ret_val
 
 
@@ -241,7 +241,7 @@ def sub_room_zfs_from_temp_free(
         # zfs
         exp = ind
         # exp = ind * 2
-        ret_val += coeffs[ind] * (temp**exp)
+        ret_val += coeffs[ind] * (temp ** exp)
 
         # if not skip_derivatives_check:
         #     # First derivative
@@ -273,7 +273,7 @@ def super_room_zfs_from_temp(temp):
     coeff_errs = [0.0009, 0.6e-5, 0.1e-7, 0.1e-10]
     ret_val = 0
     for ind in range(4):
-        ret_val += coeffs[ind] * (temp**ind)
+        ret_val += coeffs[ind] * (temp ** ind)
     return ret_val
 
 
@@ -330,7 +330,7 @@ def zfs_from_temp_li(temp):
     A = 5.6e-7  # GHz / K**2
     B = 490  # K
 
-    zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
+    zfs = zfs0 - A * temp ** 4 / ((temp + B) ** 2)
 
     return zfs
 
@@ -384,7 +384,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b6 = -1.8e-15
     D_of_T = (
         lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
+        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
         / 1000
     )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
@@ -469,10 +469,12 @@ def main():
 
     # temp_range = [-10, 1000]
     # y_range = [2.74, 2.883]
-    temp_range = [-10, 720]
-    y_range = [2.80, 2.883]
+    # temp_range = [-10, 720]
+    # y_range = [2.80, 2.883]
     # temp_range = [-10, 310]
-    # y_range = [2.869, 2.879]
+    # y_range = [2.8685, 2.8785]
+    temp_range = [280, 320]
+    y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
     # y_range = [-0.0012, 0.0012]
 
@@ -482,7 +484,7 @@ def main():
     separate_samples = False
     separate_nvs = False
     plot_prior_models = True
-    desaturate_prior = True
+    desaturate_prior = False
     plot_new_model = True
 
     ###
@@ -580,7 +582,7 @@ def main():
         fit_func,
         temp_list,
         zfs_list,
-        # sigma=zfs_err_list,
+        sigma=zfs_err_list,
         absolute_sigma=True,
         p0=guess_params,
     )
@@ -626,7 +628,7 @@ def main():
                 ax,
                 temp,
                 val,
-                # yerr=val_err,
+                yerr=val_err,
                 color=color,
                 zorder=-1,
                 label=label,
@@ -681,15 +683,15 @@ def main():
             color=color,
             zorder=10,
         )
-        color = KplColors.GRAY.value
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            cambria_fixed(temp_linspace),
-            label="MCAW proposed",
-            color=color,
-            zorder=10,
-        )
+        # color = KplColors.GRAY.value
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     cambria_fixed(temp_linspace),
+        #     label="MCAW proposed",
+        #     color=color,
+        #     zorder=10,
+        # )
         # ax.legend()
 
     ### Prior models
@@ -712,7 +714,7 @@ def main():
             temp_linspace,
             sub_room_zfs_from_temp(temp_linspace),
             label="Chen",
-            color=prior_model_colors.pop(),
+            color=prior_model_colors[0],
             zorder=prior_model_zorder,
         )
         # print(super_room_zfs_from_temp(700))
@@ -722,25 +724,25 @@ def main():
             temp_linspace,
             super_room_zfs_from_temp(temp_linspace),
             label="Toyli",
-            color=prior_model_colors.pop(),
+            color=prior_model_colors[1],
             zorder=prior_model_zorder,
         )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_barson(temp_linspace),
-            label="Barson",
-            color=prior_model_colors.pop(),
-            zorder=prior_model_zorder,
-        )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_li(temp_linspace),
-            label="Li",
-            color=prior_model_colors.pop(),
-            zorder=prior_model_zorder,
-        )
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     zfs_from_temp_barson(temp_linspace),
+        #     label="Barson",
+        #     color=prior_model_colors[2],
+        #     zorder=prior_model_zorder,
+        # )
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     zfs_from_temp_li(temp_linspace),
+        #     label="Li",
+        #     color=prior_model_colors[3],
+        #     zorder=prior_model_zorder,
+        # )
 
     ### Plot wrap up
     if plot_prior_models:
