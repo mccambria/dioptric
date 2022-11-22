@@ -291,8 +291,8 @@ def fit_resonance(
             zfs = popt[2]
             zfs_err = np.sqrt(pcov[2, 2])
 
-        print(zfs)
-        print(zfs_err)
+        # print(zfs)
+        # print(zfs_err)
         # temp_from_resonances.main(zfs, zfs_err)
 
     else:

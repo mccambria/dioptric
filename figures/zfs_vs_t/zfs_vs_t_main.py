@@ -469,18 +469,20 @@ def main():
 
     # temp_range = [-10, 1000]
     # y_range = [2.74, 2.883]
-    temp_range = [-10, 300]
-    y_range = [2.868, 2.88]
-    # temp_range = [-10, 250]
-    # y_range = [-0.0015, 0.0015]
+    temp_range = [-10, 720]
+    y_range = [2.80, 2.883]
+    # temp_range = [-10, 310]
+    # y_range = [2.869, 2.879]
+    # temp_range = [-10, 310]
+    # y_range = [-0.0012, 0.0012]
 
-    plot_data = True
-    plot_data_model_diff = False
-    hist_deviations = False
+    plot_data = False
+    plot_residuals = False
+    hist_residuals = False  # Must specify nv_to_plot down below
     separate_samples = False
-    separate_nvs = True
-    plot_prior_models = False
-    desaturate_prior = False
+    separate_nvs = False
+    plot_prior_models = True
+    desaturate_prior = True
     plot_new_model = True
 
     ###
@@ -498,14 +500,15 @@ def main():
     nv_samples = []
     data_colors = {}
     data_color_options = kpl.data_color_cycler.copy()
+    data_labels = {}
     for el in data_points:
         zfs = el["ZFS (GHz)"]
         reported_temp = el["Monitor temp (K)"]
         if zfs == "" or reported_temp == "":
             continue
         # if not (min_temp <= reported_temp <= max_temp):
-        if not (min_temp <= reported_temp <= 295):
-            continue
+        # if not (150 <= reported_temp <= 500):
+        #     continue
         temp_list.append(reported_temp)
         zfs_list.append(zfs)
         zfs_err = el["ZFS error (GHz)"]
@@ -520,14 +523,20 @@ def main():
             data_colors_samples = [el.split("-")[0] for el in data_colors_keys]
             if sample not in data_colors_samples:
                 data_colors[name] = data_color_options.pop(0)
+            data_labels[name] = sample
         elif separate_nvs:
             if name not in data_colors:
                 data_colors[name] = data_color_options.pop(0)
+            data_labels[name] = name
         else:
-            data_colors[name] = KplColors.DARK_GRAY.value
+            data_colors[name] = KplColors.BROWN.value
+    nv_names_set = list(set(nv_names))
+    nv_names_set.sort()
 
     # zfs_list.extend(toyli_zfss)
     # temp_list.extend(toyli_temps)
+    # nv_names.extend([None] * len(toyli_temps))
+    # zfs_err_list.extend([None] * len(toyli_temps))
 
     ### New model
 
@@ -571,7 +580,7 @@ def main():
         fit_func,
         temp_list,
         zfs_list,
-        sigma=zfs_err_list,
+        # sigma=zfs_err_list,
         absolute_sigma=True,
         p0=guess_params,
     )
@@ -585,46 +594,103 @@ def main():
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
-    for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
-        calc_zfs = cambria_lambda(temp)
-        ssr += ((zfs - calc_zfs) / zfs_err) ** 2
-    dof = num_points - num_params
-    red_chi_sq = ssr / dof
-    print(red_chi_sq)
+    if None not in zfs_err_list:
+        for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
+            calc_zfs = cambria_lambda(temp)
+            ssr += ((zfs - calc_zfs) / zfs_err) ** 2
+        dof = num_points - num_params
+        red_chi_sq = ssr / dof
+        print(red_chi_sq)
 
-    if plot_data:
+    used_data_labels = []
+    if plot_data or plot_residuals:
         for ind in range(len(zfs_list)):
             temp = temp_list[ind]
             name = nv_names[ind]
-            color = data_colors[name]
-            if plot_data_model_diff:
+            if plot_residuals:
                 val = zfs_list[ind] - cambria_lambda(temp)
             else:
                 val = zfs_list[ind]
             val_err = zfs_err_list[ind]
+            label = None
+            color = KplColors.DARK_GRAY.value
+            if name in data_colors:
+                color = data_colors[name]
+            if separate_samples or separate_nvs:
+                label = data_labels[name]
+                if label in used_data_labels:
+                    label = None
+                else:
+                    used_data_labels.append(label)
             kpl.plot_points(
                 ax,
                 temp,
                 val,
-                yerr=val_err,
+                # yerr=val_err,
                 color=color,
                 zorder=-1,
+                label=label,
             )
+            # ax.legend(loc="lower right")
 
-    if hist_deviations:
-        pass
+    if hist_residuals:
+        residuals = {}
+        for el in nv_names_set:
+            residuals[el] = []
+        for ind in range(len(zfs_list)):
+            name = nv_names[ind]
+            temp = temp_list[ind]
+            # if not (150 <= temp <= 500):
+            #     continue
+            # val = (zfs_list[ind] - cambria_lambda(temp)) / zfs_err_list[ind]
+            val = zfs_list[ind] - cambria_lambda(temp)
+            residuals[name].append(val)
+        nv_to_plot = nv_names_set[4]
+        devs = residuals[nv_to_plot]
+        # max_dev = 3
+        # num_bins = max_dev * 4
+        devs = [1000 * el for el in devs]
+        max_dev = 0.0006 * 1000
+        num_bins = 12
+        large_errors = [abs(val) > max_dev for val in devs]
+        if True in large_errors:
+            print("Got a large error that won't be shown in hist!")
+        hist, bin_edges = np.histogram(
+            devs, bins=num_bins, range=(-max_dev, max_dev)
+        )
+        x_vals = []
+        y_vals = []
+        for ind in range(len(bin_edges) - 1):
+            x_vals.append(bin_edges[ind])
+            x_vals.append(bin_edges[ind + 1])
+            y_vals.append(hist[ind])
+            y_vals.append(hist[ind])
+        color = data_colors[nv_to_plot]
+        kpl.plot_line(ax, x_vals, y_vals, color=color)
+        ax.fill_between(x_vals, y_vals, color=kpl.lighten_color_hex(color))
+        ylim = max(y_vals) + 1
 
     if plot_new_model:
-        color = KplColors.BLUE.value
-        # color = "#0f49bd"
+        # color = KplColors.BLUE.value
+        color = "#0f49bd"
         kpl.plot_line(
             ax,
             temp_linspace,
             cambria_lambda(temp_linspace),
-            label="Proposed",
+            label="Updated proposed",
             color=color,
             zorder=10,
         )
+        color = KplColors.GRAY.value
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            cambria_fixed(temp_linspace),
+            label="MCAW proposed",
+            color=color,
+            zorder=10,
+        )
+        # ax.legend()
 
     ### Prior models
 
@@ -681,10 +747,17 @@ def main():
         ax.legend(loc="lower left")
         # ax.legend(bbox_to_anchor=(0.37, 0.46))
         # ax.legend(bbox_to_anchor=(0.329, 0.46))
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-    ax.set_ylabel("D (GHz)")
-    ax.set_xlim(*temp_range)
-    ax.set_ylim(*y_range)
+    if hist_residuals:
+        # ax.set_xlabel("Normalized residual")
+        ax.set_xlabel("Residual (MHz)")
+        ax.set_ylabel("Frequency")
+        ax.set_xlim(-max_dev, max_dev)
+        ax.set_ylim(0, ylim)
+    else:
+        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+        ax.set_ylabel("D (GHz)")
+        ax.set_xlim(*temp_range)
+        ax.set_ylim(*y_range)
     kpl.tight_layout(fig)
 
 
