@@ -22,7 +22,7 @@ import time
 import labrad
 from git import Repo
 from pathlib import Path, PurePath
-from enum import Enum, auto
+from enum import Enum, auto, IntEnum
 import socket
 import smtplib
 from email.mime.text import MIMEText
@@ -43,6 +43,11 @@ class States(Enum):
 class ModTypes(Enum):
     DIGITAL = auto()
     ANALOG = auto()
+
+
+class Digital(IntEnum):
+    LOW = 0
+    HIGH = 1
 
 
 # endregion
@@ -380,9 +385,6 @@ def process_laser_seq(
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
 
-    LOW = 0
-    HIGH = 1
-
     processed_train = []
 
     if mod_type is ModTypes.DIGITAL:
@@ -401,14 +403,14 @@ def process_laser_seq(
             val = el[1]
             if type(laser_power) == list:
                 if val == 0:
-                    power_dict = {LOW: 0.0}
+                    power_dict = {Digital.LOW: 0.0}
                 else:
-                    power_dict = {HIGH: laser_power[high_count]}
-                    if val == HIGH:
+                    power_dict = {Digital.HIGH: laser_power[high_count]}
+                    if val == Digital.HIGH:
                         high_count += 1
             # If a list wasn't passed, just use the single value for laser_power
             elif type(laser_power) != list:
-                power_dict = {LOW: 0.0, HIGH: laser_power}
+                power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
             processed_train.append((dur, power_dict[val]))
 
         pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
@@ -437,7 +439,7 @@ def set_delays_to_zero(config):
 
 
 def seq_train_length_check(train):
-    """Print out the length of a the sequence train for a specific channel. 
+    """Print out the length of a the sequence train for a specific channel.
     Useful for debugging sequences
     """
     total = 0
@@ -839,7 +841,7 @@ def lorentzian(x, x0, A, L, offset):
             3: offset, constant y value offset
     """
     x_center = x - x0
-    return offset + A * 0.5 * L / (x_center**2 + (0.5 * L) ** 2)
+    return offset + A * 0.5 * L / (x_center ** 2 + (0.5 * L) ** 2)
 
 
 def exp_decay(x, amp, decay, offset):
@@ -865,16 +867,16 @@ def gaussian(x, *params):
     """
 
     coeff, mean, stdev, offset = params
-    var = stdev**2  # variance
+    var = stdev ** 2  # variance
     centDist = x - mean  # distance from the center
-    return offset + coeff**2 * np.exp(-(centDist**2) / (2 * var))
+    return offset + coeff ** 2 * np.exp(-(centDist ** 2) / (2 * var))
 
 
 def sinexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
     half_pi = np.pi / 2
     return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(
-        -(decay**2) * t
+        -(decay ** 2) * t
     )
 
 
@@ -921,7 +923,7 @@ def t2_func(t, amplitude, offset, t2):
 
 
 def calc_snr(sig_count, ref_count):
-    """Take a list of signal and reference counts, and take their average, 
+    """Take a list of signal and reference counts, and take their average,
     then calculate a snr.
     inputs:
         sig_count = list
@@ -1021,7 +1023,7 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 
 
 def get_xy_server(cxn):
-    """Talk to the registry to get the fine xy control server for this 
+    """Talk to the registry to get the fine xy control server for this
     setup. Eg for rabi it is probably galvo. See optimize for some examples.
     """
 
@@ -1087,7 +1089,7 @@ def get_apd_indices(cxn):
 
 
 def get_registry_entry(cxn, key, directory):
-    """Return the value for the specified key. The directory is specified 
+    """Return the value for the specified key. The directory is specified
     from the top of the registry. Directory as a list
     """
 
@@ -1421,8 +1423,8 @@ def save_combine_data(file_list, folder_list, py_file_name):
 
 
 def send_exception_email(
-    email_from="kolkowitznvlab@gmail.com",
-    email_to="kolkowitznvlab@gmail.com",
+    email_from=common.shared_email,
+    email_to=common.shared_email,
 ):
     # format_exc extracts the stack and error message from
     # the exception currently being handled.
@@ -1441,8 +1443,8 @@ def send_exception_email(
 
 def send_email(
     content,
-    email_from="kolkowitznvlab@gmail.com",
-    email_to="kolkowitznvlab@gmail.com",
+    email_from=common.shared_email,
+    email_to=common.shared_email,
 ):
 
     pc_name = socket.gethostname()
@@ -1678,14 +1680,14 @@ def presentation_round(val, err):
     if val == 0:
         return [0, None, None]
     err_mag = math.floor(math.log10(err))
-    sci_err = err / (10**err_mag)
+    sci_err = err / (10 ** err_mag)
     first_err_digit = int(str(sci_err)[0])
     if first_err_digit == 1:
         err_sig_figs = 2
     else:
         err_sig_figs = 1
     power_of_10 = math.floor(math.log10(abs(val)))
-    mag = 10**power_of_10
+    mag = 10 ** power_of_10
     rounded_err = round_sig_figs(err, err_sig_figs) / mag
     rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
     return [rounded_val, rounded_err, power_of_10]
@@ -1723,7 +1725,7 @@ def presentation_round_latex(val, err):
 
 
 # endregion
-# region Safe Stop (TM mccambria)
+# region Safe Stop
 """Use this to safely stop experiments without risking data loss or weird state.
 Works by reassigning CTRL + C to set a global variable rather than raise a 
 KeyboardInterrupt exception. That way we can check on the global variable
@@ -1740,7 +1742,7 @@ def init_safe_stop():
     global SAFESTOPFLAG
     # Tell the user safe stop has started if it was stopped or just not started
     try:
-        if not SAFESTOPFLAG:
+        if SAFESTOPFLAG:
             print("\nPress CTRL + C to stop...\n")
     except Exception as exc:
         print("\nPress CTRL + C to stop...\n")
@@ -1765,12 +1767,20 @@ def safe_stop():
 
 
 def reset_safe_stop():
-    """Reset the Safe Stop flag, but don't remove the handler in case we 
+    """Reset the Safe Stop flag, but don't remove the handler in case we
     want to reuse it.
     """
 
     global SAFESTOPFLAG
     SAFESTOPFLAG = False
+
+
+def poll_safe_stop():
+    """Blocking version of safe stop"""
+
+    init_safe_stop()
+    while not safe_stop():
+        time.sleep(0.1)
 
 
 # endregion

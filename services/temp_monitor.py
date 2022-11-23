@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Created on August 9th, 2021
+"""Temperature monitoring code
 
-Temperature monitoring code
+Created on August 9th, 2021
 
 @author: mccambria
 """
@@ -20,12 +19,37 @@ import os
 import numpy as np
 
 
-def main(channel=1, do_plot=True, do_email=True):
+def main(
+    channel=1,
+    do_plot=True,
+    do_email=False,
+    email_recipient=None,
+    email_stability=0.1,
+):
+    """Monitor the temperature on the monitor listed in the registry
+
+    Parameters
+    ----------
+    channel : int, optional
+        Channel of the temp monitor to use, by default 1
+    do_plot : bool, optional
+        Whether the temp is plotted and logged or just logged, by default True
+    do_email : bool, optional
+        Whether an email is sent when the temp is stable to within email_stability, by default False
+    email_recipient : str, optional
+        Address to email, by default None
+    email_stability : float, optional
+        10-minute peak-to-peak stability threshold for emailing, by default 0.1
+    """
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, channel, do_plot, do_email)
+        main_with_cxn(
+            cxn, channel, do_plot, do_email, email_recipient, email_stability
+        )
 
 
-def main_with_cxn(cxn, channel, do_plot, do_email):
+def main_with_cxn(
+    cxn, channel, do_plot, do_email, email_recipient, email_stability
+):
 
     # We'll log all the plotted data to this file. (If plotting is turned off,
     # we'll log the data that we would've plotted.) The format is:
@@ -33,14 +57,15 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
     pc_name = socket.gethostname()
     file_name = os.path.basename(__file__)
     file_name_no_ext = os.path.splitext(file_name)[0]
+    nvdata_dir = common.get_nvdata_dir()
     logging_file = (
-        "E:/Shared drives/Kolkowitz Lab"
-        " Group/nvdata/pc_{}/service_logging/{}.log"
-    ).format(pc_name, file_name_no_ext)
+        nvdata_dir / f"pc_{pc_name}/service_logging/{file_name_no_ext}.log"
+    )
 
     # Initialize the state
     now = time.time()
-    actual = cxn.temp_monitor_lakeshore218.measure(channel)
+    temp_monitor = tool_belt.get_temp_monitor(cxn)
+    actual = temp_monitor.measure(channel)
 
     cycle_dur = 0.1
     start_time = now
@@ -82,7 +107,7 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
         if time_diff < cycle_dur:
             time.sleep(cycle_dur - time_diff)
 
-        actual = cxn.temp_monitor_lakeshore218.measure(channel)
+        actual = temp_monitor.measure(channel)
 
         # Plotting and logging
         if now - last_plot_log_time > plot_log_period:
@@ -112,37 +137,37 @@ def main_with_cxn(cxn, channel, do_plot, do_email):
                 fig.canvas.draw()
                 fig.canvas.flush_events()
 
-                # Notify the user once the temp is stable (ptp < 0.1 over current plot history)
-                temp_check = max(plot_temps) - min(plot_temps) < 0.1
+                # Notify the user once the temp is stable (ptp < email_stability over current plot history)
+                temp_check = (
+                    max(plot_temps) - min(plot_temps) < email_stability
+                )
                 time_check = len(plot_times) == max_plot_vals
                 if do_email and temp_check and time_check and not email_sent:
                     msg = "Temp is stable!"
-                    recipient = "cambria@wisc.edu"
-                    tool_belt.send_email(msg, email_to=recipient)
+                    tool_belt.send_email(msg, email_to=email_recipient)
                     email_sent = True
 
             with open(logging_file, "a+") as f:
                 f.write("{}, {} \n".format(round(now), round(actual, 3)))
             last_plot_log_time = now
 
-    sample_name = "wu"
     timestamp = tool_belt.get_time_stamp()
-    file_path = tool_belt.get_file_path(__file__, timestamp, sample_name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, "none")
     tool_belt.save_figure(fig, file_path)
 
 
 if __name__ == "__main__":
 
     channel = 1
-    # sensor_serial = "X162689"
-    sensor_serial = "X162690"
     do_plot = True
+    do_email = True
+    email_recipient = "cambria@wisc.edu"
+    email_stability = 0.1
 
-    # main(channel, do_plot, do_email=False)
-    # main(channel, do_plot, do_email=True)
-
-    # with labrad.connect() as cxn:
-
-    #     cxn.temp_monitor_lakeshore218.enter_calibration_curve(channel, sensor_serial)
-    #     temp = cxn.temp_monitor_lakeshore218.measure(channel)
-    #     print(temp)
+    main(
+        channel,
+        do_plot,
+        do_email=do_email,
+        email_recipient=email_recipient,
+        email_stability=email_stability,
+    )
