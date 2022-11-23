@@ -52,6 +52,7 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    pulser_ao_fm = pulser_wiring['ao_fm']
 
     # %% Write the microwave sequence to be used.
 
@@ -111,6 +112,9 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, HIGH),
              (post_duration, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
+    period = 0
+    for el in train:
+        period += el[0]
 
     # Laser
     train = [(rf_delay_time + polarization_time, HIGH),
@@ -143,6 +147,20 @@ def get_seq(pulse_streamer, config, args):
     train.extend([(tau_long, LOW), (pi_on_2_pulse, HIGH)])
     train.extend([(post_duration, LOW)])
     seq.setDigital(pulser_do_sig_gen_gate, train)
+    
+    # turn on fm during MW pulses
+    ao_HIGH = 1
+    train = [(aom_delay_time + polarization_time, LOW),
+             (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time, ao_HIGH),
+             (signal_time, LOW),
+             (sig_to_ref_wait_time_shrt, LOW),
+             (reference_time, LOW),
+             (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time, ao_HIGH),
+             (signal_time, LOW),
+             (sig_to_ref_wait_time_long, LOW),
+             (reference_time + rf_delay_time, LOW),
+             (back_buffer, LOW)]
+    seq.setAnalog(pulser_ao_fm, train)
 
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -150,6 +168,8 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    seq_args = [0, 1000.0, 350, 32, 16, 10000, 1, 1, 'integrated_520', None]
+    
+    # seq_args = [0, 1000.0, 350, 32, 16, 10000, 1, 1, 'integrated_520', None]
+    seq_args = [0.0, 1000.0, 350, 0, 26, 500.0, 1, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
