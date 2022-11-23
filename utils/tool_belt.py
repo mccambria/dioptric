@@ -236,6 +236,14 @@ def set_xyz_on_nv(cxn, nv_sig):
 
 # %% Laser utils
 
+def get_mod_type(laser_name):
+    with labrad.connect() as cxn:
+        mod_type = get_registry_entry(
+            cxn, "mod_type", ["", "Config", "Optics", laser_name]
+        )
+    mod_type = eval(mod_type)
+    return mod_type.name
+
 
 def laser_off(cxn, laser_name):
     laser_switch_sub(cxn, False, laser_name)
@@ -243,7 +251,22 @@ def laser_off(cxn, laser_name):
 
 def laser_on(cxn, laser_name, laser_power=None):
     laser_switch_sub(cxn, True, laser_name, laser_power)
+    
 
+def get_opx_laser_pulse_info(config,laser_name,laser_power):
+    
+    mod_type = config['Optics'][laser_name]['mod_type']
+    laser_delay = config['Optics'][laser_name]['delay']
+    
+    laser_pulse_name = 'laser_ON_{}'.format(eval(mod_type).name)
+    
+    if eval(mod_type).name == 'ANALOG':
+        laser_pulse_amplitude = laser_power
+    
+    elif eval(mod_type).name == 'DIGITAL':
+        laser_pulse_amplitude = 1
+    
+    return laser_pulse_name, laser_delay, laser_pulse_amplitude
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
@@ -268,30 +291,40 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         # Digital, no feedthrough
         else:
             if turn_on:
+                try:
+                    laser_chan = get_registry_entry(
+                        cxn,
+                        "do_{}_dm".format(laser_name),
+                        ["", "Config", "Wiring", "PulseStreamer"],
+                    )
+                    cxn.pulse_streamer.constant([laser_chan])
+                except:
+                    # print('digital laser on using opx')
+                    cxn.qm_opx.constant([laser_name],[],[],[])
+    # Analog
+    elif mod_type is Mod_types.ANALOG:
+        if turn_on:
+            try:
                 laser_chan = get_registry_entry(
                     cxn,
                     "do_{}_dm".format(laser_name),
                     ["", "Config", "Wiring", "PulseStreamer"],
                 )
-                cxn.pulse_streamer.constant([laser_chan])
-    # Analog
-    elif mod_type is Mod_types.ANALOG:
-        if turn_on:
-            laser_chan = get_registry_entry(
-                cxn,
-                "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseStreamer"],
-            )
-            if laser_chan == 0:
-                cxn.pulse_streamer.constant([], 0.0, laser_power)
-            elif laser_chan == 1:
-                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                if laser_chan == 0:
+                    cxn.pulse_streamer.constant([], 0.0, laser_power)
+                elif laser_chan == 1:
+                    cxn.pulse_streamer.constant([], laser_power, 0.0)
+                    
+            except:
+                # print('analog laser on using opx')
+                cxn.qm_opx.constant([],[laser_name],[0.0],[laser_power])
 
     # If we're turning things off, turn everything off. If we wanted to really
     # do this nicely we'd find a way to only turn off the specific channel,
     # but it's not worth the effort.
     if not turn_on:
-        cxn.pulse_streamer.constant([])
+        pulsegen_server = get_pulsegen_server(cxn)
+        pulsegen_server.constant([])
 
 
 def set_laser_power(
@@ -516,6 +549,21 @@ def set_delays_to_zero(config):
         if type(val) is dict:
             set_delays_to_zero(val)
             
+def set_delays_to_sixteen(config):
+    """
+    Pass this a config dictionary and it'll set all the delays to 16ns, which is the minimum wait() time for the OPX.
+    Useful for testing sequences without having to worry about delays.
+    """
+
+    for key in config:
+        # Check if any entries are delays and set them to 0
+        if key.endswith("delay"):
+            config[key] = 16
+            return
+        # Check if we're at a sublevel - if so, recursively set its delay to 0
+        val = config[key]
+        if type(val) is dict:
+            set_delays_to_sixteen(val)            
             
 def seq_train_length_check(train):
     """
@@ -1133,6 +1181,13 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
+def cosine_one(t, offset, decay, amp_1, freq_1):
+    two_pi = 2 * np.pi
+
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+    )
+
 
 def t2_func(t, amplitude, offset, t2):
     n = 3
@@ -1279,6 +1334,57 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 
 def get_nv_sig_units():
     return "in config"
+
+def get_pulsegen_server(cxn):
+    """
+    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
+    """
+    pulsegen_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "pulsegen_server", ["", "Config", "PulseGeneration"]),
+    )
+    
+    if pulsegen_server_return == "":
+        raise RuntimeError
+    
+    return pulsegen_server_return
+
+def get_counter_server(cxn):
+    """
+    Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
+    """
+    counter_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "counter_server", ["", "Config", "PhotonCollection"]),
+    )
+    if counter_server_return == "":
+        raise RuntimeError
+        
+    return counter_server_return
+
+
+def get_tagger_server(cxn):
+    """
+    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    """
+    tagger_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "tagger_server", ["", "Config", "PhotonCollection"]),
+    )
+    if tagger_server_return == "":
+        raise RuntimeError
+        
+    return tagger_server_return
+
+def get_optimization_style():
+    """
+    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    """
+    optimization_style_return = get_registry_entry_no_cxn("optimization_style", ["", "Config", "Positioning"])
+    if optimization_style_return == "":
+        raise RuntimeError
+        
+    return optimization_style_return
 
 
 def get_xy_server(cxn):
