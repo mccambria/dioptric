@@ -24,14 +24,16 @@ Created on Fri Jul 12 13:53:45 2019
 
 import labrad
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
-import majorroutines.optimize_digital as optimize_digital
 from random import shuffle
 import numpy
 import matplotlib.pyplot as plt
 from utils.tool_belt import States
 import time
-
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 # %% Functions
 
@@ -74,7 +76,7 @@ def measure_delay(
     for tau_ind in tau_ind_list:
         st = time.time()
         # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-        optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
+        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         # Turn on the microwaves for determining microwave delay
         sig_gen = None
         if seq_file == "uwave_delay.py":

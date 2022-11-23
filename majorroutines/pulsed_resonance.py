@@ -13,7 +13,6 @@ Created on Thu Apr 11 15:39:23 2019
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
-import majorroutines.optimize_digital as optimize_digital
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -23,6 +22,11 @@ import labrad
 from utils.tool_belt import States
 from random import shuffle
 import sys
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # %% Figure functions
@@ -602,12 +606,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig["coords"] + np.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer

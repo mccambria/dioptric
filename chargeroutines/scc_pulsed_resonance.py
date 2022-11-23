@@ -9,8 +9,6 @@ Created on Tue Sep 21 10:52:28 2021
 
 
 import utils.tool_belt as tool_belt
-# import majorroutines.optimize as optimize
-import majorroutines.optimize_digital as optimize_digital
 import numpy
 import matplotlib.pyplot as plt
 import time
@@ -21,7 +19,11 @@ from utils.tool_belt import States
 import majorroutines.pulsed_resonance as pulsed_resonance
 from random import shuffle
 import sys
-
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 # %%
 
 def plot_esr(ref_counts, sig_counts, num_runs, freqs = None, freq_center = None, freq_range = None, num_steps = None):
@@ -183,7 +185,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+        optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
         drift = tool_belt.get_drift()
         drift_list.append(drift)
         adjusted_nv_coords = numpy.array(nv_coords) + drift
@@ -223,7 +225,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             
             current_time = time.time()
             if current_time - last_opti_time > opti_interval * 60:
-                optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+                optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
                 drift = tool_belt.get_drift()
                 drift_list.append(drift)
                 adjusted_nv_coords = numpy.array(nv_coords) + drift

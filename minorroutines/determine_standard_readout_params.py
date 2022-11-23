@@ -14,8 +14,6 @@ Created on July 13th, 2022
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
-import majorroutines.optimize_digital as optimize_digital
 import numpy as np
 import os
 import time
@@ -27,6 +25,11 @@ from utils.tool_belt import States
 import utils.kplotlib as kpl
 import copy
 import matplotlib.pyplot as plt
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # region Functions
@@ -199,7 +202,7 @@ def optimize_readout_duration_sub(
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer

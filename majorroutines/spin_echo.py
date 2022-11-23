@@ -16,8 +16,6 @@ Created on Wed Apr 24 15:01:04 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize_digital as optimize_digital
-# import majorroutines.optimize as optimize
 from scipy.optimize import minimize_scalar
 from numpy import pi
 import numpy
@@ -28,6 +26,11 @@ import labrad
 from utils.tool_belt import States
 from scipy.optimize import curve_fit
 from numpy.linalg import eigvals
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # %% Constants
@@ -635,7 +638,7 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves

@@ -16,12 +16,11 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import labrad
-
-# Hmm, we need to figure out a better way to handle optimizing with different
-# setups. Having two nearly identical versions of the same file just ain't
-# gonna cut it.
-# import majorroutines.optimize_digital as optimize
-import majorroutines.optimize as optimize
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # %% Functions

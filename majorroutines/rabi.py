@@ -12,7 +12,6 @@ Created on Tue Apr 23 11:49:23 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize_digital as optimize_digital
 import numpy
 import os
 import time
@@ -20,6 +19,13 @@ import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.optimize import curve_fit
 import labrad
+
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
+
 
 
 # %% Functions
@@ -273,12 +279,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize_digital.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")

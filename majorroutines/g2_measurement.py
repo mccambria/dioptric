@@ -17,12 +17,16 @@ Created on Wed Apr 24 17:33:26 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
 import json
 import labrad
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # %% Functions

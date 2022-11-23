@@ -406,9 +406,10 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur,exp_dur=0,bins=None):
     # readout_dur_linspace = [
     #     int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
     # ]
+    #round to nearest us
     readout_dur_linspace = [
         int(1e3 * round(val / 1e3)) for val in readout_dur_linspace
-    ]  #round to nearest us
+    ]  
     # print(readout_dur_linspace)
 
     sensitivities = []
@@ -775,6 +776,9 @@ def determine_readout_dur_power(
     return
 
 def measure_reinit_spin_dur(nv_sig, apd_indices, num_reps,state):
+    """
+    not finished
+    """
 
     with labrad.connect() as cxn:
         sig_counts = measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps,state)

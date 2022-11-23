@@ -14,8 +14,6 @@ regular yellow readout, and SCC readout.
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize_digital as optimize_digital
-# import majorroutines.optimize as optimize
 import numpy
 import os
 import time
@@ -25,6 +23,11 @@ from scipy.optimize import curve_fit
 import labrad
 from utils.tool_belt import States
 
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 # %% Functions
 
@@ -219,7 +222,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             break
 
         # Optimize
-        opti_coords = optimize_digital.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
