@@ -476,7 +476,7 @@ if __name__ == '__main__':
    
     
     # replotting data
-    file = '2022_11_08-12_31_56-johnson-search'
+    file = '2022_11_14-09_10_42-johnson-search'
     data = tool_belt.get_raw_data(file)
 #   
     # norm_avg_sig = data['norm_avg_sig']

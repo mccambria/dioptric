@@ -28,7 +28,7 @@ def qua_program(opx, config, args, num_reps):
     timetag_list_size = int(15900 / num_gates / 2)    
 
     durations = []
-    for ind in range(7):
+    for ind in range(6):
         durations.append(numpy.int64(args[ind]))
         
     # Unpack the durations
@@ -71,7 +71,9 @@ def qua_program(opx, config, args, num_reps):
     yellow_m_green_delay_cc = max(int((yellow_laser_delay_time - green_laser_delay_time)//4),4)
     rf_m_red_delay_cc = max(int((rf_delay_time - red_laser_delay_time)//4),4)
     delay21_cc = int( (post_uwave_exp_wait_time + rf_m_red_delay_cc*4)//4)
-    delay1_cc = int( (green_laser_delay_time - rf_delay_time + reion_time + pre_uwave_exp_wait_time) //4 )
+    
+    wait_after_init_pulse = 2000
+    delay1_cc = int( (green_laser_delay_time - rf_delay_time + reion_time + wait_after_init_pulse) //4 )
     delay2_cc = int((yellow_m_green_delay_cc*4 + sig_to_ref_wait_time_long) //4)
     tau_cc = int(tau//4)
     double_tau_cc = int(2*tau_cc)
@@ -197,7 +199,7 @@ if __name__ == '__main__':
     
     simulation_duration =  85000 // 4 # clock cycle units - 4ns
     
-    num_repeat=1
+    num_repeat=2
     args = [80.0, 
             2000.0, 200, 4000, 
             80, 
@@ -205,15 +207,17 @@ if __name__ == '__main__':
             1, 1, 
             'cobolt_515', 'cobolt_638', 'laserglow_589',
             1, 1, 0.45]
+    args = [8.0, 1000, 140, 5000.0, 0, 46, 0, 1, 
+            'cobolt_515', 'cobolt_638', 'laserglow_589', None, None, 0.45]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    # job = qm.execute(seq)
+    job = qm.execute(seq)
 
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     
     # a = time.time()
     # counts_apd0, counts_apd1 = results.fetch_all() 

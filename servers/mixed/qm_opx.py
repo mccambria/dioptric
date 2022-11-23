@@ -355,6 +355,21 @@ class OPX(Tagger, PulseGen, LabradServer):
         return return_counts
     
     
+    @setting(10805, num_streams="i")
+    def get_cond_logic_num_ops(self,c,num_streams):
+        """
+        This function assumes you are trying to save a num_ops stream in the sequence to keep track of how many conditional logic
+        operations you do in each run. For instance, how many readouts did you do in each iteration of the sequence, where you stop reading
+        out if you met some condition.
+        """
+        
+        data_list = ["num_ops_{}".format(1+i) for i in range(num_streams)]
+        logging.info('at cond logic')
+        results = fetching_tool(self.experiment_job, data_list, mode="wait_for_all")
+        return_streams = results.fetch_all() 
+        return return_streams
+        
+    
     def read_raw_stream(self):
         """
         read the raw stream. currently it waits for all data in the job to come in and reports it all. Ideally it would do it live

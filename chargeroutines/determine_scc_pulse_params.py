@@ -14,12 +14,14 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize_digital as optimize_digital
 # import majorroutines.optimize as optimize
 import numpy
+import os
 # import json
 # import time
 import copy
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
+import time
 from random import shuffle
 import scipy.stats as stats
 # import minorroutines.photonstatistics as ps
@@ -201,12 +203,15 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
     '''
     state = States.LOW
     if ion_durs is None:
-        ion_durs = numpy.linspace(16,400,21)
+        ion_durs = numpy.array([340])#
+        # ion_durs = numpy.linspace(20,800,10)
   
     num_steps = len(ion_durs)
     
     # create some arrays for data
     sig_counts_array = numpy.zeros(num_steps)
+    sig_counts_eachshot_array = numpy.zeros([num_steps,num_reps])
+    ref_counts_eachshot_array = numpy.zeros([num_steps,num_reps])
     sig_counts_ste_array = numpy.copy(sig_counts_array)
     ref_counts_array = numpy.copy(sig_counts_array)
     ref_counts_ste_array = numpy.copy(sig_counts_array)
@@ -233,7 +238,9 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
         sig_counts_ste = stats.sem(sig_counts)
         ref_count_avg = numpy.average(ref_counts)
         ref_counts_ste = stats.sem(ref_counts)
-            
+        
+        sig_counts_eachshot_array[ind] = sig_counts
+        ref_counts_eachshot_array[ind] = ref_counts
         sig_counts_array[ind] = sig_count_avg
         sig_counts_ste_array[ind] = sig_counts_ste
         ref_counts_array[ind] = ref_count_avg
@@ -257,6 +264,8 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
             'ion_durs-units': 'ns',
             'num_reps':num_reps,            
             'sig_counts_array': sig_counts_array.tolist(),
+            'sig_counts_eachshot_array': sig_counts_eachshot_array.tolist(),
+            'ref_counts_eachshot_array': ref_counts_eachshot_array.tolist(),
             'sig_counts_ste_array': sig_counts_ste_array.tolist(),
             'ref_counts_array': ref_counts_array.tolist(),
             'ref_counts_ste_array': ref_counts_ste_array.tolist(),
@@ -269,7 +278,43 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
     
-    print(' \nRoutine complete!')
+    # nv_sig = raw_data['nv_sig']
+    
+    # readout_dur = int(nv_sig['charge_readout_dur'])
+    # readout_power = int(nv_sig['charge_readout_laser_power']*1000)
+    # init_time = int(nv_sig['nv-_reionization_dur'])
+
+    # timestamp = tool_belt.get_time_stamp()
+    # # time.sleep(2)
+    
+    
+    # save_path1 = tool_belt.get_file_path(__file__, timestamp,'-hists'+'_{}'.format(readout_dur)+
+    #                                      'ns_{}'.format(readout_power)+'mV')
+    
+    # ion_durs = numpy.array(raw_data['ion_durs'])
+    # sig_counts = numpy.array(raw_data['sig_counts_eachshot_array'])[0]
+    # ref_counts = numpy.array(raw_data['ref_counts_eachshot_array'])[0]
+    
+    
+    # raw_fig, axes = plt.subplots(1, 5, figsize=(22, 4.5))
+    # # axes.cla()
+    # nbins=[50,100,250,500,1000]
+    # nb=0
+    # for ax in axes:
+    # # plt.hist(binned_data,bins=int(max(binned_data)),histtype='step',linewidth=2)
+    #     width=nbins[nb]
+    #     binned_data_sig = sig_counts[:(sig_counts.size // width) * width].reshape(-1, width).mean(axis=1)
+    #     binned_data_ref = ref_counts[:(ref_counts.size // width) * width].reshape(-1, width).mean(axis=1)
+    #     ax.hist(binned_data_sig,bins=6,histtype='step',linewidth=2,label='$m_s$=-1')
+    #     ax.hist(binned_data_ref,bins=6,histtype='step',linewidth=2,label='$m_s$=0')
+    #     ax.set_xlabel('avg counts in bins of {}'.format(width))
+    #     nb+=1
+    # axes[0].legend(loc='upper right')
+    # axes[2].set_title('{}'.format(readout_dur/1000)+'us     {}'.format(readout_power/1000)+'V')
+    # tool_belt.save_figure(raw_fig, save_path1)
+    # plt.show()
+    
+    # print(' \nRoutine complete!')
     return
 
 # %%
@@ -353,94 +398,65 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
 # %%
     
 if __name__ == '__main__':
-    apd_indices = [1]
-    # apd_indices = [0,1]
-
-    nd_yellow = "nd_0"
-    green_power =8000
-    nd_green = 'nd_0.4'
-    red_power = 120
-    sample_name = "rubin"
-    green_laser = "integrated_520"
-    yellow_laser = "laserglow_589"
-    red_laser = "cobolt_638"
-
-
-
-    nv_sig = {
-            "coords":[-0.855, -0.591,  6.177],
-            # "coords": [-0.874, -0.612, 6.177],
-        "name": "{}-nv1".format(sample_name,),
-        "disable_opt":False,
-        "ramp_voltages": False,
-        "expected_count_rate":13.5,
-        "correction_collar": 0.12,
-
-
-
-          "spin_laser":green_laser,
-          "spin_laser_power": green_power,
-         "spin_laser_filter": nd_green,
-          "spin_readout_dur": 350,
-          "spin_pol_dur": 1000.0,
-
-          "imaging_laser":green_laser,
-        "imaging_laser_power": green_power,
-         "imaging_laser_filter": nd_green,
-          "imaging_readout_dur": 1e7,
-
-         # "initialize_laser": green_laser,
-         #   "initialize_laser_power": green_power,
-         #   "initialize_laser_dur":  1e3,
-         # "CPG_laser": green_laser,
-         #   "CPG_laser_power":red_power,
-         #   "CPG_laser_dur": int(1e6),
-
-
-
-        # "nv-_prep_laser": green_laser,
-        # "nv-_prep_laser-power": None,
-        # "nv-_prep_laser_dur": 1e3,
-        # "nv0_prep_laser": red_laser,
-        # "nv0_prep_laser-power": None,
-        # "nv0_prep_laser_dur": 1e3,
-        
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_laser_power": green_power,
-        "nv-_reionization_dur": 1e3,
-        
-        "nv0_ionization_laser": red_laser,
-        "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 300,
-        
-        "spin_shelf_laser": yellow_laser,
-        "spin_shelf_laser_power": 0.0,
-        "spin_shelf_dur": 0,
-        
-         "charge_readout_laser": yellow_laser,
-          "charge_readout_laser_power": 0.2, 
-          "charge_readout_laser_filter": "nd_1.0",
-          "charge_readout_dur": 100e6, 
-
-        # "collection_filter": "715_lp",#see only SiV (some NV signal)
-        # "collection_filter": "740_bp",#SiV emission only (no NV signal)
-        "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 156,
-        "resonance_LOW":2.7809,
-        "rabi_LOW":64.9,
-        "uwave_power_LOW": 15,  # 15.5 max
-        "resonance_HIGH":2.9592,
-        "rabi_HIGH":49.5,
-        "uwave_power_HIGH": 15,
-    }  # 14.5 max
     
-    num_reps = 500
-    # Run the program
-    determine_ionization_dur(nv_sig, apd_indices, num_reps, [600, 650, 700, 750, 800, 850, 900, 950, 1000])
-    # determine_reion_dur(nv_sig)
-    # determine_shelf_dur(nv_sig)
+    # file = "2022_11_15-11_37_37-johnson-search-ion_pulse_dur"
+    
+    assign_state = True
+    photon_thresh = 4
+    # for file in os.listdir("E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_Carr/branch_opx-setup/determine_scc_pulse_params/2022_11/readout_time+power_sweep"):
+    for file in ['2022_11_21-15_36_59-johnson-search-ion_pulse_dur']:
+        print(file)
         
+        data = tool_belt.get_raw_data(file)
+        nv_sig = data['nv_sig']
+        
+        readout_dur = int(nv_sig['charge_readout_dur'])
+        readout_power = int(nv_sig['charge_readout_laser_power']*1000)
+        init_time = int(nv_sig['nv-_reionization_dur'])
 
-
+        timestamp = tool_belt.get_time_stamp()
+        # time.sleep(2)
+        
+        
+        save_path1 = tool_belt.get_file_path(__file__, timestamp,'-hists'+'_{}'.format(readout_dur)+
+                                             'ns_{}'.format(readout_power)+'mV')
+        
+        ion_durs = numpy.array(data['ion_durs'])
+        sig_counts = numpy.array(data['sig_counts_eachshot_array'])[0]
+        ref_counts = numpy.array(data['ref_counts_eachshot_array'])[0]
+        
+        if assign_state:
+            
+            sig_counts[numpy.where(sig_counts<=photon_thresh)] = 0
+            sig_counts[numpy.where(sig_counts>=photon_thresh)] = 1
+            
+            ref_counts[numpy.where(ref_counts<=photon_thresh)] = 0
+            ref_counts[numpy.where(ref_counts>=photon_thresh)] = 1
+        
+        raw_fig, axes = plt.subplots(1, 3, figsize=(18, 4.5))
+        # axes.cla()
+        averaging_times = numpy.array([500e3,1000e3,2000e3]) #us
+        nbins = numpy.array(averaging_times/(readout_dur/1e3),dtype=numpy.int32)
+        nb=0
+        for ax in axes:
+        # plt.hist(binned_data,bins=int(max(binned_data)),histtype='step',linewidth=2)
+            width=nbins[nb]
+            binned_data_sig = sig_counts[:(sig_counts.size // width) * width].reshape(-1, width).sum(axis=1)
+            binned_data_ref = ref_counts[:(ref_counts.size // width) * width].reshape(-1, width).sum(axis=1)
+            ax.hist(binned_data_sig,bins=10,histtype='step',linewidth=2,label='$m_s$=-1')
+            ax.hist(binned_data_ref,bins=10,histtype='step',linewidth=2,label='$m_s$=0')
+            ax.set_xlabel('Binned Counts (summed). Averaging Time = {} ms'.format(averaging_times[nb]/1000))
+            nb+=1
+        axes[0].legend(loc='upper right')
+        axes[2].set_title('{}'.format(readout_dur/1000)+'us    {}'.format(readout_power/1000)+'V')
+        tool_belt.save_figure(raw_fig, save_path1)
+        plt.show()
     
     
+
+
+
+
+
+
+

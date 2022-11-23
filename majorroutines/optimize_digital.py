@@ -151,6 +151,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     time.sleep(0.01)
     delay = config["Positioning"]["xy_small_response_delay"]
     seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
+    # print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     pulsegen_server.stream_load(seq_file_name, seq_args_string)
 

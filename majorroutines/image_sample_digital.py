@@ -10,7 +10,13 @@ import numpy
 import utils.tool_belt as tool_belt
 import time
 import labrad
-import majorroutines.optimize_digital as optimize
+
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
+
 import majorroutines.image_sample as image_sample
 import matplotlib.pyplot as plt
   
@@ -190,6 +196,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     opti_interval=2
     seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
     pulsegen_server.stream_load('simple_readout.py',seq_args_string)
     start_t = time.time()
     for i in range(total_num_samples): 

@@ -75,7 +75,7 @@ def qua_program(opx, config, args, num_reps):
     delay21_cc = int( (post_uwave_exp_wait_time + rf_m_red_delay_cc*4)//4)
     delay1_cc = int( (green_laser_delay_time - rf_delay_time + reion_time + pre_uwave_exp_wait_time) //4 )
     delay2_cc = int((yellow_m_green_delay_cc*4 + sig_to_ref_wait_time_long) //4)
-    delay3_cc = int( (yellow_delay_time - rf_delay_time + pre_uwave_exp_wait_time) //4 )
+    delay3_cc = int( (yellow_laser_delay_time - rf_delay_time + pre_uwave_exp_wait_time) //4 )
     tau_shrt_cc = int(tau_shrt//4)
     double_tau_shrt_cc = int(2*tau_shrt_cc)
     tau_long_cc = int(tau_long//4)
@@ -333,10 +333,11 @@ if __name__ == '__main__':
             'cobolt_515', 'cobolt_638', 'laserglow_589',
             1, 1, 0.45]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
+    plt.figure()
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
+    plt.show()
 # 
     # job = qm.execute(seq)
 

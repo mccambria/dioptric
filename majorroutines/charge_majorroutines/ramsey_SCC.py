@@ -396,10 +396,29 @@ def main_with_cxn(
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
+        
+        tau_run_ind = 0
 
         for tau_ind in tau_ind_list:
+            
+            tau_run_ind = tau_run_ind + 1
 
             # 'Flip a coin' to determine which tau (long/shrt) is used first
+            
+            # Optimize between some of the taus because the measurements are long. 
+            # I had to put the start tag stream in again because it gets reset in the optimize file when we reset the cfm
+            # might need to adjust this if you run into problems with the pulse streamer. This works with the opx at least. 
+            if tau_run_ind % 5 == 0:
+                if opti_nv_sig:
+                    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+                    drift = tool_belt.get_drift()
+                    adj_coords = nv_sig['coords'] + numpy.array(drift)
+                    tool_belt.set_xyz(cxn, adj_coords)
+                else:
+                    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+                counter_server.start_tag_stream(apd_indices)
+                # opti_coords_list.append(opti_coords)
+            
             rand_boolean = numpy.random.randint(0, high=2)
 
             if rand_boolean == 1:

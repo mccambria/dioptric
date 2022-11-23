@@ -78,6 +78,7 @@ def qua_program(opx, config, args, num_reps):
     double_tau_long_cc = int(2*tau_long_cc)
     post_uwave_exp_wait_time_cc = int(post_uwave_exp_wait_time//4)
     pi_on_2_pulse_cc = int(pi_on_2_pulse//4)
+    double_pi_on_2_pulse_cc = int( (2*pi_on_2_pulse)//4)
     pi_pulse_cc = int(pi_pulse//4)
     # print(pi_on_2_pulse)
     
@@ -113,9 +114,12 @@ def qua_program(opx, config, args, num_reps):
             play(laser_pulse,laser_name,duration=polarization_cc) 
                         
             wait(delay1_cc, sig_gen)
+            # if tau_shrt >= 16:
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
             wait(double_tau_shrt_cc ,sig_gen)
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
+            # elif tau_shrt <= 15:
+            #     play("uwave_ON",sig_gen, duration=double_pi_on_2_pulse_cc)
             align()
             wait(delay21_cc)
             
@@ -162,9 +166,12 @@ def qua_program(opx, config, args, num_reps):
             # wait(int( (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time) //4 ), laser_name)
             
             wait(delay3_cc, sig_gen)
+            # if tau_long >= 16:
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
             wait(double_tau_long_cc ,sig_gen)
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
+            # elif tau_long <= 15:
+            #     play("uwave_ON",sig_gen, duration=double_pi_on_2_pulse_cc)
             align()
             wait(delay21_cc)
             # wait(int( (laser_delay_time + polarization + pre_uwave_exp_wait_time) //4) ,sig_gen)
@@ -244,12 +251,13 @@ if __name__ == '__main__':
     num_repeat=1
     # 20.0, 3000.0, 340, 0, 46, 1270.0, 0, 1, 'cobolt_515', None]
 # tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
-    args = [20.0, 3000.0, 340, 0, 46, 1270.0, 0, 1, 'cobolt_515', None]
+    args = [40.0, 2000.0, 340, 0, 46, 100.0, 0, 1, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
+    plt.figure()
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
+    plt.show()
 # 
     # job = qm.execute(seq)
 

@@ -197,6 +197,7 @@ def calculate_threshold_with_model(
         state as NV-. And below this value, identify as NV0.
     """
     tR = readout_time / 10 ** 6
+    tR_us = readout_time / 10 ** 3
     fit_rate = single_nv_photon_statistics_model(tR, nv0_array, nvm_array,do_plot=plot_model_hists)
     max_x_val = int(max_x_val)
     x_data = np.linspace(0, 100, 101)
@@ -244,11 +245,11 @@ def calculate_threshold_with_model(
             bbox=props,
         )
         if nd_filter:
-            title_text = "{} ms readout, {} V, {}".format(
-                int(tR), power, nd_filter
+            title_text = "{} us readout, {} V, {}".format(
+                int(tR_us), power, nd_filter
             )
         else:
-            title_text = "{} ms readout, {} V".format(int(tR), power)
+            title_text = "{} us readout, {} V".format(int(tR_us), power)
         ax.set_title(title_text)
         plt.xlabel("Number of counts")
         plt.ylabel("Probability Density")
@@ -300,12 +301,12 @@ def calculate_threshold_no_model(
         bbox=props,
     )
     if nd_filter:
-        title_text = "{} ms readout, {} V, {}".format(
-            int(readout_time / 1e6), power, nd_filter
+        title_text = "{} us readout, {} V, {}".format(
+            int(readout_time / 1e3), power, nd_filter
         )
     else:
-        title_text = "{} ms readout, {} V".format(
-            int(readout_time / 1e6), power
+        title_text = "{} us readout, {} V".format(
+            int(readout_time / 1e3), power
         )
     ax.set_title(title_text)
     return thresh, fid, fig3
@@ -321,6 +322,7 @@ def plot_threshold(
     nd_filter=None,
     do_save=False,
     plot_model_hists=True,
+    bins=None,
 ):
 
     """
@@ -342,8 +344,9 @@ def plot_threshold(
     """
 
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
-        nv0_counts, nvm_counts, readout_dur
+        nv0_counts, nvm_counts, readout_dur,bins,
     )
+    
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
     num_reps = len(nv0_counts)
@@ -389,7 +392,7 @@ def plot_threshold(
             __file__, timestamp, nv_sig["name"] + "-threshold"
         )
         tool_belt.save_figure(fig, file_path)
-    return threshold, fidelity
+    return threshold, fidelity, nv0_counts,nvm_counts
 
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur,exp_dur=0,bins=None):
@@ -400,10 +403,12 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur,exp_dur=0,bins=None):
         readout_dur_linspace = np.arange(10e6, max_readout_dur, 10e6)
 
     # Round to nearest ms
+    # readout_dur_linspace = [
+    #     int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
+    # ]
     readout_dur_linspace = [
-        int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
-    ]
-    
+        int(1e3 * round(val / 1e3)) for val in readout_dur_linspace
+    ]  #round to nearest us
     # print(readout_dur_linspace)
 
     sensitivities = []
@@ -474,11 +479,11 @@ def plot_histogram(
     # ax.set_title("{} ms readout, {} V".format(int(dur / 1e6), power))
     
     if nd_filter:
-        title_text = "{} ms readout, {} V, {}".format(
-            int(dur / 1e6), power, nd_filter
+        title_text = "{} us readout, {} V, {}".format(
+            int(dur / 1e3), power, nd_filter
         )
     else:
-        title_text = "{} ms readout, {} V".format(int(dur / 1e6), power)
+        title_text = "{} us readout, {} V".format(int(dur / 1e3), power)
     ax.set_title(title_text)
     ax.legend()
     fig_hist.tight_layout()
@@ -1094,51 +1099,7 @@ if __name__ == "__main__":
     if True:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
-        filenames = [
-            # "2022_11_04-13_31_23-johnson-search",
-            # "2022_11_04-13_40_19-johnson-search",
-            # "2022_11_04-13_49_15-johnson-search",
-            # "2022_11_04-13_58_10-johnson-search",
-            # "2022_11_04-14_07_06-johnson-search",
-            # "2022_11_04-14_18_01-johnson-search",
-            # "2022_11_04-14_26_57-johnson-search",
-            # "2022_11_04-14_35_52-johnson-search",
-            # "2022_11_04-14_44_47-johnson-search",
-            # "2022_11_04-14_53_44-johnson-search",
-            # "2022_11_04-15_02_40-johnson-search",
-            # "2022_11_04-15_11_37-johnson-search",
-            # "2022_11_04-15_20_33-johnson-search",
-            # "2022_11_04-15_29_30-johnson-search",
-            # "2022_11_04-15_38_28-johnson-search",
-            # "2022_11_04-15_47_25-johnson-search",
-            # "2022_11_04-15_56_23-johnson-search",
-            # "2022_11_04-16_05_19-johnson-search",
-            # "2022_11_04-16_16_13-johnson-search",
-            # "2022_11_04-16_25_10-johnson-search",
-            # "2022_11_05-08_27_15-johnson-search",
-            # "2022_11_05-08_36_13-johnson-search",
-            # "2022_11_05-08_45_10-johnson-search",
-            # "2022_11_05-08_54_07-johnson-search",
-            # "2022_11_05-09_03_04-johnson-search",
-            # "2022_11_05-09_12_00-johnson-search",
-            # "2022_11_05-09_20_57-johnson-search",
-            # "2022_11_05-09_29_54-johnson-search",
-            # "2022_11_05-09_38_50-johnson-search",
-            # "2022_11_05-09_47_48-johnson-search",
-            # "2022_11_05-09_59_05-johnson-search",
-            # "2022_11_05-10_08_04-johnson-search",
-            # "2022_11_05-10_17_03-johnson-search",
-            # "2022_11_05-10_26_02-johnson-search",
-            # "2022_11_05-10_35_02-johnson-search",
-            # "2022_11_05-10_44_01-johnson-search",
-            # "2022_11_05-10_53_01-johnson-search",
-            # '2022_11_06-22_07_46-johnson-search',
-            # '2022_11_06-22_16_45-johnson-search',
-            # '2022_11_06-22_25_52-johnson-search',
-            # '2022_11_06-22_34_52-johnson-search',
-            # '2022_11_06-22_43_51-johnson-search',
-            '2022_11_04-16_16_13-johnson-search'
-            ]
+        filenames = ['2022_11_21-15_24_59-johnson-search']
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
         powers_all = []
         thresholds_all = []
@@ -1153,8 +1114,8 @@ if __name__ == "__main__":
         
         # readout_dur = opti_readout_dur
             
-        # times = [10e6]
-        times = [5e6]
+        times = [100e3]
+        # times = [4e6,1e6,400e3,100e3,50e3,10e3]
         # times = [2e6,4e6]
         
         for rd in times:
@@ -1175,7 +1136,7 @@ if __name__ == "__main__":
                 max_readout_dur = nv_sig["charge_readout_dur"]
                 
                 try:
-                    threshold, fidelity = plot_threshold(
+                    threshold, fidelity,n0,nm = plot_threshold(
                         nv_sig,
                         readout_dur,
                         nv0,
@@ -1184,6 +1145,7 @@ if __name__ == "__main__":
                         fit_threshold_full_model=True,
                         nd_filter=None,
                         plot_model_hists=True,
+                        bins=None
                     )
                 except:
                     threshold=np.nan
@@ -1201,15 +1163,15 @@ if __name__ == "__main__":
         print(thresholds_all)
         print(fidelities_all)
         
-        data_to_save = {"powers": powers_all,
-                        "thresholds": thresholds_all,
-                        "fidelities": fidelities_all
-                        }
-        timestamp = tool_belt.get_time_stamp()
-        file_path = tool_belt.get_file_path(
-            __file__, timestamp, nv_sig["name"]+'analysis_data'
-        )
-        tool_belt.save_raw_data(data_to_save, file_path)
+        # data_to_save = {"powers": powers_all,
+        #                 "thresholds": thresholds_all,
+        #                 "fidelities": fidelities_all
+        #                 }
+        # timestamp = tool_belt.get_time_stamp()
+        # file_path = tool_belt.get_file_path(
+            # __file__, timestamp, nv_sig["name"]+'analysis_data'
+        # )
+        # tool_belt.save_raw_data(data_to_save, file_path)
         
         # # file_path = "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_Carr/branch_opx-setup/determine_charge_readout_params/2022_11/"
         # analysis_data = tool_belt.get_raw_data(file_path)
@@ -1217,6 +1179,7 @@ if __name__ == "__main__":
         # fidelities = analysis_data["fidelities"]
         
         # for i in range(len(times)):
+            
             
         #     plt.figure()
             
