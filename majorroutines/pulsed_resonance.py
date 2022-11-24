@@ -111,6 +111,7 @@ def return_res_with_error(data):
             res_ind = 5
     else:
         res_ind = 2
+        # res_ind = 1  # MCC sigma
     res = popt[res_ind]
     res_err = np.sqrt(pcov[res_ind, res_ind])
     return res, res_err

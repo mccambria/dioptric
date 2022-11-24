@@ -770,10 +770,10 @@ if __name__ == "__main__":
     # print(cambria_fixed(15))
     # sys.exit()
 
-    # calc_zfs_from_compiled_data()
+    calc_zfs_from_compiled_data()
 
-    kpl.init_kplotlib()
+    # kpl.init_kplotlib()
 
-    main()
+    # main()
 
-    plt.show(block=True)
+    # plt.show(block=True)
