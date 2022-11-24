@@ -1251,4 +1251,3 @@ if __name__ == "__main__":
         # Leave green on
         # with labrad.connect() as cxn:
         #     cxn.pulse_streamer.constant([3], 0.0, 0.0)
-

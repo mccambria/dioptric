@@ -14,7 +14,6 @@ Created on July 13th, 2022
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
 import numpy as np
 import os
 import time
@@ -26,6 +25,11 @@ from utils.tool_belt import States
 import utils.kplotlib as kpl
 import copy
 import matplotlib.pyplot as plt
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # region Functions
@@ -36,6 +40,7 @@ def process_raw_tags(apd_gate_channel, raw_tags, channels):
     Take a raw timetag signal with tags in units of ns since the tagger
     started and convert the tags into relative times from when the gate opened
     """
+    # at this point it looks like one big samples of all the reps. So we just loop through all the reps
 
     sig_tags = []
     ref_tags = []
@@ -150,8 +155,10 @@ def optimize_readout_duration_sub(
 ):
     
     tool_belt.reset_cfm(cxn)
+    tagger_server = tool_belt.get_tagger_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
-    seq_file = "rabi.py"
+    seq_file = "rabi_time_tagging.py"
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -171,7 +178,7 @@ def optimize_readout_duration_sub(
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
     period_sec = period / 10 ** 9
     
@@ -179,7 +186,8 @@ def optimize_readout_duration_sub(
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
     
-    opti_period = 1 * 60  # Optimize every opti_period seconds
+    
+    opti_period = 2.5 * 60  # Optimize every opti_period seconds
 
     # Some initial parameters
     num_reps_per_cycle = round(opti_period / period_sec)
@@ -207,25 +215,25 @@ def optimize_readout_duration_sub(
         sig_gen_cxn.uwave_on()
         
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
-        cxn.apd_tagger.clear_buffer()
+        tagger_server.start_tag_stream(apd_indices)
+        tagger_server.clear_buffer()
 
         # Run the sequence
         if num_reps_remaining > num_reps_per_cycle:
             num_reps_to_run = int(num_reps_per_cycle)
         else:
             num_reps_to_run = int(num_reps_remaining)
-        cxn.pulse_streamer.stream_immediate(
+        pulsegen_server.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
 
         # Get the counts
         print("Data coming in")
-        ret_vals = cxn.apd_tagger.read_tag_stream(1)
+        ret_vals = tagger_server.read_tag_stream(1)
         print("Data collected")
         buffer_timetags, buffer_channels = ret_vals
 
-        cxn.apd_tagger.stop_tag_stream()
+        tagger_server.stop_tag_stream()
         
         # We don't care about picosecond resolution here, so just round to ns
         # We also don't care about the offset value, so subtract that off
@@ -236,6 +244,8 @@ def optimize_readout_duration_sub(
         ]
         timetags.extend(buffer_timetags)
         channels.extend(buffer_channels)
+
+        tagger_server.stop_tag_stream()
 
         num_reps_remaining -= num_reps_per_cycle
 
@@ -288,7 +298,7 @@ def main(nv_sig, apd_indices, num_reps,
                       max_readouts, powers, filters, state)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, 
-                  max_readouts, powers=None, filters=None, state=States.LOW):
+              max_readouts, powers=None, filters=None, state=States.LOW):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
     Ie we'll test max_readout[i] and power[i]/filter[i] at the same time. For 
@@ -325,7 +335,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps,
 
 if __name__ == '__main__':
     
-    file = "2022_10_25-14_40_14-wu-nv3_2022_10_24"
+    file = "2022_07_14-18_29_49-hopper-search"
     data = tool_belt.get_raw_data(file)
     
     nv_sig = data["nv_sig"]

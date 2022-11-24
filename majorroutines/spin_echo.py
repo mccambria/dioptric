@@ -16,7 +16,6 @@ Created on Wed Apr 24 15:01:04 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
 from scipy.optimize import minimize_scalar
 from numpy import pi
 import numpy
@@ -27,6 +26,11 @@ import labrad
 from utils.tool_belt import States
 from scipy.optimize import curve_fit
 from numpy.linalg import eigvals
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
 
 
 # %% Constants
@@ -101,6 +105,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     # %% Setup
 
     fit_func, popt, stes, fit_fig = fit_data(data)
+    print(popt)
     if (fit_func is None) or (popt is None):
         print("Fit failed!")
         return
@@ -110,6 +115,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     resonance_HIGH = nv_sig["resonance_HIGH"]
     # resonance_LOW = 2.7979
     # resonance_HIGH = 2.9456
+    # print('test',popt)
 
     revival_time = popt[1]
     revival_time_ste = stes[1]
@@ -201,8 +207,9 @@ def mag_B_from_revival_time(revival_time, revival_time_ste=None):
         return mag_B
 
 
-def quartic(tau, offset, revival_time, decay_time, *amplitudes): #??? update this equation to fit spin echo to actual equations
+def quartic(tau, offset, revival_time, decay_time, *amplitudes):
     tally = offset
+    # print(len(amplitudes))
     for ind in range(0, len(amplitudes)):
         exp_part = numpy.exp(-(((tau - ind * revival_time) / decay_time) ** 4))
         tally += amplitudes[ind] * exp_part
@@ -278,10 +285,10 @@ def fit_data(data):
     # return
 
     # Hard guess
-    amplitude = 0.07
-    offset = 0.90
-    decay_time = 2000.0
-    revival_time = 10e3
+    # amplitude = 0.07
+    # offset = 0.90
+    # decay_time = 2000.0
+    # revival_time = 10e3
     # dominant_freqs = [1 / (1000*revival_time)]
 
     # %% Fit
@@ -301,12 +308,15 @@ def fit_data(data):
     max_bounds_tests = []
     best_scaled_chi_sq = None
     best_popt = None
+    # print(dominant_freqs)
     for freq in dominant_freqs:
         # print(freq)
-        # revival_time = 1 / freq
+        revival_time = 60e3#1 / freq
         # print(revival_time)
-        num_revivals = max_precession_dur / revival_time
-        amplitudes = [amplitude for el in range(0, int(1.0 * num_revivals))]
+        num_revivals = 2#round(max_precession_dur / revival_time)
+        # print(num_revivals)
+        amplitudes = [amplitude for el in range(0, int(1.0 + num_revivals))]
+        print('amps',amplitudes)
         # print(num_revivals)
 
         revival_time_us = revival_time / 1000
@@ -326,6 +336,8 @@ def fit_data(data):
         min_bounds_tests.append(min_bounds)
         max_bounds_tests.append(max_bounds)
         init_params_tests.append(init_params)
+        # print(freq)
+        # print(init_params)
 
         try:
             popt, pcov = curve_fit(
@@ -337,22 +349,30 @@ def fit_data(data):
                 p0=init_params,
                 bounds=(min_bounds, max_bounds),
             )
+            # print(popt)
 
             fit_func_lambda = lambda tau: fit_func(tau, *popt)
             residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
             chi_sq = numpy.sum((residuals ** 2) / (norm_avg_sig_ste ** 2))
             scaled_chi_sq = chi_sq * len(popt)
             # print(scaled_chi_sq)
+            # print('test1',popt)
             if best_scaled_chi_sq is None or (
                 scaled_chi_sq < best_scaled_chi_sq
             ):
+                # print('here')
                 best_scaled_chi_sq = scaled_chi_sq
                 best_popt = popt
+                # print('here')
+                # print('test1',best_popt)
 
         except Exception as e:
             print(e)
+            
+    # print(popt)
 
     popt = best_popt
+    # print(popt)
     # popt[1] = 35
     popt[1] *= 1000
     popt[2] *= 1000
@@ -369,7 +389,8 @@ def fit_data(data):
             fit_func,
             popt,
         )
-
+        
+\
     return fit_func, popt, stes, fit_fig
 
 
@@ -381,7 +402,6 @@ def create_fit_figure(
     norm_avg_sig_ste,
     fit_func,
     popt,
-    t2_envelope_fit = False
 ):
 
     min_precession_dur = precession_dur_range[0]
@@ -409,155 +429,39 @@ def create_fit_figure(
     #             fmt='bo', label='data')
     ax.plot(
         linspace_tau_pis / 1000,
-        fit_func(linspace_tau_pis/1000, *popt),
+        fit_func(linspace_tau_pis, *popt),
         "r-",
         label="fit",
     )
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
     ax.set_title("Spin Echo")
     ax.legend()
-    
-    if t2_envelope_fit == True:
-        ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
-        t2_time = popt[2]
-        text_popt = "\n".join(
-            (
-                r"$S(T) = exp(- (T/T_2)^3)$",
-                r"$T_2=$%.3f us" % (t2_time),
-            )
-        )
-    
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(
-            0.70,
-            0.85,
-            text_popt,
-            transform=ax.transAxes,
-            fontsize=12,
-            verticalalignment="top",
-            bbox=props,
-        )
-        
-    else:
-        ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
-        revival_time = popt[1]
-        text_popt = "\n".join(
-            (
-                r"$\tau_{r}=$%.3f $\mathrm{\mu s}$" % (revival_time / 1000),
-                r"$B=$%.3f G" % (mag_B_from_revival_time(revival_time)),
-            )
-        )
-    
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(
-            0.80,
-            0.85,
-            text_popt,
-            transform=ax.transAxes,
-            fontsize=12,
-            verticalalignment="top",
-            bbox=props,
-        )
-     
 
+    revival_time = popt[1]
+    text_popt = "\n".join(
+        (
+            r"$\tau_{r}=$%.3f $\mathrm{\mu s}$" % (revival_time / 1000),
+            r"$B=$%.3f G" % (mag_B_from_revival_time(revival_time)),
+        )
+    )
 
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(
+        0.80,
+        0.85,
+        text_popt,
+        transform=ax.transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=props,
+    )
 
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
     fit_fig.canvas.flush_events()
 
     return fit_fig
-
-    
-def fit_t2_decay(data):
-    '''
-    either pass in only the revivals, or for isotopically pure samples, this will fit t2
-    '''
-    
-    precession_dur_range = data["precession_time_range"]
-    sig_counts = data["sig_counts"]
-    ref_counts = data["ref_counts"]
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-
-    # Get the pi pulse duration
-    state = data["state"]
-    nv_sig = data["nv_sig"]
-    rabi_period = nv_sig["rabi_{}".format(state)]
-
-    #  Set up
-
-    min_precession_dur = precession_dur_range[0]
-    max_precession_dur = precession_dur_range[1]
-    taus, tau_step = numpy.linspace(
-        min_precession_dur,
-        max_precession_dur,
-        num=num_steps,
-        dtype=numpy.int32,
-        retstep=True,
-    )
-
-    # Account for the pi/2 pulse on each side of a tau
-    pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
-    tau_pis = 2*taus + pi_pulse_dur
-
-
-    #  Normalization and uncertainty
-
-    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
-        num_runs
-    )
-
-    # Assume reference is constant and can be approximated to one value
-    avg_ref = numpy.average(ref_counts[::])
-
-    # Divide signal by reference to get normalized counts and st error
-    norm_avg_sig = avg_sig_counts / avg_ref
-    norm_avg_sig_ste = ste_sig_counts / avg_ref
-
-    # Hard guess
-    amplitude = 0.07
-    offset = 0.90
-    decay_time = 1e6
-    # dominant_freqs = [1 / (1000*revival_time)]
-
-    #  Fit
-
-    # The fit doesn't like dealing with vary large numbers. We'll convert to
-    # us here and then convert back to ns after the fit for consistency.
-
-    tau_pis_us = tau_pis / 1000
-    decay_time_us = decay_time / 1000
-    max_precession_dur_us = max_precession_dur / 1000
-
-    init_params = [
-        amplitude,
-        offset,
-        decay_time_us,
-    ]
-    
-    fit_func = tool_belt.t2_func
-    popt, pcov = curve_fit(
-        fit_func,
-        tau_pis_us,
-        norm_avg_sig,
-        sigma=norm_avg_sig_ste,
-        absolute_sigma=True,
-        p0=init_params,
-    )
-    print(popt)
-    print(numpy.sqrt(numpy.diag(pcov)))
-    create_fit_figure(
-        numpy.array(precession_dur_range)*2,
-        rabi_period,
-        num_steps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-        fit_func,
-        popt,
-        t2_envelope_fit = True)
-
 
 
 # %% Main
@@ -598,6 +502,10 @@ def main_with_cxn(
     state=States.LOW,
 ):
 
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    
     tool_belt.reset_cfm(cxn)
 
     # %% Sequence setup
@@ -632,7 +540,7 @@ def main_with_cxn(
         num=num_steps,
         dtype=numpy.int32,
     )
-    print(taus)
+    # print(taus)
     # Account for the pi/2 pulse on each side of a tau
     # plot_taus = (taus + uwave_pi_pulse) / 1000
     plot_taus = (2*taus) / 1000
@@ -691,7 +599,7 @@ def main_with_cxn(
         laser_power,
     ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+    ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     # print(seq_args)
     # return
@@ -706,7 +614,7 @@ def main_with_cxn(
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    # return
+    #    return
     
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
@@ -744,7 +652,7 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream(apd_indices)
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -766,8 +674,8 @@ def main_with_cxn(
             tau_index_master_list[run_ind].append(tau_ind_second)
 
             # Break out of the while if the user says stop
-            if tool_belt.safe_stop():
-                break
+            # if tool_belt.safe_stop():
+            #     break
 
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
@@ -786,34 +694,43 @@ def main_with_cxn(
             ]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(
+            counter_server.clear_buffer()
+            pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
             # parse the returned list into what we want.
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            # new_counts = counter_server.read_counter_separate_gates(1)
+            # sample_counts = new_counts[0]
+
+            # count = sum(sample_counts[0::4])
+            # sig_counts[run_ind, tau_ind_first] = count
+            # print("First signal = " + str(count))
+
+            # count = sum(sample_counts[1::4])
+            # ref_counts[run_ind, tau_ind_first] = count
+            # print("First Reference = " + str(count))
+
+            # count = sum(sample_counts[2::4])
+            # sig_counts[run_ind, tau_ind_second] = count
+            # print("Second Signal = " + str(count))
+
+            # count = sum(sample_counts[3::4])
+            # ref_counts[run_ind, tau_ind_second] = count
+            # print("Second Reference = " + str(count))
+            
+            new_counts = counter_server.read_counter_modulo_gates(4)
             sample_counts = new_counts[0]
+            
+            sig_counts[run_ind, tau_ind_first] = sample_counts[0]
+            ref_counts[run_ind, tau_ind_first] = sample_counts[1]
+            sig_counts[run_ind, tau_ind_second] = sample_counts[2]
+            ref_counts[run_ind, tau_ind_second] = sample_counts[3]
+            
 
-            count = sum(sample_counts[0::4])
-            sig_counts[run_ind, tau_ind_first] = count
-            print("First signal = " + str(count))
-
-            count = sum(sample_counts[1::4])
-            ref_counts[run_ind, tau_ind_first] = count
-            print("First Reference = " + str(count))
-
-            count = sum(sample_counts[2::4])
-            sig_counts[run_ind, tau_ind_second] = count
-            print("Second Signal = " + str(count))
-
-            count = sum(sample_counts[3::4])
-            ref_counts[run_ind, tau_ind_second] = count
-            print("Second Reference = " + str(count))
-
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% incremental plotting
         
@@ -1001,12 +918,7 @@ if __name__ == "__main__":
     #     "2021_09_04-11_31_49-hopper-search",
     #     "2021_09_04-13_00_14-hopper-search",
     # ]
-    
-    folder = 'pc_rabi/branch_master/spin_echo/2022_10'
-    file = '2022_10_31-22_28_17-siena-nv1_2022_10_27'
-    data = tool_belt.get_raw_data(file, folder)
-    fit_t2_decay(data)
-    
+
     # for f in file_names:
 
     #     # start = time.time()
@@ -1020,82 +932,16 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
+    file_name = "2022_11_09-19_27_55-johnson-search"
+    data = tool_belt.get_raw_data(file_name, 'pc_carr/branch_opx-setup/spin_echo/2022_11')
+    nv_name = data['nv_sig']["name"]
+    timestamp = data['timestamp']
+    # data['sig_counts'] = data['sig_counts'][:5]
+    # data['ref_counts'] = data['ref_counts'][:5]
+    # data['num_runs'] = 5
     
-    
-    
-    # file_name = "2022_08_22-15_07_16-rubin-nv1"
-    # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_08')
-    # ret_vals = plot_resonances_vs_theta_B(data)
-
-    # plt.show(block=True)
-    
-    ### just revivals ###
-    # This data set took measurements at the revivals and midway between them
-    
-    if False:
-        file_name = "2022_09_16-14_15_30-rubin-nv5_2022_08_10"
-        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/spin_echo/2022_09')
-        norm_avg_sig = numpy.array(data['norm_avg_sig'])
-        num_steps = data['num_steps']
-        
-        precession_dur_range = data["precession_time_range"]
-        min_precession_dur = precession_dur_range[0]
-        max_precession_dur = precession_dur_range[1]
-        taus = numpy.linspace(
-            min_precession_dur,
-            max_precession_dur,
-            num=num_steps,
-        )
-        taus = taus / 1e3
-        low_t = taus[1::2]
-        high_t = taus[0::2]
-        
-        low_s = norm_avg_sig[1::2]
-        high_s = norm_avg_sig[0::2]
-        
-        low_avg = numpy.average(low_s)
-        
-        contrast = high_s[0] - low_avg
-        
-        norm_high_s = ((high_s - low_avg) / contrast) / 2 + 0.5
-        
-        tau_lin = numpy.linspace(taus[0], taus[-1], 100)
-        
-        fig, ax = plt.subplots()
-        ax.plot(high_t, norm_high_s, "o")
-        
-        fit_func = lambda x, decay:tool_belt.exp_stretch_decay(x, 0.5, decay, 0.5, 3)
-        init_params = [ 20]
-        popt, pcov = curve_fit(
-            fit_func,
-            high_t,
-            norm_high_s,
-            p0=init_params,
-        )
-        print('{} +/- {} us'.format(popt[0], numpy.sqrt(pcov[0][0])))
-        ax.plot(
-                tau_lin,
-                fit_func(tau_lin, *popt),
-                "r-",
-                label="fit",
-            ) 
-        
-        text_popt = '\n'.join((
-                            r'y = 0.5 + 0.5 exp(-(t / d)^3)',
-                            r'd = ' + '%.2f'%(popt[0]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[0][0])) + ' us'
-                            ))
-    
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
-                verticalalignment='top', bbox=props)
-        
-        
-        
-        ax.set_title("Revivals of spin echo")
-        ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
-        ax.set_ylabel("Population (arb. units)")
-        
-        # print(low_t)
-        # print(high_t)
-    
-    
+    ret_vals = plot_resonances_vs_theta_B(data)
+    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
+    plt.show()
+    # tool_belt.save_figure(fit_fig, file_path_fit)

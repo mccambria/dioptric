@@ -25,48 +25,53 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
+import socket
+import logging
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
-import socket
-import logging
 import time
+from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
 
 
-class SignalGeneratorTsg4104a(LabradServer):
+class SignalGeneratorTsg4104a(LabradServer, VectorSigGen):
     name = 'signal_generator_tsg4104a'
     pc_name = socket.gethostname()
 
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
+        # logging.info('here')
         logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
+    # def stopServer(self):
+    #     self.sig_gen.close()
+        
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('signal_generator_tsg4104a_visa_address')
-        p.cd(['', 'Config', 'Wiring', 'Daq'])
-        p.get('di_clock')
+        # p.cd(['', 'Config', 'Wiring', 'Daq'])
+        # p.get('di_clock')
         # p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
+        
         resource_manager = visa.ResourceManager()
-        self.sig_gen = resource_manager.open_resource(config[0], 
-                                                      open_timeout=60)
+        self.sig_gen = resource_manager.open_resource(config, open_timeout=60)
         # Set the VISA read and write termination. This is specific to the
         # instrument - you can find it in the instrument's programming manual
         self.sig_gen.read_termination = '\r\n'
         self.sig_gen.write_termination = '\r\n'
         # Set our channels for FM
-        self.daq_di_pulser_clock = config[1]
+        # self.daq_di_pulser_clock = config[1]
         # self.daq_ao_sig_gen_mod = config[2]
         self.task = None    # Initialize state variable
         self.reset(None)
@@ -191,6 +196,7 @@ class SignalGeneratorTsg4104a(LabradServer):
         self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
         self.mod_off(c)
+        # self.sig_gen.close()
         # # Clean up the DAQ task!
         # if self.task is not None:
         #     crash = 1/0
