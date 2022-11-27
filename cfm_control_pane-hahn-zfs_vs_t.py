@@ -17,34 +17,16 @@ import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
-import majorroutines.image_sample_temperature as image_sample_temperature
-import majorroutines.map_rabi_contrast_NIR as map_rabi_contrast_NIR
-import majorroutines.ensemble_image_sample_NIR_differential as ensemble_image_sample_NIR_differential
-import majorroutines.ensemble_image_sample_NIR_differential_faster as ensemble_image_sample_NIR_differential_faster
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.four_point_esr as four_point_esr
-import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
-import majorroutines.discrete_rabi as discrete_rabi
-import majorroutines.g2_measurement as g2_measurement
-import majorroutines.t1_dq_main as t1_dq_main
-import majorroutines.ramsey as ramsey
-import majorroutines.spin_echo as spin_echo
-import majorroutines.lifetime as lifetime
-import majorroutines.lifetime_v2 as lifetime_v2
-import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
-import chargeroutines.determine_charge_readout_params_moving_target as determine_charge_readout_params_moving_target
-import chargeroutines.determine_charge_readout_params_1Dscan_target as determine_charge_readout_params_1Dscan_target
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
-import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
-import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
-import time
 import services.calibrated_temp_monitor as calibrated_temp_monitor
-from analysis.temp_from_resonances import cambria_fixed
+from figures.zfs_vs_t.zfs_vs_t_main import cambria_fixed
 from random import shuffle
 
 
@@ -64,15 +46,20 @@ def do_image_sample(
 
     scan_range = 0.5
     num_steps = 90
+    # num_steps = 150
 
     # scan_range = 0.3
     # num_steps = 80
 
     # scan_range = 1.0
-    # num_steps = 240
+    # num_steps = 180
+    
+    # scan_range = 2.0
+    # num_steps = 90*4
 
     # scan_range = 3.0
-    # num_steps = 300
+    # num_steps = 90*6
+    # num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(
@@ -210,11 +197,11 @@ def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
 
-    num_reps = 2e4
-    num_runs = 16
+    # num_reps = 2e4
+    # num_runs = 16
 
-    # num_reps = 1e3
-    # num_runs = 8
+    num_reps = 1e2
+    num_runs = 16
 
     uwave_power = 16.5
     uwave_pulse_dur = 400
@@ -242,8 +229,8 @@ def do_pulsed_resonance_batch(nv_list, apd_indices, temp):
     uwave_pulse_dur = 100
 
     freq_center = cambria_fixed(temp)
-    freq_center = 2.8773
-    freq_range = 0.020
+    # freq_center = 2.8773
+    freq_range = 0.120
 
     for nv_sig in nv_list:
         if tool_belt.safe_stop():
@@ -317,9 +304,9 @@ if __name__ == "__main__":
 
     ### Shared parameters
 
-    apd_indices = [0]
+    # apd_indices = [0]
     # apd_indices = [1]
-    # apd_indices = [0, 1]
+    apd_indices = [0, 1]
 
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
@@ -329,111 +316,108 @@ if __name__ == "__main__":
 
     sample_name = "wu"
     
-    z_coord = 11
-    ref_coords = [0.345, -0.397, z_coord]
+    z_coord = 7
+    ref_coords = [0.437, -0.295, z_coord]
     ref_coords = np.array(ref_coords)
     freq = 2.8773
     rabi_per = 200
     uwave_power = 4
     
-    
-    nvref = {
-        'coords': ref_coords, 
-        'name': '{}-nvref_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 10,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-        }
-    nv1 = {
-        'coords': ref_coords + np.array([0.174, 0.108, 0]),  
-        # "coords": [0.467, -0.285, z_coord],
-        'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-        }
-    nv2 = {
-        'coords': ref_coords + np.array([0.157, -0.021, 0]),
-        # "coords": [0.429, -0.423 , z_coord],
-        'name': '{}-nv2_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.5,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-        }
-    nv3 = {
-        'coords': ref_coords + np.array([0.052, 0.147, 0]),
-        # "coords": [0.360, -0.247, z_coord],
-        'name': '{}-nv3_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-        }
-    nv4 = {
-        'coords': ref_coords + np.array([-0.237, 0.026, 0]), 
-        # "coords": [0.051, -0.372, z_coord],
-        'name': '{}-nv4_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-        }
-    nv5 = {
-        'coords': ref_coords + np.array([0.074, -0.050, 0]), 
-        # "coords": [0.362, -0.443, z_coord],
-        'name': '{}-nv5_zfs_vs_t'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 6.0,
-        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-        }
-
-    # sample_name = "15micro"
-    # nv_sig = {
-    #     # 'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
-    #     # 'coords': [0.205, -0.111, 0], 'name': '{}-search'.format(sample_name),
-    #     'coords': [-0.168, 0.200, -3], 'name': '{}-nv2_2022_11_02'.format(sample_name),
-    #     'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 120,
-
-    #     # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 5e7,
+    # nvref = {
+    #     'coords': ref_coords, 
+    #     'name': '{}-nvref_zfs_vs_t'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 10,
     #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 5e7,
-    #     # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 1e6, "spin_readout_dur": 200e3,
-
-    #     "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
-    #     # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-    #     "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
-    #     # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
-    #     "nv0_ionization_laser": red_laser, "nv0_ionization_dur": 75, "nv0_prep_laser": red_laser, "nv0_prep_laser_dur": 75,
-    #     "spin_shelf_laser": yellow_laser, "spin_shelf_dur": 0, "spin_shelf_laser_power": 1.0,
-    #     # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-    #     "initialize_laser": green_laser, "initialize_dur": 1e4,
-    #     "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 1.0,
-    #     # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
-
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
     #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': 2.878, 'rabi_LOW': 300, 'uwave_power_LOW': 16.5,
-    #     'resonance_HIGH': 2.882, 'rabi_HIGH': 400, 'uwave_power_HIGH': 16.5,
+    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
     #     }
+    # nv1 = {
+    #     'coords': ref_coords + np.array([0.174, 0.108, 0]),  
+    #     # "coords": [0.467, -0.285, z_coord],
+    #     'name': '{}-nv1_zfs_vs_t'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 7.0,
+    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     'collection_filter': None, 'magnet_angle': None,
+    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
+    #     }
+    # nv2 = {
+    #     'coords': ref_coords + np.array([0.157, -0.021, 0]),
+    #     # "coords": [0.429, -0.423 , z_coord],
+    #     'name': '{}-nv2_zfs_vs_t'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 9.0,
+    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     'collection_filter': None, 'magnet_angle': None,
+    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
+    #     }
+    # nv3 = {
+    #     'coords': ref_coords + np.array([0.052, 0.147, 0]),
+    #     # "coords": [0.360, -0.247, z_coord],
+    #     'name': '{}-nv3_zfs_vs_t'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 8.0,
+    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     'collection_filter': None, 'magnet_angle': None,
+    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
+    #     }
+    # nv4 = {
+    #     'coords': ref_coords + np.array([-0.237, 0.026, 0]), 
+    #     # "coords": [0.051, -0.372, z_coord],
+    #     'name': '{}-nv4_zfs_vs_t'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 8.0,
+    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     'collection_filter': None, 'magnet_angle': None,
+    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
+    #     }
+    # nv5 = {
+    #     'coords': ref_coords + np.array([0.074, -0.050, 0]), 
+    #     # "coords": [0.511, -0.341, z_coord],
+    #     'name': '{}-nv5_zfs_vs_t'.format(sample_name),
+    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 9.0,
+    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     'collection_filter': None, 'magnet_angle': None,
+    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
+    #     }
+
+    sample_name = "15micro"
+    nv_sig = {
+        'coords': [0.457, -0.424, z_coord], 'name': '{}-search'.format(sample_name),
+        'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 120,
+
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 5e7,
+        'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 5e7,
+        # "imaging_laser": green_laser, "imaging_laser_filter": "nd_0.5", "imaging_readout_dur": 1e7,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 1e6, "spin_readout_dur": 200e3,
+
+        "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
+        # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+        "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
+        # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
+        "nv0_ionization_laser": red_laser, "nv0_ionization_dur": 75, "nv0_prep_laser": red_laser, "nv0_prep_laser_dur": 75,
+        "spin_shelf_laser": yellow_laser, "spin_shelf_dur": 0, "spin_shelf_laser_power": 1.0,
+        # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
+        "initialize_laser": green_laser, "initialize_dur": 1e4,
+        "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 1.0,
+        # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
+
+        'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.878, 'rabi_LOW': 300, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.882, 'rabi_HIGH': 400, 'uwave_power_HIGH': 16.5,
+        }
 
     # fmt: on
 
-    # nv_sig = nv3
-    nv_sig = nvref
-    bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
-    nv_list = [nv1, nv2, nv3, nv4, nv5]
-    # nv_list = [nv2, nv3, nv4, nv5]
-    shuffle(nv_list)
+    # nv_sig = nv5
+    # nv_sig = nvref
+    # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
+    # nv_list = [nv1, nv2, nv3, nv4, nv5]
+    # # nv_list = [nv2, nv3, nv4, nv5]
+    # shuffle(nv_list)
     # nv_list.append(nv_list[0])
 
     ### Functions to run
@@ -446,23 +430,33 @@ if __name__ == "__main__":
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, -20)
+        #     cxn.cryo_piezos.write_xy(5, 3)
 
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, 0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
         # for z in np.arange(-24, 20, 4):
-        # for z in np.arange(0, -100, -5):
-        # # while True:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     nv_sig["coords"][2] = int(z)
-        # do_image_sample(nv_sig, apd_indices)
+        for z in np.arange(10, -10, -5):
+        # while True:
+            if tool_belt.safe_stop():
+                break
+            nv_sig["coords"][2] = int(z)
+            do_image_sample(nv_sig, apd_indices)
+        
+        # num_steps = 5
+        # step_size = 5
+        # locs = [[0,0],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1],[2,-1],[2,0],[2,1],[2,2],[1,2],[0,2],[-1,2],[-2,2],[-2,1],[-2,0],[-2,-1],[-2,-2],[-1,-2],[0,-2],[1,-2],[2,-2],[2,-1]]
+        # for ind in range(num_steps**2):
+        #     loc = locs[ind]
+        #     loc = [val * step_size for val in loc]
+        #     with labrad.connect() as cxn:
+        #         cxn.cryo_piezos.write_xy(loc[0],loc[1])
+        #     do_image_sample(nv_sig, apd_indices)
 
-        # nv_sig['imaging_readout_dur'] = 5e7
         # nv_sig = nvref
+        # nv_sig['imaging_readout_dur'] = 4e7
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
@@ -471,12 +465,12 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_determine_standard_readout_params(nv_sig, apd_indices)
 
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.878, 0.020)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.080)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        temp = 63
-        do_pulsed_resonance_batch(nv_list, apd_indices, temp)
+        # temp = 250
+        # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
         # do_rabi_batch(nv_list, apd_indices)
 
     except Exception as exc:
@@ -486,9 +480,9 @@ if __name__ == "__main__":
 
     finally:
         
-        msg = "Experiment complete!"
-        recipient = "cambria@wisc.edu"
-        tool_belt.send_email(msg, email_to=recipient)
+        # msg = "Experiment complete!"
+        # recipient = "cambria@wisc.edu"
+        # tool_belt.send_email(msg, email_to=recipient)
 
         # Make sure everything is reset
         tool_belt.reset_cfm()

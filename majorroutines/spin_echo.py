@@ -390,7 +390,6 @@ def fit_data(data):
             popt,
         )
         
-\
     return fit_func, popt, stes, fit_fig
 
 
