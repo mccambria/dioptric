@@ -13,21 +13,14 @@ Created on Fri Mar  5 12:42:32 2021
 
 
 import numpy as np
-from numpy.core.shape_base import block
-from scipy.optimize import root_scalar
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
-from majorroutines.spin_echo import zfs_cost_func
-from scipy.optimize import minimize_scalar
-import time
 from figures.relaxation_temp_dependence.temp_dependence_fitting import bose
 import matplotlib.pyplot as plt
 from utils import common
 from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
-from numpy import inf
-import sys
 import csv
 import pandas as pd
 
@@ -460,6 +453,16 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
     return ret_val
 
 
+def cambria_test4(temp, zfs0, A1, Theta1):
+
+    ret_val = zfs0
+    for ind in range(1):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
 # endregion
 
 # region Main plots
@@ -469,21 +472,22 @@ def main():
 
     # temp_range = [-10, 1000]
     # y_range = [2.74, 2.883]
-    # temp_range = [-10, 720]
-    # y_range = [2.80, 2.883]
+    temp_range = [-10, 720]
+    y_range = [2.80, 2.883]
     # temp_range = [-10, 310]
     # y_range = [2.8685, 2.8785]
-    temp_range = [280, 320]
-    y_range = [2.867, 2.873]
+    # temp_range = [280, 320]
+    # y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
     # y_range = [-0.0012, 0.0012]
 
-    plot_data = False
+    plot_data = True
+    condense_data = True
     plot_residuals = False
     hist_residuals = False  # Must specify nv_to_plot down below
     separate_samples = False
     separate_nvs = False
-    plot_prior_models = True
+    plot_prior_models = False
     desaturate_prior = False
     plot_new_model = True
 
@@ -495,6 +499,37 @@ def main():
     fig, ax = plt.subplots(figsize=kpl.figsize)
 
     data_points = get_data_points()
+    if condense_data:
+        condensed_data_points = []
+        setpoint_temp_set = []
+        for point in data_points:
+            setpoint_temp_set.append(point["Setpoint temp (K)"])
+        setpoint_temp_set = list(set(setpoint_temp_set))
+        setpoint_temp_set.sort()
+        for temp in setpoint_temp_set:
+            monitor_temps = []
+            zfss = []
+            zfs_errors = []
+            for point in data_points:
+                if point["Setpoint temp (K)"] == temp:
+                    monitor_temps.append(point["Monitor temp (K)"])
+                    zfss.append(point["ZFS (GHz)"])
+                    zfs_errors.append(point["ZFS error (GHz)"])
+            sq_zfs_errors = [err ** 2 for err in zfs_errors]
+            condensed_error = np.sqrt(
+                np.sum(sq_zfs_errors) / len(sq_zfs_errors)
+            )
+            new_point = {
+                "Setpoint temp (K)": temp,
+                "Monitor temp (K)": np.average(monitor_temps),
+                "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
+                # + 0.0006,  # MCC
+                "ZFS error (GHz)": condensed_error,
+                "Sample": "Wu",
+                "NV": "",
+            }
+            condensed_data_points.append(new_point)
+    data_points = condensed_data_points
     zfs_list = []
     zfs_err_list = []
     temp_list = []
@@ -505,13 +540,13 @@ def main():
     data_labels = {}
     for el in data_points:
         zfs = el["ZFS (GHz)"]
-        reported_temp = el["Monitor temp (K)"]
-        if zfs == "" or reported_temp == "":
+        monitor_temp = el["Monitor temp (K)"]
+        if zfs == "" or monitor_temp == "":
             continue
         # if not (min_temp <= reported_temp <= max_temp):
         # if not (150 <= reported_temp <= 500):
         #     continue
-        temp_list.append(reported_temp)
+        temp_list.append(monitor_temp)
         zfs_list.append(zfs)
         zfs_err = el["ZFS error (GHz)"]
         zfs_err_list.append(zfs_err)
@@ -537,7 +572,7 @@ def main():
 
     # zfs_list.extend(toyli_zfss)
     # temp_list.extend(toyli_temps)
-    # nv_names.extend([None] * len(toyli_temps))
+    # nv_names.extend(["Toyli"] * len(toyli_temps))
     # zfs_err_list.extend([None] * len(toyli_temps))
 
     ### New model
@@ -578,16 +613,18 @@ def main():
         # 6.5,
     ]
     fit_func = cambria_test
+    # fit_func = cambria_test4
     popt, pcov = curve_fit(
         fit_func,
         temp_list,
         zfs_list,
-        sigma=zfs_err_list,
+        # sigma=zfs_err_list,
         absolute_sigma=True,
         p0=guess_params,
     )
     print(popt)
     print(np.sqrt(np.diag(pcov)))
+    # popt[2] = 0
     cambria_lambda = lambda temp: fit_func(
         temp,
         *popt,
@@ -770,10 +807,10 @@ if __name__ == "__main__":
     # print(cambria_fixed(15))
     # sys.exit()
 
-    calc_zfs_from_compiled_data()
+    # calc_zfs_from_compiled_data()
 
-    # kpl.init_kplotlib()
+    kpl.init_kplotlib()
 
-    # main()
+    main()
 
-    # plt.show(block=True)
+    plt.show(block=True)
