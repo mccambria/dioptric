@@ -17,34 +17,16 @@ import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
-import majorroutines.image_sample_temperature as image_sample_temperature
-import majorroutines.map_rabi_contrast_NIR as map_rabi_contrast_NIR
-import majorroutines.ensemble_image_sample_NIR_differential as ensemble_image_sample_NIR_differential
-import majorroutines.ensemble_image_sample_NIR_differential_faster as ensemble_image_sample_NIR_differential_faster
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.four_point_esr as four_point_esr
-import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
-import majorroutines.discrete_rabi as discrete_rabi
-import majorroutines.g2_measurement as g2_measurement
-import majorroutines.t1_dq_main as t1_dq_main
-import majorroutines.ramsey as ramsey
-import majorroutines.spin_echo as spin_echo
-import majorroutines.lifetime as lifetime
-import majorroutines.lifetime_v2 as lifetime_v2
-import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
-import chargeroutines.determine_charge_readout_params_moving_target as determine_charge_readout_params_moving_target
-import chargeroutines.determine_charge_readout_params_1Dscan_target as determine_charge_readout_params_1Dscan_target
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
-import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
-import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
-import time
 import services.calibrated_temp_monitor as calibrated_temp_monitor
-from analysis.temp_from_resonances import cambria_fixed
+from figures.zfs_vs_t.zfs_vs_t_main import cambria_fixed
 from random import shuffle
 
 
@@ -322,9 +304,9 @@ if __name__ == "__main__":
 
     ### Shared parameters
 
-    apd_indices = [0]
+    # apd_indices = [0]
     # apd_indices = [1]
-    # apd_indices = [0, 1]
+    apd_indices = [0, 1]
 
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
@@ -456,12 +438,12 @@ if __name__ == "__main__":
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
         # for z in np.arange(-24, 20, 4):
-        # for z in np.arange(5, 100, 5):
-        # # while True:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     nv_sig["coords"][2] = int(z)
-        #     do_image_sample(nv_sig, apd_indices)
+        for z in np.arange(10, -10, -5):
+        # while True:
+            if tool_belt.safe_stop():
+                break
+            nv_sig["coords"][2] = int(z)
+            do_image_sample(nv_sig, apd_indices)
         
         # num_steps = 5
         # step_size = 5
@@ -475,7 +457,7 @@ if __name__ == "__main__":
 
         # nv_sig = nvref
         # nv_sig['imaging_readout_dur'] = 4e7
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # nv_sig['imaging_readout_dur'] = 1e8
