@@ -20,32 +20,6 @@ import os
 import numpy as np
 
 
-def replot(path_to_file):
-
-    min_time = 1668528524  # 1668529208 expt end
-    max_time = 1668529208 + 100
-
-    times = []
-    temps = []
-
-    with open(path_to_file) as csv_file:
-        reader = csv.reader(csv_file)
-        for row in reader:
-            time = int(row[0])
-            if min_time <= time <= max_time:
-                times.append(time - min_time)
-                temp = float(row[1])
-                temps.append(temp)
-
-    kpl.init_kplotlib()
-    fig, ax = plt.subplots()
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Temp (K)")
-    kpl.plot_line(ax, times, temps)
-    kpl.tight_layout(fig)
-    plt.show(block=True)
-
-
 def main(channel=1, do_plot=True, do_email=True):
     with labrad.connect() as cxn:
         main_with_cxn(cxn, channel, do_plot, do_email)
@@ -164,14 +138,8 @@ if __name__ == "__main__":
     sensor_serial = "X162690"
     do_plot = True
 
-    # nvdata_dir = common.get_nvdata_dir()
-    # path_to_file = (
-    #     nvdata_dir / "pc_hahn/service_logging/calibrated_temp_monitor.log"
-    # )
-    # replot(path_to_file)
-
     # main(channel, do_plot, do_email=False)
-    main(channel, do_plot, do_email=True)
+    # main(channel, do_plot, do_email=True)
 
     # with labrad.connect() as cxn:
 

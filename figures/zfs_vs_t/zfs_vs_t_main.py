@@ -9,7 +9,7 @@ Created on Fri Mar  5 12:42:32 2021
 """
 
 
-# %% Imports
+# region Import and constants
 
 
 import numpy as np
@@ -20,14 +20,7 @@ import utils.tool_belt as tool_belt
 from majorroutines.spin_echo import zfs_cost_func
 from scipy.optimize import minimize_scalar
 import time
-from figures.relaxation_temp_dependence.temp_dependence_fitting import (
-    get_data_points,
-    nominal_temp_column_title,
-    reported_temp_column_title,
-    low_res_file_column_title,
-    high_res_file_column_title,
-    bose,
-)
+from figures.relaxation_temp_dependence.temp_dependence_fitting import bose
 import matplotlib.pyplot as plt
 from utils import common
 from utils import kplotlib as kpl
@@ -35,8 +28,8 @@ from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 from numpy import inf
 import sys
-
-bad_zfs_temps = 350
+import csv
+import pandas as pd
 
 toyli_digitized = [
     300,
@@ -133,51 +126,76 @@ toyli_zfss -= 2.87
 toyli_zfss *= 0.9857
 toyli_zfss += 2.8701
 
-
-# %% Functions
-
-
-def process_res_list():
-
-    nominal_temps = []
-    resonances = []
-
-    for ind in range(len(resonances)):
-        nominal_temp = nominal_temps[ind]
-        res_pair = resonances[ind]
-        print("Nominal temp: {}".format(nominal_temp))
-        main_files(res_pair)
-        print()
+nvdata_dir = common.get_nvdata_dir()
+compiled_data_file_name = "zfs_vs_t"
+compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 
-def process_temp_dep_res_files():
+# endregion
+# region Functions
 
-    file_name = "compiled_data"
-    home = common.get_nvdata_dir()
-    path = home / "paper_materials/relaxation_temp_dependence"
 
-    data_points = get_data_points(path, file_name)
-    nominal_temps = []
-    resonances = []
+def get_data_points(override_skips=False):
+
+    xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
+    csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
+    compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
+    compiled_data_file.to_csv(csv_file_path, index=None, header=True)
+
+    data_points = []
+    with open(csv_file_path, newline="") as f:
+
+        reader = csv.reader(f)
+        header = True
+        for row in reader:
+            # Create columns from the header (first row)
+            if header:
+                columns = row
+                header = False
+                continue
+
+            point = {}
+            for ind in range(len(columns)):
+                column = columns[ind]
+                raw_val = row[ind]
+                if raw_val == "TRUE":
+                    val = True
+                else:
+                    try:
+                        val = eval(raw_val)
+                    except Exception:
+                        val = raw_val
+                point[column] = val
+
+            if override_skips or not point["Skip"]:
+                data_points.append(point)
+
+    return data_points
+
+
+def calc_zfs_from_compiled_data():
+
+    data_points = get_data_points(override_skips=True)
+    zfs_list = []
+    zfs_err_list = []
     for el in data_points:
-        if el[low_res_file_column_title] == "":
+        zfs_file_name = el["ZFS file"]
+        if zfs_file_name == "":
+            zfs_list.append(-1)
+            zfs_err_list.append(-1)
             continue
-        # if float(el[nominal_temp_column_title]) not in [5.5, 50]:
-        #     continue
-        nominal_temps.append(el[nominal_temp_column_title])
-        resonances.append(
-            [el[low_res_file_column_title], el[high_res_file_column_title]]
-        )
+        data = tool_belt.get_raw_data(zfs_file_name)
+        res, res_err = return_res_with_error(data)
+        zfs_list.append(res)
+        zfs_err_list.append(res_err)
+    zfs_list = [round(val, 6) for val in zfs_list]
+    zfs_err_list = [round(val, 6) for val in zfs_err_list]
+    print(zfs_list)
+    print(zfs_err_list)
 
-    for ind in range(len(resonances)):
-        nominal_temp = nominal_temps[ind]
-        res_pair = resonances[ind]
-        # print("Nominal temp: {}".format(nominal_temp))
-        try:
-            main_files(res_pair)
-        except Exception as exc:
-            print(exc)
-        # print()
+
+# endregion
+# region Fitting functions
 
 
 def sub_room_zfs_from_temp(temp):
@@ -271,7 +289,7 @@ def zfs_from_temp(temp):
     if type(temp) in [list, np.ndarray]:
         ret_vals = []
         for val in temp:
-            if val < bad_zfs_temps:
+            if val < 300:
                 zfs = sub_room_zfs_from_temp(val)
             else:
                 zfs = super_room_zfs_from_temp(val)
@@ -279,7 +297,7 @@ def zfs_from_temp(temp):
         ret_vals = np.array(ret_vals)
         return ret_vals
     else:
-        if temp < bad_zfs_temps:
+        if temp < 300:
             return sub_room_zfs_from_temp(temp)
         else:
             return super_room_zfs_from_temp(temp)
@@ -442,61 +460,85 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
     return ret_val
 
 
-def experimental_zfs_versus_t(path, file_name):
+# endregion
 
-    temp_range = [-10, 1000]
-    y_range = [2.74, 2.883]
-    # temp_range = [-10, 510]
-    # y_range = [2.843, 2.881]
-    plot_data = True
+# region Main plots
+
+
+def main():
+
+    # temp_range = [-10, 1000]
+    # y_range = [2.74, 2.883]
+    # temp_range = [-10, 720]
+    # y_range = [2.80, 2.883]
+    # temp_range = [-10, 310]
+    # y_range = [2.8685, 2.8785]
+    temp_range = [280, 320]
+    y_range = [2.867, 2.873]
+    # temp_range = [-10, 310]
+    # y_range = [-0.0012, 0.0012]
+
+    plot_data = False
+    plot_residuals = False
+    hist_residuals = False  # Must specify nv_to_plot down below
+    separate_samples = False
+    separate_nvs = False
     plot_prior_models = True
-    desaturate_prior = True
-    plot_mine = True
+    desaturate_prior = False
+    plot_new_model = True
+
+    ###
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    csv_file_path = path / "{}.csv".format(file_name)
     fig, ax = plt.subplots(figsize=kpl.figsize)
 
-    data_points = get_data_points(path, file_name)
+    data_points = get_data_points()
     zfs_list = []
     zfs_err_list = []
     temp_list = []
+    nv_names = []
+    nv_samples = []
+    data_colors = {}
+    data_color_options = kpl.data_color_cycler.copy()
+    data_labels = {}
     for el in data_points:
-        if el[low_res_file_column_title] == "":
+        zfs = el["ZFS (GHz)"]
+        reported_temp = el["Monitor temp (K)"]
+        if zfs == "" or reported_temp == "":
             continue
-        reported_temp = el[reported_temp_column_title]
         # if not (min_temp <= reported_temp <= max_temp):
-        if not (min_temp <= reported_temp <= 295):
-            continue
+        # if not (150 <= reported_temp <= 500):
+        #     continue
         temp_list.append(reported_temp)
-        low_res_file = el[low_res_file_column_title]
-        high_res_file = el[high_res_file_column_title]
-        resonances = []
-        res_errs = []
-        for f in [low_res_file, high_res_file]:
-            data = tool_belt.get_raw_data(f)
-            res, res_err = return_res_with_error(data)
-            resonances.append(res)
-            res_errs.append(res_err)
-        zfs = (resonances[0] + resonances[1]) / 2
-        zfs_err = np.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
         zfs_list.append(zfs)
+        zfs_err = el["ZFS error (GHz)"]
         zfs_err_list.append(zfs_err)
+        sample = el["Sample"]
+        nv_samples.append(sample)
+        el_nv = el["NV"]
+        name = f"{sample}-{el_nv}"
+        nv_names.append(name)
+        if separate_samples:
+            data_colors_keys = list(data_colors.keys())
+            data_colors_samples = [el.split("-")[0] for el in data_colors_keys]
+            if sample not in data_colors_samples:
+                data_colors[name] = data_color_options.pop(0)
+            data_labels[name] = sample
+        elif separate_nvs:
+            if name not in data_colors:
+                data_colors[name] = data_color_options.pop(0)
+            data_labels[name] = name
+        else:
+            data_colors[name] = KplColors.BROWN.value
+    nv_names_set = list(set(nv_names))
+    nv_names_set.sort()
 
-    zfs_list.extend(toyli_zfss)
-    temp_list.extend(toyli_temps)
-
-    if plot_data:
-        color = KplColors.DARK_GRAY.value
-        kpl.plot_points(
-            ax,
-            temp_list,
-            zfs_list,
-            color=color,  # , yerr=zfs_err_list
-            zorder=-1,
-        )
+    # zfs_list.extend(toyli_zfss)
+    # temp_list.extend(toyli_temps)
+    # nv_names.extend([None] * len(toyli_temps))
+    # zfs_err_list.extend([None] * len(toyli_temps))
 
     ### New model
 
@@ -540,10 +582,9 @@ def experimental_zfs_versus_t(path, file_name):
         fit_func,
         temp_list,
         zfs_list,
+        sigma=zfs_err_list,
+        absolute_sigma=True,
         p0=guess_params,
-        # sigma=zfs_err_list,
-        # absolute_sigma=True,
-        # bounds=((-inf, -inf, -inf, -inf, -inf, -inf), (inf, 0, 0, 0, 0, 0)),
     )
     print(popt)
     print(np.sqrt(np.diag(pcov)))
@@ -555,26 +596,106 @@ def experimental_zfs_versus_t(path, file_name):
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
-    for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
-        calc_zfs = cambria_lambda(temp)
-        ssr += ((zfs - calc_zfs) / zfs_err) ** 2
-    dof = num_points - num_params
-    red_chi_sq = ssr / dof
-    print(red_chi_sq)
+    if None not in zfs_err_list:
+        for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
+            calc_zfs = cambria_lambda(temp)
+            ssr += ((zfs - calc_zfs) / zfs_err) ** 2
+        dof = num_points - num_params
+        red_chi_sq = ssr / dof
+        print(red_chi_sq)
 
-    if plot_mine:
-        color = KplColors.BLUE.value
-        # color = "#0f49bd"
+    used_data_labels = []
+    if plot_data or plot_residuals:
+        for ind in range(len(zfs_list)):
+            temp = temp_list[ind]
+            name = nv_names[ind]
+            if plot_residuals:
+                val = zfs_list[ind] - cambria_lambda(temp)
+            else:
+                val = zfs_list[ind]
+            val_err = zfs_err_list[ind]
+            label = None
+            color = KplColors.DARK_GRAY.value
+            if name in data_colors:
+                color = data_colors[name]
+            if separate_samples or separate_nvs:
+                label = data_labels[name]
+                if label in used_data_labels:
+                    label = None
+                else:
+                    used_data_labels.append(label)
+            kpl.plot_points(
+                ax,
+                temp,
+                val,
+                yerr=val_err,
+                color=color,
+                zorder=-1,
+                label=label,
+            )
+            # ax.legend(loc="lower right")
+
+    if hist_residuals:
+        residuals = {}
+        for el in nv_names_set:
+            residuals[el] = []
+        for ind in range(len(zfs_list)):
+            name = nv_names[ind]
+            temp = temp_list[ind]
+            # if not (150 <= temp <= 500):
+            #     continue
+            # val = (zfs_list[ind] - cambria_lambda(temp)) / zfs_err_list[ind]
+            val = zfs_list[ind] - cambria_lambda(temp)
+            residuals[name].append(val)
+        nv_to_plot = nv_names_set[4]
+        devs = residuals[nv_to_plot]
+        # max_dev = 3
+        # num_bins = max_dev * 4
+        devs = [1000 * el for el in devs]
+        max_dev = 0.0006 * 1000
+        num_bins = 12
+        large_errors = [abs(val) > max_dev for val in devs]
+        if True in large_errors:
+            print("Got a large error that won't be shown in hist!")
+        hist, bin_edges = np.histogram(
+            devs, bins=num_bins, range=(-max_dev, max_dev)
+        )
+        x_vals = []
+        y_vals = []
+        for ind in range(len(bin_edges) - 1):
+            x_vals.append(bin_edges[ind])
+            x_vals.append(bin_edges[ind + 1])
+            y_vals.append(hist[ind])
+            y_vals.append(hist[ind])
+        color = data_colors[nv_to_plot]
+        kpl.plot_line(ax, x_vals, y_vals, color=color)
+        ax.fill_between(x_vals, y_vals, color=kpl.lighten_color_hex(color))
+        ylim = max(y_vals) + 1
+
+    if plot_new_model:
+        # color = KplColors.BLUE.value
+        color = "#0f49bd"
         kpl.plot_line(
             ax,
             temp_linspace,
             cambria_lambda(temp_linspace),
-            label="Proposed",
+            label="Updated proposed",
             color=color,
             zorder=10,
         )
+        # color = KplColors.GRAY.value
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     cambria_fixed(temp_linspace),
+        #     label="MCAW proposed",
+        #     color=color,
+        #     zorder=10,
+        # )
+        # ax.legend()
 
     ### Prior models
+
     if plot_prior_models:
         prior_model_colors = [
             KplColors.GREEN.value,
@@ -593,7 +714,7 @@ def experimental_zfs_versus_t(path, file_name):
             temp_linspace,
             sub_room_zfs_from_temp(temp_linspace),
             label="Chen",
-            color=prior_model_colors.pop(),
+            color=prior_model_colors[0],
             zorder=prior_model_zorder,
         )
         # print(super_room_zfs_from_temp(700))
@@ -603,194 +724,56 @@ def experimental_zfs_versus_t(path, file_name):
             temp_linspace,
             super_room_zfs_from_temp(temp_linspace),
             label="Toyli",
-            color=prior_model_colors.pop(),
+            color=prior_model_colors[1],
             zorder=prior_model_zorder,
         )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_barson(temp_linspace),
-            label="Barson",
-            color=prior_model_colors.pop(),
-            zorder=prior_model_zorder,
-        )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_li(temp_linspace),
-            label="Li",
-            color=prior_model_colors.pop(),
-            zorder=prior_model_zorder,
-        )
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     zfs_from_temp_barson(temp_linspace),
+        #     label="Barson",
+        #     color=prior_model_colors[2],
+        #     zorder=prior_model_zorder,
+        # )
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     zfs_from_temp_li(temp_linspace),
+        #     label="Li",
+        #     color=prior_model_colors[3],
+        #     zorder=prior_model_zorder,
+        # )
 
     ### Plot wrap up
     if plot_prior_models:
         ax.legend(loc="lower left")
         # ax.legend(bbox_to_anchor=(0.37, 0.46))
         # ax.legend(bbox_to_anchor=(0.329, 0.46))
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-    ax.set_ylabel("D (GHz)")
-    ax.set_xlim(*temp_range)
-    ax.set_ylim(*y_range)
+    if hist_residuals:
+        # ax.set_xlabel("Normalized residual")
+        ax.set_xlabel("Residual (MHz)")
+        ax.set_ylabel("Frequency")
+        ax.set_xlim(-max_dev, max_dev)
+        ax.set_ylim(0, ylim)
+    else:
+        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+        ax.set_ylabel("D (GHz)")
+        ax.set_xlim(*temp_range)
+        ax.set_ylim(*y_range)
     kpl.tight_layout(fig)
 
 
-# %% Main
-
-
-def main_files(files, mag_B=None, theta_B_deg=None):
-
-    resonances = []
-    res_errs = []
-
-    for ind in range(2):
-        file = files[ind]
-        data = tool_belt.get_raw_data(file)
-        res, res_err = return_res_with_error(data)
-        resonances.append(res)
-        res_errs.append(res_err)
-
-    return main_res(resonances, res_errs, mag_B, theta_B_deg)
-
-
-def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
-
-    if mag_B is not None:
-        theta_B = theta_B_deg * (np.pi / 180)
-        args = (mag_B, theta_B, *resonances)
-        result = minimize_scalar(
-            zfs_cost_func, bounds=(2.83, 2.88), args=args, method="bounded"
-        )
-        zfs = result.x
-        zfs_err = 0
-    else:
-        zfs = (resonances[0] + resonances[1]) / 2
-        zfs_err = np.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
-
-    return main(zfs, zfs_err)
-
-
-def main(zfs, zfs_err=None, no_print=None):
-
-    # func_to_invert = zfs_from_temp_barson
-    func_to_invert = zfs_from_temp
-
-    x0 = 199
-    x1 = 201
-
-    next_to_zero = 1e-5
-
-    zfs_diff = lambda temp: func_to_invert(temp) - zfs
-    if zfs_diff(next_to_zero) < 0:
-        temp_mid = 0
-    else:
-        results = root_scalar(zfs_diff, x0=x0, x1=x1)
-        temp_mid = results.root
-        # print(zfs_diff(results.root))
-    # x_vals = np.linspace(0, 2, 100)
-    # plt.plot(x_vals, zfs_diff(x_vals))
-    # print(zfs)
-    # plt.show(block=True)
-
-    temp_err = None
-    if zfs_err is not None:
-        zfs_lower = zfs - zfs_err
-        zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
-        if zfs_diff(next_to_zero) < 0:
-            temp_higher = 0
-        else:
-            results = root_scalar(zfs_diff, x0=x0, x1=x1)
-            temp_higher = results.root
-
-        zfs_higher = zfs + zfs_err
-        zfs_diff = lambda temp: func_to_invert(temp) - zfs_higher
-        # print(zfs_diff(50))
-        if zfs_diff(next_to_zero) < 0:
-            temp_lower = 0
-        else:
-            results = root_scalar(zfs_diff, x0=x0, x1=x1)
-            temp_lower = results.root
-
-        if not no_print:
-            print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
-        temp_err = ((temp_mid - temp_lower) + (temp_higher - temp_mid)) / 2
-        return temp_mid, temp_err
-    else:
-        if not no_print:
-            print(temp_mid)
-
-    return temp_mid
-
-    # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
-    # temp_error = np.average([temp_mid - temp_lower, temp_higher - temp_mid])
-    # print("T: [{}\t{}]".format(temp_mid, temp_error))
-
-
-# %% Run the file
-
+# endregion
 
 if __name__ == "__main__":
 
-    print(cambria_fixed(15))
-    sys.exit()
+    # print(cambria_fixed(15))
+    # sys.exit()
 
-    # files = [
-    #     "2022_07_06-17_07_38-hopper-search",
-    #     "2022_07_06-17_36_45-hopper-search",
-    # ]
-    # files = [
-    #     "2022_07_06-18_06_22-hopper-search",
-    #     "2022_07_06-18_35_47-hopper-search",
-    # ]
+    calc_zfs_from_compiled_data()
 
-    # files = [
-    #     "2022_07_02-20_32_55-hopper-search",
-    #     "2022_07_02-21_02_41-hopper-search",
-    # ]
-    # files = [
-    #     "2022_07_02-21_32_49-hopper-search",
-    #     "2022_07_02-22_02_46-hopper-search",
-    # ]
+    # kpl.init_kplotlib()
 
-    # files = [
-    #     "2022_06_26-22_31_49-hopper-search",
-    #     "2022_06_26-22_47_13-hopper-search",
-    # ]
+    # main()
 
-    # main_files(files)
-
-    # zfs = (2.80437571982632 + 2.9361011568838298) / 2
-    # zfs_err = np.sqrt(2.3665998318251086e-05**2 + 2.7116675293791154e-05**2) / 2
-    # zfs = (2.804495746863994 + 2.936131974306111) / 2
-    # zfs_err = (
-    #     np.sqrt(2.6001293985452265e-05 ** 2 + 2.9769666707425683e-05 ** 2) / 2
-    # )
-    # main(zfs, zfs_err)
-
-    # process_temp_dep_res_files()
-
-    #    print(zfs_from_temp(280))
-
-    # temp = 0
-    # print(zfs_from_temp(temp))
-    # print(zfs_from_temp(temp) - zfs_from_temp_barson(temp))
-
-    # plt.ion()
-
-    # temps = np.linspace(10, 700, 1000)
-    # plt.plot(temps, zfs_from_temp_barson(temps))
-    # plt.plot(temps, zfs_from_temp(temps))
-    # # fig, ax = plt.subplots()
-    # # ax.plot(temps, sub_room_zfs_from_temp(temps), label='sub')
-    # # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
-    # # ax.legend()
-
-    kpl.init_kplotlib()
-
-    home = common.get_nvdata_dir()
-    path = home / "paper_materials/relaxation_temp_dependence"
-    file_name = "compiled_data"
-
-    experimental_zfs_versus_t(path, file_name)
-
-    plt.show(block=True)
+    # plt.show(block=True)

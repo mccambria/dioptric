@@ -10,7 +10,13 @@ import numpy
 import utils.tool_belt as tool_belt
 import time
 import labrad
-import majorroutines.optimize_digital as optimize
+
+optimization_type = tool_belt.get_optimization_style()
+if optimization_type == 'DISCRETE':
+    import majorroutines.optimize_digital as optimize
+if optimization_type == 'CONTINUOUS':
+    import majorroutines.optimize as optimize
+
 import majorroutines.image_sample as image_sample
 import matplotlib.pyplot as plt
   
@@ -63,21 +69,22 @@ def xy_scan_voltages(x_center, y_center, x_range, y_range, num_steps):
 
 def main(nv_sig, x_range, y_range, num_steps, apd_indices,
          save_data=True, plot_data=True, 
-         um_scaled=False):
+         um_scaled=False,cbarmin=None,cbarmax=None):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
                       y_range, num_steps, apd_indices, save_data, plot_data, 
-                      um_scaled)
+                      um_scaled,cbarmin,cbarmax)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   apd_indices, save_data=True, plot_data=True, 
-                  um_scaled=False):
+                  um_scaled=False,cbarmin=None,cbarmax=None):
 
     # %% Some initial setup
-    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     startFunctionTime = time.time()
     
     tool_belt.reset_cfm(cxn)
@@ -177,7 +184,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     update_image_figure = tool_belt.update_image_figure
     tool_belt.init_safe_stop()
     
-    cxn.apd_tagger.start_tag_stream(apd_indices) #move outside of sequence
+    counter_server.start_tag_stream(apd_indices) #move outside of sequence
     
     dx_list = []
     dy_list = []
@@ -187,18 +194,15 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     #x_positions1, y_positions1, _, _ = ret_vals
     time_start= time.time()
     opti_interval=2
+    seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
+    pulsegen_server.stream_load('simple_readout.py',seq_args_string)
+    start_t = time.time()
     for i in range(total_num_samples): 
-        #time_now = time.time()
-        #if (time_now - time_start)/60 >= opti_interval:
-       #     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-       #     drift = tool_belt.get_drift() 
-       #     time_start= time.time()
-       #     cur_z_pos = z_center1 +drift[2]
-       #     z_server.write_z(cur_z_pos)
-
         
         
-        #cxn.apd_tagger.start_tag_stream(apd_indices)
+        # start_t = time.time()
         
         cur_x_pos = x_positions[i]
         cur_y_pos = y_positions[i]
@@ -206,35 +210,31 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         if tool_belt.safe_stop():
             break
         
-        
         flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            
-            
-            
+        # t3 = time.time()
+        
         # Some diagnostic stuff - checking how far we are from the target pos
         actual_x_pos, actual_y_pos = xy_server.read_xy()
         dx_list.append((actual_x_pos-cur_x_pos)*1e3)
         dy_list.append((actual_y_pos-cur_y_pos)*1e3)
-        
         # read the counts at this location
-        seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate('simple_readout.py',1,
-                                                  seq_args_string)
-        new_samples = cxn.apd_tagger.read_counter_simple(1) 
         
+        pulsegen_server.stream_start(1)
+
+        new_samples = counter_server.read_counter_simple(1) 
         # update the image arrays
         populate_img_array(new_samples, img_array, img_write_pos)
         populate_img_array([flag], flag_img_array, flag_img_write_pos)
         
         populate_img_array([(actual_x_pos-cur_x_pos)*1e3], dx_img_array, dx_img_write_pos)
         populate_img_array([(actual_y_pos-cur_y_pos)*1e3], dy_img_array, dy_img_write_pos)
-        
         # Either include this in loop so it plots data as it takes it (takes about 2x as long)
         # or put it ourside loop so it plots after data is complete
         if plot_data: ###########################################################
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-            update_image_figure(fig, img_array_kcps)
+            update_image_figure(fig, img_array_kcps,cmin=cbarmin,cmax=cbarmax)
+        
+        # print(time.time() - tt)    
         
     do_analysis=False
     if do_analysis:
@@ -246,10 +246,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                         clickHandler=image_sample.on_click_image, color_bar_label='nm',
                         title = "positional accuracy (dy)", um_scaled=um_scaled,
                         color_map = 'bwr')
-        
-        
-    
-    
     
     
        print(numpy.std(abs(numpy.array(dx_list))))
@@ -276,34 +272,38 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     time_elapsed = endFunctionTime - startFunctionTime
     timestamp = tool_belt.get_time_stamp()
 
-    rawData = {'timestamp': timestamp,
-               'time_elapsed': time_elapsed,
-               'nv_sig': nv_sig,
-               'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'x_range': x_range,
-               'x_range-units': 'um',
-               'y_range': y_range,
-               'y_range-units': 'um',
-               'num_steps': num_steps,
-               'readout': readout,
-               'readout-units': 'ns',
-               'dx_list': dx_list,
-               'dx_list-units': 'nm',
-               'dy_list': dy_list,
-               'dy_list-units': 'nm',
-               'x_positions_1d': x_positions_1d.tolist(),
-               'x_positions_1d-units': 'um',
-               'y_positions_1d': y_positions_1d.tolist(),
-               'y_positions_1d-units': 'um',
-               'img_array': img_array.astype(int).tolist(),
-               'img_array-units': 'counts',
-               'flag_img_array': flag_img_array.tolist(),}
+    rawData = {
+        'timestamp': timestamp,
+                'time_elapsed': time_elapsed,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'x_range': x_range,
+                'x_range-units': 'um',
+                'y_range': y_range,
+                'y_range-units': 'um',
+                'num_steps': num_steps,
+                'readout': readout,
+                'readout-units': 'ns',
+                'dx_list': dx_list,
+                'dx_list-units': 'nm',
+                'dy_list': dy_list,
+                'dy_list-units': 'nm',
+                'x_positions_1d': x_positions_1d.tolist(),
+                'x_positions_1d-units': 'um',
+                'y_positions_1d': y_positions_1d.tolist(),
+                'y_positions_1d-units': 'um',
+                'img_array': img_array.astype(int).tolist(),
+                'img_array-units': 'counts',
+                'flag_img_array': flag_img_array.tolist(),
+               }
 
     if save_data:
 
         filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        # print(filePath)
         tool_belt.save_raw_data(rawData, filePath)
-
+        
+        # print('here')
         if plot_data:
 
             tool_belt.save_figure(fig, filePath)
@@ -319,8 +319,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample_digital/2022_02'
-    file_name = '2022_02_04-11_48_38-johnson-search'
+    path = 'pc_carr/branch_opx-setup/image_sample_digital/2022_11'
+    file_name = '2022_11_10-09_12_21-johnson-search'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -350,12 +350,14 @@ if __name__ == '__main__':
     
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
     
-    
-    tool_belt.create_image_figure(img_array, numpy.array(img_extent), 
+    readout_time = nv_sig["imaging_readout_dur"]/(1e9)
+    img_array = (numpy.array(img_array)/1000/readout_time).tolist()
+    fig = tool_belt.create_image_figure(img_array, numpy.array(img_extent), 
                                   clickHandler=image_sample.on_click_image,
-                        title=None, color_bar_label='Counts', 
-                        min_value=None, um_scaled=True)
-    
+                        title=None, color_bar_label='kcps', 
+                        min_value=None, um_scaled=True,cmin=0,cmax=100)
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_figure(fig, filePath)
     
     # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
     #                               csv_name)   

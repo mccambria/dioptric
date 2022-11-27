@@ -77,7 +77,7 @@ def get_seq(pulse_streamer, config, args):
     period = 0
     for el in train:
         period += el[0]
-    # print(period)
+    print(period)
 
     # Laser for polarization and readout
     train = [(common_delay - laser_delay, LOW),
@@ -127,6 +127,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    args = [100, 10000.0, 350, 200, 1, 3, 'integrated_520', None]
+    args = [100, 10000.0, 300, 300, 1, 3, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()

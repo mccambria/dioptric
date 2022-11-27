@@ -185,13 +185,14 @@ class PiezoStageDigital(LabradServer):
 
     #     task.start()
 
-    # def close_task_internal(self, task_handle=None, status=None, callback_data=None):
-    #     task = self.task
-    #     if task is not None:
-    #         task.close()
-    #         self.task = None
-    #     return 0
-
+    def close_task_internal(self, task_handle=None, status=None, callback_data=None):
+        task = self.task
+        if task is not None:
+            task.close()
+            self.task = None
+        return 0
+    
+    
     @setting(32,  xPosition="v[]", yPosition="v[]", returns="v[]",)
     def write_xy(self, c, xPosition, yPosition):
         """Write the specified x and y voltages to the piezo stage"""
@@ -358,6 +359,7 @@ class PiezoStageDigital(LabradServer):
         """
 
         ######### Assumes x_range == y_range #########
+        self.num_steps = num_steps
 
         if x_range != y_range:
             raise ValueError("x_range must equal y_range for now")

@@ -22,10 +22,10 @@ import utils.image_processing as image_processing
 # %% Functions
 
 
-def find_offset(new_img_data, ref_image_data):
+def find_offset(new_img_array, ref_image_data):
 
-    ref_x_voltages = ref_image_data["x_voltages"]
-    ref_y_voltages = ref_image_data["y_voltages"]
+    ref_x_voltages = ref_image_data["x_positions_1d"]
+    ref_y_voltages = ref_image_data["y_positions_1d"]
     ref_num_steps = ref_image_data["num_steps"]
     ref_img_array = np.array(ref_image_data["img_array"])
 
@@ -123,8 +123,8 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     
-    new_image_file = "2022_04_30-08_09_42-wu-nv6_2022_04_14"
-    ref_image_file = "2022_04_29-22_20_49-wu-nv6_2022_04_14"
+    new_image_file = "2022_11_22-11_06_06-johnson-search"
+    ref_image_file = "2022_11_22-10_52_34-johnson-search"
     # new_image_file = ref_image_file
 
     new_image_data = tool_belt.get_raw_data(new_image_file)

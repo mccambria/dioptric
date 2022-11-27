@@ -33,7 +33,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
    
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation_high, deviation_low, 
+        norm_avg_sig = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation_high, deviation_low, 
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
@@ -41,7 +41,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
 
 
 
-
+    return norm_avg_sig
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
                      num_steps, num_reps, num_runs,
                      readout_state = States.HIGH,
@@ -98,11 +98,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                 laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
-    print(seq_args)
+    # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    seq_time = ret_vals[0]
+    # print(seq_time)
+    # return
 
+    seq_time_s = seq_time / (10 ** 9)  # to seconds
+    expected_run_time_s = (
+        (num_steps / 2) * num_reps * num_runs * seq_time_s * 6 #taking slower than expected
+    )  # s
+    expected_run_time_m = expected_run_time_s / 60  # to minutes
+
+    print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
+    
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -138,7 +149,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
     for run_ind in range(num_runs):
-
         print('Run index: {}'. format(run_ind))
 
         # Break out of the while if the user says stop
@@ -175,12 +185,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         high_sig_gen_cxn.load_fm(deviation_high)
         high_sig_gen_cxn.uwave_on()
         
-
-        # TEST for split resonance
-#        sig_gen_cxn = cxn.signal_generator_bnc835
-#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
-#        sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -322,7 +326,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(raw_fig, file_path)
 
-
     # # %% Fit the data and extract piPulse
 
     # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
@@ -407,7 +410,55 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     # else:
     #     return None, sig_counts, ref_counts, []
 
+    return norm_avg_sig
 
+def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation, 
+         num_steps, num_reps, num_runs):
+    
+    contrast = 0.238
+    
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=num_steps)
+    taus = taus/1e3
+    deviation_high = deviation
+    deviation_low = deviation
+    
+    p_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+             num_steps, num_reps, num_runs,
+             readout_state = States.HIGH,
+             initial_state = States.HIGH,
+             )
+    p_pop = (numpy.array(p_sig) - contrast) / (1 - contrast)
+    
+    z_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+            num_steps, num_reps, num_runs,
+            readout_state = States.ZERO,
+            initial_state = States.HIGH,
+            )
+    z_pop = (numpy.array(z_sig) - contrast) / (1 - contrast)
+    
+    # print(p_pop)
+    # print(z_pop)
+    
+    m_pop = 1 -  p_pop-  z_pop
+    
+    
+    fig, ax = plt.subplots()
+    ax.plot(taus, p_sig, 'b-', label = '+1 population')
+    ax.plot(taus, z_sig, 'g-', label = '0 population')
+    # ax.plot(taus , m_pop, 'r-', label = '-1 population')
+    ax.set_title('Rabi SRT')
+    ax.set_xlabel('SRT length (us)')
+    ax.set_ylabel('Normalized signal')
+    ax.legend()
+    
+    timestamp = tool_belt.get_time_stamp()
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig, file_path)
+    
 # %% Run the file
 
 
