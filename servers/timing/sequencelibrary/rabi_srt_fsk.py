@@ -44,12 +44,13 @@ def get_seq(pulse_streamer, config, args):
     high_sig_gen_name = config['Microwaves']['sig_gen_HIGH']
     
     uwave_laser_buffer= config['CommonDurations']['uwave_buffer']
-    fm_mod_bandwidth_LOW = config['Microwaves'][low_sig_gen_name]['fm_mod_bandwidth'] # in Hz
-    fm_mod_bandwidth_HIGH = config['Microwaves'][high_sig_gen_name]['fm_mod_bandwidth'] # in Hz
-    min_fm_mod_bandwidth = min(fm_mod_bandwidth_LOW, fm_mod_bandwidth_HIGH)
-    fm_bandwidth_buffer = 1/min_fm_mod_bandwidth * 1e9
+    # fm_mod_bandwidth_LOW = config['Microwaves'][low_sig_gen_name]['fm_mod_bandwidth'] # in Hz
+    # fm_mod_bandwidth_HIGH = config['Microwaves'][high_sig_gen_name]['fm_mod_bandwidth'] # in Hz
+    # min_fm_mod_bandwidth = min(fm_mod_bandwidth_LOW, fm_mod_bandwidth_HIGH)
+    # fm_bandwidth_buffer = 1/min_fm_mod_bandwidth * 1e9
     uwave_detune_buffer = uwave_laser_buffer*10
     # time between signal and reference without illumination
+    trigger_dur = 10
     
     aom_delay_time = config['Optics'][laser_name]['delay']
     
@@ -64,8 +65,8 @@ def get_seq(pulse_streamer, config, args):
     high_sig_gen_gate_chan_name = 'do_{}_gate'.format(high_sig_gen_name)
     pulser_do_sig_gen_high_gate = pulser_wiring[high_sig_gen_gate_chan_name]
     
-    pulser_ao_fm_LOW = pulser_wiring['ao_fm_{}'.format(low_sig_gen_name)]
-    pulser_ao_fm_HIGH = pulser_wiring['ao_fm_{}'.format(high_sig_gen_name)]
+    pulser_do_fsk_trigger = pulser_wiring['do_fsk_trigger']
+    # pulser_ao_fm_HIGH = pulser_wiring['ao_fm_{}'.format(high_sig_gen_name)]
     
     delay_buffer = max(aom_delay_time,rf_low_delay,rf_high_delay, 100)
     back_buffer = 200
@@ -103,9 +104,7 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_shrt, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -115,8 +114,6 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -126,9 +123,7 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_long, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -138,8 +133,6 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -159,9 +152,7 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_shrt, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -170,8 +161,6 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -180,9 +169,7 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_long, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -191,8 +178,6 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_dur, LOW),
             (uwave_detune_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_dur, LOW),
             (uwave_laser_buffer, LOW),
@@ -213,42 +198,34 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_high, HIGH),
             (uwave_detune_buffer + init_pi_low, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_shrt, HIGH),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_high, HIGH),
             (uwave_laser_buffer + read_pi_low, LOW),
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_high, LOW), ####
+            (init_pi_high, LOW),
             (uwave_detune_buffer + init_pi_low, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
-            (read_pi_high, LOW), ####
+            (read_pi_high, LOW), 
             (uwave_laser_buffer + read_pi_low, LOW),
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
             (init_pi_high, HIGH),
             (uwave_detune_buffer + init_pi_low, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_long, HIGH),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_high, HIGH),
             (uwave_laser_buffer + read_pi_low, LOW),
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_high, LOW), ####
+            (init_pi_high, LOW), 
             (uwave_detune_buffer + init_pi_low, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
-            (read_pi_high, LOW), ####
+            (read_pi_high, LOW), 
             (uwave_laser_buffer + read_pi_low, LOW),
             (polarization_time, LOW) ,
             (back_buffer + rf_high_delay, LOW)
@@ -265,9 +242,7 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_low, HIGH),
             (uwave_detune_buffer + init_pi_high, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_shrt, HIGH),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, HIGH),
             (uwave_laser_buffer + read_pi_high, LOW),
@@ -276,8 +251,6 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_low, LOW),
             (uwave_detune_buffer + init_pi_high, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, LOW),
             (uwave_laser_buffer + read_pi_high, LOW),
@@ -286,9 +259,7 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_low, HIGH),
             (uwave_detune_buffer + init_pi_high, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_srt_long, HIGH),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, HIGH),
             (uwave_laser_buffer + read_pi_high, LOW),
@@ -297,8 +268,6 @@ def get_seq(pulse_streamer, config, args):
             (uwave_laser_buffer, LOW),
             (init_pi_low, LOW),
             (uwave_detune_buffer + init_pi_high, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, LOW),
             (uwave_laser_buffer + read_pi_high, LOW),
@@ -311,109 +280,58 @@ def get_seq(pulse_streamer, config, args):
         period += el[0]
     print(period)
     
-    HIGH_fm_high = 1.0 * dev_high_sign
-    # Turn on the FM for HIGH sig gen
-    train = [
-        (delay_buffer - rf_high_delay, LOW),
-            (polarization_time, LOW),
-            (uwave_laser_buffer, LOW),
-            (init_pi_high, LOW),
-            (uwave_detune_buffer + init_pi_low, LOW), 
-            (fm_bandwidth_buffer, HIGH_fm_high),
-            (uwave_srt_shrt, HIGH_fm_high),
-            (fm_bandwidth_buffer, HIGH_fm_high),
-            (uwave_detune_buffer, LOW),
-            (read_pi_high, LOW),
-            (uwave_laser_buffer + read_pi_low, LOW),
-            
-            (polarization_time, LOW),
-            (uwave_laser_buffer, LOW),
-            (init_pi_high, LOW),
-            (uwave_detune_buffer + init_pi_low, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (uwave_detune_buffer, LOW),
-            (read_pi_high, LOW),
-            (uwave_laser_buffer + read_pi_low, LOW),
-            
-            (polarization_time, LOW),
-            (uwave_laser_buffer, LOW),
-            (init_pi_high, LOW),
-            (uwave_detune_buffer + init_pi_low, LOW),
-            (fm_bandwidth_buffer, HIGH_fm_high),
-            (uwave_srt_long, HIGH_fm_high),
-            (fm_bandwidth_buffer, HIGH_fm_high),
-            (uwave_detune_buffer, LOW),
-            (read_pi_high, LOW),
-            (uwave_laser_buffer + read_pi_low, LOW),
-            
-            (polarization_time, LOW),
-            (uwave_laser_buffer, LOW),
-            (init_pi_high, LOW),
-            (uwave_detune_buffer + init_pi_low, LOW), 
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (uwave_detune_buffer, LOW),
-            (read_pi_high, LOW),
-            (uwave_laser_buffer + read_pi_low, LOW),
-            (polarization_time, LOW) ,
-            (back_buffer + rf_high_delay, LOW)
-            ]
-    seq.setAnalog(pulser_ao_fm_HIGH, train)
-    period = 0
-    for el in train:
-        period += el[0]
-    print(period)
     
-    # Turn on the FM for LOW sig gen
-    HIGH_fm_low = 1.0 * dev_low_sign
+    # FSK trigger
+    uwave_detune_buffer_half = int(uwave_detune_buffer/2)
     train = [
         (delay_buffer - rf_high_delay, LOW),
-            (polarization_time, LOW),
+        (trigger_dur, HIGH),
+            (polarization_time- trigger_dur, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_low, LOW),
-            (uwave_detune_buffer + init_pi_high, LOW), 
-            (fm_bandwidth_buffer, HIGH_fm_low),
-            (uwave_srt_shrt, HIGH_fm_low),
-            (fm_bandwidth_buffer, HIGH_fm_low),
-            (uwave_detune_buffer, LOW),
-            (read_pi_low, LOW),
-            (uwave_laser_buffer + read_pi_high, LOW),
+            (init_pi_low + init_pi_high, LOW),
+            (uwave_detune_buffer_half, LOW), 
+            (trigger_dur, HIGH),
+            (uwave_detune_buffer_half - trigger_dur, LOW), 
+            (uwave_srt_shrt, LOW),
+            (uwave_detune_buffer_half, LOW), 
+            (trigger_dur, HIGH),
+            (uwave_detune_buffer_half - trigger_dur, LOW), 
+            (read_pi_low + read_pi_high, LOW),
+            (uwave_laser_buffer, LOW),
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_low, LOW),
-            (uwave_detune_buffer + init_pi_high, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
+            (init_pi_low + init_pi_high, LOW),
             (uwave_detune_buffer, LOW),
-            (read_pi_low, LOW),
-            (uwave_laser_buffer + read_pi_high, LOW),
+            (uwave_detune_buffer, LOW),
+            (read_pi_low + read_pi_high, LOW),
+            (uwave_laser_buffer, LOW),
+            
+            (trigger_dur, HIGH),
+            (polarization_time- trigger_dur, LOW),
+            (uwave_laser_buffer, LOW),
+            (init_pi_low + init_pi_high, LOW),
+            (uwave_detune_buffer_half, LOW), 
+            (trigger_dur, HIGH),
+            (uwave_detune_buffer_half - trigger_dur, LOW), 
+            (uwave_srt_long, LOW),
+            (uwave_detune_buffer_half, LOW), 
+            (trigger_dur, HIGH),
+            (uwave_detune_buffer_half - trigger_dur, LOW), 
+            (read_pi_low + read_pi_high, LOW),
+            (uwave_laser_buffer, LOW),
             
             (polarization_time, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_low, LOW),
-            (uwave_detune_buffer + init_pi_high, LOW),
-            (fm_bandwidth_buffer, HIGH_fm_low),
-            (uwave_srt_long, HIGH_fm_low),
-            (fm_bandwidth_buffer, HIGH_fm_low),
+            (init_pi_low + init_pi_high, LOW),
+            (uwave_detune_buffer, LOW), 
             (uwave_detune_buffer, LOW),
-            (read_pi_low, LOW),
-            (uwave_laser_buffer + read_pi_high, LOW),
-            
-            (polarization_time, LOW),
+            (read_pi_low + read_pi_high, LOW),
             (uwave_laser_buffer, LOW),
-            (init_pi_low, LOW),
-            (uwave_detune_buffer + init_pi_high, LOW), 
-            (fm_bandwidth_buffer, LOW),
-            (fm_bandwidth_buffer, LOW),
-            (uwave_detune_buffer, LOW),
-            (read_pi_low, LOW),
-            (uwave_laser_buffer + read_pi_high, LOW),
             (polarization_time, LOW) ,
             (back_buffer + rf_high_delay, LOW)
             ]
-    seq.setAnalog(pulser_ao_fm_LOW, train)
+    seq.setDigital(pulser_do_fsk_trigger, train)
     period = 0
     for el in train:
         period += el[0]

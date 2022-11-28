@@ -394,7 +394,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -410,16 +410,40 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
     nv_sig["rabi_{}".format(state.name)] = period
 
 
-def do_rabi_srt(nv_sig,  apd_indices, deviation,  uwave_time_range=[0, 200]):
+def do_rabi_srt(nv_sig,  apd_indices, initial_state, readout_state, uwave_time_range=[0, 1000]):
+    
+    deviation_high = 24
+    deviation_low = 24
+    
+    # deviation = 0
+    
+    num_steps = 25
+    # num_reps = int(1e3)
+    num_reps = int(2e4)
+    num_runs = 10 #100
+
+    rabi_srt.main(nv_sig, 
+              apd_indices, 
+              uwave_time_range, 
+              deviation_high,
+              deviation_low, 
+              num_steps, 
+              num_reps,
+              num_runs,
+              readout_state,
+              initial_state,
+    )
+
+def do_rabi_srt_pop(nv_sig,  apd_indices, deviation,num_steps,  uwave_time_range=[0, 1000]):
     
     # deviation_high = 0
     # deviation_low = 0
     
     # deviation = 0
     
-    num_steps = 101
-    num_reps = int(1e3)
-    num_runs = 100
+    #num_steps = 101
+    num_reps = int(1e4)
+    num_runs = 2 #200
 
     # rabi_srt.main(nv_sig, 
     #           apd_indices, 
@@ -744,17 +768,18 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 10e6# 20e6
+    max_tau_omega = 200#10e6# 20e6
     max_tau_gamma = 10e6
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2e3
-    num_runs = 200
+    num_runs = 20#0
     
     if True:
      t1_exp_array = numpy.array(
         [[
-                [States.ZERO, States.ZERO],
+                [States.HIGH , States.ZERO],
+                        #[States.ZERO, States.ZERO],
                 [min_tau, max_tau_omega],
                 num_steps_omega,
                 num_reps,
@@ -1119,9 +1144,9 @@ if __name__ == "__main__":
     nv_sig_1["expected_count_rate"] = 21
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
-    nv_sig_1["resonance_LOW"]= 2.7813
+    nv_sig_1["resonance_LOW"]= 2.7813 
     nv_sig_1["rabi_LOW"]= 129.5
-    nv_sig_1["resonance_HIGH"]= 2.9591 #- 0.010
+    nv_sig_1["resonance_HIGH"]= 2.9591 #- 0.024
     nv_sig_1["rabi_HIGH"]=129.5
     
     
@@ -1197,25 +1222,23 @@ if __name__ == "__main__":
         
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
-        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH,   uwave_time_range=[0, 200])
+        #do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
+        #do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH,   uwave_time_range=[0, 200])
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
-        for d in [0, 2, 4, 8]:
-            do_rabi_srt(nv_sig, apd_indices, d, uwave_time_range=[0, 1000])
-        
-        # with labrad.connect() as cxn:
-        #     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
-            # sig_gen_cxn.set_freq(uwave_freq_detuned)
-            # sig_gen_cxn.set_amp(uwave_power)
-            # sig_gen_cxn.load_fsk(4)
-        # for det in numpy.linspace(-2.2, 2.2, 11):
+        do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 1500])
+        #do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.ZERO)
+        #do_rabi_srt(nv_sig,  apd_indices, States.LOW, States.LOW)
+        # for d in [0, 8, 16, 24]:
+        # do_rabi_srt_pop(nv_sig, apd_indices, 0, 51, uwave_time_range=[0, 500])
+        # do_rabi_srt_pop(nv_sig, apd_indices, 24, 201, uwave_time_range=[0, 2000])
+
         # do_ramsey(nv_sig, nv_sig,apd_indices, 0)
         
         # do_spin_echo(nv_sig, apd_indices)
 
-        # do_relaxation(nv_sig, apd_indices)  # gamma and omega
+        #do_relaxation(nv_sig, apd_indices)  # gamma and omega
                 
         # num_xy4_reps = 1
         # step_size = 100 #us

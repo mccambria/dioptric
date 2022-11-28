@@ -56,13 +56,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     start_timestamp = tool_belt.get_time_stamp()
 
     # %% Initial calculations and setup
+    dev_high_sign = 1
+    dev_low_sign = 1
+    if deviation_high < 0:
+        dev_high_sign = -1
+        deviation_high = abs(deviation_high)
+    if True:
+     if deviation_low < 0:
+        dev_low_sign = -1
+        deviation_low = abs(deviation_low)
+    
     state_high = States.HIGH
     state_low = States.LOW
     uwave_freq_high = nv_sig['resonance_{}'.format(state_high.name)]
     uwave_freq_low = nv_sig['resonance_{}'.format(state_low.name)]
     
-    uwave_freq_high_detune = uwave_freq_high + deviation_high / 1e3
-    uwave_freq_low_detune = uwave_freq_low + deviation_low / 1e3
+    # uwave_freq_high_detune = uwave_freq_high + deviation_high / 1e3
+    #uwave_freq_low_detune = uwave_freq_low + deviation_low / 1e3
     
     uwave_power_high = nv_sig['uwave_power_{}'.format(state_high.name)]
     uwave_power_low = nv_sig['uwave_power_{}'.format(state_low.name)]
@@ -93,18 +103,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
+                dev_high_sign, dev_low_sign,
                 apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
-    # print(seq_args)
+    print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_time)
-    # return
 
     seq_time_s = seq_time / (10 ** 9)  # to seconds
     expected_run_time_s = (
@@ -172,8 +181,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
             cxn, States.LOW
         )
-        low_sig_gen_cxn.set_freq(uwave_freq_low_detune)
+        low_sig_gen_cxn.set_freq(uwave_freq_low)
         low_sig_gen_cxn.set_amp(uwave_power_low)
+        low_sig_gen_cxn.load_fm(deviation_low)
         low_sig_gen_cxn.uwave_on()
 
         high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
@@ -181,7 +191,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         )
         high_sig_gen_cxn.set_freq(uwave_freq_high)
         high_sig_gen_cxn.set_amp(uwave_power_high)
-        # Maybe check the name of the signal generator??
         high_sig_gen_cxn.load_fm(deviation_high)
         high_sig_gen_cxn.uwave_on()
         
@@ -218,6 +227,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
             
             seq_args = [taus[tau_ind_first], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], 
+                dev_high_sign, dev_low_sign,
                 apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
@@ -279,7 +289,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         ax = axes_pack[1]
         ax.cla()
         ax.plot(taus , norm_avg_sig, 'b-')
-        ax.set_title('Normalized Signal With Varying Microwave Duration')
+        ax.set_title('{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
+                                   readout_state.name, deviation_high*dev_high_sign, 
+                                   deviation_low*dev_low_sign))
         ax.set_xlabel('Microwave duration (ns)')
         ax.set_ylabel('Normalized signal')
 
@@ -299,9 +311,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'deviation_low': deviation_low,
+                    'deviation_low': deviation_low*dev_low_sign,
                     'deviation_low-units': 'MHz',
-                    'deviation_high': deviation_high,
+                    'deviation_high': deviation_high*dev_high_sign,
                     'deviation_high-units': 'MHz',
                     'uwave_time_range': uwave_time_range,
                     'uwave_time_range-units': 'ns',
@@ -345,7 +357,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     ax = axes_pack[1]
     ax.cla()
     ax.plot(taus , norm_avg_sig, 'b-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
+    ax.set_title('{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
+                                   readout_state.name, deviation_high*dev_high_sign, 
+                                   deviation_low*dev_low_sign))
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Normalized signal')
 
@@ -377,9 +391,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'deviation_low': deviation_low,
+                'deviation_low': deviation_low*dev_low_sign,
                 'deviation_low-units': 'MHz',
-                'deviation_high': deviation_high,
+                'deviation_high': deviation_high*dev_high_sign,
                 'deviation_high-units': 'MHz',
                 'initial_state': initial_state.name,
                 'readout_state': readout_state.name,
@@ -412,10 +426,27 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 
     return norm_avg_sig
 
+# %%
+def plot_pop_srt(taus, p_pop, z_pop, deviation, m_pop = []):
+    
+    fig, ax = plt.subplots()
+    ax.plot(taus, p_pop, 'b-', label = '+1 population')
+    ax.plot(taus, z_pop, 'g-', label = '0 population')
+    if len(m_pop) != 0:
+        ax.plot(taus , m_pop, 'r-', label = '-1 population')
+    ax.set_title('Rabi SRT, {} MHz detuning'.format(deviation))
+    ax.set_xlabel('SRT length (us)')
+    ax.set_ylabel('Population')
+    ax.legend()
+    
+    return fig
+    
+    
 def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation, 
          num_steps, num_reps, num_runs):
     
-    contrast = 0.238
+    contrast = 0.108*2
+    low_pop = 1-contrast
     
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
@@ -425,34 +456,33 @@ def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation,
     deviation_high = deviation
     deviation_low = deviation
     
+    init=States.HIGH
+    if True :
+        m_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+            num_steps, num_reps, num_runs,
+            readout_state = States.LOW,
+            initial_state = init,
+            )
+        m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
+ 
     p_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
              num_steps, num_reps, num_runs,
              readout_state = States.HIGH,
-             initial_state = States.HIGH,
+             initial_state = init,
              )
-    p_pop = (numpy.array(p_sig) - contrast) / (1 - contrast)
+    p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
     
     z_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
-            initial_state = States.HIGH,
+            initial_state = init,
             )
-    z_pop = (numpy.array(z_sig) - contrast) / (1 - contrast)
+    z_pop = (numpy.array(z_sig) - low_pop) / (1 - low_pop)
     
-    # print(p_pop)
-    # print(z_pop)
+
     
-    m_pop = 1 -  p_pop-  z_pop
-    
-    
-    fig, ax = plt.subplots()
-    ax.plot(taus, p_sig, 'b-', label = '+1 population')
-    ax.plot(taus, z_sig, 'g-', label = '0 population')
-    # ax.plot(taus , m_pop, 'r-', label = '-1 population')
-    ax.set_title('Rabi SRT')
-    ax.set_xlabel('SRT length (us)')
-    ax.set_ylabel('Normalized signal')
-    ax.legend()
+    fig = plot_pop_srt(taus, p_pop, z_pop, deviation, m_pop)
+
     
     timestamp = tool_belt.get_time_stamp()
     nv_name = nv_sig["name"]
@@ -464,4 +494,26 @@ def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi_srt/2021_09'
+    path = 'pc_rabi/branch_master/rabi_srt/2022_11'
+    file_p = '2022_11_23-10_14_07-siena-nv1_2022_10_27'
+    file_z = '2022_11_23-10_10_27-siena-nv1_2022_10_27'
+    file_m = ''
+    
+    data = tool_belt.get_raw_data(file_p, path)
+    p_sig = data['norm_avg_sig']
+    data = tool_belt.get_raw_data(file_z, path)
+    z_sig = data['norm_avg_sig']
+    data = tool_belt.get_raw_data(file_m, path)
+    m_sig = data['norm_avg_sig']
+    taus= numpy.array(data['taus'])/1e3
+    dev = data['deviation_LOW']
+    
+    contrast = 0.238
+    low_pop = 1-contrast
+    
+    p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
+    z_pop = (numpy.array(z_sig) - low_pop) / (1 - low_pop)
+    m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
+    
+    
+    plot_pop_srt(taus, p_pop, z_pop, dev, m_pop)

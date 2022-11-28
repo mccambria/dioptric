@@ -517,7 +517,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi_srt/2022_11'
-    file = '2022_11_22-14_31_35-siena-nv1_2022_10_27'
+    file = '2022_11_23-12_04_42-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
     norm_avg_sig = data['norm_avg_sig']

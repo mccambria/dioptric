@@ -29,7 +29,7 @@ from random import shuffle
 import numpy
 import matplotlib.pyplot as plt
 from utils.tool_belt import States
-import time
+# import time
 
 
 # %% Functions
@@ -77,7 +77,11 @@ def measure_delay(
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
             sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
+            
+            sig_gen_cxn.load_fm(10)
+            
             sig_gen_cxn.uwave_on()
+            
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
             
         if seq_file == "iq_delay.py":
@@ -424,7 +428,7 @@ if __name__ == "__main__":
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":23,
+        "expected_count_rate":21,
         
         
           "spin_laser":green_laser,
@@ -445,12 +449,12 @@ if __name__ == "__main__":
         
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 68,
-        "resonance_LOW":2.7805,
-        "rabi_LOW":111.6,     
-        "uwave_power_LOW": 15,   
-        "resonance_HIGH":2.9597,
-        "rabi_HIGH":325.7,
-        "uwave_power_HIGH": -5,
+        "resonance_LOW":2.7813-0.01,
+        "rabi_LOW":129.5,     
+        "uwave_power_LOW": 13.5,   
+        "resonance_HIGH":2.9591-0.01,
+        "rabi_HIGH":129.5,
+        "uwave_power_HIGH": 16.5,
     }  
     
     apd_indices = [1]
@@ -512,32 +516,41 @@ if __name__ == "__main__":
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(5e6)
-    delay_range = [350,600]
+    num_reps = int(1e5)
+    delay_range = [-300, 200]
     num_steps = 251
     # bnc 835
     # state = States.LOW
     #  sg394
-    state = States.HIGH
+    # state = States.HIGH
     with labrad.connect() as cxn:
-        iq_delay(
+        # iq_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
+        # uwave_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     States.HIGH,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
+        uwave_delay(
             cxn,
             nv_sig,
             apd_indices,
-            state,
+            States.LOW,
             delay_range,
             num_steps,
             num_reps,
         )
-    #     uwave_delay(
-    #         cxn,
-    #         nv_sig,
-    #         apd_indices,
-    #         state,
-    #         delay_range,
-    #         num_steps,
-    #         num_reps,
-    #     )
         # fm_delay(
         #     cxn,
         #     nv_sig,
