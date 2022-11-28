@@ -13,7 +13,7 @@ Created on June 22nd, 2022
 
 
 import matplotlib.pyplot as plt
-from enum import Enum
+from strenum import StrEnum
 from colorutils import Color
 import re
 
@@ -48,7 +48,7 @@ default_data_size = "normal"
 # The default color specification is hex, eg "#bcbd22"
 
 
-class KplColors(Enum):
+class KplColors(StrEnum):
     BLUE = "#1f77b4"
     ORANGE = "#ff7f0e"
     GREEN = "#2ca02c"
@@ -66,6 +66,8 @@ class KplColors(Enum):
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
     BLACK = "000000"
+    
+    
 
 
 data_color_cycler = [

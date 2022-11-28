@@ -9,10 +9,7 @@ from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
 import utils.tool_belt as tool_belt
-from utils.tool_belt import States
-
-LOW = 0
-HIGH = 1
+from utils.tool_belt import States, Digital
 
 
 def get_seq(pulse_streamer, config, args):
@@ -33,7 +30,7 @@ def get_seq(pulse_streamer, config, args):
     # Signify which signal generator to use
     state = args[5]
     state = States(state)
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen_name = config['Microwaves'][f'sig_gen_{state.name}']
     
     # Laser specs
     laser_name = args[6]
@@ -61,18 +58,18 @@ def get_seq(pulse_streamer, config, args):
     seq = Sequence()
 
     # APD gating - first high is for signal, second high is for reference
-    train = [(common_delay, LOW),
-             (polarization_time, LOW),
-             (uwave_buffer, LOW),
-             (max_tau, LOW),
-             (uwave_buffer, LOW),
-             (readout, HIGH), 
-             (readout_pol_min - readout, LOW),
-             (uwave_buffer, LOW),
-             (max_tau, LOW),
-             (uwave_buffer, LOW),
-             (readout, HIGH),
-             (final_readout_buffer + short_buffer, LOW)]
+    train = [(common_delay, Digital.LOW),
+             (polarization_time, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (max_tau, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (readout, Digital.HIGH), 
+             (readout_pol_min - readout, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (max_tau, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (readout, Digital.HIGH),
+             (final_readout_buffer + short_buffer, Digital.LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     period = 0
     for el in train:
@@ -80,18 +77,18 @@ def get_seq(pulse_streamer, config, args):
     # print(period)
 
     # Laser for polarization and readout
-    train = [(common_delay - laser_delay, LOW),
-             (polarization_time, HIGH),
-             (uwave_buffer, LOW),
-             (max_tau, LOW),
-             (uwave_buffer, LOW),
-             (readout_pol_min, HIGH), 
-             (uwave_buffer, LOW),
-             (max_tau, LOW),
-             (uwave_buffer, LOW),
-             (readout + final_readout_buffer, HIGH),
-             (short_buffer, LOW),
-             (laser_delay, LOW)]
+    train = [(common_delay - laser_delay, Digital.LOW),
+             (polarization_time, Digital.HIGH),
+             (uwave_buffer, Digital.LOW),
+             (max_tau, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (readout_pol_min, Digital.HIGH), 
+             (uwave_buffer, Digital.LOW),
+             (max_tau, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (readout + final_readout_buffer, Digital.HIGH),
+             (short_buffer, Digital.LOW),
+             (laser_delay, Digital.LOW)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 laser_name, laser_power, train)
     # total_dur = 0
@@ -100,19 +97,19 @@ def get_seq(pulse_streamer, config, args):
     # print(total_dur)
 
     # Pulse the microwave for tau
-    train = [(common_delay - uwave_delay, LOW),
-             (polarization_time, LOW),
-             (uwave_buffer, LOW),
-             (max_tau-tau, LOW),
-             (tau, HIGH),
-             (uwave_buffer, LOW),
-             (readout_pol_min, LOW), 
-             (uwave_buffer, LOW), 
-             (max_tau, LOW),
-             (uwave_buffer, LOW),
-             (readout + final_readout_buffer, LOW),
-             (short_buffer, LOW),
-             (uwave_delay, LOW)]
+    train = [(common_delay - uwave_delay, Digital.LOW),
+             (polarization_time, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (max_tau-tau, Digital.LOW),
+             (tau, Digital.HIGH),
+             (uwave_buffer, Digital.LOW),
+             (readout_pol_min, Digital.LOW), 
+             (uwave_buffer, Digital.LOW), 
+             (max_tau, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
+             (readout + final_readout_buffer, Digital.LOW),
+             (short_buffer, Digital.LOW),
+             (uwave_delay, Digital.LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     # total_dur = 0
     # for el in train:

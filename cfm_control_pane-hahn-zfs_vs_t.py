@@ -24,7 +24,7 @@ import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.four_point_esr as four_point_esr
 import majorroutines.rabi as rabi
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
-from utils.tool_belt import States
+from utils.tool_belt import States, NormStyle
 import services.calibrated_temp_monitor as calibrated_temp_monitor
 from figures.zfs_vs_t.zfs_vs_t_main import cambria_fixed
 from random import shuffle
@@ -405,7 +405,7 @@ if __name__ == "__main__":
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
         "spin_pol_dur": 2e6, "spin_readout_dur": 480e3,
-        'collection_filter': None, 'magnet_angle': None,
+        "norm_style": NormStyle.point_to_point, 'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
         }
     
@@ -428,10 +428,15 @@ if __name__ == "__main__":
     nv4["coords"] = np.array([0.759, -0.501, z_coord])
     nv4["name"] =  f"{sample_name}-nv4_zfs_vs_t"
     nv4["expected_count_rate"] = 2300
+    
+    nv5 = copy.deepcopy(nvref)
+    nv5["coords"] = np.array([0.849, -0.669, z_coord])
+    nv5["name"] =  f"{sample_name}-nv5_zfs_vs_t"
+    nv5["expected_count_rate"] = 300
 
     # fmt: on
 
-    nv_sig = nv4
+    # nv_sig = nv5
     # nv_sig = nvref
     # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
     nv_list = [nv1, nv2, nv3]
@@ -486,12 +491,12 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_determine_standard_readout_params(nv_sig, apd_indices)
 
-        do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.060)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.060)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        # temp = 290
-        # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
+        temp = 290
+        do_pulsed_resonance_batch(nv_list, apd_indices, temp)
         # do_rabi_batch(nv_list, apd_indices)
 
     except Exception as exc:

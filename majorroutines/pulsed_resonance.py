@@ -20,7 +20,7 @@ import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import labrad
-from utils.tool_belt import States
+from utils.tool_belt import States, NormStyle
 from random import shuffle
 import sys
 
@@ -122,7 +122,9 @@ def return_res_with_error(data):
     ref_counts = data["ref_counts"]
     sig_counts = data["sig_counts"]
     num_runs = data["num_runs"]
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    nv_sig = data["nv_sig"]
+    norm_style = nv_sig["norm_style"]
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
     (
         avg_ref_counts,
         avg_sig_counts,
@@ -370,7 +372,8 @@ def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
     return smooth_freqs, rel_counts
 
 
-def process_counts(ref_counts, sig_counts, num_runs):
+def process_counts(ref_counts, sig_counts, num_runs, 
+                   norm_style=NormStyle.single_valued):
     """
     Extract the normalized average signal at each data point.
     Assume the reference measurements are independent of the signal
@@ -390,16 +393,13 @@ def process_counts(ref_counts, sig_counts, num_runs):
     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
-    # New style, single reference
-    if False:
+    if norm_style == NormStyle.single_valued:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
             + (single_ref_ste / single_ref_avg) ** 2
         )
-
-    # Old style, point-by-point reference
-    else:
+    elif norm_style == NormStyle.point_to_point:
         norm_avg_sig = sig_counts_avg / ref_counts_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
@@ -537,6 +537,8 @@ def main_with_cxn(
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    
+    norm_style = nv_sig["norm_style"]
 
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
@@ -686,7 +688,10 @@ def main_with_cxn(
         single_ref_avg = np.average(ref_counts[: (run_ind + 1)])
         ref_counts_avg = np.average(ref_counts[: (run_ind + 1)], axis=0)
         sig_counts_avg = np.average(sig_counts[: (run_ind + 1)], axis=0)
-        norm_avg_sig = sig_counts_avg / single_ref_avg
+        if norm_style == NormStyle.single_valued:
+            norm_avg_sig = sig_counts_avg / single_ref_avg
+        elif norm_style == NormStyle.point_to_point:
+            norm_avg_sig = sig_counts_avg / ref_counts_avg
 
         kcps_uwave_off_avg = (ref_counts_avg / (num_reps * 1000)) / readout_sec
         kcpsc_uwave_on_avg = (sig_counts_avg / (num_reps * 1000)) / readout_sec
@@ -756,7 +761,7 @@ def main_with_cxn(
 
     # %% Process and plot the data
 
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
     (
         avg_ref_counts,
         avg_sig_counts,
@@ -921,7 +926,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_28-11_25_39-15micro-nv4_zfs_vs_t"
+    file = "2022_11_28-14_47_17-15micro-nv5_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -931,45 +936,38 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
     nv_sig = data["nv_sig"]
-    readout = nv_sig["spin_readout_dur"]
-    freq_index_master_list = data["freq_index_master_list"]
-    readout_sec = readout / (10 ** 9)
-    run_ind = 0
-    ref_counts = ref_counts[run_ind]
-    sig_counts = sig_counts[run_ind]
-    freq_inds = freq_index_master_list[run_ind]
+    norm_style = NormStyle.point_to_point
     
-    # freqs = calculate_freqs(freq_range, freq_center, num_steps)
-    fig, ax = plt.subplots()
-    ref_counts_kcps = (ref_counts / (num_reps * 1000)) / readout_sec
-    sig_counts_kcps = (sig_counts / (num_reps * 1000)) / readout_sec
-    kpl.plot_points(ax, freq_inds, ref_counts_kcps, label="Reference", color=kpl.KplColors.RED)
-    kpl.plot_points(ax, freq_inds, sig_counts_kcps, label="Signal", color=kpl.KplColors.GREEN)
-    ax.set_xlabel("Frequency index")
-    ax.set_ylabel("Count rate (kcps)")
-    ax.legend()
-    kpl.tight_layout(fig)
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
+    (
+        avg_ref_counts,
+        avg_sig_counts,
+        norm_avg_sig,
+        ste_ref_counts,
+        ste_sig_counts,
+        norm_avg_sig_ste,
+    ) = ret_vals
 
-    # fit_func, popt, pcov = fit_resonance(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     norm_avg_sig_ste,
-    #     ref_counts,
-    # )
+    fit_func, popt, pcov = fit_resonance(
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        ref_counts,
+    )
 
-    # # # popt[2] -= np.sqrt(pcov[2, 2])
+    # # popt[2] -= np.sqrt(pcov[2, 2])
 
-    # create_fit_figure(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     fit_func,
-    #     popt,
-    #     norm_avg_sig_ste=norm_avg_sig_ste,
-    # )
+    create_fit_figure(
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        fit_func,
+        popt,
+        norm_avg_sig_ste=norm_avg_sig_ste,
+    )
 
     # plt.show(block=True)
 
