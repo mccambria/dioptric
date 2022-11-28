@@ -880,7 +880,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_27-17_38_45-15micro-nv3_zfs_vs_t"
+    file = "2022_11_28-17_27_33-15micro-nv3_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
     print(return_res_with_error(data))
     # sys.exit()
