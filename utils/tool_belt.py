@@ -568,7 +568,7 @@ def create_image_figure(
             axes_labels = [a, a]
         except Exception as exc:
             print(exc)
-            axes_label = ["V", "V"]
+            axes_labels = ["V", "V"]
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
