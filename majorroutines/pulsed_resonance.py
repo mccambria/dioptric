@@ -23,11 +23,12 @@ import labrad
 from utils.tool_belt import States
 from random import shuffle
 import sys
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+
+# optimization_type = tool_belt.get_optimization_style()
+# if optimization_type == 'DISCRETE':
+#     import majorroutines.optimize_digital as optimize
+# if optimization_type == 'CONTINUOUS':
+#     import majorroutines.optimize as optimize
 
 
 # %% Figure functions
@@ -512,7 +513,7 @@ def main_with_cxn(
 ):
 
     # %% Initial calculations and setup
-    
+
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
@@ -632,9 +633,7 @@ def main_with_cxn(
                 "discrete_rabi2.py", seq_args_string
             )
         else:
-            ret_vals = pulsegen_server.stream_load(
-                "rabi.py", seq_args_string
-            )
+            ret_vals = pulsegen_server.stream_load("rabi.py", seq_args_string)
 
         # Start the tagger stream
         counter_server.start_tag_stream(apd_indices)
@@ -665,7 +664,7 @@ def main_with_cxn(
             sample_counts = new_counts[0]
             cur_run_sig_counts_summed = sample_counts[0]
             cur_run_ref_counts_summed = sample_counts[1]
-            
+
             sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
             ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
 
