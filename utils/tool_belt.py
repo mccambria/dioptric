@@ -30,7 +30,7 @@ from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
 from pathlib import Path, PurePath
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 import socket
 import smtplib
 from email.mime.text import MIMEText
@@ -40,6 +40,7 @@ import math
 import utils.common as common
 import utils.search_index as search_index
 import signal
+import copy
 
 # %% Constants
 
@@ -48,9 +49,17 @@ class States(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
+    
+
+# Normalization style
+class NormStyle(Enum):
+    single_valued = auto()  # Use a single-valued reference 
+    point_to_point = auto()  # Normalize each signal point by its own reference
 
 
-# Digital = {'LOW': 0, 'HIGH': 1}
+class Digital(IntEnum):
+    LOW = 0
+    HIGH = 1
 
 
 class Mod_types(Enum):
@@ -1782,6 +1791,10 @@ def save_raw_data(rawData, filePath):
             The file path to save to including the file name, excluding the
             extension
     """
+    
+    # Just to be safe, work with a copy of the raw data rather than the 
+    # raw data itself
+    rawData = copy.deepcopy(rawData)
 
     file_path_ext = filePath.with_suffix(".txt")
 
@@ -1797,16 +1810,18 @@ def save_raw_data(rawData, filePath):
     except Exception as e:
         print(e)
         
-    # Cast any numpy arrays in the sig to lists
+    # Casting for JSON compatibility
     nv_sig = rawData["nv_sig"]
     for key in nv_sig:
         if type(nv_sig[key]) == np.ndarray:
             nv_sig[key] = nv_sig[key].tolist()
+        elif isinstance(nv_sig[key], Enum):
+            nv_sig[key] = nv_sig[key].name
+            
 
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
 
-    # print(repr(search_index.search_index_regex))
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
