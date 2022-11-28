@@ -157,8 +157,8 @@ def optimize_readout_duration_sub(
     tool_belt.reset_cfm(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-
-    seq_file = "rabi_time_tagging.py"
+    
+    seq_file = "rabi.py"
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -187,7 +187,7 @@ def optimize_readout_duration_sub(
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
     
     
-    opti_period = 2.5 * 60  # Optimize every opti_period seconds
+    opti_period = 0.25 * 60  # Optimize every opti_period seconds
 
     # Some initial parameters
     num_reps_per_cycle = round(opti_period / period_sec)
@@ -307,7 +307,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps,
     Either powers or filters should be populated but not both.
     """
     
-    kpl.init_kplotlib
+    kpl.init_kplotlib()
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()

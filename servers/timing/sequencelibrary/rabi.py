@@ -77,7 +77,7 @@ def get_seq(pulse_streamer, config, args):
     period = 0
     for el in train:
         period += el[0]
-    print(period)
+    # print(period)
 
     # Laser for polarization and readout
     train = [(common_delay - laser_delay, LOW),

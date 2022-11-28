@@ -139,7 +139,7 @@ if __name__ == "__main__":
     do_plot = True
 
     # main(channel, do_plot, do_email=False)
-    # main(channel, do_plot, do_email=True)
+    main(channel, do_plot, do_email=True)
 
     # with labrad.connect() as cxn:
 

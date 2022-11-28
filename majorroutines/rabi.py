@@ -333,33 +333,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             
             start_time = time.time()
             pulsegen_server.stream_immediate(file_name, num_reps,
-                                                seq_args_string)
-            # print(t1-start_time)
-            # # Get the counts
-            # new_counts = counter_server.read_counter_modulo_gates(2)
-            # t2=time.time()
-            # print(t2-t1)
-            # sample_counts = new_counts[0]
-            
-            # cur_run_sig_counts_summed = sample_counts[0]
-            # cur_run_ref_counts_summed = sample_counts[1]
-            
-            # sig_counts[run_ind, tau_ind] = cur_run_sig_counts_summed
-            # ref_counts[run_ind, tau_ind] = cur_run_ref_counts_summed
-            new_counts = counter_server.read_counter_modulo_gates(2)
+                                             seq_args_string)
+            new_counts = counter_server.read_counter_modulo_gates(2, 1)
+            # print(new_counts)
             sample_counts = new_counts[0]
-            
-            cur_run_sig_counts_summed = sample_counts[0]
-            cur_run_ref_counts_summed = sample_counts[1]
-            
-            sig_counts[run_ind, tau_ind] = cur_run_sig_counts_summed
-            ref_counts[run_ind, tau_ind] = cur_run_ref_counts_summed
+            sig_counts[run_ind, tau_ind] = sample_counts[0]
+            ref_counts[run_ind, tau_ind] = sample_counts[1]
             
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
 #            start_time = run_time
 #            print('Tau: {} ns'.format(taus[tau_ind]))
 #            print('Elapsed time {}'.format(run_elapsed_time))
+
         counter_server.stop_tag_stream()
 
         # %% incremental plotting

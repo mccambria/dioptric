@@ -149,8 +149,7 @@ class ApdTagger(LabradServer):
                 "read_counter_internal attempted while stream is None."
             )
             return
-        _, buffer_channels = self.read_raw_stream()
-        
+        buffer_times, buffer_channels = self.read_raw_stream()
         
         # Assume a single gate for both APDs: get all the gates once and then
         # count for each APD individually
@@ -168,6 +167,11 @@ class ApdTagger(LabradServer):
             apd_channels,
             self.leftover_channels,
         )
+        # MCC: Bounce check
+        # if 0 in np.array(return_counts):
+        #     double_samples = [self.tagger_di_clock, self.tagger_di_clock]
+        #     errors = [(buffer_times[i], buffer_times[i+1]) for i in range(len(buffer_channels)) if buffer_channels[i:i+2].tolist() == double_samples]
+        #     logging.info(errors)
         self.leftover_channels = leftover_channels
         return return_counts
     
@@ -307,8 +311,8 @@ class ApdTagger(LabradServer):
             np.sum(sample, dtype=int) for sample in complete_counts
         ]
         # logging.info(return_counts)
-        if 0 in return_counts:
-            logging.info(complete_counts)
+        # if 0 in return_counts:
+        #     logging.info(complete_counts)
         return return_counts
 
     @setting(6, num_to_read="i", returns="*2w")
@@ -349,6 +353,7 @@ class ApdTagger(LabradServer):
         separate_gate_counts = [
             np.sum(el, 0, dtype=int).tolist() for el in complete_counts
         ]
+        # logging.info(complete_counts)
 
         # Run the modulus
         return_counts = []
