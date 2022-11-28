@@ -11,6 +11,10 @@ Created 2021_09_10
 import platform
 from pathlib import Path
 
+shared_email = "kolkowitznvlab@gmail.com"
+windows_nvdata_dir = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
+linux_nvdata_dir = Path.home() / "E/nvdata"
+
 
 def get_nvdata_dir():
     """Returns the directory for nvdata as appropriate for the OS. Returns
@@ -18,7 +22,7 @@ def get_nvdata_dir():
     """
     os_name = platform.system()
     if os_name == "Windows":
-        nvdata_dir = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
+        nvdata_dir = 
     elif os_name == "Linux":
         nvdata_dir = Path.home() / "E/nvdata"
 

@@ -430,8 +430,6 @@ if __name__ == "__main__":
 
     try:
 
-        # pass
-
         tool_belt.init_safe_stop()
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset

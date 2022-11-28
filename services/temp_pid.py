@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-Created on August 9th, 2021
+"""PID temperature control service using a multimeter and power supply. 
+Probably should be merged with the very similar temp_monitor (which is
+just a generic monitor with no output). This file is currently
+specific to the Kolkowitz lab, but it could be easily modified. 
 
-PID temperature control service using a multimeter and power supply
+Created on August 9th, 2021
 
 @author: mccambria
 """
@@ -128,7 +130,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
     resistance_period = 10
     last_resistance_time = now
     # Check the third-party temperature monitor to make sure nothing is melting
-    safety_check_period = 10 
+    safety_check_period = 10
     last_safety_check_time = now + 5  # Offset this from the resistance checks
     last_meas_time = now
     last_error = target - actual
@@ -209,10 +211,17 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         if now - last_safety_check_time > safety_check_period:
             safety_check_temp = cxn.temp_controller_tc200.measure()
             with open(logging_file, "a+") as f:
-                f.write("safety check: {}, {} \n".format(round(now), round(safety_check_temp, 1)))
+                f.write(
+                    "safety check: {}, {} \n".format(
+                        round(now), round(safety_check_temp, 1)
+                    )
+                )
             last_safety_check_time = now
             if (safety_check_temp < 285) or (safety_check_temp > 305):
-                print("Safety check temperature out of bounds at {}! Exiting.".format(safety_check_temp))
+                print(
+                    "Safety check temperature out of bounds at {}! Exiting."
+                    .format(safety_check_temp)
+                )
                 return
         set_power(cxn, power, resistance)
         # Immediately get a better resistance measurement after the first set

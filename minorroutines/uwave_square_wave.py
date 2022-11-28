@@ -8,113 +8,90 @@ Created on Sun Jun 16 11:22:40 2019
 """
 
 
-# %% Imports
-
-
-from pulsestreamer import PulseStreamer as Pulser
-from pulsestreamer import TriggerStart
-from pulsestreamer import OutputState
 import numpy as np
-from pulsestreamer import Sequence
 import labrad
 import utils.tool_belt as tool_belt
-from utils.tool_belt import States
 import time
 
 
-# %% Constants
+def sweep(cxn, sig_gen_name, uwave_freqs, uwave_power):
 
-
-LOW = 0
-HIGH = 1
-
-
-def sweep(cxn, uwave_freqs, uwave_power):
-    
-    tool_belt.init_safe_stop()
-    
-    sig_gen_cxn = cxn.signal_generator_sg394
+    sig_gen_cxn = eval(f"cxn.{sig_gen_name}")
     sig_gen_cxn.set_freq(uwave_freqs[0])
     sig_gen_cxn.set_amp(uwave_power)
     sig_gen_cxn.uwave_on()
     cxn.pulse_streamer.constant([7])
-    
+
     time.sleep(2)
-    
+
     for freq in uwave_freqs:
         if tool_belt.safe_stop():
             break
         sig_gen_cxn.set_freq(freq)
         time.sleep(0.03)
-        
+
     cxn.pulse_streamer.constant()
     sig_gen_cxn.uwave_off()
     tool_belt.reset_cfm(cxn)
+    tool_belt.reset_safe_stop()
 
 
-def constant(cxn, uwave_freq, uwave_power):
+def constant(cxn, sig_gen_name, uwave_freq, uwave_power):
 
-    sig_gen_cxn = cxn.signal_generator_sg394
+    sig_gen_cxn = eval(f"cxn.{sig_gen_name}")
     sig_gen_cxn.set_amp(uwave_power)
     sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.uwave_on()
 
+    config = tool_belt.get_config_dict()
+    pulser_wiring = config["Wiring"]["PulseStreamer"]
+    sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
+    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+
     cxn.pulse_streamer.constant([7])
-    input('Press enter to stop...')
+    tool_belt.poll_safe_stop()
     cxn.pulse_streamer.constant()
 
     sig_gen_cxn.uwave_off()
-    tool_belt.reset_cfm(cxn)
-
-# %% Main
 
 
-def main(cxn, uwave_freq, uwave_power, state = States.LOW):
-    """When you run the file, we'll call into main, which should contain the
-    body of the script.
-    """
+def square_wave(cxn, sig_gen_name, uwave_freq, uwave_power):
 
-
-    sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-    sig_gen_cxn = cxn.signal_generator_sg394
-    sig_gen_cxn.set_amp(uwave_power)
-    sig_gen_cxn.set_freq(uwave_freq)
-    # sig_gen_cxn.load_iq()
-    # sig_gen_cxn.uwave_on()
-
-
-    seq_file = 'uwave_square_wave.py'
     uwave_on = int(500)
     uwave_off = int(500)
-    seq_args = [uwave_on,  uwave_off, state.value]
-    print(seq_args)
 
-    # seq_args_string = tool_belt.encode_seq_args(seq_args)
+    sig_gen_cxn = eval(f"cxn.{sig_gen_name}")
+    sig_gen_cxn.set_amp(uwave_power)
+    sig_gen_cxn.set_freq(uwave_freq)
 
-    # cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
-
-    # input('Press enter to stop...')
-
+    seq_file = "uwave_square_wave.py"
+    seq_args = [uwave_on, uwave_off, sig_gen_name]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+    tool_belt.poll_safe_stop()
     sig_gen_cxn.uwave_off()
     tool_belt.reset_cfm(cxn)
 
 
+if __name__ == "__main__":
 
-# %% Run the file
+    sig_gen_name = "signal_generator_sg394"
 
+    uwave_freq = 2.87
+    half_range = 0.5
+    uwave_freqs = np.linspace(
+        uwave_freq - half_range, uwave_freq + half_range, 1000
+    )
 
-# The __name__ variable will only be '__main__' if you run this file directly.
-# This allows a file's functions, classes, etc to be imported without running
-# the script that you set up here.
-if __name__ == '__main__':
+    uwave_power = 16.5  # dBm
 
-    # Set up your parameters to be passed to main here
+    tool_belt.init_safe_stop()
 
     with labrad.connect() as cxn:
-        uwave_freq = 2.87 #GHz
-        uwave_power = 16.5 #dBm
-        # # main(cxn,uwave_freq, uwave_power, States.HIGH)
-        constant(cxn,uwave_freq, uwave_power)
-        half_range = 0.5
-        uwave_freqs = np.linspace(uwave_freq - half_range, uwave_freq + half_range, 1000)
-        # sweep(cxn, uwave_freqs, uwave_power)
+        # Some parameters you'll need to set in these functions
+        # sweep(cxn, sig_gen_name, uwave_freqs, uwave_power)
+        constant(cxn, sig_gen_name, uwave_freq, uwave_power)
+        # square_wave(cxn, sig_gen_name, uwave_freq, uwave_power)
+
+    tool_belt.reset_cfm()
+    tool_belt.reset_safe_stop()

@@ -13,7 +13,7 @@ Created on June 22nd, 2022
 import matplotlib.pyplot as plt
 from colorutils import Color
 import re
-from enum import Enum, auto
+from enum import Enum, auto, StrEnum
 
 
 class Size(Enum):
@@ -51,10 +51,9 @@ default_data_size = Size.NORMAL
 
 # region Colors
 # The default color specification is hex, eg "#bcbd22"
-# Get a KplColors hex with KplColors.<COLOR>.value
 
 
-class KplColors(Enum):
+class KplColors(StrEnum):
     BLUE = "#1f77b4"
     ORANGE = "#ff7f0e"
     GREEN = "#2ca02c"
@@ -75,16 +74,16 @@ class KplColors(Enum):
 
 
 data_color_cycler = [
-    KplColors.BLUE.value,
-    KplColors.RED.value,
-    KplColors.GREEN.value,
-    KplColors.ORANGE.value,
-    KplColors.PURPLE.value,
-    KplColors.BROWN.value,
-    KplColors.PINK.value,
-    KplColors.GRAY.value,
-    KplColors.YELLOW.value,
-    KplColors.CYAN.value,
+    KplColors.BLUE,
+    KplColors.RED,
+    KplColors.GREEN,
+    KplColors.ORANGE,
+    KplColors.PURPLE,
+    KplColors.BROWN,
+    KplColors.PINK,
+    KplColors.GRAY,
+    KplColors.YELLOW,
+    KplColors.CYAN,
 ]
 line_color_cycler = data_color_cycler.copy()
 
