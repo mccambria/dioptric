@@ -23,11 +23,7 @@ from scipy.optimize import curve_fit
 import labrad
 from utils.tool_belt import States
 
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 
 # %% Functions
 

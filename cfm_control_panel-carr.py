@@ -21,7 +21,7 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.image_sample_xz_digital as image_sample_xz_digital
-import majorroutines.optimize_digital as optimize_digital
+import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
@@ -69,7 +69,7 @@ def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,c
 
 def do_optimize(nv_sig, apd_indices):
 
-    optimize_coords = optimize_digital.main(
+    optimize_coords = optimize.main(
         nv_sig,
         apd_indices,
         set_to_opti_coords=False,
@@ -85,7 +85,7 @@ def do_optimize_z(nv_sig, apd_indices):
     adj_nv_sig = copy.deepcopy(nv_sig)
     adj_nv_sig["only_z_opt"] = True
 
-    optimize_coords = optimize_digital.main(
+    optimize_coords = optimize.main(
         adj_nv_sig,
         apd_indices,
         set_to_opti_coords=False,
@@ -503,7 +503,7 @@ if __name__ == "__main__":
         
         # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.83,freq_range=.08)
         # do_resonance_modulo(nv_sig, apd_indices,num_steps = 51, num_runs = 5)
-        do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
+        # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.HIGH,num_reps=2e4,num_runs=6,num_steps=51)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.8582, freq_range=0.03,num_steps=31, num_reps=2e4, num_runs=10)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)

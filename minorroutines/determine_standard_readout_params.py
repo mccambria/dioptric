@@ -25,11 +25,7 @@ from utils.tool_belt import States
 import utils.kplotlib as kpl
 import copy
 import matplotlib.pyplot as plt
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 
 
 # region Functions

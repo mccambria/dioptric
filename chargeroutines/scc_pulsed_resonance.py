@@ -19,11 +19,8 @@ from utils.tool_belt import States
 import majorroutines.pulsed_resonance as pulsed_resonance
 from random import shuffle
 import sys
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
+
 # %%
 
 def plot_esr(ref_counts, sig_counts, num_runs, freqs = None, freq_center = None, freq_range = None, num_steps = None):
