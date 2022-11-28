@@ -29,7 +29,6 @@ import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.rabi as rabi
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import minorroutines.test_routine_opx as test_routine_opx
 import minorroutines.determine_delays as determine_delays
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
@@ -482,7 +481,7 @@ if __name__ == "__main__":
         # do_determine_scc_pulse_params(nv_sig,apd_indices,int(1e6))
         #     for t in [250,2000]:
         #         nv_sig["nv-_reionization_dur"] = t
-        do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
+        # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         
         # do_ramsey_one_tau_no_ref(nv_sig, apd_indices)
         
@@ -504,7 +503,7 @@ if __name__ == "__main__":
         
         # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.83,freq_range=.08)
         # do_resonance_modulo(nv_sig, apd_indices,num_steps = 51, num_runs = 5)
-        # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
+        do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.HIGH,num_reps=2e4,num_runs=6,num_steps=51)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.8582, freq_range=0.03,num_steps=31, num_reps=2e4, num_runs=10)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)

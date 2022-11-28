@@ -239,7 +239,9 @@ def main_with_cxn(
     uwave_pi_pulse = 0
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
-    seq_file_name = "ramsey.py"
+    seq_file_name = "spin_echo.py"
+    if False:
+        seq_file_name = "ramsey.py"
 
     # %% Create the array of relaxation times
 
