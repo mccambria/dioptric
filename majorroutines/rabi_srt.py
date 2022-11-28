@@ -60,11 +60,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     dev_low_sign = 1
     if deviation_high < 0:
         dev_high_sign = -1
-        deviation_high = abs(deviation_high)
-    if True:
-     if deviation_low < 0:
+        
+    if deviation_low < 0:
         dev_low_sign = -1
-        deviation_low = abs(deviation_low)
     
     state_high = States.HIGH
     state_low = States.LOW
@@ -183,15 +181,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         )
         low_sig_gen_cxn.set_freq(uwave_freq_low)
         low_sig_gen_cxn.set_amp(uwave_power_low)
-        low_sig_gen_cxn.load_fm(deviation_low)
+        low_sig_gen_cxn.load_fm(abs(deviation_low))
         low_sig_gen_cxn.uwave_on()
 
         high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
             cxn, States.HIGH
         )
         high_sig_gen_cxn.set_freq(uwave_freq_high)
+        # high_sig_gen_cxn.set_freq(uwave_freq_high_detune)
         high_sig_gen_cxn.set_amp(uwave_power_high)
-        high_sig_gen_cxn.load_fm(deviation_high)
+        high_sig_gen_cxn.load_fm(abs(deviation_high))
         high_sig_gen_cxn.uwave_on()
         
 
@@ -290,8 +289,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         ax.cla()
         ax.plot(taus , norm_avg_sig, 'b-')
         ax.set_title('{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
-                                   readout_state.name, deviation_high*dev_high_sign, 
-                                   deviation_low*dev_low_sign))
+                                   readout_state.name, deviation_high, 
+                                   deviation_low))
         ax.set_xlabel('Microwave duration (ns)')
         ax.set_ylabel('Normalized signal')
 
@@ -311,9 +310,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'deviation_low': deviation_low*dev_low_sign,
+                    'deviation_low': deviation_low,
                     'deviation_low-units': 'MHz',
-                    'deviation_high': deviation_high*dev_high_sign,
+                    'deviation_high': deviation_high,
                     'deviation_high-units': 'MHz',
                     'uwave_time_range': uwave_time_range,
                     'uwave_time_range-units': 'ns',
@@ -358,8 +357,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     ax.cla()
     ax.plot(taus , norm_avg_sig, 'b-')
     ax.set_title('{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
-                                   readout_state.name, deviation_high*dev_high_sign, 
-                                   deviation_low*dev_low_sign))
+                                   readout_state.name, deviation_high, 
+                                   deviation_low))
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Normalized signal')
 
@@ -391,9 +390,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'deviation_low': deviation_low*dev_low_sign,
+                'deviation_low': deviation_low,
                 'deviation_low-units': 'MHz',
-                'deviation_high': deviation_high*dev_high_sign,
+                'deviation_high': deviation_high,
                 'deviation_high-units': 'MHz',
                 'initial_state': initial_state.name,
                 'readout_state': readout_state.name,

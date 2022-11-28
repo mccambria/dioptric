@@ -419,8 +419,8 @@ def do_rabi_srt(nv_sig,  apd_indices, initial_state, readout_state, uwave_time_r
     
     num_steps = 25
     # num_reps = int(1e3)
-    num_reps = int(2e4)
-    num_runs = 10 #100
+    num_reps = int(1e4)
+    num_runs = 30 #100
 
     rabi_srt.main(nv_sig, 
               apd_indices, 
@@ -1146,7 +1146,7 @@ if __name__ == "__main__":
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7813 
     nv_sig_1["rabi_LOW"]= 129.5
-    nv_sig_1["resonance_HIGH"]= 2.9591 #- 0.024
+    nv_sig_1["resonance_HIGH"]= 2.9591 
     nv_sig_1["rabi_HIGH"]=129.5
     
     
@@ -1227,7 +1227,12 @@ if __name__ == "__main__":
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
-        do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 1500])
+        
+        for df in numpy.linspace(-4e-3, 4e-3,9):
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['resonance_LOW'] = nv_sig['resonance_LOW'] + df
+            print(nv_sig_copy['resonance_LOW'])
+            do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 1500])
         #do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.ZERO)
         #do_rabi_srt(nv_sig,  apd_indices, States.LOW, States.LOW)
         # for d in [0, 8, 16, 24]:
