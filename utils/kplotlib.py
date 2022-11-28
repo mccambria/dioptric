@@ -13,7 +13,8 @@ Created on June 22nd, 2022
 import matplotlib.pyplot as plt
 from colorutils import Color
 import re
-from enum import Enum, auto, StrEnum
+from enum import Enum, auto
+from strenum import StrEnum
 
 
 class Size(Enum):

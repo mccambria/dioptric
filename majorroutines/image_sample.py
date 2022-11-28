@@ -16,6 +16,8 @@ import labrad
 import majorroutines.optimize as optimize
 import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
+import cv2
+import utils.common as common
 
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
@@ -578,29 +580,79 @@ if __name__ == "__main__":
 
     ### Simple
 
-    file_name = "2022_09_08-13_02_34-rubin-nv1_2022_08_10"
-    data = tool_belt.get_raw_data(file_name)
-    img_array = np.array(data["img_array"], dtype=float)
-    readout_sec = data["readout"] * 1e-9
-    img_array_kcps = np.copy(img_array)
-    img_array_kcps[:] *= (1 / (1000 * readout_sec))
-    x_range = data["x_range"]
-    num_steps = data["num_steps"]
-    drift = data["drift"]
-    coords = data["nv_sig"]["coords"]
-    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
-    x_center, y_center, z_center = adjusted_coords
-    img_extent = tool_belt.calc_image_extent(
-        x_center, y_center, x_range, num_steps
-    )
-
-    kpl.init_kplotlib()
-
-    fig = tool_belt.create_image_figure(
-        img_array_kcps,
-        img_extent,
-        color_bar_label="kcps",
-        title=f"{file_name} replot",
-    )
+    wu_files = [
+        "2022_11_23-16_31_52-wu-nvref_zfs_vs_t",
+        "2022_11_23-16_37_38-wu-nvref_zfs_vs_t",
+        "2022_11_23-16_43_23-wu-nvref_zfs_vs_t",
+        "2022_11_23-16_49_09-wu-nvref_zfs_vs_t",
+        "2022_11_23-16_54_55-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_00_41-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_06_27-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_12_12-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_17_58-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_23_44-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_29_30-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_35_15-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_41_02-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_46_48-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_52_34-wu-nvref_zfs_vs_t",
+        "2022_11_23-17_58_20-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_04_06-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_09_52-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_15_38-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_21_23-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_27_09-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_32_55-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_38_40-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_44_25-wu-nvref_zfs_vs_t",
+        "2022_11_23-18_50_11-wu-nvref_zfs_vs_t",
+    ]
     
-    plt.show(block=True)
+    for ind in range(len(wu_files)):
+
+        file_name = wu_files[ind]
+        data = tool_belt.get_raw_data(file_name)
+        img_array = np.array(data["img_array"], dtype=float)
+        readout_sec = data["readout"] * 1e-9
+        img_array_kcps = np.copy(img_array)
+        img_array_kcps[:] *= 1 / (1000 * readout_sec)
+        x_range = data["x_range"]
+        num_steps = data["num_steps"]
+        drift = data["drift"]
+        coords = data["nv_sig"]["coords"]
+        adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
+        x_center, y_center, z_center = adjusted_coords
+        img_extent = tool_belt.calc_image_extent(
+            x_center, y_center, x_range, num_steps
+        )
+
+        kpl.init_kplotlib()
+
+        img_array_kcps = cv2.GaussianBlur(img_array_kcps, (5, 5), 2)
+        kernel = np.array(
+            [
+                [0, -1, -1, -1, 0],
+                [-1, 1, 1, 1, -1],
+                [-1, 1, 4, 1, -1],
+                [-1, 1, 1, 1, -1],
+                [0, -1, -1, -1, 0],
+            ]
+        )
+        kernel = kernel / (np.sum(kernel) if np.sum(kernel) != 0 else 1)
+        img_array_kcps = cv2.filter2D(img_array_kcps, -1, kernel)
+
+        fig = tool_belt.create_image_figure(
+            img_array_kcps,
+            img_extent,
+            color_bar_label="kcps",
+            title=f"{kpl.tex_escape(file_name)} replot",
+            cmin=0,
+        )
+
+        path = (
+            common.get_nvdata_dir()
+            / f"paper_materials/zfs_temp_dep/figures/composite_wu/processed/{file_name}.svg"
+        )
+        tool_belt.save_figure(fig, path)
+
+        # plt.show(block=True)
