@@ -1,23 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-This file contains functions, classes, and other objects that are useful
+"""This file contains functions, classes, and other objects that are useful
 in a variety of contexts. Since they are expected to be used in many
 files, I put them all in one place so that they don't have to be redefined
 in each file.
 
-Created on Fri Nov 23 14:57:08 2018
+Created on November 23rd, 2018
 
 @author: mccambria
 """
 
+# region Imports and constants
 
-# %% Imports
-
-
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.style as mplstyle
-import threading
 import os
 import csv
 import datetime
@@ -26,8 +20,6 @@ from numpy import exp
 import json
 import time
 import labrad
-from tkinter import Tk
-from tkinter import filedialog
 from git import Repo
 from pathlib import Path, PurePath
 from enum import Enum, IntEnum, auto
@@ -42,18 +34,16 @@ import utils.search_index as search_index
 import signal
 import copy
 
-# %% Constants
-
 
 class States(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
-    
+
 
 # Normalization style
 class NormStyle(Enum):
-    single_valued = auto()  # Use a single-valued reference 
+    single_valued = auto()  # Use a single-valued reference
     point_to_point = auto()  # Normalize each signal point by its own reference
 
 
@@ -62,9 +52,17 @@ class Digital(IntEnum):
     HIGH = 1
 
 
-class Mod_types(Enum):
+class ModTypes(Enum):
     DIGITAL = auto()
     ANALOG = auto()
+
+
+class Digital(IntEnum):
+    LOW = 0
+    HIGH = 1
+
+
+# endregion
 
 
 def get_signal_generator_name_no_cxn(state):
@@ -84,11 +82,10 @@ def get_signal_generator_cxn(cxn, state):
     return signal_generator_cxn
 
 
-# %% xyz sets
+# region xyz sets
 
 
 def set_xyz(cxn, coords):
-    ####Update to step incrementally to this position from the current position
     # get current x, y, z values
     # divide up movement to this value based on step_size
     # incrementally move to the final position
@@ -117,6 +114,7 @@ def set_xyz(cxn, coords):
 
 
 def set_xyz_ramp(cxn, coords):
+    """Step incrementally to this position from the current position"""
     xy_dtype = get_registry_entry(
         cxn, "xy_dtype", ["", "Config", "Positioning"]
     )
@@ -243,7 +241,9 @@ def set_xyz_on_nv(cxn, nv_sig):
     set_xyz(cxn, nv_sig["coords"])
 
 
-# %% Laser utils
+# endregion
+# region Laser utils
+
 
 def get_mod_type(laser_name):
     with labrad.connect() as cxn:
@@ -260,22 +260,23 @@ def laser_off(cxn, laser_name):
 
 def laser_on(cxn, laser_name, laser_power=None):
     laser_switch_sub(cxn, True, laser_name, laser_power)
-    
 
-def get_opx_laser_pulse_info(config,laser_name,laser_power):
-    
-    mod_type = config['Optics'][laser_name]['mod_type']
-    laser_delay = config['Optics'][laser_name]['delay']
-    
-    laser_pulse_name = 'laser_ON_{}'.format(eval(mod_type).name)
-    
-    if eval(mod_type).name == 'ANALOG':
+
+def get_opx_laser_pulse_info(config, laser_name, laser_power):
+
+    mod_type = config["Optics"][laser_name]["mod_type"]
+    laser_delay = config["Optics"][laser_name]["delay"]
+
+    laser_pulse_name = "laser_ON_{}".format(eval(mod_type).name)
+
+    if eval(mod_type).name == "ANALOG":
         laser_pulse_amplitude = laser_power
-    
-    elif eval(mod_type).name == 'DIGITAL':
+
+    elif eval(mod_type).name == "DIGITAL":
         laser_pulse_amplitude = 1
-    
+
     return laser_pulse_name, laser_delay, laser_pulse_amplitude
+
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
@@ -283,50 +284,26 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
     mod_type = eval(mod_type)
-    feedthrough = get_registry_entry(
-        cxn, "feedthrough", ["", "Config", "Optics", laser_name]
-    )
-    feedthrough = eval(feedthrough)
 
-    if mod_type is Mod_types.DIGITAL:
-        # Digital, feedthrough
-        if feedthrough:
-            laser_cxn = eval("cxn.{}".format(laser_name))
-            print(laser_cxn)
-            if turn_on:
-                laser_cxn.laser_on()
-            else:
-                laser_cxn.laser_off()
-        # Digital, no feedthrough
-        else:
-            if turn_on:
-                try:
-                    laser_chan = get_registry_entry(
-                        cxn,
-                        "do_{}_dm".format(laser_name),
-                        ["", "Config", "Wiring", "PulseStreamer"],
-                    )
-                    cxn.pulse_streamer.constant([laser_chan])
-                except:
-                    # print('digital laser on using opx')
-                    cxn.qm_opx.constant([laser_name],[],[],[])
-    # Analog
-    elif mod_type is Mod_types.ANALOG:
+    if mod_type is ModTypes.DIGITAL:
         if turn_on:
-            try:
-                laser_chan = get_registry_entry(
-                    cxn,
-                    "do_{}_dm".format(laser_name),
-                    ["", "Config", "Wiring", "PulseStreamer"],
-                )
-                if laser_chan == 0:
-                    cxn.pulse_streamer.constant([], 0.0, laser_power)
-                elif laser_chan == 1:
-                    cxn.pulse_streamer.constant([], laser_power, 0.0)
-                    
-            except:
-                # print('analog laser on using opx')
-                cxn.qm_opx.constant([],[laser_name],[0.0],[laser_power])
+            laser_chan = get_registry_entry(
+                cxn,
+                "do_{}_dm".format(laser_name),
+                ["", "Config", "Wiring", "PulseStreamer"],
+            )
+            cxn.pulse_streamer.constant([laser_chan])
+    elif mod_type is ModTypes.ANALOG:
+        if turn_on:
+            laser_chan = get_registry_entry(
+                cxn,
+                "do_{}_dm".format(laser_name),
+                ["", "Config", "Wiring", "PulseStreamer"],
+            )
+            if laser_chan == 0:
+                cxn.pulse_streamer.constant([], 0.0, laser_power)
+            elif laser_chan == 1:
+                cxn.pulse_streamer.constant([], laser_power, 0.0)
 
     # If we're turning things off, turn everything off. If we wanted to really
     # do this nicely we'd find a way to only turn off the specific channel,
@@ -339,8 +316,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 def set_laser_power(
     cxn, nv_sig=None, laser_key=None, laser_name=None, laser_power=None
 ):
-    """
-    Set a laser power, or return it for analog modulation.
+    """Set a laser power, or return it for analog modulation.
     Specify either a laser_key/nv_sig or a laser_name/laser_power.
     """
     if (nv_sig is not None) and (laser_key is not None):
@@ -362,7 +338,7 @@ def set_laser_power(
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
     mod_type = eval(mod_type)
-    if mod_type == Mod_types.ANALOG:
+    if mod_type == ModTypes.ANALOG:
         return laser_power
     else:
         laser_server = get_filter_server(cxn, laser_name)
@@ -374,8 +350,7 @@ def set_laser_power(
 def set_filter(
     cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None
 ):
-    """
-    optics_key should be either 'collection' or a laser key.
+    """optics_key should be either 'collection' or a laser key.
     Specify either an optics_key/nv_sig or an optics_name/filter_name.
     """
 
@@ -409,8 +384,7 @@ def set_filter(
 
 
 def get_filter_server(cxn, optics_name):
-    """
-    Try to get a filter server. If there isn't one listed on the registry,
+    """Try to get a filter server. If there isn't one listed on the registry,
     just return None.
     """
 
@@ -424,8 +398,7 @@ def get_filter_server(cxn, optics_name):
 
 
 def get_laser_server(cxn, laser_name):
-    """
-    Try to get a laser server. If there isn't one listed on the registry,
+    """Try to get a laser server. If there isn't one listed on the registry,
     just return None.
     """
 
@@ -441,8 +414,7 @@ def get_laser_server(cxn, laser_name):
 def process_laser_seq(
     pulse_streamer, seq, config, laser_name, laser_power, train
 ):
-    """
-    Some lasers may require special processing of their Pulse Streamer
+    """Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
     modulation, but the Pulse Streamer only supplies 2.6 V.
     """
@@ -450,69 +422,11 @@ def process_laser_seq(
     # print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
-    feedthrough = config["Optics"][laser_name]["feedthrough"]
-    feedthrough = eval(feedthrough)
-    #    feedthrough = False
-
-    LOW = 0
-    HIGH = 1
 
     processed_train = []
 
-    if mod_type is Mod_types.DIGITAL:
-        # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
-        # Assumes we always leave the laser on (or off) for at least 100 ns
-        if feedthrough:
-            # Collapse the sequence so that no two adjacent elements have the
-            # same value
-            collapsed_train = []
-            ind = 0
-            len_train = len(train)
-            while ind < len_train:
-                el = train[ind]
-                dur = el[0]
-                val = el[1]
-                next_ind = ind + 1
-                while next_ind < len_train:
-                    next_el = train[next_ind]
-                    next_dur = next_el[0]
-                    next_val = next_el[1]
-                    # If the next element shares the same value as the current
-                    # one, combine them
-                    if next_val == val:
-                        dur += next_dur
-                        next_ind += 1
-                    else:
-                        break
-                # Append the current pulse and start back
-                # where we left off
-                collapsed_train.append((dur, val))
-                ind = next_ind
-            # Check if this is just supposed to be always on
-            if (len(collapsed_train) == 1) and (collapsed_train[0][1] == HIGH):
-                if pulse_streamer is not None:
-                    pulse_streamer.client[laser_name].laser_on()
-                return
-            # Set up the bookends
-            for ind in range(len(collapsed_train)):
-                el = collapsed_train[ind]
-                dur = el[0]
-                val = el[1]
-                # For the first element, just leave things LOW
-                # Assumes the laser is off prior to the start of the sequence
-                if (ind == 0) and (val is LOW):
-                    processed_train.append((dur, LOW))
-                    continue
-                if dur < 75:
-                    raise ValueError(
-                        "Feedthrough lasers do not support pulses shorter than"
-                        " 100 ns."
-                    )
-                processed_train.append((20, HIGH))
-                processed_train.append((dur - 20, LOW))
-        # Digital, no feedthrough, do nothing
-        else:
-            processed_train = train.copy()
+    if mod_type is ModTypes.DIGITAL:
+        processed_train = train.copy()
         pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
         seq.setDigital(pulser_laser_mod, processed_train)
 
@@ -520,21 +434,21 @@ def process_laser_seq(
     # currently can't handle multiple powers of the AM within the same sequence
     # Possibly, we could pass laser_power as a list, and then build the sequences
     # for each power (element) in the list.
-    elif mod_type is Mod_types.ANALOG:
+    elif mod_type is ModTypes.ANALOG:
         high_count = 0
         for el in train:
             dur = el[0]
             val = el[1]
             if type(laser_power) == list:
                 if val == 0:
-                    power_dict = {LOW: 0.0}
+                    power_dict = {Digital.LOW: 0.0}
                 else:
-                    power_dict = {HIGH: laser_power[high_count]}
-                    if val == HIGH:
+                    power_dict = {Digital.HIGH: laser_power[high_count]}
+                    if val == Digital.HIGH:
                         high_count += 1
             # If a list wasn't passed, just use the single value for laser_power
             elif type(laser_power) != list:
-                power_dict = {LOW: 0.0, HIGH: laser_power}
+                power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
             processed_train.append((dur, power_dict[val]))
 
         pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
@@ -542,9 +456,12 @@ def process_laser_seq(
         seq.setAnalog(pulser_laser_mod, processed_train)
 
 
+# endregion
+# region Pulse Streamer utils
+
+
 def set_delays_to_zero(config):
-    """
-    Pass this a config dictionary and it'll set all the delays to zero.
+    """Pass this a config dictionary and it'll set all the delays to zero.
     Useful for testing sequences without having to worry about delays.
     """
 
@@ -557,7 +474,8 @@ def set_delays_to_zero(config):
         val = config[key]
         if type(val) is dict:
             set_delays_to_zero(val)
-            
+
+
 def set_delays_to_sixteen(config):
     """
     Pass this a config dictionary and it'll set all the delays to 16ns, which is the minimum wait() time for the OPX.
@@ -572,36 +490,17 @@ def set_delays_to_sixteen(config):
         # Check if we're at a sublevel - if so, recursively set its delay to 0
         val = config[key]
         if type(val) is dict:
-            set_delays_to_sixteen(val)            
-            
+            set_delays_to_sixteen(val)
+
+
 def seq_train_length_check(train):
-    """
-    Print out the length of a the sequence train for a specific channel. Useful for debugging sequences.
+    """Print out the length of a the sequence train for a specific channel.
+    Useful for debugging sequences
     """
     total = 0
     for el in train:
         total += el[0]
     print(total)
-
-
-def set_feedthroughs_to_false(config):
-    """
-    Pass this a config dictionary and it'll set all the feedthrough arguments
-    to False
-    """
-
-    for key in config:
-        # Check if any entries are feedthroughs and set them to False
-        if key == "feedthrough":
-            config[key] = "False"
-            return
-        # Check if we're at a sublevel - if so, run it recursively
-        val = config[key]
-        if type(val) is dict:
-            set_feedthroughs_to_false(val)
-
-
-# %% Pulse Streamer utils
 
 
 def encode_seq_args(seq_args):
@@ -623,18 +522,6 @@ def decode_seq_args(seq_args_string):
 def get_pulse_streamer_wiring(cxn):
     config = get_config_dict(cxn)
     pulse_streamer_wiring = config["Wiring"]["PulseStreamer"]
-
-    # cxn.registry.cd(["", "Config", "Wiring", "Pulser"])
-    # sub_folders, keys = cxn.registry.dir()
-    # if keys == []:
-    #     return {}
-    # p = cxn.registry.packet()
-    # for key in keys:
-    #     p.get(key, key=key)  # Return as a dictionary
-    # wiring = p.send()
-    # pulse_streamer_wiring = {}
-    # for key in keys:
-    #     pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
 
@@ -653,10 +540,12 @@ def get_tagger_wiring(cxn):
     return tagger_wiring
 
 
-# %% Matplotlib plotting utils
-# NOTE: This and other new plotting helper functions should all be in kplotlib
-# now. I'm leaving the below functions here so that I don't break anything by
-# deleting them.
+# endregion
+# region DEPRECATED: Matplotlib plotting utils
+"""MCC: This and other new plotting helper functions should all be in kplotlib
+now. I'm leaving the below functions here so that I don't break anything by
+deleting them.
+"""
 
 
 def init_matplotlib(font_size=17):
@@ -695,42 +584,6 @@ def init_matplotlib(font_size=17):
     plt.rc("text", usetex=True)
 
 
-def non_math_ticks(ax):
-    """Loop through the x and y ticks and take the tick labels out of math mode so they match the main font"""
-
-    # fmt = matplotlib.ticker.StrMethodFormatter("{x}")
-    # ax.xaxis.set_major_formatter(fmt)
-    # ax.yaxis.set_major_formatter(fmt)
-    # return
-
-    plt.show()
-
-    values = ax.get_xticks()
-    labels = ax.get_xticklabels()
-    adj_labels = non_math_ticks_sub(labels)
-    ax.set_xticks(values)
-    ax.set_xticklabels(adj_labels)
-
-    values = ax.get_yticks()
-    labels = ax.get_yticklabels()
-    adj_labels = non_math_ticks_sub(labels)
-    ax.set_yticks(values)
-    ax.set_yticklabels(adj_labels)
-
-
-def non_math_ticks_sub(labels):
-    adj_labels = []
-    for el in labels:
-        text = el.get_text()
-        open_brace = text.find("{")
-        close_brace = text.find("}")
-        text = text[open_brace + 1 : close_brace]
-        # el.set_text(text)
-        # adj_labels.append(el)
-        adj_labels.append(text)
-    return adj_labels
-
-
 def create_image_figure(
     imgArray,
     imgExtent,
@@ -738,14 +591,13 @@ def create_image_figure(
     title=None,
     color_bar_label="Counts",
     um_scaled=False,
-    axes_labels = None,# ["V", "V"],
+    axes_labels=None,  # ["V", "V"],
     aspect_ratio=None,
     color_map="inferno",
     cmin=None,
     cmax=None,
 ):
-    """
-    Creates a figure containing a single grayscale image and a colorbar.
+    """Creates a figure containing a single grayscale image and a colorbar.
 
     Params:
         imgArray: np.ndarray
@@ -773,7 +625,7 @@ def create_image_figure(
             axes_labels = [a, a]
         except Exception as exc:
             print(exc)
-            axes_label = ["V", "V"]
+            axes_labels = ["V", "V"]
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
@@ -788,8 +640,8 @@ def create_image_figure(
         imgArray,
         cmap=color_map,
         extent=tuple(imgExtent),
-        vmin = cmin ,#min_value,
-        vmax = cmax,
+        vmin=cmin,  # min_value,
+        vmax=cmax,
         aspect=aspect_ratio,
     )
 
@@ -823,8 +675,7 @@ def create_image_figure(
 def calc_image_extent(
     x_center, y_center, scan_range, num_steps, pixel_size_adjustment=True
 ):
-    """
-    Calculate the image extent to be fed to create_image_figure from the
+    """Calculate the image extent to be fed to create_image_figure from the
     center coordinates, scan range, and number of steps (the latter two
     are assumed to be the same for x and y).
 
@@ -858,9 +709,7 @@ def calc_image_extent(
 def calc_image_scan_vals(
     x_center, y_center, scan_range, num_steps, ret_pixel_size=False
 ):
-    """
-    Calculate the scan values in x, y for creating an image
-    """
+    """Calculate the scan values in x, y for creating an image"""
 
     x_low, x_high, y_low, y_high = calc_image_extent(
         x_center, y_center, scan_range, num_steps, pixel_size_adjustment=False
@@ -876,9 +725,8 @@ def calc_image_scan_vals(
         return x_scan_vals, y_scan_vals
 
 
-def update_image_figure(fig, imgArray,cmin=None,cmax=1000):
-    """
-    Update the image with the passed image array and redraw the figure.
+def update_image_figure(fig, imgArray, cmin=None, cmax=1000):
+    """Update the image with the passed image array and redraw the figure.
     Intended to update figures created by create_image_figure.
 
     The implementation below isn't nearly the fastest way of doing this, but
@@ -924,8 +772,7 @@ def update_image_figure(fig, imgArray,cmin=None,cmax=1000):
 
 
 def create_line_plot_figure(vals, xVals=None):
-    """
-    Creates a figure containing a single line plot
+    """Creates a figure containing a single line plot
 
     Params:
         vals: np.ndarray
@@ -937,7 +784,7 @@ def create_line_plot_figure(vals, xVals=None):
     Returns:
         matplotlib.figure.Figure
     """
-    
+
     # mplstyle.use('fast')
     # mpl.rcParams['path.simplify'] = True
     # mpl.rcParams['path.simplify_threshold'] = 1.0
@@ -964,8 +811,7 @@ def create_line_plot_figure(vals, xVals=None):
 
 
 def create_line_plots_figure(vals, xVals=None):
-    """
-    Creates a figure containing a single line plot
+    """Creates a figure containing a single line plot
 
     Params:
         vals: tuple(np.ndarray)
@@ -977,7 +823,6 @@ def create_line_plots_figure(vals, xVals=None):
     Returns:
         matplotlib.figure.Figure
     """
-    
 
     # Tell matplotlib to generate a figure with len(vals) plots
     fig, ax = plt.subplots(len(vals))
@@ -997,8 +842,7 @@ def create_line_plots_figure(vals, xVals=None):
 
 
 def update_line_plot_figure(fig, vals):
-    """
-    Updates a figure created by create_line_plot_figure
+    """Updates a figure created by create_line_plot_figure
 
     Params:
         vals: np.ndarray
@@ -1024,71 +868,9 @@ def update_line_plot_figure(fig, vals):
     # print(f"Tool time: {stop - start}")
 
 
-def radial_distrbution_data(
-    center_coords, x_voltages, y_voltages, num_steps, img_range, img_array
-):
-    """
-    Given a 2D image, calculate the average radial values from the center.
+# endregion
 
-    Still work in progress (works best for odd number of steps)
-    """
-
-    # Initial calculations
-    x_coord = center_coords[0]
-    y_coord = center_coords[1]
-
-    # subtract the center coords from the x and y voltages so that we are working from the "origin"
-    x_voltages = np.array(x_voltages) - x_coord
-    y_voltages = np.array(y_voltages) - y_coord
-
-    half_x_range = img_range / 2
-    # x_high = x_coord + half_x_range
-
-    # Having trouble with very small differences in pixel values. (10**-15 V)
-    # Let's round to a relatively safe value and see if that helps
-    pixel_size = round(x_voltages[1] - x_voltages[0], 10)
-    half_pixel_size = pixel_size / 2
-
-    # List to hold the values of each pixel within the ring
-    counts_r = []
-    # New 2D array to put the radial values of each pixel
-    r_array = np.empty((num_steps, num_steps))
-
-    # Calculate the radial distance from each point to center
-    for i in range(num_steps):
-        x_pos = x_voltages[i]
-        for j in range(num_steps):
-            y_pos = y_voltages[j]
-            r = np.sqrt(x_pos ** 2 + y_pos ** 2)
-            r_array[i][j] = r
-
-    # define bounds on each ring radial values, which will be one pixel in size
-    low_r = 0
-    high_r = pixel_size
-    # step throguh the radial ranges for each ring, add pixel within ring to list
-    # Note, I was runnign into rounding issue with the uper bound, probably a
-    # poor fix of just adding a small bit to the bound
-    while high_r <= (half_x_range + half_pixel_size + 10 ** -9):
-        ring_counts = []
-        for i in range(num_steps):
-            for j in range(num_steps):
-                radius = r_array[i][j]
-                if radius >= low_r and radius < high_r:
-                    ring_counts.append(img_array[i][j])
-        # average the counts of all counts in a ring
-        counts_r.append(np.average(ring_counts))
-        # advance the radial bounds
-        low_r = high_r
-        high_r = round(high_r + pixel_size, 10)
-
-    # define the radial values as center values of pixels along x, convert to um
-    # we need to subtract the center value from the x voltages
-    radii = np.array(x_voltages[int(num_steps / 2) :]) * 35
-
-    return radii, counts_r
-
-
-# %% Math functions
+# region Math functions
 
 
 def get_pi_pulse_dur(rabi_period):
@@ -1101,8 +883,7 @@ def get_pi_on_2_pulse_dur(rabi_period):
 
 def lorentzian(x, x0, A, L, offset):
 
-    """
-    Calculates the value of a lorentzian for the given input and parameters
+    """Calculates the value of a lorentzian for the given input and parameters
 
     Params:
         x: float
@@ -1115,19 +896,19 @@ def lorentzian(x, x0, A, L, offset):
             3: offset, constant y value offset
     """
     x_center = x - x0
-    return offset + A * 0.5 * L / (x_center ** 2 + (0.5 * L) ** 2)
+    return offset + A * 0.5 * L / (x_center**2 + (0.5 * L) ** 2)
 
 
 def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
 
+
 def exp_stretch_decay(x, amp, decay, offset, B):
-    return offset + amp * np.exp(-(x / decay)**B)
+    return offset + amp * np.exp(-((x / decay) ** B))
 
 
 def gaussian(x, *params):
-    """
-    Calculates the value of a gaussian for the given input and parameters
+    """Calculates the value of a gaussian for the given input and parameters
 
     Params:
         x: float
@@ -1141,16 +922,16 @@ def gaussian(x, *params):
     """
 
     coeff, mean, stdev, offset = params
-    var = stdev ** 2  # variance
+    var = stdev**2  # variance
     centDist = x - mean  # distance from the center
-    return offset + coeff ** 2 * np.exp(-(centDist ** 2) / (2 * var))
+    return offset + coeff**2 * np.exp(-(centDist**2) / (2 * var))
 
 
 def sinexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
     half_pi = np.pi / 2
     return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(
-        -(decay ** 2) * t
+        -(decay**2) * t
     )
 
 
@@ -1174,12 +955,12 @@ def cosexp_1_at_0(t, offset, freq, decay):
         np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
     )
 
+
 def sin_1_at_0_phase(t, amp, offset, freq, phase):
     two_pi = 2 * np.pi
     # amp = 1 - offset
-    return offset + (
-         abs(amp) * np.sin((freq * t - np.pi/2 + phase))
-    )
+    return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
+
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2 * np.pi
@@ -1189,6 +970,7 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_2 * np.cos(two_pi * freq_2 * t)
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
+
 
 def cosine_one(t, offset, decay, amp_1, freq_1):
     two_pi = 2 * np.pi
@@ -1200,12 +982,12 @@ def cosine_one(t, offset, decay, amp_1, freq_1):
 
 def t2_func(t, amplitude, offset, t2):
     n = 3
-    return amplitude * np.exp(-(t/t2)**n) + offset
+    return amplitude * np.exp(-((t / t2) ** n)) + offset
+
 
 def calc_snr(sig_count, ref_count):
-    """
-    Take a list of signal and reference counts, and take their average, then
-    calculate a snr.
+    """Take a list of signal and reference counts, and take their average,
+    then calculate a snr.
     inputs:
         sig_count = list
         ref_counts = list
@@ -1236,20 +1018,9 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     scan_vals = np.unique(scan_vals)
     return scan_vals
 
-# %% COEFFICEINT DICTIONARIES
 
-def get_dd_model_coeff_dict():
-    dd_model_coeff_dict = {
-            '1': [6, -8, 2],
-            '2': [10, -8, -8, 8, -2],
-            '4': [18, -8, -24, 8, 16, -8, -8, 8, -2],
-            '8': [34, -8, -56, 8, 48, 
-                       -8, -40, 8, 32,  -8, -24, 8, 16, -8, -8, 8, -2]
-            }
-    
-    return dd_model_coeff_dict
-
-# %% LabRAD utils
+# endregion
+# region LabRAD utils
 
 
 def get_config_dict(cxn=None):
@@ -1259,34 +1030,7 @@ def get_config_dict(cxn=None):
     parameters that are referenced by many sequences (eg polarization_dur).
     Generally, they should need to be updated infrequently, unlike the
     shared parameters defined in cfm_control_panel, which change more
-    frequently (eg apd_indices).
-
-    We currently have the parameters listed below. All durations (ending in
-    _delay or _dur) have units of ns.
-        airy_radius: Standard deviation of the Gaussian approximation to
-            the Airy disk in nm
-        polarization_dur: Duration to illuminate for polarization
-        post_polarization_wait_dur: Duration to wait after polarization to
-            allow the NV metastable state to decay
-        pre_readout_wait_dur: Duration to wait before readout - functionally
-            I think this is just for symmetry with post_polarization_wait_dur
-        532_aom_delay: Delay between signal to the 532 nm laser AOM and the
-            AOM actually opening
-        uwave_delay: Delay between signal to uwave switch and the switch
-            actually opening - should probably be different for different
-            signal generators...
-        pulsed_readout_dur: Readout duration if we're looking to determine
-            the state directly dorm fluorescence
-        continuous_readout_dur: Readout duration if we're just looking to
-            see how bright something is
-        galvo_delay: Delay between signal to galvo and the galvo settling to
-            its new position
-        galvo_nm_per_volt: Conversion factor between galvo voltage and xy
-            position
-        piezo_delay: Delay between signal to objective piezo and the piezo
-            settling to its new position
-        piezo_nm_per_volt: Conversion factor between objective piezo voltage
-            and z position
+    frequently (eg things in nv_sig).
     """
 
     if cxn is None:
@@ -1344,19 +1088,23 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 def get_nv_sig_units():
     return "in config"
 
+
 def get_pulsegen_server(cxn):
     """
     Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
     """
     pulsegen_server_return = getattr(
         cxn,
-        get_registry_entry(cxn, "pulsegen_server", ["", "Config", "PulseGeneration"]),
+        get_registry_entry(
+            cxn, "pulsegen_server", ["", "Config", "PulseGeneration"]
+        ),
     )
-    
+
     if pulsegen_server_return == "":
         raise RuntimeError
-    
+
     return pulsegen_server_return
+
 
 def get_counter_server(cxn):
     """
@@ -1364,11 +1112,13 @@ def get_counter_server(cxn):
     """
     counter_server_return = getattr(
         cxn,
-        get_registry_entry(cxn, "counter_server", ["", "Config", "PhotonCollection"]),
+        get_registry_entry(
+            cxn, "counter_server", ["", "Config", "PhotonCollection"]
+        ),
     )
     if counter_server_return == "":
         raise RuntimeError
-        
+
     return counter_server_return
 
 
@@ -1378,28 +1128,32 @@ def get_tagger_server(cxn):
     """
     tagger_server_return = getattr(
         cxn,
-        get_registry_entry(cxn, "tagger_server", ["", "Config", "PhotonCollection"]),
+        get_registry_entry(
+            cxn, "tagger_server", ["", "Config", "PhotonCollection"]
+        ),
     )
     if tagger_server_return == "":
         raise RuntimeError
-        
+
     return tagger_server_return
+
 
 def get_optimization_style():
     """
     Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
     """
-    optimization_style_return = get_registry_entry_no_cxn("optimization_style", ["", "Config", "Positioning"])
+    optimization_style_return = get_registry_entry_no_cxn(
+        "optimization_style", ["", "Config", "Positioning"]
+    )
     if optimization_style_return == "":
         raise RuntimeError
-        
+
     return optimization_style_return
 
 
 def get_xy_server(cxn):
-    """
-    Talk to the registry to get the fine xy control server for this setup.
-    eg for rabi it is probably galvo. See optimize for some examples.
+    """Talk to the registry to get the fine xy control server for this
+    setup. Eg for rabi it is probably galvo. See optimize for some examples.
     """
 
     # return an actual reference to the appropriate server so it can just
@@ -1411,22 +1165,20 @@ def get_xy_server(cxn):
 
 
 def get_temp_controller(cxn):
-    """
-    Get the server controlling the temp
-    """
+    """Get the server controlling the temp"""
 
     # return an actual reference to the appropriate server so it can just
     # be used directly
     return getattr(
         cxn,
-        get_registry_entry(cxn, "temp_controller", ["", "Config", "Temperature"]),
+        get_registry_entry(
+            cxn, "temp_controller", ["", "Config", "Temperature"]
+        ),
     )
 
 
 def get_temp_monitor(cxn):
-    """
-    Get the server controlling the temp
-    """
+    """Get the server controlling the temp"""
 
     # return an actual reference to the appropriate server so it can just
     # be used directly
@@ -1453,10 +1205,21 @@ def get_xyz_server(cxn):
     )
 
 
+def get_apd_indices(cxn):
+    "Get a list of the APD indices in use from the registry"
+
+    return get_registry_entry(
+        cxn,
+        "apd_indices",
+        [
+            "",
+        ],
+    )
+
+
 def get_registry_entry(cxn, key, directory):
-    """
-    Return the value for the specified key. The directory is specified from
-    the top of the registry. Directory as a list
+    """Return the value for the specified key. The directory is specified
+    from the top of the registry. Directory as a list
     """
 
     p = cxn.registry.packet()
@@ -1478,78 +1241,8 @@ def get_apd_gate_channel(cxn, apd_index):
     return get_registry_entry(cxn, "di_gate", directory)
 
 
-# %% Open utils
-
-
-def ask_open_file(file_path):
-    """
-    Open a file by selecting it through a file window. File window usually
-    opens behind Spyder, may need to minimize Spyder to see file number
-
-    file_path: input the file path to the folder of the data, starting after
-    the Kolkowitz Lab Group folder
-
-    Returns:
-        string: file name of the file to use in program
-    """
-    # Prompt the user to select a file
-    print("Select file \n...")
-
-    root = Tk()
-    root.withdraw()
-    root.focus_force()
-    directory = str("E:/Shared drives/Kolkowitz Lab Group/" + file_path)
-    file_name = filedialog.askopenfilename(
-        initialdir=directory,
-        title="choose file to replot",
-        filetypes=(("svg files", "*.svg"), ("all files", "*.*")),
-    )
-    return file_name
-
-
-def get_file_list(
-    path_from_nvdata,
-    file_ends_with,
-    data_dir=None,
-):
-    """
-    Creates a list of all the files in the folder for one experiment, based on
-    the ending file name
-    """
-
-    if data_dir is None:
-        data_dir = common.get_nvdata_dir()
-    else:
-        data_dir = PurePath(data_dir)
-    file_path = data_dir / path_from_nvdata
-
-    file_list = []
-
-    for file in os.listdir(file_path):
-        if file.endswith(file_ends_with):
-            file_list.append(file)
-
-    return file_list
-
-
-# def get_raw_data(source_name, file_name, sub_folder_name=None,
-#                  data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
-#     """Returns a dictionary containing the json object from the specified
-#     raw data file.
-#     """
-
-#     # Parse the source_name if __file__ was passed
-#     source_name = os.path.splitext(os.path.basename(source_name))[0]
-
-#     data_dir = Path(data_dir)
-#     file_name_ext = '{}.txt'.format(file_name)
-#     if sub_folder_name is None:
-#         file_path = data_dir / source_name / file_name_ext
-#     else:
-#         file_path = data_dir / source_name / sub_folder_name / file_name_ext
-
-#     with open(file_path) as file:
-#         return json.load(file)
+# endregion
+# region File and data handling utils
 
 
 def get_raw_data(
@@ -1557,8 +1250,7 @@ def get_raw_data(
     path_from_nvdata=None,
     nvdata_dir=None,
 ):
-    """
-    Returns a dictionary containing the json object from the specified
+    """Returns a dictionary containing the json object from the specified
     raw data file. If path_from_nvdata is not specified, we assume we're
     looking for an autogenerated experiment data file. In this case we'll
     use glob (a pattern matching module for pathnames) to efficiently find
@@ -1578,9 +1270,7 @@ def get_raw_data_path(
     path_from_nvdata=None,
     nvdata_dir=None,
 ):
-    """
-    Same as get_raw_data, but just returns the path to the file
-    """
+    """Same as get_raw_data, but just returns the path to the file"""
 
     if nvdata_dir is None:
         nvdata_dir = common.get_nvdata_dir()
@@ -1595,9 +1285,6 @@ def get_raw_data_path(
     return file_path
 
 
-# %%  Save utils
-
-
 def get_branch_name():
     """Return the name of the active branch of kolkowitz-nv-experiment-v1.0"""
     home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
@@ -1607,8 +1294,7 @@ def get_branch_name():
 
 
 def get_time_stamp():
-    """
-    Get a formatted timestamp for file names and metadata.
+    """Get a formatted timestamp for file names and metadata.
 
     Returns:
         string: <year>_<month>_<day>-<hour>_<minute>_<second>
@@ -1670,8 +1356,7 @@ def get_files_in_folder(folderDir, filetype=None):
 
 
 def get_file_path(source_name, time_stamp="", name="", subfolder=None):
-    """
-    Get the file path to save to. This will be in a subdirectory of nvdata.
+    """Get the file path to save to. This will be in a subdirectory of nvdata.
 
     Params:
         source_name: string
@@ -1730,43 +1415,8 @@ def utc_from_file_name(file_name):
     return utc_timestamp
 
 
-# def get_file_path(source_name, time_stamp='', name='', subfolder=None):
-#    """
-#    Get the file path to save to. This will be in a subdirectory of nvdata.
-#
-#    Params:
-#        source_name: string
-#            Source file name - alternatively, __file__ of the caller which will
-#            be parsed to get the name of the subdirectory we will write to
-#        time_stamp: string
-#            Formatted timestamp to include in the file name
-#        name: string
-#            The file names consist of <timestamp>_<name>.<ext>
-#            Ext is supplied by the save functions
-#        subfolder: string
-#            Subfolder to save to under file name
-#    """
-#
-#    # Set up the file name
-#    if (time_stamp != '') and (name != ''):
-#        fileName = '{}-{}'.format(time_stamp, name)
-#    elif (time_stamp == '') and (name != ''):
-#        fileName = name
-#    elif (time_stamp != '') and (name == ''):
-#        fileName = '{}-{}'.format(time_stamp, 'untitled')
-#    else:
-#        fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
-#
-#    folderDir = get_folder_dir(source_name, subfolder)
-#
-#    fileDir = os.path.abspath(os.path.join(folderDir, fileName))
-#
-#    return fileDir
-
-
 def save_figure(fig, file_path):
-    """
-    Save a matplotlib figure as a png.
+    """Save a matplotlib figure as a svg.
 
     Params:
         fig: matplotlib.figure.Figure
@@ -1780,8 +1430,7 @@ def save_figure(fig, file_path):
 
 
 def save_raw_data(rawData, filePath):
-    """
-    Save raw data in the form of a dictionary to a text file. New lines
+    """Save raw data in the form of a dictionary to a text file. New lines
     will be printed between entries in the dictionary.
 
     Params:
@@ -1791,8 +1440,8 @@ def save_raw_data(rawData, filePath):
             The file path to save to including the file name, excluding the
             extension
     """
-    
-    # Just to be safe, work with a copy of the raw data rather than the 
+
+    # Just to be safe, work with a copy of the raw data rather than the
     # raw data itself
     rawData = copy.deepcopy(rawData)
 
@@ -1803,13 +1452,12 @@ def save_raw_data(rawData, filePath):
     # nv_sig_units. If these have already been defined in the routine,
     # then they'll just be overwritten.
     try:
-        rawData["nv_sig_units"] = get_nv_sig_units()
         rawData[
             "config"
         ] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
-        
+
     # Casting for JSON compatibility
     nv_sig = rawData["nv_sig"]
     for key in nv_sig:
@@ -1817,28 +1465,26 @@ def save_raw_data(rawData, filePath):
             nv_sig[key] = nv_sig[key].tolist()
         elif isinstance(nv_sig[key], Enum):
             nv_sig[key] = nv_sig[key].name
-            
 
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
 
-
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
 
+
 def save_combine_data(file_list, folder_list, py_file_name):
-    '''
-    This routine takes any number of files and attempts to combine the data,
+    """This routine takes any number of files and attempts to combine the data,
     then saves them in one array.
-    
+
     Only use this for data that was collected under the same conditions. Works
     best for measurements that save data like Rabi, PESR, etc.
-    
+
     It will throw an error if the num_steps of the data files do not match!
-    
+
     py_file_name is the string of the name of the file, ex: 'rabi.py'
-    '''
-    
+    """
+
     # do an initial check if the num_steps all match.If they do, we can add
     # the data together.
     num_steps_list = []
@@ -1846,87 +1492,125 @@ def save_combine_data(file_list, folder_list, py_file_name):
         file = file_list[f]
         folder = folder_list[f]
         data1 = get_raw_data(file, folder)
-        num_steps = data1['num_steps']
+        num_steps = data1["num_steps"]
         num_steps_list.append(num_steps)
     # check that all num_steps of the files match
-    num_steps_result = all(element == num_steps_list[0] for element in num_steps_list)
-    
-    if (num_steps_result):
+    num_steps_result = all(
+        element == num_steps_list[0] for element in num_steps_list
+    )
+
+    if num_steps_result:
         # create initial empty arrays to add data to
         sig_counts = np.zeros([1, num_steps])
         ref_counts = np.zeros([1, num_steps])
         num_runs = 0
-    
+
         for f in range(len(file_list)):
             file = file_list[f]
             folder = folder_list[f]
             data1 = get_raw_data(file, folder)
-            
-            sig_counts1 = np.array(data1['sig_counts'])
-            ref_counts1 = np.array(data1['ref_counts'])
-            nv_sig = data1['nv_sig']
-            num_runs1 = data1['num_runs']
-            
-            sig_counts = np.concatenate((sig_counts, sig_counts1), axis = 0)
-            ref_counts = np.concatenate((ref_counts, ref_counts1), axis = 0)
+
+            sig_counts1 = np.array(data1["sig_counts"])
+            ref_counts1 = np.array(data1["ref_counts"])
+            nv_sig = data1["nv_sig"]
+            num_runs1 = data1["num_runs"]
+
+            sig_counts = np.concatenate((sig_counts, sig_counts1), axis=0)
+            ref_counts = np.concatenate((ref_counts, ref_counts1), axis=0)
             num_runs += num_runs1
-        
+
         # delete the first row of data that was a placeholder.
         sig_counts = sig_counts[1:]
         ref_counts = ref_counts[1:]
-        
+
         # Calc the norm avg sig
         avg_sig_counts = np.average(sig_counts, axis=0)
         avg_ref_counts = np.average(ref_counts, axis=0)
         norm_avg_sig = avg_sig_counts / np.average(avg_ref_counts)
-                
+
         timestamp = get_time_stamp()
-    
-        #take the dictionary from the last file, add the entry for 
+
+        # take the dictionary from the last file, add the entry for
         # file_list and folder_list, and update:
-            # sig counts
-            # ref counts
-            # norm_avg_sig
-            # num_runs
-    
+        # sig counts
+        # ref counts
+        # norm_avg_sig
+        # num_runs
+
         raw_data = data1
-        raw_data['file_list'] = file_list
-        raw_data['folder_list'] = folder_list
-        
-        raw_data['num_runs'] = num_runs
-        raw_data['sig_counts'] = sig_counts.tolist()
-        raw_data['ref_counts'] = ref_counts.tolist()
-        raw_data['norm_avg_sig'] = norm_avg_sig.tolist()
-        
+        raw_data["file_list"] = file_list
+        raw_data["folder_list"] = folder_list
+
+        raw_data["num_runs"] = num_runs
+        raw_data["sig_counts"] = sig_counts.tolist()
+        raw_data["ref_counts"] = ref_counts.tolist()
+        raw_data["norm_avg_sig"] = norm_avg_sig.tolist()
+
         nv_name = nv_sig["name"]
         file_path = get_file_path(py_file_name, timestamp, nv_name)
         save_raw_data(raw_data, file_path)
-        
 
-def get_nv_sig_units():
-    return {
-        "coords": "V",
-        "expected_count_rate": "kcps",
-        "pulsed_readout_dur": "ns",
-        "pulsed_SCC_readout_dur": "ns",
-        "am_589_power": "0-1 V",
-        "pulsed_shelf_dur": "ns",
-        "am_589_shelf_power": "0-1 V",
-        "pulsed_ionization_dur": "ns",
-        "cobalt_638_power": "mW",
-        "pulsed_reionization_dur": "ns",
-        "cobalt_532_power": "mW",
-        "magnet_angle": "deg",
-        "resonance": "GHz",
-        "rabi": "ns",
-        "uwave_power": "dBm",
+
+# endregion
+# region Email utils
+
+
+def send_exception_email(
+    email_from=common.shared_email,
+    email_to=common.shared_email,
+):
+    # format_exc extracts the stack and error message from
+    # the exception currently being handled.
+    now = time.localtime()
+    date = time.strftime(
+        "%A, %B %d, %Y",
+        now,
+    )
+    timex = time.strftime("%I:%M:%S %p", now)
+    exc_info = traceback.format_exc()
+    content = (
+        f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
+    )
+    send_email(content, email_from=email_from, email_to=email_to)
+
+
+def send_email(
+    content,
+    email_from=common.shared_email,
+    email_to=common.shared_email,
+):
+
+    pc_name = socket.gethostname()
+    msg = MIMEText(content)
+    msg["Subject"] = f"Alert from {pc_name}"
+    msg["From"] = email_from
+    msg["To"] = email_to
+
+    pw = keyring.get_password("system", email_from)
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)  # port 465 or 587
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login(email_from, pw)
+    server.sendmail(email_from, email_to, msg.as_string())
+    server.close()
+
+
+# region Miscellaneous (probably consider deprecated)
+
+
+def get_dd_model_coeff_dict():
+    # fmt: off
+    dd_model_coeff_dict = {
+        "1": [6, -8, 2],
+        "2": [10, -8, -8, 8, -2],
+        "4": [18, -8, -24, 8, 16, -8, -8, 8, -2],
+        "8": [34, -8, -56, 8, 48, -8, -40, 8, 32, -8, -24, 8, 16, -8, -8, 8, -2],
     }
+    # fmt: on
 
-
-
-def check_laser_power(laser_name, laser_power):
-    pass
-
+    return dd_model_coeff_dict
 
 
 def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
@@ -1976,13 +1660,21 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
 
     return x_voltages, y_voltages
 
-def write_csv(csv_data, file, folder_path,
-              nvdata_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",):
-    with open('{}/{}/{}.csv'.format(nvdata_dir, folder_path, file),
-              'w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file, delimiter=',',
-                                quoting=csv.QUOTE_NONE)
+
+def write_csv(
+    csv_data,
+    file,
+    folder_path,
+    nvdata_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",
+):
+    with open(
+        "{}/{}/{}.csv".format(nvdata_dir, folder_path, file), "w", newline=""
+    ) as csv_file:
+        csv_writer = csv.writer(
+            csv_file, delimiter=",", quoting=csv.QUOTE_NONE
+        )
         csv_writer.writerows(csv_data)
+
 
 def save_image_data_csv(
     img_array,
@@ -2019,54 +1711,6 @@ def save_image_data_csv(
         )
         csv_writer.writerows(csv_data)
     return
-
-
-# %% Email utils
-
-
-def send_exception_email(
-    email_from="kolkowitznvlab@gmail.com",
-    email_to="kolkowitznvlab@gmail.com",
-):
-    # format_exc extracts the stack and error message from
-    # the exception currently being handled.
-    now = time.localtime()
-    date = time.strftime(
-        "%A, %B %d, %Y",
-        now,
-    )
-    timex = time.strftime("%I:%M:%S %p", now)
-    exc_info = traceback.format_exc()
-    content = (
-        f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
-    )
-    send_email(content, email_from=email_from, email_to=email_to)
-
-
-def send_email(
-    content,
-    email_from="kolkowitznvlab@gmail.com",
-    email_to="kolkowitznvlab@gmail.com",
-):
-
-    pc_name = socket.gethostname()
-    msg = MIMEText(content)
-    msg["Subject"] = f"Alert from {pc_name}"
-    msg["From"] = email_from
-    msg["To"] = email_to
-
-    pw = keyring.get_password("system", email_from)
-
-    server = smtplib.SMTP("smtp.gmail.com", 587)  # port 465 or 587
-    server.ehlo()
-    server.starttls()
-    server.ehlo()
-    server.login(email_from, pw)
-    server.sendmail(email_from, email_to, msg.as_string())
-    server.close()
-
-
-# %% Misc
 
 
 def opt_power_via_photodiode(
@@ -2142,6 +1786,13 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
     )
 
 
+# endregion
+# region Rounding
+"""Make sure to check the end results produced by this code! Rounding turns out
+to be a nontrivial problem...
+"""
+
+
 def round_sig_figs(val, num_sig_figs):
     if val == 0:
         return 0
@@ -2159,17 +1810,17 @@ def round_sig_figs(val, num_sig_figs):
 
 
 def presentation_round(val, err):
-    if val == 0: 
+    if val == 0:
         return [0, None, None]
     err_mag = math.floor(math.log10(err))
-    sci_err = err / (10 ** err_mag)
+    sci_err = err / (10**err_mag)
     first_err_digit = int(str(sci_err)[0])
     if first_err_digit == 1:
         err_sig_figs = 2
     else:
         err_sig_figs = 1
     power_of_10 = math.floor(math.log10(abs(val)))
-    mag = 10 ** power_of_10
+    mag = 10**power_of_10
     rounded_err = round_sig_figs(err, err_sig_figs) / mag
     rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
     return [rounded_val, rounded_err, power_of_10]
@@ -2206,27 +1857,25 @@ def presentation_round_latex(val, err):
     return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
 
 
-# %% Safe Stop (TM mccambria)
-
-
-"""
-Use this to safely stop experiments without risking data loss or weird state.
+# endregion
+# region Safe Stop
+"""Use this to safely stop experiments without risking data loss or weird state.
 Works by reassigning CTRL + C to set a global variable rather than raise a 
 KeyboardInterrupt exception. That way we can check on the global variable
-whenever we like and stop the experiment appropriately.
+whenever we like and stop the experiment appropriately. It's up to you (the
+routine author) to place this in your routine appropriately. 
 """
 
 
 def init_safe_stop():
-    """
-    Call this at the beginning of a loop or other section which you may
+    """Call this at the beginning of a loop or other section which you may
     want to interrupt
     """
-    
+
     global SAFESTOPFLAG
     # Tell the user safe stop has started if it was stopped or just not started
     try:
-        if not SAFESTOPFLAG:
+        if SAFESTOPFLAG:
             print("\nPress CTRL + C to stop...\n")
     except Exception as exc:
         print("\nPress CTRL + C to stop...\n")
@@ -2234,38 +1883,49 @@ def init_safe_stop():
     signal.signal(signal.SIGINT, safe_stop_handler)
     return
 
+
 def safe_stop_handler(sig, frame):
     """This should never need to be called directly"""
-    
+
     global SAFESTOPFLAG
     SAFESTOPFLAG = True
 
+
 def safe_stop():
     """Call this to check whether the user asked us to stop"""
-        
+
     global SAFESTOPFLAG
     time.sleep(0.1)  # Pause execution to allow safe_stop_handler to run
-    return SAFESTOPFLAG 
-    
+    return SAFESTOPFLAG
+
+
 def reset_safe_stop():
+    """Reset the Safe Stop flag, but don't remove the handler in case we
+    want to reuse it.
     """
-    Reset the Safe Stop flag, but don't remove the handler in case we want
-    to reuse it.
-    """
-    
+
     global SAFESTOPFLAG
     SAFESTOPFLAG = False
 
 
-# %% State/globals
+def poll_safe_stop():
+    """Blocking version of safe stop"""
+
+    init_safe_stop()
+    while not safe_stop():
+        time.sleep(0.1)
 
 
-# Our client is and should be mostly stateless.
-# But in some cases it's just easier to share some state across the life of an
-# experiment/across experiments. To do this safely and easily we store global
-# variables on our LabRAD registry. The globals should only be accessed with
-# the getters and setters here so that we can be sure they're implemented
-# properly.
+# endregion
+# region State/globals
+
+
+"""Our client is and should be mostly stateless.
+But in some cases it's just easier to share some state across the life of an
+experiment/across experiments. To do this safely and easily we store global
+variables on our LabRAD registry. The globals should only be accessed with
+the getters and setters here so that we can be sure they're implemented
+properly."""
 
 
 def get_drift(cxn=None):
@@ -2301,7 +1961,6 @@ def get_drift_sub(cxn):
     xy_dtype = eval(cxn.registry.get("xy_dtype"))
     z_dtype = eval(cxn.registry.get("z_dtype"))
     return drift, xy_dtype, z_dtype
-    
 
 
 def set_drift(drift, cxn=None):
@@ -2338,7 +1997,8 @@ def adjust_coords_for_drift(coords, drift=None):
     return adjusted_coords
 
 
-# %% Reset hardware
+# endregion
+# region Reset hardware
 
 
 def reset_cfm(cxn=None):
@@ -2377,3 +2037,6 @@ def reset_cfm_with_cxn(cxn):
             continue
         if hasattr(server, "reset"):
             server.reset()
+
+
+# endregion
