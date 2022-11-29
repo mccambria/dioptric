@@ -21,12 +21,7 @@ import random
 import scipy.stats as stats
 import utils.tool_belt as tool_belt
 import chargeroutines.photonstatistics as model
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
-
+import majorroutines.optimize as optimize
 
 # %%
 

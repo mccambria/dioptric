@@ -34,11 +34,7 @@ from random import shuffle
 import labrad
 from utils.tool_belt import States
 from scipy.optimize import curve_fit
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 
 # %% fit
 
@@ -239,7 +235,9 @@ def main_with_cxn(
     uwave_pi_pulse = 0
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
-    seq_file_name = "ramsey.py"
+    seq_file_name = "spin_echo.py"
+    if False:
+        seq_file_name = "ramsey.py"
 
     # %% Create the array of relaxation times
 

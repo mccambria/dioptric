@@ -21,7 +21,7 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.image_sample_xz_digital as image_sample_xz_digital
-import majorroutines.optimize_digital as optimize_digital
+import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
@@ -29,7 +29,6 @@ import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.rabi as rabi
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import minorroutines.test_routine_opx as test_routine_opx
 import minorroutines.determine_delays as determine_delays
 import minorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
@@ -70,7 +69,7 @@ def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,c
 
 def do_optimize(nv_sig, apd_indices):
 
-    optimize_coords = optimize_digital.main(
+    optimize_coords = optimize.main(
         nv_sig,
         apd_indices,
         set_to_opti_coords=False,
@@ -86,7 +85,7 @@ def do_optimize_z(nv_sig, apd_indices):
     adj_nv_sig = copy.deepcopy(nv_sig)
     adj_nv_sig["only_z_opt"] = True
 
-    optimize_coords = optimize_digital.main(
+    optimize_coords = optimize.main(
         adj_nv_sig,
         apd_indices,
         set_to_opti_coords=False,
@@ -482,7 +481,7 @@ if __name__ == "__main__":
         # do_determine_scc_pulse_params(nv_sig,apd_indices,int(1e6))
         #     for t in [250,2000]:
         #         nv_sig["nv-_reionization_dur"] = t
-        do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
+        # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         
         # do_ramsey_one_tau_no_ref(nv_sig, apd_indices)
         

@@ -22,11 +22,7 @@ from utils.tool_belt import States
 import time
 from random import shuffle
 import scipy.stats as stats
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 
 # import minorroutines.photonstatistics as ps
 # from scipy.optimize import curve_fit
