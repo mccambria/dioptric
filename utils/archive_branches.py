@@ -13,15 +13,9 @@ Created on Mon Jun 10 08:02:12 2019
 """
 
 
-# %% Imports
-
-
 import time
 from git import Repo
 from pathlib import Path
-
-
-# %% Functions
 
 
 def parse_string_array(string_array):
@@ -44,10 +38,7 @@ def parse_string_array(string_array):
     return vals
 
 
-# %% Main
-
-
-def main(repo_path, branches_to_archive):
+def main(repo_path, branches_to_archive, skip_merged_check=False):
 
     # Get the repo and the remote origin
     repo = Repo(repo_path)
@@ -86,18 +77,15 @@ def main(repo_path, branches_to_archive):
             archive = False
         elif branch not in local_branches:
             print(
-                "Branch {} does not exist locally for this repo. Skipping."
-                .format(branch)
+                f"Branch {branch} does not exist locally for this repo. "
+                "Switch to it first before merging. Skipping..."
             )
             archive = False
-        elif branch not in merged_branches:
-            msg = (
-                "Branch {} is not fully merged with master. Archive anyway?"
-                " (y/[n])"
+        elif (branch not in merged_branches) and not skip_merged_check:
+            print(
+                f"Branch {branch} is not fully merged with master. "
+                If you wish to archive anyway, set skip_merged_check to True"
             )
-        else:
-            msg = "Archive branch {}? (y/[n])"
-        if archive and not input(msg.format(branch)) in ("y", "Y"):
             archive = False
         if archive:  # Change to if True to override checks
             # Add a timestamp to the tagged branch
@@ -138,17 +126,14 @@ def main(repo_path, branches_to_archive):
             print(e)
 
 
-# %% Run the file
-
-
 if __name__ == "__main__":
 
     # Path to your local checkout of the repo
-    repo_path = (
-        str(Path.home()) + "/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
-    )
+    repo_path = Path.home() / "Documents/GitHub/kolkowitz-nv-experiment-v1.0"
 
     # List of branches to archive
     branches_to_archive = ["time-tagger-speedup"]
+    
+    skip_merged_check=True
 
-    main(repo_path, branches_to_archive)
+    main(repo_path, branches_to_archive, skip_merged_check)
