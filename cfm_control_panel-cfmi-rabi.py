@@ -417,10 +417,10 @@ def do_rabi_srt(nv_sig,  apd_indices, initial_state, readout_state, uwave_time_r
     
     # deviation = 0
     
-    num_steps = 25
+    num_steps = 21
     # num_reps = int(1e3)
     num_reps = int(1e4)
-    num_runs = 30 #100
+    num_runs = 100 #100
 
     rabi_srt.main(nv_sig, 
               apd_indices, 
@@ -1232,7 +1232,7 @@ if __name__ == "__main__":
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['resonance_LOW'] = nv_sig['resonance_LOW'] + df
             print(nv_sig_copy['resonance_LOW'])
-            do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 1500])
+            do_rabi_srt(nv_sig_copy,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 1200])
         #do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.ZERO)
         #do_rabi_srt(nv_sig,  apd_indices, States.LOW, States.LOW)
         # for d in [0, 8, 16, 24]:

@@ -494,25 +494,80 @@ def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi_srt/2022_11'
-    file_p = '2022_11_23-10_14_07-siena-nv1_2022_10_27'
-    file_z = '2022_11_23-10_10_27-siena-nv1_2022_10_27'
-    file_m = ''
+    file_m4 = '2022_11_28-20_05_51-siena-nv1_2022_10_27'
+    file_m3 = '2022_11_28-21_55_32-siena-nv1_2022_10_27'
+    file_m2 = '2022_11_28-23_45_40-siena-nv1_2022_10_27'
+    file_m1 = '2022_11_29-01_36_16-siena-nv1_2022_10_27'
+    file_0 = '2022_11_29-03_27_43-siena-nv1_2022_10_27'
+    file_p1 = '2022_11_29-05_19_18-siena-nv1_2022_10_27'
+    file_p2 = '2022_11_29-07_10_56-siena-nv1_2022_10_27'
+    file_p3 = '2022_11_29-09_02_12-siena-nv1_2022_10_27'
+    file_p4 = '2022_11_29-09_02_15-siena-nv1_2022_10_27'
     
-    data = tool_belt.get_raw_data(file_p, path)
-    p_sig = data['norm_avg_sig']
-    data = tool_belt.get_raw_data(file_z, path)
-    z_sig = data['norm_avg_sig']
-    data = tool_belt.get_raw_data(file_m, path)
-    m_sig = data['norm_avg_sig']
-    taus= numpy.array(data['taus'])/1e3
-    dev = data['deviation_LOW']
-    
-    contrast = 0.238
-    low_pop = 1-contrast
-    
-    p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
-    z_pop = (numpy.array(z_sig) - low_pop) / (1 - low_pop)
-    m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
+    file_list = [
+                  # file_m4,
+                 
+                  # file_m3,
+                 file_m2,
+                 file_m1,
+                 file_0,
+                 file_p1,
+                 file_p2,
+                  # file_p3,
+                  # file_p4,
+                 ]
     
     
-    plot_pop_srt(taus, p_pop, z_pop, dev, m_pop)
+    # data = tool_belt.get_raw_data(file_p4, path)
+    # sig_counts = data['sig_counts']
+    # ref_counts = data['ref_counts']
+    # run_ind = 40
+    # avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
+    # avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+
+    # norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+    # print(list(norm_avg_sig))
+    
+    low_resonance = 2.7813 
+    fig, ax = plt.subplots()
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, path)
+        norm_avg_sig = data['norm_avg_sig']
+        taus= numpy.array(data['taus'])/1e3
+        dev = data['deviation_high']
+        nv_sig = data['nv_sig']
+        resonance_LOW = nv_sig['resonance_LOW']
+        
+        df = (resonance_LOW - low_resonance)*1e3 
+        # print(df)
+        
+        
+        contrast = 0.108*2
+        low_pop = 1-contrast
+        pop= (numpy.array(norm_avg_sig) - low_pop) / (1 - low_pop)
+        ax.plot(taus, pop, '-', label = 'LOW resonance shifted {} MHz'.format(round(df)))
+            
+    ax.set_title('Rabi SRT, {} MHz detuning'.format(dev))
+    ax.set_xlabel('SRT length (us)')
+    ax.set_ylabel('Population')
+    ax.legend()
+        
+        
+    # data = tool_belt.get_raw_data(file_p, path)
+    # p_sig = data['norm_avg_sig']
+    # data = tool_belt.get_raw_data(file_z, path)
+    # z_sig = data['norm_avg_sig']
+    # data = tool_belt.get_raw_data(file_m, path)
+    # m_sig = data['norm_avg_sig']
+    # taus= numpy.array(data['taus'])/1e3
+    # dev = data['deviation_LOW']
+    
+    # contrast = 0.238
+    # low_pop = 1-contrast
+    
+    # p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
+    # z_pop = (numpy.array(z_sig) - low_pop) / (1 - low_pop)
+    # m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
+    
+    
+    # plot_pop_srt(taus, p_pop, z_pop, dev, m_pop)
