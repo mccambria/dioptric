@@ -394,8 +394,8 @@ if __name__ == "__main__":
     #     }
     
     sample_name = "15micro"
-    z_coord = 40
-    ref_coords = [0.906, -0.527, z_coord]
+    z_coord = 30
+    ref_coords = [0.756, -0.511, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -437,7 +437,7 @@ if __name__ == "__main__":
     # fmt: on
 
     # nv_sig = nv5
-    # nv_sig = nvref
+    nv_sig = nvref
     # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
     nv_list = [nv1, nv2, nv3]
     # for nv in nv_list:
@@ -483,7 +483,7 @@ if __name__ == "__main__":
 
         # nv_sig = nvref
         # nv_sig['imaging_readout_dur'] = 4e7
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # nv_sig['imaging_readout_dur'] = 1e8
@@ -495,8 +495,8 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        temp = 290
-        do_pulsed_resonance_batch(nv_list, apd_indices, temp)
+        # temp = 241
+        # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
         # do_rabi_batch(nv_list, apd_indices)
 
     except Exception as exc:
