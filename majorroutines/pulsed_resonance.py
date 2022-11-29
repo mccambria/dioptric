@@ -88,6 +88,7 @@ def return_res_with_error(data):
     ref_counts = data["ref_counts"]
     sig_counts = data["sig_counts"]
     num_runs = data["num_runs"]
+    nv_sig = data["nv_sig"]
     ret_vals = process_counts(ref_counts, sig_counts, num_runs)
     (
         avg_ref_counts,
