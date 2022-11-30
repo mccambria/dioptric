@@ -71,7 +71,7 @@ class AwgKeys33622A(LabradServer):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
         p.get("arb_wave_gen_visa_address")
-        p.cd(["", "Config", "Wiring", "PulseStreamer"])
+        p.cd(["", "Config", "Wiring", "PulseGen"])
         p.get("do_arb_wave_trigger")
         p.cd(["", "Config", "Microwaves"])
         p.get("iq_comp_amp")

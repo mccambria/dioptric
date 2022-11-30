@@ -161,7 +161,7 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, state,
+def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          iq_mod_on = False,
          opti_nv_sig = None,
@@ -169,7 +169,7 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
-                                         apd_indices, uwave_time_range, state,
+                                         uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
                                          iq_mod_on,
                                          opti_nv_sig)
@@ -180,7 +180,7 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
             return rabi_per
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   iq_mod_on = False,
                   opti_nv_sig = None):
@@ -220,7 +220,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     num_reps = int(num_reps)
     # file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time, apd_indices[0],
+                readout, max_uwave_time, 
                 state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
@@ -274,12 +274,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
@@ -302,7 +302,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #        sig_gen_cxn.uwave_on()
 
         # Load the APD
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
@@ -319,7 +319,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
             seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time, apd_indices[0],
+                        readout, max_uwave_time, 
                         state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)

@@ -328,24 +328,31 @@ def iq_delay(
     """
     This will repeatedly run the same sequence with different passed iq
     delays. If there were no delays, the sequence would look like this
-
+    
     iq    |-|_________________|-|________________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
-
-    The first readout is a reference, the second is a signal. The iq modulation
+    
+    The first readout is a reference, the second is a signal. The iq modulation 
     initially is at 0 degrees, and the second pulse changes it to pi/2.
-    We should see a normalized signal consistent with the full pi pulse contrast.
-    If there is a delay we'll get this sequence
-
-    iq    __|-|_________________|-|______________
+    We should see a normalized signal consistent with the full pi pulse contrast. 
+    If there is a positive delay we'll get this sequence
+    
+    iq    __|-|______________|-|______________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
-
+    
     and the normalized signal will be higher than the full pi pulse contrast.
-    We need to find the minimum passed delay that recovers the full contrast.
+    The signal will reduce in contrast as the iq trigger passes over the pi pulse.
+    The correct delay is when the counts return to their full contrast. 
+    
+    |      __
+    |     /  \
+    |____/    \___
+    -----------------
+              * This is the value of the correct delay  
     (This function assumes the laser delay and uwave delay are properly set!)
     """
 
@@ -372,6 +379,16 @@ def iq_delay(
 if __name__ == "__main__":
 
     # Carr parameters
+    
+    # Rabi parameters
+    
+    apd_indices = [1]
+    sample_name = 'siena'
+    green_power = 1
+    nd_green = 'ND_1.1'
+    green_laser = "integrated_520"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
 
 
     nv_sig = {
