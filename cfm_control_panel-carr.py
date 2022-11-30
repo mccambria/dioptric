@@ -86,7 +86,6 @@ def do_optimize_z(nv_sig, apd_indices):
 
     optimize_coords = optimize.main(
         adj_nv_sig,
-        apd_indices,
         set_to_opti_coords=False,
         save_data=True,
         plot_data=True,
@@ -220,14 +219,14 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     angle_range = [0,150]
     num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.07
-    num_freq_steps = 31
+    freq_range = 0.2
+    num_freq_steps = 51
     # num_freq_runs = 30
-    num_freq_runs = 4
+    num_freq_runs = 10
 
     # Pulsed
     uwave_power = 16.5
-    uwave_pulse_dur = 92
+    uwave_pulse_dur = 84
     num_freq_reps = 2e4
 
     # CW
@@ -237,7 +236,6 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 
     optimize_magnet_angle.main(
         nv_sig,
-        apd_indices,
         angle_range,
         num_angle_steps,
         freq_center,
@@ -504,7 +502,7 @@ if __name__ == "__main__":
         # do_resonance_modulo(nv_sig, apd_indices,num_steps = 51, num_runs = 5)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.HIGH,num_reps=2e4,num_runs=6,num_steps=51)
-        do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.87, freq_range=0.2,num_steps=51, num_reps=2e4, num_runs=4)
+        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.87, freq_range=0.2,num_steps=51, num_reps=2e4, num_runs=4)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)
         # for det in [-3,-1.2,-1.1,-1,3]:
         #     do_ramsey(nv_sig, nv_sig, apd_indices,detuning=det)
@@ -513,7 +511,7 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, nv_sig, apd_indices,detuning=2)
         # do_spin_echo(nv_sig, apd_indices,max_time=140,num_reps=2e4,num_runs=80,state=States.LOW)
         # do_image_sample(nv_sig, apd_indices,num_steps=80,scan_range=8)
-        # do_optimize_magnet_angle(nv_sig, apd_indices)
+        do_optimize_magnet_angle(nv_sig, apd_indices)
         
         # for readout_dur in [200,250,300,350,400,450,500]:
         #     nv_sig['spin_readout_dur'] = readout_dur
