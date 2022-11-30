@@ -48,7 +48,7 @@ def get_seq(pulse_streamer, config, args):
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     back_buffer = 200
 
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_apd_gate = pulser_wiring['do_apd_gate']
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
@@ -150,6 +150,6 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    seq_args = [0, 1000.0, 350, 32, 16, 10000, 1, 1, 'integrated_520', None]
+    seq_args = [0, 1000.0, 350, 32, 16, 10000, 1,  'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

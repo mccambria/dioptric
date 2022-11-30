@@ -408,8 +408,8 @@ def do_ramsey(nv_sig, opti_nv_sig,  detuning, state = States.HIGH):
     # precession_time_range = [start_time, end_time]
 
 
-    num_reps = int( 10 ** 4)
-    num_runs = int(10)
+    num_reps = int( 10 ** 2)
+    num_runs = int(2)
     
     ramsey.main(
         nv_sig,
@@ -440,7 +440,7 @@ def do_spin_echo(nv_sig, state = States.HIGH):
     # precession_time_range = [0, revival_time*(num_steps - 1)]
 
     num_reps = 1e4
-    num_runs =40
+    num_runs =2
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -1095,29 +1095,21 @@ if __name__ == "__main__":
         #do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 200])
         
         
         
-        # for df in [-0.5]:#numpy.linspace(-0.5e-3, -1.5e-3,5):
-        #     df = df*1e-3
-        #     nv_sig_copy = copy.deepcopy(nv_sig)
-        #     nv_sig_copy['resonance_LOW'] = nv_sig['resonance_LOW'] + df
-        #     print((nv_sig_copy['resonance_LOW'] -2.7813)*1e3)
-        #     #do_rabi_srt(nv_sig_copy,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 2000])
-        #     do_rabi_srt_pop(nv_sig_copy, apd_indices, 24, 31, uwave_time_range=[0, 2000])
             
-            
-        #do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.ZERO)
-        for d in [32]:
+        #do_rabi_srt(nv_sig,   States.HIGH, States.ZERO)
+        for d in [30]:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
-            # do_rabi_srt(nv_sig_copy,  apd_indices, States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
+            do_rabi_srt(nv_sig_copy,   States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
         # for d in [0, 8, 16, 24]:
-        # do_rabi_srt_pop(nv_sig, apd_indices, 0, 51, uwave_time_range=[0, 500])
-        # do_rabi_srt_pop(nv_sig, apd_indices, 24, 201, uwave_time_range=[0, 2000])
+        # do_rabi_srt_pop(nv_sig,  0, 51, uwave_time_range=[0, 500])
+        # do_rabi_srt_pop(nv_sig,  24, 201, uwave_time_range=[0, 2000])
 
         # do_ramsey(nv_sig, nv_sig, 0)
         

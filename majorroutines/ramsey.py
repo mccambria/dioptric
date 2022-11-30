@@ -175,7 +175,8 @@ def main(
     num_runs,
     state=States.LOW,
     opti_nv_sig = None,
-    one_precession_time = False
+    one_precession_time = False,
+    do_fm = False
 ):
 
     with labrad.connect() as cxn:
@@ -189,7 +190,8 @@ def main(
             num_runs,
             state,
             opti_nv_sig,
-            one_precession_time
+            one_precession_time,
+            do_fm
         )
         return angle
 
@@ -205,6 +207,7 @@ def main_with_cxn(
     state=States.LOW,
     opti_nv_sig = None,
     one_precession_time = False,
+    do_fm = False
 ):
     
     counter_server = tool_belt.get_counter_server(cxn)
@@ -235,6 +238,13 @@ def main_with_cxn(
     seq_file_name = "spin_echo.py"
     if False:
         seq_file_name = "ramsey.py"
+        
+    if do_fm == False:
+        seq_file_name = "spin_echo.py"
+        deviation = 0
+    else:
+        seq_file_name = "spin_echo_fm_test.py"
+        deviation = 6
 
     # %% Create the array of relaxation times
 
@@ -366,6 +376,8 @@ def main_with_cxn(
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq_detuned)
         sig_gen_cxn.set_amp(uwave_power)
+        if do_fm:
+            sig_gen_cxn.load_fm(deviation)
         sig_gen_cxn.uwave_on()
 
         # Set up the laser
@@ -496,6 +508,7 @@ def main_with_cxn(
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             'detuning': detuning,
             'detuning-units': 'MHz',
+            "do_fm": do_fm,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq_detuned,
@@ -574,6 +587,7 @@ def main_with_cxn(
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         'detuning': detuning,
         'detuning-units': 'MHz',
+        "do_fm": do_fm,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq_detuned,

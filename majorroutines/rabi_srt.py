@@ -23,7 +23,7 @@ import labrad
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+def main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
          num_steps, num_reps, num_runs,
          readout_state = States.HIGH,
          initial_state = States.HIGH,
@@ -33,7 +33,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
    
 
     with labrad.connect() as cxn:
-        norm_avg_sig = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation_high, deviation_low, 
+        norm_avg_sig = main_with_cxn(cxn, nv_sig, uwave_time_range,  deviation_high, deviation_low, 
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
@@ -42,12 +42,14 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
 
 
     return norm_avg_sig
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low, 
                      num_steps, num_reps, num_runs,
                      readout_state = States.HIGH,
                      initial_state = States.HIGH,
                      opti_nv_sig = None):
 
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     tool_belt.reset_cfm(cxn)
 
     # %% Get the starting time of the function, to be used to calculate run time
@@ -102,7 +104,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     seq_args = [taus[0], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
                 dev_high_sign, dev_low_sign,
-                apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
 #    for arg in seq_args:
@@ -110,7 +111,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
 
     seq_time_s = seq_time / (10 ** 9)  # to seconds
@@ -164,12 +165,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
@@ -195,7 +196,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
@@ -227,19 +228,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
             seq_args = [taus[tau_ind_first], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], 
                 dev_high_sign, dev_low_sign,
-                apd_indices[0],
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
     
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+            counter_server.clear_buffer()
+            pulsegen_server.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 
             # Get the counts
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = counter_server.read_counter_separate_gates(1)
 
             sample_counts = new_counts[0]
 
@@ -265,7 +265,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 #            start_time = run_time
 #            print('Tau: {} ns'.format(taus[tau_ind]))
 #            print('Elapsed time {}'.format(run_elapsed_time))
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% incremental plotting
 
