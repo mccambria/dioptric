@@ -29,17 +29,13 @@ class PlotType(Enum):
     LINE = auto()
 
 
-# These standard values are intended for single-column figures
+# Size options
 marker_Size = {Size.NORMAL: 7, Size.SMALL: 6, Size.TINY: 4}
 line_widths = {Size.NORMAL: 1.5, Size.SMALL: 1.25, Size.TINY: 1.0}
 marker_edge_widths = line_widths.copy()
 font_Size = {Size.NORMAL: 17, Size.SMALL: 13}
-figsize = [6.5, 5.0]
-double_figsize = [figsize[0] * 2, figsize[1]]
-line_style = "solid"
-marker_style = "o"
 
-# Default Size here
+# Default sizes
 marker_size = marker_Size[Size.NORMAL]
 marker_size_inset = marker_Size[Size.SMALL]
 line_width = line_widths[Size.NORMAL]
@@ -48,6 +44,12 @@ marker_edge_width = marker_edge_widths[Size.NORMAL]
 marker_edge_width_inset = marker_edge_widths[Size.SMALL]
 default_font_size = Size.NORMAL
 default_data_size = Size.NORMAL
+figsize = [6.5, 5.0]
+double_figsize = [figsize[0] * 2, figsize[1]]
+
+# Default styles
+line_style = "solid"
+marker_style = "o"
 
 # endregion
 
@@ -135,8 +137,7 @@ def zero_to_one_threshold(val):
 def init_kplotlib(
     font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False
 ):
-    """
-    Runs the default initialization for kplotlib, our default configuration
+    """Runs the default initialization for kplotlib, our default configuration
     of matplotlib. Make sure no_latex is True for faster plotting.
     """
 
@@ -176,11 +177,10 @@ def init_kplotlib(
     ### Other rcparams
 
     # plt.rcParams["savefig.format"] = "svg"
-
     # plt.rcParams["legend.handlelength"] = 0.5
+
     plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
-    # plt.rcParams["figure.dpi"] = 300
     plt.rcParams["savefig.dpi"] = 300
 
 

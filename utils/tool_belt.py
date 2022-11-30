@@ -41,7 +41,7 @@ class States(Enum):
     HIGH = auto()
 
 
-# Normalization style for comparing experimental data to reference data 
+# Normalization style for comparing experimental data to reference data
 class NormStyle(Enum):
     single_valued = auto()  # Use a single-valued reference
     point_to_point = auto()  # Normalize each signal point by its own reference
@@ -60,23 +60,6 @@ class Digital(IntEnum):
 # endregion
 
 
-def get_signal_generator_name_no_cxn(state):
-    with labrad.connect() as cxn:
-        return get_signal_generator_name(cxn, state)
-
-
-def get_signal_generator_name(cxn, state):
-    return get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
-    )
-
-
-def get_signal_generator_cxn(cxn, state):
-    signal_generator_name = get_signal_generator_name(cxn, state)
-    signal_generator_cxn = eval("cxn.{}".format(signal_generator_name))
-    return signal_generator_cxn
-
-
 # region xyz sets
 
 
@@ -90,8 +73,8 @@ def set_xyz(cxn, coords):
     z_dtype = eval(
         get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
     )
-    xy_server = get_xy_server(cxn)
-    z_server = get_z_server(cxn)
+    pos_xy_server = get_pos_xy_server(cxn)
+    pos_z_server = get_pos_z_server(cxn)
     if xy_dtype is int:
         xy_op = round
     else:
@@ -101,8 +84,8 @@ def set_xyz(cxn, coords):
     else:
         z_op = z_dtype
 
-    xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
-    z_server.write_z(z_op(coords[2]))
+    pos_xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
+    pos_z_server.write_z(z_op(coords[2]))
     # Force some delay before proceeding to account
     # for the effective write time
     time.sleep(0.002)
@@ -142,7 +125,7 @@ def set_xyz_ramp(cxn, coords):
     else:
         total_movement_delay = z_delay
 
-    xyz_server = get_xyz_server(cxn)
+    xyz_server = get_pos_xyz_server(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
@@ -304,8 +287,8 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     # do this nicely we'd find a way to only turn off the specific channel,
     # but it's not worth the effort.
     if not turn_on:
-        pulsegen_server = get_pulsegen_server(cxn)
-        pulsegen_server.constant([])
+        pulse_gen_server = get_pulse_gen_server(cxn)
+        pulse_gen_server.constant([])
 
 
 def set_laser_power(
@@ -1080,18 +1063,93 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
             dict_to_populate[key] = val
 
 
-def get_nv_sig_units():
-    return "in config"
+def get_registry_entry(cxn, key, directory):
+    """Return the value for the specified key. The directory is specified
+    from the top of the registry. Directory as a list
+    """
+
+    p = cxn.registry.packet()
+    p.cd("", *directory)
+    p.get(key)
+    return p.send()["get"]
+
+
+def get_registry_entry_no_cxn(key, directory):
+    """
+    Same as above
+    """
+    with labrad.connect() as cxn:
+        return get_registry_entry(cxn, key, directory)
+
+
+def get_xy_server(cxn):
+    """DEPRECATED"""
+    return get_pos_xy_server(cxn)
+
+
+def get_pos_xy_server(cxn):
+    """Talk to the registry to get the fine xy control server for this
+    setup. Eg for rabi it is probably galvo. See optimize for some examples.
+    """
+
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(cxn, get_pos_xy_server_name(cxn))
+
+
+def get_pos_xy_server_name(cxn):
+    return get_registry_entry(
+        cxn, "pos_xy_server", ["", "Config", "Positioning"]
+    )
+
+
+def get_z_server(cxn):
+    """DEPRECATED"""
+    return get_pos_z_server(cxn)
+
+
+def get_pos_z_server(cxn):
+    """Same as get_xy_server but for the fine z control server"""
+
+    return getattr(cxn, get_pos_z_server_name(cxn))
+
+
+def get_pos_z_server_name(cxn):
+    return get_registry_entry(
+        cxn, "pos_z_server", ["", "Config", "Positioning"]
+    )
+
+
+def get_xyz_server(cxn):
+    """DEPRECATED"""
+    return get_pos_xyz_server(cxn)
+
+
+def get_pos_xyz_server(cxn):
+    """Get an actual reference to the combined xyz server"""
+
+    return getattr(cxn, get_pos_xyz_server_name(cxn))
+
+
+def get_pos_xyz_server_name(cxn):
+    return get_registry_entry(
+        cxn, "pos_xyz_server", ["", "Config", "Positioning"]
+    )
 
 
 def get_pulsegen_server(cxn):
+    """DEPRECATED"""
+    return get_pulse_gen_server(cxn)
+
+
+def get_pulse_gen_server(cxn):
     """
     Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
     """
     pulsegen_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "pulsegen_server", ["", "Config", "PulseGeneration"]
+            cxn, "pulse_gen_server", ["", "Config", "PulseGeneration"]
         ),
     )
 
@@ -1133,32 +1191,6 @@ def get_tagger_server(cxn):
     return tagger_server_return
 
 
-def get_optimization_style():
-    """
-    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
-    """
-    optimization_style_return = get_registry_entry_no_cxn(
-        "optimization_style", ["", "Config", "Positioning"]
-    )
-    if optimization_style_return == "":
-        raise RuntimeError
-
-    return optimization_style_return
-
-
-def get_xy_server(cxn):
-    """Talk to the registry to get the fine xy control server for this
-    setup. Eg for rabi it is probably galvo. See optimize for some examples.
-    """
-
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    return getattr(
-        cxn,
-        get_registry_entry(cxn, "xy_server", ["", "Config", "Positioning"]),
-    )
-
-
 def get_temp_controller(cxn):
     """Get the server controlling the temp"""
 
@@ -1183,21 +1215,54 @@ def get_temp_monitor(cxn):
     )
 
 
-def get_z_server(cxn):
-    """Same as get_xy_server but for the fine z control server"""
+def get_signal_generator_name_no_cxn(state):
+    """DEPRECATED"""
+    return get_sig_gen_name_no_cxn(state)
 
-    return getattr(
-        cxn, get_registry_entry(cxn, "z_server", ["", "Config", "Positioning"])
+
+def get_sig_gen_name_no_cxn(state):
+    with labrad.connect() as cxn:
+        return get_sig_gen_name(cxn, state)
+
+
+def get_signal_generator_name(cxn, state):
+    """DEPRECATED"""
+    return get_sig_gen_name(cxn, state)
+
+
+def get_sig_gen_name(cxn, state):
+    return get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
     )
 
 
-def get_xyz_server(cxn):
-    """Get an actual reference to the combined xyz server"""
+def get_signal_generator_cxn(cxn, state):
+    """DEPRECATED"""
+    return get_sig_gen_cxn(cxn, state)
 
-    return getattr(
-        cxn,
-        get_registry_entry(cxn, "xyz_server", ["", "Config", "Positioning"]),
+
+def get_sig_gen_cxn(cxn, state):
+    sig_gen_name = get_sig_gen_name(cxn, state)
+    sig_gen_cxn = eval("cxn.{}".format(sig_gen_name))
+    return sig_gen_cxn
+
+
+def get_optimization_style():
+    """
+    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    """
+    optimization_style_return = get_registry_entry_no_cxn(
+        "optimization_style", ["", "Config", "Positioning"]
     )
+    if optimization_style_return == "":
+        raise RuntimeError
+
+    return optimization_style_return
+
+
+def get_apd_gate_channel(cxn, apd_index):
+    directory = ["", "Config", "Wiring", "Tagger", "Apd_{}".format(apd_index)]
+    return get_registry_entry(cxn, "di_gate", directory)
 
 
 def get_apd_indices(cxn):
@@ -1212,28 +1277,8 @@ def get_apd_indices(cxn):
     )
 
 
-def get_registry_entry(cxn, key, directory):
-    """Return the value for the specified key. The directory is specified
-    from the top of the registry. Directory as a list
-    """
-
-    p = cxn.registry.packet()
-    p.cd("", *directory)
-    p.get(key)
-    return p.send()["get"]
-
-
-def get_registry_entry_no_cxn(key, directory):
-    """
-    Same as above
-    """
-    with labrad.connect() as cxn:
-        return get_registry_entry(cxn, key, directory)
-
-
-def get_apd_gate_channel(cxn, apd_index):
-    directory = ["", "Config", "Wiring", "Tagger", "Apd_{}".format(apd_index)]
-    return get_registry_entry(cxn, "di_gate", directory)
+def get_nv_sig_units():
+    return "in config"
 
 
 # endregion
@@ -1592,6 +1637,7 @@ def send_email(
     server.close()
 
 
+# endregion
 # region Miscellaneous (probably consider deprecated)
 
 
@@ -2014,17 +2060,13 @@ def reset_cfm_with_cxn(cxn):
 
     plt.rc("text", usetex=False)
 
-    xy_server_name = get_registry_entry(
-        cxn, "xy_server", ["", "Config", "Positioning"]
-    )
-    z_server_name = get_registry_entry(
-        cxn, "z_server", ["", "Config", "Positioning"]
-    )
-    xyz_server_names = [xy_server_name, z_server_name]
+    pos_xy_server_name = get_pos_xy_server_name(cxn)
+    pos_z_server_name = get_pos_z_server_name(cxn)
+    pos_server_names = [pos_xy_server_name, pos_z_server_name]
     cxn_server_names = cxn.servers
     for name in cxn_server_names:
-        # By default don't reset xyz control
-        if name in xyz_server_names:
+        # By default don't reset positioning control
+        if name in pos_server_names:
             continue
         server = cxn[name]
         # Check for servers that ask not to be reset automatically

@@ -63,6 +63,8 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
     ]
     print("\nLocal branches:")
     print(local_branches)
+    
+    print()
 
     for branch in branches_to_archive:
         do_archive = True
@@ -139,31 +141,6 @@ if __name__ == "__main__":
     repo_path = Path.home() / "Documents/GitHub/kolkowitz-nv-experiment-v1.0"
 
     # List of branches to archive
-    # branches_to_archive = [
-    #     "dioptric",
-    #     "opx_setup",
-    #     "CFMIII",
-    #     "time-tagger-speedup",
-    #     "email-notifications",
-    #     "piezo-hysteresis",
-    #     "Spin_to_charge",
-    #     "hopper_disable_opt",
-    #     "temperature_reading",
-    #     "filter-slider-stops-responding",
-    #     "File_directory_sam",
-    #     "curve-fit-tests",
-    #     "t1_parallel_exp",
-    #     "semi-auto-t1",
-    #     "all-zeroes-investigation",
-    #     "high-to-high",
-    #     "split_resonance",
-    #     "cpmg",
-    #     "ramsey3",
-    #     "analog-aom",
-    #     "resonance_improvements_mcc",
-    #     "working_branch_sam",
-    #     "Samli",
-    # ]
     branches_to_archive = [
         "working_branch_sam",
     ]
