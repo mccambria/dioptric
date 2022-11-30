@@ -69,6 +69,25 @@ def get_signal_generator_name(cxn, state):
     )
 
 
+def get_state_from_signal_generator_name(cxn, sig_gen_name):
+    state= States.HIGH
+    sig_gen_HIGH = get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+    state= States.LOW
+    sig_gen_LOW = get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+    
+    return_state = None
+    if sig_gen_name == sig_gen_HIGH:
+        return_state = States.HIGH
+    elif sig_gen_name == sig_gen_LOW:
+        return_state = States.LOW
+        
+    return return_state
+
+
 def get_signal_generator_cxn(cxn, state):
     signal_generator_name = get_signal_generator_name(cxn, state)
     signal_generator_cxn = eval("cxn.{}".format(signal_generator_name))

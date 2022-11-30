@@ -15,7 +15,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from random import shuffle
-from scipy.optimize import curve_fit
+# from scipy.optimize import curve_fit
 from utils.tool_belt import States
 import labrad
 
@@ -23,7 +23,7 @@ import labrad
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+def main(nv_sig, apd_indices, uwave_time_range, deviation, 
          num_steps, num_reps, num_runs,
          readout_state = States.HIGH,
          initial_state = States.HIGH,
@@ -33,7 +33,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
    
 
     with labrad.connect() as cxn:
-        norm_avg_sig = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation_high, deviation_low, 
+        norm_avg_sig = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range,  deviation,
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
@@ -42,7 +42,7 @@ def main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low,
 
 
     return norm_avg_sig
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation, 
                      num_steps, num_reps, num_runs,
                      readout_state = States.HIGH,
                      initial_state = States.HIGH,
@@ -55,31 +55,55 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     startFunctionTime = time.time()
     start_timestamp = tool_belt.get_time_stamp()
 
-    # %% Initial calculations and setup
-    dev_high_sign = 1
-    dev_low_sign = 1
-    if deviation_high < 0:
-        dev_high_sign = -1
+    # %% Initial calculations and setup   
+    init_state_value = initial_state.value
+    read_state_value = readout_state.value
         
-    if deviation_low < 0:
-        dev_low_sign = -1
+    omni_sig_generator_name = tool_belt.get_registry_entry_cxn(cxn,"sig_gen_omni", 
+                                                       ["", "Config", "Microwaves"])
+    omni_sig_gen_state = tool_belt.get_state_from_signal_generator_name(cxn, omni_sig_generator_name)
+    
+    single_sig_generator_name = tool_belt.get_registry_entry_cxn(cxn,"sig_gen_single", 
+                                                       ["", "Config", "Microwaves"])
+    single_sig_gen_state = tool_belt.get_state_from_signal_generator_name(cxn, single_sig_generator_name)
+    
+    uwave_freq_omni = nv_sig['resonance_{}'.format(omni_sig_gen_state.name)]
+    uwave_freq_single = nv_sig['resonance_{}'.format(single_sig_gen_state.name)]
+    uwave_power_omni = nv_sig['uwave_power_{}'.format(omni_sig_gen_state.name)]
+    uwave_power_single = nv_sig['uwave_power_{}'.format(single_sig_gen_state.name)]
+    
+    uwave_freq_single_detune = uwave_freq_single + deviation / 1e3
+    uwave_freq_omni_detune = uwave_freq_omni + deviation / 1e3
+    
+    
+    uwave_freq_init = nv_sig['resonance_{}'.format(initial_state.name)]
+    uwave_freq_read = nv_sig['resonance_{}'.format(readout_state.name)]
+    
+    uwave_freq_list = [uwave_freq_init, uwave_freq_omni_detune, uwave_freq_read]
     
     state_high = States.HIGH
     state_low = States.LOW
-    uwave_freq_high = nv_sig['resonance_{}'.format(state_high.name)]
-    uwave_freq_low = nv_sig['resonance_{}'.format(state_low.name)]
     
-    # uwave_freq_high_detune = uwave_freq_high + deviation_high / 1e3
-    #uwave_freq_low_detune = uwave_freq_low + deviation_low / 1e3
-    
-    uwave_power_high = nv_sig['uwave_power_{}'.format(state_high.name)]
-    uwave_power_low = nv_sig['uwave_power_{}'.format(state_low.name)]
     rabi_high = nv_sig['rabi_{}'.format(state_high.name)]
     rabi_low = nv_sig['rabi_{}'.format(state_low.name)]
 
     pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_high)
     pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_low)
 
+    # Default the pulses to 0
+    init_pi_dur= 0
+    read_pi_dur = 0
+
+    if init_state_value == States.LOW.value:
+        init_pi_dur = pi_pulse_low
+    elif init_state_value == States.HIGH.value:
+        init_pi_dur = pi_pulse_high
+
+    if read_state_value == States.LOW.value:
+        read_pi_dur = pi_pulse_low
+    elif read_state_value == States.HIGH.value:
+        read_pi_dur = pi_pulse_high
+        
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -87,7 +111,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
 
     polarization_time = nv_sig['spin_pol_dur']
     readout = nv_sig['spin_readout_dur']
-    readout_sec = readout / (10**9)
+    # readout_sec = readout / (10**9)
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
@@ -96,15 +120,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
 
+
     # Analyze the sequence
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
-                dev_high_sign, dev_low_sign,
+                readout, init_pi_dur, read_pi_dur, max_uwave_time, 
                 apd_indices[0],
-                initial_state.value, readout_state.value, 
-                laser_name, laser_power]
+                laser_name, laser_power ]
 #    for arg in seq_args:
 #        print(type(arg))
     print(seq_args)
@@ -176,22 +199,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Set up the microwaves for the low and high states
-        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+        omni_sig_gen_cxn = tool_belt.get_signal_generator_cxn( # need some better way to automate this ???
             cxn, States.LOW
         )
-        low_sig_gen_cxn.set_freq(uwave_freq_low)
-        low_sig_gen_cxn.set_amp(uwave_power_low)
-        # low_sig_gen_cxn.load_fm(abs(deviation_low))
-        # low_sig_gen_cxn.uwave_on()
+        omni_sig_gen_cxn.set_amp(uwave_power_omni)
+        omni_sig_gen_cxn.load_freq_list(uwave_freq_list)
+        omni_sig_gen_cxn.uwave_on()
 
-        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
-            cxn, States.HIGH
-        )
-        high_sig_gen_cxn.set_freq(uwave_freq_high)
-        # high_sig_gen_cxn.set_freq(uwave_freq_high_detune)
-        high_sig_gen_cxn.set_amp(uwave_power_high)
-        high_sig_gen_cxn.load_fm(abs(deviation_high))
-        high_sig_gen_cxn.uwave_on()
+        single_sig_gen_cxn = eval("cxn.{}".format(single_sig_generator_name))
+        single_sig_gen_cxn.set_freq(uwave_freq_single_detune)
+        single_sig_gen_cxn.set_amp(uwave_power_single)
+        single_sig_gen_cxn.uwave_on()
         
 
         # Load the APD
@@ -223,13 +241,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
             tau_index_master_list[run_ind].append(tau_ind_first)
             tau_index_master_list[run_ind].append(tau_ind_second)
             # Stream the sequence
-            
             seq_args = [taus[tau_ind_first], polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], 
-                dev_high_sign, dev_low_sign,
-                apd_indices[0],
-                initial_state.value, readout_state.value, 
-                laser_name, laser_power]
+                        readout, init_pi_dur, read_pi_dur, taus[tau_ind_second], 
+                        apd_indices[0],
+                        laser_name, laser_power ]
     
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
@@ -288,9 +303,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         ax = axes_pack[1]
         ax.cla()
         ax.plot(taus , norm_avg_sig, 'b-')
-        ax.set_title('{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
-                                   readout_state.name, deviation_high, 
-                                   deviation_low))
+        ax.set_title('{} initial state, {} readout state,\n{} MHz deviation'.format(initial_state.name, 
+                                   readout_state.name, deviation))
         ax.set_xlabel('Microwave duration (ns)')
         ax.set_ylabel('Normalized signal')
 
@@ -310,10 +324,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'deviation_low': deviation_low,
-                    'deviation_low-units': 'MHz',
-                    'deviation_high': deviation_high,
-                    'deviation_high-units': 'MHz',
+                    'deviation': deviation,
+                    'deviation-units': 'MHz',
                     'uwave_time_range': uwave_time_range,
                     'uwave_time_range-units': 'ns',
                     'taus': taus.tolist(),
@@ -352,14 +364,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
     ax.legend()
-    ax.set_title('Shift to LOW freq {:.2} MHz'.format((uwave_freq_low - 2.7813)*1e3 ))
 
     ax = axes_pack[1]
     ax.cla()
     ax.plot(taus , norm_avg_sig, 'b-')
-    ax.set_title('{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
-                                   readout_state.name, deviation_high, 
-                                   deviation_low))
+    ax.set_title('{} initial state, {} readout state,\n{} MHz deviation'.format(initial_state.name, 
+                               readout_state.name, deviation))
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Normalized signal')
 
@@ -391,10 +401,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, deviation_high, de
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'deviation_low': deviation_low,
-                'deviation_low-units': 'MHz',
-                'deviation_high': deviation_high,
-                'deviation_high-units': 'MHz',
+                'deviation': deviation,
+                'deviation-units': 'MHz',
                 'initial_state': initial_state.name,
                 'readout_state': readout_state.name,
                 'num_steps': num_steps,
@@ -453,26 +461,24 @@ def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation,
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps)
     taus = taus/1e3
-    deviation_high = deviation
-    deviation_low = deviation
     
     init=States.HIGH
     if True :
-        m_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+        m_sig = main(nv_sig, apd_indices, uwave_time_range, deviation,
             num_steps, num_reps, num_runs,
             readout_state = States.LOW,
             initial_state = init,
             )
         m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
  
-    p_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+    p_sig = main(nv_sig, apd_indices, uwave_time_range, deviation,
              num_steps, num_reps, num_runs,
              readout_state = States.HIGH,
              initial_state = init,
              )
     p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
     
-    z_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+    z_sig = main(nv_sig, apd_indices, uwave_time_range, deviation,
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
@@ -489,60 +495,36 @@ def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     tool_belt.save_figure(fig, file_path)
     
-def fit_data(taus,  norm_avg_sig):
-
-        # %% Set up
-
-        fit_func = lambda t, off, freq: tool_belt.cosexp_1_at_0(t, off, freq, 1e3)
-
-        # %% Estimated fit parameters
-
-        offset = 0.2#numpy.average(norm_avg_sig)
-        decay = 10
-        frequency = 0.8
-
-        # %% Fit
-
-        init_params = [offset, frequency, decay]
-        init_params = [offset, frequency]
-
-        try:
-            popt, _ = curve_fit(fit_func, taus, norm_avg_sig,
-                                p0=init_params,
-                                bounds=(0, numpy.infty))
-        except Exception as e:
-            print(e)
-            popt = None
-
-        return fit_func, popt
 # %% Run the file
 
 
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi_srt/2022_11'
-    file_1 = '2022_11_29-16_58_39-siena-nv1_2022_10_27'
-    file_2 = '2022_11_29-18_14_41-siena-nv1_2022_10_27'
-    file_3 = '2022_11_29-19_30_36-siena-nv1_2022_10_27'
-    file_4 = '2022_11_29-20_46_28-siena-nv1_2022_10_27'
-    file_0 = '2022_11_29-13_22_27-siena-nv1_2022_10_27'
-    file_5 = '2022_11_29-23_23_29-siena-nv1_2022_10_27'
+    file_m4 = '2022_11_28-20_05_51-siena-nv1_2022_10_27'
+    file_m3 = '2022_11_28-21_55_32-siena-nv1_2022_10_27'
+    file_m2 = '2022_11_28-23_45_40-siena-nv1_2022_10_27'
+    file_m1 = '2022_11_29-01_36_16-siena-nv1_2022_10_27'
+    file_0 = '2022_11_29-03_27_43-siena-nv1_2022_10_27'
+    file_p1 = '2022_11_29-05_19_18-siena-nv1_2022_10_27'
+    file_p2 = '2022_11_29-07_10_56-siena-nv1_2022_10_27'
+    file_p3 = '2022_11_29-09_02_12-siena-nv1_2022_10_27'
+    file_p4 = '2022_11_29-09_02_15-siena-nv1_2022_10_27'
     
     file_list = [
                   # file_m4,
                  
                   # file_m3,
-                  file_5,
-                 file_1,
-                 file_2,
+                 file_m2,
+                 file_m1,
                  file_0,
-                 file_3,
-                 file_4,
+                 file_p1,
+                 file_p2,
                   # file_p3,
                   # file_p4,
                  ]
     
-    color_list = ['orange','red', 'blue', 'green' ,'black' ,'purple']
+    
     # data = tool_belt.get_raw_data(file_p4, path)
     # sig_counts = data['sig_counts']
     # ref_counts = data['ref_counts']
@@ -555,8 +537,7 @@ if __name__ == '__main__':
     
     low_resonance = 2.7813 
     fig, ax = plt.subplots()
-    for f in range(len(file_list)):
-        file = file_list[f]
+    for file in file_list:
         data = tool_belt.get_raw_data(file, path)
         norm_avg_sig = data['norm_avg_sig']
         taus= numpy.array(data['taus'])/1e3
@@ -571,13 +552,7 @@ if __name__ == '__main__':
         contrast = 0.108*2
         low_pop = 1-contrast
         pop= (numpy.array(norm_avg_sig) - low_pop) / (1 - low_pop)
-        ax.plot(taus, pop, 'o',color = color_list[f],  label = 'LOW resonance shifted {:.2f} MHz'.format(df))
-        fit_func, popt = fit_data(taus, pop)
-        print(popt)
-        # popt = [0.85, 1/2, 3]
-        linspaceTau = numpy.linspace(taus[0], taus[-1], 100)
-        ax.plot(linspaceTau, fit_func(linspaceTau, *popt), '-',color = color_list[f],  label='fit')
-        
+        ax.plot(taus, pop, '-', label = 'LOW resonance shifted {} MHz'.format(round(df)))
             
     ax.set_title('Rabi SRT, {} MHz detuning'.format(dev))
     ax.set_xlabel('SRT length (us)')

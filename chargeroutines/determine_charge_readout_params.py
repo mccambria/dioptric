@@ -773,32 +773,32 @@ if __name__ == "__main__":
 
     # Rabi
     apd_indices = [1]
-    sample_name = "rubin"
+    sample_name = "siena"
 
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords":[0.088, -0.481, 5.484],
-        "name": "{}-nv8_2022_08_10".format(sample_name,),
+        "coords":[-0.199, 0.081, 4.06],
+        "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":11,
-        "correction_collar": 0.12,
+        "expected_count_rate":21,
+        # "correction_collar": 0.12,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
         "imaging_laser": green_laser,
-        "imaging_laser_filter": "nd_0.5",
+        # "imaging_laser_filter": "nd_0.5",
         "imaging_readout_dur": 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
         "spin_laser": green_laser,
-        "spin_laser_filter": "nd_0.5",
-        "spin_pol_dur": 1e4,
-        "spin_readout_dur": 350,
+        # "spin_laser_filter": "nd_0.5",
+        "spin_pol_dur": 10000.0,
+        "spin_readout_dur": 300,
         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 1e6,
@@ -824,13 +824,13 @@ if __name__ == "__main__":
         # "charge_readout_laser_power": 1.0,
         "charge_readout_laser_filter": 'nd_1.0',
         "collection_filter": "715_sp+630_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8073,
-        "rabi_LOW": 173.2,
-        "uwave_power_LOW": 16.5,
+        "magnet_angle": 68,
+        "resonance_LOW":  2.7813 ,
+        "rabi_LOW": 129.5,
+        "uwave_power_LOW": 13.5,
         # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-        "resonance_HIGH": 2.9489,
-        "rabi_HIGH": 234.6,
+        "resonance_HIGH": 2.9591,
+        "rabi_HIGH": 129.5,
         "uwave_power_HIGH": 16.5,
     }
 
@@ -841,7 +841,7 @@ if __name__ == "__main__":
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [ 150e6, 200e6]
+    readout_durs = [1e9]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
     # readout_durs = [2e9]
@@ -852,7 +852,7 @@ if __name__ == "__main__":
     # readout_powers = np.arange(0.75, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [0.15]
+    readout_powers = [0.5, 0.1]
 
     # num_reps = 2000
     # num_reps = 1000

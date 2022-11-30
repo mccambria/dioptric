@@ -165,25 +165,25 @@ class SignalGeneratorBnc835(LabradServer):
         self.sig_gen.write("FM:COUP AC")
         self.sig_gen.write("FM:STAT ON")
         
-    @setting(11, freq='v[]', deviation='v[]')
-    def load_fsk(self, c, freq, deviation):
-        '''
-        Loads a list of three frequencies, where the middle value is the shifted frequency
-        '''
-        freq_Hz = freq * 1e6
-        deviation_Hz = deviation * 1e6
-        freqs = freq_Hz, deviation_Hz, freq_Hz
+    # @setting(11, freq_list='*v[]')
+    # def load_freq_list(self, c, freq_list):
+    #     '''
+    #     Loads a list of frequencies, in GHz, which are activated on a trigger
+    #     '''
+    #     freq_Hz = freq * 1e6
+    #     deviation_Hz = deviation * 1e6
+    #     freqs = freq_Hz, deviation_Hz, freq_Hz
         
-        freqs_hz_str = ", ".join([str(int(freq)) for freq in freqs])
-        # write a list of the three frequencies to the BNC
-        self.sig_gen.write("LIST:FREQ {}".format(freqs_hz_str))
+    #     freqs_hz_str = ", ".join([str(int(freq)) for freq in freqs])
+    #     # write a list of the three frequencies to the BNC
+    #     self.sig_gen.write("LIST:FREQ {}".format(freqs_hz_str))
         
-        # Set the rising edge of an external trigger source to advance the
-        # frequency to the next point in the sweep
-        self.sig_gen.write("TRIG:TYPE POIN")
-        self.sig_gen.write("TRIG:SOUR EXT")
-        # rearms the trigger system after completion of a triggered sweep
-        self.sig_gen.write("INIT:CONT 1")
+    #     # Set the rising edge of an external trigger source to advance the
+    #     # frequency to the next point in the sweep
+    #     self.sig_gen.write("TRIG:TYPE POIN")
+    #     self.sig_gen.write("TRIG:SOUR EXT")
+    #     # rearms the trigger system after completion of a triggered sweep
+    #     self.sig_gen.write("INIT:CONT 1")
         
     @setting(6)
     def reset(self, c):
