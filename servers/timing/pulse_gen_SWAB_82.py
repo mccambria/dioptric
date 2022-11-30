@@ -60,7 +60,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("pulse_streamer_ip")
+        p.get(f"{self.name}_ip")
         p.dir()
         result = await p.send()
         return result
@@ -151,7 +151,6 @@ class PulseGenSwab82(PulseGen, LabradServer):
                 self, self.config_dict, args
             )
         return seq, final, ret_vals
-
 
     @setting(2, seq_file="s", seq_args_string="s", returns="*?")
     def stream_load(self, c, seq_file, seq_args_string=""):

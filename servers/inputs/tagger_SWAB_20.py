@@ -55,7 +55,7 @@ class TaggerSwab20(Tagger, LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("time_tagger_serial")
+        p.get(f"{self.name}_serial")
         p.cd(["", "Config", "Wiring", "Tagger"])
         p.get("di_clock")
         p.dir()

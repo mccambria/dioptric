@@ -33,31 +33,41 @@ import socket
 
 
 class FilterSliderThorEll9k(LabradServer):
-    name = 'filter_slider_THOR_ell9k'
+    name = "filter_slider_THOR_ell9k"
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = (
+            "E:/Shared drives/Kolkowitz Lab"
+            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+        )
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%y-%m-%d_%H-%M-%S",
+            filename=filename,
+        )
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd(['', 'Config', 'DeviceIDs'])
-        logging.debug('{}_address'.format(self.name))
-        p.get('{}_address'.format(self.name))
+        p.cd(["", "Config", "DeviceIDs"])
+        p.get(f"{self.name}_com")
         result = await p.send()
         return result
 
     def on_get_config(self, config):
         # Get the slider
         try:
-            self.slider = serial.Serial(config['get'], 9600, serial.EIGHTBITS,
-                                serial.PARITY_NONE, serial.STOPBITS_ONE)
+            self.slider = serial.Serial(
+                config["get"],
+                9600,
+                serial.EIGHTBITS,
+                serial.PARITY_NONE,
+                serial.STOPBITS_ONE,
+            )
         except Exception as e:
             logging.debug(e)
             del self.slider
@@ -65,13 +75,15 @@ class FilterSliderThorEll9k(LabradServer):
         self.slider.flush()
         time.sleep(0.1)
         # Set up the mapping from filter position to move command
-        self.move_commands = {0: '0ma00000000'.encode(),
-                              1: '0ma00000020'.encode(),
-                              2: '0ma00000040'.encode(),
-                              3: '0ma00000060'.encode()}
-        logging.info('Init complete')
-        
-    @setting(0, pos='i')
+        self.move_commands = {
+            0: "0ma00000000".encode(),
+            1: "0ma00000020".encode(),
+            2: "0ma00000040".encode(),
+            3: "0ma00000060".encode(),
+        }
+        logging.info("Init complete")
+
+    @setting(0, pos="i")
     def set_filter(self, c, pos):
         cmd = self.move_commands[pos]
         # self.slider.write(cmd)
@@ -82,13 +94,14 @@ class FilterSliderThorEll9k(LabradServer):
             res = self.slider.readline()
             # The device returns a status message if it's not done moving. It
             # returns the current position if it is done moving.
-            incomplete = ("0GS" in res.decode())
+            incomplete = "0GS" in res.decode()
             # if incomplete:
             #     logging.info("huh")
 
 
 __server__ = FilterSliderThorEll9k()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from labrad import util
+
     util.runServer(__server__)

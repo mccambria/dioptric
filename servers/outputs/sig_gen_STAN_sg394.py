@@ -53,7 +53,7 @@ class SigGenStanSg394(LabradServer, VectorSigGen):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("signal_generator_sg394_visa_address")
+        p.get(f"{self.name}_visa")
         p.cd(["", "Config", "Wiring", "Daq"])
         p.get("di_clock")
         result = await p.send()

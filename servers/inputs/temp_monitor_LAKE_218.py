@@ -56,7 +56,7 @@ class TempMonitorLake218(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("{}_address".format(self.name))
+        p.get(f"{self.name}_com")
         result = await p.send()
         return result["get"]
 

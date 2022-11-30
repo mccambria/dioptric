@@ -70,7 +70,6 @@ class PosXyThorGvs212(LabradServer):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
-        # logging.debug(self.daq_di_clock)
         logging.debug("Init complete")
 
     def stopServer(self):

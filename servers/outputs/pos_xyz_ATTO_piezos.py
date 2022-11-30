@@ -59,7 +59,7 @@ class PosXyzAttoPiezos(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("cryo_piezos_ip")
+        p.get(f"{self.name}_ip")
         p.cd(["", "Config", "Positioning"])
         p.get("cryo_piezos_voltage")
         p.get("z_bias_adjust")
