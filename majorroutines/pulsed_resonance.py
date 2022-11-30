@@ -399,7 +399,6 @@ def process_counts(ref_counts, sig_counts, norm_style=NormStyle.single_valued):
 
 def state(
     nv_sig,
-    apd_indices,
     state,
     freq_range,
     num_steps,
@@ -416,7 +415,6 @@ def state(
 
     resonance_list = main(
         nv_sig,
-        apd_indices,
         freq_center,
         freq_range,
         num_steps,
@@ -734,7 +732,7 @@ def main_with_cxn(
 
     # %% Process and plot the data
 
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
+    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
     (
         avg_ref_counts,
         avg_sig_counts,

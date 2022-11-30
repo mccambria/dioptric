@@ -62,19 +62,18 @@ def xy_scan_voltages(x_center, y_center, x_range, y_range, num_steps):
 # %% Main
     
 
-def main(nv_sig, x_range, y_range, num_steps, apd_indices,nvm_initialization,
+def main(nv_sig, x_range, y_range, num_steps,nvm_initialization,
          save_data=True, plot_data=True, 
          um_scaled=False,cbarmin=None,cbarmax=None):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
-                      y_range, num_steps, apd_indices,nvm_initialization, save_data, plot_data, 
+                      y_range, num_steps,nvm_initialization, save_data, plot_data, 
                       um_scaled,cbarmin,cbarmax)
 
     return img_array, x_voltages, y_voltages
 
-def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
-                  apd_indices, nvm_initialization=False,save_data=True, plot_data=True, 
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, nvm_initialization=False,save_data=True, plot_data=True, 
                   um_scaled=False,cbarmin=None,cbarmax=None):
 
     # %% Some initial setup
@@ -179,7 +178,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     update_image_figure = tool_belt.update_image_figure
     tool_belt.init_safe_stop()
     
-    counter_server.start_tag_stream(apd_indices) #move outside of sequence
+    counter_server.start_tag_stream() #move outside of sequence
     
     dx_list = []
     dy_list = []

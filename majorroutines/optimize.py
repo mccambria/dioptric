@@ -87,7 +87,7 @@ def read_timed_counts(cxn, num_steps, period):
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        new_samples = counter_server.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             counts.extend(new_samples)
@@ -448,7 +448,7 @@ def main(nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False):
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
         elif movement_type == "CONTINUOUS":
-            main_with_cxn(
+            main_with_cxn_continuous(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
         else:
@@ -456,6 +456,26 @@ def main(nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False):
 
 
 def main_with_cxn(
+    cxn,
+    nv_sig,
+    set_to_opti_coords=True,
+    save_data=False,
+    plot_data=False,
+    set_drift=True,
+):
+    movement_type = tool_belt.get_movement_style()
+    if movement_type == "DISCRETE":
+        main_with_cxn_discrete(
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data
+        )
+    elif movement_type == "CONTINUOUS":
+        main_with_cxn_continuous(
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data
+        )
+    else:
+        print("optimization style not DISCRETE or CONTINOUS. check config")
+
+def main_with_cxn_continuous(
     cxn,
     nv_sig,
     set_to_opti_coords=True,
@@ -1074,8 +1094,9 @@ def main_with_cxn_discrete(
             prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
         if opti_succeeded or opti_unnecessary:
-            print("Optimized coordinates: ")
-            print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
+            if opti_succeeded:
+                print("Optimized coordinates: ")
+                print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*drift))
         else:
