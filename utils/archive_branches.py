@@ -68,6 +68,8 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
         do_archive = True
         tag_created = False
         tag_pushed = False
+        remote_deleted = False
+        local_deleted = False
         if branch == "master":
             print(
                 "I'm sorry Dave. I'm afraid I can't archive the master branch."
@@ -115,14 +117,19 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
         if tag_created and tag_pushed:
             try:
                 origin.push(f":{branch}")
+                remote_deleted = True
             except Exception as exc:
                 print(f"Failed to delete remote branch {branch}")
                 print(exc)
             try:
                 repo_git.branch("-D", branch)
+                local_deleted = True
             except Exception as exc:
                 print(f"Failed to delete local branch {branch}")
                 print(exc)
+        
+        if tag_created and tag_pushed and remote_deleted and local_deleted:
+            print(f"Branch {branch} successfully archived.")
         print()
 
 
@@ -158,7 +165,6 @@ if __name__ == "__main__":
     #     "Samli",
     # ]
     branches_to_archive = [
-        "opx-setup",
         "working_branch_sam",
     ]
 
