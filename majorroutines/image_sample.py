@@ -261,7 +261,6 @@ def main(
     x_range,
     y_range,
     num_steps,
-    apd_indices,
     save_data=True,
     plot_data=True,
     um_scaled=False,
@@ -277,7 +276,6 @@ def main(
             x_range,
             y_range,
             num_steps,
-            apd_indices,
             save_data,
             plot_data,
             um_scaled,
@@ -295,7 +293,6 @@ def main_with_cxn(
     x_range,
     y_range,
     num_steps,
-    apd_indices,
     save_data=True,
     plot_data=True,
     um_scaled=False,
@@ -347,10 +344,11 @@ def main_with_cxn(
 
     total_num_samples = num_steps**2
 
-    # %% Load the PulseStreamer
+    # %% Load the pulse generator
+    
+    pulse_gen = tool_belt.get_pulse_gen_server(cxn)
 
     readout = nv_sig["imaging_readout_dur"]
-
     readout_sec = readout / 10**9
     readout_us = readout / 10**3
 
@@ -363,26 +361,24 @@ def main_with_cxn(
         seq_args = [
             init,
             readout,
-            apd_indices[0],
             init_laser,
             init_power,
             readout_laser,
             readout_power,
         ]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(
+        ret_vals = pulse_gen.stream_load(
             "charge_initialization-simple_readout.py", seq_args_string
         )
     else:
         seq_args = [
             xy_delay,
             readout,
-            apd_indices[0],
             readout_laser,
             readout_power,
         ]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(
+        ret_vals = pulse_gen.stream_load(
             "simple_readout.py", seq_args_string
         )
     # print(seq_args)
@@ -405,8 +401,10 @@ def main_with_cxn(
     pixel_size = x_voltages[1] - x_voltages[0]
 
     # %% Set up the APD
+    
+    counter = tool_belt.get_counter_server(cxn)
 
-    cxn.apd_tagger.start_tag_stream(apd_indices)
+    counter.start_tag_stream()
 
     # %% Set up our raw data objects
 
@@ -420,7 +418,7 @@ def main_with_cxn(
 
     if plot_data:
 
-        kpl.init_kplotlib(font_size="small", no_latex=True)
+        kpl.init_kplotlib(font_size=kpl.Size.SMALL, no_latex=True)
 
         img_array_kcps = np.copy(img_array)
 
@@ -456,8 +454,9 @@ def main_with_cxn(
         )
 
     # %% Collect the data
-    cxn.apd_tagger.clear_buffer()
-    cxn.pulse_streamer.stream_start(total_num_samples)
+    
+    counter.clear_buffer()
+    pulse_gen.stream_start(total_num_samples)
 
     timeout_duration = ((period * (10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration
@@ -478,9 +477,9 @@ def main_with_cxn(
 
         # Read the samples and update the image
         if charge_initialization:
-            new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
+            new_samples = counter.read_counter_modulo_gates(2)
         else:
-            new_samples = cxn.apd_tagger.read_counter_simple()
+            new_samples = counter.read_counter_simple()
 
         #        print(new_samples)
         num_new_samples = len(new_samples)

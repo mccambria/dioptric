@@ -54,56 +54,52 @@ class TaggerSwab20(Tagger, LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
+        p.cd(["", "Config"])
+        p.get("apd_indices")
         p.cd(["", "Config", "DeviceIDs"])
         p.get(f"{self.name}_serial")
         p.cd(["", "Config", "Wiring", "Tagger"])
         p.get("di_clock")
+        p.get("di_apd_gate")
         p.dir()
         result = await p.send()
         return result
 
     def on_get_config(self, config):
         get_result = config["get"]
-        tagger_serial = get_result[0]
+        self.config_apd_indices = get_result[0]
+        tagger_serial = get_result[1]
         try:
             self.tagger = TimeTagger.createTimeTagger(tagger_serial)
         except Exception as e:
             logging.info(e)
         self.tagger.reset()
-        # The APDs share a clock, but everything else is distinct
-        self.tagger_di_clock = get_result[1]
+        # The APDs share a clock and gate
+        self.tagger_di_clock = get_result[2]
+        self.tagger_di_apd_gate = get_result[3]
         # Determine how many APDs we're supposed to set up
-        apd_sub_dirs = []
         apd_indices = []
-        sub_dirs = config["dir"][0]
-        for sub_dir in sub_dirs:
-            if re.fullmatch(r"Apd_[0-9]+", sub_dir):
-                apd_sub_dirs.append(sub_dir)
-                apd_indices.append(int(sub_dir.split("_")[1]))
-        if len(apd_sub_dirs) > 0:
-            wiring = ensureDeferred(self.get_wiring(apd_sub_dirs))
-            wiring.addCallback(self.on_get_wiring, apd_indices)
+        keys = config["dir"][1]
+        for key in keys:
+            if re.fullmatch(r"di_apd_[0-9]+", key):
+                apd_indices.append(int(key.split("_")[2]))
+        wiring = ensureDeferred(self.get_wiring(apd_indices))
+        wiring.addCallback(self.on_get_wiring, apd_indices)
 
-    async def get_wiring(self, apd_sub_dirs):
+    async def get_wiring(self, apd_indices):
         p = self.client.registry.packet()
-        for sub_dir in apd_sub_dirs:
-            p.cd(["", "Config", "Wiring", "Tagger", sub_dir])
-            p.get("di_apd")
-            p.get("di_gate")
+        for ind in apd_indices:
+            p.get(f"di_apd_{ind}")
         result = await p.send()
         return result["get"]
 
     def on_get_wiring(self, wiring, apd_indices):
         self.tagger_di_apd = {}
-        self.tagger_di_gate = {}
         # Loop through the available APDs
         for loop_index in range(len(apd_indices)):
             apd_index = apd_indices[loop_index]
-            wiring_index = 2 * loop_index
-            di_apd = wiring[wiring_index]
+            di_apd = wiring[loop_index]
             self.tagger_di_apd[apd_index] = di_apd
-            di_gate = wiring[wiring_index + 1]
-            self.tagger_di_gate[apd_index] = di_gate
         self.reset_tag_stream_state()  # Initialize state variables
         self.reset(None)
         logging.info("init complete")
@@ -152,10 +148,6 @@ class TaggerSwab20(Tagger, LabradServer):
             return
         buffer_times, buffer_channels = self.read_raw_stream()
 
-        # Assume a single gate for both APDs: get all the gates once and then
-        # count for each APD individually
-        tagger_di_gate = self.tagger_di_gate[self.stream_apd_indices[0]]
-
         # clock_inds = np.where(buffer_channels == self.tagger_di_clock)
         # logging.info(clock_inds)
 
@@ -166,7 +158,7 @@ class TaggerSwab20(Tagger, LabradServer):
         return_counts, leftover_channels = read_counter_internal_sub(
             buffer_channels,
             self.tagger_di_clock,
-            tagger_di_gate,
+            self.tagger_di_apd_gate,
             apd_channels,
             self.leftover_channels,
         )
@@ -192,15 +184,15 @@ class TaggerSwab20(Tagger, LabradServer):
     @setting(0, returns="*i")
     def get_channel_mapping(self, c):
         """As a regexp, the order is:
-        [+APD, *[gate open, gate close], ?clock]
+        [+APD, ?gate open, ?gate close, ?clock]
         Whether certain channels will be present/how many channels of a given
         type will be present is based on the channels passed to
         start_tag_stream.
         """
         return self.stream_channels
 
-    @setting(1, apd_indices="*i", gate_indices="*i", clock="b")
-    def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
+    @setting(1, apd_indices="*i", apd_gate="b", clock="b")
+    def start_tag_stream(self, c, apd_indices=None, apd_gate=True, clock=True):
         """Expose a raw tag stream which can be read with read_tag_stream and
         closed with stop_tag_stream.
         """
@@ -214,18 +206,16 @@ class TaggerSwab20(Tagger, LabradServer):
             self.stop_tag_stream_internal()
         else:
             self.reset_tag_stream_state()
+            
+        if apd_indices is None: 
+            apd_indices = self.config_apd_indices
 
         channels = []
         for ind in apd_indices:
             channels.append(self.tagger_di_apd[ind])
-        # If gate_indices is unspecified, add gates for all the
-        # passed APDs by default
-        if gate_indices is None:
-            gate_indices = apd_indices
-        for ind in gate_indices:
-            gate_channel = self.tagger_di_gate[ind]
-            channels.append(gate_channel)  # rising edge
-            channels.append(-gate_channel)  # falling edge
+        if apd_gate:
+            channels.append(self.tagger_di_apd_gate)
+            channels.append(-self.tagger_di_apd_gate)
         if clock:
             channels.append(self.tagger_di_clock)
         # Store in state before de-duplication to preserve order
@@ -238,10 +228,6 @@ class TaggerSwab20(Tagger, LabradServer):
         # etc. The sync call waits until this process is complete.
         self.tagger.sync()
         self.stream_apd_indices = apd_indices
-
-        # If all APDs are running off the same gate, we can make things faster
-        active_gates = [self.tagger_di_gate[ind] for ind in apd_indices]
-        self.stream_single_gate = len(set(active_gates)) == 1
 
     @setting(2)
     def stop_tag_stream(self, c):
@@ -303,12 +289,6 @@ class TaggerSwab20(Tagger, LabradServer):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
 
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
-
         # Just find the sum of each sample in complete_counts
         return_counts = [
             np.sum(sample, dtype=int) for sample in complete_counts
@@ -324,12 +304,6 @@ class TaggerSwab20(Tagger, LabradServer):
         complete_counts = self.read_counter_setting_internal(num_to_read)
         # logging.info(complete_counts)
 
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
-
         # Add the APD counts as vectors for each sample in complete_counts
         return_counts = [
             np.sum(sample, 0, dtype=int).tolist() for sample in complete_counts
@@ -342,12 +316,6 @@ class TaggerSwab20(Tagger, LabradServer):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
         # logging.info(complete_counts)
-
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical("Combined counts from APDs with different gates.")
 
         # Add the APD counts as vectors for each sample in complete_counts
         # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
@@ -391,7 +359,7 @@ class TaggerSwab20(Tagger, LabradServer):
 def read_counter_internal_sub(
     buffer_channels,
     tagger_di_clock,
-    tagger_di_gate,
+    tagger_di_apd_gate,
     apd_channels,
     leftover_channels,
 ):
@@ -410,7 +378,7 @@ def read_counter_internal_sub(
 
     # Assume a single gate for both APDs: get all the gates once and then
     # count for each APD individually
-    open_channel = tagger_di_gate
+    open_channel = tagger_di_apd_gate
     close_channel = -open_channel
 
     # Find clock clicks (sample breaks)

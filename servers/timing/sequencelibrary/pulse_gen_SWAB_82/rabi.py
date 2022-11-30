@@ -24,22 +24,19 @@ def get_seq(pulse_streamer, config, args):
     # Unpack the durations
     tau, polarization_time, readout, max_tau = durations
 
-    # Get the APD indices
-    apd_index = args[4]
-
     # Signify which signal generator to use
-    state = args[5]
+    state = args[4]
     state = States(state)
     sig_gen_name = config['Microwaves'][f'sig_gen_{state.name}']
     
     # Laser specs
-    laser_name = args[6]
-    laser_power = args[7]
+    laser_name = args[5]
+    laser_power = args[6]
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    key = 'do_apd_{}_gate'.format(apd_index)
-    pulser_do_apd_gate = pulser_wiring[key]
+    pulser_wiring = config['Wiring']['PulseGen']
+    
+    pulser_do_apd_gate = pulser_wiring["do_apd_gate"]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
 

@@ -34,7 +34,6 @@ from random import shuffle
 
 def do_image_sample(
     nv_sig,
-    apd_indices,
     nv_minus_initialization=False,
     cbarmin=None,
     cbarmax=None,
@@ -70,14 +69,13 @@ def do_image_sample(
         scan_range,
         scan_range,
         num_steps,
-        apd_indices,
         nv_minus_initialization=nv_minus_initialization,
         cmin=cbarmin,
         cmax=cbarmax,
     )
 
 
-def do_image_sample_zoom(nv_sig, apd_indices):
+def do_image_sample_zoom(nv_sig):
 
     scan_range = 0.05
     num_steps = 30
@@ -87,15 +85,13 @@ def do_image_sample_zoom(nv_sig, apd_indices):
         scan_range,
         scan_range,
         num_steps,
-        apd_indices,
     )
 
 
-def do_optimize(nv_sig, apd_indices):
+def do_optimize(nv_sig):
 
     optimize.main(
         nv_sig,
-        apd_indices,
         set_to_opti_coords=False,
         save_data=True,
         plot_data=True,
@@ -104,7 +100,6 @@ def do_optimize(nv_sig, apd_indices):
 
 def do_stationary_count(
     nv_sig,
-    apd_indices,
     disable_opt=None,
     nv_minus_initialization=False,
     nv_zero_initialization=False,
@@ -115,7 +110,6 @@ def do_stationary_count(
     stationary_count.main(
         nv_sig,
         run_time,
-        apd_indices,
         disable_opt=disable_opt,
         nv_minus_initialization=nv_minus_initialization,
         nv_zero_initialization=nv_zero_initialization,
@@ -123,7 +117,6 @@ def do_stationary_count(
 
 def do_stationary_count_bg_subt(
     nv_sig,
-    apd_indices,
     bg_coords
 ):
 
@@ -132,14 +125,13 @@ def do_stationary_count_bg_subt(
     stationary_count.main(
         nv_sig,
         run_time,
-        apd_indices,
         disable_opt=True,
         background_subtraction=True,
         background_coords=bg_coords,
     )
 
 
-def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
+def do_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
     num_runs = 20
@@ -147,7 +139,6 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     resonance.main(
         nv_sig,
-        apd_indices,
         freq_center,
         freq_range,
         num_steps,
@@ -157,7 +148,7 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     )
 
 
-def do_four_point_esr(nv_sig, apd_indices, state):
+def do_four_point_esr(nv_sig, state):
 
     detuning = 0.004
     d_omega = 0.002
@@ -166,7 +157,6 @@ def do_four_point_esr(nv_sig, apd_indices, state):
 
     ret_vals = four_point_esr.main(
         nv_sig,
-        apd_indices,
         num_reps,
         num_runs,
         state,
@@ -179,7 +169,7 @@ def do_four_point_esr(nv_sig, apd_indices, state):
     return ret_vals
 
 
-def do_determine_standard_readout_params(nv_sig, apd_indices):
+def do_determine_standard_readout_params(nv_sig):
 
     num_reps = 1e3
     max_readouts = [4e6]
@@ -188,7 +178,6 @@ def do_determine_standard_readout_params(nv_sig, apd_indices):
 
     determine_standard_readout_params.main(
         nv_sig,
-        apd_indices,
         num_reps,
         max_readouts,
         filters=filters,
@@ -196,7 +185,7 @@ def do_determine_standard_readout_params(nv_sig, apd_indices):
     )
 
 
-def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
+def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
 
@@ -211,7 +200,6 @@ def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     pulsed_resonance.main(
         nv_sig,
-        apd_indices,
         freq_center,
         freq_range,
         num_steps,
@@ -222,7 +210,7 @@ def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     )
 
 
-def do_pulsed_resonance_batch(nv_list, apd_indices, temp):
+def do_pulsed_resonance_batch(nv_list, temp):
 
     num_steps = 51
     
@@ -244,7 +232,6 @@ def do_pulsed_resonance_batch(nv_list, apd_indices, temp):
             break
         pulsed_resonance.main(
             nv_sig,
-            apd_indices,
             freq_center,
             freq_range,
             num_steps,
@@ -255,7 +242,7 @@ def do_pulsed_resonance_batch(nv_list, apd_indices, temp):
         )
 
 
-def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 300]):
+def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
 
     num_steps = 51
 
@@ -267,7 +254,6 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 300]):
 
     period = rabi.main(
         nv_sig,
-        apd_indices,
         uwave_time_range,
         state,
         num_steps,
@@ -277,7 +263,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 300]):
     nv_sig["rabi_{}".format(state.name)] = period
 
 
-def do_rabi_batch(nv_list, apd_indices):
+def do_rabi_batch(nv_list):
 
     num_steps = 51
 
@@ -292,7 +278,6 @@ def do_rabi_batch(nv_list, apd_indices):
             break
         rabi.main(
             nv_sig,
-            apd_indices,
             uwave_time_range,
             state,
             num_steps,
@@ -308,17 +293,9 @@ if __name__ == "__main__":
 
     ### Shared parameters
 
-    # apd_indices = [0]
-    # apd_indices = [1]
-    apd_indices = [0, 1]
-
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-    
-    freq = 2.87
-    rabi_per = 200
-    uwave_power = 4
 
     # fmt: off
 
@@ -388,8 +365,8 @@ if __name__ == "__main__":
     #     }
     
     sample_name = "15micro"
-    z_coord = 18
-    ref_coords = [0.718, -0.565, z_coord]
+    z_coord = 0
+    ref_coords = [0.724, -0.577, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -463,7 +440,7 @@ if __name__ == "__main__":
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(z)
-        #     do_image_sample(nv_sig, apd_indices)
+        #     do_image_sample(nv_sig)
         
         # num_steps = 5
         # step_size = 5
@@ -473,25 +450,25 @@ if __name__ == "__main__":
         #     loc = [val * step_size for val in loc]
         #     with labrad.connect() as cxn:
         #         cxn.cryo_piezos.write_xy(loc[0],loc[1])
-        #     do_image_sample(nv_sig, apd_indices)
+        #     do_image_sample(nv_sig)
 
         # nv_sig = nvref 
         # nv_sig['imaging_readout_dur'] = 4e7
-        do_image_sample(nv_sig, apd_indices)
-        # do_image_sample_zoom(nv_sig, apd_indices)
-        # do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig)
+        # do_image_sample_zoom(nv_sig)
+        # do_optimize(nv_sig)
         # nv_sig['imaging_readout_dur'] = 1e8
-        # do_stationary_count_bg_subt(nv_sig, apd_indices, bg_coords)
-        # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
-        # do_determine_standard_readout_params(nv_sig, apd_indices)
+        # do_stationary_count_bg_subt(nv_sig, bg_coords)
+        # do_stationary_count(nv_sig, disable_opt=True)
+        # do_determine_standard_readout_params(nv_sig)
 
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.060)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
-        # do_four_point_esr(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance(nv_sig, 2.87, 0.060)
+        # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
+        # do_four_point_esr(nv_sig, States.LOW)
 
-        # temp = 203
-        # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
-        # do_rabi_batch(nv_list, apd_indices)
+        temp = 203
+        do_pulsed_resonance_batch(nv_list, temp)
+        # do_rabi_batch(nv_list)
 
     except Exception as exc:
         recipient = "cambria@wisc.edu"

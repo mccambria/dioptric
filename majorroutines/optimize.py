@@ -65,10 +65,9 @@ def update_figure(fig, axis_ind, voltages, count_rates, text=None):
 
 def read_timed_counts(cxn, num_steps, period):
 
-    apd_indices = tool_belt.get_apd_indices()
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    counter_server.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream()
 
     num_read_so_far = 0
     counts = []
@@ -101,10 +100,9 @@ def read_timed_counts(cxn, num_steps, period):
 
 def read_manual_counts(cxn, period, axis_write_func, scan_vals):
 
-    apd_indices = tool_belt.get_apd_indices()
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    counter_server.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream()
 
     counts = []
 
@@ -137,7 +135,6 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
     seq_file_name = "simple_readout.py"
-    apd_indices = tool_belt.get_apd_indices()
 
     # Some initial values
     laser_name = nv_sig["imaging_laser"]
@@ -159,12 +156,12 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
         delay = config["Positioning"]["xy_small_response_delay"]
     else:
         delay = config["Positioning"]["xy_delay"]
-    seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
+    seq_args = [delay, readout, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     pulsegen_server.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
-    counter_server.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream()
     pulsegen_server.stream_start(total_num_samples)
     new_samples = counter_server.read_counter_simple(total_num_samples)
 
@@ -177,7 +174,6 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
-    apd_indices = tool_belt.get_apd_indices()
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
@@ -211,7 +207,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             delay = config["Positioning"]["xy_small_response_delay"]
         else:
             delay = config["Positioning"]["xy_delay"]
-        seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
+        seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
@@ -244,7 +240,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
         z_server = tool_belt.get_z_server(cxn)
 
-        seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
+        seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
@@ -739,7 +735,7 @@ def main_with_cxn(
 
 
 def optimize_on_axis_discrete(
-    cxn, nv_sig, axis_ind, config, apd_indices, fig=None
+    cxn, nv_sig, axis_ind, config, fig=None
 ):
 
     num_steps = 31
@@ -784,7 +780,7 @@ def optimize_on_axis_discrete(
         # Get the proper scan function
         xy_server = tool_belt.get_xy_server(cxn)
 
-        seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
+        seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
@@ -820,7 +816,7 @@ def optimize_on_axis_discrete(
 
         z_server = tool_belt.get_z_server(cxn)
 
-        seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
+        seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
@@ -837,14 +833,14 @@ def optimize_on_axis_discrete(
         )
         auto_scan = False
     if auto_scan:
-        counts = read_timed_counts(cxn, num_steps, period, apd_indices)
+        counts = read_timed_counts(cxn, num_steps, period)
     else:
         counts = read_manual_counts(
-            cxn, period, apd_indices, manual_write_func, scan_vals
+            cxn, period, manual_write_func, scan_vals
         )
 
     # print(scan_vals)
-    # counts = read_timed_counts(cxn, num_steps, period, apd_indices)
+    # counts = read_timed_counts(cxn, num_steps, period)
     count_rates = (counts / 1000) / (readout / 10**9)
 
     if fig is not None:
@@ -861,7 +857,6 @@ def optimize_on_axis_discrete(
 def main_with_cxn_discrete(
     cxn,
     nv_sig,
-    apd_indices,
     set_to_opti_coords=True,
     save_data=False,
     plot_data=False,
@@ -905,7 +900,7 @@ def main_with_cxn_discrete(
 
     # Check the count rate
     opti_count_rate = stationary_count_lite(
-        cxn, nv_sig, adjusted_coords, config, apd_indices
+        cxn, nv_sig, adjusted_coords, config
     )
 
     print(
@@ -959,19 +954,19 @@ def main_with_cxn_discrete(
             for axis_ind in range(2):
                 # print(axis_ind)
                 ret_vals = optimize_on_axis_discrete(
-                    cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
+                    cxn, adjusted_nv_sig, axis_ind, config, fig
                 )
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
         # ret_vals = optimize_on_axis_discrete(
-        #     cxn, adjusted_nv_sig, 1, config, apd_indices, fig
+        #     cxn, adjusted_nv_sig, 1, config, fig
         # )
         # opti_coords.append(ret_vals[0])
         # scan_vals_by_axis.append(ret_vals[1])
         # counts_by_axis.append(ret_vals[2])
         # ret_vals = optimize_on_axis_discrete(
-        #     cxn, adjusted_nv_sig, 0, config, apd_indices, fig
+        #     cxn, adjusted_nv_sig, 0, config, fig
         # )
         # opti_coords.insert(0, ret_vals[0])
         # scan_vals_by_axis.insert(0, ret_vals[1])
@@ -994,7 +989,7 @@ def main_with_cxn_discrete(
         axis_ind = 2
         # print(axis_ind)
         ret_vals = optimize_on_axis_discrete(
-            cxn, adjusted_nv_sig_z, axis_ind, config, apd_indices, fig
+            cxn, adjusted_nv_sig_z, axis_ind, config, fig
         )
         opti_coords.append(ret_vals[0])
         scan_vals_by_axis.append(ret_vals[1])
@@ -1007,7 +1002,7 @@ def main_with_cxn_discrete(
 
         # Check the count rate
         opti_count_rate = stationary_count_lite(
-            cxn, nv_sig, opti_coords, config, apd_indices
+            cxn, nv_sig, opti_coords, config
         )
 
         # Verify that our optimization found a reasonable spot by checking

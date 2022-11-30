@@ -455,7 +455,6 @@ def state(
 
 def main(
     nv_sig,
-    apd_indices,
     freq_center,
     freq_range,
     num_steps,
@@ -473,7 +472,6 @@ def main(
         resonance_list = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             freq_center,
             freq_range,
             num_steps,
@@ -492,7 +490,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     freq_center,
     freq_range,
     num_steps,
@@ -547,7 +544,6 @@ def main_with_cxn(
             uwave_pi_on_2_pulse,
             1,
             1,
-            apd_indices[0],
             state.value,
             laser_name,
             laser_power,
@@ -559,7 +555,6 @@ def main_with_cxn(
             polarization_time,
             readout,
             uwave_pulse_dur,
-            apd_indices[0],
             state.value,
             laser_name,
             laser_power,
@@ -606,12 +601,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig["coords"] + np.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
@@ -632,7 +627,7 @@ def main_with_cxn(
             ret_vals = pulsegen_server.stream_load("rabi.py", seq_args_string)
 
         # Start the tagger stream
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)

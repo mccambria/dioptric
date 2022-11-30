@@ -25,7 +25,7 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
-from pulsestreamer import PulseStreamer as Pulser
+from pulsestreamer import PulseStreamer
 from pulsestreamer import TriggerStart
 from pulsestreamer import OutputState
 import importlib
@@ -66,10 +66,10 @@ class PulseGenSwab82(PulseGen, LabradServer):
         return result
 
     def on_get_config(self, config):
-        self.pulser = Pulser(config["get"])
+        self.pulse_streamer = PulseStreamer(config["get"])
         sequence_library_path = (
             Path.home()
-            / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary"
+            / f"Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/{self.name}"
         )
         sys.path.append(str(sequence_library_path))
         self.get_config_dict()
@@ -125,8 +125,8 @@ class PulseGenSwab82(PulseGen, LabradServer):
 
     def on_get_config_dict(self, _, config_dict):
         self.config_dict = config_dict
-        self.pulser_wiring = self.config_dict["Wiring"]["PulseStreamer"]
-        logging.info(self.config_dict["Wiring"]["PulseStreamer"])
+        self.pulse_streamer_wiring = self.config_dict["Wiring"]["PulseGen"]
+        logging.info(self.pulse_streamer_wiring)
         self.feedthrough_lasers = []
         optics_dict = config_dict["Optics"]
         for key in optics_dict:
@@ -171,7 +171,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
                 Arbitrary list returned by the sequence file
         """
 
-        self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
+        self.pulse_streamer.setTrigger(start=TriggerStart.SOFTWARE)
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string)
         if seq is not None:
             self.seq = seq
@@ -198,9 +198,9 @@ class PulseGenSwab82(PulseGen, LabradServer):
         if self.seq == None:
             raise RuntimeError("Stream started with no sequence.")
         if not self.loaded_seq_streamed:
-            self.pulser.stream(self.seq, num_repeat, self.final)
+            self.pulse_streamer.stream(self.seq, num_repeat, self.final)
             self.loaded_seq_streamed = True
-        self.pulser.startNow()
+        self.pulse_streamer.startNow()
 
     @setting(
         4,
@@ -221,7 +221,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         state = OutputState(
             digital_channels, analog_0_voltage, analog_1_voltage
         )
-        self.pulser.constant(state)
+        self.pulse_streamer.constant(state)
 
     @setting(5)
     def force_final(self, c):
@@ -229,7 +229,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         Essentially a stop command.
         """
 
-        self.pulser.forceFinal()
+        self.pulse_streamer.forceFinal()
 
     @setting(6)
     def reset(self, c):
