@@ -17,8 +17,6 @@ from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
 from utils.tool_belt import States
-from utils.tool_belt import Mod_types
-
 def qua_program(opx, config, args, num_reps):
     
     apd_indices =  config['apd_indices']

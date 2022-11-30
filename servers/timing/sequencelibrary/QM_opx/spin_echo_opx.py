@@ -17,7 +17,6 @@ from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
 from utils.tool_belt import States
-from utils.tool_belt import Mod_types
 
 def qua_program(opx, config, args, num_reps):
     
@@ -49,13 +48,11 @@ def qua_program(opx, config, args, num_reps):
     sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
-    laser_delay_time = config['Optics'][laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
     back_buffer = 200
     back_buffer_cc = int(back_buffer//4)    
     
-    laser_mod_type = config["Optics"][laser_name]["mod_type"]
-    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)
+    laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
     
     uwave_experiment_shrt = pi_on_2_pulse + tau_shrt + pi_pulse + tau_shrt + pi_on_2_pulse
     uwave_experiment_long = pi_on_2_pulse + tau_long + pi_pulse + tau_long + pi_on_2_pulse

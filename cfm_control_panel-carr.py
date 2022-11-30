@@ -30,7 +30,7 @@ import majorroutines.rabi as rabi
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import minorroutines.determine_delays as determine_delays
-import minorroutines.determine_standard_readout_params as determine_standard_readout_params
+import majorroutines.determine_standard_readout_params as determine_standard_readout_params
 import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
 import chargeroutines.determine_scc_pulse_params as determine_scc_pulse_params
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
@@ -38,7 +38,7 @@ import majorroutines.charge_majorroutines.rabi_SCC as rabi_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC as ramsey_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC_one_tau_no_ref as ramsey_SCC_one_tau_no_ref
 import majorroutines.ramsey_one_tau_no_ref as ramsey_one_tau_no_ref
-from utils.tool_belt import States
+from utils.tool_belt import States, NormStyle
 import time
 import copy
 import matplotlib.pyplot as plt
@@ -54,11 +54,11 @@ def do_test_routine_opx(nv_sig, apd_indices, delay, readout_time, laser_name, la
     
     
 
-def do_image_sample(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,cmax=None):
+def do_image_sample(nv_sig, apd_indices,nvm_initialization=False,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
    
     # For now we only support square scans so pass scan_range twice
-    image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,save_data=True,cbarmin=cmin,cbarmax=cmax)
+    image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
 
 def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
@@ -71,7 +71,6 @@ def do_optimize(nv_sig, apd_indices):
 
     optimize_coords = optimize.main(
         nv_sig,
-        apd_indices,
         set_to_opti_coords=False,
         save_data=True,
         plot_data=True,
@@ -206,7 +205,6 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
 
     pulsed_resonance.main(
         nv_sig,
-        apd_indices,
         freq_center,
         freq_range,
         num_steps,
@@ -391,14 +389,14 @@ if __name__ == "__main__":
     red_laser = 'cobolt_638'
 
     nv_sig = {
-        'coords': [86.944, 38.154,76.375], 'name': '{}-search'.format(sample_name),
+        'coords': [48.193, 50.012,72.28], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 52,
-        # "imaging_laser": yellow_laser, "imaging_laser_power": 0.55, 
+        'expected_count_rate': 115,
+        # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
         "imaging_readout_dur": 10e6,
-        # "imaging_readout_dur": 60e6,
+        # "imaging_readout_dur": 50e6,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
         "spin_pol_dur": 1e4,
@@ -427,6 +425,7 @@ if __name__ == "__main__":
         'collection_filter': None, 'magnet_angle': 112,
         'resonance_LOW': 2.8586, 'rabi_LOW': 168, 'uwave_power_LOW': 16.5,
         'resonance_HIGH': 2.883, 'rabi_HIGH': 152, 'uwave_power_HIGH': 16.5,
+        'norm_style':NormStyle.single_valued
         }
     
     
@@ -485,10 +484,10 @@ if __name__ == "__main__":
         
         # do_ramsey_one_tau_no_ref(nv_sig, apd_indices)
         
-        # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=3)#,cmin=0,cmax=50)
+        # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=10)#,cmin=0,cmax=50)
         # for z in [76.2,76.4,76.6]:
         #     nv_sig['coords'][2]=z
-        # do_image_sample(nv_sig, apd_indices,num_steps=50,scan_range=5)#,cmin=0,cmax=75)
+        # do_image_sample(nv_sig, apd_indices,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
         # do_image_sample(nv_sig, apd_indices,num_steps=30,scan_range=3)#,cmin=0,cmax=75)
         # nv_sig['coords'] = [87.944, 38.754,76.375]
         # do_image_sample(nv_sig, apd_indices,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
@@ -505,7 +504,7 @@ if __name__ == "__main__":
         # do_resonance_modulo(nv_sig, apd_indices,num_steps = 51, num_runs = 5)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.HIGH,num_reps=2e4,num_runs=6,num_steps=51)
-        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.8582, freq_range=0.03,num_steps=31, num_reps=2e4, num_runs=10)
+        do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.87, freq_range=0.2,num_steps=51, num_reps=2e4, num_runs=4)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)
         # for det in [-3,-1.2,-1.1,-1,3]:
         #     do_ramsey(nv_sig, nv_sig, apd_indices,detuning=det)

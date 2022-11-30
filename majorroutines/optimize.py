@@ -440,14 +440,14 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
 
 def main(nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False):
-    optimization_type = tool_belt.get_optimization_style()
+    movement_type = tool_belt.get_movement_style()
 
     with labrad.connect() as cxn:
-        if optimization_type == "DISCRETE":
+        if movement_type == "DISCRETE":
             main_with_cxn_discrete(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
-        elif optimization_type == "CONTINUOUS":
+        elif movement_type == "CONTINUOUS":
             main_with_cxn(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )

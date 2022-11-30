@@ -72,7 +72,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         
         opx_sequence_library_path = (
             Path.home()
-            / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences"
+            / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/QM_opx"
         )
         sys.path.append(str(opx_sequence_library_path))
         self.steady_state_option = False
@@ -437,8 +437,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         return t_return, np.array(all_channels)
 
     
-    @setting(17, apd_indices="*i", gate_indices="*i", clock="b") # from apd tagger. 
-    def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
+    @setting(17, gate_indices="*i", clock="b") # from apd tagger. 
+    def start_tag_stream(self, c, gate_indices=None, clock=True):
         self.stream = True
         pass        
     

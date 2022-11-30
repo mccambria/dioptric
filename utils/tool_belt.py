@@ -1291,17 +1291,17 @@ def get_sig_gen_cxn(cxn, state):
     return sig_gen_cxn
 
 
-def get_optimization_style():
+def get_movement_style():
     """
     Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
     """
-    optimization_style_return = get_registry_entry_no_cxn(
-        "optimization_style", ["", "Config", "Positioning"]
+    movement_style_return = get_registry_entry_no_cxn(
+        "movement_style", ["", "Config", "Positioning"]
     )
-    if optimization_style_return == "":
+    if movement_style_return == "":
         raise RuntimeError
 
-    return optimization_style_return
+    return movement_style_return
 
 
 def get_apd_gate_channel(cxn, apd_index):
