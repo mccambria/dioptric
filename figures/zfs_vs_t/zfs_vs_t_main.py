@@ -610,8 +610,8 @@ def main():
     guess_params = [
         2.87771,
         -8e-2,
-        -4e-1,
-        # 65,
+        # -4e-1,
+        65,
         # 165,
         # 6.5,
     ]
@@ -621,7 +621,7 @@ def main():
         fit_func,
         temp_list,
         zfs_list,
-        # sigma=zfs_err_list,
+        sigma=zfs_err_list,
         absolute_sigma=True,
         p0=guess_params,
     )
@@ -802,16 +802,16 @@ def main():
         ax.set_ylim(*y_range)
     kpl.tight_layout(fig)
 
-    fig, ax = plt.subplots()
-    chen_proposed_diff = lambda temp: sub_room_zfs_from_temp(temp) - cambria_lambda(temp)
-    kpl.plot_line(
-        ax,
-        temp_linspace,
-        1000 * chen_proposed_diff(temp_linspace)
-    )
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-    ax.set_ylabel("Chen - proposed (MHz)")
-    kpl.tight_layout(fig)
+    # fig, ax = plt.subplots()
+    # chen_proposed_diff = lambda temp: sub_room_zfs_from_temp(temp) - cambria_lambda(temp)
+    # kpl.plot_line(
+    #     ax,
+    #     temp_linspace,
+    #     1000 * chen_proposed_diff(temp_linspace)
+    # )
+    # ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    # ax.set_ylabel("Chen - proposed (MHz)")
+    # kpl.tight_layout(fig)
 
 
 # endregion
@@ -828,3 +828,5 @@ if __name__ == "__main__":
     main()
 
     plt.show(block=True)
+
+    2.87736(2) - 0.0768(17) - 0.23(6)
