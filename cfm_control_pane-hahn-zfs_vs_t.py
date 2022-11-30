@@ -394,8 +394,8 @@ if __name__ == "__main__":
     #     }
     
     sample_name = "15micro"
-    z_coord = 30
-    ref_coords = [0.756, -0.511, z_coord]
+    z_coord = 18
+    ref_coords = [0.718, -0.565, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -481,7 +481,7 @@ if __name__ == "__main__":
         #         cxn.cryo_piezos.write_xy(loc[0],loc[1])
         #     do_image_sample(nv_sig, apd_indices)
 
-        # nv_sig = nvref
+        # nv_sig = nvref 
         # nv_sig['imaging_readout_dur'] = 4e7
         do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
@@ -495,7 +495,7 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, apd_indices, States.LOW)
 
-        # temp = 241
+        # temp = 203
         # do_pulsed_resonance_batch(nv_list, apd_indices, temp)
         # do_rabi_batch(nv_list, apd_indices)
 
@@ -506,9 +506,9 @@ if __name__ == "__main__":
 
     finally:
         
-        # msg = "Experiment complete!"
-        # recipient = "cambria@wisc.edu"
-        # tool_belt.send_email(msg, email_to=recipient)
+        msg = "Experiment complete!"
+        recipient = "cambria@wisc.edu"
+        tool_belt.send_email(msg, email_to=recipient)
 
         # Make sure everything is reset
         tool_belt.reset_cfm()
