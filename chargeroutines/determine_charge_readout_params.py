@@ -519,7 +519,7 @@ def process_timetags(apd_gate_channel, timetags, channels):
 
 
 def measure_histograms_sub(
-    cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+    cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
 ):
     
     tagger_server = tool_belt.get_tagger_server(cxn)
@@ -545,7 +545,7 @@ def measure_histograms_sub(
 
         coords = nv_sig["coords"]
         opti_coords_list = []
-        opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
         opti_coords_list.append(opti_coords)
         drift = tool_belt.get_drift()
         adjusted_nv_coords = coords + np.array(drift)
@@ -562,6 +562,7 @@ def measure_histograms_sub(
         _ = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
 
         # Load the APD
+        apd_indices = tool_belt.get_apd_indices()
         tagger_server.start_tag_stream(apd_indices)
         tagger_server.clear_buffer()
 
@@ -610,9 +611,10 @@ def measure_histograms(nv_sig, opti_nv_sig, apd_indices, num_reps,extra_green_in
 
 
 def measure_histograms_with_cxn(
-    cxn, nv_sig, opti_nv_sig, apd_indices, num_reps,extra_green_initialization
+    cxn, nv_sig, opti_nv_sig, num_reps, extra_green_initialization
 ):
     # Only support a single APD for now
+    apd_indices = tool_belt.get_apd_indices()
     apd_index = apd_indices[0]
 
     tool_belt.reset_cfm(cxn)
@@ -673,7 +675,7 @@ def measure_histograms_with_cxn(
     seq_args = gen_seq_args("nv-_prep_laser")
     print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
-        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
     )
     nvm = process_timetags(apd_gate_channel, timetags, channels)
 
@@ -681,7 +683,7 @@ def measure_histograms_with_cxn(
     seq_args = gen_seq_args("nv0_prep_laser")
     print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
-        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, apd_indices, num_reps
+        cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
     )
     nv0 = process_timetags(apd_gate_channel, timetags, channels)
 
@@ -690,21 +692,17 @@ def measure_histograms_with_cxn(
     return nv0, nvm, period_sec * 2
 
 
-def determine_readout_dur_power(
+def main(
     nv_sig,
-    opti_nv_sig,
-    apd_indices,
-    num_reps=500,
-    max_readout_dur=1e9,
+    num_reps,
+    readout_powers,
+    max_readout_dur,
+    opti_nv_sig=None,
     bins=None,
-    readout_powers=None,
     plot_readout_durs=None,
     fit_threshold_full_model=False,
     extra_green_initialization=False,
 ):
-
-    if readout_powers is None:
-        readout_powers = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6]
 
     tool_belt.init_safe_stop()
 
@@ -720,9 +718,11 @@ def determine_readout_dur_power(
         nv_sig_copy = copy.deepcopy(nv_sig)
         nv_sig_copy["charge_readout_dur"] = max_readout_dur
         nv_sig_copy["charge_readout_laser_power"] = p
+        if opti_nv_sig is None:
+            opti_nv_sig = copy.deepcopy(nv_sig)
 
         nv0, nvm, total_seq_time_sec = measure_histograms(
-            nv_sig_copy, opti_nv_sig, apd_indices, num_reps,extra_green_initialization
+            nv_sig_copy, opti_nv_sig, num_reps, extra_green_initialization
         )
         nv0_power.append(nv0)
         nvm_power.append(nvm)
@@ -1087,12 +1087,9 @@ def determine_reinit_spin_dur(nv_sig, apd_indices, num_reps, reinit_durs):
     return
 
 
-#%%
-
-
 if __name__ == "__main__":
 
-    ############ Replots ############
+    ### Replots
 
     # if False:
     if True:

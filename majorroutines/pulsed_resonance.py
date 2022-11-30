@@ -155,7 +155,7 @@ def calculate_freqs(freq_range, freq_center, num_steps):
 
 
 def gaussian(freq, constrast, sigma, center):
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma ** 2)))
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
 
 
 def double_gaussian_dip(
@@ -313,14 +313,14 @@ def fit_resonance(
             absolute_sigma=True,
         )
         # popt = guess_params
-        # if len(popt) == 6:
-        #     zfs = (popt[2] + popt[5]) / 2
-        #     low_res_err = np.sqrt(pcov[2,2])
-        #     hig_res_err = np.sqrt(pcov[5,5])
-        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        # else:
-        #     zfs = popt[2]
-        #     zfs_err = np.sqrt(pcov[2,2])
+        if len(popt) == 6:
+            zfs = (popt[2] + popt[5]) / 2
+            low_res_err = np.sqrt(pcov[2, 2])
+            hig_res_err = np.sqrt(pcov[5, 5])
+            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        else:
+            zfs = popt[2]
+            zfs_err = np.sqrt(pcov[2, 2])
 
         # print(zfs)
         # print(zfs_err)
@@ -345,11 +345,11 @@ def fit_resonance(
 
 def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
-    rabi_freq = rabi_period ** -1
+    rabi_freq = rabi_period**-1
 
     smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
 
-    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq ** 2)
+    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq**2)
     amp = (rabi_freq / omega) ** 2
     angle = (
         omega * 2 * np.pi * uwave_pulse_dur / 2
@@ -536,7 +536,7 @@ def main_with_cxn(
 
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10 ** 9)
+    readout_sec = readout / (10**9)
     if composite:
         uwave_pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
         uwave_pi_on_2_pulse = round(nv_sig["rabi_{}".format(state.name)] / 4)
@@ -920,7 +920,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_28-14_47_17-15micro-nv5_zfs_vs_t"
+    file = "2022_11_28-17_27_33-15micro-nv3_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
