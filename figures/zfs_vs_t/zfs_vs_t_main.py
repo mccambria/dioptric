@@ -15,7 +15,7 @@ Created on Fri Mar  5 12:42:32 2021
 import numpy as np
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
-from figures.relaxation_temp_dependence.temp_dependence_fitting import bose
+from utils.tool_belt import bose
 import matplotlib.pyplot as plt
 from utils import common
 from utils import kplotlib as kpl

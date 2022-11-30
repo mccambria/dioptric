@@ -506,7 +506,7 @@ class TempMonitorLake218(LabradServer):
         pass
 
 
-__server__ = TempMonitorLakeshore218()
+__server__ = TempMonitorLake218()
 
 if __name__ == "__main__":
     from labrad import util

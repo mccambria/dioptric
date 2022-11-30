@@ -23,9 +23,8 @@ import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.four_point_esr as four_point_esr
 import majorroutines.rabi as rabi
-import minorroutines.determine_standard_readout_params as determine_standard_readout_params
+import majorroutines.determine_standard_readout_params as determine_standard_readout_params
 from utils.tool_belt import States, NormStyle
-import services.calibrated_temp_monitor as calibrated_temp_monitor
 from figures.zfs_vs_t.zfs_vs_t_main import cambria_fixed
 from random import shuffle
 
@@ -300,11 +299,6 @@ def do_rabi_batch(nv_list, apd_indices):
             num_reps,
             num_runs,
         )
-
-
-def wait_for_stable_temp():
-
-    calibrated_temp_monitor.main()
 
 
 ### Run the file
