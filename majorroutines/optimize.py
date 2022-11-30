@@ -87,7 +87,7 @@ def read_timed_counts(cxn, num_steps, period):
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        new_samples = counter_server.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             counts.extend(new_samples)
