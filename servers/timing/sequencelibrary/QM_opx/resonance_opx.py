@@ -13,7 +13,6 @@ simple readout sequence for the opx in qua
 import numpy
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
-from utils.tool_belt import Mod_types
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
