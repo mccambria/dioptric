@@ -56,6 +56,7 @@ class Digital(IntEnum):
     LOW = 0
     HIGH = 1
 
+Boltzmann = 8.617e-2  # meV / K
 
 # endregion
 
@@ -847,7 +848,6 @@ def update_line_plot_figure(fig, vals):
 
 
 # endregion
-
 # region Math functions
 
 
@@ -995,6 +995,19 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     # Deduplicate - may be necessary for ints and low scan ranges
     scan_vals = np.unique(scan_vals)
     return scan_vals
+
+
+
+def bose(energy, temp):
+    # For very low temps we can get divide by zero and overflow warnings.
+    # Fortunately, numpy is smart enough to know what we mean when this
+    # happens, so let's let numpy figure it out and suppress the warnings.
+    old_settings = np.seterr(divide="ignore", over="ignore")
+    # print(energy / (Boltzmann * temp))
+    val = 1 / (np.exp(energy / (Boltzmann * temp)) - 1)
+    # Return error handling to default state for other functions
+    np.seterr(**old_settings)
+    return val
 
 
 # endregion
