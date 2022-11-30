@@ -54,6 +54,9 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
     
+    
+    pulser_ao_fm = pulser_wiring['ao_fm_{}'.format(sig_gen)]
+    
     # Include a buffer on the front end so that we can delay channels that
     # should start off the sequence HIGH
     front_buffer = max(max_tau+pi_pulse, aom_delay_time)
@@ -83,15 +86,20 @@ def get_seq(pulse_streamer, config, args):
                                 laser_name, laser_power, train)
     
     # Vary the position of the rf pi pulse
-    train = [(front_buffer - pi_pulse - tau, LOW),
-             (pi_pulse, HIGH),
-             (period - (front_buffer - tau), LOW),
-             ]
+    # train = [(front_buffer - pi_pulse - tau, LOW),
+    #          (pi_pulse, HIGH),
+    #          (period - (front_buffer - tau), LOW),
+    #          ]
     train = [(front_buffer + polarization + wait_time - pi_pulse - tau, LOW),
              (pi_pulse, HIGH),
              (polarization + wait_time + tau, LOW),
              ]
     seq.setDigital(pulser_do_sig_gen_gate, train)
+    
+    # Apply FM during pulse
+    train = [(period, HIGH)
+             ]
+    seq.setAnalog(pulser_ao_fm, train)
 
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -108,11 +116,11 @@ if __name__ == '__main__':
 
     config = tool_belt.get_config_dict()
     pulser_wiring = config['Wiring']['PulseStreamer']
-    print(pulser_wiring)
-    config['Optics']['laserglow_532']['delay'] = 0
+    # print(pulser_wiring)
+    tool_belt.set_delays_to_zero(config)
 
     # Set up a dummy args list
-    args = [100, 500, 350, 28, 1000.0, 1, 1, 'integrated_520', None]
+    args = [0, 500, 350, 28, 1000.0, 1, 1, 'integrated_520', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

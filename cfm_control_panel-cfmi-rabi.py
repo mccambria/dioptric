@@ -79,8 +79,8 @@ def do_image_sample(nv_sig, apd_indices):
     #scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
-    # scan_range = 0.05
-    scan_range = 0.025
+    scan_range = 0.05
+    # scan_range = 0.025
     # scan_range = 0.012
 
     #num_steps = 400
@@ -394,7 +394,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -410,16 +410,39 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state,
     nv_sig["rabi_{}".format(state.name)] = period
 
 
-def do_rabi_srt(nv_sig,  apd_indices, deviation,  uwave_time_range=[0, 200]):
+def do_rabi_srt(nv_sig,  apd_indices, initial_state, readout_state, dev,  uwave_time_range=[0, 1000]):
+    
+    deviation_high = dev
+    deviation_low = dev
+    
+    # deviation = 0
+    
+    num_steps = 31
+    num_reps = int(1e4)
+    num_runs = 10
+
+    rabi_srt.main(nv_sig, 
+              apd_indices, 
+              uwave_time_range, 
+              deviation_high,
+              deviation_low, 
+              num_steps, 
+              num_reps,
+              num_runs,
+              readout_state,
+              initial_state,
+    )
+
+def do_rabi_srt_pop(nv_sig,  apd_indices, deviation,num_steps,  uwave_time_range=[0, 1000]):
     
     # deviation_high = 0
     # deviation_low = 0
     
     # deviation = 0
     
-    num_steps = 101
-    num_reps = int(1e3)
-    num_runs = 100
+    #num_steps = 101
+    num_reps = int(1e4)
+    num_runs = 100 #200
 
     # rabi_srt.main(nv_sig, 
     #           apd_indices, 
@@ -744,17 +767,18 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
 
 def do_relaxation(nv_sig, apd_indices, ):
     min_tau = 0
-    max_tau_omega = 10e6# 20e6
+    max_tau_omega = 200#10e6# 20e6
     max_tau_gamma = 10e6
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2e3
-    num_runs = 200
+    num_runs = 20#0
     
     if True:
      t1_exp_array = numpy.array(
         [[
-                [States.ZERO, States.ZERO],
+                [States.HIGH , States.ZERO],
+                        #[States.ZERO, States.ZERO],
                 [min_tau, max_tau_omega],
                 num_steps_omega,
                 num_reps,
@@ -1063,6 +1087,11 @@ if __name__ == "__main__":
         "imaging_laser_power": green_power,
         "imaging_laser_filter": nd_green,
         "imaging_readout_dur": 1e7,
+        
+        # "imaging_laser":yellow_laser,
+        # "imaging_laser_power": 0.2,
+        # "imaging_laser_filter": "nd_1.0",
+        # "imaging_readout_dur": 5e7,
 
         "initialize_laser": green_laser,
         "initialize_laser_power": green_power,
@@ -1113,15 +1142,15 @@ if __name__ == "__main__":
     
     
     nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.222, 0.027, 3.83]
+    nv_sig_1["coords"] = [-0.199, 0.081, 4.06]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     nv_sig_1[ "green_power_mW"] = 1.0
     nv_sig_1["expected_count_rate"] = 21
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
-    nv_sig_1["resonance_LOW"]= 2.7813
+    nv_sig_1["resonance_LOW"]= 2.7813 
     nv_sig_1["rabi_LOW"]= 129.5
-    nv_sig_1["resonance_HIGH"]= 2.9591 #- 0.010
+    nv_sig_1["resonance_HIGH"]= 2.9591 
     nv_sig_1["rabi_HIGH"]=129.5
     
     
@@ -1139,16 +1168,6 @@ if __name__ == "__main__":
     nv_sig_2["resonance_HIGH"]= 2.936
     nv_sig_2["rabi_HIGH"]=160
     
-    nv_sig_13c = copy.deepcopy(sig_base) # 
-    nv_sig_13c["coords"] = [-0.277, 0.006, 6.54]
-    nv_sig_13c["name"] = "{}-nv_13c".format(sample_name,)
-    nv_sig_13c["expected_count_rate"] = 267.3
-    nv_sig_13c["only_z_opt"] = True
-    nv_sig_13c['magnet_angle'] = 68
-    nv_sig_13c["resonance_LOW"]= 2.7820
-    nv_sig_13c["rabi_LOW"]= 114.5 
-    nv_sig_13c["resonance_HIGH"]= 2.9597
-    nv_sig_13c["rabi_HIGH"]=108.3
     
     
     nv_sig = nv_sig_1
@@ -1158,7 +1177,7 @@ if __name__ == "__main__":
     try:
 
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        #tool_belt.set_drift([0.0,0.0,0.0])
+        # tool_belt.set_drift([0.0,0.0,0.0])
         #tool_belt.set_drift([0.0, 0.06, 0.0])
         # tool_belt.set_xyz(labrad.connect(), [0,0,5])
         
@@ -1173,11 +1192,11 @@ if __name__ == "__main__":
         #                      do_image_sample(nv_sig, apd_indices)
 
         
-        #for dz in numpy.linspace(-0.2, 0.2, 11):
-           # nv_copy = copy.deepcopy(nv_sig)
-           # coords= nv_sig["coords"]
-           # nv_copy["coords"] =[coords[0], coords[1], coords[2] + dz ]
-           # do_image_sample(nv_copy, apd_indices)
+        # for dz in numpy.linspace(-0.1, 0.1, 5):
+        #     nv_copy = copy.deepcopy(nv_sig)
+        #     coords= nv_sig["coords"]
+        #     nv_copy["coords"] =[coords[0], coords[1], coords[2] + dz ]
+        #     do_image_sample(nv_copy, apd_indices)
                     
         
         
@@ -1202,20 +1221,30 @@ if __name__ == "__main__":
         
         
         # do_pesr_srt(nv_sig, apd_indices,States.ZERO, States.ZERO)
-        for d in [0, 2, 4, 8]:
-            do_rabi_srt(nv_sig, apd_indices, d, uwave_time_range=[0, 1000])
         
-        # with labrad.connect() as cxn:
-        #     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
-            # sig_gen_cxn.set_freq(uwave_freq_detuned)
-            # sig_gen_cxn.set_amp(uwave_power)
-            # sig_gen_cxn.load_fsk(4)
-        # for det in numpy.linspace(-2.2, 2.2, 11):
+        # for df in [-0.5]:#numpy.linspace(-0.5e-3, -1.5e-3,5):
+        #     df = df*1e-3
+        #     nv_sig_copy = copy.deepcopy(nv_sig)
+        #     nv_sig_copy['resonance_LOW'] = nv_sig['resonance_LOW'] + df
+        #     print((nv_sig_copy['resonance_LOW'] -2.7813)*1e3)
+        #     #do_rabi_srt(nv_sig_copy,  apd_indices, States.HIGH, States.HIGH, uwave_time_range=[0, 2000])
+        #     do_rabi_srt_pop(nv_sig_copy, apd_indices, 24, 31, uwave_time_range=[0, 2000])
+            
+            
+        #do_rabi_srt(nv_sig,  apd_indices, States.HIGH, States.ZERO)
+        for d in [32]:
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
+            do_rabi_srt(nv_sig_copy,  apd_indices, States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
+        # for d in [0, 8, 16, 24]:
+        # do_rabi_srt_pop(nv_sig, apd_indices, 0, 51, uwave_time_range=[0, 500])
+        # do_rabi_srt_pop(nv_sig, apd_indices, 24, 201, uwave_time_range=[0, 2000])
+
         # do_ramsey(nv_sig, nv_sig,apd_indices, 0)
         
         # do_spin_echo(nv_sig, apd_indices)
 
-        # do_relaxation(nv_sig, apd_indices)  # gamma and omega
+        #do_relaxation(nv_sig, apd_indices)  # gamma and omega
                 
         # num_xy4_reps = 1
         # step_size = 100 #us

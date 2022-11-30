@@ -61,7 +61,38 @@ Boltzmann = 8.617e-2  # meV / K
 # endregion
 
 
-# region xyz sets
+def get_signal_generator_name(cxn, state):
+    return get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+
+
+def get_state_from_signal_generator_name(cxn, sig_gen_name):
+    state= States.HIGH
+    sig_gen_HIGH = get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+    state= States.LOW
+    sig_gen_LOW = get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+
+    return_state = None
+    if sig_gen_name == sig_gen_HIGH:
+        return_state = States.HIGH
+    elif sig_gen_name == sig_gen_LOW:
+        return_state = States.LOW
+
+    return return_state
+
+
+def get_signal_generator_cxn(cxn, state):
+    signal_generator_name = get_signal_generator_name(cxn, state)
+    signal_generator_cxn = eval("cxn.{}".format(signal_generator_name))
+    return signal_generator_cxn
+
+
+# %% region xyz sets
 
 
 def set_xyz(cxn, coords):
@@ -1914,10 +1945,10 @@ def presentation_round_latex(val, err):
 # endregion
 # region Safe Stop
 """Use this to safely stop experiments without risking data loss or weird state.
-Works by reassigning CTRL + C to set a global variable rather than raise a 
+Works by reassigning CTRL + C to set a global variable rather than raise a
 KeyboardInterrupt exception. That way we can check on the global variable
 whenever we like and stop the experiment appropriately. It's up to you (the
-routine author) to place this in your routine appropriately. 
+routine author) to place this in your routine appropriately.
 """
 
 
