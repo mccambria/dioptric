@@ -13,21 +13,14 @@ Created on Fri Mar  5 12:42:32 2021
 
 
 import numpy as np
-from numpy.core.shape_base import block
-from scipy.optimize import root_scalar
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
-from majorroutines.spin_echo import zfs_cost_func
-from scipy.optimize import minimize_scalar
-import time
-from figures.relaxation_temp_dependence.temp_dependence_fitting import bose
+from utils.tool_belt import bose
 import matplotlib.pyplot as plt
 from utils import common
 from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
-from numpy import inf
-import sys
 import csv
 import pandas as pd
 
@@ -135,7 +128,7 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 # region Functions
 
 
-def get_data_points(override_skips=False):
+def get_data_points(skip_lambda=None):
 
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
@@ -167,7 +160,7 @@ def get_data_points(override_skips=False):
                         val = raw_val
                 point[column] = val
 
-            if override_skips or not point["Skip"]:
+            if not skip_lambda(point):
                 data_points.append(point)
 
     return data_points
@@ -460,6 +453,16 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
     return ret_val
 
 
+def cambria_test4(temp, zfs0, A1, Theta1):
+
+    ret_val = zfs0
+    for ind in range(1):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
 # endregion
 
 # region Main plots
@@ -469,30 +472,67 @@ def main():
 
     # temp_range = [-10, 1000]
     # y_range = [2.74, 2.883]
-    temp_range = [-10, 720]
-    y_range = [2.80, 2.883]
-    # temp_range = [-10, 310]
-    # y_range = [2.869, 2.879]
+    # temp_range = [-10, 720]
+    # y_range = [2.80, 2.883]
+    temp_range = [-10, 310]
+    y_range = [2.8685, 2.8785]
+    # temp_range = [280, 320]
+    # y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
     # y_range = [-0.0012, 0.0012]
 
-    plot_data = False
+    plot_data = True
+    condense_data = True
     plot_residuals = False
     hist_residuals = False  # Must specify nv_to_plot down below
     separate_samples = False
     separate_nvs = False
     plot_prior_models = True
-    desaturate_prior = True
+    desaturate_prior = False
     plot_new_model = True
+
+    skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
 
     ###
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    fig, ax = plt.subplots(figsize=kpl.figsize)
+    fig, ax = plt.subplots()
 
-    data_points = get_data_points()
+    data_points = get_data_points(skip_lambda)
+
+    if condense_data:
+        condensed_data_points = []
+        setpoint_temp_set = []
+        for point in data_points:
+            setpoint_temp_set.append(point["Setpoint temp (K)"])
+        setpoint_temp_set = list(set(setpoint_temp_set))
+        setpoint_temp_set.sort()
+        for temp in setpoint_temp_set:
+            monitor_temps = []
+            zfss = []
+            zfs_errors = []
+            for point in data_points:
+                if point["Setpoint temp (K)"] == temp:
+                    monitor_temps.append(point["Monitor temp (K)"])
+                    zfss.append(point["ZFS (GHz)"])
+                    zfs_errors.append(point["ZFS error (GHz)"])
+            sq_zfs_errors = [err**2 for err in zfs_errors]
+            sum_sq_errors = np.sum(sq_zfs_errors)
+            condensed_error = np.sqrt(sum_sq_errors) / len(sq_zfs_errors)
+            new_point = {
+                "Setpoint temp (K)": temp,
+                "Monitor temp (K)": np.average(monitor_temps),
+                "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
+                # + 0.0006,  # MCC
+                "ZFS error (GHz)": condensed_error,
+                "Sample": "Wu",
+                "NV": "",
+            }
+            condensed_data_points.append(new_point)
+        data_points = condensed_data_points
+
     zfs_list = []
     zfs_err_list = []
     temp_list = []
@@ -503,13 +543,13 @@ def main():
     data_labels = {}
     for el in data_points:
         zfs = el["ZFS (GHz)"]
-        reported_temp = el["Monitor temp (K)"]
-        if zfs == "" or reported_temp == "":
+        monitor_temp = el["Monitor temp (K)"]
+        if zfs == "" or monitor_temp == "":
             continue
         # if not (min_temp <= reported_temp <= max_temp):
         # if not (150 <= reported_temp <= 500):
         #     continue
-        temp_list.append(reported_temp)
+        temp_list.append(monitor_temp)
         zfs_list.append(zfs)
         zfs_err = el["ZFS error (GHz)"]
         zfs_err_list.append(zfs_err)
@@ -529,13 +569,13 @@ def main():
                 data_colors[name] = data_color_options.pop(0)
             data_labels[name] = name
         else:
-            data_colors[name] = KplColors.BROWN.value
+            data_colors[name] = KplColors.RED
     nv_names_set = list(set(nv_names))
     nv_names_set.sort()
 
     # zfs_list.extend(toyli_zfss)
     # temp_list.extend(toyli_temps)
-    # nv_names.extend([None] * len(toyli_temps))
+    # nv_names.extend(["Toyli"] * len(toyli_temps))
     # zfs_err_list.extend([None] * len(toyli_temps))
 
     ### New model
@@ -570,22 +610,24 @@ def main():
     guess_params = [
         2.87771,
         -8e-2,
-        -4e-1,
-        # 65,
+        # -4e-1,
+        65,
         # 165,
         # 6.5,
     ]
     fit_func = cambria_test
+    # fit_func = cambria_test4
     popt, pcov = curve_fit(
         fit_func,
         temp_list,
         zfs_list,
-        # sigma=zfs_err_list,
+        sigma=zfs_err_list,
         absolute_sigma=True,
         p0=guess_params,
     )
     print(popt)
     print(np.sqrt(np.diag(pcov)))
+    # popt[2] = 0
     cambria_lambda = lambda temp: fit_func(
         temp,
         *popt,
@@ -613,7 +655,7 @@ def main():
                 val = zfs_list[ind]
             val_err = zfs_err_list[ind]
             label = None
-            color = KplColors.DARK_GRAY.value
+            color = KplColors.DARK_GRAY
             if name in data_colors:
                 color = data_colors[name]
             if separate_samples or separate_nvs:
@@ -626,7 +668,7 @@ def main():
                 ax,
                 temp,
                 val,
-                # yerr=val_err,
+                yerr=val_err,
                 color=color,
                 zorder=-1,
                 label=label,
@@ -671,35 +713,35 @@ def main():
         ylim = max(y_vals) + 1
 
     if plot_new_model:
-        # color = KplColors.BLUE.value
-        color = "#0f49bd"
+        color = KplColors.BLUE
+        # color = "#0f49bd"
         kpl.plot_line(
             ax,
             temp_linspace,
             cambria_lambda(temp_linspace),
-            label="Updated proposed",
+            label="Proposed",
             color=color,
             zorder=10,
         )
-        color = KplColors.GRAY.value
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            cambria_fixed(temp_linspace),
-            label="MCAW proposed",
-            color=color,
-            zorder=10,
-        )
+        # color = KplColors.GRAY
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     cambria_fixed(temp_linspace),
+        #     label="MCAW proposed",
+        #     color=color,
+        #     zorder=10,
+        # )
         # ax.legend()
 
     ### Prior models
 
     if plot_prior_models:
         prior_model_colors = [
-            KplColors.GREEN.value,
-            KplColors.PURPLE.value,
-            KplColors.RED.value,
-            KplColors.ORANGE.value,
+            KplColors.GREEN,
+            KplColors.PURPLE,
+            KplColors.RED,
+            KplColors.ORANGE,
         ]
         prior_model_zorder = 2
         if desaturate_prior:
@@ -712,7 +754,7 @@ def main():
             temp_linspace,
             sub_room_zfs_from_temp(temp_linspace),
             label="Chen",
-            color=prior_model_colors.pop(),
+            color=prior_model_colors[0],
             zorder=prior_model_zorder,
         )
         # print(super_room_zfs_from_temp(700))
@@ -722,25 +764,25 @@ def main():
             temp_linspace,
             super_room_zfs_from_temp(temp_linspace),
             label="Toyli",
-            color=prior_model_colors.pop(),
+            color=prior_model_colors[1],
             zorder=prior_model_zorder,
         )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_barson(temp_linspace),
-            label="Barson",
-            color=prior_model_colors.pop(),
-            zorder=prior_model_zorder,
-        )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_li(temp_linspace),
-            label="Li",
-            color=prior_model_colors.pop(),
-            zorder=prior_model_zorder,
-        )
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     zfs_from_temp_barson(temp_linspace),
+        #     label="Barson",
+        #     color=prior_model_colors[2],
+        #     zorder=prior_model_zorder,
+        # )
+        # kpl.plot_line(
+        #     ax,
+        #     temp_linspace,
+        #     zfs_from_temp_li(temp_linspace),
+        #     label="Li",
+        #     color=prior_model_colors[3],
+        #     zorder=prior_model_zorder,
+        # )
 
     ### Plot wrap up
     if plot_prior_models:
@@ -760,6 +802,17 @@ def main():
         ax.set_ylim(*y_range)
     kpl.tight_layout(fig)
 
+    # fig, ax = plt.subplots()
+    # chen_proposed_diff = lambda temp: sub_room_zfs_from_temp(temp) - cambria_lambda(temp)
+    # kpl.plot_line(
+    #     ax,
+    #     temp_linspace,
+    #     1000 * chen_proposed_diff(temp_linspace)
+    # )
+    # ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    # ax.set_ylabel("Chen - proposed (MHz)")
+    # kpl.tight_layout(fig)
+
 
 # endregion
 
@@ -775,3 +828,5 @@ if __name__ == "__main__":
     main()
 
     plt.show(block=True)
+
+    2.87736(2) - 0.0768(17) - 0.23(6)

@@ -14,7 +14,6 @@ regular yellow readout, and SCC readout.
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
 import numpy
 import os
 import time
@@ -24,6 +23,7 @@ from scipy.optimize import curve_fit
 import labrad
 from utils.tool_belt import States
 
+import majorroutines.optimize as optimize
 
 # %% Functions
 
@@ -122,6 +122,9 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
         return rabi_per, sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
+    
+    tagger_server = tool_belt.get_tagger_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -135,24 +138,29 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
 
-    # parameters from nv_sig
-    readout_time = nv_sig['pulsed_SCC_readout_dur']
-    readout_power = nv_sig['am_589_power']
-    init_ion_time = nv_sig['pulsed_initial_ion_dur']
-    reion_time = nv_sig['pulsed_reionization_dur']
-    ion_time = nv_sig['pulsed_ionization_dur']
-    shelf_time = nv_sig['pulsed_shelf_dur']
-    shelf_power = nv_sig['am_589_shelf_power']
-
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
+    # shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    
+    readout_time = nv_sig['charge_readout_dur']
+    readout_power = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
+    ion_time = nv_sig['nv0_ionization_dur']
+    ion_power = 1
+    reion_power = 1
+    reion_time = nv_sig['nv-_reionization_dur']
+    shelf_time = 0 #nv_sig['spin_shelf_dur']
+    shelf_power = nv_sig['spin_shelf_laser_power'] if 'spin_shelf_laser_power' in nv_sig else None
+    
+    green_laser_name = nv_sig['nv-_reionization_laser']
+    red_laser_name = nv_sig['nv0_ionization_laser']
+    yellow_laser_name = nv_sig['charge_readout_laser']
+    sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)    
+           
     #delay of aoms and laser
-    laser_515_delay = shared_params['515_laser_delay']
-    aom_589_delay = shared_params['589_aom_delay']
-    laser_638_delay = shared_params['638_DM_laser_delay']
-    rf_delay = shared_params['uwave_delay']   
-    # wait time between pulses
-    wait_time = shared_params['post_polarization_wait_dur']
+    # laser_515_delay = shared_params['515_laser_delay']
+    # aom_589_delay = shared_params['589_aom_delay']
+    # laser_638_delay = shared_params['638_DM_laser_delay']
+    # rf_delay = shared_params['uwave_delay']   
+    # # wait time between pulses
+    # wait_time = shared_params['post_polarization_wait_dur']
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
@@ -162,22 +170,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                           num=num_steps)
 
     # Analyze the sequence
-    file_name = 'SCC_optimize_pulses_w_uwaves.py'
-    seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[0],
-        shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-        apd_indices[0], readout_power, shelf_power, state.value]
+    # file_name = 'SCC_optimize_pulses_w_uwaves.py'
+    file_name = 'rabi_scc.py'
+
+    # seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[0],
+    #     shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+    #     apd_indices[0], readout_power, shelf_power, state.value]
+    seq_args = [readout_time, reion_time, ion_time, max_uwave_time,
+        shelf_time ,  max_uwave_time, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
+        apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+    print(seq_args)
 #    seq_args = [int(el) for el in seq_args]
 #    print(seq_args)
 #    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    pulsegen_server.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    sig_counts = numpy.empty([num_runs, num_steps])
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
@@ -204,7 +218,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = True)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
@@ -214,7 +228,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn.uwave_on()
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        tagger_server.start_tag_stream(apd_indices)
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
@@ -225,29 +239,34 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 break
             
             # shine the red laser for a few seconds before the sequence
-            cxn.pulse_streamer.constant([7], 0.0, 0.0)
-            time.sleep(2)
+            # pulsegen_server.constant([7], 0.0, 0.0)
+            # time.sleep(2)
             
             # Load the sequence
-            cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+            pulsegen_server.stream_load(file_name, seq_args_string)
             
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
 
             # Stream the sequence
-            seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[tau_ind],
-                shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-                apd_indices[0], readout_power, shelf_power, state.value]
+            # seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[tau_ind],
+            #     shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+            #     apd_indices[0], readout_power, shelf_power, state.value]
 #            print(seq_args)
+            seq_args = [readout_time, reion_time, ion_time, taus[tau_ind],
+                shelf_time ,  max_uwave_time, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
+                apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+            # print(seq_args)
+
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+            tagger_server.clear_buffer()
+            pulsegen_server.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 
             # Get the counts
 #            now = time.time()
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = tagger_server.read_counter_separate_gates(1)
 #            print(new_counts)
 #            print(time.time() - now)
 
@@ -265,7 +284,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             if sum(ref_gate_counts) == 0:
                 print('Oh no, the references colleted at run {} and tau {} ns are exactly 0!'.format(run_ind,  taus[tau_ind]))
 
-        cxn.apd_tagger.stop_tag_stream()
+        tagger_server.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
 
@@ -307,7 +326,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # Replace x/0=inf with 0
     try:
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
     except RuntimeWarning as e:
         print(e)
         inf_mask = numpy.isinf(norm_avg_sig)
@@ -427,45 +446,52 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     
 # %%
 if __name__ == '__main__':
-    sample_name = 'bachman-2'
-    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
-            'name': '{}-B1'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.988,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
+    # sample_name = 'bachman-2'
+    # ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
+    #         'name': '{}-B1'.format(sample_name),
+    #         'expected_count_rate': None, 'nd_filter': 'nd_0',
+    #         'pulsed_readout_dur': 300,
+    #         'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+    #         'pulsed_initial_ion_dur': 25*10**3,
+    #         'pulsed_shelf_dur': 200, 
+    #         'am_589_shelf_power': 0.35,
+    #         'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+    #         'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+    #         'magnet_angle': 0,
+    #         "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
+    #         "resonance_HIGH": 2.988,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
 
-    apd_indices = [0]
-    num_steps = 51
-    num_reps = 2*10**2
-    num_runs = 5
-    state = States.LOW
-    uwave_time_range = [0, 200]
+    # apd_indices = [0]
+    # num_steps = 51
+    # num_reps = 2*10**2
+    # num_runs = 5
+    # state = States.LOW
+    # uwave_time_range = [0, 200]
     
-    # Run rabi with SCC readout
-    main(ensemble_B1, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs)
+    # # Run rabi with SCC readout
+    # main(ensemble_B1, apd_indices, uwave_time_range, state,
+    #      num_steps, num_reps, num_runs)
     
    
     
     # replotting data
-    file = '2020_05_19-15_54_50-bachman-B5'
-    data = tool_belt.get_raw_data('rabi_SCC/branch_Spin_to_charge/2020_05', file)
+    file = '2022_11_14-09_10_42-johnson-search'
+    data = tool_belt.get_raw_data(file)
 #   
-    norm_avg_sig = data['norm_avg_sig']
+    # norm_avg_sig = data['norm_avg_sig']
+    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts']
     uwave_time_range = data['uwave_time_range']
     num_steps = data['num_steps']
     nv_sig = data['nv_sig']
     state = data['state']
     uwave_freq = nv_sig['resonance_{}'.format(state)]
     
+    avg_sig = numpy.average(sig_counts,axis=0)/numpy.average(ref_counts)
+    taus = numpy.linspace(uwave_time_range[0], uwave_time_range[1], num=num_steps)
+    plt.plot(taus,avg_sig)
+    plt.xlabel('tau [ns]')
+    plt.ylabel('Contrast')
 #    
 #    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
 #    if (fit_func is not None) and (popt is not None):

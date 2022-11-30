@@ -1,27 +1,20 @@
 # -*- coding: utf-8 -*-
-"""This script will archive branches. A branch should be archived if you're
+"""Script for archiving branches. A branch should be archived if you're
 done working with it so that it doesn't clutter the repo. Generally we want
 a record of our work so we don't want to delete branches outright.
 
-Archiving is done by tagging them as archive/<branchname> and removing them
-both locally and remotely. Before each operation, the user is asked for
-confirmation.
+Archiving is done by tagging them as archive/<branchname>-<unix_timestamp> and 
+deleting them both locally and remotely. 
 
-Created on Mon Jun 10 08:02:12 2019
+Created on June 10th, 2019
 
 @author: mccambria
 """
 
 
-# %% Imports
-
-
 import time
 from git import Repo
 from pathlib import Path
-
-
-# %% Functions
 
 
 def parse_string_array(string_array):
@@ -44,10 +37,7 @@ def parse_string_array(string_array):
     return vals
 
 
-# %% Main
-
-
-def main(repo_path, branches_to_archive):
+def main(repo_path, branches_to_archive, skip_merged_check=False):
 
     # Get the repo and the remote origin
     repo = Repo(repo_path)
@@ -73,82 +63,88 @@ def main(repo_path, branches_to_archive):
     ]
     print("\nLocal branches:")
     print(local_branches)
+    
+    print()
 
-    # Confirm that the branch should be deleted
-    archived_branches = []
-    tagged_branches = []
     for branch in branches_to_archive:
-        archive = True
+        do_archive = True
+        tag_created = False
+        tag_pushed = False
+        remote_deleted = False
+        local_deleted = False
         if branch == "master":
             print(
                 "I'm sorry Dave. I'm afraid I can't archive the master branch."
             )
-            archive = False
+            do_archive = False
         elif branch not in local_branches:
             print(
-                "Branch {} does not exist locally for this repo. Skipping."
-                .format(branch)
+                f"Branch {branch} does not exist locally for this repo. "
+                "Switch to it first before merging."
             )
-            archive = False
-        elif branch not in merged_branches:
-            msg = (
-                "Branch {} is not fully merged with master. Archive anyway?"
-                " (y/[n])"
+            do_archive = False
+        elif (branch not in merged_branches) and not skip_merged_check:
+            print(
+                f"Branch {branch} is not fully merged with master. "
+                "If you wish to archive anyway, set skip_merged_check to True."
             )
-        else:
-            msg = "Archive branch {}? (y/[n])"
-        if archive and not input(msg.format(branch)) in ("y", "Y"):
-            archive = False
-        if archive:  # Change to if True to override checks
-            # Add a timestamp to the tagged branch
-            inst = int(time.time())
-            tagged_name = "{}-{}".format(branch, inst)
-            repo_git.tag(r"archive/{}".format(tagged_name), branch)
-            archived_branches.append(branch)
-            tagged_branches.append(tagged_name)
+            do_archive = False
 
-    if archived_branches == []:
-        print("No branches archived.")
+        # Move on to the next branch if we can't archive this one
+        if not do_archive:
+            print(f"Skipping branch {branch}.")
+            print()
+            continue
 
-    # Push archive tags to remote
-    for branch in tagged_branches:
+        # Create the tag
+        inst = int(time.time())  # Add a timestamp to the tagged branch
+        tagged_name = f"{branch}-{inst}"
         try:
-            print("tagging")
-            origin.push(r"archive/{}".format(branch))
-            print("tagged")
-        except Exception as e:
-            print(e)
+            repo_git.tag(rf"archive/{tagged_name}", branch)
+            tag_created = True
+        except Exception as exc:
+            print(f"Failed to create tag for branch {branch}")
+            print(exc)
 
-    # Delete remote branches
-    for branch in archived_branches:
-        try:
-            print("deleting remote")
-            origin.push(":{}".format(branch))
-            print("deleted remote")
-        except Exception as e:
-            print(e)
+        # Push the tag
+        if tag_created:
+            try:
+                origin.push(f"archive/{tagged_name}")
+                tag_pushed = True
+            except Exception as exc:
+                print(f"Failed to push tag {tagged_name}")
+                print(exc)
 
-    # Delete local branches
-    for branch in archived_branches:
-        try:
-            print("deleting local")
-            repo_git.branch("-D", branch)
-            print("deleted local")
-        except Exception as e:
-            print(e)
-
-
-# %% Run the file
+        # Delete remote and local branches
+        if tag_created and tag_pushed:
+            try:
+                origin.push(f":{branch}")
+                remote_deleted = True
+            except Exception as exc:
+                print(f"Failed to delete remote branch {branch}")
+                print(exc)
+            try:
+                repo_git.branch("-D", branch)
+                local_deleted = True
+            except Exception as exc:
+                print(f"Failed to delete local branch {branch}")
+                print(exc)
+        
+        if tag_created and tag_pushed and remote_deleted and local_deleted:
+            print(f"Branch {branch} successfully archived.")
+        print()
 
 
 if __name__ == "__main__":
 
     # Path to your local checkout of the repo
-    repo_path = (
-        str(Path.home()) + "/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
-    )
+    repo_path = Path.home() / "Documents/GitHub/kolkowitz-nv-experiment-v1.0"
 
     # List of branches to archive
-    branches_to_archive = ["time-tagger-speedup"]
+    branches_to_archive = [
+        "working_branch_sam",
+    ]
 
-    main(repo_path, branches_to_archive)
+    skip_merged_check = True
+
+    main(repo_path, branches_to_archive, skip_merged_check)

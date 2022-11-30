@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Here are functions for our search index, which allows us to quickly look up
+"""Here are functions for our search index, which allows us to quickly look up
 data files without specifying the file path. All you need is the file name!
+You probably just need one of the end-user facing functions in tool_belt.
 
 Created September 10th, 2021
 
@@ -22,8 +22,7 @@ search_index_glob = f"{nvdata_dir_str}/pc_*/branch_*/*/{date_glob}/*.txt"
 
 
 def process_full_path(full_path):
-    """
-    Return just what we want for writing to the database. Expects a string
+    """Return just what we want for writing to the database. Expects a string
     containing the entire path to the file, including nvdata, the file
     name, the extension...
     """
@@ -47,8 +46,7 @@ def process_full_path(full_path):
 
 
 def gen_search_index():
-    """
-    Create the search index from scratch. This will take several minutes.
+    """Create the search index from scratch. This will take several minutes.
     Once complete, delete the old index file and remove the "new_" prefix
     from the fresh index.
     """
@@ -116,8 +114,7 @@ def get_data_path(data_file_name):
 
 
 def index_on_the_fly(data_file_name):
-    """
-    If a file fails to be indexed for whatever reason and we subsequently
+    """If a file fails to be indexed for whatever reason and we subsequently
     unsuccesfully attempt to look it up, we'll just index it on the fly
     """
 

@@ -13,13 +13,13 @@ Created on Thu Apr 11 15:39:23 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
 from majorroutines import pulsed_resonance 
 from random import shuffle
+import majorroutines.optimize as optimize
 
 
 # %% Main
@@ -38,6 +38,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
+    
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     
     # Set up the laser
     laser_key = 'spin_laser'
@@ -117,8 +120,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         sig_gen_cxn.uwave_on()
 
         # Load the APD task with two samples for each frequency step
-        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        pulsegen_server.stream_load(file_name, seq_args_string)
+        counter_server.start_tag_stream(apd_indices)
         
         # Shuffle the list of frequency indices so that we step through
         # them randomly
@@ -137,23 +140,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             sig_gen_cxn.set_freq(freqs[freq_ind])
 
             # Start the timing stream
-            cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_start() 
+            counter_server.clear_buffer()
+            pulsegen_server.stream_start() 
 
             # Read the counts using parity to distinguish signal vs ref
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-            # print(new_counts)
+            new_counts = counter_server.read_counter_modulo_gates(2)
             sample_counts = new_counts[0]
-            ref_gate_counts = sample_counts[0::2]
-            ref_counts[run_ind, freq_ind]  = sum(ref_gate_counts)
-
-            sig_gate_counts = sample_counts[1::2]
-            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            
+            cur_run_sig_counts_summed = sample_counts[1]
+            cur_run_ref_counts_summed = sample_counts[0]
+            
+            sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
+            ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
             # break
             # norm= sum(sig_gate_counts) / sum(ref_gate_counts)
             # print(norm)
 
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
 
@@ -282,16 +285,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2021_08_27-00_25_11-hopper-search'
-    file_path = "pc_hahn/branch_KPZ101-z-control/resonance/2021_08"
+    file = '2022_11_10-11_17_33-johnson-search'
+    file_path = "pc_carr/branch_opx-setup/resonance/2022_11/incremental"
     data = tool_belt.get_raw_data(file, file_path)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
     num_runs = data['num_runs']
-    ref_counts = data['ref_counts']
-    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts'][0:6]
+    sig_counts = data['sig_counts'][0:6]
     print(len(ref_counts))
     ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
     avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
