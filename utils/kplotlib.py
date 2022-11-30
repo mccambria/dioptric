@@ -185,7 +185,11 @@ def init_kplotlib(
 
 
 def tight_layout(fig):
-
+    """Tight layout with defaults. Called twice because sometimes things are
+    still off after the first call.
+    """
+    
+    fig.tight_layout(pad=0.3)
     fig.tight_layout(pad=0.3)
 
 
