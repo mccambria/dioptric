@@ -39,6 +39,11 @@ class States(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
+    
+
+class ControlStyle(Enum):
+    STEP = auto()
+    STREAM = auto()
 
 
 # Normalization style for comparing experimental data to reference data
@@ -1291,17 +1296,32 @@ def get_sig_gen_cxn(cxn, state):
     return sig_gen_cxn
 
 
-def get_movement_style():
+def get_xy_control_style():
     """
-    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    Talk to the registry to get the xy control type for this setup
     """
-    movement_style_return = get_registry_entry_no_cxn(
-        "movement_style", ["", "Config", "Positioning"]
+    xy_control_style_return = get_registry_entry_no_cxn(
+        "xy_control_style", ["", "Config", "Positioning"]
     )
-    if movement_style_return == "":
+    xy_control_style_return = eval(xy_control_style_return)
+    
+    if xy_control_style_return == "":
         raise RuntimeError
 
-    return movement_style_return
+    return xy_control_style_return
+
+def get_z_control_style():
+    """
+    Talk to the registry to get the z control type for this setup
+    """
+    z_control_style_return = get_registry_entry_no_cxn(
+        "z_control_style", ["", "Config", "Positioning"]
+    )
+    z_control_style_return = eval(z_control_style_return)
+    if z_control_style_return == "":
+        raise RuntimeError
+
+    return z_control_style_return
 
 
 def get_apd_gate_channel(cxn, apd_index):

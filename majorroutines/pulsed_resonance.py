@@ -243,8 +243,8 @@ def get_guess_params(
         high_freq_guess = None
 
     # low_freq_guess = 2.8620
-    # high_freq_guess = 2.8936
-    high_freq_guess = None
+    high_freq_guess = 2.8936
+    # high_freq_guess = None
 
     if low_freq_guess is None:
         return None, None
