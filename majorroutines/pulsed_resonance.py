@@ -487,6 +487,8 @@ def main_with_cxn(
 
     # %% Initial calculations and setup
 
+    kpl.init_kplotlib()
+    
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
@@ -823,6 +825,7 @@ def main_with_cxn(
         fit_fig = create_fit_figure(
             freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
         )
+        
     else:
         fit_fig = None
 
@@ -937,7 +940,7 @@ if __name__ == "__main__":
     )
     print(return_res_with_error(data))
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
     # simulate(2.8351, 0.035, 0.02, 170, 170/2)

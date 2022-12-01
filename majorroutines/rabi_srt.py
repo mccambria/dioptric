@@ -182,8 +182,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         )
         low_sig_gen_cxn.set_freq(uwave_freq_low)
         low_sig_gen_cxn.set_amp(uwave_power_low)
-        # low_sig_gen_cxn.load_fm(abs(deviation_low))
-        # low_sig_gen_cxn.uwave_on()
+        low_sig_gen_cxn.load_fm(abs(deviation_low))
+        low_sig_gen_cxn.uwave_on()
 
         high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
             cxn, States.HIGH
@@ -442,7 +442,7 @@ def plot_pop_srt(taus, p_pop, z_pop, deviation, m_pop = []):
     return fig
     
     
-def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation, 
+def full_pop_srt(nv_sig, uwave_time_range, deviation, 
          num_steps, num_reps, num_runs):
     
     contrast = 0.108*2
@@ -458,21 +458,21 @@ def full_pop_srt(nv_sig, apd_indices, uwave_time_range, deviation,
     
     init=States.HIGH
     if True :
-        m_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+        m_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
             num_steps, num_reps, num_runs,
             readout_state = States.LOW,
             initial_state = init,
             )
         m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
  
-    p_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+    p_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
              num_steps, num_reps, num_runs,
              readout_state = States.HIGH,
              initial_state = init,
              )
     p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
     
-    z_sig = main(nv_sig, apd_indices, uwave_time_range, deviation_high, deviation_low, 
+    z_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
