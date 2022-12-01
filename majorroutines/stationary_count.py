@@ -52,16 +52,16 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices, disable_opt=None,
+def main(nv_sig, run_time, disable_opt=None,
          nv_minus_initialization=False, nv_zero_initialization=False):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt,
+        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, disable_opt,
                                         nv_minus_initialization, nv_zero_initialization)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
+def main_with_cxn(cxn, nv_sig, run_time, disable_opt=None,
                   nv_minus_initialization=False, nv_zero_initialization=False):
 
     # %% Some initial setup
@@ -76,7 +76,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     # %% Optimize
 
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig)
     coords = nv_sig['coords']
     drift = tool_belt.get_drift()
     adj_coords = []
@@ -100,7 +100,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
+        seq_args = [init, readout,  init_laser, init_power,
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load('charge_initialization-simple_readout_background_subtraction.py',
@@ -111,7 +111,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
+        seq_args = [init, readout,  init_laser, init_power,
                     readout_laser, readout_power]
         # print(seq_args)
         # return
@@ -119,7 +119,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         ret_vals = pulsegen_server.stream_load('charge_initialization-simple_readout_background_subtraction.py',
                                                   seq_args_string)
     else:
-        seq_args = [0, readout, apd_indices[0], readout_laser, readout_power]
+        seq_args = [0, readout, readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load('simple_readout.py',
                                                   seq_args_string)
@@ -131,7 +131,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     counter_server = tool_belt.get_counter_server(cxn)
 
-    counter_server.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream()
 
     # %% Initialize the figure
 
@@ -179,9 +179,11 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     while True:
         b=b+1
-        if (b % 50) == 0:
+        # Issue between OPX and pulse_streamer. Putting in key word for OPX
+        
+        if ((b % 50) == 0) and (pulsegen_server == "QM_opx"):
             tool_belt.reset_cfm(cxn)
-            counter_server.start_tag_stream(apd_indices)
+            counter_server.start_tag_stream()
             pulsegen_server.stream_start(-1)
             print('restarting')
 

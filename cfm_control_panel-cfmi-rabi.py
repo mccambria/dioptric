@@ -250,7 +250,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
     # freq_range = 0.120
     num_steps = 75
     num_reps = int(1e4)
-    num_runs = 2
+    num_runs = 5
 
     composite = False
 
@@ -310,7 +310,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs = 5
+    num_runs = 15
 
     period = rabi.main(
         nv_sig,
@@ -1017,17 +1017,16 @@ if __name__ == "__main__":
     
     
     nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.199, 0.081, 4.06]
+    nv_sig_1["coords"] = [-0.193, 0.074, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = 21
+    nv_sig_1["expected_count_rate"] = 20
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7813 - 0.0005
-    nv_sig_1["rabi_LOW"]= 129.5
+    nv_sig_1["rabi_LOW"]= 130
     nv_sig_1["resonance_HIGH"]= 2.9591 
-    nv_sig_1["rabi_HIGH"]=129.5
-    nv_sig_1["uwave_power_HIGH"]= 10
+    nv_sig_1["rabi_HIGH"]=130
     
     
     
@@ -1091,9 +1090,9 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
-        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 200])
+        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 1000])
         
         
         

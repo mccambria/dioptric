@@ -76,7 +76,7 @@ class SigGenBerkBnc835(LabradServer):
         """
 
         self.sig_gen.write("OUTP 1")
-        logging.info("turned on")
+        # logging.info("turned on")
 
     @setting(1)
     def uwave_off(self, c):
@@ -85,7 +85,7 @@ class SigGenBerkBnc835(LabradServer):
         """
 
         self.sig_gen.write("OUTP 0")
-        logging.info("turned off")
+        # logging.info("turned off")
 
     @setting(2, freq="v[]")
     def set_freq(self, c, freq):
