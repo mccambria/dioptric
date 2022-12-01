@@ -44,7 +44,7 @@ def get_seq(pulse_streamer, config, args):
     sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
     aom_delay_time = config['Optics'][laser_name]['delay']
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen_name = config['Servers']['sig_gen_{}'.format(state.name)]
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     back_buffer = 200
 

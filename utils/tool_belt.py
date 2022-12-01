@@ -1157,7 +1157,7 @@ def get_pos_xy_server(cxn):
 
 def get_pos_xy_server_name(cxn):
     return get_registry_entry(
-        cxn, "pos_xy_server", ["", "Config", "Positioning"]
+        cxn, "pos_xy_server", ["", "Config", "Servers"]
     )
 
 
@@ -1174,7 +1174,7 @@ def get_pos_z_server(cxn):
 
 def get_pos_z_server_name(cxn):
     return get_registry_entry(
-        cxn, "pos_z_server", ["", "Config", "Positioning"]
+        cxn, "pos_z_server", ["", "Config", "Servers"]
     )
 
 
@@ -1191,7 +1191,7 @@ def get_pos_xyz_server(cxn):
 
 def get_pos_xyz_server_name(cxn):
     return get_registry_entry(
-        cxn, "pos_xyz_server", ["", "Config", "Positioning"]
+        cxn, "pos_xyz_server", ["", "Config", "Servers"]
     )
 
 
@@ -1207,7 +1207,7 @@ def get_pulse_gen_server(cxn):
     pulsegen_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "pulse_gen_server", ["", "Config", "PulseGeneration"]
+            cxn, "pulse_gen_server", ["", "Config", "Servers"]
         ),
     )
 
@@ -1224,7 +1224,7 @@ def get_arb_wave_gen_server(cxn):
     pulsegen_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "arb_wave_gen_server", ["", "Config", "ArbWaveGeneration"]
+            cxn, "arb_wave_gen_server", ["", "Config", "Servers"]
         ),
     )
 
@@ -1240,7 +1240,7 @@ def get_counter_server(cxn):
     counter_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "counter_server", ["", "Config", "PhotonCollection"]
+            cxn, "counter_server", ["", "Config", "Servers"]
         ),
     )
     if counter_server_return == "":
@@ -1256,7 +1256,7 @@ def get_tagger_server(cxn):
     tagger_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "tagger_server", ["", "Config", "PhotonCollection"]
+            cxn, "tagger_server", ["", "Config", "Servers"]
         ),
     )
     if tagger_server_return == "":
@@ -1273,7 +1273,7 @@ def get_temp_controller(cxn):
     return getattr(
         cxn,
         get_registry_entry(
-            cxn, "temp_controller", ["", "Config", "Temperature"]
+            cxn, "temp_controller", ["", "Config", "Servers"]
         ),
     )
 
@@ -1285,7 +1285,7 @@ def get_temp_monitor(cxn):
     # be used directly
     return getattr(
         cxn,
-        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Temperature"]),
+        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Servers"]),
     )
 
 
@@ -1306,7 +1306,7 @@ def get_signal_generator_name(cxn, state):
 
 def get_sig_gen_name(cxn, state):
     return get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Servers"]
     )
 
 

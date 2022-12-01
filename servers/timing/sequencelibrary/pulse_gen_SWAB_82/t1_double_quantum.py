@@ -46,8 +46,8 @@ def get_seq(pulse_streamer, config, args):
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     
     aom_delay_time = config['Optics'][laser_name]['delay']
-    low_sig_gen_name = config['Microwaves']['sig_gen_LOW']
-    high_sig_gen_name = config['Microwaves']['sig_gen_HIGH']
+    low_sig_gen_name = config['Servers']['sig_gen_LOW']
+    high_sig_gen_name = config['Servers']['sig_gen_HIGH']
     
     rf_low_delay = config['Microwaves'][low_sig_gen_name]['delay']
     rf_high_delay = config['Microwaves'][high_sig_gen_name]['delay']

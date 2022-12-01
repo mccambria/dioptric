@@ -27,7 +27,7 @@ def get_seq(pulse_streamer, config, args):
     # Signify which signal generator to use
     state = args[4]
     state = States(state)
-    sig_gen_name = config['Microwaves'][f'sig_gen_{state.name}']
+    sig_gen_name = config['Servers'][f'sig_gen_{state.name}']
     
     # Laser specs
     laser_name = args[5]

@@ -38,8 +38,8 @@ def get_seq(pulse_streamer, config, args):
     laser_name = args[10]
     laser_power = args[11]
     
-    low_sig_gen_name = config['Microwaves']['sig_gen_LOW']
-    high_sig_gen_name = config['Microwaves']['sig_gen_HIGH']
+    low_sig_gen_name = config['Servers']['sig_gen_LOW']
+    high_sig_gen_name = config['Servers']['sig_gen_HIGH']
     
     uwave_laser_buffer= config['CommonDurations']['uwave_buffer']
     fm_mod_bandwidth_LOW = config['Microwaves'][low_sig_gen_name]['fm_mod_bandwidth'] # in Hz

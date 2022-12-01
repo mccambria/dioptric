@@ -1091,7 +1091,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 200])
         
@@ -1121,17 +1121,17 @@ if __name__ == "__main__":
         
         
         # pi_pulse_reps = 4  
-        step_size = 25 #us
-        T_min = 0 #us
-        T_max = 50#500 #us      
-        # for n in [8]:
-        #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
-        do_relaxation(nv_sig)  # gamma and omega
+        # step_size = 25 #us
+        # T_min = 0 #us
+        # T_max = 50#500 #us      
+        # # for n in [8]:
+        # #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
+        # do_relaxation(nv_sig)  # gamma and omega
         
-        num_xy4_reps = 2
-        do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
-        num_xy8_reps = 1
-        do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max)
+        # num_xy4_reps = 2
+        # do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
+        # num_xy8_reps = 1
+        # do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max)
         
         # pi_pulse_rep = 1
         # do_dd_cpmg(nv_sig, pi_pulse_reps, T=None)
