@@ -24,7 +24,7 @@ nvdata_dir = common.get_nvdata_dir()
 # region Functions
 
 
-def main(file_list, monitor_list, do_plot=False):
+def main(file_list, monitor_list, lookback_list, do_plot=False):
 
     path_to_logs = nvdata_dir / "paper_materials/zfs_temp_dep/temp_monitoring"
 
@@ -37,7 +37,7 @@ def main(file_list, monitor_list, do_plot=False):
         times_list = []
         temps_list = []
         for log_file in monitor_folder.iterdir():
-            if not log_file.is_file():
+            if not log_file.is_file() or log_file.suffix != ".log":
                 continue
             with open(log_file) as csv_file:
                 reader = csv.reader(csv_file)
@@ -56,13 +56,14 @@ def main(file_list, monitor_list, do_plot=False):
     for ind in range(len(file_list)):
         data_file = file_list[ind]
         monitor = monitor_list[ind]
+        lookback = lookback_list[ind]
         # First 19 characters are human-readable timestamp
         date_time_str = data_file[0:19]
         # Assume timezone is CST
         date_time_str += "-CST"
         date_time = datetime.strptime(date_time_str, r"%Y_%m_%d-%H_%M_%S-%Z")
         timestamp = date_time.timestamp()
-        min_time = timestamp - (15 * 60)
+        min_time = timestamp - (lookback * 60)
         max_time = timestamp
         file_times = []
         file_temps = []
@@ -100,13 +101,21 @@ def main(file_list, monitor_list, do_plot=False):
 
 if __name__ == "__main__":
 
-    data_points = zfs_vs_t_main.get_data_points(override_skips=True)
+    data_points = zfs_vs_t_main.get_data_points()
     file_list = [
         el["ZFS file"] for el in data_points if not el["ZFS file"] == ""
     ]
     monitor_list = [
         el["Monitor"] for el in data_points if not el["ZFS file"] == ""
     ]
-    # file_list = ["2022_11_18-11_27_31-wu-nv4_zfs_vs_t"]
+    lookback_dict = {
+        "Wu": 15,
+        "15micro": 21,
+    }  # How long did the measurement take
+    lookback_list = [
+        lookback_dict[el["Sample"]]
+        for el in data_points
+        if not el["ZFS file"] == ""
+    ]
 
-    main(file_list, monitor_list, do_plot=False)
+    main(file_list, monitor_list, lookback_list, do_plot=False)

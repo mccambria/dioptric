@@ -160,7 +160,8 @@ def get_data_points(skip_lambda=None):
                         val = raw_val
                 point[column] = val
 
-            if not skip_lambda(point):
+            skip = skip_lambda is not None and skip_lambda(point)
+            if not skip:
                 data_points.append(point)
 
     return data_points
