@@ -43,8 +43,8 @@ class States(Enum):
 
 # Normalization style for comparing experimental data to reference data
 class NormStyle(Enum):
-    single_valued = auto()  # Use a single-valued reference
-    point_to_point = auto()  # Normalize each signal point by its own reference
+    SINGLE_VALUED = auto()  # Use a single-valued reference
+    POINT_TO_POINT = auto()  # Normalize each signal point by its own reference
 
 
 class ModTypes(Enum):

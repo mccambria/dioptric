@@ -160,7 +160,8 @@ def get_data_points(skip_lambda=None):
                         val = raw_val
                 point[column] = val
 
-            if not skip_lambda(point):
+            skip = skip_lambda is not None and skip_lambda(point)
+            if not skip:
                 data_points.append(point)
 
     return data_points
@@ -168,7 +169,9 @@ def get_data_points(skip_lambda=None):
 
 def calc_zfs_from_compiled_data():
 
-    data_points = get_data_points(override_skips=True)
+    skip_lambda = lambda point: point["Sample"] != "15micro"
+
+    data_points = get_data_points(skip_lambda)
     zfs_list = []
     zfs_err_list = []
     for el in data_points:
@@ -821,12 +824,10 @@ if __name__ == "__main__":
     # print(cambria_fixed(15))
     # sys.exit()
 
-    # calc_zfs_from_compiled_data()
+    calc_zfs_from_compiled_data()
 
-    kpl.init_kplotlib()
+    # kpl.init_kplotlib()
 
-    main()
+    # main()
 
-    plt.show(block=True)
-
-    2.87736(2) - 0.0768(17) - 0.23(6)
+    # plt.show(block=True)

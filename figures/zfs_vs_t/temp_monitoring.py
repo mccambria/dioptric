@@ -37,7 +37,7 @@ def main(file_list, monitor_list, do_plot=False):
         times_list = []
         temps_list = []
         for log_file in monitor_folder.iterdir():
-            if not log_file.is_file():
+            if not log_file.is_file() or log_file.suffix != ".log":
                 continue
             with open(log_file) as csv_file:
                 reader = csv.reader(csv_file)
@@ -100,7 +100,7 @@ def main(file_list, monitor_list, do_plot=False):
 
 if __name__ == "__main__":
 
-    data_points = zfs_vs_t_main.get_data_points(override_skips=True)
+    data_points = zfs_vs_t_main.get_data_points()
     file_list = [
         el["ZFS file"] for el in data_points if not el["ZFS file"] == ""
     ]

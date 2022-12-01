@@ -16,6 +16,13 @@ from colorutils import Color
 import re
 from enum import Enum, auto
 from strenum import StrEnum
+from matplotlib.offsetbox import AnchoredText
+
+class Loc(StrEnum):
+    LOWER_LEFT = "lower left"
+    UPPER_LEFT = "upper left"
+    LOWER_RIGHT = "lower right"
+    UPPER_RIGHT = "upper right"
 
 
 class Size(Enum):
@@ -281,30 +288,20 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def text(ax, x, y, text, size=None, **kwargs):
-    """Add text in default style to the passed ax
-
-    x : float
-        x coordinate of textbox relative to plot dimensions starting from lower left corner
-    y : float
-        y coordinate of textbox relative to plot dimensions starting from lower left corner
-    """
+def anchored_text(ax, text, loc, size=None, **kwargs):
+    """Add text in default style to the passed ax"""
 
     global default_font_size
     if size is None:
         size = default_font_size
 
-    bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     font_size = font_Size[size]
-    ax.text(
-        x,
-        y,
-        text,
-        transform=ax.transAxes,
-        fontsize=font_size,
-        # verticalalignment="top",
-        bbox=bbox_props,
-    )
+    text_props = dict(fontsize=font_size)
+    text_box = AnchoredText(text, loc, prop=text_props)
+    text_box.patch.set_boxstyle("round, pad=0.05")
+    text_box.patch.set_facecolor("wheat")
+    text_box.patch.set_alpha(0.5)
+    ax.add_artist(text_box)
 
 
 def tex_escape(text):
