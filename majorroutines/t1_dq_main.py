@@ -312,7 +312,6 @@ def unpack_interleave(data, start_run=0, stop_run=None):
 
 def main(
     nv_sig,
-    apd_indices,
     t1_exp_array,
     num_runs,
     composite_pulses=False,
@@ -323,7 +322,6 @@ def main(
         main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             t1_exp_array,
             num_runs,
             composite_pulses,
@@ -334,13 +332,14 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     t1_exp_array,
     num_runs,
     composite_pulses=False,
     scc_readout=False,
 ):
 
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     tool_belt.reset_cfm(cxn)
 
     # %% Optical setup
@@ -524,7 +523,6 @@ def main_with_cxn(
                 uwave_pi_pulse_low,
                 uwave_pi_pulse_high,
                 max_relaxation_time,
-                apd_indices[0],
                 init_state.value,
                 read_state.value,
                 None,
@@ -551,7 +549,6 @@ def main_with_cxn(
                 uwave_pi_pulse_low,
                 uwave_pi_pulse_high,
                 max_relaxation_time,
-                apd_indices[0],
                 init_state.value,
                 read_state.value,
                 laser_name,
@@ -566,7 +563,6 @@ def main_with_cxn(
                 uwave_pi_pulse_low,
                 uwave_pi_pulse_high,
                 max_relaxation_time,
-                apd_indices[0],
                 init_state.value,
                 read_state.value,
                 laser_name,
@@ -575,7 +571,7 @@ def main_with_cxn(
         # print(seq_args)
         # continue
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+        ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
         seq_time = numpy.int64(ret_vals[0])
 
         seq_time_s = seq_time / (10 ** 9)  # s
@@ -629,7 +625,7 @@ def main_with_cxn(
 
             print(" \nOptimizing...\n")
             # Optimize
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
             # if opti_coords is None:
             #     return
             opti_coords_master_list[exp_ind].append(opti_coords)
@@ -682,7 +678,7 @@ def main_with_cxn(
             )
 
             # Load the APD
-            cxn.apd_tagger.start_tag_stream(apd_indices)
+            counter_server.start_tag_stream()
 
             # Shuffle the list of tau indices so that it steps thru them randomly
             shuffle(tau_ind_master_list[exp_ind])
@@ -717,18 +713,18 @@ def main_with_cxn(
                 # Stream the sequence
                 seq_args[0] = taus[tau_ind_first]
                 seq_args[5] = taus[tau_ind_second]
-                seq_args[7] = init_state.value
-                seq_args[8] = read_state.value
+                seq_args[6] = init_state.value
+                seq_args[7] = read_state.value
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-                cxn.pulse_streamer.stream_immediate(
+                pulsegen_server.stream_immediate(
                     seq_file, int(num_reps), seq_args_string
                 )
 
                 # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
                 # So we can sum on the values for similar index modulus 4 to
                 # parse the returned list into what we want.
-                new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+                new_counts = counter_server.read_counter_separate_gates(1)
                 sample_counts = new_counts[0]
                 # print(len(sample_counts))
 
@@ -756,7 +752,7 @@ def main_with_cxn(
                 )
                 print("Second Reference = " + str(count))
 
-            cxn.apd_tagger.stop_tag_stream()
+            counter_server.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
 

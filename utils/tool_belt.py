@@ -890,6 +890,20 @@ def get_pi_on_2_pulse_dur(rabi_period):
     return round(rabi_period / 4)
 
 
+def iq_comps(phase, amp):
+    '''
+    Given the phase and amplitude of the IQ vector, calculate the I (real) and 
+    Q (imaginary) components
+    '''
+    if type(phase) is list:
+        ret_vals = []
+        for val in phase:
+            ret_vals.append(np.round(amp * np.exp((0 + 1j) * val), 5))
+        return (np.real(ret_vals).tolist(), np.imag(ret_vals).tolist())
+    else:
+        ret_val = np.round(amp * np.exp((0 + 1j) * phase), 5)
+        return (np.real(ret_val), np.imag(ret_val))
+    
 def lorentzian(x, x0, A, L, offset):
 
     """Calculates the value of a lorentzian for the given input and parameters
@@ -1202,6 +1216,22 @@ def get_pulse_gen_server(cxn):
 
     return pulsegen_server_return
 
+
+def get_arb_wave_gen_server(cxn):
+    """
+    Talk to the registry to get the arb wave gen server for this setup, such as opx vs keysight
+    """
+    pulsegen_server_return = getattr(
+        cxn,
+        get_registry_entry(
+            cxn, "arb_wave_gen_server", ["", "Config", "ArbWaveGeneration"]
+        ),
+    )
+
+    if pulsegen_server_return == "":
+        raise RuntimeError
+
+    return pulsegen_server_return
 
 def get_counter_server(cxn):
     """
