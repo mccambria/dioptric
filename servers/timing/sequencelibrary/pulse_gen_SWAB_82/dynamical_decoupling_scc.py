@@ -80,7 +80,7 @@ def get_seq(pulse_streamer, config, args):
     ion_laser_delay = config["Optics"][ion_laser_name]["delay"]
     shelf_laser_delay = config["Optics"][shelf_laser_name]["delay"]
     readout_laser_delay = config["Optics"][readout_laser_name]["delay"]
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen_name = config['Servers']['sig_gen_{}'.format(state.name)]
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     iq_delay_time = config['Microwaves']['iq_delay']
     

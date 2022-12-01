@@ -54,11 +54,11 @@ def do_test_routine_opx(nv_sig, apd_indices, delay, readout_time, laser_name, la
     
     
 
-def do_image_sample(nv_sig, apd_indices,nvm_initialization=False,scan_range=2,num_steps=30,cmin=None,cmax=None):
+def do_image_sample(nv_sig,nvm_initialization=False,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
    
     # For now we only support square scans so pass scan_range twice
-    image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
+    image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
 
 def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
@@ -222,7 +222,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     freq_range = 0.2
     num_freq_steps = 51
     # num_freq_runs = 30
-    num_freq_runs = 10
+    num_freq_runs = 7
 
     # Pulsed
     uwave_power = 16.5
@@ -387,9 +387,9 @@ if __name__ == "__main__":
     red_laser = 'cobolt_638'
 
     nv_sig = {
-        'coords': [48.193, 50.012,72.28], 'name': '{}-search'.format(sample_name),
+        'coords': [47.931, 51.274,71.18], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 115,
+        'expected_count_rate': 102,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
@@ -420,7 +420,7 @@ if __name__ == "__main__":
         "charge_readout_laser_filter": "nd_0",
         "initialize_laser": green_laser,
         "initialize_dur": 1e4,
-        'collection_filter': None, 'magnet_angle': 112,
+        'collection_filter': None, 'magnet_angle': 150,
         'resonance_LOW': 2.8586, 'rabi_LOW': 168, 'uwave_power_LOW': 16.5,
         'resonance_HIGH': 2.883, 'rabi_HIGH': 152, 'uwave_power_HIGH': 16.5,
         'norm_style':NormStyle.single_valued
@@ -485,10 +485,10 @@ if __name__ == "__main__":
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=10)#,cmin=0,cmax=50)
         # for z in [76.2,76.4,76.6]:
         #     nv_sig['coords'][2]=z
-        # do_image_sample(nv_sig, apd_indices,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
-        # do_image_sample(nv_sig, apd_indices,num_steps=30,scan_range=3)#,cmin=0,cmax=75)
-        # nv_sig['coords'] = [87.944, 38.754,76.375]
-        # do_image_sample(nv_sig, apd_indices,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
+        # do_image_sample(nv_sig,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
+        # do_image_sample(nv_sig,num_steps=30,scan_range=3)#,cmin=0,cmax=75)
+        # nv_sig['coords'] = [50.193, 52.012,72.28]
+        # do_image_sample(nv_sig,num_steps=50,scan_range=6)#,cmin=0,cmax=75)
         
         # do_optimize(nv_sig, apd_indices)
         # do_optimize_z(nv_sig, apd_indices)
@@ -502,7 +502,9 @@ if __name__ == "__main__":
         # do_resonance_modulo(nv_sig, apd_indices,num_steps = 51, num_runs = 5)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.LOW,num_reps=2e4,num_runs=5,num_steps=51)
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [16,320], state=States.HIGH,num_reps=2e4,num_runs=6,num_steps=51)
-        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.87, freq_range=0.2,num_steps=51, num_reps=2e4, num_runs=4)
+        # angles = [25,50,75,100,125,150,175]
+        # nv_sig['magnet_angle'] = angles[5]
+        do_pulsed_resonance(nv_sig, nv_sig, apd_indices,freq_center=2.87, freq_range=0.2,num_steps=51, num_reps=2e4, num_runs=6)
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)
         # for det in [-3,-1.2,-1.1,-1,3]:
         #     do_ramsey(nv_sig, nv_sig, apd_indices,detuning=det)
@@ -511,7 +513,7 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, nv_sig, apd_indices,detuning=2)
         # do_spin_echo(nv_sig, apd_indices,max_time=140,num_reps=2e4,num_runs=80,state=States.LOW)
         # do_image_sample(nv_sig, apd_indices,num_steps=80,scan_range=8)
-        do_optimize_magnet_angle(nv_sig, apd_indices)
+        # do_optimize_magnet_angle(nv_sig, apd_indices)
         
         # for readout_dur in [200,250,300,350,400,450,500]:
         #     nv_sig['spin_readout_dur'] = readout_dur

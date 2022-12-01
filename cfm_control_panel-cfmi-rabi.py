@@ -347,7 +347,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
               initial_state,
     )
 
-def do_rabi_srt_pop(nv_sig,  deviation,num_steps,  uwave_time_range=[0, 1000]):
+def do_rabi_srt_pop(nv_sig,  deviation, num_steps,  uwave_time_range=[0, 1000]):
     
     # deviation_high = 0
     # deviation_low = 0
@@ -356,7 +356,7 @@ def do_rabi_srt_pop(nv_sig,  deviation,num_steps,  uwave_time_range=[0, 1000]):
     
     #num_steps = 101
     num_reps = int(1e4)
-    num_runs = 100 #200
+    num_runs = 50 #200
 
     # rabi_srt.main(nv_sig, 
     #           apd_indices, 
@@ -428,7 +428,7 @@ def do_spin_echo(nv_sig, state = States.HIGH):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 60  # us
+    max_time = 100  # us
     num_steps = int(max_time/2+ 1)  # 1 point per 2 us
     # max_time = 8.352*8
     # max_time = 8*8
@@ -450,7 +450,7 @@ def do_spin_echo(nv_sig, state = States.HIGH):
 
 
 
-    angle = spin_echo.main(
+    spin_echo.main(
         nv_sig,
         precession_time_range,
         num_steps,
@@ -458,9 +458,9 @@ def do_spin_echo(nv_sig, state = States.HIGH):
         num_runs,
         state,
     )
-    return angle
+    return
 
-def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size,  T_min, T_max):
+def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
     
     shift = 100 #ns
     
@@ -472,13 +472,12 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 2e3
-    num_runs= 150
+    num_runs= 10#150
 
     state = States.HIGH
 
     dynamical_decoupling_cpmg.main(
         nv_sig,
-        apd_indices,
         precession_time_range,
         pi_pulse_reps,
         num_steps,
@@ -489,7 +488,7 @@ def do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, step_size,  T_min, T_max):
     return 
 
 
-def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size,  T_min, T_max):
+def do_dd_xy4(nv_sig,num_xy4_reps, step_size,  T_min, T_max):
 
     #step_size = 1 # us
     shift = 100 #ns
@@ -519,7 +518,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size,  T_min, T_max):
     
     #conventional readout
     num_reps = 2e3
-    num_runs= 150
+    num_runs= 3#150
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -531,7 +530,6 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size,  T_min, T_max):
 
     dynamical_decoupling_xy4.main(
         nv_sig,
-        apd_indices,
         precession_time_range,
         num_xy4_reps,
         num_steps,
@@ -542,7 +540,7 @@ def do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size,  T_min, T_max):
     )
     return 
 
-def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
+def do_dd_xy4_revivals(nv_sig, num_xy4_reps):
 
     revival_time= nv_sig['t2_revival_time']
     num_revivals = 5
@@ -588,7 +586,6 @@ def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
 
     dynamical_decoupling_xy4.main(
         nv_sig,
-        apd_indices,
         precession_time_range,
         num_xy4_reps,
         num_steps,
@@ -599,7 +596,7 @@ def do_dd_xy4_revivals(nv_sig, apd_indices, num_xy4_reps):
     )
     return 
 
-def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
+def do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max):
 
     #step_size = 1 # us
     shift = 100 #ns
@@ -629,7 +626,7 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
     
     #conventional readout
     num_reps = 2e3
-    num_runs= 150
+    num_runs= 2#150
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -641,7 +638,6 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
 
     dynamical_decoupling_xy8.main(
         nv_sig,
-        apd_indices,
         precession_time_range,
         num_xy8_reps,
         num_steps,
@@ -651,14 +647,14 @@ def do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max):
     )
     return 
 
-def do_relaxation(nv_sig, apd_indices, ):
+def do_relaxation(nv_sig ):
     min_tau = 0
     max_tau_omega = 200#10e6# 20e6
-    max_tau_gamma = 10e6
+    max_tau_gamma = 10e3
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 2e3
-    num_runs = 20#0
+    num_runs = 2#0#0
     
     if True:
      t1_exp_array = numpy.array(
@@ -713,7 +709,6 @@ def do_relaxation(nv_sig, apd_indices, ):
 
     t1_dq_main.main(
             nv_sig,
-            apd_indices,
             t1_exp_array,
             num_runs,
             composite_pulses=False,
@@ -1028,10 +1023,11 @@ if __name__ == "__main__":
     nv_sig_1["expected_count_rate"] = 21
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
-    nv_sig_1["resonance_LOW"]= 2.7813 
+    nv_sig_1["resonance_LOW"]= 2.7813 - 0.0005
     nv_sig_1["rabi_LOW"]= 129.5
     nv_sig_1["resonance_HIGH"]= 2.9591 
     nv_sig_1["rabi_HIGH"]=129.5
+    nv_sig_1["uwave_power_HIGH"]= 10
     
     
     
@@ -1092,10 +1088,10 @@ if __name__ == "__main__":
              
         # do_optimize_magnet_angle(nv_sig)
         
-        #do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
+        # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 200])
         
@@ -1103,13 +1099,13 @@ if __name__ == "__main__":
         
             
         #do_rabi_srt(nv_sig,   States.HIGH, States.ZERO)
-        for d in [30]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
-            do_rabi_srt(nv_sig_copy,   States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
+        # for d in [30]:
+        #     nv_sig_copy = copy.deepcopy(nv_sig)
+        #     nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
+            # do_rabi_srt(nv_sig_copy,   States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
         # for d in [0, 8, 16, 24]:
-        # do_rabi_srt_pop(nv_sig,  0, 51, uwave_time_range=[0, 500])
-        # do_rabi_srt_pop(nv_sig,  24, 201, uwave_time_range=[0, 2000])
+        # do_rabi_srt_pop(nv_sig,  24, 31, uwave_time_range=[0, 2000])
+        # do_rabi_srt_pop(nv_sig,  30, 41, uwave_time_range=[0, 2500])
 
         # do_ramsey(nv_sig, nv_sig, 0)
         
@@ -1125,20 +1121,20 @@ if __name__ == "__main__":
         
         
         # pi_pulse_reps = 4  
-        step_size = 25 #us
-        T_min = 0 #us
-        T_max = 500 #us      
-        # for n in [8]:
-          # do_dd_cpmg(nv_sig, apd_indices, n, step_size, T_min, T_max)
-        # do_relaxation(nv_sig, apd_indices)  # gamma and omega
+        # step_size = 25 #us
+        # T_min = 0 #us
+        # T_max = 50#500 #us      
+        # # for n in [8]:
+        # #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
+        # do_relaxation(nv_sig)  # gamma and omega
         
         # num_xy4_reps = 2
-        # do_dd_xy4(nv_sig, apd_indices, num_xy4_reps, step_size, T_min, T_max)
+        # do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
         # num_xy8_reps = 1
-        # do_dd_xy8(nv_sig, apd_indices, num_xy8_reps, step_size,  T_min, T_max)
+        # do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max)
         
         # pi_pulse_rep = 1
-        # do_dd_cpmg(nv_sig, apd_indices, pi_pulse_reps, T=None)
+        # do_dd_cpmg(nv_sig, pi_pulse_reps, T=None)
         
         ################## 
         

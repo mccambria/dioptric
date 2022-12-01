@@ -27,15 +27,13 @@ def get_seq(pulse_streamer, config, args):
     tau_shrt, polarization_time,   \
             gate_time, pi_pulse_low, pi_pulse_high, tau_long = durations
 
-    # Get the APD indices
-    apd_index = args[6]
     
     # Specify the initial and readout states
-    init_state_value = args[7]
-    read_state_value = args[8]
+    init_state_value = args[6]
+    read_state_value = args[7]
     
-    laser_name = args[9]
-    laser_power = args[10]
+    laser_name = args[8]
+    laser_power = args[9]
     
     
     # time of illumination during which signal readout occurs
@@ -48,15 +46,15 @@ def get_seq(pulse_streamer, config, args):
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     
     aom_delay_time = config['Optics'][laser_name]['delay']
-    low_sig_gen_name = config['Microwaves']['sig_gen_LOW']
-    high_sig_gen_name = config['Microwaves']['sig_gen_HIGH']
+    low_sig_gen_name = config['Servers']['sig_gen_LOW']
+    high_sig_gen_name = config['Servers']['sig_gen_HIGH']
     
     rf_low_delay = config['Microwaves'][low_sig_gen_name]['delay']
     rf_high_delay = config['Microwaves'][high_sig_gen_name]['delay']
     
     
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    pulser_wiring = config['Wiring']['PulseGen']
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate']
     low_sig_gen_gate_chan_name = 'do_{}_gate'.format(low_sig_gen_name)
     pulser_do_sig_gen_low_gate = pulser_wiring[low_sig_gen_gate_chan_name]
     high_sig_gen_gate_chan_name = 'do_{}_gate'.format(high_sig_gen_name)
@@ -206,8 +204,8 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    tool_belt.set_feedthroughs_to_false(config)
+    # tool_belt.set_feedthroughs_to_false(config)
     
-    seq_args = [0, 1000.0, 350, 59, 53, 2000, 1, 3, 3, 'integrated_520', None]
+    seq_args = [0, 1000.0, 350, 59, 53, 2000,  3, 3, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

@@ -39,6 +39,11 @@ class States(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
+    
+
+class ControlStyle(Enum):
+    STEP = auto()
+    STREAM = auto()
 
 
 # Normalization style for comparing experimental data to reference data
@@ -890,6 +895,20 @@ def get_pi_on_2_pulse_dur(rabi_period):
     return round(rabi_period / 4)
 
 
+def iq_comps(phase, amp):
+    '''
+    Given the phase and amplitude of the IQ vector, calculate the I (real) and 
+    Q (imaginary) components
+    '''
+    if type(phase) is list:
+        ret_vals = []
+        for val in phase:
+            ret_vals.append(np.round(amp * np.exp((0 + 1j) * val), 5))
+        return (np.real(ret_vals).tolist(), np.imag(ret_vals).tolist())
+    else:
+        ret_val = np.round(amp * np.exp((0 + 1j) * phase), 5)
+        return (np.real(ret_val), np.imag(ret_val))
+    
 def lorentzian(x, x0, A, L, offset):
 
     """Calculates the value of a lorentzian for the given input and parameters
@@ -1143,7 +1162,7 @@ def get_pos_xy_server(cxn):
 
 def get_pos_xy_server_name(cxn):
     return get_registry_entry(
-        cxn, "pos_xy_server", ["", "Config", "Positioning"]
+        cxn, "pos_xy_server", ["", "Config", "Servers"]
     )
 
 
@@ -1160,7 +1179,7 @@ def get_pos_z_server(cxn):
 
 def get_pos_z_server_name(cxn):
     return get_registry_entry(
-        cxn, "pos_z_server", ["", "Config", "Positioning"]
+        cxn, "pos_z_server", ["", "Config", "Servers"]
     )
 
 
@@ -1177,7 +1196,7 @@ def get_pos_xyz_server(cxn):
 
 def get_pos_xyz_server_name(cxn):
     return get_registry_entry(
-        cxn, "pos_xyz_server", ["", "Config", "Positioning"]
+        cxn, "pos_xyz_server", ["", "Config", "Servers"]
     )
 
 
@@ -1193,7 +1212,7 @@ def get_pulse_gen_server(cxn):
     pulsegen_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "pulse_gen_server", ["", "Config", "PulseGeneration"]
+            cxn, "pulse_gen_server", ["", "Config", "Servers"]
         ),
     )
 
@@ -1203,6 +1222,22 @@ def get_pulse_gen_server(cxn):
     return pulsegen_server_return
 
 
+def get_arb_wave_gen_server(cxn):
+    """
+    Talk to the registry to get the arb wave gen server for this setup, such as opx vs keysight
+    """
+    pulsegen_server_return = getattr(
+        cxn,
+        get_registry_entry(
+            cxn, "arb_wave_gen_server", ["", "Config", "Servers"]
+        ),
+    )
+
+    if pulsegen_server_return == "":
+        raise RuntimeError
+
+    return pulsegen_server_return
+
 def get_counter_server(cxn):
     """
     Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
@@ -1210,7 +1245,7 @@ def get_counter_server(cxn):
     counter_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "counter_server", ["", "Config", "PhotonCollection"]
+            cxn, "counter_server", ["", "Config", "Servers"]
         ),
     )
     if counter_server_return == "":
@@ -1226,7 +1261,7 @@ def get_tagger_server(cxn):
     tagger_server_return = getattr(
         cxn,
         get_registry_entry(
-            cxn, "tagger_server", ["", "Config", "PhotonCollection"]
+            cxn, "tagger_server", ["", "Config", "Servers"]
         ),
     )
     if tagger_server_return == "":
@@ -1243,7 +1278,7 @@ def get_temp_controller(cxn):
     return getattr(
         cxn,
         get_registry_entry(
-            cxn, "temp_controller", ["", "Config", "Temperature"]
+            cxn, "temp_controller", ["", "Config", "Servers"]
         ),
     )
 
@@ -1255,7 +1290,7 @@ def get_temp_monitor(cxn):
     # be used directly
     return getattr(
         cxn,
-        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Temperature"]),
+        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Servers"]),
     )
 
 
@@ -1276,7 +1311,7 @@ def get_signal_generator_name(cxn, state):
 
 def get_sig_gen_name(cxn, state):
     return get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Servers"]
     )
 
 
@@ -1291,17 +1326,32 @@ def get_sig_gen_cxn(cxn, state):
     return sig_gen_cxn
 
 
-def get_movement_style():
+def get_xy_control_style():
     """
-    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    Talk to the registry to get the xy control type for this setup
     """
-    movement_style_return = get_registry_entry_no_cxn(
-        "movement_style", ["", "Config", "Positioning"]
+    xy_control_style_return = get_registry_entry_no_cxn(
+        "xy_control_style", ["", "Config", "Positioning"]
     )
-    if movement_style_return == "":
+    xy_control_style_return = eval(xy_control_style_return)
+    
+    if xy_control_style_return == "":
         raise RuntimeError
 
-    return movement_style_return
+    return xy_control_style_return
+
+def get_z_control_style():
+    """
+    Talk to the registry to get the z control type for this setup
+    """
+    z_control_style_return = get_registry_entry_no_cxn(
+        "z_control_style", ["", "Config", "Positioning"]
+    )
+    z_control_style_return = eval(z_control_style_return)
+    if z_control_style_return == "":
+        raise RuntimeError
+
+    return z_control_style_return
 
 
 def get_apd_gate_channel(cxn, apd_index):

@@ -18,6 +18,7 @@ from scipy.optimize import curve_fit
 import time
 import copy
 import labrad
+from utils.tool_belt import ControlStyle
 
 
 # endregion
@@ -440,19 +441,19 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
 
 def main(nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False):
-    movement_type = tool_belt.get_movement_style()
+    control_style = tool_belt.get_xy_control_style()
 
     with labrad.connect() as cxn:
-        if movement_type == "DISCRETE":
-            main_with_cxn_discrete(
+        if control_style == ControlStyle.STEP:
+            main_with_cxn_step(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
-        elif movement_type == "CONTINUOUS":
-            main_with_cxn_continuous(
+        elif control_style == ControlStyle.STREAM:
+            main_with_cxn_stream(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
         else:
-            print("optimization style not DISCRETE or CONTINOUS. check config")
+            print("optimization style not STREAM or STEP. check config")
 
 
 def main_with_cxn(
@@ -463,19 +464,19 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
 ):
-    movement_type = tool_belt.get_movement_style()
-    if movement_type == "DISCRETE":
-        main_with_cxn_discrete(
+    control_style = tool_belt.get_xy_control_style()
+    if control_style == ControlStyle.STEP:
+        main_with_cxn_step(
             cxn, nv_sig, set_to_opti_coords, save_data, plot_data
         )
-    elif movement_type == "CONTINUOUS":
-        main_with_cxn_continuous(
+    elif control_style == ControlStyle.STREAM:
+        main_with_cxn_stream(
             cxn, nv_sig, set_to_opti_coords, save_data, plot_data
         )
     else:
-        print("optimization style not DISCRETE or CONTINOUS. check config")
+        print("optimization style not STREAM or STEP. check config")
 
-def main_with_cxn_continuous(
+def main_with_cxn_stream(
     cxn,
     nv_sig,
     set_to_opti_coords=True,
@@ -754,7 +755,7 @@ def main_with_cxn_continuous(
     return opti_coords, opti_count_rate
 
 
-def optimize_on_axis_discrete(
+def optimize_on_axis_step(
     cxn, nv_sig, axis_ind, config, fig=None
 ):
 
@@ -874,7 +875,7 @@ def optimize_on_axis_discrete(
 # %% Main
 
 
-def main_with_cxn_discrete(
+def main_with_cxn_step(
     cxn,
     nv_sig,
     set_to_opti_coords=True,
@@ -973,19 +974,19 @@ def main_with_cxn_discrete(
         else:
             for axis_ind in range(2):
                 # print(axis_ind)
-                ret_vals = optimize_on_axis_discrete(
+                ret_vals = optimize_on_axis_step(
                     cxn, adjusted_nv_sig, axis_ind, config, fig
                 )
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
-        # ret_vals = optimize_on_axis_discrete(
+        # ret_vals = optimize_on_axis_step(
         #     cxn, adjusted_nv_sig, 1, config, fig
         # )
         # opti_coords.append(ret_vals[0])
         # scan_vals_by_axis.append(ret_vals[1])
         # counts_by_axis.append(ret_vals[2])
-        # ret_vals = optimize_on_axis_discrete(
+        # ret_vals = optimize_on_axis_step(
         #     cxn, adjusted_nv_sig, 0, config, fig
         # )
         # opti_coords.insert(0, ret_vals[0])
@@ -1008,7 +1009,7 @@ def main_with_cxn_discrete(
             adjusted_nv_sig_z["coords"] = adjusted_coords
         axis_ind = 2
         # print(axis_ind)
-        ret_vals = optimize_on_axis_discrete(
+        ret_vals = optimize_on_axis_step(
             cxn, adjusted_nv_sig_z, axis_ind, config, fig
         )
         opti_coords.append(ret_vals[0])
