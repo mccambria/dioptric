@@ -169,7 +169,9 @@ def get_data_points(skip_lambda=None):
 
 def calc_zfs_from_compiled_data():
 
-    data_points = get_data_points(override_skips=True)
+    skip_lambda = lambda point: point["Sample"] != "15micro"
+
+    data_points = get_data_points(skip_lambda)
     zfs_list = []
     zfs_err_list = []
     for el in data_points:
@@ -611,8 +613,8 @@ def main():
     guess_params = [
         2.87771,
         -8e-2,
-        -4e-1,
-        # 65,
+        # -4e-1,
+        65,
         # 165,
         # 6.5,
     ]
@@ -622,7 +624,7 @@ def main():
         fit_func,
         temp_list,
         zfs_list,
-        # sigma=zfs_err_list,
+        sigma=zfs_err_list,
         absolute_sigma=True,
         p0=guess_params,
     )
@@ -803,16 +805,16 @@ def main():
         ax.set_ylim(*y_range)
     kpl.tight_layout(fig)
 
-    fig, ax = plt.subplots()
-    chen_proposed_diff = lambda temp: sub_room_zfs_from_temp(temp) - cambria_lambda(temp)
-    kpl.plot_line(
-        ax,
-        temp_linspace,
-        1000 * chen_proposed_diff(temp_linspace)
-    )
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-    ax.set_ylabel("Chen - proposed (MHz)")
-    kpl.tight_layout(fig)
+    # fig, ax = plt.subplots()
+    # chen_proposed_diff = lambda temp: sub_room_zfs_from_temp(temp) - cambria_lambda(temp)
+    # kpl.plot_line(
+    #     ax,
+    #     temp_linspace,
+    #     1000 * chen_proposed_diff(temp_linspace)
+    # )
+    # ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    # ax.set_ylabel("Chen - proposed (MHz)")
+    # kpl.tight_layout(fig)
 
 
 # endregion
@@ -822,10 +824,10 @@ if __name__ == "__main__":
     # print(cambria_fixed(15))
     # sys.exit()
 
-    # calc_zfs_from_compiled_data()
+    calc_zfs_from_compiled_data()
 
-    kpl.init_kplotlib()
+    # kpl.init_kplotlib()
 
-    main()
+    # main()
 
-    plt.show(block=True)
+    # plt.show(block=True)

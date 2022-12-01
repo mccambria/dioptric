@@ -48,7 +48,7 @@ def get_seq(pulse_streamer, config, args):
     
 
     # Get the APD indices
-    pi_pulse_reps, apd_index, state, laser_name, laser_power = args[6:12]
+    pi_pulse_reps, state, laser_name, laser_power = args[6:11]
     state = States(state)
         
     # time of illumination during which signal readout occurs
@@ -65,7 +65,7 @@ def get_seq(pulse_streamer, config, args):
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
     
     laser_delay_time = config['Optics'][laser_name]['delay']
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen_name = config['Servers']['sig_gen_{}'.format(state.name)]
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     iq_delay_time = config['Microwaves']['iq_delay']
     
@@ -81,8 +81,8 @@ def get_seq(pulse_streamer, config, args):
     half_tau_long_st =int(tau_long/2)
     half_tau_long_en = int(tau_long -  half_tau_long_st)
     
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    pulser_wiring = config['Wiring']['PulseGen']
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate']
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']

@@ -155,7 +155,38 @@ class SigGenStanSg394(LabradServer, VectorSigGen):
         cmd = "MODL 1"
         self.sig_gen.write(cmd)
         # logging.info(cmd)
+        
+    @setting(8, deviation='v[]')
+    def load_fm(self, c, deviation):
+        """
+        Set up frequency modulation using a nexternal analog source
+        Parameters
+        ----------
+        deviation : float
+            The deviation ofthe frequency, in MHz. Max value is 6 MHz.
 
+        Returns
+        -------
+        None.
+
+        """
+        # logging.info("test")
+        
+        # FM is type 1
+        self.sig_gen.write('TYPE 1')
+        # STYP 1 is analog modulation
+        self.sig_gen.write('STYP 0')
+        # external is 5
+        self.sig_gen.write('MFNC 5')
+        #set the rate? For external this is 100 kHz
+        # self.sig_gen.write('RATE 100 kHz')
+        #set the deviation
+        cmd = 'FDEV {} MHz'.format(deviation)
+        self.sig_gen.write(cmd)
+        # Turn on modulation
+        cmd = 'MODL 1'
+        self.sig_gen.write(cmd)
+        
     @setting(6)
     def reset(self, c):
         self.sig_gen.write("FDEV 0")

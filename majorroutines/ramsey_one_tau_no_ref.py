@@ -33,11 +33,7 @@ from random import shuffle
 import labrad
 from utils.tool_belt import States
 from scipy.optimize import curve_fit
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 
 
 

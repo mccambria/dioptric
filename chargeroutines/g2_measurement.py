@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import time
 import json
 import labrad
-from utils.tool_belt import Mod_types
+from utils.tool_belt import ModTypes
 
 # %% Functions
 

@@ -18,6 +18,7 @@ from scipy.optimize import curve_fit
 import time
 import copy
 import labrad
+from utils.tool_belt import ControlStyle
 
 
 # endregion
@@ -87,7 +88,7 @@ def read_timed_counts(cxn, num_steps, period):
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        new_samples = counter_server.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             counts.extend(new_samples)
@@ -440,22 +441,42 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
 
 def main(nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False):
-    optimization_type = tool_belt.get_optimization_style()
+    control_style = tool_belt.get_xy_control_style()
 
     with labrad.connect() as cxn:
-        if optimization_type == "DISCRETE":
-            main_with_cxn_discrete(
+        if control_style == ControlStyle.STEP:
+            main_with_cxn_step(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
-        elif optimization_type == "CONTINUOUS":
-            main_with_cxn(
+        elif control_style == ControlStyle.STREAM:
+            main_with_cxn_stream(
                 cxn, nv_sig, set_to_opti_coords, save_data, plot_data
             )
         else:
-            print("optimization style not DISCRETE or CONTINOUS. check config")
+            print("optimization style not STREAM or STEP. check config")
 
 
 def main_with_cxn(
+    cxn,
+    nv_sig,
+    set_to_opti_coords=True,
+    save_data=False,
+    plot_data=False,
+    set_drift=True,
+):
+    control_style = tool_belt.get_xy_control_style()
+    if control_style == ControlStyle.STEP:
+        main_with_cxn_step(
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data
+        )
+    elif control_style == ControlStyle.STREAM:
+        main_with_cxn_stream(
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data
+        )
+    else:
+        print("optimization style not STREAM or STEP. check config")
+
+def main_with_cxn_stream(
     cxn,
     nv_sig,
     set_to_opti_coords=True,
@@ -734,7 +755,7 @@ def main_with_cxn(
     return opti_coords, opti_count_rate
 
 
-def optimize_on_axis_discrete(
+def optimize_on_axis_step(
     cxn, nv_sig, axis_ind, config, fig=None
 ):
 
@@ -854,7 +875,7 @@ def optimize_on_axis_discrete(
 # %% Main
 
 
-def main_with_cxn_discrete(
+def main_with_cxn_step(
     cxn,
     nv_sig,
     set_to_opti_coords=True,
@@ -953,19 +974,19 @@ def main_with_cxn_discrete(
         else:
             for axis_ind in range(2):
                 # print(axis_ind)
-                ret_vals = optimize_on_axis_discrete(
+                ret_vals = optimize_on_axis_step(
                     cxn, adjusted_nv_sig, axis_ind, config, fig
                 )
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
-        # ret_vals = optimize_on_axis_discrete(
+        # ret_vals = optimize_on_axis_step(
         #     cxn, adjusted_nv_sig, 1, config, fig
         # )
         # opti_coords.append(ret_vals[0])
         # scan_vals_by_axis.append(ret_vals[1])
         # counts_by_axis.append(ret_vals[2])
-        # ret_vals = optimize_on_axis_discrete(
+        # ret_vals = optimize_on_axis_step(
         #     cxn, adjusted_nv_sig, 0, config, fig
         # )
         # opti_coords.insert(0, ret_vals[0])
@@ -988,7 +1009,7 @@ def main_with_cxn_discrete(
             adjusted_nv_sig_z["coords"] = adjusted_coords
         axis_ind = 2
         # print(axis_ind)
-        ret_vals = optimize_on_axis_discrete(
+        ret_vals = optimize_on_axis_step(
             cxn, adjusted_nv_sig_z, axis_ind, config, fig
         )
         opti_coords.append(ret_vals[0])
@@ -1074,8 +1095,9 @@ def main_with_cxn_discrete(
             prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
         if opti_succeeded or opti_unnecessary:
-            print("Optimized coordinates: ")
-            print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
+            if opti_succeeded:
+                print("Optimized coordinates: ")
+                print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*drift))
         else:

@@ -168,7 +168,6 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
 
 def main(
     nv_sig,
-    apd_indices,
     detuning,
     precession_dur_range,
     num_steps,
@@ -176,14 +175,14 @@ def main(
     num_runs,
     state=States.LOW,
     opti_nv_sig = None,
-    one_precession_time = False
+    one_precession_time = False,
+    do_fm = False
 ):
 
     with labrad.connect() as cxn:
         angle = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
     detuning,
             precession_dur_range,
             num_steps,
@@ -191,7 +190,8 @@ def main(
             num_runs,
             state,
             opti_nv_sig,
-            one_precession_time
+            one_precession_time,
+            do_fm
         )
         return angle
 
@@ -199,7 +199,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     detuning,
     precession_time_range,
     num_steps,
@@ -208,6 +207,7 @@ def main_with_cxn(
     state=States.LOW,
     opti_nv_sig = None,
     one_precession_time = False,
+    do_fm = False
 ):
     
     counter_server = tool_belt.get_counter_server(cxn)
@@ -238,6 +238,13 @@ def main_with_cxn(
     seq_file_name = "spin_echo.py"
     if False:
         seq_file_name = "ramsey.py"
+        
+    if do_fm == False:
+        seq_file_name = "spin_echo.py"
+        deviation = 0
+    else:
+        seq_file_name = "spin_echo_fm_test.py"
+        deviation = 6
 
     # %% Create the array of relaxation times
 
@@ -300,7 +307,6 @@ def main_with_cxn(
         uwave_pi_pulse,
         uwave_pi_on_2_pulse,
         max_precession_time/2,
-        apd_indices[0],
         state.value,
         laser_name,
         laser_power,
@@ -358,18 +364,20 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq_detuned)
         sig_gen_cxn.set_amp(uwave_power)
+        if do_fm:
+            sig_gen_cxn.load_fm(deviation)
         sig_gen_cxn.uwave_on()
 
         # Set up the laser
@@ -377,7 +385,7 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -416,7 +424,6 @@ def main_with_cxn(
                 uwave_pi_pulse,
                 uwave_pi_on_2_pulse,
                 taus[tau_ind_second]/2,
-                apd_indices[0],
                 state.value,
                 laser_name,
                 laser_power,
@@ -501,6 +508,7 @@ def main_with_cxn(
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             'detuning': detuning,
             'detuning-units': 'MHz',
+            "do_fm": do_fm,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq_detuned,
@@ -579,6 +587,7 @@ def main_with_cxn(
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         'detuning': detuning,
         'detuning-units': 'MHz',
+        "do_fm": do_fm,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq_detuned,

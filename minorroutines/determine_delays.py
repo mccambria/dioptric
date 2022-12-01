@@ -55,19 +55,19 @@ def measure_delay(
     sig_counts = numpy.empty(num_steps)
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
-    
+
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
 
     tool_belt.reset_cfm(cxn)
-        
+
     if 'charge_readout_laser_filter' in nv_sig:
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
-        
+
 
     # tool_belt.init_safe_stop()
-    
+
     n= 0
     for tau_ind in tau_ind_list:
         st = time.time()
@@ -80,9 +80,13 @@ def measure_delay(
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
             sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
+
+            sig_gen_cxn.load_fm(10)
+
             sig_gen_cxn.uwave_on()
+
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
-            
+
         if seq_file == "iq_delay.py":
             delayed_element = 'iq'
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
@@ -95,11 +99,11 @@ def measure_delay(
 
         counter_server.start_tag_stream(apd_indices)
         ###########
-    
+
         # Break out of the while if the user says stop
         # if tool_belt.safe_stop():
         #     break
-        
+
         tau = taus[tau_ind]
         print('Index #{}/{}: {} ns'.format(n, num_steps-1,tau))
         n+=1
@@ -109,7 +113,7 @@ def measure_delay(
             readout = 5e3#,nv_sig["imaging_readout_dur"]
             seq_args = [
                 tau,
-                max_tau, 
+                max_tau,
                 readout,
                 apd_indices[0],
                 laser_name,
@@ -176,7 +180,7 @@ def measure_delay(
         #     print("Error!")
         ref_counts[tau_ind] = sample_counts[0] # sum(sample_counts[0::2])
         sig_counts[tau_ind] = sample_counts[1] # sum(sample_counts[1::2])
-        
+
         print('run time:',time.time()-st)
 
     counter_server.stop_tag_stream()
@@ -333,15 +337,22 @@ def iq_delay(
     The first readout is a reference, the second is a signal. The iq modulation 
     initially is at 0 degrees, and the second pulse changes it to pi/2.
     We should see a normalized signal consistent with the full pi pulse contrast. 
-    If there is a delay we'll get this sequence
+    If there is a positive delay we'll get this sequence
     
-    iq    __|-|_________________|-|______________
+    iq    __|-|______________|-|______________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
     
     and the normalized signal will be higher than the full pi pulse contrast.
-    We need to find the minimum passed delay that recovers the full contrast.
+    The signal will reduce in contrast as the iq trigger passes over the pi pulse.
+    The correct delay is when the counts return to their full contrast. 
+    
+    |      __
+    |     /  \
+    |____/    \___
+    -----------------
+              * This is the value of the correct delay  
     (This function assumes the laser delay and uwave delay are properly set!)
     """
 
@@ -369,73 +380,153 @@ if __name__ == "__main__":
 
     # Carr parameters
     
-    with labrad.connect() as cxn:
-        apd_indices = tool_belt.get_registry_entry(cxn, "apd_indices", ["","Config"])
-        apd_indices = apd_indices.astype(list).tolist()
-        
+    # Rabi parameters
+    
+    apd_indices = [1]
+    sample_name = 'siena'
+    green_power = 1
+    nd_green = 'ND_1.1'
+    green_laser = "integrated_520"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
 
-    sample_name = "johnson"
-    green_laser = "cobolt_515"
 
     nv_sig = {
-        'coords': [84.308, 36.44, 77.24], 'name': '{}-search'.format(sample_name),
-        'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 48,
-        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
-        "imaging_readout_dur": 10e6,
-        "spin_laser": green_laser,
-        "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 1e3,
-        "spin_readout_dur": 350,
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_dur": 1e6,
-        "nv-_reionization_laser_filter": "nd_0",
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e6,
-        "nv-_prep_laser_filter": "nd_0",
-        "initialize_laser": green_laser,
-        "initialize_dur": 1e4,
-        'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8091, 'rabi_LOW': 193.3, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9287, 'rabi_HIGH': 148.6, 'uwave_power_HIGH': 16.5,
-        }
-    """
-    # laser_delay
-    num_reps = int(2e6)
-    delay_range = [50, 500]
-    num_steps = 21
+            "coords":[-0.222, 0.027, 3.83],
+        "name": "{}-nv1_2022_10_27".format(sample_name,),
+        "disable_opt":False,
+        "ramp_voltages": False,
+        "expected_count_rate":21,
+
+
+          "spin_laser":green_laser,
+          "spin_laser_power": green_power,
+         "spin_laser_filter": nd_green,
+          "spin_readout_dur": 350,
+          "spin_pol_dur": 1000.0,
+
+          "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+         "imaging_laser_filter": nd_green,
+          "imaging_readout_dur": 1e7,
+
+         "charge_readout_laser": yellow_laser,
+          "charge_readout_laser_filter": "nd_0",
+
+
+
+        "collection_filter": "715_sp+630_lp", # NV band only
+        "magnet_angle": 68,
+        "resonance_LOW":2.7813-0.01,
+        "rabi_LOW":129.5,
+        "uwave_power_LOW": 13.5,
+        "resonance_HIGH":2.9591-0.01,
+        "rabi_HIGH":129.5,
+        "uwave_power_HIGH": 16.5,
+    }
+
+    apd_indices = [1]
+
+    # Hahn parameters
+    # apd_indices = [1]
+    # sample_name = 'johnson'
+    # green_laser = "integrated_520"
+    # yellow_laser = "laserglow_589"
+    # red_laser = "cobolt_638"
+
+    # nv_sig = { 'coords': [-0.156, 0.030, 5.7], 'name': '{}-nv0_2022_04_06'.format(sample_name),
+    #         'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 13,
+
+    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+    #         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+    #         'imaging_laser': green_laser, 'imaging_readout_dur': 1e4,
+    #         'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+    #         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
+
+    #         'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+    #         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+    #         'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
+
+    #         'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
+    #         'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
+
+    #         'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
+    #         # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
+    #         "initialize_laser": green_laser, "initialize_dur": 1e4,
+    #         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
+    #         "charge_readout_laser": yellow_laser, "charge_readout_dur": 32e6, "charge_readout_laser_power": 1.0,
+
+
+    #         "collection_filter": "630_lp", 'magnet_angle': None,
+    #         'resonance_LOW': 2.8000, 'rabi_LOW': 133.6, 'uwave_power_LOW': 16.5,
+    #         'resonance_HIGH': 2.9416, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
+
+
+
+    # laser delay
+    num_steps = 101
+    num_reps = int(5e4)
+    # laser_name = 'laserglow_532'
+    delay_range = [0, 600]
+    # num_reps = int(1e5)
+    # laser_name = 'laserglow_589'
+    # delay_range = [800, 1700]
+    # num_reps = int(1e4)
+    laser_name = 'integrated_520'
+    # laser_power = 0.65
+    # laser_name = 'cobolt_638'
+    laser_power = None
+    # laser_name = 'laserglow_589'
+    # laser_power = 0.6
+    # delay_range = [0,1e3]
+    # with labrad.connect() as cxn:
+    #     aom_delay(cxn, nv_sig, apd_indices,
+    #               delay_range, num_steps, num_reps, laser_name, laser_power)
+
+    # uwave_delay
+    num_reps = int(1e5)
+    delay_range = [-300, 200]
+    num_steps = 251
     # bnc 835
     # state = States.LOW
     #  sg394
-    state = States.HIGH
+    # state = States.HIGH
     with labrad.connect() as cxn:
-        aom_delay(
+        # iq_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
+        # uwave_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     States.HIGH,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
+        uwave_delay(
             cxn,
             nv_sig,
             apd_indices,
+            States.LOW,
             delay_range,
             num_steps,
             num_reps,
             green_laser,
             1,
         )
-    """
-    # uwave delay
-    state = States.HIGH
-    delay_range = [-500, 100]
-    num_steps = 201
-    num_reps = int(3e5)
-    with labrad.connect() as cxn:
-        uwave_delay(cxn,
-            nv_sig, 
-            apd_indices, 
-            state,
-            delay_range,
-            num_steps, 
-            num_reps,
-            )
-    
-    
-    
-    
-    
+        # fm_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )

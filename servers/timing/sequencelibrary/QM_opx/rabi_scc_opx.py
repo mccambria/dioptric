@@ -15,7 +15,6 @@ import utils.tool_belt as tool_belt
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
-from utils.tool_belt import Mod_types
 from opx_configuration_file import *
 from utils.tool_belt import States
 

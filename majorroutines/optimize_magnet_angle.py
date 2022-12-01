@@ -109,7 +109,7 @@ def AbsCosNoOff(angle, amp, phase):
 # %% Main
 
 
-def main(nv_sig, apd_indices, angle_range, num_angle_steps,
+def main(nv_sig, angle_range, num_angle_steps,
          freq_center, freq_range,
          num_freq_steps, num_freq_reps, num_freq_runs,
          uwave_power, uwave_pulse_dur=None):
@@ -118,12 +118,12 @@ def main(nv_sig, apd_indices, angle_range, num_angle_steps,
     """
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
+        main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
                       freq_center, freq_range,
                       num_freq_steps, num_freq_reps, num_freq_runs,
                       uwave_power, uwave_pulse_dur)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
+def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
                   freq_center, freq_range,
                   num_freq_steps, num_freq_reps, num_freq_runs,
                   uwave_power, uwave_pulse_dur):
@@ -151,12 +151,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 
         angle_resonances = (None, None)  # Default to Nones
         if uwave_pulse_dur is not None:
-            angle_resonances = pesr(cxn, nv_sig_copy, apd_indices,
+            angle_resonances = pesr(cxn, nv_sig_copy,
                                     freq_center, freq_range, num_freq_steps,
                                     num_freq_reps, num_freq_runs,
                                     uwave_power, uwave_pulse_dur)
         else:
-            angle_resonances = cwesr(cxn, nv_sig_copy, apd_indices,
+            angle_resonances = cwesr(cxn, nv_sig_copy,
                                      freq_center, freq_range, num_freq_steps,
                                      num_freq_runs, uwave_power)
         resonances[ind, :] = angle_resonances
@@ -187,7 +187,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
     # Set up the raw data dictionary
     raw_data = {'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'apd_indices': apd_indices,
                 'angle_range': angle_range,
                 'angle_range-units': 'deg',
                 'num_angle_steps': num_angle_steps,
