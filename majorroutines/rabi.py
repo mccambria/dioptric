@@ -161,7 +161,7 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, state,
+def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          iq_mod_on = False,
          opti_nv_sig = None,
@@ -169,7 +169,7 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
-                                         apd_indices, uwave_time_range, state,
+                                         uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
                                          iq_mod_on,
                                          opti_nv_sig)
@@ -180,14 +180,14 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
             return rabi_per
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   iq_mod_on = False,
                   opti_nv_sig = None):
 
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    
+
     tool_belt.reset_cfm(cxn)
 
     # %% Get the starting time of the function, to be used to calculate run time
@@ -220,7 +220,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     num_reps = int(num_reps)
     # file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time, apd_indices[0],
+                readout, max_uwave_time, 
                 state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
@@ -274,12 +274,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         tool_belt.set_filter(cxn, nv_sig, "spin_laser")
@@ -302,7 +302,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #        sig_gen_cxn.uwave_on()
 
         # Load the APD
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
@@ -319,13 +319,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
             seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time, apd_indices[0],
+                        readout, max_uwave_time, 
                         state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
-            
+
             start_time = time.time()
             pulsegen_server.stream_immediate(file_name, num_reps,
                                              seq_args_string)
@@ -334,7 +334,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             sample_counts = new_counts[0]
             sig_counts[run_ind, tau_ind] = sample_counts[0]
             ref_counts[run_ind, tau_ind] = sample_counts[1]
-            
+
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
 #            start_time = run_time
@@ -414,7 +414,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
 
     # %% Plot the Rabi signal
-    
+
 
     ax = axes_pack[0]
     ax.cla()
@@ -500,8 +500,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi/2021_09'
-    file = '2021_09_20-16_49_16-johnson-nv1_2021_09_07'
+    path = 'pc_rabi/branch_master/rabi_srt/2022_11'
+    file = '2022_11_23-12_04_42-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
     # norm_avg_sig = data['norm_avg_sig']

@@ -16,11 +16,7 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import labrad
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 
 
 # %% Functions
@@ -132,7 +128,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     total_num_samples = int(run_time / period)
 
     # %% Set up the APD
-    
+
     counter_server = tool_belt.get_counter_server(cxn)
 
     counter_server.start_tag_stream(apd_indices)
@@ -178,7 +174,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     charge_initialization = (nv_minus_initialization or nv_zero_initialization)
     charge_initialization = False
     # print(charge_initialization)
-    
+
     b=0
 
     while True:
@@ -188,7 +184,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
             counter_server.start_tag_stream(apd_indices)
             pulsegen_server.stream_start(-1)
             print('restarting')
-    
+
         st = time.time()
         if tool_belt.safe_stop():
             break
@@ -215,13 +211,13 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
             # If we did charge initialization, subtract out the background
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-                
-            
+
+
             # st = time.time()
             update_line_plot(new_samples, num_read_so_far, *args)
             # print(time.time() -st)
             num_read_so_far += num_new_samples
-        
+
         # print(time.time()-st)
         # print('')
 

@@ -10,13 +10,7 @@ import numpy
 import utils.tool_belt as tool_belt
 import time
 import labrad
-
-optimization_type = tool_belt.get_optimization_style()
-if optimization_type == 'DISCRETE':
-    import majorroutines.optimize_digital as optimize
-if optimization_type == 'CONTINUOUS':
-    import majorroutines.optimize as optimize
-
+import majorroutines.optimize as optimize
 import majorroutines.image_sample as image_sample
 import matplotlib.pyplot as plt
   
@@ -52,7 +46,8 @@ def xy_scan_voltages(x_center, y_center, x_range, y_range, num_steps):
         # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
 
         # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-        x_inter = numpy.concatenate((x_positions_1d, numpy.flipud(x_positions_1d)))
+        x_inter = numpy.concatenate(
+            (x_positions_1d, numpy.flipud(x_positions_1d)))
         # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
         if y_num_steps % 2 == 0:  # Even x size
             x_postions = numpy.tile(x_inter, int(y_num_steps / 2))
@@ -67,19 +62,18 @@ def xy_scan_voltages(x_center, y_center, x_range, y_range, num_steps):
 # %% Main
     
 
-def main(nv_sig, x_range, y_range, num_steps, apd_indices,
+def main(nv_sig, x_range, y_range, num_steps,nvm_initialization,
          save_data=True, plot_data=True, 
          um_scaled=False,cbarmin=None,cbarmax=None):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
-                      y_range, num_steps, apd_indices, save_data, plot_data, 
+                      y_range, num_steps,nvm_initialization, save_data, plot_data, 
                       um_scaled,cbarmin,cbarmax)
 
     return img_array, x_voltages, y_voltages
 
-def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
-                  apd_indices, save_data=True, plot_data=True, 
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, nvm_initialization=False,save_data=True, plot_data=True, 
                   um_scaled=False,cbarmin=None,cbarmax=None):
 
     # %% Some initial setup
@@ -184,7 +178,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     update_image_figure = tool_belt.update_image_figure
     tool_belt.init_safe_stop()
     
-    counter_server.start_tag_stream(apd_indices) #move outside of sequence
+    counter_server.start_tag_stream() #move outside of sequence
     
     dx_list = []
     dy_list = []
@@ -194,10 +188,21 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     #x_positions1, y_positions1, _, _ = ret_vals
     time_start= time.time()
     opti_interval=2
-    seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
+    
+    if nvm_initialization == True:
+        init_laser_key = 'nv-_prep_laser'
+        init_laser = nv_sig[init_laser_key]
+        init_laser_power = tool_belt.set_laser_power(cxn, nv_sig, init_laser_key)
+        seq_file = 'simple_readout_two_pulse.py'
+        seq_args = [nv_sig['nv-_prep_laser_dur'], readout, init_laser, laser_name, init_laser_power,laser_power,2]
+        
+    elif nvm_initialization == False:
+        seq_file = 'simple_readout.py'
+        seq_args = [0, readout, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     print(seq_args)
-    pulsegen_server.stream_load('simple_readout.py',seq_args_string)
+    pulsegen_server.stream_load(seq_file,seq_args_string)
+    
     start_t = time.time()
     for i in range(total_num_samples): 
         

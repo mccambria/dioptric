@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Plot temperature montioring data for zfs experiments
-
 Created on November 17th, 2022
-
 @author: mccambria
 """
 

@@ -41,29 +41,26 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    if False:
-    # if norm_avg_sig_ste is not None:
-        ax.errorbar(
-            freqs,
-            norm_avg_sig,
-            yerr=norm_avg_sig_ste,
-            fmt="bo",
-            label="data",
-            ls="None",
-        )
+    fig, ax = plt.subplots()
+    if norm_avg_sig_ste is not None:
+        kpl.plot_points(ax, freqs, norm_avg_sig, yerr=norm_avg_sig_ste)
     else:
-        ax.plot(freqs, norm_avg_sig, "b", label="data")
-    ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), "r-", label="fit")
+        kpl.plot_line(ax, freqs, norm_avg_sig)
+    kpl.plot_line(
+        ax,
+        smooth_freqs,
+        fit_func(smooth_freqs, *popt),
+        color=kpl.KplColors.RED,
+    )
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
-    ax.legend(loc="lower right")
+    # ax.legend(loc="lower right")
 
     text = "\n".join(
         (
-            "Contrast = {:.3f}",
-            "Standard deviation = {:.4f} GHz",
-            "Frequency = {:.4f} GHz",
+            "A = {:.3f}",
+            r"$\sigma$ = {:.4f} GHz",
+            "f = {:.4f} GHz",
         )
     )
     if fit_func == single_gaussian_dip:
@@ -73,30 +70,11 @@ def create_fit_figure(
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
 
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(
-        0.05,
-        0.15,
-        low_text,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment="top",
-        bbox=props,
-    )
+    kpl.text(ax, 0.05, 0.05, low_text)
     if high_text is not None:
-        ax.text(
-            0.55,
-            0.15,
-            high_text,
-            transform=ax.transAxes,
-            fontsize=12,
-            verticalalignment="top",
-            bbox=props,
-        )
+        kpl.text(ax, 0.74, 0.05, high_text)
 
-    fig.canvas.draw()
-    fig.set_tight_layout(True)
-    fig.canvas.flush_events()
+    kpl.tight_layout(fig)
 
     return fig
 
@@ -117,8 +95,13 @@ def return_res_with_error(data):
     sig_counts = data["sig_counts"]
     num_runs = data["num_runs"]
     nv_sig = data["nv_sig"]
-    norm_style = nv_sig["norm_style"]
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
+    if "norm_style" in nv_sig:
+        norm_style = NormStyle[nv_sig["norm_style"]]
+    else:
+        print("nv_sig has no norm_style. Defaulting to single-valued.")
+        norm_style = NormStyle.single_valued
+
+    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
     (
         avg_ref_counts,
         avg_sig_counts,
@@ -155,7 +138,7 @@ def calculate_freqs(freq_range, freq_center, num_steps):
 
 
 def gaussian(freq, constrast, sigma, center):
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma ** 2)))
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
 
 
 def double_gaussian_dip(
@@ -260,7 +243,8 @@ def get_guess_params(
         high_freq_guess = None
 
     # low_freq_guess = 2.8620
-    # high_freq_guess = 2.8936
+    high_freq_guess = 2.8936
+    # high_freq_guess = None
 
     if low_freq_guess is None:
         return None, None
@@ -313,14 +297,14 @@ def fit_resonance(
             absolute_sigma=True,
         )
         # popt = guess_params
-        # if len(popt) == 6:
-        #     zfs = (popt[2] + popt[5]) / 2
-        #     low_res_err = np.sqrt(pcov[2,2])
-        #     hig_res_err = np.sqrt(pcov[5,5])
-        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        # else:
-        #     zfs = popt[2]
-        #     zfs_err = np.sqrt(pcov[2,2])
+        if len(popt) == 6:
+            zfs = (popt[2] + popt[5]) / 2
+            low_res_err = np.sqrt(pcov[2, 2])
+            hig_res_err = np.sqrt(pcov[5, 5])
+            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        else:
+            zfs = popt[2]
+            zfs_err = np.sqrt(pcov[2, 2])
 
         # print(zfs)
         # print(zfs_err)
@@ -345,11 +329,11 @@ def fit_resonance(
 
 def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
-    rabi_freq = rabi_period ** -1
+    rabi_freq = rabi_period**-1
 
     smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
 
-    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq ** 2)
+    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq**2)
     amp = (rabi_freq / omega) ** 2
     angle = (
         omega * 2 * np.pi * uwave_pulse_dur / 2
@@ -366,17 +350,17 @@ def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
     return smooth_freqs, rel_counts
 
 
-def process_counts(ref_counts, sig_counts, num_runs, 
-                   norm_style=NormStyle.single_valued):
+def process_counts(ref_counts, sig_counts, norm_style=NormStyle.single_valued):
+    """Extract the normalized average signal at each data point.
+    Since we sometimes don't do many runs (<10), we often will have an
+    insufficient sample size to run stats on for norm_avg_sig calculation.
+    We assume Poisson statistics instead.
     """
-    Extract the normalized average signal at each data point.
-    Assume the reference measurements are independent of the signal
-    measurements (as they should be) so we can use a single averaged
-    value for the reference. Since we sometimes don't do many runs
-    (<10), we often will have an insufficient sample size to run
-    stats on for norm_avg_sig calculation. We assume Poisson
-    statistics instead.
-    """
+
+    ref_counts = np.array(ref_counts)
+    sig_counts = np.array(sig_counts)
+
+    num_runs, num_points = ref_counts.shape
 
     # Find the averages across runs
     sig_counts_avg = np.average(sig_counts, axis=0)
@@ -384,7 +368,7 @@ def process_counts(ref_counts, sig_counts, num_runs,
     ref_counts_avg = np.average(ref_counts, axis=0)
 
     sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
-    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs)
+    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
     if norm_style == NormStyle.single_valued:
@@ -415,7 +399,6 @@ def process_counts(ref_counts, sig_counts, num_runs,
 
 def state(
     nv_sig,
-    apd_indices,
     state,
     freq_range,
     num_steps,
@@ -432,7 +415,6 @@ def state(
 
     resonance_list = main(
         nv_sig,
-        apd_indices,
         freq_center,
         freq_range,
         num_steps,
@@ -455,7 +437,6 @@ def state(
 
 def main(
     nv_sig,
-    apd_indices,
     freq_center,
     freq_range,
     num_steps,
@@ -473,7 +454,6 @@ def main(
         resonance_list = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             freq_center,
             freq_range,
             num_steps,
@@ -492,7 +472,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     freq_center,
     freq_range,
     num_steps,
@@ -508,6 +487,8 @@ def main_with_cxn(
 
     # %% Initial calculations and setup
 
+    kpl.init_kplotlib()
+    
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
@@ -531,12 +512,12 @@ def main_with_cxn(
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-    
+
     norm_style = nv_sig["norm_style"]
 
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10 ** 9)
+    readout_sec = readout / (10**9)
     if composite:
         uwave_pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
         uwave_pi_on_2_pulse = round(nv_sig["rabi_{}".format(state.name)] / 4)
@@ -547,7 +528,6 @@ def main_with_cxn(
             uwave_pi_on_2_pulse,
             1,
             1,
-            apd_indices[0],
             state.value,
             laser_name,
             laser_power,
@@ -559,7 +539,6 @@ def main_with_cxn(
             polarization_time,
             readout,
             uwave_pulse_dur,
-            apd_indices[0],
             state.value,
             laser_name,
             laser_power,
@@ -606,12 +585,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig["coords"] + np.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
@@ -632,7 +611,7 @@ def main_with_cxn(
             ret_vals = pulsegen_server.stream_load("rabi.py", seq_args_string)
 
         # Start the tagger stream
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)
@@ -755,7 +734,7 @@ def main_with_cxn(
 
     # %% Process and plot the data
 
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
+    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
     (
         avg_ref_counts,
         avg_sig_counts,
@@ -846,6 +825,7 @@ def main_with_cxn(
         fit_fig = create_fit_figure(
             freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
         )
+        
     else:
         fit_fig = None
 
@@ -915,24 +895,24 @@ if __name__ == "__main__":
     #     popt,
     # )
     # print(popt)
-    # print(pcov) 
+    # print(pcov)
 
     kpl.init_kplotlib()
     # # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2022_11_28-14_47_17-15micro-nv5_zfs_vs_t"
+    file = "2022_11_21-08_44_52-wu-nv2_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
-    ref_counts = np.array(data["ref_counts"], dtype=float)
-    sig_counts = np.array(data["sig_counts"], dtype=float)
-    num_runs = data["num_runs"]
+    ref_counts = data["ref_counts"]
+    sig_counts = data["sig_counts"]
     num_reps = data["num_reps"]
     nv_sig = data["nv_sig"]
-    norm_style = NormStyle.point_to_point
-    
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs, norm_style)
+    # norm_style = NormStyle.point_to_point
+    norm_style = NormStyle.single_valued
+
+    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
     (
         avg_ref_counts,
         avg_sig_counts,
@@ -941,7 +921,6 @@ if __name__ == "__main__":
         ste_sig_counts,
         norm_avg_sig_ste,
     ) = ret_vals
-
     fit_func, popt, pcov = fit_resonance(
         freq_range,
         freq_center,
@@ -950,9 +929,6 @@ if __name__ == "__main__":
         norm_avg_sig_ste,
         ref_counts,
     )
-
-    # # popt[2] -= np.sqrt(pcov[2, 2])
-
     create_fit_figure(
         freq_range,
         freq_center,
@@ -962,6 +938,7 @@ if __name__ == "__main__":
         popt,
         norm_avg_sig_ste=norm_avg_sig_ste,
     )
+    print(return_res_with_error(data))
 
     # plt.show(block=True)
 

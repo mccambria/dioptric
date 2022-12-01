@@ -178,7 +178,6 @@ def fit_t2_decay(data, do_plot = True):
 
 def main(
     nv_sig,
-    apd_indices,
     precession_dur_range,
     pi_pulse_reps,
     num_steps,
@@ -192,7 +191,6 @@ def main(
         angle = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             precession_dur_range,
             pi_pulse_reps,
             num_steps,
@@ -207,7 +205,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     precession_time_range,
     pi_pulse_reps,
     num_steps,
