@@ -33,7 +33,7 @@ import time
 # import numpy
 # from numpy import pi
 import utils.tool_belt as tool_belt
-from servers.outputs.interfaces.arb_wave_gen import ArbWaveGen
+from servers.outputs.interfaces.awg import AWG
 
 # root2_on_2 = numpy.sqrt(2) / 2
 # amp = 0.5  # from SRS sig gen datasheet, ( I^2 + Q^2 ) ^ (1/2) = 0.5 V for full scale input. The amp should then be 0.5 V. This relates to 1.0 Vpp from the AWG
@@ -50,7 +50,7 @@ from servers.outputs.interfaces.arb_wave_gen import ArbWaveGen
 #         return (numpy.real(ret_val), numpy.imag(ret_val))
 
 
-class AwgKeys33622A(LabradServer, ArbWaveGen):
+class AwgKeys33622A(LabradServer, AWG):
     name = "awg_KEYS_33622A"
     pc_name = socket.gethostname()
 

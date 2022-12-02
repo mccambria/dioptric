@@ -31,9 +31,10 @@ import nidaqmx.stream_writers as stream_writers
 import numpy
 import logging
 import socket
+from servers.outputs.interfaces.pos_xy_stream import PosXyStream
 
 
-class PosXyThorGvs212(LabradServer):
+class PosXyThorGvs212(LabradServer, PosXyStream):
     name = "pos_xy_THOR_gvs212"
     pc_name = socket.gethostname()
 
@@ -44,7 +45,7 @@ class PosXyThorGvs212(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,

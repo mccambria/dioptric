@@ -32,10 +32,10 @@ import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
 import time
-from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
+from servers.outputs.interfaces.sig_gen_vector import SigGenVector
 
 
-class SigGenTektTsg4104a(LabradServer, VectorSigGen):
+class SigGenTektTsg4104a(LabradServer, SigGenVector):
     name = "sig_gen_TEKT_tsg4104a"
     pc_name = socket.gethostname()
 

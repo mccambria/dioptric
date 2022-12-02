@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Interface for signal generators
+Interface for arbitrary waveform generators
 
 Created on November 29th, 2022
 
@@ -17,7 +17,7 @@ root2_on_2 = numpy.sqrt(2) / 2
 # amp = 0.5  # from SRS sig gen datasheet, ( I^2 + Q^2 ) ^ (1/2) = 0.5 V for full scale input. The amp should then be 0.5 V. This relates to 1.0 Vpp from the AWG
 
     
-class ArbWaveGen(ABC):
+class AWG(ABC):
     
 
     @setting(2, amp="v[]")
@@ -141,3 +141,4 @@ class ArbWaveGen(ABC):
         Make sure the device is in a neutral state for the next experiment
         """
         pass
+    
