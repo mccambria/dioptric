@@ -19,7 +19,7 @@ from scipy.optimize import curve_fit
 import time
 import copy
 import labrad
-from utils.tool_belt import ControlStyle
+from utils.positioning import ControlStyle
 
 
 # endregion

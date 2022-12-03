@@ -189,6 +189,7 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
     plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
+    plt.rcParams["image.cmap"] = "inferno"
 
 
 def tight_layout(fig):
@@ -260,6 +261,15 @@ def tex_escape(text):
         )
     )
     return regex.sub(lambda match: conv[match.group()], text)
+
+
+def flush_update(ax):
+    """Call this after making some change to an existing figure to have the figure
+    actually update in the window
+    """
+    fig = ax.get_figure()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
 
 # endregion
@@ -350,164 +360,68 @@ def plot_line_update(ax, x=None, y=None):
     ax.relim()
     ax.autoscale_view(scalex=False)
 
-    # Redraw the canvas and flush the changes to the backend
-    # start = time.time()
+    flush_update(ax)
+
+
+def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwargs):
+    """Same as matplotlib's imshow, but with our defaults. Returns the image object"""
+
     fig = ax.get_figure()
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    # stop = time.time()
-    # print(f"Tool time: {stop - start}")
 
+    # Get a default aspect ratio
+    if "extent" in kwargs:
+        extent = tuple(kwargs["extent"])
+        kwargs["extent"] = extent
+        if "aspect" not in kwargs:
+            height = extent[3] - extent[2]
+            width = extent[1] - extent[0]
+            aspect = height / width
+            kwargs["aspect"] = aspect
 
-def imshow(
-    imgArray,
-    imgExtent,
-    clickHandler=None,
-    title=None,
-    color_bar_label="Counts",
-    um_scaled=False,
-    axes_labels=None,  # ["V", "V"],
-    aspect_ratio=None,
-    color_map="inferno",
-    cmin=None,
-    cmax=None,
-):
-    """Creates a figure containing a single grayscale image and a colorbar.
+    img = ax.imshow(img_array, **kwargs)
 
-    Params:
-        imgArray: np.ndarray
-            Rectangular np array containing the image data.
-            Just zeros if you're going to be writing the image live.
-        imgExtent: list(float)
-            The extent of the image in the form [left, right, bottom, top]
-        clickHandler: function
-            Function that fires on clicking in the image
-
-    Returns:
-        matplotlib.figure.Figure
-    """
-
-    # plt.rcParams.update({'font.size': 22})
-
-    # if um_scaled:
-    #     axes_label = r"$\mu$m"
-    # else:
-    if axes_labels == None:
-        try:
-            a = common.get_registry_entry_no_cxn(
-                "xy_units", ["", "Config", "Positioning"]
-            )
-            axes_labels = [a, a]
-        except Exception as exc:
-            print(exc)
-            axes_labels = ["V", "V"]
-    # Tell matplotlib to generate a figure with just one plot in it
-    fig, ax = plt.subplots()
-
-    # make sure the image is square
-    # plt.axis('square')
-
-    fig.set_tight_layout(True)
-
-    # Tell the axes to show a grayscale image
-    # print(imgArray)
-    img = ax.imshow(
-        imgArray,
-        cmap=color_map,
-        extent=tuple(imgExtent),
-        vmin=cmin,  # min_value,
-        vmax=cmax,
-        aspect=aspect_ratio,
-    )
-
-    #    if min_value == None:
-    #        img.autoscale()
-
-    # Add a colorbar
-    clb = plt.colorbar(img)
-    clb.set_label(color_bar_label)
-    # clb.ax.set_tight_layout(True)
-    # clb.ax.set_title(color_bar_label)
-    #    clb.set_label('kcounts/sec', rotation=270)
-
-    # Label axes
-    plt.xlabel(axes_labels[0])
-    plt.ylabel(axes_labels[1])
+    # Colorbar and labels
+    clb = fig.colorbar(img)
+    if cbar_label is not None:
+        clb.set_label(cbar_label)
+    if axes_labels is not None:
+        plt.xlabel(axes_labels[0])
+        plt.ylabel(axes_labels[1])
     if title:
         plt.title(title)
 
-    # Wire up the click handler to print the coordinates
-    if clickHandler is not None:
-        fig.canvas.mpl_connect("button_press_event", clickHandler)
+    # Click handler
+    fig.canvas.mpl_connect("button_press_event", on_click_image)
 
-    # Draw the canvas and flush the events to the backend
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+    tight_layout(fig)
 
-    return fig
+    return img
 
 
-def on_click_image(event):
-    """
-    Click handler for images. Prints the click coordinates to the console.
-
-    Params:
-        event: dictionary
-            Dictionary containing event details
-    """
-
-    try:
-        print("{:.3f}, {:.3f}".format(event.xdata, event.ydata))
-    #        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
-    except TypeError:
-        # Ignore TypeError if you click in the figure but out of the image
-        pass
-
-
-def imshow_update(fig, imgArray, cmin=None, cmax=1000):
-    """Update the image with the passed image array and redraw the figure.
-    Intended to update figures created by create_image_figure.
-
-    The implementation below isn't nearly the fastest way of doing this, but
-    it's the easiest and it makes a perfect figure every time (I've found
-    that the various update methods accumulate undesirable deviations from
-    what is produced by this brute force method).
-
-    Params:
-        fig: matplotlib.figure.Figure
-            The figure containing the image to update
-        imgArray: np.ndarray
-            The new image data
-    """
-
-    # Get the image - Assume it's the first image in the first axes
-    axes = fig.get_axes()
-    ax = axes[0]
+def imshow_update(ax, img_array, cmin=None, cmax=None):
+    """Update the first image in the passed ax"""
     images = ax.get_images()
     img = images[0]
-
-    # Set the data for the image to display
-    img.set_data(imgArray)
-
-    # Check if we should clip or autoscale
-    clipAtThousand = False
-    if clipAtThousand:
-        if np.all(np.isnan(imgArray)):
-            imgMax = 0  # No data yet
-        else:
-            imgMax = np.nanmax(imgArray)
-        if imgMax > 1000:
-            img.set_clim(None, 1000)
-        else:
-            img.autoscale()
-    elif (cmax != None) & (cmin != None):
+    img.set_data(img_array)
+    if (cmin != None) & (cmax != None):
         img.set_clim(cmin, cmax)
     else:
         img.autoscale()
+    img.autoscale()
+    flush_update(ax)
 
-    # Redraw the canvas and flush the changes to the backend
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+
+def on_click_image(event):
+    """Click handler for images from imshow. Prints the click coordinates to
+    the console. Event is passed automatically
+    """
+    x_coord = round(event.xdata, 3)
+    y_coord = round(event.ydata, 3)
+    try:
+        print(f"{x_coord}, {y_coord}")
+    except TypeError:
+        # Ignore the exc that's raised if the user clicks out of bounds
+        pass
 
 
 # endregion

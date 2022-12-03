@@ -11,7 +11,6 @@ Created on November 23rd, 2018
 
 # region Imports and constants
 
-import matplotlib.pyplot as plt
 import os
 import csv
 import datetime

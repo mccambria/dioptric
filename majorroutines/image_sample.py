@@ -9,8 +9,10 @@ Created on April 9th, 2019
 """
 
 
+import matplotlib.pyplot as plt
 import numpy as np
 import utils.tool_belt as tool_belt
+import utils.common as common
 import time
 import labrad
 import majorroutines.optimize as optimize
@@ -81,8 +83,8 @@ def main(
     num_steps,
     um_scaled=False,
     nv_minus_init=False,
-    cmin=None,
-    cmax=None,
+    vmin=None,
+    vmax=None,
 ):
 
     with labrad.connect() as cxn:
@@ -94,8 +96,8 @@ def main(
             num_steps,
             um_scaled,
             nv_minus_init,
-            cmin,
-            cmax,
+            vmin,
+            vmax,
         )
 
     return img_array, x_voltages, y_voltages
@@ -109,8 +111,8 @@ def main_with_cxn(
     num_steps,
     um_scaled=False,
     nv_minus_init=False,
-    cmin=None,
-    cmax=None,
+    vmin=None,
+    vmax=None,
 ):
 
     ### Some initial setup
@@ -148,6 +150,14 @@ def main_with_cxn(
     else:
         xy_scale *= 1000
 
+    try:
+        xy_units = common.get_registry_entry_no_cxn(
+            "xy_units", ["", "Config", "Positioning"]
+        )
+    except Exception as exc:
+        print("xy_units not in config")
+        xy_units = None
+
     ### Load the pulse generator
 
     readout = nv_sig["imaging_readout_dur"]
@@ -174,9 +184,10 @@ def main_with_cxn(
 
     x_num_steps = num_steps
     y_num_steps = num_steps
-    x_voltages, y_voltages, _, _, img_extent = positioning.get_scan_grid_2d(
+    ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, x_num_steps, y_num_steps
     )
+    x_voltages, y_voltages, x_voltages_1d, y_voltages_1d, extent = ret_vals
     xy_server.load_stream_xy(x_voltages, y_voltages)
 
     ### Set up our raw data objects
@@ -185,26 +196,32 @@ def main_with_cxn(
     # are not interpreted as 0 by matplotlib's colobar
     img_array = np.empty((x_num_steps, y_num_steps))
     img_array[:] = np.nan
+    img_array_kcps = np.copy(img_array)
     img_write_pos = []
 
     ### Set up the image display
 
     kpl.init_kplotlib(font_size=kpl.Size.SMALL, no_latex=True)
 
-    img_array_kcps = np.copy(img_array)
-
     if um_scaled:
-        img_extent = [el * xy_scale for el in img_extent]
+        extent = [el * xy_scale for el in extent]
+        axes_labels = ["um", "um"]
+    elif xy_units is not None:
+        axes_labels = [xy_units, xy_units]
 
     readout_laser_text = kpl.tex_escape(readout_laser)
     title = f"XY image under {readout_laser_text}, {readout_us} us readout"
-    fig = tool_belt.create_image_figure(
-        img_array,
-        img_extent,
-        clickHandler=on_click_image,
-        color_bar_label="kcps",
+
+    fig, ax = plt.subplots()
+    kpl.imshow(
+        ax,
+        img_array_kcps,
         title=title,
-        um_scaled=um_scaled,
+        axes_labels=axes_labels,
+        cbar_label="kcps",
+        extent=extent,
+        vmin=vmin,
+        vmax=vmax,
     )
 
     ### Collect the data
@@ -224,22 +241,21 @@ def main_with_cxn(
         if (time.time() > timeout_inst) or tool_belt.safe_stop():
             break
 
-        # Read the samples and update the image
+        # Read the samples
         if charge_init:
             new_samples = counter.read_counter_modulo_gates(2)
         else:
             new_samples = counter.read_counter_simple()
 
+        # Update the image
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-
             # If we did charge initialization, subtract out the non-initialized counts
             if charge_init:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-
             populate_img_array(new_samples, img_array, img_write_pos)
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-            tool_belt.update_image_figure(fig, img_array_kcps, cmin, cmax)
+            kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
             num_read_so_far += num_new_samples
 
     ### Clean up and save the data
@@ -256,16 +272,20 @@ def main_with_cxn(
         "y_center": y_center,
         "z_center": z_center,
         "x_range": x_range,
-        "x_range-units": "V",
+        "x_range-units": xy_units,
         "y_range": y_range,
-        "y_range-units": "V",
+        "y_range-units": xy_units,
         "num_steps": num_steps,
         "readout": readout,
         "readout-units": "ns",
-        "x_voltages": x_voltages,
-        "x_voltages-units": "V",
-        "y_voltages": y_voltages,
-        "y_voltages-units": "V",
+        "title": title,
+        "axes_labels": axes_labels,
+        "extent": extent,
+        "xy_scale": xy_scale,
+        "x_voltages_1d": x_voltages_1d,
+        "x_voltages_1d-units": "V",
+        "y_voltages_1d": y_voltages_1d,
+        "y_voltages_1d-units": "V",
         "img_array": img_array.astype(int),
         "img_array-units": "counts",
     }
@@ -274,9 +294,36 @@ def main_with_cxn(
     tool_belt.save_raw_data(rawData, filePath)
     tool_belt.save_figure(fig, filePath)
 
-    return img_array, x_voltages, y_voltages
+    return img_array, x_voltages_1d, y_voltages_1d
 
 
 if __name__ == "__main__":
 
-    pass
+    file_name = "2022_12_01-17_10_25-15micro-nvref_zfs_vs_t"
+    data = tool_belt.get_raw_data(file_name)
+    img_array = np.array(data["img_array"])
+    readout = data["readout"]
+    img_array_kcps = (img_array / 1000) / (readout * 1e-9)
+    x_voltages = data["x_voltages"]
+    y_voltages = data["y_voltages"]
+    x_half_pixel = (x_voltages[1] - x_voltages[0]) / 2
+    y_half_pixel = (y_voltages[1] - y_voltages[0]) / 2
+    extent = (
+        x_voltages[0] - x_half_pixel,
+        x_voltages[-1] + x_half_pixel,
+        y_voltages[0] - y_half_pixel,
+        y_voltages[-1] + y_half_pixel,
+    )
+
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots()
+    kpl.imshow(
+        ax,
+        img_array_kcps,
+        title="Replot test",
+        axes_labels=["V", "V"],
+        cbar_label="kcps",
+        extent=extent,
+    )
+
+    plt.show(block=True)

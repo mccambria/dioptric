@@ -3,13 +3,10 @@
 Electron spin resonance routine. Scans the microwave frequency, taking counts
 at each point.
 
-Created on Thu Apr 11 15:39:23 2019
+Created on April 11th, 2019
 
 @author: mccambria
 """
-
-# %% Imports
-
 
 import utils.tool_belt as tool_belt
 import utils.kplotlib as kpl
@@ -25,7 +22,7 @@ from random import shuffle
 import sys
 
 
-# %% Figure functions
+# region Plotting
 
 
 def create_fit_figure(
@@ -81,7 +78,43 @@ def create_fit_figure(
     return fig
 
 
-# %%
+# endregion
+# region Math functions
+
+
+def gaussian(freq, constrast, sigma, center):
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
+
+
+def lorentzian(freq, constrast, hwhm, center):
+    """Defined so that the value at the center is the contrast"""
+    return constrast * (hwhm**2) / ((freq - center) ** 2 + hwhm**2)
+
+
+def double_dip(
+    freq,
+    low_constrast,
+    low_width,
+    low_center,
+    high_constrast,
+    high_width,
+    high_center,
+):
+    dip_func = lorentzian
+    # dip_func = gaussian
+    low_dip = dip_func(freq, low_constrast, low_width, low_center)
+    high_dip = dip_func(freq, high_constrast, high_width, high_center)
+    return 1.0 - low_dip - high_dip
+
+
+def single_dip(freq, constrast, width, center):
+    dip_func = lorentzian
+    # dip_func = gaussian
+    return 1.0 - dip_func(freq, constrast, width, center)
+
+
+# endregion
+# region Analysis functions
 
 
 def return_res_with_error(data):
@@ -141,43 +174,10 @@ def calculate_freqs(freq_range, freq_center, num_steps):
     return np.linspace(freq_low, freq_high, num_steps)
 
 
-def gaussian(freq, constrast, sigma, center):
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
-
-
-def lorentzian(freq, constrast, hwhm, center):
-    """Defined so that the value at the center is the contrast"""
-    return constrast * (hwhm**2) / ((freq - center) ** 2 + hwhm**2)
-
-
-def double_dip(
-    freq,
-    low_constrast,
-    low_width,
-    low_center,
-    high_constrast,
-    high_width,
-    high_center,
-):
-    dip_func = lorentzian
-    # dip_func = gaussian
-    low_dip = dip_func(freq, low_constrast, low_width, low_center)
-    high_dip = dip_func(freq, high_constrast, high_width, high_center)
-    return 1.0 - low_dip - high_dip
-
-
-def single_dip(freq, constrast, width, center):
-    dip_func = lorentzian
-    # dip_func = gaussian
-    return 1.0 - dip_func(freq, constrast, width, center)
-
-
-# def get_guess_params(freqs, norm_avg_sig, ref_counts):
-def get_guess_params(
-    freq_range, freq_center, num_steps, norm_avg_sig, ref_counts=None
-):
-
-    # %% Guess the locations of the minimums
+def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig, ref_counts=None):
+    """Get guess params for line fitting. Most importantly how many lines
+    and what their frequencies are
+    """
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
@@ -230,9 +230,7 @@ def get_guess_params(
         next_max_peak_peak_inds = peak_heights.index(
             next_max_peak_height
         )  # Index in peak_inds
-        next_max_peak_freqs = peak_inds[
-            next_max_peak_peak_inds
-        ]  # Index in freqs
+        next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
 
         # List of higest peak then next highest peak
         peaks = [max_peak_freqs, next_max_peak_freqs]
@@ -340,29 +338,6 @@ def fit_resonance(
     return fit_func, popt, pcov
 
 
-def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
-
-    rabi_freq = rabi_period**-1
-
-    smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
-
-    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq**2)
-    amp = (rabi_freq / omega) ** 2
-    angle = (
-        omega * 2 * np.pi * uwave_pulse_dur / 2
-    )  # we use frequencies, so we have to convert by 2 pi here
-    prob = amp * (np.sin(angle)) ** 2
-
-    rel_counts = 1.0 + (contrast * prob)
-
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(smooth_freqs, rel_counts)
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Contrast (arb. units)")
-
-    return smooth_freqs, rel_counts
-
-
 def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
     """Extract the normalized average signal at each data point.
     Since we sometimes don't do many runs (<10), we often will have an
@@ -407,7 +382,8 @@ def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
     )
 
 
-# %% User functions
+# endregion
+# region Control panel functions
 
 
 def state(
@@ -443,9 +419,6 @@ def state(
 
     return resonance_list
     # return resonance_list, nv_sig
-
-
-# %% Main
 
 
 def main(
@@ -617,9 +590,7 @@ def main_with_cxn(
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         if composite:
-            ret_vals = pulsegen_server.stream_load(
-                "discrete_rabi2.py", seq_args_string
-            )
+            ret_vals = pulsegen_server.stream_load("discrete_rabi2.py", seq_args_string)
         else:
             ret_vals = pulsegen_server.stream_load("rabi.py", seq_args_string)
 
@@ -853,9 +824,7 @@ def main_with_cxn(
         print("\n")
         ret_vals = [popt[2], None]
     elif fit_func == double_dip:
-        print(
-            "Resonances at {:.4f} GHz and {:.4f} GHz".format(popt[2], popt[5])
-        )
+        print("Resonances at {:.4f} GHz and {:.4f} GHz".format(popt[2], popt[5]))
         print("Splitting of {:d} MHz".format(int((popt[5] - popt[2]) * 1000)))
         print("\n")
         ret_vals = [popt[2], popt[5]]
@@ -870,48 +839,12 @@ def main_with_cxn(
     return ret_vals
 
 
-# %% Run the file
+# endregion
 
 
 if __name__ == "__main__":
 
-    # print(__file__)
-    # sys.exit()
-
-    # file = "2022_07_12-10_08_45-hopper-search"
-
-    # data = tool_belt.get_raw_data(file)
-
-    # freq_center = data["freq_center"]
-    # freq_range = data["freq_range"]
-    # num_steps = data["num_steps"]
-    # num_runs = data["num_runs"]
-    # norm_avg_sig = np.array(data["norm_avg_sig"])
-    # norm_avg_sig_ste = np.array(data["norm_avg_sig_ste"])
-
-    # freqs = calculate_freqs(freq_range, freq_center, num_steps)
-
-    # # ax.plot(freqs, norm_avg_sig, label=label_list[f])
-    # # ax.set_xlabel("Frequency (GHz)")
-    # # ax.set_ylabel("Contrast (arb. units)")
-    # # ax.legend(loc="lower right")
-
-    # fit_func, popt, pcov = fit_resonance(
-    #     freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
-    # )
-    # create_fit_figure(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     fit_func,
-    #     popt,
-    # )
-    # print(popt)
-    # print(pcov)
-
     kpl.init_kplotlib()
-    # # matplotlib.rcParams["axes.linewidth"] = 1.0
 
     file = "2022_12_01-04_04_27-15micro-nv3_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
@@ -955,8 +888,3 @@ if __name__ == "__main__":
         norm_avg_sig_ste=norm_avg_sig_ste,
     )
     print(return_res_with_error(data))
-
-    # plt.show(block=True)
-
-    # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
-    # simulate(2.8351, 0.035, 0.02, 170, 170/2)

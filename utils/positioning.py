@@ -211,6 +211,7 @@ def set_drift(cxn, drift):
 def reset_drift(cxn):
     set_drift(cxn, [0.0, 0.0, 0.0])
 
+
 def adjust_coords_for_drift(coords, cxn=None, drift=None):
     """Current drift will be retrieved from registry if passed drift is None"""
     if drift is None:
@@ -244,16 +245,18 @@ def get_scan_1d(center, scan_range, num_steps):
     array(numeric)
         Scan coords
     """
-    
+
     half_range = scan_range / 2
     low = center - half_range
     high = center + half_range
     coords = np.linspace(low, high, num_steps)
     return coords
-    
+
 
 # load_sweep_scan_xy
-def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
+def get_scan_grid_2d(
+    center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2
+):
     """Create a grid of points for a snake scan
 
     Parameters
@@ -284,10 +287,10 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
     array(numeric)
         Second-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
     list(float)
-        Extent of the grid in the form [left, right, bottom, top] - includes half-pixel adjusment to 
+        Extent of the grid in the form [left, right, bottom, top] - includes half-pixel adjusment to
         min/max written vals for each axis so that the pixels in an image are properly centered
     """
-    
+
     coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
     coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
 
@@ -298,10 +301,10 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
     # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
     inter_1 = np.concatenate((coords_1_1d, np.flipud(coords_1_1d)))
     # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
-    if num_steps_2 % 2 == 0: 
+    if num_steps_2 % 2 == 0:
         coords_1 = np.tile(inter_1, num_steps_2 // 2)
     else:  # Odd x size
-        coords_1 = np.tile(inter_1, num_steps_2 // 2))
+        coords_1 = np.tile(inter_1, num_steps_2 // 2)
         coords_1 = np.concatenate((coords_1, coords_1_1d))
 
     # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
@@ -321,13 +324,15 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
         x_high + x_half_pixel,
         x_low - x_half_pixel,
         y_low - y_half_pixel,
-        y_high + y_half_pixel
+        y_high + y_half_pixel,
     ]
 
     return coords_1, coords_2, coords_1_1d, coords_2_1d, img_extent
 
 
-def get_scan_cross_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
+def get_scan_cross_2d(
+    center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2
+):
     """Scan in a cross pattern. The first axis will be scanned while the second is held at its center,
     then the second axis will be scanned while the first is held at its center. This is useful for optimization
 
@@ -367,16 +372,32 @@ def get_scan_cross_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_
     return coords_1, coords_2, coords_1_1d, coords_2_1d
 
 
-def get_scan_cross_3d(center_1, center_2, center_3, scan_range_1, scan_range_2, scan_range_3, num_steps_1, num_steps_2, num_steps_3):
+def get_scan_cross_3d(
+    center_1,
+    center_2,
+    center_3,
+    scan_range_1,
+    scan_range_2,
+    scan_range_3,
+    num_steps_1,
+    num_steps_2,
+    num_steps_3,
+):
     """Extension of get_scan_cross_2d to 3D"""
 
     coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
     coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
     coords_3_1d = get_scan_1d(center_3, scan_range_3, num_steps_3)
 
-    coords_1 = np.concatenate([coords_1_1d, np.full(num_steps_2 + num_steps_3, center_1)])
-    coords_2 = np.concatenate([np.full(num_steps_1, center_2), coords_2_1d, np.full(num_steps_3, center_2)])
-    coords_3 = np.concatenate([np.full(num_steps_1 + num_steps_2, center_3), coords_3_1d])
+    coords_1 = np.concatenate(
+        [coords_1_1d, np.full(num_steps_2 + num_steps_3, center_1)]
+    )
+    coords_2 = np.concatenate(
+        [np.full(num_steps_1, center_2), coords_2_1d, np.full(num_steps_3, center_2)]
+    )
+    coords_3 = np.concatenate(
+        [np.full(num_steps_1 + num_steps_2, center_3), coords_3_1d]
+    )
 
     return coords_1, coords_2, coords_3, coords_1_1d, coords_2_1d, coords_3_1d
 
@@ -457,7 +478,7 @@ def get_scan_two_point_2d(first_coord_1, first_coord_2, second_coord_1, second_c
     array(numeric)
         Values to write to the second axis for the scan
     """
-    
+
     # Sometimes a minimum number of points is required in a stream, so
     # return a list of 64 coords to be safe
     coords_1 = [first_coord_1, second_coord_1] * 32
