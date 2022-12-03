@@ -21,6 +21,7 @@ from matplotlib.offsetbox import AnchoredText
 
 # matplotlib semantic locations for legends and text boxes
 class Loc(StrEnum):
+    BEST = "best"
     LOWER_LEFT = "lower left"
     UPPER_LEFT = "upper left"
     LOWER_RIGHT = "lower right"
@@ -343,14 +344,14 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def plot_line_update(ax, x=None, y=None):
+def plot_line_update(ax, line_ind=0, x=None, y=None):
     """Updates a figure created by plot_line. x and y are the new data to write.
     Either may be None in which case that axis of the plot won't be updated
     """
 
     # Get the line - assume it's  the first line in the first axes
     lines = ax.get_lines()
-    line = lines[0]
+    line = lines[line_ind]
 
     # Set the data for the line to display and rescale
     if x is not None:
