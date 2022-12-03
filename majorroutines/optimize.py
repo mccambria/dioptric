@@ -417,6 +417,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     """
 
     if coords is not None:
+        print('setting to opti coords:',coords)
         if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, coords)
         else:
@@ -430,8 +431,12 @@ def prepare_microscope(cxn, nv_sig, coords=None):
             )
 
     magnet_angle = nv_sig["magnet_angle"]
-    if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
-        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+    if magnet_angle is not None:
+        try:
+            rotation_stage_server = tool_belt.get_magnet_rotation_server(cxn)
+            rotation_stage_server.set_angle(magnet_angle)
+        except:
+            print('trying to set magnet angle with no rotation stage. check config?')
 
     time.sleep(0.01)
 
@@ -1083,7 +1088,7 @@ def main_with_cxn_step(
     # %% Set to the optimized coordinates, or just tell the user what they are
 
     if set_to_opti_coords:
-        if opti_succeeded:
+        if opti_succeeded or opti_unnecessary:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
             if not opti_unnecessary:

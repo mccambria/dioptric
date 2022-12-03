@@ -1207,6 +1207,22 @@ def get_pulse_gen_server(cxn):
 
     return pulsegen_server_return
 
+def get_magnet_rotation_server(cxn):
+    """
+    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
+    """
+    magnet_rotation_server_return = getattr(
+        cxn,
+        get_registry_entry(
+            cxn, "magnet_rotation_server", ["", "Config", "Servers"]
+        ),
+    )
+
+    if magnet_rotation_server_return == "":
+        raise RuntimeError
+
+    return magnet_rotation_server_return
+
 
 def get_counter_server(cxn):
     """
@@ -1336,7 +1352,7 @@ def get_apd_indices(cxn):
         cxn,
         "apd_indices",
         [
-            "",
+            "", "Config"
         ],
     )
 

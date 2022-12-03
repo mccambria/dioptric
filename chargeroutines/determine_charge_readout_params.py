@@ -562,7 +562,7 @@ def measure_histograms_sub(
         _ = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
 
         # Load the APD
-        apd_indices = tool_belt.get_apd_indices()
+        apd_indices = tool_belt.get_apd_indices(cxn)
         tagger_server.start_tag_stream(apd_indices)
         tagger_server.clear_buffer()
 
@@ -600,11 +600,11 @@ def measure_histograms_sub(
 # Apply a gren or red pulse, then measure the counts under yellow illumination.
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
 # Use with DM on red and green
-def measure_histograms(nv_sig, opti_nv_sig, apd_indices, num_reps,extra_green_initialization):
+def measure_histograms(nv_sig, opti_nv_sig, num_reps,extra_green_initialization):
 
     with labrad.connect() as cxn:
         nv0, nvm, total_seq_time_sec = measure_histograms_with_cxn(
-            cxn, nv_sig, opti_nv_sig, apd_indices, num_reps,extra_green_initialization
+            cxn, nv_sig, opti_nv_sig, num_reps,extra_green_initialization
         )
 
     return nv0, nvm, total_seq_time_sec
@@ -614,7 +614,7 @@ def measure_histograms_with_cxn(
     cxn, nv_sig, opti_nv_sig, num_reps, extra_green_initialization
 ):
     # Only support a single APD for now
-    apd_indices = tool_belt.get_apd_indices()
+    apd_indices = tool_belt.get_apd_indices(cxn)
     apd_index = apd_indices[0]
 
     tool_belt.reset_cfm(cxn)
@@ -650,7 +650,6 @@ def measure_histograms_with_cxn(
             tool_belt.set_laser_power(cxn, nv_sig, init_laser),
             readout_laser_power,
             2,
-            apd_index,
         ]
 
     else:
@@ -673,6 +672,7 @@ def measure_histograms_with_cxn(
 
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
+    
     print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
         cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
@@ -921,8 +921,7 @@ def measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps):
         tool_belt.set_laser_power(cxn, nv_sig, 'nv0_prep_laser'),
         tool_belt.set_laser_power(cxn, nv_sig, 'nv-_reionization_laser'),
         tool_belt.set_laser_power(cxn, nv_sig, 'charge_readout_laser'),
-        2,
-        apd_indices[0]]
+        2]
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -1092,7 +1091,29 @@ if __name__ == "__main__":
     ### Replots
 
     # if False:
-    if True:
+        
+    data = tool_belt.get_raw_data('2022_12_02-13_47_25-johnson-search')
+    nv_sig = data["nv_sig"]
+    nv0 = data["nv0"]
+    nvm = data["nvm"]
+    readout_power = nv_sig["charge_readout_laser_power"]
+    max_readout_dur = nv_sig["charge_readout_dur"]
+    
+    readout_dur=15e6
+
+    threshold, fidelity,n0,nm = plot_threshold(
+        nv_sig,
+        readout_dur,
+        nv0,
+        nvm,
+        readout_power,
+        fit_threshold_full_model=False,
+        nd_filter=None,
+        plot_model_hists=True,
+        bins=None)
+    
+    
+    if False:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
         filenames = ['2022_11_21-15_24_59-johnson-search']
@@ -1196,111 +1217,3 @@ if __name__ == "__main__":
 
     ########################
 
-    # Rabi
-    apd_indices = [1]
-    sample_name = "siena"
-
-    green_laser = "integrated_520"
-    yellow_laser = "laserglow_589"
-    red_laser = "cobolt_638"
-
-    nv_sig = {
-        "coords":[-0.199, 0.081, 4.06],
-        "name": "{}-nv1_2022_10_27".format(sample_name,),
-        "disable_opt":False,
-        "ramp_voltages": False,
-        "expected_count_rate":21,
-        # "correction_collar": 0.12,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-        "imaging_laser": green_laser,
-        # "imaging_laser_filter": "nd_0.5",
-        "imaging_readout_dur": 1e7,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
-        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-        "spin_laser": green_laser,
-        # "spin_laser_filter": "nd_0.5",
-        "spin_pol_dur": 10000.0,
-        "spin_readout_dur": 300,
-        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_dur": 1e6,
-        # "nv-_reionization_laser_filter": None,
-        # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e4,
-        "nv-_prep_laser_filter": None,  # "nd_1.0",
-        "nv0_ionization_laser": red_laser,
-        "nv0_ionization_dur": 100,
-        "nv0_prep_laser": red_laser,
-        "nv0_prep_laser-power": 180,
-        "nv0_prep_laser_dur": 1e4,
-        "spin_shelf_laser": yellow_laser,
-        "spin_shelf_dur": 0,
-        "spin_shelf_laser_power": 1.0,
-        # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-        "initialize_laser": green_laser,
-        "initialize_dur": 1e4,
-        # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_dur": 50e6,
-        # "charge_readout_laser_power": 1.0,
-        "charge_readout_laser_filter": 'nd_1.0',
-        "collection_filter": "715_sp+630_lp",
-        "magnet_angle": 68,
-        "resonance_LOW":  2.7813 ,
-        "rabi_LOW": 129.5,
-        "uwave_power_LOW": 13.5,
-        # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-        "resonance_HIGH": 2.9591,
-        "rabi_HIGH": 129.5,
-        "uwave_power_HIGH": 16.5,
-    }
-
-    # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
-    #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
-    #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
-    #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
-    # readout_durs = numpy.linspace(10e6, 50e6, 5)
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [1e9]
-    # readout_durs = numpy.linspace(700e6, 1e9, 7)
-    # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
-    # readout_durs = [2e9]
-    readout_durs = [int(el) for el in readout_durs]
-    max_readout_dur = max(readout_durs)
-
-    # readout_powers = np.linspace(0.6, 1.0, 9)
-    # readout_powers = np.arange(0.75, 1.05, 0.05)
-    # readout_powers = np.arange(0.68, 1.04, 0.04)
-    # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [0.5, 0.1]
-
-    # num_reps = 2000
-    # num_reps = 1000
-    num_reps = 500
-    bins = None
-
-    # try:
-    determine_readout_dur_power(
-        nv_sig,
-        nv_sig,
-        apd_indices,
-        num_reps,
-        max_readout_dur=max_readout_dur,
-        bins=bins,
-        readout_powers=readout_powers,
-        plot_readout_durs=readout_durs,
-        fit_threshold_full_model=False,
-    )
-    # finally:
-    #     # Reset our hardware - this should be done in each routine, but
-    #     # let's double check here
-    #     tool_belt.reset_cfm()
-    #     # Kill safe stop
-    #     if tool_belt.check_safe_stop_alive():
-    #         print("\n\nRoutine complete. Press enter to exit.")
-    #         tool_belt.poll_safe_stop()

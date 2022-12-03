@@ -180,7 +180,7 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
         # Find the angle at the peak within [0, 180]
         opti_angle = popt[2] % 180
         print('Optimized angle: {}'.format(opti_angle))
-        cxn.rotation_stage_ell18k.set_angle(opti_angle)
+        cxn.rotation_stage_THOR_ell18k.set_angle(opti_angle)
 
     # %% Wrap up
 
