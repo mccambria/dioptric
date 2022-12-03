@@ -11,7 +11,6 @@ from abc import ABC, abstractmethod
 
 
 class PosXy(ABC):
-    
     @abstractmethod
     def write_xy(self, c, x_coord, y_coord):
         """Set the positioner to the passed coordinates
@@ -25,11 +24,13 @@ class PosXy(ABC):
         """
         pass
 
-
     @abstractmethod
     def reset(self, c):
-        """
-        Make sure the device is in a neutral state for the next experiment
-        """
-        
+        """Make sure the device is in a neutral state for the next experiment"""
+
+        pass
+
+    def reset_cfm_opt_out(self, c):
+        """Do not reset positioning devices by default with tool_belt.reset_cfm"""
+
         pass

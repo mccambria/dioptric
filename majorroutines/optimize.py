@@ -12,6 +12,7 @@ Created on April 11th, 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -199,7 +200,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     # xy
     if axis_ind in [0, 1]:
 
-        xy_server = tool_belt.get_xy_server(cxn)
+        xy_server = positioning.get_pos_xy_server(cxn)
 
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
@@ -799,7 +800,7 @@ def optimize_on_axis_step(
             tool_belt.set_xyz(cxn, start_coords)
 
         # Get the proper scan function
-        xy_server = tool_belt.get_xy_server(cxn)
+        xy_server = positioning.get_pos_xy_server(cxn)
 
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)

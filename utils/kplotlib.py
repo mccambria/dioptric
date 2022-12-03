@@ -18,6 +18,7 @@ from enum import Enum, auto
 from strenum import StrEnum
 from matplotlib.offsetbox import AnchoredText
 
+# matplotlib semantic locations for legends and text boxes
 class Loc(StrEnum):
     LOWER_LEFT = "lower left"
     UPPER_LEFT = "upper left"
@@ -141,9 +142,7 @@ def zero_to_one_threshold(val):
 # endregion
 
 
-def init_kplotlib(
-    font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False
-):
+def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
     """Runs the default initialization for kplotlib, our default configuration
     of matplotlib. Make sure no_latex is True for faster plotting.
     """

@@ -1,0 +1,398 @@
+# -*- coding: utf-8 -*-
+"""Various functions for positioning microscope focus. Includes
+functions for generating lists of coordinates used in scans
+
+Created on Decemeber 1st, 2022
+
+@author: mccambria
+"""
+
+# region Imports and constants
+
+import numpy as np
+import time
+import labrad
+from enum import Enum, IntEnum, auto
+import utils.common as common
+import utils.tool_belt as tool_belt
+
+
+class ControlStyle(Enum):
+    STEP = auto()
+    STREAM = auto()
+
+
+# endregion
+# region Simple sets
+
+
+def set_xyz(cxn, coords):
+    pos_xy_server = get_pos_xy_server(cxn)
+    pos_z_server = get_pos_z_server(cxn)
+    pos_xy_server.write_xy(coords[0], coords[1])
+    pos_z_server.write_z(coords[2])
+    # Force some delay before proceeding to account for the effective write time
+    time.sleep(0.002)
+
+
+def set_xyz_ramp(cxn, coords):
+    """Step incrementally to this position from the current position"""
+    xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
+    # Get the min step size
+    step_size_xy = common.get_registry_entry(
+        cxn, "xy_incremental_step_size", ["", "Config", "Positioning"]
+    )
+    step_size_z = common.get_registry_entry(
+        cxn, "z_incremental_step_size", ["", "Config", "Positioning"]
+    )
+    # Get the delay between movements
+    try:
+        xy_delay = common.get_registry_entry(
+            cxn, "xy_delay", ["", "Config", "Positioning"]
+        )
+
+    except Exception:
+        xy_delay = common.get_registry_entry(
+            cxn,
+            "xy_large_response_delay",  # AG Eventually pahse out large angle response
+            ["", "Config", "Positioning"],
+        )
+
+    z_delay = common.get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
+
+    # Take whichever one is longer
+    if xy_delay > z_delay:
+        total_movement_delay = xy_delay
+    else:
+        total_movement_delay = z_delay
+
+    xyz_server = get_pos_xyz_server(cxn)
+
+    # if the movement type is int, just skip this and move to the desired position
+    if xy_dtype is int or z_dtype is int:
+        set_xyz(cxn, coords)
+        return
+
+    # Get current and final position
+    current_x, current_y = xyz_server.read_xy()
+    current_z = xyz_server.read_z()
+    final_x, final_y, final_z = coords
+
+    dx = final_x - current_x
+    dy = final_y - current_y
+    dz = final_z - current_z
+    # print('dx: {}'.format(dx))
+    # print('dy: {}'.format(dy))
+
+    # If we are moving a distance smaller than the step size,
+    # just set the coords, don't try to run a sequence
+
+    if abs(dx) <= step_size_xy and abs(dy) <= step_size_xy and abs(dz) <= step_size_z:
+        # print('just setting coords without ramp')
+        set_xyz(cxn, coords)
+
+    else:
+        # Determine num of steps to get to final destination based on step size
+        num_steps_x = np.ceil(abs(dx) / step_size_xy)
+        num_steps_y = np.ceil(abs(dy) / step_size_xy)
+        num_steps_z = np.ceil(abs(dz) / step_size_z)
+
+        # Determine max steps for this move
+        max_steps = int(max([num_steps_x, num_steps_y, num_steps_z]))
+
+        # The delay between steps will be the total delay divided by the num of incr steps
+        movement_delay = int(total_movement_delay / max_steps)
+
+        x_points = [current_x]
+        y_points = [current_y]
+        z_points = [current_z]
+
+        # set up the voltages to step thru. Once x, y, or z reach their final
+        # value, just pass the final position for the remaining steps
+        for n in range(max_steps):
+            if n > num_steps_x - 1:
+                x_points.append(final_x)
+            else:
+                move_x = (n + 1) * step_size_xy * dx / abs(dx)
+                incr_x_val = move_x + current_x
+                x_points.append(incr_x_val)
+
+            if n > num_steps_y - 1:
+                y_points.append(final_y)
+            else:
+                move_y = (n + 1) * step_size_xy * dy / abs(dy)
+                incr_y_val = move_y + current_y
+                y_points.append(incr_y_val)
+
+            if n > num_steps_z - 1:
+                z_points.append(final_z)
+            else:
+                move_z = (n + 1) * step_size_z * dz / abs(dz)
+                incr_z_val = move_z + current_z
+                z_points.append(incr_z_val)
+        # Run a simple clock pulse repeatedly to move through votlages
+        file_name = "simple_clock.py"
+        seq_args = [movement_delay]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        period = ret_vals[0]
+        # print(z_points)
+
+        xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
+        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        cxn.pulse_streamer.stream_start(max_steps)
+
+    # Force some delay before proceeding to account
+    # for the effective write time, as well as settling time for movement
+    time.sleep(total_movement_delay / 1e9)
+
+
+def set_xyz_on_nv(cxn, nv_sig, drift_adjust=True):
+    coords = nv_sig["coords"]
+    if drift_adjust:
+        coords = adjust_coords_for_drift(coords, cxn)
+    set_xyz(cxn, nv_sig["coords"])
+
+
+# endregion
+# region Server getters
+
+
+def get_pos_xy_server(cxn):
+    common.get_server(cxn, "pos_xy")
+
+
+def get_pos_z_server(cxn):
+    common.get_server(cxn, "pos_z")
+
+
+def get_pos_xyz_server(cxn):
+    common.get_server(cxn, "pos_xyz")
+
+
+def get_xy_control_style():
+    """Talk to the registry to get the xy control type for this setup"""
+    xy_control_style_return = common.get_registry_entry_no_cxn(
+        "xy_control_style", ["", "Config", "Positioning"]
+    )
+    xy_control_style_return = eval(xy_control_style_return)
+    return xy_control_style_return
+
+
+def get_z_control_style():
+    """Talk to the registry to get the z control type for this setup"""
+    z_control_style_return = common.get_registry_entry_no_cxn(
+        "z_control_style", ["", "Config", "Positioning"]
+    )
+    z_control_style_return = eval(z_control_style_return)
+    return z_control_style_return
+
+
+# endregion
+# region Drift
+"""Implemented with a drift tracking global stored on the registry"""
+
+
+def get_drift(cxn):
+    drift = common.get_registry_entry(cxn, "DRIFT", ["", "State"])
+    xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
+    drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
+    return drift
+
+
+def set_drift(cxn, drift):
+    return cxn.registry.set("DRIFT", drift)
+
+
+def reset_drift(cxn):
+    set_drift(cxn, [0.0, 0.0, 0.0])
+
+
+def adjust_coords_for_drift(coords, cxn=None, drift=None):
+    """Current drift will be retrieved from registry if passed drift is None"""
+    if drift is None:
+        drift = get_drift(cxn)
+    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
+    return adjusted_coords
+
+
+# endregion
+# region Scans
+"""These are really just calculator functions for generating lists of coordinates
+used in scans
+"""
+
+
+def get_scan_1d(center, scan_range, num_steps):
+    """Get a linear spacing of coords about the passed center
+
+    Parameters
+    ----------
+    center : numeric
+        Center of the scan along the axis
+    range : numeric
+        Full range of the scan along the first axis
+    num_steps : _type_
+        Number of steps in the scan
+
+    Returns
+    -------
+    array(numeric)
+        Scan coords
+    """
+    
+    half_range = scan_range / 2
+    low = center - half_range
+    high = center + half_range
+    coords = np.linspace(low, high, num_steps)
+    return coords
+    
+
+# load_sweep_scan_xy
+def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
+    """Create a grid of points to snake scan through
+
+    Parameters
+    ----------
+    center_1 : numeric
+        Center of the scan along the first axis
+    center_2 : numeric
+        Center of the scan along the second axis
+    scan_range_1 : numeric
+        Full range of the scan along the first axis
+    scan_range_2 : numeric
+        Full range of the scan along the second axis
+    num_steps_1 : int
+        Number of steps along the first axis
+    num_steps_2 : int
+        Number of steps along the second axis
+
+    Returns
+    -------
+    array(numeric)
+        Values to write to the first axis for the scan
+    array(numeric)
+        Values to write to the second axis for the scan
+    """
+    
+    coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
+    coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
+
+    ### Winding cartesian product
+    # The first axis values are repeated - the second axis values are mirrored and tiled
+    # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
+
+    # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
+    inter_1 = np.concatenate((coords_1_1d, np.flipud(coords_1_1d)))
+    # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
+    if num_steps_2 % 2 == 0: 
+        coords_1 = np.tile(inter_1, num_steps_2 // 2)
+    else:  # Odd x size
+        coords_1 = np.tile(inter_1, num_steps_2 // 2))
+        coords_1 = np.concatenate((coords_1, coords_1_1d))
+
+    # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
+    coords_2 = np.repeat(coords_2_1d, num_steps_1)
+
+    return coords_1, coords_2
+
+
+def get_scan_cross_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
+    """Scan in a cross pattern - useful for optimization
+
+    Parameters
+    ----------
+    center_1 : numeric
+        Center of the scan along the first axis
+    center_2 : numeric
+        Center of the scan along the second axis
+    scan_range_1 : numeric
+        Full range of the scan along the first axis
+    scan_range_2 : numeric
+        Full range of the scan along the second axis
+    num_steps_1 : int
+        Number of steps along the first axis
+    num_steps_2 : int
+        Number of steps along the second axis
+
+    Returns
+    -------
+    array(numeric)
+        Values to write to the first axis for the scan
+    array(numeric)
+        Values to write to the second axis for the scan
+    """
+
+    coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
+    coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
+
+    coords_1 = np.concatenate([coords_1_1d, np.full(num_steps_1, center_1)])
+    coords_2 = np.concatenate([np.full(num_steps_2, center_2), coords_2_1d])
+
+    return coords_1, coords_2
+
+
+def get_scan_one_axis_2d(center_1, center_2, scan_range_1, num_steps_1):
+    """Scan through the first axis, keeping the second fixed
+
+    Parameters
+    ----------
+    center_1 : numeric
+        Center of the scan along the first axis
+    center_2 : numeric
+        Center of the scan along the second axis
+    scan_range_1 : numeric
+        Full range of the scan along the first axis
+    num_steps_1 : int
+        Number of steps along the first axis
+
+    Returns
+    -------
+    array(numeric)
+        Values to write to the first axis for the scan
+    array(numeric)
+        Values to write to the second axis for the scan
+    """
+
+    coords_1 = get_scan_1d(center_1, scan_range_1, num_steps_1)
+    coords_2 = np.full(num_steps_1, center_2)
+    return coords_1, coords_2
+
+
+def get_scan_circle_2d(center_1, center_2, radius, num_steps):
+    """Load a scan around a circle. Useful for testing cat's eye
+    stationary point. Designed to be run continuously
+
+    Params
+        radius: float
+            Radius of the circle in V
+        num_steps: int
+            Number of steps the break the x/y range into
+        period: int
+            Expected period between clock signals in ns
+
+    Returns
+        list(float)
+            The x voltages that make up the scan
+        list(float)
+            The y voltages that make up the scan
+    """
+
+    angles = np.linspace(0, 2 * np.pi, num_steps)
+    coords_1 = center_1 + (radius * np.sin(angles))
+    coords_2 = center_1 + (radius * np.cos(angles))
+    return coords_1, coords_2
+
+
+def get_scan_two_point_2d(first_coord_1, first_coord_2, second_coord_1, second_coord_2):
+    """Flip back an forth between two points - designed to be run continuously"""
+    # Sometimes a minimum number of points is required in a stream, so
+    # return a list of 64 coords to be safe
+    coords_1 = [first_coord_1, second_coord_1] * 32
+    coords_2 = [first_coord_2, second_coord_2] * 32
+    return coords_1, coords_2
+
+
+# endregion
