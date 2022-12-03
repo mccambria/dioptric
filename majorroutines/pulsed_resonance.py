@@ -21,14 +21,15 @@ import labrad
 from utils.tool_belt import States, NormStyle
 from random import shuffle
 import sys
+from utils.positioning import get_scan_1d as calculate_freqs
 
 
 # region Plotting
 
 
 def create_fit_figure(
-    freq_range,
     freq_center,
+    freq_range,
     num_steps,
     norm_avg_sig,
     fit_func,
@@ -36,8 +37,8 @@ def create_fit_figure(
     norm_avg_sig_ste=None,
 ):
 
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
-    smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    smooth_freqs = calculate_freqs(freq_center, freq_range, 1000)
 
     fig, ax = plt.subplots()
     if norm_avg_sig_ste is not None:
@@ -75,27 +76,31 @@ def create_fit_figure(
 
 
 def create_raw_data_figure(
-    freq_range, freq_center, num_steps, avg_sig_counts, avg_ref_counts, norm_avg_sig
+    freq_center, freq_range, num_steps, avg_sig_counts=None, avg_ref_counts=None, norm_avg_sig=None
 ):
 
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
-    ax1, ax2 = axes_pack
+    ax_sig_ref, ax_norm = axes_pack
 
-    ax1.set_xlabel("Frequency (GHz)")
-    ax1.set_ylabel("Count rate (kcps)")
-    kpl.plot_line(ax1, freqs, avg_sig_counts, label="Signal", color=KplColors.GREEN)
-    kpl.plot_line(ax1, freqs, avg_ref_counts, label="Reference", color=KplColors.RED)
-    ax1.legend(loc=kpl.Loc.LOWER_RIGHT)
-
-    ax2.set_xlabel("Frequency (GHz)")
-    ax2.set_ylabel("Normalized fluorescence")
-    kpl.plot_line(ax2, freqs, norm_avg_sig, color=KplColors.BLUE)
+    ax_sig_ref.set_xlabel("Frequency (GHz)")
+    ax_sig_ref.set_ylabel("Count rate (kcps)")
+    ax_norm.set_xlabel("Frequency (GHz)")
+    ax_norm.set_ylabel("Normalized fluorescence")
+    
+    if avg_sig_counts is not None:
+        kpl.plot_line(ax_sig_ref, freqs, avg_sig_counts, label="Signal", color=KplColors.GREEN)
+    if avg_ref_counts is not None:
+        kpl.plot_line(ax_sig_ref, freqs, avg_ref_counts, label="Reference", color=KplColors.RED)
+    if (avg_sig_counts is not None) or (avg_ref_counts is not None):
+        ax_sig_ref.legend(loc=kpl.Loc.LOWER_RIGHT)
+    if norm_avg_sig is not None:
+        kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
     kpl.tight_layout(fig)
 
-    return fig, ax1, ax2
+    return fig, ax_sig_ref, ax_norm
 
 
 # endregion
@@ -134,10 +139,11 @@ def single_dip(freq, constrast, width, center, dip_func=lorentzian):
 # region Analysis functions
 
 
-def return_res_with_error(data):
-    """
-    Returns the frequency/error of the deepest resonance in a spectrum.
-    Intended for extracting the frequency/error of a single resonance.
+def return_res_with_error(data, fit_func=None, guess_params=None):
+    """Returns the frequency/error of the resonance in a spectrum.
+    Intended for extracting the frequency/error of a single resonance -
+    if there's a double, we'll return the average. data should be some
+    completed experiment file's raw data dictionary
     """
 
     freq_center = data["freq_center"]
@@ -152,19 +158,20 @@ def return_res_with_error(data):
         print("nv_sig has no norm_style. Defaulting to single-valued.")
         norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
-    (
-        avg_ref_counts,
-        avg_sig_counts,
-        norm_avg_sig,
-        ste_ref_counts,
-        ste_sig_counts,
-        norm_avg_sig_ste,
-    ) = ret_vals
+    _, _, norm_avg_sig, _, _, norm_avg_sig_ste = process_counts(
+        ref_counts, sig_counts, norm_style
+    )
 
     fit_func, popt, pcov = fit_resonance(
-        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        fit_func,
+        guess_params,
     )
+
     if len(popt) == 6:
         # print("Double resonance")
         low_res_ind = 2
@@ -183,20 +190,15 @@ def return_res_with_error(data):
         return res, res_err
 
 
-def calculate_freqs(freq_range, freq_center, num_steps):
-    half_freq_range = freq_range / 2
-    freq_low = freq_center - half_freq_range
-    freq_high = freq_center + half_freq_range
-    return np.linspace(freq_low, freq_high, num_steps)
-
-
-def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste):
-    """Get guess params for line fitting. Most importantly how many lines
-    and what their frequencies are
+def get_guess_params(
+    freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+):
+    """Get guess params for line fitting. Most importantly how many resonances and what
+    their frequencies are
     """
 
     # Setup for scipy's peak finding algorithm
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
     inverted_norm_avg_sig = 1 - norm_avg_sig
 
     # contrast = 0.15  # Arb
@@ -261,13 +263,6 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_
         low_freq_guess = freq_center
         high_freq_guess = None
 
-    # low_freq_guess = 2.8620
-    # high_freq_guess = 2.8936
-    # high_freq_guess = None
-
-    if low_freq_guess is None:
-        return None, None
-
     ### Fit functions
 
     if high_freq_guess is None:
@@ -293,59 +288,35 @@ def fit_resonance(
     num_steps,
     norm_avg_sig,
     norm_avg_sig_ste,
+    fit_func=None,
+    guess_params=None,
 ):
 
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    fit_func, guess_params = get_guess_params(
-        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
+    # Guess the fit function and params if not provided
+    if (fit_func is None) or (guess_params is None):
+        algo_fit_func, algo_guess_params = get_guess_params(
+            freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+        )
+    if fit_func is None:
+        fit_func = algo_fit_func
+    if guess_params is None:
+        guess_params = algo_guess_params
+
+    popt, pcov = curve_fit(
+        fit_func,
+        freqs,
+        norm_avg_sig,
+        p0=guess_params,
+        sigma=norm_avg_sig_ste,
+        absolute_sigma=True,
     )
-
-    # fit_func = single_dip
-    # guess_params = [0.2, 0.004, freq_center]
-
-    # try:
-    if norm_avg_sig_ste is not None:
-        popt, pcov = curve_fit(
-            fit_func,
-            freqs,
-            norm_avg_sig,
-            p0=guess_params,
-            sigma=norm_avg_sig_ste,
-            absolute_sigma=True,
-        )
-        # popt = guess_params
-        if len(popt) == 6:
-            zfs = (popt[2] + popt[5]) / 2
-            low_res_err = np.sqrt(pcov[2, 2])
-            hig_res_err = np.sqrt(pcov[5, 5])
-            zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        else:
-            zfs = popt[2]
-            zfs_err = np.sqrt(pcov[2, 2])
-
-        # print(zfs)
-        # print(zfs_err)
-        # temp_from_resonances.main(zfs, zfs_err)
-
-    else:
-        if fit_func == single_dip:
-            fit_bounds = (0, np.infty)
-        else:
-            fit_bounds = (0, np.infty)
-        print(guess_params)
-        popt, pcov = curve_fit(
-            fit_func, freqs, norm_avg_sig, p0=guess_params, bounds=fit_bounds
-        )
-    # except Exception as e:
-    #     print(e)
-    #     popt = guess_params
-    #     pcov = None
 
     return fit_func, popt, pcov
 
 
-def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
+def process_counts(sig_counts, ref_counts, norm_style=NormStyle.SINGLE_VALUED):
     """Extract the normalized average signal at each data point.
     Since we sometimes don't do many runs (<10), we often will have an
     insufficient sample size to run stats on for norm_avg_sig calculation.
@@ -380,11 +351,11 @@ def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
         )
 
     return (
-        ref_counts_avg,
         sig_counts_avg,
+        ref_counts_avg,
         norm_avg_sig,
-        ref_counts_ste,
         sig_counts_ste,
+        ref_counts_ste,
         norm_avg_sig_ste,
     )
 
@@ -402,12 +373,11 @@ def state(
     num_runs,
     composite=False,
     opti_nv_sig=None,
-    ret_file_name=False,
 ):
 
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
-    uwave_pulse_dur = nv_sig["rabi_{}".format(state.name)] // 2
+    uwave_pulse_dur = tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.name}"])
 
     resonance_list = main(
         nv_sig,
@@ -421,11 +391,9 @@ def state(
         state,
         composite,
         opti_nv_sig,
-        ret_file_name,
     )
 
     return resonance_list
-    # return resonance_list, nv_sig
 
 
 def main(
@@ -440,7 +408,6 @@ def main(
     state=States.HIGH,
     composite=False,
     opti_nv_sig=None,
-    ret_file_name=False,
 ):
 
     with labrad.connect() as cxn:
@@ -457,7 +424,6 @@ def main(
             state,
             composite,
             opti_nv_sig,
-            ret_file_name,
         )
     return resonance_list
 
@@ -475,50 +441,45 @@ def main_with_cxn(
     state=States.HIGH,
     composite=False,
     opti_nv_sig=None,
-    ret_file_name=False,
 ):
 
-    # %% Initial calculations and setup
+    ### Setup
 
     kpl.init_kplotlib()
-
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-
     tool_belt.reset_cfm(cxn)
 
-    # Calculate the frequencies we need to set
-    half_freq_range = freq_range / 2
-    freq_low = freq_center - half_freq_range
-    freq_high = freq_center + half_freq_range
-    freqs = np.linspace(freq_low, freq_high, num_steps)
+    counter = tool_belt.get_server_counter_server(cxn)
+    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
 
-    # Set up our data structure, an array of NaNs that we'll fill
-    # incrementally. NaNs are ignored by matplotlib, which is why they're
-    # useful for us here.
+    norm_style = nv_sig["norm_style"]
+    polarization_time = nv_sig["spin_pol_dur"]
+    readout = nv_sig["spin_readout_dur"]
+    readout_sec = readout / (10**9)
+
+    laser_key = "spin_laser"
+    laser_name = nv_sig[laser_key]
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+
+    # Set up our data structure, an array of NaNs that we'll fill incrementally.
+    # NaNs are ignored by matplotlib, which is why they're useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
     ref_counts = np.empty([num_runs, num_steps])
     ref_counts[:] = np.nan
     sig_counts = np.copy(ref_counts)
 
-    laser_key = "spin_laser"
-    laser_name = nv_sig[laser_key]
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-
-    norm_style = nv_sig["norm_style"]
-
-    polarization_time = nv_sig["spin_pol_dur"]
-    readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10**9)
+    # Sequence processing
     if composite:
-        uwave_pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
-        uwave_pi_on_2_pulse = round(nv_sig["rabi_{}".format(state.name)] / 4)
+        rabi_period = nv_sig[f"rabi_{state.name}"]
+        pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+        pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
         seq_args = [
             polarization_time,
             readout,
-            uwave_pi_pulse,
-            uwave_pi_on_2_pulse,
+            pi_pulse,
+            pi_on_2_pulse,
             1,
             1,
             state.value,
@@ -526,6 +487,7 @@ def main_with_cxn(
             laser_power,
         ]
         seq_args = [int(el) for el in seq_args]
+        seq_name = "discrete_rabi2.py"
     else:
         seq_args = [
             uwave_pulse_dur,
@@ -536,35 +498,21 @@ def main_with_cxn(
             laser_name,
             laser_power,
         ]
-    # print(seq_args)
-    # return
+        seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
 
-    # create figure
-    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    ax = axes_pack[0]
-    ax.plot([], [])
-    ax.set_title("Non-normalized Count Rate Versus Frequency")
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Count rate (kcps)")
+    # Create raw data figure for incremental plotting
+    fig_raw, ax_sig_ref, ax_norm = create_raw_data_figure(freq_center, freq_range, num_steps)
 
-    ax = axes_pack[1]
-    ax.plot([], [])
-    ax.set_title("Normalized Count Rate vs Frequency")
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Contrast (arb. units)")
-
-    # %% Get the starting time of the function
-
-    start_timestamp = tool_belt.get_time_stamp()
-
-    # %% Collect the data
+    ### Collect the data
 
     # Create a list of indices to step through the freqs. This will be shuffled
     freq_index_master_list = [[] for i in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
+
+    start_timestamp = tool_belt.get_time_stamp()
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -596,13 +544,11 @@ def main_with_cxn(
             cxn.arbitrary_waveform_generator.load_knill()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        if composite:
-            ret_vals = pulsegen_server.stream_load("discrete_rabi2.py", seq_args_string)
-        else:
-            ret_vals = pulsegen_server.stream_load("rabi.py", seq_args_string)
 
-        # Start the tagger stream
-        counter_server.start_tag_stream()
+        ret_vals = pulse_gen.stream_load(seq_name, seq_args_string)
+
+        # Load the pu
+        counter.start_tag_stream()
 
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)
@@ -615,38 +561,21 @@ def main_with_cxn(
             freq_index_master_list[run_ind].append(freq_ind)
             sig_gen_cxn.set_freq(freqs[freq_ind])
             sig_gen_cxn.uwave_on()
+            
+            counter.clear_buffer()
+            pulse_gen.stream_start(int(num_reps))
 
-            # It takes 400 us from receipt of the command to
-            # switch frequencies so allow 1 ms total
-            #            time.sleep(0.001)
-            # Clear the tagger buffer of any excess counts
-            counter_server.clear_buffer()
-            # Start the timing stream
-            pulsegen_server.stream_start(int(num_reps))
-
-            # Get the counts
-            new_counts = counter_server.read_counter_modulo_gates(2, 1)
-
+            # Get and write the counts
+            new_counts = counter.read_counter_modulo_gates(2, 1)
             sample_counts = new_counts[0]
             cur_run_sig_counts_summed = sample_counts[0]
             cur_run_ref_counts_summed = sample_counts[1]
-
             sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
             ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
 
-            # signal counts are even - get every second element starting from 0
-            # sig_gate_counts = sample_counts[0::2]
-            # sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
-            # print(sum(sig_gate_counts))
+        counter.stop_tag_stream()
 
-            # ref counts are odd - sample_counts every second element starting from 1
-            # ref_gate_counts = sample_counts[1::2]
-            # ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
-            # print(sum(ref_gate_counts))
-
-        counter_server.stop_tag_stream()
-
-        # %% incremental plotting
+        ### ncremental plotting
 
         # Average the counts over the iterations
         single_ref_avg = np.average(ref_counts[: (run_ind + 1)])
@@ -725,13 +654,13 @@ def main_with_cxn(
 
     # %% Process and plot the data
 
-    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
+    ret_vals = process_counts(sig_counts, ref_counts, norm_style)
     (
-        avg_ref_counts,
         avg_sig_counts,
+        avg_ref_counts,
         norm_avg_sig,
-        ste_ref_counts,
         ste_sig_counts,
+        ste_ref_counts,
         norm_avg_sig_ste,
     ) = ret_vals
 
@@ -766,7 +695,7 @@ def main_with_cxn(
 
     timestamp = tool_belt.get_time_stamp()
 
-    rawData = {
+    data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
@@ -803,18 +732,18 @@ def main_with_cxn(
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_name)
     # print(filePath)
     if ret_file_name:
-        raw_file_name = filePath.stem()
+        data_file_name = filePath.stem()
     tool_belt.save_figure(fig, filePath)
-    tool_belt.save_raw_data(rawData, filePath)
+    tool_belt.save_raw_data(data, filePath)
 
     # %% Fit the data
 
     fit_func, popt, pcov = fit_resonance(
-        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste
+        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(
-            freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
+            freq_center, freq_range, num_steps, norm_avg_sig, fit_func, popt
         )
 
     else:
@@ -826,24 +755,8 @@ def main_with_cxn(
 
     # %% Return
 
-    if fit_func == single_dip:
-        print("Single resonance at {:.4f} GHz".format(popt[2]))
-        print("\n")
-        ret_vals = [popt[2], None]
-    elif fit_func == double_dip:
-        print("Resonances at {:.4f} GHz and {:.4f} GHz".format(popt[2], popt[5]))
-        print("Splitting of {:d} MHz".format(int((popt[5] - popt[2]) * 1000)))
-        print("\n")
-        ret_vals = [popt[2], popt[5]]
-    else:
-        print("No resonances found")
-        print("\n")
-        ret_vals = [None, None]
-
-    if ret_file_name:
-        ret_vals.append(raw_file_name)
-    # print(ret_vals)
-    return ret_vals
+    single_res = return_res_with_error(data)
+    return single_res, data_file_name
 
 
 # endregion
@@ -868,30 +781,26 @@ if __name__ == "__main__":
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = process_counts(ref_counts, sig_counts, norm_style)
-    (
-        avg_ref_counts,
-        avg_sig_counts,
-        norm_avg_sig,
-        ste_ref_counts,
-        ste_sig_counts,
-        norm_avg_sig_ste,
-    ) = ret_vals
-    create_raw_data_figure(
-        freq_range, freq_center, num_steps, avg_sig_counts, avg_ref_counts, norm_avg_sig
-    )
+    ret_vals = process_counts(sig_counts, ref_counts, norm_style)
+    avg_sig_counts, avg_ref_counts, norm_avg_sig, _, _, norm_avg_sig_ste = ret_vals
+
     fit_func, popt, pcov = fit_resonance(
-        freq_range, freq_center, num_steps, norm_avg_sig, norm_avg_sig_ste, ref_counts
+        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+    )
+
+    create_raw_data_figure(
+        freq_center, freq_range, num_steps, avg_sig_counts, avg_ref_counts, norm_avg_sig
     )
     create_fit_figure(
-        freq_range,
         freq_center,
+        freq_range,
         num_steps,
         norm_avg_sig,
         fit_func,
         popt,
         norm_avg_sig_ste,
     )
+
     print(return_res_with_error(data))
 
     plt.show(block=True)
