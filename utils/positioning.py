@@ -67,7 +67,7 @@ def set_xyz_ramp(cxn, coords):
     else:
         total_movement_delay = z_delay
 
-    xyz_server = get_pos_xyz_server(cxn)
+    xyz_server = get_server_pos_xyz(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
