@@ -10,12 +10,22 @@ Created on June 22nd, 2022
 
 # region Imports and constants
 
+import utils.common as common
 import matplotlib.pyplot as plt
 from strenum import StrEnum
 from colorutils import Color
 import re
 from enum import Enum, auto
 from strenum import StrEnum
+from matplotlib.offsetbox import AnchoredText
+
+# matplotlib semantic locations for legends and text boxes
+class Loc(StrEnum):
+    BEST = "best"
+    LOWER_LEFT = "lower left"
+    UPPER_LEFT = "upper left"
+    LOWER_RIGHT = "lower right"
+    UPPER_RIGHT = "upper right"
 
 
 class Size(Enum):
@@ -52,9 +62,8 @@ line_style = "solid"
 marker_style = "o"
 
 # endregion
-
 # region Colors
-# The default color specification is hex, eg "#bcbd22"
+"""The default color specification is hex, eg "#bcbd22'"""
 
 
 class KplColors(StrEnum):
@@ -132,11 +141,10 @@ def zero_to_one_threshold(val):
 
 
 # endregion
+# region Miscellaneous
 
 
-def init_kplotlib(
-    font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False
-):
+def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
     """Runs the default initialization for kplotlib, our default configuration
     of matplotlib. Make sure no_latex is True for faster plotting.
     """
@@ -182,6 +190,7 @@ def init_kplotlib(
     plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
+    plt.rcParams["image.cmap"] = "inferno"
 
 
 def tight_layout(fig):
@@ -212,6 +221,60 @@ def get_default_color(ax, plot_type):
     cycler = color_cyclers[ax_ind][plot_type]
     color = cycler.pop(0)
     return color
+
+
+def anchored_text(ax, text, loc, size=None, **kwargs):
+    """Add text in default style to the passed ax"""
+
+    global default_font_size
+    if size is None:
+        size = default_font_size
+
+    font_size = font_Size[size]
+    text_props = dict(fontsize=font_size)
+    text_box = AnchoredText(text, loc, prop=text_props)
+    text_box.patch.set_boxstyle("round, pad=0.05")
+    text_box.patch.set_facecolor("wheat")
+    text_box.patch.set_alpha(0.5)
+    ax.add_artist(text_box)
+
+
+def tex_escape(text):
+    """Escape TeX characters in the passed text"""
+    conv = {
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\^{}",
+        "\\": r"\textbackslash{}",
+        "<": r"\textless{}",
+        ">": r"\textgreater{}",
+    }
+    regex = re.compile(
+        "|".join(
+            re.escape(str(key))
+            for key in sorted(conv.keys(), key=lambda item: -len(item))
+        )
+    )
+    return regex.sub(lambda match: conv[match.group()], text)
+
+
+def flush_update(ax):
+    """Call this after making some change to an existing figure to have the figure
+    actually update in the window
+    """
+    fig = ax.get_figure()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
+
+# endregion
+# region Plotting
 
 
 def plot_points(ax, x, y, size=None, **kwargs):
@@ -281,52 +344,85 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def text(ax, x, y, text, size=None, **kwargs):
-    """Add text in default style to the passed ax
-
-    x : float
-        x coordinate of textbox relative to plot dimensions starting from lower left corner
-    y : float
-        y coordinate of textbox relative to plot dimensions starting from lower left corner
+def plot_line_update(ax, line_ind=0, x=None, y=None):
+    """Updates a figure created by plot_line. x and y are the new data to write.
+    Either may be None in which case that axis of the plot won't be updated
     """
 
-    global default_font_size
-    if size is None:
-        size = default_font_size
+    # Get the line - assume it's  the first line in the first axes
+    lines = ax.get_lines()
+    line = lines[line_ind]
 
-    bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    font_size = font_Size[size]
-    ax.text(
-        x,
-        y,
-        text,
-        transform=ax.transAxes,
-        fontsize=font_size,
-        # verticalalignment="top",
-        bbox=bbox_props,
-    )
+    # Set the data for the line to display and rescale
+    if x is not None:
+        line.set_xdata(x)
+    if y is not None:
+        line.set_ydata(y)
+    ax.relim()
+    ax.autoscale_view(scalex=False)
+
+    flush_update(ax)
 
 
-def tex_escape(text):
-    """Escape TeX characters in the passed text"""
-    conv = {
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\^{}",
-        "\\": r"\textbackslash{}",
-        "<": r"\textless{}",
-        ">": r"\textgreater{}",
-    }
-    regex = re.compile(
-        "|".join(
-            re.escape(str(key))
-            for key in sorted(conv.keys(), key=lambda item: -len(item))
-        )
-    )
-    return regex.sub(lambda match: conv[match.group()], text)
+def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwargs):
+    """Same as matplotlib's imshow, but with our defaults. Returns the image object"""
+
+    fig = ax.get_figure()
+
+    # Get a default aspect ratio
+    if "extent" in kwargs:
+        extent = tuple(kwargs["extent"])
+        kwargs["extent"] = extent
+        if "aspect" not in kwargs:
+            height = extent[3] - extent[2]
+            width = extent[1] - extent[0]
+            aspect = height / width
+            kwargs["aspect"] = aspect
+
+    img = ax.imshow(img_array, **kwargs)
+
+    # Colorbar and labels
+    clb = fig.colorbar(img)
+    if cbar_label is not None:
+        clb.set_label(cbar_label)
+    if axes_labels is not None:
+        plt.xlabel(axes_labels[0])
+        plt.ylabel(axes_labels[1])
+    if title:
+        plt.title(title)
+
+    # Click handler
+    fig.canvas.mpl_connect("button_press_event", on_click_image)
+
+    tight_layout(fig)
+
+    return img
+
+
+def imshow_update(ax, img_array, cmin=None, cmax=None):
+    """Update the first image in the passed ax"""
+    images = ax.get_images()
+    img = images[0]
+    img.set_data(img_array)
+    if (cmin != None) & (cmax != None):
+        img.set_clim(cmin, cmax)
+    else:
+        img.autoscale()
+    img.autoscale()
+    flush_update(ax)
+
+
+def on_click_image(event):
+    """Click handler for images from imshow. Prints the click coordinates to
+    the console. Event is passed automatically
+    """
+    x_coord = round(event.xdata, 3)
+    y_coord = round(event.ydata, 3)
+    try:
+        print(f"{x_coord}, {y_coord}")
+    except TypeError:
+        # Ignore the exc that's raised if the user clicks out of bounds
+        pass
+
+
+# endregion

@@ -45,12 +45,12 @@ def get_seq(pulse_streamer, config, args):
     
     state, apd_index, laser_name, laser_power = args[5:9]
     state = States(state)
-    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen = config['Servers']['sig_gen_{}'.format(state.name)]
     
     wait_time = config['CommonDurations']['uwave_buffer']
     aom_delay_time = config['Optics'][laser_name]['delay']
     
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
     

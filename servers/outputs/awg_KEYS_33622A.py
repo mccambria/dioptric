@@ -30,25 +30,27 @@ import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import socket
 import logging
 import time
-import numpy
-from numpy import pi
+# import numpy
+# from numpy import pi
+import utils.tool_belt as tool_belt
+from servers.outputs.interfaces.awg import AWG
 
-root2_on_2 = numpy.sqrt(2) / 2
+# root2_on_2 = numpy.sqrt(2) / 2
 # amp = 0.5  # from SRS sig gen datasheet, ( I^2 + Q^2 ) ^ (1/2) = 0.5 V for full scale input. The amp should then be 0.5 V. This relates to 1.0 Vpp from the AWG
 
 
-def iq_comps(phase, amp):
-    if type(phase) is list:
-        ret_vals = []
-        for val in phase:
-            ret_vals.append(numpy.round(amp * numpy.exp((0 + 1j) * val), 5))
-        return (numpy.real(ret_vals).tolist(), numpy.imag(ret_vals).tolist())
-    else:
-        ret_val = numpy.round(amp * numpy.exp((0 + 1j) * phase), 5)
-        return (numpy.real(ret_val), numpy.imag(ret_val))
+# def iq_comps(phase, amp):
+#     if type(phase) is list:
+#         ret_vals = []
+#         for val in phase:
+#             ret_vals.append(numpy.round(amp * numpy.exp((0 + 1j) * val), 5))
+#         return (numpy.real(ret_vals).tolist(), numpy.imag(ret_vals).tolist())
+#     else:
+#         ret_val = numpy.round(amp * numpy.exp((0 + 1j) * phase), 5)
+#         return (numpy.real(ret_val), numpy.imag(ret_val))
 
 
-class AwgKeys33622A(LabradServer):
+class AwgKeys33622A(LabradServer, AWG):
     name = "awg_KEYS_33622A"
     pc_name = socket.gethostname()
 
@@ -87,86 +89,86 @@ class AwgKeys33622A(LabradServer):
         self.reset(None)
         logging.info("Init complete")
 
-    @setting(2, amp="v[]")
-    def set_i_full(self, c, amp):
+    # @setting(2, amp="v[]")
+    # def set_i_full(self, c, amp):
 
-        self.load_iq([0], amp)
+    #     self.load_iq([0], amp)
 
-    @setting(3)
-    def load_knill(self, c):
+    # @setting(3)
+    # def load_knill(self, c):
 
-        # There's a minimum number of points, thus * 16
-        # phases = [0, +pi/2, 0] * 16
-        phases = [
-            pi / 6,
-            0,
-            pi / 2,
-            0,
-            pi / 6,
-            # pi/6+pi, 0+pi, pi/2+pi, 0+pi, pi/6+pi] * 8
-            pi / 6 + pi / 2,
-            0 + pi / 2,
-            pi / 2 + pi / 2,
-            0 + pi / 2,
-            pi / 6 + pi / 2,
-        ] * 8
-        # phases = [0, -pi/2, 0,
-        #           pi/2, 0, pi/2,
-        #           3*pi/2, pi, 3*pi/2,
-        #           pi, pi/2, pi] * 4
+    #     # There's a minimum number of points, thus * 16
+    #     # phases = [0, +pi/2, 0] * 16
+    #     phases = [
+    #         pi / 6,
+    #         0,
+    #         pi / 2,
+    #         0,
+    #         pi / 6,
+    #         # pi/6+pi, 0+pi, pi/2+pi, 0+pi, pi/6+pi] * 8
+    #         pi / 6 + pi / 2,
+    #         0 + pi / 2,
+    #         pi / 2 + pi / 2,
+    #         0 + pi / 2,
+    #         pi / 6 + pi / 2,
+    #     ] * 8
+    #     # phases = [0, -pi/2, 0,
+    #     #           pi/2, 0, pi/2,
+    #     #           3*pi/2, pi, 3*pi/2,
+    #     #           pi, pi/2, pi] * 4
 
-        amp = self.iq_comp_amp
-        self.load_iq(phases, amp)
+    #     amp = self.iq_comp_amp
+    #     self.load_iq(phases, amp)
 
-    @setting(10, phases="*v[]")
-    def load_arb_phases(self, c, phases):
+    # @setting(10, phases="*v[]")
+    # def load_arb_phases(self, c, phases):
 
-        phases_list = []
+    #     phases_list = []
 
-        for el in phases:
-            phases_list.append(el)
+    #     for el in phases:
+    #         phases_list.append(el)
 
-        amp = self.iq_comp_amp
-        self.load_iq(phases_list, amp)
+    #     amp = self.iq_comp_amp
+    #     self.load_iq(phases_list, amp)
 
-    @setting(11, num_dd_reps="i")
-    def load_xy4n(self, c, num_dd_reps):
+    # @setting(11, num_dd_reps="i")
+    # def load_xy4n(self, c, num_dd_reps):
 
-        # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
-        phases = [0] + [0, pi / 2, 0, pi / 2] * num_dd_reps + [0]
-        phases = phases * 4
+    #     # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
+    #     phases = [0] + [0, pi / 2, 0, pi / 2] * num_dd_reps + [0]
+    #     phases = phases * 4
 
-        amp = self.iq_comp_amp
-        self.load_iq(phases, amp)
+    #     amp = self.iq_comp_amp
+    #     self.load_iq(phases, amp)
 
-    @setting(13, num_dd_reps="i")
-    def load_xy8n(self, c, num_dd_reps):
+    # @setting(13, num_dd_reps="i")
+    # def load_xy8n(self, c, num_dd_reps):
 
-        # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
-        phases = (
-            [0]
-            + [0, pi / 2, 0, pi / 2, pi / 2, 0, pi / 2, 0] * num_dd_reps
-            + [0]
-        )
-        phases = phases * 4
+    #     # intended phase list: [0, (0, pi/2, 0, pi/2, 0, pi/2, 0, pi/2)*N, 0]
+    #     phases = (
+    #         [0]
+    #         + [0, pi / 2, 0, pi / 2, pi / 2, 0, pi / 2, 0] * num_dd_reps
+    #         + [0]
+    #     )
+    #     phases = phases * 4
 
-        amp = self.iq_comp_amp
-        self.load_iq(phases, amp)
+    #     amp = self.iq_comp_amp
+    #     self.load_iq(phases, amp)
 
-    @setting(12, num_dd_reps="i")
-    def load_cpmg(self, c, num_dd_reps):
+    # @setting(12, num_dd_reps="i")
+    # def load_cpmg(self, c, num_dd_reps):
 
-        # intended phase list: [0, (pi/2)*N, 0]
+    #     # intended phase list: [0, (pi/2)*N, 0]
 
-        phases = [0] + [pi / 2] * num_dd_reps + [0]  ###
-        # 11/20/2022 Tried alternating phase, but for N>4, state is not coherent
-        # half_num_dd_reps = int(num_dd_reps/2)
-        # phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
-        # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
+    #     phases = [0] + [pi / 2] * num_dd_reps + [0]  ###
+    #     # 11/20/2022 Tried alternating phase, but for N>4, state is not coherent
+    #     # half_num_dd_reps = int(num_dd_reps/2)
+    #     # phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
+    #     # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
 
-        phases = phases * 4
-        amp = self.iq_comp_amp
-        self.load_iq(phases, amp)
+    #     phases = phases * 4
+    #     amp = self.iq_comp_amp
+    #     self.load_iq(phases, amp)
 
     # @setting(14)
     # def load_fsk_test(self, c):
@@ -198,8 +200,10 @@ class AwgKeys33622A(LabradServer):
         # repeat until it's long enough
         while len(phases) < 32:
             phases *= 2
-
-        phase_comps = iq_comps(phases, amp)
+            
+        # basedo n the angles for the phase and the amplitude, calculate
+        # the amplitudes for the I and Q components
+        phase_comps = tool_belt.iq_comps(phases, amp)
         # logging.info(phase_comps)
 
         # Shift the last element to first to account for first pulse in seq
@@ -284,7 +288,7 @@ if __name__ == "__main__":
     util.runServer(__server__)
 
     phases = [pi / 4, -pi / 4] * 16
-    phase_comps = iq_comps(phases)
+    phase_comps = tool_belt.iq_comps(phases)
     seq1 = str(phase_comps[1])[1:-1]  # Convert to string and trim the brackets
     seq = "0.5, -0.5, " * 16
     seq2 = seq[:-2]

@@ -12,13 +12,14 @@ Created on April 11th, 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
 import labrad
-from utils.tool_belt import ControlStyle
+from utils.positioning import ControlStyle
 
 
 # endregion
@@ -148,9 +149,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
         tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
     else:
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    time.sleep(
-        0.5
-    )  # finding we need a bit more time to settle at new position
+    time.sleep(0.5)  # finding we need a bit more time to settle at new position
 
     config_positioning = config["Positioning"]
     if "xy_small_response_delay" in config_positioning:
@@ -199,7 +198,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     # xy
     if axis_ind in [0, 1]:
 
-        xy_server = tool_belt.get_xy_server(cxn)
+        xy_server = positioning.get_pos_xy_server(cxn)
 
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
@@ -347,10 +346,8 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
         # mu: mean, defines the center of the Gaussian
         # sigma: standard deviation, defines the width of the Gaussian
         # offset: constant y value to account for background
-        text = (
-            "a={:.3f}\n $\mu$={:.3f}\n $\sigma$={:.3f}\n offset={:.3f}".format(
-                *opti_params
-            )
+        text = "a={:.3f}\n $\mu$={:.3f}\n $\sigma$={:.3f}\n offset={:.3f}".format(
+            *opti_params
         )
         update_figure(fig, axis_ind, linspace_voltages, fit_count_rates, text)
 
@@ -393,14 +390,10 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
         )
 
         if opti_coords is not None:
-            opti_coords_list.append(
-                "[{:.3f}, {:.3f}, {:.2f}],".format(*opti_coords)
-            )
+            opti_coords_list.append("[{:.3f}, {:.3f}, {:.2f}],".format(*opti_coords))
             opti_counts_list.append("{},".format(opti_counts))
         else:
-            opti_coords_list.append(
-                "Optimization failed for NV {}.".format(ind)
-            )
+            opti_coords_list.append("Optimization failed for NV {}.".format(ind))
 
     for coords in opti_coords_list:
         print(coords)
@@ -426,9 +419,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
         if filter_name is not None:
-            tool_belt.set_filter(
-                cxn, optics_name="collection", filter_name=filter_name
-            )
+            tool_belt.set_filter(cxn, optics_name="collection", filter_name=filter_name)
 
     magnet_angle = nv_sig["magnet_angle"]
     if magnet_angle is not None:
@@ -445,20 +436,11 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 # region Main
 
 
-def main(nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False):
-    control_style = tool_belt.get_xy_control_style()
-
+def main(
+    nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False, set_drift=True
+):
     with labrad.connect() as cxn:
-        if control_style == ControlStyle.STEP:
-            main_with_cxn_step(
-                cxn, nv_sig, set_to_opti_coords, save_data, plot_data
-            )
-        elif control_style == ControlStyle.STREAM:
-            main_with_cxn_stream(
-                cxn, nv_sig, set_to_opti_coords, save_data, plot_data
-            )
-        else:
-            print("optimization style not STREAM or STEP. check config")
+        main_with_cxn(cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift)
 
 
 def main_with_cxn(
@@ -472,14 +454,15 @@ def main_with_cxn(
     control_style = tool_belt.get_xy_control_style()
     if control_style == ControlStyle.STEP:
         main_with_cxn_step(
-            cxn, nv_sig, set_to_opti_coords, save_data, plot_data
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift
         )
     elif control_style == ControlStyle.STREAM:
         main_with_cxn_stream(
-            cxn, nv_sig, set_to_opti_coords, save_data, plot_data
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift
         )
     else:
-        print("optimization style not STREAM or STEP. check config")
+        print("Control style not STREAM or STEP. Check config.")
+
 
 def main_with_cxn_stream(
     cxn,
@@ -498,9 +481,7 @@ def main_with_cxn_stream(
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig["coords"]
-    adjusted_coords = (
-        numpy.array(passed_coords) + numpy.array(drift)
-    ).tolist()
+    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     # If optimize is disabled, just set the filters and magnet in place
     if nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig, adjusted_coords)
@@ -526,13 +507,9 @@ def main_with_cxn_stream(
         upper_threshold = expected_count_rate * 6 / 5
 
     # Check the count rate
-    opti_count_rate = stationary_count_lite(
-        cxn, nv_sig, adjusted_coords, config
-    )
+    opti_count_rate = stationary_count_lite(cxn, nv_sig, adjusted_coords, config)
 
-    print(
-        "Count rate at optimized coordinates: {:.1f}".format(opti_count_rate)
-    )
+    print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
     # If the count rate close to what we expect, we succeeded!
     if (expected_count_rate is not None) and (
@@ -581,9 +558,7 @@ def main_with_cxn_stream(
         else:
             for axis_ind in range(2):
                 # print(axis_ind)
-                ret_vals = optimize_on_axis(
-                    cxn, adjusted_nv_sig, axis_ind, config, fig
-                )
+                ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
@@ -625,9 +600,7 @@ def main_with_cxn_stream(
                 ]
                 tool_belt.set_xyz(cxn, int_coords)
             axis_ind = 2
-            ret_vals = optimize_on_axis(
-                cxn, adjusted_nv_sig, axis_ind, config, fig
-            )
+            ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
@@ -638,19 +611,13 @@ def main_with_cxn_stream(
             continue
 
         # Check the count rate
-        opti_count_rate = stationary_count_lite(
-            cxn, nv_sig, opti_coords, config
-        )
+        opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords, config)
 
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
 
-            print(
-                "Count rate at optimized coordinates: {:.1f}".format(
-                    opti_count_rate
-                )
-            )
+            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
             # If the count rate close to what we expect, we succeeded!
             if lower_threshold <= opti_count_rate <= upper_threshold:
@@ -668,11 +635,7 @@ def main_with_cxn_stream(
 
         # If the threshold is not set, we succeed based only on optimize
         else:
-            print(
-                "Count rate at optimized coordinates: {:.1f}".format(
-                    opti_count_rate
-                )
-            )
+            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
             print("Optimization succeeded! (No expected count rate passed.)")
             opti_succeeded = True
 
@@ -682,9 +645,7 @@ def main_with_cxn_stream(
     ### Calculate the drift relative to the passed coordinates
 
     if opti_succeeded and set_drift:
-        drift = (
-            numpy.array(opti_coords) - numpy.array(passed_coords)
-        ).tolist()
+        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
         tool_belt.set_drift(drift)
 
     ### Set to the optimized coordinates, or just tell the user what they are
@@ -760,9 +721,7 @@ def main_with_cxn_stream(
     return opti_coords, opti_count_rate
 
 
-def optimize_on_axis_step(
-    cxn, nv_sig, axis_ind, config, fig=None
-):
+def optimize_on_axis_step(cxn, nv_sig, axis_ind, config, fig=None):
 
     num_steps = 31
 
@@ -804,7 +763,7 @@ def optimize_on_axis_step(
             tool_belt.set_xyz(cxn, start_coords)
 
         # Get the proper scan function
-        xy_server = tool_belt.get_xy_server(cxn)
+        xy_server = positioning.get_pos_xy_server(cxn)
 
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -820,9 +779,7 @@ def optimize_on_axis_step(
             scan_func = xy_server.load_scan_y
             manual_write_func = xy_server.write_y
 
-        scan_vals = scan_func(
-            x_center, y_center, scan_range, num_steps, period
-        )
+        scan_vals = scan_func(x_center, y_center, scan_range, num_steps, period)
 
     # z
     elif axis_ind == 2:
@@ -861,9 +818,7 @@ def optimize_on_axis_step(
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period)
     else:
-        counts = read_manual_counts(
-            cxn, period, manual_write_func, scan_vals
-        )
+        counts = read_manual_counts(cxn, period, manual_write_func, scan_vals)
 
     # print(scan_vals)
     # counts = read_timed_counts(cxn, num_steps, period)
@@ -897,9 +852,7 @@ def main_with_cxn_step(
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig["coords"]
-    adjusted_coords = (
-        numpy.array(passed_coords) + numpy.array(drift)
-    ).tolist()
+    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     # If optimize is disabled, just set the filters and magnet in place
     if nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig, adjusted_coords)
@@ -925,13 +878,9 @@ def main_with_cxn_step(
         upper_threshold = expected_count_rate * 6 / 5
 
     # Check the count rate
-    opti_count_rate = stationary_count_lite(
-        cxn, nv_sig, adjusted_coords, config
-    )
+    opti_count_rate = stationary_count_lite(cxn, nv_sig, adjusted_coords, config)
 
-    print(
-        "Count rate at optimized coordinates: {:.1f}".format(opti_count_rate)
-    )
+    print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
     # If the count rate close to what we expect, we succeeded!
     if (expected_count_rate is not None) and (
@@ -1014,9 +963,7 @@ def main_with_cxn_step(
             adjusted_nv_sig_z["coords"] = adjusted_coords
         axis_ind = 2
         # print(axis_ind)
-        ret_vals = optimize_on_axis_step(
-            cxn, adjusted_nv_sig_z, axis_ind, config, fig
-        )
+        ret_vals = optimize_on_axis_step(cxn, adjusted_nv_sig_z, axis_ind, config, fig)
         opti_coords.append(ret_vals[0])
         scan_vals_by_axis.append(ret_vals[1])
         counts_by_axis.append(ret_vals[2])
@@ -1027,9 +974,7 @@ def main_with_cxn_step(
             continue
 
         # Check the count rate
-        opti_count_rate = stationary_count_lite(
-            cxn, nv_sig, opti_coords, config
-        )
+        opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords, config)
 
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -1041,11 +986,7 @@ def main_with_cxn_step(
             if ind == 0:
                 print("Expected count rate: {}".format(expected_count_rate))
 
-            print(
-                "Count rate at optimized coordinates: {:.1f}".format(
-                    opti_count_rate
-                )
-            )
+            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
             # If the count rate close to what we expect, we succeeded!
             if lower_threshold <= opti_count_rate <= upper_threshold:
@@ -1063,11 +1004,7 @@ def main_with_cxn_step(
 
         # If the threshold is not set, we succeed based only on optimize
         else:
-            print(
-                "Count rate at optimized coordinates: {:.0f}".format(
-                    opti_count_rate
-                )
-            )
+            print("Count rate at optimized coordinates: {:.0f}".format(opti_count_rate))
             print("Optimization succeeded! (No expected count rate passed.)")
             opti_succeeded = True
         # Break out of the loop if optimization succeeded
@@ -1080,9 +1017,7 @@ def main_with_cxn_step(
     # %% Calculate the drift relative to the passed coordinates
 
     if opti_succeeded and set_drift:
-        drift = (
-            numpy.array(opti_coords) - numpy.array(passed_coords)
-        ).tolist()
+        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
         tool_belt.set_drift(drift)
 
     # %% Set to the optimized coordinates, or just tell the user what they are

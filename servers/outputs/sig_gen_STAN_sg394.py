@@ -28,10 +28,10 @@ from twisted.internet.defer import ensureDeferred
 import socket
 import logging
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
-from servers.outputs.interfaces.vector_sig_gen import VectorSigGen
+from servers.outputs.interfaces.sig_gen_vector import SigGenVector
 
 
-class SigGenStanSg394(LabradServer, VectorSigGen):
+class SigGenStanSg394(LabradServer, SigGenVector):
     name = "sig_gen_STAN_sg394"
     pc_name = socket.gethostname()
 
