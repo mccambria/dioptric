@@ -10,6 +10,7 @@ Created on June 22nd, 2022
 
 # region Imports and constants
 
+import utils.common as common
 import matplotlib.pyplot as plt
 from strenum import StrEnum
 from colorutils import Color
@@ -60,9 +61,8 @@ line_style = "solid"
 marker_style = "o"
 
 # endregion
-
 # region Colors
-# The default color specification is hex, eg "#bcbd22"
+"""The default color specification is hex, eg "#bcbd22'"""
 
 
 class KplColors(StrEnum):
@@ -140,6 +140,7 @@ def zero_to_one_threshold(val):
 
 
 # endregion
+# region Miscellaneous
 
 
 def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
@@ -220,6 +221,51 @@ def get_default_color(ax, plot_type):
     return color
 
 
+def anchored_text(ax, text, loc, size=None, **kwargs):
+    """Add text in default style to the passed ax"""
+
+    global default_font_size
+    if size is None:
+        size = default_font_size
+
+    font_size = font_Size[size]
+    text_props = dict(fontsize=font_size)
+    text_box = AnchoredText(text, loc, prop=text_props)
+    text_box.patch.set_boxstyle("round, pad=0.05")
+    text_box.patch.set_facecolor("wheat")
+    text_box.patch.set_alpha(0.5)
+    ax.add_artist(text_box)
+
+
+def tex_escape(text):
+    """Escape TeX characters in the passed text"""
+    conv = {
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\^{}",
+        "\\": r"\textbackslash{}",
+        "<": r"\textless{}",
+        ">": r"\textgreater{}",
+    }
+    regex = re.compile(
+        "|".join(
+            re.escape(str(key))
+            for key in sorted(conv.keys(), key=lambda item: -len(item))
+        )
+    )
+    return regex.sub(lambda match: conv[match.group()], text)
+
+
+# endregion
+# region Plotting
+
+
 def plot_points(ax, x, y, size=None, **kwargs):
     """Same as matplotlib's errorbar, but with our defaults. Use for plotting
     data points
@@ -287,42 +333,181 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def anchored_text(ax, text, loc, size=None, **kwargs):
-    """Add text in default style to the passed ax"""
+def plot_line_update(ax, x=None, y=None):
+    """Updates a figure created by plot_line. x and y are the new data to write.
+    Either may be None in which case that axis of the plot won't be updated
+    """
 
-    global default_font_size
-    if size is None:
-        size = default_font_size
+    # Get the line - assume it's  the first line in the first axes
+    lines = ax.get_lines()
+    line = lines[0]
 
-    font_size = font_Size[size]
-    text_props = dict(fontsize=font_size)
-    text_box = AnchoredText(text, loc, prop=text_props)
-    text_box.patch.set_boxstyle("round, pad=0.05")
-    text_box.patch.set_facecolor("wheat")
-    text_box.patch.set_alpha(0.5)
-    ax.add_artist(text_box)
+    # Set the data for the line to display and rescale
+    if x is not None:
+        line.set_xdata(x)
+    if y is not None:
+        line.set_ydata(y)
+    ax.relim()
+    ax.autoscale_view(scalex=False)
+
+    # Redraw the canvas and flush the changes to the backend
+    # start = time.time()
+    fig = ax.get_figure()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    # stop = time.time()
+    # print(f"Tool time: {stop - start}")
 
 
-def tex_escape(text):
-    """Escape TeX characters in the passed text"""
-    conv = {
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\^{}",
-        "\\": r"\textbackslash{}",
-        "<": r"\textless{}",
-        ">": r"\textgreater{}",
-    }
-    regex = re.compile(
-        "|".join(
-            re.escape(str(key))
-            for key in sorted(conv.keys(), key=lambda item: -len(item))
-        )
+def imshow(
+    imgArray,
+    imgExtent,
+    clickHandler=None,
+    title=None,
+    color_bar_label="Counts",
+    um_scaled=False,
+    axes_labels=None,  # ["V", "V"],
+    aspect_ratio=None,
+    color_map="inferno",
+    cmin=None,
+    cmax=None,
+):
+    """Creates a figure containing a single grayscale image and a colorbar.
+
+    Params:
+        imgArray: np.ndarray
+            Rectangular np array containing the image data.
+            Just zeros if you're going to be writing the image live.
+        imgExtent: list(float)
+            The extent of the image in the form [left, right, bottom, top]
+        clickHandler: function
+            Function that fires on clicking in the image
+
+    Returns:
+        matplotlib.figure.Figure
+    """
+
+    # plt.rcParams.update({'font.size': 22})
+
+    # if um_scaled:
+    #     axes_label = r"$\mu$m"
+    # else:
+    if axes_labels == None:
+        try:
+            a = common.get_registry_entry_no_cxn(
+                "xy_units", ["", "Config", "Positioning"]
+            )
+            axes_labels = [a, a]
+        except Exception as exc:
+            print(exc)
+            axes_labels = ["V", "V"]
+    # Tell matplotlib to generate a figure with just one plot in it
+    fig, ax = plt.subplots()
+
+    # make sure the image is square
+    # plt.axis('square')
+
+    fig.set_tight_layout(True)
+
+    # Tell the axes to show a grayscale image
+    # print(imgArray)
+    img = ax.imshow(
+        imgArray,
+        cmap=color_map,
+        extent=tuple(imgExtent),
+        vmin=cmin,  # min_value,
+        vmax=cmax,
+        aspect=aspect_ratio,
     )
-    return regex.sub(lambda match: conv[match.group()], text)
+
+    #    if min_value == None:
+    #        img.autoscale()
+
+    # Add a colorbar
+    clb = plt.colorbar(img)
+    clb.set_label(color_bar_label)
+    # clb.ax.set_tight_layout(True)
+    # clb.ax.set_title(color_bar_label)
+    #    clb.set_label('kcounts/sec', rotation=270)
+
+    # Label axes
+    plt.xlabel(axes_labels[0])
+    plt.ylabel(axes_labels[1])
+    if title:
+        plt.title(title)
+
+    # Wire up the click handler to print the coordinates
+    if clickHandler is not None:
+        fig.canvas.mpl_connect("button_press_event", clickHandler)
+
+    # Draw the canvas and flush the events to the backend
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
+    return fig
+
+
+def on_click_image(event):
+    """
+    Click handler for images. Prints the click coordinates to the console.
+
+    Params:
+        event: dictionary
+            Dictionary containing event details
+    """
+
+    try:
+        print("{:.3f}, {:.3f}".format(event.xdata, event.ydata))
+    #        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
+    except TypeError:
+        # Ignore TypeError if you click in the figure but out of the image
+        pass
+
+
+def imshow_update(fig, imgArray, cmin=None, cmax=1000):
+    """Update the image with the passed image array and redraw the figure.
+    Intended to update figures created by create_image_figure.
+
+    The implementation below isn't nearly the fastest way of doing this, but
+    it's the easiest and it makes a perfect figure every time (I've found
+    that the various update methods accumulate undesirable deviations from
+    what is produced by this brute force method).
+
+    Params:
+        fig: matplotlib.figure.Figure
+            The figure containing the image to update
+        imgArray: np.ndarray
+            The new image data
+    """
+
+    # Get the image - Assume it's the first image in the first axes
+    axes = fig.get_axes()
+    ax = axes[0]
+    images = ax.get_images()
+    img = images[0]
+
+    # Set the data for the image to display
+    img.set_data(imgArray)
+
+    # Check if we should clip or autoscale
+    clipAtThousand = False
+    if clipAtThousand:
+        if np.all(np.isnan(imgArray)):
+            imgMax = 0  # No data yet
+        else:
+            imgMax = np.nanmax(imgArray)
+        if imgMax > 1000:
+            img.set_clim(None, 1000)
+        else:
+            img.autoscale()
+    elif (cmax != None) & (cmin != None):
+        img.set_clim(cmin, cmax)
+    else:
+        img.autoscale()
+
+    # Redraw the canvas and flush the changes to the backend
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
+
+# endregion

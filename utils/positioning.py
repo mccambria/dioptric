@@ -159,15 +159,15 @@ def set_xyz_on_nv(cxn, nv_sig, drift_adjust=True):
 # region Server getters
 
 
-def get_pos_xy_server(cxn):
+def get_server_pos_xy(cxn):
     common.get_server(cxn, "pos_xy")
 
 
-def get_pos_z_server(cxn):
+def get_server_pos_z(cxn):
     common.get_server(cxn, "pos_z")
 
 
-def get_pos_xyz_server(cxn):
+def get_server_pos_xyz(cxn):
     common.get_server(cxn, "pos_xyz")
 
 
@@ -221,7 +221,8 @@ def adjust_coords_for_drift(coords, cxn=None, drift=None):
 # endregion
 # region Scans
 """These are really just calculator functions for generating lists of coordinates
-used in scans
+used in scans. Since the functions don't care about whether your scan is xy or xz
+or whatever, variables are named axis-agnostically as <var>_<axis_ind>
 """
 
 
@@ -252,7 +253,7 @@ def get_scan_1d(center, scan_range, num_steps):
 
 # load_sweep_scan_xy
 def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
-    """Create a grid of points to snake scan through
+    """Create a grid of points for a snake scan
 
     Parameters
     ----------
@@ -272,9 +273,13 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
     Returns
     -------
     array(numeric)
-        Values to write to the first axis for the scan
+        Values to write to the first axis for the snake scan
     array(numeric)
-        Values to write to the second axis for the scan
+        Values to write to the second axis for the snake scan
+    array(numeric)
+        First-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
+    array(numeric)
+        Second-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
     """
     
     coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
@@ -296,11 +301,12 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
     # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
     coords_2 = np.repeat(coords_2_1d, num_steps_1)
 
-    return coords_1, coords_2
+    return coords_1, coords_2, coords_1_1d, coords_2_1d
 
 
 def get_scan_cross_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
-    """Scan in a cross pattern - useful for optimization
+    """Scan in a cross pattern. The first axis will be scanned while the second is held at its center,
+    then the second axis will be scanned while the first is held at its center. This is useful for optimization
 
     Parameters
     ----------
@@ -320,18 +326,36 @@ def get_scan_cross_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_
     Returns
     -------
     array(numeric)
-        Values to write to the first axis for the scan
+        Values to write to the first axis for the cross scan
     array(numeric)
-        Values to write to the second axis for the scan
+        Values to write to the second axis for the cross scan
+    array(numeric)
+        First-axis coordinates (i.e. coordinates scanned through while second axis is fixed)
+    array(numeric)
+        Second-axis coordinates (i.e. coordinates scanned through while first axis is fixed)
     """
 
     coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
     coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
 
-    coords_1 = np.concatenate([coords_1_1d, np.full(num_steps_1, center_1)])
-    coords_2 = np.concatenate([np.full(num_steps_2, center_2), coords_2_1d])
+    coords_1 = np.concatenate([coords_1_1d, np.full(num_steps_2, center_1)])
+    coords_2 = np.concatenate([np.full(num_steps_1, center_2), coords_2_1d])
 
-    return coords_1, coords_2
+    return coords_1, coords_2, coords_1_1d, coords_2_1d
+
+
+def get_scan_cross_3d(center_1, center_2, center_3, scan_range_1, scan_range_2, scan_range_3, num_steps_1, num_steps_2, num_steps_3):
+    """Extension of get_scan_cross_2d to 3D"""
+
+    coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
+    coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
+    coords_3_1d = get_scan_1d(center_3, scan_range_3, num_steps_3)
+
+    coords_1 = np.concatenate([coords_1_1d, np.full(num_steps_2 + num_steps_3, center_1)])
+    coords_2 = np.concatenate([np.full(num_steps_1, center_2), coords_2_1d, np.full(num_steps_3, center_2)])
+    coords_3 = np.concatenate([np.full(num_steps_1 + num_steps_2, center_3), coords_3_1d])
+
+    return coords_1, coords_2, coords_3, coords_1_1d, coords_2_1d, coords_3_1d
 
 
 def get_scan_one_axis_2d(center_1, center_2, scan_range_1, num_steps_1):
@@ -362,32 +386,55 @@ def get_scan_one_axis_2d(center_1, center_2, scan_range_1, num_steps_1):
 
 
 def get_scan_circle_2d(center_1, center_2, radius, num_steps):
-    """Load a scan around a circle. Useful for testing cat's eye
-    stationary point. Designed to be run continuously
+    """Get coordinates for a scan around in a circle. Useful for checking galvo alignment
 
-    Params
-        radius: float
-            Radius of the circle in V
-        num_steps: int
-            Number of steps the break the x/y range into
-        period: int
-            Expected period between clock signals in ns
+    Parameters
+    ----------
+    center_1 : numeric
+        First-axis center of the circle
+    center_2 : numeric
+        First-axis center of the circle
+    radius : numeric
+        Radius of the circle
+    num_steps : int
+        Number of steps to discretize the circle into
 
     Returns
-        list(float)
-            The x voltages that make up the scan
-        list(float)
-            The y voltages that make up the scan
+    -------
+    array(numeric)
+        Values to write to the first axis for the scan
+    array(numeric)
+        Values to write to the second axis for the scan
     """
 
     angles = np.linspace(0, 2 * np.pi, num_steps)
     coords_1 = center_1 + (radius * np.sin(angles))
-    coords_2 = center_1 + (radius * np.cos(angles))
+    coords_2 = center_2 + (radius * np.cos(angles))
     return coords_1, coords_2
 
 
 def get_scan_two_point_2d(first_coord_1, first_coord_2, second_coord_1, second_coord_2):
-    """Flip back an forth between two points - designed to be run continuously"""
+    """Flip back an forth between two points - designed to be run continuously
+
+    Parameters
+    ----------
+    first_coord_1 : numeric
+        First point, first axis coordinate
+    first_coord_2 : numeric
+        First point, second axis coordinate
+    second_coord_1 : numeric
+        Second point, first axis coordinate
+    second_coord_2 : numeric
+        Second point, second axis coordinate
+
+    Returns
+    -------
+    array(numeric)
+        Values to write to the first axis for the scan
+    array(numeric)
+        Values to write to the second axis for the scan
+    """
+    
     # Sometimes a minimum number of points is required in a stream, so
     # return a list of 64 coords to be safe
     coords_1 = [first_coord_1, second_coord_1] * 32

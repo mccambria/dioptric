@@ -15,9 +15,6 @@ import time
 import labrad
 import majorroutines.optimize as optimize
 import utils.kplotlib as kpl
-import matplotlib.pyplot as plt
-import cv2
-import utils.common as common
 import utils.positioning as positioning
 
 
@@ -77,130 +74,6 @@ def populate_img_array(valsToAdd, imgArray, writePos):
     return imgArray
 
 
-def on_click_image(event):
-    """
-    Click handler for images. Prints the click coordinates to the console.
-
-    Params:
-        event: dictionary
-            Dictionary containing event details
-    """
-
-    try:
-        print("{:.3f}, {:.3f}".format(event.xdata, event.ydata))
-    #        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
-    except TypeError:
-        # Ignore TypeError if you click in the figure but out of the image
-        pass
-
-
-def replot_for_presentation(file_name, scale_um_to_V, centered_at_0=False):
-    """
-    Replot measurements based on the scaling of um to V. Useful for preparing
-    presentation figures.
-    The coordinates can be centered at (0,0), or use the voltage values
-
-    """
-    scale = scale_um_to_V
-
-    data = tool_belt.get_raw_data(file_name)
-    nv_sig = data["nv_sig"]
-    # timestamp = data['timestamp']
-    img_array = np.array(data["img_array"])
-    x_range = data["x_range"]
-    y_range = data["y_range"]
-    x_voltages = data["x_voltages"]
-    y_voltages = data["y_voltages"]
-    readout = nv_sig["imaging_readout_dur"]
-
-    readout_sec = readout / 10**9
-
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-
-    if centered_at_0:
-        x_low = -x_range / 2
-        x_high = x_range / 2
-        y_low = -y_range / 2
-        y_high = y_range / 2
-
-        img_extent = [
-            x_low - half_pixel_size,
-            x_high + half_pixel_size,
-            y_low - half_pixel_size,
-            y_high + half_pixel_size,
-        ]
-
-    else:
-        x_low = x_voltages[0]
-        x_high = x_voltages[-1]
-        y_low = y_voltages[0]
-        y_high = y_voltages[-1]
-
-        img_extent = [
-            x_high - half_pixel_size,
-            x_low + half_pixel_size,
-            y_low - half_pixel_size,
-            y_high + half_pixel_size,
-        ]
-
-    # convert to kcps
-    img_array = (img_array[:] / 1000) / readout_sec
-
-    tool_belt.create_image_figure(
-        img_array,
-        np.array(img_extent) * scale,
-        clickHandler=on_click_image,
-        title=None,
-        color_bar_label="kcps",
-        axes_labels=["x (um)", "y (um)"],
-    )
-
-
-def replot_for_analysis(file_name, cmin=None, cmax=None):
-    """
-    Replot data just as it appears in measurements
-    """
-    data = tool_belt.get_raw_data(file_name)
-    nv_sig = data["nv_sig"]
-    img_array = np.array(data["img_array"])
-    x_voltages = data["x_voltages"]
-    y_voltages = data["y_voltages"]
-    readout = nv_sig["imaging_readout_dur"]
-
-    readout_sec = readout / 10**9
-
-    x_low = x_voltages[0]
-    x_high = x_voltages[-1]
-    y_low = y_voltages[0]
-    y_high = y_voltages[-1]
-
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [
-        x_high - half_pixel_size,
-        x_low + half_pixel_size,
-        y_low - half_pixel_size,
-        y_high + half_pixel_size,
-    ]
-
-    # convert to kcps
-    img_array = (img_array[:] / 1000) / readout_sec
-
-    tool_belt.create_image_figure(
-        img_array,
-        np.array(img_extent),
-        clickHandler=on_click_image,
-        title=None,
-        color_bar_label="kcps",
-        cmin=cmin,
-        cmax=cmax,
-    )
-
-
-### Main
-
-
 def main(
     nv_sig,
     x_range,
@@ -209,7 +82,7 @@ def main(
     save_data=True,
     plot_data=True,
     um_scaled=False,
-    nv_minus_initialization=False,
+    nv_minus_init=False,
     cmin=None,
     cmax=None,
 ):
@@ -224,7 +97,7 @@ def main(
             save_data,
             plot_data,
             um_scaled,
-            nv_minus_initialization,
+            nv_minus_init,
             cmin,
             cmax,
         )
@@ -241,7 +114,7 @@ def main_with_cxn(
     save_data=True,
     plot_data=True,
     um_scaled=False,
-    nv_minus_initialization=False,
+    nv_minus_init=False,
     cmin=None,
     cmax=None,
 ):
@@ -263,7 +136,7 @@ def main_with_cxn(
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     # print(readout_power)
 
-    xy_server = positioning.get_pos_xy_server(cxn)
+    xy_server = positioning.get_server_pos_xy(cxn)
 
     # Get a couple registry entries
     # See if this setup has finely specified delay times, else just get the
@@ -294,7 +167,7 @@ def main_with_cxn(
     readout_sec = readout / 10**9
     readout_us = readout / 10**3
 
-    if nv_minus_initialization:
+    if nv_minus_init:
         laser_key = "nv-_prep_laser"
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig["{}_dur".format(laser_key)]
@@ -328,7 +201,7 @@ def main_with_cxn(
 
     x_num_steps = num_steps
     y_num_steps = num_steps
-    x_voltages, y_voltages = positioning.get_scan_grid_2d(
+    x_voltages, y_voltages, x_voltages_1d, y_voltages_1d = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, x_num_steps, y_num_steps
     )
     xy_server.load_stream_xy(x_voltages, y_voltages)
@@ -340,7 +213,7 @@ def main_with_cxn(
 
     ### Set up our raw data objects
 
-    # Initialize imgArray and set all values to NaN so that unset values
+    # Initialize img_array and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
     img_array = np.empty((x_num_steps, y_num_steps))
     img_array[:] = np.nan
@@ -354,10 +227,10 @@ def main_with_cxn(
 
         img_array_kcps = np.copy(img_array)
 
-        x_low = min(x_voltages)
-        x_high = max(x_voltages)
-        y_low = min(y_voltages)
-        y_high = max(y_voltages)
+        x_low = min(x_voltages_1d)
+        x_high = max(x_voltages_1d)
+        y_low = min(y_voltages_1d)
+        y_high = max(y_voltages_1d)
 
         # For the image extent, we need to bump out the min/max x/y by half the
         # pixel size in each direction so that the center of each pixel properly
@@ -394,7 +267,7 @@ def main_with_cxn(
     counter.clear_buffer()
     pulse_gen.stream_start(total_num_samples)
 
-    charge_initialization = nv_minus_initialization
+    charge_initialization = nv_minus_init
 
     timeout_duration = ((period * (10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration

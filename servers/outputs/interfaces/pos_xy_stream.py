@@ -10,7 +10,6 @@ Created on December 1st, 2022
 
 from abc import abstractmethod
 from servers.outputs.interfaces.pos_xy import PosXy
-import numpy as np
 
 
 class PosXyStream(PosXy):
