@@ -27,8 +27,8 @@ class ControlStyle(Enum):
 
 
 def set_xyz(cxn, coords):
-    pos_xy_server = get_pos_xy_server(cxn)
-    pos_z_server = get_pos_z_server(cxn)
+    pos_xy_server = get_server_pos_xy(cxn)
+    pos_z_server = get_server_pos_z(cxn)
     pos_xy_server.write_xy(coords[0], coords[1])
     pos_z_server.write_z(coords[2])
     # Force some delay before proceeding to account for the effective write time
@@ -149,10 +149,12 @@ def set_xyz_ramp(cxn, coords):
 
 
 def set_xyz_on_nv(cxn, nv_sig, drift_adjust=True):
+    """Returns the coords actually used in the set"""
     coords = nv_sig["coords"]
     if drift_adjust:
         coords = adjust_coords_for_drift(coords, cxn)
     set_xyz(cxn, nv_sig["coords"])
+    return coords
 
 
 # endregion
@@ -208,7 +210,6 @@ def set_drift(cxn, drift):
 
 def reset_drift(cxn):
     set_drift(cxn, [0.0, 0.0, 0.0])
-
 
 def adjust_coords_for_drift(coords, cxn=None, drift=None):
     """Current drift will be retrieved from registry if passed drift is None"""
@@ -280,6 +281,11 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
         First-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
     array(numeric)
         Second-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
+    array(numeric)
+        Second-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
+    list(float)
+        Extent of the grid in the form [left, right, bottom, top] - includes half-pixel adjusment to 
+        min/max written vals for each axis so that the pixels in an image are properly centered
     """
     
     coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
@@ -301,7 +307,24 @@ def get_scan_grid_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1
     # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
     coords_2 = np.repeat(coords_2_1d, num_steps_1)
 
-    return coords_1, coords_2, coords_1_1d, coords_2_1d
+    x_low = min(coords_1_1d)
+    x_high = max(coords_1_1d)
+    y_low = min(coords_2_1d)
+    y_high = max(coords_2_1d)
+
+    # For the image extent, we need to bump out the min/max axis coords by half the
+    # pixel size in each direction so that the center of each pixel is properly aligned
+    # with its coords
+    x_half_pixel = (coords_1_1d[1] - coords_1_1d[0]) / 2
+    y_half_pixel = (coords_2_1d[1] - coords_2_1d[0]) / 2
+    img_extent = [
+        x_high + x_half_pixel,
+        x_low - x_half_pixel,
+        y_low - y_half_pixel,
+        y_high + y_half_pixel
+    ]
+
+    return coords_1, coords_2, coords_1_1d, coords_2_1d, img_extent
 
 
 def get_scan_cross_2d(center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2):
