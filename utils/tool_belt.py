@@ -39,11 +39,6 @@ class States(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
-    
-
-class ControlStyle(Enum):
-    STEP = auto()
-    STREAM = auto()
 
 
 # Normalization style for comparing experimental data to reference data
@@ -61,200 +56,8 @@ class Digital(IntEnum):
     LOW = 0
     HIGH = 1
 
+
 Boltzmann = 8.617e-2  # meV / K
-
-# endregion
-
-
-def get_signal_generator_name(cxn, state):
-    return get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
-    )
-
-
-def get_state_from_signal_generator_name(cxn, sig_gen_name):
-    state= States.HIGH
-    sig_gen_HIGH = get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
-    )
-    state= States.LOW
-    sig_gen_LOW = get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
-    )
-
-    return_state = None
-    if sig_gen_name == sig_gen_HIGH:
-        return_state = States.HIGH
-    elif sig_gen_name == sig_gen_LOW:
-        return_state = States.LOW
-
-    return return_state
-
-
-def get_signal_generator_cxn(cxn, state):
-    signal_generator_name = get_signal_generator_name(cxn, state)
-    signal_generator_cxn = eval("cxn.{}".format(signal_generator_name))
-    return signal_generator_cxn
-
-
-# %% region xyz sets
-
-
-def set_xyz(cxn, coords):
-    # get current x, y, z values
-    # divide up movement to this value based on step_size
-    # incrementally move to the final position
-    xy_dtype = eval(
-        get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
-    )
-    z_dtype = eval(
-        get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    )
-    pos_xy_server = get_pos_xy_server(cxn)
-    pos_z_server = get_pos_z_server(cxn)
-    if xy_dtype is int:
-        xy_op = round
-    else:
-        xy_op = xy_dtype
-    if z_dtype is int:
-        z_op = round
-    else:
-        z_op = z_dtype
-
-    pos_xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
-    pos_z_server.write_z(z_op(coords[2]))
-    # Force some delay before proceeding to account
-    # for the effective write time
-    time.sleep(0.002)
-
-
-def set_xyz_ramp(cxn, coords):
-    """Step incrementally to this position from the current position"""
-    xy_dtype = get_registry_entry(
-        cxn, "xy_dtype", ["", "Config", "Positioning"]
-    )
-    z_dtype = get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    # Get the min step size
-    step_size_xy = get_registry_entry(
-        cxn, "xy_incremental_step_size", ["", "Config", "Positioning"]
-    )
-    step_size_z = get_registry_entry(
-        cxn, "z_incremental_step_size", ["", "Config", "Positioning"]
-    )
-    # Get the delay between movements
-    try:
-        xy_delay = get_registry_entry(
-            cxn, "xy_delay", ["", "Config", "Positioning"]
-        )
-
-    except Exception:
-        xy_delay = get_registry_entry(
-            cxn,
-            "xy_large_response_delay",  # AG Eventually pahse out large angle response
-            ["", "Config", "Positioning"],
-        )
-
-    z_delay = get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
-
-    # Take whichever one is longer
-    if xy_delay > z_delay:
-        total_movement_delay = xy_delay
-    else:
-        total_movement_delay = z_delay
-
-    xyz_server = get_pos_xyz_server(cxn)
-
-    # if the movement type is int, just skip this and move to the desired position
-    if xy_dtype is int or z_dtype is int:
-        set_xyz(cxn, coords)
-        return
-
-    # Get current and final position
-    current_x, current_y = xyz_server.read_xy()
-    current_z = xyz_server.read_z()
-    final_x, final_y, final_z = coords
-
-    dx = final_x - current_x
-    dy = final_y - current_y
-    dz = final_z - current_z
-    # print('dx: {}'.format(dx))
-    # print('dy: {}'.format(dy))
-
-    # If we are moving a distance smaller than the step size,
-    # just set the coords, don't try to run a sequence
-
-    if (
-        abs(dx) <= step_size_xy
-        and abs(dy) <= step_size_xy
-        and abs(dz) <= step_size_z
-    ):
-        # print('just setting coords without ramp')
-        set_xyz(cxn, coords)
-
-    else:
-        # Determine num of steps to get to final destination based on step size
-        num_steps_x = np.ceil(abs(dx) / step_size_xy)
-        num_steps_y = np.ceil(abs(dy) / step_size_xy)
-        num_steps_z = np.ceil(abs(dz) / step_size_z)
-
-        # Determine max steps for this move
-        max_steps = int(max([num_steps_x, num_steps_y, num_steps_z]))
-
-        # The delay between steps will be the total delay divided by the num of incr steps
-        movement_delay = int(total_movement_delay / max_steps)
-
-        x_points = [current_x]
-        y_points = [current_y]
-        z_points = [current_z]
-
-        # set up the voltages to step thru. Once x, y, or z reach their final
-        # value, just pass the final position for the remaining steps
-        for n in range(max_steps):
-            if n > num_steps_x - 1:
-                x_points.append(final_x)
-            else:
-                move_x = (n + 1) * step_size_xy * dx / abs(dx)
-                incr_x_val = move_x + current_x
-                x_points.append(incr_x_val)
-
-            if n > num_steps_y - 1:
-                y_points.append(final_y)
-            else:
-                move_y = (n + 1) * step_size_xy * dy / abs(dy)
-                incr_y_val = move_y + current_y
-                y_points.append(incr_y_val)
-
-            if n > num_steps_z - 1:
-                z_points.append(final_z)
-            else:
-                move_z = (n + 1) * step_size_z * dz / abs(dz)
-                incr_z_val = move_z + current_z
-                z_points.append(incr_z_val)
-        # Run a simple clock pulse repeatedly to move through votlages
-        file_name = "simple_clock.py"
-        seq_args = [movement_delay]
-        seq_args_string = encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        period = ret_vals[0]
-        # print(z_points)
-
-        xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
-        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        cxn.pulse_streamer.stream_start(max_steps)
-
-    # Force some delay before proceeding to account
-    # for the effective write time, as well as settling time for movement
-    time.sleep(total_movement_delay / 1e9)
-
-
-def set_xyz_center(cxn):
-    # MCC Generalize this for Hahn
-    set_xyz(cxn, [0, 0, 5])
-
-
-def set_xyz_on_nv(cxn, nv_sig):
-    set_xyz(cxn, nv_sig["coords"])
-
 
 # endregion
 # region Laser utils
@@ -262,7 +65,7 @@ def set_xyz_on_nv(cxn, nv_sig):
 
 def get_mod_type(laser_name):
     with labrad.connect() as cxn:
-        mod_type = get_registry_entry(
+        mod_type = common.get_registry_entry(
             cxn, "mod_type", ["", "Config", "Optics", laser_name]
         )
     mod_type = eval(mod_type)
@@ -295,14 +98,14 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
-    mod_type = get_registry_entry(
+    mod_type = common.get_registry_entry(
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
     mod_type = eval(mod_type)
 
     if mod_type is ModTypes.DIGITAL:
         if turn_on:
-            laser_chan = get_registry_entry(
+            laser_chan = common.get_registry_entry(
                 cxn,
                 "do_{}_dm".format(laser_name),
                 ["", "Config", "Wiring", "PulseStreamer"],
@@ -310,7 +113,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
             cxn.pulse_streamer.constant([laser_chan])
     elif mod_type is ModTypes.ANALOG:
         if turn_on:
-            laser_chan = get_registry_entry(
+            laser_chan = common.get_registry_entry(
                 cxn,
                 "do_{}_dm".format(laser_name),
                 ["", "Config", "Wiring", "PulseStreamer"],
@@ -324,7 +127,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     # do this nicely we'd find a way to only turn off the specific channel,
     # but it's not worth the effort.
     if not turn_on:
-        pulse_gen_server = get_pulse_gen_server(cxn)
+        pulse_gen_server = get_server_pulse_gen(cxn)
         pulse_gen_server.constant([])
 
 
@@ -334,6 +137,7 @@ def set_laser_power(
     """Set a laser power, or return it for analog modulation.
     Specify either a laser_key/nv_sig or a laser_name/laser_power.
     """
+
     if (nv_sig is not None) and (laser_key is not None):
         laser_name = nv_sig[laser_key]
         power_key = "{}_power".format(laser_key)
@@ -349,7 +153,7 @@ def set_laser_power(
 
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
-    mod_type = get_registry_entry(
+    mod_type = common.get_registry_entry(
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
     mod_type = eval(mod_type)
@@ -362,9 +166,7 @@ def set_laser_power(
         return None
 
 
-def set_filter(
-    cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None
-):
+def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
     """optics_key should be either 'collection' or a laser key.
     Specify either an optics_key/nv_sig or an optics_name/filter_name.
     """
@@ -383,14 +185,13 @@ def set_filter(
         pass  # All good
     else:
         raise Exception(
-            "Specify either an optics_key/nv_sig or an"
-            " optics_name/filter_name."
+            "Specify either an optics_key/nv_sig or an" " optics_name/filter_name."
         )
 
     filter_server = get_filter_server(cxn, optics_name)
     if filter_server is None:
         return
-    pos = get_registry_entry(
+    pos = common.get_registry_entry(
         cxn,
         filter_name,
         ["", "Config", "Optics", optics_name, "FilterMapping"],
@@ -402,9 +203,8 @@ def get_filter_server(cxn, optics_name):
     """Try to get a filter server. If there isn't one listed on the registry,
     just return None.
     """
-
     try:
-        server_name = get_registry_entry(
+        server_name = common.get_registry_entry(
             cxn, "filter_server", ["", "Config", "Optics", optics_name]
         )
         return getattr(cxn, server_name)
@@ -416,9 +216,8 @@ def get_laser_server(cxn, laser_name):
     """Try to get a laser server. If there isn't one listed on the registry,
     just return None.
     """
-
     try:
-        server_name = get_registry_entry(
+        server_name = common.get_registry_entry(
             cxn, "laser_server", ["", "Config", "Optics", laser_name]
         )
         return getattr(cxn, server_name)
@@ -426,13 +225,12 @@ def get_laser_server(cxn, laser_name):
         return None
 
 
-def process_laser_seq(
-    pulse_streamer, seq, config, laser_name, laser_power, train
-):
+def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
     """Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
     modulation, but the Pulse Streamer only supplies 2.6 V.
     """
+
     pulser_wiring = config["Wiring"]["PulseGen"]
     # print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
@@ -472,14 +270,13 @@ def process_laser_seq(
 
 
 # endregion
-# region Pulse Streamer utils
+# region Pulse generator utils
 
 
 def set_delays_to_zero(config):
     """Pass this a config dictionary and it'll set all the delays to zero.
     Useful for testing sequences without having to worry about delays.
     """
-
     for key in config:
         # Check if any entries are delays and set them to 0
         if key.endswith("delay"):
@@ -492,11 +289,10 @@ def set_delays_to_zero(config):
 
 
 def set_delays_to_sixteen(config):
+    """Pass this a config dictionary and it'll set all the delays to 16ns,
+    which is the minimum wait() time for the OPX. Useful for testing
+    sequences without having to worry about delays.
     """
-    Pass this a config dictionary and it'll set all the delays to 16ns, which is the minimum wait() time for the OPX.
-    Useful for testing sequences without having to worry about delays.
-    """
-
     for key in config:
         # Check if any entries are delays and set them to 0
         if key.endswith("delay"):
@@ -563,42 +359,6 @@ deleting them.
 """
 
 
-def init_matplotlib(font_size=17):
-    """Runs the default initialization/configuration for matplotlib"""
-
-    # Interactive mode so plots update as soon as the event loop runs
-    plt.ion()
-
-    ####### Latex setup #######
-
-    preamble = r""
-    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
-    preamble += r"\usepackage{physics} \usepackage{upgreek}"
-
-    # Fonts
-    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-    preamble += r"\usepackage{helvet}"
-    # Latin mdoern is default math font but let's be safe
-    preamble += r"\usepackage{lmodern}"
-
-    # Sans serif math font, looks better for axis numbers.
-    # Preserves \mathrm and \mathit commands so you can still use serif
-    # Latin modern font for actually variables, equations, or whatever.
-    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
-
-    plt.rcParams["text.latex.preamble"] = preamble
-
-    ###########################
-
-    # plt.rcParams["savefig.format"] = "svg"
-
-    plt.rcParams["font.size"] = font_size
-    # plt.rcParams["font.size"] = 17
-    # plt.rcParams["font.size"] = 15
-
-    plt.rc("text", usetex=True)
-
-
 def create_image_figure(
     imgArray,
     imgExtent,
@@ -634,7 +394,7 @@ def create_image_figure(
     # else:
     if axes_labels == None:
         try:
-            a = get_registry_entry_no_cxn(
+            a = common.get_registry_entry_no_cxn(
                 "xy_units", ["", "Config", "Positioning"]
             )
             axes_labels = [a, a]
@@ -687,59 +447,6 @@ def create_image_figure(
     return fig
 
 
-def calc_image_extent(
-    x_center, y_center, scan_range, num_steps, pixel_size_adjustment=True
-):
-    """Calculate the image extent to be fed to create_image_figure from the
-    center coordinates, scan range, and number of steps (the latter two
-    are assumed to be the same for x and y).
-
-    If pixel_size_adjustment, adjust extent by half a pixel so pixel
-    coordinates are centered on the pixel. Should only be used for plotting.
-    """
-
-    half_scan_range = scan_range / 2
-    x_low = x_center - half_scan_range
-    x_high = x_center + half_scan_range
-    y_low = y_center - half_scan_range
-    y_high = y_center + half_scan_range
-
-    if pixel_size_adjustment:
-        _, _, pixel_size = calc_image_scan_vals(
-            x_center, y_center, scan_range, num_steps, ret_pixel_size=True
-        )
-        half_pixel_size = pixel_size / 2
-        image_extent = [
-            x_low - half_pixel_size,
-            x_high + half_pixel_size,
-            y_low - half_pixel_size,
-            y_high + half_pixel_size,
-        ]
-    else:
-        image_extent = [x_low, x_high, y_low, y_high]
-
-    return image_extent
-
-
-def calc_image_scan_vals(
-    x_center, y_center, scan_range, num_steps, ret_pixel_size=False
-):
-    """Calculate the scan values in x, y for creating an image"""
-
-    x_low, x_high, y_low, y_high = calc_image_extent(
-        x_center, y_center, scan_range, num_steps, pixel_size_adjustment=False
-    )
-    x_scan_vals, pixel_size = np.linspace(
-        x_low, x_high, num_steps, retstep=True
-    )
-    y_scan_vals = np.linspace(y_low, y_high, num_steps)
-
-    if ret_pixel_size:
-        return x_scan_vals, y_scan_vals, pixel_size
-    else:
-        return x_scan_vals, y_scan_vals
-
-
 def update_image_figure(fig, imgArray, cmin=None, cmax=1000):
     """Update the image with the passed image array and redraw the figure.
     Intended to update figures created by create_image_figure.
@@ -786,76 +493,6 @@ def update_image_figure(fig, imgArray, cmin=None, cmax=1000):
     fig.canvas.flush_events()
 
 
-def create_line_plot_figure(vals, xVals=None):
-    """Creates a figure containing a single line plot
-
-    Params:
-        vals: np.ndarray
-            1D np array containing the values to plot
-        xVals: np.ndarray
-            1D np array with the x values to plot against
-            Default is just the index of the value in vals
-
-    Returns:
-        matplotlib.figure.Figure
-    """
-
-    # mplstyle.use('fast')
-    # mpl.rcParams['path.simplify'] = True
-    # mpl.rcParams['path.simplify_threshold'] = 1.0
-    # mpl.rcParams['agg.path.chunksize'] = 10000
-
-    # Tell matplotlib to generate a figure with just one plot in it
-    fig, ax = plt.subplots()
-    fig.set_tight_layout(True)
-    ax.grid(axis="y")
-
-    if xVals is not None:
-        ax.plot(xVals, vals)
-        max_x_val = xVals[-1]
-        ax.set_xlim(xVals[0], 1.1 * max_x_val)
-    else:
-        ax.plot(vals)
-        ax.set_xlim(0, len(vals) - 1)
-
-    # Draw the canvas and flush the events to the backend
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-
-    return fig
-
-
-def create_line_plots_figure(vals, xVals=None):
-    """Creates a figure containing a single line plot
-
-    Params:
-        vals: tuple(np.ndarray)
-            1D np array containing the values to plot
-        xVals: np.ndarray
-            1D np array with the x values to plot against
-            Default is just the index of the value in vals
-
-    Returns:
-        matplotlib.figure.Figure
-    """
-
-    # Tell matplotlib to generate a figure with len(vals) plots
-    fig, ax = plt.subplots(len(vals))
-
-    if xVals is not None:
-        ax.plot(xVals, vals)
-        ax.set_xlim(xVals[0], xVals[len(xVals) - 1])
-    else:
-        ax.plot(vals)
-        ax.set_xlim(0, len(vals) - 1)
-
-    # Draw the canvas and flush the events to the backend
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-
-    return fig
-
-
 def update_line_plot_figure(fig, vals):
     """Updates a figure created by create_line_plot_figure
 
@@ -896,10 +533,9 @@ def get_pi_on_2_pulse_dur(rabi_period):
 
 
 def iq_comps(phase, amp):
-    '''
-    Given the phase and amplitude of the IQ vector, calculate the I (real) and 
+    """Given the phase and amplitude of the IQ vector, calculate the I (real) and
     Q (imaginary) components
-    '''
+    """
     if type(phase) is list:
         ret_vals = []
         for val in phase:
@@ -908,9 +544,9 @@ def iq_comps(phase, amp):
     else:
         ret_val = np.round(amp * np.exp((0 + 1j) * phase), 5)
         return (np.real(ret_val), np.imag(ret_val))
-    
-def lorentzian(x, x0, A, L, offset):
 
+
+def lorentzian(x, x0, A, L, offset):
     """Calculates the value of a lorentzian for the given input and parameters
 
     Params:
@@ -923,6 +559,7 @@ def lorentzian(x, x0, A, L, offset):
             2: L, related to width of curve
             3: offset, constant y value offset
     """
+
     x_center = x - x0
     return offset + A * 0.5 * L / (x_center**2 + (0.5 * L) ** 2)
 
@@ -963,25 +600,15 @@ def sinexp(t, offset, amp, freq, decay):
     )
 
 
-# This cosexp includes a phase that will be 0 in the ideal case.
-# def cosexp(t, offset, amp, freq, phase, decay):
-#    two_pi = 2*np.pi
-#    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t) + phase))
-
-
 def cosexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
-    return offset + (
-        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
-    )
+    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
 
 def cosexp_1_at_0(t, offset, freq, decay):
     two_pi = 2 * np.pi
     amp = 1 - offset
-    return offset + (
-        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
-    )
+    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
 
 def sin_1_at_0_phase(t, amp, offset, freq, phase):
@@ -1003,9 +630,7 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
 def cosine_one(t, offset, decay, amp_1, freq_1):
     two_pi = 2 * np.pi
 
-    return offset + np.exp(-t / abs(decay)) * (
-        amp_1 * np.cos(two_pi * freq_1 * t)
-    )
+    return offset + np.exp(-t / abs(decay)) * (amp_1 * np.cos(two_pi * freq_1 * t))
 
 
 def t2_func(t, amplitude, offset, t2):
@@ -1047,8 +672,9 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     return scan_vals
 
 
-
 def bose(energy, temp):
+    """Calculate Bose Einstein occupation number for a mode with given energy
+    (meV) at given temperature (K)"""
     # For very low temps we can get divide by zero and overflow warnings.
     # Fortunately, numpy is smart enough to know what we mean when this
     # happens, so let's let numpy figure it out and suppress the warnings.
@@ -1061,19 +687,12 @@ def bose(energy, temp):
 
 
 # endregion
-# region LabRAD utils
+# region LabRAD registry utils
+# Core registry functions in Common
 
 
 def get_config_dict(cxn=None):
-    """Get the shared parameters from the registry. These parameters are not
-    specific to any experiment, but are instead used across experiments. They
-    may depend on the current alignment (eg aom_delay) or they may just be
-    parameters that are referenced by many sequences (eg polarization_dur).
-    Generally, they should need to be updated infrequently, unlike the
-    shared parameters defined in cfm_control_panel, which change more
-    frequently (eg things in nv_sig).
-    """
-
+    """Get the whole config from the registry as a dictionary"""
     if cxn is None:
         with labrad.connect() as cxn:
             return get_config_dict_sub(cxn)
@@ -1082,7 +701,6 @@ def get_config_dict(cxn=None):
 
 
 def get_config_dict_sub(cxn):
-
     config_dict = {}
     populate_config_dict(cxn, ["", "Config"], config_dict)
     return config_dict
@@ -1126,253 +744,49 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
             dict_to_populate[key] = val
 
 
-def get_registry_entry(cxn, key, directory):
-    """Return the value for the specified key. The directory is specified
-    from the top of the registry. Directory as a list
-    """
-
-    p = cxn.registry.packet()
-    p.cd("", *directory)
-    p.get(key)
-    return p.send()["get"]
-
-
-def get_registry_entry_no_cxn(key, directory):
-    """
-    Same as above
-    """
-    with labrad.connect() as cxn:
-        return get_registry_entry(cxn, key, directory)
-
-
-def get_xy_server(cxn):
-    """DEPRECATED"""
-    return get_pos_xy_server(cxn)
-
-
-def get_pos_xy_server(cxn):
-    """Talk to the registry to get the fine xy control server for this
-    setup. Eg for rabi it is probably galvo. See optimize for some examples.
-    """
-
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    return getattr(cxn, get_pos_xy_server_name(cxn))
-
-
-def get_pos_xy_server_name(cxn):
-    return get_registry_entry(
-        cxn, "pos_xy_server", ["", "Config", "Servers"]
-    )
-
-
-def get_z_server(cxn):
-    """DEPRECATED"""
-    return get_pos_z_server(cxn)
-
-
-def get_pos_z_server(cxn):
-    """Same as get_xy_server but for the fine z control server"""
-
-    return getattr(cxn, get_pos_z_server_name(cxn))
-
-
-def get_pos_z_server_name(cxn):
-    return get_registry_entry(
-        cxn, "pos_z_server", ["", "Config", "Servers"]
-    )
-
-
-def get_xyz_server(cxn):
-    """DEPRECATED"""
-    return get_pos_xyz_server(cxn)
-
-
-def get_pos_xyz_server(cxn):
-    """Get an actual reference to the combined xyz server"""
-
-    return getattr(cxn, get_pos_xyz_server_name(cxn))
-
-
-def get_pos_xyz_server_name(cxn):
-    return get_registry_entry(
-        cxn, "pos_xyz_server", ["", "Config", "Servers"]
-    )
-
-
-def get_pulsegen_server(cxn):
-    """DEPRECATED"""
-    return get_pulse_gen_server(cxn)
-
-
-def get_pulse_gen_server(cxn):
-    """
-    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
-    """
-    pulsegen_server_return = getattr(
-        cxn,
-        get_registry_entry(
-            cxn, "pulse_gen_server", ["", "Config", "Servers"]
-        ),
-    )
-
-    if pulsegen_server_return == "":
-        raise RuntimeError
-
-    return pulsegen_server_return
-
-
-def get_arb_wave_gen_server(cxn):
-    """
-    Talk to the registry to get the arb wave gen server for this setup, such as opx vs keysight
-    """
-    pulsegen_server_return = getattr(
-        cxn,
-        get_registry_entry(
-            cxn, "arb_wave_gen_server", ["", "Config", "Servers"]
-        ),
-    )
-
-    if pulsegen_server_return == "":
-        raise RuntimeError
-
-    return pulsegen_server_return
-
-def get_counter_server(cxn):
-    """
-    Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
-    """
-    counter_server_return = getattr(
-        cxn,
-        get_registry_entry(
-            cxn, "counter_server", ["", "Config", "Servers"]
-        ),
-    )
-    if counter_server_return == "":
-        raise RuntimeError
-
-    return counter_server_return
-
-
-def get_tagger_server(cxn):
-    """
-    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
-    """
-    tagger_server_return = getattr(
-        cxn,
-        get_registry_entry(
-            cxn, "tagger_server", ["", "Config", "Servers"]
-        ),
-    )
-    if tagger_server_return == "":
-        raise RuntimeError
-
-    return tagger_server_return
-
-
-def get_temp_controller(cxn):
-    """Get the server controlling the temp"""
-
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    return getattr(
-        cxn,
-        get_registry_entry(
-            cxn, "temp_controller", ["", "Config", "Servers"]
-        ),
-    )
-
-
-def get_temp_monitor(cxn):
-    """Get the server controlling the temp"""
-
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    return getattr(
-        cxn,
-        get_registry_entry(cxn, "temp_monitor", ["", "Config", "Servers"]),
-    )
-
-
-def get_signal_generator_name_no_cxn(state):
-    """DEPRECATED"""
-    return get_sig_gen_name_no_cxn(state)
-
-
-def get_sig_gen_name_no_cxn(state):
-    with labrad.connect() as cxn:
-        return get_sig_gen_name(cxn, state)
-
-
-def get_signal_generator_name(cxn, state):
-    """DEPRECATED"""
-    return get_sig_gen_name(cxn, state)
-
-
-def get_sig_gen_name(cxn, state):
-    return get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Servers"]
-    )
-
-
-def get_signal_generator_cxn(cxn, state):
-    """DEPRECATED"""
-    return get_sig_gen_cxn(cxn, state)
-
-
-def get_sig_gen_cxn(cxn, state):
-    sig_gen_name = get_sig_gen_name(cxn, state)
-    sig_gen_cxn = eval("cxn.{}".format(sig_gen_name))
-    return sig_gen_cxn
-
-
-def get_xy_control_style():
-    """
-    Talk to the registry to get the xy control type for this setup
-    """
-    xy_control_style_return = get_registry_entry_no_cxn(
-        "xy_control_style", ["", "Config", "Positioning"]
-    )
-    xy_control_style_return = eval(xy_control_style_return)
-    
-    if xy_control_style_return == "":
-        raise RuntimeError
-
-    return xy_control_style_return
-
-def get_z_control_style():
-    """
-    Talk to the registry to get the z control type for this setup
-    """
-    z_control_style_return = get_registry_entry_no_cxn(
-        "z_control_style", ["", "Config", "Positioning"]
-    )
-    z_control_style_return = eval(z_control_style_return)
-    if z_control_style_return == "":
-        raise RuntimeError
-
-    return z_control_style_return
-
-
-def get_apd_gate_channel(cxn, apd_index):
-    directory = ["", "Config", "Wiring", "Tagger", "Apd_{}".format(apd_index)]
-    return get_registry_entry(cxn, "di_gate", directory)
-
-
 def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
-
-    return get_registry_entry(
-        cxn,
-        "apd_indices",
-        [
-            "",
-        ],
-    )
+    return common.get_registry_entry(cxn, "apd_indices", [""])
 
 
-def get_nv_sig_units():
-    return "in config"
+# endregion
+# region Server getters
+"""Each getter looks up the requested server from the registry and 
+returns a usable reference to the requested server (i.e. cxn.<server>)
+"""
+
+
+def get_server_pulse_gen(cxn):
+    """Get the pulse gen server for this setup, e.g. opx or swabian"""
+    return common.get_server(cxn, "pulse_gen")
+
+
+def get_server_awg(cxn):
+    """Get the arbitrary waveform generator server for this setup, e.g. opx or keysight"""
+    return common.get_server(cxn, "awg")
+
+
+def get_server_counter(cxn):
+    """Get the photon counter server for this setup, e.g. opx or swabian"""
+    return common.get_server(cxn, "counter")
+
+
+def get_server_tagger(cxn):
+    """Get the photon time tagger server for this setup, e.g. opx or swabian"""
+    return common.get_server(cxn, "tagger")
+
+
+def get_server_temp_controller(cxn):
+    return common.get_server(cxn, "temp_controller")
+
+
+def get_server_temp_monitor(cxn):
+    return common.get_server(cxn, "temp_monitor")
+
+
+def get_server_sig_gen(cxn, state):
+    """Get the signal generator that controls transitions to the specified NV state"""
+    return common.get_server(cxn, f"sig_gen_{state.name}")
 
 
 # endregion
@@ -1391,9 +805,7 @@ def get_raw_data(
     the file based on the known structure of the directories rooted from
     nvdata_dir (ie nvdata_dir / pc_folder / routine / year_month / file.txt)
     """
-
     file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
-
     with file_path.open() as f:
         res = json.load(f)
         return res
@@ -1405,17 +817,13 @@ def get_raw_data_path(
     nvdata_dir=None,
 ):
     """Same as get_raw_data, but just returns the path to the file"""
-
     if nvdata_dir is None:
         nvdata_dir = common.get_nvdata_dir()
-
     if path_from_nvdata is None:
         path_from_nvdata = search_index.get_data_path(file_name)
-
     data_dir = nvdata_dir / path_from_nvdata
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext
-
     return file_path
 
 
@@ -1535,7 +943,6 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
 
 
 def utc_from_file_name(file_name):
-
     f_split = file_name.split("-")
     date = f_split[0]
     date_split = date.split("_")
@@ -1586,9 +993,7 @@ def save_raw_data(rawData, filePath):
     # nv_sig_units. If these have already been defined in the routine,
     # then they'll just be overwritten.
     try:
-        rawData[
-            "config"
-        ] = get_config_dict()  # Include a snapshot of the config
+        rawData["config"] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
 
@@ -1629,9 +1034,7 @@ def save_combine_data(file_list, folder_list, py_file_name):
         num_steps = data1["num_steps"]
         num_steps_list.append(num_steps)
     # check that all num_steps of the files match
-    num_steps_result = all(
-        element == num_steps_list[0] for element in num_steps_list
-    )
+    num_steps_result = all(element == num_steps_list[0] for element in num_steps_list)
 
     if num_steps_result:
         # create initial empty arrays to add data to
@@ -1696,15 +1099,10 @@ def send_exception_email(
     # format_exc extracts the stack and error message from
     # the exception currently being handled.
     now = time.localtime()
-    date = time.strftime(
-        "%A, %B %d, %Y",
-        now,
-    )
+    date = time.strftime("%A, %B %d, %Y", now)
     timex = time.strftime("%I:%M:%S %p", now)
     exc_info = traceback.format_exc()
-    content = (
-        f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
-    )
+    content = f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
     send_email(content, email_from=email_from, email_to=email_to)
 
 
@@ -1805,9 +1203,7 @@ def write_csv(
     with open(
         "{}/{}/{}.csv".format(nvdata_dir, folder_path, file), "w", newline=""
     ) as csv_file:
-        csv_writer = csv.writer(
-            csv_file, delimiter=",", quoting=csv.QUOTE_NONE
-        )
+        csv_writer = csv.writer(csv_file, delimiter=",", quoting=csv.QUOTE_NONE)
         csv_writer.writerows(csv_data)
 
 
@@ -1841,16 +1237,12 @@ def save_image_data_csv(
         newline="",
     ) as csv_file:
 
-        csv_writer = csv.writer(
-            csv_file, delimiter=",", quoting=csv.QUOTE_NONE
-        )
+        csv_writer = csv.writer(csv_file, delimiter=",", quoting=csv.QUOTE_NONE)
         csv_writer.writerows(csv_data)
     return
 
 
-def opt_power_via_photodiode(
-    color_ind, AO_power_settings=None, nd_filter=None
-):
+def opt_power_via_photodiode(color_ind, AO_power_settings=None, nd_filter=None):
     cxn = labrad.connect()
     optical_power_list = []
     if color_ind == 532:
@@ -1907,9 +1299,7 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
 
     red_optical_power_mW = calc_optical_power_mW(638, red_optical_power_pd)
 
-    yellow_optical_power_mW = calc_optical_power_mW(
-        589, yellow_optical_power_pd
-    )
+    yellow_optical_power_mW = calc_optical_power_mW(589, yellow_optical_power_pd)
 
     return (
         green_optical_power_pd,
@@ -2006,7 +1396,6 @@ def init_safe_stop():
     """Call this at the beginning of a loop or other section which you may
     want to interrupt
     """
-
     global SAFESTOPFLAG
     # Tell the user safe stop has started if it was stopped or just not started
     try:
@@ -2021,14 +1410,12 @@ def init_safe_stop():
 
 def safe_stop_handler(sig, frame):
     """This should never need to be called directly"""
-
     global SAFESTOPFLAG
     SAFESTOPFLAG = True
 
 
 def safe_stop():
     """Call this to check whether the user asked us to stop"""
-
     global SAFESTOPFLAG
     time.sleep(0.1)  # Pause execution to allow safe_stop_handler to run
     return SAFESTOPFLAG
@@ -2038,98 +1425,15 @@ def reset_safe_stop():
     """Reset the Safe Stop flag, but don't remove the handler in case we
     want to reuse it.
     """
-
     global SAFESTOPFLAG
     SAFESTOPFLAG = False
 
 
 def poll_safe_stop():
     """Blocking version of safe stop"""
-
     init_safe_stop()
     while not safe_stop():
         time.sleep(0.1)
-
-
-# endregion
-# region State/globals
-
-
-"""Our client is and should be mostly stateless.
-But in some cases it's just easier to share some state across the life of an
-experiment/across experiments. To do this safely and easily we store global
-variables on our LabRAD registry. The globals should only be accessed with
-the getters and setters here so that we can be sure they're implemented
-properly."""
-
-
-def get_drift(cxn=None):
-    if cxn is None:
-        with labrad.connect() as cxn:
-            drift, xy_dtype, z_dtype = get_drift_sub(cxn)
-    else:
-        drift, xy_dtype, z_dtype = get_drift_sub(cxn)
-    len_drift = len(drift)
-    if len_drift != 3:
-        print("Got drift of length {}.".format(len_drift))
-        print("Setting to length 3.")
-        if len_drift < 3:
-            for ind in range(3 - len_drift):
-                drift.append(0.0)
-        elif len_drift > 3:
-            drift = drift[0:3]
-    # Cast to appropriate type
-    # MCC round instead of int?
-    drift_to_return = [
-        xy_dtype(drift[0]),
-        xy_dtype(drift[1]),
-        z_dtype(drift[2]),
-    ]
-    return drift_to_return
-
-
-def get_drift_sub(cxn):
-    cxn.registry.cd(["", "State"])
-    drift = cxn.registry.get("DRIFT")
-    # MCC where should this stuff live?
-    cxn.registry.cd(["", "Config", "Positioning"])
-    xy_dtype = eval(cxn.registry.get("xy_dtype"))
-    z_dtype = eval(cxn.registry.get("z_dtype"))
-    return drift, xy_dtype, z_dtype
-
-
-def set_drift(drift, cxn=None):
-    len_drift = len(drift)
-    if len_drift != 3:
-        print("Attempted to set drift of length {}.".format(len_drift))
-        print("Set drift unsuccessful.")
-    # Cast to the proper types
-
-    # xy_dtype = eval(
-    #     get_registry_entry_no_cxn("xy_dtype", ["Config", "Positioning"])
-    # )
-    # z_dtype = eval(
-    #     get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"])
-    # )
-    # drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
-    if cxn is None:
-        with labrad.connect() as cxn:
-            cxn.registry.cd(["", "State"])
-            return cxn.registry.set("DRIFT", drift)
-    else:
-        cxn.registry.cd(["", "State"])
-        return cxn.registry.set("DRIFT", drift)
-
-
-def reset_drift():
-    set_drift([0.0, 0.0, 0.0])
-
-
-def adjust_coords_for_drift(coords, drift=None):
-    if drift is None:
-        drift = get_drift()
-    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
-    return adjusted_coords
 
 
 # endregion
@@ -2142,7 +1446,6 @@ def reset_cfm(cxn=None):
     components that control xyz since these need to be reset in any
     routine where they matter anyway).
     """
-
     if cxn is None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
@@ -2151,17 +1454,8 @@ def reset_cfm(cxn=None):
 
 
 def reset_cfm_with_cxn(cxn):
-
-    plt.rc("text", usetex=False)
-
-    pos_xy_server_name = get_pos_xy_server_name(cxn)
-    pos_z_server_name = get_pos_z_server_name(cxn)
-    pos_server_names = [pos_xy_server_name, pos_z_server_name]
     cxn_server_names = cxn.servers
     for name in cxn_server_names:
-        # By default don't reset positioning control
-        if name in pos_server_names:
-            continue
         server = cxn[name]
         # Check for servers that ask not to be reset automatically
         if hasattr(server, "reset_cfm_opt_out"):
