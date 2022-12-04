@@ -23,6 +23,7 @@ from utils.positioning import ControlStyle
 
 # region Plotting functions
 
+
 def create_figure():
     fig, axes_pack = plt.subplots(1, 3, figsize=(17, 8.5))
     axis_titles = ["X Axis", "Y Axis", "Z Axis"]
@@ -56,6 +57,7 @@ def update_figure(fig, axis_ind, voltages, count_rates, text=None):
 
     fig.canvas.draw()
     fig.canvas.flush_events()
+
 
 def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 
@@ -129,6 +131,7 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
         center = opti_params[1]
 
     return center
+
 
 # endregion
 # region Misc functions
@@ -244,6 +247,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
 # endregion
 # region User-callable functions
 
+
 def prepare_microscope(cxn, nv_sig, coords=None):
     """
     Prepares the microscope for a measurement. In particular,
@@ -253,7 +257,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     """
 
     if coords is not None:
-        print('setting to opti coords:',coords)
+        print("setting to opti coords:", coords)
         if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, coords)
         else:
@@ -270,9 +274,10 @@ def prepare_microscope(cxn, nv_sig, coords=None):
             rotation_stage_server = tool_belt.get_magnet_rotation_server(cxn)
             rotation_stage_server.set_angle(magnet_angle)
         except:
-            print('trying to set magnet angle with no rotation stage. check config?')
+            print("trying to set magnet angle with no rotation stage. check config?")
 
     time.sleep(0.01)
+
 
 def optimize_list(nv_sig_list):
 
@@ -314,7 +319,7 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
-    
+
     xy_control_style = tool_belt.get_xy_control_style()
     z_control_style = tool_belt.get_z_control_style()
 
@@ -325,9 +330,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     seq_file_name = "simple_readout.py"
 
     coords = nv_sig["coords"]
-    
+
     x_center, y_center, z_center = coords
-    
+
     if "opti_offset" in nv_sig:
         adj_coords = numpy.array(coords)
         opti_offset = numpy.array(nv_sig["opti_offset"])
@@ -335,7 +340,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         sweep_x_center, sweep_y_center, sweep_z_center = adj_coords
     else:
         sweep_x_center, sweep_y_center, sweep_z_center = coords
-    
+
     readout = nv_sig["imaging_readout_dur"]
     laser_key = "imaging_laser"
     laser_name = nv_sig[laser_key]
@@ -343,9 +348,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
     # xy
     if axis_ind in [0, 1]:
-        
+
         xy_server = positioning.get_pos_xy_server(cxn)
-        
+
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
         scan_dtype = eval(config_positioning["xy_dtype"])
@@ -353,8 +358,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             delay = config["Positioning"]["xy_small_response_delay"]
         else:
             delay = config["Positioning"]["xy_delay"]
-            
-            
+
         if xy_control_style == ControlStyle.STEP:
             # Move to first point in scan
             half_scan_range = scan_range / 2
@@ -370,11 +374,11 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             else:
                 tool_belt.set_xyz(cxn, start_coords)
             auto_scan = False
-            
+
         elif xy_control_style == ControlStyle.STREAM:
             # no need to move to first position. loading the daq already does that
             auto_scan = True
-        
+
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
@@ -387,7 +391,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             scan_func = xy_server.load_scan_y
             manual_write_func = xy_server.write_y
 
-        scan_vals = scan_func(sweep_x_center, sweep_y_center, scan_range, num_steps, period)
+        scan_vals = scan_func(
+            sweep_x_center, sweep_y_center, scan_range, num_steps, period
+        )
 
     # z
     elif axis_ind == 2:
@@ -413,7 +419,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         period = ret_vals[0]
 
         if hasattr(z_server, "load_scan_z"):
-            scan_vals = z_server.load_scan_z(sweep_z_center, scan_range, num_steps, period)
+            scan_vals = z_server.load_scan_z(
+                sweep_z_center, scan_range, num_steps, period
+            )
             auto_scan = True
         else:
             manual_write_func = z_server.write_z
@@ -423,10 +431,10 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             )
             auto_scan = False
     if z_control_style == ControlStyle.STEP:
-        auto_scan=False
+        auto_scan = False
     elif z_control_style == ControlStyle.STREAM:
         pass
-        
+
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period)
     else:
@@ -443,12 +451,15 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
     return opti_coord, scan_vals, counts
 
+
 # %% Main
 def main(
     nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False, set_drift=True
 ):
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift)
+        return main_with_cxn(
+            cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift
+        )
 
 
 def main_with_cxn(
@@ -512,7 +523,7 @@ def main_with_cxn(
         print("Count rate at optimized coordinates out of bounds.")
         opti_unnecessary = False
 
-    ### Try to optimize. 
+    ### Try to optimize.
 
     if xy_control_style == ControlStyle.STREAM:
         num_attempts = 20
@@ -551,7 +562,7 @@ def main_with_cxn(
             for axis_ind in range(2):
                 # print(axis_ind)
                 ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
-                
+
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
@@ -580,7 +591,6 @@ def main_with_cxn(
                         break
             else:
                 pass
-                
 
         # z
         if z_control_style == ControlStyle.STREAM:
@@ -591,12 +601,11 @@ def main_with_cxn(
             else:
                 # Help z out by ensuring we're centered in xy first
                 if None not in opti_coords:
-                    int_coords = [opti_coords[0],opti_coords[1],adjusted_coords[2]]
+                    int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
                     tool_belt.set_xyz(cxn, int_coords)
                 axis_ind = 2
                 ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
-                
-        
+
         elif z_control_style == ControlStyle.STEP:
             if None not in opti_coords:
                 int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
@@ -607,7 +616,7 @@ def main_with_cxn(
                 adjusted_nv_sig_z["coords"] = adjusted_coords
             axis_ind = 2
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig_z, axis_ind, config, fig)
-            
+
         opti_coords.append(ret_vals[0])
         scan_vals_by_axis.append(ret_vals[1])
         counts_by_axis.append(ret_vals[2])
@@ -715,8 +724,8 @@ def main_with_cxn(
             "y_counts-units": "number",
             "z_counts": z_scan_vals,
             "z_counts-units": "number",
-            "xy_control_type":xy_control_style.name,
-            "z_control_type":z_control_style.name
+            "xy_control_type": xy_control_style.name,
+            "z_control_type": z_control_style.name,
         }
 
         filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])

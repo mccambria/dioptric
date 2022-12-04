@@ -237,6 +237,8 @@ def anchored_text(ax, text, loc, size=None, **kwargs):
     text_box.patch.set_facecolor("wheat")
     text_box.patch.set_alpha(0.5)
     ax.add_artist(text_box)
+    return text_box
+    
 
 
 def tex_escape(text):

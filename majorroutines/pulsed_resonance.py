@@ -76,7 +76,12 @@ def create_fit_figure(
 
 
 def create_raw_data_figure(
-    freq_center, freq_range, num_steps, avg_sig_counts=None, avg_ref_counts=None, norm_avg_sig=None
+    freq_center,
+    freq_range,
+    num_steps,
+    avg_sig_counts=None,
+    avg_ref_counts=None,
+    norm_avg_sig=None,
 ):
 
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
@@ -88,11 +93,15 @@ def create_raw_data_figure(
     ax_sig_ref.set_ylabel("Count rate (kcps)")
     ax_norm.set_xlabel("Frequency (GHz)")
     ax_norm.set_ylabel("Normalized fluorescence")
-    
+
     if avg_sig_counts is not None:
-        kpl.plot_line(ax_sig_ref, freqs, avg_sig_counts, label="Signal", color=KplColors.GREEN)
+        kpl.plot_line(
+            ax_sig_ref, freqs, avg_sig_counts, label="Signal", color=KplColors.GREEN
+        )
     if avg_ref_counts is not None:
-        kpl.plot_line(ax_sig_ref, freqs, avg_ref_counts, label="Reference", color=KplColors.RED)
+        kpl.plot_line(
+            ax_sig_ref, freqs, avg_ref_counts, label="Reference", color=KplColors.RED
+        )
     if (avg_sig_counts is not None) or (avg_ref_counts is not None):
         ax_sig_ref.legend(loc=kpl.Loc.LOWER_RIGHT)
     if norm_avg_sig is not None:
@@ -504,7 +513,14 @@ def main_with_cxn(
     opti_coords_list = []
 
     # Create raw data figure for incremental plotting
-    fig_raw, ax_sig_ref, ax_norm = create_raw_data_figure(freq_center, freq_range, num_steps)
+    raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
+        freq_center, freq_range, num_steps
+    )
+    # Set up a run indicator for incremental plotting
+    run_indicator_text = "Run #{}/{}"
+    run_indicator_obj = kpl.anchored_text(
+        ax_norm, run_indicator_text.format(0, num_runs), loc=kpl.Loc.UPPER_RIGHT
+    )
 
     ### Collect the data
 
@@ -526,10 +542,8 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
-            drift = tool_belt.get_drift()
-            adj_coords = nv_sig["coords"] + np.array(drift)
-            tool_belt.set_xyz(cxn, adj_coords)
+            ret_vals = optimize.main_with_cxn(cxn, opti_nv_sig)
+            opti_coords = ret_vals[0]
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
@@ -539,15 +553,14 @@ def main_with_cxn(
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
+        sig_gen_cxn.uwave_on()
         if composite:
             sig_gen_cxn.load_iq()
             cxn.arbitrary_waveform_generator.load_knill()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-        ret_vals = pulse_gen.stream_load(seq_name, seq_args_string)
-
-        # Load the pu
+        pulse_gen.stream_load(seq_name, seq_args_string)
         counter.start_tag_stream()
 
         # Take a sample and step through the shuffled frequencies
@@ -560,8 +573,7 @@ def main_with_cxn(
 
             freq_index_master_list[run_ind].append(freq_ind)
             sig_gen_cxn.set_freq(freqs[freq_ind])
-            sig_gen_cxn.uwave_on()
-            
+
             counter.clear_buffer()
             pulse_gen.stream_start(int(num_reps))
 
@@ -575,50 +587,27 @@ def main_with_cxn(
 
         counter.stop_tag_stream()
 
-        ### ncremental plotting
+        ### Incremental plotting
+
+        # Update the run indicator
+        run_indicator_obj.txt.set_text(run_indicator_text.format(run_ind + 1, num_runs))
 
         # Average the counts over the iterations
-        single_ref_avg = np.average(ref_counts[: (run_ind + 1)])
-        ref_counts_avg = np.average(ref_counts[: (run_ind + 1)], axis=0)
-        sig_counts_avg = np.average(sig_counts[: (run_ind + 1)], axis=0)
-        if norm_style == NormStyle.single_valued:
-            norm_avg_sig = sig_counts_avg / single_ref_avg
-        elif norm_style == NormStyle.point_to_point:
-            norm_avg_sig = sig_counts_avg / ref_counts_avg
+        inc_sig_counts = sig_counts[: run_ind + 1]
+        inc_ref_counts = ref_counts[: run_ind + 1]
+        ret_vals = process_counts(inc_sig_counts, inc_ref_counts, norm_style)
+        sig_counts_avg, ref_counts_avg, norm_avg_sig, _, _, _ = ret_vals
 
-        kcps_uwave_off_avg = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-        kcpsc_uwave_on_avg = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+        sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+        ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
 
-        ax = axes_pack[0]
-        ax.cla()
-        ax.plot(freqs, kcps_uwave_off_avg, "r-", label="Reference")
-        ax.plot(freqs, kcpsc_uwave_on_avg, "g-", label="Signal")
+        kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+        kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+        kpl.plot_line_update(ax_norm, y=norm_avg_sig)
 
-        ax.legend()
+        ### Incremental saving
 
-        ax = axes_pack[1]
-        ax.cla()
-        ax.plot(freqs, norm_avg_sig, "b-")
-
-        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
-
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(
-            0.8,
-            0.9,
-            text_popt,
-            transform=ax.transAxes,
-            verticalalignment="top",
-            bbox=props,
-        )
-
-        fig.canvas.draw()
-        fig.set_tight_layout(True)
-        fig.canvas.flush_events()
-
-        # %% Save the data we have incrementally for long measurements
-
-        rawData = {
+        data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
@@ -649,52 +638,39 @@ def main_with_cxn(
         file_path = tool_belt.get_file_path(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
-        tool_belt.save_raw_data(rawData, file_path)
-        tool_belt.save_figure(fig, file_path)
+        tool_belt.save_raw_data(data, file_path)
+        tool_belt.save_figure(raw_fig, file_path)
 
-    # %% Process and plot the data
+    ### Process and plot the data
 
     ret_vals = process_counts(sig_counts, ref_counts, norm_style)
-    (
-        avg_sig_counts,
-        avg_ref_counts,
-        norm_avg_sig,
-        ste_sig_counts,
-        ste_ref_counts,
-        norm_avg_sig_ste,
-    ) = ret_vals
+    sig_counts_avg, ref_counts_avg, norm_avg_sig, _, _, norm_avg_sig_ste = ret_vals
 
     # Convert to kilocounts per second
-    kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
-    kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
+    sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+    ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
 
-    # The first plot will display both the uwave_off and uwave_off counts
-    ax = axes_pack[0]
-    ax.cla()
-    ax.plot(freqs, kcps_uwave_off_avg, "r-", label="Reference")
-    ax.plot(freqs, kcpsc_uwave_on_avg, "g-", label="Signal")
-    ax.set_title("Non-normalized Count Rate Versus Frequency")
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Count rate (kcps)")
-    ax.legend()
-    # The second plot will show their subtracted values
-    ax = axes_pack[1]
-    ax.cla()
-    ax.plot(freqs, norm_avg_sig, "b-")
-    ax.set_title("Normalized Count Rate vs Frequency")
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Contrast (arb. units)")
+    # Raw data
+    kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+    kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+    kpl.plot_line_update(ax_norm, y=norm_avg_sig)
+    run_indicator_obj.remove()
 
-    fig.canvas.draw()
-    fig.tight_layout()
-    fig.canvas.flush_events()
+    # Fits
+    fit_func, popt, pcov = fit_resonance(
+        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+    )
+    fit_fig = create_fit_figure(
+        freq_center, freq_range, num_steps, norm_avg_sig, fit_func, popt
+    )
 
-    # %% Clean up and save the data
+    ### Clean up, save the data, return
 
     tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
 
+    # If you update this, also update the incremental data above if necessary
     data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
@@ -729,31 +705,14 @@ def main_with_cxn(
     }
 
     nv_name = nv_sig["name"]
-    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name)
-    # print(filePath)
-    if ret_file_name:
-        data_file_name = filePath.stem()
-    tool_belt.save_figure(fig, filePath)
-    tool_belt.save_raw_data(data, filePath)
 
-    # %% Fit the data
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    data_file_name = file_path.stem()
+    tool_belt.save_figure(raw_fig, file_path)
+    tool_belt.save_raw_data(data, file_path)
 
-    fit_func, popt, pcov = fit_resonance(
-        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
-    )
-    if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(
-            freq_center, freq_range, num_steps, norm_avg_sig, fit_func, popt
-        )
-
-    else:
-        fit_fig = None
-
-    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    if fit_fig is not None:
-        tool_belt.save_figure(fit_fig, filePath)
-
-    # %% Return
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tool_belt.save_figure(fit_fig, file_path)
 
     single_res = return_res_with_error(data)
     return single_res, data_file_name
