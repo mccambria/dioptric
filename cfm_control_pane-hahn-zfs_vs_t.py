@@ -401,8 +401,8 @@ if __name__ == "__main__":
 
     # fmt: on
 
-    nv_sig = nv1
-    # nv_sig = nvref
+    # nv_sig = nv1
+    nv_sig = nvref
     # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
     nv_list = [nv1, nv2, nv3]
     # for nv in nv_list:
