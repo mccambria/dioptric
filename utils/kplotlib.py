@@ -11,6 +11,7 @@ Created on June 22nd, 2022
 # region Imports and constants
 
 import utils.common as common
+import matplotlib
 import matplotlib.pyplot as plt
 from strenum import StrEnum
 from colorutils import Color
@@ -150,6 +151,9 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
     """
 
     ### Misc setup
+    
+    # Reset to the default
+    matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
     global active_axes, color_cyclers, default_font_size, default_data_size
     active_axes = []
