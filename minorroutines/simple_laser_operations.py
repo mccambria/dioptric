@@ -30,8 +30,9 @@ def square_wave(cxn, laser_name, laser_power=None):
 
     seq_file = "square_wave.py"
     seq_args = [period, laser_name, laser_power]
+    pulse_gen = tool_belt.get_pulse_gen_server(cxn)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+    pulse_gen.stream_immediate(seq_file, -1, seq_args_string)
     tool_belt.poll_safe_stop()
     tool_belt.laser_off(cxn, laser_name)
 
@@ -46,8 +47,9 @@ def arb_duty_cycle(cxn, laser_name, laser_power=None):
 
     seq_file = "square_wave_arb_duty_cycle.py"
     seq_args = [wait_1, period_1, wait_2, period_2, laser_name, laser_power]
+    pulse_gen = tool_belt.get_pulse_gen_server(cxn)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+    pulse_gen.stream_immediate(seq_file, -1, seq_args_string)
     tool_belt.poll_safe_stop()
     tool_belt.laser_off(cxn, laser_name)
 
@@ -60,11 +62,12 @@ def circle(cxn, laser_name, laser_power=None):
     num_steps = 300
 
     seq_file = "simple_readout.py"
-    seq_args = [period, period, 0, laser_name, laser_power]
+    seq_args = [period, period, laser_name, laser_power]
     xy_server = tool_belt.get_xy_server(cxn)
     xy_server.load_circle_scan_xy(radius, num_steps, period)
+    pulse_gen = tool_belt.get_pulse_gen_server(cxn)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+    pulse_gen.stream_immediate(seq_file, -1, seq_args_string)
     tool_belt.poll_safe_stop()
     tool_belt.laser_off(cxn, laser_name)
 
@@ -80,10 +83,10 @@ if __name__ == "__main__":
 
     with labrad.connect() as cxn:
 
-        tool_belt.set_xyz(cxn, pos)
-        tool_belt.set_filter(
-            cxn, optics_name=laser_name, filter_name=filter_name
-        )
+        # tool_belt.set_xyz(cxn, pos)
+        # tool_belt.set_filter(
+        #     cxn, optics_name=laser_name, filter_name=filter_name
+        # )
 
         # Some parameters you'll need to set in these functions
         constant(cxn, laser_name)

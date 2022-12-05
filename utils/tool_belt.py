@@ -127,6 +127,8 @@ def set_xyz_ramp(cxn, coords):
         total_movement_delay = z_delay
 
     xyz_server = get_pos_xyz_server(cxn)
+    
+    pulse_gen = get_pulse_gen_server(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
@@ -198,13 +200,13 @@ def set_xyz_ramp(cxn, coords):
         file_name = "simple_clock.py"
         seq_args = [movement_delay]
         seq_args_string = encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        ret_vals = pulse_gen.stream_load(file_name, seq_args_string)
         period = ret_vals[0]
         # print(z_points)
 
         xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
-        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        cxn.pulse_streamer.stream_start(max_steps)
+        pulse_gen.stream_load(file_name, seq_args_string)
+        pulse_gen.stream_start(max_steps)
 
     # Force some delay before proceeding to account
     # for the effective write time, as well as settling time for movement
@@ -263,26 +265,28 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
     mod_type = eval(mod_type)
+    
+    pulse_gen = get_pulse_gen_server(cxn)
 
     if mod_type is ModTypes.DIGITAL:
         if turn_on:
             laser_chan = get_registry_entry(
                 cxn,
                 "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseStreamer"],
+                ["", "Config", "Wiring", "PulseGen"],
             )
-            cxn.pulse_streamer.constant([laser_chan])
+            pulse_gen.constant([laser_chan])
     elif mod_type is ModTypes.ANALOG:
         if turn_on:
             laser_chan = get_registry_entry(
                 cxn,
                 "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseStreamer"],
+                ["", "Config", "Wiring", "PulseGen"],
             )
             if laser_chan == 0:
-                cxn.pulse_streamer.constant([], 0.0, laser_power)
+                pulse_gen.constant([], 0.0, laser_power)
             elif laser_chan == 1:
-                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                pulse_gen.constant([], laser_power, 0.0)
 
     # If we're turning things off, turn everything off. If we wanted to really
     # do this nicely we'd find a way to only turn off the specific channel,
@@ -1273,9 +1277,9 @@ def get_optimization_style():
     return optimization_style_return
 
 
-def get_apd_gate_channel(cxn, apd_index):
-    directory = ["", "Config", "Wiring", "Tagger", "Apd_{}".format(apd_index)]
-    return get_registry_entry(cxn, "di_gate", directory)
+def get_apd_gate_channel(cxn):
+    directory = ["", "Config", "Wiring", "Tagger"]
+    return get_registry_entry(cxn, "di_apd_gate", directory)
 
 
 def get_apd_indices(cxn):
@@ -1771,9 +1775,10 @@ def opt_power_via_photodiode(
     color_ind, AO_power_settings=None, nd_filter=None
 ):
     cxn = labrad.connect()
+    pulse_gen = get_pulse_gen_server(cxn)
     optical_power_list = []
     if color_ind == 532:
-        cxn.pulse_streamer.constant([3], 0.0, 0.0)  # Turn on the green laser
+        pulse_gen.constant([3], 0.0, 0.0)  # Turn on the green laser
         time.sleep(0.3)
         for i in range(10):
             optical_power_list.append(cxn.photodiode.read_optical_power())
@@ -1782,7 +1787,7 @@ def opt_power_via_photodiode(
         cxn.filter_slider_ell9k.set_filter(
             nd_filter
         )  # Change the nd filter for the yellow laser
-        cxn.pulse_streamer.constant(
+        pulse_gen.constant(
             [], 0.0, AO_power_settings
         )  # Turn on the yellow laser
         time.sleep(0.3)
@@ -1790,7 +1795,7 @@ def opt_power_via_photodiode(
             optical_power_list.append(cxn.photodiode.read_optical_power())
             time.sleep(0.01)
     elif color_ind == 638:
-        cxn.pulse_streamer.constant([7], 0.0, 0.0)  # Turn on the red laser
+        pulse_gen.constant([7], 0.0, 0.0)  # Turn on the red laser
         time.sleep(0.3)
         for i in range(10):
             optical_power_list.append(cxn.photodiode.read_optical_power())
@@ -1798,7 +1803,7 @@ def opt_power_via_photodiode(
 
     optical_power = np.average(optical_power_list)
     time.sleep(0.1)
-    cxn.pulse_streamer.constant([], 0.0, 0.0)
+    pulse_gen.constant([], 0.0, 0.0)
     return optical_power
 
 
