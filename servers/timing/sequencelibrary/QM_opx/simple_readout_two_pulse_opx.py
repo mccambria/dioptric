@@ -12,7 +12,6 @@ simple readout sequence for the opx in qua
 
 import numpy
 import utils.tool_belt as tool_belt
-from utils.tool_belt import Mod_types
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
@@ -21,24 +20,28 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
-      init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
+      init_laser_power, read_laser_power, readout_on_pulse_ind = args
     
-    init_laser_mod_type = config["Optics"][init_laser_key]["mod_type"]
-    init_laser_pulse = 'laser_ON_{}'.format(eval(init_laser_mod_type).name)
-    readout_laser_mod_type = config["Optics"][readout_laser_key]["mod_type"]
-    readout_laser_pulse = 'laser_ON_{}'.format(eval(readout_laser_mod_type).name)
-    init_laser_delay_time = config['Optics'][init_laser_key]['delay']
-    readout_laser_delay_time = config['Optics'][readout_laser_key]['delay']
+    
+    init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
+    readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,read_laser_power)
+    
+    # init_laser_mod_type = config["Optics"][init_laser_key]["mod_type"]
+    # init_laser_pulse = 'laser_ON_{}'.format(eval(init_laser_mod_type).name)
+    # readout_laser_mod_type = config["Optics"][readout_laser_key]["mod_type"]
+    # readout_laser_pulse = 'laser_ON_{}'.format(eval(readout_laser_mod_type).name)
+    # init_laser_delay_time = config['Optics'][init_laser_key]['delay']
+    # readout_laser_delay_time = config['Optics'][readout_laser_key]['delay']
     intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
     
-    if eval(init_laser_mod_type).name == 'ANALOG':
-        init_laser_amplitude = init_laser_power
-    if eval(init_laser_mod_type).name == 'DIGITAL':
-        init_laser_amplitude = 1
-    if eval(readout_laser_mod_type).name == 'ANALOG':
-        readout_laser_amplitude = init_laser_power
-    if eval(readout_laser_mod_type).name == 'DIGITAL':
-        readout_laser_amplitude = 1
+    # if eval(init_laser_mod_type).name == 'ANALOG':
+    #     init_laser_amplitude = init_laser_power
+    # if eval(init_laser_mod_type).name == 'DIGITAL':
+    #     init_laser_amplitude = 1
+    # if eval(readout_laser_mod_type).name == 'ANALOG':
+    #     readout_laser_amplitude = init_laser_power
+    # if eval(readout_laser_mod_type).name == 'DIGITAL':
+    #     readout_laser_amplitude = 1
 
     apd_indices =  config['apd_indices']
     positioning = config['Positioning']
@@ -220,7 +223,7 @@ if __name__ == '__main__':
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  20000 // 4 # clock cycle units - 4ns
+    simulation_duration =  30000 // 4 # clock cycle units - 4ns
     num_repeat=1
     # init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
       # init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
@@ -243,7 +246,7 @@ if __name__ == '__main__':
     # print(time.time())
     # job = qm.execute(seq)
     # st = time.time()
-    args = [1000, 2000, 'cobolt_515', 'laserglow_589',1,1,2,0]
+    args = [1000.0, 5000.0, 'cobolt_515', 'laserglow_589', None, 1.0, 2]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()

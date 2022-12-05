@@ -178,7 +178,6 @@ def fit_t2_decay(data, do_plot = True):
 
 def main(
     nv_sig,
-    apd_indices,
     precession_dur_range,
     pi_pulse_reps,
     num_steps,
@@ -192,7 +191,6 @@ def main(
         angle = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             precession_dur_range,
             pi_pulse_reps,
             num_steps,
@@ -207,7 +205,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     precession_time_range,
     pi_pulse_reps,
     num_steps,
@@ -217,6 +214,10 @@ def main_with_cxn(
     state=States.LOW,
 ):
 
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    
     tool_belt.reset_cfm(cxn)
 
     # %% Sequence setup
@@ -307,13 +308,12 @@ def main_with_cxn(
           uwave_pi_on_2_pulse,
           taus[-1],
           pi_pulse_reps,
-          apd_indices[0],
           state.value,
           laser_name,
           laser_power,
       ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
+    ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     # print(seq_args)
     # return
@@ -352,7 +352,7 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -362,7 +362,7 @@ def main_with_cxn(
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
-        cxn.arbitrary_waveform_generator.load_cpmg(pi_pulse_reps)
+        arbwavegen_server.load_cpmg(pi_pulse_reps)
         
 
         # Set up the laser
@@ -370,7 +370,7 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -406,7 +406,6 @@ def main_with_cxn(
                   uwave_pi_on_2_pulse,
                   taus[tau_ind_second],
                   pi_pulse_reps,
-                  apd_indices[0],
                   state.value,
                   laser_name,
                   laser_power,
@@ -415,15 +414,15 @@ def main_with_cxn(
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
-            # cxn.apd_tagger.clear_buffer()
-            cxn.pulse_streamer.stream_immediate(
+            # counter_server.clear_buffer()
+            pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
             # parse the returned list into what we want.
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            new_counts = counter_server.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
             # print(new_counts)
 
@@ -443,7 +442,7 @@ def main_with_cxn(
             ref_counts[run_ind, tau_ind_second] = count
             print("Second Reference = " + str(count))
 
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
 
         # %% incremental plotting
         

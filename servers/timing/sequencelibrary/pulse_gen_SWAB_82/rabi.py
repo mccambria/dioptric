@@ -27,7 +27,7 @@ def get_seq(pulse_streamer, config, args):
     # Signify which signal generator to use
     state = args[4]
     state = States(state)
-    sig_gen_name = config['Microwaves'][f'sig_gen_{state.name}']
+    sig_gen_name = config['Servers'][f'sig_gen_{state.name}']
     
     # Laser specs
     laser_name = args[5]
@@ -41,6 +41,7 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
 
     # Get the other durations we need
+    # print(laser_name)
     laser_delay =  config['Optics'][laser_name]['delay']
     uwave_delay = config['Microwaves'][sig_gen_name]['delay']
     short_buffer = 10  # Helps avoid weird things that happen for ~0 ns pulses 
@@ -121,6 +122,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    args = [100, 10000.0, 300, 300, 1, 3, 'integrated_520', None]
+    args = [100, 10000.0, 300, 300,  3, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()

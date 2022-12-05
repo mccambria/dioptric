@@ -14,7 +14,7 @@ Created on November 23rd, 2018
 import matplotlib.pyplot as plt
 import os
 import csv
-import datetime
+from datetime import datetime
 import numpy as np
 from numpy import exp
 import json
@@ -41,10 +41,15 @@ class States(Enum):
     HIGH = auto()
 
 
+class ControlStyle(Enum):
+    STEP = auto()
+    STREAM = auto()
+
+
 # Normalization style for comparing experimental data to reference data
 class NormStyle(Enum):
-    single_valued = auto()  # Use a single-valued reference
-    point_to_point = auto()  # Normalize each signal point by its own reference
+    SINGLE_VALUED = auto()  # Use a single-valued reference
+    POINT_TO_POINT = auto()  # Normalize each signal point by its own reference
 
 
 class ModTypes(Enum):
@@ -56,24 +61,52 @@ class Digital(IntEnum):
     LOW = 0
     HIGH = 1
 
+
 Boltzmann = 8.617e-2  # meV / K
 
 # endregion
 
 
-# region xyz sets
+def get_signal_generator_name(cxn, state):
+    return get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+
+
+def get_state_from_signal_generator_name(cxn, sig_gen_name):
+    state = States.HIGH
+    sig_gen_HIGH = get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+    state = States.LOW
+    sig_gen_LOW = get_registry_entry(
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+    )
+
+    return_state = None
+    if sig_gen_name == sig_gen_HIGH:
+        return_state = States.HIGH
+    elif sig_gen_name == sig_gen_LOW:
+        return_state = States.LOW
+
+    return return_state
+
+
+def get_signal_generator_cxn(cxn, state):
+    signal_generator_name = get_signal_generator_name(cxn, state)
+    signal_generator_cxn = eval("cxn.{}".format(signal_generator_name))
+    return signal_generator_cxn
+
+
+# %% region xyz sets
 
 
 def set_xyz(cxn, coords):
     # get current x, y, z values
     # divide up movement to this value based on step_size
     # incrementally move to the final position
-    xy_dtype = eval(
-        get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
-    )
-    z_dtype = eval(
-        get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    )
+    xy_dtype = eval(get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"]))
+    z_dtype = eval(get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"]))
     pos_xy_server = get_pos_xy_server(cxn)
     pos_z_server = get_pos_z_server(cxn)
     if xy_dtype is int:
@@ -94,9 +127,7 @@ def set_xyz(cxn, coords):
 
 def set_xyz_ramp(cxn, coords):
     """Step incrementally to this position from the current position"""
-    xy_dtype = get_registry_entry(
-        cxn, "xy_dtype", ["", "Config", "Positioning"]
-    )
+    xy_dtype = get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
     z_dtype = get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
     # Get the min step size
     step_size_xy = get_registry_entry(
@@ -107,9 +138,7 @@ def set_xyz_ramp(cxn, coords):
     )
     # Get the delay between movements
     try:
-        xy_delay = get_registry_entry(
-            cxn, "xy_delay", ["", "Config", "Positioning"]
-        )
+        xy_delay = get_registry_entry(cxn, "xy_delay", ["", "Config", "Positioning"])
 
     except Exception:
         xy_delay = get_registry_entry(
@@ -149,11 +178,7 @@ def set_xyz_ramp(cxn, coords):
     # If we are moving a distance smaller than the step size,
     # just set the coords, don't try to run a sequence
 
-    if (
-        abs(dx) <= step_size_xy
-        and abs(dy) <= step_size_xy
-        and abs(dz) <= step_size_z
-    ):
+    if abs(dx) <= step_size_xy and abs(dy) <= step_size_xy and abs(dz) <= step_size_z:
         # print('just setting coords without ramp')
         set_xyz(cxn, coords)
 
@@ -261,9 +286,7 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
-    mod_type = get_registry_entry(
-        cxn, "mod_type", ["", "Config", "Optics", laser_name]
-    )
+    mod_type = get_registry_entry(cxn, "mod_type", ["", "Config", "Optics", laser_name])
     mod_type = eval(mod_type)
     
     pulse_gen = get_pulse_gen_server(cxn)
@@ -317,9 +340,7 @@ def set_laser_power(
 
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
-    mod_type = get_registry_entry(
-        cxn, "mod_type", ["", "Config", "Optics", laser_name]
-    )
+    mod_type = get_registry_entry(cxn, "mod_type", ["", "Config", "Optics", laser_name])
     mod_type = eval(mod_type)
     if mod_type == ModTypes.ANALOG:
         return laser_power
@@ -330,9 +351,7 @@ def set_laser_power(
         return None
 
 
-def set_filter(
-    cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None
-):
+def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
     """optics_key should be either 'collection' or a laser key.
     Specify either an optics_key/nv_sig or an optics_name/filter_name.
     """
@@ -351,8 +370,7 @@ def set_filter(
         pass  # All good
     else:
         raise Exception(
-            "Specify either an optics_key/nv_sig or an"
-            " optics_name/filter_name."
+            "Specify either an optics_key/nv_sig or an" " optics_name/filter_name."
         )
 
     filter_server = get_filter_server(cxn, optics_name)
@@ -394,9 +412,7 @@ def get_laser_server(cxn, laser_name):
         return None
 
 
-def process_laser_seq(
-    pulse_streamer, seq, config, laser_name, laser_power, train
-):
+def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
     """Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
     modulation, but the Pulse Streamer only supplies 2.6 V.
@@ -602,9 +618,7 @@ def create_image_figure(
     # else:
     if axes_labels == None:
         try:
-            a = get_registry_entry_no_cxn(
-                "xy_units", ["", "Config", "Positioning"]
-            )
+            a = get_registry_entry_no_cxn("xy_units", ["", "Config", "Positioning"])
             axes_labels = [a, a]
         except Exception as exc:
             print(exc)
@@ -697,9 +711,7 @@ def calc_image_scan_vals(
     x_low, x_high, y_low, y_high = calc_image_extent(
         x_center, y_center, scan_range, num_steps, pixel_size_adjustment=False
     )
-    x_scan_vals, pixel_size = np.linspace(
-        x_low, x_high, num_steps, retstep=True
-    )
+    x_scan_vals, pixel_size = np.linspace(x_low, x_high, num_steps, retstep=True)
     y_scan_vals = np.linspace(y_low, y_high, num_steps)
 
     if ret_pixel_size:
@@ -925,17 +937,13 @@ def sinexp(t, offset, amp, freq, decay):
 
 def cosexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
-    return offset + (
-        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
-    )
+    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
 
 def cosexp_1_at_0(t, offset, freq, decay):
     two_pi = 2 * np.pi
     amp = 1 - offset
-    return offset + (
-        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
-    )
+    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
 
 def sin_1_at_0_phase(t, amp, offset, freq, phase):
@@ -957,9 +965,7 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
 def cosine_one(t, offset, decay, amp_1, freq_1):
     two_pi = 2 * np.pi
 
-    return offset + np.exp(-t / abs(decay)) * (
-        amp_1 * np.cos(two_pi * freq_1 * t)
-    )
+    return offset + np.exp(-t / abs(decay)) * (amp_1 * np.cos(two_pi * freq_1 * t))
 
 
 def t2_func(t, amplitude, offset, t2):
@@ -999,7 +1005,6 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     # Deduplicate - may be necessary for ints and low scan ranges
     scan_vals = np.unique(scan_vals)
     return scan_vals
-
 
 
 def bose(energy, temp):
@@ -1115,9 +1120,7 @@ def get_pos_xy_server(cxn):
 
 
 def get_pos_xy_server_name(cxn):
-    return get_registry_entry(
-        cxn, "pos_xy_server", ["", "Config", "Positioning"]
-    )
+    return get_registry_entry(cxn, "pos_xy_server", ["", "Config", "Positioning"])
 
 
 def get_z_server(cxn):
@@ -1132,9 +1135,7 @@ def get_pos_z_server(cxn):
 
 
 def get_pos_z_server_name(cxn):
-    return get_registry_entry(
-        cxn, "pos_z_server", ["", "Config", "Positioning"]
-    )
+    return get_registry_entry(cxn, "pos_z_server", ["", "Config", "Positioning"])
 
 
 def get_xyz_server(cxn):
@@ -1149,9 +1150,7 @@ def get_pos_xyz_server(cxn):
 
 
 def get_pos_xyz_server_name(cxn):
-    return get_registry_entry(
-        cxn, "pos_xyz_server", ["", "Config", "Positioning"]
-    )
+    return get_registry_entry(cxn, "pos_xyz_server", ["", "Config", "Positioning"])
 
 
 def get_pulsegen_server(cxn):
@@ -1165,9 +1164,7 @@ def get_pulse_gen_server(cxn):
     """
     pulsegen_server_return = getattr(
         cxn,
-        get_registry_entry(
-            cxn, "pulse_gen_server", ["", "Config", "PulseGeneration"]
-        ),
+        get_registry_entry(cxn, "pulse_gen_server", ["", "Config", "PulseGeneration"]),
     )
 
     if pulsegen_server_return == "":
@@ -1176,15 +1173,28 @@ def get_pulse_gen_server(cxn):
     return pulsegen_server_return
 
 
+def get_magnet_rotation_server(cxn):
+    """
+    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
+    """
+    magnet_rotation_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "magnet_rotation_server", ["", "Config", "Servers"]),
+    )
+
+    if magnet_rotation_server_return == "":
+        raise RuntimeError
+
+    return magnet_rotation_server_return
+
+
 def get_counter_server(cxn):
     """
     Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
     """
     counter_server_return = getattr(
         cxn,
-        get_registry_entry(
-            cxn, "counter_server", ["", "Config", "PhotonCollection"]
-        ),
+        get_registry_entry(cxn, "counter_server", ["", "Config", "PhotonCollection"]),
     )
     if counter_server_return == "":
         raise RuntimeError
@@ -1198,9 +1208,7 @@ def get_tagger_server(cxn):
     """
     tagger_server_return = getattr(
         cxn,
-        get_registry_entry(
-            cxn, "tagger_server", ["", "Config", "PhotonCollection"]
-        ),
+        get_registry_entry(cxn, "tagger_server", ["", "Config", "PhotonCollection"]),
     )
     if tagger_server_return == "":
         raise RuntimeError
@@ -1215,9 +1223,7 @@ def get_temp_controller(cxn):
     # be used directly
     return getattr(
         cxn,
-        get_registry_entry(
-            cxn, "temp_controller", ["", "Config", "Temperature"]
-        ),
+        get_registry_entry(cxn, "temp_controller", ["", "Config", "Temperature"]),
     )
 
 
@@ -1264,17 +1270,33 @@ def get_sig_gen_cxn(cxn, state):
     return sig_gen_cxn
 
 
-def get_optimization_style():
+def get_xy_control_style():
     """
-    Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
+    Talk to the registry to get the xy control type for this setup
     """
-    optimization_style_return = get_registry_entry_no_cxn(
-        "optimization_style", ["", "Config", "Positioning"]
+    xy_control_style_return = get_registry_entry_no_cxn(
+        "xy_control_style", ["", "Config", "Positioning"]
     )
-    if optimization_style_return == "":
+    xy_control_style_return = eval(xy_control_style_return)
+
+    if xy_control_style_return == "":
         raise RuntimeError
 
-    return optimization_style_return
+    return xy_control_style_return
+
+
+def get_z_control_style():
+    """
+    Talk to the registry to get the z control type for this setup
+    """
+    z_control_style_return = get_registry_entry_no_cxn(
+        "z_control_style", ["", "Config", "Positioning"]
+    )
+    z_control_style_return = eval(z_control_style_return)
+    if z_control_style_return == "":
+        raise RuntimeError
+
+    return z_control_style_return
 
 
 def get_apd_gate_channel(cxn):
@@ -1288,9 +1310,7 @@ def get_apd_indices(cxn):
     return get_registry_entry(
         cxn,
         "apd_indices",
-        [
-            "",
-        ],
+        ["", "Config"],
     )
 
 
@@ -1333,7 +1353,7 @@ def get_raw_data_path(
         nvdata_dir = common.get_nvdata_dir()
 
     if path_from_nvdata is None:
-        path_from_nvdata = search_index.get_data_path(file_name)
+        path_from_nvdata = search_index.get_data_path_from_nvdata(file_name)
 
     data_dir = nvdata_dir / path_from_nvdata
     file_name_ext = "{}.txt".format(file_name)
@@ -1357,7 +1377,7 @@ def get_time_stamp():
         string: <year>_<month>_<day>-<hour>_<minute>_<second>
     """
 
-    timestamp = str(datetime.datetime.now())
+    timestamp = str(datetime.now())
     timestamp = timestamp.split(".")[0]  # Keep up to seconds
     timestamp = timestamp.replace(":", "_")  # Replace colon with dash
     timestamp = timestamp.replace("-", "_")  # Replace dash with underscore
@@ -1457,19 +1477,14 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
     return file_path_Path
 
 
-def utc_from_file_name(file_name):
-
-    f_split = file_name.split("-")
-    date = f_split[0]
-    date_split = date.split("_")
-    date_ints = [int(el) for el in date_split]
-    time = f_split[1]
-    time_split = time.split("_")
-    time_ints = [int(el) for el in time_split]
-    dt = datetime.datetime(*date_ints, *time_ints)
-    utc_time = dt.replace(tzinfo=datetime.timezone.utc)
-    utc_timestamp = utc_time.timestamp()
-    return utc_timestamp
+def utc_from_file_name(file_name, time_zone="CST"):
+    # First 19 characters are human-readable timestamp
+    date_time_str = file_name[0:19]
+    # Assume timezone is CST
+    date_time_str += f"-{time_zone}"
+    date_time = datetime.strptime(date_time_str, r"%Y_%m_%d-%H_%M_%S-%Z")
+    timestamp = date_time.timestamp()
+    return timestamp
 
 
 def save_figure(fig, file_path):
@@ -1509,9 +1524,7 @@ def save_raw_data(rawData, filePath):
     # nv_sig_units. If these have already been defined in the routine,
     # then they'll just be overwritten.
     try:
-        rawData[
-            "config"
-        ] = get_config_dict()  # Include a snapshot of the config
+        rawData["config"] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
 
@@ -1552,9 +1565,7 @@ def save_combine_data(file_list, folder_list, py_file_name):
         num_steps = data1["num_steps"]
         num_steps_list.append(num_steps)
     # check that all num_steps of the files match
-    num_steps_result = all(
-        element == num_steps_list[0] for element in num_steps_list
-    )
+    num_steps_result = all(element == num_steps_list[0] for element in num_steps_list)
 
     if num_steps_result:
         # create initial empty arrays to add data to
@@ -1625,9 +1636,7 @@ def send_exception_email(
     )
     timex = time.strftime("%I:%M:%S %p", now)
     exc_info = traceback.format_exc()
-    content = (
-        f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
-    )
+    content = f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
     send_email(content, email_from=email_from, email_to=email_to)
 
 
@@ -1728,9 +1737,7 @@ def write_csv(
     with open(
         "{}/{}/{}.csv".format(nvdata_dir, folder_path, file), "w", newline=""
     ) as csv_file:
-        csv_writer = csv.writer(
-            csv_file, delimiter=",", quoting=csv.QUOTE_NONE
-        )
+        csv_writer = csv.writer(csv_file, delimiter=",", quoting=csv.QUOTE_NONE)
         csv_writer.writerows(csv_data)
 
 
@@ -1764,16 +1771,12 @@ def save_image_data_csv(
         newline="",
     ) as csv_file:
 
-        csv_writer = csv.writer(
-            csv_file, delimiter=",", quoting=csv.QUOTE_NONE
-        )
+        csv_writer = csv.writer(csv_file, delimiter=",", quoting=csv.QUOTE_NONE)
         csv_writer.writerows(csv_data)
     return
 
 
-def opt_power_via_photodiode(
-    color_ind, AO_power_settings=None, nd_filter=None
-):
+def opt_power_via_photodiode(color_ind, AO_power_settings=None, nd_filter=None):
     cxn = labrad.connect()
     pulse_gen = get_pulse_gen_server(cxn)
     optical_power_list = []
@@ -1831,9 +1834,7 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
 
     red_optical_power_mW = calc_optical_power_mW(638, red_optical_power_pd)
 
-    yellow_optical_power_mW = calc_optical_power_mW(
-        589, yellow_optical_power_pd
-    )
+    yellow_optical_power_mW = calc_optical_power_mW(589, yellow_optical_power_pd)
 
     return (
         green_optical_power_pd,
@@ -1919,10 +1920,10 @@ def presentation_round_latex(val, err):
 # endregion
 # region Safe Stop
 """Use this to safely stop experiments without risking data loss or weird state.
-Works by reassigning CTRL + C to set a global variable rather than raise a 
+Works by reassigning CTRL + C to set a global variable rather than raise a
 KeyboardInterrupt exception. That way we can check on the global variable
 whenever we like and stop the experiment appropriately. It's up to you (the
-routine author) to place this in your routine appropriately. 
+routine author) to place this in your routine appropriately.
 """
 
 

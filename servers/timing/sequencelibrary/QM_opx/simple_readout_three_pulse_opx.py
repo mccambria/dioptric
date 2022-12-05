@@ -12,7 +12,6 @@ simple readout sequence for the opx in qua
 
 import numpy
 import utils.tool_belt as tool_belt
-from utils.tool_belt import Mod_types
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
@@ -21,7 +20,7 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     first_init_pulse_time, init_pulse_time, readout_time, first_init_laser_key, init_laser_key, readout_laser_key,\
-      first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
+      first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind  = args
     
     first_init_laser_pulse, first_init_laser_delay_time, first_init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,first_init_laser_key,first_init_laser_power)
     init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
@@ -222,7 +221,7 @@ if __name__ == '__main__':
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  20000 // 4 # clock cycle units - 4ns
+    simulation_duration =  140000 // 4 # clock cycle units - 4ns
     num_repeat=2
     # init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
       # init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
@@ -246,7 +245,7 @@ if __name__ == '__main__':
     # job = qm.execute(seq)
     # st = time.time()
     # args = [1000,300, 2000, 'cobolt_515','cobolt_638', 'laserglow_589',1,1,0.4,2,0]
-    args = [1000.0, 296.0, 5000.0, 'cobolt_638', 'cobolt_515', 'laserglow_589', None, None, 0.45, 2, 0]
+    args = [500.0, 1000.0, 50000, "cobolt_515", "cobolt_515", "laserglow_589", 1, 'null', 0.5, 2]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()

@@ -47,7 +47,7 @@ def get_seq(pulse_streamer, config, args):
     
     num_uwave_pulses, state, apd_index, laser_name, laser_power = args[7:12]
     state = States(state)
-    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen = config['Servers']['sig_gen_{}'.format(state.name)]
     
     wait_time = config['CommonDurations']['uwave_buffer']
     aom_delay_time = config['Optics'][laser_name]['delay']
@@ -59,7 +59,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_sig_wait =inter_pulse_time # int(iq_trigger_time*2 //2)
     half_uwave_sig_wait = int(uwave_sig_wait/2)
     
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']

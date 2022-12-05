@@ -33,14 +33,14 @@ def get_seq(pulse_streamer, config, args):
     # Signify which signal generator to use
     state = args[5]
     state = States(state)
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    sig_gen_name = config['Servers']['sig_gen_{}'.format(state.name)]
     
     # Laser specs
     laser_name = args[6]
     laser_power = args[7]
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     key = 'do_apd_{}_gate'.format(apd_index)
     pulser_do_apd_gate = pulser_wiring[key]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)

@@ -25,10 +25,8 @@ import TimeTagger
 import numpy as np
 import logging
 import re
-import time
 import socket
-import numba
-from numba import jit, njit
+import servers.inputs.interfaces.tagger as tagger
 from servers.inputs.interfaces.tagger import Tagger
 
 
@@ -38,8 +36,7 @@ class TaggerSwab20(Tagger, LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -120,42 +117,15 @@ class TaggerSwab20(Tagger, LabradServer):
         channels = buffer.getChannels()
         return timestamps, channels
 
-    def read_counter_setting_internal(self, num_to_read):
-        #     # if self.stream is None:
-        #     #     logging.error("read_counter attempted while stream is None.")
-        #     #     return
-        if num_to_read is None:
-            # Poll once and return the result
-            counts = self.read_counter_internal()
-        else:
-            # Poll until we've read the requested number of samples
-            counts = []
-            while len(counts) < num_to_read:
-                counts.extend(self.read_counter_internal())
-            if len(counts) > num_to_read:
-                msg = "Read {} samples, only requested {}".format(
-                    len(counts), num_to_read
-                )
-                logging.error(msg)
-
-        return counts
-
     def read_counter_internal(self):
         if self.stream is None:
-            logging.error(
-                "read_counter_internal attempted while stream is None."
-            )
+            logging.error("read_counter_internal attempted while stream is None.")
             return
-        buffer_times, buffer_channels = self.read_raw_stream()
-
-        # clock_inds = np.where(buffer_channels == self.tagger_di_clock)
-        # logging.info(clock_inds)
+        _, buffer_channels = self.read_raw_stream()
 
         # Do the hard work in the fast sub function
-        apd_channels = [
-            self.tagger_di_apd[val] for val in self.stream_apd_indices
-        ]
-        return_counts, leftover_channels = read_counter_internal_sub(
+        apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]
+        return_counts, leftover_channels = tagger.tags_to_counts(
             buffer_channels,
             self.tagger_di_clock,
             self.tagger_di_apd_gate,
@@ -206,8 +176,8 @@ class TaggerSwab20(Tagger, LabradServer):
             self.stop_tag_stream_internal()
         else:
             self.reset_tag_stream_state()
-            
-        if apd_indices is None: 
+
+        if apd_indices is None:
             apd_indices = self.config_apd_indices
 
         channels = []
@@ -236,7 +206,7 @@ class TaggerSwab20(Tagger, LabradServer):
         """
         self.stop_tag_stream_internal()
 
-    @setting(9)
+    @setting(3)
     def clear_buffer(self, c):
         """Clear the hardware's internal buffer. Should be called before
         starting a pulse sequence."""
@@ -248,202 +218,9 @@ class TaggerSwab20(Tagger, LabradServer):
             logging.info(f"Num hardware overflows: {num_hardware_overflows}")
             logging.info(f"Has software overflows: {has_software_overflows}")
 
-    @setting(3, num_to_read="i", returns="*s*i")
-    def read_tag_stream(self, c, num_to_read=None):
-        """Read the stream started with start_tag_stream. Returns two lists,
-        each as long as the number of counts that have occurred since the
-        buffer was refreshed. First list is timestamps in ps, second is
-        channel names
-        """
-        if self.stream is None:
-            logging.error("read_tag_stream attempted while stream is None.")
-            return
-        if num_to_read is None:
-            timestamps, channels = self.read_raw_stream()
-        else:
-            timestamps = np.array([], dtype=np.int64)
-            channels = np.array([], dtype=int)
-            num_read = 0
-            while True:
-                timestamps_chunk, channels_chunk = self.read_raw_stream()
-                timestamps = np.append(timestamps, timestamps_chunk)
-                channels = np.append(channels, channels_chunk)
-                # Check if we've read enough samples
-                new_num_read = np.count_nonzero(
-                    channels_chunk == self.tagger_di_clock
-                )
-                num_read += new_num_read
-                if num_read >= num_to_read:
-                    break
-        # Convert timestamps to strings since labrad does not support int64s
-        # It must be converted to int64s back on the client
-        timestamps = timestamps.astype(str).tolist()
-        return timestamps, channels
-
-    @setting(4, num_to_read="i", returns="*3w")
-    def read_counter_complete(self, c, num_to_read=None):
-        return self.read_counter_setting_internal(num_to_read)
-
-    @setting(5, num_to_read="i", returns="*w")
-    def read_counter_simple(self, c, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-
-        # Just find the sum of each sample in complete_counts
-        return_counts = [
-            np.sum(sample, dtype=int) for sample in complete_counts
-        ]
-        # logging.info(return_counts)
-        # if 0 in return_counts:
-        #     logging.info(complete_counts)
-        return return_counts
-
-    @setting(6, num_to_read="i", returns="*2w")
-    def read_counter_separate_gates(self, c, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        # logging.info(complete_counts)
-
-        # Add the APD counts as vectors for each sample in complete_counts
-        return_counts = [
-            np.sum(sample, 0, dtype=int).tolist() for sample in complete_counts
-        ]
-
-        return return_counts
-
-    @setting(11, modulus="i", num_to_read="i", returns="*2w")
-    def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        # logging.info(complete_counts)
-
-        # Add the APD counts as vectors for each sample in complete_counts
-        # sum_lambda = lambda arg: np.sum(arg, 0, dtype=int).tolist()
-        # with Pool() as p:
-        #     separate_gate_counts = p.map(sum_lambda, complete_counts)
-        separate_gate_counts = [
-            np.sum(el, 0, dtype=int).tolist() for el in complete_counts
-        ]
-        # logging.info(complete_counts)
-
-        # Run the modulus
-        return_counts = []
-        for sample in separate_gate_counts:
-            sample_list = []
-            for ind in range(modulus):
-                sample_list.append(np.sum(sample[ind::modulus]))
-            return_counts.append(sample_list)
-
-        return return_counts
-
-    @setting(7, num_to_read="i", returns="*2w")
-    def read_counter_separate_apds(self, c, num_to_read=None):
-
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-
-        # Just find the sum of the counts for each APD for each
-        # sample in complete_counts
-        return_counts = [
-            [np.sum(apd_counts, dtype=int) for apd_counts in sample]
-            for sample in complete_counts
-        ]
-
-        return return_counts
-
-    @setting(8)
+    @setting(5)
     def reset(self, c):
         self.stop_tag_stream_internal()
-
-
-@njit
-def read_counter_internal_sub(
-    buffer_channels,
-    tagger_di_clock,
-    tagger_di_apd_gate,
-    apd_channels,
-    leftover_channels,
-):
-    """
-    This is the core counter function for the Time Tagger. It needs to be
-    fast - if it's not fast enough, we may encounter unexpected behavior,
-    like certain samples returning 0 counts when clearly they should return
-    something > 0. For that reason, this function lives outside the class so
-    that it can be compiled by numba. It's written in very basic (and slow,
-    natively) python so that the compiler has no trouble understanding what
-    to do.
-
-    The data structure (return_counts) is 3D array - the first dimension is
-    for samples, the second is for APDs, and the third is for reps/gates.
-    """
-
-    # Assume a single gate for both APDs: get all the gates once and then
-    # count for each APD individually
-    open_channel = tagger_di_apd_gate
-    close_channel = -open_channel
-
-    # Find clock clicks (sample breaks)
-    clock_click_inds = np.flatnonzero(buffer_channels == tagger_di_clock)
-
-    previous_sample_end_ind = None
-    sample_end_ind = None
-
-    # Figure out the number of samples and APDs
-    num_samples = len(clock_click_inds)
-    num_apds = len(apd_channels)
-
-    # Allocate the data structure inside the loop so we know we have a sample
-    data_structure_allocated = False
-
-    for dim1 in range(num_samples):
-        clock_click_ind = clock_click_inds[dim1]
-
-        # Clock clicks end samples, so they should be included with the
-        # sample itself
-        sample_end_ind = clock_click_ind + 1
-
-        # Get leftovers and make sure we've got an array for comparison
-        # to find click indices
-        if previous_sample_end_ind is None:
-            join_tuple = (leftover_channels, buffer_channels[0:sample_end_ind])
-            sample_channels = np.concatenate(join_tuple)
-        else:
-            sample_channels = buffer_channels[
-                previous_sample_end_ind:sample_end_ind
-            ]
-
-        # Find gate open and close clicks (gate close channel is negative of
-        # gate open channel, signifying the falling edge)
-        open_inds = np.flatnonzero(sample_channels == open_channel)
-        close_inds = np.flatnonzero(sample_channels == close_channel)
-        gates = np.column_stack((open_inds, close_inds))
-
-        if not data_structure_allocated:
-            num_reps = len(open_inds)
-            return_counts = np.empty(
-                (num_samples, num_apds, num_reps), dtype=np.int32
-            )
-            data_structure_allocated = True
-
-        for dim2 in range(num_apds):
-            apd_channel = apd_channels[dim2]
-            for dim3 in range(num_reps):
-                gate = gates[dim3]
-                num_counts = np.count_nonzero(
-                    sample_channels[gate[0] : gate[1]] == apd_channel
-                )
-                return_counts[dim1, dim2, dim3] = num_counts
-
-        previous_sample_end_ind = sample_end_ind
-
-    # No samples were clocked - make a dummy return_counts and add everything to leftovers
-    if sample_end_ind is None:
-        return_counts = np.empty((0, 0, 0), dtype=np.int32)
-        leftover_channels = np.append(leftover_channels, buffer_channels)
-    # Reset leftovers from the last sample clock
-    else:
-        leftover_channels = buffer_channels[sample_end_ind:]
-
-    return return_counts, leftover_channels
 
 
 __server__ = TaggerSwab20()

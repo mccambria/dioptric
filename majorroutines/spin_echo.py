@@ -464,7 +464,6 @@ def create_fit_figure(
 
 def main(
     nv_sig,
-    apd_indices,
     precession_dur_range,
     num_steps,
     num_reps,
@@ -476,7 +475,6 @@ def main(
         angle = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             precession_dur_range,
             num_steps,
             num_reps,
@@ -489,7 +487,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     precession_time_range,
     num_steps,
     num_reps,
@@ -588,7 +585,6 @@ def main_with_cxn(
         uwave_pi_pulse,
         uwave_pi_on_2_pulse,
         max_precession_time,
-        apd_indices[0],
         state.value,
         laser_name,
         laser_power,
@@ -633,7 +629,7 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -647,7 +643,7 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -682,7 +678,6 @@ def main_with_cxn(
                 uwave_pi_pulse,
                 uwave_pi_on_2_pulse,
                 taus[tau_ind_second],
-                apd_indices[0],
                 state.value,
                 laser_name,
                 laser_power,
@@ -716,7 +711,7 @@ def main_with_cxn(
             # ref_counts[run_ind, tau_ind_second] = count
             # print("Second Reference = " + str(count))
             
-            new_counts = counter_server.read_counter_modulo_gates(4)
+            new_counts = counter_server.read_counter_modulo_gates(4, 1)
             sample_counts = new_counts[0]
             
             sig_counts[run_ind, tau_ind_first] = sample_counts[0]
@@ -884,15 +879,18 @@ def main_with_cxn(
     tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Fit and save figs
+    try:
+        ret_vals = plot_resonances_vs_theta_B(raw_data)
+        fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
 
-    ret_vals = plot_resonances_vs_theta_B(raw_data)
-    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-
-    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tool_belt.save_figure(fit_fig, file_path_fit)
-    file_path_angle = tool_belt.get_file_path(__file__, timestamp, nv_name + "-angle")
-    tool_belt.save_figure(angle_fig, file_path_angle)
-
+        file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+        tool_belt.save_figure(fit_fig, file_path_fit)
+        file_path_angle = tool_belt.get_file_path(__file__, timestamp, nv_name + "-angle")
+        tool_belt.save_figure(angle_fig, file_path_angle)
+    except Exception:
+        print("Fit Failed")
+        theta_B_deg = None
+        
     return theta_B_deg
 
 

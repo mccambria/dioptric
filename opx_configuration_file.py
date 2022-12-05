@@ -136,14 +136,14 @@ config_opx = {
                 "cw": "const_freq_out",
             },
         },
-        "signal_generator_tsg4104a_I": {
+        "sig_gen_TEKT_tsg4104a_I": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 0.0,
             "operations": {
                 "cw": "const_freq_out",
             },
         },
-        "signal_generator_tsg4104a_Q": {
+        "sig_gen_TEKT_tsg4104a_Q": {
             "singleInput": {"port": ("con1", 7)},
             "intermediate_frequency": 0.0,
             "operations": {
@@ -158,7 +158,7 @@ config_opx = {
                 "cw": "const_freq_out",
             },
         },
-        "signal_generator_tsg4104a": {
+        "sig_gen_TEKT_tsg4104a": {
             "digitalInputs": {
                 "marker": {
                     "port": ("con1", 7),
