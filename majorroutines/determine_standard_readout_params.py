@@ -55,15 +55,12 @@ def process_raw_tags(apd_gate_channel, raw_tags, channels):
         close_ind = gate_close_inds[rep_ind]
         open_timetag = raw_tags[open_ind]
         rep_processed_timetags = raw_tags[open_ind + 1 : close_ind]
-        rep_processed_timetags = [
-            val - open_timetag for val in rep_processed_timetags
-        ]
+        rep_processed_timetags = [val - open_timetag for val in rep_processed_timetags]
         # Every even gate is sig, odd is ref
         if rep_ind % 2 == 0:
             sig_tags.extend(rep_processed_timetags)
         else:
             ref_tags.extend(rep_processed_timetags)
-            
 
     sig_tags_arr = np.array(sig_tags, dtype=int)
     ref_tags_arr = np.array(ref_tags, dtype=int)
@@ -72,25 +69,23 @@ def process_raw_tags(apd_gate_channel, raw_tags, channels):
     return sorted_sig_tags, sorted_ref_tags
 
 
-def plot_readout_duration_optimization(max_readout, num_reps, 
-                                       sig_tags, ref_tags):
-    """
-    Generate two plots: 1, the total counts vs readout duration for each of 
+def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags):
+    """Generate two plots: 1, the total counts vs readout duration for each of
     the spin states; 2 the SNR vs readout duration
     """
-    
-    kpl.init_kplotlib(no_latex=True)
-    
+
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
-    
+
     num_points = 50
     readouts_with_zero = np.linspace(0, max_readout, num_points + 1)
     readouts = readouts_with_zero[1:]  # Exclude 0 ns
-    
+
     # Integrate up the tags that fell before each readout duration under test
     integrated_sig_tags = []
     integrated_ref_tags = []
-    zip_iter = zip((sig_tags, ref_tags), (integrated_sig_tags.append, integrated_ref_tags.append))
+    zip_iter = zip(
+        (sig_tags, ref_tags), (integrated_sig_tags.append, integrated_ref_tags.append)
+    )
     for sorted_tags, integrated_append in zip_iter:
         current_readout_ind = 0
         current_readout = readouts[current_readout_ind]
@@ -110,34 +105,36 @@ def plot_readout_duration_optimization(max_readout, num_reps,
         while current_readout_ind < num_points:
             integrated_append(ind)
             current_readout_ind += 1
-            
+
     # Calculate the snr per readout for each readout duration
     snr_per_readouts = []
     for sig, ref in zip(integrated_sig_tags, integrated_ref_tags):
         # Assume Poisson statistics on each count value
         sig_noise = np.sqrt(sig)
         ref_noise = np.sqrt(ref)
-        snr = (ref-sig) / np.sqrt(sig_noise**2 + ref_noise**2)
+        snr = (ref - sig) / np.sqrt(sig_noise**2 + ref_noise**2)
         snr_per_readouts.append(snr / np.sqrt(num_reps))
 
     ax = axes_pack[0]
     sig_hist, bin_edges = np.histogram(sig_tags, bins=readouts_with_zero)
     ref_hist, bin_edges = np.histogram(ref_tags, bins=readouts_with_zero)
     readout_window = round(readouts_with_zero[1] - readouts_with_zero[0])
-    readout_window_sec = readout_window * 10 ** -9
+    readout_window_sec = readout_window * 10**-9
     sig_rates = sig_hist / (readout_window_sec * num_reps * 1000)
     ref_rates = ref_hist / (readout_window_sec * num_reps * 1000)
     bin_centers = (readouts_with_zero[:-1] + readouts) / 2
-    kpl.plot_line(ax, bin_centers, sig_rates, color=KplColors.GREEN, label=r"$m_{s}=\pm 1$")
+    kpl.plot_line(
+        ax, bin_centers, sig_rates, color=KplColors.GREEN, label=r"$m_{s}=\pm 1$"
+    )
     kpl.plot_line(ax, bin_centers, ref_rates, color=KplColors.RED, label=r"$m_{s}=0$")
-    ax.set_ylabel('Count rate (kcps)')
-    ax.set_xlabel('Time since readout began (ns)')
+    ax.set_ylabel("Count rate (kcps)")
+    ax.set_xlabel("Time since readout began (ns)")
     ax.legend()
 
     ax = axes_pack[1]
     kpl.plot_line(ax, readouts, snr_per_readouts)
-    ax.set_xlabel('Readout duration (ns)')
-    ax.set_ylabel('SNR per sqrt(readout)')
+    ax.set_xlabel("Readout duration (ns)")
+    ax.set_ylabel("SNR per sqrt(readout)")
     max_snr = tool_belt.round_sig_figs(max(snr_per_readouts), 3)
     optimum_readout = round(readouts[np.argmax(snr_per_readouts)])
     text = f"Max SNR: {max_snr} at {optimum_readout} ns"
@@ -146,18 +143,17 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     kpl.tight_layout(fig)
 
     return fig
-    
-# endregion 
 
 
-def optimize_readout_duration_sub(
-    cxn, nv_sig, num_reps, state=States.LOW
-):
-    
+# endregion
+
+
+def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
+
     tool_belt.reset_cfm(cxn)
     tagger_server = tool_belt.get_tagger_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    
+
     seq_file = "rabi.py"
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
@@ -179,13 +175,12 @@ def optimize_readout_duration_sub(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
-    period_sec = period / 10 ** 9
-    
+    period_sec = period / 10**9
+
     opti_coords_list = []
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-    
-    
+
     opti_period = 0.25 * 60  # Optimize every opti_period seconds
 
     # Some initial parameters
@@ -193,7 +188,7 @@ def optimize_readout_duration_sub(
     num_reps_remaining = num_reps
     timetags = []
     channels = []
-    
+
     while num_reps_remaining > 0:
 
         # Break out of the while if the user says stop
@@ -212,7 +207,7 @@ def optimize_readout_duration_sub(
         sig_gen_cxn.set_freq(nv_sig[f"resonance_{state.name}"])
         sig_gen_cxn.set_amp(nv_sig[f"uwave_power_{state.name}"])
         sig_gen_cxn.uwave_on()
-        
+
         # Load the APD
         tagger_server.start_tag_stream()
         tagger_server.clear_buffer()
@@ -222,9 +217,7 @@ def optimize_readout_duration_sub(
             num_reps_to_run = int(num_reps_per_cycle)
         else:
             num_reps_to_run = int(num_reps_remaining)
-        pulsegen_server.stream_immediate(
-            seq_file, num_reps_to_run, seq_args_string
-        )
+        pulsegen_server.stream_immediate(seq_file, num_reps_to_run, seq_args_string)
 
         # Get the counts
         print("Data coming in")
@@ -233,7 +226,7 @@ def optimize_readout_duration_sub(
         buffer_timetags, buffer_channels = ret_vals
 
         tagger_server.stop_tag_stream()
-        
+
         # We don't care about picosecond resolution here, so just round to ns
         # We also don't care about the offset value, so subtract that off
         if len(timetags) == 0:
@@ -249,10 +242,10 @@ def optimize_readout_duration_sub(
         num_reps_remaining -= num_reps_per_cycle
 
     return timetags, channels, opti_coords_list
-    
+
 
 def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
-    
+
     max_readout = nv_sig["spin_readout_dur"]
 
     # Assume a common gate for both APDs
@@ -263,7 +256,7 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
 
     # Process the raw tags
     sig_tags, ref_tags = process_raw_tags(apd_gate_channel, timetags, channels)
-    
+
     # Analyze and plot
     fig = plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags)
 
@@ -281,42 +274,42 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
         "sig_tags": sig_tags.tolist(),
         "ref_tags": ref_tags.tolist(),
     }
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
 
 
 # region Main
 
-def main(nv_sig, num_reps, max_readouts, 
-         powers=None, filters=None, state=States.LOW):
-    
-    with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, num_reps, max_readouts, 
-                      powers, filters, state)
 
-def main_with_cxn(cxn, nv_sig, num_reps, max_readouts, 
-                  powers=None, filters=None, state=States.LOW):
+def main(nv_sig, num_reps, max_readouts, powers=None, filters=None, state=States.LOW):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, num_reps, max_readouts, powers, filters, state)
+
+
+def main_with_cxn(
+    cxn, nv_sig, num_reps, max_readouts, powers=None, filters=None, state=States.LOW
+):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
-    Ie we'll test max_readout[i] and power[i]/filter[i] at the same time. For 
+    Ie we'll test max_readout[i] and power[i]/filter[i] at the same time. For
     each experiment i, we'll just run one data set under the max_readout. Then
     we'll determine the optimized readout in post.
     Either powers or filters should be populated but not both.
     """
-    
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
-    
+
     num_exps = len(max_readouts)
-    
-    for ind in range(num_exps): 
-        
+
+    for ind in range(num_exps):
+
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-        
+
         adjusted_nv_sig = copy.deepcopy(nv_sig)
         if max_readouts is not None:
             adjusted_nv_sig["spin_readout_dur"] = int(max_readouts[ind])
@@ -324,23 +317,24 @@ def main_with_cxn(cxn, nv_sig, num_reps, max_readouts,
             adjusted_nv_sig["spin_laser_power"] = powers[ind]
         if filters is not None:
             adjusted_nv_sig["spin_laser_filter"] = filters[ind]
-            
+
         optimize_readout_duration(cxn, adjusted_nv_sig, num_reps, state)
+
 
 # endregion
 
-if __name__ == '__main__':
-    
-    file = "2022_12_05-13_03_16-15micro-nv1_zfs_vs_t"
-    data = tool_belt.get_raw_data(file)
-    
+if __name__ == "__main__":
+
+    file_name = "2022_12_05-14_16_25-15micro-nv1_zfs_vs_t"
+    data = tool_belt.get_raw_data(file_name)
+
     nv_sig = data["nv_sig"]
     max_readout = nv_sig["spin_readout_dur"]
     sig_tags = data["sig_tags"]
     ref_tags = data["ref_tags"]
     num_reps = data["num_reps"]
-    
-    plot_readout_duration_optimization(max_readout, num_reps, 
-                                       sig_tags, ref_tags)
 
-    # plt.show(block=True)
+    kpl.init_kplotlib(no_latex=True)
+    plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags)
+
+    plt.show(block=True)
