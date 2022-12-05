@@ -199,7 +199,9 @@ def get_z_control_style():
 def get_drift(cxn):
     drift = common.get_registry_entry(cxn, "DRIFT", ["", "State"])
     xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    xy_dtype = eval(xy_dtype)
     z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
+    z_dtype = eval(z_dtype)
     drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     return drift
 

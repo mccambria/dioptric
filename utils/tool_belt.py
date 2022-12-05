@@ -1120,7 +1120,7 @@ def get_pos_xy_server(cxn):
 
 
 def get_pos_xy_server_name(cxn):
-    return get_registry_entry(cxn, "pos_xy_server", ["", "Config", "Positioning"])
+    return get_registry_entry(cxn, "pos_xy", ["", "Config", "Positioning"])
 
 
 def get_z_server(cxn):
@@ -1248,20 +1248,10 @@ def get_sig_gen_name_no_cxn(state):
         return get_sig_gen_name(cxn, state)
 
 
-def get_signal_generator_name(cxn, state):
-    """DEPRECATED"""
-    return get_sig_gen_name(cxn, state)
-
-
 def get_sig_gen_name(cxn, state):
     return get_registry_entry(
-        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Microwaves"]
+        cxn, "sig_gen_{}".format(state.name), ["", "Config", "Servers"]
     )
-
-
-def get_signal_generator_cxn(cxn, state):
-    """DEPRECATED"""
-    return get_sig_gen_cxn(cxn, state)
 
 
 def get_sig_gen_cxn(cxn, state):
