@@ -14,7 +14,7 @@ Created on November 23rd, 2018
 import matplotlib.pyplot as plt
 import os
 import csv
-import datetime
+from datetime import datetime
 import numpy as np
 from numpy import exp
 import json
@@ -1349,7 +1349,7 @@ def get_raw_data_path(
         nvdata_dir = common.get_nvdata_dir()
 
     if path_from_nvdata is None:
-        path_from_nvdata = search_index.get_data_path(file_name)
+        path_from_nvdata = search_index.get_data_path_from_nvdata(file_name)
 
     data_dir = nvdata_dir / path_from_nvdata
     file_name_ext = "{}.txt".format(file_name)
@@ -1373,7 +1373,7 @@ def get_time_stamp():
         string: <year>_<month>_<day>-<hour>_<minute>_<second>
     """
 
-    timestamp = str(datetime.datetime.now())
+    timestamp = str(datetime.now())
     timestamp = timestamp.split(".")[0]  # Keep up to seconds
     timestamp = timestamp.replace(":", "_")  # Replace colon with dash
     timestamp = timestamp.replace("-", "_")  # Replace dash with underscore
@@ -1473,19 +1473,14 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
     return file_path_Path
 
 
-def utc_from_file_name(file_name):
-
-    f_split = file_name.split("-")
-    date = f_split[0]
-    date_split = date.split("_")
-    date_ints = [int(el) for el in date_split]
-    time = f_split[1]
-    time_split = time.split("_")
-    time_ints = [int(el) for el in time_split]
-    dt = datetime.datetime(*date_ints, *time_ints)
-    utc_time = dt.replace(tzinfo=datetime.timezone.utc)
-    utc_timestamp = utc_time.timestamp()
-    return utc_timestamp
+def utc_from_file_name(file_name, time_zone="CST"):
+    # First 19 characters are human-readable timestamp
+    date_time_str = file_name[0:19]
+    # Assume timezone is CST
+    date_time_str += f"-{time_zone}"
+    date_time = datetime.strptime(date_time_str, r"%Y_%m_%d-%H_%M_%S-%Z")
+    timestamp = date_time.timestamp()
+    return timestamp
 
 
 def save_figure(fig, file_path):

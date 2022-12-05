@@ -14,6 +14,7 @@ Created on Fri Mar  5 12:42:32 2021
 
 import numpy as np
 from majorroutines.pulsed_resonance import return_res_with_error
+import majorroutines.pulsed_resonance as pesr
 import utils.tool_belt as tool_belt
 from utils.tool_belt import bose
 import matplotlib.pyplot as plt
@@ -24,92 +25,9 @@ from scipy.optimize import curve_fit
 import csv
 import pandas as pd
 
-toyli_digitized = [
-    300,
-    2.87,
-    309.9858044201037,
-    2.8690768841409784,
-    320.04280071681194,
-    2.868366259576263,
-    330.32149670254546,
-    2.8673945841666115,
-    340.3583384820696,
-    2.866304172245094,
-    350.05837349046874,
-    2.8655253065868678,
-    360.1625766242179,
-    2.8644972039180088,
-    370.064695695292,
-    2.8633133281175045,
-    380.2362601832661,
-    2.8622540708223165,
-    390.13837925434024,
-    2.8611013496481412,
-    399.9731369711893,
-    2.8600109377266243,
-    410.00997875071346,
-    2.858858216552449,
-    420.0468205302376,
-    2.857362794488654,
-    430.4878304351117,
-    2.856176937898957,
-    440.3899495061858,
-    2.8549015790086583,
-    450.02262316036,
-    2.8535619300765087,
-    460.1268262941091,
-    2.852066508012714,
-    469.96158401095823,
-    2.850633395201577,
-    480.5373166242823,
-    2.849387210148415,
-    490.30471298690645,
-    2.84789178808462,
-    500.2068320579806,
-    2.8465209845261414,
-    510.04158977482973,
-    2.844994407836017,
-    520.2805156170289,
-    2.843374367266906,
-    530.452080105003,
-    2.8417854813241243,
-    540.354199176077,
-    2.840258904634,
-    550.1215955387013,
-    2.838638864064889,
-    560.1584373182253,
-    2.837361524385398,
-    570.3300018061993,
-    2.8357103291899572,
-    580.2321208772735,
-    2.8341545786626967,
-    590.4036853652476,
-    2.8322813395045685,
-    600.0363590194218,
-    2.830756743603637,
-    610.005839444721,
-    2.829354785418829,
-    619.9079585157951,
-    2.8275789717180726,
-    630.4163297748942,
-    2.826052395027949,
-    640.3184488459683,
-    2.824556972964154,
-    650.2879292712674,
-    2.8227500046370686,
-    660.1269697755595,
-    2.821005345562641,
-    669.8900833507407,
-    2.8189160048094015,
-    680.4658159640647,
-    2.816922108724342,
-    690.5700190978139,
-    2.8151482758127777,
-    700.472138168888,
-    2.8134950998281454,
-    710.0374504688373,
-    2.812188586311517,
-]
+# fmt: off
+toyli_digitized = [300, 2.87, 309.9858044201037, 2.8690768841409784, 320.04280071681194, 2.868366259576263, 330.32149670254546, 2.8673945841666115, 340.3583384820696, 2.866304172245094, 350.05837349046874, 2.8655253065868678, 360.1625766242179, 2.8644972039180088, 370.064695695292, 2.8633133281175045, 380.2362601832661, 2.8622540708223165, 390.13837925434024, 2.8611013496481412, 399.9731369711893, 2.8600109377266243, 410.00997875071346, 2.858858216552449, 420.0468205302376, 2.857362794488654, 430.4878304351117, 2.856176937898957, 440.3899495061858, 2.8549015790086583, 450.02262316036, 2.8535619300765087, 460.1268262941091, 2.852066508012714, 469.96158401095823, 2.850633395201577, 480.5373166242823, 2.849387210148415, 490.30471298690645, 2.84789178808462, 500.2068320579806, 2.8465209845261414, 510.04158977482973, 2.844994407836017, 520.2805156170289, 2.843374367266906, 530.452080105003, 2.8417854813241243, 540.354199176077, 2.840258904634, 550.1215955387013, 2.838638864064889, 560.1584373182253, 2.837361524385398, 570.3300018061993, 2.8357103291899572, 580.2321208772735, 2.8341545786626967, 590.4036853652476, 2.8322813395045685, 600.0363590194218, 2.830756743603637, 610.005839444721, 2.829354785418829, 619.9079585157951, 2.8275789717180726, 630.4163297748942, 2.826052395027949, 640.3184488459683, 2.824556972964154, 650.2879292712674, 2.8227500046370686, 660.1269697755595, 2.821005345562641, 669.8900833507407, 2.8189160048094015, 680.4658159640647, 2.816922108724342, 690.5700190978139, 2.8151482758127777, 700.472138168888, 2.8134950998281454, 710.0374504688373, 2.812188586311517]
+# fmt: on
 toyli_temps = toyli_digitized[0::2]
 toyli_temps = [round(val, -1) for val in toyli_temps]
 toyli_zfss = toyli_digitized[1::2]
@@ -188,6 +106,160 @@ def calc_zfs_from_compiled_data():
     zfs_err_list = [round(val, 6) for val in zfs_err_list]
     print(zfs_list)
     print(zfs_err_list)
+
+
+def refit_experiments():
+    """Re-run fits to experimental data, either plotting and saving the new plots
+    or just printing out the fit parameters
+    """
+
+    ### User setup
+    # Also see below section Sample-dependent fit...
+
+    do_plot = False  # Generate raw data and fit plots?
+    do_save = False  # Save the plots?
+    do_print = True  # Print out popts and associated error bars?
+
+    data_points = get_data_points()
+    # sample = "Wu"
+    sample = "15micro"
+    file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
+
+    ### Loop
+
+    table_popt = None
+    table_pste = None
+
+    for file_name in file_list:
+
+        ### Data extraction and processing
+
+        # file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
+        data = tool_belt.get_raw_data(file_name)
+        raw_file_path = tool_belt.get_raw_data_path(file_name)
+        freq_center = data["freq_center"]
+        freq_range = data["freq_range"]
+        num_steps = data["num_steps"]
+        ref_counts = data["ref_counts"]
+        sig_counts = data["sig_counts"]
+        num_reps = data["num_reps"]
+        nv_sig = data["nv_sig"]
+        readout = nv_sig["spin_readout_dur"]
+        try:
+            norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
+        except Exception as exc:
+            # norm_style = NormStyle.POINT_TO_POINT
+            norm_style = tool_belt.NormStyle.SINGLE_VALUED
+
+        ret_vals = pesr.process_counts(
+            sig_counts, ref_counts, num_reps, readout, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+
+        ### Raw data figure
+
+        if do_plot:
+            ret_vals = pesr.create_raw_data_figure(
+                freq_center,
+                freq_range,
+                num_steps,
+                sig_counts_avg_kcps,
+                ref_counts_avg_kcps,
+                norm_avg_sig,
+            )
+            if do_save:
+                raw_fig = ret_vals[0]
+                file_path = raw_file_path.with_suffix(".svg")
+                tool_belt.save_figure(raw_fig, file_path)
+
+        ### Sample-dependent fit functions and parameters
+
+        if sample == "Wu":
+            fit_func = lambda freq, contrast, rabi_freq, center: pesr.single_dip(
+                freq, contrast, rabi_freq, center, dip_func=pesr.rabi_line_hyperfine
+            )
+            guess_params = [0.1, 5, freq_center]
+        elif sample == "15micro":
+            fit_func = lambda freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center: pesr.double_dip(
+                freq,
+                low_contrast,
+                low_width,
+                low_center,
+                high_contrast,
+                high_width,
+                high_center,
+                dip_func=pesr.lorentzian,
+            )
+            guess_params = [
+                0.015,
+                7,
+                freq_center - 0.005,
+                0.015,
+                7,
+                freq_center + 0.005,
+            ]
+
+        ### Raw data figure
+
+        if do_plot:
+            fit_fig, fit_func, popt, pcov = pesr.create_fit_figure(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                fit_func=fit_func,
+                guess_params=guess_params,
+            )
+            if do_save:
+                file_path = raw_file_path.with_name((f"{file_name}-fit"))
+                file_path = file_path.with_suffix(".svg")
+                tool_belt.save_figure(fit_fig, file_path)
+
+        ### Get fit parameters and error bars
+
+        if do_print:
+            if not do_plot:
+                fit_func, popt, pcov = pesr.fit_resonance(
+                    freq_center,
+                    freq_range,
+                    num_steps,
+                    norm_avg_sig,
+                    norm_avg_sig_ste,
+                    fit_func=fit_func,
+                    guess_params=guess_params,
+                )
+            if table_popt is None:
+                table_popt = []
+                table_pste = []
+                for ind in range(len(popt)):
+                    table_popt.append([])
+                    table_pste.append([])
+            for ind in range(len(popt)):
+                val = popt[ind]
+                err = np.sqrt(pcov[ind, ind])
+                val_col = table_popt[ind]
+                err_col = table_pste[ind]
+                val_col.append(round(val, 6))
+                err_col.append(round(err, 6))
+
+        # Close the plots so they don't clutter everything up
+        # plt.close("all")
+
+    ### Report the fit parameters
+
+    if do_print:
+        for ind in range(len(table_popt)):
+            print()
+            print(table_popt[ind])
+            print()
+            print(table_pste[ind])
+            print()
 
 
 # endregion
@@ -312,9 +384,7 @@ def zfs_from_temp_barson(temp):
     Theta2 = 880  # K
     Theta3 = 2137.5  # K
 
-    return zfs_from_temp_barson_free(
-        temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3
-    )
+    return zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3)
 
 
 def zfs_from_temp_li(temp):
@@ -340,18 +410,12 @@ def fractional_thermal_expansion(temp):
     Theta2 = 880  # K
     Theta3 = 2137.5  # K
 
-    return fractional_thermal_expansion_free(
-        temp, X1, X2, X3, Theta1, Theta2, Theta3
-    )
+    return fractional_thermal_expansion_free(temp, X1, X2, X3, Theta1, Theta2, Theta3)
 
 
-def fractional_thermal_expansion_free(
-    temp, X1, X2, X3, Theta1, Theta2, Theta3
-):
+def fractional_thermal_expansion_free(temp, X1, X2, X3, Theta1, Theta2, Theta3):
 
-    dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (
-        np.exp(Theta / T) - 1
-    )
+    dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (np.exp(Theta / T) - 1)
     dV_over_V = (
         lambda T: np.exp(
             3
@@ -380,8 +444,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     b6 = -1.8e-15
     D_of_T = (
         lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
-        / 1000
+        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6)) / 1000
     )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
     if type(temp) in [list, np.ndarray]:
@@ -700,9 +763,7 @@ def main():
         large_errors = [abs(val) > max_dev for val in devs]
         if True in large_errors:
             print("Got a large error that won't be shown in hist!")
-        hist, bin_edges = np.histogram(
-            devs, bins=num_bins, range=(-max_dev, max_dev)
-        )
+        hist, bin_edges = np.histogram(devs, bins=num_bins, range=(-max_dev, max_dev))
         x_vals = []
         y_vals = []
         for ind in range(len(bin_edges) - 1):
@@ -824,10 +885,11 @@ if __name__ == "__main__":
     # print(cambria_fixed(15))
     # sys.exit()
 
-    calc_zfs_from_compiled_data()
+    # calc_zfs_from_compiled_data()
 
     # kpl.init_kplotlib()
 
     # main()
+    refit_experiments()
 
     # plt.show(block=True)

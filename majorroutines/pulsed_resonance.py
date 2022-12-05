@@ -38,6 +38,7 @@ def create_fit_figure(
     guess_params=None,
 ):
 
+    # Fitting
     if (fit_func is None) or (popt is None):
         fit_func, popt, pcov = fit_resonance(
             freq_center,
@@ -49,10 +50,14 @@ def create_fit_figure(
             guess_params,
         )
 
+    # Plot setup
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("Normalized fluorescence")
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     smooth_freqs = calculate_freqs(freq_center, freq_range, 1000)
 
-    fig, ax = plt.subplots()
+    # Plotting
     if norm_avg_sig_ste is not None:
         kpl.plot_points(ax, freqs, norm_avg_sig, yerr=norm_avg_sig_ste)
     else:
@@ -63,28 +68,29 @@ def create_fit_figure(
         fit_func(smooth_freqs, *popt),
         color=KplColors.RED,
     )
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Normalized fluorescence")
 
-    text = "A = {:.3f} \n hwhm = {:.1f} MHz \n f = {:.4f} GHz"
-    if fit_func == single_dip:
+    # Text boxes to describe the fits
+    low_text = None
+    high_text = None
+    base_text = "A = {:.3f} \n width = {:.1f} MHz \n f = {:.4f} GHz"
+    if len(popt) == 3:
         contrast, hwhm, freq = popt[0:3]
-        low_text = text.format(contrast, 1000 * hwhm, freq)
+        low_text = base_text.format(contrast, hwhm, freq)
         high_text = None
-    elif fit_func == double_dip:
+    elif len(popt) == 6:
         contrast, hwhm, freq = popt[0:3]
-        low_text = text.format(contrast, 1000 * hwhm, freq)
+        low_text = base_text.format(contrast, hwhm, freq)
         contrast, hwhm, freq = popt[3:6]
-        high_text = text.format(contrast, 1000 * hwhm, freq)
-
+        high_text = base_text.format(contrast, hwhm, freq)
     size = kpl.Size.SMALL
-    kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
+    if low_text is not None:
+        kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
     if high_text is not None:
         kpl.anchored_text(ax, high_text, kpl.Loc.LOWER_RIGHT, size=size)
 
+    # Wrap up
     kpl.tight_layout(fig)
-
-    return fig, fit_func, popt, pcov
+    return fig, ax, fit_func, popt, pcov
 
 
 def create_raw_data_figure(
@@ -96,16 +102,16 @@ def create_raw_data_figure(
     norm_avg_sig=None,
 ):
 
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
-
+    # Plot setup
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
     ax_sig_ref, ax_norm = axes_pack
-
     ax_sig_ref.set_xlabel("Frequency (GHz)")
     ax_sig_ref.set_ylabel("Count rate (kcps)")
     ax_norm.set_xlabel("Frequency (GHz)")
     ax_norm.set_ylabel("Normalized fluorescence")
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
+    # Plotting
     if avg_sig_counts is not None:
         kpl.plot_line(
             ax_sig_ref, freqs, avg_sig_counts, label="Signal", color=KplColors.GREEN
@@ -119,8 +125,8 @@ def create_raw_data_figure(
     if norm_avg_sig is not None:
         kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
+    # Wrap up
     kpl.tight_layout(fig)
-
     return fig, ax_sig_ref, ax_norm
 
 
@@ -131,39 +137,54 @@ def create_raw_data_figure(
 def rabi_line(freq, constrast, rabi_freq, res_freq):
     """Lineshape for PESR under a pi pulse for the actual resonant frequency"""
 
+    rabi_freq_ghz = rabi_freq / 1000
     detuning = freq - res_freq
-    effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq**2)
-    effective_contrast = constrast * ((rabi_freq / effective_rabi_freq) ** 2)
-    pulse_dur = np.pi / rabi_freq  # Assumed
+    effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
+    effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
+    pulse_dur = np.pi / rabi_freq_ghz  # Assumed
     return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2)
 
 
+def rabi_line_hyperfine(freq, constrast, rabi_freq, res_freq):
+    """Sum of 3 Rabi lineshapes separated by hyperfine splitting for N14"""
+
+    hyperfine = 2.14 / 1000  # Hyperfine in GHz
+    val = (1 / 3) * (
+        rabi_line(freq, constrast, rabi_freq, res_freq - hyperfine)
+        + rabi_line(freq, constrast, rabi_freq, res_freq)
+        + rabi_line(freq, constrast, rabi_freq, res_freq + hyperfine)
+    )
+    return val
+
+
 def gaussian(freq, constrast, sigma, center):
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma**2)))
+    sigma_ghz = sigma / 1000
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma_ghz**2)))
 
 
 def lorentzian(freq, constrast, hwhm, center):
     """Normalized that the value at the center is the contrast"""
-    return constrast * (hwhm**2) / ((freq - center) ** 2 + hwhm**2)
+    hwhm_ghz = hwhm / 1000
+    return constrast * (hwhm_ghz**2) / ((freq - center) ** 2 + hwhm_ghz**2)
 
 
 def double_dip(
     freq,
-    low_constrast,
+    low_contrast,
     low_width,
     low_center,
-    high_constrast,
+    high_contrast,
     high_width,
     high_center,
     dip_func=rabi_line,
 ):
-    low_dip = dip_func(freq, low_constrast, low_width, low_center)
-    high_dip = dip_func(freq, high_constrast, high_width, high_center)
+    low_dip = dip_func(freq, low_contrast, low_width, low_center)
+    high_dip = dip_func(freq, high_contrast, high_width, high_center)
     return 1.0 - (low_dip + high_dip)
 
 
-def single_dip(freq, constrast, width, center, dip_func=rabi_line):
-    return 1.0 - dip_func(freq, constrast, width, center)
+def single_dip(freq, contrast, width, center, dip_func=rabi_line):
+    return 1.0 - dip_func(freq, contrast, width, center)
 
 
 # endregion
@@ -235,6 +256,7 @@ def get_guess_params(
     inverted_norm_avg_sig = 1 - norm_avg_sig
 
     hwhm = 0.004  # GHz
+    hwhm_mhz = hwhm * 1000
     fwhm = 2 * hwhm
 
     # Convert to index space
@@ -256,11 +278,13 @@ def get_guess_params(
 
     low_freq_guess = None
     high_freq_guess = None
+
+    # Find the location of the highest peak
+    max_peak_height = max(peak_heights)
+    max_peak_peak_ind = peak_heights.index(max_peak_height)
+    max_peak_freq = freqs[peak_inds[max_peak_peak_ind]]
+
     if len(peak_inds) > 1:
-        # Find the location of the highest peak
-        max_peak_height = max(peak_heights)
-        max_peak_peak_ind = peak_heights.index(max_peak_height)
-        max_peak_freq = freqs[peak_inds[max_peak_peak_ind]]
 
         # Remove what we just found so we can find the second highest peak
         peak_inds.pop(max_peak_peak_ind)
@@ -305,15 +329,15 @@ def get_guess_params(
 
     if high_freq_guess is None:
         fit_func = single_dip
-        guess_params = [low_contrast_guess, hwhm, low_freq_guess]
+        guess_params = [low_contrast_guess, hwhm_mhz, low_freq_guess]
     else:
         fit_func = double_dip
         guess_params = [
             low_contrast_guess,
-            hwhm,
+            hwhm_mhz,
             low_freq_guess,
             high_contrast_guess,
-            hwhm,
+            hwhm_mhz,
             high_freq_guess,
         ]
 
@@ -695,7 +719,7 @@ def main_with_cxn(
     run_indicator_obj.remove()
 
     # Fits
-    fit_fig, fit_func, popt, pcov = create_fit_figure(
+    fit_fig, _, fit_func, popt, _ = create_fit_figure(
         freq_center, freq_range, num_steps, norm_avg_sig, fit_func, popt
     )
 
@@ -760,8 +784,7 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # file_name = "2022_12_01-04_04_27-15micro-nv3_zfs_vs_t"
-    file_name = "2022_08_10-13_41_02-rubin-nv8"
+    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -778,8 +801,12 @@ if __name__ == "__main__":
         norm_style = NormStyle.SINGLE_VALUED
 
     ret_vals = process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
-    sig_counts_avg_kcps, ref_counts_avg_kcps, norm_avg_sig, norm_avg_sig_ste = ret_vals
-
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
     create_raw_data_figure(
         freq_center,
         freq_range,
@@ -795,7 +822,5 @@ if __name__ == "__main__":
         norm_avg_sig,
         norm_avg_sig_ste,
     )
-
-    print(return_res_with_error(data))
 
     plt.show(block=True)
