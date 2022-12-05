@@ -156,7 +156,7 @@ def set_xyz_ramp(cxn, coords):
         total_movement_delay = z_delay
 
     xyz_server = get_pos_xyz_server(cxn)
-    
+
     pulse_gen = get_pulse_gen_server(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
@@ -288,7 +288,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
     mod_type = get_registry_entry(cxn, "mod_type", ["", "Config", "Optics", laser_name])
     mod_type = eval(mod_type)
-    
+
     pulse_gen = get_pulse_gen_server(cxn)
 
     if mod_type is ModTypes.DIGITAL:
@@ -1174,32 +1174,16 @@ def get_pulse_gen_server(cxn):
 
 
 def get_magnet_rotation_server(cxn):
-    """
-    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
-    """
-    magnet_rotation_server_return = getattr(
-        cxn,
-        get_registry_entry(cxn, "magnet_rotation_server", ["", "Config", "Servers"]),
-    )
+    """Get the rotation stage server for the magnet orientation"""
 
-    if magnet_rotation_server_return == "":
-        raise RuntimeError
-
-    return magnet_rotation_server_return
+    return common.get_server(cxn, "magnet_rotation")
 
 
 def get_counter_server(cxn):
     """
     Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
     """
-    counter_server_return = getattr(
-        cxn,
-        get_registry_entry(cxn, "counter_server", ["", "Config", "PhotonCollection"]),
-    )
-    if counter_server_return == "":
-        raise RuntimeError
-
-    return counter_server_return
+    return common.get_server(cxn, "magnet_rotation")
 
 
 def get_tagger_server(cxn):
@@ -1790,9 +1774,7 @@ def opt_power_via_photodiode(color_ind, AO_power_settings=None, nd_filter=None):
         cxn.filter_slider_ell9k.set_filter(
             nd_filter
         )  # Change the nd filter for the yellow laser
-        pulse_gen.constant(
-            [], 0.0, AO_power_settings
-        )  # Turn on the yellow laser
+        pulse_gen.constant([], 0.0, AO_power_settings)  # Turn on the yellow laser
         time.sleep(0.3)
         for i in range(10):
             optical_power_list.append(cxn.photodiode.read_optical_power())
