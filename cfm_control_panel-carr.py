@@ -20,6 +20,7 @@ import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
+import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_xz_digital as image_sample_xz_digital
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
@@ -46,19 +47,20 @@ import matplotlib.pyplot as plt
 
 # %% Major Routines
 
-def do_test_routine_opx(nv_sig, apd_indices, delay, readout_time, laser_name, laser_power, num_reps):
-    apd_index = apd_indices[0]
-    counts, times, channels = test_routine_opx.main(nv_sig, delay, readout_time, apd_index, laser_name, laser_power, num_reps)
+# def do_test_routine_opx(nv_sig, apd_indices, delay, readout_time, laser_name, laser_power, num_reps):
+#     apd_index = apd_indices[0]
+#     counts, times, channels = test_routine_opx.main(nv_sig, delay, readout_time, apd_index, laser_name, laser_power, num_reps)
     
-    return counts, times, channels
+#     return counts, times, channels
     
     
 
-def do_image_sample(nv_sig,nvm_initialization=False,scan_range=2,num_steps=30,cmin=None,cmax=None):
+def do_image_sample(nv_sig,nv_minus_init=False,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
    
     # For now we only support square scans so pass scan_range twice
-    image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
+    # image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps,nv_minus_init,vmin=cmin,vmax=cmax)
 
 def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
@@ -384,9 +386,9 @@ if __name__ == "__main__":
     red_laser = 'cobolt_638'
 
     nv_sig = {
-        'coords': [48.031, 51.462, 70.94], 'name': '{}-search'.format(sample_name),
+        'coords': [50.0, 50.0, 50.0], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 95,
+        'expected_count_rate': None,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
@@ -420,7 +422,7 @@ if __name__ == "__main__":
         'collection_filter': None, 'magnet_angle': 80,
         'resonance_LOW': 2.8443, 'rabi_LOW': 176, 'uwave_power_LOW': 16.5,
         'resonance_HIGH': 2.8982, 'rabi_HIGH': 152, 'uwave_power_HIGH': 16.5,
-        'norm_style':NormStyle.single_valued
+        'norm_style':NormStyle.SINGLE_VALUED
         }
     
     
@@ -440,8 +442,8 @@ if __name__ == "__main__":
         # do_determine_charge_readout_params(nv_sig, num_reps=500,readout_powers=[.55],readout_times=[5e6])
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         
-        # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=10)#,cmin=0,cmax=50)
-        # do_image_sample(nv_sig,num_steps=20,scan_range=2)#,cmin=0,cmax=75)
+        do_image_sample_xz(nv_sig, apd_indices,num_steps=40,scan_range=10)#,cmin=0,cmax=50)
+        # do_image_sample(nv_sig,num_steps=30,scan_range=6)#,cmin=0,cmax=75)
         
         # do_optimize(nv_sig, apd_indices)
         # do_optimize_z(nv_sig, apd_indices)
@@ -460,7 +462,7 @@ if __name__ == "__main__":
         # do_optimize_magnet_angle(nv_sig)
         
         # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.65],readout_times=[15e6])
-        do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.55],readout_times=[15e6])
+        # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.55],readout_times=[15e6])
         # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.7],readout_times=[15e6])
         # do_determine_reion_dur(nv_sig, apd_indices)
 

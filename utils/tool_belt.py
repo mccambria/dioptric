@@ -315,7 +315,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     # do this nicely we'd find a way to only turn off the specific channel,
     # but it's not worth the effort.
     if not turn_on:
-        pulse_gen_server = get_pulse_gen_server(cxn)
+        pulse_gen_server = get_server_pulse_gen(cxn)
         pulse_gen_server.constant([])
 
 
@@ -1155,10 +1155,10 @@ def get_pos_xyz_server_name(cxn):
 
 def get_pulsegen_server(cxn):
     """DEPRECATED"""
-    return get_pulse_gen_server(cxn)
+    return get_server_pulse_gen(cxn)
 
 
-def get_pulse_gen_server(cxn):
+def get_server_pulse_gen(cxn):
     """
     Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
     """
@@ -1173,20 +1173,26 @@ def get_pulse_gen_server(cxn):
     return pulsegen_server_return
 
 
-def get_magnet_rotation_server(cxn):
-    """Get the rotation stage server for the magnet orientation"""
+def get_server_magnet_rotation(cxn):
+    """
+    Talk to the registry to get the pulse gen server for this setup, such as opx vs swabian
+    """
+    magnet_rotation_server_return = getattr(
+        cxn,
+        get_registry_entry(cxn, "magnet_rotation_server", ["", "Config", "Servers"]),
+    )
 
     return common.get_server(cxn, "magnet_rotation")
 
 
-def get_counter_server(cxn):
+def get_server_counter(cxn):
     """
     Talk to the registry to get the photon counter server for this setup, such as opx vs swabian
     """
     return common.get_server(cxn, "magnet_rotation")
 
 
-def get_tagger_server(cxn):
+def get_server_tagger(cxn):
     """
     Talk to the registry to get the photon time tagger server for this setup, such as opx vs swabian
     """

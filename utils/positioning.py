@@ -162,15 +162,15 @@ def set_xyz_on_nv(cxn, nv_sig, drift_adjust=True):
 
 
 def get_server_pos_xy(cxn):
-    common.get_server(cxn, "pos_xy")
+    return common.get_server(cxn, "pos_xy")
 
 
 def get_server_pos_z(cxn):
-    common.get_server(cxn, "pos_z")
+    return common.get_server(cxn, "pos_z")
 
 
 def get_server_pos_xyz(cxn):
-    common.get_server(cxn, "pos_xyz")
+    return common.get_server(cxn, "pos_xyz")
 
 
 def get_xy_control_style():
@@ -199,7 +199,9 @@ def get_z_control_style():
 def get_drift(cxn):
     drift = common.get_registry_entry(cxn, "DRIFT", ["", "State"])
     xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    xy_dtype = eval(xy_dtype)
     z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
+    z_dtype = eval(z_dtype)
     drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     return drift
 

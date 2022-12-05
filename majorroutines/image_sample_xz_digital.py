@@ -8,12 +8,83 @@ Created on Wed Nov 10 10:46:28 2021
 
 import numpy
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import time
 import labrad
 import majorroutines.optimize_digital as optimize
 import majorroutines.image_sample as image_sample
 import matplotlib.pyplot as plt
   
+def populate_img_array(valsToAdd, imgArray, writePos):
+    """
+    We scan the sample in a winding pattern. This function takes a chunk
+    of the 1D list returned by this process and places each value appropriately
+    in the 2D image array. This allows for real time imaging of the sample's
+    fluorescence.
+    Note that this function could probably be much faster. At least in this
+    context, we don't care if it's fast. The implementation below was
+    written for simplicity.
+    Params:
+        valsToAdd: numpy.ndarray
+            The increment of raw data to add to the image array
+        imgArray: numpy.ndarray
+            The xDim x yDim array of fluorescence counts
+        writePos: tuple(int)
+            The last x, y write position on the image array. [] will default
+            to the bottom right corner.
+    """
+    yDim = imgArray.shape[0]
+    xDim = imgArray.shape[1]
+
+    if len(writePos) == 0:
+        writePos[:] = [xDim, yDim - 1]
+
+    xPos = writePos[0]
+    yPos = writePos[1]
+
+    # Figure out what direction we're heading
+    headingLeft = ((yDim - 1 - yPos) % 2 == 0)
+
+    for val in valsToAdd:
+        if headingLeft:
+            # Determine if we're at the left x edge
+            if (xPos == 0):
+                yPos = yPos - 1
+                imgArray[yPos, xPos] = val
+                headingLeft = not headingLeft  # Flip directions
+            else:
+                xPos = xPos - 1
+                imgArray[yPos, xPos] = val
+        else:
+            # Determine if we're at the right x edge
+            if (xPos == xDim - 1):
+                yPos = yPos - 1
+                imgArray[yPos, xPos] = val
+                headingLeft = not headingLeft  # Flip directions
+            else:
+                xPos = xPos + 1
+                imgArray[yPos, xPos] = val
+    writePos[:] = [xPos, yPos]
+
+    return imgArray
+
+
+def on_click_image(event):
+    """
+    Click handler for images. Prints the click coordinates to the console.
+    Params:
+        event: dictionary
+            Dictionary containing event details
+    """
+
+    try:
+        print('{:.3f}, {:.3f}'.format(event.xdata, event.ydata))
+#        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
+    except TypeError:
+        # Ignore TypeError if you click in the figure but out of the image
+        pass
+
+
 def xz_scan_voltages(x_center, z_center, x_range, z_range, num_steps):
     
         if x_range != z_range:
@@ -77,15 +148,15 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
                   um_scaled=False,cbarmin=None,cbarmax=None):
 
     # %% Some initial setup
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     startFunctionTime = time.time()
     
     tool_belt.reset_cfm(cxn)
     
     laser_key = 'imaging_laser'
 
-    drift = tool_belt.get_drift() 
+    drift = positioning.get_drift(cxn) 
     coords = nv_sig['coords']
     adjusted_coords = (numpy.array(coords) + numpy.array(drift)).tolist() 
     x_center, y_center, z_center = adjusted_coords
@@ -103,7 +174,7 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
     if x_range != z_range:
         raise RuntimeError('x and z resolutions must match for now.')
 
-    xyz_server = tool_belt.get_xyz_server(cxn)
+    xyz_server = positioning.get_server_pos_xyz(cxn)
     # z_server = tool_belt.get_z_server(cxn)
     
     # Get a couple registry entries
@@ -170,11 +241,10 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
                       z_low - half_pixel_size, z_high + half_pixel_size]
         title = r'Confocal scan, {}, {} us readout'.format(laser_name, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
-                        clickHandler=image_sample.on_click_image, color_bar_label='kcps',
+                        clickHandler=on_click_image, color_bar_label='kcps',
                         title=title, um_scaled=um_scaled)
         
     # %% Collect the data
-    populate_img_array = image_sample.populate_img_array
     update_image_figure = tool_belt.update_image_figure
     tool_belt.init_safe_stop()
     
@@ -188,7 +258,7 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
     #x_positions1, y_positions1, _, _ = ret_vals
     time_start= time.time()
     opti_interval=2
-    seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
+    seq_args = [0, readout, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     pulsegen_server.stream_load('simple_readout.py',seq_args_string)
     
@@ -320,8 +390,8 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample_digital/2022_02'
-    file_name = '2022_02_04-11_48_38-johnson-search'
+    path = 'pc_carr/branch_opx-setup/image_sample_xz_digital/2022_11'
+    file_name = '2022_11_09-10_20_21-johnson-search'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
