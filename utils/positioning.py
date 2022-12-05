@@ -162,15 +162,15 @@ def set_xyz_on_nv(cxn, nv_sig, drift_adjust=True):
 
 
 def get_server_pos_xy(cxn):
-    common.get_server(cxn, "pos_xy")
+    return common.get_server(cxn, "pos_xy")
 
 
 def get_server_pos_z(cxn):
-    common.get_server(cxn, "pos_z")
+    return common.get_server(cxn, "pos_z")
 
 
 def get_server_pos_xyz(cxn):
-    common.get_server(cxn, "pos_xyz")
+    return common.get_server(cxn, "pos_xyz")
 
 
 def get_xy_control_style():

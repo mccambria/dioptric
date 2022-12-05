@@ -380,8 +380,8 @@ def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwarg
         extent = tuple(kwargs["extent"])
         kwargs["extent"] = extent
         if "aspect" not in kwargs:
-            height = extent[3] - extent[2]
-            width = extent[1] - extent[0]
+            height = abs(extent[3] - extent[2])
+            width = abs(extent[1] - extent[0])
             aspect = height / width
             kwargs["aspect"] = aspect
 

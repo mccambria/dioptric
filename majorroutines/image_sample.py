@@ -313,7 +313,8 @@ def main_with_cxn(
     vmin=None,
     vmax=None,
 ):
-    # %% Some initial setup
+    
+    ### Some initial setup
     
     xy_control_style = tool_belt.get_xy_control_style()
     
@@ -352,12 +353,15 @@ def main_with_cxn(
         xy_scale *= 1000
 
     try:
-        xy_units = common.get_registry_entry_no_cxn(
+        xy_units = common.get_registry_entry(cxn,
             "xy_units", ["", "Config", "Positioning"]
         )
     except Exception as exc:
         print("xy_units not in config")
         xy_units = None
+    
+    
+    ### Load the pulse generator
     
     readout = nv_sig['imaging_readout_dur']
     readout_us = readout / 10**3
@@ -374,7 +378,7 @@ def main_with_cxn(
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         seq_file = 'charge_init-simple_readout.py'
     else:
-        seq_args = [0, readout, readout_laser, readout_power]
+        seq_args = [xy_delay, readout, readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         seq_file = 'simple_readout.py'
         
@@ -382,11 +386,11 @@ def main_with_cxn(
     ret_vals = pulse_gen.stream_load(seq_file,seq_args_string)
     period = ret_vals[0]
         
-    # %% calculate x y positions
+    ### Set up the xy_server
 
     x_num_steps = num_steps
     y_num_steps = num_steps
-    ret_vals = positioning.get_scan_cross_2d(
+    ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
     
     if xy_control_style == ControlStyle.STEP:
@@ -425,7 +429,7 @@ def main_with_cxn(
     img_write_pos = []
 
 
-    # %% Set up the image display
+    ### Set up the image display
     
     kpl.init_kplotlib(font_size=kpl.Size.SMALL, no_latex=True)
     
@@ -435,8 +439,7 @@ def main_with_cxn(
     elif xy_units is not None:
         axes_labels = [xy_units, xy_units]
         
-    readout_laser_text = kpl.tex_escape(readout_laser)
-    title = f"XY image under {readout_laser_text}, {readout_us} us readout"
+    title = f"XY image under {readout_laser}, {readout_us} us readout"
     
     fig, ax = plt.subplots()
     kpl.imshow(
@@ -449,10 +452,15 @@ def main_with_cxn(
         vmin=vmin,
         vmax=vmax,
     )
-    # %% Collect the data
+    
+    ### Collect the data
+    
+    counter.clear_buffer()
+    
+    counter.start_tag_stream() 
+    tool_belt.init_safe_stop()
+    
     if xy_control_style == ControlStyle.STEP:
-        counter.start_tag_stream() #move outside of sequence
-        tool_belt.init_safe_stop()
         
         dx_list = []
         dy_list = []
@@ -488,7 +496,7 @@ def main_with_cxn(
             kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
         
     elif xy_control_style == ControlStyle.STREAM:
-        counter.start_tag_stream()
+        
         pulse_gen.stream_start(total_num_samples)
 
         charge_init = nv_minus_init
@@ -496,7 +504,6 @@ def main_with_cxn(
         timeout_duration = ((period * (10**-9)) * total_num_samples) + 10
         timeout_inst = time.time() + timeout_duration
         num_read_so_far = 0
-        tool_belt.init_safe_stop()
 
         while num_read_so_far < total_num_samples:
 
@@ -520,12 +527,10 @@ def main_with_cxn(
                 kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
                 num_read_so_far += num_new_samples
 
-    # %% Clean up
+    ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
     xy_server.write_xy(x_center, y_center)
-    
-    # %% Save the data
     
     timestamp = tool_belt.get_time_stamp()
     rawData = {
