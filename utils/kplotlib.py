@@ -151,7 +151,7 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
     """
 
     ### Misc setup
-    
+
     # Reset to the default
     matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
@@ -242,7 +242,6 @@ def anchored_text(ax, text, loc, size=None, **kwargs):
     text_box.patch.set_alpha(0.5)
     ax.add_artist(text_box)
     return text_box
-    
 
 
 def tex_escape(text):
@@ -365,7 +364,7 @@ def plot_line_update(ax, line_ind=0, x=None, y=None):
     if y is not None:
         line.set_ydata(y)
     ax.relim()
-    ax.autoscale_view(scalex=False)
+    ax.autoscale_view()
 
     flush_update(ax)
 
