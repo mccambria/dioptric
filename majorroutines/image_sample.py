@@ -12,7 +12,8 @@ Created on April 9th, 2019
 import matplotlib.pyplot as plt
 import numpy as np
 import utils.tool_belt as tool_belt
-from utils.tool_belt import ControlStyle
+import utils.positioning as positioning
+from utils.positioning import ControlStyle
 import utils.common as common
 import time
 import labrad
@@ -316,7 +317,7 @@ def main_with_cxn(
     
     ### Some initial setup
     
-    xy_control_style = tool_belt.get_xy_control_style()
+    xy_control_style = positioning.get_xy_control_style(cxn)
     
     tool_belt.reset_cfm(cxn)
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
@@ -343,10 +344,10 @@ def main_with_cxn(
             cxn, "xy_small_response_delay", dir_path
         )
     else:
-        xy_delay = tool_belt.get_registry_entry(cxn, "xy_delay", dir_path)
+        xy_delay = common.get_registry_entry(cxn, "xy_delay", dir_path)
 
     # Get the scale in um per unit
-    xy_scale = tool_belt.get_registry_entry(cxn, "xy_nm_per_unit", dir_path)
+    xy_scale = common.get_registry_entry(cxn, "xy_nm_per_unit", dir_path)
     if xy_scale == -1:
         um_scaled = False
     else:
@@ -382,7 +383,7 @@ def main_with_cxn(
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         seq_file = 'simple_readout.py'
         
-    print(seq_args)
+    # print(seq_args)
     ret_vals = pulse_gen.stream_load(seq_file,seq_args_string)
     period = ret_vals[0]
         
@@ -454,8 +455,6 @@ def main_with_cxn(
     )
     
     ### Collect the data
-    
-    counter.clear_buffer()
     
     counter.start_tag_stream() 
     tool_belt.init_safe_stop()

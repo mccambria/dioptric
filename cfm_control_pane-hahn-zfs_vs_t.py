@@ -32,12 +32,7 @@ from random import shuffle
 ### Major Routines
 
 
-def do_image_sample(
-    nv_sig,
-    nv_minus_initialization=False,
-    cbarmin=None,
-    cbarmax=None,
-):
+def do_image_sample(nv_sig, nv_minus_init=False):
 
     # scan_range = 0.2
     # num_steps = 60
@@ -69,9 +64,7 @@ def do_image_sample(
         scan_range,
         scan_range,
         num_steps,
-        nv_minus_initialization=nv_minus_initialization,
-        cmin=cbarmin,
-        cmax=cbarmax,
+        nv_minus_init=nv_minus_init,
     )
 
 
@@ -376,7 +369,7 @@ if __name__ == "__main__":
         'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 800,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
-        "spin_pol_dur": 4e6, "spin_readout_dur": 1.4e6,
+        "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
         "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
         }
@@ -408,8 +401,8 @@ if __name__ == "__main__":
 
     # fmt: on
 
-    nv_sig = nv1
-    # nv_sig = nvref
+    # nv_sig = nv1
+    nv_sig = nvref
     # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
     nv_list = [nv1, nv2, nv3]
     # for nv in nv_list:
@@ -455,13 +448,13 @@ if __name__ == "__main__":
 
         # nv_sig = nvref 
         # nv_sig['imaging_readout_dur'] = 4e7
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_optimize(nv_sig)
         # nv_sig['imaging_readout_dur'] = 1e8
         # do_stationary_count_bg_subt(nv_sig, bg_coords)
         # do_stationary_count(nv_sig, disable_opt=True)
-        do_determine_standard_readout_params(nv_sig)
+        # do_determine_standard_readout_params(nv_sig)
 
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
