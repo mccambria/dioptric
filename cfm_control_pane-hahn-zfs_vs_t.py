@@ -171,7 +171,7 @@ def do_four_point_esr(nv_sig, state):
 
 def do_determine_standard_readout_params(nv_sig):
 
-    num_reps = 1e3
+    num_reps = 4e3
     max_readouts = [6e6]
     filters = ["nd_0"]
     state = States.LOW
@@ -377,7 +377,7 @@ if __name__ == "__main__":
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
         "spin_pol_dur": 4e6, "spin_readout_dur": 1.4e6,
-        "norm_style": NormStyle.point_to_point, 'collection_filter': None, 'magnet_angle': None,
+        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
         }
     

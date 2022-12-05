@@ -23,6 +23,7 @@ from scipy.optimize import curve_fit
 from random import shuffle
 from utils.tool_belt import States
 import utils.kplotlib as kpl
+from utils.kplotlib import KplColors
 import copy
 import matplotlib.pyplot as plt
 import majorroutines.optimize as optimize
@@ -78,6 +79,8 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     the spin states; 2 the SNR vs readout duration
     """
     
+    kpl.init_kplotlib(no_latex=True)
+    
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
     
     num_points = 50
@@ -125,22 +128,22 @@ def plot_readout_duration_optimization(max_readout, num_reps,
     sig_rates = sig_hist / (readout_window_sec * num_reps * 1000)
     ref_rates = ref_hist / (readout_window_sec * num_reps * 1000)
     bin_centers = (readouts_with_zero[:-1] + readouts) / 2
-    ax.plot(bin_centers, sig_rates, label=r"$m_{s}=\pm 1$")
-    ax.plot(bin_centers, ref_rates, label=r"$m_{s}=0$")
+    kpl.plot_line(ax, bin_centers, sig_rates, color=KplColors.GREEN, label=r"$m_{s}=\pm 1$")
+    kpl.plot_line(ax, bin_centers, ref_rates, color=KplColors.RED, label=r"$m_{s}=0$")
     ax.set_ylabel('Count rate (kcps)')
     ax.set_xlabel('Time since readout began (ns)')
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(readouts, snr_per_readouts)
+    kpl.plot_line(ax, readouts, snr_per_readouts)
     ax.set_xlabel('Readout duration (ns)')
-    ax.set_ylabel('SNR per readout')
+    ax.set_ylabel('SNR per sqrt(readout)')
     max_snr = tool_belt.round_sig_figs(max(snr_per_readouts), 3)
     optimum_readout = round(readouts[np.argmax(snr_per_readouts)])
-    text = f"Max SNR of {max_snr} at {optimum_readout} ns"
-    ax.text(0.6, 0.05, text, transform=ax.transAxes)
+    text = f"Max SNR: {max_snr} at {optimum_readout} ns"
+    kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT)
 
-    fig.tight_layout()
+    kpl.tight_layout(fig)
 
     return fig
     
@@ -302,7 +305,6 @@ def main_with_cxn(cxn, nv_sig, num_reps, max_readouts,
     Either powers or filters should be populated but not both.
     """
     
-    kpl.init_kplotlib()
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -329,7 +331,7 @@ def main_with_cxn(cxn, nv_sig, num_reps, max_readouts,
 
 if __name__ == '__main__':
     
-    file = "2022_07_14-18_29_49-hopper-search"
+    file = "2022_12_05-13_03_16-15micro-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file)
     
     nv_sig = data["nv_sig"]
