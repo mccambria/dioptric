@@ -243,7 +243,7 @@ def get_guess_params(
         high_freq_guess = None
 
     # low_freq_guess = 2.8620
-    high_freq_guess = 2.8936
+    #high_freq_guess = 2.8936
     # high_freq_guess = None
 
     if low_freq_guess is None:
@@ -491,6 +491,7 @@ def main_with_cxn(
     
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -500,6 +501,11 @@ def main_with_cxn(
     freq_high = freq_center + half_freq_range
     freqs = np.linspace(freq_low, freq_high, num_steps)
 
+
+    # check if running external iq_mod with SRS
+    iq_key = False
+    if 'uwave_iq_{}'.format(state.name) in nv_sig:
+        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -598,9 +604,12 @@ def main_with_cxn(
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
+        if iq_key:
+            sig_gen_cxn.load_iq()
+            # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            cxn.arbitrary_waveform_generator.load_knill()
+            arbwavegen_server.load_knill()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         if composite:
