@@ -271,7 +271,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     magnet_angle = nv_sig["magnet_angle"]
     if magnet_angle is not None:
         try:
-            rotation_stage_server = tool_belt.get_magnet_rotation_server(cxn)
+            rotation_stage_server = tool_belt.get_server_magnet_rotation(cxn)
             rotation_stage_server.set_angle(magnet_angle)
         except:
             print("trying to set magnet angle with no rotation stage. check config?")
