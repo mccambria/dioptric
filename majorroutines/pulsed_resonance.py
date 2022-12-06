@@ -512,7 +512,7 @@ def main_with_cxn(
 ):
 
     ### Setup
-    
+
     start_timestamp = tool_belt.get_time_stamp()
 
     kpl.init_kplotlib()
@@ -580,9 +580,7 @@ def main_with_cxn(
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
     text = kpl.tex_escape(run_indicator_text.format(0, num_runs))
-    run_indicator_obj = kpl.anchored_text(
-        ax_norm, text, loc=kpl.Loc.UPPER_RIGHT
-    )
+    run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
 
     ### Collect the data
 
@@ -662,7 +660,12 @@ def main_with_cxn(
         ret_vals = process_counts(
             inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
         )
-        sig_counts_avg_kcps, ref_counts_avg_kcps, norm_avg_sig, norm_avg_sig_ste = ret_vals
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
 
         kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
         kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
@@ -793,7 +796,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    no_latex = False
+    no_latex = True
     kpl.init_kplotlib(no_latex=no_latex)
 
     file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"

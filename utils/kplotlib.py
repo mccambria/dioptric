@@ -145,9 +145,10 @@ def zero_to_one_threshold(val):
 # region Miscellaneous
 
 
-def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
-    """Runs the default initialization for kplotlib, our default configuration
-    of matplotlib. Make sure no_latex is True for faster plotting.
+def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
+    """Runs the initialization for kplotlib, our default configuration
+    of matplotlib. Plotting will be faster if latex is False - only set to True
+    if you need full access to LaTeX
     """
 
     ### Misc setup
@@ -166,16 +167,16 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
 
     ### Latex setup
 
-    if not no_latex:
+    if latex:
 
         preamble = r""
         preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
         preamble += r"\usepackage{physics} \usepackage{upgreek}"
         preamble += r"\usepackage{roboto}"  # Google's free Helvetica
 
-        # Sans serif math font, looks better for axis numbers.
-        # We preserve \mathrm and \mathit commands so you can still use
-        # the serif lmodern font for variables, equations, etc
+        # Render math (e.g. axis numbers) in sans serif by default.
+        # Preserve the \mathrm and \mathit commands so you can still
+        # use the serif font for variables, equations, etc.
         preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
         plt.rcParams["text.latex.preamble"] = preamble
