@@ -20,7 +20,7 @@ def get_seq(pulse_streamer, config, args):
     durations = []
     for ind in range(4):
         durations.append(numpy.int64(args[ind]))
-        
+
     # Unpack the durations
     tau, polarization_time, readout, max_tau = durations
 
@@ -28,14 +28,14 @@ def get_seq(pulse_streamer, config, args):
     state = args[4]
     state = States(state)
     sig_gen_name = config['Servers'][f'sig_gen_{state.name}']
-    
+
     # Laser specs
     laser_name = args[5]
     laser_power = args[6]
 
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseGen']
-    
+
     pulser_do_apd_gate = pulser_wiring["do_apd_gate"]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
@@ -44,11 +44,11 @@ def get_seq(pulse_streamer, config, args):
     # print(laser_name)
     laser_delay =  config['Optics'][laser_name]['delay']
     uwave_delay = config['Microwaves'][sig_gen_name]['delay']
-    short_buffer = 10  # Helps avoid weird things that happen for ~0 ns pulses 
+    short_buffer = 10  # Helps avoid weird things that happen for ~0 ns pulses
     common_delay = max(laser_delay, uwave_delay) + short_buffer
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     # Keep the laser on for only as long as we need
-    readout_pol_min = max(readout, polarization_time) + short_buffer
+    readout_pol_max = max(readout, polarization_time) + short_buffer
     final_readout_buffer = 500
 
     # %% Define the sequence
@@ -61,8 +61,8 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
-             (readout, Digital.HIGH), 
-             (readout_pol_min - readout, Digital.LOW),
+             (readout, Digital.HIGH),
+             (readout_pol_max - readout, Digital.LOW),
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
@@ -80,7 +80,7 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
-             (readout_pol_min, Digital.HIGH), 
+             (readout_pol_max, Digital.HIGH),
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
@@ -101,8 +101,8 @@ def get_seq(pulse_streamer, config, args):
              (max_tau-tau, Digital.LOW),
              (tau, Digital.HIGH),
              (uwave_buffer, Digital.LOW),
-             (readout_pol_min, Digital.LOW), 
-             (uwave_buffer, Digital.LOW), 
+             (readout_pol_max, Digital.LOW),
+             (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
              (readout + final_readout_buffer, Digital.LOW),
