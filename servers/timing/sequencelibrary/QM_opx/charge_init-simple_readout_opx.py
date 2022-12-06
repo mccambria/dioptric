@@ -19,16 +19,13 @@ from opx_configuration_file import *
 
 def qua_program(opx, config, args, num_reps):
     
-    first_init_pulse_time, init_pulse_time, readout_time, first_init_laser_key, init_laser_key, readout_laser_key,\
-      first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind  = args
+    init_pulse_time, readout_time, init_laser_key, init_laser_power,\
+      readout_laser_key, read_laser_power = args
     
-    first_init_laser_pulse, first_init_laser_delay_time, first_init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,first_init_laser_key,first_init_laser_power)
+    
     init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
     readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,read_laser_power)
     
-    delay1_cc = int( (max(first_init_pulse_time - init_pulse_time,20))//4 )
-    # print(delay1_cc)
-    delay2_cc = int( (max(init_pulse_time - readout_time,20))//4 )
     intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
     
 
@@ -75,7 +72,6 @@ def qua_program(opx, config, args, num_reps):
         readout_laser_on_time = readout_time
         init_laser_on_time = num_readouts*(apd_readout_time) + (num_readouts-1)*(delay_between_readouts_iterations)
         
-    first_init_laser_on_time = first_init_pulse_time
     period = pos_move_time + init_laser_on_time + intra_pulse_delay + readout_laser_on_time + 300 
     
     
@@ -99,95 +95,50 @@ def qua_program(opx, config, args, num_reps):
         j = declare(int)
         k = declare(int)
         
-        
         with for_(n, 0, n < num_reps, n + 1):
-            # align()
-            play(first_init_laser_pulse*amp(first_init_laser_amplitude),first_init_laser_key,duration=first_init_laser_on_time//4) 
-        
-            align()
-            wait(delay1_cc)
+            
+            align()  
             wait(pos_move_time//4)            
-            
                 
-            if readout_on_pulse_ind == 2:
-                
-                play(init_laser_pulse*amp(init_laser_amplitude),init_laser_key,duration=init_laser_on_time//4) 
-            
-            elif readout_on_pulse_ind == 1:
-                
-                with for_(i,0,i<num_readouts,i+1):                 
-                    
-                    play(init_laser_pulse*amp(init_laser_amplitude),init_laser_key,duration=apd_readout_time//4) 
-                    
-                    wait(init_laser_delay_time//4,"do_apd_0_gate","do_apd_1_gate")
-                                    
-                    if num_apds == 2:
-                        measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
-                        measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
-                        save(counts_gate1_apd_0, counts_st_apd_0)
-                        save(counts_gate1_apd_1, counts_st_apd_1)
-                        align("do_apd_0_gate","do_apd_1_gate")
-                        
-                    if num_apds == 1:
-                        measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
-                        save(counts_gate1_apd_0, counts_st_apd_0)
-                        save(0, counts_st_apd_1)
-                        align("do_apd_0_gate","do_apd_1_gate")
-                        
-                    with for_(j, 0, j < counts_gate1_apd_0, j + 1):
-                        save(times_gate1_apd_0[j], times_st_apd_0) 
-                        
-                    with for_(k, 0, k < counts_gate1_apd_1, k + 1):
-                        save(times_gate1_apd_1[k], times_st_apd_1)
-                        
+            play(init_laser_pulse*amp(init_laser_amplitude),init_laser_key,duration=init_laser_on_time//4) 
             
             align()
-            # wait(readout_laser_delay_time//4)
-            wait(delay2_cc)
             wait(intra_pulse_delay//4)
             align()
             
                 
-            if readout_on_pulse_ind == 1:
+            with for_(i,0,i<num_readouts,i+1):  
                 
-                play(readout_laser_pulse*amp(readout_laser_amplitude),readout_laser_key,duration=readout_laser_on_time//4) 
-            
-            elif readout_on_pulse_ind == 2:
+                play(readout_laser_pulse*amp(readout_laser_amplitude),readout_laser_key,duration=apd_readout_time//4) 
                 
-                with for_(i,0,i<num_readouts,i+1):  
+                wait(readout_laser_delay_time//4,"do_apd_0_gate","do_apd_1_gate")
+                                    
+                if num_apds == 2:
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
+                    save(counts_gate1_apd_0, counts_st_apd_0)
+                    save(counts_gate1_apd_1, counts_st_apd_1)
+                    align("do_apd_0_gate","do_apd_1_gate")
                     
-                    play(readout_laser_pulse*amp(readout_laser_amplitude),readout_laser_key,duration=apd_readout_time//4) 
                     
-                    wait(readout_laser_delay_time//4,"do_apd_0_gate","do_apd_1_gate")
-                                        
-                    if num_apds == 2:
-                        measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
-                        measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
-                        save(counts_gate1_apd_0, counts_st_apd_0)
-                        save(counts_gate1_apd_1, counts_st_apd_1)
-                        align("do_apd_0_gate","do_apd_1_gate")
-                        
-                        
-                    if num_apds == 1:
-                        measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
-                        save(counts_gate1_apd_0, counts_st_apd_0)
-                        save(0, counts_st_apd_1)
-                        align("do_apd_0_gate","do_apd_1_gate")
-                        
-                    with for_(j, 0, j < counts_gate1_apd_0, j + 1):
-                        save(times_gate1_apd_0[j], times_st_apd_0) 
-                        
-                    with for_(k, 0, k < counts_gate1_apd_1, k + 1):
-                        save(times_gate1_apd_1[k], times_st_apd_1)
+                if num_apds == 1:
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                    save(counts_gate1_apd_0, counts_st_apd_0)
+                    save(0, counts_st_apd_1)
+                    align("do_apd_0_gate","do_apd_1_gate")
+                    
+                with for_(j, 0, j < counts_gate1_apd_0, j + 1):
+                    save(times_gate1_apd_0[j], times_st_apd_0) 
+                    
+                with for_(k, 0, k < counts_gate1_apd_1, k + 1):
+                    save(times_gate1_apd_1[k], times_st_apd_1)
                         
             
             ##clock pulse that advances piezos and ends a sample in the tagger
             align()
-            wait(readout_laser_delay_time//4)
             wait(25)
             play("clock_pulse","do_sample_clock")
             wait(25)
-            align()
         
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
@@ -221,8 +172,8 @@ if __name__ == '__main__':
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     qm = qmm.open_qm(config_opx)
-    simulation_duration =  140000 // 4 # clock cycle units - 4ns
-    num_repeat=2
+    simulation_duration =  30000 // 4 # clock cycle units - 4ns
+    num_repeat=1
     # init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
       # init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
     
@@ -244,12 +195,10 @@ if __name__ == '__main__':
     # print(time.time())
     # job = qm.execute(seq)
     # st = time.time()
-    # args = [1000,300, 2000, 'cobolt_515','cobolt_638', 'laserglow_589',1,1,0.4,2,0]
-    args = [500.0, 1000.0, 50000, "cobolt_515", "cobolt_515", "laserglow_589", 1, 'null', 0.5, 2]
+    args = [1000.0, 5000.0, 'cobolt_515', None, 'laserglow_589', 1.0]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
-    plt.show()
     # job = qm.execute(seq)
     
     # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")

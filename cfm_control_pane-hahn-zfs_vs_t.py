@@ -32,12 +32,7 @@ from random import shuffle
 ### Major Routines
 
 
-def do_image_sample(
-    nv_sig,
-    nv_minus_initialization=False,
-    cbarmin=None,
-    cbarmax=None,
-):
+def do_image_sample(nv_sig, nv_minus_init=False):
 
     # scan_range = 0.2
     # num_steps = 60
@@ -69,9 +64,7 @@ def do_image_sample(
         scan_range,
         scan_range,
         num_steps,
-        nv_minus_initialization=nv_minus_initialization,
-        cmin=cbarmin,
-        cmax=cbarmax,
+        nv_minus_init=nv_minus_init,
     )
 
 
@@ -171,8 +164,8 @@ def do_four_point_esr(nv_sig, state):
 
 def do_determine_standard_readout_params(nv_sig):
 
-    num_reps = 1e3
-    max_readouts = [4e6]
+    num_reps = 4e3
+    max_readouts = [6e6]
     filters = ["nd_0"]
     state = States.LOW
 
@@ -217,8 +210,10 @@ def do_pulsed_resonance_batch(nv_list, temp):
     # num_reps = 2e4
     # num_runs = 32
     
-    num_reps = 1e2
+    # num_reps = 1e2
+    num_reps = 50
     num_runs = 32
+    # num_runs = 8
 
     uwave_power = 4
     uwave_pulse_dur = 100
@@ -366,7 +361,7 @@ if __name__ == "__main__":
     
     sample_name = "15micro"
     z_coord = 0
-    ref_coords = [0.724, -0.577, z_coord]
+    ref_coords = [0.639, -0.84, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -375,8 +370,8 @@ if __name__ == "__main__":
         'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 800,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
-        "spin_pol_dur": 2e6, "spin_readout_dur": 480e3,
-        "norm_style": NormStyle.point_to_point, 'collection_filter': None, 'magnet_angle': None,
+        "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
+        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
         }
     
@@ -407,7 +402,7 @@ if __name__ == "__main__":
 
     # fmt: on
 
-    # nv_sig = nv5
+    # nv_sig = nv1
     nv_sig = nvref
     # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
     nv_list = [nv1, nv2, nv3]
@@ -415,7 +410,7 @@ if __name__ == "__main__":
     #     print(nv["coords"])
     # nv_list = [nv2, nv3, nv4, nv5]
     shuffle(nv_list)
-    # nv_list.append(nv_list[0])
+    nv_list.append(nv_list[0])
 
     ### Functions to run
 
@@ -466,7 +461,7 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        temp = 203
+        temp = 15
         do_pulsed_resonance_batch(nv_list, temp)
         # do_rabi_batch(nv_list)
 

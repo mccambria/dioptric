@@ -69,4 +69,6 @@ class SigGen(ABC):
         """
         Make sure the device is in a neutral state for the next experiment
         """
+        
+        pass
 

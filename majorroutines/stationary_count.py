@@ -1,78 +1,44 @@
 # -*- coding: utf-8 -*-
 """
-Sit on the passed coordinates and take counts.
+Sit on the passed coordinates and record counts
 
-Created on Fri Apr 12 09:25:24 2019
+Created on April 12th, 2019
 
 @author: mccambria
 """
 
 
-# %% Imports
-
-
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
 import numpy
 import matplotlib.pyplot as plt
-import time
 import labrad
 import majorroutines.optimize as optimize
 
 
-# %% Functions
-
-
-def update_line_plot(new_samples, num_read_so_far, *args):
-
-    fig, samples, write_pos, readout_sec, total_num_samples = args
-
-
-    num_samples = numpy.count_nonzero(~numpy.isnan(samples))
-    num_new_samples = len(new_samples)
-
-    # If we're going to overflow, just shift everything over and drop the
-    # earliest samples
-    overflow = (num_samples + num_new_samples) - total_num_samples
-    if overflow > 0:
-        num_nans = max(total_num_samples - num_samples, 0)
-        samples[::] = numpy.append(samples[num_new_samples-num_nans:
-                                           total_num_samples-num_nans],
-                                   new_samples)
-    else:
-        cur_write_pos = write_pos[0]
-        new_write_pos = cur_write_pos + num_new_samples
-        samples[cur_write_pos: new_write_pos] = new_samples
-        write_pos[0] = new_write_pos
-
-
-    # Update the figure in k counts per sec
-    tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
-
-
-# %% Main
-
-
-def main(nv_sig, run_time, disable_opt=None,
-         nv_minus_initialization=False, nv_zero_initialization=False):
-
+def main(nv_sig, run_time, disable_opt=None, nv_minus_init=False, nv_zero_init=False):
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, disable_opt,
-                                        nv_minus_initialization, nv_zero_initialization)
-
+        average, st_dev = main_with_cxn(
+            cxn, nv_sig, run_time, disable_opt, nv_minus_init, nv_zero_init
+        )
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, disable_opt=None,
-                  nv_minus_initialization=False, nv_zero_initialization=False):
 
-    # %% Some initial setup
+def main_with_cxn(
+    cxn, nv_sig, run_time, disable_opt=None, nv_minus_init=False, nv_zero_init=False
+):
+
+    ### Initial setup
 
     if disable_opt is not None:
         nv_sig["disable_opt"] = disable_opt
-
     tool_belt.reset_cfm(cxn)
-
-    readout = nv_sig['imaging_readout_dur']
+    readout = nv_sig["imaging_readout_dur"]
     readout_sec = readout / 10**9
+    charge_init = nv_minus_init or nv_zero_init
+    optimize.main_with_cxn(cxn, nv_sig)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_counter_server(cxn)
 
     # %% Optimize
 
@@ -91,159 +57,100 @@ def main_with_cxn(cxn, nv_sig, run_time, disable_opt=None,
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    # %% Load the PulseStreamer
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-
-    if nv_minus_initialization:
-        laser_key = 'nv-_prep_laser'
+    # Charge init setup and sequence processing
+    if charge_init:
+        if nv_minus_init:
+            laser_key = "nv-_prep_laser"
+        elif nv_zero_init:
+            laser_key = "nv0_prep_laser"
         tool_belt.set_filter(cxn, nv_sig, laser_key)
-        init = nv_sig['{}_dur'.format(laser_key)]
+        init = nv_sig["{}_dur".format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout,  init_laser, init_power,
-                    readout_laser, readout_power]
+        seq_args = [init, readout, init_laser, init_power, readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = pulsegen_server.stream_load('charge_initialization-simple_readout_background_subtraction.py',
-                                                  seq_args_string)
-    elif nv_zero_initialization:
-        laser_key = 'nv0_prep_laser'
-        tool_belt.set_filter(cxn, nv_sig, laser_key)
-        init = nv_sig['{}_dur'.format(laser_key)]
-        init_laser = nv_sig[laser_key]
-        init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout,  init_laser, init_power,
-                    readout_laser, readout_power]
-        # print(seq_args)
-        # return
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = pulsegen_server.stream_load('charge_initialization-simple_readout_background_subtraction.py',
-                                                  seq_args_string)
+        seq_name = "charge_init-simple_readout_background_subtraction.py"
     else:
-        seq_args = [0, readout, readout_laser, readout_power]
+        delay = 0
+        seq_args = [delay, readout, readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = pulsegen_server.stream_load('simple_readout.py',
-                                                  seq_args_string)
+        seq_name = "simple_readout.py"
+    ret_vals = pulsegen_server.stream_load(seq_name, seq_args_string)
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
 
-    # %% Set up the APD
+    # Figure setup
+    samples = numpy.empty(total_num_samples)
+    samples.fill(numpy.nan)  # NaNs don't get plotted
+    write_pos = 0
+    x_vals = numpy.arange(total_num_samples) + 1
+    x_vals = x_vals / (10**9) * period  # Elapsed time in s
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, x_vals, samples)
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Count rate (kcps)")
+    plt.get_current_fig_manager().window.showMaximized()  # Maximize the window
 
-    counter_server = tool_belt.get_counter_server(cxn)
+    ### Collect the data
 
     counter_server.start_tag_stream()
-
-    # %% Initialize the figure
-
-    samples = numpy.empty(total_num_samples)
-    samples.fill(numpy.nan)  # Only floats support NaN
-    write_pos = [0]  # This is a list because we need a mutable variable
-
-    # Set up the line plot
-    x_vals = numpy.arange(total_num_samples) + 1
-    x_vals = x_vals / (10**9) * period   # Elapsed time in s
-
-    fig = tool_belt.create_line_plot_figure(samples, x_vals)
-    # fig = tool_belt.create_line_plot_figure(samples)
-
-    # Set labels
-    axes = fig.get_axes()
-    ax = axes[0]
-    ax.set_title('Stationary Counts')
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('kcps')
-
-    # Maximize the window
-    fig_manager = plt.get_current_fig_manager()
-    fig_manager.window.showMaximized()
-
-    # Args to pass to update_line_plot
-    args = fig, samples, write_pos, readout_sec, total_num_samples
-
-    # %% Collect the data
-
     pulsegen_server.stream_start(-1)
-
-    # timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
-    # timeout_inst = time.time() + timeout_duration
-
-    num_read_so_far = 0
-
     tool_belt.init_safe_stop()
+    # b = 0  # If this just for the OPX, please find a way to implement that does not interfere with other expts
 
-    charge_initialization = (nv_minus_initialization or nv_zero_initialization)
-    charge_initialization = False
-    # print(charge_initialization)
-
-    b=0
-
+    # Run until user says stop
     while True:
-        b=b+1
-        # Issue between OPX and pulse_streamer. Putting in key word for OPX
-        
-        if ((b % 50) == 0) and (pulsegen_server == "QM_opx"):
-            tool_belt.reset_cfm(cxn)
-            counter_server.start_tag_stream()
-            pulsegen_server.stream_start(-1)
-            print('restarting')
+        # b = b + 1
+        # if (b % 50) == 0 and (pulsegen_server == "QM_opx"):
+        #     tool_belt.reset_cfm(cxn)
+        #     counter_server.start_tag_stream()
+        #     pulsegen_server.stream_start(-1)
+        #     print("restarting")
 
-        st = time.time()
         if tool_belt.safe_stop():
             break
 
         # Read the samples and update the image
-        if charge_initialization:
+        if charge_init:
             new_samples = counter_server.read_counter_modulo_gates(2)
-            # print(new_samples)
         else:
-            # st = time.time()
             new_samples = counter_server.read_counter_simple()
-            # print(time.time() -st)
-            # print(new_samples)
 
         # Read the samples and update the image
-#        print(new_samples)
         num_new_samples = len(new_samples)
-        # print(len(new_samples))
-        # t1 = time.time()
-        # print(t1-st)
-        st=time.time()
         if num_new_samples > 0:
 
-            # If we did charge initialization, subtract out the background
-            if charge_initialization:
+            # If we did charge init, subtract out the non-initialized count rate
+            if charge_init:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
 
+            num_samples = numpy.count_nonzero(~numpy.isnan(samples))
 
-            # st = time.time()
-            update_line_plot(new_samples, num_read_so_far, *args)
-            # print(time.time() -st)
-            num_read_so_far += num_new_samples
+            # If we're going to overflow, shift everything over and drop earliest samples
+            overflow = (num_samples + num_new_samples) - total_num_samples
+            if overflow > 0:
+                num_nans = max(total_num_samples - num_samples, 0)
+                samples[::] = numpy.append(
+                    samples[num_new_samples - num_nans : total_num_samples - num_nans],
+                    new_samples,
+                )
+            else:
+                cur_write_pos = write_pos
+                new_write_pos = cur_write_pos + num_new_samples
+                samples[cur_write_pos:new_write_pos] = new_samples
+                write_pos = new_write_pos
 
-        # print(time.time()-st)
-        # print('')
+            # Update the figure in k counts per sec
+            samples_kcps = samples / (10**3 * readout_sec)
+            kpl.plot_line_update(ax, samples_kcps)
 
-    # %% Clean up and report the data
+    ### Clean up and report average and standard deviation
 
     tool_belt.reset_cfm(cxn)
-
-    # Replace x/0=inf with 0
-    try:
-        average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-        print('average: {}'.format(average))
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(average)
-        # Assign to 0 based on the passed conditional array
-        average[inf_mask] = 0
-
-    try:
-        st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-        print('st_dev: {}'.format(st_dev))
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(st_dev)
-        # Assign to 0 based on the passed conditional array
-        st_dev[inf_mask] = 0
-
+    average = numpy.mean(samples[0:write_pos]) / (10**3 * readout_sec)
+    print(f"Average: {average}")
+    st_dev = numpy.std(samples[0:write_pos]) / (10**3 * readout_sec)
+    print(f"Standard deviation: {st_dev}")
     return average, st_dev

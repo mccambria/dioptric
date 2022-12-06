@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from servers.outputs.interfaces.sig_gen import SigGen
 
 
-class VectorSigGen(SigGen):
+class SigGenVector(SigGen):
     
     @abstractmethod
     def load_iq(self, c):
