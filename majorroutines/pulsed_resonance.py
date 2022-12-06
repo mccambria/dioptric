@@ -72,7 +72,7 @@ def create_fit_figure(
     # Text boxes to describe the fits
     low_text = None
     high_text = None
-    base_text = "A = {:.3f} \n width = {:.1f} MHz \n f = {:.4f} GHz"
+    base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
     if len(popt) == 3:
         contrast, hwhm, freq = popt[0:3]
         low_text = base_text.format(contrast, hwhm, freq)
@@ -782,7 +782,8 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    kpl.init_kplotlib()
+    no_latex = False
+    kpl.init_kplotlib(no_latex=no_latex)
 
     file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
@@ -807,14 +808,14 @@ if __name__ == "__main__":
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
-    create_raw_data_figure(
-        freq_center,
-        freq_range,
-        num_steps,
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-    )
+    # create_raw_data_figure(
+    #     freq_center,
+    #     freq_range,
+    #     num_steps,
+    #     sig_counts_avg_kcps,
+    #     ref_counts_avg_kcps,
+    #     norm_avg_sig,
+    # )
     create_fit_figure(
         freq_center,
         freq_range,

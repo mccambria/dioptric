@@ -171,26 +171,21 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
         preamble = r""
         preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
         preamble += r"\usepackage{physics} \usepackage{upgreek}"
-
-        # Fonts
-        # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-        preamble += r"\usepackage{helvet}"
-        # Latin mdoern is default math font but let's be safe
-        preamble += r"\usepackage{lmodern}"
+        preamble += r"\usepackage{roboto}"  # Google's free Helvetica
 
         # Sans serif math font, looks better for axis numbers.
         # We preserve \mathrm and \mathit commands so you can still use
         # the serif lmodern font for variables, equations, etc
-        preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+        preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
 
     ### Other rcparams
 
-    # plt.rcParams["savefig.format"] = "svg"
     # plt.rcParams["legend.handlelength"] = 0.5
-
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = "Roboto"
     plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
