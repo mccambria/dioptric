@@ -216,7 +216,9 @@ def get_default_color(ax, plot_type):
 
 
 def anchored_text(ax, text, loc, size=None):
-    """Add text in default style to the passed ax"""
+    """Add text in default style to the passed ax. To update text call set_text on the
+    returned object's txt property
+    """
 
     global default_font_size
     if size is None:
@@ -351,7 +353,7 @@ def plot_line_update(ax, line_ind=0, x=None, y=None, relim=True, flush=True):
         line.set_xdata(x)
     if y is not None:
         line.set_ydata(y)
-        
+
     if relim:
         ax.relim()
         ax.autoscale_view()

@@ -117,14 +117,14 @@ def refit_experiments():
     # Also see below section Sample-dependent fit...
 
     do_plot = True  # Generate raw data and fit plots?
-    do_save = True  # Save the plots?
+    do_save = False  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     data_points = get_data_points()
     # sample = "Wu"
     sample = "15micro"
     file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
-    file_list = ["2022_12_06-01_01_28-15micro-nv1_zfs_vs_t"]
+    file_list = ["2022_12_06-12_06_52-15micro-nv3_zfs_vs_t"]
 
     ### Loop
 
@@ -181,29 +181,40 @@ def refit_experiments():
         ### Sample-dependent fit functions and parameters
 
         if sample == "Wu":
+
             fit_func = lambda freq, contrast, rabi_freq, center: pesr.single_dip(
                 freq, contrast, rabi_freq, center, dip_func=pesr.rabi_line_hyperfine
             )
             guess_params = [0.1, 5, freq_center]
+
         elif sample == "15micro":
-            fit_func = lambda freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center: pesr.double_dip(
-                freq,
-                low_contrast,
-                low_width,
-                low_center,
-                high_contrast,
-                high_width,
-                high_center,
-                dip_func=pesr.lorentzian,
-            )
-            guess_params = [
-                0.015,
-                8,
-                freq_center - 0.0065,
-                0.015,
-                8,
-                freq_center + 0.0065,
-            ]
+
+            avg_splitting = 13.19 / 1000
+            # fmt: off
+            # Fixed double Lorentzians
+            fit_func = lambda freq, contrast, width, center: pesr.double_dip( freq, contrast, width, center - avg_splitting / 2, contrast, width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
+            guess_params = [0.015, 8, freq_center]
+
+            # Contrast- and width-fixed double Lorentzians
+            # fit_func = lambda freq, contrast, width, center, splitting: pesr.double_dip( freq, contrast, width, center - splitting / 2, contrast, width, center + splitting / 2, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, 8, freq_center, 13 / 1000]
+
+            # Contrast- and width-fixed double Lorentzians
+            # fit_func = lambda freq, low_contrast, width, center, splitting, high_contrast: pesr.double_dip( freq, low_contrast, width, center - splitting / 2, high_contrast, width, center + splitting / 2, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, 8, freq_center, 13 / 1000, 0.015]
+
+            # Splitting-fixed double Lorentzians
+            # fit_func = lambda freq, low_contrast, low_width, center, high_contrast, high_width: pesr.double_dip( freq, low_contrast, low_width, center - avg_splitting / 2, high_contrast, high_width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, 8, freq_center, 0.015, 8]
+
+            # Independent double Lorentzians
+            fit_func = lambda freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center: pesr.double_dip( freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center, dip_func=pesr.lorentzian)
+            guess_params = [ 0.015, 8, freq_center - 0.0065, 0.015, 8, freq_center + 0.0065]
+
+            # Independent double Lorentzians - reparameterized
+            # fit_func = lambda freq, low_contrast, low_width, high_contrast, high_width, center, splitting: pesr.double_dip( freq, low_contrast, low_width, center - splitting, high_contrast, high_width, center + splitting, dip_func=pesr.lorentzian)
+            # guess_params = [ 0.015, 8, 0.015, 8, freq_center, 13 / 1000]
+            # fmt: on
 
         ### Raw data figure
 
@@ -238,6 +249,7 @@ def refit_experiments():
             if table_popt is None:
                 table_popt = []
                 table_pste = []
+                table_red_chi_sq = []
                 for ind in range(len(popt)):
                     table_popt.append([])
                     table_pste.append([])
@@ -249,12 +261,22 @@ def refit_experiments():
                 val_col.append(round(val, 6))
                 err_col.append(round(err, 6))
 
+        fit_lambda = lambda freq: fit_func(freq, *popt)
+        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+        chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+        red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+        table_red_chi_sq.append(red_chi_sq)
+
         # Close the plots so they don't clutter everything up
         # plt.close("all")
 
     ### Report the fit parameters
 
     if do_print:
+        print("Reduced chi squared:")
+        print(table_red_chi_sq)
+        print()
+        print("Fit parameters:")
         for ind in range(len(table_popt)):
             print()
             print(table_popt[ind])
