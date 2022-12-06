@@ -22,6 +22,7 @@ from utils.tool_belt import States, NormStyle
 from random import shuffle
 import sys
 from utils.positioning import get_scan_1d as calculate_freqs
+from pathlib import Path
 
 
 # region Plotting
@@ -790,6 +791,9 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+
+    print(Path(__file__).stem)
+    sys.exit()
 
     kpl.init_kplotlib()
 
