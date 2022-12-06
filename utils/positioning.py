@@ -17,9 +17,9 @@ import utils.common as common
 import utils.tool_belt as tool_belt
 
 
-# class ControlStyle(Enum):
-#     STEP = auto()
-#     STREAM = auto()
+class ControlStyle(Enum):
+    STEP = auto()
+    STREAM = auto()
 
 
 # endregion

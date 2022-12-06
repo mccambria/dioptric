@@ -445,7 +445,7 @@ if __name__ == "__main__":
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=7)
-        # do_image_sample(nv_sig,num_steps=10,scan_range=1,scan_type='XY')
+        do_image_sample(nv_sig,num_steps=10,scan_range=1,scan_type='XY')
         # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XZ')
         
         # for z in [67.0, 75.0]:
@@ -455,7 +455,7 @@ if __name__ == "__main__":
         # do_optimize(nv_sig, apd_indices,save_data=False)
         # do_optimize_z(nv_sig, apd_indices)
         
-        do_stationary_count(nv_sig,disable_opt=True)
+        # do_stationary_count(nv_sig,disable_opt=True)
         # 
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e5), delay_range=[64,560],num_steps=32)
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_638',num_reps=int(6e6), delay_range=[40,700],num_steps=31)
