@@ -529,20 +529,17 @@ def main_with_cxn(
 
     kpl.init_kplotlib()
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
-
     tool_belt.reset_cfm(cxn)
 
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
-
+    awg = tool_belt.get_server_awg(cxn)
 
     # check if running external iq_mod with SRS
     iq_key = False
     if 'uwave_iq_{}'.format(state.name) in nv_sig:
         iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
+        
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -640,10 +637,10 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
             sig_gen_cxn.load_iq()
-            # arbwavegen_server.load_arb_phases([0])
+            # awg.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            arbwavegen_server.load_knill()
+            awg.load_knill()
         sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
