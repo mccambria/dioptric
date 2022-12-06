@@ -88,8 +88,6 @@ def create_fit_figure(
     if high_text is not None:
         kpl.anchored_text(ax, high_text, kpl.Loc.LOWER_RIGHT, size=size)
 
-    # Wrap up
-    kpl.tight_layout(fig)
     return fig, ax, fit_func, popt, pcov
 
 
@@ -130,8 +128,6 @@ def create_raw_data_figure(
         norm_avg_sig[:] = np.nan
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
-    # Wrap up
-    kpl.tight_layout(fig)
     return fig, ax_sig_ref, ax_norm
 
 

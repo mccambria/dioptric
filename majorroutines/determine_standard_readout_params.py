@@ -140,8 +140,6 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
     text = f"Max SNR: {max_snr} at {optimum_readout} ns"
     kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT)
 
-    kpl.tight_layout(fig)
-
     return fig
 
 
