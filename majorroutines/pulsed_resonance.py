@@ -796,8 +796,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    no_latex = True
-    kpl.init_kplotlib(no_latex=no_latex)
+    kpl.init_kplotlib()
 
     file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
