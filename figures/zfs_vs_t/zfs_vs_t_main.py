@@ -124,7 +124,10 @@ def refit_experiments():
     # sample = "Wu"
     sample = "15micro"
     file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
-    file_list = ["2022_12_06-12_06_52-15micro-nv3_zfs_vs_t"]
+    file_list = [
+        "2022_12_03-22_06_43-15micro-nv3_zfs_vs_t",
+        "2022_12_06-12_06_52-15micro-nv3_zfs_vs_t",
+    ]
 
     ### Loop
 
@@ -559,12 +562,12 @@ def cambria_test4(temp, zfs0, A1, Theta1):
 
 def main():
 
-    # temp_range = [-10, 1000]
-    # y_range = [2.74, 2.883]
+    temp_range = [-10, 1000]
+    y_range = [2.74, 2.883]
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
-    temp_range = [-10, 310]
-    y_range = [2.8685, 2.8785]
+    # temp_range = [-10, 310]
+    # y_range = [2.8685, 2.8785]
     # temp_range = [280, 320]
     # y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
@@ -574,11 +577,12 @@ def main():
     condense_data = True
     plot_residuals = False
     hist_residuals = False  # Must specify nv_to_plot down below
-    separate_samples = False
+    separate_samples = True
     separate_nvs = False
-    plot_prior_models = True
+    plot_prior_models = False
     desaturate_prior = False
-    plot_new_model = True
+    plot_new_model = False
+    toyli_extension = True
 
     skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
 
@@ -593,17 +597,21 @@ def main():
 
     if condense_data:
         condensed_data_points = []
-        setpoint_temp_set = []
+        identifier_set = []
         for point in data_points:
-            setpoint_temp_set.append(point["Setpoint temp (K)"])
-        setpoint_temp_set = list(set(setpoint_temp_set))
-        setpoint_temp_set.sort()
-        for temp in setpoint_temp_set:
+            identifier = f"{point['Setpoint temp (K)']}-{point['Sample']}"
+            identifier_set.append(identifier)
+        identifier_set = list(set(identifier_set))
+        identifier_set.sort()
+        for identifier in identifier_set:
+            id_split = identifier.split("-")
+            setpoint_temp = int(id_split[0])
+            sample = id_split[1]
             monitor_temps = []
             zfss = []
             zfs_errors = []
             for point in data_points:
-                if point["Setpoint temp (K)"] == temp:
+                if point["Setpoint temp (K)"] == setpoint_temp:
                     monitor_temps.append(point["Monitor temp (K)"])
                     zfss.append(point["ZFS (GHz)"])
                     zfs_errors.append(point["ZFS error (GHz)"])
@@ -611,12 +619,12 @@ def main():
             sum_sq_errors = np.sum(sq_zfs_errors)
             condensed_error = np.sqrt(sum_sq_errors) / len(sq_zfs_errors)
             new_point = {
-                "Setpoint temp (K)": temp,
+                "Setpoint temp (K)": setpoint_temp,
                 "Monitor temp (K)": np.average(monitor_temps),
                 "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
                 # + 0.0006,  # MCC
                 "ZFS error (GHz)": condensed_error,
-                "Sample": "Wu",
+                "Sample": sample,
                 "NV": "",
             }
             condensed_data_points.append(new_point)
@@ -658,14 +666,18 @@ def main():
                 data_colors[name] = data_color_options.pop(0)
             data_labels[name] = name
         else:
-            data_colors[name] = KplColors.RED
+            data_colors[name] = KplColors.BLUE
     nv_names_set = list(set(nv_names))
     nv_names_set.sort()
 
-    # zfs_list.extend(toyli_zfss)
-    # temp_list.extend(toyli_temps)
-    # nv_names.extend(["Toyli"] * len(toyli_temps))
-    # zfs_err_list.extend([None] * len(toyli_temps))
+    if toyli_extension:
+        zfs_list.extend(toyli_zfss)
+        temp_list.extend(toyli_temps)
+        nv_names.extend(["Toyli"] * len(toyli_temps))
+        nv_samples.extend(["Toyli"] * len(toyli_temps))
+        zfs_err_list.extend([None] * len(toyli_temps))
+        data_colors["Toyli"] = KplColors.RED
+        data_labels["Toyli"] = "Toyli"
 
     ### New model
 
@@ -699,19 +711,24 @@ def main():
     guess_params = [
         2.87771,
         -8e-2,
-        # -4e-1,
-        65,
+        -4e-1,
+        # 65,
         # 165,
         # 6.5,
     ]
     fit_func = cambria_test
     # fit_func = cambria_test4
+    if None in zfs_err_list:
+        zfs_err_list = None
+        absolute_sigma = False
+    else:
+        absolute_sigma = True
     popt, pcov = curve_fit(
         fit_func,
         temp_list,
         zfs_list,
         sigma=zfs_err_list,
-        absolute_sigma=True,
+        absolute_sigma=absolute_sigma,
         p0=guess_params,
     )
     print(popt)
@@ -725,7 +742,7 @@ def main():
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
-    if None not in zfs_err_list:
+    if zfs_err_list is not None:
         for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
             calc_zfs = cambria_lambda(temp)
             ssr += ((zfs - calc_zfs) / zfs_err) ** 2
@@ -738,11 +755,12 @@ def main():
         for ind in range(len(zfs_list)):
             temp = temp_list[ind]
             name = nv_names[ind]
-            if plot_residuals:
-                val = zfs_list[ind] - cambria_lambda(temp)
-            else:
-                val = zfs_list[ind]
-            val_err = zfs_err_list[ind]
+            val = (
+                zfs_list[ind] - cambria_lambda(temp)
+                if plot_residuals
+                else zfs_list[ind]
+            )
+            val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
             label = None
             color = KplColors.DARK_GRAY
             if name in data_colors:
@@ -762,7 +780,8 @@ def main():
                 zorder=-1,
                 label=label,
             )
-            # ax.legend(loc="lower right")
+            if separate_samples or separate_nvs:
+                ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     if hist_residuals:
         residuals = {}
@@ -854,22 +873,22 @@ def main():
             color=prior_model_colors[1],
             zorder=prior_model_zorder,
         )
-        # kpl.plot_line(
-        #     ax,
-        #     temp_linspace,
-        #     zfs_from_temp_barson(temp_linspace),
-        #     label="Barson",
-        #     color=prior_model_colors[2],
-        #     zorder=prior_model_zorder,
-        # )
-        # kpl.plot_line(
-        #     ax,
-        #     temp_linspace,
-        #     zfs_from_temp_li(temp_linspace),
-        #     label="Li",
-        #     color=prior_model_colors[3],
-        #     zorder=prior_model_zorder,
-        # )
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            zfs_from_temp_barson(temp_linspace),
+            label="Barson",
+            color=prior_model_colors[2],
+            zorder=prior_model_zorder,
+        )
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            zfs_from_temp_li(temp_linspace),
+            label="Li",
+            color=prior_model_colors[3],
+            zorder=prior_model_zorder,
+        )
 
     ### Plot wrap up
     if plot_prior_models:
@@ -883,8 +902,8 @@ def main():
         ax.set_xlim(-max_dev, max_dev)
         ax.set_ylim(0, ylim)
     else:
-        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
-        ax.set_ylabel("D (GHz)")
+        ax.set_xlabel("Temperature $\mathit{T}$ (K)")
+        ax.set_ylabel("$\mathit{D}$ (GHz)")
         ax.set_xlim(*temp_range)
         ax.set_ylim(*y_range)
 
@@ -908,9 +927,9 @@ if __name__ == "__main__":
 
     # calc_zfs_from_compiled_data()
 
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(latex=True)
 
-    # main()
-    refit_experiments()
+    main()
+    # refit_experiments()
 
     plt.show(block=True)
