@@ -49,8 +49,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
                      initial_state = States.HIGH,
                      opti_nv_sig = None):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     tool_belt.reset_cfm(cxn)
 
     # %% Get the starting time of the function, to be used to calculate run time

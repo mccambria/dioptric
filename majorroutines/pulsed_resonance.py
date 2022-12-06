@@ -642,8 +642,8 @@ def main_with_cxn(
         # own sequences)
         sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
-        if iq_key:
-            sig_gen_cxn.load_iq()
+        # if iq_key:
+        #     sig_gen_cxn.load_iq()
             # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
@@ -672,14 +672,26 @@ def main_with_cxn(
             pulse_gen.stream_start(int(num_reps))
 
             # Get and write the counts
-            new_counts = counter.read_counter_modulo_gates(2, 1)
-            sample_counts = new_counts[0]
-            print(sample_counts)
-            cur_run_sig_counts_summed = sample_counts[0]
-            cur_run_ref_counts_summed = sample_counts[1]
-            sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
-            ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
+            # new_counts = counter.read_counter_modulo_gates(2, 1)
+            # sample_counts = new_counts[0]
+            # print(sample_counts)
+            # cur_run_sig_counts_summed = sample_counts[0]
+            # cur_run_ref_counts_summed = sample_counts[1]
+            # sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
+            # ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
 
+            new_counts = counter.read_counter_separate_gates(1)
+
+            sample_counts = new_counts[0]
+            
+            count = sum(sample_counts[0::2])
+            # print(count)
+            sig_counts[run_ind, freq_ind] = count
+
+            count = sum(sample_counts[1::2])
+            # print(count)
+            ref_counts[run_ind, freq_ind] = count
+            
         counter.stop_tag_stream()
 
         ### Incremental plotting

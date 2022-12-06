@@ -218,11 +218,11 @@ def do_resonance_state(nv_sig, opti_nv_sig,  state):
 
 def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
-    num_steps =151
+    num_steps =101
     num_reps = 1e4
-    num_runs = 10
+    num_runs = 7
     uwave_power = 10
-    uwave_pulse_dur = int(160/2)
+    uwave_pulse_dur = int(130/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -264,7 +264,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
         composite,
         opti_nv_sig = opti_nv_sig,
     )
-    nv_sig["resonance_{}".format(state.name)] = res
+    # nv_sig["resonance_{}".format(state.name)] = res
 
 
 def do_optimize_magnet_angle(nv_sig):
@@ -277,13 +277,13 @@ def do_optimize_magnet_angle(nv_sig):
     angle_range = [0, 150]
     #    num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.3
+    freq_range = 0.25
     num_freq_steps = 101
-    num_freq_runs = 5
+    num_freq_runs = 10
 
     # Pulsed
     uwave_power = 10
-    uwave_pulse_dur = 120/2
+    uwave_pulse_dur = 130/2
     num_freq_reps = int(1e4)
 
     # CW
@@ -312,7 +312,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     num_reps = int(2e4)    
     num_runs = 5
 
-    period = rabi.main(
+    rabi.main(
         nv_sig,
         uwave_time_range,
         state,
@@ -321,7 +321,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_runs,
         opti_nv_sig = opti_nv_sig
     )
-    nv_sig["rabi_{}".format(state.name)] = period
+    # nv_sig["rabi_{}".format(state.name)] = period
 
 
 def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0, 1000]):
@@ -1029,11 +1029,11 @@ if __name__ == "__main__":
     nv_sig_1[ "green_power_mW"] = 1.0
     nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
-    nv_sig_1['magnet_angle'] = 68
-    nv_sig_1["resonance_LOW"]= 2.7809
+    nv_sig_1['magnet_angle'] = 151.7
+    nv_sig_1["resonance_LOW"]= 2.7816#2.7809
     nv_sig_1["rabi_LOW"]=2249.5
     nv_sig_1["uwave_iq_LOW"]= False 
-    nv_sig_1["resonance_HIGH"]=2.9597
+    nv_sig_1["resonance_HIGH"]=2.9573#2.9597
     nv_sig_1["rabi_HIGH"]= 160#2329.0
     nv_sig_1["uwave_iq_HIGH"]= False  
     
@@ -1095,7 +1095,6 @@ if __name__ == "__main__":
         # do_lifetime(nv_sig)
              
         # do_optimize_magnet_angle(nv_sig)
-        
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
