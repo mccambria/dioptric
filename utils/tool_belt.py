@@ -694,23 +694,15 @@ def get_folder_dir(source_name, subfolder):
     pc_name = socket.gethostname()
 
     nvdata_dir = common.get_nvdata_dir()
-    joined_path = (
-        nvdata_dir
-        / "pc_{}".format(pc_name)
-        / "branch_{}".format(branch_name)
-        / source_name
-    )
+    folder_dir = nvdata_dir / f"pc_{pc_name}" / f"branch_{branch_name}" / source_name
 
     if subfolder is not None:
-        joined_path = os.path.join(joined_path, subfolder)
+        folder_dir = folder_dir / subfolder
 
-    folderDir = os.path.abspath(joined_path)
+    # Make the required directories if it doesn't exist already
+    folder_dir.mkdir(parents=True, exist_ok=True)
 
-    # Make the required directory if it doesn't exist already
-    if not os.path.isdir(folderDir):
-        os.makedirs(folderDir)
-
-    return folderDir
+    return folder_dir
 
 
 def get_files_in_folder(folderDir, filetype=None):
@@ -732,7 +724,7 @@ def get_files_in_folder(folderDir, filetype=None):
     return file_list
 
 
-def get_file_path(source_name, time_stamp="", name="", subfolder=None):
+def get_file_path(source_name, time_stamp, name, subfolder=None):
     """Get the file path to save to. This will be in a subdirectory of nvdata.
 
     Params:
@@ -748,19 +740,11 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
             Subfolder to save to under file name
     """
 
-    date_folder_name = None  # Init to None
     # Set up the file name
-    if (time_stamp != "") and (name != ""):
-        fileName = "{}-{}".format(time_stamp, name)
-        # locate the subfolder that matches the month and year when the data is taken
-        date_folder_name = "_".join(time_stamp.split("_")[0:2])
-    elif (time_stamp == "") and (name != ""):
-        fileName = name
-    elif (time_stamp != "") and (name == ""):
-        fileName = "{}-{}".format(time_stamp, "untitled")
-        date_folder_name = "_".join(time_stamp.split("_")[0:2])
-    else:
-        fileName = "{}-{}".format(get_time_stamp(), "untitled")
+    file_name = "{}-{}".format(time_stamp, name)
+
+    # locate the subfolder that matches the month and year when the data is taken
+    date_folder_name = "_".join(time_stamp.split("_")[0:2])
 
     # Create the subfolder combined name, if needed
     subfolder_name = None
@@ -769,12 +753,9 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
     elif (subfolder == None) and (date_folder_name != None):
         subfolder_name = date_folder_name
 
-    folderDir = get_folder_dir(source_name, subfolder_name)
-    fileDir = os.path.abspath(os.path.join(folderDir, fileName))
+    folder_dir = get_folder_dir(source_name, subfolder_name)
 
-    file_path_Path = Path(fileDir)
-
-    return file_path_Path
+    return folder_dir / file_name
 
 
 def utc_from_file_name(file_name):
