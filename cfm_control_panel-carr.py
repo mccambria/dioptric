@@ -20,6 +20,7 @@ import time
 import copy
 import utils.positioning as positioning
 import utils.tool_belt as tool_belt
+import utils.common as common
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.image_sample as image_sample
 import majorroutines.image_sample_xz_digital as image_sample_xz_digital
@@ -377,7 +378,7 @@ if __name__ == "__main__":
     # %% Shared parameters
     
     with labrad.connect() as cxn:
-        apd_indices = tool_belt.get_registry_entry(cxn, "apd_indices", ["","Config"])
+        apd_indices = common.get_registry_entry(cxn, "apd_indices", ["","Config"])
         apd_indices = apd_indices.astype(list).tolist()
         
 
@@ -445,8 +446,8 @@ if __name__ == "__main__":
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=7)
-        do_image_sample(nv_sig,num_steps=10,scan_range=1,scan_type='XY')
-        # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XZ')
+        # do_image_sample(nv_sig,num_steps=10,scan_range=1,scan_type='XY')
+        do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XZ')
         
         # for z in [67.0, 75.0]:
         #     nv_sig['coords'][2] = z

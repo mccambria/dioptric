@@ -12,7 +12,7 @@ Created on April 9th, 2019
 import matplotlib.pyplot as plt
 import numpy as np
 import utils.tool_belt as tool_belt
-from utils.tool_belt import ControlStyle
+from utils.positioning import ControlStyle
 import utils.common as common
 import time
 import labrad
@@ -319,7 +319,7 @@ def main_with_cxn(
     
     ### Some initial setup
     
-    xy_control_style = tool_belt.get_xy_control_style()
+    xy_control_style = positioning.get_xy_control_style(cxn)
     
     tool_belt.reset_cfm(cxn)
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
@@ -343,22 +343,22 @@ def main_with_cxn(
     _, keys = cxn.registry.dir()
     
     if "xy_small_response_delay" in keys:
-        xy_delay = tool_belt.get_registry_entry(
+        xy_delay = common.get_registry_entry(
             cxn, "xy_small_response_delay", dir_path
         )
     else:
-        xy_delay = tool_belt.get_registry_entry(cxn, "xy_delay", dir_path)
+        xy_delay = common.get_registry_entry(cxn, "xy_delay", dir_path)
         
 
     # Get the scale in um per unit
-    xy_scale = tool_belt.get_registry_entry(cxn, "xy_nm_per_unit", dir_path)
+    xy_scale = common.get_registry_entry(cxn, "xy_nm_per_unit", dir_path)
     if xy_scale == -1:
         um_scaled = False
     else:
         xy_scale *= 1000
         
-    z_delay = tool_belt.get_registry_entry(cxn, 'z_delay', ['', 'Config', 'Positioning'])
-    z_scale = tool_belt.get_registry_entry(cxn, 'z_nm_per_unit', ['', 'Config', 'Positioning'])
+    z_delay = common.get_registry_entry(cxn, 'z_delay', ['', 'Config', 'Positioning'])
+    z_scale = common.get_registry_entry(cxn, 'z_nm_per_unit', ['', 'Config', 'Positioning'])
     # use whichever delay is longer: 
     if (z_delay > xy_delay) and scan_type=='XZ':
         delay = z_delay
@@ -456,7 +456,7 @@ def main_with_cxn(
 
     ### Set up the image display
     
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL, no_latex=True)
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL, latex=False)
     
     if um_scaled:
         extent = [el * xy_scale for el in extent]
@@ -573,7 +573,7 @@ def main_with_cxn(
     rawData = {
         'timestamp': timestamp,
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 "x_center": x_center,
                 "y_center": y_center,
                 "z_center": z_center,
