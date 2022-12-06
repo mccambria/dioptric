@@ -325,6 +325,7 @@ def main_with_cxn(
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
     optimize.prepare_microscope(cxn, nv_sig)
     xy_server = positioning.get_server_pos_xy(cxn)
+    # print(xy_server)
     xyz_server = positioning.get_server_pos_xy(cxn)
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
@@ -481,7 +482,6 @@ def main_with_cxn(
     
     ### Collect the data
     
-    counter.clear_buffer()
     
     counter.start_tag_stream() 
     tool_belt.init_safe_stop()
@@ -561,6 +561,7 @@ def main_with_cxn(
                 kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
                 num_read_so_far += num_new_samples
 
+    counter.clear_buffer()
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)

@@ -1084,8 +1084,8 @@ if __name__ == "__main__":
                     
         
         
-        do_optimize(nv_sig)
-        #do_image_sample(nv_sig)
+        # do_optimize(nv_sig)
+        do_image_sample(nv_sig)
         #do_image_sample_xz(nv_sig)
         
         # do_stationary_count(nv_sig)
