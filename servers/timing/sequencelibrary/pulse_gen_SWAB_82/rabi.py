@@ -109,6 +109,7 @@ def get_seq(pulse_streamer, config, args):
              (short_buffer, Digital.LOW),
              (uwave_delay, Digital.LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
+    print(train)
     # total_dur = 0
     # for el in train:
     #     total_dur += el[0]
@@ -121,7 +122,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    tool_belt.set_delays_to_zero(config)
+    # tool_belt.set_delays_to_zero(config)
     args = [1164, 10000.0, 300, 1164, 3, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()

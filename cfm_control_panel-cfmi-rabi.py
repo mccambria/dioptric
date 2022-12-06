@@ -218,11 +218,11 @@ def do_resonance_state(nv_sig, opti_nv_sig,  state):
 
 def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
-    num_steps =151
+    num_steps =101
     num_reps = 1e4
     num_runs = 5
-    uwave_power = 10
-    uwave_pulse_dur = int(104.2/2)
+    uwave_power = 3.5
+    uwave_pulse_dur = int(2300/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -246,11 +246,11 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
     # num_runs = 8
 
     # Zoom
-    # freq_range = 0.12
-    freq_range = 0.020
-    num_steps = 101
+    freq_range = 0.12
+    # freq_range = 0.020
+    num_steps = 51
     num_reps = int(1e4)
-    num_runs =  2
+    num_runs =  3
 
     composite = False
 
@@ -999,7 +999,7 @@ if __name__ == "__main__":
         "collection_filter": "715_sp+630_lp", # NV band only
         "norm_style": NormStyle.SINGLE_VALUED,
         "uwave_power_LOW": 20,  
-        "uwave_power_HIGH": 3.5,
+        "uwave_power_HIGH": 10,#3.5,
         
         "uwave_mod_freq_LOW": 2.189288,
         "uwave_mod_amp_LOW": 140,
@@ -1034,8 +1034,8 @@ if __name__ == "__main__":
     nv_sig_1["rabi_LOW"]=2249.5
     nv_sig_1["uwave_iq_LOW"]= False 
     nv_sig_1["resonance_HIGH"]=2.9597
-    nv_sig_1["rabi_HIGH"]= 2329.0
-    # nv_sig_1["uwave_iq_HIGH"]= True  
+    nv_sig_1["rabi_HIGH"]= 160#2329.0
+    nv_sig_1["uwave_iq_HIGH"]= False  
     
     
     

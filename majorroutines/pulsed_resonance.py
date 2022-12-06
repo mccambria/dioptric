@@ -641,10 +641,10 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
             sig_gen_cxn.load_iq()
-            # awg.load_arb_phases([0])
+            # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            awg.load_knill()
+            arbwavegen_server.load_knill()
         sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)

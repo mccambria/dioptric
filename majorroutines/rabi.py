@@ -331,7 +331,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
             # start_time = time.time()
             pulsegen_server.stream_immediate(file_name, num_reps,
-                                             seq_args_string)
+                                              seq_args_string)
             new_counts = counter_server.read_counter_modulo_gates(2, 1)
             sample_counts = new_counts[0]
             sig_counts[run_ind, tau_ind] = sample_counts[0]
