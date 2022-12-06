@@ -655,7 +655,7 @@ def get_raw_data_path(
     if nvdata_dir is None:
         nvdata_dir = common.get_nvdata_dir()
     if path_from_nvdata is None:
-        path_from_nvdata = search_index.get_data_path(file_name)
+        path_from_nvdata = search_index.get_data_path_from_nvdata(file_name)
     data_dir = nvdata_dir / path_from_nvdata
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext

@@ -72,7 +72,7 @@ def create_fit_figure(
     # Text boxes to describe the fits
     low_text = None
     high_text = None
-    base_text = "A = {:.3f} \n width = {:.1f} MHz \n f = {:.4f} GHz"
+    base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
     if len(popt) == 3:
         contrast, hwhm, freq = popt[0:3]
         low_text = base_text.format(contrast, hwhm, freq)
@@ -512,7 +512,7 @@ def main_with_cxn(
 ):
 
     ### Setup
-    
+
     start_timestamp = tool_belt.get_time_stamp()
 
     kpl.init_kplotlib()
@@ -580,9 +580,7 @@ def main_with_cxn(
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
     text = kpl.tex_escape(run_indicator_text.format(0, num_runs))
-    run_indicator_obj = kpl.anchored_text(
-        ax_norm, text, loc=kpl.Loc.UPPER_RIGHT
-    )
+    run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
 
     ### Collect the data
 
@@ -662,7 +660,12 @@ def main_with_cxn(
         ret_vals = process_counts(
             inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
         )
-        sig_counts_avg_kcps, ref_counts_avg_kcps, norm_avg_sig, norm_avg_sig_ste = ret_vals
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
 
         kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
         kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
@@ -817,14 +820,14 @@ if __name__ == "__main__":
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
-    create_raw_data_figure(
-        freq_center,
-        freq_range,
-        num_steps,
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-    )
+    # create_raw_data_figure(
+    #     freq_center,
+    #     freq_range,
+    #     num_steps,
+    #     sig_counts_avg_kcps,
+    #     ref_counts_avg_kcps,
+    #     norm_avg_sig,
+    # )
     create_fit_figure(
         freq_center,
         freq_range,
