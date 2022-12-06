@@ -864,7 +864,6 @@ def main():
         ax.set_ylabel("D (GHz)")
         ax.set_xlim(*temp_range)
         ax.set_ylim(*y_range)
-    kpl.tight_layout(fig)
 
     # fig, ax = plt.subplots()
     # chen_proposed_diff = lambda temp: sub_room_zfs_from_temp(temp) - cambria_lambda(temp)
@@ -875,7 +874,6 @@ def main():
     # )
     # ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     # ax.set_ylabel("Chen - proposed (MHz)")
-    # kpl.tight_layout(fig)
 
 
 # endregion

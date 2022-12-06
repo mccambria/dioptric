@@ -191,15 +191,7 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
-
-
-def tight_layout(fig):
-    """Tight layout with defaults. Called twice because sometimes things are
-    still off after the first call.
-    """
-
-    fig.tight_layout(pad=0.3)
-    fig.tight_layout(pad=0.3)
+    plt.rcParams["figure.constrained_layout.use"] = True
 
 
 def get_default_color(ax, plot_type):
@@ -223,7 +215,7 @@ def get_default_color(ax, plot_type):
     return color
 
 
-def anchored_text(ax, text, loc, size=None, **kwargs):
+def anchored_text(ax, text, loc, size=None):
     """Add text in default style to the passed ax"""
 
     global default_font_size
@@ -394,8 +386,6 @@ def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwarg
 
     # Click handler
     fig.canvas.mpl_connect("button_press_event", on_click_image)
-
-    tight_layout(fig)
 
     return img
 
