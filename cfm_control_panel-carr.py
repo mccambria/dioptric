@@ -390,7 +390,7 @@ if __name__ == "__main__":
     nv_sig = {
         'coords': [47.392, 53.947, 65.64], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 54,
+        'expected_count_rate': None,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
@@ -447,13 +447,13 @@ if __name__ == "__main__":
         
         # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=7)
         # do_image_sample(nv_sig,num_steps=10,scan_range=1,scan_type='XY')
-        do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XZ')
+        # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XZ')
         
         # for z in [67.0, 75.0]:
         #     nv_sig['coords'][2] = z
         #     do_image_sample(nv_sig,num_steps=50,scan_range=5)
         
-        # do_optimize(nv_sig, apd_indices,save_data=False)
+        do_optimize(nv_sig, apd_indices,save_data=False)
         # do_optimize_z(nv_sig, apd_indices)
         
         # do_stationary_count(nv_sig,disable_opt=True)

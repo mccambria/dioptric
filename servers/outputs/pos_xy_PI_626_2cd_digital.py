@@ -521,97 +521,97 @@ class PosXyPi6262cdDigital(LabradServer):
 
     #     return x_voltages, y_voltages
 
-    @setting(
-        4,
-        x_center="v[]",
-        y_center="v[]",
-        scan_range="v[]",
-        num_steps="i",
-        period="i",
-        returns="*v[]",
-    )
-    def load_scan_x(
-        self, c, x_center, y_center, scan_range, num_steps, period
-    ):
-        """Load a scan that will step through scan_range in x keeping y
-        constant at its center.
+    # @setting(
+    #     4,
+    #     x_center="v[]",
+    #     y_center="v[]",
+    #     scan_range="v[]",
+    #     num_steps="i",
+    #     period="i",
+    #     returns="*v[]",
+    # )
+    # def load_scan_x(
+    #     self, c, x_center, y_center, scan_range, num_steps, period
+    # ):
+    #     """Load a scan that will step through scan_range in x keeping y
+    #     constant at its center.
 
-        Params
-            x_center: float
-                Center x voltage of the scan
-            y_center: float
-                Center y voltage of the scan
-            scan_range: float
-                Full scan range in x/y
-            num_steps: int
-                Number of steps the break the x/y range into
-            period: int
-                Expected period between clock signals in ns
+    #     Params
+    #         x_center: float
+    #             Center x voltage of the scan
+    #         y_center: float
+    #             Center y voltage of the scan
+    #         scan_range: float
+    #             Full scan range in x/y
+    #         num_steps: int
+    #             Number of steps the break the x/y range into
+    #         period: int
+    #             Expected period between clock signals in ns
 
-        Returns
-            list(float)
-                The x voltages that make up the scan
-        """
+    #     Returns
+    #         list(float)
+    #             The x voltages that make up the scan
+    #     """
 
-        half_scan_range = scan_range / 2
+    #     half_scan_range = scan_range / 2
 
-        x_low = x_center - half_scan_range
-        x_high = x_center + half_scan_range
+    #     x_low = x_center - half_scan_range
+    #     x_high = x_center + half_scan_range
 
-        x_voltages = numpy.linspace(x_low, x_high, num_steps)
-        y_voltages = numpy.full(num_steps, y_center)
+    #     x_voltages = numpy.linspace(x_low, x_high, num_steps)
+    #     y_voltages = numpy.full(num_steps, y_center)
 
-        voltages = numpy.vstack((x_voltages, y_voltages))
+    #     voltages = numpy.vstack((x_voltages, y_voltages))
 
-        # self.load_stream_writer_xy(c, "Piezo_stage-load_scan_x", voltages, period)
+    #     # self.load_stream_writer_xy(c, "Piezo_stage-load_scan_x", voltages, period)
 
-        return x_voltages
+    #     return x_voltages
 
-    @setting(
-        5,
-        x_center="v[]",
-        y_center="v[]",
-        scan_range="v[]",
-        num_steps="i",
-        period="i",
-        returns="*v[]",
-    )
-    def load_scan_y(
-        self, c, x_center, y_center, scan_range, num_steps, period
-    ):
-        """Load a scan that will step through scan_range in y keeping x
-        constant at its center.
+    # @setting(
+    #     5,
+    #     x_center="v[]",
+    #     y_center="v[]",
+    #     scan_range="v[]",
+    #     num_steps="i",
+    #     period="i",
+    #     returns="*v[]",
+    # )
+    # def load_scan_y(
+    #     self, c, x_center, y_center, scan_range, num_steps, period
+    # ):
+    #     """Load a scan that will step through scan_range in y keeping x
+    #     constant at its center.
 
-        Params
-            x_center: float
-                Center x voltage of the scan
-            y_center: float
-                Center y voltage of the scan
-            scan_range: float
-                Full scan range in x/y
-            num_steps: int
-                Number of steps the break the x/y range into
-            period: int
-                Expected period between clock signals in ns
+    #     Params
+    #         x_center: float
+    #             Center x voltage of the scan
+    #         y_center: float
+    #             Center y voltage of the scan
+    #         scan_range: float
+    #             Full scan range in x/y
+    #         num_steps: int
+    #             Number of steps the break the x/y range into
+    #         period: int
+    #             Expected period between clock signals in ns
 
-        Returns
-            list(float)
-                The y voltages that make up the scan
-        """
+    #     Returns
+    #         list(float)
+    #             The y voltages that make up the scan
+    #     """
 
-        half_scan_range = scan_range / 2
+    #     half_scan_range = scan_range / 2
 
-        y_low = y_center - half_scan_range
-        y_high = y_center + half_scan_range
+    #     y_low = y_center - half_scan_range
+    #     y_high = y_center + half_scan_range
 
-        x_voltages = numpy.full(num_steps, x_center)
-        y_voltages = numpy.linspace(y_low, y_high, num_steps)
+    #     x_voltages = numpy.full(num_steps, x_center)
+    #     y_voltages = numpy.linspace(y_low, y_high, num_steps)
 
-        voltages = numpy.vstack((x_voltages, y_voltages))
+    #     voltages = numpy.vstack((x_voltages, y_voltages))
 
-        # self.load_stream_writer_xy(c, "Piezo_stage-load_scan_y", voltages, period)
+    #     # self.load_stream_writer_xy(c, "Piezo_stage-load_scan_y", voltages, period)
 
-        return y_voltages
+    #     return y_voltages
 
     # @setting(6, x_points="*v[]", y_points="*v[]", period="i")
     # def load_arb_scan_xy(self, c, x_points, y_points, period):
