@@ -58,12 +58,15 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     smooth_freqs = calculate_freqs(freq_center, freq_range, 1000)
 
-    # Plotting
+    # Plot data
     if norm_avg_sig_ste is not None:
         kpl.plot_points(ax, freqs, norm_avg_sig, yerr=norm_avg_sig_ste)
     else:
         kpl.plot_line(ax, freqs, norm_avg_sig)
+        
+    # Plot fit
     if fit_func is not None:
+        
         kpl.plot_line(
             ax,
             smooth_freqs,
@@ -71,24 +74,24 @@ def create_fit_figure(
             color=KplColors.RED,
         )
 
-    # Text boxes to describe the fits
-    low_text = None
-    high_text = None
-    base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
-    if len(popt) == 3:
-        contrast, hwhm, freq = popt[0:3]
-        low_text = base_text.format(contrast, hwhm, freq)
+        # Text boxes to describe the fits
+        low_text = None
         high_text = None
-    elif len(popt) == 6:
-        contrast, hwhm, freq = popt[0:3]
-        low_text = base_text.format(contrast, hwhm, freq)
-        contrast, hwhm, freq = popt[3:6]
-        high_text = base_text.format(contrast, hwhm, freq)
-    size = kpl.Size.SMALL
-    if low_text is not None:
-        kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
-    if high_text is not None:
-        kpl.anchored_text(ax, high_text, kpl.Loc.LOWER_RIGHT, size=size)
+        base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
+        if len(popt) == 3:
+            contrast, hwhm, freq = popt[0:3]
+            low_text = base_text.format(contrast, hwhm, freq)
+            high_text = None
+        elif len(popt) == 6:
+            contrast, hwhm, freq = popt[0:3]
+            low_text = base_text.format(contrast, hwhm, freq)
+            contrast, hwhm, freq = popt[3:6]
+            high_text = base_text.format(contrast, hwhm, freq)
+        size = kpl.Size.SMALL
+        if low_text is not None:
+            kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
+        if high_text is not None:
+            kpl.anchored_text(ax, high_text, kpl.Loc.LOWER_RIGHT, size=size)
 
     return fig, ax, fit_func, popt, pcov
 
