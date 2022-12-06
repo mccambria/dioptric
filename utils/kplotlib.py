@@ -337,24 +337,27 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def plot_line_update(ax, line_ind=0, x=None, y=None):
+def plot_line_update(ax, line_ind=0, x=None, y=None, relim=True, flush=True):
     """Updates a figure created by plot_line. x and y are the new data to write.
-    Either may be None in which case that axis of the plot won't be updated
+    Either may be None in which case that axis of the plot won't be updated.
+    Set flush to False if you want to make more changes and call flush_update
+    yourself.
     """
 
-    # Get the line - assume it's  the first line in the first axes
     lines = ax.get_lines()
     line = lines[line_ind]
 
-    # Set the data for the line to display and rescale
     if x is not None:
         line.set_xdata(x)
     if y is not None:
         line.set_ydata(y)
-    ax.relim()
-    ax.autoscale_view()
+        
+    if relim:
+        ax.relim()
+        ax.autoscale_view()
 
-    flush_update(ax)
+    if flush:
+        flush_update(ax)
 
 
 def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwargs):

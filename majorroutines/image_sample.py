@@ -432,7 +432,7 @@ def main_with_cxn(
 
     ### Set up the image display
     
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL, no_latex=True)
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
     
     if um_scaled:
         extent = [el * xy_scale for el in extent]
@@ -448,7 +448,7 @@ def main_with_cxn(
         img_array_kcps,
         title=title,
         axes_labels=axes_labels,
-        cbar_label="kcps",
+        cbar_label="Count rate (kcps)",
         extent=extent,
         vmin=vmin,
         vmax=vmax,

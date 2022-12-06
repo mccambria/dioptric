@@ -322,7 +322,7 @@ def get_guess_params(
         high_freq_guess = None
         low_contrast_guess = max_peak_height
     else:
-        # print("Could not locate peaks, using center frequency")
+        print("Could not locate peaks, using center frequency")
         low_freq_guess = freq_center
         high_freq_guess = None
         low_contrast_guess = height
