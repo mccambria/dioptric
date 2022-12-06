@@ -190,6 +190,8 @@ class SigGenStanSg394(LabradServer, SigGenVector):
     @setting(6)
     def reset(self, c):
         self.sig_gen.write("FDEV 0")
+        cmd = 'MODL 0'
+        self.sig_gen.write(cmd)
         self.uwave_off(c)
         self.mod_off(c)
 

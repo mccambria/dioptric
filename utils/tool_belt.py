@@ -576,12 +576,12 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 
 def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
-    return common.get_registry_entry(cxn, "apd_indices", [""])
+    return common.get_registry_entry(cxn, "apd_indices", ["Config"])
 
 
 # endregion
 # region Server getters
-"""Each getter looks up the requested server from the registry and 
+"""Each getter looks up the requested server from the registry and
 returns a usable reference to the requested server (i.e. cxn.<server>)
 """
 
@@ -709,7 +709,7 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
 
     Params:
         source_file: string
-            Source __file__ of the caller which will be parsed to get the 
+            Source __file__ of the caller which will be parsed to get the
             name of the subdirectory we will write to
         time_stamp: string
             Formatted timestamp to include in the file name
@@ -733,7 +733,7 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
 
     # Make the required directories if it doesn't exist already
     folder_dir.mkdir(parents=True, exist_ok=True)
-    
+
     file_name = f"{time_stamp}-{name}"
 
     return folder_dir / file_name
@@ -748,7 +748,14 @@ def utc_from_file_name(file_name, time_zone="CST"):
     timestamp = date_time.timestamp()
     return timestamp
 
-
+def get_nv_sig_units(cxn):
+    try:
+        nv_sig_units = common.get_registry_entry(cxn, "nv_sig_units", "Config")
+    except Exception:
+        nv_sig_units = ""
+    return nv_sig_units
+    
+    
 def save_figure(fig, file_path):
     """Save a matplotlib figure as a svg.
 

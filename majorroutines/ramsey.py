@@ -212,6 +212,7 @@ def main_with_cxn(
     
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
     
 
     tool_belt.reset_cfm(cxn)
@@ -246,6 +247,10 @@ def main_with_cxn(
         seq_file_name = "spin_echo_fm_test.py"
         deviation = 6
 
+    # check if running external iq_mod with SRS
+    iq_key = False
+    if 'uwave_iq_{}'.format(state.name) in nv_sig:
+        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
     # %% Create the array of relaxation times
 
     # Array of times to sweep through
@@ -378,6 +383,10 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         if do_fm:
             sig_gen_cxn.load_fm(deviation)
+        if iq_key:
+            # print('iq on')
+            sig_gen_cxn.load_iq()
+            # arbwavegen_server.load_arb_phases([0])
         sig_gen_cxn.uwave_on()
 
         # Set up the laser

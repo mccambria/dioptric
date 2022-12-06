@@ -63,12 +63,13 @@ def create_fit_figure(
         kpl.plot_points(ax, freqs, norm_avg_sig, yerr=norm_avg_sig_ste)
     else:
         kpl.plot_line(ax, freqs, norm_avg_sig)
-    kpl.plot_line(
-        ax,
-        smooth_freqs,
-        fit_func(smooth_freqs, *popt),
-        color=KplColors.RED,
-    )
+    if fit_func is not None:
+        kpl.plot_line(
+            ax,
+            smooth_freqs,
+            fit_func(smooth_freqs, *popt),
+            color=KplColors.RED,
+        )
 
     # Text boxes to describe the fits
     low_text = None
@@ -227,23 +228,24 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
         fit_func,
         guess_params,
     )
-
-    if len(popt) == 6:
-        # print("Double resonance")
-        low_res_ind = 2
-        high_res_ind = low_res_ind + 3
-        avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
-        low_res_err = np.sqrt(pcov[low_res_ind, low_res_ind])
-        hig_res_err = np.sqrt(pcov[high_res_ind, high_res_ind])
-        avg_res_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-        return avg_res, avg_res_err
+    if fit_func is None:
+        return None, None
     else:
-        # print("Single resonance")
-        res_ind = 2
-        # res_ind = 1  # MCC sigma
-        res = popt[res_ind]
-        res_err = np.sqrt(pcov[res_ind, res_ind])
-        return res, res_err
+        if len(popt) == 6:
+            # print("Double resonance")
+            low_res_ind = 2
+            high_res_ind = low_res_ind + 3
+            avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
+            low_res_err = np.sqrt(pcov[low_res_ind, low_res_ind])
+            hig_res_err = np.sqrt(pcov[high_res_ind, high_res_ind])
+            avg_res_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+            return avg_res, avg_res_err
+        else:
+            # print("Single resonance")
+            res_ind = 2
+            res = popt[res_ind]
+            res_err = np.sqrt(pcov[res_ind, res_ind])
+            return res, res_err
 
 
 def get_guess_params(
@@ -327,7 +329,14 @@ def get_guess_params(
         high_freq_guess = None
         low_contrast_guess = height
 
-    ### Fit functions
+    # low_freq_guess = 2.8620
+    #high_freq_guess = 2.8936
+    # high_freq_guess = None
+
+    if low_freq_guess is None:
+        return None, None
+
+    # %% Fit!
 
     if high_freq_guess is None:
         fit_func = single_dip
@@ -368,14 +377,20 @@ def fit_resonance(
     if guess_params is None:
         guess_params = algo_guess_params
 
-    popt, pcov = curve_fit(
-        fit_func,
-        freqs,
-        norm_avg_sig,
-        p0=guess_params,
-        sigma=norm_avg_sig_ste,
-        absolute_sigma=True,
-    )
+    try:
+        popt, pcov = curve_fit(
+            fit_func,
+            freqs,
+            norm_avg_sig,
+            p0=guess_params,
+            sigma=norm_avg_sig_ste,
+            absolute_sigma=True,
+        )
+    except Exception as exc:
+        print(exc)
+        fit_func = None
+        popt = None
+        pcov = None
 
     return fit_func, popt, pcov
 
@@ -513,11 +528,24 @@ def main_with_cxn(
     start_timestamp = tool_belt.get_time_stamp()
 
     kpl.init_kplotlib()
+
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+
     tool_belt.reset_cfm(cxn)
 
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
 
+
+    # check if running external iq_mod with SRS
+    iq_key = False
+    if 'uwave_iq_{}'.format(state.name) in nv_sig:
+        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
+    # Set up our data structure, an array of NaNs that we'll fill
+    # incrementally. NaNs are ignored by matplotlib, which is why they're
+    # useful for us here.
     norm_style = nv_sig["norm_style"]
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
@@ -610,11 +638,13 @@ def main_with_cxn(
         # own sequences)
         sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.uwave_on()
+        if iq_key:
+            sig_gen_cxn.load_iq()
+            # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            awg_cxn = tool_belt.get_awg_server(cxn)
-            awg_cxn.load_knill()
+            arbwavegen_server.load_knill()
+        sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
@@ -729,9 +759,10 @@ def main_with_cxn(
     run_indicator_obj.remove()
 
     # Fits
-    fit_fig, _, fit_func, popt, _ = create_fit_figure(
+    ret_vals = create_fit_figure(
         freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
+    fit_fig = ret_vals[0]
 
     ### Clean up, save the data, return
 
@@ -792,13 +823,12 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    print(Path(__file__).stem)
-    sys.exit()
-
     kpl.init_kplotlib()
 
-    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
+    file_name = "2022_12_06-10_38_40-15micro-nv3_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
+    print(return_res_with_error(data))
+    sys.exit()
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]

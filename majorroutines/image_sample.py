@@ -12,7 +12,6 @@ Created on April 9th, 2019
 import matplotlib.pyplot as plt
 import numpy as np
 import utils.tool_belt as tool_belt
-import utils.positioning as positioning
 from utils.positioning import ControlStyle
 import utils.common as common
 import time
@@ -87,6 +86,7 @@ def main(
     nv_minus_init=False,
     vmin=None,
     vmax=None,
+    scan_type='XY',
 ):
 
     with labrad.connect() as cxn:
@@ -100,6 +100,7 @@ def main(
             nv_minus_init,
             vmin,
             vmax,
+            scan_type,
         )
 
     return img_array, x_voltages, y_voltages
@@ -313,6 +314,7 @@ def main_with_cxn(
     nv_minus_init=False,
     vmin=None,
     vmax=None,
+    scan_type='XY',
 ):
     
     ### Some initial setup
@@ -323,6 +325,8 @@ def main_with_cxn(
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
     optimize.prepare_microscope(cxn, nv_sig)
     xy_server = positioning.get_server_pos_xy(cxn)
+    # print(xy_server)
+    xyz_server = positioning.get_server_pos_xy(cxn)
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
     total_num_samples = num_steps**2
@@ -340,11 +344,12 @@ def main_with_cxn(
     _, keys = cxn.registry.dir()
     
     if "xy_small_response_delay" in keys:
-        xy_delay = tool_belt.get_registry_entry(
+        xy_delay = common.get_registry_entry(
             cxn, "xy_small_response_delay", dir_path
         )
     else:
         xy_delay = common.get_registry_entry(cxn, "xy_delay", dir_path)
+        
 
     # Get the scale in um per unit
     xy_scale = common.get_registry_entry(cxn, "xy_nm_per_unit", dir_path)
@@ -352,15 +357,26 @@ def main_with_cxn(
         um_scaled = False
     else:
         xy_scale *= 1000
+        
+    z_delay = common.get_registry_entry(cxn, 'z_delay', ['', 'Config', 'Positioning'])
+    z_scale = common.get_registry_entry(cxn, 'z_nm_per_unit', ['', 'Config', 'Positioning'])
+    # use whichever delay is longer: 
+    if (z_delay > xy_delay) and scan_type=='XZ':
+        delay = z_delay
+    else:
+        delay = xy_delay
 
     try:
         xy_units = common.get_registry_entry(cxn,
             "xy_units", ["", "Config", "Positioning"]
         )
+        z_units = common.get_registry_entry(cxn,
+            "z_units", ["", "Config", "Positioning"]
+        )
     except Exception as exc:
-        print("xy_units not in config")
+        print("xy_units or z_units not in config")
         xy_units = None
-    
+        z_units = None
     
     ### Load the pulse generator
     
@@ -383,16 +399,21 @@ def main_with_cxn(
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         seq_file = 'simple_readout.py'
         
-    # print(seq_args)
+    print(seq_args)
     ret_vals = pulse_gen.stream_load(seq_file,seq_args_string)
     period = ret_vals[0]
         
-    ### Set up the xy_server
+    ### Set up the xy_server (xyz_server if 'xz' scan_type)
 
     x_num_steps = num_steps
     y_num_steps = num_steps
-    ret_vals = positioning.get_scan_grid_2d(
-        x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
+    
+    if scan_type == 'XY':
+        ret_vals = positioning.get_scan_grid_2d(
+            x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
+    elif scan_type == 'XZ':
+        ret_vals = positioning.get_scan_grid_2d(
+            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
     
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -420,7 +441,11 @@ def main_with_cxn(
         x_voltages, y_voltages, x_voltages_1d, y_voltages_1d, extent = ret_vals
         x_positions_1d, y_positions_1d = x_voltages_1d, y_voltages_1d
         pos_units = "V"
-        xy_server.load_stream_xy(x_voltages, y_voltages)
+        # xy_server.load_stream_xy(x_voltages, y_voltages)
+        if scan_type == 'XY':
+            xy_server.load_stream_xy(x_voltages, y_voltages)
+        elif scan_type == 'XZ':
+            xyz_server.load_stream_xyz(x_voltages, y_voltages)
     
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
@@ -432,7 +457,7 @@ def main_with_cxn(
 
     ### Set up the image display
     
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL, latex=False)
     
     if um_scaled:
         extent = [el * xy_scale for el in extent]
@@ -440,7 +465,8 @@ def main_with_cxn(
     elif xy_units is not None:
         axes_labels = [xy_units, xy_units]
         
-    title = f"XY image under {readout_laser}, {readout_us} us readout"
+    
+    title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
     
     fig, ax = plt.subplots()
     kpl.imshow(
@@ -448,13 +474,14 @@ def main_with_cxn(
         img_array_kcps,
         title=title,
         axes_labels=axes_labels,
-        cbar_label="Count rate (kcps)",
+        cbar_label="kcps",
         extent=extent,
         vmin=vmin,
         vmax=vmax,
     )
     
     ### Collect the data
+    
     
     counter.start_tag_stream() 
     tool_belt.init_safe_stop()
@@ -463,6 +490,7 @@ def main_with_cxn(
         
         dx_list = []
         dy_list = []
+        dz_list = []
         
         for i in range(total_num_samples): 
             
@@ -472,12 +500,19 @@ def main_with_cxn(
             if tool_belt.safe_stop():
                 break
             
-            flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
+            if scan_type == 'XY':
+                flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
+            elif scan_type == 'XZ':
+                flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
             
             # Some diagnostic stuff - checking how far we are from the target pos
-            actual_x_pos, actual_y_pos = xy_server.read_xy()
+            actual_x_pos, actual_y_pos, actual_z_pos = xyz_server.read_xyz()
             dx_list.append((actual_x_pos-cur_x_pos)*1e3)
-            dy_list.append((actual_y_pos-cur_y_pos)*1e3)
+            if scan_type == 'XY':
+                dy_list.append((actual_y_pos-cur_y_pos)*1e3)
+            elif scan_type == 'XZ':
+                cur_z_pos = cur_y_pos
+                dy_list.append((actual_z_pos-cur_z_pos)*1e3)
             # read the counts at this location
             
             pulse_gen.stream_start(1)
@@ -526,15 +561,20 @@ def main_with_cxn(
                 kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
                 num_read_so_far += num_new_samples
 
+    counter.clear_buffer()
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
-    xy_server.write_xy(x_center, y_center)
+    if scan_type == 'XY':
+        xy_server.write_xy(x_center, y_center)
+    elif scan_type == 'XZ':
+        xyz_server.write_xyz(x_center, y_center, z_center)
     
     timestamp = tool_belt.get_time_stamp()
     rawData = {
         'timestamp': timestamp,
                 'nv_sig': nv_sig,
+                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 "x_center": x_center,
                 "y_center": y_center,
                 "z_center": z_center,
@@ -543,6 +583,7 @@ def main_with_cxn(
                 'y_range': y_range,
                 'y_range-units': 'um',
                 'num_steps': num_steps,
+                'scan_type': scan_type,
                 'readout': readout,
                 'readout-units': 'ns',
                 "title": title,
@@ -555,8 +596,8 @@ def main_with_cxn(
                }
 
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_raw_data(rawData, filePath)
     tool_belt.save_figure(fig, filePath)
+    tool_belt.save_raw_data(rawData, filePath)
     
     return img_array, x_positions_1d, y_positions_1d
 
