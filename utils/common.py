@@ -43,6 +43,14 @@ def get_registry_entry(cxn, key, directory):
 
 
 def get_server(cxn, server_type):
-    """Helper function for server getters in tool_belt"""
-    server_name = get_registry_entry(cxn, server_type, ["", "Config", "Servers"])
-    return getattr(cxn, server_name)
+    """Helper function for server getters in tool_belt. Return None if we can't
+    make the connection for whatever reason (e.g. the key does not exist in 
+    the registry
+    """
+    try:
+        server_name = get_registry_entry(cxn, server_type, ["", "Config", "Servers"])
+        server = getattr(cxn, server_name)
+    except Exception as exc:
+        # print(f"Could not get server type {server_type}")
+        server = None
+    return server
