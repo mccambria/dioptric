@@ -729,7 +729,7 @@ def main_with_cxn(
 
     # Fits
     fit_fig, _, fit_func, popt, _ = create_fit_figure(
-        freq_center, freq_range, num_steps, norm_avg_sig
+        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
 
     ### Clean up, save the data, return
@@ -743,7 +743,6 @@ def main_with_cxn(
         "start_timestamp": start_timestamp,
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "freq_center": freq_center,
