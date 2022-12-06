@@ -665,12 +665,16 @@ def main_with_cxn(
 
             freq_index_master_list[run_ind].append(freq_ind)
             sig_gen_cxn.set_freq(freqs[freq_ind])
+            # sig_gen_cxn.uwave_on()
+            # print(freqs[freq_ind])
+            # time.sleep(5)
             counter.clear_buffer()
             pulse_gen.stream_start(int(num_reps))
 
             # Get and write the counts
             new_counts = counter.read_counter_modulo_gates(2, 1)
             sample_counts = new_counts[0]
+            print(sample_counts)
             cur_run_sig_counts_summed = sample_counts[0]
             cur_run_ref_counts_summed = sample_counts[1]
             sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed

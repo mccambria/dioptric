@@ -312,7 +312,6 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
         # start_time = time.time()
         for tau_ind in tau_ind_list:
-            print(tau_ind)
 #        for tau_ind in range(len(taus)):
             # print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
@@ -387,7 +386,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'nv_sig-units': tool_belt.get_nv_sig_units(cxn),
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -465,7 +464,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'nv_sig-units': tool_belt.get_nv_sig_units(cxn),
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,
