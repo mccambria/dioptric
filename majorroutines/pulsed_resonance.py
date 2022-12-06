@@ -579,7 +579,7 @@ def main_with_cxn(
     )
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
-    text = kpl.tex_escape(run_indicator_text.format(0, num_runs))
+    text = run_indicator_text.format(0, num_runs)
     run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
 
     ### Collect the data
@@ -651,7 +651,7 @@ def main_with_cxn(
         ### Incremental plotting
 
         # Update the run indicator
-        text = kpl.tex_escape(run_indicator_text.format(run_ind + 1, num_runs))
+        text = run_indicator_text.format(run_ind + 1, num_runs)
         run_indicator_obj.txt.set_text(text)
 
         # Average the counts over the iterations
