@@ -373,6 +373,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             else:
                 positioning.set_xyz(cxn, start_coords)
             auto_scan = False
+            
+            
+            
 
         elif xy_control_style == ControlStyle.STREAM:
             # no need to move to first position. loading the daq already does that
@@ -384,38 +387,46 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         period = ret_vals[0]
 
         if axis_ind == 0:
-            if hasattr(xy_server, "load_scan_x"):
-                scan_func = xy_server.load_scan_x
-                scan_vals = scan_func(
-                    sweep_x_center, sweep_y_center, scan_range, num_steps, period
+            if auto_scan:
+                scan_func = xy_server.load_stream_xy
+                scan_vals, fixed_vals = positioning.get_scan_one_axis_2d(
+                    sweep_x_center, sweep_y_center, 
+                    scan_range,num_steps
                 )
+                scan_func(scan_vals, fixed_vals)
             else:
                 manual_write_func = xy_server.write_x
-                scan_vals = tool_belt.get_scan_vals(
-                    sweep_x_center, scan_range, num_steps, scan_dtype
+                scan_vals = positioning.get_scan_1d(
+                    sweep_x_center, scan_range, num_steps
                 )
-                auto_scan = False
                 
         elif axis_ind == 1:
-            if hasattr(xy_server, "load_scan_y"):
-                scan_func = xy_server.load_scan_y
-                scan_vals = scan_func(
-                    sweep_x_center, sweep_y_center, scan_range, num_steps, period
+            if auto_scan:
+                scan_func = xy_server.load_stream_xy
+                scan_vals, fixed_vals = positioning.get_scan_one_axis_2d(
+                    sweep_y_center, sweep_x_center, 
+                    scan_range,num_steps
                 )
+                scan_func(fixed_vals, scan_vals)
             else:
                 manual_write_func = xy_server.write_y
-                scan_vals = tool_belt.get_scan_vals(
-                    sweep_y_center, scan_range, num_steps, scan_dtype
+                scan_vals = positioning.get_scan_1d(
+                    sweep_y_center, scan_range, num_steps
                 )
-                auto_scan = False
 
     # z
     elif axis_ind == 2:
 
         scan_range = config["Positioning"]["z_optimize_range"]
-        scan_dtype = eval(config["Positioning"]["z_dtype"])
+        scan_dtype = eval(config["Positioning"]["z_dtype"]) #matt, make sure this still works for your piezo
         delay = config["Positioning"]["z_delay"]
 
+        if z_control_style == ControlStyle.STEP:
+            auto_scan = False
+        elif z_control_style == ControlStyle.STREAM:
+            # no need to move to first position. loading the daq already does that
+            auto_scan = True
+            
         # Move to first point in scan
         half_scan_range = scan_range / 2
         z_low = sweep_z_center - half_scan_range
@@ -433,24 +444,19 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         period = ret_vals[0]
 
 
-        if hasattr(z_server, "load_scan_z"):
-            scan_vals = z_server.load_scan_z(
-                sweep_z_center, scan_range, num_steps, period
+        if auto_scan:
+            scan_func = z_server.load_stream_z
+            scan_vals = positioning.get_scan_1d(
+                sweep_z_center,scan_range,num_steps,
             )
-            auto_scan = True
+            scan_func(scan_vals)
 
         else:
-            scan_vals = tool_belt.get_scan_vals(
-                sweep_z_center, scan_range, num_steps, scan_dtype
-            )
-            auto_scan = False
             manual_write_func = z_server.write_z
+            scan_vals = positioning.get_scan_1d(
+                sweep_z_center, scan_range, num_steps
+            )
             
-    if z_control_style == ControlStyle.STEP:
-        auto_scan = False
-    elif z_control_style == ControlStyle.STREAM:
-        pass
-
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period)
     else:
