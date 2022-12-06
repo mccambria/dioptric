@@ -532,17 +532,19 @@ def main_with_cxn(
 
     kpl.init_kplotlib()
 
-    tool_belt.reset_cfm(cxn)
-
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
-    awg = tool_belt.get_server_awg(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
+
+    tool_belt.reset_cfm(cxn)
+
+
 
     # check if running external iq_mod with SRS
     iq_key = False
     if 'uwave_iq_{}'.format(state.name) in nv_sig:
         iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
-        
+
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -596,6 +598,8 @@ def main_with_cxn(
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
+    # print(seq_args)
+    # return
     opti_coords_list = []
 
     # Create raw data figure for incremental plotting
@@ -640,10 +644,10 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
             sig_gen_cxn.load_iq()
-            # awg.load_arb_phases([0])
+            # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            awg.load_knill()
+            arbwavegen_server.load_knill()
         sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -661,7 +665,6 @@ def main_with_cxn(
 
             freq_index_master_list[run_ind].append(freq_ind)
             sig_gen_cxn.set_freq(freqs[freq_ind])
-
             counter.clear_buffer()
             pulse_gen.stream_start(int(num_reps))
 

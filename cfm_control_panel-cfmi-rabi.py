@@ -55,7 +55,7 @@ import chargeroutines.determine_charge_readout_params as determine_charge_readou
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 # import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
-# from utils.tool_belt import NormStyle
+from utils.tool_belt import NormStyle
 import time
 
 
@@ -218,11 +218,11 @@ def do_resonance_state(nv_sig, opti_nv_sig,  state):
 
 def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
-    num_steps =151
+    num_steps =101
     num_reps = 1e4
     num_runs = 5
-    uwave_power = 10
-    uwave_pulse_dur = int(104.2/2)
+    uwave_power = 3.5
+    uwave_pulse_dur = int(2300/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -246,11 +246,11 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
     # num_runs = 8
 
     # Zoom
-    # freq_range = 0.12
-    freq_range = 0.020
-    num_steps = 101
+    freq_range = 0.12
+    # freq_range = 0.020
+    num_steps = 51
     num_reps = int(1e4)
-    num_runs =  40
+    num_runs =  3
 
     composite = False
 
@@ -310,7 +310,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
 
     num_steps =101
     num_reps = int(2e4)    
-    num_runs = 1#10
+    num_runs = 210
 
     period = rabi.main(
         nv_sig,
@@ -997,9 +997,9 @@ if __name__ == "__main__":
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        # "norm_style": NormStyle.single_valued,
+        "norm_style": NormStyle.SINGLE_VALUED,
         "uwave_power_LOW": 20,  
-        "uwave_power_HIGH": 3.5,
+        "uwave_power_HIGH": 10,#3.5,
         
         "uwave_mod_freq_LOW": 2.189288,
         "uwave_mod_amp_LOW": 140,
@@ -1027,15 +1027,15 @@ if __name__ == "__main__":
     nv_sig_1["coords"] = [-0.189, 0.079, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = None#19
+    nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7809
     nv_sig_1["rabi_LOW"]=2249.5
     nv_sig_1["uwave_iq_LOW"]= False 
     nv_sig_1["resonance_HIGH"]=2.9597
-    nv_sig_1["rabi_HIGH"]= 2329.0
-    nv_sig_1["uwave_iq_HIGH"]= True  
+    nv_sig_1["rabi_HIGH"]= 160#2329.0
+    nv_sig_1["uwave_iq_HIGH"]= False  
     
     
     
@@ -1085,7 +1085,7 @@ if __name__ == "__main__":
         
         
         # do_optimize(nv_sig)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         #do_image_sample_xz(nv_sig)
         
         # do_stationary_count(nv_sig)
@@ -1099,7 +1099,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2000])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 400])
         
