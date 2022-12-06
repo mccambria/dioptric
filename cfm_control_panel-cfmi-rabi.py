@@ -218,11 +218,11 @@ def do_resonance_state(nv_sig, opti_nv_sig,  state):
 
 def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
-    num_steps =101
+    num_steps =151
     num_reps = 1e4
-    num_runs = 5
-    uwave_power = 3.5
-    uwave_pulse_dur = int(2300/2)
+    num_runs = 10
+    uwave_power = 10
+    uwave_pulse_dur = int(160/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -308,9 +308,9 @@ def do_optimize_magnet_angle(nv_sig):
 def do_rabi(nv_sig, opti_nv_sig, state, 
             uwave_time_range=[0, 200]):
 
-    num_steps =101
+    num_steps =51
     num_reps = int(2e4)    
-    num_runs = 210
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -1098,7 +1098,7 @@ if __name__ == "__main__":
         
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
-       # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2000])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 400])
