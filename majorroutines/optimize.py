@@ -19,7 +19,7 @@ from scipy.optimize import curve_fit
 import time
 import copy
 import labrad
-from utils.positioning import ControlStyle
+from utils.tool_belt import ControlStyle
 
 # region Plotting functions
 
@@ -139,8 +139,8 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 
 def read_timed_counts(cxn, num_steps, period):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     counter_server.start_tag_stream()
 
     num_read_so_far = 0
@@ -174,8 +174,8 @@ def read_timed_counts(cxn, num_steps, period):
 
 def read_manual_counts(cxn, period, axis_write_func, scan_vals):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     counter_server.start_tag_stream()
 
     counts = []
@@ -205,8 +205,8 @@ def read_manual_counts(cxn, period, axis_write_func, scan_vals):
 
 def stationary_count_lite(cxn, nv_sig, coords, config):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file_name = "simple_readout.py"
 
@@ -257,7 +257,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     """
 
     if coords is not None:
-        print("setting to opti coords:", coords)
+        # print("setting to opti coords:", coords)
         if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, coords)
         else:
@@ -325,7 +325,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
     num_steps = 31
 
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file_name = "simple_readout.py"
 
@@ -349,7 +349,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     # xy
     if axis_ind in [0, 1]:
 
-        xy_server = positioning.get_pos_xy_server(cxn)
+        xy_server = positioning.get_server_pos_xy(cxn)
 
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
@@ -417,15 +417,16 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
+        
+        manual_write_func = z_server.write_z
 
         if hasattr(z_server, "load_scan_z"):
             scan_vals = z_server.load_scan_z(
                 sweep_z_center, scan_range, num_steps, period
             )
             auto_scan = True
+            
         else:
-            manual_write_func = z_server.write_z
-
             scan_vals = tool_belt.get_scan_vals(
                 sweep_z_center, scan_range, num_steps, scan_dtype
             )
@@ -479,7 +480,7 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     # Adjust the sig we use for drift
-    drift = tool_belt.get_drift()
+    drift = positioning.get_drift(cxn)
     passed_coords = nv_sig["coords"]
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     # If optimize is disabled, just set the filters and magnet in place
@@ -529,6 +530,8 @@ def main_with_cxn(
         num_attempts = 20
     elif xy_control_style == ControlStyle.STEP:
         num_attempts = 4
+    # print(xy_control_style)
+    # print(num_attempts)
 
     for ind in range(num_attempts):
 
@@ -662,7 +665,7 @@ def main_with_cxn(
 
     if opti_succeeded and set_drift:
         drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
-        tool_belt.set_drift(drift)
+        positioning.set_drift(cxn,drift)
 
     ### Set to the optimized coordinates, or just tell the user what they are
 
@@ -729,10 +732,9 @@ def main_with_cxn(
         }
 
         filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
-        tool_belt.save_raw_data(rawData, filePath)
-
         if fig is not None:
             tool_belt.save_figure(fig, filePath)
+        tool_belt.save_raw_data(rawData, filePath)
 
     # %% Return the optimized coordinates we found
 

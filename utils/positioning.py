@@ -17,9 +17,9 @@ import utils.common as common
 import utils.tool_belt as tool_belt
 
 
-class ControlStyle(Enum):
-    STEP = auto()
-    STREAM = auto()
+# class ControlStyle(Enum):
+#     STEP = auto()
+#     STREAM = auto()
 
 
 # endregion
@@ -207,6 +207,7 @@ def get_drift(cxn):
 
 
 def set_drift(cxn, drift):
+    cxn.registry.cd(["", "State"])
     return cxn.registry.set("DRIFT", drift)
 
 

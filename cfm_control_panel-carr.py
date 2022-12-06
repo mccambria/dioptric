@@ -18,6 +18,7 @@ import labrad
 import numpy
 import time
 import copy
+import utils.positioning as positioning
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.image_sample as image_sample
@@ -55,12 +56,12 @@ import matplotlib.pyplot as plt
     
     
 
-def do_image_sample(nv_sig,nv_minus_init=False,scan_range=2,num_steps=30,cmin=None,cmax=None):
+def do_image_sample(nv_sig,nv_minus_init=False,scan_range=2,num_steps=30,cmin=None,cmax=None,scan_type='XY'):
     scale = 1 #um / V
    
     # For now we only support square scans so pass scan_range twice
     # image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps,nv_minus_init,vmin=cmin,vmax=cmax)
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps,nv_minus_init,vmin=cmin,vmax=cmax,scan_type=scan_type)
 
 def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,cmax=None):
     scale = 1 #um / V
@@ -69,12 +70,12 @@ def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,c
     image_sample_xz_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,save_data=True,cbarmin=cmin,cbarmax=cmax)
 
 
-def do_optimize(nv_sig, apd_indices):
+def do_optimize(nv_sig, apd_indices,save_data):
 
     optimize_coords = optimize.main(
         nv_sig,
         set_to_opti_coords=False,
-        save_data=True,
+        save_data=save_data,
         plot_data=True,
     )
     return optimize_coords
@@ -94,11 +95,11 @@ def do_optimize_z(nv_sig, apd_indices):
     )
     return optimize_coords
 
-def do_stationary_count(nv_sig, apd_indices,disable_opt=False):
+def do_stationary_count(nv_sig,disable_opt=False):
 
     run_time = 1 * 60 * 10 ** 9  # ns
 
-    stationary_count.main(nv_sig, run_time, apd_indices,disable_opt)
+    stationary_count.main(nv_sig, run_time,disable_opt)
     
 def do_laser_delay_calibration(nv_sig,apd_indices,laser_name,num_reps = int(2e6),
                               delay_range = [50, 500],num_steps=21):
@@ -386,9 +387,9 @@ if __name__ == "__main__":
     red_laser = 'cobolt_638'
 
     nv_sig = {
-        'coords': [50.0, 50.0, 50.0], 'name': '{}-search'.format(sample_name),
+        'coords': [47.392, 53.947, 65.64], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': None,
+        'expected_count_rate': 54,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
@@ -430,7 +431,8 @@ if __name__ == "__main__":
     # %% Functions to run
 
     try:
-        # tool_belt.reset_drift()
+        # with labrad.connect() as cxn:
+        #     positioning.reset_drift(cxn)
 
         # tool_belt.init_safe_stop()
         # do_determine_standard_readout_params(nv_sig, apd_indices)
@@ -442,15 +444,20 @@ if __name__ == "__main__":
         # do_determine_charge_readout_params(nv_sig, num_reps=500,readout_powers=[.55],readout_times=[5e6])
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         
-        do_image_sample_xz(nv_sig, apd_indices,num_steps=40,scan_range=10)#,cmin=0,cmax=50)
-        # do_image_sample(nv_sig,num_steps=30,scan_range=6)#,cmin=0,cmax=75)
+        # do_image_sample_xz(nv_sig, apd_indices,num_steps=30,scan_range=7)
+        # do_image_sample(nv_sig,num_steps=10,scan_range=1,scan_type='XY')
+        # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XZ')
         
-        # do_optimize(nv_sig, apd_indices)
+        # for z in [67.0, 75.0]:
+        #     nv_sig['coords'][2] = z
+        #     do_image_sample(nv_sig,num_steps=50,scan_range=5)
+        
+        # do_optimize(nv_sig, apd_indices,save_data=False)
         # do_optimize_z(nv_sig, apd_indices)
         
-        # do_stationary_count(nv_sig, apd_indices,disable_opt=True)
+        do_stationary_count(nv_sig,disable_opt=True)
         # 
-        # do_laser_delay_calibration(nv_sig,apd_indices,'laserglow_589',num_reps=int(2e6), delay_range=[100,5000],num_steps=101)
+        # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e5), delay_range=[64,560],num_steps=32)
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_638',num_reps=int(6e6), delay_range=[40,700],num_steps=31)
         
         # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.83,freq_range=.08)

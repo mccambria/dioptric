@@ -56,20 +56,23 @@ def measure_delay(
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
 
     tool_belt.reset_cfm(cxn)
 
     if 'charge_readout_laser_filter' in nv_sig:
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
-
-
-    # tool_belt.init_safe_stop()
-
+        
+    tool_belt.init_safe_stop()
+    
     n= 0
     for tau_ind in tau_ind_list:
+        
+        if tool_belt.safe_stop():
+            break
+        
         st = time.time()
         # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         optimize.main_with_cxn(cxn, nv_sig, apd_indices)
