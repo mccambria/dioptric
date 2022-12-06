@@ -187,6 +187,10 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
         # Close the task once we've written all the samples
         task.register_done_event(self.close_task_internal)
         task.start()
+        
+    @setting(3)
+    def reset(self, c):
+        self.close_task_internal()
 
 
 __server__ = PosXyThorGvs212()

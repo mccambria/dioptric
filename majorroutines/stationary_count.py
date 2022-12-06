@@ -40,8 +40,19 @@ def main_with_cxn(
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     counter_server = tool_belt.get_counter_server(cxn)
 
-    # Imaging laser
-    laser_key = "imaging_laser"
+    # %% Optimize
+
+    optimize.main_with_cxn(cxn, nv_sig)
+    coords = nv_sig['coords']
+    drift = tool_belt.get_drift()
+    adj_coords = []
+    for i in range(3):
+        adj_coords.append(coords[i] + drift[i])
+    tool_belt.set_xyz(cxn, adj_coords)
+
+    # %% Set up the imaging laser
+
+    laser_key = 'imaging_laser'
     readout_laser = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -92,7 +103,7 @@ def main_with_cxn(
     # Run until user says stop
     while True:
         # b = b + 1
-        # if (b % 50) == 0:
+        # if (b % 50) == 0 and (pulsegen_server == "QM_opx"):
         #     tool_belt.reset_cfm(cxn)
         #     counter_server.start_tag_stream()
         #     pulsegen_server.stream_start(-1)

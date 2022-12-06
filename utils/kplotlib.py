@@ -145,13 +145,14 @@ def zero_to_one_threshold(val):
 # region Miscellaneous
 
 
-def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
-    """Runs the default initialization for kplotlib, our default configuration
-    of matplotlib. Make sure no_latex is True for faster plotting.
+def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
+    """Runs the initialization for kplotlib, our default configuration
+    of matplotlib. Plotting will be faster if latex is False - only set to True
+    if you need full access to LaTeX
     """
 
     ### Misc setup
-    
+
     # Reset to the default
     matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
@@ -166,44 +167,31 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, no_latex=False):
 
     ### Latex setup
 
-    if not no_latex:
+    if latex:
 
         preamble = r""
         preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
         preamble += r"\usepackage{physics} \usepackage{upgreek}"
+        preamble += r"\usepackage{roboto}"  # Google's free Helvetica
 
-        # Fonts
-        # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-        preamble += r"\usepackage{helvet}"
-        # Latin mdoern is default math font but let's be safe
-        preamble += r"\usepackage{lmodern}"
-
-        # Sans serif math font, looks better for axis numbers.
-        # We preserve \mathrm and \mathit commands so you can still use
-        # the serif lmodern font for variables, equations, etc
-        preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+        # Render math (e.g. axis numbers) in sans serif by default.
+        # Preserve the \mathrm and \mathit commands so you can still
+        # use the serif font for variables, equations, etc.
+        preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
 
     ### Other rcparams
 
-    # plt.rcParams["savefig.format"] = "svg"
     # plt.rcParams["legend.handlelength"] = 0.5
-
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = "Roboto"
     plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
-
-
-def tight_layout(fig):
-    """Tight layout with defaults. Called twice because sometimes things are
-    still off after the first call.
-    """
-
-    fig.tight_layout(pad=0.3)
-    fig.tight_layout(pad=0.3)
+    plt.rcParams["figure.constrained_layout.use"] = True
 
 
 def get_default_color(ax, plot_type):
@@ -227,7 +215,7 @@ def get_default_color(ax, plot_type):
     return color
 
 
-def anchored_text(ax, text, loc, size=None, **kwargs):
+def anchored_text(ax, text, loc, size=None):
     """Add text in default style to the passed ax"""
 
     global default_font_size
@@ -242,7 +230,6 @@ def anchored_text(ax, text, loc, size=None, **kwargs):
     text_box.patch.set_alpha(0.5)
     ax.add_artist(text_box)
     return text_box
-    
 
 
 def tex_escape(text):
@@ -365,7 +352,7 @@ def plot_line_update(ax, line_ind=0, x=None, y=None):
     if y is not None:
         line.set_ydata(y)
     ax.relim()
-    ax.autoscale_view(scalex=False)
+    ax.autoscale_view()
 
     flush_update(ax)
 
@@ -399,8 +386,6 @@ def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwarg
 
     # Click handler
     fig.canvas.mpl_connect("button_press_event", on_click_image)
-
-    tight_layout(fig)
 
     return img
 

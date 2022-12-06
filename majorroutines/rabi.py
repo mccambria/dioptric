@@ -163,7 +163,6 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 
 def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs,
-         iq_mod_on = False,
          opti_nv_sig = None,
          return_popt=False):
 
@@ -171,7 +170,6 @@ def main(nv_sig, uwave_time_range, state,
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
                                          uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
-                                         iq_mod_on,
                                          opti_nv_sig)
 
         if return_popt:
@@ -182,11 +180,11 @@ def main(nv_sig, uwave_time_range, state,
 
 def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
-                  iq_mod_on = False,
                   opti_nv_sig = None):
 
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -215,7 +213,12 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     max_uwave_time = uwave_time_range[1]
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
-
+    
+    # check if running external iq_mod with SRS
+    iq_key = False
+    if 'uwave_iq_{}'.format(state.name) in nv_sig:
+        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
+        
     # Analyze the sequence
     num_reps = int(num_reps)
     # file_name = os.path.basename(__file__)
@@ -289,11 +292,10 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
-        if iq_mod_on:
+        if iq_key:
             sig_gen_cxn.load_iq()
+            # arbwavegen_server.load_arb_phases([0])
         sig_gen_cxn.uwave_on()
-        if iq_mod_on:
-            cxn.arbitrary_waveform_generator.load_arb_phases([0])
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
@@ -348,7 +350,8 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         #Average the counts over the iterations
         avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
         avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-        norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+        # norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
 
 
         ax = axes_pack[0]

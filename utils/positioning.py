@@ -27,10 +27,14 @@ import utils.tool_belt as tool_belt
 
 
 def set_xyz(cxn, coords):
+    xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
+    xy_dtype = eval(xy_dtype)
+    z_dtype = eval(z_dtype)
     pos_xy_server = get_server_pos_xy(cxn)
     pos_z_server = get_server_pos_z(cxn)
-    pos_xy_server.write_xy(coords[0], coords[1])
-    pos_z_server.write_z(coords[2])
+    pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
+    pos_z_server.write_z(z_dtype(coords[2]))
     # Force some delay before proceeding to account for the effective write time
     time.sleep(0.002)
 
@@ -173,19 +177,19 @@ def get_server_pos_xyz(cxn):
     return common.get_server(cxn, "pos_xyz")
 
 
-def get_xy_control_style():
+def get_xy_control_style(cxn):
     """Talk to the registry to get the xy control type for this setup"""
-    xy_control_style_return = common.get_registry_entry_no_cxn(
-        "xy_control_style", ["", "Config", "Positioning"]
+    xy_control_style_return = common.get_registry_entry(
+        cxn, "xy_control_style", ["", "Config", "Positioning"]
     )
     xy_control_style_return = eval(xy_control_style_return)
     return xy_control_style_return
 
 
-def get_z_control_style():
+def get_z_control_style(cxn):
     """Talk to the registry to get the z control type for this setup"""
-    z_control_style_return = common.get_registry_entry_no_cxn(
-        "z_control_style", ["", "Config", "Positioning"]
+    z_control_style_return = common.get_registry_entry(
+        cxn, "z_control_style", ["", "Config", "Positioning"]
     )
     z_control_style_return = eval(z_control_style_return)
     return z_control_style_return

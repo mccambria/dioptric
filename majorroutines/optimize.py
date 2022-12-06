@@ -253,15 +253,14 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     Prepares the microscope for a measurement. In particular,
     sets up the optics (positioning, collection filter, etc) and magnet.
     The laser set up must be handled by each routine since the same laser
-    may be specified for multiple purposes.
     """
 
     if coords is not None:
         # print("setting to opti coords:", coords)
         if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-            tool_belt.set_xyz_ramp(cxn, coords)
+            positioning.set_xyz_ramp(cxn, coords)
         else:
-            tool_belt.set_xyz(cxn, coords)
+            positioning.set_xyz(cxn, coords)
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
@@ -471,8 +470,8 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
 ):
-    xy_control_style = tool_belt.get_xy_control_style()
-    z_control_style = tool_belt.get_z_control_style()
+    xy_control_style = positioning.get_xy_control_style(cxn)
+    z_control_style = positioning.get_z_control_style(cxn)
 
     startFunctionTime = time.time()
     tool_belt.reset_cfm(cxn)
@@ -569,7 +568,6 @@ def main_with_cxn(
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
-
             # Check the count rate before moving on to z
             if z_control_style == ControlStyle.STREAM:
                 if expected_count_rate is not None:
