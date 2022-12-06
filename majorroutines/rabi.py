@@ -12,6 +12,7 @@ Created on Tue Apr 23 11:49:23 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import numpy
 import os
 import time
@@ -182,9 +183,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   opti_nv_sig = None):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -278,9 +279,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         # Optimize and save the coords we found
         if opti_nv_sig:
             opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
-            drift = tool_belt.get_drift()
+            drift = positioning.get_drift(cxn)
             adj_coords = nv_sig['coords'] + numpy.array(drift)
-            tool_belt.set_xyz(cxn, adj_coords)
+            positioning.set_xyz(cxn, adj_coords)
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
@@ -289,7 +290,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
@@ -311,6 +312,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
         # start_time = time.time()
         for tau_ind in tau_ind_list:
+            print(tau_ind)
 #        for tau_ind in range(len(taus)):
             # print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
@@ -326,16 +328,16 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
-            counter_server.clear_buffer()
 
-            start_time = time.time()
+            # start_time = time.time()
             pulsegen_server.stream_immediate(file_name, num_reps,
                                              seq_args_string)
             new_counts = counter_server.read_counter_modulo_gates(2, 1)
-            # print(new_counts)
             sample_counts = new_counts[0]
             sig_counts[run_ind, tau_ind] = sample_counts[0]
             ref_counts[run_ind, tau_ind] = sample_counts[1]
+            
+            counter_server.clear_buffer()
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time

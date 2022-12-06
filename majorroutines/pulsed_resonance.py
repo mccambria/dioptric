@@ -521,14 +521,12 @@ def main_with_cxn(
 
     kpl.init_kplotlib()
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    counter = tool_belt.get_server_counter(cxn)
+    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
 
     tool_belt.reset_cfm(cxn)
 
-    counter = tool_belt.get_server_counter(cxn)
-    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
 
 
     # check if running external iq_mod with SRS
@@ -587,7 +585,9 @@ def main_with_cxn(
         ]
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-
+    
+    # print(seq_args)
+    # return
     opti_coords_list = []
 
     # Create raw data figure for incremental plotting
@@ -653,7 +653,6 @@ def main_with_cxn(
 
             freq_index_master_list[run_ind].append(freq_ind)
             sig_gen_cxn.set_freq(freqs[freq_ind])
-
             counter.clear_buffer()
             pulse_gen.stream_start(int(num_reps))
 
