@@ -48,7 +48,7 @@ def get_seq(pulse_streamer, config, args):
     common_delay = max(laser_delay, uwave_delay) + short_buffer
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     # Keep the laser on for only as long as we need
-    readout_pol_min = max(readout, polarization_time) + short_buffer
+    readout_pol_max = max(readout, polarization_time) + short_buffer
     final_readout_buffer = 500
 
     # %% Define the sequence
@@ -62,7 +62,7 @@ def get_seq(pulse_streamer, config, args):
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
              (readout, Digital.HIGH), 
-             (readout_pol_min - readout, Digital.LOW),
+             (readout_pol_max - readout, Digital.LOW),
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
@@ -80,7 +80,7 @@ def get_seq(pulse_streamer, config, args):
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
-             (readout_pol_min, Digital.HIGH), 
+             (readout_pol_max, Digital.HIGH), 
              (uwave_buffer, Digital.LOW),
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
@@ -101,7 +101,7 @@ def get_seq(pulse_streamer, config, args):
              (max_tau-tau, Digital.LOW),
              (tau, Digital.HIGH),
              (uwave_buffer, Digital.LOW),
-             (readout_pol_min, Digital.LOW), 
+             (readout_pol_max, Digital.LOW), 
              (uwave_buffer, Digital.LOW), 
              (max_tau, Digital.LOW),
              (uwave_buffer, Digital.LOW),
@@ -122,6 +122,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    args = [100, 10000.0, 300, 300,  3, 'integrated_520', None]
+    args = [100, 10000.0, 300, 300,  3, 'laserglow_532', None]
     seq = get_seq(None, config, args)[0]
     seq.plot()
