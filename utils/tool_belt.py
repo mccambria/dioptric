@@ -748,7 +748,14 @@ def utc_from_file_name(file_name, time_zone="CST"):
     timestamp = date_time.timestamp()
     return timestamp
 
-
+def get_nv_sig_units(cxn):
+    try:
+        nv_sig_units = common.get_registry_entry(cxn, "nv_sig_units", "Config")
+    except Exception:
+        nv_sig_units = ""
+    return nv_sig_units
+    
+    
 def save_figure(fig, file_path):
     """Save a matplotlib figure as a svg.
 

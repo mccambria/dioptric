@@ -139,8 +139,8 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 
 def read_timed_counts(cxn, num_steps, period):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     counter_server.start_tag_stream()
 
     num_read_so_far = 0
@@ -205,8 +205,8 @@ def read_manual_counts(cxn, period, axis_write_func, scan_vals):
 
 def stationary_count_lite(cxn, nv_sig, coords, config):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file_name = "simple_readout.py"
 
@@ -218,9 +218,9 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
     x_center, y_center, z_center = coords
 
     if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-        tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
+        positioning.set_xyz_ramp(cxn, [x_center, y_center, z_center])
     else:
-        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+        positioning.set_xyz(cxn, [x_center, y_center, z_center])
     time.sleep(0.5)  # finding we need a bit more time to settle at new position
 
     config_positioning = config["Positioning"]
@@ -319,12 +319,12 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
-    xy_control_style = tool_belt.get_xy_control_style()
-    z_control_style = tool_belt.get_z_control_style()
+    xy_control_style = positioning.get_xy_control_style(cxn)
+    z_control_style = positioning.get_z_control_style(cxn)
 
     num_steps = 31
 
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file_name = "simple_readout.py"
 
@@ -348,7 +348,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     # xy
     if axis_ind in [0, 1]:
 
-        xy_server = positioning.get_pos_xy_server(cxn)
+        xy_server = positioning.get_server_pos_xy(cxn)
 
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
@@ -369,9 +369,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
                 start_coords = [coords[0], y_low, coords[2]]
 
             if nv_sig["ramp_voltages"] == True:
-                tool_belt.set_xyz_ramp(cxn, start_coords)
+                positioning.set_xyz_ramp(cxn, start_coords)
             else:
-                tool_belt.set_xyz(cxn, start_coords)
+                positioning.set_xyz(cxn, start_coords)
             auto_scan = False
 
         elif xy_control_style == ControlStyle.STREAM:
@@ -384,11 +384,15 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         period = ret_vals[0]
 
         if axis_ind == 0:
-            scan_func = xy_server.load_scan_x
-            manual_write_func = xy_server.write_x
+            if hasattr(xy_server, "load_scan_x"):
+                scan_func = xy_server.load_scan_x
+            else:
+                manual_write_func = xy_server.write_x
         elif axis_ind == 1:
-            scan_func = xy_server.load_scan_y
-            manual_write_func = xy_server.write_y
+            if hasattr(xy_server, "load_scan_y"):
+                scan_func = xy_server.load_scan_y
+            else:
+                manual_write_func = xy_server.write_y
 
         scan_vals = scan_func(
             sweep_x_center, sweep_y_center, scan_range, num_steps, period
@@ -406,11 +410,11 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         z_low = sweep_z_center - half_scan_range
         start_coords = [x_center, y_center, z_low]
         if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-            tool_belt.set_xyz_ramp(cxn, start_coords)
+            positioning.set_xyz_ramp(cxn, start_coords)
         else:
-            tool_belt.set_xyz(cxn, start_coords)
+            positioning.set_xyz(cxn, start_coords)
 
-        z_server = tool_belt.get_z_server(cxn)
+        z_server = positioning.get_server_pos_z(cxn)
 
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -600,7 +604,7 @@ def main_with_cxn(
                 # Help z out by ensuring we're centered in xy first
                 if None not in opti_coords:
                     int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-                    tool_belt.set_xyz(cxn, int_coords)
+                    positioning.set_xyz(cxn, int_coords)
                 axis_ind = 2
                 ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
 
@@ -660,7 +664,7 @@ def main_with_cxn(
 
     if opti_succeeded and set_drift:
         drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
-        tool_belt.set_drift(drift)
+        positioning.set_drift(cxn, drift)
 
     ### Set to the optimized coordinates, or just tell the user what they are
 
@@ -711,7 +715,7 @@ def main_with_cxn(
             "timestamp": timestamp,
             "time_elapsed": time_elapsed,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
             "opti_coords": opti_coords,
             "x_scan_vals": scan_vals_by_axis[0].tolist(),
             "y_scan_vals": scan_vals_by_axis[1].tolist(),
@@ -727,10 +731,11 @@ def main_with_cxn(
         }
 
         filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
-        tool_belt.save_raw_data(rawData, filePath)
-
         if fig is not None:
             tool_belt.save_figure(fig, filePath)
+                    
+        tool_belt.save_raw_data(rawData, filePath)
+
 
     # %% Return the optimized coordinates we found
 

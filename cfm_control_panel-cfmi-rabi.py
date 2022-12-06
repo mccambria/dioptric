@@ -21,7 +21,7 @@ import copy
 import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 import majorroutines.image_sample as image_sample
-import majorroutines.image_sample_xz as image_sample_xz
+# import majorroutines.image_sample_xz as image_sample_xz
 import chargeroutines.image_sample_charge_state_compare as image_sample_charge_state_compare
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
@@ -55,7 +55,7 @@ import chargeroutines.determine_charge_readout_params as determine_charge_readou
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 # import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
-from utils.tool_belt import NormStyle
+# from utils.tool_belt import NormStyle
 import time
 
 
@@ -110,20 +110,20 @@ def do_image_sample(nv_sig):
     return img_array, x_voltages, y_voltages
 
 
-def do_image_sample_xz(nv_sig):
+# def do_image_sample_xz(nv_sig):
 
-    scan_range_x = .1
-# z code range 3 to 7 if centered at 5
-    scan_range_z =0.2
-    num_steps = 60
+#     scan_range_x = .1
+# # z code range 3 to 7 if centered at 5
+#     scan_range_z =0.2
+#     num_steps = 60
 
-    image_sample_xz.main(
-        nv_sig,
-        scan_range_x,
-        scan_range_z,
-        num_steps,
-        um_scaled=False,
-    )
+#     image_sample_xz.main(
+#         nv_sig,
+#         scan_range_x,
+#         scan_range_z,
+#         num_steps,
+#         um_scaled=False,
+#     )
 
 
 def do_image_charge_states(nv_sig):
@@ -997,7 +997,7 @@ if __name__ == "__main__":
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "norm_style": NormStyle.single_valued,
+        # "norm_style": NormStyle.single_valued,
         "uwave_power_LOW": 20,  
         "uwave_power_HIGH": 3.5,
         
@@ -1027,7 +1027,7 @@ if __name__ == "__main__":
     nv_sig_1["coords"] = [-0.189, 0.079, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = 19
+    nv_sig_1["expected_count_rate"] = None#19
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7809
@@ -1084,7 +1084,7 @@ if __name__ == "__main__":
                     
         
         
-        # do_optimize(nv_sig)
+        do_optimize(nv_sig)
         #do_image_sample(nv_sig)
         #do_image_sample_xz(nv_sig)
         
@@ -1105,11 +1105,11 @@ if __name__ == "__main__":
         
         
         
-        dev = 3
-        uwave_time_range = [0, 6e3]
-        for dev in [1.5, 3, 6]:
-           do_rabi_srt(nv_sig,   States.LOW,  States.LOW, dev, uwave_time_range)
-           do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
+        # dev = 3
+        # uwave_time_range = [0, 6e3]
+        # for dev in [1.5, 3, 6]:
+        #    do_rabi_srt(nv_sig,   States.LOW,  States.LOW, dev, uwave_time_range)
+        #    do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
         
         # for d in [30]:
         #     nv_sig_copy = copy.deepcopy(nv_sig)
