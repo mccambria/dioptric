@@ -329,7 +329,14 @@ def get_guess_params(
         high_freq_guess = None
         low_contrast_guess = height
 
-    ### Fit functions
+    # low_freq_guess = 2.8620
+    #high_freq_guess = 2.8936
+    # high_freq_guess = None
+
+    if low_freq_guess is None:
+        return None, None
+
+    # %% Fit!
 
     if high_freq_guess is None:
         fit_func = single_dip
@@ -521,11 +528,24 @@ def main_with_cxn(
     start_timestamp = tool_belt.get_time_stamp()
 
     kpl.init_kplotlib()
+
+    counter_server = tool_belt.get_counter_server(cxn)
+    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+
     tool_belt.reset_cfm(cxn)
 
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
 
+
+    # check if running external iq_mod with SRS
+    iq_key = False
+    if 'uwave_iq_{}'.format(state.name) in nv_sig:
+        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
+    # Set up our data structure, an array of NaNs that we'll fill
+    # incrementally. NaNs are ignored by matplotlib, which is why they're
+    # useful for us here.
     norm_style = nv_sig["norm_style"]
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
@@ -618,11 +638,13 @@ def main_with_cxn(
         # own sequences)
         sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.uwave_on()
+        if iq_key:
+            sig_gen_cxn.load_iq()
+            # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            awg_cxn = tool_belt.get_awg_server(cxn)
-            awg_cxn.load_knill()
+            arbwavegen_server.load_knill()
+        sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 

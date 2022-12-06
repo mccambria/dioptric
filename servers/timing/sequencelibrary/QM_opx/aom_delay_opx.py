@@ -12,7 +12,6 @@ simple readout sequence for the opx in qua
 
 import numpy
 import utils.tool_belt as tool_belt
-from utils.tool_belt import Mod_types
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
@@ -26,12 +25,8 @@ def qua_program(opx, config, args, num_reps):
 
     apd_index, laser_name, laser_power = args[3:6]
     
-    laser_mod_type = config["Optics"][laser_name]["mod_type"]
-    if eval(laser_mod_type).name == 'ANALOG':
-        laser_amplitude = laser_power
-    if eval(laser_mod_type).name == 'DIGITAL':
-        laser_amplitude = 1
-    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)        
+    laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
+     
     apd_indices =  config['apd_indices']
     
     num_apds = len(apd_indices)

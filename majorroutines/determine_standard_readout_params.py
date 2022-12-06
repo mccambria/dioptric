@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Determine optimimum readout duration and power for standard spin state
-readout under green illumination. Works by comparing readout after 
-intialization into ms=0 vs ms=+/-1. 
+readout under green illumination. Works by comparing readout after
+intialization into ms=0 vs ms=+/-1.
 
 Created on July 13th, 2022
 
@@ -279,16 +279,15 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
 
 # region Main
 
-
-def main(nv_sig, num_reps, max_readouts, powers=None, filters=None, state=States.LOW):
+def main(nv_sig, num_reps,
+         max_readouts, powers=None, filters=None, state=States.LOW):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, num_reps, max_readouts, powers, filters, state)
+        main_with_cxn(cxn, nv_sig, num_reps,
+                      max_readouts, powers, filters, state)
 
-
-def main_with_cxn(
-    cxn, nv_sig, num_reps, max_readouts, powers=None, filters=None, state=States.LOW
-):
+def main_with_cxn(cxn, nv_sig, num_reps,
+              max_readouts, powers=None, filters=None, state=States.LOW):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
     Ie we'll test max_readout[i] and power[i]/filter[i] at the same time. For
@@ -316,8 +315,8 @@ def main_with_cxn(
         if filters is not None:
             adjusted_nv_sig["spin_laser_filter"] = filters[ind]
 
-        optimize_readout_duration(cxn, adjusted_nv_sig, num_reps, state)
-
+        optimize_readout_duration(cxn, adjusted_nv_sig,
+                                  num_reps, state)
 
 # endregion
 
