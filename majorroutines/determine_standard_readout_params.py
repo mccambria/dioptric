@@ -147,7 +147,7 @@ def plot_readout_duration_optimization(max_readout, num_reps,
 
 
 def optimize_readout_duration_sub(
-    cxn, nv_sig, apd_indices, num_reps, state=States.LOW
+    cxn, nv_sig, num_reps, state=States.LOW
 ):
     
     tool_belt.reset_cfm(cxn)
@@ -166,7 +166,6 @@ def optimize_readout_duration_sub(
         polarization_time,
         readout,
         pi_pulse_dur,
-        apd_indices[0],
         state.value,
         laser_name,
         laser_power,
@@ -198,7 +197,7 @@ def optimize_readout_duration_sub(
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
@@ -211,7 +210,7 @@ def optimize_readout_duration_sub(
         sig_gen_cxn.uwave_on()
         
         # Load the APD
-        tagger_server.start_tag_stream(apd_indices)
+        tagger_server.start_tag_stream()
         tagger_server.clear_buffer()
 
         # Run the sequence
@@ -248,15 +247,16 @@ def optimize_readout_duration_sub(
     return timetags, channels, opti_coords_list
     
 
-def optimize_readout_duration(cxn, nv_sig, apd_indices, num_reps, 
+def optimize_readout_duration(cxn, nv_sig, num_reps, 
                               state=States.LOW):
     
     max_readout = nv_sig["spin_readout_dur"]
 
     # Assume a common gate for both APDs
-    apd_gate_channel = tool_belt.get_apd_gate_channel(cxn, apd_indices[0])
+    # apd_indices = tool_belt.get_registry_entry(cxn, "apd_indices", ["Config"])
+    apd_gate_channel = tool_belt.get_apd_gate_channel(cxn)
     timetags, channels, opti_coords_list = optimize_readout_duration_sub(
-        cxn, nv_sig, apd_indices, num_reps, state
+        cxn, nv_sig, num_reps, state
     )
 
     # Process the raw tags
@@ -286,14 +286,14 @@ def optimize_readout_duration(cxn, nv_sig, apd_indices, num_reps,
 
 # region Main
 
-def main(nv_sig, apd_indices, num_reps, 
+def main(nv_sig, num_reps, 
          max_readouts, powers=None, filters=None, state=States.LOW):
     
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, num_reps, 
+        main_with_cxn(cxn, nv_sig, num_reps, 
                       max_readouts, powers, filters, state)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, 
+def main_with_cxn(cxn, nv_sig, num_reps, 
               max_readouts, powers=None, filters=None, state=States.LOW):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
@@ -324,7 +324,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps,
         if filters is not None:
             adjusted_nv_sig["spin_laser_filter"] = filters[ind]
             
-        optimize_readout_duration(cxn, adjusted_nv_sig, apd_indices, 
+        optimize_readout_duration(cxn, adjusted_nv_sig, 
                                   num_reps, state)
 
 # endregion

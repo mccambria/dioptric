@@ -1354,9 +1354,9 @@ def get_z_control_style():
     return z_control_style_return
 
 
-def get_apd_gate_channel(cxn, apd_index):
-    directory = ["", "Config", "Wiring", "Tagger", "Apd_{}".format(apd_index)]
-    return get_registry_entry(cxn, "di_gate", directory)
+def get_apd_gate_channel(cxn):
+    directory = ["", "Config", "Wiring", "Tagger"]
+    return get_registry_entry(cxn, "di_apd_gate", directory)
 
 
 def get_apd_indices(cxn):
@@ -1366,7 +1366,7 @@ def get_apd_indices(cxn):
         cxn,
         "apd_indices",
         [
-            "",
+            "Config",
         ],
     )
 

@@ -23,6 +23,7 @@ import labrad
 # %% Main
 
 
+              
 def main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
          num_steps, num_reps, num_runs,
          readout_state = States.HIGH,
@@ -71,7 +72,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     uwave_freq_high = nv_sig['resonance_{}'.format(state_high.name)]
     uwave_freq_low = nv_sig['resonance_{}'.format(state_low.name)]
     
-    # uwave_freq_high_detune = uwave_freq_high + deviation_high / 1e3
+    uwave_freq_high_detune = uwave_freq_high + deviation_high / 1e3
     #uwave_freq_low_detune = uwave_freq_low + deviation_low / 1e3
     
     uwave_power_high = nv_sig['uwave_power_{}'.format(state_high.name)]
@@ -81,6 +82,15 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
 
     pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_high)
     pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_low)
+
+
+    # check if running external iq_mod with low or high sig gen
+    iq_key_LOW = False
+    iq_key_HIGH = False
+    if 'uwave_iq_{}'.format(state_low.name) in nv_sig:
+        iq_key_LOW = nv_sig['uwave_iq_{}'.format(state_low.name)]
+    if 'uwave_iq_{}'.format(state_high.name) in nv_sig:
+        iq_key_HIGH = nv_sig['uwave_iq_{}'.format(state_high.name)]
 
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
@@ -116,7 +126,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
 
     seq_time_s = seq_time / (10 ** 9)  # to seconds
     expected_run_time_s = (
-        (num_steps / 2) * num_reps * num_runs * seq_time_s * 6 #taking slower than expected
+        (num_steps / 2) * num_reps * num_runs * seq_time_s# * 6 #taking slower than expected
     )  # s
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
@@ -182,6 +192,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         )
         low_sig_gen_cxn.set_freq(uwave_freq_low)
         low_sig_gen_cxn.set_amp(uwave_power_low)
+        # if iq_key_LOW:
+        #     low_sig_gen_cxn.load_iq()
         low_sig_gen_cxn.load_fm(abs(deviation_low))
         low_sig_gen_cxn.uwave_on()
 
@@ -189,9 +201,11 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
             cxn, States.HIGH
         )
         high_sig_gen_cxn.set_freq(uwave_freq_high)
-        # high_sig_gen_cxn.set_freq(uwave_freq_high_detune)
+        high_sig_gen_cxn.set_freq(uwave_freq_high_detune)
+        #if iq_key_HIGH:
+        high_sig_gen_cxn.load_iq()
         high_sig_gen_cxn.set_amp(uwave_power_high)
-        high_sig_gen_cxn.load_fm(abs(deviation_high))
+        # high_sig_gen_cxn.load_fm(abs(deviation_high))
         high_sig_gen_cxn.uwave_on()
         
 
@@ -352,7 +366,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
     ax.legend()
-    ax.set_title('Shift to LOW freq {:.2} MHz'.format((uwave_freq_low - 2.7813)*1e3 ))
+    # ax.set_title('Shift to LOW freq {:.2} MHz'.format((uwave_freq_low - 2.7813)*1e3 ))
 
     ax = axes_pack[1]
     ax.cla()
@@ -427,13 +441,13 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     return norm_avg_sig
 
 # %%
-def plot_pop_srt(taus, p_pop, z_pop, deviation, m_pop = []):
+def plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop = []):
     
     fig, ax = plt.subplots()
-    ax.plot(taus, p_pop, 'b-', label = '+1 population')
+    ax.plot(taus , m_pop, 'r-', label = '-1 population')
     ax.plot(taus, z_pop, 'g-', label = '0 population')
     if len(m_pop) != 0:
-        ax.plot(taus , m_pop, 'r-', label = '-1 population')
+        ax.plot(taus, p_pop, 'b-', label = '+1 population')
     ax.set_title('Rabi SRT, {} MHz detuning'.format(deviation))
     ax.set_xlabel('SRT length (us)')
     ax.set_ylabel('Population')
@@ -446,7 +460,7 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
          num_steps, num_reps, num_runs):
     
     contrast = 0.108*2
-    low_pop = 1-contrast
+    min_pop = 1-contrast
     
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
@@ -456,32 +470,33 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
     deviation_high = deviation
     deviation_low = deviation
     
-    init=States.HIGH
-    if True :
-        m_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
-            num_steps, num_reps, num_runs,
-            readout_state = States.LOW,
-            initial_state = init,
-            )
-        m_pop = (numpy.array(m_sig) - low_pop) / (1 - low_pop)
+    init=States.LOW
+    if False :
  
-    p_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
-             num_steps, num_reps, num_runs,
-             readout_state = States.HIGH,
-             initial_state = init,
-             )
-    p_pop = (numpy.array(p_sig) - low_pop) / (1 - low_pop)
+        p_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
+                 num_steps, num_reps, num_runs,
+                 readout_state = States.HIGH,
+                 initial_state = init,
+                 )
+        p_pop = (numpy.array(p_sig) - low_pop) / (1 - min_pop)
+        
+    m_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
+        num_steps, num_reps, num_runs,
+        readout_state = States.LOW,
+        initial_state = init,
+        )
+    m_pop = (numpy.array(m_sig) - low_pop) / (1 - min_pop)
     
     z_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
             )
-    z_pop = (numpy.array(z_sig) - low_pop) / (1 - low_pop)
+    z_pop = (numpy.array(z_sig) - low_pop) / (1 - min_pop)
     
 
     
-    fig = plot_pop_srt(taus, p_pop, z_pop, deviation, m_pop)
+    fig = plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop)
 
     
     timestamp = tool_belt.get_time_stamp()

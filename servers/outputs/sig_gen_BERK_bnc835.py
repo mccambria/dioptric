@@ -194,10 +194,10 @@ class SigGenBerkBnc835(LabradServer):
     def reset(self, c):
         self.uwave_off(c)
         # turn off FM modulation
-        #self.sig_gen.write("FM:STAT OFF")
+        self.sig_gen.write("FM:STAT OFF")
         # Default to a continuous wave at 2.87 GHz and 0.0 dBm
-        self.set_freq(c, 2.87)
-        self.set_amp(c, 0.0)
+        # self.set_freq(c, 2.87)
+        # self.set_amp(c, 0.0)
 
 
 __server__ = SigGenBerkBnc835()

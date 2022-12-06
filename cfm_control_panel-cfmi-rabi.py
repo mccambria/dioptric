@@ -329,11 +329,10 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
     deviation_high = dev
     deviation_low = dev
     
-    # deviation = 0
     
-    num_steps = 31
+    num_steps = 61
     num_reps = int(1e4)
-    num_runs = 10
+    num_runs = 30
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -714,13 +713,13 @@ def do_relaxation(nv_sig ):
             scc_readout=False,
         )
 
-def do_determine_standard_readout_params(nv_sig, apd_indices):
+def do_determine_standard_readout_params(nv_sig):
     
     num_reps = 5e5
     max_readouts = [1e3]
     state = States.HIGH
     
-    determine_standard_readout_params.main(nv_sig, apd_indices, num_reps, 
+    determine_standard_readout_params.main(nv_sig, num_reps, 
                                            max_readouts, state=state)
     
 def do_determine_charge_readout_params(nv_sig, apd_indices):
@@ -1028,15 +1027,15 @@ if __name__ == "__main__":
     nv_sig_1["coords"] = [-0.189, 0.079, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = 18
+    nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 68
     nv_sig_1["resonance_LOW"]= 2.7809
     nv_sig_1["rabi_LOW"]=2249.5
     nv_sig_1["uwave_iq_LOW"]= False 
     nv_sig_1["resonance_HIGH"]=2.9597
-    nv_sig_1["rabi_HIGH"]=2329.0
-    nv_sig_1["uwave_iq_HIGH"]= False  
+    nv_sig_1["rabi_HIGH"]= 2329.0
+    nv_sig_1["uwave_iq_HIGH"]= True  
     
     
     
@@ -1085,7 +1084,7 @@ if __name__ == "__main__":
                     
         
         
-        #do_optimize(nv_sig)
+        # do_optimize(nv_sig)
         #do_image_sample(nv_sig)
         #do_image_sample_xz(nv_sig)
         
@@ -1102,12 +1101,16 @@ if __name__ == "__main__":
        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2000])
-        do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 400])
         
         
         
-            
-        #do_rabi_srt(nv_sig,   States.HIGH, States.ZERO)
+        dev = 3
+        uwave_time_range = [0, 6e3]
+        for dev in [1.5, 3, 6]:
+           do_rabi_srt(nv_sig,   States.LOW,  States.LOW, dev, uwave_time_range)
+           do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
+        
         # for d in [30]:
         #     nv_sig_copy = copy.deepcopy(nv_sig)
         #     nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
@@ -1149,7 +1152,7 @@ if __name__ == "__main__":
         
         ################## 
         
-        # do_determine_standard_readout_params(nv_sig, apd_indices)
+        # do_determine_standard_readout_params(nv_sig)
         # do_determine_charge_readout_params(nv_sig, apd_indices)
 
 
