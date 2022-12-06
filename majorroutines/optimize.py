@@ -174,8 +174,8 @@ def read_timed_counts(cxn, num_steps, period):
 
 def read_manual_counts(cxn, period, axis_write_func, scan_vals):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     counter_server.start_tag_stream()
 
     counts = []
@@ -421,14 +421,15 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
 
+        manual_write_func = z_server.write_z
+
         if hasattr(z_server, "load_scan_z"):
             scan_vals = z_server.load_scan_z(
                 sweep_z_center, scan_range, num_steps, period
             )
             auto_scan = True
-        else:
-            manual_write_func = z_server.write_z
 
+        else:
             scan_vals = tool_belt.get_scan_vals(
                 sweep_z_center, scan_range, num_steps, scan_dtype
             )
@@ -532,6 +533,8 @@ def main_with_cxn(
         num_attempts = 20
     elif xy_control_style == ControlStyle.STEP:
         num_attempts = 4
+    # print(xy_control_style)
+    # print(num_attempts)
 
     for ind in range(num_attempts):
 
@@ -733,9 +736,7 @@ def main_with_cxn(
         filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
         if fig is not None:
             tool_belt.save_figure(fig, filePath)
-                    
         tool_belt.save_raw_data(rawData, filePath)
-
 
     # %% Return the optimized coordinates we found
 

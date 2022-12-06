@@ -37,6 +37,7 @@ import majorroutines.optimize as optimize
 def measure_delay(
     cxn,
     nv_sig,
+    apd_indices,
     delay_range,
     num_steps,
     num_reps,
@@ -46,10 +47,6 @@ def measure_delay(
     laser_power=None,
 ):
 
-    
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    
     taus = numpy.linspace(delay_range[0], delay_range[1], num_steps)
     max_tau = delay_range[1]
     tau_ind_list = list(range(num_steps))
@@ -59,21 +56,26 @@ def measure_delay(
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
 
     tool_belt.reset_cfm(cxn)
 
     if 'charge_readout_laser_filter' in nv_sig:
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
-
-
-    # tool_belt.init_safe_stop()
-
+        
+    tool_belt.init_safe_stop()
+    
     n= 0
     for tau_ind in tau_ind_list:
+        
+        if tool_belt.safe_stop():
+            break
+        
         st = time.time()
-        # optimize.main_with_cxn(cxn, nv_sig)
-        optimize.main_with_cxn(cxn, nv_sig)
+        # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         # Turn on the microwaves for determining microwave delay
         sig_gen = None
         if seq_file == "uwave_delay.py":
@@ -81,15 +83,8 @@ def measure_delay(
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
             sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
-            
-            # check if running external iq_mod with SRS
-            iq_key = False
-            if 'uwave_iq_{}'.format(state.name) in nv_sig:
-                iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
-            if iq_key:
-                sig_gen_cxn.load_iq()
 
-            # sig_gen_cxn.load_fm(10)
+            sig_gen_cxn.load_fm(10)
 
             sig_gen_cxn.uwave_on()
 
@@ -105,7 +100,7 @@ def measure_delay(
             cxn.arbitrary_waveform_generator.load_arb_phases([0, numpy.pi/2])
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
 
-        counter_server.start_tag_stream()
+        counter_server.start_tag_stream(apd_indices)
         ###########
 
         # Break out of the while if the user says stop
@@ -123,6 +118,7 @@ def measure_delay(
                 tau,
                 max_tau,
                 readout,
+                apd_indices[0],
                 laser_name,
                 laser_power,
             ]
@@ -140,6 +136,7 @@ def measure_delay(
                 pi_pulse,
                 polarization,
                 state.value,
+                apd_indices[0],
                 laser_name,
                 laser_power,
             ]
@@ -157,6 +154,7 @@ def measure_delay(
         #         pi_pulse,
         #         polarization,
         #         state.value,
+        #         apd_indices[0],
         #         laser_name,
         #         laser_power,
         #     ]
@@ -176,7 +174,7 @@ def measure_delay(
         # complete_counts = counter_server.read_counter_complete()
 
         # new_counts = counter_server.read_counter_separate_gates(1)
-        new_counts = counter_server.read_counter_modulo_gates(2, 1)
+        new_counts = counter_server.read_counter_modulo_gates(2)
 
         # print('here2')
         sample_counts = new_counts[0]
@@ -186,7 +184,7 @@ def measure_delay(
         ref_counts[tau_ind] = sample_counts[0] # sum(sample_counts[0::2])
         sig_counts[tau_ind] = sample_counts[1] # sum(sample_counts[1::2])
 
-        # print('run time:',time.time()-st)
+        print('run time:',time.time()-st)
 
     counter_server.stop_tag_stream()
 
@@ -249,6 +247,7 @@ def measure_delay(
 def aom_delay(
     cxn,
     nv_sig,
+    apd_indices,
     delay_range,
     num_steps,
     num_reps,
@@ -281,6 +280,7 @@ def aom_delay(
     measure_delay(
         cxn,
         nv_sig,
+        apd_indices,
         delay_range,
         num_steps,
         num_reps,
@@ -291,7 +291,7 @@ def aom_delay(
 
 
 def uwave_delay(
-    cxn, nv_sig, state, delay_range, num_steps, num_reps
+    cxn, nv_sig, apd_indices, state, delay_range, num_steps, num_reps
 ):
 
     """
@@ -316,6 +316,7 @@ def uwave_delay(
     measure_delay(
         cxn,
         nv_sig,
+        apd_indices,
         delay_range,
         num_steps,
         num_reps,
@@ -324,7 +325,7 @@ def uwave_delay(
     )
 
 def iq_delay(
-    cxn, nv_sig,  state, delay_range, num_steps, num_reps
+    cxn, nv_sig, apd_indices, state, delay_range, num_steps, num_reps
 ):
 
     """
@@ -363,6 +364,7 @@ def iq_delay(
     measure_delay(
         cxn,
         nv_sig,
+        apd_indices,
         delay_range,
         num_steps,
         num_reps,
@@ -383,6 +385,7 @@ if __name__ == "__main__":
     
     # Rabi parameters
     
+    apd_indices = [1]
     sample_name = 'siena'
     green_power = 1
     nd_green = 'ND_1.1'
@@ -392,18 +395,18 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.189, 0.079, 4.05],
+            "coords":[-0.222, 0.027, 3.83],
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":19,
+        "expected_count_rate":21,
 
 
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
           "spin_readout_dur": 350,
-          "spin_pol_dur": 10000.0,
+          "spin_pol_dur": 1000.0,
 
           "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
@@ -417,17 +420,18 @@ if __name__ == "__main__":
 
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 68,
-        "resonance_LOW":2.7809,
-        "rabi_LOW":2249.5,
-        "uwave_power_LOW": 20,
-        "resonance_HIGH":2.9597,
-        "rabi_HIGH":2329.0,
-        "uwave_power_HIGH": 3.5,
-        "uwave_iq_HIGH": True,
+        "resonance_LOW":2.7813-0.01,
+        "rabi_LOW":129.5,
+        "uwave_power_LOW": 13.5,
+        "resonance_HIGH":2.9591-0.01,
+        "rabi_HIGH":129.5,
+        "uwave_power_HIGH": 16.5,
     }
 
+    apd_indices = [1]
 
     # Hahn parameters
+    # apd_indices = [1]
     # sample_name = 'johnson'
     # green_laser = "integrated_520"
     # yellow_laser = "laserglow_589"
@@ -479,21 +483,22 @@ if __name__ == "__main__":
     # laser_power = 0.6
     # delay_range = [0,1e3]
     # with labrad.connect() as cxn:
-    #     aom_delay(cxn, nv_sig, 
+    #     aom_delay(cxn, nv_sig, apd_indices,
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(2e5)
-    delay_range = [-700, 700]
-    num_steps = 151
+    num_reps = int(1e5)
+    delay_range = [-300, 200]
+    num_steps = 251
     # bnc 835
     # state = States.LOW
     #  sg394
-    state = States.HIGH
+    # state = States.HIGH
     with labrad.connect() as cxn:
         # iq_delay(
         #     cxn,
         #     nv_sig,
+        #     apd_indices,
         #     state,
         #     delay_range,
         #     num_steps,
@@ -502,6 +507,7 @@ if __name__ == "__main__":
         # uwave_delay(
         #     cxn,
         #     nv_sig,
+        #     apd_indices,
         #     States.HIGH,
         #     delay_range,
         #     num_steps,
@@ -510,14 +516,18 @@ if __name__ == "__main__":
         uwave_delay(
             cxn,
             nv_sig,
-            state,
+            apd_indices,
+            States.LOW,
             delay_range,
             num_steps,
             num_reps,
+            green_laser,
+            1,
         )
         # fm_delay(
         #     cxn,
         #     nv_sig,
+        #     apd_indices,
         #     state,
         #     delay_range,
         #     num_steps,

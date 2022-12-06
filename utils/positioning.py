@@ -211,6 +211,7 @@ def get_drift(cxn):
 
 
 def set_drift(cxn, drift):
+    cxn.registry.cd(["", "State"])
     return cxn.registry.set("DRIFT", drift)
 
 
