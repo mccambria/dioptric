@@ -116,14 +116,15 @@ def refit_experiments():
     ### User setup
     # Also see below section Sample-dependent fit...
 
-    do_plot = False  # Generate raw data and fit plots?
-    do_save = False  # Save the plots?
+    do_plot = True  # Generate raw data and fit plots?
+    do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     data_points = get_data_points()
     # sample = "Wu"
     sample = "15micro"
     file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
+    file_list = ["2022_12_06-01_01_28-15micro-nv1_zfs_vs_t"]
 
     ### Loop
 
@@ -197,17 +198,17 @@ def refit_experiments():
             )
             guess_params = [
                 0.015,
-                7,
-                freq_center - 0.005,
+                8,
+                freq_center - 0.0065,
                 0.015,
-                7,
-                freq_center + 0.005,
+                8,
+                freq_center + 0.0065,
             ]
 
         ### Raw data figure
 
         if do_plot:
-            fit_fig, fit_func, popt, pcov = pesr.create_fit_figure(
+            fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
                 freq_center,
                 freq_range,
                 num_steps,
@@ -885,9 +886,9 @@ if __name__ == "__main__":
 
     # calc_zfs_from_compiled_data()
 
-    # kpl.init_kplotlib()
+    kpl.init_kplotlib()
 
     # main()
     refit_experiments()
 
-    # plt.show(block=True)
+    plt.show(block=True)
