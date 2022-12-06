@@ -386,17 +386,28 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         if axis_ind == 0:
             if hasattr(xy_server, "load_scan_x"):
                 scan_func = xy_server.load_scan_x
+                scan_vals = scan_func(
+                    sweep_x_center, sweep_y_center, scan_range, num_steps, period
+                )
             else:
                 manual_write_func = xy_server.write_x
+                scan_vals = tool_belt.get_scan_vals(
+                    sweep_x_center, scan_range, num_steps, scan_dtype
+                )
+                auto_scan = False
+                
         elif axis_ind == 1:
             if hasattr(xy_server, "load_scan_y"):
                 scan_func = xy_server.load_scan_y
+                scan_vals = scan_func(
+                    sweep_x_center, sweep_y_center, scan_range, num_steps, period
+                )
             else:
                 manual_write_func = xy_server.write_y
-
-        scan_vals = scan_func(
-            sweep_x_center, sweep_y_center, scan_range, num_steps, period
-        )
+                scan_vals = tool_belt.get_scan_vals(
+                    sweep_y_center, scan_range, num_steps, scan_dtype
+                )
+                auto_scan = False
 
     # z
     elif axis_ind == 2:
@@ -421,7 +432,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
 
-        manual_write_func = z_server.write_z
 
         if hasattr(z_server, "load_scan_z"):
             scan_vals = z_server.load_scan_z(
@@ -434,6 +444,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
                 sweep_z_center, scan_range, num_steps, scan_dtype
             )
             auto_scan = False
+            manual_write_func = z_server.write_z
+            
     if z_control_style == ControlStyle.STEP:
         auto_scan = False
     elif z_control_style == ControlStyle.STREAM:
