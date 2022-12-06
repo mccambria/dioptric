@@ -360,7 +360,7 @@ if __name__ == "__main__":
     
     sample_name = "15micro"
     z_coord = 0
-    ref_coords = [0.730, -0.824, z_coord]
+    ref_coords = [0.639, -0.84, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -448,7 +448,7 @@ if __name__ == "__main__":
 
         # nv_sig = nvref 
         # nv_sig['imaging_readout_dur'] = 4e7
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_optimize(nv_sig)
         # nv_sig['imaging_readout_dur'] = 1e8
@@ -460,8 +460,8 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        # temp = 15
-        # do_pulsed_resonance_batch(nv_list, temp)
+        temp = 15
+        do_pulsed_resonance_batch(nv_list, temp)
         # do_rabi_batch(nv_list)
 
     except Exception as exc:

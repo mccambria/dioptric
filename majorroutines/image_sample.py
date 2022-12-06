@@ -535,7 +535,6 @@ def main_with_cxn(
     rawData = {
         'timestamp': timestamp,
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
                 "x_center": x_center,
                 "y_center": y_center,
                 "z_center": z_center,
