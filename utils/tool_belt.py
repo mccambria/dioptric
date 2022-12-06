@@ -685,26 +685,6 @@ def get_time_stamp():
     return timestamp
 
 
-def get_folder_dir(source_name, subfolder):
-
-    source_name = os.path.basename(source_name)
-    source_name = os.path.splitext(source_name)[0]
-
-    branch_name = get_branch_name()
-    pc_name = socket.gethostname()
-
-    nvdata_dir = common.get_nvdata_dir()
-    folder_dir = nvdata_dir / f"pc_{pc_name}" / f"branch_{branch_name}" / source_name
-
-    if subfolder is not None:
-        folder_dir = folder_dir / subfolder
-
-    # Make the required directories if it doesn't exist already
-    folder_dir.mkdir(parents=True, exist_ok=True)
-
-    return folder_dir
-
-
 def get_files_in_folder(folderDir, filetype=None):
     """
     folderDir: str
@@ -724,13 +704,13 @@ def get_files_in_folder(folderDir, filetype=None):
     return file_list
 
 
-def get_file_path(source_name, time_stamp, name, subfolder=None):
+def get_file_path(source_file, time_stamp, name, subfolder=None):
     """Get the file path to save to. This will be in a subdirectory of nvdata.
 
     Params:
-        source_name: string
-            Source file name - alternatively, __file__ of the caller which will
-            be parsed to get the name of the subdirectory we will write to
+        source_file: string
+            Source __file__ of the caller which will be parsed to get the 
+            name of the subdirectory we will write to
         time_stamp: string
             Formatted timestamp to include in the file name
         name: string
@@ -740,20 +720,21 @@ def get_file_path(source_name, time_stamp, name, subfolder=None):
             Subfolder to save to under file name
     """
 
-    # Set up the file name
-    file_name = "{}-{}".format(time_stamp, name)
+    nvdata_dir = common.get_nvdata_dir()
+    pc_name = socket.gethostname()
+    branch_name = get_branch_name()
+    source_name = Path(source_file).stem
+    date_folder = "_".join(time_stamp.split("_")[0:2])  # yyyy_mm
 
-    # locate the subfolder that matches the month and year when the data is taken
-    date_folder_name = "_".join(time_stamp.split("_")[0:2])
+    folder_dir = nvdata_dir / f"pc_{pc_name}" / f"branch_{branch_name}" / source_name / date_folder
 
-    # Create the subfolder combined name, if needed
-    subfolder_name = None
-    if (subfolder != None) and (date_folder_name != None):
-        subfolder_name = str(date_folder_name + "/" + subfolder)
-    elif (subfolder == None) and (date_folder_name != None):
-        subfolder_name = date_folder_name
+    if subfolder is not None:
+        folder_dir = folder_dir / subfolder
 
-    folder_dir = get_folder_dir(source_name, subfolder_name)
+    # Make the required directories if it doesn't exist already
+    folder_dir.mkdir(parents=True, exist_ok=True)
+    
+    file_name = f"{time_stamp}-{name}"
 
     return folder_dir / file_name
 

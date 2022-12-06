@@ -775,7 +775,7 @@ def main_with_cxn(
     nv_name = nv_sig["name"]
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
-    data_file_name = file_path.stem()
+    data_file_name = file_path.stem
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(data, file_path)
 
