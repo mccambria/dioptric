@@ -23,7 +23,7 @@ def qua_program(opx, config, args, num_reps):
     durations = [numpy.int64(el) for el in durations]
     tau, max_tau, readout_time = durations
 
-    apd_index, laser_name, laser_power = args[3:6]
+    laser_name, laser_power = args[3:5]
     
     laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
      
