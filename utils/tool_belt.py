@@ -591,9 +591,9 @@ def get_server_pulse_gen(cxn):
     return common.get_server(cxn, "pulse_gen")
 
 
-def get_server_awg(cxn):
+def get_server_arb_wave_gen(cxn):
     """Get the arbitrary waveform generator server for this setup, e.g. opx or keysight"""
-    return common.get_server(cxn, "awg")
+    return common.get_server(cxn, "arb_wave_gen")
 
 
 def get_server_counter(cxn):

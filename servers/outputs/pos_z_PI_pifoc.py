@@ -268,24 +268,16 @@ class PosZPiPifoc(LabradServer):
 
     @setting(
         23,
-        center="v[]",
-        scan_range="v[]",
-        num_steps="i",
-        period="i",
-        returns="*v[]",
+        coords_z="*v[]"
     )
-    def load_scan_z(self, c, center, scan_range, num_steps, period):
+    def load_stream_z(self, c, coords_z):
         """Load a linear sweep with the DAQ"""
-
-        half_scan_range = scan_range / 2
-        low = center - half_scan_range
-        high = center + half_scan_range
-        voltages = numpy.linspace(low, high, num_steps)
+        
+        period = 1e6
         self.load_stream_writer_z(
-            c, "ObjectivePiezo-load_scan_z", voltages, period
+            c, "ObjectivePiezo-load_scan_z", coords_z, period
         )
-        return voltages
-
+        
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     @setting(24, z_voltages="*v[]", period="i", returns="*v[]")
     def load_arb_scan_z(self, c, z_voltages, period):

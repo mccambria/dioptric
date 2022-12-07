@@ -64,7 +64,7 @@ def main_with_cxn(
 
     # Initialize the state
     now = time.time()
-    temp_monitor = tool_belt.get_temp_monitor(cxn)
+    temp_monitor = tool_belt.get_server_temp_monitor(cxn)
     actual = temp_monitor.measure(channel)
 
     cycle_dur = 0.1
@@ -76,13 +76,11 @@ def main_with_cxn(
     plot_log_period = 2  # Plot and log every plot_period seconds
     last_plot_log_time = now
     if do_plot:
-        plt.ion()
+        kpl.init_kplotlib()
         fig, ax = plt.subplots()
-        # fig = plt.figure()
-        # ax = fig.add_axes([0, 0, 1, 1])
         plot_times = [0]
         plot_temps = [actual]
-        ax.plot(plot_times, plot_temps)
+        kpl.plot_line(ax, plot_times, plot_temps)
         history = 600
         max_plot_vals = history / plot_log_period
         plot_x_extent = int(1.1 * max_plot_vals * plot_log_period)
@@ -90,11 +88,8 @@ def main_with_cxn(
         ax.set_ylim(actual - 2, actual + 2)
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Temp (K)")
-        cur_temp_str = "Current temp: {} K".format(actual)
-        cur_temp_text_box = fig.text(0.15, 0.90, cur_temp_str)
-        fig.tight_layout()
-        # fig.canvas.draw()
-        # fig.canvas.flush_events()
+        cur_temp_str = f"Current temp: {actual} K"
+        cur_temp_text_box = kpl.anchored_text(ax, cur_temp_str, kpl.Loc.UPPER_LEFT)
 
     # Break out of the while if the user says stop
     tool_belt.init_safe_stop()
@@ -117,25 +112,21 @@ def main_with_cxn(
                 plot_times.append(elapsed_time)
                 plot_temps.append(actual)
 
-                lines = ax.get_lines()
-                line = lines[0]
-                line.set_xdata(plot_times)
-                line.set_ydata(plot_temps)
+
+                kpl.plot_line_update(ax, x=plot_times, y=plot_temps)
 
                 # Relim as necessary
                 if len(plot_times) > max_plot_vals:
                     plot_times.pop(0)
                     plot_temps.pop(0)
-                    min_plot_time = min(plot_times)
-                    ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
+                min_plot_time = min(plot_times)
+                ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
                 ax.set_ylim(min(plot_temps) - 2, max(plot_temps) + 2)
 
-                cur_temp_str = "Current temp: {} K".format(actual)
-                cur_temp_text_box.set_text(cur_temp_str)
+                cur_temp_str = f"Current temp: {actual} K"
+                cur_temp_text_box.txt.set_text(cur_temp_str)
 
-                # Redraw the plot with the new data
-                fig.canvas.draw()
-                fig.canvas.flush_events()
+                kpl.flush_update(ax)
 
                 # Notify the user once the temp is stable (ptp < email_stability over current plot history)
                 temp_check = (

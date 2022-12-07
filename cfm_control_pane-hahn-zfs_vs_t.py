@@ -210,8 +210,8 @@ def do_pulsed_resonance_batch(nv_list, temp):
     # num_reps = 2e4
     # num_runs = 32
     
-    # num_reps = 1e2
-    num_reps = 50
+    num_reps = 1e2
+    # num_reps = 50
     num_runs = 32
     # num_runs = 8
 
