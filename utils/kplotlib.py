@@ -339,7 +339,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def plot_line_update(ax, line_ind=0, x=None, y=None, relim=True, flush=True):
+def plot_line_update(ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True, flush=True):
     """Updates a figure created by plot_line. x and y are the new data to write.
     Either may be None in which case that axis of the plot won't be updated.
     Set flush to False if you want to make more changes and call flush_update
@@ -354,9 +354,9 @@ def plot_line_update(ax, line_ind=0, x=None, y=None, relim=True, flush=True):
     if y is not None:
         line.set_ydata(y)
 
-    if relim:
+    if relim_x or relim_y:
         ax.relim()
-        ax.autoscale_view()
+        ax.autoscale_view(scalex=relim_x, scaley=relim_y)
 
     if flush:
         flush_update(ax)

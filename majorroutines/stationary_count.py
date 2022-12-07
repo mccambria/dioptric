@@ -80,6 +80,7 @@ def main_with_cxn(
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
+    run_time_s = run_time * 1e-9
 
     # Figure setup
     samples = numpy.empty(total_num_samples)
@@ -90,6 +91,7 @@ def main_with_cxn(
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     kpl.plot_line(ax, x_vals, samples)
+    ax.set_xlim(-0.05*run_time_s, 1.05*run_time_s)
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Count rate (kcps)")
     plt.get_current_fig_manager().window.showMaximized()  # Maximize the window
@@ -145,8 +147,8 @@ def main_with_cxn(
 
             # Update the figure in k counts per sec
             samples_kcps = samples / (10**3 * readout_sec)
-            kpl.plot_line_update(ax, x =x_vals, y =samples_kcps)
-            # kpl.plot_line_update(ax, samples_kcps)
+            kpl.plot_line_update(ax, x =x_vals, y =samples_kcps, relim_x=False)
+            
 
     ### Clean up and report average and standard deviation
 
