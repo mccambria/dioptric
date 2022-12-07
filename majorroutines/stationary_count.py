@@ -145,7 +145,8 @@ def main_with_cxn(
 
             # Update the figure in k counts per sec
             samples_kcps = samples / (10**3 * readout_sec)
-            kpl.plot_line_update(ax, samples_kcps)
+            kpl.plot_line_update(ax, x =x_vals, y =samples_kcps)
+            # kpl.plot_line_update(ax, samples_kcps)
 
     ### Clean up and report average and standard deviation
 
