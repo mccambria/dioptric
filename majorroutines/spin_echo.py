@@ -495,8 +495,8 @@ def main_with_cxn(
 ):
 
     
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     
     tool_belt.reset_cfm(cxn)
 
@@ -633,7 +633,7 @@ def main_with_cxn(
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
@@ -768,7 +768,7 @@ def main_with_cxn(
         raw_data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -843,7 +843,7 @@ def main_with_cxn(
         "timestamp": timestamp,
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,

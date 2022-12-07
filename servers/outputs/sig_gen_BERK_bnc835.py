@@ -161,7 +161,7 @@ class SigGenBerkBnc835(LabradServer):
         '''
         deviation_Hz = deviation * 1e6
         # set the deviation
-        self.sig_gen.write("FM:DEV {}".format(deviation_Hz))
+        # self.sig_gen.write("FM:DEV {}".format(deviation_Hz)) #I guess I don't actually need this...
         # set the sensitivity for the modulation to the full deviation / V, so we apply 1 V to change the freq
         self.sig_gen.write("FM:SENS {}".format(deviation_Hz))
         # set the BNC to get trigger externally

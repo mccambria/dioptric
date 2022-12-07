@@ -839,7 +839,7 @@ if __name__ == "__main__":
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
