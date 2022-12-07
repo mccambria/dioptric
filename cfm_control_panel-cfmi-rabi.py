@@ -247,10 +247,11 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
 
     # Zoom
     freq_range = 0.12
-    # freq_range = 0.020
-    num_steps = 51
+    num_steps = 75
+    # freq_range = 0.010
+    # num_steps = 101
     num_reps = int(1e4)
-    num_runs =  3
+    num_runs =  3#40
 
     composite = False
 
@@ -309,8 +310,10 @@ def do_rabi(nv_sig, opti_nv_sig, state,
             uwave_time_range=[0, 200]):
 
     num_steps =51
-    num_reps = int(2e4)    
-    num_runs = 5
+    # num_reps = int(2e4)    
+    # num_runs = 2
+    num_reps = int(1e4)
+    num_runs =  3#40
 
     rabi.main(
         nv_sig,
@@ -330,9 +333,9 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
     deviation_low = dev
     
     
-    num_steps = 61
+    num_steps = 11#61
     num_reps = int(1e4)
-    num_runs = 30
+    num_runs = 3
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -390,7 +393,7 @@ def do_lifetime(nv_sig):
 
 
 
-def do_ramsey(nv_sig, opti_nv_sig,  detuning, state = States.LOW):
+def do_ramsey(nv_sig, opti_nv_sig,  detuning, state = States.HIGH):
 
     # detuning = 0 # MHz
     
@@ -649,15 +652,15 @@ def do_relaxation(nv_sig ):
     min_tau = 0
     max_tau_omega = 200#10e6# 20e6
     max_tau_gamma = 10e3
-    num_steps_omega = 21
+    num_steps_omega = 11#2#1
     num_steps_gamma = 21
-    num_reps = 2e3
-    num_runs = 2#0#0
+    num_reps = 1e4
+    num_runs = 3#0#0
     
     if True:
      t1_exp_array = numpy.array(
         [[
-                [States.HIGH , States.ZERO],
+                [States.LOW , States.ZERO],
                         #[States.ZERO, States.ZERO],
                 [min_tau, max_tau_omega],
                 num_steps_omega,
@@ -999,7 +1002,7 @@ if __name__ == "__main__":
         "collection_filter": "715_sp+630_lp", # NV band only
         "norm_style": NormStyle.SINGLE_VALUED,
         "uwave_power_LOW": 20,  
-        "uwave_power_HIGH": 10,#3.5,
+        "uwave_power_HIGH": 3.5,
         
         "uwave_mod_freq_LOW": 2.189288,
         "uwave_mod_amp_LOW": 140,
@@ -1030,12 +1033,12 @@ if __name__ == "__main__":
     nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 151.7
-    nv_sig_1["resonance_LOW"]= 2.7816#2.7809
-    nv_sig_1["rabi_LOW"]=2249.5
+    nv_sig_1["resonance_LOW"]= 2.78059
+    nv_sig_1["rabi_LOW"]=2193.4
     nv_sig_1["uwave_iq_LOW"]= False 
-    nv_sig_1["resonance_HIGH"]=2.9573#2.9597
-    nv_sig_1["rabi_HIGH"]= 160#2329.0
-    nv_sig_1["uwave_iq_HIGH"]= False  
+    nv_sig_1["resonance_HIGH"]=2.9600
+    nv_sig_1["rabi_HIGH"]= 2404.3
+    nv_sig_1["uwave_iq_HIGH"]= True  
     
     
     
@@ -1097,34 +1100,35 @@ if __name__ == "__main__":
         # do_optimize_magnet_angle(nv_sig)
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
-        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2000])
-        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 400])
+        #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        #do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2000])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 2000])
         
         
         
         # dev = 3
-        # uwave_time_range = [0, 6e3]
+        # uwave_time_range = [0, 6e2]
         # for dev in [1.5, 3, 6]:
-        #    do_rabi_srt(nv_sig,   States.LOW,  States.LOW, dev, uwave_time_range)
+        # do_rabi_srt(nv_sig,   States.LOW,  States.LOW, 0, uwave_time_range)
         #    do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
         
-        # for d in [30]:
-        #     nv_sig_copy = copy.deepcopy(nv_sig)
-        #     nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
-            # do_rabi_srt(nv_sig_copy,   States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
+        for d in [3]:
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
+            do_rabi_srt(nv_sig_copy,   States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
+            do_rabi_srt(nv_sig_copy,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 200])
         # for d in [0, 8, 16, 24]:
         # do_rabi_srt_pop(nv_sig,  24, 31, uwave_time_range=[0, 2000])
         # do_rabi_srt_pop(nv_sig,  30, 41, uwave_time_range=[0, 2500])
         
-        # for d in [0.1]:
-        #   do_ramsey(nv_sig, nv_sig, d)
+        # for d in [0]:
+        #    do_ramsey(nv_sig, nv_sig, d)
         #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         
         # do_spin_echo(nv_sig)
 
-        #do_relaxation(nv_sig)  # gamma and omega
+        # do_relaxation(nv_sig)  # gamma and omega
                 
         # num_xy4_reps = 1
         # step_size = 100 #us

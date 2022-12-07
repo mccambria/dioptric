@@ -748,6 +748,11 @@ def utc_from_file_name(file_name, time_zone="CST"):
     timestamp = date_time.timestamp()
     return timestamp
 
+def get_nv_sig_units_no_cxn():
+    with labrad.connect() as cxn:
+        nv_sig_units =get_nv_sig_units(cxn)
+    return nv_sig_units
+
 def get_nv_sig_units(cxn):
     try:
         nv_sig_units = common.get_registry_entry(cxn, "nv_sig_units", "Config")

@@ -329,6 +329,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             # Clear the tagger buffer of any excess counts
 
             # start_time = time.time()
+            counter_server.clear_buffer()
             pulsegen_server.stream_immediate(file_name, num_reps,
                                               seq_args_string)
             new_counts = counter_server.read_counter_modulo_gates(2, 1)
@@ -336,7 +337,6 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             sig_counts[run_ind, tau_ind] = sample_counts[0]
             ref_counts[run_ind, tau_ind] = sample_counts[1]
             
-            counter_server.clear_buffer()
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time

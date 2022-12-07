@@ -25,6 +25,7 @@ Created on December 16, 2021
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import utils.common as common
 import majorroutines.optimize as optimize
 import numpy
@@ -259,7 +260,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
             "init_state": init_state_name,
             "read_state": read_state_name,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "nv_sig-units": tool_belt.get_nv_sig_units_no_cxn(),
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq_init": uwave_freq_init,
@@ -338,8 +339,8 @@ def main_with_cxn(
     scc_readout=False,
 ):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     tool_belt.reset_cfm(cxn)
 
     # %% Optical setup
@@ -631,7 +632,7 @@ def main_with_cxn(
             opti_coords_master_list[exp_ind].append(opti_coords)
 
             # Set up the microwaves for the low and high states
-            low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+            low_sig_gen_cxn = tool_belt.get_server_sig_gen(
                 cxn, States.LOW
             )
             low_sig_gen_cxn.set_freq(uwave_freq_low)
@@ -640,7 +641,7 @@ def main_with_cxn(
                 low_sig_gen_cxn.load_iq()
             low_sig_gen_cxn.uwave_on()
 
-            high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+            high_sig_gen_cxn = tool_belt.get_server_sig_gen(
                 cxn, States.HIGH
             )
             high_sig_gen_cxn.set_freq(uwave_freq_high)
@@ -759,7 +760,7 @@ def main_with_cxn(
         incr_data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
             "run_ind": run_ind,
             "params_master_list": params_master_list,
             "params_master_list-format": (
@@ -809,7 +810,7 @@ def main_with_cxn(
         "timestamp": timestamp,
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         "num_runs": num_runs,
         "params_master_list": params_master_list,
         "params_master_list-format": (

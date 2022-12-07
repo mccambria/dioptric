@@ -45,8 +45,8 @@ def get_seq(pulse_streamer, config, args):
     fm_mod_bandwidth_LOW = config['Microwaves'][low_sig_gen_name]['fm_mod_bandwidth'] # in Hz
     fm_mod_bandwidth_HIGH = config['Microwaves'][high_sig_gen_name]['fm_mod_bandwidth'] # in Hz
     min_fm_mod_bandwidth = min(fm_mod_bandwidth_LOW, fm_mod_bandwidth_HIGH)
-    fm_bandwidth_buffer =  1/min_fm_mod_bandwidth * 1e9
-    uwave_detune_buffer = uwave_laser_buffer*10
+    fm_bandwidth_buffer =  0#1/min_fm_mod_bandwidth * 1e9
+    uwave_detune_buffer = uwave_laser_buffer*1#0
     # time between signal and reference without illumination
     
     aom_delay_time = config['Optics'][laser_name]['delay']
@@ -253,6 +253,7 @@ def get_seq(pulse_streamer, config, args):
             ]
     seq.setDigital(pulser_do_sig_gen_high_gate, train)
     period = 0
+    print(train)
     for el in train:
         period += el[0]
     print(period)
@@ -264,7 +265,7 @@ def get_seq(pulse_streamer, config, args):
             (init_pi_low, HIGH),
             (uwave_detune_buffer + init_pi_high, LOW),
             (fm_bandwidth_buffer, LOW),
-            (uwave_srt_shrt, HIGH),
+            (uwave_srt_shrt, LOW),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, HIGH),
@@ -285,7 +286,7 @@ def get_seq(pulse_streamer, config, args):
             (init_pi_low, HIGH),
             (uwave_detune_buffer + init_pi_high, LOW),
             (fm_bandwidth_buffer, LOW),
-            (uwave_srt_long, HIGH),
+            (uwave_srt_long, LOW),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, HIGH),
@@ -427,6 +428,6 @@ if __name__ == '__main__':
     # tool_belt.set_feedthroughs_to_false(config)
     
     
-    seq_args = [0, 10000.0, 300, 1125, 1164, 8000.0, 1, 1, 1, 1, 'integrated_520', None]
+    seq_args = [200, 10000.0, 300, 1097, 1202, 200, 1, 1, 1, 2, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

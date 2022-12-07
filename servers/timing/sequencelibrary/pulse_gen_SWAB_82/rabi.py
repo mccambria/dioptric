@@ -72,7 +72,7 @@ def get_seq(pulse_streamer, config, args):
     period = 0
     for el in train:
         period += el[0]
-    # print(period)
+    print(period)
 
     # Laser for polarization and readout
     train = [(common_delay - laser_delay, Digital.LOW),
@@ -89,10 +89,10 @@ def get_seq(pulse_streamer, config, args):
              (laser_delay, Digital.LOW)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 laser_name, laser_power, train)
-    # total_dur = 0
-    # for el in train:
-    #     total_dur += el[0]
-    # print(total_dur)
+    total_dur = 0
+    for el in train:
+        total_dur += el[0]
+    print(total_dur)
 
     # Pulse the microwave for tau
     train = [(common_delay - uwave_delay, Digital.LOW),
@@ -109,11 +109,11 @@ def get_seq(pulse_streamer, config, args):
              (short_buffer, Digital.LOW),
              (uwave_delay, Digital.LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
-    print(train)
-    # total_dur = 0
-    # for el in train:
-    #     total_dur += el[0]
-    # print(total_dur)
+    # print(train)
+    total_dur = 0
+    for el in train:
+        total_dur += el[0]
+    print(total_dur)
 
     final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -123,6 +123,7 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
-    args = [80, 10000.0, 300, 80, 3, 'integrated_520', None]
+    args = [1202, 10000.0, 300, 1202, 3, 'integrated_520', None]
+    # args = [1000, 10000.0, 300, 2000, 3, 'integrated_520', None] 
     seq = get_seq(None, config, args)[0]
     seq.plot()

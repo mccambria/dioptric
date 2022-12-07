@@ -111,6 +111,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     # Analyze the sequence
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
+    # file_name = "rabi_srt_balancing.py"
     seq_args = [taus[0], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
                 dev_high_sign, dev_low_sign,
@@ -187,7 +188,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Set up the microwaves for the low and high states
-        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+        low_sig_gen_cxn = tool_belt.get_server_sig_gen(
             cxn, States.LOW
         )
         low_sig_gen_cxn.set_freq(uwave_freq_low)
@@ -197,7 +198,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         low_sig_gen_cxn.load_fm(abs(deviation_low))
         low_sig_gen_cxn.uwave_on()
 
-        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
+        high_sig_gen_cxn = tool_belt.get_server_sig_gen(
             cxn, States.HIGH
         )
         high_sig_gen_cxn.set_freq(uwave_freq_high)
@@ -323,7 +324,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'nv_sig-units': tool_belt.get_nv_sig_units(cxn),
                     'deviation_low': deviation_low,
                     'deviation_low-units': 'MHz',
                     'deviation_high': deviation_high,
@@ -404,7 +405,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'nv_sig-units': tool_belt.get_nv_sig_units(cxn),
                 'deviation_low': deviation_low,
                 'deviation_low-units': 'MHz',
                 'deviation_high': deviation_high,
