@@ -151,7 +151,7 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 
         angle_resonances = (None, None)  # Default to Nones
         if uwave_pulse_dur is not None:
-            angle_resonances, _ = pesr(cxn, nv_sig_copy,
+            _, _, angle_resonances = pesr(cxn, nv_sig_copy,
                                     freq_center, freq_range, num_freq_steps,
                                     num_freq_reps, num_freq_runs,
                                     uwave_power, uwave_pulse_dur)
