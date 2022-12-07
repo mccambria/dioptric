@@ -78,10 +78,7 @@ class Counter(LabradServer, ABC):
     @setting(10, modulus="i", num_to_read="i", returns="*2w")
     def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
 
-        # logging.info(modulus, num_to_read)
-
         complete_counts = self.read_counter_setting_internal(num_to_read)
-        logging.info(complete_counts)
 
         # To combine APDs we assume all the APDs have the same gate
         try:

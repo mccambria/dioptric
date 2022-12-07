@@ -390,7 +390,7 @@ if __name__ == "__main__":
     nv_sig = {
         'coords': [29.279, 46.573, 55.], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 38,
+        'expected_count_rate': 50,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
@@ -422,8 +422,8 @@ if __name__ == "__main__":
         "initialize_laser": green_laser,
         "initialize_dur": 1e4,
         'collection_filter': None, 'magnet_angle': 150,
-        'resonance_LOW': 2.8469, 'rabi_LOW': 232, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.8952, 'rabi_HIGH': 232, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8469, 'rabi_LOW': 104, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.8952, 'rabi_HIGH': 104, 'uwave_power_HIGH': 16.5,
         'norm_style':NormStyle.SINGLE_VALUED
         }
     
@@ -454,12 +454,12 @@ if __name__ == "__main__":
         # for z in [67.0, 75.0]:
         #     nv_sig['coords'][2] = z
         #     do_image_sample(nv_sig,num_steps=50,scan_range=5)
-        do_optimize(nv_sig, apd_indices,save_data=True)
+        # do_optimize(nv_sig, apd_indices,save_data=True)
         # do_optimize_z(nv_sig, apd_indices)
         
-        # do_stationary_count(nv_sig,disable_opt=True)
+        do_stationary_count(nv_sig,disable_opt=True)
         # 
-        # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e5), delay_range=[64,560],num_steps=32)
+        # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e6), delay_range=[64,640],num_steps=37)
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_638',num_reps=int(6e6), delay_range=[40,700],num_steps=31)
         
         # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.87,freq_range=.2)
