@@ -624,7 +624,8 @@ def main():
                 "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
                 # + 0.0006,  # MCC
                 "ZFS error (GHz)": condensed_error,
-                "Sample": sample,
+                # "Sample": sample,
+                "Sample": "Cambria",
                 "NV": "",
             }
             condensed_data_points.append(new_point)
@@ -763,9 +764,8 @@ def main():
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
             label = None
             color = KplColors.DARK_GRAY
-            if name in data_colors:
-                color = data_colors[name]
             if separate_samples or separate_nvs:
+                color = data_colors[name]
                 label = data_labels[name]
                 if label in used_data_labels:
                     label = None
@@ -777,7 +777,8 @@ def main():
                 val,
                 yerr=val_err,
                 color=color,
-                zorder=-1,
+                # zorder=-1,
+                zorder=temp - 1000,
                 label=label,
             )
             if separate_samples or separate_nvs:
@@ -819,8 +820,8 @@ def main():
         ylim = max(y_vals) + 1
 
     if plot_new_model:
-        color = KplColors.BLUE
-        # color = "#0f49bd"
+        # color = KplColors.BLUE
+        color = "#0f49bd"
         kpl.plot_line(
             ax,
             temp_linspace,
@@ -849,12 +850,13 @@ def main():
             KplColors.RED,
             KplColors.ORANGE,
         ]
+        prior_model_colors.reverse()
         prior_model_zorder = 2
         if desaturate_prior:
             prior_model_colors = [
                 kpl.lighten_color_hex(el) for el in prior_model_colors
             ]
-            prior_model_zorder = -5
+            prior_model_zorder = -1500
         kpl.plot_line(
             ax,
             temp_linspace,
