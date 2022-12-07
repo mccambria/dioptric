@@ -12,15 +12,59 @@ Created on Thu Apr 11 15:39:23 2019
 # %% Imports
 
 
+import utils.positioning as positioning
 import utils.tool_belt as tool_belt
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 import labrad
-from utils.tool_belt import States
+from utils.tool_belt import States, NormStyle
 from majorroutines import pulsed_resonance 
 from random import shuffle
 import majorroutines.optimize as optimize
 
+
+def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
+    """Extract the normalized average signal at each data point.
+    Since we sometimes don't do many runs (<10), we often will have an
+    insufficient sample size to run stats on for norm_avg_sig calculation.
+    We assume Poisson statistics instead.
+    """
+
+    ref_counts = np.array(ref_counts)
+    sig_counts = np.array(sig_counts)
+
+    num_runs, num_points = ref_counts.shape
+
+    # Find the averages across runs
+    sig_counts_avg = np.average(sig_counts, axis=0)
+    single_ref_avg = np.average(ref_counts)
+    ref_counts_avg = np.average(ref_counts, axis=0)
+
+    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
+    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
+    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
+
+    if norm_style == NormStyle.SINGLE_VALUED:
+        norm_avg_sig = sig_counts_avg / single_ref_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (single_ref_ste / single_ref_avg) ** 2
+        )
+    elif norm_style == NormStyle.POINT_TO_POINT:
+        norm_avg_sig = sig_counts_avg / ref_counts_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (ref_counts_ste / ref_counts_avg) ** 2
+        )
+
+    return (
+        ref_counts_avg,
+        sig_counts_avg,
+        norm_avg_sig,
+        ref_counts_ste,
+        sig_counts_ste,
+        norm_avg_sig_ste,
+    )
 
 # %% Main
 
@@ -39,8 +83,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     tool_belt.reset_cfm(cxn)
     
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     
     # Set up the laser
     laser_key = 'spin_laser'
@@ -62,24 +106,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
-    freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    freqs = np.linspace(freq_low, freq_high, num_steps)
     freq_ind_list = list(range(num_steps))
     freq_ind_master_list = []
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
-    # counts = numpy.empty(num_steps)
-    # counts[:] = numpy.nan
+    # counts = np.empty(num_steps)
+    # counts[:] = np.nan
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    ref_counts = numpy.empty([num_runs, num_steps])
-    ref_counts[:] = numpy.nan
-    sig_counts = numpy.copy(ref_counts)
+    ref_counts = np.empty([num_runs, num_steps])
+    ref_counts[:] = np.nan
+    sig_counts = np.copy(ref_counts)
 
     opti_coords_list = []
 
@@ -102,9 +146,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Optimize and save the coords we found
         if opti_nv_sig:
             opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
-            drift = tool_belt.get_drift()
-            adj_coords = nv_sig['coords'] + numpy.array(drift)
-            tool_belt.set_xyz(cxn, adj_coords)
+            drift = positioning.get_drift(cxn)
+            adj_coords = nv_sig['coords'] + np.array(drift)
+            positioning.set_xyz(cxn, adj_coords)
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
@@ -113,9 +157,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         # Start the laser now to get rid of transient effects
-        tool_belt.laser_on(cxn, laser_name, laser_power)
+        # tool_belt.laser_on(cxn, laser_name, laser_power)
     
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
 
@@ -162,7 +206,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
         rawData = {'start_timestamp': start_timestamp,
                    'nv_sig': nv_sig,
-                   'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                    'opti_coords_list': opti_coords_list,
                    'opti_coords_list-units': 'V',
                    'freq_center': freq_center,
@@ -189,7 +233,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
 
-    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
     avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
     
     # Convert to kilocounts per second
@@ -227,7 +271,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
-               'nv_sig-units': tool_belt.get_nv_sig_units(),
+               # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                'opti_coords_list': opti_coords_list,
                'opti_coords_list-units': 'V',
                'freq_center': freq_center,
@@ -285,28 +329,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2022_11_10-11_17_33-johnson-search'
-    file_path = "pc_carr/branch_opx-setup/resonance/2022_11/incremental"
+    file = '2022_12_06-15_24_46-johnson-search'
+    file_path = "pc_carr/branch_master/resonance/2022_12/incremental"
     data = tool_belt.get_raw_data(file, file_path)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
     num_runs = data['num_runs']
-    ref_counts = data['ref_counts'][0:6]
-    sig_counts = data['sig_counts'][0:6]
+    ref_counts = data['ref_counts'][0:1]
+    sig_counts = data['sig_counts'][0:1]
     print(len(ref_counts))
-    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
+    ret_vals = process_counts(ref_counts, sig_counts)
     avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
     # norm_avg_sig_ste = None
     
 
-    fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_range, freq_center, num_steps,
-                                         norm_avg_sig, norm_avg_sig_ste, ref_counts)
+    fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_center, freq_range,num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
 
     # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
     #                                norm_avg_sig, ref_counts)
 
-    pulsed_resonance.create_fit_figure(freq_range, freq_center, num_steps,
+    pulsed_resonance.create_fit_figure(freq_center, freq_range, num_steps,
                       norm_avg_sig, fit_func, popt)
     

@@ -12,6 +12,7 @@ Created on Tue Apr 23 11:49:23 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import numpy
 import os
 import time
@@ -182,9 +183,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   opti_nv_sig = None):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_awg(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -278,9 +279,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         # Optimize and save the coords we found
         if opti_nv_sig:
             opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
-            drift = tool_belt.get_drift()
+            drift = positioning.get_drift(cxn)
             adj_coords = nv_sig['coords'] + numpy.array(drift)
-            tool_belt.set_xyz(cxn, adj_coords)
+            positioning.set_xyz(cxn, adj_coords)
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
@@ -289,7 +290,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
@@ -385,7 +386,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -463,7 +464,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,

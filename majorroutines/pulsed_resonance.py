@@ -520,15 +520,12 @@ def main_with_cxn(
     start_timestamp = tool_belt.get_time_stamp()
 
     kpl.init_kplotlib()
-
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
-
-    tool_belt.reset_cfm(cxn)
-
+    
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_awg(cxn)
+
+    tool_belt.reset_cfm(cxn)
 
 
     # check if running external iq_mod with SRS
@@ -587,6 +584,7 @@ def main_with_cxn(
         ]
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
 
     opti_coords_list = []
 
@@ -731,8 +729,8 @@ def main_with_cxn(
         file_path = tool_belt.get_file_path(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
-        tool_belt.save_raw_data(data, file_path)
         tool_belt.save_figure(raw_fig, file_path)
+        tool_belt.save_raw_data(data, file_path)
 
     ### Process and plot the data
 
@@ -800,10 +798,11 @@ def main_with_cxn(
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     data_file_name = file_path.stem
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_raw_data(data, file_path)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     tool_belt.save_figure(fit_fig, file_path)
+
+    tool_belt.save_raw_data(data, file_path)
 
     single_res = return_res_with_error(data)
     return single_res, data_file_name
