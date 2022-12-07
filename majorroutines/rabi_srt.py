@@ -358,6 +358,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
 
     # %% Plot the Rabi signal
 
+    print(numpy.average(norm_avg_sig))
     ax = axes_pack[0]
     ax.cla()
     ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')

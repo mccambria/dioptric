@@ -45,8 +45,8 @@ def get_seq(pulse_streamer, config, args):
     fm_mod_bandwidth_LOW = config['Microwaves'][low_sig_gen_name]['fm_mod_bandwidth'] # in Hz
     fm_mod_bandwidth_HIGH = config['Microwaves'][high_sig_gen_name]['fm_mod_bandwidth'] # in Hz
     min_fm_mod_bandwidth = min(fm_mod_bandwidth_LOW, fm_mod_bandwidth_HIGH)
-    fm_bandwidth_buffer =  0#1/min_fm_mod_bandwidth * 1e9
-    uwave_detune_buffer = uwave_laser_buffer*1#0
+    fm_bandwidth_buffer =  1/min_fm_mod_bandwidth * 1e9
+    uwave_detune_buffer = uwave_laser_buffer*10
     # time between signal and reference without illumination
     
     aom_delay_time = config['Optics'][laser_name]['delay']
@@ -265,7 +265,7 @@ def get_seq(pulse_streamer, config, args):
             (init_pi_low, HIGH),
             (uwave_detune_buffer + init_pi_high, LOW),
             (fm_bandwidth_buffer, LOW),
-            (uwave_srt_shrt, LOW),
+            (uwave_srt_shrt, HIGH),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, HIGH),
@@ -286,7 +286,7 @@ def get_seq(pulse_streamer, config, args):
             (init_pi_low, HIGH),
             (uwave_detune_buffer + init_pi_high, LOW),
             (fm_bandwidth_buffer, LOW),
-            (uwave_srt_long, LOW),
+            (uwave_srt_long, HIGH),
             (fm_bandwidth_buffer, LOW),
             (uwave_detune_buffer, LOW),
             (read_pi_low, HIGH),
