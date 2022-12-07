@@ -185,7 +185,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
-    arbwavegen_server = tool_belt.get_server_awg(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
 
     tool_belt.reset_cfm(cxn)
 

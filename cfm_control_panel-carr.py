@@ -454,7 +454,7 @@ if __name__ == "__main__":
         # for z in [67.0, 75.0]:
         #     nv_sig['coords'][2] = z
         #     do_image_sample(nv_sig,num_steps=50,scan_range=5)
-        # do_optimize(nv_sig, apd_indices,save_data=True)
+        do_optimize(nv_sig, apd_indices,save_data=True)
         # do_optimize_z(nv_sig, apd_indices)
         
         # do_stationary_count(nv_sig,disable_opt=True)
@@ -463,7 +463,7 @@ if __name__ == "__main__":
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_638',num_reps=int(6e6), delay_range=[40,700],num_steps=31)
         
         # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.87,freq_range=.2)
-        do_rabi(nv_sig, apd_indices, uwave_time_range = [0,160], state=States.LOW,num_reps=2e4,num_runs=20,num_steps=11)
+        # do_rabi(nv_sig, apd_indices, uwave_time_range = [0,160], state=States.LOW,num_reps=2e4,num_runs=20,num_steps=11)
         # time.sleep(4)
         
         # mangles = [150]
