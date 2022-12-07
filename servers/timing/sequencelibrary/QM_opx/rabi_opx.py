@@ -39,7 +39,7 @@ def qua_program(opx, config, args, num_reps):
     state = args[4]
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    print(sig_gen)
+    # print(sig_gen)
     
     # Laser specs
     laser_name = args[5]
@@ -84,7 +84,8 @@ def qua_program(opx, config, args, num_reps):
         
         counts_st_apd_0 = declare_stream()
         counts_st_apd_1 = declare_stream()     
-        
+        tau_cc_qua = declare(int)
+        assign(tau_cc_qua,tau_cc)
 
         n = declare(int)
         
@@ -97,10 +98,13 @@ def qua_program(opx, config, args, num_reps):
             align()
             wait(signal_wait_time_cc)
             
-            if tau_cc >= 4:
+            with if_(tau_cc_qua >= 4):
                 play("uwave_ON",sig_gen, duration=tau_cc)
+                align()
+            with elif_(tau_cc_qua <= 3):
+                align()
             
-            align()
+            # align()
             wait(signal_wait_time_cc)
                            
             play(laser_pulse*amp(laser_amplitude),laser_name,duration=polarization_cc) 
@@ -169,14 +173,16 @@ if __name__ == '__main__':
     
     simulation_duration =  35000 // 4 # clock cycle units - 4ns
     
-    num_repeat=1
+    num_repeat=2
 
-    args = [50, 1000.0, 350, 50,  3, 'cobolt_515', 1]
+    args = [0, 1000.0, 350, 0,  3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
+    
+    plt.figure()
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
+    plt.show()
 # 
     # job = qm.execute(seq)
 

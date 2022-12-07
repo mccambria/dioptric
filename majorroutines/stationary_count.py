@@ -37,7 +37,7 @@ def main_with_cxn(
     readout = nv_sig["imaging_readout_dur"]
     readout_sec = readout / 10**9
     charge_init = nv_minus_init or nv_zero_init
-
+    # optimize.main_with_cxn(cxn, nv_sig)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     counter_server = tool_belt.get_server_counter(cxn)
 
@@ -145,7 +145,7 @@ def main_with_cxn(
 
             # Update the figure in k counts per sec
             samples_kcps = samples / (10**3 * readout_sec)
-            kpl.plot_line_update(ax, x =x_vals, y =samples_kcps)
+            kpl.plot_line_update(ax, samples_kcps)
 
     ### Clean up and report average and standard deviation
 

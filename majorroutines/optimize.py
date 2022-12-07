@@ -710,6 +710,7 @@ def main_with_cxn(
             print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*drift))
+            prepare_microscope(cxn, nv_sig)
         else:
             print("Optimization failed.")
             prepare_microscope(cxn, nv_sig)

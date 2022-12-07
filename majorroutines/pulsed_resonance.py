@@ -58,40 +58,36 @@ def create_fit_figure(
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     smooth_freqs = calculate_freqs(freq_center, freq_range, 1000)
 
-    # Plot data
+    # Plotting
     if norm_avg_sig_ste is not None:
         kpl.plot_points(ax, freqs, norm_avg_sig, yerr=norm_avg_sig_ste)
     else:
         kpl.plot_line(ax, freqs, norm_avg_sig)
-        
-    # Plot fit
-    if fit_func is not None:
-        
-        kpl.plot_line(
-            ax,
-            smooth_freqs,
-            fit_func(smooth_freqs, *popt),
-            color=KplColors.RED,
-        )
+    kpl.plot_line(
+        ax,
+        smooth_freqs,
+        fit_func(smooth_freqs, *popt),
+        color=KplColors.RED,
+    )
 
-        # Text boxes to describe the fits
-        low_text = None
+    # Text boxes to describe the fits
+    low_text = None
+    high_text = None
+    base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
+    if len(popt) == 3:
+        contrast, hwhm, freq = popt[0:3]
+        low_text = base_text.format(contrast, hwhm, freq)
         high_text = None
-        base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
-        if len(popt) == 3:
-            contrast, hwhm, freq = popt[0:3]
-            low_text = base_text.format(contrast, hwhm, freq)
-            high_text = None
-        elif len(popt) == 6:
-            contrast, hwhm, freq = popt[0:3]
-            low_text = base_text.format(contrast, hwhm, freq)
-            contrast, hwhm, freq = popt[3:6]
-            high_text = base_text.format(contrast, hwhm, freq)
-        size = kpl.Size.SMALL
-        if low_text is not None:
-            kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
-        if high_text is not None:
-            kpl.anchored_text(ax, high_text, kpl.Loc.LOWER_RIGHT, size=size)
+    elif len(popt) == 6:
+        contrast, hwhm, freq = popt[0:3]
+        low_text = base_text.format(contrast, hwhm, freq)
+        contrast, hwhm, freq = popt[3:6]
+        high_text = base_text.format(contrast, hwhm, freq)
+    size = kpl.Size.SMALL
+    if low_text is not None:
+        kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
+    if high_text is not None:
+        kpl.anchored_text(ax, high_text, kpl.Loc.LOWER_RIGHT, size=size)
 
     return fig, ax, fit_func, popt, pcov
 
@@ -231,24 +227,23 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
         fit_func,
         guess_params,
     )
-    if fit_func is None:
-        return None, None
+
+    if len(popt) == 6:
+        # print("Double resonance")
+        low_res_ind = 2
+        high_res_ind = low_res_ind + 3
+        avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
+        low_res_err = np.sqrt(pcov[low_res_ind, low_res_ind])
+        hig_res_err = np.sqrt(pcov[high_res_ind, high_res_ind])
+        avg_res_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        return avg_res, avg_res_err
     else:
-        if len(popt) == 6:
-            # print("Double resonance")
-            low_res_ind = 2
-            high_res_ind = low_res_ind + 3
-            avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
-            low_res_err = np.sqrt(pcov[low_res_ind, low_res_ind])
-            hig_res_err = np.sqrt(pcov[high_res_ind, high_res_ind])
-            avg_res_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-            return avg_res, avg_res_err
-        else:
-            # print("Single resonance")
-            res_ind = 2
-            res = popt[res_ind]
-            res_err = np.sqrt(pcov[res_ind, res_ind])
-            return res, res_err
+        # print("Single resonance")
+        res_ind = 2
+        # res_ind = 1  # MCC sigma
+        res = popt[res_ind]
+        res_err = np.sqrt(pcov[res_ind, res_ind])
+        return res, res_err
 
 
 def get_guess_params(
@@ -327,7 +322,7 @@ def get_guess_params(
         high_freq_guess = None
         low_contrast_guess = max_peak_height
     else:
-        print("Could not locate peaks, using center frequency")
+        # print("Could not locate peaks, using center frequency")
         low_freq_guess = freq_center
         high_freq_guess = None
         low_contrast_guess = height
@@ -380,20 +375,14 @@ def fit_resonance(
     if guess_params is None:
         guess_params = algo_guess_params
 
-    try:
-        popt, pcov = curve_fit(
-            fit_func,
-            freqs,
-            norm_avg_sig,
-            p0=guess_params,
-            sigma=norm_avg_sig_ste,
-            absolute_sigma=True,
-        )
-    except Exception as exc:
-        print(exc)
-        fit_func = None
-        popt = None
-        pcov = None
+    popt, pcov = curve_fit(
+        fit_func,
+        freqs,
+        norm_avg_sig,
+        p0=guess_params,
+        sigma=norm_avg_sig_ste,
+        absolute_sigma=True,
+    )
 
     return fit_func, popt, pcov
 
@@ -538,12 +527,10 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
 
 
-
     # check if running external iq_mod with SRS
     iq_key = False
     if 'uwave_iq_{}'.format(state.name) in nv_sig:
         iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
-
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -596,9 +583,8 @@ def main_with_cxn(
         ]
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
 
-    # print(seq_args)
-    # return
     opti_coords_list = []
 
     # Create raw data figure for incremental plotting
@@ -674,7 +660,7 @@ def main_with_cxn(
             cur_run_ref_counts_summed = sample_counts[1]
             sig_counts[run_ind, freq_ind] = cur_run_sig_counts_summed
             ref_counts[run_ind, freq_ind] = cur_run_ref_counts_summed
-            
+
         counter.stop_tag_stream()
 
         ### Incremental plotting
@@ -741,8 +727,8 @@ def main_with_cxn(
         file_path = tool_belt.get_file_path(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
-        tool_belt.save_raw_data(data, file_path)
         tool_belt.save_figure(raw_fig, file_path)
+        tool_belt.save_raw_data(data, file_path)
 
     ### Process and plot the data
 
@@ -761,10 +747,9 @@ def main_with_cxn(
     run_indicator_obj.remove()
 
     # Fits
-    ret_vals = create_fit_figure(
+    fit_fig, _, fit_func, popt, _ = create_fit_figure(
         freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
-    fit_fig = ret_vals[0]
 
     ### Clean up, save the data, return
 
@@ -811,10 +796,11 @@ def main_with_cxn(
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     data_file_name = file_path.stem
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_raw_data(data, file_path)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     tool_belt.save_figure(fit_fig, file_path)
+
+    tool_belt.save_raw_data(data, file_path)
 
     single_res = return_res_with_error(data)
     return single_res, data_file_name
@@ -825,12 +811,13 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
+    print(Path(__file__).stem)
+    sys.exit()
+
     kpl.init_kplotlib()
 
-    file_name = "2022_12_06-10_38_40-15micro-nv3_zfs_vs_t"
+    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
-    print(return_res_with_error(data))
-    sys.exit()
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
