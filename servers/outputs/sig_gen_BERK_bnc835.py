@@ -166,9 +166,16 @@ class SigGenBerkBnc835(LabradServer):
         self.sig_gen.write("FM:SENS {}".format(deviation_Hz))
         # set the BNC to get trigger externally
         self.sig_gen.write("FM:SOUR EXT")
-        # set the external coupling to AC
-        self.sig_gen.write("FM:COUP AC")
+        # set the external coupling to DC
+        self.sig_gen.write("FM:COUP DC")
         self.sig_gen.write("FM:STAT ON")
+        
+    @setting(12)
+    def fm_off(self, c):
+        '''
+        Trun off frequency modulation
+        '''
+        self.sig_gen.write("FM:STAT OFF")
         
     # @setting(11, freq_list='*v[]')
     # def load_freq_list(self, c, freq_list):
@@ -194,7 +201,8 @@ class SigGenBerkBnc835(LabradServer):
     def reset(self, c):
         self.uwave_off(c)
         # turn off FM modulation
-        self.sig_gen.write("FM:STAT OFF")
+        # self.sig_gen.write("FM:STAT OFF")
+        
         # Default to a continuous wave at 2.87 GHz and 0.0 dBm
         # self.set_freq(c, 2.87)
         # self.set_amp(c, 0.0)

@@ -335,7 +335,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
     
     num_steps = 11#61
     num_reps = int(1e4)
-    num_runs = 3
+    num_runs = 15
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -1000,7 +1000,6 @@ if __name__ == "__main__":
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "norm_style": NormStyle.SINGLE_VALUED,
         "uwave_power_LOW": 20,  
         "uwave_power_HIGH": 3.5,
         
@@ -1029,6 +1028,8 @@ if __name__ == "__main__":
     nv_sig_1 = copy.deepcopy(sig_base) # 
     nv_sig_1["coords"] = [-0.189, 0.079, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
+    # nv_sig_1["norm_style"]= NormStyle.POINT_TO_POINT
+    nv_sig_1["norm_style"]= NormStyle.SINGLE_VALUED
     nv_sig_1[ "green_power_mW"] = 1.0
     nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
@@ -1114,10 +1115,10 @@ if __name__ == "__main__":
         #    do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
         
         for d in [3]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
-            do_rabi_srt(nv_sig_copy,   States.LOW, States.LOW, d,  uwave_time_range=[0, 200])
-            do_rabi_srt(nv_sig_copy,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 200])
+            # nv_sig_copy = copy.deepcopy(nv_sig)
+            # nv_sig_copy['resonance_HIGH'] = nv_sig['resonance_HIGH'] - d*1e-3
+            do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 1000])
+            do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 1000])
         # for d in [0, 8, 16, 24]:
         # do_rabi_srt_pop(nv_sig,  24, 31, uwave_time_range=[0, 2000])
         # do_rabi_srt_pop(nv_sig,  30, 41, uwave_time_range=[0, 2500])
