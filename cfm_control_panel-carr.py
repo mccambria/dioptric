@@ -99,7 +99,7 @@ def do_optimize_z(nv_sig, apd_indices):
 def do_stationary_count(nv_sig,disable_opt=False):
 
     run_time = 1 * 60 * 10 ** 9  # ns
-
+    nv_sig["imaging_readout_dur"] = 100e6
     stationary_count.main(nv_sig, run_time,disable_opt)
     
 def do_laser_delay_calibration(nv_sig,apd_indices,laser_name,num_reps = int(2e6),
@@ -390,7 +390,7 @@ if __name__ == "__main__":
     nv_sig = {
         'coords': [29.279, 46.573, 55.], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': 50,
+        'expected_count_rate': None,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
         # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
