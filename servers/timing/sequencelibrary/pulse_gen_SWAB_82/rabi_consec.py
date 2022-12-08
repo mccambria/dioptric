@@ -310,6 +310,6 @@ if __name__ == '__main__':
     
     
     
-    seq_args = [200, 200, 10000.0, 300, 1097, 1202, 2000, 2000, 3, 3, 'integrated_520', None]
+    seq_args = [0, 0, 10000.0, 300, 62, 68, 1000, 1000, 1, 1, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

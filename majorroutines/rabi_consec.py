@@ -97,25 +97,28 @@ def main(nv_sig, uwave_time_range,
          readout_state = States.HIGH,
          initial_state = States.HIGH,
          opti_nv_sig = None,
+         do_err_plot = True,
          ):
         #Right now, make sure SRS is set as State HIGH
    
 
     with labrad.connect() as cxn:
-        norm_avg_sig = main_with_cxn(cxn, nv_sig, uwave_time_range,  
+        norm_avg_sig, norm_avg_sig_ste = main_with_cxn(cxn, nv_sig, uwave_time_range,  
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
-                 opti_nv_sig)
+                 opti_nv_sig,
+                 do_err_plot)
 
 
 
-    return norm_avg_sig
+    return norm_avg_sig, norm_avg_sig_ste
 def main_with_cxn(cxn, nv_sig, uwave_time_range,  
                      num_steps, num_reps, num_runs,
                      readout_state = States.HIGH,
                      initial_state = States.HIGH,
-                     opti_nv_sig = None):
+                     opti_nv_sig = None,
+                     do_err_plot = True,):
 
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
@@ -170,8 +173,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
                 laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
-    print(seq_args)
-    return
+    # print(seq_args)
+    # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -400,12 +403,13 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     kpl.plot_line_update(ax_norm, y=norm_avg_sig)
     run_indicator_obj.remove()
     
-    err_fig = create_err_figure(
-        taus,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-        title
-        )
+    if do_err_plot:
+        err_fig = create_err_figure(
+            taus,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            title
+            )
 
     # %% Plot the data itself and the fitted curve
 
@@ -460,27 +464,52 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     #     tool_belt.save_figure(fit_fig, file_path_fit)
     tool_belt.save_raw_data(raw_data, file_path)
     
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + '-err')
-    tool_belt.save_figure(err_fig, file_path)
+    
+    if do_err_plot:
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + '-err')
+        tool_belt.save_figure(err_fig, file_path)
 
     # if (fit_func is not None) and (popt is not None):
     #     return rabi_period, sig_counts, ref_counts, popt
     # else:
     #     return None, sig_counts, ref_counts, []
 
-    return norm_avg_sig
+    return norm_avg_sig, norm_avg_sig_ste
 
 # %%
-def plot_pop_consec(taus, m_pop, z_pop, p_pop = []):
+def plot_pop_consec(taus, m_pop, z_pop, p_pop,
+                    m_err = None,
+                    z_err = None,
+                    p_err = None):
     
     fig, ax = plt.subplots()
-    ax.plot(taus , m_pop, 'r-', label = '-1 population')
-    ax.plot(taus, z_pop, 'g-', label = '0 population')
-    if len(m_pop) != 0:
-        ax.plot(taus, p_pop, 'b-', label = '+1 population')
     ax.set_title('Rabi double quantum')
     ax.set_xlabel('SRT length (us)')
     ax.set_ylabel('Population')
+    ax.set_title('Rabi with consec. pulses')
+    
+    # Plotting
+    if m_err is not None:
+        kpl.plot_points(ax, taus, m_pop, yerr=m_err, color=KplColors.RED,
+                        label = '-1 population')
+    else:
+        kpl.plot_line(ax, taus, m_pop, color=KplColors.RED,
+                        label = '-1 population')
+        
+    if z_err is not None:
+        kpl.plot_points(ax, taus, z_pop, yerr=z_err, color=KplColors.GREEN, 
+                        label = '0 population')
+    else:
+        kpl.plot_line(ax, taus, z_pop, color=KplColors.GREEN,
+                        label = '0 population')
+        
+    if p_err is not None:
+        kpl.plot_points(ax, taus, p_pop, yerr=p_err, color=KplColors.BLUE, 
+                        label = '+1 population')
+    else:
+        kpl.plot_line(ax, taus, p_pop, color=KplColors.BLUE,
+                        label = '=1 population')
+    
     ax.legend()
     
     return fig
@@ -489,7 +518,7 @@ def plot_pop_consec(taus, m_pop, z_pop, p_pop = []):
 def full_pop_consec(nv_sig, uwave_time_range,
          num_steps, num_reps, num_runs):
     
-    contrast = 0.108*2
+    contrast = 0.11*2
     min_pop = 1-contrast
     
     min_uwave_time = uwave_time_range[0]
@@ -499,32 +528,39 @@ def full_pop_consec(nv_sig, uwave_time_range,
     taus = taus/1e3
     
     init=States.LOW
-    if False :
+    if True :
  
-        p_sig = main(nv_sig, uwave_time_range,
+        p_sig, p_err = main(nv_sig, uwave_time_range,
                  num_steps, num_reps, num_runs,
                  readout_state = States.HIGH,
                  initial_state = init,
+                 do_err_plot = False,
                  )
-        p_pop = (numpy.array(p_sig) - low_pop) / (1 - min_pop)
+        p_pop = (numpy.array(p_sig) - min_pop) / (1 - min_pop)
+        p_err = numpy.array(p_err)/ (1 - min_pop)
         
-    m_sig = main(nv_sig, uwave_time_range, 
+    m_sig, m_err = main(nv_sig, uwave_time_range, 
         num_steps, num_reps, num_runs,
         readout_state = States.LOW,
         initial_state = init,
+        do_err_plot = False,
         )
-    m_pop = (numpy.array(m_sig) - low_pop) / (1 - min_pop)
+    m_pop = (numpy.array(m_sig) - min_pop) / (1 - min_pop)
+    m_err = numpy.array(m_err)/ (1 - min_pop)
     
     z_sig = main(nv_sig, uwave_time_range, 
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
+            do_err_plot = False,
             )
-    z_pop = (numpy.array(z_sig) - low_pop) / (1 - min_pop)
+    z_pop, z_err = (numpy.array(z_sig) - min_pop) / (1 - min_pop)
+    z_err = numpy.array(z_err)/ (1 - min_pop)
     
 
     
-    fig = plot_pop_consec(taus, m_pop, z_pop, p_pop)
+    fig = plot_pop_consec(taus, m_pop, z_pop, p_pop,
+                            m_err, z_err, p_err)
 
     
     timestamp = tool_belt.get_time_stamp()
