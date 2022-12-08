@@ -486,7 +486,7 @@ def plot_pop_consec(taus, m_pop, z_pop, p_pop = []):
     return fig
     
     
-def full_pop_cosec(nv_sig, uwave_time_range,
+def full_pop_consec(nv_sig, uwave_time_range,
          num_steps, num_reps, num_runs):
     
     contrast = 0.108*2

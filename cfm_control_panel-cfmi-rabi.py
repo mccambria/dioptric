@@ -19,6 +19,7 @@ import numpy
 import time
 import copy
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import matplotlib.pyplot as plt
 import majorroutines.image_sample as image_sample
 # import majorroutines.image_sample_xz as image_sample_xz
@@ -31,6 +32,7 @@ import majorroutines.esr_srt as esr_srt
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.rabi_srt as rabi_srt
+import majorroutines.rabi_consec as rabi_consec
 import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.ramsey as ramsey
@@ -90,8 +92,8 @@ def do_image_sample(nv_sig):
     # num_steps = 135
     # num_steps =120
    # num_steps = 90
-    # num_steps = 60
-    num_steps = 31
+    num_steps = 60
+    # num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -313,7 +315,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     # num_reps = int(2e4)    
     # num_runs = 2
     num_reps = int(1e4)
-    num_runs =  10
+    num_runs =  2
 
     rabi.main(
         nv_sig,
@@ -327,6 +329,23 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     # nv_sig["rabi_{}".format(state.name)] = period
 
 
+def do_rabi_consec(nv_sig,  initial_state, readout_state,  uwave_time_range=[0, 1000]):
+    
+    
+    
+    num_steps = 101
+    num_reps = int(1e4)
+    num_runs = 10#30
+
+    rabi_consec.main(nv_sig, 
+             uwave_time_range, 
+             num_steps, 
+             num_reps, 
+             num_runs,
+             readout_state,
+             initial_state,
+             )
+    
 def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0, 1000]):
     
     deviation_high = dev
@@ -1001,7 +1020,7 @@ if __name__ == "__main__":
 
         "collection_filter": "715_sp+630_lp", # NV band only
         "uwave_power_LOW": 15,  
-        "uwave_power_HIGH": 3.5,
+        "uwave_power_HIGH": 15,
         
         "uwave_mod_freq_LOW": 2.189288,
         "uwave_mod_amp_LOW": 140,
@@ -1026,7 +1045,7 @@ if __name__ == "__main__":
     
     
     nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.189, 0.079, 4.05]
+    nv_sig_1["coords"] = [-0.19, 0.084, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     # nv_sig_1["norm_style"]= NormStyle.POINT_TO_POINT
     nv_sig_1["norm_style"]= NormStyle.SINGLE_VALUED
@@ -1035,11 +1054,11 @@ if __name__ == "__main__":
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 151.7
     nv_sig_1["resonance_LOW"]= 2.78059
-    nv_sig_1["rabi_LOW"]=2227.9
+    nv_sig_1["rabi_LOW"]=124.4
     nv_sig_1["uwave_iq_LOW"]= False 
     nv_sig_1["resonance_HIGH"]=2.9600
-    nv_sig_1["rabi_HIGH"]= 2404.3
-    nv_sig_1["uwave_iq_HIGH"]= True  
+    nv_sig_1["rabi_HIGH"]= 135.9
+    nv_sig_1["uwave_iq_HIGH"]= False  
     
     
     
@@ -1064,12 +1083,11 @@ if __name__ == "__main__":
 
     try:
 
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0,0.0,0.0])
-        #tool_belt.set_drift([0.0, 0.06, 0.0])
-        # tool_belt.set_xyz(labrad.connect(), [0,0,5])
+        # positioning.set_drift(labrad.connect(),[0.0, 0.0, positioning.get_drift(labrad.connect())[2]])  # Keep z
+        # positioning.set_drift(labrad.connect(),[0.0,0.0,0.0])
+        # positioning.set_drift(labrad.connect(),[0.0, 0.06, 0.0])
+        # positioning.set_xyz(labrad.connect(), [0,0,5])
         
-        # with labrad.connect() as cxn:
         #     cxn.rotation_stage_ell18k.set_angle(65)
         
         # for x in [-0.25, 0.25]:
@@ -1103,21 +1121,18 @@ if __name__ == "__main__":
         
         #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        #do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2500])
-        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 2000])
+        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 300])
+        do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 300])
         
         
         
-        # dev = 3
-        # uwave_time_range = [0, 6e2]
-        # for dev in [1.5, 3, 6]:
-        # do_rabi_srt(nv_sig,   States.LOW,  States.LOW, 0, uwave_time_range)
-        #    do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
+        # uwave_time_range = [0, 400]
+        # do_rabi_srt(nv_sig,   States.LOW, States.LOW)
         
-        for d in [3]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 15000])
-            do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 15000])
+        # for d in [3]:
+        #     nv_sig_copy = copy.deepcopy(nv_sig)
+        #     do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 15000])
+        #     do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 15000])
             #do_rabi_srt(nv_sig,   States.ZERO, States.ZERO, d,  uwave_time_range=[0, 2500])
         # for d in [0, 8, 16, 24]:
         # do_rabi_srt_pop(nv_sig,  24, 31, uwave_time_range=[0, 2000])

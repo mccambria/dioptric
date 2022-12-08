@@ -12,6 +12,8 @@ Created on Tue Apr 23 11:49:23 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
+from utils.kplotlib import KplColors
 import utils.positioning as positioning
 import numpy
 import os
@@ -26,19 +28,18 @@ import majorroutines.optimize as optimize
 
 # %% Functions
 
+def fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_ste = None):
 
-def fit_data(uwave_time_range, num_steps, norm_avg_sig):
-
-    # %% Set up
+    #  Set up
 
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
     taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
                             num=num_steps, dtype=numpy.int32, retstep=True)
 
-    fit_func = tool_belt.cosexp_1_at_0
+    # fit_func = tool_belt.cosexp_1_at_0
 
-    # %% Estimated fit parameters
+    #  Estimated fit parameters
 
     offset = numpy.average(norm_avg_sig)
     decay = 1000
@@ -51,56 +52,101 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind + 1]
 
-    # %% Fit
+    #  Fit
 
     init_params = [offset, frequency, decay]
 
     try:
-        popt, _ = curve_fit(fit_func, taus, norm_avg_sig,
-                            p0=init_params)
+        popt, pcov = curve_fit(fit_func, taus, norm_avg_sig,
+                            p0=init_params,
+                            sigma=norm_avg_sig_ste,
+                            absolute_sigma=True)
     except Exception as e:
         print(e)
         popt = None
 
-    return fit_func, popt
+    return fit_func, popt, pcov
 
-def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
-                      fit_func, popt):
+def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
+                      norm_avg_sig_ste, fit_func=None, popt=None):
 
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
-    taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=num_steps, dtype=numpy.int32)
-    linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
+    taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
+                            num=num_steps, dtype=numpy.int32, retstep=True)
+    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
+    
+    # Fitting
+    if (fit_func is None) or (popt is None):
+        fit_func, popt, pcov = fit_data(
+            uwave_time_range,
+            num_steps,
+            fit_func,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        )
 
-    fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(taus, norm_avg_sig,'bo',label='data')
-    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
+    # Plot setup
+    fig, ax = plt.subplots()
     ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Contrast (arb. units)')
+    ax.set_ylabel("Normalized fluorescence")
     ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
-    ax.legend()
-    text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
+    
+    # Plotting
+    if norm_avg_sig_ste is not None:
+        kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
+    else:
+        kpl.plot_line(ax, taus, norm_avg_sig)
+    kpl.plot_line(
+        ax,
+        smooth_taus,
+        fit_func(smooth_taus, *popt),
+        color=KplColors.RED,
+    )
+    Amp = 1- popt[0]
+    base_text = "Offset = {:.3f} \nAmp = {:.3f} \n1/v = {:.1f} ns \nd = {:.1f} ns"
+    size = kpl.Size.SMALL
+    text = base_text.format(popt[0], Amp, 1/popt[1], popt[2])
+    kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
+    
+    return fig, ax, fit_func, popt, pcov
 
-    A_0 = 1- popt[0]
+def create_raw_data_figure(
+    taus,
+    avg_sig_counts=None,
+    avg_ref_counts=None,
+    norm_avg_sig=None,
+):
+    num_steps = len(taus)
+    # Plot setup
+    fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
+    ax_sig_ref, ax_norm = axes_pack
+    ax_sig_ref.set_xlabel('Microwave duration (ns)')
+    ax_sig_ref.set_ylabel("Count rate (kcps)")
+    ax_norm.set_xlabel('Microwave duration (ns)')
+    ax_norm.set_ylabel("Normalized fluorescence")
 
-    text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
-                      r'$C = $' + '%.3f'%(popt[0]),
-                      r'$A_0 = $' + '%.3f'%(A_0),
-                      r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[1]) + ' ns',
-                      r'$d = $' + '%i'%(popt[2]) + ' ' + r'$ ns$'))
+    # Plotting
+    if avg_sig_counts is None:
+        avg_sig_counts = numpy.empty(num_steps)
+        avg_sig_counts[:] = numpy.nan
+    kpl.plot_line(
+        ax_sig_ref, taus, avg_sig_counts, label="Signal", color=KplColors.GREEN
+    )
+    if avg_ref_counts is None:
+        avg_ref_counts = numpy.empty(num_steps)
+        avg_ref_counts[:] = numpy.nan
+    kpl.plot_line(
+        ax_sig_ref, taus, avg_ref_counts, label="Reference", color=KplColors.RED
+    )
+    ax_sig_ref.legend(loc=kpl.Loc.LOWER_RIGHT)
+    if norm_avg_sig is None:
+        norm_avg_sig = numpy.empty(num_steps)
+        norm_avg_sig[:] = numpy.nan
+    kpl.plot_line(ax_norm, taus, norm_avg_sig, color=KplColors.BLUE)
 
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.55, 0.3, text_freq, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+    return fig, ax_sig_ref, ax_norm
 
-    fit_fig.canvas.draw()
-    fit_fig.set_tight_layout(True)
-    fit_fig.canvas.flush_events()
-
-    return fit_fig
 
 def simulate(uwave_time_range, freq, resonant_freq, contrast,
              measured_rabi_period=None, resonant_rabi_period=None):
@@ -188,6 +234,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
 
     tool_belt.reset_cfm(cxn)
+    kpl.init_kplotlib()
 
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -204,6 +251,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
+    norm_style = nv_sig["norm_style"]
     polarization_time = nv_sig['spin_pol_dur']
     readout = nv_sig['spin_readout_dur']
     readout_sec = readout / (10**9)
@@ -252,17 +300,14 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     # Create a list of indices to step through the taus. This will be shuffled
     tau_ind_list = list(range(0, num_steps))
 
-    # create figure
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    ax = axes_pack[0]
-    ax.plot([], [])
-    ax.set_xlabel('rf time (ns)')
-    ax.set_ylabel('Counts')
-
-    ax = axes_pack[1]
-    ax.plot([], [])
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Normalized signal')
+    # Create raw data figure for incremental plotting
+    raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
+        taus
+    )
+    # Set up a run indicator for incremental plotting
+    run_indicator_text = "Run #{}/{}"
+    text = run_indicator_text.format(0, num_runs)
+    run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
 
     # %% Collect the data
 
@@ -348,40 +393,28 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
         counter_server.stop_tag_stream()
 
-        # %% incremental plotting
+        ### Incremental plotting
 
-        #Average the counts over the iterations
-        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
-        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-        # norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        # Update the run indicator
+        text = run_indicator_text.format(run_ind + 1, num_runs)
+        run_indicator_obj.txt.set_text(text)
 
+        # Average the counts over the iterations
+        inc_sig_counts = sig_counts[: run_ind + 1]
+        inc_ref_counts = ref_counts[: run_ind + 1]
+        ret_vals = tool_belt.process_counts(
+            inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
 
-        ax = axes_pack[0]
-        ax.cla()
-        ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-        ax.plot(taus, avg_ref_counts, 'g-', label = 'reference')
-
-        ax.set_xlabel('rf time (ns)')
-        ax.set_ylabel('Counts')
-        ax.legend()
-
-        ax = axes_pack[1]
-        ax.cla()
-        ax.plot(taus , norm_avg_sig, 'b-')
-        ax.set_title('Normalized Signal With Varying Microwave Duration')
-        ax.set_xlabel('Microwave duration (ns)')
-        ax.set_ylabel('Normalized signal')
-
-        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
-
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                verticalalignment='top', bbox=props)
-
-        raw_fig.canvas.draw()
-        raw_fig.set_tight_layout(True)
-        raw_fig.canvas.flush_events()
+        kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+        kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+        kpl.plot_line_update(ax_norm, y=norm_avg_sig)
 
 
         # %% Save the data we have incrementally for long measurements
@@ -414,43 +447,32 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(raw_fig, file_path)
 
+   
+    ### Process and plot the data
 
-    # %% Fit the data and extract piPulse
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
 
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    # Raw data
+    kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+    kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+    kpl.plot_line_update(ax_norm, y=norm_avg_sig)
+    run_indicator_obj.remove()
 
-    # %% Plot the Rabi signal
 
-
-    ax = axes_pack[0]
-    ax.cla()
-    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
-
-    # ax.plot(tauArray, countsBackground, 'o-')
-    ax.set_xlabel('rf time (ns)')
-    ax.set_ylabel('Counts')
-    ax.legend()
-
-    ax = axes_pack[1]
-    ax.cla()
-    ax.plot(taus , norm_avg_sig, 'b-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Normalized signal')
-
-    raw_fig.canvas.draw()
-    raw_fig.set_tight_layout(True)
-    raw_fig.canvas.flush_events()
-
-    # %% Plot the data itself and the fitted curve
-
-    fit_fig = None
-    if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(uwave_time_range, uwave_freq, num_steps,
-                                    norm_avg_sig, fit_func, popt)
-        rabi_period = 1/popt[1]
-        print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
+    #  Plot the data itself and the fitted curve
+    fit_func = tool_belt.cosexp_1_at_0
+    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
+        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+        fit_func 
+    )
+    rabi_period = 1/popt[1]
+    print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
 
     # %% Clean up and save the data
 
