@@ -20,7 +20,8 @@ import sys
 import random
 import scipy.stats as stats
 import utils.tool_belt as tool_belt
-import chargeroutines.photonstatistics as model
+import utils.positioning as positioning
+import majorroutines.charge_majorroutines.photonstatistics as model
 import majorroutines.optimize as optimize
 
 # %%
@@ -522,8 +523,8 @@ def measure_histograms_sub(
     cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
 ):
 
-    tagger_server = tool_belt.get_tagger_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    tagger_server = tool_belt.get_server_tagger(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
@@ -547,9 +548,9 @@ def measure_histograms_sub(
         opti_coords_list = []
         opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
         opti_coords_list.append(opti_coords)
-        drift = tool_belt.get_drift()
+        drift = positioning.get_drift(cxn)
         adjusted_nv_coords = coords + np.array(drift)
-        tool_belt.set_xyz(cxn, adjusted_nv_coords)
+        positioning.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
 
         # Make sure the lasers are at the right powers
@@ -668,7 +669,8 @@ def measure_histograms_with_cxn(
     # print(seq_args)
     # return
 
-    apd_gate_channel = tool_belt.get_apd_gate_channel(cxn, apd_index)
+    apd_wiring = tool_belt.get_tagger_wiring(cxn)
+    apd_gate_channel = apd_wiring['di_apd_gate']
 
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
@@ -734,7 +736,6 @@ def main(
         raw_data = {
             "timestamp": timestamp,
             "nv_sig": nv_sig_copy,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
             "num_reps": num_reps,
             "nv0": nv0,
             "nv0-units": "list(list(us))",
@@ -786,7 +787,7 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
 
     # Initial Calculation and setup
     tagger_server = tool_belt.get_server_tagger(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    pulsegen_server = tool_belt.get_server_pulsegen(cxn)
 
     readout_time = nv_sig['spin_readout_dur']
 
