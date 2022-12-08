@@ -180,7 +180,11 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
         # Find the angle at the peak within [0, 180]
         opti_angle = popt[2] % 180
         print('Optimized angle: {}'.format(opti_angle))
-        cxn.rotation_stage_THOR_ell18k.set_angle(opti_angle)
+        try:
+            rotation_stage_server = tool_belt.get_server_magnet_rotation(cxn)
+            rotation_stage_server.set_angle(opti_angle)
+        except:
+            print("trying to set magnet angle with no rotation stage. check config?")
 
     # %% Wrap up
 

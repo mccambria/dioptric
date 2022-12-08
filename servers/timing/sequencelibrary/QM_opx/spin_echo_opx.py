@@ -35,7 +35,7 @@ def qua_program(opx, config, args, num_reps):
     tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
 
     # Get the APD indices
-    apd_index, state, laser_name, laser_power = args[6:10]
+    state, laser_name, laser_power = args[6:9]
     
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
@@ -50,7 +50,7 @@ def qua_program(opx, config, args, num_reps):
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
     back_buffer = 200
-    back_buffer_cc = int(back_buffer//4)    
+    back_buffer_cc = int(round(back_buffer/4))    
     
     laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
     
@@ -59,22 +59,26 @@ def qua_program(opx, config, args, num_reps):
 
     # Include a buffer on the front end so that we can delay channels that
     # should start off the sequence HIGH
-    polarization_cc = int(polarization // 4)
-    laser_delay_time_cc = int(laser_delay_time // 4)
+    polarization_cc = int(round(polarization / 4))
+    laser_delay_time_cc = int(round(laser_delay_time / 4))
 
-    readout_time_cc = int(readout_time // 4)
-    period = 0 # polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on
-    delay1_cc = int( (laser_delay_time - rf_delay_time + polarization + pre_uwave_exp_wait_time) //4 )
-    delay2_cc = int((laser_delay_time+sig_to_ref_wait_time_long) //4)
-    delay21_cc = int( (post_uwave_exp_wait_time + laser_delay_time - rf_delay_time)/4)
-    delay3_cc = int( (laser_delay_time - rf_delay_time + pre_uwave_exp_wait_time) //4 )
-    delay4_cc = int((laser_delay_time+sig_to_ref_wait_time_shrt) //4)
-    tau_shrt_cc = int(tau_shrt//4)
-    tau_long_cc = int(tau_long//4)
-    post_uwave_exp_wait_time_cc = int(post_uwave_exp_wait_time//4)
-    pi_on_2_pulse_cc = int(pi_on_2_pulse//4)
-    pi_pulse_cc = int(pi_pulse//4)
-    # print(pi_on_2_pulse)
+    readout_time_cc = int(round(readout_time / 4))
+    delay1_cc = int( round( (laser_delay_time - rf_delay_time + polarization + pre_uwave_exp_wait_time) /4) )
+    delay2_cc = int( round( (laser_delay_time+sig_to_ref_wait_time_long) /4 ))
+    delay21_cc = int( round( (post_uwave_exp_wait_time + laser_delay_time - rf_delay_time)/4))
+    delay3_cc = int(round( (laser_delay_time - rf_delay_time + pre_uwave_exp_wait_time) /4 ))
+    delay4_cc = int( round( (laser_delay_time+sig_to_ref_wait_time_shrt) /4) )
+    tau_shrt_cc = int(round(tau_shrt/4))
+    tau_long_cc = int(round(tau_long/4))
+    post_uwave_exp_wait_time_cc = int(round(post_uwave_exp_wait_time/4))
+    pi_on_2_pulse_cc = int(round(pi_on_2_pulse/4))
+    pi_pulse_cc = int(round(pi_pulse/4))
+    
+    period_cc= delay1_cc + pi_on_2_pulse_cc + tau_shrt_cc + pi_pulse_cc + tau_shrt_cc + pi_on_2_pulse_cc + delay21_cc \
+        + polarization_cc + delay2_cc + polarization_cc + delay3_cc + pi_on_2_pulse_cc + tau_long_cc + pi_pulse_cc + \
+            tau_long_cc + pi_on_2_pulse_cc + delay21_cc + polarization_cc + delay4_cc + polarization_cc \
+                + laser_delay_time_cc + back_buffer_cc
+    period = int(period_cc*4)
     
     with program() as seq:
         
@@ -244,23 +248,23 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     qm = qmm.open_qm(config_opx)
     
-    simulation_duration =  205500 // 4 # clock cycle units - 4ns
+    simulation_duration =  80550 // 4 # clock cycle units - 4ns
     
-    num_repeat=3
+    num_repeat=2
 # tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
-    args = [40, 1000.0, 350, 0, 100, 100, 0, 1, 'cobolt_515', None]
+    args = [100, 1000.0, 350, 50, 52, 32, 1, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
     # plt.show()
 # 
-    # job = qm.execute(seq)
+    job = qm.execute(seq)
 
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     
     # a = time.time()
-    # counts_apd0, counts_apd1 = results.fetch_all() 
+    counts_apd0, counts_apd1 = results.fetch_all() 
     # counts_apd0 = np.sum(counts_apd0,1)
     # ref_counts = np.sum(counts_apd0[0::2])
     # sig_counts = np.sum(counts_apd0[1::2])

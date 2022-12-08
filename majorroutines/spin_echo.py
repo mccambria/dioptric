@@ -493,7 +493,6 @@ def main_with_cxn(
     num_runs,
     state=States.LOW,
 ):
-
     
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
@@ -590,6 +589,7 @@ def main_with_cxn(
         laser_power,
     ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     # print(seq_args)
@@ -688,28 +688,6 @@ def main_with_cxn(
             pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
-
-            # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
-            # So we can sum on the values for similar index modulus 4 to
-            # parse the returned list into what we want.
-            # new_counts = counter_server.read_counter_separate_gates(1)
-            # sample_counts = new_counts[0]
-
-            # count = sum(sample_counts[0::4])
-            # sig_counts[run_ind, tau_ind_first] = count
-            # print("First signal = " + str(count))
-
-            # count = sum(sample_counts[1::4])
-            # ref_counts[run_ind, tau_ind_first] = count
-            # print("First Reference = " + str(count))
-
-            # count = sum(sample_counts[2::4])
-            # sig_counts[run_ind, tau_ind_second] = count
-            # print("Second Signal = " + str(count))
-
-            # count = sum(sample_counts[3::4])
-            # ref_counts[run_ind, tau_ind_second] = count
-            # print("Second Reference = " + str(count))
             
             new_counts = counter_server.read_counter_modulo_gates(4, 1)
             sample_counts = new_counts[0]

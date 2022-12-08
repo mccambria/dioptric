@@ -785,7 +785,7 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
     tool_belt.reset_cfm(cxn)
 
     # Initial Calculation and setup
-    tagger_server = tool_belt.get_tagger_server(cxn)
+    tagger_server = tool_belt.get_server_tagger(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
 
     readout_time = nv_sig['spin_readout_dur']

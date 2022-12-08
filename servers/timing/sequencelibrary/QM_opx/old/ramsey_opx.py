@@ -17,7 +17,6 @@ from qm.qua import *
 from qm import SimulationConfig
 from opx_configuration_file import *
 from utils.tool_belt import States
-from utils.tool_belt import Mod_types
 
 def qua_program(opx, config, args, num_reps):
     
@@ -35,8 +34,7 @@ def qua_program(opx, config, args, num_reps):
     # Unpack the durations
     tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
 
-    # Get the APD indices
-    apd_index, state, laser_name, laser_power = args[6:10]
+    state, laser_name, laser_power = args[6:9]
     
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
@@ -49,14 +47,11 @@ def qua_program(opx, config, args, num_reps):
     sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
     sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
-    laser_delay_time = config['Optics'][laser_name]['delay']
+    laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
     back_buffer = 200
     back_buffer_cc = int(back_buffer//4)    
-    
-    laser_mod_type = config["Optics"][laser_name]["mod_type"]
-    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)
-    
+
     uwave_experiment_shrt = pi_on_2_pulse + tau_shrt + pi_pulse + tau_shrt + pi_on_2_pulse
     uwave_experiment_long = pi_on_2_pulse + tau_long + pi_pulse + tau_long + pi_on_2_pulse
 
@@ -65,21 +60,21 @@ def qua_program(opx, config, args, num_reps):
     polarization_cc = int(polarization // 4)
     laser_delay_time_cc = int(laser_delay_time // 4)
 
-    readout_time_cc = int(readout_time // 4)
+    readout_time_cc = int(round(readout_time / 4))
     period = 0 # polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on
     delay1_cc = int( (laser_delay_time - rf_delay_time + polarization + pre_uwave_exp_wait_time) //4 )
     delay2_cc = int((laser_delay_time+sig_to_ref_wait_time_long) //4)
     delay21_cc = int( (post_uwave_exp_wait_time + laser_delay_time - rf_delay_time)/4)
     delay3_cc = int( (laser_delay_time - rf_delay_time + pre_uwave_exp_wait_time) //4 )
     delay4_cc = int((laser_delay_time+sig_to_ref_wait_time_shrt) //4)
-    tau_shrt_cc = int(tau_shrt//4)
+    tau_shrt_cc = int(round(tau_shrt/4))
     double_tau_shrt_cc = int(2*tau_shrt_cc)
-    tau_long_cc = int(tau_long//4)
+    tau_long_cc = int(round(tau_long/4))
     double_tau_long_cc = int(2*tau_long_cc)
     post_uwave_exp_wait_time_cc = int(post_uwave_exp_wait_time//4)
-    pi_on_2_pulse_cc = int(pi_on_2_pulse//4)
+    pi_on_2_pulse_cc = int(round(pi_on_2_pulse/4))
     double_pi_on_2_pulse_cc = int( (2*pi_on_2_pulse)//4)
-    pi_pulse_cc = int(pi_pulse//4)
+    pi_pulse_cc = int(round(pi_pulse/4))
     # print(pi_on_2_pulse)
     
     with program() as seq:
@@ -116,7 +111,10 @@ def qua_program(opx, config, args, num_reps):
             wait(delay1_cc, sig_gen)
             # if tau_shrt >= 16:
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
-            wait(double_tau_shrt_cc ,sig_gen)
+            if double_tau_shrt_cc >=4:
+                wait(double_tau_shrt_cc ,sig_gen)
+            elif double_tau_shrt_cc <=3:
+                pass
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
             # elif tau_shrt <= 15:
             #     play("uwave_ON",sig_gen, duration=double_pi_on_2_pulse_cc)
@@ -166,9 +164,11 @@ def qua_program(opx, config, args, num_reps):
             # wait(int( (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time) //4 ), laser_name)
             
             wait(delay3_cc, sig_gen)
-            # if tau_long >= 16:
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
-            wait(double_tau_long_cc ,sig_gen)
+            if double_tau_long_cc >=4:
+                wait(double_tau_long_cc ,sig_gen)
+            if double_tau_long_cc <=3:
+                pass
             play("uwave_ON",sig_gen, duration=pi_on_2_pulse_cc)
             # elif tau_long <= 15:
             #     play("uwave_ON",sig_gen, duration=double_pi_on_2_pulse_cc)
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     num_repeat=1
     # 20.0, 3000.0, 340, 0, 46, 1270.0, 0, 1, 'cobolt_515', None]
 # tau_shrt, polarization, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
-    args = [40.0, 2000.0, 340, 0, 46, 100.0, 0, 1, 'cobolt_515', None]
+    args = [40.0, 2000.0, 340, 0, 46, 100.0, 1, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
     plt.figure()
 
