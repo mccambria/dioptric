@@ -21,15 +21,14 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     readout, state, laser_name, laser_power, apd_index = args
-
-    laser_mod_type = config["Optics"][laser_name]["mod_type"]
-    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)
     
+    laser_pulse, laser_delay, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
+    
+
     state = States(state)
     opx_wiring = config['Wiring']['QmOpx']
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
     uwave_delay = config['Microwaves'][sig_gen_name]['delay']
-    laser_delay = config['Optics'][laser_name]['delay']
     meas_buffer = config['CommonDurations']['cw_meas_buffer']
     transient = 0
     
@@ -90,7 +89,7 @@ def qua_program(opx, config, args, num_reps):
             align()              
             
             # start the laser a little earlier than the apds
-            play(laser_pulse,laser_name,duration=period_cc)
+            play(laser_pulse*amp(laser_amplitude),laser_name,duration=period_cc)
             
             wait(front_buffer_m_uwave_delay_cc, sig_gen_name)
             wait(front_buffer_cc,"do_apd_0_gate","do_apd_1_gate")

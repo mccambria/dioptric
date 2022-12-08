@@ -118,7 +118,6 @@ def measure_delay(
                 tau,
                 max_tau,
                 readout,
-                apd_indices[0],
                 laser_name,
                 laser_power,
             ]
@@ -174,7 +173,7 @@ def measure_delay(
         # complete_counts = counter_server.read_counter_complete()
 
         # new_counts = counter_server.read_counter_separate_gates(1)
-        new_counts = counter_server.read_counter_modulo_gates(2)
+        new_counts = counter_server.read_counter_modulo_gates(2, 1)
 
         # print('here2')
         sample_counts = new_counts[0]
@@ -219,7 +218,7 @@ def measure_delay(
         "laser_name": laser_name,
         "sig_gen": sig_gen,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         "delay_range": delay_range,
         "delay_range-units": "ns",
         "num_steps": num_steps,
@@ -395,11 +394,11 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.222, 0.027, 3.83],
+            "coords":[-0.189, 0.079, 4.05],
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":21,
+        "expected_count_rate":19,
 
 
           "spin_laser":green_laser,
@@ -467,10 +466,10 @@ if __name__ == "__main__":
 
 
     # laser delay
-    num_steps = 101
+    num_steps = 51
     num_reps = int(5e4)
     # laser_name = 'laserglow_532'
-    delay_range = [0, 600]
+    delay_range = [0, 2000]
     # num_reps = int(1e5)
     # laser_name = 'laserglow_589'
     # delay_range = [800, 1700]
@@ -482,9 +481,9 @@ if __name__ == "__main__":
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
     # delay_range = [0,1e3]
-    # with labrad.connect() as cxn:
-    #     aom_delay(cxn, nv_sig, apd_indices,
-    #               delay_range, num_steps, num_reps, laser_name, laser_power)
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, apd_indices,
+                  delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
     num_reps = int(1e5)
@@ -494,7 +493,7 @@ if __name__ == "__main__":
     # state = States.LOW
     #  sg394
     # state = States.HIGH
-    with labrad.connect() as cxn:
+    # with labrad.connect() as cxn:
         # iq_delay(
         #     cxn,
         #     nv_sig,
@@ -513,17 +512,17 @@ if __name__ == "__main__":
         #     num_steps,
         #     num_reps,
         # )
-        uwave_delay(
-            cxn,
-            nv_sig,
-            apd_indices,
-            States.LOW,
-            delay_range,
-            num_steps,
-            num_reps,
-            green_laser,
-            1,
-        )
+        # uwave_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     States.LOW,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        #     green_laser,
+        #     1,
+        # )
         # fm_delay(
         #     cxn,
         #     nv_sig,

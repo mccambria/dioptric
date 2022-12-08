@@ -63,13 +63,12 @@ def create_fit_figure(
         kpl.plot_points(ax, freqs, norm_avg_sig, yerr=norm_avg_sig_ste)
     else:
         kpl.plot_line(ax, freqs, norm_avg_sig)
-    if fit_func is not None:
-        kpl.plot_line(
-            ax,
-            smooth_freqs,
-            fit_func(smooth_freqs, *popt),
-            color=KplColors.RED,
-        )
+    kpl.plot_line(
+        ax,
+        smooth_freqs,
+        fit_func(smooth_freqs, *popt),
+        color=KplColors.RED,
+    )
 
     # Text boxes to describe the fits
     low_text = None
@@ -215,7 +214,7 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    _, _, norm_avg_sig, norm_avg_sig_ste = process_counts(
+    _, _, norm_avg_sig, norm_avg_sig_ste = tool_belt.process_counts(
         sig_counts, ref_counts, num_reps, readout, norm_style
     )
 
@@ -228,24 +227,23 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
         fit_func,
         guess_params,
     )
-    if fit_func is None:
-        return None, None
+
+    if len(popt) == 6:
+        # print("Double resonance")
+        low_res_ind = 2
+        high_res_ind = low_res_ind + 3
+        avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
+        low_res_err = np.sqrt(pcov[low_res_ind, low_res_ind])
+        hig_res_err = np.sqrt(pcov[high_res_ind, high_res_ind])
+        avg_res_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        return avg_res, avg_res_err
     else:
-        if len(popt) == 6:
-            # print("Double resonance")
-            low_res_ind = 2
-            high_res_ind = low_res_ind + 3
-            avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
-            low_res_err = np.sqrt(pcov[low_res_ind, low_res_ind])
-            hig_res_err = np.sqrt(pcov[high_res_ind, high_res_ind])
-            avg_res_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-            return avg_res, avg_res_err
-        else:
-            # print("Single resonance")
-            res_ind = 2
-            res = popt[res_ind]
-            res_err = np.sqrt(pcov[res_ind, res_ind])
-            return res, res_err
+        # print("Single resonance")
+        res_ind = 2
+        # res_ind = 1  # MCC sigma
+        res = popt[res_ind]
+        res_err = np.sqrt(pcov[res_ind, res_ind])
+        return res, res_err
 
 
 def get_guess_params(
@@ -324,7 +322,7 @@ def get_guess_params(
         high_freq_guess = None
         low_contrast_guess = max_peak_height
     else:
-        print("Could not locate peaks, using center frequency")
+        # print("Could not locate peaks, using center frequency")
         low_freq_guess = freq_center
         high_freq_guess = None
         low_contrast_guess = height
@@ -377,70 +375,63 @@ def fit_resonance(
     if guess_params is None:
         guess_params = algo_guess_params
 
-    try:
-        popt, pcov = curve_fit(
-            fit_func,
-            freqs,
-            norm_avg_sig,
-            p0=guess_params,
-            sigma=norm_avg_sig_ste,
-            absolute_sigma=True,
-        )
-    except Exception as exc:
-        print(exc)
-        fit_func = None
-        popt = None
-        pcov = None
+    popt, pcov = curve_fit(
+        fit_func,
+        freqs,
+        norm_avg_sig,
+        p0=guess_params,
+        sigma=norm_avg_sig_ste,
+        absolute_sigma=True,
+    )
 
     return fit_func, popt, pcov
 
 
-def process_counts(
-    sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
-):
-    """Extract the normalized average signal at each data point.
-    Since we sometimes don't do many runs (<10), we often will have an
-    insufficient sample size to run stats on for norm_avg_sig calculation.
-    We assume Poisson statistics instead.
-    """
+# def process_counts(
+#     sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
+# ):
+#     """Extract the normalized average signal at each data point.
+#     Since we sometimes don't do many runs (<10), we often will have an
+#     insufficient sample size to run stats on for norm_avg_sig calculation.
+#     We assume Poisson statistics instead.
+#     """
 
-    ref_counts = np.array(ref_counts)
-    sig_counts = np.array(sig_counts)
+#     ref_counts = np.array(ref_counts)
+#     sig_counts = np.array(sig_counts)
+#     num_runs, num_points = ref_counts.shape
+#     readout_sec = readout * 1e-9
 
-    num_runs, num_points = ref_counts.shape
-    readout_sec = readout * 1e-9
+#     # Find the averages across runs
+#     sig_counts_avg = np.average(sig_counts, axis=0)
+#     single_ref_avg = np.average(ref_counts)
+#     ref_counts_avg = np.average(ref_counts, axis=0)
 
-    # Find the averages across runs
-    sig_counts_avg = np.average(sig_counts, axis=0)
-    single_ref_avg = np.average(ref_counts)
-    ref_counts_avg = np.average(ref_counts, axis=0)
+#     sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
+#     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
+#     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
-    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
-    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
-    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
+#     if norm_style == NormStyle.SINGLE_VALUED:
+#         norm_avg_sig = sig_counts_avg / single_ref_avg
+#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+#             (sig_counts_ste / sig_counts_avg) ** 2
+#             + (single_ref_ste / single_ref_avg) ** 2
+#         )
+#     elif norm_style == NormStyle.POINT_TO_POINT:
+#         norm_avg_sig = sig_counts_avg / ref_counts_avg
+#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+#             (sig_counts_ste / sig_counts_avg) ** 2
+#             + (ref_counts_ste / ref_counts_avg) ** 2
+#         )
 
-    if norm_style == NormStyle.SINGLE_VALUED:
-        norm_avg_sig = sig_counts_avg / single_ref_avg
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (sig_counts_ste / sig_counts_avg) ** 2
-            + (single_ref_ste / single_ref_avg) ** 2
-        )
-    elif norm_style == NormStyle.POINT_TO_POINT:
-        norm_avg_sig = sig_counts_avg / ref_counts_avg
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (sig_counts_ste / sig_counts_avg) ** 2
-            + (ref_counts_ste / ref_counts_avg) ** 2
-        )
+#     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+#     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
 
-    sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
-    ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-
-    return (
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    )
+#     return (
+#         sig_counts_avg_kcps,
+#         ref_counts_avg_kcps,
+#         norm_avg_sig,
+#         norm_avg_sig_ste,
+#     )
 
 
 # endregion
@@ -529,17 +520,17 @@ def main_with_cxn(
 
     kpl.init_kplotlib()
 
-    tool_belt.reset_cfm(cxn)
-
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
-    awg = tool_belt.get_server_awg(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
+
+    tool_belt.reset_cfm(cxn)
+
 
     # check if running external iq_mod with SRS
     iq_key = False
     if 'uwave_iq_{}'.format(state.name) in nv_sig:
         iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
-        
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -592,6 +583,7 @@ def main_with_cxn(
         ]
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
 
     opti_coords_list = []
 
@@ -636,11 +628,11 @@ def main_with_cxn(
         sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
-            sig_gen_cxn.load_iq()
-            # awg.load_arb_phases([0])
+             sig_gen_cxn.load_iq()
+            # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
-            awg.load_knill()
+            arbwavegen_server.load_knill()
         sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -658,7 +650,6 @@ def main_with_cxn(
 
             freq_index_master_list[run_ind].append(freq_ind)
             sig_gen_cxn.set_freq(freqs[freq_ind])
-
             counter.clear_buffer()
             pulse_gen.stream_start(int(num_reps))
 
@@ -681,7 +672,7 @@ def main_with_cxn(
         # Average the counts over the iterations
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
-        ret_vals = process_counts(
+        ret_vals = tool_belt.process_counts(
             inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
         )
         (
@@ -736,12 +727,12 @@ def main_with_cxn(
         file_path = tool_belt.get_file_path(
             __file__, start_timestamp, nv_sig["name"], "incremental"
         )
-        tool_belt.save_raw_data(data, file_path)
         tool_belt.save_figure(raw_fig, file_path)
+        tool_belt.save_raw_data(data, file_path)
 
     ### Process and plot the data
 
-    ret_vals = process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
@@ -756,10 +747,16 @@ def main_with_cxn(
     run_indicator_obj.remove()
 
     # Fits
-    ret_vals = create_fit_figure(
+    fit_fig, _, fit_func, popt, _ = create_fit_figure(
         freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
-    fit_fig = ret_vals[0]
+    
+    if len(popt) == 3:
+        low_freq = popt[2]
+        high_freq = None
+    elif len(popt) == 6:
+        low_freq = popt[2]
+        high_freq = popt[5]
 
     ### Clean up, save the data, return
 
@@ -806,13 +803,14 @@ def main_with_cxn(
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     data_file_name = file_path.stem
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_raw_data(data, file_path)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     tool_belt.save_figure(fit_fig, file_path)
 
+    tool_belt.save_raw_data(data, file_path)
+
     single_res = return_res_with_error(data)
-    return single_res, data_file_name
+    return single_res, data_file_name, [low_freq, high_freq]
 
 
 # endregion
@@ -820,12 +818,13 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
+    print(Path(__file__).stem)
+    sys.exit()
+
     kpl.init_kplotlib()
 
-    file_name = "2022_12_06-10_38_40-15micro-nv3_zfs_vs_t"
+    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
-    print(return_res_with_error(data))
-    sys.exit()
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
@@ -840,7 +839,7 @@ if __name__ == "__main__":
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,

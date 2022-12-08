@@ -151,7 +151,7 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 
         angle_resonances = (None, None)  # Default to Nones
         if uwave_pulse_dur is not None:
-            angle_resonances = pesr(cxn, nv_sig_copy,
+            _, _, angle_resonances = pesr(cxn, nv_sig_copy,
                                     freq_center, freq_range, num_freq_steps,
                                     num_freq_reps, num_freq_runs,
                                     uwave_power, uwave_pulse_dur)
@@ -217,8 +217,9 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2022_11_07-17_44_17-siena-nv1_2022_10_27'
-    data = tool_belt.get_raw_data(file)
+    file = '2022_11_06-15_11_47-siena-nv1_2022_10_13'
+    folder = "pc_rabi/branch_master/optimize_magnet_angle/2022_12"
+    data = tool_belt.get_raw_data(file, folder)
     splittings = data['splittings']
     print(splittings)
 

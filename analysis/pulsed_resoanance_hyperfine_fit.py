@@ -19,7 +19,7 @@ from utils.tool_belt import States, NormStyle
 from random import shuffle
 import sys
 
-def process_counts(ref_counts, sig_counts, norm_style=NormStyle.single_valued):
+def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
     """Extract the normalized average signal at each data point.
     Since we sometimes don't do many runs (<10), we often will have an
     insufficient sample size to run stats on for norm_avg_sig calculation.
@@ -40,13 +40,13 @@ def process_counts(ref_counts, sig_counts, norm_style=NormStyle.single_valued):
     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
-    if norm_style == NormStyle.single_valued:
+    if norm_style == NormStyle.SINGLE_VALUED:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
             + (single_ref_ste / single_ref_avg) ** 2
         )
-    elif norm_style == NormStyle.point_to_point:
+    elif norm_style == NormStyle.POINT_TO_POINT:
         norm_avg_sig = sig_counts_avg / ref_counts_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
@@ -111,7 +111,7 @@ def create_fit_figure(
     # kpl.text(ax, 0.35, 0.8, text2)
     # kpl.text(ax, 0.7, 0.8, text3)
 
-    kpl.tight_layout(fig)
+#    kpl.tight_layout(fig)
 
     return fig
 
@@ -142,9 +142,9 @@ def fit_resonance(
     fit_func = lambda freqs, center, a1, s1, a2, s2, a3, s3: tri_gaus(freqs,center, hyperfine, a1, s1, a2, s2, a3, s3)
     
     guess_params = [freq_center,
-                    0.05, 0.001, 
-                    0.05, 0.001,
-                    0.05, 0.001, 
+                    0.2, 0.0002, 
+                    0.2, 0.0002,
+                    0.2, 0.0002, 
                     ]
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
@@ -155,7 +155,8 @@ def fit_resonance(
         norm_avg_sig,
         p0=guess_params,
     )
-    print(guess_params[0])
+    #popt=guess_params
+    print(popt[0])
 
     return fit_func, popt, pcov
 
@@ -166,7 +167,7 @@ def fit_resonance(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     
-    file = "2022_12_04-15_47_00-siena-nv1_2022_10_27"
+    file = "2022_12_06-19_31_44-siena-nv1_2022_10_27"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     nv_sig = data["nv_sig"]
     # norm_style = NormStyle.point_to_point
-    norm_style = NormStyle.single_valued
+    norm_style = NormStyle.SINGLE_VALUED
 
     ret_vals = process_counts(ref_counts, sig_counts, norm_style)
     (

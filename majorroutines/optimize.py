@@ -507,7 +507,7 @@ def main_with_cxn(
     # If optimize is disabled, just set the filters and magnet in place
     if nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig, adjusted_coords)
-        return None
+        return [], None
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig["coords"] = adjusted_coords
 
@@ -710,6 +710,7 @@ def main_with_cxn(
             print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*drift))
+            prepare_microscope(cxn, nv_sig)
         else:
             print("Optimization failed.")
             prepare_microscope(cxn, nv_sig)

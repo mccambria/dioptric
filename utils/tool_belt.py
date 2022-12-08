@@ -488,6 +488,53 @@ def calc_snr(sig_count, ref_count):
     return snr
 
 
+def process_counts(
+    sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
+):
+    """Extract the normalized average signal at each data point.
+    Since we sometimes don't do many runs (<10), we often will have an
+    insufficient sample size to run stats on for norm_avg_sig calculation.
+    We assume Poisson statistics instead.
+    """
+
+    ref_counts = np.array(ref_counts)
+    sig_counts = np.array(sig_counts)
+    num_runs, num_points = ref_counts.shape
+    readout_sec = readout * 1e-9
+
+    # Find the averages across runs
+    sig_counts_avg = np.average(sig_counts, axis=0)
+    single_ref_avg = np.average(ref_counts)
+    ref_counts_avg = np.average(ref_counts, axis=0)
+
+    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
+    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
+    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
+
+    if norm_style == NormStyle.SINGLE_VALUED:
+        norm_avg_sig = sig_counts_avg / single_ref_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (single_ref_ste / single_ref_avg) ** 2
+        )
+    elif norm_style == NormStyle.POINT_TO_POINT:
+        norm_avg_sig = sig_counts_avg / ref_counts_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (ref_counts_ste / ref_counts_avg) ** 2
+        )
+
+    sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+    ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
+
+    return (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    )
+
+
 def get_scan_vals(center, scan_range, num_steps, dtype=float):
     """
     Returns a linspace for a scan centered about specified point
@@ -591,9 +638,9 @@ def get_server_pulse_gen(cxn):
     return common.get_server(cxn, "pulse_gen")
 
 
-def get_server_awg(cxn):
+def get_server_arb_wave_gen(cxn):
     """Get the arbitrary waveform generator server for this setup, e.g. opx or keysight"""
-    return common.get_server(cxn, "awg")
+    return common.get_server(cxn, "arb_wave_gen")
 
 
 def get_server_counter(cxn):
@@ -747,6 +794,11 @@ def utc_from_file_name(file_name, time_zone="CST"):
     date_time = datetime.strptime(date_time_str, r"%Y_%m_%d-%H_%M_%S-%Z")
     timestamp = date_time.timestamp()
     return timestamp
+
+def get_nv_sig_units_no_cxn():
+    with labrad.connect() as cxn:
+        nv_sig_units =get_nv_sig_units(cxn)
+    return nv_sig_units
 
 def get_nv_sig_units(cxn):
     try:

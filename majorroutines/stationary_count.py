@@ -9,6 +9,7 @@ Created on April 12th, 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import utils.kplotlib as kpl
 import numpy
 import matplotlib.pyplot as plt
@@ -36,19 +37,19 @@ def main_with_cxn(
     readout = nv_sig["imaging_readout_dur"]
     readout_sec = readout / 10**9
     charge_init = nv_minus_init or nv_zero_init
-    optimize.main_with_cxn(cxn, nv_sig)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    counter_server = tool_belt.get_counter_server(cxn)
+    # optimize.main_with_cxn(cxn, nv_sig)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
 
     # %% Optimize
 
     optimize.main_with_cxn(cxn, nv_sig)
     coords = nv_sig['coords']
-    drift = tool_belt.get_drift()
+    drift = positioning.get_drift(cxn)
     adj_coords = []
     for i in range(3):
         adj_coords.append(coords[i] + drift[i])
-    tool_belt.set_xyz(cxn, adj_coords)
+    positioning.set_xyz(cxn, adj_coords)
 
     # %% Set up the imaging laser
 
@@ -79,6 +80,7 @@ def main_with_cxn(
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
+    run_time_s = run_time * 1e-9
 
     # Figure setup
     samples = numpy.empty(total_num_samples)
@@ -89,6 +91,7 @@ def main_with_cxn(
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     kpl.plot_line(ax, x_vals, samples)
+    ax.set_xlim(-0.05*run_time_s, 1.05*run_time_s)
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Count rate (kcps)")
     plt.get_current_fig_manager().window.showMaximized()  # Maximize the window
@@ -144,7 +147,8 @@ def main_with_cxn(
 
             # Update the figure in k counts per sec
             samples_kcps = samples / (10**3 * readout_sec)
-            kpl.plot_line_update(ax, samples_kcps)
+            kpl.plot_line_update(ax, x =x_vals, y =samples_kcps, relim_x=False)
+            
 
     ### Clean up and report average and standard deviation
 

@@ -12,6 +12,7 @@ Created on Tue Apr 23 11:49:23 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import numpy
 import os
 import time
@@ -182,9 +183,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   opti_nv_sig = None):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -213,17 +214,17 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     max_uwave_time = uwave_time_range[1]
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
-    
+
     # check if running external iq_mod with SRS
     iq_key = False
     if 'uwave_iq_{}'.format(state.name) in nv_sig:
         iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
-        
+
     # Analyze the sequence
     num_reps = int(num_reps)
     # file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time, 
+                readout, max_uwave_time,
                 state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
@@ -278,9 +279,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         # Optimize and save the coords we found
         if opti_nv_sig:
             opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
-            drift = tool_belt.get_drift()
+            drift = positioning.get_drift(cxn)
             adj_coords = nv_sig['coords'] + numpy.array(drift)
-            tool_belt.set_xyz(cxn, adj_coords)
+            positioning.set_xyz(cxn, adj_coords)
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
@@ -289,7 +290,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
@@ -321,14 +322,15 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
             seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time, 
+                        readout, max_uwave_time,
                         state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
 
-            start_time = time.time()
+            # start_time = time.time()
+            counter_server.clear_buffer()
             pulsegen_server.stream_immediate(file_name, num_reps,
                                              seq_args_string)
             new_counts = counter_server.read_counter_modulo_gates(2, 1)
@@ -336,6 +338,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             sample_counts = new_counts[0]
             sig_counts[run_ind, tau_ind] = sample_counts[0]
             ref_counts[run_ind, tau_ind] = sample_counts[1]
+
 
 #            run_time = time.time()
 #            run_elapsed_time = run_time - start_time
@@ -385,7 +388,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -463,7 +466,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,

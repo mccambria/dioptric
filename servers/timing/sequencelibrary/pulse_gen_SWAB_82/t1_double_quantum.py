@@ -206,6 +206,6 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config)
     # tool_belt.set_feedthroughs_to_false(config)
     
-    seq_args = [0, 1000.0, 350, 59, 53, 2000,  3, 3, 'integrated_520', None]
+    seq_args = [1000, 1000.0, 350, 59, 53, 2000,  1, 2, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
