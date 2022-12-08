@@ -182,7 +182,6 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     # Analyze the sequence
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
-    # file_name = "rabi_srt_balancing.py"
     seq_args = [taus[0], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
                 dev_high_sign, dev_low_sign,
@@ -241,8 +240,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     high_sig_gen_cxn = tool_belt.get_server_sig_gen(
         cxn, States.HIGH
     )
-    if hasattr(low_sig_gen_cxn, "load_fm"):
-        low_sig_gen_cxn.load_fm(abs(deviation_low)) 
+    #if hasattr(low_sig_gen_cxn, "load_fm"):
+    #    low_sig_gen_cxn.load_fm(abs(deviation_low)) 
     # if hasattr(high_sig_gen_cxn, "load_fm"): #we don't want to turn on SRS FM
     #     high_sig_gen_cxn.load_fm(abs(deviation_high)) 
     
@@ -275,6 +274,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         low_sig_gen_cxn.set_amp(uwave_power_low)
         # if iq_key_LOW:
         #     low_sig_gen_cxn.load_iq()
+        
+        low_sig_gen_cxn.load_fm(abs(deviation_low)) 
         low_sig_gen_cxn.uwave_on()
 
         # high_sig_gen_cxn.set_freq(uwave_freq_high)

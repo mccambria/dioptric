@@ -89,7 +89,8 @@ def main_with_cxn(
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Temp (K)")
         cur_temp_str = f"Current temp: {actual} K"
-        cur_temp_text_box = kpl.anchored_text(ax, cur_temp_str, kpl.Loc.UPPER_LEFT)
+        cur_temp_text_box = kpl.anchored_text(ax, cur_temp_str, 
+                                    kpl.Loc.UPPER_LEFT, size=kpl.Size.SMALL)
 
     # Break out of the while if the user says stop
     tool_belt.init_safe_stop()

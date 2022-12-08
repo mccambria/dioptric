@@ -207,13 +207,13 @@ def do_pulsed_resonance_batch(nv_list, temp):
 
     num_steps = 51
     
-    # num_reps = 2e4
-    # num_runs = 32
-    
-    num_reps = 1e2
-    # num_reps = 50
+    num_reps = 2e4
     num_runs = 32
-    # num_runs = 8
+    
+    # num_reps = 1e2
+    # # num_reps = 50
+    # num_runs = 32
+    # # num_runs = 8
 
     uwave_power = 4
     uwave_pulse_dur = 100
@@ -304,7 +304,8 @@ if __name__ == "__main__":
     #     'name': '{}-nvref_zfs_vs_t'.format(sample_name),
     #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 10,
     #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
+    #     "spin_pol_dur": 2e3, "spin_readout_dur": 440,
     #     'collection_filter': None, 'magnet_angle': None,
     #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
     #     }
@@ -360,8 +361,8 @@ if __name__ == "__main__":
     #     }
     
     sample_name = "15micro"
-    z_coord = 0
-    ref_coords = [0.639, -0.84, z_coord]
+    z_coord = 8
+    ref_coords = [0.728, -0.766, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -370,7 +371,8 @@ if __name__ == "__main__":
         'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 800,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
-        "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
+        # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
+        "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': None, 'magnet_angle': None,
         'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
         }
@@ -405,12 +407,13 @@ if __name__ == "__main__":
     # nv_sig = nv1
     nv_sig = nvref
     # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
-    nv_list = [nv1, nv2, nv3]
+    # nv_list = [nv1, nv2, nv3]
+    nv_list = [nv1]
     # for nv in nv_list:
     #     print(nv["coords"])
     # nv_list = [nv2, nv3, nv4, nv5]
     shuffle(nv_list)
-    nv_list.append(nv_list[0])
+    # nv_list.append(nv_list[0])
 
     ### Functions to run
 
@@ -449,7 +452,7 @@ if __name__ == "__main__":
 
         # nv_sig = nvref 
         # nv_sig['imaging_readout_dur'] = 4e7
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_optimize(nv_sig)
         # nv_sig['imaging_readout_dur'] = 1e8
@@ -461,8 +464,8 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        temp = 15
-        do_pulsed_resonance_batch(nv_list, temp)
+        # temp = 90
+        # do_pulsed_resonance_batch(nv_list, temp)
         # do_rabi_batch(nv_list)
 
     except Exception as exc:
