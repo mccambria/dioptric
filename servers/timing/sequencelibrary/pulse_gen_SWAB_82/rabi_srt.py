@@ -429,6 +429,6 @@ if __name__ == '__main__':
     # tool_belt.set_feedthroughs_to_false(config)
     
     
-    seq_args = [0, 10000.0, 300, 1097, 1202, 2000, 1, 1, 2, 2, 'integrated_520', None]
+    seq_args = [0, 10000.0, 300, 68, 68, 2500, 1, 1, 1, 2, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

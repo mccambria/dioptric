@@ -136,6 +136,16 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     if deviation_low < 0:
         dev_low_sign = -1
     
+    ### some BS with the BNC using discrete deviations... will work on fixing this later
+    if deviation_low == 2:
+        deviation_high = -1.95
+    elif deviation_low == 3:
+        deviation_high = -3.92
+        
+        
+        
+        
+    
     state_high = States.HIGH
     state_low = States.LOW
     uwave_freq_high = nv_sig['resonance_{}'.format(state_high.name)]
@@ -222,8 +232,12 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     tau_ind_list = list(range(0, num_steps))
 
     title='{} initial state, {} readout state,\n{} MHz deviation on HIGH, {} MHz deviation on LOW'.format(initial_state.name, 
-                           readout_state.name, deviation_high, 
-                           deviation_low)
+                           readout_state.name, 
+                           -deviation_high,
+                           -deviation_high,   
+                           # deviation_high, 
+                           # deviation_low
+                           )
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
         taus, title = title
@@ -240,8 +254,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     high_sig_gen_cxn = tool_belt.get_server_sig_gen(
         cxn, States.HIGH
     )
-    #if hasattr(low_sig_gen_cxn, "load_fm"):
-    #    low_sig_gen_cxn.load_fm(abs(deviation_low)) 
+    if hasattr(low_sig_gen_cxn, "load_fm"):
+        low_sig_gen_cxn.load_fm(abs(deviation_low)) 
     # if hasattr(high_sig_gen_cxn, "load_fm"): #we don't want to turn on SRS FM
     #     high_sig_gen_cxn.load_fm(abs(deviation_high)) 
     
@@ -275,7 +289,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         # if iq_key_LOW:
         #     low_sig_gen_cxn.load_iq()
         
-        low_sig_gen_cxn.load_fm(abs(deviation_low)) 
+        # low_sig_gen_cxn.load_fm(abs(deviation_low)) 
         low_sig_gen_cxn.uwave_on()
 
         # high_sig_gen_cxn.set_freq(uwave_freq_high)
@@ -606,8 +620,8 @@ def fit_data(taus,  norm_avg_sig):
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi_srt/2022_11'
-    file_1 = '2022_11_29-16_58_39-siena-nv1_2022_10_27'
+    path = 'pc_rabi/branch_master/rabi_srt/2022_12'
+    file_1 = '2022_12_08-15_34_04-siena-nv1_2022_10_27'
     file_2 = '2022_11_29-18_14_41-siena-nv1_2022_10_27'
     file_3 = '2022_11_29-19_30_36-siena-nv1_2022_10_27'
     file_4 = '2022_11_29-20_46_28-siena-nv1_2022_10_27'
@@ -618,12 +632,12 @@ if __name__ == '__main__':
                   # file_m4,
                  
                   # file_m3,
-                  file_5,
+                  # file_5,
                  file_1,
-                 file_2,
-                 file_0,
-                 file_3,
-                 file_4,
+                 # file_2,
+                 # file_0,
+                 # file_3,
+                 # file_4,
                   # file_p3,
                   # file_p4,
                  ]
@@ -657,9 +671,9 @@ if __name__ == '__main__':
         contrast = 0.108*2
         low_pop = 1-contrast
         pop= (numpy.array(norm_avg_sig) - low_pop) / (1 - low_pop)
-        ax.plot(taus, pop, 'o',color = color_list[f],  label = 'LOW resonance shifted {:.2f} MHz'.format(df))
+        ax.plot(taus, pop, 'o',color = color_list[f],)#  label = 'LOW resonance shifted {:.2f} MHz'.format(df))
         fit_func, popt = fit_data(taus, pop)
-        print(popt)
+        print(1/popt[-1])
         # popt = [0.85, 1/2, 3]
         linspaceTau = numpy.linspace(taus[0], taus[-1], 100)
         ax.plot(linspaceTau, fit_func(linspaceTau, *popt), '-',color = color_list[f],  label='fit')
