@@ -399,7 +399,7 @@ def main_with_cxn(
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         seq_file = 'simple_readout.py'
         
-    print(seq_args)
+    # print(seq_args)
     ret_vals = pulse_gen.stream_load(seq_file,seq_args_string)
     period = ret_vals[0]
         
@@ -562,6 +562,7 @@ def main_with_cxn(
                 num_read_so_far += num_new_samples
 
     counter.clear_buffer()
+    
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
