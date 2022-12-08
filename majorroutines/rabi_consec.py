@@ -471,14 +471,14 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     return norm_avg_sig
 
 # %%
-def plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop = []):
+def plot_pop_consec(taus, m_pop, z_pop, p_pop = []):
     
     fig, ax = plt.subplots()
     ax.plot(taus , m_pop, 'r-', label = '-1 population')
     ax.plot(taus, z_pop, 'g-', label = '0 population')
     if len(m_pop) != 0:
         ax.plot(taus, p_pop, 'b-', label = '+1 population')
-    ax.set_title('Rabi SRT, {} MHz detuning'.format(deviation))
+    ax.set_title('Rabi double quantum')
     ax.set_xlabel('SRT length (us)')
     ax.set_ylabel('Population')
     ax.legend()
@@ -486,7 +486,7 @@ def plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop = []):
     return fig
     
     
-def full_pop_srt(nv_sig, uwave_time_range, deviation, 
+def full_pop_cosec(nv_sig, uwave_time_range,
          num_steps, num_reps, num_runs):
     
     contrast = 0.108*2
@@ -497,27 +497,25 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps)
     taus = taus/1e3
-    deviation_high = deviation
-    deviation_low = deviation
     
     init=States.LOW
     if False :
  
-        p_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
+        p_sig = main(nv_sig, uwave_time_range,
                  num_steps, num_reps, num_runs,
                  readout_state = States.HIGH,
                  initial_state = init,
                  )
         p_pop = (numpy.array(p_sig) - low_pop) / (1 - min_pop)
         
-    m_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
+    m_sig = main(nv_sig, uwave_time_range, 
         num_steps, num_reps, num_runs,
         readout_state = States.LOW,
         initial_state = init,
         )
     m_pop = (numpy.array(m_sig) - low_pop) / (1 - min_pop)
     
-    z_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
+    z_sig = main(nv_sig, uwave_time_range, 
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
@@ -526,7 +524,7 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
     
 
     
-    fig = plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop)
+    fig = plot_pop_consec(taus, m_pop, z_pop, p_pop)
 
     
     timestamp = tool_belt.get_time_stamp()

@@ -159,15 +159,19 @@ class SigGenBerkBnc835(LabradServer):
         '''
         Set up frequency modulation using an external analog source
         '''
-        deviation_Hz = deviation * 1e6
+        #deviation_Hz = deviation * 1e6
+        precision = len(str(deviation).split(".")[1])
         # set the deviation
-        # self.sig_gen.write("FM:DEV {}".format(deviation_Hz)) #I guess I don't actually need this...
+        cmd = "FM:DEV {0:.{1}f}MHZ".format(deviation, precision)
+        #logging.info(cmd)
+        self.sig_gen.write(cmd) #I guess I don't actually need this...
         # set the sensitivity for the modulation to the full deviation / V, so we apply 1 V to change the freq
-        self.sig_gen.write("FM:SENS {}".format(deviation_Hz))
-        # set the BNC to get trigger externally
-        self.sig_gen.write("FM:SOUR EXT")
+        cmd = "FM:SENS {0:.{1}f}MHZ".format(deviation, precision)
+        self.sig_gen.write(cmd)
         # set the external coupling to DC
         self.sig_gen.write("FM:COUP DC")
+        # set the BNC to get trigger externally
+        self.sig_gen.write("FM:SOUR EXT")
         self.sig_gen.write("FM:STAT ON")
         
     @setting(12)
