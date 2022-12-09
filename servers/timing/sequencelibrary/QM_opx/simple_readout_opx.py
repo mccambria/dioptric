@@ -52,7 +52,8 @@ def qua_program(opx, config, args, num_reps):
     # print(laser_on_time)
     
     delay_cc = max(int(delay // 4),4)
-    period = int(laser_on_time)
+    period_cc = delay_cc + num_readouts*(laser_on_time_cc) + 25
+    period = int(period_cc*4)
             
     with program() as seq:
         

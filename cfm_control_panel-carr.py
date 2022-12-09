@@ -34,9 +34,9 @@ import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import minorroutines.determine_delays as determine_delays
 import majorroutines.determine_standard_readout_params as determine_standard_readout_params
-import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
-import chargeroutines.determine_scc_pulse_params as determine_scc_pulse_params
-import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
+import majorroutines.charge_majorroutines.determine_charge_readout_params as determine_charge_readout_params
+import majorroutines.charge_majorroutines.determine_scc_pulse_params as determine_scc_pulse_params
+import majorroutines.charge_majorroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import majorroutines.charge_majorroutines.rabi_SCC as rabi_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC as ramsey_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC_one_tau_no_ref as ramsey_SCC_one_tau_no_ref
@@ -153,13 +153,13 @@ def do_rabi(nv_sig, apd_indices, uwave_time_range, state ,num_steps = 51, num_re
         num_runs,
     )    
 
-def do_spin_echo(nv_sig, apd_indices,max_time=120,num_reps=4e3,num_runs=5,state=States.LOW):
+def do_spin_echo(nv_sig, max_time=120,num_reps=4e3,num_runs=5,state=States.LOW):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
     # max_time = 120  # us
-    num_steps = int(max_time/2)  # 1 point per us
-    precession_time_range = [1e3, max_time * 10 ** 3]
+    num_steps = int(max_time/4)  # 1 point per us
+    precession_time_range = [10**3, max_time * 10 ** 3]
     # num_reps = 4e3
     # num_runs = 5
     # num_runs = 20
@@ -168,7 +168,6 @@ def do_spin_echo(nv_sig, apd_indices,max_time=120,num_reps=4e3,num_runs=5,state=
 
     angle = spin_echo.main(
         nv_sig,
-        apd_indices,
         precession_time_range,
         num_steps,
         num_reps,
@@ -177,35 +176,33 @@ def do_spin_echo(nv_sig, apd_indices,max_time=120,num_reps=4e3,num_runs=5,state=
     )
     return angle
 
-def do_ramsey(nv_sig, opti_nv_sig, apd_indices,detuning=4):
+def do_ramsey(nv_sig, detuning=4):
 
     # detuning = 5  # MHz
-    precession_time_range = [20, 1320]
-    num_steps =41
-    num_reps = int(4e4)
-    num_runs = 20
+    precession_time_range = [0, 1632]
+    num_steps = 52
+    num_reps = int(2e4)
+    num_runs = 15
 
     ramsey.main(
         nv_sig,
-        apd_indices,
         detuning,
         precession_time_range,
         num_steps,
         num_reps,
         num_runs,
-        opti_nv_sig = opti_nv_sig
     )
 
-def do_pulsed_resonance(nv_sig, opti_nv_sig, freq_center=2.87, freq_range=0.2, uwave_pulse_dur=100, num_steps=51, num_reps=1e4, num_runs=10):
+def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2, uwave_pulse_dur=100, num_steps=51, num_reps=1e4, num_runs=10):
 
     # num_steps =101
     # num_reps = 1e4
     # num_runs = 10
     uwave_power = 16.5
-    nv_sig['spin_pol_dur']=3e3
+    nv_sig['spin_pol_dur']=2e3
     # uwave_pulse_dur = 200
 
-    pulsed_resonance.main(
+    ret_vals = pulsed_resonance.main(
         nv_sig,
         freq_center,
         freq_range,
@@ -214,8 +211,9 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, freq_center=2.87, freq_range=0.2, u
         num_runs,
         uwave_power,
         uwave_pulse_dur,
-        opti_nv_sig = opti_nv_sig
+        opti_nv_sig = nv_sig
     )
+    return ret_vals
 
 def do_optimize_magnet_angle(nv_sig):
 
@@ -225,11 +223,11 @@ def do_optimize_magnet_angle(nv_sig):
     freq_range = 0.2
     num_freq_steps = 51
     # num_freq_runs = 30
-    num_freq_runs = 5
+    num_freq_runs = 4
 
     # Pulsed
     uwave_power = 16.5
-    uwave_pulse_dur = 84
+    uwave_pulse_dur = 50
     num_freq_reps = 2e4
 
     # CW
@@ -260,8 +258,8 @@ def do_determine_standard_readout_params(nv_sig):
                                            max_readouts, state=state)
 
 def do_determine_charge_readout_params(nv_sig,readout_powers,readout_times,num_reps):
+    
         opti_nv_sig = nv_sig
-        # num_reps = 2000
         readout_durs = readout_times
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
@@ -380,25 +378,23 @@ if __name__ == "__main__":
     with labrad.connect() as cxn:
         apd_indices = common.get_registry_entry(cxn, "apd_indices", ["","Config"])
         apd_indices = apd_indices.astype(list).tolist()
-        
 
     sample_name = "johnson"
     green_laser = "cobolt_515"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
-
+#28.632, 51.873, 60.30
     nv_sig = {
-        'coords': [29.279, 46.573, 55.], 'name': '{}-search'.format(sample_name),
+        'coords': [26.615, 50.049, 60.69], 'name': '{}-search'.format(sample_name),
         'ramp_voltages': False, "only_z_opt": False, 'disable_opt': False, "disable_z_opt": False, 
-        'expected_count_rate': None,
+        'expected_count_rate': 74,
         # "imaging_laser": yellow_laser, "imaging_laser_power": .35, 
-        # "imaging_laser": red_laser, "imaging_laser_filter": "nd_0", 
         "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", 
         "imaging_readout_dur": 10e6,
         # "imaging_readout_dur": 50e6,
         "spin_laser": green_laser,
         "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 1e4,
+        "spin_pol_dur": 3e3,
         "spin_readout_dur": 340,
         "nv-_reionization_laser": green_laser,
         "nv-_reionization_dur": 250,
@@ -421,9 +417,9 @@ if __name__ == "__main__":
         "charge_readout_laser_filter": "nd_0",
         "initialize_laser": green_laser,
         "initialize_dur": 1e4,
-        'collection_filter': None, 'magnet_angle': 150,
-        'resonance_LOW': 2.8469, 'rabi_LOW': 104, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.8952, 'rabi_HIGH': 104, 'uwave_power_HIGH': 16.5,
+        'collection_filter': None, 'magnet_angle': 171,
+        'resonance_LOW': 2.8196, 'rabi_LOW': 108, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9221, 'rabi_HIGH': 108, 'uwave_power_HIGH': 16.5,
         'norm_style':NormStyle.SINGLE_VALUED
         }
     
@@ -435,54 +431,38 @@ if __name__ == "__main__":
         # with labrad.connect() as cxn:
         #     positioning.reset_drift(cxn)
 
-        # tool_belt.init_safe_stop()
         # do_determine_standard_readout_params(nv_sig)
         # do_scc_pulsed_resonance(nv_sig,apd_indices)
         # do_rabi_SCC(nv_sig, apd_indices)       
         # do_ramsey_SCC(nv_sig, nv_sig, apd_indices,detuning=-0.74)
         
         # do_determine_scc_pulse_params(nv_sig,apd_indices,5000)
-        # do_determine_charge_readout_params(nv_sig, num_reps=500,readout_powers=[.55],readout_times=[5e6])
+        powers = [0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, \
+                  0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]
+        powers = [.2,.4]
+        do_determine_charge_readout_params(nv_sig, readout_powers=powers,readout_times=[20e6], num_reps=5000)
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
+        # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')
+        # do_image_sample(nv_sig,num_steps=20,scan_range=4,scan_type='XZ')
         
-        # nv_sig['coords'] = [30.0,46.0,55.0]
-        # do_image_sample(nv_sig,num_steps=40,scan_range=5,scan_type='XY')
-        
-        
-        # do_image_sample(nv_sig,num_steps=15,scan_range=4,scan_type='XZ')
-        
-        # for z in [67.0, 75.0]:
-        #     nv_sig['coords'][2] = z
-        #     do_image_sample(nv_sig,num_steps=50,scan_range=5)
         # do_optimize(nv_sig, apd_indices,save_data=True)
         # do_optimize_z(nv_sig, apd_indices)
         
-        do_stationary_count(nv_sig,disable_opt=True)
+        # do_stationary_count(nv_sig,disable_opt=True)
         # 
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e6), delay_range=[64,640],num_steps=37)
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_638',num_reps=int(6e6), delay_range=[40,700],num_steps=31)
         
         # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.87,freq_range=.2)
-        # do_rabi(nv_sig, apd_indices, uwave_time_range = [0,160], state=States.LOW,num_reps=2e4,num_runs=20,num_steps=11)
-        # time.sleep(4)
-        
-        # mangles = [150]
-        # pulse_durs = [40]
-        # for dur in pulse_durs:
-        #     for mag in mangles:
-        #         nv_sig['magnet_angle']=mag
-        #         do_pulsed_resonance(nv_sig, nv_sig,freq_center=2.87, freq_range=0.25,
-        #                             uwave_pulse_dur=dur,num_steps=61, num_reps=2e4, num_runs=15)
-
-        # do_pulsed_resonance(nv_sig, nv_sig,freq_center=2.87, freq_range=0.2,
-        #                     uwave_pulse_dur=100,num_steps=51, num_reps=2e4, num_runs=8)
-        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices,uwave_pulse_dur=500,freq_center=2.83,freq_range=.03,num_steps=51, num_reps=2e4, num_runs=15)
-        # do_ramsey(nv_sig, nv_sig, apd_indices,detuning=2)
-        # do_spin_echo(nv_sig, apd_indices,max_time=140,num_reps=2e4,num_runs=80,state=States.LOW)
+        # do_rabi(nv_sig, apd_indices, uwave_time_range = [0,160], state=States.LOW,num_reps=2e4,num_runs=15,num_steps=11)
+                
+        # do_pulsed_resonance(nv_sig, freq_range=0.2, uwave_pulse_dur=52,num_steps=41, num_reps=2e4, num_runs=8)
+        # detunings = [4,2,0]
+        # for d in detunings:
+        #     do_ramsey(nv_sig,detuning=d)
+        # do_spin_echo(nv_sig, max_time=200,num_reps=2e4,num_runs=100,state=States.LOW)
         # do_optimize_magnet_angle(nv_sig)
         
-        # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.65],readout_times=[15e6])
-        # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.55],readout_times=[15e6])
         # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.7],readout_times=[15e6])
         # do_determine_reion_dur(nv_sig, apd_indices)
 

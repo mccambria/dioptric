@@ -238,8 +238,6 @@ def main_with_cxn(
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
     seq_file_name = "spin_echo.py"
-    if False:
-        seq_file_name = "ramsey.py"
         
     if do_fm == False:
         seq_file_name = "spin_echo.py"
@@ -441,7 +439,7 @@ def main_with_cxn(
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the counter/tagger buffer of any excess counts
             counter_server.clear_buffer()
-            print(seq_args)
+            # print(seq_args)
             pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
