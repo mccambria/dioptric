@@ -248,12 +248,12 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.12
-    num_steps = 75
-    # freq_range = 0.010
-    # num_steps = 101
+    # freq_range = 0.12
+    # num_steps = 75
+    freq_range = 0.010
+    num_steps = 101
     num_reps = int(1e4)
-    num_runs =  3#40
+    num_runs =  20
 
     composite = False
 
@@ -313,7 +313,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs =  3
+    num_runs =  10
 
     rabi.main(
         nv_sig,
@@ -358,7 +358,7 @@ def do_rabi_consec_pop(nv_sig, uwave_time_range=[0, 500]):
     rabi_consec.full_pop_consec(nv_sig,  uwave_time_range,
              num_steps, num_reps, num_runs)
     
-def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0, 1000]):
+def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, v, uwave_time_range=[0, 1000]):
     
     deviation_high = dev
     deviation_low = dev
@@ -366,7 +366,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
     
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 3
+    num_runs = 10
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -377,6 +377,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
               num_runs,
               readout_state,
               initial_state,
+              low_dev_analog_voltage = v
     )
 
 def do_rabi_srt_pop(nv_sig,  deviation, num_steps,  uwave_time_range=[0, 1000]):
@@ -1032,7 +1033,7 @@ if __name__ == "__main__":
 
         "collection_filter": "715_sp+630_lp", # NV band only
         "uwave_power_LOW": 15,  
-        "uwave_power_HIGH": 3.5,
+        "uwave_power_HIGH": 5,
         
         "uwave_mod_freq_LOW": 2.189288,
         "uwave_mod_amp_LOW": 190,
@@ -1057,7 +1058,7 @@ if __name__ == "__main__":
     
     
     nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.184, 0.096, 4.05]
+    nv_sig_1["coords"] = [-0.184, 0.092, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     # nv_sig_1["norm_style"]= NormStyle.POINT_TO_POINT
     nv_sig_1["norm_style"]= NormStyle.SINGLE_VALUED
@@ -1065,12 +1066,12 @@ if __name__ == "__main__":
     nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 151.7
-    nv_sig_1["resonance_LOW"]= 2.78059 + 1.95*1e-3
-    nv_sig_1["rabi_LOW"]=135.2
+    nv_sig_1["resonance_LOW"]= 2.7805
+    nv_sig_1["rabi_LOW"]=1829.9
     nv_sig_1["uwave_iq_LOW"]= False 
     nv_sig_1["resonance_HIGH"]=2.9600
-    nv_sig_1["rabi_HIGH"]= 135.9
-    nv_sig_1["uwave_iq_HIGH"]= False  
+    nv_sig_1["rabi_HIGH"]= 1982.3
+    nv_sig_1["uwave_iq_HIGH"]= True  
     
     
     
@@ -1132,9 +1133,9 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2500])
-        do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 2500])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 2500])
         
         
         
@@ -1146,10 +1147,17 @@ if __name__ == "__main__":
             # 2 MHz == 1.95
             # 3 MHz == 3.92
         
-        # for d in [2, 3]:
-        #     do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 16000])
-        #     do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 16000])
-            
+        d = -5.175
+        v = 0#0.7
+        # do_rabi_srt(nv_sig,   States.LOW, States.LOW, d, v,  uwave_time_range=[0, 20000])
+        # do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d, v,  uwave_time_range=[0, 20000])
+        
+        do_rabi_srt(nv_sig,   States.ZERO, States.ZERO, d, v, uwave_time_range=[0, 2500])
+         
+        # for d in [3]:
+        #      do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 20000])
+        #      do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 20000])
+               
         # for d in [0, 8, 16, 24]:
         # do_rabi_srt_pop(nv_sig,  24, 31, uwave_time_range=[0, 2000])
         # do_rabi_srt_pop(nv_sig,  30, 41, uwave_time_range=[0, 2500])
