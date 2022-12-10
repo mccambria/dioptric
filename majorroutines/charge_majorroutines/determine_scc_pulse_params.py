@@ -13,8 +13,6 @@ reionization pulse and spin shelf pulse.
 import utils.tool_belt as tool_belt
 import numpy
 import os
-# import json
-# import time
 import copy
 import matplotlib.pyplot as plt
 import labrad

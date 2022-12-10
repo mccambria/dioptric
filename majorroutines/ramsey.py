@@ -184,7 +184,7 @@ def main(
         angle = main_with_cxn(
             cxn,
             nv_sig,
-    detuning,
+            detuning,
             precession_dur_range,
             num_steps,
             num_reps,
