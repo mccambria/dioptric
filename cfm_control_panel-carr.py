@@ -276,11 +276,11 @@ def do_determine_charge_readout_params(nv_sig,readout_powers,readout_times,num_r
           extra_green_initialization=True,
           )
         
-def do_determine_scc_pulse_params(nv_sig,num_reps):
+def do_determine_scc_pulse_params(nv_sig,num_reps,ion_durs=None):
     
     nv_sig['nv-_reionization_dur'] = 5000
     
-    determine_scc_pulse_params.determine_ionization_dur(nv_sig, num_reps)
+    determine_scc_pulse_params.determine_ionization_dur(nv_sig, num_reps,ion_durs)
     
 def do_scc_pulsed_resonance(nv_sig,apd_indices):
     
@@ -305,7 +305,7 @@ def do_rabi_SCC(nv_sig):
     
     num_steps = 11
     num_reps= 500
-    num_runs = 5
+    num_runs = 2
     uwave_time_range = [0,160]
     
     rabi_SCC.main(nv_sig, uwave_time_range, state,
@@ -436,9 +436,7 @@ if __name__ == "__main__":
         # do_rabi_SCC(nv_sig)       
         # do_ramsey_SCC(nv_sig, nv_sig, apd_indices,detuning=-0.74)
         
-        # do_determine_scc_pulse_params(nv_sig,5000)
-        # powers = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, \
-        #           0.55, 0.60, 0.65, 0.70, 0.75, 0.80]
+        # do_determine_scc_pulse_params(nv_sig,50000,ion_durs=[116])
         # do_determine_charge_readout_params(nv_sig, readout_powers=powers,readout_times=[10e6], num_reps=50000)
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
         # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')
@@ -456,7 +454,7 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [0,160], state=States.LOW,num_reps=2e4,num_runs=15,num_steps=11)
                 
         # do_pulsed_resonance(nv_sig, freq_range=0.2, uwave_pulse_dur=52,num_steps=41, num_reps=2e4, num_runs=8)
-        detunings = [-.15]
+        detunings = [-.75]
         for d in detunings:
             do_ramsey(nv_sig,detuning=d)
         # do_spin_echo(nv_sig, max_time=200,num_reps=2e4,num_runs=100,state=States.LOW)

@@ -106,6 +106,7 @@ def qua_program(opx, config, args, num_reps):
         with for_(n, 0, n < num_reps, n + 1):
             
             align()
+            
             play(green_laser_pulse*amp(green_laser_amplitude),green_laser_name,duration=reion_time//4)
             align()
             wait(green_laser_delay_time//4)

@@ -434,8 +434,9 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
     return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
-def inverted_cosexp(t, offset, amp, freq, decay):
+def inverted_cosexp(t, offset, freq, decay):
     two_pi = 2 * np.pi
+    amp = offset - 1
     return offset - (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
 

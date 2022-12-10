@@ -318,14 +318,16 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
                 'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
                 'norm_avg_sig-units': 'arb'}
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     tool_belt.save_figure(raw_fig, file_path)
     if fit_fig is not None:
-        tool_belt.save_figure(fit_fig, file_path + '-fit')
+        file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+        tool_belt.save_figure(fit_fig, file_path_fit)
     tool_belt.save_raw_data(raw_data, file_path)
     
     if (fit_func is not None) and (popt is not None):
-        return rabi_period, sig_counts, ref_counts
+        return rabi_period, sig_counts, ref_counts, popt
     else:
         return None, sig_counts, ref_counts
     
@@ -341,21 +343,28 @@ if __name__ == '__main__':
     # norm_avg_sig = data['norm_avg_sig']
     sig_counts = data['sig_counts']
     ref_counts = data['ref_counts']
+    num_reps = data['num_reps']
     uwave_time_range = data['uwave_time_range']
     num_steps = data['num_steps']
     nv_sig = data['nv_sig']
+    norm_style = tool_belt.NormStyle.SINGLE_VALUED
     state = data['state']
     uwave_freq = nv_sig['resonance_{}'.format(state)]
+    readout_time = nv_sig['charge_readout_dur']
     
-    norm_avg_sig = numpy.average(sig_counts,axis=0)/numpy.average(ref_counts)
-    taus = numpy.linspace(uwave_time_range[0], uwave_time_range[1], num=num_steps)
-    plt.plot(taus,norm_avg_sig)
-    plt.xlabel('tau [ns]')
-    plt.ylabel('Contrast')
+    kpl.init_kplotlib()
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout_time, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
 #    
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
-                  fit_func, popt)
+    fit_func = tool_belt.inverted_cosexp
+    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
+        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+        fit_func 
+    )
     
                   

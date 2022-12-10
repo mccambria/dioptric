@@ -400,10 +400,11 @@ if __name__ == '__main__':
     
     # file = "2022_11_15-11_37_37-johnson-search-ion_pulse_dur"
     
-    assign_state = True
+    assign_state = False
     photon_thresh = 4
     # for file in os.listdir("E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_Carr/branch_opx-setup/determine_scc_pulse_params/2022_11/readout_time+power_sweep"):
-    for file in ['2022_11_21-15_36_59-johnson-search-ion_pulse_dur']:
+    for file in ['2022_11_15-09_45_21-johnson-search-ion_pulse_dur',
+                 '2022_12_10-08_56_16-johnson-search-ion_pulse_dur']:
         print(file)
         
         data = tool_belt.get_raw_data(file)
@@ -434,7 +435,7 @@ if __name__ == '__main__':
         
         raw_fig, axes = plt.subplots(1, 3, figsize=(18, 4.5))
         # axes.cla()
-        averaging_times = numpy.array([500e3,1000e3,2000e3]) #us
+        averaging_times = numpy.array([100e3,500e3,1000e3]) #us
         nbins = numpy.array(averaging_times/(readout_dur/1e3),dtype=numpy.int32)
         nb=0
         for ax in axes:
