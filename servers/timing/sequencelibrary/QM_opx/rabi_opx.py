@@ -66,7 +66,7 @@ def qua_program(opx, config, args, num_reps):
     mid_duration_cc = int(mid_duration // 4)
 
     readout_time_cc = int(readout_time // 4)
-    tau_cc = int(tau // 4)
+    tau_cc = int(round(tau / 4))
     reference_laser_on_cc = int(reference_laser_on // 4)
     signal_wait_time_cc = int(signal_wait_time // 4)
     period = polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on

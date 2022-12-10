@@ -37,14 +37,14 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
                             num=num_steps, dtype=numpy.int32, retstep=True)
 
-    fit_func = tool_belt.cosexp_scc
+    fit_func = tool_belt.inverted_cosexp
 
     # %% Estimated fit parameters
 
     offset = numpy.average(norm_avg_sig)
-    amplitude = 1.0 - offset
-    frequency = 1/75  # Could take Fourier transform
-    decay = 1000
+    amplitude = .3
+    frequency = 1/100  # Could take Fourier transform
+    decay = 100
 
     # To estimate the frequency let's find the highest peak in the FFT
     transform = numpy.fft.rfft(norm_avg_sig)
@@ -57,7 +57,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     # %% Fit
 
     init_params = [offset, amplitude, frequency, decay]
-    init_params=[1.005, -0.005, 1/118.7, 847]
+    # init_params=[1.005, -0.005, 1/118.7, 847]
 
     try:
         popt, _ = curve_fit(fit_func, taus, norm_avg_sig,
@@ -77,7 +77,7 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
                           num=num_steps, dtype=numpy.int32)
     linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
 
-    text = 40
+    text = 20
     fit_fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(taus, norm_avg_sig,'bo', linewidth = 3,label='data')
     ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', linewidth = 3, label='fit')
@@ -86,22 +86,22 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
                 direction='in',grid_alpha=0.7, labelsize = text)
 #    ax.set_ylim([0.982, 1.021])
-    ax.set_yticks([ 0.99, 1.0, 1.01, 1.02])
+    # ax.set_yticks([ 0.99, 1.0, 1.01, 1.02])
 #    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend(fontsize = text)
     text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
     
-    text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
+    text_popt = '\n'.join((r'$C - A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
                       r'$C = $' + '%.3f'%(popt[0]),
                       r'$A_0 = $' + '%.3f'%(popt[1]),
                       r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[2]) + ' ns',
                       r'$d = $' + '%i'%(popt[3]) + ' ' + r'$ ns$'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#    ax.text(0.55, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
-#            verticalalignment='top', bbox=props)
-#    ax.text(0.55, 0.3, text_freq, transform=ax.transAxes, fontsize=12,
-#            verticalalignment='top', bbox=props)
+    ax.text(0.25, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    # ax.text(0.55, 0.3, text_freq, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
 
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
@@ -112,19 +112,19 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_time_range, state,
+def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, uwave_time_range, state,
                       num_steps, num_reps, num_runs)
         
         return rabi_per, sig_counts, ref_counts
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
     
-    tagger_server = tool_belt.get_tagger_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    tagger_server = tool_belt.get_server_tagger(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     tool_belt.reset_cfm(cxn)
 
@@ -152,7 +152,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     green_laser_name = nv_sig['nv-_reionization_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
     yellow_laser_name = nv_sig['charge_readout_laser']
-    sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)    
+    sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state) 
+    sig_gen_name = sig_gen_cxn.name
            
     #delay of aoms and laser
     # laser_515_delay = shared_params['515_laser_delay']
@@ -175,10 +176,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[0],
     #     shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-    #     apd_indices[0], readout_power, shelf_power, state.value]
+    #     readout_power, shelf_power, state.value]
     seq_args = [readout_time, reion_time, ion_time, max_uwave_time,
         shelf_time ,  max_uwave_time, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-        apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+        reion_power, ion_power, shelf_power, readout_power]
     print(seq_args)
 #    seq_args = [int(el) for el in seq_args]
 #    print(seq_args)
@@ -218,17 +219,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
 
         # Load the APD
-        tagger_server.start_tag_stream(apd_indices)
+        tagger_server.start_tag_stream()
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
@@ -251,11 +251,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # Stream the sequence
             # seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[tau_ind],
             #     shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-            #     apd_indices[0], readout_power, shelf_power, state.value]
+            #     readout_power, shelf_power, state.value]
 #            print(seq_args)
             seq_args = [readout_time, reion_time, ion_time, taus[tau_ind],
                 shelf_time ,  max_uwave_time, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-                apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+                reion_power, ion_power, shelf_power, readout_power]
             # print(seq_args)
 
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -290,7 +290,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'shelf_power': shelf_power,
                     'shelf_power-units': 'mW',
                     'uwave_freq': uwave_freq,
@@ -397,7 +397,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
 #                'green_optical_power_pd': green_optical_power_pd,
 #                'green_optical_power_pd-units': 'V',
 #                'green_optical_power_mW': green_optical_power_mW,
@@ -461,7 +461,6 @@ if __name__ == '__main__':
     #         "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
     #         "resonance_HIGH": 2.988,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
 
-    # apd_indices = [0]
     # num_steps = 51
     # num_reps = 2*10**2
     # num_runs = 5
@@ -469,13 +468,13 @@ if __name__ == '__main__':
     # uwave_time_range = [0, 200]
     
     # # Run rabi with SCC readout
-    # main(ensemble_B1, apd_indices, uwave_time_range, state,
+    # main(ensemble_B1, uwave_time_range, state,
     #      num_steps, num_reps, num_runs)
     
    
     
     # replotting data
-    file = '2022_11_14-09_10_42-johnson-search'
+    file = '2022_12_09-15_25_26-johnson-search'
     data = tool_belt.get_raw_data(file)
 #   
     # norm_avg_sig = data['norm_avg_sig']
@@ -487,16 +486,16 @@ if __name__ == '__main__':
     state = data['state']
     uwave_freq = nv_sig['resonance_{}'.format(state)]
     
-    avg_sig = numpy.average(sig_counts,axis=0)/numpy.average(ref_counts)
+    norm_avg_sig = numpy.average(sig_counts,axis=0)/numpy.average(ref_counts)
     taus = numpy.linspace(uwave_time_range[0], uwave_time_range[1], num=num_steps)
-    plt.plot(taus,avg_sig)
+    plt.plot(taus,norm_avg_sig)
     plt.xlabel('tau [ns]')
     plt.ylabel('Contrast')
 #    
-#    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-#    if (fit_func is not None) and (popt is not None):
-#        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
-#                  fit_func, popt)
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    if (fit_func is not None) and (popt is not None):
+        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
+                  fit_func, popt)
     
                   
 #    sig_counts = data['sig_counts']

@@ -80,23 +80,21 @@ def plot_snr_v_dur(dur_list, sig_counts_avg, ref_counts_avg,
 
 #%% Main
 # Function to actually run sequence and collect counts
-def measure(nv_sig, apd_indices, num_reps, state, plot = True):
+def measure(nv_sig, num_reps, state, plot = True):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = measure_with_cxn(cxn, nv_sig, apd_indices,  
-                           num_reps, state, plot)
+        sig_counts, ref_counts = measure_with_cxn(cxn, nv_sig, num_reps, state, plot)
         
     return sig_counts, ref_counts
-def measure_with_cxn(cxn, nv_sig, apd_indices,
-                  num_reps, state, plot):
+def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
 
     tool_belt.reset_cfm(cxn)
 
     # Initial Calculation and setup
     tool_belt.reset_cfm(cxn)
     
-    tagger_server = tool_belt.get_tagger_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    tagger_server = tool_belt.get_server_tagger(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
 
     # Initial Calculation and setup
@@ -134,7 +132,8 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
     green_laser_name = nv_sig['nv-_reionization_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
     yellow_laser_name = nv_sig['charge_readout_laser']
-    sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)
+    sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)   
+    sig_gen_name = sig_gen_cxn.name
     
     num_reps = int(num_reps)
     opti_coords_list = []
@@ -144,7 +143,7 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pi_pulse,
         shelf_time ,  uwave_pi_pulse, 
         green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-        apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+        reion_power, ion_power, shelf_power, readout_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
       
@@ -163,17 +162,16 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
     # Collect data
 
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig)
     opti_coords_list.append(opti_coords)
     
     # Turn on the microwaves
-    sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
     sig_gen_cxn.set_freq(uwave_freq)
     sig_gen_cxn.set_amp(uwave_power)
     sig_gen_cxn.uwave_on()
     
     # Load the APD
-    tagger_server.start_tag_stream(apd_indices)
+    tagger_server.start_tag_stream()
 
     pulsegen_server.stream_immediate(file_name, num_reps, seq_args_string)
 
@@ -196,15 +194,16 @@ def measure_with_cxn(cxn, nv_sig, apd_indices,
 
 # %%
 
-def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
+def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
     '''
     This function will test red pulse lengths between 0 and 600 ns on the LOW
     NV state.
     '''
     state = States.LOW
     if ion_durs is None:
-        ion_durs = numpy.array([340])#
-        # ion_durs = numpy.linspace(20,800,10)
+        # ion_durs = numpy.array([340])#
+        ion_durs = numpy.linspace(20,212,7)
+        # ion_durs = numpy.linspace(20,532,17)
   
     num_steps = len(ion_durs)
     
@@ -230,7 +229,7 @@ def determine_ionization_dur(nv_sig, apd_indices, num_reps, ion_durs=None):
         print('Ionization dur: {} ns'.format(t))
         nv_sig_copy = copy.deepcopy(nv_sig)
         nv_sig_copy['nv0_ionization_dur'] = t
-        sig_counts, ref_counts = measure(nv_sig_copy, apd_indices, num_reps,
+        sig_counts, ref_counts = measure(nv_sig_copy, num_reps,
                                     state, plot = False)
         # print(sig_counts)
         

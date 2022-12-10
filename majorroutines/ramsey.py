@@ -658,8 +658,8 @@ if __name__ == "__main__":
     analytics = True
     if analysis:
 
-        folder = "pc_carr/branch_opx-setup/ramsey/2022_11"
-        file = '2022_11_15-18_15_15-johnson-search'
+        folder = "pc_carr/branch_master/ramsey/2022_12"
+        file = '2022_12_09-03_33_30-johnson-search'
         
         # detuning = 0
         data = tool_belt.get_raw_data(file, folder)
@@ -693,25 +693,25 @@ if __name__ == "__main__":
         # t = numpy.linspace(.040,1.04,50)
         func = tool_belt.cosine_sum#(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
         taus = taus/1000
-        offset=.9
-        decay =0.7
-        amp_1 = -.033
+        offset=.88
+        decay = 1.5
+        amp_1 = -.04
         amp_2 = amp_1
         amp_3 = amp_1
-        detuning = -1.0
+        detuning = 4
         freq_1 = detuning-2.2
         freq_2 = detuning
         freq_3 = detuning+2.2
         
-        # fit_func = tool_belt.cosine_sum        
-        fit_func = tool_belt.cosine_one
+        fit_func = tool_belt.cosine_sum        
+        # fit_func = tool_belt.cosine_one
         # fit_func = cosine_sum_fixed_freq
         # init_params = guess_params_fixed_freq
         
-        # guess_params = (offset, decay, amp_1, freq_1,
-        #                     amp_2, freq_2,
-        #                     amp_3, freq_3)
-        guess_params = (offset, decay, amp_1*3, freq_1)
+        guess_params = (offset, decay, amp_1, freq_1,
+                            amp_2, freq_2,
+                            amp_3, freq_3)
+        # guess_params = (offset, decay, amp_1*3, freq_1)
         init_params = guess_params
 
         popt,pcov = curve_fit(fit_func, taus, norm_avg_sig,p0=init_params)
@@ -721,8 +721,8 @@ if __name__ == "__main__":
         # plt.figure()
         # plt.plot(taus,theoryvals)
         plt.plot(taus,norm_avg_sig)
-        plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
-        # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
+        # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
+        plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
         # plt.show()
         # raw_fig = fit_ramsey(norm_avg_sig, taus*1000, precession_time_range, [freq_1,freq_2,freq_3])
         

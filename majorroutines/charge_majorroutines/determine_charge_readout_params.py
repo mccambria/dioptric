@@ -197,12 +197,13 @@ def calculate_threshold_with_model(
     fit_rate = single_nv_photon_statistics_model(tR, nv0_array, nvm_array,do_plot=plot_model_hists)
     max_x_val = int(max_x_val)
     x_data = np.linspace(0, 100, 101)
-    thresh_para = model.calculate_threshold(tR, x_data, fit_rate)
+    threshold_list, thresh_para = model.calculate_threshold(tR, x_data, fit_rate)
     mu_0 = fit_rate[3] * tR
     mu_m = fit_rate[2] * tR
     fidelity = thresh_para[1]
     threshold = thresh_para[0]
     # print(title_text)
+    print(threshold_list)
     print("Threshold: {} counts, fidelity: {:.3f}".format(threshold, fidelity))
 
     if plot_model_hists:
@@ -249,11 +250,11 @@ def calculate_threshold_with_model(
         ax.set_title(title_text)
         plt.xlabel("Number of counts")
         plt.ylabel("Probability Density")
-        return threshold, fidelity, mu_0, mu_m, fig3
+        return threshold_list, threshold, fidelity, mu_0, mu_m, fig3
 
     else:
         # print('i made it here too')
-        return threshold, fidelity, mu_0, mu_m, ''
+        return threshold_list, threshold, fidelity, mu_0, mu_m, ''
 
 
 
@@ -358,7 +359,7 @@ def plot_threshold(
         nvm_counts_list = [
             np.count_nonzero(np.array(rep) < dur_us) for rep in nvm_counts
         ]
-        threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(
+        threshold_list, threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(
             readout_dur,
             nv0_counts_list,
             nvm_counts_list,
@@ -388,7 +389,8 @@ def plot_threshold(
             __file__, timestamp, nv_sig["name"] + "-threshold"
         )
         tool_belt.save_figure(fig, file_path)
-    return threshold, fidelity, nv0_counts,nvm_counts
+    print(threshold_list)
+    return threshold_list, threshold, fidelity, nv0_counts,nvm_counts
 
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur,exp_dur=0,bins=None):
@@ -1090,34 +1092,47 @@ def determine_reinit_spin_dur(nv_sig, apd_indices, num_reps, reinit_durs):
 if __name__ == "__main__":
 
     ### Replots
-
-    # if False:
-        
-    data = tool_belt.get_raw_data('2022_12_02-13_47_25-johnson-search')
-    nv_sig = data["nv_sig"]
-    nv0 = data["nv0"]
-    nvm = data["nvm"]
-    readout_power = nv_sig["charge_readout_laser_power"]
-    max_readout_dur = nv_sig["charge_readout_dur"]
     
-    readout_dur=15e6
+        
+    # data = tool_belt.get_raw_data('2022_12_02-13_47_25-johnson-search')
+    # nv_sig = data["nv_sig"]
+    # nv0 = data["nv0"]
+    # nvm = data["nvm"]
+    # readout_power = nv_sig["charge_readout_laser_power"]
+    # max_readout_dur = nv_sig["charge_readout_dur"]
+    
+    # readout_dur=15e6
 
-    threshold, fidelity,n0,nm = plot_threshold(
-        nv_sig,
-        readout_dur,
-        nv0,
-        nvm,
-        readout_power,
-        fit_threshold_full_model=False,
-        nd_filter=None,
-        plot_model_hists=True,
-        bins=None)
+    # threshold, fidelity,n0,nm = plot_threshold(
+    #     nv_sig,
+    #     readout_dur,
+    #     nv0,
+    #     nvm,
+    #     readout_power,
+    #     fit_threshold_full_model=False,
+    #     nd_filter=None,
+    #     plot_model_hists=True,
+    #     bins=None)
     
     
     if False:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
-        filenames = ['2022_11_21-15_24_59-johnson-search']
+        filenames = [
+        # "2022_12_08-20_31_43-johnson-search",
+        # "2022_12_08-16_33_28-johnson-search",
+        # "2022_12_08-16_53_12-johnson-search",
+        # "2022_12_08-17_12_57-johnson-search",
+        # "2022_12_08-17_32_44-johnson-search",
+        # "2022_12_08-17_52_31-johnson-search",
+        # "2022_12_08-18_12_20-johnson-search",
+        "2022_12_08-18_32_09-johnson-search",
+        # "2022_12_08-18_52_01-johnson-search",
+        # "2022_12_08-19_11_52-johnson-search",
+        # "2022_12_08-19_31_51-johnson-search",
+        # "2022_12_08-19_51_49-johnson-search",
+        # "2022_12_08-20_11_44-johnson-search"
+        ]
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
         powers_all = []
         thresholds_all = []
@@ -1132,7 +1147,7 @@ if __name__ == "__main__":
 
         # readout_dur = opti_readout_dur
 
-        times = [100e3]
+        times = [3e6]
         # times = [4e6,1e6,400e3,100e3,50e3,10e3]
         # times = [2e6,4e6]
 
@@ -1154,7 +1169,7 @@ if __name__ == "__main__":
                 max_readout_dur = nv_sig["charge_readout_dur"]
 
                 try:
-                    threshold, fidelity,n0,nm = plot_threshold(
+                    threshold_list, threshold, fidelity,n0,nm = plot_threshold(
                         nv_sig,
                         readout_dur,
                         nv0,
@@ -1180,30 +1195,38 @@ if __name__ == "__main__":
         print(powers_all)
         print(thresholds_all)
         print(fidelities_all)
-
+        
         # data_to_save = {"powers": powers_all,
         #                 "thresholds": thresholds_all,
-        #                 "fidelities": fidelities_all
+        #                 "fidelities": fidelities_all,
+        #                 'nv_sig':nv_sig
         #                 }
         # timestamp = tool_belt.get_time_stamp()
         # file_path = tool_belt.get_file_path(
-            # __file__, timestamp, nv_sig["name"]+'analysis_data'
+        #     __file__, timestamp, nv_sig["name"]+'analysis_data'
         # )
         # tool_belt.save_raw_data(data_to_save, file_path)
+        
+    if True:
+            
+        file_path = "2022_12_09-16_03_36-analysis_data"
+        
+        analysis_data = tool_belt.get_raw_data(file_path)
+        powers = np.array(analysis_data["powers"])
+        sort_inds = np.argsort(powers[0])
+        fidelities = np.array(analysis_data["fidelities"])
+        times = [500e3,1e6,3e6,5e6,10e6]
+        for i in range(len(times)):
 
-        # # file_path = "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_Carr/branch_opx-setup/determine_charge_readout_params/2022_11/"
-        # analysis_data = tool_belt.get_raw_data(file_path)
-        # powers = analysis_data["powers"]
-        # fidelities = analysis_data["fidelities"]
 
-        # for i in range(len(times)):
+            plt.figure()
 
-
-        #     plt.figure()
-
-        #     plt.scatter(powers[i],fidelities[i])
-        #     plt.title('{} ms readout'.format(times[i]))
-        #     plt.show()
+            plt.scatter(powers[i][sort_inds],fidelities[i][sort_inds])
+            plt.plot(powers[i][sort_inds],fidelities[i][sort_inds])
+            plt.title('{} ms readout'.format(times[i]/1e6))
+            plt.xlabel('Power (V)')
+            plt.ylabel('Charge State Fidelity')
+            plt.show()
 
 
         # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
