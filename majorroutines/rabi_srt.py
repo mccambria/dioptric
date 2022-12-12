@@ -517,13 +517,13 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     return norm_avg_sig
 
 # %%
-def plot_pop_srt(taus_m, m_pop, taus_z, z_pop, deviation, p_pop = []):
+def plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop = []):
     
     fig, ax = plt.subplots()
-    ax.plot(taus_m , m_pop, 'r-', label = '-1 population')
-    ax.plot(taus_z, z_pop, 'g-', label = '0 population')
+    ax.plot(taus , m_pop, 'r-', label = '-1 population')
+    ax.plot(taus, z_pop, 'g-', label = '0 population')
     if len(p_pop) != 0:
-        ax.plot(taus_z, p_pop, 'b-', label = '+1 population')
+        ax.plot(taus, p_pop, 'b-', label = '+1 population')
     ax.set_title('Rabi SRT, {} MHz detuning'.format(deviation))
     ax.set_xlabel('SRT length (us)')
     ax.set_ylabel('Population')
@@ -533,9 +533,10 @@ def plot_pop_srt(taus_m, m_pop, taus_z, z_pop, deviation, p_pop = []):
     
     
 def full_pop_srt(nv_sig, uwave_time_range, deviation, 
-         num_steps, num_reps, num_runs):
+         num_steps, num_reps, num_runs, 
+                       low_dev_analog_voltage):
     
-    contrast = 0.108*2
+    contrast = 0.104*2
     min_pop = 1-contrast
     
     min_uwave_time = uwave_time_range[0]
@@ -554,25 +555,27 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
                  readout_state = States.HIGH,
                  initial_state = init,
                  )
-        p_pop = (numpy.array(p_sig) - low_pop) / (1 - min_pop)
+        p_pop = (numpy.array(p_sig) - min_pop) / (1 - min_pop)
         
     m_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
         num_steps, num_reps, num_runs,
         readout_state = States.LOW,
         initial_state = init,
+        low_dev_analog_voltage=low_dev_analog_voltage
         )
-    m_pop = (numpy.array(m_sig) - low_pop) / (1 - min_pop)
+    m_pop = (numpy.array(m_sig) - min_pop) / (1 - min_pop)
     
     z_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
+            low_dev_analog_voltage=low_dev_analog_voltage
             )
-    z_pop = (numpy.array(z_sig) - low_pop) / (1 - min_pop)
+    z_pop = (numpy.array(z_sig) - min_pop) / (1 - min_pop)
     
 
     
-    fig = plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop)
+    fig = plot_pop_srt(taus, m_pop, z_pop, deviation)
 
     
     timestamp = tool_belt.get_time_stamp()

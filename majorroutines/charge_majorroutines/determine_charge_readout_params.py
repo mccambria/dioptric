@@ -34,10 +34,10 @@ def calc_histogram(nv0, nvm, dur, bins=None):
     # print(nv0)
     nv0_counts = [
         np.count_nonzero(np.array(rep) < dur_us) for rep in nv0
-    ]  # ???
+    ]  
     nvm_counts = [
         np.count_nonzero(np.array(rep) < dur_us) for rep in nvm
-    ]  # ???
+    ]  
     # print(nv0_counts)
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
@@ -525,7 +525,7 @@ def measure_histograms_sub(
 
     tagger_server = tool_belt.get_server_tagger(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
-
+    # print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
@@ -656,14 +656,13 @@ def measure_histograms_with_cxn(
     else:
         seq_file = "simple_readout_two_pulse.py"
         gen_seq_args = lambda init_laser: [
-            nv_sig["{}_dur".format(init_laser)],
+            int(nv_sig["{}_dur".format(init_laser)]),
             readout_pulse_time,
             nv_sig[init_laser],
             nv_sig["charge_readout_laser"],
             tool_belt.set_laser_power(cxn, nv_sig, init_laser),
             readout_laser_power,
             2,
-            apd_index,
         ]
     # seq_args = gen_seq_args("nv0_prep_laser")
     # print(seq_args)
@@ -675,7 +674,7 @@ def measure_histograms_with_cxn(
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
     
-    print(seq_args)
+    # print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
         cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
     )
@@ -683,7 +682,7 @@ def measure_histograms_with_cxn(
 
     # Red measurement
     seq_args = gen_seq_args("nv0_prep_laser")
-    print(seq_args)
+    # print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
         cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
     )
@@ -846,7 +845,7 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    print(seq_args)
+    # print(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
 
 
@@ -926,7 +925,7 @@ def measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    print(seq_args)
+    # print(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
 
 
