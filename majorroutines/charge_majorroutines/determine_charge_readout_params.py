@@ -197,7 +197,7 @@ def calculate_threshold_with_model(
     fit_rate = single_nv_photon_statistics_model(tR, nv0_array, nvm_array,do_plot=plot_model_hists)
     max_x_val = int(max_x_val)
     x_data = np.linspace(0, 100, 101)
-    threshold_list, thresh_para = model.calculate_threshold(tR, x_data, fit_rate)
+    threshold_list, fidelity_list, thresh_para = model.calculate_threshold(tR, x_data, fit_rate)
     mu_0 = fit_rate[3] * tR
     mu_m = fit_rate[2] * tR
     fidelity = thresh_para[1]
@@ -250,11 +250,11 @@ def calculate_threshold_with_model(
         ax.set_title(title_text)
         plt.xlabel("Number of counts")
         plt.ylabel("Probability Density")
-        return threshold_list, threshold, fidelity, mu_0, mu_m, fig3
+        return threshold_list,fidelity_list, threshold, fidelity, mu_0, mu_m, fig3
 
     else:
         # print('i made it here too')
-        return threshold_list, threshold, fidelity, mu_0, mu_m, ''
+        return threshold_list,fidelity_list, threshold, fidelity, mu_0, mu_m, ''
 
 
 
@@ -269,10 +269,13 @@ def calculate_threshold_no_model(
     power,
     nd_filter=None,
 ):
+    
+    # print(nvm_hist)
 
-    thresh, fid = model.calculate_threshold_from_experiment(
+    thresh, fid, threshold_list, fidelity_list = model.calculate_threshold_from_experiment(
         x_vals_0, x_vals_m, mu_0, mu_m, nv0_hist, nvm_hist
     )
+    # print(fid)
 
     fig3, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0, nv0_hist, "r-o", label="Test red pulse")
@@ -306,7 +309,7 @@ def calculate_threshold_no_model(
             int(readout_time / 1e3), power
         )
     ax.set_title(title_text)
-    return thresh, fid, fig3
+    return thresh, fid, fig3,  threshold_list, fidelity_list
 
 
 def plot_threshold(
@@ -343,7 +346,7 @@ def plot_threshold(
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
         nv0_counts, nvm_counts, readout_dur,bins,
     )
-    print(occur_m)
+    # print(occur_m)
 
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
@@ -360,7 +363,7 @@ def plot_threshold(
         nvm_counts_list = [
             np.count_nonzero(np.array(rep) < dur_us) for rep in nvm_counts
         ]
-        threshold_list, threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(
+        threshold_list, fidelity_list, threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(
             readout_dur,
             nv0_counts_list,
             nvm_counts_list,
@@ -370,7 +373,7 @@ def plot_threshold(
             plot_model_hists
         )
     else:
-        threshold, fidelity, fig = calculate_threshold_no_model(
+        threshold, fidelity, fig, threshold_list, fidelity_list = calculate_threshold_no_model(
             readout_dur,
             occur_0,
             occur_m,
@@ -390,8 +393,8 @@ def plot_threshold(
             __file__, timestamp, nv_sig["name"] + "-threshold"
         )
         tool_belt.save_figure(fig, file_path)
-    print(threshold_list)
-    return threshold_list, threshold, fidelity, nv0_counts,nvm_counts
+
+    return threshold_list, fidelity_list, threshold, fidelity, nv0_counts,nvm_counts
 
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur,exp_dur=0,bins=None):
@@ -1095,28 +1098,28 @@ if __name__ == "__main__":
     ### Replots
     
         
-    # data = tool_belt.get_raw_data('2022_12_02-13_47_25-johnson-search')
-    # nv_sig = data["nv_sig"]
-    # nv0 = data["nv0"]
-    # nvm = data["nvm"]
-    # readout_power = nv_sig["charge_readout_laser_power"]
-    # max_readout_dur = nv_sig["charge_readout_dur"]
+    data = tool_belt.get_raw_data("2022_12_08-17_52_31-johnson-search")
+    nv_sig = data["nv_sig"]
+    nv0 = data["nv0"]
+    nvm = data["nvm"]
+    readout_power = nv_sig["charge_readout_laser_power"]
+    max_readout_dur = nv_sig["charge_readout_dur"]
     
-    # readout_dur=15e6
+    readout_dur=5e6
 
-    # threshold, fidelity,n0,nm = plot_threshold(
-    #     nv_sig,
-    #     readout_dur,
-    #     nv0,
-    #     nvm,
-    #     readout_power,
-    #     fit_threshold_full_model=False,
-    #     nd_filter=None,
-    #     plot_model_hists=True,
-    #     bins=None)
+    threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
+        nv_sig,
+        readout_dur,
+        nv0,
+        nvm,
+        readout_power,
+        fit_threshold_full_model=True,
+        nd_filter=None,
+        plot_model_hists=True,
+        bins=None)
     
     
-    if True:
+    if False:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
         filenames = [
@@ -1170,13 +1173,13 @@ if __name__ == "__main__":
                 max_readout_dur = nv_sig["charge_readout_dur"]
 
                 try:
-                    threshold_list, threshold, fidelity,n0,nm = plot_threshold(
+                    threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
                         nv_sig,
                         readout_dur,
                         nv0,
                         nvm,
                         readout_power,
-                        fit_threshold_full_model=False,
+                        fit_threshold_full_model=True,
                         nd_filter=None,
                         plot_model_hists=True,
                         bins=None
