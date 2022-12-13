@@ -184,7 +184,7 @@ def main(
         angle = main_with_cxn(
             cxn,
             nv_sig,
-    detuning,
+            detuning,
             precession_dur_range,
             num_steps,
             num_reps,
@@ -238,8 +238,6 @@ def main_with_cxn(
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
     seq_file_name = "spin_echo.py"
-    if False:
-        seq_file_name = "ramsey.py"
         
     if do_fm == False:
         seq_file_name = "spin_echo.py"
@@ -441,7 +439,7 @@ def main_with_cxn(
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the counter/tagger buffer of any excess counts
             counter_server.clear_buffer()
-            print(seq_args)
+            # print(seq_args)
             pulsegen_server.stream_immediate(
                 seq_file_name, num_reps, seq_args_string
             )
@@ -660,8 +658,8 @@ if __name__ == "__main__":
     analytics = True
     if analysis:
 
-        folder = "pc_carr/branch_opx-setup/ramsey/2022_11"
-        file = '2022_11_15-18_15_15-johnson-search'
+        folder = "pc_carr/branch_master/ramsey/2022_12"
+        file = '2022_12_10-12_15_01-johnson-search'
         
         # detuning = 0
         data = tool_belt.get_raw_data(file, folder)
@@ -695,37 +693,37 @@ if __name__ == "__main__":
         # t = numpy.linspace(.040,1.04,50)
         func = tool_belt.cosine_sum#(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
         taus = taus/1000
-        offset=.9
-        decay =0.7
-        amp_1 = -.033
+        offset=.88
+        decay = 2.0
+        amp_1 = -.03
         amp_2 = amp_1
         amp_3 = amp_1
-        detuning = -1.0
+        detuning = .5
         freq_1 = detuning-2.2
         freq_2 = detuning
         freq_3 = detuning+2.2
         
-        # fit_func = tool_belt.cosine_sum        
-        fit_func = tool_belt.cosine_one
+        fit_func = tool_belt.cosine_sum        
+        # fit_func = tool_belt.cosine_one
         # fit_func = cosine_sum_fixed_freq
         # init_params = guess_params_fixed_freq
         
-        # guess_params = (offset, decay, amp_1, freq_1,
-        #                     amp_2, freq_2,
-        #                     amp_3, freq_3)
-        guess_params = (offset, decay, amp_1*3, freq_1)
+        guess_params = (offset, decay, amp_1, freq_1,
+                            amp_2, freq_2,
+                            amp_3, freq_3)
+        # guess_params = (offset, decay, amp_1*3, freq_1)
         init_params = guess_params
 
         popt,pcov = curve_fit(fit_func, taus, norm_avg_sig,p0=init_params)
         print(popt)
         # theoryvals = func(taus,offset,decay,amp_1,freq_1, amp_2, freq_2, amp_3, freq_3)
         # print(vals)
-        # plt.figure()
+        plt.figure()
         # plt.plot(taus,theoryvals)
         plt.plot(taus,norm_avg_sig)
-        plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
-        # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
-        # plt.show()
+        # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
+        plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
+        plt.show()
         # raw_fig = fit_ramsey(norm_avg_sig, taus*1000, precession_time_range, [freq_1,freq_2,freq_3])
         
         # cur_time = tool_belt.get_time_stamp()

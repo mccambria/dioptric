@@ -24,8 +24,8 @@ def get_seq(pulse_streamer, config, args):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    uwave_consec_high_shrt, uwave_consec_low_shrt, polarization_time,   \
-            gate_time, pi_pulse_low, pi_pulse_high, uwave_consec_high_long, uwave_consec_low_long = durations
+    uwave_consec_low_shrt, uwave_consec_high_shrt,  polarization_time,   \
+            gate_time, pi_pulse_low, pi_pulse_high, uwave_consec_low_long, uwave_consec_high_long = durations
 
     
     # Specify the initial and readout states
@@ -310,6 +310,6 @@ if __name__ == '__main__':
     
     
     
-    seq_args = [200, 200, 10000.0, 300, 1097, 1202, 2000, 2000, 3, 3, 'integrated_520', None]
+    seq_args = [66, 0, 10000.0, 300, 66, 68, 66, 300, 3, 3, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

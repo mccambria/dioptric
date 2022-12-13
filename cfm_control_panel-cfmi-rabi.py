@@ -19,10 +19,12 @@ import numpy
 import time
 import copy
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
+import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
 import majorroutines.image_sample as image_sample
 # import majorroutines.image_sample_xz as image_sample_xz
-import chargeroutines.image_sample_charge_state_compare as image_sample_charge_state_compare
+import majorroutines.charge_majorroutines.image_sample_charge_state_compare as image_sample_charge_state_compare
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -31,6 +33,8 @@ import majorroutines.esr_srt as esr_srt
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.rabi_srt as rabi_srt
+import majorroutines.rabi_consec as rabi_consec
+import majorroutines.rabi_two_pulse as rabi_two_pulse
 import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.ramsey as ramsey
@@ -41,16 +45,16 @@ import majorroutines.dynamical_decoupling_xy4 as dynamical_decoupling_xy4
 import majorroutines.dynamical_decoupling_xy8 as dynamical_decoupling_xy8
 import majorroutines.lifetime_v2 as lifetime_v2
 # import minorroutines.time_resolved_readout as time_resolved_readout
-import chargeroutines.SPaCE as SPaCE
+import majorroutines.charge_majorroutines.SPaCE as SPaCE
 # import chargeroutines.SPaCE_simplified as SPaCE_simplified
-import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
-import chargeroutines.scc_spin_echo as scc_spin_echo
+import majorroutines.charge_majorroutines.scc_pulsed_resonance as scc_pulsed_resonance
+import majorroutines.charge_majorroutines.scc_spin_echo as scc_spin_echo
 import majorroutines.determine_standard_readout_params as determine_standard_readout_params
-import chargeroutines.super_resolution_pulsed_resonance as super_resolution_pulsed_resonance
-import chargeroutines.super_resolution_ramsey as super_resolution_ramsey
-import chargeroutines.super_resolution_spin_echo as super_resolution_spin_echo
-import chargeroutines.g2_measurement as g2_SCC_branch
-import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
+import majorroutines.charge_majorroutines.super_resolution_pulsed_resonance as super_resolution_pulsed_resonance
+import majorroutines.charge_majorroutines.super_resolution_ramsey as super_resolution_ramsey
+import majorroutines.charge_majorroutines.super_resolution_spin_echo as super_resolution_spin_echo
+# import majorroutines.charge_majorroutines.g2_measurement as g2_SCC_branch
+import majorroutines.charge_majorroutines.determine_charge_readout_params as determine_charge_readout_params
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 # import debug.test_major_routines as test_major_routines
@@ -90,8 +94,8 @@ def do_image_sample(nv_sig):
     # num_steps = 135
     # num_steps =120
    # num_steps = 90
-    # num_steps = 60
-    num_steps = 31
+    num_steps = 60
+    # num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -162,15 +166,15 @@ def do_stationary_count(nv_sig):
     stationary_count.main(nv_sig, run_time)
 
 
-def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
+# def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 3*60  # s
-    diff_window =120# ns
+#     run_time = 3*60  # s
+#     diff_window =120# ns
 
-    # g2_measurement.main(
-    g2_SCC_branch.main(
-        nv_sig, run_time, diff_window, apd_a_index, apd_b_index
-    )
+#     # g2_measurement.main(
+#     g2_SCC_branch.main(
+#         nv_sig, run_time, diff_window, apd_a_index, apd_b_index
+#     )
 
 
 def do_resonance(nv_sig, opti_nv_sig,freq_center=2.87, freq_range=0.2):
@@ -246,12 +250,12 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
     # num_runs = 8
 
     # Zoom
-    freq_range = 0.12
-    num_steps = 75
-    # freq_range = 0.010
-    # num_steps = 101
+    # freq_range = 0.12
+    # num_steps = 75
+    freq_range = 0.010
+    num_steps = 101
     num_reps = int(1e4)
-    num_runs =  3#40
+    num_runs =  20
 
     composite = False
 
@@ -310,10 +314,8 @@ def do_rabi(nv_sig, opti_nv_sig, state,
             uwave_time_range=[0, 200]):
 
     num_steps =51
-    # num_reps = int(2e4)    
-    # num_runs = 2
-    num_reps = int(1e4)
-    num_runs =  10
+    num_reps = int(2e4)    
+    num_runs =  15
 
     rabi.main(
         nv_sig,
@@ -327,15 +329,63 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     # nv_sig["rabi_{}".format(state.name)] = period
 
 
-def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0, 1000]):
+def do_rabi_consec(nv_sig,  initial_state, readout_state,  uwave_time_range=[0, 500],
+                    ):
+    
+    num_steps = 101
+    num_reps = int(1e4)
+    num_runs = 5
+
+    norm_avg_sig, norm_avg_ste = rabi_consec.main(nv_sig, 
+             num_steps, 
+             num_reps, 
+             num_runs,
+             uwave_time_range, 
+             readout_state,
+             initial_state,
+             do_err_plot = True,
+             )
+    return norm_avg_sig, norm_avg_ste
+    
+def do_rabi_consec_pop(nv_sig, uwave_time_range=[0, 500]):
+    
+    # deviation_high = 0
+    # deviation_low = 0
+    
+    # deviation = 0
+    
+    num_steps = 101
+    num_reps = int(1e4)
+    num_runs = 20
+
+    rabi_consec.full_pop_consec(nv_sig,  uwave_time_range,
+             num_steps, num_reps, num_runs)
+    
+def do_rabi_two_pulse(nv_sig, uwave_time_range_LOW, uwave_time_range_HIGH, num_steps):
+        
+    readout_state = States.HIGH
+    initial_state = States.LOW
+    
+    # num_steps = 101
+    num_reps = int(5e5)
+    num_runs = 2 #200
+
+    rabi_two_pulse.main(nv_sig, 
+             num_steps, num_reps, num_runs,
+             uwave_time_range_LOW, 
+             uwave_time_range_HIGH, 
+             readout_state,
+             initial_state,)
+    
+def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, v, uwave_time_range=[0, 1000]):
     
     deviation_high = dev
     deviation_low = dev
     
     
-    num_steps = 101
+    num_steps = 51
     num_reps = int(1e4)
-    num_runs = 10#30
+    num_runs = 10
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -346,9 +396,10 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev,  uwave_time_range=[0
               num_runs,
               readout_state,
               initial_state,
+              low_dev_analog_voltage = v
     )
 
-def do_rabi_srt_pop(nv_sig,  deviation, num_steps,  uwave_time_range=[0, 1000]):
+def do_rabi_srt_pop(nv_sig,  deviation,v, num_steps,  uwave_time_range=[0, 1000]):
     
     # deviation_high = 0
     # deviation_low = 0
@@ -357,7 +408,7 @@ def do_rabi_srt_pop(nv_sig,  deviation, num_steps,  uwave_time_range=[0, 1000]):
     
     #num_steps = 101
     num_reps = int(1e4)
-    num_runs = 50 #200
+    num_runs = 40 #200
 
     # rabi_srt.main(nv_sig, 
     #           apd_indices, 
@@ -371,7 +422,8 @@ def do_rabi_srt_pop(nv_sig,  deviation, num_steps,  uwave_time_range=[0, 1000]):
     #           initial_state,
     # )
     rabi_srt.full_pop_srt(nv_sig,  uwave_time_range, deviation, 
-             num_steps, num_reps, num_runs)
+             num_steps, num_reps, num_runs,
+                           low_dev_analog_voltage = v)
 
 
 def do_lifetime(nv_sig):
@@ -725,25 +777,23 @@ def do_determine_standard_readout_params(nv_sig):
     determine_standard_readout_params.main(nv_sig, num_reps, 
                                            max_readouts, state=state)
     
-def do_determine_charge_readout_params(nv_sig, apd_indices):
-        opti_nv_sig = nv_sig
-        num_reps = 100
+def do_determine_charge_readout_params(nv_sig):
+        num_reps = int(5e2)
         readout_durs = [50e6]
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
-        readout_powers = [0.2]
+        readout_powers = [0.1]
         
             
-        determine_charge_readout_params.determine_readout_dur_power(  
+        determine_charge_readout_params.main(  
           nv_sig,
-          opti_nv_sig,
-          apd_indices,
           num_reps,
           max_readout_dur=max_readout_dur,
           readout_powers=readout_powers,
           plot_readout_durs=readout_durs,
           fit_threshold_full_model= False,)
         
+          
 # def do_time_resolved_readout(nv_sig, apd_indices):
 
 #     # nv_sig uses the initialization key for the first pulse
@@ -996,22 +1046,13 @@ if __name__ == "__main__":
         
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_power": 0.15, 
-        "charge_readout_laser_filter": "nd_1.0",
+        "charge_readout_laser_filter": nd_yellow,
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "uwave_power_LOW": 15,  
-        "uwave_power_HIGH": 3.5,
+        "uwave_power_LOW": 13,  
+        "uwave_power_HIGH": 15,
         
-        "uwave_mod_freq_LOW": 2.189288,
-        "uwave_mod_amp_LOW": 140,
-        "uwave_mod_offset_LOW": 32,
-        "uwave_mod_method_LOW": "external IQ mixer",
-        "uwave_mod_freq_HIGH": 2.189288,
-        "uwave_mod_amp_HIGH": 200,
-        "uwave_mod_offset_HIGH": 53,
-        "uwave_mod_method_HIGH": "internal IQ modulation",
-        # "uwave_power_HIGH": 16.5, # should be able to set these to 16.5 dBm with combiner
     } 
 
     
@@ -1026,7 +1067,7 @@ if __name__ == "__main__":
     
     
     nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.189, 0.079, 4.05]
+    nv_sig_1["coords"] = [-0.184, 0.092, 4.05]
     nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
     # nv_sig_1["norm_style"]= NormStyle.POINT_TO_POINT
     nv_sig_1["norm_style"]= NormStyle.SINGLE_VALUED
@@ -1034,12 +1075,11 @@ if __name__ == "__main__":
     nv_sig_1["expected_count_rate"] = 19
     nv_sig_1[ "spin_readout_dur"] = 300
     nv_sig_1['magnet_angle'] = 151.7
-    nv_sig_1["resonance_LOW"]= 2.78059
-    nv_sig_1["rabi_LOW"]=2227.9
-    nv_sig_1["uwave_iq_LOW"]= False 
+    
+    nv_sig_1["resonance_LOW"]= 2.7805
+    nv_sig_1["rabi_LOW"]=132.8
     nv_sig_1["resonance_HIGH"]=2.9600
-    nv_sig_1["rabi_HIGH"]= 2404.3
-    nv_sig_1["uwave_iq_HIGH"]= True  
+    nv_sig_1["rabi_HIGH"]= 136.2
     
     
     
@@ -1064,12 +1104,11 @@ if __name__ == "__main__":
 
     try:
 
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_drift([0.0,0.0,0.0])
-        #tool_belt.set_drift([0.0, 0.06, 0.0])
-        # tool_belt.set_xyz(labrad.connect(), [0,0,5])
+        # positioning.set_drift(labrad.connect(),[0.0, 0.0, positioning.get_drift(labrad.connect())[2]])  # Keep z
+        # positioning.set_drift(labrad.connect(),[0.0,0.0,0.0])
+        # positioning.set_drift(labrad.connect(),[0.0, 0.06, 0.0])
+        # positioning.set_xyz(labrad.connect(), [0,0,5])
         
-        # with labrad.connect() as cxn:
         #     cxn.rotation_stage_ell18k.set_angle(65)
         
         # for x in [-0.25, 0.25]:
@@ -1102,30 +1141,83 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.25) 
         
         #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        #do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 2500])
-        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 2000])
+        #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 250])
         
         
         
-        # dev = 3
-        # uwave_time_range = [0, 6e2]
-        # for dev in [1.5, 3, 6]:
-        # do_rabi_srt(nv_sig,   States.LOW,  States.LOW, 0, uwave_time_range)
-        #    do_rabi_srt(nv_sig,   States.LOW,  States.ZERO,  dev,uwave_time_range)
+        # uwave_time_range = [0, 400]
+        #do_rabi_consec(nv_sig,   States.HIGH, States.ZERO,  uwave_time_range=[0, 300])
+        do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
         
-        for d in [3]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 15000])
-            do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 15000])
-            #do_rabi_srt(nv_sig,   States.ZERO, States.ZERO, d,  uwave_time_range=[0, 2500])
+        ti = 30
+        tf = 90
+        num_steps = int((tf-ti)/2+1)
+        uwave_time_range_LOW = [ti, tf]
+        uwave_time_range_HIGH = [ti, tf]
+        do_rabi_two_pulse(nv_sig, uwave_time_range_LOW, uwave_time_range_HIGH, num_steps)
+        
+        # img_array = numpy.empty([steps, steps])
+        # img_array[:] = numpy.nan
+        # t_LOW_list = numpy.linspace(ti,tf,steps)
+        # t_HIGH_list = numpy.linspace(ti,tf,steps)
+        # kpl.init_kplotlib()
+        # for t_L_i in range(len(t_LOW_list)):
+        #     for t_H_i in range(len(t_HIGH_list)):
+        #         t_LOW = t_LOW_list[t_L_i]
+        #         t_HIGH = t_HIGH_list[t_H_i]
+        #         print("t_LOW {} ns, t_HIGH {} ns".format(t_LOW, t_HIGH))
+                
+        #         ret_vals = do_rabi_consec(nv_sig,   States.LOW, States.HIGH, 
+        #                         uwave_time_range_LOW=[0, t_LOW*2], uwave_time_range_HIGH=[0, t_HIGH*2], num_steps = 3)
+        #         norm_avg_sig = ret_vals[0]
+        #         # print(t_LOW)
+        #         # print(t_HIGH)
+        #         # print(norm_avg_sig[1])
+        #         img_array[t_L_i][t_H_i] = norm_avg_sig[1]
+        # img_array=numpy.flipud(img_array)
+        # kpl.imshow
+        # fig, ax = plt.subplots()
+        # axes_labels = ['HIGH MW pulse', 'LOW MW pulse']
+        # img_extent = [
+        #     ti-0.5,
+        #     tf+0.5,
+        #     ti-0.5,
+        #     tf+0.5,
+        # ]
+        # kpl.imshow(
+        #     ax,
+        #     img_array,
+        #     axes_labels=axes_labels,
+        #     cbar_label="Norm. fluor.",
+        #     extent=img_extent,
+        # )
+        
+        
+        # equivalent deviations:
+            # 2 MHz == 1.95
+            # 3 MHz == 3.92
+        
+        # d =-3.7125
+        # v = 1.0
+        #do_rabi_srt(nv_sig,   States.LOW, States.LOW, d, v,  uwave_time_range=[0, 20000])
+        #do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d, v,  uwave_time_range=[0, 20000])
+        
+        # do_rabi_srt(nv_sig,   States.ZERO, States.ZERO, d, v, uwave_time_range=[0, 2500])
+         
+        # for d in [3]:
+        #      do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 20000])
+        #      do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 20000])
+               
         # for d in [0, 8, 16, 24]:
-        # do_rabi_srt_pop(nv_sig,  24, 31, uwave_time_range=[0, 2000])
+        # do_rabi_srt_pop(nv_sig,  d, v, 101, uwave_time_range=[0, 16000])
         # do_rabi_srt_pop(nv_sig,  30, 41, uwave_time_range=[0, 2500])
+        
+        
         
         # for d in [0]:
         #    do_ramsey(nv_sig, nv_sig, d)
-        #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         
         # do_spin_echo(nv_sig)
 
@@ -1157,7 +1249,7 @@ if __name__ == "__main__":
         ################## 
         
         # do_determine_standard_readout_params(nv_sig)
-        # do_determine_charge_readout_params(nv_sig, apd_indices)
+        # do_determine_charge_readout_params(nv_sig)
 
 
     except Exception as exc:

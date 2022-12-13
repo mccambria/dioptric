@@ -35,7 +35,7 @@ def qua_program(opx, config, args, num_reps):
     (
         readout_time, reion_time, ion_time, tau, shelf_time, uwave_tau_max,
         green_laser_name, yellow_laser_name, red_laser_name,
-        sig_gen, apd_index, reion_power, ion_power, shelf_power, readout_power,
+        sig_gen, reion_power, ion_power, shelf_power, readout_power,
     ) = args 
     
     
@@ -62,7 +62,7 @@ def qua_program(opx, config, args, num_reps):
         num_readouts=1
         apd_readout_time = readout_time
     
-    tau_cc = int(tau // 4)
+    tau_cc = int(round(tau / 4))
     signal_wait_time_cc = int(signal_wait_time // 4)
     period = 2 * (reion_time + signal_wait_time + tau + signal_wait_time + ion_time + scc_ion_readout_buffer + readout_time ) - tau
     
@@ -84,6 +84,9 @@ def qua_program(opx, config, args, num_reps):
         i = declare(int)
         k = declare(int)
         
+        tau_cc_qua = declare(int)
+        assign(tau_cc_qua,tau_cc)
+        
         with for_(n, 0, n < num_reps, n + 1):
             
             align()
@@ -92,8 +95,11 @@ def qua_program(opx, config, args, num_reps):
             wait(green_laser_delay_time//4)
             wait(signal_wait_time_cc)
             
-            if tau_cc >= 4:
+            with if_(tau_cc_qua >= 4):
                 play("uwave_ON",sig_gen, duration=tau_cc)
+                align()
+            with elif_(tau_cc_qua <= 3):
+                align()
             
             align()
             wait(signal_wait_time_cc)
@@ -194,9 +200,9 @@ if __name__ == '__main__':
     qm = qmm.open_qm(config_opx)
     cxn = labrad.connect()
     cxn.qm_opx.start_tag_stream([0,1])
-    simulation_duration =  30000 // 4 # clock cycle units - 4ns
+    simulation_duration =  60000 // 4 # clock cycle units - 4ns
     
-    num_repeat=3
+    num_repeat=1
     
     # (
     #     readout_time,
@@ -219,18 +225,18 @@ if __name__ == '__main__':
     # config['PhotonCollection']['qm_opx_max_readout_time'] = 1000
     # args = [5e3,1e3,30,90,0,90,'cobolt_515','laserglow_589','cobolt_638',
     #         'signal_generator_tsg4104a',0,None,None,0,.26]
-    args = [5000000.0, 1000000.0, 140, 180.56, 0, 500, 
+    args = [5000.0, 1000.0, 140, 180.56, 0, 500, 
             'cobolt_515', 'laserglow_589', 'cobolt_638', 
-            'signal_generator_tsg4104a', 0, 1, 1, None, 0.45]
+            'sig_gen_TEKT_tsg4104a',  1, 1, None, 0.45]
     # args = [400,1000,16,90,0,90,'cobolt_515','cobolt_515','cobolt_638','signal_generator_tsg4104a',0,None,None,0,0.26]
     # args = [0, 1000.0, 350, 0, 1, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    plt.show()
 # 
-    job = qm.execute(seq)
+    # job = qm.execute(seq)
     # seq_args_str = tool_belt.encode_seq_args(args)
     # cxn.qm_opx.stream_immediate('rabi_scc.py',3,seq_args_str)
 

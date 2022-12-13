@@ -437,6 +437,12 @@ def cosexp(t, offset, amp, freq, decay):
     return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
 
+def inverted_cosexp(t, offset, freq, decay):
+    two_pi = 2 * np.pi
+    amp = offset - 1
+    return offset - (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
+
+
 def cosexp_1_at_0(t, offset, freq, decay):
     two_pi = 2 * np.pi
     amp = 1 - offset
@@ -479,62 +485,18 @@ def calc_snr(sig_count, ref_count):
     outputs:
         snr = list
     """
+    ref_count = np.array(ref_count)
+    sig_count = np.array(sig_count)
+    num_runs, num_points = ref_count.shape
 
-    sig_count_avg = np.average(sig_count)
-    ref_count_avg = np.average(ref_count)
-    dif = sig_count_avg - ref_count_avg
-    sum_ = sig_count_avg + ref_count_avg
-    noise = np.sqrt(sig_count_avg)
+    sig_count_sum = np.sum(sig_count,1)
+    ref_count_sum = np.sum(ref_count,1)
+    dif = sig_count_sum - ref_count_sum
+    sum_ = sig_count_sum + ref_count_sum
+    noise = np.sqrt(num_points)*np.sqrt(sum_)
     snr = dif / noise
 
     return snr
-
-
-def process_counts(
-    sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
-):
-    """Extract the normalized average signal at each data point.
-    Since we sometimes don't do many runs (<10), we often will have an
-    insufficient sample size to run stats on for norm_avg_sig calculation.
-    We assume Poisson statistics instead.
-    """
-
-    ref_counts = np.array(ref_counts)
-    sig_counts = np.array(sig_counts)
-    num_runs, num_points = ref_counts.shape
-    readout_sec = readout * 1e-9
-
-    # Find the averages across runs
-    sig_counts_avg = np.average(sig_counts, axis=0)
-    single_ref_avg = np.average(ref_counts)
-    ref_counts_avg = np.average(ref_counts, axis=0)
-
-    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
-    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
-    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
-
-    if norm_style == NormStyle.SINGLE_VALUED:
-        norm_avg_sig = sig_counts_avg / single_ref_avg
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (sig_counts_ste / sig_counts_avg) ** 2
-            + (single_ref_ste / single_ref_avg) ** 2
-        )
-    elif norm_style == NormStyle.POINT_TO_POINT:
-        norm_avg_sig = sig_counts_avg / ref_counts_avg
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (sig_counts_ste / sig_counts_avg) ** 2
-            + (ref_counts_ste / ref_counts_avg) ** 2
-        )
-
-    sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
-    ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-
-    return (
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    )
 
 
 def get_scan_vals(center, scan_range, num_steps, dtype=float):
@@ -563,6 +525,61 @@ def bose(energy, temp):
     # Return error handling to default state for other functions
     np.seterr(**old_settings)
     return val
+
+
+def process_counts(
+    sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
+):
+    """Extract the normalized average signal at each data point.
+    Since we sometimes don't do many runs (<10), we often will have an
+    insufficient sample size to run stats on for norm_avg_sig calculation.
+    We assume Poisson statistics instead.
+    """
+
+    ref_counts = np.array(ref_counts)
+    sig_counts = np.array(sig_counts)
+    num_runs, num_points = ref_counts.shape
+    print(num_runs,num_points)
+    readout_sec = readout * 1e-9
+
+    # Find the averages across runs
+    sig_counts_avg = np.average(sig_counts, axis=0)
+    single_ref_avg = np.average(ref_counts)
+    ref_counts_avg = np.average(ref_counts, axis=0)
+
+    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
+    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
+    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
+
+    if norm_style == NormStyle.SINGLE_VALUED:
+        norm_avg_sig = sig_counts_avg / single_ref_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (single_ref_ste / single_ref_avg) ** 2
+        )
+    elif norm_style == NormStyle.POINT_TO_POINT:
+        norm_avg_sig = sig_counts_avg / ref_counts_avg
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (sig_counts_ste / sig_counts_avg) ** 2
+            + (ref_counts_ste / ref_counts_avg) ** 2
+        )
+
+    sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
+    ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
+
+    # both_counts = sig_counts + ref_counts
+    # both_counts_avg = np.average(both_counts, axis=0)
+    # both_counts_ste = np.sqrt(both_counts_avg) / np.sqrt(num_runs)
+    # norm = 1.008 * both_counts_avg[0]
+    # norm_avg_sig = both_counts_avg / norm
+    # norm_avg_sig_ste = both_counts_ste / norm
+
+    return (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    )
 
 
 # endregion
@@ -775,7 +792,13 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
     source_name = Path(source_file).stem
     date_folder = "_".join(time_stamp.split("_")[0:2])  # yyyy_mm
 
-    folder_dir = nvdata_dir / f"pc_{pc_name}" / f"branch_{branch_name}" / source_name / date_folder
+    folder_dir = (
+        nvdata_dir
+        / f"pc_{pc_name}"
+        / f"branch_{branch_name}"
+        / source_name
+        / date_folder
+    )
 
     if subfolder is not None:
         folder_dir = folder_dir / subfolder
@@ -797,10 +820,12 @@ def utc_from_file_name(file_name, time_zone="CST"):
     timestamp = date_time.timestamp()
     return timestamp
 
+
 def get_nv_sig_units_no_cxn():
     with labrad.connect() as cxn:
-        nv_sig_units =get_nv_sig_units(cxn)
+        nv_sig_units = get_nv_sig_units(cxn)
     return nv_sig_units
+
 
 def get_nv_sig_units(cxn):
     try:
@@ -808,8 +833,8 @@ def get_nv_sig_units(cxn):
     except Exception:
         nv_sig_units = ""
     return nv_sig_units
-    
-    
+
+
 def save_figure(fig, file_path):
     """Save a matplotlib figure as a svg.
 
@@ -864,82 +889,6 @@ def save_raw_data(rawData, filePath):
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
-
-
-def save_combine_data(file_list, folder_list, py_file_name):
-    """This routine takes any number of files and attempts to combine the data,
-    then saves them in one array.
-
-    Only use this for data that was collected under the same conditions. Works
-    best for measurements that save data like Rabi, PESR, etc.
-
-    It will throw an error if the num_steps of the data files do not match!
-
-    py_file_name is the string of the name of the file, ex: 'rabi.py'
-    """
-
-    # do an initial check if the num_steps all match.If they do, we can add
-    # the data together.
-    num_steps_list = []
-    for f in range(len(file_list)):
-        file = file_list[f]
-        folder = folder_list[f]
-        data1 = get_raw_data(file, folder)
-        num_steps = data1["num_steps"]
-        num_steps_list.append(num_steps)
-    # check that all num_steps of the files match
-    num_steps_result = all(element == num_steps_list[0] for element in num_steps_list)
-
-    if num_steps_result:
-        # create initial empty arrays to add data to
-        sig_counts = np.zeros([1, num_steps])
-        ref_counts = np.zeros([1, num_steps])
-        num_runs = 0
-
-        for f in range(len(file_list)):
-            file = file_list[f]
-            folder = folder_list[f]
-            data1 = get_raw_data(file, folder)
-
-            sig_counts1 = np.array(data1["sig_counts"])
-            ref_counts1 = np.array(data1["ref_counts"])
-            nv_sig = data1["nv_sig"]
-            num_runs1 = data1["num_runs"]
-
-            sig_counts = np.concatenate((sig_counts, sig_counts1), axis=0)
-            ref_counts = np.concatenate((ref_counts, ref_counts1), axis=0)
-            num_runs += num_runs1
-
-        # delete the first row of data that was a placeholder.
-        sig_counts = sig_counts[1:]
-        ref_counts = ref_counts[1:]
-
-        # Calc the norm avg sig
-        avg_sig_counts = np.average(sig_counts, axis=0)
-        avg_ref_counts = np.average(ref_counts, axis=0)
-        norm_avg_sig = avg_sig_counts / np.average(avg_ref_counts)
-
-        timestamp = get_time_stamp()
-
-        # take the dictionary from the last file, add the entry for
-        # file_list and folder_list, and update:
-        # sig counts
-        # ref counts
-        # norm_avg_sig
-        # num_runs
-
-        raw_data = data1
-        raw_data["file_list"] = file_list
-        raw_data["folder_list"] = folder_list
-
-        raw_data["num_runs"] = num_runs
-        raw_data["sig_counts"] = sig_counts.tolist()
-        raw_data["ref_counts"] = ref_counts.tolist()
-        raw_data["norm_avg_sig"] = norm_avg_sig.tolist()
-
-        nv_name = nv_sig["name"]
-        file_path = get_file_path(py_file_name, timestamp, nv_name)
-        save_raw_data(raw_data, file_path)
 
 
 # endregion
