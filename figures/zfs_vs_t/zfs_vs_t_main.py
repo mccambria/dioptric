@@ -117,16 +117,20 @@ def refit_experiments():
     # Also see below section Sample-dependent fit...
 
     do_plot = True  # Generate raw data and fit plots?
-    do_save = False  # Save the plots?
+    do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     data_points = get_data_points()
     # sample = "Wu"
     sample = "15micro"
-    file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
+    # file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
+    # file_list = [file_list[57]]
     file_list = [
-        "2022_12_03-22_06_43-15micro-nv3_zfs_vs_t",
-        "2022_12_06-12_06_52-15micro-nv3_zfs_vs_t",
+        "2022_12_12-18_05_28-15micro-nv1_zfs_vs_t",
+        "2022_12_12-16_18_59-15micro-nv1_zfs_vs_t",
+        "2022_12_12-17_35_57-15micro-nv1_zfs_vs_t",
+        "2022_12_12-19_25_24-15micro-nv1_zfs_vs_t",
+        # "2022_12_12-18_41_45-15micro-nv1_zfs_vs_t",
     ]
 
     ### Loop
@@ -155,7 +159,7 @@ def refit_experiments():
             # norm_style = NormStyle.POINT_TO_POINT
             norm_style = tool_belt.NormStyle.SINGLE_VALUED
 
-        ret_vals = pesr.process_counts(
+        ret_vals = tool_belt.process_counts(
             sig_counts, ref_counts, num_reps, readout, norm_style
         )
         (
@@ -194,11 +198,31 @@ def refit_experiments():
 
             avg_splitting = 13.19 / 1000
             # fmt: off
+            # Just center and contrast
+            # fit_func = lambda freq, contrast, center: pesr.double_dip( freq, contrast, 8, center - avg_splitting / 2, contrast, 8, center + avg_splitting / 2, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, freq_center]
+
             # Fixed double Lorentzians
             fit_func = lambda freq, contrast, width, center: pesr.double_dip( freq, contrast, width, center - avg_splitting / 2, contrast, width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
             guess_params = [0.015, 8, freq_center]
 
-            # Contrast- and width-fixed double Lorentzians
+            # Fixed double Rabi
+            # fit_func = lambda freq, contrast, width, center: pesr.double_dip( freq, contrast, width, center - avg_splitting / 2, contrast, width, center + avg_splitting / 2, dip_func=pesr.rabi_line)
+            # guess_params = [0.015, 8, freq_center]
+
+            # Fixed double Lorentzians, indpendent freqs
+            # fit_func = lambda freq, contrast, width, low_center, high_center: pesr.double_dip( freq, contrast, width, low_center, contrast, width, high_center, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, 8, freq_center - 6.5/1000, freq_center + 6.5/1000]
+
+            # Common width
+            # fit_func = lambda freq, low_contrast, width, low_center, high_center, high_contrast: pesr.double_dip( freq, low_contrast, width, low_center, high_contrast, width, high_center, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, 8, freq_center - 6.5/1000, freq_center + 6.5/1000, 0.015]
+
+            # Common width, splitting fixed
+            # fit_func = lambda freq, low_contrast, width, center, high_contrast: pesr.double_dip( freq, low_contrast, width, center - avg_splitting / 2, high_contrast, width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
+            # guess_params = [0.015, 8, freq_center, 0.015]
+
+            # Fixed double Lorentzians, indpendent center + splitting
             # fit_func = lambda freq, contrast, width, center, splitting: pesr.double_dip( freq, contrast, width, center - splitting / 2, contrast, width, center + splitting / 2, dip_func=pesr.lorentzian)
             # guess_params = [0.015, 8, freq_center, 13 / 1000]
 
@@ -211,11 +235,11 @@ def refit_experiments():
             # guess_params = [0.015, 8, freq_center, 0.015, 8]
 
             # Independent double Lorentzians
-            fit_func = lambda freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center: pesr.double_dip( freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center, dip_func=pesr.lorentzian)
-            guess_params = [ 0.015, 8, freq_center - 0.0065, 0.015, 8, freq_center + 0.0065]
+            # fit_func = lambda freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center: pesr.double_dip( freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center, dip_func=pesr.lorentzian)
+            # guess_params = [ 0.015, 8, freq_center - 0.0065, 0.015, 8, freq_center + 0.0065]
 
             # Independent double Lorentzians - reparameterized
-            # fit_func = lambda freq, low_contrast, low_width, high_contrast, high_width, center, splitting: pesr.double_dip( freq, low_contrast, low_width, center - splitting, high_contrast, high_width, center + splitting, dip_func=pesr.lorentzian)
+            # fit_func = lambda freq, low_contrast, low_width, high_contrast, high_width, center, splitting: pesr.double_dip( freq, low_contrast, low_width, center - splitting/2, high_contrast, high_width, center + splitting/2, dip_func=pesr.lorentzian)
             # guess_params = [ 0.015, 8, 0.015, 8, freq_center, 13 / 1000]
             # fmt: on
 
@@ -271,13 +295,14 @@ def refit_experiments():
         table_red_chi_sq.append(red_chi_sq)
 
         # Close the plots so they don't clutter everything up
-        # plt.close("all")
+        plt.close("all")
 
     ### Report the fit parameters
 
     if do_print:
         print("Reduced chi squared:")
         print(table_red_chi_sq)
+        print(np.mean(table_red_chi_sq))
         print()
         print("Fit parameters:")
         for ind in range(len(table_popt)):
@@ -286,6 +311,17 @@ def refit_experiments():
             print()
             print(table_pste[ind])
             print()
+
+    # freq1_errs = np.array(table_pste[2])
+    # freq2_errs = np.array(table_pste[3])
+    # zfs_errs = np.sqrt(freq1_errs**2 + freq2_errs**2) / 2
+
+    zfs_errs = np.array(table_pste[2])
+
+    print("ZFS errors")
+    print(zfs_errs)
+    mean_zfs_err = np.mean(zfs_errs)
+    print(mean_zfs_err)
 
 
 # endregion
@@ -931,7 +967,7 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib(latex=True)
 
-    main()
-    # refit_experiments()
+    # main()
+    refit_experiments()
 
     plt.show(block=True)
