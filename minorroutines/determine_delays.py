@@ -80,12 +80,9 @@ def measure_delay(
         sig_gen = None
         if seq_file == "uwave_delay.py":
             delayed_element = 'uwave'
-            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+            sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
             sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
             sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
-
-            sig_gen_cxn.load_fm(10)
-
             sig_gen_cxn.uwave_on()
 
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
@@ -135,7 +132,6 @@ def measure_delay(
                 pi_pulse,
                 polarization,
                 state.value,
-                apd_indices[0],
                 laser_name,
                 laser_power,
             ]
@@ -394,7 +390,7 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.189, 0.079, 4.05],
+            "coords":[-0.184, 0.092, 4.05],
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -404,7 +400,7 @@ if __name__ == "__main__":
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
-          "spin_readout_dur": 350,
+          "spin_readout_dur": 300,
           "spin_pol_dur": 1000.0,
 
           "imaging_laser":green_laser,
@@ -418,16 +414,15 @@ if __name__ == "__main__":
 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 68,
-        "resonance_LOW":2.7813-0.01,
-        "rabi_LOW":129.5,
-        "uwave_power_LOW": 13.5,
-        "resonance_HIGH":2.9591-0.01,
-        "rabi_HIGH":129.5,
-        "uwave_power_HIGH": 16.5,
+        "magnet_angle": 151.7,
+        "resonance_LOW":2.78059,
+        "rabi_LOW":131.1,
+        "uwave_power_LOW": 13,
+        "resonance_HIGH":2.9600,
+        "rabi_HIGH":136.6,
+        "uwave_power_HIGH": 15,
     }
 
-    apd_indices = [1]
 
     # Hahn parameters
     # apd_indices = [1]
@@ -481,19 +476,20 @@ if __name__ == "__main__":
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
     # delay_range = [0,1e3]
-    with labrad.connect() as cxn:
-        aom_delay(cxn, nv_sig, apd_indices,
-                  delay_range, num_steps, num_reps, laser_name, laser_power)
+    # with labrad.connect() as cxn:
+    #     aom_delay(cxn, nv_sig, apd_indices,
+    #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(1e5)
-    delay_range = [-300, 200]
-    num_steps = 251
+    num_reps = int(1e6)
+    delay_range = [0, 300]
+    delay_range = [0, 300]
+    num_steps = 150
     # bnc 835
     # state = States.LOW
     #  sg394
-    # state = States.HIGH
-    # with labrad.connect() as cxn:
+    state = States.HIGH
+    with labrad.connect() as cxn:
         # iq_delay(
         #     cxn,
         #     nv_sig,
@@ -503,15 +499,15 @@ if __name__ == "__main__":
         #     num_steps,
         #     num_reps,
         # )
-        # uwave_delay(
-        #     cxn,
-        #     nv_sig,
-        #     apd_indices,
-        #     States.HIGH,
-        #     delay_range,
-        #     num_steps,
-        #     num_reps,
-        # )
+        uwave_delay(
+            cxn,
+            nv_sig,
+            apd_indices,
+            state,
+            delay_range,
+            num_steps,
+            num_reps,
+        )
         # uwave_delay(
         #     cxn,
         #     nv_sig,

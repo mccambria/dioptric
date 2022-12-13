@@ -387,53 +387,6 @@ def fit_resonance(
     return fit_func, popt, pcov
 
 
-# def process_counts(
-#     sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
-# ):
-#     """Extract the normalized average signal at each data point.
-#     Since we sometimes don't do many runs (<10), we often will have an
-#     insufficient sample size to run stats on for norm_avg_sig calculation.
-#     We assume Poisson statistics instead.
-#     """
-
-#     ref_counts = np.array(ref_counts)
-#     sig_counts = np.array(sig_counts)
-#     num_runs, num_points = ref_counts.shape
-#     readout_sec = readout * 1e-9
-
-#     # Find the averages across runs
-#     sig_counts_avg = np.average(sig_counts, axis=0)
-#     single_ref_avg = np.average(ref_counts)
-#     ref_counts_avg = np.average(ref_counts, axis=0)
-
-#     sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
-#     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
-#     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
-
-#     if norm_style == NormStyle.SINGLE_VALUED:
-#         norm_avg_sig = sig_counts_avg / single_ref_avg
-#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-#             (sig_counts_ste / sig_counts_avg) ** 2
-#             + (single_ref_ste / single_ref_avg) ** 2
-#         )
-#     elif norm_style == NormStyle.POINT_TO_POINT:
-#         norm_avg_sig = sig_counts_avg / ref_counts_avg
-#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-#             (sig_counts_ste / sig_counts_avg) ** 2
-#             + (ref_counts_ste / ref_counts_avg) ** 2
-#         )
-
-#     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
-#     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-
-#     return (
-#         sig_counts_avg_kcps,
-#         ref_counts_avg_kcps,
-#         norm_avg_sig,
-#         norm_avg_sig_ste,
-#     )
-
-
 # endregion
 # region Control panel functions
 
@@ -803,12 +756,13 @@ def main_with_cxn(
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     data_file_name = file_path.stem
-
-    tool_belt.save_raw_data(data, file_path)
     tool_belt.save_figure(raw_fig, file_path)
 
-    fit_file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tool_belt.save_figure(fit_fig, fit_file_path)
+    tool_belt.save_raw_data(data, file_path)
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tool_belt.save_figure(fit_fig, file_path)
+
 
     single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]

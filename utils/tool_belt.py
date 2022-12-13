@@ -565,6 +565,13 @@ def process_counts(
     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
 
+    # both_counts = sig_counts + ref_counts
+    # both_counts_avg = np.average(both_counts, axis=0)
+    # both_counts_ste = np.sqrt(both_counts_avg) / np.sqrt(num_runs)
+    # norm = 1.008 * both_counts_avg[0]
+    # norm_avg_sig = both_counts_avg / norm
+    # norm_avg_sig_ste = both_counts_ste / norm
+
     return (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
