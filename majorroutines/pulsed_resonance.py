@@ -328,7 +328,7 @@ def get_guess_params(
         low_contrast_guess = height
 
     # low_freq_guess = 2.8620
-    #high_freq_guess = 2.8936
+    # high_freq_guess = 2.8936
     # high_freq_guess = None
 
     if low_freq_guess is None:
@@ -526,11 +526,10 @@ def main_with_cxn(
 
     tool_belt.reset_cfm(cxn)
 
-
     # check if running external iq_mod with SRS
     iq_key = False
-    if 'uwave_iq_{}'.format(state.name) in nv_sig:
-        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
+    if "uwave_iq_{}".format(state.name) in nv_sig:
+        iq_key = nv_sig["uwave_iq_{}".format(state.name)]
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -628,8 +627,8 @@ def main_with_cxn(
         sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
         if iq_key:
-             sig_gen_cxn.load_iq()
-            # arbwavegen_server.load_arb_phases([0])
+            sig_gen_cxn.load_iq()
+        # arbwavegen_server.load_arb_phases([0])
         if composite:
             sig_gen_cxn.load_iq()
             arbwavegen_server.load_knill()
@@ -732,7 +731,9 @@ def main_with_cxn(
 
     ### Process and plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, readout, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
@@ -750,7 +751,7 @@ def main_with_cxn(
     fit_fig, _, fit_func, popt, _ = create_fit_figure(
         freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
     )
-    
+
     if len(popt) == 3:
         low_freq = popt[2]
         high_freq = None
@@ -802,12 +803,12 @@ def main_with_cxn(
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     data_file_name = file_path.stem
-    tool_belt.save_figure(raw_fig, file_path)
-
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tool_belt.save_figure(fit_fig, file_path)
 
     tool_belt.save_raw_data(data, file_path)
+    tool_belt.save_figure(raw_fig, file_path)
+
+    fit_file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tool_belt.save_figure(fit_fig, fit_file_path)
 
     single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]
@@ -839,7 +840,9 @@ if __name__ == "__main__":
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, readout, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,

@@ -158,9 +158,13 @@ if __name__ == "__main__":
     # gen_search_index()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
-    root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2022_11"
+    root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2022_12"
     files = [
-        "2022_11_04-16_38_24-wu-nv5_2022_11_04.txt",
+        "2022_12_12-18_05_28-15micro-nv1_zfs_vs_t.txt",
+        # "2022_12_12-16_18_59-15micro-nv1_zfs_vs_t.txt",
+        # "2022_12_12-17_35_57-15micro-nv1_zfs_vs_t.txt",
+        # "2022_12_12-19_25_24-15micro-nv1_zfs_vs_t.txt",
+        # "2022_12_12-18_41_45-15micro-nv1_zfs_vs_t.txt",
     ]
     paths = [root / el for el in files]
     for el in paths:
