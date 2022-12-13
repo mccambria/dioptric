@@ -482,12 +482,15 @@ def calc_snr(sig_count, ref_count):
     outputs:
         snr = list
     """
+    ref_count = np.array(ref_count)
+    sig_count = np.array(sig_count)
+    num_runs, num_points = ref_count.shape
 
-    sig_count_avg = np.average(sig_count)
-    ref_count_avg = np.average(ref_count)
-    dif = sig_count_avg - ref_count_avg
-    sum_ = sig_count_avg + ref_count_avg
-    noise = np.sqrt(sig_count_avg)
+    sig_count_sum = np.sum(sig_count,1)
+    ref_count_sum = np.sum(ref_count,1)
+    dif = sig_count_sum - ref_count_sum
+    sum_ = sig_count_sum + ref_count_sum
+    noise = np.sqrt(num_points)*np.sqrt(sum_)
     snr = dif / noise
 
     return snr
@@ -505,6 +508,7 @@ def process_counts(
     ref_counts = np.array(ref_counts)
     sig_counts = np.array(sig_counts)
     num_runs, num_points = ref_counts.shape
+    print(num_runs,num_points)
     readout_sec = readout * 1e-9
 
     # Find the averages across runs

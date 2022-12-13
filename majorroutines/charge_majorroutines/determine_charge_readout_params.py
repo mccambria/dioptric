@@ -343,6 +343,7 @@ def plot_threshold(
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
         nv0_counts, nvm_counts, readout_dur,bins,
     )
+    print(occur_m)
 
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
@@ -1115,7 +1116,7 @@ if __name__ == "__main__":
     #     bins=None)
     
     
-    if False:
+    if True:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
         filenames = [
@@ -1124,9 +1125,9 @@ if __name__ == "__main__":
         # "2022_12_08-16_53_12-johnson-search",
         # "2022_12_08-17_12_57-johnson-search",
         # "2022_12_08-17_32_44-johnson-search",
-        # "2022_12_08-17_52_31-johnson-search",
+        "2022_12_08-17_52_31-johnson-search",
         # "2022_12_08-18_12_20-johnson-search",
-        "2022_12_08-18_32_09-johnson-search",
+        # "2022_12_08-18_32_09-johnson-search",
         # "2022_12_08-18_52_01-johnson-search",
         # "2022_12_08-19_11_52-johnson-search",
         # "2022_12_08-19_31_51-johnson-search",
@@ -1147,7 +1148,7 @@ if __name__ == "__main__":
 
         # readout_dur = opti_readout_dur
 
-        times = [3e6]
+        times = [5e6]
         # times = [4e6,1e6,400e3,100e3,50e3,10e3]
         # times = [2e6,4e6]
 
@@ -1175,7 +1176,7 @@ if __name__ == "__main__":
                         nv0,
                         nvm,
                         readout_power,
-                        fit_threshold_full_model=True,
+                        fit_threshold_full_model=False,
                         nd_filter=None,
                         plot_model_hists=True,
                         bins=None
@@ -1207,7 +1208,7 @@ if __name__ == "__main__":
         # )
         # tool_belt.save_raw_data(data_to_save, file_path)
         
-    if True:
+    if False:
             
         file_path = "2022_12_09-16_03_36-analysis_data"
         

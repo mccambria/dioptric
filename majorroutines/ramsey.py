@@ -659,7 +659,7 @@ if __name__ == "__main__":
     if analysis:
 
         folder = "pc_carr/branch_master/ramsey/2022_12"
-        file = '2022_12_09-03_33_30-johnson-search'
+        file = '2022_12_10-12_15_01-johnson-search'
         
         # detuning = 0
         data = tool_belt.get_raw_data(file, folder)
@@ -694,11 +694,11 @@ if __name__ == "__main__":
         func = tool_belt.cosine_sum#(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
         taus = taus/1000
         offset=.88
-        decay = 1.5
-        amp_1 = -.04
+        decay = 2.0
+        amp_1 = -.03
         amp_2 = amp_1
         amp_3 = amp_1
-        detuning = 4
+        detuning = .5
         freq_1 = detuning-2.2
         freq_2 = detuning
         freq_3 = detuning+2.2
@@ -718,12 +718,12 @@ if __name__ == "__main__":
         print(popt)
         # theoryvals = func(taus,offset,decay,amp_1,freq_1, amp_2, freq_2, amp_3, freq_3)
         # print(vals)
-        # plt.figure()
+        plt.figure()
         # plt.plot(taus,theoryvals)
         plt.plot(taus,norm_avg_sig)
         # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
         plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
-        # plt.show()
+        plt.show()
         # raw_fig = fit_ramsey(norm_avg_sig, taus*1000, precession_time_range, [freq_1,freq_2,freq_3])
         
         # cur_time = tool_belt.get_time_stamp()
