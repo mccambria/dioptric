@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
     # Set up a dummy args list
     # args = [500, 500, 350, 28, 1000.0, 1, 'integrated_520', None]
-    args = [3000, 3000, 350, 1125, 1000.0, 1, 'integrated_520', None]
+    args = [-186.0, 200, 300, 68, 1000.0, 3, 'integrated_520', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

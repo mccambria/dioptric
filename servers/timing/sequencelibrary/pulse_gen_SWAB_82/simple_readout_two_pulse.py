@@ -20,12 +20,12 @@ def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
     init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
-      init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
+      init_laser_power, read_laser_power, readout_on_pulse_ind  = args
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
-    pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    pulser_do_daq_gate = pulser_wiring['do_apd_gate']
 
     positioning = config['Positioning']
     if 'xy_small_response_delay' in positioning:
@@ -100,8 +100,8 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    # tool_belt.set_delays_to_zero(config)
+    tool_belt.set_delays_to_zero(config)
     # args = [1000000.0, 50000000, 'cobolt_638', 'laserglow_589', None, 0.2, 2, 1]
-    args = [50e6, 75, 'cobolt_638', 'laserglow_589', None, 1, 2,1 ]
+    args = [1000, 50000000, "integrated_520", "laserglow_589", None, 0.1, 2]
     seq = get_seq(None, config, args)[0]
     seq.plot()

@@ -756,12 +756,13 @@ def main_with_cxn(
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     data_file_name = file_path.stem
-
-    tool_belt.save_raw_data(data, file_path)
     tool_belt.save_figure(raw_fig, file_path)
 
-    fit_file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tool_belt.save_figure(fit_fig, fit_file_path)
+    tool_belt.save_raw_data(data, file_path)
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tool_belt.save_figure(fit_fig, file_path)
+
 
     single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]

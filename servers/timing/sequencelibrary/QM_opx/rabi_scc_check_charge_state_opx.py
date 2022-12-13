@@ -285,9 +285,9 @@ if __name__ == '__main__':
     # config['PhotonCollection']['qm_opx_max_readout_time'] = 1000
     # args = [5e3,1e3,30,90,0,90,'cobolt_515','laserglow_589','cobolt_638',
     #         'signal_generator_tsg4104a',0,None,None,0,.26]
-    args = [5000,5000.0, 1000.0, 140, 180.56, 0, 500, 
+    args = [0,5000.0, 1000.0, 140, 180.56, 0, 500, 
             'cobolt_515', 'laserglow_589', 'cobolt_638', 
-            'sig_gen_TEKT_tsg4104a',  1, 1, None, 0.45,.3]
+            'sig_gen_TEKT_tsg4104a',  1, 1, None, .45,.45]
     # args = [400,1000,16,90,0,90,'cobolt_515','cobolt_515','cobolt_638','signal_generator_tsg4104a',0,None,None,0,0.26]
     # args = [0, 1000.0, 350, 0, 1, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
