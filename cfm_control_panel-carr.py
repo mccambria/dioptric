@@ -40,7 +40,8 @@ import majorroutines.charge_majorroutines.scc_pulsed_resonance as scc_pulsed_res
 import majorroutines.charge_majorroutines.rabi_SCC as rabi_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC as ramsey_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC_one_tau_no_ref as ramsey_SCC_one_tau_no_ref
-import majorroutines.charge_majorroutines.test_charge_state_pre_selection as test_charge_state_pre_selection
+# import majorroutines.charge_majorroutines.test_charge_state_pre_selection as test_charge_state_pre_selection
+import majorroutines.charge_majorroutines.test_spin_repolarization_scc as test_spin_repolarization_scc
 import majorroutines.ramsey_one_tau_no_ref as ramsey_one_tau_no_ref
 from utils.tool_belt import States, NormStyle
 import time
@@ -369,11 +370,13 @@ def do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps):
         chop_factor
     )
     
-def do_test_charge_state_pre_selection(nv_sig,num_reps):
+def do_test_spin_polarization_scc(nv_sig, pre_init_laser_key, pre_init_time, pre_init_power, total_wait_time, num_reps):
     
     state = States.LOW
     
-    test_charge_state_pre_selection.main(nv_sig, state, num_reps)
+    do_test_spin_polarization_scc.main(nv_sig, state, 
+                                       pre_init_laser_key, pre_init_time, pre_init_power, 
+                                       total_wait_time, num_reps)
 
 # %% Run the file
 
@@ -442,13 +445,14 @@ if __name__ == "__main__":
 
         # do_determine_standard_readout_params(nv_sig)
         # do_scc_pulsed_resonance(nv_sig,apd_indices)
-        do_rabi_SCC(nv_sig)       
+        # do_rabi_SCC(nv_sig)       
         # do_ramsey_SCC(nv_sig, nv_sig, apd_indices,detuning=-0.74)
         
         # do_determine_scc_pulse_params(nv_sig,50000,ion_durs=[116])
         # do_determine_charge_readout_params(nv_sig, readout_powers=powers,readout_times=[10e6], num_reps=50000)
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
-        # do_test_charge_state_pre_selection(nv_sig,num_reps=5000)
+        do_test_spin_polarization_scc(nv_sig, pre_init_laser_key='laserglow_589', 
+                                      pre_init_time=5e6, pre_init_power=.4, total_wait_time=5e6, num_reps=1000)
         
         # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')
         # do_image_sample(nv_sig,num_steps=20,scan_range=4,scan_type='XZ')

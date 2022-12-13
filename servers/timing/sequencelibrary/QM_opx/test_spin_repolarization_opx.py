@@ -19,19 +19,26 @@ from opx_configuration_file import *
 
 def qua_program(opx, config, args, num_reps):
     
-    first_init_pulse_time, init_pulse_time, readout_time, first_init_laser_key, init_laser_key, readout_laser_key,\
-      first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind, sig_gen, tau, extra_wait_time  = args
-      
-    tau_cc = int(round(tau / 4))
-    extra_wait_time_cc = int(round(extra_wait_time / 4))
+    first_init_laser_key, init_laser_key, ion_laser_key, readout_laser_key,\
+                pre_init_time, second_init_time, ion_time, readout_time,\
+                first_init_laser_power, init_laser_power, ion_laser_power, read_laser_power,\
+                sig_gen, pi_pulse, total_wait_time = args
+    
+    pi_pulse_cc = int(round(pi_pulse / 4))
+    extra_wait_time = total_wait_time - init_pulse_time
+    extra_wait_time_cc = int(max(round(extra_wait_time / 4)),4)
+    
     first_init_laser_pulse, first_init_laser_delay_time, first_init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,first_init_laser_key,first_init_laser_power)
     init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
+    ion_laser_pulse, ion_laser_delay_time, ion_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,ion_laser_key,ion_laser_power)
     readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,read_laser_power)
+    
     
     delay1_cc = int( (max(first_init_laser_delay_time - init_laser_delay_time + 1000,1000))//4 )
     # print(delay1_cc)
     uwave_delay_time = config['Microwaves'][sig_gen]['delay']
-    delay2_cc = int( (max(uwave_delay_time - readout_laser_delay_time + 1000,1000))//4 )
+    delay2_cc = int( (max(uwave_delay_time - ion_laser_delay_time + 1000,1000))//4 )
+    delay7_cc = int( (max(ion_laser_delay_time - readout_laser_delay_time + 1000,1000))//4 )
     delay5_cc = int( (max(init_laser_delay_time-uwave_delay_time + 1000,1000))//4 )
     intra_pulse_delay = config['CommonDurations']['uwave_buffer']
 
@@ -43,9 +50,7 @@ def qua_program(opx, config, args, num_reps):
     
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     delay_between_readouts_iterations = 200 #simulated - conservative estimate
-    
-    # for now lets assume we use two different lasers.
-    
+        
         
     if readout_time > max_readout_time:
         num_readouts = int(readout_time / max_readout_time)
@@ -75,11 +80,8 @@ def qua_program(opx, config, args, num_reps):
         counts_st_apd_0 = declare_stream()
         counts_st_apd_1 = declare_stream()  
         
-        
         n = declare(int)
         i = declare(int)
-        tau_cc_qua = declare(int)
-        assign(tau_cc_qua,tau_cc)
         
         with for_(n, 0, n < num_reps, n + 1):
             # align()
@@ -95,10 +97,13 @@ def qua_program(opx, config, args, num_reps):
             wait(extra_wait_time_cc)
             
             
-            play("uwave_ON",sig_gen, duration=tau_cc)
+            play("uwave_ON",sig_gen, duration=pi_pulse_cc)
             align()    
                 
             wait(delay2_cc)
+            play(red_laser_pulse*amp(red_laser_amplitude),red_laser_name,duration=ion_time//4)
+            wait(delay7_cc)
+            
             align()
                 
                 
@@ -134,9 +139,12 @@ def qua_program(opx, config, args, num_reps):
             wait(delay5_cc)
             wait(extra_wait_time_cc)
             
-            wait(tau_cc)
+            wait(pi_pulse_cc)
                 
             wait(delay2_cc)
+            play(red_laser_pulse*amp(red_laser_amplitude),red_laser_name,duration=ion_time//4)
+            wait(delay7_cc)
+            
             align()
                 
                 
@@ -181,7 +189,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = '' 
-    sample_size = 'one_rep' # 'all_reps
+    sample_size = 'all_reps' # 'one_rep'
     
     return seq, final, [period], num_gates, sample_size
     
@@ -223,9 +231,10 @@ if __name__ == '__main__':
     # job = qm.execute(seq)
     # st = time.time()
     plt.figure()
-    # args = [1000,300, 2000, 'cobolt_515','cobolt_638', 'laserglow_589',1,1,0.4,2,0]
-    args = [500.0, 5000.0, 5000, "cobolt_515", "laserglow_589", "laserglow_589", 1, 0.5, 
-            0.5, 2,'sig_gen_TEKT_tsg4104a',100,400]
+    
+    args = ['cobolt_515', "cobolt_515", 'cobolt_638', 'laserglow_589',
+                1000, 2000, 200, 2000,1, .5, 1, .5,
+                'sig_gen_TEKT_tsg4104a', 48, 2000]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()
