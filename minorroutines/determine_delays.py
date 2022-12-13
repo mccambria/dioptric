@@ -390,7 +390,7 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.19, 0.084, 4.05],
+            "coords":[-0.184, 0.092, 4.05],
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -416,10 +416,10 @@ if __name__ == "__main__":
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 151.7,
         "resonance_LOW":2.78059,
-        "rabi_LOW":135.2,
+        "rabi_LOW":131.1,
         "uwave_power_LOW": 13,
         "resonance_HIGH":2.9600,
-        "rabi_HIGH":135.9,
+        "rabi_HIGH":136.6,
         "uwave_power_HIGH": 15,
     }
 
@@ -481,13 +481,14 @@ if __name__ == "__main__":
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    num_reps = int(2e5)
-    delay_range = [-100, 300]
-    num_steps = 201
+    num_reps = int(1e6)
+    delay_range = [0, 300]
+    delay_range = [0, 300]
+    num_steps = 150
     # bnc 835
-    state = States.LOW
+    # state = States.LOW
     #  sg394
-    # state = States.HIGH
+    state = States.HIGH
     with labrad.connect() as cxn:
         # iq_delay(
         #     cxn,

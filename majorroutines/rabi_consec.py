@@ -34,9 +34,9 @@ def create_raw_data_figure(
     # Plot setup
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
     ax_sig_ref, ax_norm = axes_pack
-    ax_sig_ref.set_xlabel('Microwave duration (high = low) (ns)')
+    ax_sig_ref.set_xlabel('First microwave pulse duration (ns)')
     ax_sig_ref.set_ylabel("Count rate (kcps)")
-    ax_norm.set_xlabel('Microwave duration (high = low) (ns)')
+    ax_norm.set_xlabel('First microwave pulse duration (ns)')
     ax_norm.set_ylabel("Normalized fluorescence")
     if title is not None:
         ax_norm.set_title(title)
@@ -77,7 +77,7 @@ def create_err_figure(
 
     # Plot setup
     fig, ax = plt.subplots()
-    ax.set_xlabel('Microwave duration (high = low) (ns)')
+    ax.set_xlabel('First microwave pulse duration (ns)')
     ax.set_ylabel("Normalized fluorescence")
     if title is not None:
         ax.set_title(title)
@@ -92,33 +92,39 @@ def create_err_figure(
 
 
               
-def main(nv_sig, uwave_time_range, 
+def main(nv_sig, 
          num_steps, num_reps, num_runs,
+         uwave_time_range, 
          readout_state = States.HIGH,
          initial_state = States.HIGH,
          opti_nv_sig = None,
          do_err_plot = True,
+         do_plot = True,
          ):
         #Right now, make sure SRS is set as State HIGH
    
 
     with labrad.connect() as cxn:
-        norm_avg_sig, norm_avg_sig_ste = main_with_cxn(cxn, nv_sig, uwave_time_range,  
+        norm_avg_sig, norm_avg_sig_ste = main_with_cxn(cxn, nv_sig,  
                  num_steps, num_reps, num_runs,
+                 uwave_time_range, 
                  readout_state,
                  initial_state,
                  opti_nv_sig,
-                 do_err_plot)
+                 do_err_plot,
+                 do_plot)
 
 
-
+    # print(norm_avg_sig, norm_avg_sig_ste)
     return norm_avg_sig, norm_avg_sig_ste
-def main_with_cxn(cxn, nv_sig, uwave_time_range,  
+def main_with_cxn(cxn, nv_sig,  
                      num_steps, num_reps, num_runs,
+                     uwave_time_range,  
                      readout_state = States.HIGH,
                      initial_state = States.HIGH,
                      opti_nv_sig = None,
-                     do_err_plot = True,):
+                     do_err_plot = True,
+                     do_plot = True,):
 
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
@@ -156,6 +162,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     
     norm_style = nv_sig["norm_style"]
 
+
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
     min_uwave_time = uwave_time_range[0]
@@ -167,14 +174,22 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
     # file_name = "rabi_srt_balancing.py"
-    seq_args = [taus[0],taus[0], polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, max_uwave_time,  max_uwave_time,
+    if initial_state.value == state_low.value:
+        consec_pulse = pi_pulse_high
+        seq_args = [taus[0],consec_pulse, polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, max_uwave_time,  consec_pulse,
                 initial_state.value, readout_state.value, 
-                laser_name, laser_power]
+                laser_name, laser_power] 
+    elif initial_state.value == state_high.value:
+        consec_pulse = pi_pulse_low
+        seq_args = [consec_pulse,taus[0], polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, consec_pulse, max_uwave_time, 
+                initial_state.value, readout_state.value, 
+                laser_name, laser_power] 
 #    for arg in seq_args:
 #        print(type(arg))
-    # print(seq_args)
-    # return
+    print(seq_args)
+    #return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -208,13 +223,14 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     title='{} initial state, {} readout state'.format(initial_state.name, 
                            readout_state.name)
     # Create raw data figure for incremental plotting
-    raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        taus, title = title
-    )
-    # Set up a run indicator for incremental plotting
-    run_indicator_text = "Run #{}/{}"
-    text = run_indicator_text.format(0, num_runs)
-    run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
+    if do_plot:
+        raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
+            taus, title = title
+        )
+        # Set up a run indicator for incremental plotting
+        run_indicator_text = "Run #{}/{}"
+        text = run_indicator_text.format(0, num_runs)
+        run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
 
     ### Signal generators servers
     low_sig_gen_cxn = tool_belt.get_server_sig_gen(
@@ -288,10 +304,16 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
             tau_index_master_list[run_ind].append(tau_ind_second)
             # Stream the sequence
             
-            seq_args = [taus[tau_ind_first], taus[tau_ind_first],polarization_time,
-                readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], taus[tau_ind_second],
+            if initial_state.value == state_low.value:
+               seq_args = [taus[tau_ind_first],consec_pulse, polarization_time,
+                readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second],  consec_pulse,
                 initial_state.value, readout_state.value, 
-                laser_name, laser_power]
+                laser_name, laser_power] 
+            elif initial_state.value == state_high.value: 
+                seq_args = [consec_pulse,taus[tau_ind_first], polarization_time,
+                 readout, pi_pulse_low, pi_pulse_high, consec_pulse, taus[tau_ind_second], 
+                 initial_state.value, readout_state.value, 
+                 laser_name, laser_power] 
     
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
@@ -332,8 +354,6 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
         # %% incremental plotting
         
         # Update the run indicator
-        text = run_indicator_text.format(run_ind + 1, num_runs)
-        run_indicator_obj.txt.set_text(text)
         
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
@@ -347,9 +367,12 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
             norm_avg_sig_ste,
         ) = ret_vals
         
-        kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
-        kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
-        kpl.plot_line_update(ax_norm, y=norm_avg_sig)
+        if do_plot:
+            text = run_indicator_text.format(run_ind + 1, num_runs)
+            run_indicator_obj.txt.set_text(text)
+            kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+            kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+            kpl.plot_line_update(ax_norm, y=norm_avg_sig)
         
 
 
@@ -379,7 +402,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
-        tool_belt.save_figure(raw_fig, file_path)
+        if do_plot:
+            tool_belt.save_figure(raw_fig, file_path)
 
     # # %% Fit the data and extract piPulse
 
@@ -398,10 +422,11 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
     ) = ret_vals
 
     # Raw data
-    kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
-    kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
-    kpl.plot_line_update(ax_norm, y=norm_avg_sig)
-    run_indicator_obj.remove()
+    if do_plot:
+        kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+        kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+        kpl.plot_line_update(ax_norm, y=norm_avg_sig)
+        run_indicator_obj.remove()
     
     if do_err_plot:
         err_fig = create_err_figure(
@@ -445,8 +470,9 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
+                'uwave_time_range': uwave_time_range,
+                'uwave_time_range-units': 'ns',
                 'taus': taus.tolist(),
-                'tau_index_master_list':tau_index_master_list,
                 'opti_coords_list': opti_coords_list,
                 'opti_coords_list-units': 'V',
                 'sig_counts': sig_counts.astype(int).tolist(),
@@ -459,7 +485,8 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range,
 
     nv_name = nv_sig["name"]
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
-    tool_belt.save_figure(raw_fig, file_path)
+    if do_plot:
+        tool_belt.save_figure(raw_fig, file_path)
     # if fit_fig is not None:
     #     file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     #     tool_belt.save_figure(fit_fig, file_path_fit)
@@ -484,10 +511,9 @@ def plot_pop_consec(taus, m_pop, z_pop, p_pop,
                     p_err = None):
     
     fig, ax = plt.subplots()
-    ax.set_title('Rabi double quantum')
-    ax.set_xlabel('SRT length (us)')
+    ax.set_title('Rabi double quantum through zero state')
+    ax.set_xlabel('First microwave pulse duration (ns)')
     ax.set_ylabel('Population')
-    ax.set_title('Rabi with consec. pulses')
     
     # Plotting
     if m_err is not None:
@@ -526,11 +552,11 @@ def full_pop_consec(nv_sig, uwave_time_range,
     max_uwave_time = uwave_time_range[1]
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps)
-    taus = taus/1e3
     
-    init=States.LOW
-    p_sig, p_ste = main(nv_sig, uwave_time_range,
+    init=States.HIGH
+    p_sig, p_ste = main(nv_sig, 
              num_steps, num_reps, num_runs,
+             uwave_time_range,
              readout_state = States.HIGH,
              initial_state = init,
              do_err_plot = False,
@@ -538,8 +564,9 @@ def full_pop_consec(nv_sig, uwave_time_range,
     p_pop = (numpy.array(p_sig) - min_pop) / (1 - min_pop)
     p_err = numpy.array(p_ste)/ (1 - min_pop)
         
-    m_sig, m_ste = main(nv_sig, uwave_time_range, 
+    m_sig, m_ste = main(nv_sig, 
         num_steps, num_reps, num_runs,
+            uwave_time_range,
         readout_state = States.LOW,
         initial_state = init,
         do_err_plot = False,
@@ -547,8 +574,9 @@ def full_pop_consec(nv_sig, uwave_time_range,
     m_pop = (numpy.array(m_sig) - min_pop) / (1 - min_pop)
     m_err = numpy.array(m_ste)/ (1 - min_pop)
     
-    z_sig, z_ste = main(nv_sig, uwave_time_range, 
+    z_sig, z_ste = main(nv_sig, 
             num_steps, num_reps, num_runs,
+                uwave_time_range,
             readout_state = States.ZERO,
             initial_state = init,
             do_err_plot = False,
