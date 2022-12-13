@@ -28,20 +28,21 @@ def qua_program(opx, config, args, num_reps):
     
     apd_indices =  config['apd_indices']
     num_apds = len(apd_indices)
-    num_gates = 2
+    num_gates = 4
     total_num_gates = int(num_gates*num_reps)
     timetag_list_size = int(15900 / num_gates / 2)    
 
     (
-        readout_time, reion_time, ion_time, tau, shelf_time, uwave_tau_max,
+        check_charge_readout_time, readout_time, reion_time, ion_time, tau, shelf_time, uwave_tau_max,
         green_laser_name, yellow_laser_name, red_laser_name,
-        sig_gen, reion_power, ion_power, shelf_power, readout_power,
+        sig_gen, reion_power, ion_power, shelf_power, check_charge_readout_power, readout_power,
     ) = args 
     
     
     green_laser_pulse, green_laser_delay_time, green_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,green_laser_name,reion_power)
     red_laser_pulse, red_laser_delay_time, red_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,red_laser_name,ion_power)
     yellow_laser_pulse, yellow_laser_delay_time, yellow_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,yellow_laser_name,readout_power)
+    yellow_laser_pulse, yellow_laser_delay_time, check_charge_yellow_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,yellow_laser_name,check_charge_readout_power)
         
     uwave_delay_time = config['Microwaves'][sig_gen]['delay']
     signal_wait_time = config['CommonDurations']['uwave_buffer']
@@ -61,9 +62,18 @@ def qua_program(opx, config, args, num_reps):
     elif readout_time <= max_readout_time:
         num_readouts=1
         apd_readout_time = readout_time
+        
+    if check_charge_readout_time > max_readout_time:
+        check_charge_num_readouts = int(check_charge_readout_time / max_readout_time)
+        check_charge_apd_readout_time = max_readout_time
+        
+    elif check_charge_readout_time <= max_readout_time:
+        check_charge_num_readouts=1
+        check_charge_apd_readout_time = check_charge_readout_time
     
     tau_cc = int(round(tau / 4))
-    signal_wait_time_cc = int(signal_wait_time // 4)
+    signal_wait_time_cc = int(round(signal_wait_time / 4))
+
     period = 2 * (reion_time + signal_wait_time + tau + signal_wait_time + ion_time + scc_ion_readout_buffer + readout_time ) - tau
     
     with program() as seq:
@@ -77,6 +87,15 @@ def qua_program(opx, config, args, num_reps):
         times_gate2_apd_0 = declare(int,size=timetag_list_size)
         times_gate2_apd_1 = declare(int,size=timetag_list_size)
         
+        counts_gate3_apd_0 = declare(int)  
+        counts_gate3_apd_1 = declare(int)
+        times_gate3_apd_0 = declare(int,size=timetag_list_size)
+        times_gate3_apd_1 = declare(int,size=timetag_list_size)
+        counts_gate4_apd_0 = declare(int)  
+        counts_gate4_apd_1 = declare(int)
+        times_gate4_apd_0 = declare(int,size=timetag_list_size)
+        times_gate4_apd_1 = declare(int,size=timetag_list_size)
+        
         counts_st_apd_0 = declare_stream()
         counts_st_apd_1 = declare_stream()     
 
@@ -84,22 +103,40 @@ def qua_program(opx, config, args, num_reps):
         i = declare(int)
         k = declare(int)
         
-        tau_cc_qua = declare(int)
-        assign(tau_cc_qua,tau_cc)
-        
         with for_(n, 0, n < num_reps, n + 1):
             
             align()
+            
             play(green_laser_pulse*amp(green_laser_amplitude),green_laser_name,duration=reion_time//4)
             align()
             wait(green_laser_delay_time//4)
+            
             wait(signal_wait_time_cc)
             
-            with if_(tau_cc_qua >= 4):
+            with for_(i,0,i<check_charge_num_readouts,i+1):
+                
+                play(yellow_laser_pulse*amp(check_charge_yellow_laser_amplitude),yellow_laser_name,duration=check_charge_apd_readout_time//4) 
+                
+                if num_apds == 2:
+                    wait(yellow_laser_delay_time//4 ,"do_apd_0_gate","do_apd_1_gate" )
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, check_charge_apd_readout_time, counts_gate1_apd_0))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, check_charge_apd_readout_time, counts_gate1_apd_1))
+                    save(counts_gate1_apd_0, counts_st_apd_0)
+                    save(counts_gate1_apd_1, counts_st_apd_1)
+                    align("do_apd_0_gate","do_apd_1_gate")
+                    
+                if num_apds == 1:
+                    wait(yellow_laser_delay_time//4 ,"do_apd_{}_gate".format(apd_indices[0]))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, check_charge_apd_readout_time, counts_gate1_apd))
+                    save(counts_gate1_apd_0, counts_st_apd_0)
+                    save(0, counts_st_apd_1)
+                    align("do_apd_0_gate","do_apd_1_gate")
+            
+            align()
+            wait(signal_wait_time_cc)
+            
+            if tau_cc >= 4:
                 play("uwave_ON",sig_gen, duration=tau_cc)
-                align()
-            with elif_(tau_cc_qua <= 3):
-                align()
             
             align()
             wait(signal_wait_time_cc)
@@ -117,16 +154,16 @@ def qua_program(opx, config, args, num_reps):
                 
                 if num_apds == 2:
                     wait(yellow_laser_delay_time//4 ,"do_apd_0_gate","do_apd_1_gate" )
-                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
-                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate1_apd_1, apd_readout_time, counts_gate1_apd_1))
-                    save(counts_gate1_apd_0, counts_st_apd_0)
-                    save(counts_gate1_apd_1, counts_st_apd_1)
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, apd_readout_time, counts_gate2_apd_1))
+                    save(counts_gate2_apd_0, counts_st_apd_0)
+                    save(counts_gate2_apd_1, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
                     
                 if num_apds == 1:
                     wait(yellow_laser_delay_time//4 ,"do_apd_{}_gate".format(apd_indices[0]))
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
-                    save(counts_gate1_apd_0, counts_st_apd_0)
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, apd_readout_time, counts_gate2_apd))
+                    save(counts_gate2_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
                     
@@ -141,7 +178,30 @@ def qua_program(opx, config, args, num_reps):
             align()
             wait(green_laser_delay_time//4)
             wait(signal_wait_time_cc)
+            
+            with for_(i,0,i<check_charge_num_readouts,i+1):
+                
+                play(yellow_laser_pulse*amp(check_charge_yellow_laser_amplitude),yellow_laser_name,duration=check_charge_apd_readout_time//4) 
+                
+                if num_apds == 2:
+                    wait(yellow_laser_delay_time//4 ,"do_apd_0_gate","do_apd_1_gate" )
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate3_apd_0, check_charge_apd_readout_time, counts_gate3_apd_0))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate3_apd_1, check_charge_apd_readout_time, counts_gate3_apd_1))
+                    save(counts_gate3_apd_0, counts_st_apd_0)
+                    save(counts_gate3_apd_1, counts_st_apd_1)
+                    align("do_apd_0_gate","do_apd_1_gate")
+                    
+                if num_apds == 1:
+                    wait(yellow_laser_delay_time//4 ,"do_apd_{}_gate".format(apd_indices[0]))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate3_apd_0, check_charge_apd_readout_time, counts_gate3_apd))
+                    save(counts_gate3_apd_0, counts_st_apd_0)
+                    save(0, counts_st_apd_1)
+                    align("do_apd_0_gate","do_apd_1_gate")
+            
+            align()
+            
             wait(signal_wait_time_cc)
+            
             align()
             if ion_time >= 16:
                 play(red_laser_pulse*amp(red_laser_amplitude),red_laser_name,duration=ion_time//4)
@@ -156,16 +216,16 @@ def qua_program(opx, config, args, num_reps):
                                 
                 if num_apds == 2:
                     wait(yellow_laser_delay_time//4 ,"do_apd_0_gate","do_apd_1_gate")
-                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
-                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate2_apd_1, apd_readout_time, counts_gate2_apd_1))
-                    save(counts_gate2_apd_0, counts_st_apd_0)
-                    save(counts_gate2_apd_1, counts_st_apd_1)
+                    measure("readout", "do_apd_0_gate", None, time_tagging.analog(times_gate4_apd_0, apd_readout_time, counts_gate4_apd_0))
+                    measure("readout", "do_apd_1_gate", None, time_tagging.analog(times_gate4_apd_1, apd_readout_time, counts_gate4_apd_1))
+                    save(counts_gate4_apd_0, counts_st_apd_0)
+                    save(counts_gate4_apd_1, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
                     
                 if num_apds == 1:
                     wait(yellow_laser_delay_time//4 ,"do_apd_{}_gate".format(apd_indices[0]))
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, apd_readout_time, counts_gate2_apd))
-                    save(counts_gate2_apd_0, counts_st_apd_0)
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate4_apd_0, apd_readout_time, counts_gate4_apd))
+                    save(counts_gate4_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
                 
@@ -225,9 +285,9 @@ if __name__ == '__main__':
     # config['PhotonCollection']['qm_opx_max_readout_time'] = 1000
     # args = [5e3,1e3,30,90,0,90,'cobolt_515','laserglow_589','cobolt_638',
     #         'signal_generator_tsg4104a',0,None,None,0,.26]
-    args = [5000.0, 1000.0, 140, 180.56, 0, 500, 
+    args = [0,5000.0, 1000.0, 140, 180.56, 0, 500, 
             'cobolt_515', 'laserglow_589', 'cobolt_638', 
-            'sig_gen_TEKT_tsg4104a',  1, 1, None, 0.45]
+            'sig_gen_TEKT_tsg4104a',  1, 1, None, .45,.45]
     # args = [400,1000,16,90,0,90,'cobolt_515','cobolt_515','cobolt_638','signal_generator_tsg4104a',0,None,None,0,0.26]
     # args = [0, 1000.0, 350, 0, 1, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)

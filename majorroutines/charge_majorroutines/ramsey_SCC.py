@@ -34,140 +34,12 @@ import labrad
 from utils.tool_belt import States
 from scipy.optimize import curve_fit
 import majorroutines.optimize as optimize
-
-# %% fit
-
-def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning):
-    # Create an empty array for the frequency arrays
-    FreqParams = numpy.empty([3])
-
-    # Perform the fft
-    time_step = (precession_time_range[1]/1e3 - precession_time_range[0]/1e3) \
-                                                    / (num_steps - 1)
-
-    transform = numpy.fft.rfft(norm_avg_sig)
-#    window = max_precession_time - min_precession_time
-    freqs = numpy.fft.rfftfreq(num_steps, d=time_step)
-    transform_mag = numpy.absolute(transform)
-
-    # Plot the fft
-    fig_fft, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(freqs[1:], transform_mag[1:])  # [1:] excludes frequency 0 (DC component)
-    ax.set_xlabel('Frequency (MHz)')
-    ax.set_ylabel('FFT magnitude')
-    ax.set_title('Ramsey FFT')
-    fig_fft.canvas.draw()
-    fig_fft.canvas.flush_events()
-
-
-    # Guess the peaks in the fft. There are parameters that can be used to make
-    # this more efficient
-    freq_guesses_ind = find_peaks(transform_mag[1:]
-                                  , prominence = 0.5
-#                                  , height = 0.8
-#                                  , distance = 2.2 / freq_step
-                                  )
-
-#    print(freq_guesses_ind[0])
-
-    # Check to see if there are three peaks. If not, try the detuning passed in
-    if len(freq_guesses_ind[0]) != 3:
-        print('Number of frequencies found: {}'.format(len(freq_guesses_ind[0])))
-#        detuning = 3 # MHz
-
-        FreqParams[0] = detuning - 2.2
-        FreqParams[1] = detuning
-        FreqParams[2] = detuning + 2.2
-    else:
-        FreqParams[0] = freqs[freq_guesses_ind[0][0]]
-        FreqParams[1] = freqs[freq_guesses_ind[0][1]]
-        FreqParams[2] = freqs[freq_guesses_ind[0][2]]
-        
-    return fig_fft, FreqParams
-
-def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
-    
-    taus_us = numpy.array(taus)/1e3
-    # Guess the other params for fitting
-    amp_1 = -0.09/3
-    amp_2 = amp_1
-    amp_3 = amp_1
-    decay = 1.6
-    offset = .91
-
-    guess_params = (offset, decay, amp_1, FreqParams[0],
-                        amp_2, FreqParams[1],
-                        amp_3, FreqParams[2])
-    
-    # guess_params_fixed_freq = (offset, decay, amp_1,
-    #                     amp_2, 
-    #                     amp_3, )
-    # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
-    
-    # Try the fit to a sum of three cosines
-    
-    fit_func = tool_belt.cosine_sum
-    init_params = guess_params
-    
-    # fit_func = cosine_sum_fixed_freq
-    # init_params = guess_params_fixed_freq
-    try:
-        popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
-                      p0=init_params)#,
-                        # bounds=(0, [numpy.infty, numpy.infty, numpy.infty, numpy.infty,
-                                    # numpy.infty, numpy.infty,
-                                    # numpy.infty, numpy.infty, ])
-                      # )
-    except Exception:
-        print('Something went wrong!')
-        popt = guess_params
-    print(popt)
-
-    taus_us_linspace = numpy.linspace(precession_time_range[0]/1e3, precession_time_range[1]/1e3,
-                          num=1000)
-
-    fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus_us, norm_avg_sig,'b',label='data')
-    ax.plot(taus_us_linspace, fit_func(taus_us_linspace,*popt),'r',label='fit')
-    ax.set_xlabel(r'Free precesion time ($\mu$s)')
-    ax.set_ylabel('Contrast (arb. units)')
-    ax.legend()
-    text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
-                        r'$d = $' + '%.2f'%(abs(popt[1]/1e6)) + ' us',
-                        r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
-                        r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
-                        r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
-                        ))
-    
-    text1 = "\n".join((r'$C + e^{-t/d} \sum_i^3 a_i \mathrm{cos}(2 \pi \nu_i t)$',
-                        r'$d = $' + '%.2f'%(abs(popt[1]/1e6)) + ' us',
-                        r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
-                        r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
-                        r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
-                        ))
-    
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    # print(text1)
-
-    ax.text(0.70, 0.25, text1, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
-
-
-
-#  Plot the data itself and the fitted curve
-
-    fig_fit.canvas.draw()
-#    fig.set_tight_layout(True)
-    fig_fit.canvas.flush_events()
-    
-    return fig_fit
+from majorroutines.ramsey import extract_oscillations, fit_ramsey
 
 # %% Main
 
-
 def main(
     nv_sig,
-    apd_indices,
     detuning,
     precession_dur_range,
     num_steps,
@@ -175,22 +47,23 @@ def main(
     num_runs,
     state=States.LOW,
     opti_nv_sig = None,
-    one_precession_time = False
+    one_precession_time = False,
+    do_fm = False
 ):
 
     with labrad.connect() as cxn:
         angle = main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
-    detuning,
+            detuning,
             precession_dur_range,
             num_steps,
             num_reps,
             num_runs,
             state,
             opti_nv_sig,
-            one_precession_time
+            one_precession_time,
+            do_fm
         )
         return angle
 
@@ -198,7 +71,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     detuning,
     precession_time_range,
     num_steps,
@@ -207,10 +79,12 @@ def main_with_cxn(
     state=States.LOW,
     opti_nv_sig = None,
     one_precession_time = False,
+    do_fm = False
 ):
     
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
     
 
     tool_belt.reset_cfm(cxn)
@@ -307,7 +181,6 @@ def main_with_cxn(
         uwave_pi_pulse,
         uwave_pi_on_2_pulse,
         max_precession_time/2,
-        apd_indices[0],
         state.value,
         green_laser_name, red_laser_name, yellow_laser_name,
         green_laser_power, red_laser_power, yellow_laser_power
@@ -365,12 +238,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig['coords'] + numpy.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -388,7 +261,7 @@ def main_with_cxn(
         yellow_laser_power = tool_belt.set_laser_power(cxn, nv_sig, yellow_laser_key)
 
         # Load the APD
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -406,13 +279,13 @@ def main_with_cxn(
             # might need to adjust this if you run into problems with the pulse streamer. This works with the opx at least. 
             if tau_run_ind % 5 == 0:
                 if opti_nv_sig:
-                    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+                    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
                     drift = tool_belt.get_drift()
                     adj_coords = nv_sig['coords'] + numpy.array(drift)
                     tool_belt.set_xyz(cxn, adj_coords)
                 else:
-                    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-                counter_server.start_tag_stream(apd_indices)
+                    opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+                counter_server.start_tag_stream()
                 # opti_coords_list.append(opti_coords)
             
             rand_boolean = numpy.random.randint(0, high=2)
@@ -447,7 +320,6 @@ def main_with_cxn(
                 uwave_pi_pulse,
                 uwave_pi_on_2_pulse,
                 taus[tau_ind_second]/2,
-                apd_indices[0],
                 state.value,
                 green_laser_name, red_laser_name, yellow_laser_name,
                 green_laser_power, red_laser_power, yellow_laser_power

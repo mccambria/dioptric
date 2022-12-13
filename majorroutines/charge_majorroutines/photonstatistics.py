@@ -527,7 +527,7 @@ def calculate_threshold(readout_time,x_data,rate_fit):
     n_thresh = threshold_list[thre_index]
     # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
     # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
-    return np.array([n_thresh,  max(fidelity_list)])
+    return threshold_list, np.array([n_thresh,  max(fidelity_list)])
 
 def calculate_threshold_from_experiment( x_vals_0, x_vals_m, mu0, mu1, nv0_hist, nvm_hist):
     threshold_list = np.linspace(int(mu0),int(mu1)+2,int(mu1) - int(mu0) +3)
