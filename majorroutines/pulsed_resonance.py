@@ -537,7 +537,6 @@ def main_with_cxn(
     norm_style = nv_sig["norm_style"]
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10**9)
 
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
@@ -583,7 +582,7 @@ def main_with_cxn(
         ]
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    print(seq_args)
+    # print(seq_args)
 
     opti_coords_list = []
 
