@@ -370,11 +370,11 @@ def do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps):
         chop_factor
     )
     
-def do_test_spin_polarization_scc(nv_sig, pre_init_laser_key, pre_init_time, pre_init_power, total_wait_time, num_reps):
+def do_test_spin_repolarization_scc(nv_sig, pre_init_laser_key, pre_init_time, pre_init_power, total_wait_time, num_reps):
     
     state = States.LOW
     
-    do_test_spin_polarization_scc.main(nv_sig, state, 
+    test_spin_repolarization_scc.main(nv_sig, state, 
                                        pre_init_laser_key, pre_init_time, pre_init_power, 
                                        total_wait_time, num_reps)
 
@@ -451,7 +451,7 @@ if __name__ == "__main__":
         # do_determine_scc_pulse_params(nv_sig,50000,ion_durs=[116])
         # do_determine_charge_readout_params(nv_sig, readout_powers=powers,readout_times=[10e6], num_reps=50000)
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
-        do_test_spin_polarization_scc(nv_sig, pre_init_laser_key='laserglow_589', 
+        do_test_spin_repolarization_scc(nv_sig, pre_init_laser_key='laserglow_589', 
                                       pre_init_time=5e6, pre_init_power=.4, total_wait_time=5e6, num_reps=1000)
         
         # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')

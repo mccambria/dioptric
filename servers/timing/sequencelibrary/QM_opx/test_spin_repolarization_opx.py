@@ -20,19 +20,19 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     first_init_laser_key, init_laser_key, ion_laser_key, readout_laser_key,\
-                pre_init_time, second_init_time, ion_time, readout_time,\
+                first_init_pulse_time, second_init_time, ion_time, readout_time,\
                 first_init_laser_power, init_laser_power, ion_laser_power, read_laser_power,\
                 sig_gen, pi_pulse, total_wait_time = args
     
-    pi_pulse_cc = int(round(pi_pulse / 4))
-    extra_wait_time = total_wait_time - init_pulse_time
-    extra_wait_time_cc = int(max(round(extra_wait_time / 4)),4)
     
     first_init_laser_pulse, first_init_laser_delay_time, first_init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,first_init_laser_key,first_init_laser_power)
     init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
     ion_laser_pulse, ion_laser_delay_time, ion_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,ion_laser_key,ion_laser_power)
     readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,read_laser_power)
     
+    pi_pulse_cc = int(round(pi_pulse / 4))
+    extra_wait_time = total_wait_time - second_init_time
+    extra_wait_time_cc = int(max(round(extra_wait_time / 4),4))
     
     delay1_cc = int( (max(first_init_laser_delay_time - init_laser_delay_time + 1000,1000))//4 )
     # print(delay1_cc)
@@ -60,7 +60,7 @@ def qua_program(opx, config, args, num_reps):
         num_readouts=1
         apd_readout_time = readout_time
 
-    init_laser_on_time = init_pulse_time
+    init_laser_on_time = second_init_time
     readout_laser_on_time = num_readouts*(apd_readout_time) + (num_readouts-1)*(delay_between_readouts_iterations)
         
     first_init_laser_on_time = first_init_pulse_time
@@ -101,7 +101,7 @@ def qua_program(opx, config, args, num_reps):
             align()    
                 
             wait(delay2_cc)
-            play(red_laser_pulse*amp(red_laser_amplitude),red_laser_name,duration=ion_time//4)
+            play(ion_laser_pulse*amp(ion_laser_amplitude),ion_laser_key,duration=ion_time//4)
             wait(delay7_cc)
             
             align()
@@ -142,7 +142,7 @@ def qua_program(opx, config, args, num_reps):
             wait(pi_pulse_cc)
                 
             wait(delay2_cc)
-            play(red_laser_pulse*amp(red_laser_amplitude),red_laser_name,duration=ion_time//4)
+            play(ion_laser_pulse*amp(ion_laser_amplitude),ion_laser_key,duration=ion_time//4)
             wait(delay7_cc)
             
             align()
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     # st = time.time()
     plt.figure()
     
-    args = ['cobolt_515', "cobolt_515", 'cobolt_638', 'laserglow_589',
+    args = ['cobolt_515', "laserglow_589", 'cobolt_638', 'laserglow_589',
                 1000, 2000, 200, 2000,1, .5, 1, .5,
                 'sig_gen_TEKT_tsg4104a', 48, 2000]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
