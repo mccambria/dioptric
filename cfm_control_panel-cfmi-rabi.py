@@ -377,7 +377,7 @@ def do_rabi_two_pulse(nv_sig, uwave_time_range_LOW, uwave_time_range_HIGH, num_s
              readout_state,
              initial_state,)
     
-def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, v, uwave_time_range=[0, 1000]):
+def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, uwave_time_range=[0, 1000]):
     
     deviation_high = dev
     deviation_low = dev
@@ -386,6 +386,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, v, uwave_time_range=
     num_steps = 51
     num_reps = int(1e4)
     num_runs = 10
+    v = 1.0
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -1154,6 +1155,7 @@ if __name__ == "__main__":
         #do_rabi_consec(nv_sig,   States.HIGH, States.ZERO,  uwave_time_range=[0, 300])
         # do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
         
+        do_rabi_srt(nv_sig, States.HIGH, States.LOW,0,  uwave_time_range=[0, 300])
         
         # for t1 in [60e3]:
         #     do_ramsey(nv_sig, nv_sig, t1)

@@ -833,6 +833,7 @@ def main_with_cxn(
             "num_steps": num_steps,
             "num_reps": num_reps,
             "run_ind": run_ind,
+            "taus": taus,
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
@@ -909,6 +910,7 @@ def main_with_cxn(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
+        "taus": taus,
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
@@ -972,16 +974,70 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_11_09-19_27_55-johnson-search"
-    data = tool_belt.get_raw_data(file_name, 'pc_carr/branch_opx-setup/spin_echo/2022_11')
+    file_name = "2022_12_14-12_55_37-siena-nv1_2022_10_27"
+    folder = 'pc_rabi/branch_master/spin_echo/2022_12'
+    data = tool_belt.get_raw_data(file_name, folder)
     nv_name = data['nv_sig']["name"]
     timestamp = data['timestamp']
     # data['sig_counts'] = data['sig_counts'][:5]
     # data['ref_counts'] = data['ref_counts'][:5]
     # data['num_runs'] = 5
     
-    ret_vals = plot_resonances_vs_theta_B(data)
-    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
-    plt.show()
+    # ret_vals = plot_resonances_vs_theta_B(data)
+    # fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+    # file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
+    # plt.show()
     # tool_belt.save_figure(fit_fig, file_path_fit)
+    
+    #### T2 time
+    
+    norm_avg_sig = data['norm_avg_sig']
+    precession_time_range = data['precession_time_range']
+    num_steps = data['num_steps']
+    
+    min_precession_time = int(precession_time_range[0])
+    max_precession_time = int(precession_time_range[1])
+
+    taus = numpy.linspace(
+        min_precession_time,
+        max_precession_time,
+        num=num_steps,
+    )
+    
+    taus_ms = numpy.array(taus)/1e6
+    
+    
+    guess_params = [0.1, 3, 0.9]
+    fit_func = tool_belt.exp_t2
+    
+    popt, pcov = curve_fit(
+        fit_func,
+        taus_ms,
+        norm_avg_sig,
+        # sigma=norm_avg_sig_ste,
+        # absolute_sigma=True,
+        p0=guess_params,
+    )
+    print(popt)
+    
+    
+    taus_ms_linspace = numpy.linspace(taus_ms[0], taus_ms[-1],
+                          num=1000)
+
+    fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(taus_ms, norm_avg_sig,'bo',label='data')
+    ax.plot(taus_ms_linspace, fit_func(taus_ms_linspace,*popt),'r',label='fit')
+    ax.set_xlabel(r'Free precesion time (ms)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend()
+    text = r"$T_2 =$ " + '%.2f'%(popt[1]) + r" ms" 
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(
+        0.65,
+        0.65,
+        text,
+        fontsize=14,
+        transform=ax.transAxes,
+        verticalalignment="top",
+        bbox=props,
+)

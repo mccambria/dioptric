@@ -242,10 +242,10 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     text = run_indicator_text.format(0, num_runs)
     run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
 
-    ### Turn on FM
-    # low_sig_gen_cxn = tool_belt.get_server_sig_gen(
-    #     cxn, States.LOW
-    # )
+    ### Turn on MWs
+    low_sig_gen_cxn = tool_belt.get_server_sig_gen(
+        cxn, States.LOW
+    )
     high_sig_gen_cxn = tool_belt.get_server_sig_gen(
         cxn, States.HIGH
     )
@@ -279,14 +279,14 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Set up the microwaves for the low and high states
-        # low_sig_gen_cxn.set_freq(uwave_freq_low)
-        # low_sig_gen_cxn.set_amp(uwave_power_low)
-        # low_sig_gen_cxn.uwave_on()
+        low_sig_gen_cxn.set_freq(uwave_freq_low)
+        low_sig_gen_cxn.set_amp(uwave_power_low)
+        low_sig_gen_cxn.uwave_on()
 
         # high_sig_gen_cxn.set_freq(uwave_freq_high)
         high_sig_gen_cxn.set_freq(uwave_freq_high_detune)
-        #if iq_key_HIGH:
-        high_sig_gen_cxn.load_iq()
+        if iq_key_HIGH:
+            high_sig_gen_cxn.load_iq()
         high_sig_gen_cxn.set_amp(uwave_power_high)
         high_sig_gen_cxn.uwave_on()
         

@@ -403,6 +403,8 @@ def exp_decay(x, amp, decay, offset):
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 
+def exp_t2(x, amp, decay, offset):
+    return exp_stretch_decay(x, amp, decay, offset, 3)
 
 def gaussian(x, *params):
     """Calculates the value of a gaussian for the given input and parameters
