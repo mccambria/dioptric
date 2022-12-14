@@ -469,6 +469,7 @@ def main(
     num_reps,
     num_runs,
     state=States.LOW,
+    do_dq = False
 ):
 
     with labrad.connect() as cxn:
@@ -480,6 +481,7 @@ def main(
             num_reps,
             num_runs,
             state,
+            do_dq
         )
         return angle
 
@@ -492,6 +494,7 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state=States.LOW,
+    do_dq = False
 ):
     
     counter_server = tool_belt.get_server_counter(cxn)
@@ -517,6 +520,27 @@ def main_with_cxn(
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
     seq_file_name = "spin_echo.py"
+    # set up to drive transition through zero
+    if do_dq is not False:
+        do_ramsey = False
+        seq_file_name = "spin_echo_dq.py"
+        
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        if state.value == States.LOW.value:
+            state_init = States.LOW
+            state_seco = States.HIGH
+        elif state.value == States.HIGH.value:
+            state_init = States.HIGH
+            state_seco = States.LOW
 
     # %% Create the array of relaxation times
 
@@ -576,18 +600,34 @@ def main_with_cxn(
     # %% Analyze the sequence
     
     num_reps = int(num_reps)
-
-    seq_args = [
-        min_precession_time,
-        polarization_time,
-        gate_time,
-        uwave_pi_pulse,
-        uwave_pi_on_2_pulse,
-        max_precession_time,
-        state.value,
-        laser_name,
-        laser_power,
-    ]
+    if do_dq is not False:
+        seq_args = [
+            min_precession_time,
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse_low,
+            uwave_pi_on_2_pulse_low,
+            uwave_pi_pulse_high,
+            uwave_pi_on_2_pulse_high,
+            max_precession_time,
+            state_init.value,
+            state_seco.value,
+            laser_name, 
+            laser_power, 
+            do_ramsey
+        ]
+    else:
+        seq_args = [
+            min_precession_time,
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse,
+            uwave_pi_on_2_pulse,
+            max_precession_time,
+            state.value,
+            laser_name,
+            laser_power,
+        ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     print(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
@@ -638,6 +678,16 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
 
+        if do_dq is not False:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            sig_gen_high_cxn.uwave_on()
+            
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -671,17 +721,34 @@ def main_with_cxn(
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
-            seq_args = [
-                taus[tau_ind_first],
-                polarization_time,
-                gate_time,
-                uwave_pi_pulse,
-                uwave_pi_on_2_pulse,
-                taus[tau_ind_second],
-                state.value,
-                laser_name,
-                laser_power,
-            ]
+            if do_dq is not False:
+                seq_args = [
+                    taus[tau_ind_first],
+                    polarization_time,
+                    gate_time,
+                    uwave_pi_pulse_low,
+                    uwave_pi_on_2_pulse_low,
+                    uwave_pi_pulse_high,
+                    uwave_pi_on_2_pulse_high,
+                    taus[tau_ind_second],
+                    state_init.value,
+                    state_seco.value,
+                    laser_name,
+                    laser_power, 
+                    do_ramsey
+                ]
+            else:
+                seq_args = [
+                    taus[tau_ind_first],
+                    polarization_time,
+                    gate_time,
+                    uwave_pi_pulse,
+                    uwave_pi_on_2_pulse,
+                    taus[tau_ind_second],
+                    state.value,
+                    laser_name,
+                    laser_power,
+                ]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
@@ -747,6 +814,7 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+            "do_dq": do_dq,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -822,6 +890,7 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+        "do_dq": do_dq,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,

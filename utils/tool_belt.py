@@ -461,6 +461,14 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_2 * np.cos(two_pi * freq_2 * t)
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
+def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
+    two_pi = 2 * np.pi
+
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+        + amp_2 * np.cos(two_pi * freq_2 * t)
+        # + amp_3 * np.cos(two_pi * freq_3 * t)
+    )
 
 
 def cosine_one(t, offset, decay, amp_1, freq_1):
