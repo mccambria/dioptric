@@ -686,7 +686,7 @@ if __name__ == "__main__":
         # _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
         # print(FreqParams)
     
-        # fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
+        fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
     
     if analytics:
         
