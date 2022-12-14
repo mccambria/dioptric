@@ -126,11 +126,11 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
         FreqParams[0] = freqs[freq_guesses_ind[0][0]]
         FreqParams[1] = freqs[freq_guesses_ind[0][1]]
         FreqParams[2] = freqs[freq_guesses_ind[0][2]]
-        
+
     return fig_fft, FreqParams
 
 def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
-    
+
     taus_us = numpy.array(taus)/1e3
     # Guess the other params for fitting
     amp_1 = -0.1/3
@@ -142,34 +142,34 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     guess_params = (offset, decay, amp_1, FreqParams[0],
                         amp_2, FreqParams[1],
                         amp_3, FreqParams[2])
-    # guess_params_double = (offset, decay, 
+    # guess_params_double = (offset, decay,
     #                 # amp_1, FreqParams[0],
     #                     amp_2, FreqParams[1],
     #                     amp_3, FreqParams[2])
-    
+
     # guess_params_fixed_freq = (offset, decay, amp_1,
-    #                     amp_2, 
+    #                     amp_2,
     #                     amp_3, )
     # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
-    
+
     # Try the fit to a sum of three cosines
-    
+
     fit_func = tool_belt.cosine_sum
     init_params = guess_params
-    
+
     # fit_func = cosine_sum_fixed_freq
     # init_params = guess_params_fixed_freq
-    
+
     # fit_func = tool_belt.cosine_double_sum
     # init_params = guess_params_double
-    
+
     try:
         popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
                       p0=init_params,
                         bounds=([0, 0, -numpy.infty, -15,
                                     # -numpy.infty, -15,
                                     -numpy.infty, -15, ]
-                                , [numpy.infty, numpy.infty, 
+                                , [numpy.infty, numpy.infty,
                                    numpy.infty, 15,
                                     # numpy.infty, 15,
                                     numpy.infty, 15, ])
@@ -194,14 +194,14 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     #                     r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
     #                     r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
     #                     ))
-    
+
     text1 = "\n".join((r'$C + e^{-t/d} \sum_i^3 a_i \mathrm{cos}(2 \pi \nu_i t)$',
                         r'$d = $' + '%.2f'%(abs(popt[1]/1e6)) + ' us',
                         r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
                         r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
                         # r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
                         ))
-    
+
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     # print(text1)
 
@@ -215,7 +215,7 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     fig_fit.canvas.draw()
 #    fig.set_tight_layout(True)
     fig_fit.canvas.flush_events()
-    
+
     return fig_fit
 
 # %% Main
@@ -267,11 +267,11 @@ def main_with_cxn(
     do_fm = False,
     do_dq = False
 ):
-    
+
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     # arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
-    
+
 
     tool_belt.reset_cfm(cxn)
     kpl.init_kplotlib()
@@ -297,14 +297,14 @@ def main_with_cxn(
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
     seq_file_name = "spin_echo.py"
-        
+
     if do_fm == False:
         seq_file_name = "spin_echo.py"
         deviation = 0
     else:
         seq_file_name = "spin_echo_fm_test.py"
         deviation = 6
-    
+
     # set up to drive transition through zero
     if do_dq is not False:
         do_ramsey = True
@@ -327,8 +327,8 @@ def main_with_cxn(
             state_init = States.HIGH
             state_seco = States.LOW
             uwave_freq_high = uwave_freq_high + detuning / 10**3
-        
-        
+
+
     # %% Create the array of relaxation times
 
     # Array of times to sweep through
@@ -397,7 +397,7 @@ def main_with_cxn(
             state_init.value,
             state_seco.value,
             laser_name,
-            laser_power, 
+            laser_power,
             do_ramsey
         ]
     else:
@@ -430,8 +430,8 @@ def main_with_cxn(
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     #    return
-    
-    
+
+
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
         taus/1000
@@ -440,7 +440,7 @@ def main_with_cxn(
     run_indicator_text = "Run #{}/{}"
     text = run_indicator_text.format(0, num_runs)
     run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
-    
+
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -476,7 +476,7 @@ def main_with_cxn(
         if do_fm:
             sig_gen_cxn.load_fm(deviation)
         sig_gen_cxn.uwave_on()
-        
+
         if do_dq is not False:
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
             sig_gen_low_cxn.set_freq(uwave_freq_low)
@@ -508,7 +508,7 @@ def main_with_cxn(
             elif rand_boolean == 0:
                 tau_ind_first = -tau_ind - 1
                 tau_ind_second = tau_ind
-            
+
             if one_precession_time:
                 tau_ind_first = 0
                 tau_ind_second = 0
@@ -537,7 +537,7 @@ def main_with_cxn(
                     state_init.value,
                     state_seco.value,
                     laser_name,
-                    laser_power, 
+                    laser_power,
                     do_ramsey
                 ]
             else:
@@ -583,7 +583,7 @@ def main_with_cxn(
             # print("Second Reference = " + str(count))
 
         counter_server.stop_tag_stream()
-        
+
         ### Incremental plotting
 
         # Update the run indicator
@@ -606,7 +606,7 @@ def main_with_cxn(
         kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
         kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
         kpl.plot_line_update(ax_norm, y=norm_avg_sig)
-        
+
         # %% Save the data we have incrementally for long T1s
 
         raw_data = {
@@ -724,15 +724,15 @@ def main_with_cxn(
     tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Fit and save figs
-    
+
     # Fourier transform
-    fig_fft, FreqParams = extract_oscillations(norm_avg_sig, 
+    fig_fft, FreqParams = extract_oscillations(norm_avg_sig,
                                precession_time_range, num_steps, detuning)
-    
+
     # Save the fft figure
     file_path_fft = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"] + '_fft')
     tool_belt.save_figure(fig_fft, file_path_fft)
-    
+
     # Fit actual data
     fig_fit = fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
 
@@ -740,7 +740,7 @@ def main_with_cxn(
     file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"] + '_fit')
     tool_belt.save_figure(fig_fit, file_path_fit)
 
-    return 
+    return
 
 
 # %% Run the file
@@ -754,7 +754,7 @@ if __name__ == "__main__":
 
         folder = "pc_rabi/branch_master/ramsey/2022_12"
         file = '2022_12_13-14_21_22-siena-nv1_2022_10_27'
-        
+
         # detuning = 0
         data = tool_belt.get_raw_data(file, folder)
         detuning= data['detuning']
@@ -769,21 +769,21 @@ if __name__ == "__main__":
             taus = data['taus']
             taus = numpy.array(taus)
         except Exception:
-            
+
             taus = numpy.linspace(
                 precession_time_range[0],
                 precession_time_range[1],
                 num=num_steps,
             )
-            
-            
+
+
         # _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
         # print(FreqParams)
         FreqParams = [0, 3.9, 8.2]
         fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
-    
+
     if analytics:
-        
+
         # t = numpy.linspace(.040,1.04,50)
         func = tool_belt.cosine_sum#(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
         taus = taus/1000
@@ -796,12 +796,12 @@ if __name__ == "__main__":
         freq_1 = detuning-2.2
         freq_2 = detuning
         freq_3 = detuning+2.2
-        
-        fit_func = tool_belt.cosine_sum        
+
+        fit_func = tool_belt.cosine_sum
         # fit_func = tool_belt.cosine_one
         # fit_func = cosine_sum_fixed_freq
         # init_params = guess_params_fixed_freq
-        
+
         guess_params = (offset, decay, amp_1, freq_1,
                             amp_2, freq_2,
                             amp_3, freq_3)
@@ -818,15 +818,10 @@ if __name__ == "__main__":
         # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
         plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
         plt.show()
-        
+
         raw_fig = fit_ramsey(norm_avg_sig, taus*1000, precession_time_range, [freq_1,freq_2,freq_3])
-        
+
         # cur_time = tool_belt.get_time_stamp()
         # file_path = tool_belt.get_file_path( __file__, cur_time, nv_sig["name"]+'-refit')
         # tool_belt.save_figure(raw_fig, file_path)
         # extract_oscillations(vals, t, len(t), detuning)
-        
-        
-        
-        
-    

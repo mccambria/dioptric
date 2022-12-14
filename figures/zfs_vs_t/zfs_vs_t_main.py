@@ -126,11 +126,11 @@ def refit_experiments():
     # file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
     # file_list = [file_list[57]]
     file_list = [
-        "2022_12_12-18_05_28-15micro-nv1_zfs_vs_t",
-        "2022_12_12-16_18_59-15micro-nv1_zfs_vs_t",
-        "2022_12_12-17_35_57-15micro-nv1_zfs_vs_t",
-        "2022_12_12-19_25_24-15micro-nv1_zfs_vs_t",
-        # "2022_12_12-18_41_45-15micro-nv1_zfs_vs_t",
+        "2022_12_13-10_24_13-15micro-nv1_zfs_vs_t",
+        "2022_12_13-11_35_43-15micro-nv1_zfs_vs_t",
+        "2022_12_13-13_04_58-15micro-nv1_zfs_vs_t",
+        "2022_12_13-12_35_43-15micro-nv1_zfs_vs_t",
+        "2022_12_13-12_06_41-15micro-nv1_zfs_vs_t",
     ]
 
     ### Loop
@@ -598,12 +598,12 @@ def cambria_test4(temp, zfs0, A1, Theta1):
 
 def main():
 
-    temp_range = [-10, 1000]
-    y_range = [2.74, 2.883]
+    # temp_range = [-10, 1000]
+    # y_range = [2.74, 2.883]
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
-    # temp_range = [-10, 310]
-    # y_range = [2.8685, 2.8785]
+    temp_range = [-10, 310]
+    y_range = [2.8685, 2.8785]
     # temp_range = [280, 320]
     # y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
@@ -617,10 +617,11 @@ def main():
     separate_nvs = False
     plot_prior_models = False
     desaturate_prior = False
-    plot_new_model = False
-    toyli_extension = True
+    plot_new_model = True
+    toyli_extension = False
 
-    skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
+    # skip_lambda = lambda point: point["Skip"]
+    skip_lambda = lambda point: point["Skip"] or point["Sample"] != "15micro"
 
     ###
 
@@ -647,7 +648,8 @@ def main():
             zfss = []
             zfs_errors = []
             for point in data_points:
-                if point["Setpoint temp (K)"] == setpoint_temp:
+                test_identifier = f"{point['Setpoint temp (K)']}-{point['Sample']}"
+                if test_identifier == identifier:
                     monitor_temps.append(point["Monitor temp (K)"])
                     zfss.append(point["ZFS (GHz)"])
                     zfs_errors.append(point["ZFS error (GHz)"])
@@ -660,8 +662,8 @@ def main():
                 "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
                 # + 0.0006,  # MCC
                 "ZFS error (GHz)": condensed_error,
-                # "Sample": sample,
-                "Sample": "Cambria",
+                "Sample": sample,
+                # "Sample": "Cambria",
                 "NV": "",
             }
             condensed_data_points.append(new_point)
@@ -674,6 +676,7 @@ def main():
     nv_samples = []
     data_colors = {}
     data_color_options = kpl.data_color_cycler.copy()
+    data_color_options.pop(0)
     data_labels = {}
     for el in data_points:
         zfs = el["ZFS (GHz)"]

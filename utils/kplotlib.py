@@ -19,6 +19,7 @@ import re
 from enum import Enum, auto
 from strenum import StrEnum
 from matplotlib.offsetbox import AnchoredText
+import numpy as np
 
 # matplotlib semantic locations for legends and text boxes
 class Loc(StrEnum):
@@ -39,6 +40,12 @@ class PlotType(Enum):
     DATA = auto()
     LINE = auto()
 
+
+class HistType(StrEnum):
+    INTEGER = 'integer'
+    STEP_UNFILLED = 'step'
+    BAR = 'bar'
+    
 
 # Size options
 marker_Size = {Size.NORMAL: 7, Size.SMALL: 6, Size.TINY: 4}
@@ -100,6 +107,7 @@ data_color_cycler = [
     KplColors.CYAN,
 ]
 line_color_cycler = data_color_cycler.copy()
+histogram_color_cycler = data_color_cycler.copy()
 
 
 def color_mpl_to_color_hex(color_mpl):
@@ -207,6 +215,7 @@ def get_default_color(ax, plot_type):
             {
                 "points": data_color_cycler.copy(),
                 "line": line_color_cycler.copy(),
+                "histogram": histogram_color_cycler.copy(),
             }
         )
     ax_ind = active_axes.index(ax)
@@ -307,6 +316,27 @@ def plot_points(ax, x, y, size=None, **kwargs):
     params["markerfacecolor"] = face_color
 
     ax.errorbar(x, y, **params)
+    
+
+def histogram(ax, data, hist_type=HistType.INTEGER,nbins=10,color=None,hist_label=None):
+    """Histogram the data in a desired way. the integer hist_type is for when 
+    you have a discrete dataset of integers, so it makes sense to simply plot the occurences
+    of each integer. 
+    """
+    
+    if color is not None:
+        hist_color = color
+    else:
+        hist_color = get_default_color(ax, "histogram")
+        
+    if hist_type == 'integer':
+        occur, bin_edges = np.histogram(data, np.linspace(0, int(max(data)), int(max(data)) + 1))
+        x_vals = bin_edges[:-1]
+        
+        ax.plot(x_vals, occur, c=hist_color, label=hist_label)
+     
+    else:
+        ax.hist(data,histtype=hist_type,color=hist_color,label=hist_label,bins=nbins)
 
 
 def plot_line(ax, x, y, size=None, **kwargs):

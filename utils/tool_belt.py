@@ -101,33 +101,33 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
     mod_type = eval(mod_type)
+    pulse_gen = get_server_pulse_gen(cxn)
 
     if mod_type is ModTypes.DIGITAL:
         if turn_on:
             laser_chan = common.get_registry_entry(
                 cxn,
                 "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseStreamer"],
+                ["", "Config", "Wiring", "PulseGen"],
             )
-            cxn.pulse_streamer.constant([laser_chan])
+            pulse_gen.constant([laser_chan])
     elif mod_type is ModTypes.ANALOG:
         if turn_on:
             laser_chan = common.get_registry_entry(
                 cxn,
                 "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseStreamer"],
+                ["", "Config", "Wiring", "PulseGen"],
             )
             if laser_chan == 0:
-                cxn.pulse_streamer.constant([], 0.0, laser_power)
+                pulse_gen.constant([], 0.0, laser_power)
             elif laser_chan == 1:
-                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                pulse_gen.constant([], laser_power, 0.0)
 
     # If we're turning things off, turn everything off. If we wanted to really
     # do this nicely we'd find a way to only turn off the specific channel,
     # but it's not worth the effort.
     if not turn_on:
-        pulse_gen_server = get_server_pulse_gen(cxn)
-        pulse_gen_server.constant([])
+        pulse_gen.constant([])
 
 
 def set_laser_power(
@@ -195,6 +195,8 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
         filter_name,
         ["", "Config", "Optics", optics_name, "FilterMapping"],
     )
+    # print(filter_server)
+    # print(pos)
     filter_server.set_filter(pos)
 
 
@@ -331,7 +333,7 @@ def decode_seq_args(seq_args_string):
 
 def get_pulse_streamer_wiring(cxn):
     config = get_config_dict(cxn)
-    pulse_streamer_wiring = config["Wiring"]["PulseStreamer"]
+    pulse_streamer_wiring = config["Wiring"]["PulseGen"]
     return pulse_streamer_wiring
 
 
@@ -545,7 +547,7 @@ def process_counts(
     ref_counts = np.array(ref_counts)
     sig_counts = np.array(sig_counts)
     num_runs, num_points = ref_counts.shape
-    print(num_runs,num_points)
+    # print(num_runs,num_points)
     readout_sec = readout * 1e-9
 
     # Find the averages across runs
@@ -572,6 +574,13 @@ def process_counts(
 
     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
+
+    # both_counts = sig_counts + ref_counts
+    # both_counts_avg = np.average(both_counts, axis=0)
+    # both_counts_ste = np.sqrt(both_counts_avg) / np.sqrt(num_runs)
+    # norm = 1.008 * both_counts_avg[0]
+    # norm_avg_sig = both_counts_avg / norm
+    # norm_avg_sig_ste = both_counts_ste / norm
 
     return (
         sig_counts_avg_kcps,

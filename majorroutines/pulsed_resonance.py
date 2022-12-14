@@ -387,53 +387,6 @@ def fit_resonance(
     return fit_func, popt, pcov
 
 
-# def process_counts(
-#     sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
-# ):
-#     """Extract the normalized average signal at each data point.
-#     Since we sometimes don't do many runs (<10), we often will have an
-#     insufficient sample size to run stats on for norm_avg_sig calculation.
-#     We assume Poisson statistics instead.
-#     """
-
-#     ref_counts = np.array(ref_counts)
-#     sig_counts = np.array(sig_counts)
-#     num_runs, num_points = ref_counts.shape
-#     readout_sec = readout * 1e-9
-
-#     # Find the averages across runs
-#     sig_counts_avg = np.average(sig_counts, axis=0)
-#     single_ref_avg = np.average(ref_counts)
-#     ref_counts_avg = np.average(ref_counts, axis=0)
-
-#     sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
-#     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
-#     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
-
-#     if norm_style == NormStyle.SINGLE_VALUED:
-#         norm_avg_sig = sig_counts_avg / single_ref_avg
-#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-#             (sig_counts_ste / sig_counts_avg) ** 2
-#             + (single_ref_ste / single_ref_avg) ** 2
-#         )
-#     elif norm_style == NormStyle.POINT_TO_POINT:
-#         norm_avg_sig = sig_counts_avg / ref_counts_avg
-#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-#             (sig_counts_ste / sig_counts_avg) ** 2
-#             + (ref_counts_ste / ref_counts_avg) ** 2
-#         )
-
-#     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
-#     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-
-#     return (
-#         sig_counts_avg_kcps,
-#         ref_counts_avg_kcps,
-#         norm_avg_sig,
-#         norm_avg_sig_ste,
-#     )
-
-
 # endregion
 # region Control panel functions
 
@@ -536,7 +489,6 @@ def main_with_cxn(
     norm_style = nv_sig["norm_style"]
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10**9)
 
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
@@ -582,7 +534,7 @@ def main_with_cxn(
         ]
         seq_name = "rabi.py"
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    print(seq_args)
+    # print(seq_args)
 
     opti_coords_list = []
 
