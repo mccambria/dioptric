@@ -483,12 +483,8 @@ def do_ramsey(nv_sig, opti_nv_sig, t1,state = States.LOW):
 
 def do_spin_echo(nv_sig, state = States.LOW):
 
-    # T2* in nanodiamond NVs is just a couple us at 300 K
-    # In bulk it's more like 100 us at 300 K
-    # max_time = 100  # us
-    # num_steps = int(max_time/2+ 1)  # 1 point per 2 us
-    # max_time = 8.352*8
-    max_time = 2.5e3
+    #max_time = 2.5e3
+    max_time = 2000
     num_steps = 21
     precession_time_range = [0, max_time*10**3]
 
@@ -496,8 +492,10 @@ def do_spin_echo(nv_sig, state = States.LOW):
     # num_steps = 25
     # precession_time_range = [0, revival_time*(num_steps - 1)]
 
+    # num_reps = 1e3
+    # num_runs = 100
     num_reps = 1e3
-    num_runs = 100
+    num_runs = 50
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -514,7 +512,7 @@ def do_spin_echo(nv_sig, state = States.LOW):
         num_reps,
         num_runs,
         state,
-        do_dq = False
+        do_dq = True
     )
     return
 
@@ -1155,7 +1153,7 @@ if __name__ == "__main__":
         #do_rabi_consec(nv_sig,   States.HIGH, States.ZERO,  uwave_time_range=[0, 300])
         # do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
         
-        do_rabi_srt(nv_sig, States.HIGH, States.LOW,0,  uwave_time_range=[0, 300])
+        # do_rabi_srt(nv_sig, States.HIGH, States.LOW,0,  uwave_time_range=[0, 300])
         
         # for t1 in [60e3]:
         #     do_ramsey(nv_sig, nv_sig, t1)
