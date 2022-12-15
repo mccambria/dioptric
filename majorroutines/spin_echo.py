@@ -524,8 +524,9 @@ def main_with_cxn(
     # set up to drive transition through zero
     if do_dq is not False:
         do_ramsey = False
-        seq_file_name = "spin_echo_dq.py"
+        # seq_file_name = "spin_echo_dq.py"
         # seq_file_name = "spin_echo_dq_edit.py"
+        seq_file_name = "spin_echo_dq_simult.py"
         
         rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
@@ -537,6 +538,9 @@ def main_with_cxn(
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
         uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
         uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        
+        echo_pi_pulse = nv_sig['echo_pi']
+        
         if state.value == States.LOW.value:
             state_init = States.LOW
             state_seco = States.HIGH
@@ -613,6 +617,7 @@ def main_with_cxn(
             uwave_pi_on_2_pulse_low,
             uwave_pi_pulse_high,
             uwave_pi_on_2_pulse_high,
+            echo_pi_pulse,
             max_precession_time,
             state_init.value,
             state_seco.value,
@@ -734,6 +739,7 @@ def main_with_cxn(
                     uwave_pi_on_2_pulse_low,
                     uwave_pi_pulse_high,
                     uwave_pi_on_2_pulse_high,
+                    echo_pi_pulse,
                     taus[tau_ind_second],
                     state_init.value,
                     state_seco.value,

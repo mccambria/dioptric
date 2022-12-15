@@ -25,13 +25,13 @@ def get_seq(pulse_streamer, config, args):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    tau_shrt, polarization_time, gate_time, pi_pulse_low_dur, pi_on_2_pulse_low_dur, \
-        pi_pulse_high_dur, pi_on_2_pulse_high_dur, tau_long = durations
+    tau_shrt, polarization_time, gate_time, pi_pulse_low, pi_on_2_pulse_low, \
+        pi_pulse_high, pi_on_2_pulse_high, tau_long = durations
 
     # Get the APD indices
-    state_ini, state_opp, laser_name, laser_power, do_ramsey = args[8:13]
-    state_ini = States(state_ini)
-    state_opp = States(state_opp)
+    state_activ, state_proxy, laser_name, laser_power, do_ramsey = args[8:13]
+    state_activ = States(state_activ)
+    state_proxy = States(state_proxy)
         
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     laser_delay = config['Optics'][laser_name]['delay']
@@ -52,34 +52,34 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_sig_gen_gate_high = pulser_wiring[sig_gen_gate_chan_name_high]
 
 
-    coh_pi_on_2_pulse_low = 0
-    coh_pi_pulse_low = 0
-    coh_pi_on_2_pulse_high = 0
-    coh_pi_pulse_high = 0
+    coh_pulse_activ_low = 0
+    coh_pulse_proxy_low = 0
+    coh_pulse_activ_high = 0
+    coh_pulse_proxy_high = 0
     
-    echo_pi_pulse_low_1 = 0
-    echo_pi_pulse_low_2 = 0
-    echo_pi_pulse_high_1 = 0
-    echo_pi_pulse_high_2 = 0
+    echo_pulse_activ_low = 0
+    echo_pulse_proxy_low = 0
+    echo_pulse_activ_high = 0
+    echo_pulse_proxy_high = 0
     
-    if state_ini.value == States.LOW.value:
-        coh_pi_on_2_pulse_low = pi_on_2_pulse_low_dur
-        coh_pi_pulse_high = pi_pulse_high_dur
+    if state_activ.value == States.LOW.value:
+        coh_pulse_activ_low = pi_on_2_pulse_low
+        coh_pulse_proxy_high = pi_pulse_high
         if do_ramsey == False:
-            echo_pi_pulse_low_1 = pi_pulse_low_dur
-            echo_pi_pulse_high_2 = pi_pulse_high_dur
-    elif state_ini.value == States.HIGH.value:
-        coh_pi_on_2_pulse_high = pi_on_2_pulse_high_dur
-        coh_pi_pulse_low = pi_pulse_low_dur
+            echo_pulse_activ_low = pi_pulse_low
+            echo_pulse_proxy_high = pi_pulse_high
+    elif state_activ.value == States.HIGH.value:
+        coh_pulse_activ_high = pi_on_2_pulse_high
+        coh_pulse_proxy_low = pi_pulse_low
         if do_ramsey == False:
-            echo_pi_pulse_high_1 = pi_pulse_high_dur
-            echo_pi_pulse_low_2 = pi_pulse_low_dur
+            echo_pulse_activ_high = pi_pulse_high
+            echo_pulse_proxy_low = pi_pulse_low
         
-    uwave_coh_pulse_dur = coh_pi_on_2_pulse_low + coh_pi_pulse_low + \
-        coh_pi_on_2_pulse_high + coh_pi_pulse_high
-    uwave_echo_pulse_dur = echo_pi_pulse_low_1 + echo_pi_pulse_low_2 + echo_buffer +\
-                echo_pi_pulse_high_1 + echo_pi_pulse_high_2 + echo_buffer+ \
-                echo_pi_pulse_low_1 + echo_pi_pulse_high_1 
+    uwave_coh_pulse_dur = coh_pulse_activ_low + coh_pulse_proxy_low + \
+        coh_pulse_activ_high + coh_pulse_proxy_high
+    uwave_echo_pulse_dur = echo_pulse_proxy_low + echo_pulse_proxy_high + echo_buffer +\
+                echo_pulse_activ_low + echo_pulse_activ_high + echo_buffer+ \
+                echo_pulse_proxy_low + echo_pulse_proxy_high 
 
     ### Define the sequence
 
@@ -160,28 +160,28 @@ def get_seq(pulse_streamer, config, args):
              
              (uwave_buffer, LOW),
              
-             (coh_pi_on_2_pulse_low, HIGH),
-             (coh_pi_on_2_pulse_high, LOW),
-             (coh_pi_pulse_low, HIGH),
-             (coh_pi_pulse_high, LOW),
+             (coh_pulse_activ_low, HIGH),
+             (coh_pulse_activ_high, LOW),
+             (coh_pulse_proxy_low, HIGH),
+             (coh_pulse_proxy_high, LOW),
              
              (tau_shrt, LOW),
              
-             (echo_pi_pulse_low_1, HIGH),
-             (echo_pi_pulse_high_1, LOW),
+             (echo_pulse_proxy_low, HIGH),
+             (echo_pulse_proxy_high, LOW),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_2, HIGH),
-             (echo_pi_pulse_high_2, LOW),
+             (echo_pulse_activ_low, HIGH),
+             (echo_pulse_activ_high, LOW),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_1, HIGH),
-             (echo_pi_pulse_high_1, LOW),
+             (echo_pulse_proxy_low, HIGH),
+             (echo_pulse_proxy_high, LOW),
              
              (tau_shrt, LOW),
              
-             (coh_pi_pulse_low, HIGH),
-             (coh_pi_pulse_high, LOW),
-             (coh_pi_on_2_pulse_low, HIGH),
-             (coh_pi_on_2_pulse_high, LOW),
+             (coh_pulse_proxy_low, HIGH),
+             (coh_pulse_proxy_high, LOW),
+             (coh_pulse_activ_low, HIGH),
+             (coh_pulse_activ_high, LOW),
              
              (uwave_buffer, LOW),
              
@@ -193,28 +193,28 @@ def get_seq(pulse_streamer, config, args):
              
              (uwave_buffer, LOW),
              
-             (coh_pi_on_2_pulse_low, HIGH),
-             (coh_pi_on_2_pulse_high, LOW),
-             (coh_pi_pulse_low, HIGH),
-             (coh_pi_pulse_high, LOW),
+             (coh_pulse_activ_low, HIGH),
+             (coh_pulse_activ_high, LOW),
+             (coh_pulse_proxy_low, HIGH),
+             (coh_pulse_proxy_high, LOW),
              
              (tau_long, LOW),
              
-             (echo_pi_pulse_low_1, HIGH),
-             (echo_pi_pulse_high_1, LOW),
+             (echo_pulse_proxy_low, HIGH),
+             (echo_pulse_proxy_high, LOW),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_2, HIGH),
-             (echo_pi_pulse_high_2, LOW),
+             (echo_pulse_activ_low, HIGH),
+             (echo_pulse_activ_high, LOW),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_1, HIGH),
-             (echo_pi_pulse_high_1, LOW),
+             (echo_pulse_proxy_low, HIGH),
+             (echo_pulse_proxy_high, LOW),
              
              (tau_long, LOW),
              
-             (coh_pi_pulse_low, HIGH),
-             (coh_pi_pulse_high, LOW),
-             (coh_pi_on_2_pulse_low, HIGH),
-             (coh_pi_on_2_pulse_high, LOW),
+             (coh_pulse_proxy_low, HIGH),
+             (coh_pulse_proxy_high, LOW),
+             (coh_pulse_activ_low, HIGH),
+             (coh_pulse_activ_high, LOW),
              
              (uwave_buffer, LOW),
              
@@ -235,28 +235,28 @@ def get_seq(pulse_streamer, config, args):
              
              (uwave_buffer, LOW),
              
-             (coh_pi_on_2_pulse_low, LOW),
-             (coh_pi_on_2_pulse_high, HIGH),
-             (coh_pi_pulse_low, LOW),
-             (coh_pi_pulse_high, HIGH),
+             (coh_pulse_activ_low, LOW),
+             (coh_pulse_activ_high, HIGH),
+             (coh_pulse_proxy_low, LOW),
+             (coh_pulse_proxy_high, HIGH),
              
              (tau_shrt, LOW),
              
-             (echo_pi_pulse_low_1, LOW),
-             (echo_pi_pulse_high_1, HIGH),
+             (echo_pulse_proxy_low, LOW),
+             (echo_pulse_proxy_high, HIGH),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_2, LOW),
-             (echo_pi_pulse_high_2, HIGH),
+             (echo_pulse_activ_low, LOW),
+             (echo_pulse_activ_high, HIGH),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_1, LOW),
-             (echo_pi_pulse_high_1, HIGH),
+             (echo_pulse_proxy_low, LOW),
+             (echo_pulse_proxy_high, HIGH),
              
              (tau_shrt, LOW),
              
-             (coh_pi_pulse_low, LOW),
-             (coh_pi_pulse_high, HIGH),
-             (coh_pi_on_2_pulse_low, LOW),
-             (coh_pi_on_2_pulse_high, HIGH),
+             (coh_pulse_proxy_low, LOW),
+             (coh_pulse_proxy_high, HIGH),
+             (coh_pulse_activ_low, LOW),
+             (coh_pulse_activ_high, HIGH),
              
              (uwave_buffer, LOW),
              
@@ -268,28 +268,28 @@ def get_seq(pulse_streamer, config, args):
              
              (uwave_buffer, LOW),
              
-             (coh_pi_on_2_pulse_low, LOW),
-             (coh_pi_on_2_pulse_high, HIGH),
-             (coh_pi_pulse_low, LOW),
-             (coh_pi_pulse_high, HIGH),
+             (coh_pulse_activ_low, LOW),
+             (coh_pulse_activ_high, HIGH),
+             (coh_pulse_proxy_low, LOW),
+             (coh_pulse_proxy_high, HIGH),
              
              (tau_long, LOW),
              
-             (echo_pi_pulse_low_1, LOW),
-             (echo_pi_pulse_high_1, HIGH),
+             (echo_pulse_proxy_low, LOW),
+             (echo_pulse_proxy_high, HIGH),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_2, LOW),
-             (echo_pi_pulse_high_2, HIGH),
+             (echo_pulse_activ_low, LOW),
+             (echo_pulse_activ_high, HIGH),
              (echo_buffer, LOW),
-             (echo_pi_pulse_low_1, LOW),
-             (echo_pi_pulse_high_1, HIGH),
+             (echo_pulse_proxy_low, LOW),
+             (echo_pulse_proxy_high, HIGH),
              
              (tau_long, LOW),
              
-             (coh_pi_pulse_low, LOW),
-             (coh_pi_pulse_high, HIGH),
-             (coh_pi_on_2_pulse_low, LOW),
-             (coh_pi_on_2_pulse_high, HIGH),
+             (coh_pulse_proxy_low, LOW),
+             (coh_pulse_proxy_high, HIGH),
+             (coh_pulse_activ_low, LOW),
+             (coh_pulse_activ_high, HIGH),
              
              (uwave_buffer, LOW),
              
@@ -314,6 +314,6 @@ if __name__ == '__main__':
     tool_belt.set_delays_to_zero(config)
     
     
-    seq_args = [10.0, 10000.0, 300, 66, 33, 68, 34, 1000.0, 1, 3, 'integrated_520', None, False]
+    seq_args = [10.0, 10000.0, 300, 66, 33, 68, 34, 1000.0, 3, 1, 'integrated_520', None, False]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

@@ -315,7 +315,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs =  15
+    num_runs =  40
 
     rabi.main(
         nv_sig,
@@ -400,7 +400,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, uwave_time_range=[0,
               low_dev_analog_voltage = v
     )
 
-def do_rabi_srt_pop(nv_sig,  deviation,v, num_steps,  uwave_time_range=[0, 1000]):
+def do_rabi_srt_pop(nv_sig,  deviation, num_steps,  uwave_time_range=[0, 1000]):
     
     # deviation_high = 0
     # deviation_low = 0
@@ -409,7 +409,7 @@ def do_rabi_srt_pop(nv_sig,  deviation,v, num_steps,  uwave_time_range=[0, 1000]
     
     #num_steps = 101
     num_reps = int(1e4)
-    num_runs = 40 #200
+    num_runs = 10 #200
 
     # rabi_srt.main(nv_sig, 
     #           apd_indices, 
@@ -423,8 +423,7 @@ def do_rabi_srt_pop(nv_sig,  deviation,v, num_steps,  uwave_time_range=[0, 1000]
     #           initial_state,
     # )
     rabi_srt.full_pop_srt(nv_sig,  uwave_time_range, deviation, 
-             num_steps, num_reps, num_runs,
-                           low_dev_analog_voltage = v)
+             num_steps, num_reps, num_runs)
 
 
 def do_lifetime(nv_sig):
@@ -495,7 +494,7 @@ def do_spin_echo(nv_sig, state = States.LOW):
     # num_reps = 1e3
     # num_runs = 100
     num_reps = 1e3
-    num_runs = 50
+    num_runs = 100
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -1053,7 +1052,7 @@ if __name__ == "__main__":
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "uwave_power_LOW": 13,  
+        "uwave_power_LOW": 12.12,  
         "uwave_power_HIGH": 15,
         
     } 
@@ -1080,9 +1079,10 @@ if __name__ == "__main__":
     nv_sig_1['magnet_angle'] = 151.7
     
     nv_sig_1["resonance_LOW"]= 2.7805
-    nv_sig_1["rabi_LOW"]=132.8
+    nv_sig_1["rabi_LOW"]=136.09 # +/- 0.54
     nv_sig_1["resonance_HIGH"]=2.9600
-    nv_sig_1["rabi_HIGH"]= 136.2
+    nv_sig_1["rabi_HIGH"]= 136.18 # +/- 0.54
+    nv_sig_1["echo_pi"]= 105
     
     
     
@@ -1153,7 +1153,8 @@ if __name__ == "__main__":
         #do_rabi_consec(nv_sig,   States.HIGH, States.ZERO,  uwave_time_range=[0, 300])
         # do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
         
-        # do_rabi_srt(nv_sig, States.HIGH, States.LOW,0,  uwave_time_range=[0, 300])
+        # do_rabi_srt(nv_sig, States.LOW, States.HIGH, 0,  uwave_time_range=[0, 300])
+        # do_rabi_srt_pop(nv_sig, 0, 51, uwave_time_range=[0, 300])
         
         # for t1 in [60e3]:
         #     do_ramsey(nv_sig, nv_sig, t1)

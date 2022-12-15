@@ -32,13 +32,12 @@ def get_seq(pulse_streamer, config, args):
     dev_low_sign = args[7]
     
     
-    low_dev_analog_voltage = args[8]
     # Specify the initial and readout states
-    init_state_value = args[9]
-    read_state_value = args[10]
+    init_state_value = args[8]
+    read_state_value = args[9]
     
-    laser_name = args[11]
-    laser_power = args[12]
+    laser_name = args[10]
+    laser_power = args[11]
     
     low_sig_gen_name = config['Servers']['sig_gen_LOW']
     high_sig_gen_name = config['Servers']['sig_gen_HIGH']
@@ -368,7 +367,7 @@ def get_seq(pulse_streamer, config, args):
         print(period)
     
     # Turn on the FM for LOW sig gen
-    HIGH_fm_low = low_dev_analog_voltage * 1#dev_low_sign
+    HIGH_fm_low = 1.0 * dev_low_sign
     train = [
         (delay_buffer - rf_high_delay, LOW),
             (polarization_time, LOW),
@@ -431,6 +430,6 @@ if __name__ == '__main__':
     # tool_belt.set_feedthroughs_to_false(config)
     
     
-    seq_args = [0, 10000.0, 300, 915, 991, 20000, 1, 1, 0.5, 1, 2, 'integrated_520', None]
+    seq_args = [0, 10000.0, 300, 68, 68, 300, 1, 1, 1.0, 1, 3, 'integrated_520', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
