@@ -49,6 +49,7 @@ def main(
     taus=[],
     state=States.LOW,
     scc_readout=False,
+    do_dq = False
 ):
 
     with labrad.connect() as cxn:
@@ -63,6 +64,7 @@ def main(
             taus,
             state,
             scc_readout,
+            do_dq
         )
         return angle
 
@@ -78,11 +80,12 @@ def main_with_cxn(
     taus = [],
     state=States.LOW,
     scc_readout=False,
+    do_dq = False
 ):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
     tool_belt.reset_cfm(cxn)
 
     # %% Sequence setup
@@ -120,6 +123,7 @@ def main_with_cxn(
         gate_time = nv_sig["spin_readout_dur"]
         
     polarization_time = nv_sig["spin_pol_dur"]
+    norm_style = nv_sig['norm_style']
 
     rabi_period = nv_sig["rabi_{}".format(state.name)]
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
@@ -128,6 +132,32 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    
+    # set up to drive transition through zero
+    if do_dq:
+        do_ramsey = False
+        # seq_file_name = "spin_echo_dq.py"
+        # seq_file_name = "spin_echo_dq_edit.py"
+        seq_file_name = "spin_echo_dq_simult.py"
+        
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        
+        
+        if state.value == States.LOW.value:
+            state_activ = States.LOW
+            state_proxy = States.HIGH
+        elif state.value == States.HIGH.value:
+            state_activ = States.HIGH
+            state_proxy = States.LOW
     
 
     # %% Create the array of relaxation times
@@ -215,7 +245,24 @@ def main_with_cxn(
                shelf_laser_power,
                readout_laser_name,
                readout_laser_power
-           ]   
+           ] 
+    elif do_dq:
+        seq_file_name = "dynamical_decoupling_dq.py"
+        seq_args = [
+              taus[0],
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse_low,
+            uwave_pi_on_2_pulse_low,
+            uwave_pi_pulse_high,
+            uwave_pi_on_2_pulse_high,
+            taus[-1],
+            pi_pulse_reps,
+            state_activ.value,
+            state_proxy.value,
+            laser_name, 
+            laser_power
+        ]
       
     else:
         seq_file_name = "dynamical_decoupling.py"  
@@ -276,11 +323,21 @@ def main_with_cxn(
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
+        
+        if do_dq:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            sig_gen_high_cxn.uwave_on()
         
         arbwavegen_server.load_xy4n(num_xy4_reps)
         
@@ -341,7 +398,22 @@ def main_with_cxn(
                        readout_laser_name,
                        readout_laser_power
                    ]   
-              
+            elif do_dq:
+                seq_args = [
+                    taus[tau_ind_first],
+                    polarization_time,
+                    gate_time,
+                    uwave_pi_pulse_low,
+                    uwave_pi_on_2_pulse_low,
+                    uwave_pi_pulse_high,
+                    uwave_pi_on_2_pulse_high,
+                    taus[tau_ind_second],
+                    pi_pulse_reps,
+                    state_activ.value,
+                    state_proxy.value,
+                    laser_name,
+                    laser_power, 
+                ]
             else:
                 seq_file_name = "dynamical_decoupling.py"  
                 seq_args = [
@@ -393,17 +465,13 @@ def main_with_cxn(
 
         # %% incremental plotting
         
-        #Average the counts over the iterations
-        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
-        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-        # print(numpy.average(avg_ref_counts))
-        try:
-            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-        except RuntimeWarning as e:
-            print(e)
-            inf_mask = numpy.isinf(norm_avg_sig)
-            # Assign to 0 based on the passed conditional array
-            norm_avg_sig[inf_mask] = 0
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
         
         
         ax = axes_pack[0]
@@ -411,7 +479,7 @@ def main_with_cxn(
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
         ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
         ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
-        ax.set_ylabel("Counts")
+        ax.set_ylabel("kcps")
         ax.legend()
         
         ax = axes_pack[1]
@@ -436,8 +504,9 @@ def main_with_cxn(
         raw_data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
             'num_xy4_reps': num_xy4_reps,
+            "do_dq": do_dq,
             # "gate_time": gate_time,
             # "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -480,12 +549,20 @@ def main_with_cxn(
 
     # %% Plot the data
 
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
+    
     ax = axes_pack[0]
     ax.cla()
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
     ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("kcps")
     ax.legend()
 
     ax = axes_pack[1]
@@ -511,8 +588,9 @@ def main_with_cxn(
         "timestamp": timestamp,
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         'num_xy4_reps': num_xy4_reps,
+        "do_dq": do_dq,
         # "gate_time": gate_time,
         # "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
@@ -542,6 +620,7 @@ def main_with_cxn(
         "ref_counts-units": "counts",
         "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
         "norm_avg_sig-units": "arb",
+        "norm_avg_sig_ste": norm_avg_sig_ste.tolist(),
     }
 
     nv_name = nv_sig["name"]

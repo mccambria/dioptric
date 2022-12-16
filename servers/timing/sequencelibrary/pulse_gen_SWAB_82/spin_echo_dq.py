@@ -41,6 +41,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_delay_high = config['Microwaves'][sig_gen_high_name]['delay']
     short_buffer = 10
     echo_buffer = 100
+    coh_buffer = 100
     common_delay = max(laser_delay, uwave_delay_low, uwave_delay_high) + short_buffer
     back_buffer = 200
 
@@ -75,7 +76,7 @@ def get_seq(pulse_streamer, config, args):
             echo_pulse_activ_high = pi_pulse_high
             echo_pulse_proxy_low = pi_pulse_low
         
-    uwave_coh_pulse_dur = coh_pulse_activ_low + coh_pulse_proxy_low + \
+    uwave_coh_pulse_dur = coh_pulse_activ_low + coh_pulse_proxy_low + coh_buffer + \
         coh_pulse_activ_high + coh_pulse_proxy_high
     uwave_echo_pulse_dur = echo_pulse_proxy_low + echo_pulse_proxy_high + echo_buffer +\
                 echo_pulse_activ_low + echo_pulse_activ_high + echo_buffer+ \
@@ -162,6 +163,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_activ_low, HIGH),
              (coh_pulse_activ_high, LOW),
+             (coh_buffer, LOW),
              (coh_pulse_proxy_low, HIGH),
              (coh_pulse_proxy_high, LOW),
              
@@ -180,6 +182,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_proxy_low, HIGH),
              (coh_pulse_proxy_high, LOW),
+             (coh_buffer, LOW),
              (coh_pulse_activ_low, HIGH),
              (coh_pulse_activ_high, LOW),
              
@@ -195,6 +198,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_activ_low, HIGH),
              (coh_pulse_activ_high, LOW),
+             (coh_buffer, LOW),
              (coh_pulse_proxy_low, HIGH),
              (coh_pulse_proxy_high, LOW),
              
@@ -213,6 +217,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_proxy_low, HIGH),
              (coh_pulse_proxy_high, LOW),
+             (coh_buffer, LOW),
              (coh_pulse_activ_low, HIGH),
              (coh_pulse_activ_high, LOW),
              
@@ -237,6 +242,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_activ_low, LOW),
              (coh_pulse_activ_high, HIGH),
+             (coh_buffer, LOW),
              (coh_pulse_proxy_low, LOW),
              (coh_pulse_proxy_high, HIGH),
              
@@ -255,6 +261,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_proxy_low, LOW),
              (coh_pulse_proxy_high, HIGH),
+             (coh_buffer, LOW),
              (coh_pulse_activ_low, LOW),
              (coh_pulse_activ_high, HIGH),
              
@@ -270,6 +277,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_activ_low, LOW),
              (coh_pulse_activ_high, HIGH),
+             (coh_buffer, LOW),
              (coh_pulse_proxy_low, LOW),
              (coh_pulse_proxy_high, HIGH),
              
@@ -288,6 +296,7 @@ def get_seq(pulse_streamer, config, args):
              
              (coh_pulse_proxy_low, LOW),
              (coh_pulse_proxy_high, HIGH),
+             (coh_buffer, LOW),
              (coh_pulse_activ_low, LOW),
              (coh_pulse_activ_high, HIGH),
              

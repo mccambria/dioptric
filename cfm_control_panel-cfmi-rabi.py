@@ -315,7 +315,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
 
     num_steps =51
     num_reps = int(2e4)    
-    num_runs =  40
+    num_runs =  10
 
     rabi.main(
         nv_sig,
@@ -494,7 +494,7 @@ def do_spin_echo(nv_sig, state = States.LOW):
     # num_reps = 1e3
     # num_runs = 100
     num_reps = 1e3
-    num_runs = 100
+    num_runs = 300
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -572,8 +572,8 @@ def do_dd_xy4(nv_sig,num_xy4_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     #conventional readout
-    num_reps = 2e3
-    num_runs= 3#150
+    num_reps = 1e3
+    num_runs= 200
     
     # # scc readout
     # num_reps = 4 #should optimize every 10 min
@@ -591,7 +591,7 @@ def do_dd_xy4(nv_sig,num_xy4_reps, step_size,  T_min, T_max):
         num_reps,
         num_runs,
         state=state,
-        scc_readout=False,
+        do_dq=True,
     )
     return 
 
@@ -1053,7 +1053,7 @@ if __name__ == "__main__":
 
         "collection_filter": "715_sp+630_lp", # NV band only
         "uwave_power_LOW": 12.12,  
-        "uwave_power_HIGH": 15,
+        "uwave_power_HIGH": 10,
         
     } 
 
@@ -1081,7 +1081,7 @@ if __name__ == "__main__":
     nv_sig_1["resonance_LOW"]= 2.7805
     nv_sig_1["rabi_LOW"]=136.09 # +/- 0.54
     nv_sig_1["resonance_HIGH"]=2.9600
-    nv_sig_1["rabi_HIGH"]= 136.18 # +/- 0.54
+    nv_sig_1["rabi_HIGH"]= 176.3
     nv_sig_1["echo_pi"]= 105
     
     
@@ -1146,7 +1146,7 @@ if __name__ == "__main__":
         #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
-        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 250])
+        #do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 250])
         
         
         # uwave_time_range = [0, 400]
@@ -1154,12 +1154,12 @@ if __name__ == "__main__":
         # do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
         
         # do_rabi_srt(nv_sig, States.LOW, States.HIGH, 0,  uwave_time_range=[0, 300])
-        # do_rabi_srt_pop(nv_sig, 0, 51, uwave_time_range=[0, 300])
+        #do_rabi_srt_pop(nv_sig, 0, 51, uwave_time_range=[0, 300])
         
         # for t1 in [60e3]:
         #     do_ramsey(nv_sig, nv_sig, t1)
         
-        do_spin_echo(nv_sig)
+        #do_spin_echo(nv_sig)
 
         # do_relaxation(nv_sig)  # gamma and omega
                 
@@ -1171,15 +1171,15 @@ if __name__ == "__main__":
         
         
         # pi_pulse_reps = 4  
-        # step_size = 25 #us
-        # T_min = 0 #us
-        # T_max = 50#500 #us      
+        step_size = 250 #us
+        T_min = 0 #us
+        T_max = 5000 #us      
         # # for n in [8]:
         # #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
         # do_relaxation(nv_sig)  # gamma and omega
         
-        # num_xy4_reps = 2
-        # do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
+        num_xy4_reps = 1
+        do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max)
         

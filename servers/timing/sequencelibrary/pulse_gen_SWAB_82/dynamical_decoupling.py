@@ -125,7 +125,7 @@ def get_seq(pulse_streamer, config, args):
                                 (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
                                 (iq_trigger_time, HIGH), 
                                 # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                (half_tau_shrt_en - iq_trigger_time + pi_pulse + 20+ pi_on_2_pulse, LOW)])
+                                (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse + 20 + pi_pulse, LOW)])
     # uwave_iq_train_shrt_dur=0
     # for el in uwave_iq_train_shrt:
     #     uwave_iq_train_shrt_dur += el[0]
@@ -141,7 +141,7 @@ def get_seq(pulse_streamer, config, args):
                                 (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
                                 (iq_trigger_time, HIGH), 
                                 # (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                (half_tau_long_en - iq_trigger_time + pi_pulse + 20+ pi_on_2_pulse, LOW)])
+                                (half_tau_long_en - iq_trigger_time + pi_on_2_pulse + 20 + pi_pulse, LOW)])
     
 
     # %% Define the sequence
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)   
     # tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long
-    #pi_pulse_reps, apd_index, state, laser_name, laser_power
-    seq_args = [100, 10000.0, 300, 64, 32, 125100, 1, 1, 3, 'integrated_520', None]
+    #pi_pulse_reps,  state, laser_name, laser_power
+    seq_args = [100, 1000.0, 300, 64, 32, 200, 3, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
