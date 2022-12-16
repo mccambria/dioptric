@@ -539,7 +539,7 @@ def process_counts(
     ref_counts = np.array(ref_counts)
     sig_counts = np.array(sig_counts)
     num_runs, num_points = ref_counts.shape
-    print(num_runs,num_points)
+    # print(num_runs,num_points)
     readout_sec = readout * 1e-9
 
     # Find the averages across runs

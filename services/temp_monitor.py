@@ -150,27 +150,28 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    channel = 6
+    channel = 2
     do_plot = True
     do_email = True
     email_recipient = "cambria@wisc.edu"
     email_stability = 0.1
     
-    # sensor_serial = "X162690"
-    # with labrad.connect() as cxn:
-    #     temp_monitor = tool_belt.get_server_temp_monitor(cxn)
-    #     # temp_monitor.enter_calibration_curve(channel, sensor_serial)
-    #     # temp = temp_monitor.measure(channel)
-    #     # print(temp)
-    #     cmd = "INCRV {}, {}".format(channel, 20+channel)
-    #     # cmd = "KRDG? {}".format(channel)
-    #     ret_val = temp_monitor.arb_cmd(cmd)
-    #     print(ret_val)
+    sensor_serial = "X162690"
+    with labrad.connect() as cxn:
+        temp_monitor = tool_belt.get_server_temp_monitor(cxn)
+        # temp_monitor.enter_calibration_curve(channel, sensor_serial)
+        # temp = temp_monitor.measure(channel)
+        # print(temp)
+        # cmd = "INCRV {}, {}".format(channel, 20+channel)
+        cmd = "SRDG? {}".format(channel)        
+        # cmd = "KRDG? {}".format(channel)
+        ret_val = temp_monitor.arb_cmd(cmd)
+        print(ret_val)
 
-    main(
-        channel,
-        do_plot,
-        do_email=do_email,
-        email_recipient=email_recipient,
-        email_stability=email_stability,
-    )
+    # main(
+    #     channel,
+    #     do_plot,
+    #     do_email=do_email,
+    #     email_recipient=email_recipient,
+    #     email_stability=email_stability,
+    # )
