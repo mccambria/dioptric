@@ -403,6 +403,8 @@ def exp_decay(x, amp, decay, offset):
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 
+def exp_t2(x, amp, decay, offset):
+    return exp_stretch_decay(x, amp, decay, offset, 3)
 
 def gaussian(x, *params):
     """Calculates the value of a gaussian for the given input and parameters
@@ -462,6 +464,14 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         amp_1 * np.cos(two_pi * freq_1 * t)
         + amp_2 * np.cos(two_pi * freq_2 * t)
         + amp_3 * np.cos(two_pi * freq_3 * t)
+    )
+def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
+    two_pi = 2 * np.pi
+
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+        + amp_2 * np.cos(two_pi * freq_2 * t)
+        # + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
 

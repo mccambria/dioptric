@@ -30,17 +30,18 @@ import logging
 import socket
 import pyvisa as visa
 import time
+import numpy as np
 
 
 class PowerSupplyMultMp710087(LabradServer):
     name = "power_supply_MULT_mp710087"
     pc_name = socket.gethostname()
+    # Sending communications faster than 10 Hz may result in corrupted commands/returns
     comms_delay = 0.1
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -112,6 +113,19 @@ class PowerSupplyMultMp710087(LabradServer):
         self.voltage_limit = limit
         self.power_supply.write("VOLT:LIM {}".format(limit))
 
+    @setting(13, limit="v[]")
+    def set_power_limit(self, c, limit):
+        """Set the maximum power the instrument will allow (up to 3 A * 60 V
+        = 180 W). This is a soft limit that we enforce here. (The hardware is
+        not aware of this limit!)
+
+        Parameters
+        ----------
+        limit : float
+            Power limit in watts
+        """
+        self.power_limit = limit
+
     @setting(4, val="v[]")
     def set_current(self, c, val):
         """
@@ -138,7 +152,6 @@ class PowerSupplyMultMp710087(LabradServer):
             val = lim
         self.power_supply.write("VOLT {}".format(val))
 
-    @staticmethod
     def decode_query_response(response):
         """The instrument (sometimes at least...) returns values with a
         leading \x00, which is a hex-escaped 0.
@@ -146,6 +159,18 @@ class PowerSupplyMultMp710087(LabradServer):
         if response.startswith(chr(0)):
             response = response[1:]
         return float(response)
+
+    @setting(6, val="v[]")
+    def set_power(self, c, power):
+        if power > self.power_limit:
+            power = self.power_limit
+        if power <= 0.01:
+            power = 0.01  # Can't actually set 0 exactly, but this is close enough
+        # P = V2 / R
+        # V = sqrt(P R)
+        resistance = self.meas_resistance(c)
+        voltage = np.sqrt(power * resistance)
+        self.set_voltage(c, voltage)
 
     @setting(7, returns="v[]")
     def meas_resistance(self, c):

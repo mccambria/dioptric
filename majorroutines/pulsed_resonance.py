@@ -762,7 +762,6 @@ def main_with_cxn(
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     tool_belt.save_figure(fit_fig, file_path)
 
-
     single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]
 

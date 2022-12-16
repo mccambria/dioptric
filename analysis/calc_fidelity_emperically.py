@@ -10,6 +10,7 @@ file to help find fidelity emperically, outside of having to use determine_charg
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+import utils.kplotlib as kpl
 import utils.tool_belt as tool_belt
 import scipy.stats as stats
 import majorroutines.optimize as optimize
@@ -139,7 +140,6 @@ if __name__ == "__main__":
     
     filename = '2022_12_10-08_56_16-johnson-search-ion_pulse_dur'
     
-    
     data = tool_belt.get_raw_data(filename)
     nv_sig = data['nv_sig']
     readout_dur= nv_sig['charge_readout_dur']
@@ -175,4 +175,11 @@ if __name__ == "__main__":
 
     area_below_m, area_above_m = model.get_area(x_vals_m,occur_m.tolist(),thred)
     full_area_m = area_below_m + area_above_m
+        
+   
+        
+        
+        
+        
+        
 
