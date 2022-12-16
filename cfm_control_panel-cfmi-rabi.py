@@ -526,7 +526,7 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
     num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
-    num_reps = 2e3
+    num_reps = 1e3
     num_runs= 10#150
 
     state = States.HIGH
@@ -1174,12 +1174,12 @@ if __name__ == "__main__":
         step_size = 250 #us
         T_min = 0 #us
         T_max = 5000 #us      
-        # # for n in [8]:
-        # #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
+        for n in [8]:
+            do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
         # do_relaxation(nv_sig)  # gamma and omega
         
-        num_xy4_reps = 1
-        do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
+        # num_xy4_reps = 1
+        # do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max)
         

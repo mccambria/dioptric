@@ -31,7 +31,7 @@ import socket
 import logging
 import time
 # import numpy
-# from numpy import pi
+from numpy import pi
 import utils.tool_belt as tool_belt
 from servers.outputs.interfaces.awg import AWG
 
@@ -179,6 +179,7 @@ class AwgKeys33622A(LabradServer, AWG):
     #     phases = phases*4
     #     amp = self.iq_comp_amp
     #     self.load_iq(phases, amp)
+
 
     def load_iq(self, phases, amp):
         """

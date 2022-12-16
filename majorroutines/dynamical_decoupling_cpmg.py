@@ -184,7 +184,8 @@ def main(
     num_reps,
     num_runs,
     taus=[],
-    state=States.LOW,
+    state=States.HIGH,
+    do_dq = False
 ):
 
     with labrad.connect() as cxn:
@@ -198,6 +199,7 @@ def main(
             num_runs,
             taus,
             state,
+            do_dq
         )
         return angle
 
@@ -211,12 +213,13 @@ def main_with_cxn(
     num_reps,
     num_runs,
     taus=[],
-    state=States.LOW,
+    state=States.HIGH,
+    do_dq = False
 ):
 
-    counter_server = tool_belt.get_counter_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
-    arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
     
     tool_belt.reset_cfm(cxn)
 
@@ -228,6 +231,7 @@ def main_with_cxn(
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     polarization_time = nv_sig["spin_pol_dur"]
     gate_time = nv_sig["spin_readout_dur"]
+    norm_style = nv_sig['norm_style']
 
     rabi_period = nv_sig["rabi_{}".format(state.name)]
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
@@ -238,7 +242,34 @@ def main_with_cxn(
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
     seq_file_name = "dynamical_decoupling.py"
-
+    # set up to drive transition through zero
+    if do_dq:
+        seq_file_name = "dynamical_decoupling_dq.py"
+        
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        
+        if state.value == States.LOW.value:
+            state_activ = States.LOW
+            state_proxy = States.HIGH
+            
+            coh_pulse_dur = uwave_pi_on_2_pulse_low + uwave_pi_pulse_high
+            echo_pulse_dur = uwave_pi_pulse_high + uwave_pi_pulse_low + uwave_pi_pulse_high
+        elif state.value == States.HIGH.value:
+            state_activ = States.HIGH
+            state_proxy = States.LOW
+            
+            coh_pulse_dur = uwave_pi_on_2_pulse_high + uwave_pi_pulse_low
+            echo_pulse_dur = uwave_pi_pulse_low + uwave_pi_pulse_high + uwave_pi_pulse_low
+    
     # %% Create the array of relaxation times
 
     # Array of times to sweep through
@@ -258,6 +289,8 @@ def main_with_cxn(
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
+    if do_dq:
+        plot_taus = (2* coh_pulse_dur + (2*taus + echo_pulse_dur)  * 2 *4 * pi_pulse_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -312,6 +345,22 @@ def main_with_cxn(
           laser_name,
           laser_power,
       ]
+    if do_dq:
+        seq_args = [
+              taus[0],
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse_low,
+            uwave_pi_on_2_pulse_low,
+            uwave_pi_pulse_high,
+            uwave_pi_on_2_pulse_high,
+            taus[-1],
+            pi_pulse_reps,
+            state_activ.value,
+            state_proxy.value,
+            laser_name, 
+            laser_power
+        ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -356,12 +405,22 @@ def main_with_cxn(
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
         
+        if do_dq:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            sig_gen_high_cxn.uwave_on()
+            
         arbwavegen_server.load_cpmg(pi_pulse_reps)
         
 
@@ -410,6 +469,22 @@ def main_with_cxn(
                   laser_name,
                   laser_power,
               ]
+            if do_dq:
+                seq_args = [
+                    taus[tau_ind_first],
+                    polarization_time,
+                    gate_time,
+                    uwave_pi_pulse_low,
+                    uwave_pi_on_2_pulse_low,
+                    uwave_pi_pulse_high,
+                    uwave_pi_on_2_pulse_high,
+                    taus[tau_ind_second],
+                    pi_pulse_reps,
+                    state_activ.value,
+                    state_proxy.value,
+                    laser_name,
+                    laser_power, 
+                ]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -445,25 +520,28 @@ def main_with_cxn(
         counter_server.stop_tag_stream()
 
         # %% incremental plotting
+      
+        # Average the counts over the iterations
+        inc_sig_counts = sig_counts[: run_ind + 1]
+        inc_ref_counts = ref_counts[: run_ind + 1]
+        ret_vals = tool_belt.process_counts(
+            inc_sig_counts, inc_ref_counts, num_reps, gate_time, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
         
-        #Average the counts over the iterations
-        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
-        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-        try:
-            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-        except RuntimeWarning as e:
-            print(e)
-            inf_mask = numpy.isinf(norm_avg_sig)
-            # Assign to 0 based on the passed conditional array
-            norm_avg_sig[inf_mask] = 0
         
         
         ax = axes_pack[0]
         ax.cla()
-        ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
-        ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+        ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+        ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
         ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
-        ax.set_ylabel("Counts")
+        ax.set_ylabel("kcps")
         ax.legend()
         
         ax = axes_pack[1]
@@ -488,8 +566,9 @@ def main_with_cxn(
         raw_data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(),
+            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
             'pi_pulse_reps': pi_pulse_reps,
+            "do_dq": do_dq,
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -530,12 +609,20 @@ def main_with_cxn(
 
     # %% Plot the data
 
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
+    
     ax = axes_pack[0]
     ax.cla()
-    ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
-    ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+    ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+    ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
     ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("kcps")
     ax.legend()
 
     ax = axes_pack[1]
@@ -561,8 +648,9 @@ def main_with_cxn(
         "timestamp": timestamp,
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         'pi_pulse_reps': pi_pulse_reps,
+        "do_dq": do_dq,
         "uwave_freq": uwave_freq,
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
@@ -596,7 +684,7 @@ def main_with_cxn(
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
 
-    # %% Fit and save figs
+    # Fit and save figs
 
 
     return 
@@ -608,7 +696,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_11'   
+    folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12'   
     
     file1 = '2022_11_14-11_02_50-siena-nv1_2022_10_27'
     file2 = '2022_11_14-11_02_59-siena-nv1_2022_10_27'
@@ -619,108 +707,108 @@ if __name__ == "__main__":
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
     file_t1 = '2022_11_22-08_15_49-siena-nv1_2022_10_27'
     
-    # data = tool_belt.get_raw_data(file16, folder)
-    # fit_t2_decay(data)
+    data = tool_belt.get_raw_data(file16, folder)
+    fit_t2_decay(data)
     
     # file_list = [file16_1, file16_2, file16_3]
     # folder_list = [folder, folder, folder]
     # tool_belt.save_combine_data(file_list, folder_list, 'dynamical_decoupling_cpmg.py')
     
-    file_list = [
-                file1, 
-                  file2, 
-                  file4, 
-                  file8, 
-                    file16, 
-                  file_t1
-                 ]
-    color_list = ['red', 
-                   'blue', 
-                  'orange', 
-                    'green',
-                    'purple', 
-                   'black'
-                  ]
+    # file_list = [
+    #             file1, 
+    #               file2, 
+    #               file4, 
+    #               file8, 
+    #                 file16, 
+    #               file_t1
+    #              ]
+    # color_list = ['red', 
+    #                'blue', 
+    #               'orange', 
+    #                 'green',
+    #                 'purple', 
+    #                'black'
+    #               ]
     
     
-    if True:
-    # if False:
-        fig, ax = plt.subplots(figsize=(8.5, 8.5))
-        # amplitude = 0.069
-        # offset = 0.931
-        for f in range(len(file_list)):
-            file = file_list[f]
+    # if True:
+    # # if False:
+    #     fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    #     # amplitude = 0.069
+    #     # offset = 0.931
+    #     for f in range(len(file_list)):
+    #         file = file_list[f]
              
-            # if f == 10:
-            #     w = 1
-            if f == len(file_list)-1: 
-                data = tool_belt.get_raw_data(file, folder_relaxation)  
-                relaxation_time_range = data['relaxation_time_range']
-                min_relaxation_time = int(relaxation_time_range[0])
-                max_relaxation_time = int(relaxation_time_range[1])
-                num_steps = data['num_steps']
-                tau_T = numpy.linspace(
-                    min_relaxation_time,
-                    max_relaxation_time,
-                    num=num_steps,
-                  )  
-                tau_T_us = tau_T / 1000
-                norm_avg_sig = data['norm_avg_sig']
-                ax.plot([],[],"-o", color= color_list[f], label = "T1")
+    #         # if f == 10:
+    #         #     w = 1
+    #         if f == len(file_list)-1: 
+    #             data = tool_belt.get_raw_data(file, folder_relaxation)  
+    #             relaxation_time_range = data['relaxation_time_range']
+    #             min_relaxation_time = int(relaxation_time_range[0])
+    #             max_relaxation_time = int(relaxation_time_range[1])
+    #             num_steps = data['num_steps']
+    #             tau_T = numpy.linspace(
+    #                 min_relaxation_time,
+    #                 max_relaxation_time,
+    #                 num=num_steps,
+    #               )  
+    #             tau_T_us = tau_T / 1000
+    #             norm_avg_sig = data['norm_avg_sig']
+    #             ax.plot([],[],"-o", color= color_list[f], label = "T1")
                 
-                A0 = 0.098
-                amplitude = 2/3 * 2*A0
-                offset = 1 - amplitude
+    #             A0 = 0.098
+    #             amplitude = 2/3 * 2*A0
+    #             offset = 1 - amplitude
                 
-                fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
-                init_params = [0.069, 5000]
+    #             fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
+    #             init_params = [0.069, 5000]
                 
-                popt, pcov = curve_fit(
-                    fit_func,
-                    tau_T_us,
-                    norm_avg_sig,
-                    # sigma=norm_avg_sig_ste,
-                    # absolute_sigma=True,
-                    p0=init_params,
-                )
-                print(popt)
-                print(numpy.sqrt(numpy.diag(pcov)))
+    #             popt, pcov = curve_fit(
+    #                 fit_func,
+    #                 tau_T_us,
+    #                 norm_avg_sig,
+    #                 # sigma=norm_avg_sig_ste,
+    #                 # absolute_sigma=True,
+    #                 p0=init_params,
+    #             )
+    #             print(popt)
+    #             print(numpy.sqrt(numpy.diag(pcov)))
                 
-            else:  
-                data = tool_belt.get_raw_data(file, folder)  
-                popt, fit_func = fit_t2_decay(data, do_plot= False)
+    #         else:  
+    #             data = tool_belt.get_raw_data(file, folder)  
+    #             popt, fit_func = fit_t2_decay(data, do_plot= False)
             
-                taus = numpy.array(data['taus'])
-                num_steps = data['num_steps']
-                norm_avg_sig = data['norm_avg_sig']
-                pi_pulse_reps = data['pi_pulse_reps']
+    #             taus = numpy.array(data['taus'])
+    #             num_steps = data['num_steps']
+    #             norm_avg_sig = data['norm_avg_sig']
+    #             pi_pulse_reps = data['pi_pulse_reps']
             
-                tau_T = 2*taus*pi_pulse_reps
+    #             tau_T = 2*taus*pi_pulse_reps
                    
                
-                # for legend
-                ax.plot([],[],"-o", color= color_list[f], label = "CPMG-{}".format(pi_pulse_reps))
+    #             # for legend
+    #             ax.plot([],[],"-o", color= color_list[f], label = "CPMG-{}".format(pi_pulse_reps))
             
-            # linspace_T = numpy.linspace(
-            #     tau_T[0], tau_T[-1], num=1000
-            linspace_T = numpy.linspace(
-                    tau_T[0], tau_T[-1], num=1000
-            )
-            ax.plot(tau_T / 1000, norm_avg_sig, "o", color= color_list[f])
-            # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
-            #             fmt='bo', label='data')
-            ax.plot(
-                linspace_T / 1000,
-                fit_func(linspace_T/1000, *popt),
-                "-", color= color_list[f]
-            )
+    #         # linspace_T = numpy.linspace(
+    #         #     tau_T[0], tau_T[-1], num=1000
+    #         linspace_T = numpy.linspace(
+    #                 tau_T[0], tau_T[-1], num=1000
+    #         )
+    #         ax.plot(tau_T / 1000, norm_avg_sig, "o", color= color_list[f])
+    #         # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
+    #         #             fmt='bo', label='data')
+    #         ax.plot(
+    #             linspace_T / 1000,
+    #             fit_func(linspace_T/1000, *popt),
+    #             "-", color= color_list[f]
+    #         )
             
-        ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
-        ax.set_ylabel("Contrast (arb. units)")
-        ax.set_title("CPMG-N")
-        ax.legend()
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+    #     ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
+    #     ax.set_ylabel("Contrast (arb. units)")
+    #     ax.set_title("CPMG-N")
+    #     ax.legend()
+    #     ax.set_xscale('log')
+    #     ax.set_yscale('log')
         
     
     
