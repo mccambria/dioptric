@@ -45,6 +45,7 @@ def main(
     num_reps,
     num_runs,
     iq_state=States.HIGH,
+    do_dq = True
 ):
 
     with labrad.connect() as cxn:
@@ -56,6 +57,7 @@ def main(
             num_reps,
             num_runs,
             iq_state,
+            do_dq
         )
         return angle
 
@@ -68,6 +70,7 @@ def main_with_cxn(
     num_reps,
     num_runs,
     iq_state=States.HIGH,
+    do_dq = True
 ):
 
     counter_server = tool_belt.get_server_counter(cxn)
@@ -87,26 +90,40 @@ def main_with_cxn(
     norm_style = nv_sig['norm_style']
     pi_pulse_reps = 1
 
-    seq_file_name = "dynamical_decoupling_dq.py"
-    
-    rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
-    uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
-    uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
-    uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
-    uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
-    rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
-    uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
-    uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
-    uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
-    uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
-    
-    if iq_state.value == States.LOW.value:
-        state_activ = States.LOW
-        state_proxy = States.HIGH
+    if do_dq:
+        seq_file_name = "dynamical_decoupling_dq.py"
         
-    elif iq_state.value == States.HIGH.value:
-        state_activ = States.HIGH
-        state_proxy = States.LOW
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        
+        if iq_state.value == States.LOW.value:
+            state_activ = States.LOW
+            state_proxy = States.HIGH
+            
+        elif iq_state.value == States.HIGH.value:
+            state_activ = States.HIGH
+            state_proxy = States.LOW
+    else:
+        seq_file_name = "dynamical_decoupling.py"
+        
+        rabi_period = nv_sig["rabi_{}".format(iq_state.name)]
+        uwave_freq = nv_sig["resonance_{}".format(iq_state.name)]
+        uwave_power = nv_sig["uwave_power_{}".format(iq_state.name)]
+    
+        # Get pulse frequencies
+        uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+        uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    
+        
+        
         
     
     ### Create the array of the phases to test
@@ -116,6 +133,11 @@ def main_with_cxn(
         phase_range[1],
         num=num_steps,
         )
+    # phis = numpy.linspace(
+    #     pi/2,
+    #     pi/2,
+    #     num=num_steps,
+    #     )
     
     phis_deg = phis*180/pi
     # print(phis_deg)
@@ -152,25 +174,40 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
     
-    seq_args = [
-        100,
-        polarization_time,
-        gate_time,
-        uwave_pi_pulse_low,
-        uwave_pi_on_2_pulse_low,
-        uwave_pi_pulse_high,
-        uwave_pi_on_2_pulse_high,
-        100,
-        pi_pulse_reps,
-        state_activ.value,
-        state_proxy.value,
-        laser_name, 
-        laser_power
-    ]
+    if do_dq:
+        seq_args = [
+            1000,
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse_low,
+            uwave_pi_on_2_pulse_low,
+            uwave_pi_pulse_high,
+            uwave_pi_on_2_pulse_high,
+            1000,
+            pi_pulse_reps,
+            state_activ.value,
+            state_proxy.value,
+            laser_name, 
+            laser_power
+            ]
+    else:
+        seq_args = [
+              1000,
+              polarization_time,
+              gate_time,
+              uwave_pi_pulse,
+              uwave_pi_on_2_pulse,
+              1000,
+              pi_pulse_reps,
+              iq_state.value,
+              laser_name,
+              laser_power,
+          ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_args)
+    print(seq_file_name)
+    print(seq_args)
     # return
         # print(seq_time)
 
@@ -209,24 +246,31 @@ def main_with_cxn(
         # Optimize
         opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
-
-        # Set up the microwaves        
-        sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
-        sig_gen_low_cxn.set_freq(uwave_freq_low)
-        sig_gen_low_cxn.set_amp(uwave_power_low)
-        try:
-            sig_gen_low_cxn.load_iq()
-        except Exception:
-            pass
-        sig_gen_low_cxn.uwave_on()
-        sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
-        sig_gen_high_cxn.set_freq(uwave_freq_high)
-        sig_gen_high_cxn.set_amp(uwave_power_high)
-        try:
-            sig_gen_high_cxn.load_iq()
-        except Exception:
-            pass
-        sig_gen_high_cxn.uwave_on()
+        
+        if do_dq:
+            # Set up the microwaves        
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            try:
+                sig_gen_low_cxn.load_iq()
+            except Exception:
+                pass
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            try:
+                sig_gen_high_cxn.load_iq()
+            except Exception:
+                pass
+            sig_gen_high_cxn.uwave_on()
+        else:
+            sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, iq_state)
+            sig_gen_cxn.set_freq(uwave_freq)
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.load_iq()
+            sig_gen_cxn.uwave_on()
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -540,7 +584,7 @@ if __name__ == "__main__":
     phase_range = [0, 2*pi]
     num_steps = 25
     num_reps = 2e4
-    num_runs = 10
+    num_runs = 5
     main(
           nv_sig_1,
           phase_range,
@@ -548,10 +592,11 @@ if __name__ == "__main__":
           num_reps,
           num_runs,
           iq_state=States.HIGH,
+          do_dq=False
       )
     
     
-    # file_name = "2022_12_16-14_32_57-siena-nv1_2022_10_27"
+    # file_name = "2022_12_16-14_20_28-siena-nv1_2022_10_27"
     # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/bootstrap_iq_error_dq/2022_12')
     # norm_avg_sig = data['norm_avg_sig']
     # # norm_avg_sig_ste = data['norm_avg_sig_ste']

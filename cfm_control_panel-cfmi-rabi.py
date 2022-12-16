@@ -704,18 +704,17 @@ def do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max):
 
 def do_relaxation(nv_sig ):
     min_tau = 0
-    max_tau_omega = 200#10e6# 20e6
+    max_tau_omega = 5e6
     max_tau_gamma = 10e3
-    num_steps_omega = 11#2#1
+    num_steps_omega = 21
     num_steps_gamma = 21
-    num_reps = 1e4
-    num_runs = 3#0#0
+    num_reps = 1e3
+    num_runs = 200
     
     if True:
      t1_exp_array = numpy.array(
         [[
-                [States.LOW , States.ZERO],
-                        #[States.ZERO, States.ZERO],
+                [States.ZERO, States.ZERO],
                 [min_tau, max_tau_omega],
                 num_steps_omega,
                 num_reps,
@@ -1100,8 +1099,21 @@ if __name__ == "__main__":
     nv_sig_2["rabi_HIGH"]=160
     
     
+    nv_sig_OFF = copy.deepcopy(sig_base) 
+    nv_sig_OFF["coords"] = [-0.183, 0.086, 4.05]
+    nv_sig_OFF["name"] = "{}-background".format(sample_name,)
+    nv_sig_OFF["norm_style"]= NormStyle.SINGLE_VALUED
+    nv_sig_OFF["disable_opt"] =True
+    nv_sig_OFF[ "spin_readout_dur"] = 300
+    nv_sig_OFF['magnet_angle'] =  151.7
+    nv_sig_OFF["resonance_LOW"]= 2.7805
+    nv_sig_OFF["rabi_LOW"]=136.09 # +/- 0.54
+    nv_sig_OFF["resonance_HIGH"]=2.9600
+    nv_sig_OFF["rabi_HIGH"]= 176.3
+    nv_sig_OFF["echo_pi"]= 105
     
-    nv_sig = nv_sig_1
+    
+    nv_sig = nv_sig_OFF
     
     # %% Functions to run
 
@@ -1161,22 +1173,16 @@ if __name__ == "__main__":
         
         #do_spin_echo(nv_sig)
 
-        # do_relaxation(nv_sig)  # gamma and omega
+        do_relaxation(nv_sig)  # gamma and omega
                 
-        # num_xy4_reps = 1
-        # step_size = 100 #us
+        
+        ###################
+        # step_size = 250 #us
         # T_min = 0 #us
-        # T_max = 10000 #us
-        
-        
-        
-        # pi_pulse_reps = 4  
-        step_size = 250 #us
-        T_min = 0 #us
-        T_max = 5000 #us      
-        for n in [8]:
-            do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
-        # do_relaxation(nv_sig)  # gamma and omega
+        # T_max = 5000 #us      
+        # for n in [8]:
+        #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
+
         
         # num_xy4_reps = 1
         # do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)

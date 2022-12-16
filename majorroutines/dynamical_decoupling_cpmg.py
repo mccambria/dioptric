@@ -420,8 +420,10 @@ def main_with_cxn(
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
             sig_gen_high_cxn.uwave_on()
+            arbwavegen_server.load_cpmg_dq(pi_pulse_reps) # phase value needs to be doubled
+        else:
+            arbwavegen_server.load_cpmg(pi_pulse_reps)
             
-        arbwavegen_server.load_cpmg(pi_pulse_reps)
         
 
         # Set up the laser

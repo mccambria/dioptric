@@ -414,6 +414,6 @@ if __name__ == '__main__':
     # tau_shrt, polarization_time, gate_time, pi_pulse_low, pi_on_2_pulse_low,\
     #     pi_pulse_high, pi_on_2_pulse_high, tau_long 
     # pi_pulse_reps, state_activ, state_proxy,  laser_name, laser_power
-    seq_args = [100, 10000.0, 300, 64, 32, 88, 44,  500, 1 , 3, 1, 'integrated_520', None]
+    seq_args = [100, 10000.0, 300, 64, 32, 88, 44,  500, 0 , 3, 1, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
