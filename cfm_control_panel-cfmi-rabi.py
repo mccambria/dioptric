@@ -377,7 +377,7 @@ def do_rabi_two_pulse(nv_sig, uwave_time_range_LOW, uwave_time_range_HIGH, num_s
              readout_state,
              initial_state,)
     
-def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, v, uwave_time_range=[0, 1000]):
+def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, uwave_time_range=[0, 1000]):
     
     deviation_high = dev
     deviation_low = dev
@@ -386,6 +386,7 @@ def do_rabi_srt(nv_sig,  initial_state, readout_state, dev, v, uwave_time_range=
     num_steps = 51
     num_reps = int(1e4)
     num_runs = 10
+    v = 1.0
 
     rabi_srt.main(nv_sig, 
               uwave_time_range, 
@@ -445,13 +446,15 @@ def do_lifetime(nv_sig):
 
 
 
-def do_ramsey(nv_sig, opti_nv_sig,  detuning, state = States.HIGH):
+def do_ramsey(nv_sig, opti_nv_sig, t1,state = States.LOW):
 
-    # detuning = 0 # MHz
+    detuning = 0 # MHz
     
     # precession_time_range = [0, 2 * 10 ** 3]
-    precession_time_range = [0, 2000]
-    num_steps = 101
+    # precession_time_range = [1e3, 2e3]
+    #t1=5e3
+    precession_time_range = [t1, t1+1e3]
+    num_steps = 51
     
     # code to collect data at the Nyquist frequency
     # step_size = 75 #ns
@@ -461,8 +464,8 @@ def do_ramsey(nv_sig, opti_nv_sig,  detuning, state = States.HIGH):
     # precession_time_range = [start_time, end_time]
 
 
-    num_reps = int( 10 ** 4)
-    num_runs = int(20)
+    num_reps = int(1e4)
+    num_runs = int(40)
     
     ramsey.main(
         nv_sig,
@@ -473,27 +476,26 @@ def do_ramsey(nv_sig, opti_nv_sig,  detuning, state = States.HIGH):
         num_runs,
         state,
         opti_nv_sig = opti_nv_sig,
-        do_fm = False
+        do_fm = False,
+        do_dq = False
     )
 
 
-def do_spin_echo(nv_sig, state = States.HIGH):
+def do_spin_echo(nv_sig, state = States.LOW):
 
-    # T2* in nanodiamond NVs is just a couple us at 300 K
-    # In bulk it's more like 100 us at 300 K
-    max_time = 100  # us
-    num_steps = int(max_time/2+ 1)  # 1 point per 2 us
-    # max_time = 8.352*8
-    # max_time = 8*8
-    # num_steps = (8*2)+1
+    #max_time = 2.5e3
+    max_time = 2000
+    num_steps = 21
     precession_time_range = [0, max_time*10**3]
 
     # revival_time= 9.934e3
     # num_steps = 25
     # precession_time_range = [0, revival_time*(num_steps - 1)]
 
-    num_reps = 1e4
-    num_runs =2
+    # num_reps = 1e3
+    # num_runs = 100
+    num_reps = 1e3
+    num_runs = 50
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -510,6 +512,7 @@ def do_spin_echo(nv_sig, state = States.HIGH):
         num_reps,
         num_runs,
         state,
+        do_dq = True
     )
     return
 
@@ -1146,80 +1149,16 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 250])
         
         
-        
         # uwave_time_range = [0, 400]
         #do_rabi_consec(nv_sig,   States.HIGH, States.ZERO,  uwave_time_range=[0, 300])
-        do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
+        # do_rabi_consec_pop(nv_sig,  uwave_time_range=[0, 300])
         
-        ti = 30
-        tf = 90
-        num_steps = int((tf-ti)/2+1)
-        uwave_time_range_LOW = [ti, tf]
-        uwave_time_range_HIGH = [ti, tf]
-        do_rabi_two_pulse(nv_sig, uwave_time_range_LOW, uwave_time_range_HIGH, num_steps)
+        # do_rabi_srt(nv_sig, States.HIGH, States.LOW,0,  uwave_time_range=[0, 300])
         
-        # img_array = numpy.empty([steps, steps])
-        # img_array[:] = numpy.nan
-        # t_LOW_list = numpy.linspace(ti,tf,steps)
-        # t_HIGH_list = numpy.linspace(ti,tf,steps)
-        # kpl.init_kplotlib()
-        # for t_L_i in range(len(t_LOW_list)):
-        #     for t_H_i in range(len(t_HIGH_list)):
-        #         t_LOW = t_LOW_list[t_L_i]
-        #         t_HIGH = t_HIGH_list[t_H_i]
-        #         print("t_LOW {} ns, t_HIGH {} ns".format(t_LOW, t_HIGH))
-                
-        #         ret_vals = do_rabi_consec(nv_sig,   States.LOW, States.HIGH, 
-        #                         uwave_time_range_LOW=[0, t_LOW*2], uwave_time_range_HIGH=[0, t_HIGH*2], num_steps = 3)
-        #         norm_avg_sig = ret_vals[0]
-        #         # print(t_LOW)
-        #         # print(t_HIGH)
-        #         # print(norm_avg_sig[1])
-        #         img_array[t_L_i][t_H_i] = norm_avg_sig[1]
-        # img_array=numpy.flipud(img_array)
-        # kpl.imshow
-        # fig, ax = plt.subplots()
-        # axes_labels = ['HIGH MW pulse', 'LOW MW pulse']
-        # img_extent = [
-        #     ti-0.5,
-        #     tf+0.5,
-        #     ti-0.5,
-        #     tf+0.5,
-        # ]
-        # kpl.imshow(
-        #     ax,
-        #     img_array,
-        #     axes_labels=axes_labels,
-        #     cbar_label="Norm. fluor.",
-        #     extent=img_extent,
-        # )
+        # for t1 in [60e3]:
+        #     do_ramsey(nv_sig, nv_sig, t1)
         
-        
-        # equivalent deviations:
-            # 2 MHz == 1.95
-            # 3 MHz == 3.92
-        
-        # d =-3.7125
-        # v = 1.0
-        #do_rabi_srt(nv_sig,   States.LOW, States.LOW, d, v,  uwave_time_range=[0, 20000])
-        #do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d, v,  uwave_time_range=[0, 20000])
-        
-        # do_rabi_srt(nv_sig,   States.ZERO, States.ZERO, d, v, uwave_time_range=[0, 2500])
-         
-        # for d in [3]:
-        #      do_rabi_srt(nv_sig,   States.LOW, States.LOW, d,  uwave_time_range=[0, 20000])
-        #      do_rabi_srt(nv_sig,   States.LOW, States.ZERO, d,  uwave_time_range=[0, 20000])
-               
-        # for d in [0, 8, 16, 24]:
-        # do_rabi_srt_pop(nv_sig,  d, v, 101, uwave_time_range=[0, 16000])
-        # do_rabi_srt_pop(nv_sig,  30, 41, uwave_time_range=[0, 2500])
-        
-        
-        
-        # for d in [0]:
-        #    do_ramsey(nv_sig, nv_sig, d)
-        
-        # do_spin_echo(nv_sig)
+        do_spin_echo(nv_sig)
 
         # do_relaxation(nv_sig)  # gamma and omega
                 

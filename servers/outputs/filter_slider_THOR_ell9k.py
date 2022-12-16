@@ -74,6 +74,10 @@ class FilterSliderThorEll9k(LabradServer):
         time.sleep(0.1)
         self.slider.flush()
         time.sleep(0.1)
+        # Find the resonant frequencies of the motor
+        cmd = "0s1".encode()
+        self.slider.write(cmd)
+        time.sleep(0.1)
         # Set up the mapping from filter position to move command
         self.move_commands = {
             0: "0ma00000000".encode(),
@@ -103,5 +107,10 @@ __server__ = FilterSliderThorEll9k()
 
 if __name__ == "__main__":
     from labrad import util
-
     util.runServer(__server__)
+    
+    # with serial.Serial("COM5", 9600, serial.EIGHTBITS, serial.PARITY_NONE, serial.STOPBITS_ONE) as slider:
+    #     cmd = "0ma00000060".encode()
+    #     slider.write(cmd)
+    #     res = slider.readline()
+    #     print(res)
