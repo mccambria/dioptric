@@ -29,9 +29,7 @@ import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_dq_main as t1_dq_main
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
-import minorroutines.determine_standard_readout_params as determine_standard_readout_params
-import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
+import majorroutines.determine_standard_readout_params as determine_standard_readout_params
 from utils.tool_belt import States
 import time
 

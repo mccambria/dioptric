@@ -971,7 +971,7 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib(latex=True)
 
-    # main()
-    refit_experiments()
+    main()
+    # refit_experiments()
 
     plt.show(block=True)
