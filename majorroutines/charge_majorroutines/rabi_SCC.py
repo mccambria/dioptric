@@ -110,8 +110,10 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
     sig_counts = numpy.empty([num_runs, num_steps])
+    sig_counts_each_shot = numpy.zeros([num_runs, num_steps, num_reps])
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
+    ref_counts_each_shot =  numpy.copy(sig_counts_each_shot)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
 
     # %% Make some lists and variables to save at the end
@@ -199,8 +201,10 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
             sample_counts = new_counts[0]
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+            sig_counts_each_shot[run_ind, tau_ind] = sig_gate_counts
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
+            ref_counts_each_shot[run_ind, tau_ind] = ref_gate_counts
             
         counter_server.stop_tag_stream()
         
@@ -250,7 +254,11 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
                     'sig_counts': sig_counts.astype(int).tolist(),
                     'sig_counts-units': 'counts',
                     'ref_counts': ref_counts.astype(int).tolist(),
-                    'ref_counts-units': 'counts'}
+                    'ref_counts-units': 'counts',
+                    'sig_counts_each_shot': sig_counts_each_shot.astype(int).tolist(),
+                    'sig_counts_each_shot-units': 'counts',
+                    'ref_counts_each_shot': ref_counts_each_shot.astype(int).tolist(),
+                    'ref_counts-units_each_shot': 'counts'}
 
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
@@ -316,7 +324,11 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
                 'ref_counts': ref_counts.astype(int).tolist(),
                 'ref_counts-units': 'counts',
                 'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-                'norm_avg_sig-units': 'arb'}
+                'norm_avg_sig-units': 'arb',
+                'sig_counts_each_shot': sig_counts_each_shot.astype(int).tolist(),
+                'sig_counts_each_shot-units': 'counts',
+                'ref_counts_each_shot': ref_counts_each_shot.astype(int).tolist(),
+                'ref_counts-units_each_shot': 'counts'}
 
     nv_name = nv_sig["name"]
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
@@ -334,37 +346,65 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, state,
     
 # %%
 if __name__ == '__main__':
-    
+    import numpy as np
     
     # replotting data
-    file = '2022_12_09-15_25_26-johnson-search'
+    file = '2022_12_12-19_45_53-johnson-search'
     data = tool_belt.get_raw_data(file)
+    
+    threshold =4
+    
+    num_steps = data['num_steps']
+    uwave_time_range = data['uwave_time_range']
+    
+    taus = numpy.linspace(uwave_time_range[0], uwave_time_range[1], num=num_steps, dtype=numpy.int32)
 #   
     # norm_avg_sig = data['norm_avg_sig']
-    sig_counts = data['sig_counts']
-    ref_counts = data['ref_counts']
-    num_reps = data['num_reps']
-    uwave_time_range = data['uwave_time_range']
-    num_steps = data['num_steps']
-    nv_sig = data['nv_sig']
-    norm_style = tool_belt.NormStyle.SINGLE_VALUED
-    state = data['state']
-    uwave_freq = nv_sig['resonance_{}'.format(state)]
-    readout_time = nv_sig['charge_readout_dur']
+    sig_counts_all = np.array(data['sig_counts_each_shot'])
+    ref_counts_all = np.array(data['ref_counts_each_shot'])
     
-    kpl.init_kplotlib()
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout_time, norm_style)
-    (
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    ) = ret_vals
-#    
-    fit_func = tool_belt.inverted_cosexp
-    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
-        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
-        fit_func 
-    )
+    states_s = np.copy(sig_counts_all)*0
+    states_s[np.where(sig_counts_all>=threshold)] = 1
+    states_r= np.copy(ref_counts_all)*0
+    states_r[np.where(ref_counts_all>=threshold)] = 1
+    
+    avg_states_s = np.average(states_s[0],1)
+
+    avg_states_r = np.average(states_r[0],1)
+    
+    plt.figure()
+    plt.plot(taus,avg_states_s,label='sig')
+    plt.plot(taus,avg_states_r,label='ref')
+    plt.ylabel(r'NV0 probability')
+    plt.xlabel('t [ns]')
+    plt.legend()
+    plt.show()
+    
+    
+    # num_reps = data['num_reps']
+    # uwave_time_range = data['uwave_time_range']
+    # num_steps = data['num_steps']
+    # nv_sig = data['nv_sig']
+    # norm_style = tool_belt.NormStyle.SINGLE_VALUED
+    # state = data['state']
+    # uwave_freq = nv_sig['resonance_{}'.format(state)]
+    # readout_time = nv_sig['charge_readout_dur']
+    
+    
+    
+#     kpl.init_kplotlib()
+#     ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout_time, norm_style)
+#     (
+#         sig_counts_avg_kcps,
+#         ref_counts_avg_kcps,
+#         norm_avg_sig,
+#         norm_avg_sig_ste,
+#     ) = ret_vals
+# #    
+#     fit_func = tool_belt.inverted_cosexp
+#     fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
+#         uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+#         fit_func 
+#     )
     
                   

@@ -93,7 +93,7 @@ class TempMonitorLake218(LabradServer):
         a few lines down to allow for a new sensor to be used.
         """
 
-        sensor_num = 1
+        sensor_num = channel
         name = "CERNOX"
         curve_format = 4  # 2: V/K, 3: Ohm / K, 4: log(Ohm) / K
         limit = 325
@@ -483,10 +483,17 @@ class TempMonitorLake218(LabradServer):
             self.write(cmd)
             time.sleep(0.25)
 
-            # cmd = "CRVPT? {}, {}".format(curve_num, ind+1)
-            # monitor.write("{}{}".format(cmd, term).encode())
-            # ret_val = monitor.readline()
-            # print(ret_val)
+        # # Optional read for debugging
+        for ind in range(num_points):
+            cmd = "CRVPT? {}, {}".format(curve_num, ind+1)
+            self.write(cmd)
+            ret_val = self.read()
+            logging.info(ret_val)
+            time.sleep(0.25)
+        
+        # Set the channel to use the curve we just set up
+        cmd = "INCRV {}, {}".format(channel, curve_num)
+        self.write(cmd)
 
     @setting(5, channel="i", returns="v[]")
     def measure(self, c, channel):
@@ -496,6 +503,13 @@ class TempMonitorLake218(LabradServer):
         ret_val = self.read()
         reading = float(ret_val)
         return reading
+    
+    @setting(7, cmd="s", returns="s")
+    def arb_cmd(self, c, cmd):
+        self.write(cmd)
+        ret_val = self.read()
+        return ret_val
+        
 
     @setting(6)
     def reset_cfm_opt_out(self, c):

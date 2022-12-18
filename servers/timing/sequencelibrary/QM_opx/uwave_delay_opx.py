@@ -33,8 +33,8 @@ def qua_program(opx, config, args, num_reps):
     state, apd_index, laser_name, laser_power = args[5:9]
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    laser_mod_type = config["Optics"][laser_name]["mod_type"]
-    laser_pulse = 'laser_ON_{}'.format(eval(laser_mod_type).name)
+    
+    laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
     
     wait_time = config['CommonDurations']['uwave_buffer']
     laser_delay_time = config['Optics'][laser_name]['delay']
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     
     num_repeat=1#4e4
 
-    args = [-100, 100, 350, 80, 1000.0, 1, 0, 'cobolt_515', None]
+    args = [-200, 100, 350, 80, 1000.0, 1, 0, 'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

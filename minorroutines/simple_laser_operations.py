@@ -76,7 +76,8 @@ if __name__ == "__main__":
 
     laser_name = "laserglow_532"
     laser_power = None
-    filter_name = "nd_1.0"
+    laser_filter = "nd_0"
+    collection_filter = "nd_0.4"
     pos = [0.0, 0.0, 0]
 
     tool_belt.init_safe_stop()
@@ -84,8 +85,11 @@ if __name__ == "__main__":
     with labrad.connect() as cxn:
 
         # tool_belt.set_xyz(cxn, pos)
+        tool_belt.set_filter(
+            cxn, optics_name=laser_name, filter_name=laser_filter
+        )
         # tool_belt.set_filter(
-        #     cxn, optics_name=laser_name, filter_name=filter_name
+        #     cxn, optics_name="collection", filter_name=collection_filter
         # )
 
         # Some parameters you'll need to set in these functions

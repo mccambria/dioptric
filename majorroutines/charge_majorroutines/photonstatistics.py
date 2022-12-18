@@ -527,7 +527,7 @@ def calculate_threshold(readout_time,x_data,rate_fit):
     n_thresh = threshold_list[thre_index]
     # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
     # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
-    return threshold_list, np.array([n_thresh,  max(fidelity_list)])
+    return threshold_list,fidelity_list, np.array([n_thresh,  max(fidelity_list)])
 
 def calculate_threshold_from_experiment( x_vals_0, x_vals_m, mu0, mu1, nv0_hist, nvm_hist):
     threshold_list = np.linspace(int(mu0),int(mu1)+2,int(mu1) - int(mu0) +3)
@@ -538,20 +538,24 @@ def calculate_threshold_from_experiment( x_vals_0, x_vals_m, mu0, mu1, nv0_hist,
     for i in range(len(threshold_list.tolist())):
         thred = threshold_list[i]
         area_below_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[0]
-        # area_below_nvm = get_area(x_vals_m,dis1.tolist(),thred)[0]
-        # area_above_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[1]
+        area_below_nvm = get_area(x_vals_m,dis1.tolist(),thred)[0]
+        area_above_nv0 = get_area(x_vals_0,dis0.tolist(),thred)[1]
         area_above_nvm = get_area(x_vals_m,dis1.tolist(),thred)[1]
+        
         # prob_below = area_below_nv0 / (area_below_nvm + area_below_nv0)
         # prob_above = area_above_nvm/ (area_above_nvm+ area_above_nv0)
         # prob_diff_list.append(abs(prob_below - prob_above))
-        pnvm_c = area_above_nvm
-        pnv0_c = area_below_nv0
+        total_area_nvm = area_below_nvm + area_above_nvm
+        total_area_nv0 = area_below_nv0 + area_above_nv0
+        pnvm_c = area_above_nvm / total_area_nvm
+        pnv0_c = area_below_nv0 / total_area_nv0
+        
         fidelity_list.append( (pnvm_c + pnv0_c)/2 )
     thre_index = fidelity_list.index(max(fidelity_list))
     n_thresh = threshold_list[thre_index]
     # fidelity1 = get_area(x_data,dis2.tolist(), n_thresh)[1] / (get_area(x_data,dis1.tolist(), n_thresh)[1] + get_area(x_data,dis2.tolist(), n_thresh)[1])   
     # fidelity2 = get_area(x_data,dis1.tolist(), n_thresh)[0] / (get_area(x_data,dis1.tolist(), n_thresh)[0] + get_area(x_data,dis2.tolist(), n_thresh)[0])   
-    return n_thresh,  max(fidelity_list)
+    return n_thresh,  max(fidelity_list), threshold_list, fidelity_list
 
 #nv_para = array([g0(P),g1(P),y0(P),y1(P)]) =  [A0,B0,A1,B1,C0,D0,C1,D1]
 def optimize_single_shot_readout(power_range,time_range,nv_para,optimize_steps):

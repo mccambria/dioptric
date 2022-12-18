@@ -40,6 +40,8 @@ import majorroutines.charge_majorroutines.scc_pulsed_resonance as scc_pulsed_res
 import majorroutines.charge_majorroutines.rabi_SCC as rabi_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC as ramsey_SCC
 import majorroutines.charge_majorroutines.ramsey_SCC_one_tau_no_ref as ramsey_SCC_one_tau_no_ref
+# import majorroutines.charge_majorroutines.test_charge_state_pre_selection as test_charge_state_pre_selection
+import majorroutines.charge_majorroutines.test_spin_repolarization_scc as test_spin_repolarization_scc
 import majorroutines.ramsey_one_tau_no_ref as ramsey_one_tau_no_ref
 from utils.tool_belt import States, NormStyle
 import time
@@ -158,8 +160,10 @@ def do_spin_echo(nv_sig, max_time=120,num_reps=4e3,num_runs=5,state=States.LOW):
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
     # max_time = 120  # us
-    num_steps = int(max_time/4)  # 1 point per us
-    precession_time_range = [10**3, max_time * 10 ** 3]
+    # num_steps = int(1*max_time)  # 1 point per us
+    num_steps = int(240)  # 1 point per us
+    # precession_time_range = [10**2, max_time * 10 ** 3]
+    precession_time_range = [600,2512]
     # num_reps = 4e3
     # num_runs = 5
     # num_runs = 20
@@ -179,10 +183,10 @@ def do_spin_echo(nv_sig, max_time=120,num_reps=4e3,num_runs=5,state=States.LOW):
 def do_ramsey(nv_sig, detuning=4):
 
     # detuning = 5  # MHz
-    precession_time_range = [0, 1952]
-    num_steps = 62
+    precession_time_range = [0, 2336]
+    num_steps = 74
     num_reps = int(2e4)
-    num_runs = 140
+    num_runs = 50
 
     ramsey.main(
         nv_sig,
@@ -304,8 +308,8 @@ def do_rabi_SCC(nv_sig):
     state = States.LOW
     
     num_steps = 11
-    num_reps= 500
-    num_runs = 2
+    num_reps= 10000
+    num_runs = 1
     uwave_time_range = [0,160]
     
     rabi_SCC.main(nv_sig, uwave_time_range, state,
@@ -365,6 +369,14 @@ def do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps):
         photon_threshold,
         chop_factor
     )
+    
+def do_test_spin_repolarization_scc(nv_sig, pre_init_laser_key, pre_init_time, pre_init_power, total_wait_time, num_reps):
+    
+    state = States.LOW
+    
+    test_spin_repolarization_scc.main(nv_sig, state, 
+                                       pre_init_laser_key, pre_init_time, pre_init_power, 
+                                       total_wait_time, num_reps)
 
 # %% Run the file
 
@@ -439,12 +451,13 @@ if __name__ == "__main__":
         # do_determine_scc_pulse_params(nv_sig,50000,ion_durs=[116])
         # do_determine_charge_readout_params(nv_sig, readout_powers=powers,readout_times=[10e6], num_reps=50000)
         # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
+        do_test_spin_repolarization_scc(nv_sig, pre_init_laser_key='laserglow_589', 
+                                      pre_init_time=5e6, pre_init_power=.4, total_wait_time=5e6, num_reps=1000)
+        
         # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')
         # do_image_sample(nv_sig,num_steps=20,scan_range=4,scan_type='XZ')
-        
         # do_optimize(nv_sig, apd_indices,save_data=True)
         # do_optimize_z(nv_sig, apd_indices)
-        
         # do_stationary_count(nv_sig,disable_opt=True)
         # 
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e6), delay_range=[64,640],num_steps=37)
@@ -454,10 +467,12 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, apd_indices, uwave_time_range = [0,160], state=States.LOW,num_reps=2e4,num_runs=15,num_steps=11)
                 
         # do_pulsed_resonance(nv_sig, freq_range=0.2, uwave_pulse_dur=52,num_steps=41, num_reps=2e4, num_runs=8)
-        detunings = [-.75]
-        for d in detunings:
-            do_ramsey(nv_sig,detuning=d)
-        # do_spin_echo(nv_sig, max_time=200,num_reps=2e4,num_runs=100,state=States.LOW)
+        # detunings = [1.5,1.2,.8,.6,.4]
+        # for d in detunings:
+        #     do_ramsey(nv_sig,detuning=d)
+        # do_spin_echo(nv_sig, max_time=200,num_reps=2e4,num_runs=50,state=States.LOW)
+        # do_spin_echo(nv_sig, num_reps=2e4, num_runs=200, state=States.LOW)
+        # do_spin_echo(nv_sig, max_time=15,num_reps=2e4,num_runs=200,state=States.LOW)
         # do_optimize_magnet_angle(nv_sig)
         
         # do_determine_charge_readout_params(nv_sig,num_reps=3000,readout_powers=[.7],readout_times=[15e6])

@@ -34,10 +34,10 @@ def calc_histogram(nv0, nvm, dur, bins=None):
     # print(nv0)
     nv0_counts = [
         np.count_nonzero(np.array(rep) < dur_us) for rep in nv0
-    ]  # ???
+    ]  
     nvm_counts = [
         np.count_nonzero(np.array(rep) < dur_us) for rep in nvm
-    ]  # ???
+    ]  
     # print(nv0_counts)
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
@@ -197,7 +197,7 @@ def calculate_threshold_with_model(
     fit_rate = single_nv_photon_statistics_model(tR, nv0_array, nvm_array,do_plot=plot_model_hists)
     max_x_val = int(max_x_val)
     x_data = np.linspace(0, 100, 101)
-    threshold_list, thresh_para = model.calculate_threshold(tR, x_data, fit_rate)
+    threshold_list, fidelity_list, thresh_para = model.calculate_threshold(tR, x_data, fit_rate)
     mu_0 = fit_rate[3] * tR
     mu_m = fit_rate[2] * tR
     fidelity = thresh_para[1]
@@ -250,11 +250,11 @@ def calculate_threshold_with_model(
         ax.set_title(title_text)
         plt.xlabel("Number of counts")
         plt.ylabel("Probability Density")
-        return threshold_list, threshold, fidelity, mu_0, mu_m, fig3
+        return threshold_list,fidelity_list, threshold, fidelity, mu_0, mu_m, fig3
 
     else:
         # print('i made it here too')
-        return threshold_list, threshold, fidelity, mu_0, mu_m, ''
+        return threshold_list,fidelity_list, threshold, fidelity, mu_0, mu_m, ''
 
 
 
@@ -269,10 +269,13 @@ def calculate_threshold_no_model(
     power,
     nd_filter=None,
 ):
+    
+    # print(nvm_hist)
 
-    thresh, fid = model.calculate_threshold_from_experiment(
+    thresh, fid, threshold_list, fidelity_list = model.calculate_threshold_from_experiment(
         x_vals_0, x_vals_m, mu_0, mu_m, nv0_hist, nvm_hist
     )
+    # print(fid)
 
     fig3, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0, nv0_hist, "r-o", label="Test red pulse")
@@ -306,7 +309,7 @@ def calculate_threshold_no_model(
             int(readout_time / 1e3), power
         )
     ax.set_title(title_text)
-    return thresh, fid, fig3
+    return thresh, fid, fig3,  threshold_list, fidelity_list
 
 
 def plot_threshold(
@@ -343,6 +346,7 @@ def plot_threshold(
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
         nv0_counts, nvm_counts, readout_dur,bins,
     )
+    # print(occur_m)
 
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
@@ -359,7 +363,7 @@ def plot_threshold(
         nvm_counts_list = [
             np.count_nonzero(np.array(rep) < dur_us) for rep in nvm_counts
         ]
-        threshold_list, threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(
+        threshold_list, fidelity_list, threshold, fidelity, mu_0, mu_m, fig = calculate_threshold_with_model(
             readout_dur,
             nv0_counts_list,
             nvm_counts_list,
@@ -369,7 +373,7 @@ def plot_threshold(
             plot_model_hists
         )
     else:
-        threshold, fidelity, fig = calculate_threshold_no_model(
+        threshold, fidelity, fig, threshold_list, fidelity_list = calculate_threshold_no_model(
             readout_dur,
             occur_0,
             occur_m,
@@ -389,8 +393,8 @@ def plot_threshold(
             __file__, timestamp, nv_sig["name"] + "-threshold"
         )
         tool_belt.save_figure(fig, file_path)
-    print(threshold_list)
-    return threshold_list, threshold, fidelity, nv0_counts,nvm_counts
+
+    return threshold_list, fidelity_list, threshold, fidelity, nv0_counts,nvm_counts
 
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur,exp_dur=0,bins=None):
@@ -527,7 +531,7 @@ def measure_histograms_sub(
 
     tagger_server = tool_belt.get_server_tagger(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
-
+    # print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
@@ -658,14 +662,13 @@ def measure_histograms_with_cxn(
     else:
         seq_file = "simple_readout_two_pulse.py"
         gen_seq_args = lambda init_laser: [
-            nv_sig["{}_dur".format(init_laser)],
+            int(nv_sig["{}_dur".format(init_laser)]),
             readout_pulse_time,
             nv_sig[init_laser],
             nv_sig["charge_readout_laser"],
             tool_belt.set_laser_power(cxn, nv_sig, init_laser),
             readout_laser_power,
             2,
-            apd_index,
         ]
     # seq_args = gen_seq_args("nv0_prep_laser")
     # print(seq_args)
@@ -677,7 +680,7 @@ def measure_histograms_with_cxn(
     # Green measurement
     seq_args = gen_seq_args("nv-_prep_laser")
     
-    print(seq_args)
+    # print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
         cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
     )
@@ -685,7 +688,7 @@ def measure_histograms_with_cxn(
 
     # Red measurement
     seq_args = gen_seq_args("nv0_prep_laser")
-    print(seq_args)
+    # print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
         cxn, nv_sig, opti_nv_sig, seq_file, seq_args, num_reps
     )
@@ -848,7 +851,7 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    print(seq_args)
+    # print(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
 
 
@@ -928,7 +931,7 @@ def measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    print(seq_args)
+    # print(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
 
 
@@ -1094,25 +1097,25 @@ if __name__ == "__main__":
     ### Replots
     
         
-    # data = tool_belt.get_raw_data('2022_12_02-13_47_25-johnson-search')
-    # nv_sig = data["nv_sig"]
-    # nv0 = data["nv0"]
-    # nvm = data["nvm"]
-    # readout_power = nv_sig["charge_readout_laser_power"]
-    # max_readout_dur = nv_sig["charge_readout_dur"]
+    data = tool_belt.get_raw_data("2022_12_08-17_52_31-johnson-search")
+    nv_sig = data["nv_sig"]
+    nv0 = data["nv0"]
+    nvm = data["nvm"]
+    readout_power = nv_sig["charge_readout_laser_power"]
+    max_readout_dur = nv_sig["charge_readout_dur"]
     
-    # readout_dur=15e6
+    readout_dur=5e6
 
-    # threshold, fidelity,n0,nm = plot_threshold(
-    #     nv_sig,
-    #     readout_dur,
-    #     nv0,
-    #     nvm,
-    #     readout_power,
-    #     fit_threshold_full_model=False,
-    #     nd_filter=None,
-    #     plot_model_hists=True,
-    #     bins=None)
+    threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
+        nv_sig,
+        readout_dur,
+        nv0,
+        nvm,
+        readout_power,
+        fit_threshold_full_model=True,
+        nd_filter=None,
+        plot_model_hists=True,
+        bins=None)
     
     
     if False:
@@ -1124,9 +1127,9 @@ if __name__ == "__main__":
         # "2022_12_08-16_53_12-johnson-search",
         # "2022_12_08-17_12_57-johnson-search",
         # "2022_12_08-17_32_44-johnson-search",
-        # "2022_12_08-17_52_31-johnson-search",
+        "2022_12_08-17_52_31-johnson-search",
         # "2022_12_08-18_12_20-johnson-search",
-        "2022_12_08-18_32_09-johnson-search",
+        # "2022_12_08-18_32_09-johnson-search",
         # "2022_12_08-18_52_01-johnson-search",
         # "2022_12_08-19_11_52-johnson-search",
         # "2022_12_08-19_31_51-johnson-search",
@@ -1147,7 +1150,7 @@ if __name__ == "__main__":
 
         # readout_dur = opti_readout_dur
 
-        times = [3e6]
+        times = [5e6]
         # times = [4e6,1e6,400e3,100e3,50e3,10e3]
         # times = [2e6,4e6]
 
@@ -1169,7 +1172,7 @@ if __name__ == "__main__":
                 max_readout_dur = nv_sig["charge_readout_dur"]
 
                 try:
-                    threshold_list, threshold, fidelity,n0,nm = plot_threshold(
+                    threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
                         nv_sig,
                         readout_dur,
                         nv0,
@@ -1207,7 +1210,7 @@ if __name__ == "__main__":
         # )
         # tool_belt.save_raw_data(data_to_save, file_path)
         
-    if True:
+    if False:
             
         file_path = "2022_12_09-16_03_36-analysis_data"
         

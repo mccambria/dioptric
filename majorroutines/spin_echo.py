@@ -469,6 +469,7 @@ def main(
     num_reps,
     num_runs,
     state=States.LOW,
+    do_dq = False
 ):
 
     with labrad.connect() as cxn:
@@ -480,6 +481,7 @@ def main(
             num_reps,
             num_runs,
             state,
+            do_dq
         )
         return angle
 
@@ -492,6 +494,7 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state=States.LOW,
+    do_dq = False
 ):
     
     counter_server = tool_belt.get_server_counter(cxn)
@@ -507,6 +510,7 @@ def main_with_cxn(
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     polarization_time = nv_sig["spin_pol_dur"]
     gate_time = nv_sig["spin_readout_dur"]
+    norm_style = nv_sig['norm_style']
 
     rabi_period = nv_sig["rabi_{}".format(state.name)]
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
@@ -517,6 +521,30 @@ def main_with_cxn(
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
     seq_file_name = "spin_echo.py"
+    # set up to drive transition through zero
+    if do_dq is not False:
+        do_ramsey = False
+        seq_file_name = "spin_echo_dq.py"
+        # seq_file_name = "spin_echo_dq_edit.py"
+        
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        if state.value == States.LOW.value:
+            state_init = States.LOW
+            state_seco = States.HIGH
+            # state_seco = States.LOW
+        elif state.value == States.HIGH.value:
+            state_init = States.HIGH
+            state_seco = States.LOW
+            # state_seco = States.HIGH
 
     # %% Create the array of relaxation times
 
@@ -576,18 +604,34 @@ def main_with_cxn(
     # %% Analyze the sequence
     
     num_reps = int(num_reps)
-
-    seq_args = [
-        min_precession_time,
-        polarization_time,
-        gate_time,
-        uwave_pi_pulse,
-        uwave_pi_on_2_pulse,
-        max_precession_time,
-        state.value,
-        laser_name,
-        laser_power,
-    ]
+    if do_dq is not False:
+        seq_args = [
+            min_precession_time,
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse_low,
+            uwave_pi_on_2_pulse_low,
+            uwave_pi_pulse_high,
+            uwave_pi_on_2_pulse_high,
+            max_precession_time,
+            state_init.value,
+            state_seco.value,
+            laser_name, 
+            laser_power, 
+            do_ramsey
+        ]
+    else:
+        seq_args = [
+            min_precession_time,
+            polarization_time,
+            gate_time,
+            uwave_pi_pulse,
+            uwave_pi_on_2_pulse,
+            max_precession_time,
+            state.value,
+            laser_name,
+            laser_power,
+        ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     print(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
@@ -638,6 +682,16 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
 
+        if do_dq is not False:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            sig_gen_high_cxn.uwave_on()
+            
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -671,17 +725,34 @@ def main_with_cxn(
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
-            seq_args = [
-                taus[tau_ind_first],
-                polarization_time,
-                gate_time,
-                uwave_pi_pulse,
-                uwave_pi_on_2_pulse,
-                taus[tau_ind_second],
-                state.value,
-                laser_name,
-                laser_power,
-            ]
+            if do_dq is not False:
+                seq_args = [
+                    taus[tau_ind_first],
+                    polarization_time,
+                    gate_time,
+                    uwave_pi_pulse_low,
+                    uwave_pi_on_2_pulse_low,
+                    uwave_pi_pulse_high,
+                    uwave_pi_on_2_pulse_high,
+                    taus[tau_ind_second],
+                    state_init.value,
+                    state_seco.value,
+                    laser_name,
+                    laser_power, 
+                    do_ramsey
+                ]
+            else:
+                seq_args = [
+                    taus[tau_ind_first],
+                    polarization_time,
+                    gate_time,
+                    uwave_pi_pulse,
+                    uwave_pi_on_2_pulse,
+                    taus[tau_ind_second],
+                    state.value,
+                    laser_name,
+                    laser_power,
+                ]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
@@ -702,22 +773,24 @@ def main_with_cxn(
 
         # %% incremental plotting
         
-        #Average the counts over the iterations
-        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
-        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
-        try:
-            norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-        except RuntimeWarning as e:
-            print(e)
-            inf_mask = numpy.isinf(norm_avg_sig)
-            # Assign to 0 based on the passed conditional array
-            norm_avg_sig[inf_mask] = 0
+        # Average the counts over the iterations
+        inc_sig_counts = sig_counts[: run_ind + 1]
+        inc_ref_counts = ref_counts[: run_ind + 1]
+        ret_vals = tool_belt.process_counts(
+            inc_sig_counts, inc_ref_counts, num_reps, gate_time, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
         
         
         ax = axes_pack[0]
         ax.cla()
-        ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
-        ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+        ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+        ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
         ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
         # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
@@ -747,6 +820,7 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+            "do_dq": do_dq,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -765,6 +839,7 @@ def main_with_cxn(
             "num_steps": num_steps,
             "num_reps": num_reps,
             "run_ind": run_ind,
+            "taus": taus.tolist(),
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
@@ -788,13 +863,23 @@ def main_with_cxn(
 
     # %% Plot the data
 
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
+    
+    print(numpy.average(norm_avg_sig))
+    print(numpy.average(norm_avg_sig_ste))
     ax = axes_pack[0]
     ax.cla()
-    ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
-    ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+    ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+    ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
     ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
     # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("kcps")
     ax.legend()
 
     ax = axes_pack[1]
@@ -822,6 +907,7 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+        "do_dq": do_dq,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
@@ -840,6 +926,7 @@ def main_with_cxn(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
+        "taus": taus.tolist(),
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
@@ -903,16 +990,71 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_11_09-19_27_55-johnson-search"
-    data = tool_belt.get_raw_data(file_name, 'pc_carr/branch_opx-setup/spin_echo/2022_11')
+    file_name = "2022_12_15-04_07_26-siena-nv1_2022_10_27"
+    folder = 'pc_rabi/branch_master/spin_echo/2022_12'
+    data = tool_belt.get_raw_data(file_name, folder)
     nv_name = data['nv_sig']["name"]
     timestamp = data['timestamp']
     # data['sig_counts'] = data['sig_counts'][:5]
     # data['ref_counts'] = data['ref_counts'][:5]
     # data['num_runs'] = 5
     
-    ret_vals = plot_resonances_vs_theta_B(data)
-    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
-    plt.show()
+    # ret_vals = plot_resonances_vs_theta_B(data)
+    # fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+    # file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
+    # plt.show()
     # tool_belt.save_figure(fit_fig, file_path_fit)
+    
+    #### T2 time
+    
+    norm_avg_sig = data['norm_avg_sig']
+    precession_time_range = data['precession_time_range']
+    num_steps = data['num_steps']
+    
+    min_precession_time = int(precession_time_range[0])
+    max_precession_time = int(precession_time_range[1])
+
+    taus = numpy.linspace(
+        min_precession_time,
+        max_precession_time,
+        num=num_steps,
+    )
+    
+    taus_ms = numpy.array(taus)*2/1e6
+    
+    
+    guess_params = [0.05, 3, 0.85]
+    fit_func = tool_belt.exp_t2
+    
+    popt, pcov = curve_fit(
+        fit_func,
+        taus_ms,
+        norm_avg_sig,
+        # sigma=norm_avg_sig_ste,
+        # absolute_sigma=True,
+        p0=guess_params,
+    )
+    print(popt)
+    print(numpy.sqrt(numpy.diag(pcov)))
+    
+    
+    taus_ms_linspace = numpy.linspace(taus_ms[0], taus_ms[-1],
+                          num=1000)
+
+    fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(taus_ms, norm_avg_sig,'bo',label='data')
+    ax.plot(taus_ms_linspace, fit_func(taus_ms_linspace,*popt),'r',label='fit')
+    ax.set_xlabel(r'Free precesion time (ms)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend()
+    text = r"$T_2 =$ " + '%.2f'%(popt[1]) + r" ms" 
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(
+        0.65,
+        0.65,
+        text,
+        fontsize=14,
+        transform=ax.transAxes,
+        verticalalignment="top",
+        bbox=props,
+)
