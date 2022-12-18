@@ -37,15 +37,17 @@ class Size(Enum):
 
 
 class PlotType(Enum):
-    DATA = auto()
+    POINTS = auto()
     LINE = auto()
+    HIST = auto()
 
 
+# Histogram type, mostly following https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 class HistType(StrEnum):
-    INTEGER = 'integer'
-    STEP_UNFILLED = 'step'
-    BAR = 'bar'
-    
+    INTEGER = "integer"  # Just plot the frequency of each integer
+    STEP = "step"  # No space between between, unfilled
+    BAR = "bar"  # Space between bins, filled
+
 
 # Size options
 marker_Size = {Size.NORMAL: 7, Size.SMALL: 6, Size.TINY: 4}
@@ -107,7 +109,7 @@ data_color_cycler = [
     KplColors.CYAN,
 ]
 line_color_cycler = data_color_cycler.copy()
-histogram_color_cycler = data_color_cycler.copy()
+hist_color_cycler = data_color_cycler.copy()
 
 
 def color_mpl_to_color_hex(color_mpl):
@@ -141,6 +143,7 @@ def lighten_color_hex(color_hex, saturation_factor=0.3, value_factor=1.2):
 
 
 def zero_to_one_threshold(val):
+    """Clip the passed value such that it is between 0 and 1"""
     if val < 0:
         return 0
     elif val > 1:
@@ -213,9 +216,9 @@ def get_default_color(ax, plot_type):
         active_axes.append(ax)
         color_cyclers.append(
             {
-                "points": data_color_cycler.copy(),
-                "line": line_color_cycler.copy(),
-                "histogram": histogram_color_cycler.copy(),
+                PlotType.POINTS: data_color_cycler.copy(),
+                PlotType.LINE: line_color_cycler.copy(),
+                PlotType.HIST: hist_color_cycler.copy(),
             }
         )
     ax_ind = active_axes.index(ax)
@@ -227,6 +230,20 @@ def get_default_color(ax, plot_type):
 def anchored_text(ax, text, loc, size=None):
     """Add text in default style to the passed ax. To update text call set_text on the
     returned object's txt property
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to add the text box to
+    text : str
+    loc : str or Loc(enum)
+        Relative location to anchor the text box to
+    size : Size(enum), optional
+        Font size, defaults to default_font_size set up in init_kplotlib
+
+    Returns
+    -------
+    matplotlib.offsetbox.AnchoredText
     """
 
     global default_font_size
@@ -285,7 +302,18 @@ def plot_points(ax, x, y, size=None, **kwargs):
     """Same as matplotlib's errorbar, but with our defaults. Use for plotting
     data points
 
-    size : Size(enum)
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot on
+    x : 1D array
+        x values to plot
+    y : 1D array
+        y values to plot
+    size : Size(enum), optional
+        Data point size, by default data_size passed to init_kplotlib
+    kwargs
+        Passed on to matplotlib's errorbar function
     """
 
     global default_data_size
@@ -296,7 +324,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
     if "color" in kwargs:
         color = kwargs["color"]
     else:
-        color = get_default_color(ax, "points")
+        color = get_default_color(ax, PlotType.POINTS)
     if "facecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
@@ -316,34 +344,24 @@ def plot_points(ax, x, y, size=None, **kwargs):
     params["markerfacecolor"] = face_color
 
     ax.errorbar(x, y, **params)
-    
-
-def histogram(ax, data, hist_type=HistType.INTEGER,nbins=10,color=None,hist_label=None):
-    """Histogram the data in a desired way. the integer hist_type is for when 
-    you have a discrete dataset of integers, so it makes sense to simply plot the occurences
-    of each integer. 
-    """
-    
-    if color is not None:
-        hist_color = color
-    else:
-        hist_color = get_default_color(ax, "histogram")
-        
-    if hist_type == 'integer':
-        occur, bin_edges = np.histogram(data, np.linspace(0, int(max(data)), int(max(data)) + 1))
-        x_vals = bin_edges[:-1]
-        
-        ax.plot(x_vals, occur, c=hist_color, label=hist_label)
-     
-    else:
-        ax.hist(data,histtype=hist_type,color=hist_color,label=hist_label,bins=nbins)
 
 
 def plot_line(ax, x, y, size=None, **kwargs):
     """Same as matplotlib's plot, but with our defaults. Use for plotting
     continuous lines
 
-    size : Size(enum)
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot on
+    x : 1D array
+        x values to plot
+    y : 1D array
+        y values to plot
+    size : Size(enum), optional
+        Line width, by default data_size passed to init_kplotlib
+    kwargs
+        Passed on to matplotlib's plot function
     """
 
     global default_data_size
@@ -354,7 +372,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
     if "color" in kwargs:
         color = kwargs["color"]
     else:
-        color = get_default_color(ax, "line")
+        color = get_default_color(ax, PlotType.LINE)
 
     # Defaults
     params = {
@@ -369,11 +387,28 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def plot_line_update(ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True, flush=True):
-    """Updates a figure created by plot_line. x and y are the new data to write.
-    Either may be None in which case that axis of the plot won't be updated.
-    Set flush to False if you want to make more changes and call flush_update
-    yourself.
+def plot_line_update(
+    ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True, flush=True
+):
+    """Updates a plot created by plot_line
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to update
+    line_ind : int, optional
+        Index of the line in the plot to update, by default 0
+    x : 1D array, optional
+        New x values to write, by default None
+    y : 1D array, optional
+        New y values to write, by default None
+    relim_x : bool, optional
+        Update the x limits of the plot? By default True
+    relim_y : bool, optional
+        Update the y limits of the plot? By default True
+    flush : bool, optional
+        Flush the updates (i.e. render them)? If False, call flush_update
+        yoursel. By default True
     """
 
     lines = ax.get_lines()
@@ -392,8 +427,32 @@ def plot_line_update(ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True,
         flush_update(ax)
 
 
-def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwargs):
-    """Same as matplotlib's imshow, but with our defaults. Returns the image object"""
+def imshow(
+    ax, img_array, title=None, x_label=None, y_label=None, cbar_label=None, **kwargs
+):
+    """Same as matplotlib's imshow, but with our defaults
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes for the image
+    img_array : 2D array
+        Values to plot in the image
+    title : str, optional
+        Image title, by default None
+    x_label : str, optional
+        x axis label, by default None
+    y_label : str, optional
+        y axis label, by default None
+    cbar_label : str, optional
+        Color bar label, by default None
+    kwargs
+        Passed on to matplotlib's plot function
+
+    Returns
+    -------
+    matplotlib.image.AxesImage
+    """
 
     fig = ax.get_figure()
 
@@ -413,9 +472,10 @@ def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwarg
     clb = fig.colorbar(img)
     if cbar_label is not None:
         clb.set_label(cbar_label)
-    if axes_labels is not None:
-        plt.xlabel(axes_labels[0])
-        plt.ylabel(axes_labels[1])
+    if x_label is not None:
+        plt.xlabel(x_label)
+    if y_label is not None:
+        plt.xlabel(y_label)
     if title:
         plt.title(title)
 
@@ -426,7 +486,19 @@ def imshow(ax, img_array, title=None, axes_labels=None, cbar_label=None, **kwarg
 
 
 def imshow_update(ax, img_array, cmin=None, cmax=None):
-    """Update the first image in the passed ax"""
+    """Update the (first) image in the passed ax
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes for the image
+    img_array : 2D array
+        Values to plot in the image
+    cmin : numeric, optional
+        Minimum color bar value, by default None
+    cmax : numeric, optional
+        Maximum color bar value, by default None
+    """
     images = ax.get_images()
     img = images[0]
     img.set_data(img_array)
@@ -451,4 +523,66 @@ def on_click_image(event):
         pass
 
 
+def histogram(ax, data, hist_type=HistType.INTEGER, nbins=10, **kwargs):
+    """Similar to matplotlib's hist, but with our defaults
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot on
+    data : array
+        Data to histogram - will be flattened
+    hist_type : HistType(enum), optional
+        Histogram type, by default HistType.INTEGER
+    nbins : int, optional
+        Number of bins, by default 10
+    kwargs
+        Passed on to matplotlib's plot function
+
+    Returns
+    -------
+    1D array
+        Histogram occurrences (same as numpy histogram)
+    1D array
+        Histogram bin edges
+    """
+
+    # Color handling
+    if "color" in kwargs:
+        color = kwargs["color"]
+    else:
+        color = get_default_color(ax, PlotType.HIST)
+
+    # Copy kwargs and set the color
+    params = {**kwargs}
+    params["color"] = color
+
+    # Just make a line plot of the frequencies of each integer
+    if hist_type == HistType.INTEGER:
+        max_data = int(max(data))
+        occur, bin_edges = np.histogram(data, np.linspace(0, max_data, max_data + 1))
+        x_vals = bin_edges[:-1]
+        plot_line(ax, x_vals, occur, **kwargs)
+    else:
+        occur, bin_edges, _ = ax.hist(data, histtype=hist_type, bins=nbins, **kwargs)
+
+    return occur, bin_edges
+
+
 # endregion
+
+if __name__ == "__main__":
+
+    # print(cambria_fixed(15))
+    # sys.exit()
+
+    # calc_zfs_from_compiled_data()
+
+    init_kplotlib()
+
+    # main()
+    x = np.random.randint(10, size=500)
+    fig, ax = plt.subplots()
+    histogram(ax, x, hist_type=HistType.BAR)
+
+    plt.show(block=True)

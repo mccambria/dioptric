@@ -524,8 +524,20 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 
 
 def bose(energy, temp):
-    """Calculate Bose Einstein occupation number for a mode with given energy
-    (meV) at given temperature (K)"""
+    """Calculate Bose Einstein occupation number 
+
+    Parameters
+    ----------
+    energy : numeric
+        Mode energy in meV
+    temp : numeric
+        Temperature in K
+
+    Returns
+    -------
+    numeric
+        Occupation number
+    """
     # For very low temps we can get divide by zero and overflow warnings.
     # Fortunately, numpy is smart enough to know what we mean when this
     # happens, so let's let numpy figure it out and suppress the warnings.
@@ -544,12 +556,35 @@ def process_counts(
     Since we sometimes don't do many runs (<10), we often will have an
     insufficient sample size to run stats on for norm_avg_sig calculation.
     We assume Poisson statistics instead.
+
+    Parameters
+    ----------
+    sig_counts : 2D array
+        Signal counts from the experiment
+    ref_counts : 2D array
+        Reference counts from the experiment
+    num_reps : int
+        Number of experiment repetitions summed over for each point in sig or ref counts
+    readout : numeric
+        Readout duration in ns
+    norm_style : NormStyle(enum), optional
+        By default NormStyle.SINGLE_VALUED
+
+    Returns
+    -------
+    1D array
+        Signal count rate averaged across runs
+    1D array
+        Reference count rate averaged across runs
+    1D array
+        Normalized average signal
+    1D array
+        Standard error of the normalized average signal
     """
 
     ref_counts = np.array(ref_counts)
     sig_counts = np.array(sig_counts)
     num_runs, num_points = ref_counts.shape
-    # print(num_runs,num_points)
     readout_sec = readout * 1e-9
 
     # Find the averages across runs
@@ -576,13 +611,6 @@ def process_counts(
 
     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-
-    # both_counts = sig_counts + ref_counts
-    # both_counts_avg = np.average(both_counts, axis=0)
-    # both_counts_ste = np.sqrt(both_counts_avg) / np.sqrt(num_runs)
-    # norm = 1.008 * both_counts_avg[0]
-    # norm_avg_sig = both_counts_avg / norm
-    # norm_avg_sig_ste = both_counts_ste / norm
 
     return (
         sig_counts_avg_kcps,
