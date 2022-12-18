@@ -690,6 +690,10 @@ def get_server_temp_monitor(cxn):
     return common.get_server(cxn, "temp_monitor")
 
 
+def get_server_power_supply(cxn):
+    return common.get_server(cxn, "power_supply")
+
+
 def get_server_sig_gen(cxn, state):
     """Get the signal generator that controls transitions to the specified NV state"""
     return common.get_server(cxn, f"sig_gen_{state.name}")

@@ -152,24 +152,16 @@ class PowerSupplyMultMp710087(LabradServer):
             val = lim
         self.power_supply.write("VOLT {}".format(val))
 
-    def decode_query_response(response):
-        """The instrument (sometimes at least...) returns values with a
-        leading \x00, which is a hex-escaped 0.
-        """
-        if response.startswith(chr(0)):
-            response = response[1:]
-        return float(response)
-
     @setting(6, val="v[]")
-    def set_power(self, c, power):
-        if power > self.power_limit:
-            power = self.power_limit
-        if power <= 0.01:
-            power = 0.01  # Can't actually set 0 exactly, but this is close enough
+    def set_power(self, c, val):
+        if val > self.power_limit:
+            val = self.power_limit
+        if val <= 0.01:
+            val = 0.01  # Can't actually set 0 exactly, but this is close enough
         # P = V2 / R
         # V = sqrt(P R)
         resistance = self.meas_resistance(c)
-        voltage = np.sqrt(power * resistance)
+        voltage = np.sqrt(val * resistance)
         self.set_voltage(c, voltage)
 
     @setting(7, returns="v[]")
@@ -192,19 +184,25 @@ class PowerSupplyMultMp710087(LabradServer):
         time.sleep(self.comms_delay)
 
         response = self.power_supply.query("MEAS:VOLT?")
-        voltage = self.decode_query_response(response)
+        voltage = decode_query_response(response)
 
         time.sleep(self.comms_delay)
 
         response = self.power_supply.query("MEAS:CURR?")
-        current = self.decode_query_response(response)
+        current = decode_query_response(response)
 
         time.sleep(self.comms_delay)
 
-        if current < 0.001:
-            resistance = high_z
+        # If off, apply a test voltage and try again
+        if (current < 0.001) and (voltage < 0.001):
+            self.set_voltage(c, 0.01)
+            resistance = self.meas_resistance(c)
+            self.set_voltage(c, 0.0)
         else:
-            resistance = voltage / current
+            if current < 0.001:
+                resistance = high_z
+            else:
+                resistance = voltage / current
 
         return resistance
 
@@ -223,6 +221,16 @@ class PowerSupplyMultMp710087(LabradServer):
         tool_belt.reset_cfm
         """
         self.output_off(c)
+        
+
+
+def decode_query_response(response):
+    """The instrument (sometimes at least...) returns values with a
+    leading \x00, which is a hex-escaped 0.
+    """
+    if response.startswith(chr(0)):
+        response = response[1:]
+    return float(response)
 
 
 __server__ = PowerSupplyMultMp710087()

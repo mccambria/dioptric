@@ -107,16 +107,16 @@ def main_with_cxn(
     cycle_dur = 0.1
     start_time = now
     prev_time = now
-    safety_lower, safety_upper = safety_check_bounds
+    actual = temp_monitor.measure()
 
     # Initialize the state for control mode
     if mode == Mode.CONTROL:
         # Last meas time, last error, integral, derivative
-        actual = temp_monitor.measure()
         # Check the third-party temperature monitor to make sure nothing is melting
         if safety_check:
             safety_check_period = 10
             last_safety_check_time = now
+            safety_lower, safety_upper = safety_check_bounds
         last_meas_time = now
         last_error = target - actual
         integral = integral_bootstrap
@@ -150,6 +150,8 @@ def main_with_cxn(
 
         # Timing work
         now = time.time()
+        if now - start_time > 2.25*60*60:
+            break
         time_diff = now - prev_time
         prev_time = now
         if time_diff < cycle_dur:
@@ -175,7 +177,7 @@ def main_with_cxn(
                 ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
                 ax.set_ylim(min(plot_temps) - 2, max(plot_temps) + 2)
 
-                cur_temp_str = f"Current temp: {actual} K"
+                cur_temp_str = f"Current temp: {round(actual, 3)} K"
                 cur_temp_text_box.txt.set_text(cur_temp_str)
 
                 kpl.flush_update(ax)
@@ -196,8 +198,8 @@ def main_with_cxn(
         # Update state and set the power accordingly
         if mode == Mode.CONTROL:
             pid_state, power = pid(pid_state, pid_coeffs, target, actual, integral_max)
-            if now - last_safety_check_time > safety_check_period:
-                if safety_check:
+            if safety_check:
+                if now - last_safety_check_time > safety_check_period:
                     safety_check_temp = cxn.temp_controller_tc200.measure()
                     with open(logging_file, "a+") as f:
                         f.write(
@@ -209,7 +211,7 @@ def main_with_cxn(
                             f"Safety check temperature out of bounds at {safety_check_temp}! Exiting."
                         )
                         return
-            power_supply.set_power(cxn, power)
+            power_supply.set_power(power)
 
 
 # endregion
@@ -217,9 +219,9 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     do_plot = False
-    target = 310
+    target = 370
     pid_coeffs = [0.5, 0.01, 0]
-    integral_max = 10
+    integral_max = 2500
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
     integral_bootstrap = 0.0
@@ -240,9 +242,9 @@ if __name__ == "__main__":
         # Set up the power supply
         power_supply.set_power_limit(30)
         power_supply.set_voltage_limit(30)
-        # Bootstrap
+        # Bootstrap to get a faster initial resistance reading
         power_supply.set_current(0.0)
-        power_supply.set_voltage(0.01)
+        power_supply.set_voltage(0.1)
         power_supply.output_on()
 
         # temp = cxn.multimeter_mp730028.measure()
