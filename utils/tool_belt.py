@@ -524,8 +524,20 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 
 
 def bose(energy, temp):
-    """Calculate Bose Einstein occupation number for a mode with given energy
-    (meV) at given temperature (K)"""
+    """Calculate Bose Einstein occupation number 
+
+    Parameters
+    ----------
+    energy : numeric
+        Mode energy in meV
+    temp : numeric
+        Temperature in K
+
+    Returns
+    -------
+    numeric
+        Occupation number
+    """
     # For very low temps we can get divide by zero and overflow warnings.
     # Fortunately, numpy is smart enough to know what we mean when this
     # happens, so let's let numpy figure it out and suppress the warnings.
@@ -565,7 +577,7 @@ def process_counts(
     1D array
         Reference count rate averaged across runs
     1D array
-        Average signal normalized to the reference
+        Normalized average signal
     1D array
         Standard error of the normalized average signal
     """
