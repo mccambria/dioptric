@@ -111,9 +111,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
     run_time = 60 * 10  # s
     diff_window = 200  # ns
 
-    g2_measurement.main(
-        nv_sig, run_time, diff_window, apd_a_index, apd_b_index
-    )
+    g2_measurement.main(nv_sig, run_time, diff_window, apd_a_index, apd_b_index)
 
 
 def do_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
@@ -232,9 +230,7 @@ def do_scc_pulsed_resonance(nv_sig, state):
     opti_nv_sig = nv_sig
     freq_center = nv_sig["resonance_{}".format(state)]
     uwave_power = nv_sig["uwave_power_{}".format(state)]
-    uwave_pulse_dur = tool_belt.get_pi_pulse_dur(
-        nv_sig["rabi_{}".format(state)]
-    )
+    uwave_pulse_dur = tool_belt.get_pi_pulse_dur(nv_sig["rabi_{}".format(state)])
     freq_range = 0.020
     num_steps = 25
     num_reps = int(1e3)

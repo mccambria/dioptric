@@ -562,12 +562,12 @@ def cambria_test4(temp, zfs0, A1, Theta1):
 
 def main():
 
-    temp_range = [-10, 1000]
-    y_range = [2.74, 2.883]
+    # temp_range = [-10, 1000]
+    # y_range = [2.74, 2.883]
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
-    # temp_range = [-10, 310]
-    # y_range = [2.8685, 2.8785]
+    temp_range = [-10, 310]
+    y_range = [2.8685, 2.8785]
     # temp_range = [280, 320]
     # y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
@@ -581,10 +581,11 @@ def main():
     separate_nvs = False
     plot_prior_models = False
     desaturate_prior = False
-    plot_new_model = False
-    toyli_extension = True
+    plot_new_model = True
+    toyli_extension = False
 
-    skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
+    # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
+    skip_lambda = None
 
     ###
 
@@ -610,8 +611,8 @@ def main():
             monitor_temps = []
             zfss = []
             zfs_errors = []
-            for point in data_points:
-                if point["Setpoint temp (K)"] == setpoint_temp:
+            for identifier_sub in identifier_set:
+                if identifier_sub == identifier:
                     monitor_temps.append(point["Monitor temp (K)"])
                     zfss.append(point["ZFS (GHz)"])
                     zfs_errors.append(point["ZFS error (GHz)"])
@@ -624,8 +625,8 @@ def main():
                 "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
                 # + 0.0006,  # MCC
                 "ZFS error (GHz)": condensed_error,
-                # "Sample": sample,
-                "Sample": "Cambria",
+                "Sample": sample,
+                # "Sample": "Cambria",
                 "NV": "",
             }
             condensed_data_points.append(new_point)
@@ -777,12 +778,13 @@ def main():
                 val,
                 yerr=val_err,
                 color=color,
-                # zorder=-1,
-                zorder=temp - 1000,
+                zorder=-1,
+                # zorder=temp - 1000,
                 label=label,
             )
-            if separate_samples or separate_nvs:
-                ax.legend(loc=kpl.Loc.LOWER_LEFT)
+            # print(name, val, temp)
+        if separate_samples or separate_nvs:
+            ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     if hist_residuals:
         residuals = {}

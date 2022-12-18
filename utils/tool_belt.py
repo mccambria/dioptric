@@ -434,6 +434,7 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
     return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t)))
 
+
 def inverted_cosexp(t, offset, freq, decay):
     two_pi = 2 * np.pi
     amp = offset - 1
@@ -500,6 +501,30 @@ def process_counts(
     Since we sometimes don't do many runs (<10), we often will have an
     insufficient sample size to run stats on for norm_avg_sig calculation.
     We assume Poisson statistics instead.
+
+    Parameters
+    ----------
+    sig_counts : 2D array
+        Signal counts from the experiment
+    ref_counts : 2D array
+        Reference counts from the experiment
+    num_reps : int
+        Number of experiment repetitions summed over for each point in sig or ref counts
+    readout : numeric
+        Readout duration in ns
+    norm_style : NormStyle(enum), optional
+        By default NormStyle.SINGLE_VALUED
+
+    Returns
+    -------
+    1D array
+        Signal count rate averaged across runs
+    1D array
+        Reference count rate averaged across runs
+    1D array
+        Average signal normalized to the reference
+    1D array
+        Standard error of the normalized average signal
     """
 
     ref_counts = np.array(ref_counts)
@@ -778,7 +803,13 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
     source_name = Path(source_file).stem
     date_folder = "_".join(time_stamp.split("_")[0:2])  # yyyy_mm
 
-    folder_dir = nvdata_dir / f"pc_{pc_name}" / f"branch_{branch_name}" / source_name / date_folder
+    folder_dir = (
+        nvdata_dir
+        / f"pc_{pc_name}"
+        / f"branch_{branch_name}"
+        / source_name
+        / date_folder
+    )
 
     if subfolder is not None:
         folder_dir = folder_dir / subfolder
@@ -800,10 +831,12 @@ def utc_from_file_name(file_name, time_zone="CST"):
     timestamp = date_time.timestamp()
     return timestamp
 
+
 def get_nv_sig_units_no_cxn():
     with labrad.connect() as cxn:
-        nv_sig_units =get_nv_sig_units(cxn)
+        nv_sig_units = get_nv_sig_units(cxn)
     return nv_sig_units
+
 
 def get_nv_sig_units(cxn):
     try:
@@ -811,8 +844,8 @@ def get_nv_sig_units(cxn):
     except Exception:
         nv_sig_units = ""
     return nv_sig_units
-    
-    
+
+
 def save_figure(fig, file_path):
     """Save a matplotlib figure as a svg.
 

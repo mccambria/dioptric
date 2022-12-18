@@ -133,6 +133,7 @@ def lighten_color_hex(color_hex, saturation_factor=0.3, value_factor=1.2):
 
 
 def zero_to_one_threshold(val):
+    """Clip the passed value such that it is between 0 and 1"""
     if val < 0:
         return 0
     elif val > 1:
@@ -218,6 +219,20 @@ def get_default_color(ax, plot_type):
 def anchored_text(ax, text, loc, size=None):
     """Add text in default style to the passed ax. To update text call set_text on the
     returned object's txt property
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to add the text box to
+    text : str
+    loc : str or Loc(enum)
+        Relative location to anchor the text box to
+    size : Size(enum), optional
+        Font size, defaults to default_font_size set up in init_kplotlib
+
+    Returns
+    -------
+    matplotlib.offsetbox.AnchoredText
     """
 
     global default_font_size
@@ -276,7 +291,18 @@ def plot_points(ax, x, y, size=None, **kwargs):
     """Same as matplotlib's errorbar, but with our defaults. Use for plotting
     data points
 
-    size : Size(enum)
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot the points on
+    x : 1D array
+        x values to plot
+    y : 1D array
+        y values to plot
+    size : Size(enum), optional
+        Data point size, by default data_size passed to init_kplotlib
+    kwargs
+        Passed on to matplotlib's errorbar function
     """
 
     global default_data_size
@@ -313,7 +339,18 @@ def plot_line(ax, x, y, size=None, **kwargs):
     """Same as matplotlib's plot, but with our defaults. Use for plotting
     continuous lines
 
-    size : Size(enum)
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot the points on
+    x : 1D array
+        x values to plot
+    y : 1D array
+        y values to plot
+    size : Size(enum), optional
+        Data point size, by default data_size passed to init_kplotlib
+    kwargs
+        Passed on to matplotlib's errorbar function
     """
 
     global default_data_size
@@ -339,7 +376,9 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def plot_line_update(ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True, flush=True):
+def plot_line_update(
+    ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True, flush=True
+):
     """Updates a figure created by plot_line. x and y are the new data to write.
     Either may be None in which case that axis of the plot won't be updated.
     Set flush to False if you want to make more changes and call flush_update
