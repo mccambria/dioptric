@@ -816,12 +816,13 @@ def main():
                 val,
                 yerr=val_err,
                 color=color,
-                # zorder=-1,
-                zorder=temp - 1000,
+                zorder=-1,
+                # zorder=temp - 1000,
                 label=label,
             )
-            if separate_samples or separate_nvs:
-                ax.legend(loc=kpl.Loc.LOWER_LEFT)
+            # print(name, val, temp)
+        if separate_samples or separate_nvs:
+            ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     if hist_residuals:
         residuals = {}
@@ -970,7 +971,7 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib(latex=True)
 
-    # main()
-    refit_experiments()
+    main()
+    # refit_experiments()
 
     plt.show(block=True)

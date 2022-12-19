@@ -208,12 +208,12 @@ def do_pulsed_resonance_batch(nv_list, temp):
     num_steps = 51
     
     # Microdiamond
-    num_reps = 1e2
-    num_runs = 32
+    # num_reps = 1e2
+    # num_runs = 32
     
     # Single
-    # num_reps = 2e4
-    # num_runs = 32
+    num_reps = 2e4
+    num_runs = 32
     
     # num_reps = 50
     # num_runs = 8
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     #     }
     
     sample_name = "15micro"
-    z_coord = 99
+    z_coord = 0
     ref_coords = [1.186, -0.614, z_coord]
     ref_coords = np.array(ref_coords)
     
@@ -377,16 +377,16 @@ if __name__ == "__main__":
         # Microdiamond
         # "spin_laser": green_laser, "spin_laser_filter": "nd_0.3", 
         # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
-        "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
+        # "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
+        # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
         
         # Single
-        # "spin_laser": green_laser, "spin_laser_filter": "nd_0",
-        # "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0",
+        "spin_pol_dur": 2e3, "spin_readout_dur": 440,
         
-        # "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.4", 'magnet_angle': None,
-        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0", 'magnet_angle': None,
-        'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
+        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.4", 'magnet_angle': None,
+        # "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0", 'magnet_angle': None,
+        'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
         }
     
     nv1 = copy.deepcopy(nvref)
@@ -437,7 +437,7 @@ if __name__ == "__main__":
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(5, 3)
+        #     cxn.pos_xyz_ATTO_piezos.write_xy(5, 3)
 
         # tool_belt.set_drift([0.0, 0.0, 0])  # Totally reset
         # drift = tool_belt.get_drift()
@@ -446,11 +446,17 @@ if __name__ == "__main__":
 
         # for z in np.arange(-24, 20, 4):
         # for z in np.arange(10, -10, -5):
-        # # while True:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     nv_sig["coords"][2] = int(z)
-        #     do_image_sample(nv_sig)
+        z = 0
+        while True:
+            if tool_belt.safe_stop():
+                break
+            with labrad.connect() as cxn:
+                cxn.pos_xyz_ATTO_piezos.write_z(z)
+            print(z)
+            z += 5
+            time.sleep(5)
+            # nv_sig["coords"][2] = int(z)
+            # do_image_sample(nv_sig)
         
         # num_steps = 5
         # step_size = 5
@@ -476,8 +482,8 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        temp = 285
-        do_pulsed_resonance_batch(nv_list, temp)
+        # temp = 285
+        # do_pulsed_resonance_batch(nv_list, temp)
         # do_rabi_batch(nv_list)
 
     # except Exception as exc:
