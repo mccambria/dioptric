@@ -94,8 +94,8 @@ def do_image_sample(nv_sig):
     # num_steps = 135
     # num_steps =120
    # num_steps = 90
-    num_steps = 60
-    # num_steps = 31
+    # num_steps = 60
+    num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -527,7 +527,7 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 1e3
-    num_runs= 10#150
+    num_runs= 100#150
 
     state = States.HIGH
 
@@ -1099,19 +1099,6 @@ if __name__ == "__main__":
     nv_sig_2["rabi_HIGH"]=160
     
     
-    nv_sig_OFF = copy.deepcopy(sig_base) 
-    nv_sig_OFF["coords"] = [-0.183, 0.086, 4.05]
-    nv_sig_OFF["name"] = "{}-background".format(sample_name,)
-    nv_sig_OFF["norm_style"]= NormStyle.SINGLE_VALUED
-    nv_sig_OFF["disable_opt"] =True
-    nv_sig_OFF[ "spin_readout_dur"] = 300
-    nv_sig_OFF['magnet_angle'] =  151.7
-    nv_sig_OFF["resonance_LOW"]= 2.7805
-    nv_sig_OFF["rabi_LOW"]=136.09 # +/- 0.54
-    nv_sig_OFF["resonance_HIGH"]=2.9600
-    nv_sig_OFF["rabi_HIGH"]= 176.3
-    nv_sig_OFF["echo_pi"]= 105
-    
     
     nv_sig = nv_sig_1
     
@@ -1143,7 +1130,7 @@ if __name__ == "__main__":
         
         
         # do_optimize(nv_sig)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         #do_image_sample_xz(nv_sig)
         
         # do_stationary_count(nv_sig)
@@ -1158,7 +1145,7 @@ if __name__ == "__main__":
         #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
-        #do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 250])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 250])
         
         
         # uwave_time_range = [0, 400]
@@ -1177,11 +1164,11 @@ if __name__ == "__main__":
                 
         
         ###################
-        # step_size = 250 #us
-        # T_min = 0 #us
-        # T_max = 5000 #us      
-        # for n in [8]:
-        #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
+        step_size = 250 #us
+        T_min = 0 #us
+        T_max = 5000 #us      
+        for n in [4]:
+            do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
 
         
         # num_xy4_reps = 1

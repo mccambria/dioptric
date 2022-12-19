@@ -88,7 +88,24 @@ def main_with_cxn(
     polarization_time = nv_sig["spin_pol_dur"]
     gate_time = nv_sig["spin_readout_dur"]
     norm_style = nv_sig['norm_style']
-    pi_pulse_reps = 1
+    
+    # pi_pulse_reps = 1
+    pi_pulse_reps = 0
+    if pi_pulse_reps == 1:
+        phase_exp = "[0, phi, 0]"
+        tau = 1000
+        if do_dq:
+            title = r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (DQ basis)"
+        else:
+            title = r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (SQ basis)"
+    elif pi_pulse_reps == 0:
+        phase_exp = "[0, phi]"
+        tau = 20
+        if do_dq:
+            title = r"$\pi / 2_x$ - $\pi / 2_{\phi}$ (DQ basis)"
+        else:
+            title = r"$\pi / 2_x$ - $\pi / 2_{\phi}$ (SQ basis)"
+    
 
     if do_dq:
         seq_file_name = "dynamical_decoupling_dq.py"
@@ -151,7 +168,7 @@ def main_with_cxn(
     # Then we must use this half length to calculate the list of integers to be
     # shuffled for each run
 
-    phi_ind_list = list(range(0, half_length_phis))
+    # phi_ind_list = list(range(0, half_length_phis))
 
     # %% Create data structure to save the counts
 
@@ -176,14 +193,14 @@ def main_with_cxn(
     
     if do_dq:
         seq_args = [
-            1000,
+            tau,
             polarization_time,
             gate_time,
             uwave_pi_pulse_low,
             uwave_pi_on_2_pulse_low,
             uwave_pi_pulse_high,
             uwave_pi_on_2_pulse_high,
-            1000,
+            tau,
             pi_pulse_reps,
             state_activ.value,
             state_proxy.value,
@@ -192,12 +209,12 @@ def main_with_cxn(
             ]
     else:
         seq_args = [
-              1000,
+              tau,
               polarization_time,
               gate_time,
               uwave_pi_pulse,
               uwave_pi_on_2_pulse,
-              1000,
+              tau,
               pi_pulse_reps,
               iq_state.value,
               laser_name,
@@ -252,18 +269,18 @@ def main_with_cxn(
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
             sig_gen_low_cxn.set_freq(uwave_freq_low)
             sig_gen_low_cxn.set_amp(uwave_power_low)
-            try:
-                sig_gen_low_cxn.load_iq()
-            except Exception:
-                pass
+            # try:
+            #     sig_gen_low_cxn.load_iq()
+            # except Exception:
+            #     pass
             sig_gen_low_cxn.uwave_on()
             sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
-            try:
-                sig_gen_high_cxn.load_iq()
-            except Exception:
-                pass
+            # try:
+            sig_gen_high_cxn.load_iq()
+            # except Exception:
+            #     pass
             sig_gen_high_cxn.uwave_on()
         else:
             sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, iq_state)
@@ -280,7 +297,7 @@ def main_with_cxn(
         counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
-        shuffle(phi_ind_list)
+        # shuffle(phi_ind_list)
 
         # for phi_ind in phi_ind_list:
         for phi_ind in range(len(phis)):
@@ -295,20 +312,21 @@ def main_with_cxn(
             #     phi_ind_first = -phi_ind - 1
             #     phi_ind_second = phi_ind
 
-            # # add the tau indexxes used to a list to save at the end
-            # phi_index_master_list[run_ind].append(phi_ind_first)
-            # phi_index_master_list[run_ind].append(phi_ind_second)
+            # add the tau indexxes used to a list to save at the end
+            phi_index_master_list[run_ind].append(phi_ind)
+            phi_index_master_list[run_ind].append(phi_ind)
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
 
-            # print(" \nFirst phase: {}".format(phis[phi_ind_first]*180/pi))
-            # print("Second relaxation time: {}".format(phis[phi_ind_second]*180/pi))
             print(" \nFirst phase: {}".format(phis[phi_ind]*180/pi))
             print("Second phase: {}".format(phis[phi_ind]*180/pi))
 
-            arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, 0, phis[phi_ind], 0])
+            if pi_pulse_reps == 1:
+                arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, 0, phis[phi_ind], 0])
+            elif pi_pulse_reps == 0:
+                arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, phis[phi_ind]])
             # arbwavegen_server.load_cpmg(1)
             
             # Clear the tagger buffer of any excess counts
@@ -324,16 +342,22 @@ def main_with_cxn(
             sample_counts = new_counts[0]
             # print(new_counts)
 
-            count = sum(sample_counts[0::4])
+            # count = sum(sample_counts[0::4])
+            # sig_counts[run_ind, phi_ind_first] = count
+
+            # count = sum(sample_counts[1::4])
+            # ref_counts[run_ind, phi_ind_first] = count
+
+            # count = sum(sample_counts[2::4])
+            # sig_counts[run_ind, phi_ind_second] = count
+
+            # count = sum(sample_counts[3::4])
+            # ref_counts[run_ind, phi_ind_second] = count
+            
+            count = (sum(sample_counts[0::4]) + sum(sample_counts[2::4]))/2
             sig_counts[run_ind, phi_ind] = count
 
-            count = sum(sample_counts[1::4])
-            ref_counts[run_ind, phi_ind] = count
-
-            count = sum(sample_counts[2::4])
-            sig_counts[run_ind, phi_ind] = count
-
-            count = sum(sample_counts[3::4])
+            count = (sum(sample_counts[1::4]) + sum(sample_counts[3::4]))/2
             ref_counts[run_ind, phi_ind] = count
             
             arbwavegen_server.reset()
@@ -361,7 +385,7 @@ def main_with_cxn(
         ax.cla()
         ax.plot(phis_deg, sig_counts_avg_kcps, "r-", label="signal")
         ax.plot(phis_deg, ref_counts_avg_kcps, "g-", label="reference")
-        ax.set_xlabel(r"Relative phase, $\phi$ (degrees)")
+        ax.set_xlabel(r"Relative phase, $\phi$ (deg)")
         ax.set_ylabel("kcps")
         ax.legend()
         
@@ -369,8 +393,9 @@ def main_with_cxn(
         ax.cla()
         ax.plot(phis_deg, norm_avg_sig, "b-")
         # ax.set_title("CPMG-{} Measurement".format(pi_pulse_reps))
-        ax.set_xlabel(r"Relative phase, $\phi$ (degrees)")
+        ax.set_xlabel(r"Relative phase, $\phi$ (deg)")
         ax.set_ylabel("Contrast (arb. units)")
+        ax.set_title(title)
         
         text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
@@ -388,8 +413,11 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+            "pi_pulse_reps": pi_pulse_reps,
+            "phase_exp": phase_exp,
             "phase_range": phase_range,
             "phase_range-units": "radians",
+            "tau": tau,
             "iq_state": iq_state.name,
             "num_steps": num_steps,
             "num_reps": num_reps,
@@ -431,18 +459,15 @@ def main_with_cxn(
     ax.cla()
     ax.plot(phis_deg, sig_counts_avg_kcps, "r-", label="signal")
     ax.plot(phis_deg, ref_counts_avg_kcps, "g-", label="reference")
-    ax.set_xlabel(r"Relative phase, $\phi$ (degrees)")
+    ax.set_xlabel(r"Relative phase, $\phi$ (deg)")
     ax.set_ylabel("kcps")
     ax.legend()
 
     ax = axes_pack[1]
     ax.cla()
     ax.plot(phis_deg, norm_avg_sig, "b-")
-    if do_dq:
-        ax.set_title(r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (DQ basis)")
-    else:
-        ax.set_title(r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (SQ basis)")
-    ax.set_xlabel(r"Relative phase, $\phi$ (degrees)")
+    ax.set_title(title)
+    ax.set_xlabel(r"Relative phase, $\phi$ (deg)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -462,8 +487,11 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+        "pi_pulse_reps": pi_pulse_reps,
+        "phase_exp": phase_exp,
         "phase_range": phase_range,
         "phase_range-units": "radians",
+        "tau": tau,
         "iq_state": iq_state.name,
         "num_steps": num_steps,
         "num_reps": num_reps,
@@ -588,9 +616,9 @@ if __name__ == "__main__":
         
 
     phase_range = [0, 2*pi]
-    num_steps = 25
+    num_steps = 51
     num_reps = 2e4
-    num_runs = 5
+    num_runs = 10
     main(
           nv_sig_1,
           phase_range,
@@ -600,6 +628,15 @@ if __name__ == "__main__":
           iq_state=States.HIGH,
           do_dq=False
       )
+    # main(
+    #     nv_sig_1,
+    #     phase_range,
+    #     num_steps,
+    #     num_reps,
+    #     num_runs,
+    #     iq_state=States.HIGH,
+    #     do_dq=False
+    # )
     
     
     # file_name = "2022_12_16-14_20_28-siena-nv1_2022_10_27"

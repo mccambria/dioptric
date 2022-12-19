@@ -119,16 +119,21 @@ def get_seq(pulse_streamer, config, args):
     # Also add up the total time of the uwave experiment and use for other channels
 
     ###
-    rep_train_low_shrt = [(tau_shrt, LOW), 
-                 (echo_pulse_proxy_low, HIGH),
-                 (echo_pulse_proxy_high, LOW),
-                 (echo_buffer, LOW),
-                 (echo_pulse_activ_low, HIGH), 
-                 (echo_pulse_activ_high, LOW), 
-                 (echo_buffer, LOW),
-                 (echo_pulse_proxy_low, HIGH),
-                 (echo_pulse_proxy_high, LOW),
-                 (tau_shrt, LOW)]*pi_pulse_reps
+    
+    if pi_pulse_reps==0:
+        rep_train_low_shrt = [(tau_shrt, LOW), 
+                     (tau_shrt, LOW)]
+    else:
+        rep_train_low_shrt = [(tau_shrt, LOW), 
+                     (echo_pulse_proxy_low, HIGH),
+                     (echo_pulse_proxy_high, LOW),
+                     (echo_buffer, LOW),
+                     (echo_pulse_activ_low, HIGH), 
+                     (echo_pulse_activ_high, LOW), 
+                     (echo_buffer, LOW),
+                     (echo_pulse_proxy_low, HIGH),
+                     (echo_pulse_proxy_high, LOW),
+                     (tau_shrt, LOW)]*pi_pulse_reps
     
     uwave_experiment_train_low_shrt = [(coh_pulse_activ_low, HIGH),
                                         (coh_pulse_activ_high, LOW),
@@ -150,16 +155,20 @@ def get_seq(pulse_streamer, config, args):
         uwave_experiment_dur_shrt += el[0]
         
     ###
-    rep_train_low_long = [(tau_long, LOW), 
-                 (echo_pulse_proxy_low, HIGH),
-                 (echo_pulse_proxy_high, LOW),
-                 (echo_buffer, LOW),
-                 (echo_pulse_activ_low, HIGH), 
-                 (echo_pulse_activ_high, LOW), 
-                 (echo_buffer, LOW),
-                 (echo_pulse_proxy_low, HIGH),
-                 (echo_pulse_proxy_high, LOW),
-                 (tau_long, LOW)]*pi_pulse_reps
+    if pi_pulse_reps==0:
+        rep_train_low_long = [(tau_long, LOW), 
+                     (tau_long, LOW)]
+    else:
+        rep_train_low_long = [(tau_long, LOW), 
+                     (echo_pulse_proxy_low, HIGH),
+                     (echo_pulse_proxy_high, LOW),
+                     (echo_buffer, LOW),
+                     (echo_pulse_activ_low, HIGH), 
+                     (echo_pulse_activ_high, LOW), 
+                     (echo_buffer, LOW),
+                     (echo_pulse_proxy_low, HIGH),
+                     (echo_pulse_proxy_high, LOW),
+                     (tau_long, LOW)]*pi_pulse_reps
     uwave_experiment_train_low_long = [(coh_pulse_activ_low, HIGH),
                                         (coh_pulse_activ_high, LOW),
                                         (coh_buffer, LOW),
@@ -180,16 +189,20 @@ def get_seq(pulse_streamer, config, args):
         uwave_experiment_dur_long += el[0]
     
     ###
-    rep_train_high_shrt = [(tau_shrt, LOW), 
-                 (echo_pulse_proxy_low, LOW),
-                 (echo_pulse_proxy_high, HIGH),
-                 (echo_buffer, LOW),
-                 (echo_pulse_activ_low, LOW), 
-                 (echo_pulse_activ_high, HIGH), 
-                 (echo_buffer, LOW),
-                 (echo_pulse_proxy_low, LOW),
-                 (echo_pulse_proxy_high, HIGH),
-                 (tau_shrt, LOW)]*pi_pulse_reps
+    if pi_pulse_reps==0:
+        rep_train_high_shrt = [(tau_shrt, LOW), 
+                     (tau_shrt, LOW)]
+    else:
+        rep_train_high_shrt = [(tau_shrt, LOW), 
+                     (echo_pulse_proxy_low, LOW),
+                     (echo_pulse_proxy_high, HIGH),
+                     (echo_buffer, LOW),
+                     (echo_pulse_activ_low, LOW), 
+                     (echo_pulse_activ_high, HIGH), 
+                     (echo_buffer, LOW),
+                     (echo_pulse_proxy_low, LOW),
+                     (echo_pulse_proxy_high, HIGH),
+                     (tau_shrt, LOW)]*pi_pulse_reps
     
     uwave_experiment_train_high_shrt = [(coh_pulse_activ_low, LOW),
                                 (coh_pulse_activ_high, HIGH),
@@ -208,16 +221,20 @@ def get_seq(pulse_streamer, config, args):
     #                                         (coh_pulse_proxy_high, HIGH)]) # adding a pi pulse to readout
         
     ###
-    rep_train_high_long = [(tau_long, LOW), 
-                 (echo_pulse_proxy_low, LOW),
-                 (echo_pulse_proxy_high, HIGH),
-                 (echo_buffer, LOW),
-                 (echo_pulse_activ_low, LOW), 
-                 (echo_pulse_activ_high, HIGH), 
-                 (echo_buffer, LOW),
-                 (echo_pulse_proxy_low, LOW),
-                 (echo_pulse_proxy_high, HIGH),
-                 (tau_long, LOW)]*pi_pulse_reps
+    if pi_pulse_reps==0:
+        rep_train_high_long = [(tau_long, LOW), 
+                     (tau_long, LOW)]
+    else:
+        rep_train_high_long = [(tau_long, LOW), 
+                     (echo_pulse_proxy_low, LOW),
+                     (echo_pulse_proxy_high, HIGH),
+                     (echo_buffer, LOW),
+                     (echo_pulse_activ_low, LOW), 
+                     (echo_pulse_activ_high, HIGH), 
+                     (echo_buffer, LOW),
+                     (echo_pulse_proxy_low, LOW),
+                     (echo_pulse_proxy_high, HIGH),
+                     (tau_long, LOW)]*pi_pulse_reps
     uwave_experiment_train_high_long = [(coh_pulse_activ_low, LOW),
                                 (coh_pulse_activ_high, HIGH),
                                 (coh_buffer, LOW),
@@ -241,30 +258,40 @@ def get_seq(pulse_streamer, config, args):
     uwave_iq_train_shrt = [(iq_trigger_time, HIGH), 
                            (uwave_buffer + uwave_coh_pulse_dur-iq_trigger_time, LOW),
                            (half_tau_shrt_st, LOW)]
-    rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_shrt_en - iq_trigger_time + uwave_echo_pulse_dur +\
-              tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
-    uwave_iq_train_shrt.extend(rep_train)
-    uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
-                                (half_tau_shrt_en - iq_trigger_time + uwave_echo_pulse_dur + half_tau_shrt_st, LOW),
-                                (iq_trigger_time, HIGH), 
-                                (half_tau_shrt_en - iq_trigger_time+ uwave_coh_pulse_dur, LOW)])
-                                # (half_tau_shrt_en - iq_trigger_time+ uwave_coh_pulse_dur + 20 + final_pi_pulse, LOW)])
+    if pi_pulse_reps == 0:
+        uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_shrt_en - iq_trigger_time + half_tau_shrt_st, LOW),
+                                    (half_tau_shrt_en + uwave_coh_pulse_dur, LOW)])
+    else:
+        rep_train = [(iq_trigger_time, HIGH),
+                 (half_tau_shrt_en - iq_trigger_time + uwave_echo_pulse_dur +\
+                  tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
+        uwave_iq_train_shrt.extend(rep_train)
+        uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_shrt_en - iq_trigger_time + uwave_echo_pulse_dur + half_tau_shrt_st, LOW),
+                                    (iq_trigger_time, HIGH), 
+                                    (half_tau_shrt_en - iq_trigger_time+ uwave_coh_pulse_dur, LOW)])
+                                    # (half_tau_shrt_en - iq_trigger_time+ uwave_coh_pulse_dur + 20 + final_pi_pulse, LOW)])
     
     
     uwave_iq_train_long = [(iq_trigger_time, HIGH), 
                            (uwave_buffer + uwave_coh_pulse_dur-iq_trigger_time, LOW),
                            (half_tau_long_st, LOW)]
-    rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_long_en - iq_trigger_time + uwave_echo_pulse_dur +\
-              tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
-    uwave_iq_train_long.extend(rep_train)
-    uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
-                                (half_tau_long_en - iq_trigger_time + uwave_echo_pulse_dur + half_tau_long_st, LOW),
-                                (iq_trigger_time, HIGH), 
-                                (half_tau_long_en - iq_trigger_time + uwave_coh_pulse_dur, LOW)])
-                                # (half_tau_long_en - iq_trigger_time + uwave_coh_pulse_dur + 20+ final_pi_pulse, LOW)])
-    
+    if pi_pulse_reps == 0:
+        uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_long_en - iq_trigger_time + half_tau_long_st, LOW),
+                                    (half_tau_long_en + uwave_coh_pulse_dur, LOW)])
+    else:
+        rep_train = [(iq_trigger_time, HIGH),
+                 (half_tau_long_en - iq_trigger_time + uwave_echo_pulse_dur +\
+                  tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
+        uwave_iq_train_long.extend(rep_train)
+        uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_long_en - iq_trigger_time + uwave_echo_pulse_dur + half_tau_long_st, LOW),
+                                    (iq_trigger_time, HIGH), 
+                                    (half_tau_long_en - iq_trigger_time + uwave_coh_pulse_dur, LOW)])
+                                    # (half_tau_long_en - iq_trigger_time + uwave_coh_pulse_dur + 20+ final_pi_pulse, LOW)])
+        
 
     ### Define the sequence
 
@@ -414,6 +441,6 @@ if __name__ == '__main__':
     # tau_shrt, polarization_time, gate_time, pi_pulse_low, pi_on_2_pulse_low,\
     #     pi_pulse_high, pi_on_2_pulse_high, tau_long 
     # pi_pulse_reps, state_activ, state_proxy,  laser_name, laser_power
-    seq_args = [100, 10000.0, 300, 64, 32, 88, 44,  500, 0 , 3, 1, 'integrated_520', None]
+    seq_args = [1000, 10000.0, 300, 64, 32, 88, 44,  500, 0 , 3, 1, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
