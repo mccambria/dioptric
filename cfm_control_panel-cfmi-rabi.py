@@ -709,7 +709,7 @@ def do_relaxation(nv_sig ):
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 1e3
-    num_runs = 200
+    num_runs = 400
     
     if True:
      t1_exp_array = numpy.array(
@@ -1113,7 +1113,7 @@ if __name__ == "__main__":
     nv_sig_OFF["echo_pi"]= 105
     
     
-    nv_sig = nv_sig_OFF
+    nv_sig = nv_sig_1
     
     # %% Functions to run
 
@@ -1143,7 +1143,7 @@ if __name__ == "__main__":
         
         
         # do_optimize(nv_sig)
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         #do_image_sample_xz(nv_sig)
         
         # do_stationary_count(nv_sig)
@@ -1173,7 +1173,7 @@ if __name__ == "__main__":
         
         #do_spin_echo(nv_sig)
 
-        do_relaxation(nv_sig)  # gamma and omega
+        # do_relaxation(nv_sig)  # gamma and omega
                 
         
         ###################

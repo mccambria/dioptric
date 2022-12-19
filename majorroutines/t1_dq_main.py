@@ -39,6 +39,7 @@ import shutil
 # import analysis.relaxation_rate_analysis as relaxation_rate_analysis
 from pathlib import Path
 from scipy.optimize import curve_fit
+from utils.tool_belt import NormStyle
 
 
 # %% Functions
@@ -872,7 +873,8 @@ if __name__ == "__main__":
     # plt.show(block=True)
     
     
-    file_name = "2022_11_22-08_15_52-siena-nv1_2022_10_27"
+    file_name = "2022_12_19-10_08_14-siena-background"
+    inc = True
     data = tool_belt.get_raw_data(file_name)
     params_list = data['params_master_list'][0]
     min_relaxation_time = params_list[1][0] / 1e6
@@ -886,18 +888,64 @@ if __name__ == "__main__":
     avg_sig_counts = numpy.average(sig_counts_list, axis =0)
     ref_counts_list = data['ref_counts_master_list'][0]
     avg_ref_counts = numpy.average(ref_counts_list, axis =0)
-    norm_counts = avg_sig_counts/avg_ref_counts
+    run_ind=  3500
+    num_reps = params_list[3]
+    nv_sig = data['nv_sig']
+    readout = nv_sig['spin_readout_dur']
+    norm_style = NormStyle.SINGLE_VALUED
+    
+    if inc == True:
+        inc_sig_counts = sig_counts_list[: run_ind + 1]
+        inc_ref_counts = ref_counts_list[: run_ind + 1]
+        ret_vals = tool_belt.process_counts(
+            inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        
+    # norm_counts = avg_sig_counts/avg_ref_counts
     
     fig, ax = plt.subplots()
-    ax.plot(taus,norm_counts, 'bo')
+    ax.plot(taus,norm_avg_sig, 'bo')
     ax.set_xlabel('Relaxation time (ms)')
     ax.set_ylabel('Norm opulation')
     
     fit_func = tool_belt.exp_decay
     taus_fit = numpy.linspace(min_relaxation_time,max_relaxation_time, 100 )
-    popt, covarr = curve_fit(fit_func,taus,norm_counts,p0 = [0.2, 5, 0.8])
+    popt, covarr = curve_fit(fit_func,taus,norm_avg_sig,p0 = [0.2, 5, 0.8])
     
     print(popt[1])
-    print(numpy.sqrt(covarr[1][1]))
+    # print(numpy.sqrt(covarr[1][1]))
     ax.plot(taus_fit,fit_func(taus_fit, *popt), 'r-')
     # ax.plot(taus_fit,fit_func(taus_fit, 0.2,5, 0.8), 'r-')
+    
+    # Plot
+    individual_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+
+    ax = axes_pack[0]
+    ax.plot(
+        numpy.array(taus) / 10 ** 6, sig_counts_avg_kcps, "r-", label="signal"
+    )
+    ax.plot(
+        numpy.array(taus) / 10 ** 6,
+        ref_counts_avg_kcps,
+        "g-",
+        label="reference",
+    )
+    ax.set_xlabel("Relaxation time (ms)")
+    ax.set_ylabel("Counts")
+    ax.legend()
+
+    ax = axes_pack[1]
+    ax.plot(numpy.array(taus) / 10 ** 6, norm_avg_sig, "b-")
+    ax.set_title(
+        "T1 Measurement. Initial state: {}, readout state: {}".format(
+            "ZERO", "ZERO"
+        )
+    )
+    ax.set_xlabel("Relaxation time (ms)")
+    ax.set_ylabel("Contrast (arb. units)")

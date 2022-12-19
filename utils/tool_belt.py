@@ -768,6 +768,7 @@ def get_files_in_folder(folderDir, filetype=None):
     filetype: str
         must be a 3-letter file extension, do NOT include the period. ex: 'txt'
     """
+    # print(folderDir)
     file_list_temp = os.listdir(folderDir)
     if filetype:
         file_list = []

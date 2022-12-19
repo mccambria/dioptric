@@ -282,30 +282,33 @@ def main_with_cxn(
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(phi_ind_list)
 
-        for phi_ind in phi_ind_list:
+        # for phi_ind in phi_ind_list:
+        for phi_ind in range(len(phis)):
 
-            # 'Flip a coin' to determine which tau (long/shrt) is used first
-            rand_boolean = numpy.random.randint(0, high=2)
+            # # 'Flip a coin' to determine which tau (long/shrt) is used first
+            # rand_boolean = numpy.random.randint(0, high=2)
 
-            if rand_boolean == 1:
-                phi_ind_first = phi_ind
-                phi_ind_second = -phi_ind - 1
-            elif rand_boolean == 0:
-                phi_ind_first = -phi_ind - 1
-                phi_ind_second = phi_ind
+            # if rand_boolean == 1:
+            #     phi_ind_first = phi_ind
+            #     phi_ind_second = -phi_ind - 1
+            # elif rand_boolean == 0:
+            #     phi_ind_first = -phi_ind - 1
+            #     phi_ind_second = phi_ind
 
-            # add the tau indexxes used to a list to save at the end
-            phi_index_master_list[run_ind].append(phi_ind_first)
-            phi_index_master_list[run_ind].append(phi_ind_second)
+            # # add the tau indexxes used to a list to save at the end
+            # phi_index_master_list[run_ind].append(phi_ind_first)
+            # phi_index_master_list[run_ind].append(phi_ind_second)
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
 
-            print(" \nFirst phase: {}".format(phis[phi_ind_first]*180/pi))
-            print("Second relaxation time: {}".format(phis[phi_ind_second]*180/pi))
+            # print(" \nFirst phase: {}".format(phis[phi_ind_first]*180/pi))
+            # print("Second relaxation time: {}".format(phis[phi_ind_second]*180/pi))
+            print(" \nFirst phase: {}".format(phis[phi_ind]*180/pi))
+            print("Second phase: {}".format(phis[phi_ind]*180/pi))
 
-            arbwavegen_server.load_arb_phases([0, phis[phi_ind_first], 0, 0, phis[phi_ind_second], 0])
+            arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, 0, phis[phi_ind], 0])
             # arbwavegen_server.load_cpmg(1)
             
             # Clear the tagger buffer of any excess counts
@@ -322,16 +325,16 @@ def main_with_cxn(
             # print(new_counts)
 
             count = sum(sample_counts[0::4])
-            sig_counts[run_ind, phi_ind_first] = count
+            sig_counts[run_ind, phi_ind] = count
 
             count = sum(sample_counts[1::4])
-            ref_counts[run_ind, phi_ind_first] = count
+            ref_counts[run_ind, phi_ind] = count
 
             count = sum(sample_counts[2::4])
-            sig_counts[run_ind, phi_ind_second] = count
+            sig_counts[run_ind, phi_ind] = count
 
             count = sum(sample_counts[3::4])
-            ref_counts[run_ind, phi_ind_second] = count
+            ref_counts[run_ind, phi_ind] = count
             
             arbwavegen_server.reset()
 
@@ -435,7 +438,10 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(phis_deg, norm_avg_sig, "b-")
-    ax.set_title(r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (DQ basis)")
+    if do_dq:
+        ax.set_title(r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (DQ basis)")
+    else:
+        ax.set_title(r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi / 2_x$ (SQ basis)")
     ax.set_xlabel(r"Relative phase, $\phi$ (degrees)")
     ax.set_ylabel("Contrast (arb. units)")
 
