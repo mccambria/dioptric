@@ -539,6 +539,7 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
         num_reps,
         num_runs,
         state=state,
+        do_dq = True
     )
     return 
 

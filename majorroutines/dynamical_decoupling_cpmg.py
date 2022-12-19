@@ -364,8 +364,9 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_args)
-    # return
+    print(seq_file_name)
+    print(seq_args)
+    return
         # print(seq_time)
 
     # %% Let the user know how long this will take
@@ -812,6 +813,52 @@ if __name__ == "__main__":
     #     ax.set_xscale('log')
     #     ax.set_yscale('log')
         
+    if True:
+        file_name = "2022_12_16-13_06_55-siena-nv1_2022_10_27"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_12')
+        norm_avg_sig = data['norm_avg_sig']
+        norm_avg_sig_ste = data['norm_avg_sig_ste']
+        plot_taus = data['plot_taus']
+        
+        contrast = 0.2
+        
+        tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
+        
+        fig, ax = plt.subplots()
+        ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o")
+        
+        fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
+        init_params = [ 0.1, 200, 0.9]
+        popt, pcov = curve_fit(
+            fit_func,
+            plot_taus,
+            norm_avg_sig,
+            p0=init_params,
+            absolute_sigma = True,
+            sigma=norm_avg_sig_ste
+        )
+        print('{} +/- {} us'.format(popt[1], numpy.sqrt(pcov[1][1])))
+        ax.plot(
+                tau_lin,
+                fit_func(tau_lin, *popt),
+                "r-",
+                label="fit",
+            ) 
+        
+        text_popt = '\n'.join((
+                            r'y = A + C exp(-(T / d)^3)',
+                            r'd = ' + '%.2f'%(popt[1]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])) + ' us'
+                            ))
+    
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+        
+        
+        
+        ax.set_title("Revivals of XY4")
+        ax.set_xlabel(r"Coherence time, T ($\mathrm{\mu s}$)")
+        ax.set_ylabel("Normalized signal (arb. units)")
     
     
     

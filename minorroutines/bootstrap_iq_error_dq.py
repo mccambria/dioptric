@@ -44,6 +44,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    pi_pulse_reps,
     iq_state=States.HIGH,
     do_dq = True
 ):
@@ -56,6 +57,7 @@ def main(
             num_steps,
             num_reps,
             num_runs,
+            pi_pulse_reps,
             iq_state,
             do_dq
         )
@@ -69,6 +71,7 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
+    pi_pulse_reps,
     iq_state=States.HIGH,
     do_dq = True
 ):
@@ -90,7 +93,9 @@ def main_with_cxn(
     norm_style = nv_sig['norm_style']
     
     # pi_pulse_reps = 1
-    pi_pulse_reps = 0
+    # pi_pulse_reps = 0
+    
+    
     if pi_pulse_reps == 1:
         phase_exp = "[0, phi, 0]"
         tau = 1000
@@ -105,6 +110,13 @@ def main_with_cxn(
             title = r"$\pi / 2_x$ - $\pi / 2_{\phi}$ (DQ basis)"
         else:
             title = r"$\pi / 2_x$ - $\pi / 2_{\phi}$ (SQ basis)"
+    elif pi_pulse_reps == 2:
+        phase_exp = "[0, phi,phi, 0]"
+        tau = 1000
+        if do_dq:
+            title = r"$\pi / 2_x$ - $\pi_{\phi}$ - $\pi_{\phi}$ -$\pi / 2_x$ (DQ basis)"
+        else:
+            title = r"$\pi / 2_x$ - $\pi_{\phi}$ -$\pi_{\phi}$ - $\pi / 2_x$ (SQ basis)"
     
 
     if do_dq:
@@ -327,6 +339,8 @@ def main_with_cxn(
                 arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, 0, phis[phi_ind], 0])
             elif pi_pulse_reps == 0:
                 arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, phis[phi_ind]])
+            elif pi_pulse_reps == 2:
+                arbwavegen_server.load_arb_phases([0, phis[phi_ind],phis[phi_ind], 0, phis[phi_ind],phis[phi_ind]])
             # arbwavegen_server.load_cpmg(1)
             
             # Clear the tagger buffer of any excess counts
@@ -619,24 +633,16 @@ if __name__ == "__main__":
     num_steps = 51
     num_reps = 2e4
     num_runs = 10
+    pi_pulse_reps = 2
     main(
           nv_sig_1,
           phase_range,
           num_steps,
           num_reps,
-          num_runs,
+          num_runs,pi_pulse_reps,
           iq_state=States.HIGH,
           do_dq=False
       )
-    # main(
-    #     nv_sig_1,
-    #     phase_range,
-    #     num_steps,
-    #     num_reps,
-    #     num_runs,
-    #     iq_state=States.HIGH,
-    #     do_dq=False
-    # )
     
     
     # file_name = "2022_12_16-14_20_28-siena-nv1_2022_10_27"
