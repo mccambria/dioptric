@@ -82,8 +82,8 @@ def do_image_sample(nv_sig):
     # scan_range = 0.5
     # scan_range = 0.35
     #scan_range = 0.2
-    # scan_range = 0.15
-    scan_range = 0.1
+    scan_range = 0.15
+    # scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
@@ -93,9 +93,9 @@ def do_image_sample(nv_sig):
     # num_steps = 200
     # num_steps = 135
     # num_steps =120
-   # num_steps = 90
-    # num_steps = 60
-    num_steps = 31
+    # num_steps = 90
+    num_steps = 60
+    # num_steps = 31
     # num_steps = 21
 
     #individual line pairs:
@@ -114,20 +114,19 @@ def do_image_sample(nv_sig):
     return img_array, x_voltages, y_voltages
 
 
-# def do_image_sample_xz(nv_sig):
+def do_image_sample_xz(nv_sig):
 
-#     scan_range_x = .1
-# # z code range 3 to 7 if centered at 5
-#     scan_range_z =0.2
-#     num_steps = 60
+    x_range = .1
+    z_range =0.2
+    num_steps = 60
 
-#     image_sample_xz.main(
-#         nv_sig,
-#         scan_range_x,
-#         scan_range_z,
-#         num_steps,
-#         um_scaled=False,
-#     )
+    image_sample.main(
+        nv_sig,
+        x_range,
+        z_range,
+        num_steps,
+        scan_type = 'XZ'
+    )
 
 
 def do_image_charge_states(nv_sig):
@@ -515,7 +514,7 @@ def do_spin_echo(nv_sig, state = States.LOW):
     )
     return
 
-def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
+def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
     
     shift = 100 #ns
     
@@ -527,7 +526,7 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 1e3
-    num_runs= 100#150
+    num_runs= 300#150
 
     state = States.HIGH
 
@@ -539,7 +538,7 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max):
         num_reps,
         num_runs,
         state=state,
-        do_dq = True
+        do_dq= do_dq_
     )
     return 
 
@@ -991,8 +990,8 @@ if __name__ == "__main__":
     green_power =8000
     nd_green = 'nd_1.1'
     red_power = 120
-    sample_name = "siena"
-    # sample_name = "hopper"
+    # sample_name = "siena"
+    sample_name = "ayrton12"
     green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
@@ -1052,6 +1051,7 @@ if __name__ == "__main__":
         "charge_readout_dur": 200e6, 
 
         "collection_filter": "715_sp+630_lp", # NV band only
+        'magnet_angle': 151.7,
         "uwave_power_LOW": 12.12,  
         "uwave_power_HIGH": 10,
         
@@ -1059,7 +1059,7 @@ if __name__ == "__main__":
 
     
     nv_search = copy.deepcopy(sig_base)
-    nv_search["coords"] = [0,0,5]
+    nv_search["coords"] = [0.030, -0.061, 5.0]
     nv_search["name"] = "{}-nv_search".format(sample_name,)
     # nv_search['diasble_opt'] = True
     # nv_search["expected_count_rate"] = 100
@@ -1074,9 +1074,8 @@ if __name__ == "__main__":
     # nv_sig_1["norm_style"]= NormStyle.POINT_TO_POINT
     nv_sig_1["norm_style"]= NormStyle.SINGLE_VALUED
     nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = 19
+    nv_sig_1["expected_count_rate"] = None
     nv_sig_1[ "spin_readout_dur"] = 300
-    nv_sig_1['magnet_angle'] = 151.7
     
     nv_sig_1["resonance_LOW"]= 2.7805
     nv_sig_1["rabi_LOW"]=136.09 # +/- 0.54
@@ -1093,7 +1092,6 @@ if __name__ == "__main__":
     nv_sig_2["coords"] = new_coords.tolist()
     nv_sig_2["name"] = "{}-nv2_2022_10_18".format(sample_name,)
     nv_sig_2["expected_count_rate"] =None
-    nv_sig_2['magnet_angle'] = 68
     nv_sig_2["resonance_LOW"]= 2.826
     nv_sig_2["rabi_LOW"]=210.1
     nv_sig_2["resonance_HIGH"]= 2.936
@@ -1101,14 +1099,14 @@ if __name__ == "__main__":
     
     
     
-    nv_sig = nv_sig_1
+    nv_sig = nv_search
     
     # %% Functions to run
 
     try:
 
         # positioning.set_drift(labrad.connect(),[0.0, 0.0, positioning.get_drift(labrad.connect())[2]])  # Keep z
-        # positioning.set_drift(labrad.connect(),[0.0,0.0,0.0])
+        positioning.set_drift(labrad.connect(),[0.0,0.0,0.13])
         # positioning.set_drift(labrad.connect(),[0.0, 0.06, 0.0])
         # positioning.set_xyz(labrad.connect(), [0,0,5])
         
@@ -1131,8 +1129,8 @@ if __name__ == "__main__":
         
         
         # do_optimize(nv_sig)
-        # do_image_sample(nv_sig)
-        #do_image_sample_xz(nv_sig)
+        do_image_sample(nv_sig)
+        # do_image_sample_xz(nv_sig)
         
         # do_stationary_count(nv_sig)
 
@@ -1168,8 +1166,9 @@ if __name__ == "__main__":
         step_size = 250 #us
         T_min = 0 #us
         T_max = 5000 #us      
-        for n in [4]:
-            do_dd_cpmg(nv_sig, n, step_size, T_min, T_max)
+        # for n in [2, 8]:
+        #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= True)
+        #     do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= False)
 
         
         # num_xy4_reps = 1

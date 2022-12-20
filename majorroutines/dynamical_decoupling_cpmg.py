@@ -289,8 +289,8 @@ def main_with_cxn(
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
-    if do_dq:
-        plot_taus = (2* coh_pulse_dur + (2*taus + echo_pulse_dur)  * 2 *4 * pi_pulse_reps) / 1000
+    #if do_dq:
+    #    plot_taus = (2* coh_pulse_dur + (2*taus + echo_pulse_dur)  * 2 *4 * pi_pulse_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -366,7 +366,7 @@ def main_with_cxn(
     seq_time = ret_vals[0]
     print(seq_file_name)
     print(seq_args)
-    return
+    # return
         # print(seq_time)
 
     # %% Let the user know how long this will take
@@ -596,6 +596,7 @@ def main_with_cxn(
             "sig_counts-units": "counts",
             "ref_counts": ref_counts.astype(int).tolist(),
             "ref_counts-units": "counts",
+            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
         }
 
         # This will continuously be the same file path so we will overwrite
@@ -680,6 +681,7 @@ def main_with_cxn(
         "ref_counts-units": "counts",
         "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
         "norm_avg_sig-units": "arb",
+        "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
     }
 
     nv_name = nv_sig["name"]
@@ -705,7 +707,7 @@ if __name__ == "__main__":
     file2 = '2022_11_14-11_02_59-siena-nv1_2022_10_27'
     file4 = '2022_11_14-11_03_05-siena-nv1_2022_10_27'
     file8 = '2022_11_14-11_00_01-siena-nv1_2022_10_27'
-    file16 = '2022_11_14-11_03_13-siena-nv1_2022_10_27'
+    file16 = '2022_12_19-15_48_05-siena-nv1_2022_10_27'
     
     folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
     file_t1 = '2022_11_22-08_15_49-siena-nv1_2022_10_27'
@@ -814,18 +816,31 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
         
     if True:
-        file_name = "2022_12_16-13_06_55-siena-nv1_2022_10_27"
-        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_12')
+        file_name = "2022_12_19-17_32_16-siena-nv1_2022_10_27"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12')
         norm_avg_sig = data['norm_avg_sig']
-        norm_avg_sig_ste = data['norm_avg_sig_ste']
+       # norm_avg_sig_ste = data['norm_avg_sig_ste']
         plot_taus = data['plot_taus']
+        pi_pulse_reps = data['pi_pulse_reps']
         
+        precession_time_range = data['precession_time_range']
+        num_steps = data['num_steps']
+        min_precession_time = int(precession_time_range[0])
+        max_precession_time = int(precession_time_range[1])
+
+        plot_taus = numpy.linspace(
+            min_precession_time,
+            max_precession_time,
+            num=num_steps,
+        )
+        plot_taus=plot_taus*2*4/1e3
         contrast = 0.2
         
         tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
         
         fig, ax = plt.subplots()
-        ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o")
+        #ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o")
+        ax.plot(plot_taus, norm_avg_sig,"b-")
         
         fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
         init_params = [ 0.1, 200, 0.9]
@@ -834,8 +849,8 @@ if __name__ == "__main__":
             plot_taus,
             norm_avg_sig,
             p0=init_params,
-            absolute_sigma = True,
-            sigma=norm_avg_sig_ste
+           # absolute_sigma = True,
+           # sigma=norm_avg_sig_ste
         )
         print('{} +/- {} us'.format(popt[1], numpy.sqrt(pcov[1][1])))
         ax.plot(
@@ -847,16 +862,15 @@ if __name__ == "__main__":
         
         text_popt = '\n'.join((
                             r'y = A + C exp(-(T / d)^3)',
-                            r'd = ' + '%.2f'%(popt[1]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])) + ' us'
+                            r'd = ' + '%.2f'%(popt[1]/1e3) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])/1e3) + ' ms'
                             ))
     
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
-                verticalalignment='top', bbox=props)
+        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12, verticalalignment='top', bbox=props)
         
         
         
-        ax.set_title("Revivals of XY4")
+        ax.set_title("CPMG-{}".format(pi_pulse_reps))
         ax.set_xlabel(r"Coherence time, T ($\mathrm{\mu s}$)")
         ax.set_ylabel("Normalized signal (arb. units)")
     

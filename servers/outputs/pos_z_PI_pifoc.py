@@ -60,6 +60,7 @@ class PosZPiPifoc(LabradServer):
         self.z_last_turning_position = None
         config = ensureDeferred(self.get_config_z())
         config.addCallback(self.on_get_config_z)
+        # logging.info(self.z_hysteresis_b)
 
     async def get_config_z(self):
         p = self.client.registry.packet()
@@ -95,8 +96,6 @@ class PosZPiPifoc(LabradServer):
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
-        logging.info(self.z_hysteresis_a)
-        logging.info(self.z_hysteresis_b)
         logging.info("Init complete")
 
     def stopServer(self):

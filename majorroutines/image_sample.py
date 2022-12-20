@@ -324,9 +324,13 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
     optimize.prepare_microscope(cxn, nv_sig)
+    drift = positioning.get_drift(cxn)
+    adj_x_center = x_center + drift[0]
+    adj_y_center = y_center + drift[1]
+    adj_z_center = z_center + drift[2]
     xy_server = positioning.get_server_pos_xy(cxn)
     # print(xy_server)
-    xyz_server = positioning.get_server_pos_xy(cxn)
+    xyz_server = positioning.get_server_pos_xyz(cxn)
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
     total_num_samples = num_steps**2
@@ -410,10 +414,10 @@ def main_with_cxn(
     
     if scan_type == 'XY':
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
+            adj_x_center, adj_y_center,x_range, y_range, x_num_steps, y_num_steps)
     elif scan_type == 'XZ':
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
+            adj_x_center, adj_z_center,x_range, y_range, x_num_steps, y_num_steps)
     
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -445,7 +449,9 @@ def main_with_cxn(
         if scan_type == 'XY':
             xy_server.load_stream_xy(x_voltages, y_voltages)
         elif scan_type == 'XZ':
-            xyz_server.load_stream_xyz(x_voltages, y_voltages)
+            z_voltages = y_voltages
+            y_vals_static = [adj_y_center]*len(x_voltages)
+            xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
     
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
@@ -473,7 +479,8 @@ def main_with_cxn(
         ax,
         img_array_kcps,
         title=title,
-        axes_labels=axes_labels,
+        x_label=axes_labels[0],
+        y_label=axes_labels[1],
         cbar_label="kcps",
         extent=extent,
         vmin=vmin,
@@ -629,7 +636,8 @@ if __name__ == "__main__":
         ax,
         img_array_kcps,
         title="Replot test",
-        axes_labels=["V", "V"],
+        x_label="V",
+        y_label="V",
         cbar_label="kcps",
         extent=extent,
     )
