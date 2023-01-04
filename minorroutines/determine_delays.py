@@ -382,19 +382,21 @@ if __name__ == "__main__":
     
     apd_indices = [1]
     sample_name = 'siena'
+    # sample_name = 'ayrton12'
     green_power = 1
     nd_green = 'ND_1.1'
-    green_laser = "integrated_520"
+    # green_laser = "integrated_520"
+    green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
 
     nv_sig = {
-            "coords":[-0.184, 0.092, 4.05],
+            "coords":[0,0, 7.323],
         "name": "{}-nv1_2022_10_27".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":19,
+        "expected_count_rate":150,
 
 
           "spin_laser":green_laser,
@@ -464,21 +466,22 @@ if __name__ == "__main__":
     num_steps = 51
     num_reps = int(5e4)
     # laser_name = 'laserglow_532'
-    delay_range = [0, 2000]
+    delay_range = [0, 1000]
     # num_reps = int(1e5)
     # laser_name = 'laserglow_589'
     # delay_range = [800, 1700]
     # num_reps = int(1e4)
-    laser_name = 'integrated_520'
+    # laser_name = 'integrated_520'
+    laser_name = 'cobolt_515'
     # laser_power = 0.65
     # laser_name = 'cobolt_638'
     laser_power = None
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
     # delay_range = [0,1e3]
-    # with labrad.connect() as cxn:
-    #     aom_delay(cxn, nv_sig, apd_indices,
-    #               delay_range, num_steps, num_reps, laser_name, laser_power)
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, apd_indices,
+                  delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
     num_reps = int(1e6)
@@ -489,7 +492,7 @@ if __name__ == "__main__":
     # state = States.LOW
     #  sg394
     state = States.HIGH
-    with labrad.connect() as cxn:
+    # with labrad.connect() as cxn:
         # iq_delay(
         #     cxn,
         #     nv_sig,
@@ -499,15 +502,15 @@ if __name__ == "__main__":
         #     num_steps,
         #     num_reps,
         # )
-        uwave_delay(
-            cxn,
-            nv_sig,
-            apd_indices,
-            state,
-            delay_range,
-            num_steps,
-            num_reps,
-        )
+        # uwave_delay(
+        #     cxn,
+        #     nv_sig,
+        #     apd_indices,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
         # uwave_delay(
         #     cxn,
         #     nv_sig,

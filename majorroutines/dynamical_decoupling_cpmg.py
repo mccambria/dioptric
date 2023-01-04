@@ -15,6 +15,7 @@ Created on Fri Aug 5 2022
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 from scipy.optimize import minimize_scalar
+from utils.tool_belt import NormStyle
 from numpy import pi
 import numpy
 import time
@@ -713,7 +714,7 @@ if __name__ == "__main__":
     file_t1 = '2022_11_22-08_15_49-siena-nv1_2022_10_27'
     
     data = tool_belt.get_raw_data(file16, folder)
-    fit_t2_decay(data)
+    # fit_t2_decay(data)
     
     # file_list = [file16_1, file16_2, file16_3]
     # folder_list = [folder, folder, folder]
@@ -814,26 +815,73 @@ if __name__ == "__main__":
     #     ax.legend()
     #     ax.set_xscale('log')
     #     ax.set_yscale('log')
+    
+    if False:
+        folder ='pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12'
+        file_1 = "2022_12_25-02_51_03-siena-nv8_2022_12_22"
+        file_2 = "2022_12_25-13_57_34-siena-nv8_2022_12_22"
         
+        data = tool_belt.get_raw_data(file_1, folder)
+        num_runs_1 = data['num_runs']
+        sig_counts_1 = data['sig_counts']
+        ref_counts_1 = data['ref_counts']
+        
+        data = tool_belt.get_raw_data(file_1, folder)
+        num_runs_2 = data['num_runs']
+        sig_counts_2 = data['sig_counts']
+        ref_counts_2 = data['ref_counts']
+        
+        sig_counts_tot = sig_counts_1 + sig_counts_2
+        ref_counts_tot = ref_counts_1 + ref_counts_2
+        
+        nv_sig = data['nv_sig']
+        norm_style = NormStyle.SINGLE_VALUED
+        gate_time = nv_sig['spin_readout_dur']
+        num_reps = data['num_reps']
+        ret_vals = tool_belt.process_counts(sig_counts_tot, ref_counts_tot, num_reps, gate_time, norm_style)
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        
+        import copy
+        raw_data = copy.deepcopy(data)
+        raw_data['sig_counts'] = sig_counts_tot
+        raw_data['ref_counts'] = ref_counts_tot
+        raw_data['norm_avg_sig'] = norm_avg_sig.tolist()
+        raw_data['num_runs'] = num_runs_1 + num_runs_2
+        raw_data['file_list'] = [file_1, file_2]
+        
+        nv_name = nv_sig["name"]
+        timestamp = "2022_12_25-13_58_34"
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+        tool_belt.save_raw_data(raw_data, file_path)
+    
+    
+    
     if True:
-        file_name = "2022_12_19-17_32_16-siena-nv1_2022_10_27"
+        # file_name = "2022_12_25-19_00_35-siena-nv8_2022_12_22"
+        file_name = "2022_12_25-13_58_34-siena-nv8_2022_12_22"
         data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12')
         norm_avg_sig = data['norm_avg_sig']
        # norm_avg_sig_ste = data['norm_avg_sig_ste']
         plot_taus = data['plot_taus']
         pi_pulse_reps = data['pi_pulse_reps']
+        do_dq=data['do_dq']
         
         precession_time_range = data['precession_time_range']
         num_steps = data['num_steps']
         min_precession_time = int(precession_time_range[0])
         max_precession_time = int(precession_time_range[1])
 
-        plot_taus = numpy.linspace(
-            min_precession_time,
-            max_precession_time,
-            num=num_steps,
-        )
-        plot_taus=plot_taus*2*4/1e3
+        # plot_taus = numpy.linspace(
+        #     min_precession_time,
+        #     max_precession_time,
+        #     num=num_steps,
+        # )
+        # plot_taus=plot_taus*2*4/1e3
         contrast = 0.2
         
         tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
@@ -843,7 +891,7 @@ if __name__ == "__main__":
         ax.plot(plot_taus, norm_avg_sig,"b-")
         
         fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ 0.1, 200, 0.9]
+        init_params = [ 0.1, 1000, 0.9]
         popt, pcov = curve_fit(
             fit_func,
             plot_taus,
@@ -869,8 +917,10 @@ if __name__ == "__main__":
         ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12, verticalalignment='top', bbox=props)
         
         
-        
-        ax.set_title("CPMG-{}".format(pi_pulse_reps))
+        if do_dq:
+            ax.set_title("CPMG-{} DQ baiss".format(pi_pulse_reps))
+        else:
+            ax.set_title("CPMG-{} SQ baiss".format(pi_pulse_reps))
         ax.set_xlabel(r"Coherence time, T ($\mathrm{\mu s}$)")
         ax.set_ylabel("Normalized signal (arb. units)")
     

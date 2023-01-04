@@ -65,6 +65,7 @@ def fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_s
     except Exception as e:
         print(e)
         popt = None
+        pcov = None
 
     return fit_func, popt, pcov
 
@@ -76,7 +77,7 @@ def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
     taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
                             num=num_steps, dtype=numpy.int32, retstep=True)
     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
-    
+    fig = None
     # Fitting
     if (fit_func is None) or (popt is None):
         fit_func, popt, pcov = fit_data(
@@ -86,29 +87,29 @@ def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
             norm_avg_sig,
             norm_avg_sig_ste,
         )
-
-    # Plot setup
-    fig, ax = plt.subplots()
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel("Normalized fluorescence")
-    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
-    
-    # Plotting
-    if norm_avg_sig_ste is not None:
-        kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
-    else:
-        kpl.plot_line(ax, taus, norm_avg_sig)
-    kpl.plot_line(
-        ax,
-        smooth_taus,
-        fit_func(smooth_taus, *popt),
-        color=KplColors.RED,
-    )
-    Amp = 1- popt[0]
-    base_text = "Offset = {:.3f} \nAmp = {:.3f} \n1/v = {:.1f} ns \nd = {:.1f} ns"
-    size = kpl.Size.SMALL
-    text = base_text.format(popt[0], Amp, 1/popt[1], popt[2])
-    kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
+    if (popt is not None):
+        # Plot setup
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Microwave duration (ns)')
+        ax.set_ylabel("Normalized fluorescence")
+        ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
+        
+        # Plotting
+        if norm_avg_sig_ste is not None:
+            kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
+        else:
+            kpl.plot_line(ax, taus, norm_avg_sig)
+        kpl.plot_line(
+            ax,
+            smooth_taus,
+            fit_func(smooth_taus, *popt),
+            color=KplColors.RED,
+        )
+        Amp = 1- popt[0]
+        base_text = "Offset = {:.3f} \nAmp = {:.3f} \n1/v = {:.1f} ns \nd = {:.1f} ns"
+        size = kpl.Size.SMALL
+        text = base_text.format(popt[0], Amp, 1/popt[1], popt[2])
+        kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
     
     return fig, ax, fit_func, popt, pcov
 

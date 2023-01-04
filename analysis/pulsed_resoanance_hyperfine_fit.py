@@ -167,7 +167,7 @@ def fit_resonance(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     
-    file = "2022_12_08-16_28_55-siena-nv1_2022_10_27-fit"
+    file = "2023_01_03-14_23_09-siena-nv8_2022_12_22"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]

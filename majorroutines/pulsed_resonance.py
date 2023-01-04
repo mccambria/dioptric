@@ -827,16 +827,22 @@ def main_with_cxn(
     run_indicator_obj.remove()
 
     # Fits
-    fit_fig, _, fit_func, popt, _ = create_fit_figure(
-        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
-    )
-
-    if len(popt) == 3:
-        low_freq = popt[2]
-        high_freq = None
-    elif len(popt) == 6:
-        low_freq = popt[2]
-        high_freq = popt[5]
+    low_freq = None
+    high_freq = None
+    fit_fig = None
+    try:
+        fit_fig, _, fit_func, popt, _ = create_fit_figure(
+            freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+        )
+    
+        if len(popt) == 3:
+            low_freq = popt[2]
+            high_freq = None
+        elif len(popt) == 6:
+            low_freq = popt[2]
+            high_freq = popt[5]
+    except Exception:
+        print('Could not fit data')
 
     ### Clean up, save the data, return
 
@@ -885,11 +891,13 @@ def main_with_cxn(
     tool_belt.save_figure(raw_fig, file_path)
 
     tool_belt.save_raw_data(data, file_path)
+    
+    single_res = None
+    if fit_fig is not None:
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+        tool_belt.save_figure(fit_fig, file_path)
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tool_belt.save_figure(fit_fig, file_path)
-
-    single_res = return_res_with_error(data)
+        single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]
 
 

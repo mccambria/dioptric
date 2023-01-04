@@ -13,6 +13,8 @@ Created on Thu Apr 11 15:39:23 2019
 
 
 import utils.positioning as positioning
+import utils.kplotlib as kpl
+from utils.kplotlib import KplColors
 import utils.tool_belt as tool_belt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,48 +25,48 @@ from random import shuffle
 import majorroutines.optimize as optimize
 
 
-def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
-    """Extract the normalized average signal at each data point.
-    Since we sometimes don't do many runs (<10), we often will have an
-    insufficient sample size to run stats on for norm_avg_sig calculation.
-    We assume Poisson statistics instead.
-    """
+# def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
+#     """Extract the normalized average signal at each data point.
+#     Since we sometimes don't do many runs (<10), we often will have an
+#     insufficient sample size to run stats on for norm_avg_sig calculation.
+#     We assume Poisson statistics instead.
+#     """
 
-    ref_counts = np.array(ref_counts)
-    sig_counts = np.array(sig_counts)
+#     ref_counts = np.array(ref_counts)
+#     sig_counts = np.array(sig_counts)
 
-    num_runs, num_points = ref_counts.shape
+#     num_runs, num_points = ref_counts.shape
 
-    # Find the averages across runs
-    sig_counts_avg = np.average(sig_counts, axis=0)
-    single_ref_avg = np.average(ref_counts)
-    ref_counts_avg = np.average(ref_counts, axis=0)
+#     # Find the averages across runs
+#     sig_counts_avg = np.average(sig_counts, axis=0)
+#     single_ref_avg = np.average(ref_counts)
+#     ref_counts_avg = np.average(ref_counts, axis=0)
 
-    sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
-    single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
-    ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
+#     sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
+#     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
+#     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
-    if norm_style == NormStyle.SINGLE_VALUED:
-        norm_avg_sig = sig_counts_avg / single_ref_avg
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (sig_counts_ste / sig_counts_avg) ** 2
-            + (single_ref_ste / single_ref_avg) ** 2
-        )
-    elif norm_style == NormStyle.POINT_TO_POINT:
-        norm_avg_sig = sig_counts_avg / ref_counts_avg
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (sig_counts_ste / sig_counts_avg) ** 2
-            + (ref_counts_ste / ref_counts_avg) ** 2
-        )
+#     if norm_style == NormStyle.SINGLE_VALUED:
+#         norm_avg_sig = sig_counts_avg / single_ref_avg
+#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+#             (sig_counts_ste / sig_counts_avg) ** 2
+#             + (single_ref_ste / single_ref_avg) ** 2
+#         )
+#     elif norm_style == NormStyle.POINT_TO_POINT:
+#         norm_avg_sig = sig_counts_avg / ref_counts_avg
+#         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+#             (sig_counts_ste / sig_counts_avg) ** 2
+#             + (ref_counts_ste / ref_counts_avg) ** 2
+#         )
 
-    return (
-        ref_counts_avg,
-        sig_counts_avg,
-        norm_avg_sig,
-        ref_counts_ste,
-        sig_counts_ste,
-        norm_avg_sig_ste,
-    )
+#     return (
+#         ref_counts_avg,
+#         sig_counts_avg,
+#         norm_avg_sig,
+#         ref_counts_ste,
+#         sig_counts_ste,
+#         norm_avg_sig_ste,
+#     )
 
 # %% Main
 
@@ -82,6 +84,7 @@ def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
+    kpl.init_kplotlib()
     
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
@@ -132,6 +135,16 @@ def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
 
     start_timestamp = tool_belt.get_time_stamp()
 
+
+    # Create raw data figure for incremental plotting
+    raw_fig, ax_sig_ref, ax_norm = pulsed_resonance.create_raw_data_figure(
+        freq_center, freq_range, num_steps
+    )
+    # Set up a run indicator for incremental plotting
+    run_indicator_text = "Run #{}/{}"
+    text = run_indicator_text.format(0, num_runs)
+    run_indicator_obj = kpl.anchored_text(ax_norm, text, loc=kpl.Loc.UPPER_RIGHT)
+    
     # %% Collect the data
 
     # Start 'Press enter to stop...'
@@ -203,7 +216,29 @@ def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
 
         counter_server.stop_tag_stream()
 
-        # %% Save the data we have incrementally for long measurements
+        ### Incremental plotting
+
+        # Update the run indicator
+        text = run_indicator_text.format(run_ind + 1, num_runs)
+        run_indicator_obj.txt.set_text(text)
+
+        # Average the counts over the iterations
+        inc_sig_counts = sig_counts[: run_ind + 1]
+        inc_ref_counts = ref_counts[: run_ind + 1]
+        ret_vals = tool_belt.process_counts(
+            inc_sig_counts, inc_ref_counts, 1, readout, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+
+        kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+        kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+        kpl.plot_line_update(ax_norm, y=norm_avg_sig)
+        # Save the data we have incrementally for long measurements
 
         rawData = {'start_timestamp': start_timestamp,
                    'nv_sig': nv_sig,
@@ -231,40 +266,28 @@ def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(rawData, file_path)
+        
 
     # %% Process and plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, 1, readout, norm_style)
+    ### Process and plot the data
+
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, 1, readout, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
+
+    # Raw data
+    kpl.plot_line_update(ax_sig_ref, line_ind=0, y=sig_counts_avg_kcps)
+    kpl.plot_line_update(ax_sig_ref, line_ind=1, y=ref_counts_avg_kcps)
+    kpl.plot_line_update(ax_norm, y=norm_avg_sig)
+    run_indicator_obj.remove()
     
-
-    # Create an image with 2 plots on one row, with a specified size
-    # Then draw the canvas and flush all the previous plots from the canvas
-    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
-    # The first plot will display both the uwave_off and uwave_off counts
-    ax = axes_pack[0]
-    ax.plot(freqs, ref_counts_avg_kcps, 'r-', label = 'Reference')
-    ax.plot(freqs, sig_counts_avg_kcps, 'g-', label = 'Signal')
-    ax.set_title('Non-normalized Count Rate Versus Frequency')
-    ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('Count rate (kcps)')
-    ax.legend()
-    # The second plot will show their subtracted values
-    ax = axes_pack[1]
-    ax.plot(freqs, norm_avg_sig, 'b-')
-    ax.set_title('Normalized Count Rate vs Frequency')
-    ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('Contrast (arb. units)')
-
-    fig.canvas.draw()
-    fig.tight_layout()
-    fig.canvas.flush_events()
 
     # %% Clean up and save the data
 
@@ -300,7 +323,7 @@ def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
 
     name = nv_sig['name']
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
-    tool_belt.save_figure(fig, filePath)
+    tool_belt.save_figure(raw_fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
 
     # Use the pulsed_resonance fitting functions
