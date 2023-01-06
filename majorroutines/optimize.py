@@ -253,14 +253,19 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     Prepares the microscope for a measurement. In particular,
     sets up the optics (positioning, collection filter, etc) and magnet.
     The laser set up must be handled by each routine since the same laser
+    
+    If coords are not passed, it will add drift to the nv_sig coords
     """
 
-    if coords is not None:
-        # print("setting to opti coords:", coords)
-        if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-            positioning.set_xyz_ramp(cxn, coords)
-        else:
-            positioning.set_xyz(cxn, coords)
+    if coords is None:
+        coords_nv_sig = nv_sig['coords']
+        drift = positioning.get_drift(cxn)
+        coords = numpy.array(coords_nv_sig) + drift
+        
+    if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
+        positioning.set_xyz_ramp(cxn, coords)
+    else:
+        positioning.set_xyz(cxn, coords)
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]

@@ -475,7 +475,7 @@ def imshow(
     if x_label is not None:
         plt.xlabel(x_label)
     if y_label is not None:
-        plt.xlabel(y_label)
+        plt.ylabel(y_label)
     if title:
         plt.title(title)
 

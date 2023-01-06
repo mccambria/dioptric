@@ -27,6 +27,7 @@ from utils.tool_belt import States
 from scipy.optimize import curve_fit
 from numpy.linalg import eigvals
 import majorroutines.optimize as optimize
+from utils.tool_belt import NormStyle
 
 
 # %% Constants
@@ -522,10 +523,9 @@ def main_with_cxn(
 
     seq_file_name = "spin_echo.py"
     # set up to drive transition through zero
-    if do_dq is not False:
+    if do_dq:
         do_ramsey = False
         seq_file_name = "spin_echo_dq.py"
-        # seq_file_name = "spin_echo_dq_edit.py"
         
         rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
@@ -537,14 +537,14 @@ def main_with_cxn(
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
         uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
         uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        
+        
         if state.value == States.LOW.value:
-            state_init = States.LOW
-            state_seco = States.HIGH
-            # state_seco = States.LOW
+            state_activ = States.LOW
+            state_proxy = States.HIGH
         elif state.value == States.HIGH.value:
-            state_init = States.HIGH
-            state_seco = States.LOW
-            # state_seco = States.HIGH
+            state_activ = States.HIGH
+            state_proxy = States.LOW
 
     # %% Create the array of relaxation times
 
@@ -604,7 +604,7 @@ def main_with_cxn(
     # %% Analyze the sequence
     
     num_reps = int(num_reps)
-    if do_dq is not False:
+    if do_dq:
         seq_args = [
             min_precession_time,
             polarization_time,
@@ -614,8 +614,8 @@ def main_with_cxn(
             uwave_pi_pulse_high,
             uwave_pi_on_2_pulse_high,
             max_precession_time,
-            state_init.value,
-            state_seco.value,
+            state_activ.value,
+            state_proxy.value,
             laser_name, 
             laser_power, 
             do_ramsey
@@ -682,7 +682,7 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
 
-        if do_dq is not False:
+        if do_dq:
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
             sig_gen_low_cxn.set_freq(uwave_freq_low)
             sig_gen_low_cxn.set_amp(uwave_power_low)
@@ -725,7 +725,7 @@ def main_with_cxn(
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
-            if do_dq is not False:
+            if do_dq:
                 seq_args = [
                     taus[tau_ind_first],
                     polarization_time,
@@ -735,8 +735,8 @@ def main_with_cxn(
                     uwave_pi_pulse_high,
                     uwave_pi_on_2_pulse_high,
                     taus[tau_ind_second],
-                    state_init.value,
-                    state_seco.value,
+                    state_activ.value,
+                    state_proxy.value,
                     laser_name,
                     laser_power, 
                     do_ramsey
@@ -871,8 +871,8 @@ def main_with_cxn(
         norm_avg_sig_ste,
     ) = ret_vals
     
-    print(numpy.average(norm_avg_sig))
-    print(numpy.average(norm_avg_sig_ste))
+    # print(numpy.average(norm_avg_sig))
+    # print(numpy.average(norm_avg_sig_ste))
     ax = axes_pack[0]
     ax.cla()
     ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
@@ -936,6 +936,7 @@ def main_with_cxn(
         "ref_counts-units": "counts",
         "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
         "norm_avg_sig-units": "arb",
+        "norm_avg_sig_ste": norm_avg_sig_ste.tolist(),
     }
 
     nv_name = nv_sig["name"]
@@ -990,7 +991,7 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_12_15-04_07_26-siena-nv1_2022_10_27"
+    file_name = "2022_12_16-01_10_36-siena-nv1_2022_10_27"
     folder = 'pc_rabi/branch_master/spin_echo/2022_12'
     data = tool_belt.get_raw_data(file_name, folder)
     nv_name = data['nv_sig']["name"]
@@ -1008,8 +1009,22 @@ if __name__ == "__main__":
     #### T2 time
     
     norm_avg_sig = data['norm_avg_sig']
+    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts']
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
+    num_reps = data['num_reps']
+    nv_sig = data['nv_sig']
+    readout = nv_sig['spin_readout_dur']
+    norm_style = NormStyle.SINGLE_VALUED
+    
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
     
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
@@ -1030,8 +1045,8 @@ if __name__ == "__main__":
         fit_func,
         taus_ms,
         norm_avg_sig,
-        # sigma=norm_avg_sig_ste,
-        # absolute_sigma=True,
+        sigma=norm_avg_sig_ste,
+        absolute_sigma=True,
         p0=guess_params,
     )
     print(popt)
@@ -1042,12 +1057,12 @@ if __name__ == "__main__":
                           num=1000)
 
     fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus_ms, norm_avg_sig,'bo',label='data')
+    ax.errorbar(taus_ms, norm_avg_sig,fmt = 'bo', yerr = norm_avg_sig_ste, label='data')
     ax.plot(taus_ms_linspace, fit_func(taus_ms_linspace,*popt),'r',label='fit')
     ax.set_xlabel(r'Free precesion time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend()
-    text = r"$T_2 =$ " + '%.2f'%(popt[1]) + r" ms" 
+    text = r"$T_2 =$ " + '%.2f'%(popt[1]) + r' $\pm$ '+ '%.2f'%(numpy.sqrt(pcov[1][1])) + r" ms" 
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(
         0.65,

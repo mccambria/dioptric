@@ -69,14 +69,14 @@ def process_counts(ref_counts, sig_counts, norm_style=NormStyle.SINGLE_VALUED):
 # %% Main
 
 
-def main(nv_sig, apd_indices, freq_center, freq_range,
+def main(nv_sig, freq_center, freq_range,
          num_steps, num_runs, uwave_power, state=States.LOW, opti_nv_sig = None):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+        main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
                       num_steps, num_runs, uwave_power, state, opti_nv_sig)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
                   num_steps, num_runs, uwave_power, state=States.LOW, opti_nv_sig = None):
 
     # %% Initial calculations and setup
@@ -95,9 +95,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # readout typically used for state detection
     readout = nv_sig['imaging_readout_dur']  
     readout_sec = readout / (10**9)
+    norm_style = nv_sig["norm_style"]
     
     file_name = 'resonance.py'
-    seq_args = [readout, state.value, laser_name, laser_power, apd_indices[0]]
+    seq_args = [readout, state.value, laser_name, laser_power, ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     # print(seq_args)
     # return
@@ -145,12 +146,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
             drift = positioning.get_drift(cxn)
             adj_coords = nv_sig['coords'] + np.array(drift)
             positioning.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
         
         # Laser setup
@@ -165,7 +166,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
         # Load the APD task with two samples for each frequency step
         pulsegen_server.stream_load(file_name, seq_args_string)
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
         
         # Shuffle the list of frequency indices so that we step through
         # them randomly
@@ -188,7 +189,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             pulsegen_server.stream_start() 
 
             # Read the counts using parity to distinguish signal vs ref
-            new_counts = counter_server.read_counter_modulo_gates(2)
+            new_counts = counter_server.read_counter_modulo_gates(2, 1)
             sample_counts = new_counts[0]
             
             cur_run_sig_counts_summed = sample_counts[1]
@@ -233,12 +234,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
 
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
-    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, 1, readout, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
     
-    # Convert to kilocounts per second
-    kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
-    kcpsc_uwave_on_avg = (avg_sig_counts / (10**3)) / readout_sec
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
@@ -246,8 +249,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # The first plot will display both the uwave_off and uwave_off counts
     ax = axes_pack[0]
-    ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = 'Reference')
-    ax.plot(freqs, kcpsc_uwave_on_avg, 'g-', label = 'Signal')
+    ax.plot(freqs, ref_counts_avg_kcps, 'r-', label = 'Reference')
+    ax.plot(freqs, sig_counts_avg_kcps, 'g-', label = 'Signal')
     ax.set_title('Non-normalized Count Rate Versus Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Count rate (kcps)')
@@ -301,8 +304,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     tool_belt.save_raw_data(rawData, filePath)
 
     # Use the pulsed_resonance fitting functions
-    fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_range, freq_center,
-                                  num_steps, norm_avg_sig, norm_avg_sig_ste, ref_counts)
+    fit_func = None
+    if False:
+        fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_range, freq_center,
+                                      num_steps, norm_avg_sig, norm_avg_sig_ste, ref_counts)
+        
     fit_fig = None
     if (fit_func is not None) and (popt is not None):
         fit_fig = pulsed_resonance.create_fit_figure(freq_range, freq_center,
@@ -311,19 +317,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
 
-    if fit_func == pulsed_resonance.single_gaussian_dip:
-        print('Single resonance at {:.4f} GHz'.format(popt[2]))
-        print('\n')
-        return popt[2], None
-    elif fit_func == pulsed_resonance.double_gaussian_dip:
-        print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
-        print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
-        print('\n')
-        return popt[2], popt[5]
-    else:
-        print('No resonances found')
-        print('\n')
-        return None, None
+    # if fit_func == pulsed_resonance.single_gaussian_dip:
+    #     print('Single resonance at {:.4f} GHz'.format(popt[2]))
+    #     print('\n')
+    #     return popt[2], None
+    # elif fit_func == pulsed_resonance.double_gaussian_dip:
+    #     print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
+    #     print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
+    #     print('\n')
+    #     return popt[2], popt[5]
+    # else:
+    #     print('No resonances found')
+    #     print('\n')
+    return None, None
 
 # %%
 

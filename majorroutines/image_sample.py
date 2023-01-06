@@ -324,9 +324,13 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
     optimize.prepare_microscope(cxn, nv_sig)
+    drift = positioning.get_drift(cxn)
+    adj_x_center = x_center + drift[0]
+    adj_y_center = y_center + drift[1]
+    adj_z_center = z_center + drift[2]
     xy_server = positioning.get_server_pos_xy(cxn)
     # print(xy_server)
-    xyz_server = positioning.get_server_pos_xy(cxn)
+    xyz_server = positioning.get_server_pos_xyz(cxn)
     counter = tool_belt.get_server_counter(cxn)
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
     total_num_samples = num_steps**2
@@ -410,10 +414,10 @@ def main_with_cxn(
     
     if scan_type == 'XY':
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
+            adj_x_center, adj_y_center,x_range, y_range, x_num_steps, y_num_steps)
     elif scan_type == 'XZ':
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
+            adj_x_center, adj_z_center,x_range, y_range, x_num_steps, y_num_steps)
     
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -445,7 +449,9 @@ def main_with_cxn(
         if scan_type == 'XY':
             xy_server.load_stream_xy(x_voltages, y_voltages)
         elif scan_type == 'XZ':
-            xyz_server.load_stream_xyz(x_voltages, y_voltages)
+            z_voltages = y_voltages
+            y_vals_static = [adj_y_center]*len(x_voltages)
+            xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
     
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
@@ -469,16 +475,31 @@ def main_with_cxn(
     title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
     
     fig, ax = plt.subplots()
-    kpl.imshow(
-        ax,
-        img_array_kcps,
-        title=title,
-        axes_labels=axes_labels,
-        cbar_label="kcps",
-        extent=extent,
-        vmin=vmin,
-        vmax=vmax,
-    )
+    if scan_type == 'XZ':
+        kpl.imshow(
+            ax,
+            img_array_kcps,
+            title=title,
+            x_label=axes_labels[0],
+            y_label=axes_labels[1],
+            cbar_label="kcps",
+            extent=extent,
+            vmin=vmin,
+            vmax=vmax,
+            aspect='auto'
+        )
+    else:
+        kpl.imshow(
+            ax,
+            img_array_kcps,
+            title=title,
+            x_label=axes_labels[0],
+            y_label=axes_labels[1],
+            cbar_label="kcps",
+            extent=extent,
+            vmin=vmin,
+            vmax=vmax,
+        )
     
     ### Collect the data
     
@@ -503,7 +524,7 @@ def main_with_cxn(
             if scan_type == 'XY':
                 flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
             elif scan_type == 'XZ':
-                flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
+                flag = xyz_server.write_xyz(cur_x_pos, adj_y_center, cur_y_pos)
             
             # Some diagnostic stuff - checking how far we are from the target pos
             actual_x_pos, actual_y_pos, actual_z_pos = xyz_server.read_xyz()
@@ -567,18 +588,18 @@ def main_with_cxn(
 
     tool_belt.reset_cfm(cxn)
     if scan_type == 'XY':
-        xy_server.write_xy(x_center, y_center)
+        xy_server.write_xy(adj_x_center, adj_y_center)
     elif scan_type == 'XZ':
-        xyz_server.write_xyz(x_center, y_center, z_center)
+        xyz_server.write_xyz(adj_x_center, adj_y_center, adj_z_center)
     
     timestamp = tool_belt.get_time_stamp()
     rawData = {
         'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 # 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                "x_center": x_center,
-                "y_center": y_center,
-                "z_center": z_center,
+                "x_center": adj_x_center,
+                "y_center": adj_y_center,
+                "z_center": adj_z_center,
                 'x_range': x_range,
                 'x_range-units': 'um',
                 'y_range': y_range,
@@ -607,18 +628,18 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2022_12_01-17_10_25-15micro-nvref_zfs_vs_t"
+    file_name = "2022_12_20-19_00_52-siena-nv_search"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    x_voltages = data["x_voltages"]
-    y_voltages = data["y_voltages"]
+    x_voltages = data["x_positions_1d"]
+    y_voltages = data["y_positions_1d"]
     x_half_pixel = (x_voltages[1] - x_voltages[0]) / 2
     y_half_pixel = (y_voltages[1] - y_voltages[0]) / 2
     extent = (
+    x_voltages[-1] + x_half_pixel,
         x_voltages[0] - x_half_pixel,
-        x_voltages[-1] + x_half_pixel,
         y_voltages[0] - y_half_pixel,
         y_voltages[-1] + y_half_pixel,
     )
@@ -629,9 +650,10 @@ if __name__ == "__main__":
         ax,
         img_array_kcps,
         title="Replot test",
-        axes_labels=["V", "V"],
+        x_label="V",
+        y_label="V",
         cbar_label="kcps",
         extent=extent,
     )
 
-    plt.show(block=True)
+    # plt.show(block=True)

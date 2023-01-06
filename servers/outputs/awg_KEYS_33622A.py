@@ -31,7 +31,7 @@ import socket
 import logging
 import time
 # import numpy
-# from numpy import pi
+from numpy import pi
 import utils.tool_belt as tool_belt
 from servers.outputs.interfaces.awg import AWG
 
@@ -180,6 +180,7 @@ class AwgKeys33622A(LabradServer, AWG):
     #     amp = self.iq_comp_amp
     #     self.load_iq(phases, amp)
 
+
     def load_iq(self, phases, amp):
         """
         Load IQ modulation
@@ -200,25 +201,19 @@ class AwgKeys33622A(LabradServer, AWG):
         # repeat until it's long enough
         while len(phases) < 32:
             phases *= 2
-            
+        
         # basedo n the angles for the phase and the amplitude, calculate
         # the amplitudes for the I and Q components
         phase_comps = tool_belt.iq_comps(phases, amp)
-        # logging.info(phase_comps)
-
-        # Shift the last element to first to account for first pulse in seq
-        # Then convert to string and trim the brackets
+        
+        # Convert to string and trim the brackets
         # for the I channel
         comps = phase_comps[0]
-        last_el = comps.pop()
-        comps.insert(0, last_el)
         seq = str(comps)[1:-1]
         self.wave_gen.write("SOUR1:DATA:ARB iqSwitch1, {}".format(seq))
 
         # for the Q channel
         comps = phase_comps[1]
-        last_el = comps.pop()
-        comps.insert(0, last_el)
         seq = str(comps)[1:-1]
         self.wave_gen.write("SOUR2:DATA:ARB iqSwitch2, {}".format(seq))
 
@@ -231,15 +226,22 @@ class AwgKeys33622A(LabradServer, AWG):
 
         self.wave_gen.write("OUTP1 ON")
         self.wave_gen.write("OUTP2 ON")
-
+        
+        
+        # 12/19/2022 No longr setting an initial trigger. 
+        # It seems to be working just fine if we send in a list of phases and
+        # set trigger pulses before each MW pulse. - AG
+        
+        
         # When you load a sequence like this, it doesn't move to the first
         # point of the sequence until it gets a trigger. Supposedly just
         # 'TRIG[1:2]' forces a trigger event, but I can't get it to work.
         # So let's just set the pulse streamer to constant for a second to
         # fake a trigger...
-        time.sleep(0.1)  # Make sure everything is propagated
-        ret_val = ensureDeferred(self.force_trigger())
-        ret_val.addCallback(self.on_force_trigger)
+        
+        # time.sleep(0.1)  # Make sure everything is propagated
+        # ret_val = ensureDeferred(self.force_trigger())
+        # ret_val.addCallback(self.on_force_trigger)
 
     async def force_trigger(self):
         self.client.pulse_streamer.constant([self.do_arb_wave_trigger])

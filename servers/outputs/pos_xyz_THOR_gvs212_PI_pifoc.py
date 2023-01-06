@@ -47,7 +47,7 @@ class PosXyzThorgvs212PiPifoc(PosXyThorGvs212, PosZPiPifoc):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -55,12 +55,17 @@ class PosXyzThorgvs212PiPifoc(PosXyThorGvs212, PosZPiPifoc):
         self.task = None
         self.sub_init_server_xy()
         self.sub_init_server_z()
+        logging.info('Init complete')
 
     def stopServer(self):
         self.close_task_internal()
 
-    def load_stream_writer_xyz(self, c, task_name, voltages, period):
+    @setting(100, coords_x="*v[]", coords_y="*v[]", coords_z="*v[]", continuous="b")
+    def load_stream_xyz(self, c, coords_x, coords_y, coords_z, continuous=False):
 
+        
+        voltages = numpy.vstack((coords_x, coords_y, coords_z))
+        
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
@@ -74,7 +79,7 @@ class PosXyzThorgvs212PiPifoc(PosXyThorGvs212, PosZPiPifoc):
         num_stream_voltages = num_voltages - 1
 
         # Create a new task
-        task = nidaqmx.Task(task_name)
+        task = nidaqmx.Task(f"{self.name}-load_stream_xyz")
         self.task = task
 
         # Set up the output channels
@@ -95,7 +100,7 @@ class PosXyzThorgvs212PiPifoc(PosXyThorGvs212, PosZPiPifoc):
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
-        freq = float(1 / (period * (10 ** -9)))  # freq in seconds as a float
+        freq = 100  # Just guess a data rate of 100 Hz
         task.timing.cfg_samp_clk_timing(
             freq, source=self.daq_di_clock, samps_per_chan=num_stream_voltages
         )
@@ -107,120 +112,22 @@ class PosXyzThorgvs212PiPifoc(PosXyThorGvs212, PosZPiPifoc):
 
         task.start()
 
-    @setting(11, x_points="*v[]", y_points="*v[]", z_points="*v[]", period="i")
-    def load_arb_scan_xyz(self, c, x_points, y_points, z_points, period):
-        """
-        Load a scan around a seuqence of arbitrary xyz points 
+    @setting(200, xVoltage="v[]", yVoltage="v[]", zVoltage="v[]")
+    def write_xyz(self, c, xVoltage, yVoltage, zVoltage):
+        """Write the specified voltages to the galvo.
 
         Params
-            x_points: list(float)
-                X values correspnding to positions in x
-            y_points: list(float)
-                Y values correspnding to positions in y
-            z_points: list(float)
-                Z values correspnding to positions in z
-            period: int
-                Expected period between clock signals in ns
-
+            xVoltage: float
+                Voltage to write to the x channel
+            yVoltage: float
+                Voltage to write to the y channel
+            zVoltage: float
+                Voltage to write to the z channel
         """
 
-        voltages = numpy.vstack((x_points, y_points, z_points))
-
-        self.load_stream_writer_xyz(
-            c, "GalvoAndObjectivePiezo-load_arb_scan_xyz", voltages, period
-        )
-
-        return
-    
-    @setting(
-        12,
-        x_center="v[]",
-        z_center="v[]",
-        x_range="v[]",
-        z_range="v[]",
-        num_steps="i",
-        period="i",
-        returns="*v[]*v[]",
-    )
-    def load_sweep_scan_xz(
-        self, c, x_center, y_center, z_center, x_range, z_range, num_steps, period
-    ):
-        """Load a scan that will wind through the grid defined by the passed
-        parameters. Samples are advanced by the clock.
-
-        Normal scan performed, starts in bottom right corner, and starts
-        heading left
-        
-
-        Params
-            x_center: float
-                Center x voltage of the scan
-            y_center: float
-                Center position y voltage (won't change in y)
-            z_center: float
-                Center z voltage of the scan
-            x_range: float
-                Full scan range in x
-            z_range: float
-                Full scan range in z
-            num_steps: int
-                Number of steps the break the ranges into
-            period: int
-                Expected period between clock signals in ns
-
-        Returns
-            list(float)
-                The x voltages that make up the scan
-            list(float)
-                The z voltages that make up the scan
-        """
-
-        # Must use same number of steps right now
-        x_num_steps = num_steps
-        z_num_steps = num_steps
-
-        # Force the scan to have square pixels by only applying num_steps
-        # to the shorter axis
-        half_x_range = x_range / 2
-        half_z_range = z_range / 2
-
-        x_low = x_center - half_x_range
-        x_high = x_center + half_x_range
-        z_low = z_center - half_z_range
-        z_high = z_center + half_z_range
-
-        # Apply scale and offset to get the voltages we'll apply.
-        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
-        z_voltages_1d = numpy.linspace(z_low, z_high, num_steps)
-    
-
-        ######### Works for any x_range, y_range #########
-
-        # Winding cartesian product
-        # The x values are repeated and the z values are mirrored and tiled
-        # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
-
-        # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-        x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
-        # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
-        if z_num_steps % 2 == 0:  # Even x size
-            x_voltages = numpy.tile(x_inter, int(z_num_steps / 2))
-        else:  # Odd x size
-            x_voltages = numpy.tile(x_inter, int(numpy.floor(z_num_steps / 2)))
-            x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
-
-        # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
-        z_voltages = numpy.repeat(z_voltages_1d, x_num_steps)
-        
-        y_voltages = numpy.empty(len(z_voltages))
-        y_voltages.fill(y_center)
-
-        voltages = numpy.vstack((x_voltages,y_voltages, z_voltages))
-
-        self.load_stream_writer_xyz(c, "GalvoAndObjectivePiezo-load_sweep_scan_xz", voltages, period)
-
-        return x_voltages_1d, z_voltages_1d
-
+        self.write_xy(c, [xVoltage], [yVoltage])
+        self.write_z(c, [zVoltage])
+  
 
 __server__ = PosXyzThorgvs212PiPifoc()
 

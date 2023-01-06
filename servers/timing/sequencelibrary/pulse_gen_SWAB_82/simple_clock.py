@@ -20,7 +20,7 @@ def get_seq(pulse_streamer, config, args):
     delay = args
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
 
     # Convert the 32 bit ints into 64 bit ints

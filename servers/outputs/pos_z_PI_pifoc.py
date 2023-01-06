@@ -60,6 +60,7 @@ class PosZPiPifoc(LabradServer):
         self.z_last_turning_position = None
         config = ensureDeferred(self.get_config_z())
         config.addCallback(self.on_get_config_z)
+        # logging.info(self.z_hysteresis_b)
 
     async def get_config_z(self):
         p = self.client.registry.packet()
@@ -81,7 +82,7 @@ class PosZPiPifoc(LabradServer):
         gcs_dll_path += (
             "\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll"
         )
-        logging.info(gcs_dll_path)
+        # logging.info(gcs_dll_path)
         self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
         # Connect the specific device with the serial number
         self.piezo.ConnectUSB(config[1])
@@ -91,12 +92,11 @@ class PosZPiPifoc(LabradServer):
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
         self.z_hysteresis_b = config[4]
+        logging.info(self.z_hysteresis_b)
         # Define a such that 1 nominal volt corresponds to
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
-        logging.info(self.z_hysteresis_a)
-        logging.info(self.z_hysteresis_b)
         logging.info("Init complete")
 
     def stopServer(self):

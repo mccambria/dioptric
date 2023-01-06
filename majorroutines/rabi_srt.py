@@ -96,7 +96,6 @@ def main(nv_sig, uwave_time_range, deviation_high, deviation_low,
          num_steps, num_reps, num_runs,
          readout_state = States.HIGH,
          initial_state = States.HIGH,
-         low_dev_analog_voltage = 1.0,
          opti_nv_sig = None,
          ):
         #Right now, make sure SRS is set as State HIGH
@@ -107,7 +106,6 @@ def main(nv_sig, uwave_time_range, deviation_high, deviation_low,
                  num_steps, num_reps, num_runs,
                  readout_state,
                  initial_state,
-                 low_dev_analog_voltage,
                  opti_nv_sig)
 
 
@@ -117,7 +115,6 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
                      num_steps, num_reps, num_runs,
                      readout_state = States.HIGH,
                      initial_state = States.HIGH,
-                     low_dev_analog_voltage = 1.0,
                      opti_nv_sig = None):
 
     counter_server = tool_belt.get_server_counter(cxn)
@@ -172,7 +169,7 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
 
     polarization_time = nv_sig['spin_pol_dur']
     readout = nv_sig['spin_readout_dur']
-    readout_sec = readout / (10**9)
+    # readout_sec = readout / (10**9)
     
     norm_style = nv_sig["norm_style"]
 
@@ -189,7 +186,6 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
     seq_args = [taus[0], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, max_uwave_time, 
                 dev_high_sign, dev_low_sign,
-                low_dev_analog_voltage,
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
 #    for arg in seq_args:
@@ -324,7 +320,6 @@ def main_with_cxn(cxn, nv_sig, uwave_time_range, deviation_high, deviation_low,
             seq_args = [taus[tau_ind_first], polarization_time,
                 readout, pi_pulse_low, pi_pulse_high, taus[tau_ind_second], 
                 dev_high_sign, dev_low_sign,
-                low_dev_analog_voltage,
                 initial_state.value, readout_state.value, 
                 laser_name, laser_power]
     
@@ -533,8 +528,7 @@ def plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop = []):
     
     
 def full_pop_srt(nv_sig, uwave_time_range, deviation, 
-         num_steps, num_reps, num_runs, 
-                       low_dev_analog_voltage):
+         num_steps, num_reps, num_runs):
     
     contrast = 0.104*2
     min_pop = 1-contrast
@@ -548,20 +542,20 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
     deviation_low = deviation
     
     init=States.LOW
-    if False :
+    if True :
  
         p_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
                  num_steps, num_reps, num_runs,
                  readout_state = States.HIGH,
                  initial_state = init,
                  )
+                 
         p_pop = (numpy.array(p_sig) - min_pop) / (1 - min_pop)
         
     m_sig = main(nv_sig, uwave_time_range, deviation_high, deviation_low, 
         num_steps, num_reps, num_runs,
         readout_state = States.LOW,
         initial_state = init,
-        low_dev_analog_voltage=low_dev_analog_voltage
         )
     m_pop = (numpy.array(m_sig) - min_pop) / (1 - min_pop)
     
@@ -569,13 +563,12 @@ def full_pop_srt(nv_sig, uwave_time_range, deviation,
             num_steps, num_reps, num_runs,
             readout_state = States.ZERO,
             initial_state = init,
-            low_dev_analog_voltage=low_dev_analog_voltage
             )
     z_pop = (numpy.array(z_sig) - min_pop) / (1 - min_pop)
     
 
     
-    fig = plot_pop_srt(taus, m_pop, z_pop, deviation)
+    fig = plot_pop_srt(taus, m_pop, z_pop, deviation, p_pop)
 
     
     timestamp = tool_belt.get_time_stamp()
