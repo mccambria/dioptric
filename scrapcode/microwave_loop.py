@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 mu0 = 4 * np.pi * 10**-7  # H / m
 rad = 0.001 / 2  # m
 current = 2 * np.sqrt(15 / 50)
+current = 4.3 * np.sqrt(15 / 50)  # Matches data
+# current = 14 * np.sqrt(15 / 50)
 
 
 def b_field_below_loop(z):
@@ -36,6 +38,7 @@ def main():
     # wo_obj = np.array([2378.8, 2254.1, 2064.1, 1830.3, 1598.2, 1291.8, 941.6, 586.3, 1.0])
 
     with_obj *= mu0 * 10**4  # From A/m to G
+    # with_obj += 60
 
     fig, ax = plt.subplots()
 
