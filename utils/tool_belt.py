@@ -180,6 +180,8 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
         if filter_key not in nv_sig:
             return
         filter_name = nv_sig[filter_key]
+        if filter_name is None:
+            return
     elif (optics_name is not None) and (filter_name is not None):
         pass  # All good
     else:

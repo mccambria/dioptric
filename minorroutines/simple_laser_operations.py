@@ -10,6 +10,7 @@ Created on June 16th, 2019
 
 import labrad
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 
 
 def constant(cxn, laser_name, laser_power=None):
@@ -63,9 +64,10 @@ def circle(cxn, laser_name, laser_power=None):
 
     seq_file = "simple_readout.py"
     seq_args = [period, period, laser_name, laser_power]
-    xy_server = tool_belt.get_xy_server(cxn)
-    xy_server.load_circle_scan_xy(radius, num_steps, period)
-    pulse_gen = tool_belt.get_pulse_gen_server(cxn)
+    xy_server = positioning.get_server_pos_xy(cxn)
+    coords_x, coords_y = positioning.get_scan_circle_2d(0, 0, radius, num_steps)
+    xy_server.load_stream_xy(coords_x, coords_y, True)
+    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     pulse_gen.stream_immediate(seq_file, -1, seq_args_string)
     tool_belt.poll_safe_stop()
@@ -76,18 +78,18 @@ if __name__ == "__main__":
 
     laser_name = "laserglow_532"
     laser_power = None
-    laser_filter = "nd_1.0"
-    collection_filter = "nd_0.4"
+    laser_filter = "nd_0"
+    collection_filter = "nd_0"
     pos = [0.0, 0.0, 5.0]
 
     tool_belt.init_safe_stop()
 
     with labrad.connect() as cxn:
 
-        tool_belt.set_xyz(cxn, pos)
-        tool_belt.set_filter(
-            cxn, optics_name=laser_name, filter_name=laser_filter
-        )
+        positioning.set_xyz(cxn, pos)
+        # tool_belt.set_filter(
+        #     cxn, optics_name=laser_name, filter_name=laser_filter
+        # )
         # tool_belt.set_filter(
         #     cxn, optics_name="collection", filter_name=collection_filter
         # )

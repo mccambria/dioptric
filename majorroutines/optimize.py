@@ -645,14 +645,17 @@ def main_with_cxn(
             axis_ind = 2
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig_z, axis_ind, config, fig)
 
-        opti_coords.append(ret_vals[0])
-        scan_vals_by_axis.append(ret_vals[1])
-        counts_by_axis.append(ret_vals[2])
+        # MCC: What is this doing here? It breaks optimize for me (xy and z are streams and disable_z_opt is set)
+        # opti_coords.append(ret_vals[0])
+        # scan_vals_by_axis.append(ret_vals[1])
+        # counts_by_axis.append(ret_vals[2])
 
         # return
         # We failed to get optimized coordinates, try again
         if None in opti_coords:
             continue
+        
+        # print(opti_coords)
 
         # Check the count rate
         opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords, config)
