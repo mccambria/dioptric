@@ -253,13 +253,13 @@ if __name__ == "__main__":
         try:
             main_with_cxn(
                 cxn,
-                mode=Mode.CONTROL,
+                mode=Mode.MONITOR,
                 do_plot=True,
                 target=target,
                 pid_coeffs=pid_coeffs,
                 integral_bootstrap=integral_bootstrap,
                 integral_max=integral_max,
-                safety_check=False,
+                safety_check=True,
             )
         finally:
             power_supply.output_off()

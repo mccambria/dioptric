@@ -73,6 +73,8 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
     """Generate two plots: 1, the total counts vs readout duration for each of
     the spin states; 2 the SNR vs readout duration
     """
+    
+    kpl.init_kplotlib()
 
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
 
@@ -149,8 +151,8 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
 def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
 
     tool_belt.reset_cfm(cxn)
-    tagger_server = tool_belt.get_tagger_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    tagger_server = tool_belt.get_server_tagger(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file = "rabi.py"
     laser_key = "spin_laser"
@@ -177,7 +179,7 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
 
     opti_coords_list = []
 
-    sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+    sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
 
     opti_period = 0.25 * 60  # Optimize every opti_period seconds
 
@@ -263,7 +265,6 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
     raw_data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "state": state.name,

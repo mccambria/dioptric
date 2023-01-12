@@ -684,6 +684,9 @@ def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
     return common.get_registry_entry(cxn, "apd_indices", ["Config"])
 
+def get_apd_gate_channel(cxn):
+    return common.get_registry_entry(cxn, "di_apd_gate", ["Config", "Wiring", "Tagger"])
+
 
 # endregion
 # region Server getters
