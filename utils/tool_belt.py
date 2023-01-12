@@ -456,6 +456,8 @@ def sin_1_at_0_phase(t, amp, offset, freq, phase):
     # amp = 1 - offset
     return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
 
+def sin_phase(t, amp, offset, freq, phase):
+    return offset + (abs(amp) * np.sin((freq * t + phase)))
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2 * np.pi

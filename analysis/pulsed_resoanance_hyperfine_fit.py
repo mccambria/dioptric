@@ -75,6 +75,7 @@ def create_fit_figure(
     norm_avg_sig,
     fit_func,
     popt,
+    pcov,
     norm_avg_sig_ste=None,
 ):
 
@@ -96,18 +97,15 @@ def create_fit_figure(
     ax.set_ylabel("Normalized fluorescence")
     # ax.legend(loc="lower right")
 
-    # text = "\n".join(
-    #     (
-    #         "A = {:.3f}",
-    #         r"$\sigma$ = {:.4f} GHz",
-    #         "f = {:.4f} GHz",
-    #     )
-    # )
+    text = "f(mi=0) = {:.6f} +/- {:.6f} GHz"
+    
     # text1 = text.format(*popt[0:3])
     # text2 = text.format(*popt[3:6])
     # text3 = text.format(*popt[6:9])
 
-    # kpl.text(ax, 0.03, 0.8, text1)
+    # kpl.text(ax, 0.03, 0.8, text.format(popt[0], np.sqrt(pcov[0][0])) )
+    kpl.anchored_text(ax, text.format(popt[0], np.sqrt(pcov[0][0])), kpl.Loc.LOWER_LEFT, size=kpl.Size.SMALL)
+    # kpl.anchored_text(ax, text.format(popt[1], np.sqrt(pcov[1][1])), kpl.Loc.UPPER_RIGHT, size=kpl.Size.SMALL)
     # kpl.text(ax, 0.35, 0.8, text2)
     # kpl.text(ax, 0.7, 0.8, text3)
 
@@ -128,6 +126,20 @@ def tri_gaus(freqs,  center, hyperfine, a1, s1, a2, s2, a3, s3):
     gauss3 = gaussian(freqs, a3, s3, c3)
     return 1.0 - gauss1 - gauss2 - gauss3
 
+def six_gaus(freqs,  center1, center2, hyperfine, a1, s1, a2, s2, a3, s3, a4, s4, a5, s5, a6, s6):
+    c12 = center1 + hyperfine
+    c13 = center1 - hyperfine
+    c22 = center2 + hyperfine
+    c23 = center2 - hyperfine
+    gauss1 = gaussian(freqs, a1, s1, center1)
+    gauss2 = gaussian(freqs, a2, s2, c12)
+    gauss3 = gaussian(freqs, a3, s3, c13)
+    gauss4 = gaussian(freqs, a4, s4, center2)
+    gauss5 = gaussian(freqs, a5, s5, c22)
+    gauss6 = gaussian(freqs, a6, s6, c23)
+    return 1.0 - gauss1 - gauss2 - gauss3- gauss4 - gauss5 - gauss6
+
+
 
 def fit_resonance(
     freq_range,
@@ -141,10 +153,15 @@ def fit_resonance(
     hyperfine = 2.189288*1e-3
     fit_func = lambda freqs, center, a1, s1, a2, s2, a3, s3: tri_gaus(freqs,center, hyperfine, a1, s1, a2, s2, a3, s3)
     
+    # hyperfine = 2.189288*1e-3
+    # fit_func = lambda freqs, center1, center2,a1, s1, a2, s2, a3, s3,a4, s4, a5, s5, a6, s6: six_gaus(freqs,center1, center2, hyperfine, a1, s1, a2, s2, a3, s3,
+    #                                                                    a4, s4, a5, s5, a6, s6)
+    
+    
     guess_params = [freq_center,
-                    0.2, 0.0002, 
-                    0.2, 0.0002,
-                    0.2, 0.0002, 
+                    0.1, 0.0002, 
+                    0.1, 0.0002,
+                    0.1, 0.0002,
                     ]
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
@@ -155,8 +172,11 @@ def fit_resonance(
         norm_avg_sig,
         p0=guess_params,
     )
-    #popt=guess_params
-    print(popt[0])
+    # popt=guess_params
+    # print(popt)
+    print('{:.5f}'.format(popt[0]))
+    # print(popt[1])
+    print('{:.5f}'.format(np.sqrt(pcov[0][0])))
 
     return fit_func, popt, pcov
 
@@ -167,7 +187,7 @@ def fit_resonance(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     
-    file = "2023_01_03-14_23_09-siena-nv8_2022_12_22"
+    file = "2023_01_12-15_29_51-siena-nv8_2022_12_22"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
@@ -203,5 +223,6 @@ if __name__ == "__main__":
         norm_avg_sig,
         fit_func,
         popt,
+        pcov,
         norm_avg_sig_ste=norm_avg_sig_ste,
     )

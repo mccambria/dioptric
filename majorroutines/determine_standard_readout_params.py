@@ -149,8 +149,8 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
 def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
 
     tool_belt.reset_cfm(cxn)
-    tagger_server = tool_belt.get_tagger_server(cxn)
-    pulsegen_server = tool_belt.get_pulsegen_server(cxn)
+    tagger_server = tool_belt.get_server_tagger(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file = "rabi.py"
     laser_key = "spin_laser"
@@ -177,7 +177,7 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
 
     opti_coords_list = []
 
-    sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+    sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
 
     opti_period = 0.25 * 60  # Optimize every opti_period seconds
 
@@ -246,8 +246,9 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
 
     max_readout = nv_sig["spin_readout_dur"]
 
-    # Assume a common gate for both APDs
-    apd_gate_channel = tool_belt.get_apd_gate_channel(cxn)
+    # Get gate channels for apds
+    apd_wiring = tool_belt.get_tagger_wiring(cxn)
+    apd_gate_channel = apd_wiring['di_apd_gate']
     timetags, channels, opti_coords_list = optimize_readout_duration_sub(
         cxn, nv_sig, num_reps, state
     )
@@ -263,7 +264,7 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
     raw_data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(),
+        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "state": state.name,
@@ -298,6 +299,7 @@ def main_with_cxn(cxn, nv_sig, num_reps,
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
+    kpl.init_kplotlib()
 
     num_exps = len(max_readouts)
 

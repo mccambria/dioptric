@@ -863,8 +863,8 @@ if __name__ == "__main__":
     
     if True:
         # file_name = "2022_12_25-19_00_35-siena-nv8_2022_12_22"
-        file_name = "2022_12_25-13_58_34-siena-nv8_2022_12_22"
-        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12')
+        file_name = "2023_01_09-01_44_22-siena-nv6_2022_12_22"
+        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
         norm_avg_sig = data['norm_avg_sig']
        # norm_avg_sig_ste = data['norm_avg_sig_ste']
         plot_taus = data['plot_taus']

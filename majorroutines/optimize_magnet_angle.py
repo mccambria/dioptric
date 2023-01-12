@@ -74,7 +74,6 @@ def fit_data(splittings, angles):
             print(e)
             fit_func = None
             popt = None
-
     return fit_func, popt
 
 def clean_up(cxn):
@@ -118,10 +117,11 @@ def main(nv_sig, angle_range, num_angle_steps,
     """
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
+        angle = main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
                       freq_center, freq_range,
                       num_freq_steps, num_freq_reps, num_freq_runs,
                       uwave_power, uwave_pulse_dur)
+    return angle
 
 def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
                   freq_center, freq_range,
@@ -211,6 +211,7 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 
     # Save the data and the figures from this run
     save_data(nv_sig['name'], raw_data, fig)
+    return opti_angle
 
 
 # %% Run the file
@@ -221,8 +222,8 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2022_11_06-15_11_47-siena-nv1_2022_10_13'
-    folder = "pc_rabi/branch_master/optimize_magnet_angle/2022_12"
+    file = '2023_01_09-13_16_03-siena-nv6_2022_12_22'
+    folder = "pc_rabi/branch_master/optimize_magnet_angle/2023_01"
     data = tool_belt.get_raw_data(file, folder)
     splittings = data['splittings']
     print(splittings)

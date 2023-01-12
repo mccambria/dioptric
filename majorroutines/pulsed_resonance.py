@@ -122,6 +122,10 @@ def create_fit_figure(
         low_text = base_text.format(contrast, hwhm, freq)
         contrast, hwhm, freq = popt[3:6]
         high_text = base_text.format(contrast, hwhm, freq)
+        print(popt[2])
+        print(np.sqrt(pcov[2][2]))
+        print(popt[5])
+        print(np.sqrt(pcov[5][5]))
     size = kpl.Size.SMALL
     if low_text is not None:
         kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
@@ -138,6 +142,7 @@ def create_raw_data_figure(
     sig_counts_avg_kcps=None,
     ref_counts_avg_kcps=None,
     norm_avg_sig=None,
+    magnet_angle= None,
 ):
     """Create a 2-panel figure showing the raw data (signal and reference) as well as the
     normalized average signal
@@ -193,7 +198,9 @@ def create_raw_data_figure(
         norm_avg_sig = np.empty(num_steps)
         norm_avg_sig[:] = np.nan
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
-
+    
+    if magnet_angle:
+        kpl.anchored_text(ax_norm, '{} deg'.format(magnet_angle), kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
     return fig, ax_sig_ref, ax_norm
 
 
@@ -667,7 +674,8 @@ def main_with_cxn(
 
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        freq_center, freq_range, num_steps
+        freq_center, freq_range, num_steps,
+        magnet_angle = nv_sig['magnet_angle']
     )
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
@@ -831,16 +839,18 @@ def main_with_cxn(
     high_freq = None
     fit_fig = None
     try:
-        fit_fig, _, fit_func, popt, _ = create_fit_figure(
+        fit_fig, _, fit_func, popt, pcov = create_fit_figure(
             freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
         )
     
         if len(popt) == 3:
             low_freq = popt[2]
             high_freq = None
+            print('Single resonance found at {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2])))
         elif len(popt) == 6:
             low_freq = popt[2]
             high_freq = popt[5]
+            print('Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2]),popt[5], np.sqrt(pcov[5][5])))
     except Exception:
         print('Could not fit data')
 
@@ -906,12 +916,12 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    print(Path(__file__).stem)
-    sys.exit()
+    # print(Path(__file__).stem)
+    # sys.exit()
 
     kpl.init_kplotlib()
 
-    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
+    file_name = "2023_01_11-13_43_03-siena-nv6_2022_12_22"
     data = tool_belt.get_raw_data(file_name)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]

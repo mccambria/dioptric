@@ -67,6 +67,8 @@ def plot(N, t2_sq, t2_sq_unc, t2_dq, t2_dq_unc, title, do_fit = True):
     if do_fit:
         kpl.plot_line(ax, N_lin, fit_func(N_lin,*popt_sq ), label = 'SQ fit', color=KplColors.RED)
         kpl.plot_line(ax, N_lin, fit_func(N_lin,*popt_dq ), label = 'DQ fit', color=KplColors.GREEN)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     
     ax.legend()
             

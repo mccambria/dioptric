@@ -385,18 +385,18 @@ if __name__ == "__main__":
     # sample_name = 'ayrton12'
     green_power = 1
     nd_green = 'ND_1.1'
-    # green_laser = "integrated_520"
-    green_laser = "cobolt_515"
+    green_laser = "integrated_520"
+    # green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
 
     nv_sig = {
-            "coords":[0,0, 7.323],
-        "name": "{}-nv1_2022_10_27".format(sample_name,),
+            "coords":[0.294, 0.169, 4.14],
+        "name": "{}-nv8_2022_12_22".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":150,
+        "expected_count_rate":29,
 
 
           "spin_laser":green_laser,
@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 151.7,
+        "magnet_angle": 153,
         "resonance_LOW":2.78059,
         "rabi_LOW":131.1,
         "uwave_power_LOW": 13,
@@ -466,13 +466,13 @@ if __name__ == "__main__":
     num_steps = 51
     num_reps = int(5e4)
     # laser_name = 'laserglow_532'
-    delay_range = [0, 1000]
+    delay_range = [0, 500]
     # num_reps = int(1e5)
     # laser_name = 'laserglow_589'
     # delay_range = [800, 1700]
     # num_reps = int(1e4)
-    # laser_name = 'integrated_520'
-    laser_name = 'cobolt_515'
+    laser_name = 'integrated_520'
+    # laser_name = 'cobolt_515'
     # laser_power = 0.65
     # laser_name = 'cobolt_638'
     laser_power = None

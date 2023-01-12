@@ -184,27 +184,18 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
     ax.set_xlabel('Tau (ns)')
     ax.set_ylabel('Contrast (arb. units)')
 
-# def simulate_split(uwave_time_range, freq,
-#                    res_freq_low, res_freq_high, contrast, rabi_period):
+def hyperfine_rabi_func(t, offset, freq, decay):
+    two_pi = 2 * numpy.pi
+    amp = offset - 1
+    v= 2.2e-3
+    omega_pm= numpy.sqrt((v)**2 + freq**2)
+    omega_0= freq
+    term_0 = numpy.cos((two_pi * omega_0 * t)) 
+    term_pm = numpy.cos((two_pi * omega_pm * t))
+    
+    return offset + (numpy.exp(-t / abs(decay)) * abs(amp/3)* ( term_0  +2*term_pm) )
 
-#     rabi_freq = rabi_period**-1
 
-#     min_uwave_time = uwave_time_range[0]
-#     max_uwave_time = uwave_time_range[1]
-#     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
-#                           num=1000, dtype=numpy.int32)
-
-#     omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
-#     amp = (rabi_freq / omega)**2
-#     angle = omega * 2 * numpy.pi * smooth_taus / 2
-#     prob = amp * (numpy.sin(angle))**2
-
-#     rel_counts = 1.0 - (contrast * prob)
-
-#     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-#     ax.plot(smooth_taus, rel_counts)
-#     ax.set_xlabel('Tau (ns)')
-#     ax.set_ylabel('Contrast (arb. units)')
 
 
 # %% Main
@@ -512,7 +503,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'ref_counts': ref_counts.astype(int).tolist(),
                 'ref_counts-units': 'counts',
                 'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-                'norm_avg_sig-units': 'arb'}
+                'norm_avg_sig-units': 'arb',
+                'norm_avg_sig_ste': norm_avg_sig_ste.astype(float).tolist(),
+                'norm_avg_sig_ste-units': 'arb'}
 
     nv_name = nv_sig["name"]
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
@@ -533,80 +526,22 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi_srt/2022_12'
-    file = '2022_12_15-13_47_58-siena-nv1_2022_10_27'
+    path = 'pc_rabi/branch_master/rabi/2023_01'
+    file = '2023_01_06-15_28_38-siena-nv6_2022_12_22'
     data = tool_belt.get_raw_data(file, path)
+    kpl.init_kplotlib()
 
-    # norm_avg_sig = data['norm_avg_sig']
-    # uwave_time_range = data['uwave_time_range']
-    # num_steps = data['num_steps']
-    # uwave_freq = data['uwave_freq']
-
-    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(uwave_time_range, uwave_freq, num_steps,
-    #                       norm_avg_sig, fit_func, popt)
-
-    sig_counts = data['sig_counts']
-    ref_counts = data['ref_counts']
-    taus = numpy.array(data['taus'])
-    num_steps = data['num_steps']
-    num_runs = data['num_runs']
-    # uwave_freq = data['uwave_freq']
-    uwave_time_range = [taus[0], taus[-1]]
-    num_steps = data['num_steps']
     norm_avg_sig = data['norm_avg_sig']
-    num_reps = data['num_reps']
-    nv_sig = data['nv_sig']
-    readout = nv_sig['spin_readout_dur']
-    norm_style = NormStyle.SINGLE_VALUED
+    uwave_time_range = data['uwave_time_range']
+    num_steps = data['num_steps']
+    uwave_freq = data['uwave_freq']
+    norm_avg_sig_ste =None
+
+    fit_func = hyperfine_rabi_func
+    # fit_func = tool_belt.cosexp_1_at_0
     
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
-    (
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    ) = ret_vals
+    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
+        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+        fit_func 
+    )
 
-    # min_uwave_time = uwave_time_range[0]
-    # max_uwave_time = uwave_time_range[1]
-    # taus = numpy.linspace(min_uwave_time, max_uwave_time,
-    #                       num=num_steps, dtype=numpy.int32)
-    
-    fit_func = tool_belt.inverted_cosexp
-    fit_func, popt, pcov = fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_ste = None)
-    taus_linspace = numpy.linspace(uwave_time_range[0], uwave_time_range[1], 1000)
-
-    print(popt)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
-
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-
-    sig_perc_err = st_err_sig_counts / avg_sig_counts
-    ref_perc_err = st_err_ref_counts / avg_ref_counts
-    st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
-
-
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
-    ax = axes_pack[0]
-    ax.errorbar(taus, avg_sig_counts, yerr = st_err_sig_counts, fmt = 'r-', label = 'signal')
-    ax.errorbar(taus, avg_ref_counts, yerr = st_err_ref_counts,fmt = 'g-', label = 'refernece')
-    ax.legend()
-
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Counts')
-
-
-    ax = axes_pack[1]
-    ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'bo')
-    ax.plot(taus_linspace , fit_func(taus_linspace, *popt),  'r-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Normalized signal')
-
-    # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
