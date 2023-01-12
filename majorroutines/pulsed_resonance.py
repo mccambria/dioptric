@@ -209,7 +209,7 @@ def rabi_line(freq, constrast, rabi_freq, res_freq):
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
     effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
     pulse_dur = np.pi / rabi_freq_ghz  # Assumed
-    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2)
+    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2) ** 2
 
 
 def rabi_line_hyperfine(freq, constrast, rabi_freq, res_freq):
@@ -557,7 +557,7 @@ def main(
         Single-valued resonance (GHz) - may be incorrect if there are multiple resonances
     str
         Extension-less name of the data file generated
-    list   
+    list
         list containing the low frequency resonance (GHz) and the high frequency resonance if
         there is one - may be incorrect if there are more than 2 resonances
     """
@@ -898,13 +898,16 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    print(Path(__file__).stem)
+    # print(Path(__file__).stem)
+    # sys.exit()
+
+    file_name = "2023_01_12-11_46_30-wu-nv8_zfs_vs_t"
+    data = tool_belt.get_raw_data(file_name)
+
+    print(return_res_with_error(data))
     sys.exit()
 
     kpl.init_kplotlib()
-
-    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
-    data = tool_belt.get_raw_data(file_name)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
