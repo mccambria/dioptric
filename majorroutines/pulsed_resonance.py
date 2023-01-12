@@ -209,7 +209,7 @@ def rabi_line(freq, constrast, rabi_freq, res_freq):
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
     effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
     pulse_dur = np.pi / rabi_freq_ghz  # Assumed
-    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2)
+    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2) ** 2
 
 
 def rabi_line_hyperfine(freq, constrast, rabi_freq, res_freq):
@@ -901,7 +901,7 @@ if __name__ == "__main__":
     # print(Path(__file__).stem)
     # sys.exit()
 
-    file_name = "2023_01_12-00_37_17-wu-nv10_zfs_vs_t"
+    file_name = "2023_01_12-11_46_30-wu-nv8_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
 
     print(return_res_with_error(data))
