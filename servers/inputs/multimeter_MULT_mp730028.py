@@ -49,7 +49,7 @@ class MultimeterMultMp730028(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        self.measuring_temp = True
+        self.measuring_temp = False
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -72,11 +72,15 @@ class MultimeterMultMp730028(LabradServer):
         # logging.info(test)
         logging.info("Init complete")
     
-    @setting(1, res_range='s')
-    def config_res_measurement(self, c, res_range):
-        self.multimeter.write('SENS:FUNC "RES"')
+    @setting(1, res_range='s', four_wire='b')
+    def config_res_measurement(self, c, res_range, four_wire=False):
+        if four_wire:
+            meas_name = "FRES"
+        else:
+            meas_name = "RES"
+        self.multimeter.write(f'SENS:FUNC "{meas_name}"')
         # res_range_options = ["500", "5E3", "50E3", "500E3", "5E6", "50E6", "500E6"]
-        cmd = "CONF:SCAL:RES {}".format(res_range)
+        cmd = f"CONF:SCAL:{meas_name} {res_range}"
         self.multimeter.write(cmd)
         # Set the update rate to fast (maximum speed)
         self.multimeter.write("RATE F")
@@ -100,7 +104,7 @@ class MultimeterMultMp730028(LabradServer):
         we avoid this problem."""
         
         detector_ranges = {"PT100": "500"}
-        self.config_res_measurement(c, detector_ranges[detector])
+        self.config_res_measurement(c, detector_ranges[detector], four_wire=True)
         self.measuring_temp = True
         self.detector = detector
         

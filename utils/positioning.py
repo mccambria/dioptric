@@ -72,6 +72,7 @@ def set_xyz_ramp(cxn, coords):
         total_movement_delay = z_delay
 
     xyz_server = get_server_pos_xyz(cxn)
+    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
@@ -139,13 +140,13 @@ def set_xyz_ramp(cxn, coords):
         file_name = "simple_clock.py"
         seq_args = [movement_delay]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        period = ret_vals[0]
+        pulse_gen.stream_load(file_name, seq_args_string)
+        # period = ret_vals[0]
         # print(z_points)
 
-        xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
-        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        cxn.pulse_streamer.stream_start(max_steps)
+        xyz_server.load_stream_xyz(x_points, y_points, z_points)
+        pulse_gen.stream_load(file_name, seq_args_string)
+        pulse_gen.stream_start(max_steps)
 
     # Force some delay before proceeding to account
     # for the effective write time, as well as settling time for movement

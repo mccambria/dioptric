@@ -23,6 +23,7 @@ from random import shuffle
 from scipy.optimize import curve_fit
 import labrad
 import majorroutines.optimize as optimize
+from utils.tool_belt import NormStyle
 
 
 
@@ -472,7 +473,10 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         fit_func 
     )
     rabi_period = 1/popt[1]
-    print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
+    v_unc = numpy.sqrt(pcov[1][1])
+    print(v_unc)
+    rabi_period_unc = rabi_period**2 * v_unc
+    print('Rabi period measured: {} +/- {} ns\n'.format('%.2f'%rabi_period, '%.2f'%rabi_period_unc))
 
     # %% Clean up and save the data
 
@@ -528,8 +532,8 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi_srt/2022_11'
-    file = '2022_11_23-12_04_42-siena-nv1_2022_10_27'
+    path = 'pc_rabi/branch_master/rabi_srt/2022_12'
+    file = '2022_12_15-13_47_58-siena-nv1_2022_10_27'
     data = tool_belt.get_raw_data(file, path)
 
     # norm_avg_sig = data['norm_avg_sig']
@@ -544,17 +548,36 @@ if __name__ == '__main__':
 
     sig_counts = data['sig_counts']
     ref_counts = data['ref_counts']
-    uwave_time_range = data['uwave_time_range']
+    taus = numpy.array(data['taus'])
     num_steps = data['num_steps']
     num_runs = data['num_runs']
-    uwave_freq = data['uwave_freq']
+    # uwave_freq = data['uwave_freq']
+    uwave_time_range = [taus[0], taus[-1]]
+    num_steps = data['num_steps']
+    norm_avg_sig = data['norm_avg_sig']
+    num_reps = data['num_reps']
+    nv_sig = data['nv_sig']
+    readout = nv_sig['spin_readout_dur']
+    norm_style = NormStyle.SINGLE_VALUED
+    
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
 
-    min_uwave_time = uwave_time_range[0]
-    max_uwave_time = uwave_time_range[1]
-    taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=num_steps, dtype=numpy.int32)
+    # min_uwave_time = uwave_time_range[0]
+    # max_uwave_time = uwave_time_range[1]
+    # taus = numpy.linspace(min_uwave_time, max_uwave_time,
+    #                       num=num_steps, dtype=numpy.int32)
+    
+    fit_func = tool_belt.inverted_cosexp
+    fit_func, popt, pcov = fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_ste = None)
+    taus_linspace = numpy.linspace(uwave_time_range[0], uwave_time_range[1], 1000)
 
-    print(numpy.size(sig_counts))
+    print(popt)
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
@@ -579,7 +602,8 @@ if __name__ == '__main__':
 
 
     ax = axes_pack[1]
-    ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'b-')
+    ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'bo')
+    ax.plot(taus_linspace , fit_func(taus_linspace, *popt),  'r-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Normalized signal')

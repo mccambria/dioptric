@@ -253,14 +253,19 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     Prepares the microscope for a measurement. In particular,
     sets up the optics (positioning, collection filter, etc) and magnet.
     The laser set up must be handled by each routine since the same laser
+    
+    If coords are not passed, it will add drift to the nv_sig coords
     """
 
-    if coords is not None:
-        # print("setting to opti coords:", coords)
-        if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-            positioning.set_xyz_ramp(cxn, coords)
-        else:
-            positioning.set_xyz(cxn, coords)
+    if coords is None:
+        coords_nv_sig = nv_sig['coords']
+        drift = positioning.get_drift(cxn)
+        coords = numpy.array(coords_nv_sig) + drift
+        
+    if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
+        positioning.set_xyz_ramp(cxn, coords)
+    else:
+        positioning.set_xyz(cxn, coords)
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
@@ -640,14 +645,17 @@ def main_with_cxn(
             axis_ind = 2
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig_z, axis_ind, config, fig)
 
-        opti_coords.append(ret_vals[0])
-        scan_vals_by_axis.append(ret_vals[1])
-        counts_by_axis.append(ret_vals[2])
+        # MCC: What is this doing here? It breaks optimize for me (xy and z are streams and disable_z_opt is set)
+        # opti_coords.append(ret_vals[0])
+        # scan_vals_by_axis.append(ret_vals[1])
+        # counts_by_axis.append(ret_vals[2])
 
         # return
         # We failed to get optimized coordinates, try again
         if None in opti_coords:
             continue
+        
+        # print(opti_coords)
 
         # Check the count rate
         opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords, config)

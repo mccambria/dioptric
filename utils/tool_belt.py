@@ -90,11 +90,7 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
         laser_pulse_amplitude = laser_power
 
     elif eval(mod_type).name == "DIGITAL":
-        if laser_power == 0:
-            laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
-            laser_pulse_amplitude = 1
-        else:
-            laser_pulse_amplitude = 1
+        laser_pulse_amplitude = 1
 
     return laser_pulse_name, laser_delay, laser_pulse_amplitude
 
@@ -184,6 +180,8 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
         if filter_key not in nv_sig:
             return
         filter_name = nv_sig[filter_key]
+        if filter_name is None:
+            return
     elif (optics_name is not None) and (filter_name is not None):
         pass  # All good
     else:
@@ -273,23 +271,6 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
         # print(processed_train)
         seq.setAnalog(pulser_laser_mod, processed_train)
 
-
-# endregion
-# region Microwave utils
-def get_opx_uwave_pulse_info(config,pulse_time):
-    pulse_time_cc = int(round(pulse_time/4))
-    
-    if pulse_time_cc < 4:
-        uwave_pulse = 'uwave_OFF'
-        uwave_amp = 1
-        uwave_time_cc = 4
-        
-    elif pulse_time_cc >= 4:
-        uwave_pulse = 'uwave_ON'
-        uwave_amp = 1
-        uwave_time_cc = pulse_time_cc
-    
-    return uwave_pulse, uwave_amp, uwave_time_cc
 
 # endregion
 # region Pulse generator utils
@@ -424,6 +405,8 @@ def exp_decay(x, amp, decay, offset):
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 
+def exp_t2(x, amp, decay, offset):
+    return exp_stretch_decay(x, amp, decay, offset, 3)
 
 def gaussian(x, *params):
     """Calculates the value of a gaussian for the given input and parameters
@@ -484,6 +467,14 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_2 * np.cos(two_pi * freq_2 * t)
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
+def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
+    two_pi = 2 * np.pi
+
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+        + amp_2 * np.cos(two_pi * freq_2 * t)
+        # + amp_3 * np.cos(two_pi * freq_3 * t)
+    )
 
 
 def cosine_one(t, offset, decay, amp_1, freq_1):
@@ -535,8 +526,20 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 
 
 def bose(energy, temp):
-    """Calculate Bose Einstein occupation number for a mode with given energy
-    (meV) at given temperature (K)"""
+    """Calculate Bose Einstein occupation number 
+
+    Parameters
+    ----------
+    energy : numeric
+        Mode energy in meV
+    temp : numeric
+        Temperature in K
+
+    Returns
+    -------
+    numeric
+        Occupation number
+    """
     # For very low temps we can get divide by zero and overflow warnings.
     # Fortunately, numpy is smart enough to know what we mean when this
     # happens, so let's let numpy figure it out and suppress the warnings.
@@ -555,12 +558,35 @@ def process_counts(
     Since we sometimes don't do many runs (<10), we often will have an
     insufficient sample size to run stats on for norm_avg_sig calculation.
     We assume Poisson statistics instead.
+
+    Parameters
+    ----------
+    sig_counts : 2D array
+        Signal counts from the experiment
+    ref_counts : 2D array
+        Reference counts from the experiment
+    num_reps : int
+        Number of experiment repetitions summed over for each point in sig or ref counts
+    readout : numeric
+        Readout duration in ns
+    norm_style : NormStyle(enum), optional
+        By default NormStyle.SINGLE_VALUED
+
+    Returns
+    -------
+    1D array
+        Signal count rate averaged across runs
+    1D array
+        Reference count rate averaged across runs
+    1D array
+        Normalized average signal
+    1D array
+        Standard error of the normalized average signal
     """
 
     ref_counts = np.array(ref_counts)
     sig_counts = np.array(sig_counts)
     num_runs, num_points = ref_counts.shape
-    # print(num_runs,num_points)
     readout_sec = readout * 1e-9
 
     # Find the averages across runs
@@ -587,13 +613,6 @@ def process_counts(
 
     sig_counts_avg_kcps = (sig_counts_avg / (num_reps * 1000)) / readout_sec
     ref_counts_avg_kcps = (ref_counts_avg / (num_reps * 1000)) / readout_sec
-
-    # both_counts = sig_counts + ref_counts
-    # both_counts_avg = np.average(both_counts, axis=0)
-    # both_counts_ste = np.sqrt(both_counts_avg) / np.sqrt(num_runs)
-    # norm = 1.008 * both_counts_avg[0]
-    # norm_avg_sig = both_counts_avg / norm
-    # norm_avg_sig_ste = both_counts_ste / norm
 
     return (
         sig_counts_avg_kcps,
@@ -665,6 +684,9 @@ def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
     return common.get_registry_entry(cxn, "apd_indices", ["Config"])
 
+def get_apd_gate_channel(cxn):
+    return common.get_registry_entry(cxn, "di_apd_gate", ["Config", "Wiring", "Tagger"])
+
 
 # endregion
 # region Server getters
@@ -699,6 +721,10 @@ def get_server_temp_controller(cxn):
 
 def get_server_temp_monitor(cxn):
     return common.get_server(cxn, "temp_monitor")
+
+
+def get_server_power_supply(cxn):
+    return common.get_server(cxn, "power_supply")
 
 
 def get_server_sig_gen(cxn, state):
@@ -779,6 +805,7 @@ def get_files_in_folder(folderDir, filetype=None):
     filetype: str
         must be a 3-letter file extension, do NOT include the period. ex: 'txt'
     """
+    # print(folderDir)
     file_list_temp = os.listdir(folderDir)
     if filetype:
         file_list = []

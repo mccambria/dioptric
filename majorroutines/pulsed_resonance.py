@@ -38,6 +38,43 @@ def create_fit_figure(
     popt=None,
     guess_params=None,
 ):
+    """Create a figure showing the normalized average signal and the fit. If you pass
+    fit_func and popt, then no actual fit will be performed - we'll just plot the passed
+    fit_func and popt
+
+    Parameters
+    ----------
+    freq_center : numeric
+        Center of the frequency range used in the ESR scan
+    freq_range : numeric
+        Frequency range of the ESR scan
+    num_steps : numeric
+        Number of steps in the ESR scan
+    norm_avg_sig : 1D array
+        Normalized average signal
+    norm_avg_sig_ste : 1D array
+        Standard error of the normalized average signal
+    fit_func : Function, optional
+        Function used to fit the data. If None, we will use a default fit function - either
+        a single or double Rabi line depending on how many dips are apparent in the data
+    popt : 1D array, optional
+        Fit parameters for the fit function. If None, the fit function will be fit
+        to the data
+    guess_params : 1D array, optional
+        Guess parameters for fitting the fit function to the data. If None,
+        we will estimate fit parameters by inspecting the data before actually fitting
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    matplotlib.axes.Axes
+    Function
+        Function used to fit the data
+    1D array
+        Fit parameters for the fit function
+    2D array
+        Covariance matrix of the fit
+    """
 
     # Fitting
     if (fit_func is None) or (popt is None):
@@ -50,6 +87,8 @@ def create_fit_figure(
             fit_func,
             guess_params,
         )
+    else:
+        pcov = None
 
     # Plot setup
     fig, ax = plt.subplots()
@@ -96,10 +135,36 @@ def create_raw_data_figure(
     freq_center,
     freq_range,
     num_steps,
-    avg_sig_counts=None,
-    avg_ref_counts=None,
+    sig_counts_avg_kcps=None,
+    ref_counts_avg_kcps=None,
     norm_avg_sig=None,
 ):
+    """Create a 2-panel figure showing the raw data (signal and reference) as well as the
+    normalized average signal
+
+    Parameters
+    ----------
+    freq_center : numeric
+        Center of the frequency range used in the ESR scan
+    freq_range : numeric
+        Frequency range of the ESR scan
+    num_steps : numeric
+        Number of steps in the ESR scan
+    sig_counts_avg_kcps : 1D array, optional
+        Average signal count rate in kcps
+    ref_counts_avg_kcps : 1D array, optional
+        Average reference count rate in kcps
+    norm_avg_sig : 1D array, optional
+        Normalized average signal
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    matplotlib.axes.Axes
+        Ax for the signal and reference plot
+    matplotlib.axes.Axes
+        Ax for the normalized average signal plot
+    """
 
     # Plot setup
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
@@ -111,17 +176,17 @@ def create_raw_data_figure(
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
     # Plotting
-    if avg_sig_counts is None:
-        avg_sig_counts = np.empty(num_steps)
-        avg_sig_counts[:] = np.nan
+    if sig_counts_avg_kcps is None:
+        sig_counts_avg_kcps = np.empty(num_steps)
+        sig_counts_avg_kcps[:] = np.nan
     kpl.plot_line(
-        ax_sig_ref, freqs, avg_sig_counts, label="Signal", color=KplColors.GREEN
+        ax_sig_ref, freqs, sig_counts_avg_kcps, label="Signal", color=KplColors.GREEN
     )
-    if avg_ref_counts is None:
-        avg_ref_counts = np.empty(num_steps)
-        avg_ref_counts[:] = np.nan
+    if ref_counts_avg_kcps is None:
+        ref_counts_avg_kcps = np.empty(num_steps)
+        ref_counts_avg_kcps[:] = np.nan
     kpl.plot_line(
-        ax_sig_ref, freqs, avg_ref_counts, label="Reference", color=KplColors.RED
+        ax_sig_ref, freqs, ref_counts_avg_kcps, label="Reference", color=KplColors.RED
     )
     ax_sig_ref.legend(loc=kpl.Loc.LOWER_RIGHT)
     if norm_avg_sig is None:
@@ -144,7 +209,7 @@ def rabi_line(freq, constrast, rabi_freq, res_freq):
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
     effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
     pulse_dur = np.pi / rabi_freq_ghz  # Assumed
-    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2)
+    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2) ** 2
 
 
 def rabi_line_hyperfine(freq, constrast, rabi_freq, res_freq):
@@ -327,15 +392,9 @@ def get_guess_params(
         high_freq_guess = None
         low_contrast_guess = height
 
-    # low_freq_guess = 2.8620
-    # high_freq_guess = 2.8936
-    # high_freq_guess = None
-
+    # Returns
     if low_freq_guess is None:
         return None, None
-
-    # %% Fit!
-
     if high_freq_guess is None:
         fit_func = single_dip
         guess_params = [low_contrast_guess, hwhm_mhz, low_freq_guess]
@@ -349,7 +408,6 @@ def get_guess_params(
             hwhm_mhz,
             high_freq_guess,
         ]
-
     return fit_func, guess_params
 
 
@@ -362,6 +420,36 @@ def fit_resonance(
     fit_func=None,
     guess_params=None,
 ):
+    """_summary_
+
+    Parameters
+    ----------
+    freq_center : numeric
+        Center of the frequency range used in the ESR scan
+    freq_range : numeric
+        Frequency range of the ESR scan
+    num_steps : numeric
+        Number of steps in the ESR scan
+    norm_avg_sig : 1D array
+        Normalized average signal
+    norm_avg_sig_ste : 1D array
+        Standard error of the normalized average signal
+    fit_func : Function, optional
+        Function used to fit the data. If None, we will use a default fit function - either
+        a single or double Rabi line depending on how many dips are apparent in the data
+    guess_params : 1D array, optional
+        Guess parameters for fitting the fit function to the data. If None,
+        we will estimate fit parameters by inspecting the data before actually fitting
+
+    Returns
+    -------
+    Function
+        Function used to fit the data
+    1D array
+        Fit parameters for the fit function
+    2D array
+        Covariance matrix of the fit
+    """
 
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
@@ -401,6 +489,7 @@ def state(
     composite=False,
     opti_nv_sig=None,
 ):
+    """Same as main, but the center frequency, microwave power, and pulse duration are taken from nv_sig"""
 
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
@@ -434,6 +523,44 @@ def main(
     composite=False,
     opti_nv_sig=None,
 ):
+    """Pulsed electron spin resonance measurement
+
+    Parameters
+    ----------
+    nv_sig : dict
+        Dictionary with the properties of the NV to work with
+    freq_center : numeric
+        Center of the frequency range used in the ESR scan
+    freq_range : numeric
+        Frequency range of the ESR scan
+    num_steps : numeric
+        Number of steps in the ESR scan
+    num_reps : int
+        Number of times to repeat each experiment at each frequency per run
+    num_runs : int
+        Number of times to scan through the frequencies under test
+    uwave_power : float
+        Microwave power to set in dBm
+    uwave_pulse_dur : int
+        Microwave pulse duration in ns
+    state : States(enum), optional
+        Determines which signal generator to use, by default States.HIGH
+    composite : bool, optional
+        Use a Knill composite pulse? By default False
+    opti_nv_sig : _type_, optional
+        nv to optimize on - useful if you're working with a troublesome NV.
+        If None, just use the initial passed nv_sig
+
+    Returns single_res, data_file_name, [low_freq, high_freq]
+    -------
+    float
+        Single-valued resonance (GHz) - may be incorrect if there are multiple resonances
+    str
+        Extension-less name of the data file generated
+    list
+        list containing the low frequency resonance (GHz) and the high frequency resonance if
+        there is one - may be incorrect if there are more than 2 resonances
+    """
 
     with labrad.connect() as cxn:
         return main_with_cxn(
@@ -762,7 +889,6 @@ def main_with_cxn(
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     tool_belt.save_figure(fit_fig, file_path)
 
-
     single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]
 
@@ -772,13 +898,16 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    print(Path(__file__).stem)
+    # print(Path(__file__).stem)
+    # sys.exit()
+
+    file_name = "2023_01_13-10_07_15-wu-nv10_zfs_vs_t"
+    data = tool_belt.get_raw_data(file_name)
+
+    print(return_res_with_error(data))
     sys.exit()
 
     kpl.init_kplotlib()
-
-    file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
-    data = tool_belt.get_raw_data(file_name)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
