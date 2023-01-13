@@ -168,6 +168,7 @@ config_opx = {
             },
             "operations": {
                 "uwave_ON": "uwave_ON",
+                "uwave_OFF": "uwave_OFF",
                 "constant_HIGH": "constant_HIGH",
             },
         },
@@ -181,6 +182,7 @@ config_opx = {
             },
             "operations": {
                 "laser_ON_DIGITAL": "laser_ON_DIGITAL",
+                "laser_OFF_DIGITAL": "laser_OFF_DIGITAL",
                 "constant_HIGH": "constant_HIGH",
             },
         },
@@ -194,6 +196,7 @@ config_opx = {
             },
             "operations": {
                 "laser_ON_DIGITAL": "laser_ON_DIGITAL",
+                "laser_OFF_DIGITAL": "laser_OFF_DIGITAL",
                 "constant_HIGH": "constant_HIGH",
             },
         },
@@ -273,6 +276,11 @@ config_opx = {
             "length": initialization_len,
             "digital_marker": "ON",
         },
+        "laser_OFF_DIGITAL": {
+            "operation": "control",
+            "length": initialization_len,
+            "digital_marker": "OFF",
+        },
         "constant_HIGH": {
             "operation": "control",
             "length": initialization_len,
@@ -292,6 +300,11 @@ config_opx = {
             "operation": "control",
             "length": uwave_len,
             "digital_marker": "ON",
+        },
+        "uwave_OFF": {
+            "operation": "control",
+            "length": uwave_len,
+            "digital_marker": "OFF",
         },
         "readout_pulse": {
             "operation": "measurement",

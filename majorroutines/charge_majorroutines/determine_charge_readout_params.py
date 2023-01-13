@@ -203,7 +203,7 @@ def calculate_threshold_with_model(
     fidelity = thresh_para[1]
     threshold = thresh_para[0]
     # print(title_text)
-    print(threshold_list)
+    # print(threshold_list)
     print("Threshold: {} counts, fidelity: {:.3f}".format(threshold, fidelity))
 
     if plot_model_hists:
@@ -1097,44 +1097,33 @@ if __name__ == "__main__":
     ### Replots
     
         
-    data = tool_belt.get_raw_data("2022_12_08-17_52_31-johnson-search")
+    data = tool_belt.get_raw_data("2022_12_19-10_06_55-johnson-search")
     nv_sig = data["nv_sig"]
     nv0 = data["nv0"]
     nvm = data["nvm"]
     readout_power = nv_sig["charge_readout_laser_power"]
     max_readout_dur = nv_sig["charge_readout_dur"]
     
-    readout_dur=5e6
+    # readout_dur=5e6
 
-    threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
-        nv_sig,
-        readout_dur,
-        nv0,
-        nvm,
-        readout_power,
-        fit_threshold_full_model=True,
-        nd_filter=None,
-        plot_model_hists=True,
-        bins=None)
+    # threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
+    #     nv_sig,
+    #     readout_dur,
+    #     nv0,
+    #     nvm,
+    #     readout_power,
+    #     fit_threshold_full_model=True,
+    #     nd_filter=None,
+    #     plot_model_hists=True,
+    #     bins=None)
     
     
-    if False:
+    if True:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
+        fp='pc_Carr/branch_master/determine_charge_readout_params/2023_01/'
         filenames = [
-        # "2022_12_08-20_31_43-johnson-search",
-        # "2022_12_08-16_33_28-johnson-search",
-        # "2022_12_08-16_53_12-johnson-search",
-        # "2022_12_08-17_12_57-johnson-search",
-        # "2022_12_08-17_32_44-johnson-search",
-        "2022_12_08-17_52_31-johnson-search",
-        # "2022_12_08-18_12_20-johnson-search",
-        # "2022_12_08-18_32_09-johnson-search",
-        # "2022_12_08-18_52_01-johnson-search",
-        # "2022_12_08-19_11_52-johnson-search",
-        # "2022_12_08-19_31_51-johnson-search",
-        # "2022_12_08-19_51_49-johnson-search",
-        # "2022_12_08-20_11_44-johnson-search"
+            "2023_01_09-15_47_56-johnson-search"         
         ]
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
         powers_all = []
@@ -1164,7 +1153,7 @@ if __name__ == "__main__":
 
             for file_name in filenames:
 
-                data = tool_belt.get_raw_data(file_name)
+                data = tool_belt.get_raw_data(file_name,path_from_nvdata=fp)
                 nv_sig = data["nv_sig"]
                 nv0 = data["nv0"]
                 nvm = data["nvm"]

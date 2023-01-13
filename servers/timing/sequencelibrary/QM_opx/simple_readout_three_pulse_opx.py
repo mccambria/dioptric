@@ -76,7 +76,7 @@ def qua_program(opx, config, args, num_reps):
         init_laser_on_time = num_readouts*(apd_readout_time) + (num_readouts-1)*(delay_between_readouts_iterations)
         
     first_init_laser_on_time = first_init_pulse_time
-    period = pos_move_time + init_laser_on_time + intra_pulse_delay + readout_laser_on_time + 300 
+    period = pos_move_time + first_init_laser_on_time + init_laser_on_time + intra_pulse_delay + readout_laser_on_time + 300 + 50000
     
     
     with program() as seq:
@@ -144,6 +144,7 @@ def qua_program(opx, config, args, num_reps):
             align()
             # wait(readout_laser_delay_time//4)
             wait(delay2_cc)
+            wait(10000)
             wait(intra_pulse_delay//4)
             align()
             
@@ -222,7 +223,7 @@ if __name__ == '__main__':
     
     qm = qmm.open_qm(config_opx)
     simulation_duration =  34000 // 4 # clock cycle units - 4ns
-    num_repeat=1
+    num_repeat=100
     # init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
       # init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
     
@@ -245,16 +246,16 @@ if __name__ == '__main__':
     # job = qm.execute(seq)
     # st = time.time()
     # args = [1000,300, 2000, 'cobolt_515','cobolt_638', 'laserglow_589',1,1,0.4,2,0]
-    args = [500.0, 5000.0, 5000, "cobolt_515", "laserglow_589", "laserglow_589", 1, 0.5, 0.5, 2]
+    args = [50000.0, 10000.0, 5000000, "cobolt_515", "cobolt_515", "laserglow_589", 1, 1, 0, 2]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
-    plt.show()
-    # job = qm.execute(seq)
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
+    # plt.show()
+    job = qm.execute(seq)
     
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
-    # counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
-    # # print(counts_apd0)
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
+    counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
+    print(np.average(counts_apd0))
     # print(np.sum(counts_apd0))
     
     # args = [10000, 200e6, 'cobolt_638', 'laserglow_589',1,1,2,0]

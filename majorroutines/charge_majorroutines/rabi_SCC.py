@@ -352,7 +352,7 @@ if __name__ == '__main__':
     file = '2022_12_12-19_45_53-johnson-search'
     data = tool_belt.get_raw_data(file)
     
-    threshold =4
+    threshold =3
     
     num_steps = data['num_steps']
     uwave_time_range = data['uwave_time_range']
@@ -375,7 +375,7 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(taus,avg_states_s,label='sig')
     plt.plot(taus,avg_states_r,label='ref')
-    plt.ylabel(r'NV0 probability')
+    plt.ylabel(r'NV- probability')
     plt.xlabel('t [ns]')
     plt.legend()
     plt.show()

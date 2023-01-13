@@ -188,6 +188,8 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
     
     tagger_server.stop_tag_stream()
     tool_belt.reset_cfm(cxn)
+    # print(sig_counts)
+    # print(ref_counts)
 
     return sig_counts, ref_counts
 
@@ -201,8 +203,8 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
     state = States.LOW
     if ion_durs is None:
         # ion_durs = numpy.array([340])#
-        ion_durs = numpy.linspace(20,212,7)
-        # ion_durs = numpy.linspace(20,532,17)
+        # ion_durs = numpy.linspace(20,212,7)
+        ion_durs = numpy.linspace(52,436,13)
   
     num_steps = len(ion_durs)
     
@@ -244,7 +246,7 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
         ref_counts_array[ind] = ref_count_avg
         ref_counts_ste_array[ind] = ref_counts_ste
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        avg_snr = tool_belt.calc_snr([sig_counts], [ref_counts])
         snr_array[ind] = avg_snr
  
     #plot
@@ -420,6 +422,7 @@ if __name__ == '__main__':
     mean_r = np.mean(r)
     std_s = np.std(s)
     std_r = np.std(r)
+    print((mean_s-mean_r)/np.sqrt(std_s**2+std_r**2))
     # assign_state = False
     # photon_thresh = 4
     # for file in os.listdir("E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_Carr/branch_opx-setup/determine_scc_pulse_params/2022_11/readout_time+power_sweep"):

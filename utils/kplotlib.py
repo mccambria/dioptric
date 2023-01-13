@@ -333,7 +333,7 @@ def histogram(ax, data, hist_type=HistType.INTEGER,nbins=10,color=None,hist_labe
         occur, bin_edges = np.histogram(data, np.linspace(0, int(max(data)), int(max(data)) + 1))
         x_vals = bin_edges[:-1]
         
-        ax.plot(x_vals, occur, c=hist_color, label=hist_label)
+        ax.plot(x_vals, occur, c=hist_color, label=hist_label,marker='o')
      
     else:
         ax.hist(data,histtype=hist_type,color=hist_color,label=hist_label,bins=nbins)

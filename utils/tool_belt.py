@@ -90,7 +90,11 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
         laser_pulse_amplitude = laser_power
 
     elif eval(mod_type).name == "DIGITAL":
-        laser_pulse_amplitude = 1
+        if laser_power == 0:
+            laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
+            laser_pulse_amplitude = 1
+        else:
+            laser_pulse_amplitude = 1
 
     return laser_pulse_name, laser_delay, laser_pulse_amplitude
 
@@ -269,6 +273,23 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
         # print(processed_train)
         seq.setAnalog(pulser_laser_mod, processed_train)
 
+
+# endregion
+# region Microwave utils
+def get_opx_uwave_pulse_info(config,pulse_time):
+    pulse_time_cc = int(round(pulse_time/4))
+    
+    if pulse_time_cc < 4:
+        uwave_pulse = 'uwave_OFF'
+        uwave_amp = 1
+        uwave_time_cc = 4
+        
+    elif pulse_time_cc >= 4:
+        uwave_pulse = 'uwave_ON'
+        uwave_amp = 1
+        uwave_time_cc = pulse_time_cc
+    
+    return uwave_pulse, uwave_amp, uwave_time_cc
 
 # endregion
 # region Pulse generator utils
@@ -539,7 +560,7 @@ def process_counts(
     ref_counts = np.array(ref_counts)
     sig_counts = np.array(sig_counts)
     num_runs, num_points = ref_counts.shape
-    print(num_runs,num_points)
+    # print(num_runs,num_points)
     readout_sec = readout * 1e-9
 
     # Find the averages across runs

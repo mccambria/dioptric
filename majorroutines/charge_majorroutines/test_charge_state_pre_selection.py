@@ -2,7 +2,8 @@
 """
 Routine to test rabi_scc with and without an extra charge state readout after initialization. 
 Still need to add analysis that goes and makes plots with the counts it gets back.
-Those plots should compare the scc histograms with and without throwing away the experiments where the charge readout gave a count rate below the threhsold
+Those plots should compare the scc histograms with and without throwing away the experiments where 
+the charge readout gave a count rate below the threhsold
 
 Created on Sat Dec 10 11:49:23 2022
 
@@ -17,7 +18,7 @@ import utils.tool_belt as tool_belt
 import utils.kplotlib as kpl
 from utils.kplotlib import KplColors
 import utils.positioning as positioning
-import numpy
+import numpy as np
 import os
 import time
 import matplotlib.pyplot as plt
@@ -38,15 +39,11 @@ def main(nv_sig, state, num_reps, opti_nv_sig = None):
     
     ret_vals_nocheck = measure(nv_sig, state, num_reps, opti_nv_sig, check_charge_state=False)
     (pre_sig_counts_nocheck, 
-     sig_counts_nocheck, 
-     pre_ref_counts_nocheck, 
-     ref_counts_nocheck) = ret_vals_nocheck
+     sig_counts_nocheck) = ret_vals_nocheck
 
     ret_vals_check = measure(nv_sig, state, num_reps, opti_nv_sig, check_charge_state=True)
     (pre_sig_counts_check, 
-     sig_counts_check, 
-     pre_ref_counts_check, 
-     ref_countsc_check) = ret_vals_check
+     sig_counts_check) = ret_vals_check
 
     
 def measure(nv_sig, state, num_reps, opti_nv_sig, check_charge_state):
@@ -118,9 +115,10 @@ def measure_with_cxn(cxn, nv_sig, state, num_reps, opti_nv_sig, check_charge_sta
         check_charge_readout_time = readout_time
         check_charge_readout_power = 0
     
-    seq_args = [check_charge_readout_time, readout_time, reionization_time, ionization_time, uwave_pi_pulse, 0, uwave_pi_pulse, 
+    seq_args = [check_charge_readout_time, readout_time, reionization_time, ionization_time, uwave_pi_pulse, uwave_pi_pulse, 
                 green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-                reion_power, ion_power, 0, check_charge_readout_power, readout_power]
+                reion_power, ion_power, check_charge_readout_power, readout_power]
+    
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
     print(seq_args)
@@ -132,10 +130,8 @@ def measure_with_cxn(cxn, nv_sig, state, num_reps, opti_nv_sig, check_charge_sta
     sample_counts = new_counts[0]
     print('sample counts: ',sample_counts)
 
-    pre_sig_counts = sample_counts[0::4]
-    sig_counts = sample_counts[1::4]
-    pre_ref_counts = sample_counts[2::4]
-    ref_counts = sample_counts[3::4]
+    pre_sig_counts = sample_counts[0::2]
+    sig_counts = sample_counts[1::2]
 
     counter_server.stop_tag_stream()
     
@@ -162,18 +158,14 @@ def measure_with_cxn(cxn, nv_sig, state, num_reps, opti_nv_sig, check_charge_sta
                 'num_reps': num_reps,
                 'sig_counts': sig_counts.astype(int).tolist(),
                 'sig_counts-units': 'counts',
-                'ref_counts': ref_counts.astype(int).tolist(),
-                'ref_counts-units': 'counts',
                 'pre_sig_counts': pre_sig_counts.astype(int).tolist(),
-                'pre_sig_counts-units': 'counts',
-                'pre_ref_counts': pre_ref_counts.astype(int).tolist(),
-                'pre_ref_counts-units': 'counts'}
+                'pre_sig_counts-units': 'counts'}
 
     nv_name = nv_sig["name"]
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     tool_belt.save_raw_data(raw_data, file_path)
     
-    return pre_sig_counts, sig_counts, pre_ref_counts, ref_counts
+    return pre_sig_counts, sig_counts
     
     
     
@@ -194,11 +186,26 @@ if __name__ == '__main__':
     sig_counts = data['sig_counts']
     ref_counts = data['ref_counts']
     pre_sig_counts = data['pre_sig_counts']
-    pref_ref_counts = data['pre_ref_counts']
+    pre_ref_counts = data['pre_ref_counts']
     
-    snr = tool_belt.calc_snr(sig_counts, ref_counts)
-    print(snr)
+    threshold = 4
     
+    pre_sig_states = np.empty(np.shape(pre_sig_counts))
+    sig_states = np.empty(np.shape(sig_counts))
+    
+    pre_sig_states[np.where(pre_sig_counts < threshold)] = 0
+    sig_states[np.where(pre_sig_counts < threshold)] = 0
+    
+    pre_sig_states[np.where(pre_sig_counts >= threshold)] = 1
+    sig_states[np.where(pre_sig_counts >= threshold)] = 1
+    
+    
+    avg_sig_states = np.average(sig_states)
+    avg_pre_sig_states = np.average(pre_sig_states)
+    
+    sig_started_in_nvm = np.where(pre_sig_states >= threshold)
+    avg_sig_states_cond = np.average(sig_started_in_nvm)
+
     
     
     

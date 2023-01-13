@@ -26,22 +26,7 @@ def qua_program(opx, config, args, num_reps):
     init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
     readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,read_laser_power)
     
-    # init_laser_mod_type = config["Optics"][init_laser_key]["mod_type"]
-    # init_laser_pulse = 'laser_ON_{}'.format(eval(init_laser_mod_type).name)
-    # readout_laser_mod_type = config["Optics"][readout_laser_key]["mod_type"]
-    # readout_laser_pulse = 'laser_ON_{}'.format(eval(readout_laser_mod_type).name)
-    # init_laser_delay_time = config['Optics'][init_laser_key]['delay']
-    # readout_laser_delay_time = config['Optics'][readout_laser_key]['delay']
     intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
-    
-    # if eval(init_laser_mod_type).name == 'ANALOG':
-    #     init_laser_amplitude = init_laser_power
-    # if eval(init_laser_mod_type).name == 'DIGITAL':
-    #     init_laser_amplitude = 1
-    # if eval(readout_laser_mod_type).name == 'ANALOG':
-    #     readout_laser_amplitude = init_laser_power
-    # if eval(readout_laser_mod_type).name == 'DIGITAL':
-    #     readout_laser_amplitude = 1
 
     apd_indices =  config['apd_indices']
     positioning = config['Positioning']

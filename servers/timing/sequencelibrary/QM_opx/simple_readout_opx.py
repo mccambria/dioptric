@@ -49,7 +49,6 @@ def qua_program(opx, config, args, num_reps):
     laser_on_time= delay + meas_delay + num_readouts*(apd_readout_time + delay_between_readouts_iterations) + 300
     laser_on_time=  meas_delay + apd_readout_time  
     laser_on_time_cc = laser_on_time // 4
-    # print(laser_on_time)
     
     delay_cc = max(int(delay // 4),4)
     period_cc = delay_cc + num_readouts*(laser_on_time_cc) + 25
@@ -68,13 +67,16 @@ def qua_program(opx, config, args, num_reps):
         i = declare(int)
         j = declare(int)
         
+        # play(laser_pulse*amp(laser_amplitude),laser_name,duration=100000000)
+        # align()  
+        
         with for_(n, 0, n < num_reps, n + 1):
             
             align()  
             wait(delay_cc)            
             align()  
             # start the laser a little earlier than the apds
-            # play(laser_pulse*amp(laser_amplitude),laser_name,duration=laser_on_time_cc)
+
             # wait(meas_delay_cc,"do_apd_0_gate","do_apd_1_gate")
             
             # play("laser_ON",laser_name,duration=laser_on_time_cc) 
@@ -135,15 +137,11 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     
-    readout_time = 4000
-    max_readout_time = 1000# config['PhotonCollection']['qm_opx_max_readout_time']
-    
     qm = qmm.open_qm(config_opx)
     simulation_duration =  12000 // 4 # clock cycle units - 4ns
-    num_repeat=3
+    num_repeat=40
     delay = 3000
-    args = [200, readout_time, 0,'laserglow_589',0.55]
-    args=[800, 1000.0, 0, 'cobolt_515', None]
+    args=[5e6, 100e6,  'cobolt_515', 1]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     
     # start_t = time.time()
@@ -151,13 +149,13 @@ if __name__ == '__main__':
     # t1 = time.time()
     # print(t1 - start_t)
 
-    # program_job = qm.queue.add_compiled(compilied_program_id)
-    # job = program_job.wait_for_execution()
+    program_job = qm.queue.add_compiled(compilied_program_id)
+    job = program_job.wait_for_execution()
     # print(time.time()-t1)
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
-    plt.show()
+    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    # job_sim.get_simulated_samples().con1.plot()
+    # plt.show()
 # 
     # print(time.time())
     # job = qm.execute(seq)
@@ -165,9 +163,9 @@ if __name__ == '__main__':
     # job = qm.execute(seq)
     # st = time.time()
     
-    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="live")
-    # counts_apd0, counts_apd1 = results.fetch_all() 
-    
+    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    counts_apd0, counts_apd1 = results.fetch_all() 
+    print(np.sum(counts_apd0,1))
     # print(time.time() - st)
     
     # print('')
