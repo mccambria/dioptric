@@ -50,14 +50,6 @@ import matplotlib.pyplot as plt
 
 # %% Major Routines
 
-# def do_test_routine_opx(nv_sig, apd_indices, delay, readout_time, laser_name, laser_power, num_reps):
-#     apd_index = apd_indices[0]
-#     counts, times, channels = test_routine_opx.main(nv_sig, delay, readout_time, apd_index, laser_name, laser_power, num_reps)
-    
-#     return counts, times, channels
-    
-    
-
 def do_image_sample(nv_sig,nv_minus_init=False,scan_range=2,num_steps=30,cmin=None,cmax=None,scan_type='XY'):
     scale = 1 #um / V
    
