@@ -527,7 +527,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi/2023_01'
-    file = '2023_01_06-15_28_38-siena-nv6_2022_12_22'
+    file = '2023_01_13-09_36_01-siena-nv6_2022_12_22'
     data = tool_belt.get_raw_data(file, path)
     kpl.init_kplotlib()
 

@@ -862,11 +862,28 @@ if __name__ == "__main__":
     
     
     if True:
-        # file_name = "2022_12_25-19_00_35-siena-nv8_2022_12_22"
-        file_name = "2023_01_09-01_44_22-siena-nv6_2022_12_22"
+        file_name = "2023_01_14-17_14_27-siena-nv6_2022_12_22"
         data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
         norm_avg_sig = data['norm_avg_sig']
-       # norm_avg_sig_ste = data['norm_avg_sig_ste']
+        norm_avg_sig_ste = data['norm_avg_sig_ste']
+        
+        ### incremental data
+        # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01/incremental')
+        # run_ind = data['run_ind']
+        # sig_counts = data['sig_counts'][: run_ind ]
+        # ref_counts = data['ref_counts'][: run_ind ]
+        # nv_sig = data['nv_sig']
+        # norm_style = NormStyle.SINGLE_VALUED
+        # gate_time = nv_sig['spin_readout_dur']
+        # num_reps = data['num_reps']
+        # ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        # (
+        #     sig_counts_avg_kcps,
+        #     ref_counts_avg_kcps,
+        #     norm_avg_sig,
+        #     norm_avg_sig_ste,
+        # ) = ret_vals
+        
         plot_taus = data['plot_taus']
         pi_pulse_reps = data['pi_pulse_reps']
         do_dq=data['do_dq']
@@ -882,13 +899,13 @@ if __name__ == "__main__":
         #     num=num_steps,
         # )
         # plot_taus=plot_taus*2*4/1e3
-        contrast = 0.2
+        # contrast = 0.2
         
         tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
         
         fig, ax = plt.subplots()
-        #ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o")
-        ax.plot(plot_taus, norm_avg_sig,"b-")
+        ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o", color='b')
+        # ax.plot(plot_taus, norm_avg_sig,"b-")
         
         fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
         init_params = [ 0.1, 1000, 0.9]
@@ -897,8 +914,8 @@ if __name__ == "__main__":
             plot_taus,
             norm_avg_sig,
             p0=init_params,
-           # absolute_sigma = True,
-           # sigma=norm_avg_sig_ste
+            absolute_sigma = True,
+            sigma=norm_avg_sig_ste
         )
         print('{} +/- {} us'.format(popt[1], numpy.sqrt(pcov[1][1])))
         ax.plot(

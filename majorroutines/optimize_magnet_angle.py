@@ -222,7 +222,7 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2023_01_09-13_16_03-siena-nv6_2022_12_22'
+    file = '2023_01_12-16_08_01-siena-nv6_2022_12_22'
     folder = "pc_rabi/branch_master/optimize_magnet_angle/2023_01"
     data = tool_belt.get_raw_data(file, folder)
     splittings = data['splittings']

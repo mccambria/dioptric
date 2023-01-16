@@ -29,13 +29,13 @@ def solve_B_theta(D, E, v1, v2, z):
    return F
 
 # %% NV6
-v1=2.8349
-v2=2.9076
+v1=2.81884
+v2=2.92203
 
 D =2.87039 #(3)
 E = 0
 solve_B_theta_func = lambda z: solve_B_theta(D,E, v1, v2, z)
-zGuess = np.array([0.06,0.1])
+zGuess = np.array([0.06,( 5 )*np.pi/180])
 z = fsolve(solve_B_theta_func,zGuess)
 
 print('NV6')
@@ -43,8 +43,8 @@ print('{:.1f} G'.format(z[0]/0.0028))
 print('{:.2f} deg'.format(z[1]*180/np.pi))
 
 # %% NV5
-v1= 2.8608
-v2=2.8836
+v1= 2.85609
+v2= 2.88726
 
 D=2.87036
 E = 0.0032
@@ -57,8 +57,8 @@ print('{:.1f} G'.format(z[0]/0.0028))
 print('{:.2f} deg'.format(z[1]*180/np.pi))
 
 # %% NV8
-v1=2.85997
-v2=2.8816
+v1=2.86423
+v2=2.87930
 
 D=2.87035
 E = 0

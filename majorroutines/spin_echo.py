@@ -991,8 +991,8 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2022_12_31-08_44_22-siena-nv6_2022_12_22"
-    folder = 'pc_rabi/branch_master/spin_echo/2022_12'
+    file_name = "2023_01_13-20_41_45-siena-nv6_2022_12_22"
+    folder = 'pc_rabi/branch_master/spin_echo/2023_01'
     data = tool_belt.get_raw_data(file_name, folder)
     nv_name = data['nv_sig']["name"]
     timestamp = data['timestamp']
