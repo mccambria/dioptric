@@ -155,6 +155,11 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file = "rabi.py"
+    
+    ### the opx needs a specific rabi time tagging sequence because the normal rabi sequence doesn't record time tags
+    if pulsegen_server.name == 'QM_opx':
+        seq_file = "rabi_time_tagging.py"
+        
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)

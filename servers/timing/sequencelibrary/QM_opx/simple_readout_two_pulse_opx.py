@@ -5,7 +5,7 @@ Created on Sat Sep  3 11:16:25 2022
 
 @author: carterfox
 
-simple readout sequence for the opx in qua
+simple readout sequence with two pulses
 
 """
 
@@ -19,28 +19,32 @@ from opx_configuration_file import *
 
 def qua_program(opx, config, args, num_reps):
     
+    ### get input parameters
     init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
       init_laser_power, read_laser_power, readout_on_pulse_ind = args
     
-    
+    ### get laser info
     init_laser_pulse, init_laser_delay_time, init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,init_laser_key,init_laser_power)
     readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,read_laser_power)
     
     intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
-
-    apd_indices =  config['apd_indices']
     positioning = config['Positioning']
     if 'xy_small_response_delay' in positioning:
         pos_move_time = positioning['xy_small_response_delay']
     else:
         pos_move_time = positioning['xy_delay']
     
+    ### specify number of gates and determine length of timetag streams to use 
+    apd_indices =  config['apd_indices']
     num_apds = len(apd_indices)
     num_gates = 1
-    timetag_list_size = int(15900 / num_gates / 2)    
+    timetag_list_size = int(15900 / num_gates / num_apds)    
     
+    ### determine if the readout time is longer than the max opx readout time and therefore we need to loop over smaller readouts. 
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     delay_between_readouts_iterations = 200 #simulated - conservative estimate
+    
+    init_m_readout_delay_cc = int( max( init_laser_delay_time-readout_laser_delay_time , 4 ) )
     
     # for now lets assume we use two different lasers.
     
@@ -76,6 +80,7 @@ def qua_program(opx, config, args, num_reps):
     
     with program() as seq:
         
+        ### define qua variables and streams
         counts_gate1_apd_0 = declare(int)  
         counts_gate1_apd_1 = declare(int)
         times_gate1_apd_0 = declare(int,size=timetag_list_size)
@@ -131,12 +136,11 @@ def qua_program(opx, config, args, num_reps):
                     with for_(k, 0, k < counts_gate1_apd_1, k + 1):
                         save(times_gate1_apd_1[k], times_st_apd_1)
                         
-            
             align()
+            wait(init_m_readout_delay_cc)
             wait(intra_pulse_delay//4)
             align()
             
-                
             if readout_on_pulse_ind == 1:
                 
                 play(readout_laser_pulse*amp(readout_laser_amplitude),readout_laser_key,duration=readout_laser_on_time//4) 
@@ -170,7 +174,6 @@ def qua_program(opx, config, args, num_reps):
                         save(times_gate1_apd_1[k], times_st_apd_1)
                         
             
-            ##clock pulse that advances piezos and ends a sample in the tagger
             align()
             wait(25)
             play("clock_pulse","do_sample_clock")
@@ -190,6 +193,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = '' 
+    ### specify what one 'sample' means for the data processing. 
     sample_size = 'one_rep' # 'all_reps
     
     return seq, final, [period], num_gates, sample_size

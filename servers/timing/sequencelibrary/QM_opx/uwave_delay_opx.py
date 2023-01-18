@@ -5,7 +5,7 @@ Created on Sat Sep  3 11:16:25 2022
 
 @author: carterfox
 
-simple readout sequence for the opx in qua
+uwave delay measurement sequence
 
 """
 
@@ -19,26 +19,32 @@ from opx_configuration_file import *
 from utils.tool_belt import States
 def qua_program(opx, config, args, num_reps):
     
+    ### get inputted parameters
+    durations = args[0:5]
+    durations = [numpy.int64(el) for el in durations]
+    tau, max_tau, readout_time, pi_pulse, polarization = durations
+    state, apd_index, laser_name, laser_power = args[5:9]
+    
+    ### specify number of gates and determine length of timetag streams to use 
     apd_indices =  config['apd_indices']
     num_apds = len(apd_indices)
     num_gates = 2
     total_num_gates = int(num_gates*num_reps)
     timetag_list_size = int(15900 / num_gates / 2)    
+    
+    ### specify number of readouts to buffer the count stream by so the counter function on the server knows the combine iterative readouts
+    ### it's just 1 here because the readout will always be much shorter than the max readout time the opx can do (~5ms)
     num_readouts = 1
 
-    durations = args[0:5]
-    durations = [numpy.int64(el) for el in durations]
-    tau, max_tau, readout_time, pi_pulse, polarization = durations
-    
-    state, apd_index, laser_name, laser_power = args[5:9]
+    ### get microwave information
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    
+    wait_time = config['CommonDurations']['uwave_buffer']
+
+    ### get laser information
     laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
     
-    wait_time = config['CommonDurations']['uwave_buffer']
-    laser_delay_time = config['Optics'][laser_name]['delay']
-    
+    ### compute necessary delays    
     common_delay = max(laser_delay_time, pi_pulse + abs(tau)) + 24
     common_delay_cc = int(common_delay // 4 )
     uwave_wait_cc = int( (common_delay_cc*4 - (pi_pulse - tau)) // 4 )
@@ -55,10 +61,6 @@ def qua_program(opx, config, args, num_reps):
     pi_pulse_cc = int(pi_pulse // 4)
     period = front_buffer + wait_time*2 + polarization*2 
     
-    # print(pi_pulse)
-    # print(common_delay - laser_delay_time)
-    # print(common_delay - pi_pulse - tau)
-    # print(common_delay)
     
     with program() as seq:
         
@@ -140,6 +142,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = ''
+    ### specify what one 'sample' means for the data processing. 
     sample_size = 'all_reps'
     return seq, final, [period], num_gates, sample_size
     

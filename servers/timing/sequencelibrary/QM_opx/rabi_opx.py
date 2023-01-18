@@ -5,7 +5,7 @@ Created on Sat Sep  3 11:16:25 2022
 
 @author: carterfox
 
-simple readout sequence for the opx in qua
+rabi sequence for the opx
 
 """
 
@@ -20,36 +20,36 @@ from utils.tool_belt import States
 
 def qua_program(opx, config, args, num_reps):
     
+    ### get inputted parameters
+    durations = []
+    for ind in range(4):
+        durations.append(numpy.int64(args[ind]))
+    tau, polarization, readout_time, max_tau = durations
+    state = args[4]
+    laser_name = args[5]
+    laser_power = args[6]
+    
+    ### get microwave information
+    state = States(state)
+    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    uwave_delay_time = config['Microwaves'][sig_gen]['delay']
+    signal_wait_time = config['CommonDurations']['uwave_buffer']
+    
+    ### get laser information
+    laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
+    
+    ### specify number of gates and determine length of timetag streams to use 
     apd_indices =  config['apd_indices']
     num_apds = len(apd_indices)
     num_gates = 2
     total_num_gates = int(num_gates*num_reps)
-    timetag_list_size = int(15900 / num_gates / 2)    
+    timetag_list_size = int(15900 / num_gates / num_apds)    
+    
+    ### specify number of readouts to buffer the count stream by so the counter function on the server knows the combine iterative readouts
+    ### it's just 1 here because the readout will always be much shorter than the max readout time the opx can do (~5ms)
     num_readouts = 1
-
-    durations = []
-    for ind in range(4):
-        durations.append(numpy.int64(args[ind]))
-        
-    # Unpack the durations
-    tau, polarization, readout_time, max_tau = durations
-
-
-    # Signify which signal generator to use
-    state = args[4]
-    state = States(state)
-    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    # print(sig_gen)
     
-    # Laser specs
-    laser_name = args[5]
-    laser_power = args[6]
-    
-    
-    laser_pulse, laser_delay_time, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
-    
-    uwave_delay_time = config['Microwaves'][sig_gen]['delay']
-    signal_wait_time = config['CommonDurations']['uwave_buffer']
+    ### set up necessary times and get things in terms of clock cycles
     background_wait_time = 0*signal_wait_time
     reference_wait_time = 2 * signal_wait_time
     reference_time = readout_time#signal_wait_time
@@ -58,8 +58,6 @@ def qua_program(opx, config, args, num_reps):
     end_rest_time = max_tau - tau + 16 # 8/3/2022 issue with PESR and rabi, an not collecting counts if end time is 0 ns. Adding just a bit of buffer to this.
     mid_duration = polarization + reference_wait_time - readout_time
      
-    # Include a buffer on the front end so that we can delay channels that
-    # should start off the sequence HIGH
     reference_laser_on = reference_time + background_wait_time + end_rest_time + 2*laser_delay_time
     polarization_cc = int(polarization // 4)
     laser_delay_time_cc = int(laser_delay_time // 4)
@@ -71,8 +69,13 @@ def qua_program(opx, config, args, num_reps):
     signal_wait_time_cc = int(signal_wait_time // 4)
     period = polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on
     
+    ### compute necessary delays. 
+    laser_m_uwave_delay_cc = int( max( (laser_delay_time - uwave_delay_time)/4 , 4 ) )
+    uwave_m_laser_delay_cc = int( max( (uwave_delay_time - laser_delay_time)/4 , 4 ) )
+    
     with program() as seq:
         
+        ### define qua variables and streams 
         counts_gate1_apd_0 = declare(int)  
         counts_gate1_apd_1 = declare(int)
         times_gate1_apd_0 = declare(int,size=timetag_list_size)
@@ -83,7 +86,9 @@ def qua_program(opx, config, args, num_reps):
         times_gate2_apd_1 = declare(int,size=timetag_list_size)
         
         counts_st_apd_0 = declare_stream()
-        counts_st_apd_1 = declare_stream()     
+        counts_st_apd_1 = declare_stream()  
+
+        ### declare a qua variable for the microwave time so we can use a qua if statement to allow for the tau<16ns case. 
         tau_cc_qua = declare(int)
         assign(tau_cc_qua,tau_cc)
 
@@ -96,6 +101,7 @@ def qua_program(opx, config, args, num_reps):
             play(laser_pulse*amp(laser_amplitude),laser_name,duration=polarization_cc) 
             
             align()
+            wait(laser_m_uwave_delay_cc)
             wait(signal_wait_time_cc)
             
             with if_(tau_cc_qua >= 4):
@@ -104,7 +110,7 @@ def qua_program(opx, config, args, num_reps):
             with elif_(tau_cc_qua <= 3):
                 align()
             
-            # align()
+            wait(uwave_m_laser_delay_cc)
             wait(signal_wait_time_cc)
                            
             play(laser_pulse*amp(laser_amplitude),laser_name,duration=polarization_cc) 
@@ -143,7 +149,7 @@ def qua_program(opx, config, args, num_reps):
                 
             align()
         
-        play("clock_pulse","do_sample_clock") # clock pulse after all the reps so the tagger sees all reps as one sample
+        play("clock_pulse","do_sample_clock") 
         
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
@@ -157,6 +163,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = ''
+    ### specify what one 'sample' means for the data processing. 
     sample_size = 'all_reps'
     return seq, final, [period], num_gates, sample_size
     

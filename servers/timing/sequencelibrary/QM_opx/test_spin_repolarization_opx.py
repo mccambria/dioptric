@@ -5,7 +5,7 @@ Created on Sat Sep  3 11:16:25 2022
 
 @author: carterfox
 
-simple readout sequence for the opx in qua
+sequence for a T1 type measurement with scc readout and a yellow pulse during the wait time.
 
 """
 
@@ -19,18 +19,31 @@ from opx_configuration_file import *
 
 def qua_program(opx, config, args, num_reps):
     
+    ### get inputted parameters
     green_laser_key, second_init_laser_key, red_laser_key, readout_laser_key,\
                 green_pulse_time, second_init_pulse_time, red_pulse_time, readout_pulse_time,\
                 green_laser_power, second_init_laser_power, red_laser_power, readout_laser_power,\
                 sig_gen, pi_pulse = args
     
-    
+    ### get laser information
     green_laser_pulse, green_laser_delay_time, green_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,green_laser_key,green_laser_power)
     second_init_laser_pulse, second_init_laser_delay_time, second_init_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,second_init_laser_key,second_init_laser_power)
     red_laser_pulse, red_laser_delay_time, red_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,red_laser_key,red_laser_power)
     readout_laser_pulse, readout_laser_delay_time, readout_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,readout_laser_key,readout_laser_power)
 
+    ### specify number of gates and determine length of timetag streams to use 
     apd_indices =  config['apd_indices']
+    num_apds = len(apd_indices)
+    num_gates = 1
+    total_num_gates = int(num_gates*num_reps)
+    timetag_list_size = int(15900 / num_gates / num_apds)    
+    
+    ### specify number of readouts to buffer the count stream by so the counter function on the server knows the combine iterative readouts
+    ### here we assume its only one readout necessary (so at most ~5ms). 
+    ### Need to loop over readouts if you want to read out longer. see other sequences for examples
+    num_readouts = 1
+    
+    ### get microwave information
     uwave_delay = config['Microwaves'][sig_gen]['delay']
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     scc_ion_buffer = config['CommonDurations']['scc_ion_readout_buffer']
@@ -45,6 +58,7 @@ def qua_program(opx, config, args, num_reps):
         second_init_pulse_time_cc = 4
         second_init_laser_amplitude = 0.0
     
+    ### compute necessary delays. 
     readout_pulse_time_cc = int(round(readout_pulse_time/4))
     readout_laser_delay_time_cc = int(readout_laser_delay_time/4)
     yellow_m_red_delay_cc = int(max(round((readout_laser_delay_time - red_laser_delay_time)/4),4))
@@ -63,15 +77,13 @@ def qua_program(opx, config, args, num_reps):
     extra_5000_delay_cc = int(5000/4)
     extra_5000000_delay_cc = int(5000000/4)
     extra_10000_delay_cc = int(10000/4)
-    num_gates = 1
-    timetag_list_size = int(15900 / num_gates / 2)    
-    num_readouts=1
     
     period_cc = green_pulse_time_cc + second_init_pulse_time_cc + readout_pulse_time_cc
     period = int(period_cc/4)
     
     with program() as seq:
         
+        ### define qua variables and streams
         counts_gate1_apd_0 = declare(int)  
         counts_gate1_apd_1 = declare(int)
         times_gate1_apd_0 = declare(int,size=timetag_list_size)
@@ -146,6 +158,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = '' 
+    ### specify what one 'sample' means for the data processing. 
     sample_size = 'all_reps' # 'one_rep'
     
     return seq, final, [period], num_gates, sample_size

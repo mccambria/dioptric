@@ -23,7 +23,6 @@ import utils.tool_belt as tool_belt
 import utils.common as common
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.image_sample as image_sample
-import majorroutines.image_sample_xz_digital as image_sample_xz_digital
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -57,12 +56,6 @@ def do_image_sample(nv_sig,nv_minus_init=False,scan_range=2,num_steps=30,cmin=No
     # image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps,nvm_initialization,save_data=True,cbarmin=cmin,cbarmax=cmax)
     image_sample.main(nv_sig, scan_range, scan_range, num_steps,nv_minus_init,vmin=cmin,vmax=cmax,scan_type=scan_type)
 
-def do_image_sample_xz(nv_sig, apd_indices,scan_range=2,num_steps=30,cmin=None,cmax=None):
-    scale = 1 #um / V
-   
-    # For now we only support square scans so pass scan_range twice
-    image_sample_xz_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,save_data=True,cbarmin=cmin,cbarmax=cmax)
-
 
 def do_optimize(nv_sig,save_data):
 
@@ -76,7 +69,7 @@ def do_optimize(nv_sig,save_data):
 
 
 
-def do_optimize_z(nv_sig, apd_indices):
+def do_optimize_z(nv_sig):
     
     adj_nv_sig = copy.deepcopy(nv_sig)
     adj_nv_sig["only_z_opt"] = True
@@ -113,7 +106,7 @@ def do_laser_delay_calibration(nv_sig,apd_indices,laser_name,num_reps = int(2e6)
             1,
         )
         
-def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2,num_steps = 51, num_runs = 20):
+def do_resonance(nv_sig, freq_center=2.87, freq_range=0.2,num_steps = 51, num_runs = 20):
 
     # num_steps = 51
     # num_runs = 20
@@ -122,7 +115,6 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2,num_steps
 
     resonance.main(
         nv_sig,
-        apd_indices,
         freq_center,
         freq_range,
         num_steps,
@@ -131,7 +123,7 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2,num_steps
         state=States.HIGH,
     )
 
-def do_rabi(nv_sig, apd_indices, uwave_time_range, state ,num_steps = 51, num_reps = 1e4, num_runs = 20):
+def do_rabi(nv_sig, uwave_time_range, state ,num_steps = 51, num_reps = 1e4, num_runs = 20):
 
     # num_steps = 51
     # num_runs = 20
@@ -277,7 +269,7 @@ def do_determine_scc_pulse_params(nv_sig,num_reps,ion_durs=None):
     
     determine_scc_pulse_params.determine_ionization_dur(nv_sig, num_reps,ion_durs)
     
-def do_scc_pulsed_resonance(nv_sig,apd_indices):
+def do_scc_pulsed_resonance(nv_sig):
     
     
     uwave_power = 16.5
@@ -290,7 +282,7 @@ def do_scc_pulsed_resonance(nv_sig,apd_indices):
     freq_center = 2.87
     freq_range = 0.2
     
-    scc_pulsed_resonance.main(nv_sig, nv_sig, apd_indices, 
+    scc_pulsed_resonance.main(nv_sig, nv_sig, 
                               freq_center, freq_range, num_steps, num_reps, num_runs, 
                               uwave_power, uwave_pulse_dur)
     
@@ -306,7 +298,7 @@ def do_rabi_SCC(nv_sig):
     rabi_SCC.main(nv_sig, uwave_time_range, state,
              num_steps, num_reps, num_runs)
     
-def do_ramsey_SCC(nv_sig, opti_nv_sig, apd_indices,detuning=4):
+def do_ramsey_SCC(nv_sig, opti_nv_sig,detuning=4):
 
     # detuning = 5  # MHz
     precession_time_range = [20, 704]
@@ -316,7 +308,6 @@ def do_ramsey_SCC(nv_sig, opti_nv_sig, apd_indices,detuning=4):
 
     ramsey_SCC.main(
         nv_sig,
-        apd_indices,
         detuning,
         precession_time_range,
         num_steps,
@@ -327,20 +318,19 @@ def do_ramsey_SCC(nv_sig, opti_nv_sig, apd_indices,detuning=4):
     
     
 
-def do_determine_reion_dur(nv_sig, apd_indices):
+def do_determine_reion_dur(nv_sig):
     
     reion_durs = numpy.arange(240,556,16)
     num_reps = 30000
     
     determine_charge_readout_params.determine_reion_dur(
         nv_sig,
-        apd_indices,
         num_reps,
         reion_durs
         )
     
     
-def do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps):
+def do_ramsey_SCC_one_tau_no_ref(nv_sig,num_reps):
 
     detuning = -0.9  # MHz
     precession_time = 200
@@ -351,7 +341,6 @@ def do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps):
 
     ramsey_SCC_one_tau_no_ref.main(
         nv_sig,
-        apd_indices,
         detuning,
         precession_time,
         num_reps,
@@ -445,13 +434,13 @@ if __name__ == "__main__":
         #     positioning.reset_drift(cxn)
 
         # do_determine_standard_readout_params(nv_sig)
-        # do_scc_pulsed_resonance(nv_sig,apd_indices)
+        # do_scc_pulsed_resonance(nv_sig)
         # do_rabi_SCC(nv_sig)       
-        # do_ramsey_SCC(nv_sig, nv_sig, apd_indices,detuning=-0.74)
+        # do_ramsey_SCC(nv_sig, nv_sig,detuning=-0.74)
         
         # do_determine_scc_pulse_params(nv_sig,5000,ion_durs=None)
         # do_determine_charge_readout_params(nv_sig, readout_powers=powers,readout_times=[10e6], num_reps=50000)
-        # do_ramsey_SCC_one_tau_no_ref(nv_sig, apd_indices,num_reps=int(1e6))
+        # do_ramsey_SCC_one_tau_no_ref(nv_sig,num_reps=int(1e6))
         
         # do_test_spin_repolarization_scc(nv_sig, second_init_laser_key='laserglow_589', 
         #                               second_init_power=0.0, 
@@ -467,17 +456,17 @@ if __name__ == "__main__":
         
         # do_test_charge_state_pre_selection(nv_sig, num_reps=2000)
         
-        # do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')
+        do_image_sample(nv_sig,num_steps=20,scan_range=3,scan_type='XY')
         # do_image_sample(nv_sig,num_steps=20,scan_range=10,scan_type='XZ')
         # do_optimize(nv_sig,save_data=True)
-        # do_optimize_z(nv_sig, apd_indices)
+        # do_optimize_z(nv_sig)
         # do_stationary_count(nv_sig,disable_opt=True)
         # 
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_515',num_reps=int(2e6), delay_range=[64,640],num_steps=37)
         # do_laser_delay_calibration(nv_sig,apd_indices,'cobolt_638',num_reps=int(6e6), delay_range=[40,700],num_steps=31)
         
-        # do_resonance(nv_sig, apd_indices,num_steps = 41, num_runs = 40,freq_center=2.87,freq_range=.2)
-        # do_rabi(nv_sig, apd_indices, uwave_time_range = [0,320], state=States.HIGH,num_reps=2e4,num_runs=4,num_steps=21)
+        # do_resonance(nv_sig,num_steps = 41, num_runs = 40,freq_center=2.87,freq_range=.2)
+        # do_rabi(nv_sig, uwave_time_range = [0,320], state=States.HIGH,num_reps=2e4,num_runs=4,num_steps=21)
         # do_pulsed_resonance(nv_sig, freq_range=0.2, uwave_pulse_dur=52,num_steps=41, num_reps=2e4, num_runs=4)
         # detunings = [3]
         # for d in detunings:
@@ -486,11 +475,10 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, num_reps=2e4, num_runs=200, state=States.LOW)
         # do_spin_echo(nv_sig, max_time=15,num_reps=2e4,num_runs=200,state=States.LOW)
         # do_optimize_magnet_angle(nv_sig)
-        # powers = [.45,.55]
         # do_determine_charge_readout_params(nv_sig,num_reps=5000,readout_powers=powers,readout_times=[5e6])
         # do_determine_charge_readout_params(nv_sig,num_reps=1000,readout_powers=[.35],readout_times=[20e6])
         # do_determine_charge_readout_params(nv_sig,num_reps=1000,readout_powers=[.3],readout_times=[20e6])
-        # do_determine_reion_dur(nv_sig, apd_indices)
+        # do_determine_reion_dur(nv_sig)
 
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it
