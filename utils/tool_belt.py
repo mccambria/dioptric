@@ -88,9 +88,13 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
     if eval(mod_type).name == "ANALOG":
         laser_pulse_amplitude = laser_power
-
+        
     elif eval(mod_type).name == "DIGITAL":
-        laser_pulse_amplitude = 1
+        if laser_power == 0:
+            laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
+            laser_pulse_amplitude = 1
+        else:
+            laser_pulse_amplitude = 1
 
     return laser_pulse_name, laser_delay, laser_pulse_amplitude
 
@@ -164,6 +168,21 @@ def set_laser_power(
             laser_server.set_laser_power(laser_power)
         return None
 
+def get_opx_uwave_pulse_info(config,pulse_time):
+    pulse_time_cc = int(round(pulse_time/4))
+    
+    if pulse_time_cc < 4:
+        uwave_pulse = 'uwave_OFF'
+        uwave_amp = 1
+        uwave_time_cc = 4
+        
+    elif pulse_time_cc >= 4:
+        uwave_pulse = 'uwave_ON'
+        uwave_amp = 1
+        uwave_time_cc = pulse_time_cc
+    
+    return uwave_pulse, uwave_amp, uwave_time_cc
+
 
 def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
     """optics_key should be either 'collection' or a laser key.
@@ -180,6 +199,8 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
         if filter_key not in nv_sig:
             return
         filter_name = nv_sig[filter_key]
+        if filter_name is None:
+            return
     elif (optics_name is not None) and (filter_name is not None):
         pass  # All good
     else:
@@ -690,6 +711,9 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
     return common.get_registry_entry(cxn, "apd_indices", ["Config"])
+
+def get_apd_gate_channel(cxn):
+    return common.get_registry_entry(cxn, "di_apd_gate", ["Config", "Wiring", "Tagger"])
 
 
 # endregion

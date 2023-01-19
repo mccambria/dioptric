@@ -203,7 +203,7 @@ def calculate_threshold_with_model(
     fidelity = thresh_para[1]
     threshold = thresh_para[0]
     # print(title_text)
-    print(threshold_list)
+    # print(threshold_list)
     print("Threshold: {} counts, fidelity: {:.3f}".format(threshold, fidelity))
 
     if plot_model_hists:
@@ -776,17 +776,17 @@ def main(
 
     return
 
-def measure_reinit_spin_dur(nv_sig, apd_indices, num_reps,state):
+def measure_reinit_spin_dur(nv_sig, num_reps,state):
     """
     not finished
     """
 
     with labrad.connect() as cxn:
-        sig_counts = measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps,state)
+        sig_counts = measure_reion_dur_with_cxn(cxn, nv_sig, num_reps,state)
 
     return sig_counts
 
-def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
+def measure_reinit_spin_dur_cxn(cxn, nv_sig, num_reps,state):
 
     tool_belt.reset_cfm(cxn)
 
@@ -823,12 +823,12 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
 
 
 # first_init_pulse_time, init_pulse_time, readout_time, first_init_laser_key, init_laser_key, readout_laser_key,\
-#   first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
+#   first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind  = args
     # Estimate the lenth of the sequance
 # (
 #     readout_time, reion_time, ion_time, tau, shelf_time, uwave_tau_max,
 #     green_laser_name, yellow_laser_name, red_laser_name,
-#     sig_gen, apd_index, reion_power, ion_power, shelf_power, readout_power,
+#     sig_gen, reion_power, ion_power, shelf_power, readout_power,
 # ) = args
     file_name = 'rabi_scc.py'
     seq_args = [
@@ -842,7 +842,6 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
         green_laser_name,
         green_laser_name,
         sig_gen_name,
-        apd_indices[0],
         tool_belt.set_laser_power(cxn, nv_sig, 'spin_reinit_laser'),
         tool_belt.set_laser_power(cxn, nv_sig, 'spin_laser'),
         tool_belt.set_laser_power(cxn, nv_sig, 'spin_laser'),
@@ -860,11 +859,11 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
     expected_run_time = num_reps * seq_time_s  #s
 
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig)
     opti_coords_list.append(opti_coords)
 
     # Load the APD
-    tagger_server.start_tag_stream(apd_indices)
+    tagger_server.start_tag_stream()
 
     pulsegen_server.stream_immediate(file_name, num_reps, seq_args_string)
 
@@ -881,14 +880,14 @@ def measure_reinit_spin_dur_cxn(cxn, nv_sig, apd_indices, num_reps,state):
 
     return sig_counts
 
-def measure_reion_dur(nv_sig, apd_indices, num_reps):
+def measure_reion_dur(nv_sig, num_reps):
 
     with labrad.connect() as cxn:
-        sig_counts = measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps)
+        sig_counts = measure_reion_dur_with_cxn(cxn, nv_sig, num_reps)
 
     return sig_counts
 
-def measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps):
+def measure_reion_dur_with_cxn(cxn, nv_sig, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
@@ -914,7 +913,7 @@ def measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
 
 # first_init_pulse_time, init_pulse_time, readout_time, first_init_laser_key, init_laser_key, readout_laser_key,\
-#   first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
+#   first_init_laser_power,init_laser_power, read_laser_power, readout_on_pulse_ind  = args
     # Estimate the lenth of the sequance
     file_name = 'simple_readout_three_pulse.py'
     seq_args = [
@@ -940,11 +939,11 @@ def measure_reion_dur_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     expected_run_time = num_reps * seq_time_s  #s
 
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig)
     opti_coords_list.append(opti_coords)
 
     # Load the APD
-    tagger_server.start_tag_stream(apd_indices)
+    tagger_server.start_tag_stream()
 
     pulsegen_server.stream_immediate(file_name, num_reps, seq_args_string)
 
@@ -971,7 +970,7 @@ def plot_reion_dur(reion_durs, sig_counts_array, sig_counts_ste_array, title):
 
     return fig
 
-def determine_reion_dur(nv_sig, apd_indices, num_reps, reion_durs):
+def determine_reion_dur(nv_sig, num_reps, reion_durs):
 
     num_steps = len(reion_durs)
 
@@ -995,7 +994,7 @@ def determine_reion_dur(nv_sig, apd_indices, num_reps, reion_durs):
         print('Reionization dur: {} ns'.format(t))
         nv_sig_copy = copy.deepcopy(nv_sig)
         nv_sig_copy['nv-_reionization_dur'] = t
-        sig_counts = measure_reion_dur(nv_sig_copy, apd_indices, num_reps)
+        sig_counts = measure_reion_dur(nv_sig_copy, num_reps)
         # print('measured: ',sig_counts)
 
         sig_counts_ste = stats.sem(sig_counts)
@@ -1031,7 +1030,7 @@ def determine_reion_dur(nv_sig, apd_indices, num_reps, reion_durs):
     print(' \nRoutine complete!')
     return
 
-def determine_reinit_spin_dur(nv_sig, apd_indices, num_reps, reinit_durs):
+def determine_reinit_spin_dur(nv_sig, num_reps, reinit_durs):
 
     num_steps = len(reinit_durs)
 
@@ -1055,7 +1054,7 @@ def determine_reinit_spin_dur(nv_sig, apd_indices, num_reps, reinit_durs):
         print('m_s=0 reinitialization dur: {} ns'.format(t))
         nv_sig_copy = copy.deepcopy(nv_sig)
         nv_sig_copy['spin_reinit_laser_dur'] = t
-        sig_counts = measure_reinit_spin_dur(nv_sig_copy, apd_indices, num_reps)
+        sig_counts = measure_reinit_spin_dur(nv_sig_copy, num_reps)
         # print('measured: ',sig_counts)
 
         sig_counts_ste = stats.sem(sig_counts)
@@ -1097,44 +1096,33 @@ if __name__ == "__main__":
     ### Replots
     
         
-    data = tool_belt.get_raw_data("2022_12_08-17_52_31-johnson-search")
+    data = tool_belt.get_raw_data("2022_12_19-10_06_55-johnson-search")
     nv_sig = data["nv_sig"]
     nv0 = data["nv0"]
     nvm = data["nvm"]
     readout_power = nv_sig["charge_readout_laser_power"]
     max_readout_dur = nv_sig["charge_readout_dur"]
     
-    readout_dur=5e6
+    # readout_dur=5e6
 
-    threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
-        nv_sig,
-        readout_dur,
-        nv0,
-        nvm,
-        readout_power,
-        fit_threshold_full_model=True,
-        nd_filter=None,
-        plot_model_hists=True,
-        bins=None)
+    # threshold_list, fidelity_list,threshold, fidelity,n0,nm = plot_threshold(
+    #     nv_sig,
+    #     readout_dur,
+    #     nv0,
+    #     nvm,
+    #     readout_power,
+    #     fit_threshold_full_model=True,
+    #     nd_filter=None,
+    #     plot_model_hists=True,
+    #     bins=None)
     
     
-    if False:
+    if True:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
+        fp='pc_Carr/branch_master/determine_charge_readout_params/2023_01/'
         filenames = [
-        # "2022_12_08-20_31_43-johnson-search",
-        # "2022_12_08-16_33_28-johnson-search",
-        # "2022_12_08-16_53_12-johnson-search",
-        # "2022_12_08-17_12_57-johnson-search",
-        # "2022_12_08-17_32_44-johnson-search",
-        "2022_12_08-17_52_31-johnson-search",
-        # "2022_12_08-18_12_20-johnson-search",
-        # "2022_12_08-18_32_09-johnson-search",
-        # "2022_12_08-18_52_01-johnson-search",
-        # "2022_12_08-19_11_52-johnson-search",
-        # "2022_12_08-19_31_51-johnson-search",
-        # "2022_12_08-19_51_49-johnson-search",
-        # "2022_12_08-20_11_44-johnson-search"
+            "2023_01_09-15_47_56-johnson-search"         
         ]
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
         powers_all = []
@@ -1164,7 +1152,7 @@ if __name__ == "__main__":
 
             for file_name in filenames:
 
-                data = tool_belt.get_raw_data(file_name)
+                data = tool_belt.get_raw_data(file_name,path_from_nvdata=fp)
                 nv_sig = data["nv_sig"]
                 nv0 = data["nv0"]
                 nvm = data["nvm"]

@@ -198,7 +198,7 @@ def create_raw_data_figure(
         norm_avg_sig = np.empty(num_steps)
         norm_avg_sig[:] = np.nan
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
-    
+
     if magnet_angle:
         kpl.anchored_text(ax_norm, '{} deg'.format(magnet_angle), kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
     return fig, ax_sig_ref, ax_norm
@@ -216,7 +216,7 @@ def rabi_line(freq, constrast, rabi_freq, res_freq):
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
     effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
     pulse_dur = np.pi / rabi_freq_ghz  # Assumed
-    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2)
+    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2) ** 2
 
 
 def rabi_line_hyperfine(freq, constrast, rabi_freq, res_freq):
@@ -564,7 +564,7 @@ def main(
         Single-valued resonance (GHz) - may be incorrect if there are multiple resonances
     str
         Extension-less name of the data file generated
-    list   
+    list
         list containing the low frequency resonance (GHz) and the high frequency resonance if
         there is one - may be incorrect if there are more than 2 resonances
     """
@@ -842,7 +842,7 @@ def main_with_cxn(
         fit_fig, _, fit_func, popt, pcov = create_fit_figure(
             freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
         )
-    
+
         if len(popt) == 3:
             low_freq = popt[2]
             high_freq = None
@@ -901,7 +901,7 @@ def main_with_cxn(
     tool_belt.save_figure(raw_fig, file_path)
 
     tool_belt.save_raw_data(data, file_path)
-    
+
     single_res = None
     if fit_fig is not None:
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
@@ -919,10 +919,13 @@ if __name__ == "__main__":
     # print(Path(__file__).stem)
     # sys.exit()
 
-    kpl.init_kplotlib()
-
-    file_name = "2023_01_11-13_43_03-siena-nv6_2022_12_22"
+    file_name = "2023_01_12-20_55_47-wu-nv10_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
+
+    print(return_res_with_error(data))
+    sys.exit()
+
+    kpl.init_kplotlib()
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]

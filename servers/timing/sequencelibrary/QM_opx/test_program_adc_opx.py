@@ -1,3 +1,7 @@
+"""
+sequence for testing out raw adc stream 
+"""
+
 import time
 from qm import SimulationConfig
 from qm.qua import *

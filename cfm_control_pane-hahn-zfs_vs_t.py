@@ -16,6 +16,7 @@ import numpy as np
 import time
 import copy
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
@@ -37,8 +38,8 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 0.4
-    num_steps = 90
+    # scan_range = 0.4
+    # num_steps = 90
     # num_steps = 120
 
     # scan_range = 0.5
@@ -48,8 +49,8 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # scan_range = 0.3
     # num_steps = 80
 
-    # scan_range = 1.0
-    # num_steps = 180
+    scan_range = 1.5
+    num_steps = 180
     
     # scan_range = 2.0
     # num_steps = 90*2
@@ -164,8 +165,10 @@ def do_four_point_esr(nv_sig, state):
 
 def do_determine_standard_readout_params(nv_sig):
 
-    num_reps = 4e3
-    max_readouts = [6e6]
+    num_reps = 1e6
+    max_readouts = [1e3]
+    # num_reps = 4e3
+    # max_readouts = [6e6]
     filters = ["nd_0"]
     state = States.LOW
 
@@ -210,20 +213,21 @@ def do_pulsed_resonance_batch(nv_list, temp):
     # Microdiamond
     # num_reps = 1e2
     # num_runs = 32
+    # freq_range = 0.060
     
     # Single
-    num_reps = 2e4
-    num_runs = 32
+    num_reps = 5e4
+    num_runs = 16
+    freq_range = 0.020
     
     # num_reps = 50
     # num_runs = 8
 
-    uwave_power = 4
-    uwave_pulse_dur = 100
+    uwave_power = 10
+    uwave_pulse_dur = 200
 
     freq_center = cambria_fixed(temp)
     # freq_center = 2.8773
-    freq_range = 0.060
 
     for nv_sig in nv_list:
         if tool_belt.safe_stop():
@@ -244,11 +248,11 @@ def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
 
     num_steps = 51
 
-    # num_reps = 2e4
-    # num_runs = 16
-
-    num_reps = 1e2
+    num_reps = 0.5e4  # 2e4
     num_runs = 16
+
+    # num_reps = 1e2
+    # num_runs = 16
 
     period = rabi.main(
         nv_sig,
@@ -296,134 +300,112 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     # fmt: off
-
-    # sample_name = "wu"
-    # z_coord = 7
-    # ref_coords = [0.437, -0.295, z_coord]
+    
+    # sample_name = "15micro"
+    # z_coord = 0
+    # ref_coords = [1.186, -0.614, z_coord]
     # ref_coords = np.array(ref_coords)
     
     # nvref = {
     #     'coords': ref_coords, 
     #     'name': '{}-nvref_zfs_vs_t'.format(sample_name),
-    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 10,
+    #     'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 800,
     #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
+        
+    #     # Microdiamond
+    #     # "spin_laser": green_laser, "spin_laser_filter": "nd_0.3", 
+    #     # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
+    #     # "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
+    #     # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
+        
+    #     # Single
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0",
     #     "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-    #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-    #     }
-    # nv1 = {
-    #     'coords': ref_coords + np.array([0.174, 0.108, 0]),  
-    #     # "coords": [0.467, -0.285, z_coord],
-    #     'name': '{}-nv1_zfs_vs_t'.format(sample_name),
-    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 7.0,
-    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-    #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-    #     }
-    # nv2 = {
-    #     'coords': ref_coords + np.array([0.157, -0.021, 0]),
-    #     # "coords": [0.429, -0.423 , z_coord],
-    #     'name': '{}-nv2_zfs_vs_t'.format(sample_name),
-    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 9.0,
-    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-    #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-    #     }
-    # nv3 = {
-    #     'coords': ref_coords + np.array([0.052, 0.147, 0]),
-    #     # "coords": [0.360, -0.247, z_coord],
-    #     'name': '{}-nv3_zfs_vs_t'.format(sample_name),
-    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 8.0,
-    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-    #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-    #     }
-    # nv4 = {
-    #     'coords': ref_coords + np.array([-0.237, 0.026, 0]), 
-    #     # "coords": [0.051, -0.372, z_coord],
-    #     'name': '{}-nv4_zfs_vs_t'.format(sample_name),
-    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 8.0,
-    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-    #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
-    #     }
-    # nv5 = {
-    #     'coords': ref_coords + np.array([0.074, -0.050, 0]), 
-    #     # "coords": [0.511, -0.341, z_coord],
-    #     'name': '{}-nv5_zfs_vs_t'.format(sample_name),
-    #     'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 9.0,
-    #     'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-    #     'collection_filter': None, 'magnet_angle': None,
-    #     'resonance_LOW': freq, 'rabi_LOW': rabi_per, 'uwave_power_LOW': uwave_power,
+        
+    #     "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.4", 'magnet_angle': None,
+    #     # "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0", 'magnet_angle': None,
+    #     'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
     #     }
     
-    sample_name = "15micro"
-    z_coord = 0
-    ref_coords = [1.186, -0.614, z_coord]
+    # nv1 = copy.deepcopy(nvref)
+    # nv1["coords"] = ref_coords + np.array([0.144, 0.089, 0])
+    # nv1["name"] =  f"{sample_name}-nv1_zfs_vs_t"
+    # nv1["expected_count_rate"] = 1000
+    
+    # nv2 = copy.deepcopy(nvref)
+    # nv2["coords"] = ref_coords + np.array([0.032, -0.060, 0])
+    # nv2["name"] =  f"{sample_name}-nv2_zfs_vs_t"
+    # nv2["expected_count_rate"] = 1000
+    
+    # nv3 = copy.deepcopy(nvref)
+    # nv3["coords"] = ref_coords + np.array([-0.125, -0.037, 0])
+    # nv3["name"] =  f"{sample_name}-nv3_zfs_vs_t"
+    # nv3["expected_count_rate"] = 1000
+    
+    # nv4 = copy.deepcopy(nvref)
+    # nv4["coords"] = np.array([0.759, -0.501, z_coord])
+    # nv4["name"] =  f"{sample_name}-nv4_zfs_vs_t"
+    # nv4["expected_count_rate"] = 2300
+    
+    # nv5 = copy.deepcopy(nvref)
+    # nv5["coords"] = np.array([0.849, -0.669, z_coord])
+    # nv5["name"] =  f"{sample_name}-nv5_zfs_vs_t"
+    # nv5["expected_count_rate"] = 300
+
+    sample_name = "wu"
+    z_coord = 5.65
+    ref_coords = [0.021, -0.183, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
         'coords': ref_coords, 
         'name': '{}-nvref_zfs_vs_t'.format(sample_name),
-        'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 800,
+        'disable_opt': False, "disable_z_opt": True, 'expected_count_rate': 26,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 0.5e7,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-        
-        # Microdiamond
-        # "spin_laser": green_laser, "spin_laser_filter": "nd_0.3", 
-        # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
-        # "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
-        # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
-        
-        # Single
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 2e3, "spin_readout_dur": 440,
-        
-        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.4", 'magnet_angle': None,
-        # "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0", 'magnet_angle': None,
-        'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 4.0,
+        "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
+        "spin_pol_dur": 1e3, "spin_readout_dur": 350,
+        "norm_style": NormStyle.SINGLE_VALUED, 'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.87, 'rabi_LOW': 400, 'uwave_power_LOW': 10.0,
         }
+        
+    nv6 = copy.deepcopy(nvref)
+    nv6["coords"] = ref_coords + np.array([0.259, -0.23, 0])
+    nv6["name"] =  f"{sample_name}-nv6_zfs_vs_t"
+    nv6["expected_count_rate"] = 26
     
-    nv1 = copy.deepcopy(nvref)
-    nv1["coords"] = ref_coords + np.array([0.144, 0.089, 0])
-    nv1["name"] =  f"{sample_name}-nv1_zfs_vs_t"
-    nv1["expected_count_rate"] = 1000
+    nv7 = copy.deepcopy(nvref)
+    nv7["coords"] = ref_coords + np.array([0.191, -0.25, 0])
+    nv7["name"] =  f"{sample_name}-nv7_zfs_vs_t"
+    nv7["expected_count_rate"] = 24
     
-    nv2 = copy.deepcopy(nvref)
-    nv2["coords"] = ref_coords + np.array([0.032, -0.060, 0])
-    nv2["name"] =  f"{sample_name}-nv2_zfs_vs_t"
-    nv2["expected_count_rate"] = 1000
+    nv8 = copy.deepcopy(nvref)
+    nv8["coords"] = ref_coords + np.array([0.002, -0.257, 0])
+    nv8["name"] =  f"{sample_name}-nv8_zfs_vs_t"
+    nv8["expected_count_rate"] = 26
     
-    nv3 = copy.deepcopy(nvref)
-    nv3["coords"] = ref_coords + np.array([-0.125, -0.037, 0])
-    nv3["name"] =  f"{sample_name}-nv3_zfs_vs_t"
-    nv3["expected_count_rate"] = 1000
+    # nv9 = copy.deepcopy(nvref)
+    # nv9["coords"] = ref_coords + np.array([0., 0., 0])
+    # nv9["name"] =  f"{sample_name}-nv9_zfs_vs_t"
+    # nv9["expected_count_rate"] = 20
+
+    nv10 = copy.deepcopy(nvref)
+    nv10["coords"] = ref_coords + np.array([-0.055, 0.320, 0])
+    nv10["name"] =  f"{sample_name}-nv10_zfs_vs_t"
+    nv10["expected_count_rate"] = 24
     
-    nv4 = copy.deepcopy(nvref)
-    nv4["coords"] = np.array([0.759, -0.501, z_coord])
-    nv4["name"] =  f"{sample_name}-nv4_zfs_vs_t"
-    nv4["expected_count_rate"] = 2300
-    
-    nv5 = copy.deepcopy(nvref)
-    nv5["coords"] = np.array([0.849, -0.669, z_coord])
-    nv5["name"] =  f"{sample_name}-nv5_zfs_vs_t"
-    nv5["expected_count_rate"] = 300
+    nv11 = copy.deepcopy(nvref)
+    nv11["coords"] = ref_coords + np.array([-0.280, 0.447, 0])
+    nv11["name"] =  f"{sample_name}-nv11_zfs_vs_t"
+    nv11["expected_count_rate"] = 23
 
     # fmt: on
 
     # nv_sig = nv1
     nv_sig = nvref
-    # bg_coords = np.array(nv_sig["coords"]) + np.array([0.05, -0.05, 0])
-    # nv_list = [nv1, nv2, nv3]
-    nv_list = [nv1]
-    # for nv in nv_list:
-    #     print(nv["coords"])
-    # nv_list = [nv2, nv3, nv4, nv5]
+    bg_coords = np.array(nv_sig["coords"]) + np.array([0.04, -0.04, 0])
+    nv_list = [nv6, nv7, nv8, nv10, nv11]
+    # nv_list = [nv11]
     shuffle(nv_list)
     # nv_list.append(nv_list[0])
 
@@ -439,51 +421,50 @@ if __name__ == "__main__":
         # with labrad.connect() as cxn:
         #     cxn.pos_xyz_ATTO_piezos.write_xy(5, 3)
 
-        # tool_belt.set_drift([0.0, 0.0, 0])  # Totally reset
-        # drift = tool_belt.get_drift()
-        # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
+        # with labrad.connect() as cxn:
+        # #     positioning.set_drift(cxn, [0.0, 0.0, 0])  # Totally reset
+        #     drift = positioning.get_drift(cxn)
+        #     positioning.set_drift(cxn, [0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
         # for z in np.arange(-24, 20, 4):
-        # for z in np.arange(10, -10, -5):
-        z = 0
-        while True:
-            if tool_belt.safe_stop():
-                break
-            with labrad.connect() as cxn:
-                cxn.pos_xyz_ATTO_piezos.write_z(z)
-            print(z)
-            z += 5
-            time.sleep(5)
-            # nv_sig["coords"][2] = int(z)
-            # do_image_sample(nv_sig)
+        # for z in np.arange(8.0, 2.0, -0.5):
+        # # z = 0
+        # # while True:
+        #     if tool_belt.safe_stop():
+        #         break
+        # #     with labrad.connect() as cxn:
+        # #         cxn.pos_xyz_ATTO_piezos.write_z(z)
+        # #     print(z)
+        # #     z += 5
+        # #     time.sleep(5)
+        #     nv_sig["coords"][2] = z
+        #     do_image_sample(nv_sig) 
         
-        # num_steps = 5
-        # step_size = 5
-        # locs = [[0,0],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1],[2,-1],[2,0],[2,1],[2,2],[1,2],[0,2],[-1,2],[-2,2],[-2,1],[-2,0],[-2,-1],[-2,-2],[-1,-2],[0,-2],[1,-2],[2,-2],[2,-1]]
-        # for ind in range(num_steps**2):
-        #     loc = locs[ind]
-        #     loc = [val * step_size for val in loc]
-        #     with labrad.connect() as cxn:
-        #         cxn.cryo_piezos.write_xy(loc[0],loc[1])
-        #     do_image_sample(nv_sig)
-
         # nv_sig = nvref 
         # nv_sig['imaging_readout_dur'] = 4e7
         # do_image_sample(nv_sig)
-        # do_image_sample_zoom(nv_sig)
+        # do_image_sample_zoom(nv11)
+        
+        # for nv in nv_list:
+        #     print(nv["coords"])
+        #     do_image_sample_zoom(nv_sig)
+        
         # do_optimize(nv_sig)
+        
+        # nv_sig['imaging_readout_dur'] = 1e8
+        # do_stationary_count(nv_sig, disable_opt=True)
         # nv_sig['imaging_readout_dur'] = 1e8
         # do_stationary_count_bg_subt(nv_sig, bg_coords)
-        # do_stationary_count(nv_sig, disable_opt=True)
+        
         # do_determine_standard_readout_params(nv_sig)
 
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
-        # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
+        # do_rabi(nv10, States.LOW, uwave_time_range=[0, 500])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        # temp = 285
-        # do_pulsed_resonance_batch(nv_list, temp)
+        temp = 296
+        do_pulsed_resonance_batch(nv_list, temp)
         # do_rabi_batch(nv_list)
 
     # except Exception as exc:

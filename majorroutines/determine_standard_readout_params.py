@@ -74,6 +74,8 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
     the spin states; 2 the SNR vs readout duration
     """
 
+    kpl.init_kplotlib()
+
     fig, axes_pack = plt.subplots(1, 2, figsize=kpl.double_figsize)
 
     num_points = 50
@@ -153,6 +155,11 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
 
     seq_file = "rabi.py"
+
+    ### the opx needs a specific rabi time tagging sequence because the normal rabi sequence doesn't record time tags
+    if pulsegen_server.name == 'QM_opx':
+        seq_file = "rabi_time_tagging.py"
+
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)

@@ -174,7 +174,7 @@ def main_with_cxn(
                     plot_times.pop(0)
                     plot_temps.pop(0)
                 min_plot_time = min(plot_times)
-                ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
+                ax.set_xlim(min_plot_time, min_plot_time + 1.05*plot_x_extent)
                 ax.set_ylim(min(plot_temps) - 2, max(plot_temps) + 2)
 
                 cur_temp_str = f"Current temp: {round(actual, 3)} K"
@@ -218,15 +218,15 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    do_plot = False
-    target = 370
+    do_plot = True
+    target = 310
     pid_coeffs = [0.5, 0.01, 0]
     integral_max = 2500
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
-    integral_bootstrap = 0.0
+    # integral_bootstrap = 0.0
     # integral_bootstrap = 0.3 * integral_max
-    # integral_bootstrap = 0.6 * integral_max
+    integral_bootstrap = 0.1 * integral_max
     # integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
@@ -254,12 +254,12 @@ if __name__ == "__main__":
             main_with_cxn(
                 cxn,
                 mode=Mode.CONTROL,
-                do_plot=True,
+                do_plot=do_plot,
                 target=target,
                 pid_coeffs=pid_coeffs,
                 integral_bootstrap=integral_bootstrap,
                 integral_max=integral_max,
-                safety_check=False,
+                safety_check=True,
             )
         finally:
             power_supply.output_off()
