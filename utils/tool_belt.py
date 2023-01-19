@@ -400,6 +400,13 @@ def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
 
 
+def linear(x, slope, y_offset):
+    return slope * x + y_offset
+
+def quadratic(x, a, b, c, x_offset):
+    x_ = x - x_offset
+    return a * (x_)**2 + b * x_ + c
+
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 

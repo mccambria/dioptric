@@ -69,7 +69,7 @@ def fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_s
 
     return fit_func, popt, pcov
 
-def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
+def create_cos_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
                       norm_avg_sig_ste, fit_func=None, popt=None):
 
     min_uwave_time = uwave_time_range[0]
@@ -112,6 +112,137 @@ def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
         kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
     
     return fig, ax, fit_func, popt, pcov
+
+
+from scipy.optimize import fsolve
+
+def solve_linear(m, b, y, z):
+   x = z[0]
+
+   F = numpy.empty((1))
+   
+   F[0] = m*x + b - y
+   return F
+
+def create_piecewise_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
+                      norm_avg_sig_ste, fit_func=None, popt=None):
+
+    # instead of fitting to a decay cosine, this function fits the initial slope
+    # to a linear line to find the pi/2 pulse duration and a quadratic to 
+    # the first dip to find the pi pulse duration.
+    
+    # this should accurately find the pi/2 and pi pulse times, which are not always 
+    # even fractions of the total period (possibly due to rise times on the MW switches)
+        
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
+                            num=num_steps, dtype=numpy.int32, retstep=True)
+    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
+    fig = None
+    # Fitting
+    if (fit_func is None) or (popt is None):
+        fit_func, popt, pcov = fit_data(
+            uwave_time_range,
+            num_steps,
+            fit_func,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        )
+    if (popt is not None):
+        # Plot setup
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Microwave duration (ns)')
+        ax.set_ylabel("Normalized fluorescence")
+        ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
+        
+        # Plotting
+        if norm_avg_sig_ste is not None:
+            kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
+        else:
+            kpl.plot_line(ax, taus, norm_avg_sig)
+            
+        # kpl.plot_line(
+        #     ax,
+        #     smooth_taus,
+        #     fit_func(smooth_taus, *popt),
+        #     color=KplColors.RED,
+        # )
+        
+        ax.axhline(popt[0])
+        
+        #prep for fitting
+        period = 1/popt[1]
+        print(period)
+        rabi_offset = popt[0]
+        Amp = 1- popt[0]
+        q=period/4# + period/25
+        q_ind=q/tau_step
+        q_range = 0.1 *period/tau_step
+        q_ind_low = int(numpy.round(q_ind-q_range)) 
+        q_ind_high = int(numpy.round(q_ind+q_range) )
+        
+        h=period/2
+        h_ind=h/tau_step
+        h_range = 0.2 *period/tau_step
+        h_ind_low = int(numpy.round(h_ind-h_range) )
+        h_ind_high = int(numpy.round(h_ind+h_range) )
+        
+        ### fit linear line to initial slope
+        fit_func_q = tool_belt.linear
+        init_params = [-Amp/(h), rabi_offset]
+        popt_q, pcov = curve_fit(fit_func_q, taus[q_ind_low : q_ind_high], norm_avg_sig[q_ind_low : q_ind_high],
+                            p0=init_params,
+                            sigma=norm_avg_sig_ste[q_ind_low : q_ind_high],
+                            absolute_sigma=True)
+        
+        # find intersection of linear line and offset (half of full range)        
+        solve_linear_func = lambda z: solve_linear(popt_q[0], popt_q[1], rabi_offset, z)
+        zGuess = numpy.array([q])
+        solve= fsolve(solve_linear_func,zGuess)
+        pi_on_2_pulse =  solve[0]
+        # print(pi_on_2_pulse)
+        
+        # plot linear line
+        smooth_taus_q = numpy.linspace(taus[q_ind_low], taus[q_ind_high], num=1000)
+        kpl.plot_line(
+            ax,
+            smooth_taus_q,
+            fit_func_q(smooth_taus_q, *popt_q),
+            color=KplColors.GREEN,
+        )
+        
+        
+        ### fit quadratic to initial slope
+        fit_func_h = lambda x, a, c, x_offset: tool_belt.quadratic(x, a, 0, c, x_offset)
+        init_params = [1e-5, 1-2*Amp, h]
+        popt_h, pcov = curve_fit(fit_func_h, taus[h_ind_low : h_ind_high], norm_avg_sig[h_ind_low : h_ind_high],
+                            p0=init_params,
+                            sigma=norm_avg_sig_ste[h_ind_low : h_ind_high],
+                            absolute_sigma=True)
+        
+        # find when quadratic is min (the x_offset param)        
+        pi_pulse =  popt_h[2]
+        # print(popt_h)
+        
+        # plot quadratic line
+        smooth_taus_h = numpy.linspace(taus[h_ind_low], taus[h_ind_high], num=1000)
+        kpl.plot_line(
+            ax,
+            smooth_taus_h,
+            fit_func_h(smooth_taus_h, *popt_h),
+            color=KplColors.RED,
+        )
+        Amp = 1- popt[0]
+        base_text = "pi pulse = {:.2f} ns \npi_on_2 pulse = {:.2f} ns"
+        size = kpl.Size.SMALL
+        text = base_text.format(pi_pulse, pi_on_2_pulse)
+        kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
+        
+        # print(popt[0])
+        # ax.axhline(1-(1-popt[0])*2)
+    
+    return fig, ax, fit_func, popt, pcov, pi_pulse,pi_on_2_pulse 
 
 def create_raw_data_figure(
     taus,
@@ -204,13 +335,14 @@ def hyperfine_rabi_func(t, offset, freq, decay):
 def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          opti_nv_sig = None,
-         return_popt=False):
+         return_popt=False,
+         do_cos_fit = True):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
                                          uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
-                                         opti_nv_sig)
+                                         opti_nv_sig, do_cos_fit)
 
         if return_popt:
             return rabi_per, popt
@@ -220,7 +352,8 @@ def main(nv_sig, uwave_time_range, state,
 
 def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
-                  opti_nv_sig = None):
+                  opti_nv_sig = None,
+                  do_cos_fit = True):
 
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
@@ -459,16 +592,27 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
 
     #  Plot the data itself and the fitted curve
-    fit_func = tool_belt.cosexp_1_at_0
-    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
-        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
-        fit_func 
-    )
-    rabi_period = 1/popt[1]
-    v_unc = numpy.sqrt(pcov[1][1])
-    print(v_unc)
-    rabi_period_unc = rabi_period**2 * v_unc
-    print('Rabi period measured: {} +/- {} ns\n'.format('%.2f'%rabi_period, '%.2f'%rabi_period_unc))
+    if do_cos_fit:
+        fit_func = tool_belt.cosexp_1_at_0
+        fit_fig, ax, fit_func, popt, pcov = create_cos_fit_figure(
+            uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+            fit_func 
+        )
+        rabi_period = 1/popt[1]
+        v_unc = numpy.sqrt(pcov[1][1])
+        print(v_unc)
+        rabi_period_unc = rabi_period**2 * v_unc
+        print('Rabi period measured: {} +/- {} ns\n'.format('%.2f'%rabi_period, '%.2f'%rabi_period_unc))
+    else:
+        fit_func = tool_belt.cosexp_1_at_0
+        fit_fig, ax, fit_func, popt, pcov, pi_pulse,pi_on_2_pulse  = create_piecewise_fit_figure(
+            uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+            fit_func 
+        )
+        print('pi pulse: {}  ns\n'.format('%.2f'%pi_pulse))
+        print('pi_on_2 pulse: {}  ns\n'.format('%.2f'%pi_on_2_pulse))
+        rabi_period = 2*pi_pulse
+        
 
     # %% Clean up and save the data
 
@@ -527,7 +671,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi/2023_01'
-    file = '2023_01_13-09_36_01-siena-nv6_2022_12_22'
+    file = '2023_01_18-14_10_13-siena-nv4_2023_01_16'
     data = tool_belt.get_raw_data(file, path)
     kpl.init_kplotlib()
 
@@ -540,8 +684,28 @@ if __name__ == '__main__':
     fit_func = hyperfine_rabi_func
     # fit_func = tool_belt.cosexp_1_at_0
     
-    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
+    
+    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts']
+    num_reps = data['num_reps']
+    nv_sig = data['nv_sig']
+    readout = nv_sig['spin_readout_dur']
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, NormStyle.POINT_TO_POINT)
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
+    
+    
+    create_piecewise_fit_figure(
         uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
         fit_func 
     )
+    
+    # create_cos_fit_figure(
+    #     uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+    #     fit_func 
+    # )
 

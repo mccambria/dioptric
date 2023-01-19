@@ -247,16 +247,20 @@ def main_with_cxn(
     if do_dq:
         seq_file_name = "dynamical_decoupling_dq.py"
         
-        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
         uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
-        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
-        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
-        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        # uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        # uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        uwave_pi_pulse_low = nv_sig["pi_pulse_{}".format(States.LOW.name)]
+        uwave_pi_on_2_pulse_low = nv_sig["pi_on_2_pulse_{}".format(States.LOW.name)]
+        # rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
         uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
-        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
-        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        # uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        # uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        uwave_pi_pulse_high = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
+        uwave_pi_on_2_pulse_high = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
         
         if state.value == States.LOW.value:
             state_activ = States.LOW
