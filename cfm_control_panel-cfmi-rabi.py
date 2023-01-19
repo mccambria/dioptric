@@ -324,11 +324,11 @@ def do_optimize_magnet_angle(nv_sig):
 def do_rabi(nv_sig, opti_nv_sig, state, 
             uwave_time_range=[0, 200]):
 
-    num_steps =101
+    # num_steps =101
     num_reps = int(2e4)    
-    num_runs =  15
+    num_runs =  10
 
-    # num_steps =51
+    num_steps =51
     # num_reps = int(2e4)    
     # num_runs =  10
     
@@ -340,7 +340,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_reps,
         num_runs,
         opti_nv_sig = opti_nv_sig,
-        do_cos_fit = False
+        do_cos_fit = True
     )
     # nv_sig["rabi_{}".format(state.name)] = period
 
@@ -511,7 +511,7 @@ def do_spin_echo(nv_sig, state = States.HIGH, do_dq = True):
     # num_reps = 1e3
     # num_runs = 100
     num_reps = 1e3
-    num_runs = 400
+    num_runs = 50
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -544,7 +544,7 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
     num_reps = 500
-    num_runs= 260  #600
+    num_runs= 100#500  #600
 
     state = States.HIGH
 
@@ -1074,8 +1074,8 @@ if __name__ == "__main__":
         "uwave_power_HIGH": 10,
         
         
-        # "norm_style": NormStyle.SINGLE_VALUED,
-        "norm_style": NormStyle.POINT_TO_POINT,
+        "norm_style": NormStyle.SINGLE_VALUED,
+        # "norm_style": NormStyle.POINT_TO_POINT,
         "resonance_LOW": 2.7808,
         "rabi_LOW":131, 
         "resonance_HIGH": 2.9598, 
@@ -1126,16 +1126,16 @@ if __name__ == "__main__":
     nv_sig_1["resonance_HIGH"]= 2.92156
     nv_sig_1["uwave_power_LOW"]= 12
     nv_sig_1["uwave_power_HIGH"]= 9.5
-    nv_sig_1["rabi_LOW"]= 152
-    nv_sig_1["rabi_HIGH"]=117.43*2 
+    nv_sig_1["rabi_LOW"]= 83*2
+    nv_sig_1["rabi_HIGH"]=128*2 
     # nv_sig_1["uwave_power_LOW"]= -13
     # nv_sig_1["uwave_power_HIGH"]= -12
     # nv_sig_1["rabi_LOW"]= 1360
     # nv_sig_1["rabi_HIGH"]=1431 
-    nv_sig_1["pi_pulse_LOW"]= 81.7
-    nv_sig_1["pi_on_2_pulse_LOW"]= 41.5
-    nv_sig_1["pi_pulse_HIGH"]= 129.16 
-    nv_sig_1["pi_on_2_pulse_HIGH"]= 65.59
+    nv_sig_1["pi_pulse_LOW"]= 83
+    nv_sig_1["pi_on_2_pulse_LOW"]= 46
+    nv_sig_1["pi_pulse_HIGH"]= 128 
+    nv_sig_1["pi_on_2_pulse_HIGH"]= 65
         
     nv_sig_4 = copy.deepcopy(sig_base)  
     nv_sig_4["coords"] = [0.030, -0.302, 5.09]  # NVC
@@ -1148,8 +1148,8 @@ if __name__ == "__main__":
     nv_sig_4["resonance_HIGH"]= 2.92155
     nv_sig_4["uwave_power_LOW"]= 12
     nv_sig_4["uwave_power_HIGH"]= 10
-    nv_sig_4["rabi_LOW"]= 75*2
-    nv_sig_4["rabi_HIGH"]=111.71*2  
+    nv_sig_4["rabi_LOW"]= 144.24
+    nv_sig_4["rabi_HIGH"]=210.73  
     # nv_sig_4["uwave_power_LOW"]= -13
     # nv_sig_4["uwave_power_HIGH"]= -12
     # nv_sig_4["rabi_LOW"]= 1360
@@ -1323,8 +1323,8 @@ if __name__ == "__main__":
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        #do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
-        #do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
+        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 350])
         
         
         # uwave_time_range = [0, 400]
@@ -1337,8 +1337,8 @@ if __name__ == "__main__":
         # for t1 in [0, 5e3, 10e3, 15e3, 20e3, 25e3, 50e3, 75e3, 100e3]:
         #      do_ramsey(nv_sig, nv_sig, t1)
         #do_ramsey(nv_sig, nv_sig, 0)
-       # do_spin_echo(nv_sig, do_dq=True)
-       # do_spin_echo(nv_sig, do_dq=False)
+        do_spin_echo(nv_sig, do_dq=True)
+        do_spin_echo(nv_sig, do_dq=False)
 
         # do_relaxation(nv_sig)  # gamma and omega
                 
@@ -1348,20 +1348,20 @@ if __name__ == "__main__":
         T_min = 0 #us
         # T_max = 6000 #us     
         
-        for boo in [True]:
-            do_dd_cpmg(nv_sig, 16, step_size, T_min, 5000, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 4, step_size, T_min, 3000, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 32, step_size, T_min, 5000, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 8, step_size, T_min, 3000, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 64, step_size, T_min, 5000, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 2, step_size, T_min, 3000, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 128, step_size, T_min, 6000, do_dq_= boo)
+        # for boo in [True]:
+        #     do_dd_cpmg(nv_sig, 16, step_size, T_min, 5000, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 4, step_size, T_min, 4000, do_dq_= boo)
+        #     do_dd_cpmg(nv_sig, 32, step_size, T_min, 5000, do_dq_= boo)
+        #     do_dd_cpmg(nv_sig, 8, step_size, T_min, 3000, do_dq_= boo)
+        #     do_dd_cpmg(nv_sig, 64, step_size, T_min, 5000, do_dq_= boo)
+        #     do_dd_cpmg(nv_sig, 2, step_size, T_min, 3000, do_dq_= boo)
+        #     do_dd_cpmg(nv_sig, 128, step_size, T_min, 6000, do_dq_= boo)
         # for n in [4]:#128
              # do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= True)
              #do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= False)
 
         
-        # num_xy4_reps = 1
+        # num_xy4_reps = 1d
         # do_dd_xy4(nv_sig, num_xy4_reps, step_size, T_min, T_max)
         # num_xy8_reps = 1
         # do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max)

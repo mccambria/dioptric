@@ -866,7 +866,7 @@ if __name__ == "__main__":
     
     
     if True:
-        file_name = "2023_01_14-17_14_27-siena-nv6_2022_12_22"
+        file_name = "2023_01_18-22_17_56-siena-nv4_2023_01_16"
         data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
         norm_avg_sig = data['norm_avg_sig']
         norm_avg_sig_ste = data['norm_avg_sig_ste']
@@ -912,7 +912,7 @@ if __name__ == "__main__":
         # ax.plot(plot_taus, norm_avg_sig,"b-")
         
         fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ 0.1, 1000, 0.9]
+        init_params = [ 0.1, 1200, 0.9]
         popt, pcov = curve_fit(
             fit_func,
             plot_taus,
