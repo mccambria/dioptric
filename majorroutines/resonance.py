@@ -98,7 +98,7 @@ def main_with_cxn(cxn, nv_sig,  freq_center, freq_range,
     norm_style = nv_sig["norm_style"]
     
     file_name = 'resonance.py'
-    seq_args = [readout, state.value, laser_name, laser_power, ]
+    seq_args = [readout, state.value, laser_name, laser_power ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     # print(seq_args)
     # return

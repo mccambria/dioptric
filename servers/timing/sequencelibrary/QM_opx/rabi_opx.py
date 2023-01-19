@@ -124,7 +124,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, readout_time, counts_gate1_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -143,7 +143,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -180,9 +180,9 @@ if __name__ == '__main__':
     
     simulation_duration =  35000 // 4 # clock cycle units - 4ns
     
-    num_repeat=2
+    num_repeat=3
 
-    args = [0, 1000.0, 350, 0,  3, 'cobolt_515', 1]
+    args = [100, 1000.0, 350, 100,  3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
     
     plt.figure()

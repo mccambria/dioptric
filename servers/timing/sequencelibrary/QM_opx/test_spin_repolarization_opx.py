@@ -185,7 +185,7 @@ if __name__ == '__main__':
     
     args = ['cobolt_515', 'laserglow_589', 'cobolt_638', 'laserglow_589', 
             1000, 2000.0, 116, 2000.0, 
-            1, 1, 1, 1, 'sig_gen_TEKT_tsg4104a', 54]
+            1, 1, 1, .5, 'sig_gen_TEKT_tsg4104a', 54]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
     job_sim.get_simulated_samples().con1.plot()

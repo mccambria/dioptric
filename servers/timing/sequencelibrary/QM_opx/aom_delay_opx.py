@@ -88,7 +88,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(half_illumination_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, readout_time, counts_gate1_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -106,7 +106,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(tau_cc + illumination_cc - readout_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -139,14 +139,15 @@ if __name__ == '__main__':
     import time
     
     config = tool_belt.get_config_dict()
+    tool_belt.set_delays_to_sixteen(config)
     qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
     qm = qmm.open_qm(config_opx)
     
-    simulation_duration =  105000 // 4 # clock cycle units - 4ns
+    simulation_duration =  15000 // 4 # clock cycle units - 4ns
     
     num_repeat=1
 
-    args = [100, 100.0, 5000.0, 0,'laserglow_589', 0]
+    args = [100, 100.0, 500.0,'laserglow_589', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

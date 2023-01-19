@@ -137,7 +137,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, readout_time, counts_gate1_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -164,7 +164,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -211,23 +211,23 @@ if __name__ == '__main__':
     
     num_repeat=1
 
-    args = [100, 100000.0, 95000, 100, 1, 3, 'cobolt_515', 1]
+    args = [100, 1000.0, 500, 100, 3, 'cobolt_515', 1]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
-    compilied_program_id = qm.compile(seq)
-    program_job = qm.queue.add_compiled(compilied_program_id)
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    plt.show()
+    # compilied_program_id = qm.compile(seq)
+    # program_job = qm.queue.add_compiled(compilied_program_id)
     
-    job = program_job.wait_for_execution()
+    # job = program_job.wait_for_execution()
 # 
     # job = qm.execute(seq)
 
-    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
     
     # a = time.time()
-    counts_apd0, counts_apd1, times0, times1  = results.fetch_all() 
+    # counts_apd0, counts_apd1, times0, times1  = results.fetch_all() 
     # counts_apd0 = np.sum(counts_apd0,1)
     # ref_counts = np.sum(counts_apd0[0::2])
     # sig_counts = np.sum(counts_apd0[1::2])

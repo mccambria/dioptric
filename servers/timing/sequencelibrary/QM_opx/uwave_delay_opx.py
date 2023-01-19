@@ -23,7 +23,7 @@ def qua_program(opx, config, args, num_reps):
     durations = args[0:5]
     durations = [numpy.int64(el) for el in durations]
     tau, max_tau, readout_time, pi_pulse, polarization = durations
-    state, apd_index, laser_name, laser_power = args[5:9]
+    state, laser_name, laser_power = args[5:9]
     
     ### specify number of gates and determine length of timetag streams to use 
     apd_indices =  config['apd_indices']
@@ -95,7 +95,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, readout_time, counts_gate1_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, readout_time, counts_gate1_apd_0))
                 save(counts_gate1_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -119,7 +119,7 @@ def qua_program(opx, config, args, num_reps):
                 
             if num_apds == 1:
                 wait(common_delay_cc,"do_apd_{}_gate".format(apd_indices[0]))
-                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, readout_time, counts_gate2_apd))
+                measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, readout_time, counts_gate2_apd_0))
                 save(counts_gate2_apd_0, counts_st_apd_0)
                 save(0, counts_st_apd_1)
                 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     
     num_repeat=1#4e4
 
-    args = [-200, 100, 350, 80, 1000.0, 1, 0, 'cobolt_515', None]
+    args = [-200, 100, 350, 80, 1000.0, 1,  'cobolt_515', None]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

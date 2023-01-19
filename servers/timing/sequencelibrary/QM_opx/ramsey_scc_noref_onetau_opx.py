@@ -160,7 +160,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     wait(yellow_laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
@@ -212,13 +212,13 @@ if __name__ == '__main__':
             'cobolt_515', 'cobolt_638', 'laserglow_589', None, None, 0.45]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
-# 
-    job = qm.execute(seq)
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    plt.show()
 
-    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    # job = qm.execute(seq)
+
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     
     # a = time.time()
     # counts_apd0, counts_apd1 = results.fetch_all() 

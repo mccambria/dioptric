@@ -48,8 +48,10 @@ def qua_program(opx, config, args, num_reps):
     delay_between_readouts_iterations = 200 #simulated - conservative estimate
     readout_m_init_delay_cc = int( max( (readout_laser_delay_time - init_laser_delay_time)/4 , 4 ) )
     
-    ### for now lets assume we use two different lasers.
+    ### for now lets assume we use two different lasers. We also assume we are reading out on the second one
     ### determine if the readout time is longer than the max opx readout time and therefore we need to loop over smaller readouts. 
+    
+    readout_on_pulse_ind = 2
     
     if readout_on_pulse_ind == 2:
         
@@ -128,7 +130,7 @@ def qua_program(opx, config, args, num_reps):
                     
                     
                 if num_apds == 1:
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")

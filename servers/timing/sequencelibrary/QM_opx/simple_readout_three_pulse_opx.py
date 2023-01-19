@@ -82,7 +82,6 @@ def qua_program(opx, config, args, num_reps):
     first_init_laser_on_time = first_init_pulse_time
     period = pos_move_time + first_init_laser_on_time + init_laser_on_time + intra_pulse_delay + readout_laser_on_time + 300 + 50000
     
-    
     with program() as seq:
         
         ### define qua variables and streams
@@ -103,7 +102,6 @@ def qua_program(opx, config, args, num_reps):
         i = declare(int)
         j = declare(int)
         k = declare(int)
-        
         
         with for_(n, 0, n < num_reps, n + 1):
             
@@ -134,7 +132,7 @@ def qua_program(opx, config, args, num_reps):
                         align("do_apd_0_gate","do_apd_1_gate")
                         
                     if num_apds == 1:
-                        measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                        measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                         save(counts_gate1_apd_0, counts_st_apd_0)
                         save(0, counts_st_apd_1)
                         align("do_apd_0_gate","do_apd_1_gate")
@@ -175,7 +173,7 @@ def qua_program(opx, config, args, num_reps):
                         
                         
                     if num_apds == 1:
-                        measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                        measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                         save(counts_gate1_apd_0, counts_st_apd_0)
                         save(0, counts_st_apd_1)
                         align("do_apd_0_gate","do_apd_1_gate")
@@ -228,7 +226,7 @@ if __name__ == '__main__':
     
     qm = qmm.open_qm(config_opx)
     simulation_duration =  34000 // 4 # clock cycle units - 4ns
-    num_repeat=100
+    num_repeat=1
     # init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
       # init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
     
@@ -251,16 +249,16 @@ if __name__ == '__main__':
     # job = qm.execute(seq)
     # st = time.time()
     # args = [1000,300, 2000, 'cobolt_515','cobolt_638', 'laserglow_589',1,1,0.4,2,0]
-    args = [50000.0, 10000.0, 5000000, "cobolt_515", "cobolt_515", "laserglow_589", 1, 1, 0, 2]
+    args = [5000.0, 100.0, 5000, "cobolt_638", "cobolt_515", "cobolt_515", 1, 1, 1, 2]
     seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
-    job = qm.execute(seq)
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    plt.show()
+    # job = qm.execute(seq)
     
-    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
-    counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
-    print(np.average(counts_apd0))
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1","times_apd0","times_apd1"], mode="wait_for_all")
+    # counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all() 
+    # print(np.average(counts_apd0))
     # print(np.sum(counts_apd0))
     
     # args = [10000, 200e6, 'cobolt_638', 'laserglow_589',1,1,2,0]

@@ -139,7 +139,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     wait(yellow_laser_delay_time//4 ,"do_apd_{}_gate".format(apd_indices[0]))
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, check_charge_apd_readout_time, counts_gate1_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, check_charge_apd_readout_time, counts_gate1_apd_0))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
@@ -172,7 +172,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     wait(yellow_laser_delay_time//4 ,"do_apd_{}_gate".format(apd_indices[0]))
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, apd_readout_time, counts_gate2_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
                     save(counts_gate2_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")

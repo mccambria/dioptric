@@ -37,7 +37,6 @@ import majorroutines.optimize as optimize
 def measure_delay(
     cxn,
     nv_sig,
-    apd_indices,
     delay_range,
     num_steps,
     num_reps,
@@ -74,8 +73,8 @@ def measure_delay(
             break
         
         st = time.time()
-        # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        # optimize.main_with_cxn(cxn, nv_sig)
+        optimize.main_with_cxn(cxn, nv_sig)
         # Turn on the microwaves for determining microwave delay
         sig_gen = None
         if seq_file == "uwave_delay.py":
@@ -97,7 +96,7 @@ def measure_delay(
             cxn.arbitrary_waveform_generator.load_arb_phases([0, numpy.pi/2])
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
 
-        counter_server.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
         ###########
 
         # Break out of the while if the user says stop
@@ -149,7 +148,6 @@ def measure_delay(
         #         pi_pulse,
         #         polarization,
         #         state.value,
-        #         apd_indices[0],
         #         laser_name,
         #         laser_power,
         #     ]
@@ -242,7 +240,6 @@ def measure_delay(
 def aom_delay(
     cxn,
     nv_sig,
-    apd_indices,
     delay_range,
     num_steps,
     num_reps,
@@ -275,7 +272,6 @@ def aom_delay(
     measure_delay(
         cxn,
         nv_sig,
-        apd_indices,
         delay_range,
         num_steps,
         num_reps,
@@ -286,7 +282,7 @@ def aom_delay(
 
 
 def uwave_delay(
-    cxn, nv_sig, apd_indices, state, delay_range, num_steps, num_reps
+    cxn, nv_sig, state, delay_range, num_steps, num_reps
 ):
 
     """
@@ -311,7 +307,6 @@ def uwave_delay(
     measure_delay(
         cxn,
         nv_sig,
-        apd_indices,
         delay_range,
         num_steps,
         num_reps,
@@ -320,7 +315,7 @@ def uwave_delay(
     )
 
 def iq_delay(
-    cxn, nv_sig, apd_indices, state, delay_range, num_steps, num_reps
+    cxn, nv_sig, state, delay_range, num_steps, num_reps
 ):
 
     """
@@ -359,7 +354,6 @@ def iq_delay(
     measure_delay(
         cxn,
         nv_sig,
-        apd_indices,
         delay_range,
         num_steps,
         num_reps,
@@ -477,7 +471,7 @@ if __name__ == "__main__":
     # laser_power = 0.6
     # delay_range = [0,1e3]
     # with labrad.connect() as cxn:
-    #     aom_delay(cxn, nv_sig, apd_indices,
+    #     aom_delay(cxn, nv_sig,
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
@@ -493,7 +487,6 @@ if __name__ == "__main__":
         # iq_delay(
         #     cxn,
         #     nv_sig,
-        #     apd_indices,
         #     state,
         #     delay_range,
         #     num_steps,
@@ -502,7 +495,6 @@ if __name__ == "__main__":
         uwave_delay(
             cxn,
             nv_sig,
-            apd_indices,
             state,
             delay_range,
             num_steps,
@@ -511,7 +503,6 @@ if __name__ == "__main__":
         # uwave_delay(
         #     cxn,
         #     nv_sig,
-        #     apd_indices,
         #     States.LOW,
         #     delay_range,
         #     num_steps,
@@ -522,7 +513,6 @@ if __name__ == "__main__":
         # fm_delay(
         #     cxn,
         #     nv_sig,
-        #     apd_indices,
         #     state,
         #     delay_range,
         #     num_steps,

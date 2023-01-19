@@ -21,7 +21,7 @@ from opx_configuration_file import *
 def qua_program(opx, config, args, num_reps):
     
     ### get inputted parameters
-    readout, state, laser_name, laser_power, apd_index = args
+    readout, state, laser_name, laser_power = args
     
     ### get laser info
     laser_pulse, laser_delay, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
@@ -119,7 +119,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     # play("laser_ON",laser_name,duration=laser_on_time_cc)  
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     
@@ -146,7 +146,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     # play("laser_ON",laser_name,duration=laser_on_time_cc)  
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, apd_readout_time, counts_gate2_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
                     save(counts_gate2_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     state = 1
     readout=1e3
     num_repeat = 1
-    args = [readout, state, laser_name, laser_power, apd_index]
+    args = [readout, state, laser_name, laser_power]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
