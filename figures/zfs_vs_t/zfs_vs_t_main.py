@@ -24,6 +24,7 @@ from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 import csv
 import pandas as pd
+import sys
 
 # fmt: off
 toyli_digitized = [300, 2.87, 309.9858044201037, 2.8690768841409784, 320.04280071681194, 2.868366259576263, 330.32149670254546, 2.8673945841666115, 340.3583384820696, 2.866304172245094, 350.05837349046874, 2.8655253065868678, 360.1625766242179, 2.8644972039180088, 370.064695695292, 2.8633133281175045, 380.2362601832661, 2.8622540708223165, 390.13837925434024, 2.8611013496481412, 399.9731369711893, 2.8600109377266243, 410.00997875071346, 2.858858216552449, 420.0468205302376, 2.857362794488654, 430.4878304351117, 2.856176937898957, 440.3899495061858, 2.8549015790086583, 450.02262316036, 2.8535619300765087, 460.1268262941091, 2.852066508012714, 469.96158401095823, 2.850633395201577, 480.5373166242823, 2.849387210148415, 490.30471298690645, 2.84789178808462, 500.2068320579806, 2.8465209845261414, 510.04158977482973, 2.844994407836017, 520.2805156170289, 2.843374367266906, 530.452080105003, 2.8417854813241243, 540.354199176077, 2.840258904634, 550.1215955387013, 2.838638864064889, 560.1584373182253, 2.837361524385398, 570.3300018061993, 2.8357103291899572, 580.2321208772735, 2.8341545786626967, 590.4036853652476, 2.8322813395045685, 600.0363590194218, 2.830756743603637, 610.005839444721, 2.829354785418829, 619.9079585157951, 2.8275789717180726, 630.4163297748942, 2.826052395027949, 640.3184488459683, 2.824556972964154, 650.2879292712674, 2.8227500046370686, 660.1269697755595, 2.821005345562641, 669.8900833507407, 2.8189160048094015, 680.4658159640647, 2.816922108724342, 690.5700190978139, 2.8151482758127777, 700.472138168888, 2.8134950998281454, 710.0374504688373, 2.812188586311517]
@@ -87,7 +88,7 @@ def get_data_points(skip_lambda=None):
 
 def calc_zfs_from_compiled_data():
 
-    skip_lambda = lambda point: point["Sample"] != "15micro"
+    skip_lambda = lambda point: point["Sample"] != "Wu"
 
     data_points = get_data_points(skip_lambda)
     zfs_list = []
@@ -602,8 +603,10 @@ def main():
     # y_range = [2.74, 2.883]
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
-    temp_range = [-10, 310]
-    y_range = [2.8685, 2.8785]
+    temp_range = [-10, 520]
+    y_range = [2.848, 2.879]
+    # temp_range = [-10, 310]
+    # y_range = [2.8685, 2.8785]
     # temp_range = [280, 320]
     # y_range = [2.867, 2.873]
     # temp_range = [-10, 310]
@@ -615,13 +618,14 @@ def main():
     hist_residuals = False  # Must specify nv_to_plot down below
     separate_samples = True
     separate_nvs = False
-    plot_prior_models = False
+    plot_prior_models = True
     desaturate_prior = False
     plot_new_model = True
-    toyli_extension = False
+    toyli_extension = True
 
     # skip_lambda = lambda point: point["Skip"]
-    skip_lambda = lambda point: point["Skip"] or point["Sample"] != "15micro"
+    # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
+    skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 295
 
     ###
 
@@ -642,7 +646,11 @@ def main():
         identifier_set.sort()
         for identifier in identifier_set:
             id_split = identifier.split("-")
-            setpoint_temp = int(id_split[0])
+            setpoint_temp_str = id_split[0]
+            if setpoint_temp_str == "":
+                setpoint_temp = "room"
+            else:
+                setpoint_temp = int(float(setpoint_temp_str))
             sample = id_split[1]
             monitor_temps = []
             zfss = []
@@ -675,8 +683,17 @@ def main():
     nv_names = []
     nv_samples = []
     data_colors = {}
-    data_color_options = kpl.data_color_cycler.copy()
-    data_color_options.pop(0)
+    # data_color_options = kpl.data_color_cycler.copy()
+    # data_color_options.pop(0)
+    data_color_options = [
+        KplColors.GREEN,
+        KplColors.PURPLE,
+        KplColors.BROWN,
+        KplColors.PINK,
+        KplColors.GRAY,
+        KplColors.YELLOW,
+        KplColors.CYAN,
+    ]
     data_labels = {}
     for el in data_points:
         zfs = el["ZFS (GHz)"]
@@ -752,12 +769,12 @@ def main():
         2.87771,
         -8e-2,
         -4e-1,
-        # 65,
-        # 165,
+        65,
+        165,
         # 6.5,
     ]
-    fit_func = cambria_test
-    # fit_func = cambria_test4
+    # fit_func = cambria_test
+    fit_func = cambria_test3
     if None in zfs_err_list:
         zfs_err_list = None
         absolute_sigma = False
@@ -883,6 +900,8 @@ def main():
 
     ### Prior models
 
+    # prior_models_to_plot = ["Toyli", "Barson"]
+    prior_models_to_plot = ["Toyli"]
     if plot_prior_models:
         prior_model_colors = [
             KplColors.GREEN,
@@ -897,40 +916,46 @@ def main():
                 kpl.lighten_color_hex(el) for el in prior_model_colors
             ]
             prior_model_zorder = -1500
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            sub_room_zfs_from_temp(temp_linspace),
-            label="Chen",
-            color=prior_model_colors[0],
-            zorder=prior_model_zorder,
-        )
-        # print(super_room_zfs_from_temp(700))
+        if "Chen" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                sub_room_zfs_from_temp(temp_linspace),
+                label="Chen",
+                color=prior_model_colors[0],
+                zorder=prior_model_zorder,
+            )
+        print(super_room_zfs_from_temp(294))
+        print(super_room_zfs_from_temp(296))
+        print(super_room_zfs_from_temp(298))
         # return
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            super_room_zfs_from_temp(temp_linspace),
-            label="Toyli",
-            color=prior_model_colors[1],
-            zorder=prior_model_zorder,
-        )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_barson(temp_linspace),
-            label="Barson",
-            color=prior_model_colors[2],
-            zorder=prior_model_zorder,
-        )
-        kpl.plot_line(
-            ax,
-            temp_linspace,
-            zfs_from_temp_li(temp_linspace),
-            label="Li",
-            color=prior_model_colors[3],
-            zorder=prior_model_zorder,
-        )
+        if "Toyli" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                super_room_zfs_from_temp(temp_linspace),
+                label="Toyli",
+                color=prior_model_colors[1],
+                zorder=prior_model_zorder,
+            )
+        if "Barson" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                zfs_from_temp_barson(temp_linspace),
+                label="Barson",
+                color=prior_model_colors[2],
+                zorder=prior_model_zorder,
+            )
+        if "Li" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                zfs_from_temp_li(temp_linspace),
+                label="Li",
+                color=prior_model_colors[3],
+                zorder=prior_model_zorder,
+            )
 
     ### Plot wrap up
     if plot_prior_models:
@@ -968,8 +993,9 @@ if __name__ == "__main__":
     # sys.exit()
 
     # calc_zfs_from_compiled_data()
+    # sys.exit()
 
-    kpl.init_kplotlib(latex=True)
+    kpl.init_kplotlib()
 
     main()
     # refit_experiments()
