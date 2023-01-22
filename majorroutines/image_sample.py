@@ -326,10 +326,6 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
     optimize.prepare_microscope(cxn, nv_sig)
-    drift = positioning.get_drift(cxn)
-    adj_x_center = x_center + drift[0]
-    adj_y_center = y_center + drift[1]
-    adj_z_center = z_center + drift[2]
     xy_server = positioning.get_server_pos_xy(cxn)
     # print(xy_server)
     xyz_server = positioning.get_server_pos_xyz(cxn)
@@ -414,12 +410,10 @@ def main_with_cxn(
 
     if scan_type == "XY":
         ret_vals = positioning.get_scan_grid_2d(
-            adj_x_center, adj_y_center, x_range, y_range, x_num_steps, y_num_steps
-        )
-    elif scan_type == "XZ":
+            x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
+    elif scan_type == 'XZ':
         ret_vals = positioning.get_scan_grid_2d(
-            adj_x_center, adj_z_center, x_range, y_range, x_num_steps, y_num_steps
-        )
+            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
 
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -452,7 +446,7 @@ def main_with_cxn(
             xy_server.load_stream_xy(x_voltages, y_voltages)
         elif scan_type == "XZ":
             z_voltages = y_voltages
-            y_vals_static = [adj_y_center] * len(x_voltages)
+            y_vals_static = [y_center]*len(x_voltages)
             xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
 
     # Initialize imgArray and set all values to NaN so that unset values
@@ -522,8 +516,8 @@ def main_with_cxn(
 
             if scan_type == "XY":
                 flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            elif scan_type == "XZ":
-                flag = xyz_server.write_xyz(cur_x_pos, adj_y_center, cur_y_pos)
+            elif scan_type == 'XZ':
+                flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
 
             # Some diagnostic stuff - checking how far we are from the target pos
             actual_x_pos, actual_y_pos, actual_z_pos = xyz_server.read_xyz()
@@ -592,35 +586,35 @@ def main_with_cxn(
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
-    if scan_type == "XY":
-        xy_server.write_xy(adj_x_center, adj_y_center)
-    elif scan_type == "XZ":
-        xyz_server.write_xyz(adj_x_center, adj_y_center, adj_z_center)
+    if scan_type == 'XY':
+        xy_server.write_xy(x_center, y_center)
+    elif scan_type == 'XZ':
+        xyz_server.write_xyz(x_center, y_center, z_center)
 
     timestamp = tool_belt.get_time_stamp()
     rawData = {
-        "timestamp": timestamp,
-        "nv_sig": nv_sig,
-        # 'nv_sig-units': tool_belt.get_nv_sig_units(),
-        "x_center": adj_x_center,
-        "y_center": adj_y_center,
-        "z_center": adj_z_center,
-        "x_range": x_range,
-        "x_range-units": "um",
-        "y_range": y_range,
-        "y_range-units": "um",
-        "num_steps": num_steps,
-        "scan_type": scan_type,
-        "readout": readout,
-        "readout-units": "ns",
-        "title": title,
-        "x_positions_1d": x_positions_1d.tolist(),
-        "x_positions_1d-units": pos_units,
-        "y_positions_1d": y_positions_1d.tolist(),
-        "y_positions_1d-units": pos_units,
-        "img_array": img_array.astype(int).tolist(),
-        "img_array-units": "counts",
-    }
+        'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                "x_center": x_center,
+                "y_center": y_center,
+                "z_center": z_center,
+                'x_range': x_range,
+                'x_range-units': 'um',
+                'y_range': y_range,
+                'y_range-units': 'um',
+                'num_steps': num_steps,
+                'scan_type': scan_type,
+                'readout': readout,
+                'readout-units': 'ns',
+                "title": title,
+                'x_positions_1d': x_positions_1d.tolist(),
+                'x_positions_1d-units': pos_units,
+                'y_positions_1d': y_positions_1d.tolist(),
+                'y_positions_1d-units': pos_units,
+                'img_array': img_array.astype(int).tolist(),
+                'img_array-units': 'counts',
+               }
 
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
     tool_belt.save_figure(fig, filePath)
@@ -631,7 +625,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_01_10-16_31_48-wu-nvref_zfs_vs_t"
+    file_name = "2023_01_17-15_51_47-siena-nv_search"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -655,6 +649,7 @@ if __name__ == "__main__":
         x_label="V",
         y_label="V",
         cbar_label="kcps",
+        # vmax = 80,
         extent=extent,
     )
 

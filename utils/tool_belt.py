@@ -88,9 +88,13 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
     if eval(mod_type).name == "ANALOG":
         laser_pulse_amplitude = laser_power
-
+        
     elif eval(mod_type).name == "DIGITAL":
-        laser_pulse_amplitude = 1
+        if laser_power == 0:
+            laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
+            laser_pulse_amplitude = 1
+        else:
+            laser_pulse_amplitude = 1
 
     return laser_pulse_name, laser_delay, laser_pulse_amplitude
 
@@ -163,6 +167,21 @@ def set_laser_power(
         if (laser_power is not None) and (laser_server is not None):
             laser_server.set_laser_power(laser_power)
         return None
+
+def get_opx_uwave_pulse_info(config,pulse_time):
+    pulse_time_cc = int(round(pulse_time/4))
+    
+    if pulse_time_cc < 4:
+        uwave_pulse = 'uwave_OFF'
+        uwave_amp = 1
+        uwave_time_cc = 4
+        
+    elif pulse_time_cc >= 4:
+        uwave_pulse = 'uwave_ON'
+        uwave_amp = 1
+        uwave_time_cc = pulse_time_cc
+    
+    return uwave_pulse, uwave_amp, uwave_time_cc
 
 
 def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
@@ -402,6 +421,13 @@ def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
 
 
+def linear(x, slope, y_offset):
+    return slope * x + y_offset
+
+def quadratic(x, a, b, c, x_offset):
+    x_ = x - x_offset
+    return a * (x_)**2 + b * x_ + c
+
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 
@@ -458,6 +484,8 @@ def sin_1_at_0_phase(t, amp, offset, freq, phase):
     # amp = 1 - offset
     return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
 
+def sin_phase(t, amp, offset, freq, phase):
+    return offset + (abs(amp) * np.sin((freq * t + phase)))
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2 * np.pi

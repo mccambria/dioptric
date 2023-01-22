@@ -17,6 +17,8 @@ Created on Wed Apr 24 17:33:26 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
+from utils.kplotlib import KplColors
 import numpy
 import matplotlib.pyplot as plt
 import time
@@ -30,15 +32,16 @@ import majorroutines.optimize as optimize
 
 def illuminate(cxn, laser_power, laser_name):
     
+    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     if not laser_power:
-        cxn.pulse_streamer.constant([wiring['do_{}_dm'.format(laser_name)]], 0.0, 0.0)
+        pulse_gen.constant([wiring['do_{}_dm'.format(laser_name)]], 0.0, 0.0)
     else:
         analog_channel = wiring['ao_{}_am'.format(laser_name)]
         if analog_channel == 1:
-            cxn.pulse_streamer.constant([], laser_power, 0.0)
+            pulse_gen.constant([], laser_power, 0.0)
         elif analog_channel == 2:
-            cxn.pulse_streamer.constant([], 0.0, laser_power)
+            pulse_gen.constant([], 0.0, laser_power)
 
 
 def calculate_relative_g2_zero(hist):
@@ -175,19 +178,18 @@ def process_raw_buffer(timestamps, channels,
 # %% Main
 
 
-def main(nv_sig, run_time, diff_window,
-         apd_a_index, apd_b_index):
+def main(nv_sig, run_time, diff_window):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, run_time, diff_window,
-                      apd_a_index, apd_b_index)
+        main_with_cxn(cxn, nv_sig, run_time, diff_window)
 
-def main_with_cxn(cxn, nv_sig, run_time, diff_window,
-                  apd_a_index, apd_b_index):
+def main_with_cxn(cxn, nv_sig, run_time, diff_window):
 
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
+    kpl.init_kplotlib()
+    tagger_server = tool_belt.get_server_tagger(cxn)
 
     laser_key = 'imaging_laser'
     laser_name = nv_sig[laser_key]
@@ -197,10 +199,10 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 #    sleep_time = 2 # (?)
     # afterpulse_window = (diff_window - 200) * 1000
 
-    apd_indices = [apd_a_index, apd_b_index]
+    # apd_indices = [apd_a_index, apd_b_index]
 
     # Optimize and set filters
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig)
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
@@ -218,12 +220,17 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # num_bins = diff_window + 1
     # num_bins = int(2*mod)-1
 
-    # Expose the stream
-    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
-
     # Get the APD channel names that the tagger will return
-    ret_vals = cxn.apd_tagger.get_channel_mapping()
-    apd_a_chan_name, apd_b_chan_name = ret_vals
+    apd_wiring = tool_belt.get_tagger_wiring(cxn)
+    apd_a_chan_name = apd_wiring['di_apd_gate']
+    apd_b_chan_name = apd_a_chan_name
+    
+    # Expose the stream
+    apd_a_di_ind = apd_wiring['di_apd_0']
+    apd_b_di_ind = apd_wiring['di_apd_0']
+        
+    tagger_server.start_tag_stream([apd_a_di_ind,apd_b_di_ind], [], False)
+
 
     # %% Collect the data
 
@@ -266,11 +273,11 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         elapsed_time = run_time - new_time_remaining
         if (elapsed_time % 120 == 0) and (elapsed_time > 0) and (new_time_remaining > 0):
             cxn.apd_tagger.stop_tag_stream()
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
             tool_belt.set_filter(cxn, nv_sig, laser_key)
             laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
             illuminate(cxn, laser_power, laser_name)
-            cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
+            cxn.apd_tagger.start_tag_stream(clock=False)
 
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()

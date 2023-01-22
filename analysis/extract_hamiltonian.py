@@ -304,7 +304,7 @@ if __name__ == "__main__":
     # [magnetic field if known, lower resonance, higher resonance]
     res_descs = [
         [0.0, 2.87, None],
-        [None, 2.8640, 2.8912],
+        [None, 2.8549, 2.88687],
     ]
 
     main(name, res_descs)

@@ -145,7 +145,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         self.steady_state_seq, final_ss, period_ss = self.get_seq(self.steady_state_program_file, self.steady_state_seq_args_string, 1)
         logging.info("Init complete")
-        self.tagger_di_clock = int(self.config_dict['Wiring']['Tagger']['Apd_{}'.format(self.apd_indices[0])]['di_gate'])
+        self.tagger_di_clock = int(self.config_dict['Wiring']['Tagger']['di_apd_gate'])
         
         
     def stopServer(self):
@@ -386,7 +386,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         t2 = (times_apd1[1::]*1000).tolist()
         
         max_readout_time = 1000*self.config_dict["PhotonCollection"]["qm_opx_max_readout_time"]      
-        gate_open_channel = int(self.config_dict['Wiring']['Tagger']['Apd_{}'.format(self.apd_indices[0])]['di_gate'])
+        gate_open_channel = int(self.config_dict['Wiring']['Tagger']['di_apd_gate'])
         gate_close_channel = int(-1*gate_open_channel)
 
         all_time_tags = []

@@ -5,7 +5,7 @@ Created on Sat Sep  3 11:16:25 2022
 
 @author: carterfox
 
-simple readout sequence for the opx in qua
+esr sequence for the opx in qua
 
 """
 
@@ -20,13 +20,14 @@ from opx_configuration_file import *
 
 def qua_program(opx, config, args, num_reps):
     
-    readout, state, laser_name, laser_power, apd_index = args
+    ### get inputted parameters
+    readout, state, laser_name, laser_power = args
     
+    ### get laser info
     laser_pulse, laser_delay, laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,laser_name,laser_power)
     
-
+    ### get microwave info
     state = States(state)
-    opx_wiring = config['Wiring']['QmOpx']
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
     uwave_delay = config['Microwaves'][sig_gen_name]['delay']
     meas_buffer = config['CommonDurations']['cw_meas_buffer']
@@ -35,13 +36,15 @@ def qua_program(opx, config, args, num_reps):
     readout_time = numpy.int64(readout)
     front_buffer = max(uwave_delay, laser_delay)
     
-    apd_indices =  config['apd_indices']
     
+    ### specify number of gates and determine length of timetag streams to use 
+    apd_indices =  config['apd_indices']
     num_apds = len(apd_indices)
     num_gates = 2
     total_num_gates = int(num_gates*num_reps)
-    timetag_list_size = int(15900 / num_gates / 2)   
+    timetag_list_size = int(15900 / num_gates / num_apds)   
     
+    ### determine if the readout time is longer than the max opx readout time and therefore we need to loop over smaller readouts. 
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
    
     if readout_time > max_readout_time:
@@ -52,6 +55,8 @@ def qua_program(opx, config, args, num_reps):
         num_readouts=1
         apd_readout_time = readout_time
     
+    
+    ### determine necessary times and delays and put them in clock cycles
     meas_delay = 100
     meas_delay_cc = meas_delay // 4
     
@@ -61,6 +66,10 @@ def qua_program(opx, config, args, num_reps):
     meas_buffer_cc = int(meas_buffer//4)
     front_buffer_cc = int(front_buffer // 4)
     front_buffer_m_uwave_delay_cc = int( (front_buffer - uwave_delay) //4)
+    laser_m_uwave_delay_cc = int( max(laser_delay - uwave_delay , 4 ) )
+    delay1_cc = int(front_buffer_cc + laser_m_uwave_delay_cc)
+    delay2_cc = int(front_buffer_cc + laser_delay/4 )
+    
     meas_buffer_p_transient_cc = int( (meas_buffer + transient) //4 )
     uwave_on_time = num_readouts*(apd_readout_time + 200)
     uwave_on_time_cc = int(uwave_on_time//4)
@@ -91,8 +100,8 @@ def qua_program(opx, config, args, num_reps):
             # start the laser a little earlier than the apds
             play(laser_pulse*amp(laser_amplitude),laser_name,duration=period_cc)
             
-            wait(front_buffer_m_uwave_delay_cc, sig_gen_name)
-            wait(front_buffer_cc,"do_apd_0_gate","do_apd_1_gate")
+            wait(delay1_cc, sig_gen_name)
+            wait(delay2_cc,"do_apd_0_gate","do_apd_1_gate")
             
             
             with for_(i,0,i<num_readouts,i+1):  
@@ -110,7 +119,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     # play("laser_ON",laser_name,duration=laser_on_time_cc)  
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     
@@ -137,7 +146,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     # play("laser_ON",laser_name,duration=laser_on_time_cc)  
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate2_apd_0, apd_readout_time, counts_gate2_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate2_apd_0, apd_readout_time, counts_gate2_apd_0))
                     save(counts_gate2_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     
@@ -154,10 +163,6 @@ def qua_program(opx, config, args, num_reps):
         with stream_processing():
             counts_st_apd_0.buffer(num_readouts).save_all("counts_apd0") 
             counts_st_apd_1.buffer(num_readouts).save_all("counts_apd1")
-            # counts_st_apd_0.buffer(num_readouts).buffer(num_gates).save_all("counts_apd0") 
-            # counts_st_apd_1.buffer(num_readouts).buffer(num_gates).save_all("counts_apd1")
-
-
     return seq, period, num_gates
 
 
@@ -166,6 +171,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = ''
+    ### specify what one 'sample' means for the data processing.
     sample_size = 'one_rep'
     return seq, final, [period], num_gates, sample_size
     
@@ -187,7 +193,7 @@ if __name__ == '__main__':
     state = 1
     readout=1e3
     num_repeat = 1
-    args = [readout, state, laser_name, laser_power, apd_index]
+    args = [readout, state, laser_name, laser_power]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
     job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))

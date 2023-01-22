@@ -1,3 +1,7 @@
+"""
+Sequence for generating constants outputs with the opx, such as for leaving a laser on during alignment. 
+"""
+
 import time
 from qm import SimulationConfig
 from qm.qua import *
@@ -9,14 +13,11 @@ import utils.tool_belt as tool_belt
 import numpy
 from qualang_tools.units import unit
 
-period =0
+period = 0 
 
 def qua_program(opx, config,args, num_reps):
     
-    opx_wiring = config['Wiring']['QmOpx']
-    
-    # need to figure out how to grab to elements from the opx wiring and the channel numbers
-    
+    opx_wiring = config['Wiring']['QmOpx']    
     high_digital_channels = args[0]
     analog_elements_to_set = args[1]
     analog_frequencies = args[2]
