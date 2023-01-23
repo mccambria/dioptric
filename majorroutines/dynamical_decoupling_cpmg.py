@@ -13,6 +13,8 @@ Created on Fri Aug 5 2022
 
 
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
+from utils.kplotlib import KplColors
 import majorroutines.optimize as optimize
 from scipy.optimize import minimize_scalar
 from utils.tool_belt import NormStyle
@@ -40,54 +42,46 @@ def create_fit_figure(
     norm_avg_sig,
     norm_avg_sig_ste,
     pi_pulse_reps,
+    do_dq,
     fit_func,
     popt,
+    pcov
 ):
 
-    tau_T = 2*taus*pi_pulse_reps
+    tau_T = 2*taus*pi_pulse_reps/1000
 
-    linspace_taus = numpy.linspace(
+    smooth_taus = numpy.linspace(
         tau_T[0], tau_T[-1], num=1000
     )
 
-    fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    fit_fig.set_tight_layout(True)
-    ax.plot(tau_T / 1000, norm_avg_sig, "bo", label="data")
-    # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
-    #             fmt='bo', label='data')
-    ax.plot(
-        linspace_taus / 1000,
-        fit_func(linspace_taus/1000, *popt),
-        "r-",
+    fit_fig, ax = plt.subplots()
+    kpl.plot_points(ax, tau_T, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE, label = 'data')
+    kpl.plot_line(
+        ax,
+        smooth_taus,
+        fit_func(smooth_taus, *popt),
+        color=KplColors.RED,
         label="fit",
     )
+    ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
     ax.set_title("CPMG-{}".format(pi_pulse_reps))
-    ax.legend()
+    # ax.legend()
     
-    ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
-    t2_time = popt[-1]
+    t2_us = popt[1]/1000
+    t2_unc_us = numpy.sqrt(pcov[1][1])/1000
     text_popt = "\n".join(
         (
-            r"$S(T) = exp(- (T/T_2)^3)$",
-            r"$T_2=$%.3f us" % (t2_time),
+            r"$S(T) = e^{(- (T/T_2)^3)}$",
+            r"$T_2=$%.2f $\pm$ %.2f us" % (t2_us, t2_unc_us),
         )
     )
-
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(
-        0.70,
-        0.85,
-        text_popt,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment="top",
-        bbox=props,
-    )
-
-     
-
-
+    kpl.anchored_text(ax, text_popt, kpl.Loc.UPPER_RIGHT, size=kpl.Size.SMALL)
+    
+    if do_dq:
+        ax.set_title("CPMG-{} DQ baiss".format(pi_pulse_reps))
+    else:
+        ax.set_title("CPMG-{} SQ baiss".format(pi_pulse_reps))
 
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
@@ -95,84 +89,111 @@ def create_fit_figure(
 
     return fit_fig
 
-def fit_t2_decay(data, do_plot = True):
+def fit_t2_12C(data, do_fit = True, incremental=False):
     '''
-    either pass in only the revivals, or for isotopically pure samples, this will fit t2
+    for isotopically pure samples, this will fit t2
     '''
     
-    precession_dur_range = data["precession_time_range"]
-    sig_counts = data["sig_counts"]
-    ref_counts = data["ref_counts"]
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
+    if incremental:
+        run_ind = data['run_ind']
+        sig_counts = data['sig_counts']
+        ref_counts = data['ref_counts']
+        nv_sig = data['nv_sig']
+        gate_time = nv_sig['spin_readout_dur']
+        norm_style = NormStyle.SINGLE_VALUED
+        num_reps = data['num_reps']
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        (
+             sig_counts_avg_kcps,
+             ref_counts_avg_kcps,
+             norm_avg_sig,
+             norm_avg_sig_ste,
+        ) = ret_vals
+    
+    else:
+        norm_avg_sig = data['norm_avg_sig']
+        norm_avg_sig_ste = data['norm_avg_sig_ste']
+    
+    
+    plot_taus = data['plot_taus']
+    num_steps = data['num_steps']
     pi_pulse_reps = data['pi_pulse_reps']
+    do_dq=data['do_dq']
     taus = numpy.array(data['taus'])
     
-    tau_T = 2*taus*pi_pulse_reps
-
-
-    #  Normalization and uncertainty
-
-    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
-        num_runs
-    )
-
-    # Assume reference is constant and can be approximated to one value
-    avg_ref = numpy.average(ref_counts[::])
-
-    # Divide signal by reference to get normalized counts and st error
-    norm_avg_sig = avg_sig_counts / avg_ref
-    # print(list(norm_avg_sig))
-    norm_avg_sig_ste = ste_sig_counts / avg_ref
-
-    # Hard guess
-    A0 = 0.098
-    offset = 0.902
-    amplitude = 2/3 * 2*A0
-    offset = 1 - amplitude
-    decay_time = 6e6
-    # dominant_freqs = [1 / (1000*revival_time)]
-
-    #  Fit
-
-    # The fit doesn't like dealing with vary large numbers. We'll convert to
-    # us here and then convert back to ns after the fit for consistency.
-
-    tau_T_us = tau_T / 1000
-    decay_time_us = decay_time / 1000
-
-    init_params = [
-        amplitude,
-        # offset,
-        decay_time_us,
-    ]
+    # tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
+    fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
     
-    fit_func = tool_belt.t2_func
-    fit_func = lambda t, amplitude, t2: tool_belt.t2_func(t, amplitude, offset, t2)
+    init_params = [ 0.1, 1200, 0.9]
     popt, pcov = curve_fit(
         fit_func,
-        tau_T_us,
+        plot_taus,
         norm_avg_sig,
-        sigma=norm_avg_sig_ste,
-        absolute_sigma=True,
         p0=init_params,
+        absolute_sigma = True,
+        sigma=norm_avg_sig_ste
     )
-    print(popt)
-    print(numpy.sqrt(numpy.diag(pcov)))
-    if do_plot:
-        create_fit_figure(
-            taus,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            pi_pulse_reps,
-            fit_func,
-        popt,)
     
-    return popt, fit_func
+    fig = create_fit_figure(
+        taus,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        pi_pulse_reps,
+        do_dq,
+        fit_func,
+        popt,
+        pcov)
+    
+    return fig
+    
 
-
+def compile_12C_data(file_list, do_save = True):
+    '''
+    for a bunch of 12C files of the same type, combine data
+    '''
+    sig_counts = []
+    ref_counts = []
+    num_runs = 0
+    for file in file_list:
+        data = tool_belt.get_raw_data(file)
+        sig_counts_i = data['sig_counts']
+        ref_counts_i = data['ref_counts']
+        num_runs_i = data['num_runs']
+        
+        sig_counts = sig_counts+sig_counts_i
+        ref_counts = ref_counts+ref_counts_i
+        num_runs  = num_runs + num_runs_i
+        
+    nv_sig = data['nv_sig']
+    norm_style = NormStyle.SINGLE_VALUED
+    # norm_style = NormStyle.POINT_TO_POINT
+    gate_time = nv_sig['spin_readout_dur']
+    num_reps = data['num_reps']
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    (
+         sig_counts_avg_kcps,
+         ref_counts_avg_kcps,
+         norm_avg_sig,
+         norm_avg_sig_ste,
+    ) = ret_vals
+    
+    data['sig_counts']= sig_counts
+    data['ref_counts']= ref_counts
+    data['norm_avg_sig']= norm_avg_sig.tolist()
+    data['norm_avg_sig_ste']= norm_avg_sig_ste.tolist()
+    data['num_runs']= num_runs
+    data['file_list']= file_list
+    
+    fig = fit_t2_12C(data)
+    
+    if do_save:
+        timestamp = tool_belt.get_time_stamp()
+        nv_name = nv_sig["name"]
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+        tool_belt.save_figure(fig, file_path)
+        tool_belt.save_raw_data(data, file_path)
+    
 
 # %% Main
 
@@ -705,6 +726,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
 
     folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12'   
     
@@ -819,134 +841,28 @@ if __name__ == "__main__":
     #     ax.legend()
     #     ax.set_xscale('log')
     #     ax.set_yscale('log')
+  
     
-    if False:
-        folder ='pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12'
-        file_1 = "2022_12_25-02_51_03-siena-nv8_2022_12_22"
-        file_2 = "2022_12_25-13_57_34-siena-nv8_2022_12_22"
-        
-        data = tool_belt.get_raw_data(file_1, folder)
-        num_runs_1 = data['num_runs']
-        sig_counts_1 = data['sig_counts']
-        ref_counts_1 = data['ref_counts']
-        
-        data = tool_belt.get_raw_data(file_1, folder)
-        num_runs_2 = data['num_runs']
-        sig_counts_2 = data['sig_counts']
-        ref_counts_2 = data['ref_counts']
-        
-        sig_counts_tot = sig_counts_1 + sig_counts_2
-        ref_counts_tot = ref_counts_1 + ref_counts_2
-        
-        nv_sig = data['nv_sig']
-        norm_style = NormStyle.SINGLE_VALUED
-        gate_time = nv_sig['spin_readout_dur']
-        num_reps = data['num_reps']
-        ret_vals = tool_belt.process_counts(sig_counts_tot, ref_counts_tot, num_reps, gate_time, norm_style)
-        (
-            sig_counts_avg_kcps,
-            ref_counts_avg_kcps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-        ) = ret_vals
-        
-        import copy
-        raw_data = copy.deepcopy(data)
-        raw_data['sig_counts'] = sig_counts_tot
-        raw_data['ref_counts'] = ref_counts_tot
-        raw_data['norm_avg_sig'] = norm_avg_sig.tolist()
-        raw_data['num_runs'] = num_runs_1 + num_runs_2
-        raw_data['file_list'] = [file_1, file_2]
-        
-        nv_name = nv_sig["name"]
-        timestamp = "2022_12_25-13_58_34"
-        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
-        tool_belt.save_raw_data(raw_data, file_path)
-    
-    
-    
-    if True:
-        file_name = "2023_01_21-18_23_04-siena-nv4_2023_01_16"
-    
-        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
-        norm_avg_sig = data['norm_avg_sig']
-        norm_avg_sig_ste = data['norm_avg_sig_ste']
-        
-        
-        
-        ### incremental data
-        # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01/incremental')
-        # run_ind = data['run_ind']
-        sig_counts = data['sig_counts']
-        ref_counts = data['ref_counts']
-        nv_sig = data['nv_sig']
-        norm_style = NormStyle.SINGLE_VALUED
-        gate_time = nv_sig['spin_readout_dur']
-        num_reps = data['num_reps']
-        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
-        (
-             sig_counts_avg_kcps,
-             ref_counts_avg_kcps,
-             norm_avg_sig,
-             norm_avg_sig_ste,
-        ) = ret_vals
-        
-        plot_taus = data['plot_taus']
-        pi_pulse_reps = data['pi_pulse_reps']
-        do_dq=data['do_dq']
-        
-        precession_time_range = data['precession_time_range']
-        num_steps = data['num_steps']
-        min_precession_time = int(precession_time_range[0])
-        max_precession_time = int(precession_time_range[1])
+    # file_name = "2023_01_21-18_23_04-siena-nv4_2023_01_16"
 
-        # plot_taus = numpy.linspace(
-        #     min_precession_time,
-        #     max_precession_time,
-        #     num=num_steps,
-        # )
-        # plot_taus=plot_taus*2*4/1e3
-        # contrast = 0.2
-        
-        tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
-        
-        fig, ax = plt.subplots()
-        ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o", color='b')
-        # ax.plot(plot_taus, norm_avg_sig,"b-")
-        
-        fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ 0.1, 1200, 0.9]
-        popt, pcov = curve_fit(
-            fit_func,
-            plot_taus,
-            norm_avg_sig,
-            p0=init_params,
-            absolute_sigma = True,
-            sigma=norm_avg_sig_ste
-        )
-        print('{} +/- {} us'.format(popt[1], numpy.sqrt(pcov[1][1])))
-        ax.plot(
-                tau_lin,
-                fit_func(tau_lin, *popt),
-                "r-",
-                label="fit",
-            ) 
-        
-        text_popt = '\n'.join((
-                            r'y = A + C exp(-(T / $T_2$)^3)',
-                            r'$T_2$ = ' + '%.2f'%(popt[1]/1e3) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])/1e3) + ' ms'
-                            ))
+    # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
+    # fit_t2_12C(data, do_fit = True, incremental=False)
     
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12, verticalalignment='top', bbox=props)
-        
-        
-        if do_dq:
-            ax.set_title("CPMG-{} DQ baiss".format(pi_pulse_reps))
-        else:
-            ax.set_title("CPMG-{} SQ baiss".format(pi_pulse_reps))
-        ax.set_xlabel(r"Coherence time, T ($\mathrm{\mu s}$)")
-        ax.set_ylabel("Normalized signal (arb. units)")
+    file_list =['2023_01_22-14_01_38-siena-nv4_2023_01_16',
+                '2023_01_22-15_45_14-siena-nv4_2023_01_16',
+                '2023_01_22-17_32_07-siena-nv4_2023_01_16',
+                '2023_01_22-19_16_51-siena-nv4_2023_01_16',
+                '2023_01_22-20_59_54-siena-nv4_2023_01_16',
+                '2023_01_22-22_47_20-siena-nv4_2023_01_16',
+                '2023_01_23-00_34_20-siena-nv4_2023_01_16',
+                '2023_01_23-02_19_37-siena-nv4_2023_01_16',
+                '2023_01_23-04_07_32-siena-nv4_2023_01_16',
+                '2023_01_23-05_49_51-siena-nv4_2023_01_16',
+                '2023_01_23-07_39_39-siena-nv4_2023_01_16',
+                '2023_01_23-09_25_45-siena-nv4_2023_01_16'
+        ]
+    
+    compile_12C_data(file_list)
     
     
     
