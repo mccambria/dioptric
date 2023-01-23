@@ -247,18 +247,18 @@ def main_with_cxn(
     if do_dq:
         seq_file_name = "dynamical_decoupling_dq.py"
         
-        # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+       # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
         uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
-        # uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
-        # uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+       # uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+       # uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
         uwave_pi_pulse_low = nv_sig["pi_pulse_{}".format(States.LOW.name)]
         uwave_pi_on_2_pulse_low = nv_sig["pi_on_2_pulse_{}".format(States.LOW.name)]
-        # rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        #rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
         uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
-        # uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
-        # uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        #uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+       # uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
         uwave_pi_pulse_high = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
         uwave_pi_on_2_pulse_high = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
         
@@ -866,27 +866,30 @@ if __name__ == "__main__":
     
     
     if True:
-        file_name = "2023_01_18-22_17_56-siena-nv4_2023_01_16"
+        file_name = "2023_01_21-18_23_04-siena-nv4_2023_01_16"
+    
         data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
         norm_avg_sig = data['norm_avg_sig']
         norm_avg_sig_ste = data['norm_avg_sig_ste']
         
+        
+        
         ### incremental data
         # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01/incremental')
         # run_ind = data['run_ind']
-        # sig_counts = data['sig_counts'][: run_ind ]
-        # ref_counts = data['ref_counts'][: run_ind ]
-        # nv_sig = data['nv_sig']
-        # norm_style = NormStyle.SINGLE_VALUED
-        # gate_time = nv_sig['spin_readout_dur']
-        # num_reps = data['num_reps']
-        # ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
-        # (
-        #     sig_counts_avg_kcps,
-        #     ref_counts_avg_kcps,
-        #     norm_avg_sig,
-        #     norm_avg_sig_ste,
-        # ) = ret_vals
+        sig_counts = data['sig_counts']
+        ref_counts = data['ref_counts']
+        nv_sig = data['nv_sig']
+        norm_style = NormStyle.SINGLE_VALUED
+        gate_time = nv_sig['spin_readout_dur']
+        num_reps = data['num_reps']
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        (
+             sig_counts_avg_kcps,
+             ref_counts_avg_kcps,
+             norm_avg_sig,
+             norm_avg_sig_ste,
+        ) = ret_vals
         
         plot_taus = data['plot_taus']
         pi_pulse_reps = data['pi_pulse_reps']
@@ -930,8 +933,8 @@ if __name__ == "__main__":
             ) 
         
         text_popt = '\n'.join((
-                            r'y = A + C exp(-(T / d)^3)',
-                            r'd = ' + '%.2f'%(popt[1]/1e3) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])/1e3) + ' ms'
+                            r'y = A + C exp(-(T / $T_2$)^3)',
+                            r'$T_2$ = ' + '%.2f'%(popt[1]/1e3) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])/1e3) + ' ms'
                             ))
     
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)

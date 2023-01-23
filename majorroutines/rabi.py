@@ -671,7 +671,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi/2023_01'
-    file = '2023_01_18-14_10_13-siena-nv4_2023_01_16'
+    file = '2023_01_19-17_55_46-siena-nv1_2023_01_16'
     data = tool_belt.get_raw_data(file, path)
     kpl.init_kplotlib()
 
@@ -699,13 +699,13 @@ if __name__ == '__main__':
     ) = ret_vals
     
     
-    create_piecewise_fit_figure(
-        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
-        fit_func 
-    )
-    
-    # create_cos_fit_figure(
+    # create_piecewise_fit_figure(
     #     uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
     #     fit_func 
     # )
+    
+    create_cos_fit_figure(
+        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+        fit_func 
+    )
 
