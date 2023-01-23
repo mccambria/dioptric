@@ -177,7 +177,8 @@ def data_points_to_lists(data_points):
             continue
         # if not (min_temp <= reported_temp <= max_temp):
         # if monitor_temp < 296:
-        #     zfs += 0.0004
+        #     # zfs += 0.00042
+        #     monitor_temp *= 300.8 / 295
         temp_list.append(monitor_temp)
         zfs_list.append(zfs)
         zfs_err = el["ZFS error (GHz)"]

@@ -203,6 +203,7 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
     plt.rcParams["figure.constrained_layout.use"] = True
+    plt.rcParams['savefig.format'] = 'svg'
 
 
 def get_default_color(ax, plot_type):
