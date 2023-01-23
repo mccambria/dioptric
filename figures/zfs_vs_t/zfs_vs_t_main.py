@@ -47,7 +47,7 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 # region Functions
 
 
-def get_data_points(skip_lambda=None):
+def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False):
 
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
@@ -83,7 +83,113 @@ def get_data_points(skip_lambda=None):
             if not skip:
                 data_points.append(point)
 
+    data_points = condense_data_points(data_points, condense_all, condense_samples)
+
     return data_points
+
+
+def condense_data_points(data_points, condense_all=False, condense_samples=False):
+    """
+    Turn the full data points list into a processed version where there is just the
+    information necessary for analysis and plotting.
+    If condense_all, combine all the data at one temp into one point
+    regardless of which sample or NV it came from.
+    If condense_samples, combine the data from different NVs within the same
+    sample into one point. Each sample at a given temp will have its own point.
+    """
+
+    if condense_all or condense_samples:
+        id_lambda = lambda point: f"{point['Setpoint temp (K)']}-{point['Sample']}"
+    else:
+        id_lambda = (
+            lambda point: f"{point['Setpoint temp (K)']}-{point['Sample']}-{point['NV']}"
+        )
+
+    condensed_data_points = []
+    identifier_set = [id_lambda(point) for point in data_points]
+    identifier_set = list(set(identifier_set))
+    identifier_set.sort()
+    for identifier in identifier_set:
+        id_split = identifier.split("-")
+        setpoint_temp_str = id_split[0]
+        if setpoint_temp_str == "":
+            setpoint_temp = "room"
+        else:
+            setpoint_temp = int(float(setpoint_temp_str))
+        monitor_temps = []
+        zfss = []
+        zfs_errors = []
+        for point in data_points:
+            test_identifier = id_lambda(point)
+            if test_identifier == identifier:
+                monitor_temps.append(point["Monitor temp (K)"])
+                zfss.append(point["ZFS (GHz)"])
+                zfs_errors.append(point["ZFS error (GHz)"])
+        sq_zfs_errors = [err**2 for err in zfs_errors]
+        sum_sq_errors = np.sum(sq_zfs_errors)
+        condensed_error = np.sqrt(sum_sq_errors) / len(sq_zfs_errors)
+        if condense_all:
+            label = "Cambria"
+        elif condense_samples:
+            sample = id_split[1]
+            label = sample
+        else:
+            sample = id_split[1]
+            nv = id_split[2]
+            label = f"{sample}-{nv}"
+        weights = [val**-2 for val in zfs_errors]
+        new_point = {
+            "Setpoint temp (K)": setpoint_temp,
+            "Monitor temp (K)": np.average(monitor_temps),
+            "ZFS (GHz)": np.average(zfss, weights=weights),
+            "ZFS error (GHz)": condensed_error,
+            "Label": label,
+        }
+        condensed_data_points.append(new_point)
+    return condensed_data_points
+
+
+def data_points_to_lists(data_points):
+    """Turn a dict of data points into a list that's more convenenient for plotting"""
+
+    zfs_list = []
+    zfs_err_list = []
+    temp_list = []
+    label_list = []
+    color_list = []
+    # data_color_options = kpl.data_color_cycler.copy()
+    # data_color_options.pop(0)
+    data_color_options = [
+        KplColors.GREEN,
+        KplColors.PURPLE,
+        KplColors.BROWN,
+        KplColors.PINK,
+        KplColors.GRAY,
+        KplColors.YELLOW,
+        KplColors.CYAN,
+    ]
+    color_dict = {}
+    used_labels = []  # For matching colors to labels
+    for el in data_points:
+        zfs = el["ZFS (GHz)"]
+        monitor_temp = el["Monitor temp (K)"]
+        if zfs == "" or monitor_temp == "":
+            continue
+        # if not (min_temp <= reported_temp <= max_temp):
+        # if monitor_temp < 296:
+        #     zfs += 0.0004
+        temp_list.append(monitor_temp)
+        zfs_list.append(zfs)
+        zfs_err = el["ZFS error (GHz)"]
+        zfs_err_list.append(zfs_err)
+        label = el["Label"]
+        label_list.append(label)
+        if label not in used_labels:
+            used_labels.append(label)
+            color_dict[label] = data_color_options.pop(0)
+        color_list.append(color_dict[label])
+
+    return zfs_list, zfs_err_list, temp_list, label_list, color_list
 
 
 def calc_zfs_from_compiled_data():
@@ -593,7 +699,58 @@ def cambria_test4(temp, zfs0, A1, Theta1):
 
 
 # endregion
+# region Secondary plots
 
+
+def derivative_comp():
+
+    # Low temp fit
+    skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] < 295
+    data_points = get_data_points(skip_lambda, condense_all=True)
+    zfs_list, zfs_err_list, temp_list, _, _ = data_points_to_lists(data_points)
+    guess_params = [2.87771, -8e-2, -4e-1, 65, 165]
+    fit_func = cambria_test3
+    low_popt, _ = curve_fit(
+        fit_func,
+        temp_list,
+        zfs_list,
+        sigma=zfs_err_list,
+        absolute_sigma=True,
+        p0=guess_params,
+    )
+    low_lambda = lambda temp: fit_func(temp, *low_popt)
+
+    # High temp fit
+    skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 295
+    data_points = get_data_points(skip_lambda, condense_all=True)
+    zfs_list, zfs_err_list, temp_list, _, _ = data_points_to_lists(data_points)
+    guess_params = [2.87771, -8e-2, -4e-1, 65, 165]
+    fit_func = cambria_test3
+    high_popt, _ = curve_fit(
+        fit_func,
+        temp_list,
+        zfs_list,
+        sigma=zfs_err_list,
+        absolute_sigma=True,
+        p0=guess_params,
+    )
+    high_lambda = lambda temp: fit_func(temp, *high_popt)
+
+    fig, ax = plt.subplots()
+
+    temp_linspace = np.linspace(0, 500, 1000)
+    # low_der = np.gradient(low_lambda(temp_linspace), temp_linspace)
+    low_der = low_lambda(temp_linspace)
+    kpl.plot_line(ax, temp_linspace, low_der, label="< 295 K")
+
+    # high_der = np.gradient(high_lambda(temp_linspace), temp_linspace)
+    high_der = high_lambda(temp_linspace)
+    kpl.plot_line(ax, temp_linspace, high_der, label=">= 295 K")
+
+    ax.legend()
+
+
+# endregion
 # region Main plots
 
 
@@ -613,19 +770,18 @@ def main():
     # y_range = [-0.0012, 0.0012]
 
     plot_data = True
-    condense_data = True
     plot_residuals = False
     hist_residuals = False  # Must specify nv_to_plot down below
-    separate_samples = True
-    separate_nvs = False
-    plot_prior_models = True
+    condense_all = True
+    condense_samples = False
+    plot_prior_models = False
     desaturate_prior = False
     plot_new_model = True
-    toyli_extension = True
+    toyli_extension = False
 
-    # skip_lambda = lambda point: point["Skip"]
+    skip_lambda = lambda point: point["Skip"]
     # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
-    skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 295
+    # skip_lambda = lambda point: point["Skip"] or not point["Monitor temp (K)"] >= 296
 
     ###
 
@@ -634,107 +790,21 @@ def main():
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
     fig, ax = plt.subplots()
 
-    data_points = get_data_points(skip_lambda)
-
-    if condense_data:
-        condensed_data_points = []
-        identifier_set = []
-        for point in data_points:
-            identifier = f"{point['Setpoint temp (K)']}-{point['Sample']}"
-            identifier_set.append(identifier)
-        identifier_set = list(set(identifier_set))
-        identifier_set.sort()
-        for identifier in identifier_set:
-            id_split = identifier.split("-")
-            setpoint_temp_str = id_split[0]
-            if setpoint_temp_str == "":
-                setpoint_temp = "room"
-            else:
-                setpoint_temp = int(float(setpoint_temp_str))
-            sample = id_split[1]
-            monitor_temps = []
-            zfss = []
-            zfs_errors = []
-            for point in data_points:
-                test_identifier = f"{point['Setpoint temp (K)']}-{point['Sample']}"
-                if test_identifier == identifier:
-                    monitor_temps.append(point["Monitor temp (K)"])
-                    zfss.append(point["ZFS (GHz)"])
-                    zfs_errors.append(point["ZFS error (GHz)"])
-            sq_zfs_errors = [err**2 for err in zfs_errors]
-            sum_sq_errors = np.sum(sq_zfs_errors)
-            condensed_error = np.sqrt(sum_sq_errors) / len(sq_zfs_errors)
-            new_point = {
-                "Setpoint temp (K)": setpoint_temp,
-                "Monitor temp (K)": np.average(monitor_temps),
-                "ZFS (GHz)": np.average(zfss, weights=zfs_errors),
-                # + 0.0006,  # MCC
-                "ZFS error (GHz)": condensed_error,
-                "Sample": sample,
-                # "Sample": "Cambria",
-                "NV": "",
-            }
-            condensed_data_points.append(new_point)
-        data_points = condensed_data_points
-
-    zfs_list = []
-    zfs_err_list = []
-    temp_list = []
-    nv_names = []
-    nv_samples = []
-    data_colors = {}
-    # data_color_options = kpl.data_color_cycler.copy()
-    # data_color_options.pop(0)
-    data_color_options = [
-        KplColors.GREEN,
-        KplColors.PURPLE,
-        KplColors.BROWN,
-        KplColors.PINK,
-        KplColors.GRAY,
-        KplColors.YELLOW,
-        KplColors.CYAN,
-    ]
-    data_labels = {}
-    for el in data_points:
-        zfs = el["ZFS (GHz)"]
-        monitor_temp = el["Monitor temp (K)"]
-        if zfs == "" or monitor_temp == "":
-            continue
-        # if not (min_temp <= reported_temp <= max_temp):
-        # if not (150 <= reported_temp <= 500):
-        #     continue
-        temp_list.append(monitor_temp)
-        zfs_list.append(zfs)
-        zfs_err = el["ZFS error (GHz)"]
-        zfs_err_list.append(zfs_err)
-        sample = el["Sample"]
-        nv_samples.append(sample)
-        el_nv = el["NV"]
-        name = f"{sample}-{el_nv}"
-        nv_names.append(name)
-        if separate_samples:
-            data_colors_keys = list(data_colors.keys())
-            data_colors_samples = [el.split("-")[0] for el in data_colors_keys]
-            if sample not in data_colors_samples:
-                data_colors[name] = data_color_options.pop(0)
-            data_labels[name] = sample
-        elif separate_nvs:
-            if name not in data_colors:
-                data_colors[name] = data_color_options.pop(0)
-            data_labels[name] = name
-        else:
-            data_colors[name] = KplColors.BLUE
-    nv_names_set = list(set(nv_names))
-    nv_names_set.sort()
+    data_points = get_data_points(skip_lambda, condense_all, condense_samples)
+    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
+        data_points
+    )
 
     if toyli_extension:
         zfs_list.extend(toyli_zfss)
         temp_list.extend(toyli_temps)
-        nv_names.extend(["Toyli"] * len(toyli_temps))
-        nv_samples.extend(["Toyli"] * len(toyli_temps))
-        zfs_err_list.extend([None] * len(toyli_temps))
-        data_colors["Toyli"] = KplColors.RED
-        data_labels["Toyli"] = "Toyli"
+        label_list.extend(["Toyli"] * len(toyli_temps))
+        color_list.extend(KplColors.RED * len(toyli_temps))
+
+    label_set = set(label_list)
+    color_dict = {}
+    for ind in range(len(zfs_list)):
+        color_dict[label_list[ind]] = color_list[ind]
 
     ### New model
 
@@ -811,22 +881,20 @@ def main():
     if plot_data or plot_residuals:
         for ind in range(len(zfs_list)):
             temp = temp_list[ind]
-            name = nv_names[ind]
             val = (
                 zfs_list[ind] - cambria_lambda(temp)
                 if plot_residuals
                 else zfs_list[ind]
             )
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
-            label = None
-            color = KplColors.DARK_GRAY
-            if separate_samples or separate_nvs:
-                color = data_colors[name]
-                label = data_labels[name]
-                if label in used_data_labels:
-                    label = None
-                else:
-                    used_data_labels.append(label)
+            # label = None
+            # color = KplColors.DARK_GRAY
+            color = color_list[ind]
+            label = label_list[ind]
+            if label in used_data_labels:
+                label = None
+            else:
+                used_data_labels.append(label)
             kpl.plot_points(
                 ax,
                 temp,
@@ -838,22 +906,22 @@ def main():
                 label=label,
             )
             # print(name, val, temp)
-        if separate_samples or separate_nvs:
+        if len(used_data_labels) > 1:
             ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     if hist_residuals:
         residuals = {}
-        for el in nv_names_set:
+        for el in label_set:
             residuals[el] = []
         for ind in range(len(zfs_list)):
-            name = nv_names[ind]
+            label = label_list[ind]
             temp = temp_list[ind]
             # if not (150 <= temp <= 500):
             #     continue
             # val = (zfs_list[ind] - cambria_lambda(temp)) / zfs_err_list[ind]
             val = zfs_list[ind] - cambria_lambda(temp)
-            residuals[name].append(val)
-        nv_to_plot = nv_names_set[4]
+            residuals[label].append(val)
+        nv_to_plot = label_list[4]
         devs = residuals[nv_to_plot]
         # max_dev = 3
         # num_bins = max_dev * 4
@@ -871,7 +939,7 @@ def main():
             x_vals.append(bin_edges[ind + 1])
             y_vals.append(hist[ind])
             y_vals.append(hist[ind])
-        color = data_colors[nv_to_plot]
+        color = color_dict[nv_to_plot]
         kpl.plot_line(ax, x_vals, y_vals, color=color)
         ax.fill_between(x_vals, y_vals, color=kpl.lighten_color_hex(color))
         ylim = max(y_vals) + 1
@@ -925,9 +993,9 @@ def main():
                 color=prior_model_colors[0],
                 zorder=prior_model_zorder,
             )
-        print(super_room_zfs_from_temp(294))
-        print(super_room_zfs_from_temp(296))
-        print(super_room_zfs_from_temp(298))
+        # print(super_room_zfs_from_temp(294))
+        # print(super_room_zfs_from_temp(296))
+        # print(super_room_zfs_from_temp(298))
         # return
         if "Toyli" in prior_models_to_plot:
             kpl.plot_line(
@@ -999,5 +1067,6 @@ if __name__ == "__main__":
 
     main()
     # refit_experiments()
+    # derivative_comp()
 
     plt.show(block=True)
