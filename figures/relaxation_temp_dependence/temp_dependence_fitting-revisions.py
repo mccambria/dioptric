@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Reproduce Jarmola 2012 temperature scalings
+Paper revisions version of temp dependence fitting
 
-Created on Fri Jun 26 17:40:09 2020
+Created on January 23rd, 2023
 
 @author: mccambria
 """
@@ -1893,6 +1893,7 @@ def main(
     xscale="linear",
     yscale="linear",
     dosave=False,
+    inv_temp=False,
 ):
 
     # %% Setup
@@ -1937,6 +1938,7 @@ def main(
             xscale[0],
             yscale[0],
             dosave,
+            inv_temp,
         )
         _ = main_sub(
             fig,
@@ -1950,6 +1952,7 @@ def main(
             xscale[1],
             yscale[1],
             dosave,
+            inv_temp,
         )
         # fig.text(
         #     -0.16,
@@ -1984,6 +1987,7 @@ def main(
             xscale,
             yscale,
             dosave,
+            inv_temp,
         )
 
 
@@ -1999,6 +2003,7 @@ def main_sub(
     xscale,
     yscale,
     dosave,
+    inv_temp=False,
 ):
 
     data_points = get_data_points(path, file_name, temp_range)
@@ -2052,8 +2057,12 @@ def main_sub(
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
             ls = linestyles[sample]
+            if inv_temp:
+                plot_temp_linspace = 1 / temp_linspace
+            else:
+                plot_temp_linspace = temp_linspace
             ax.plot(
-                temp_linspace,
+                plot_temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
                 label=r"$\mathrm{\Omega}$ fit",
@@ -2068,8 +2077,12 @@ def main_sub(
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
             ls = linestyles[sample]
+            if inv_temp:
+                plot_temp_linspace = 1 / temp_linspace
+            else:
+                plot_temp_linspace = temp_linspace
             ax.plot(
-                temp_linspace,
+                plot_temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
                 label=r"$\mathit{\gamma}$ fit",
@@ -2156,9 +2169,15 @@ def main_sub(
                     ls=linestyle,
                 )
 
-        ax.axvline(x=125, color="silver", zorder=-10)
+    gray_line = 125
+    if inv_temp:
+        gray_line = 1 / gray_line
+    ax.axvline(x=gray_line, color="silver", zorder=-10)
 
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    if inv_temp:
+        ax.set_xlabel(r"Inverse temperature $1/\mathit{T}$ (K)")
+    else:
+        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if plot_type == "rates":
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     elif plot_type == "ratios":
@@ -2175,7 +2194,10 @@ def main_sub(
         ax.set_ylabel(r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
-    ax.set_xlim(min_temp, max_temp)
+    if inv_temp:
+        ax.set_xlim(1 / max_temp, 1 / min_temp)
+    else:
+        ax.set_xlim(min_temp, max_temp)
     if rate_range is not None:
         ax.set_ylim(rate_range[0], rate_range[1])
 
@@ -2224,8 +2246,12 @@ def main_sub(
                 elif plot_type == "normalized_residuals":
                     val = (rate - omega_lambda(temp)) / rate_err
                     val_err = 0
+                if inv_temp:
+                    plot_temp = 1 / temp
+                else:
+                    plot_temp = temp
                 ax.errorbar(
-                    temp,
+                    plot_temp,
                     val,
                     yerr=val_err,
                     xerr=temp_error,
@@ -2252,8 +2278,12 @@ def main_sub(
                 elif plot_type == "normalized_residuals":
                     val = (rate - gamma_lambda(temp)) / rate_err
                     val_err = 0
+                if inv_temp:
+                    plot_temp = 1 / temp
+                else:
+                    plot_temp = temp
                 ax.errorbar(
-                    temp,
+                    plot_temp,
                     val,
                     yerr=val_err,
                     xerr=temp_error,
@@ -2280,8 +2310,12 @@ def main_sub(
                 ratio_err = ratio * np.sqrt(
                     (omega_err / omega_val) ** 2 + (gamma_err / gamma_val) ** 2
                 )
+                if inv_temp:
+                    plot_temp = 1 / temp
+                else:
+                    plot_temp = temp
                 ax.errorbar(
-                    temp,
+                    plot_temp,
                     ratio,
                     yerr=ratio_err,
                     xerr=temp_error,
@@ -2565,12 +2599,14 @@ if __name__ == "__main__":
     # rates_to_plot = 'gamma'
 
     # temp_range = [0, 600]
-    temp_range = [0, 480]
+    temp_range = [-10, 480]
     # temp_range = [305, 480]
     # temp_range = [469.5, 475]
     xscale = "linear"
     # temp_range = [1, 500]
     # xscale = "log"
+    temp_range = [80, 550]
+    inv_temp = True
 
     file_name = "compiled_data"
     # file_name = "compiled_data-single_ref"
@@ -2581,7 +2617,8 @@ if __name__ == "__main__":
 
     if plot_type == "rates":
         # y_params = [[[-10, 1000], "linear"]]
-        y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
+        # y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
+        y_params = [[[5e-3, 1000], "log"]]
     elif plot_type == "T2_max":
         # y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
         y_params = [[[5e-4, 50], "log"]]
@@ -2611,6 +2648,7 @@ if __name__ == "__main__":
             xscale,
             yscale,
             dosave=False,
+            inv_temp=inv_temp,
         )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
