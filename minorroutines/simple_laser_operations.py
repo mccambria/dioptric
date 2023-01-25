@@ -23,13 +23,17 @@ def constant(cxn, laser_name, laser_power=None):
 def square_wave(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
 
-    period = int(2e4)
+    # period = int(2e4)
     # period = int(350*2)
     # period = int(1000)
     # period = int(0.25e6)
-    # period = int(10000)
+    period = int(1e6)
 
     seq_file = "square_wave.py"
+    
+    charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+    charge_readout_laser_server.load_feedthrough(1)
+    
     seq_args = [period, laser_name, laser_power]
     pulse_gen = tool_belt.get_server_pulse_gen(cxn)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -77,17 +81,19 @@ def circle(cxn, laser_name, laser_power=None):
 if __name__ == "__main__":
 
     # laser_name = "laserglow_532"
-    laser_name = "integrated_520"
+    laser_name = "laser_LGLO_589"
+    # laser_name = "integrated_520"
     laser_power = None
     laser_filter = "nd_0"
     collection_filter = "nd_0"
     pos = [0.0, 0.0, 5.0]
 
     tool_belt.init_safe_stop()
-
+    
+ 
     with labrad.connect() as cxn:
 
-        positioning.set_xyz(cxn, pos)
+        # positioning.set_xyz(cxn, pos)
         # tool_belt.set_filter(
         #     cxn, optics_name=laser_name, filter_name=laser_filter
         # )

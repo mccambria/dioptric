@@ -91,7 +91,7 @@ def get_seq(pulse_streamer, config, args):
                             (100 ,LOW )]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 readout_laser_key, read_laser_power, train_read_laser)
-
+        print(train_read_laser)
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
 
@@ -102,6 +102,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config)
     # args = [1000000.0, 50000000, 'cobolt_638', 'laserglow_589', None, 0.2, 2, 1]
-    args = [1000, 50000000, "integrated_520", "laserglow_589", None, 0.1, 2]
+    args = [1000, 50000, "cobolt_638", "laser_LGLO_589", None, None, 2]
     seq = get_seq(None, config, args)[0]
     seq.plot()

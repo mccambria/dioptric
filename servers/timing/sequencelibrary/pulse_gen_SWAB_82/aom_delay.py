@@ -100,11 +100,11 @@ if __name__ == '__main__':
     # go through that here.
 
     config = tool_belt.get_config_dict()
-    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_wiring = config['Wiring']['PulseGen']
     # print(pulser_wiring)
 
     # Set up a dummy args list
-    args = [0,3000.0, 3000.0, 1, 'integrated_520', None]
+    args = [1000.0, 2500, 5000.0, 'laser_LGLO_589', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

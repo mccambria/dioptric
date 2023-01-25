@@ -324,13 +324,13 @@ def do_optimize_magnet_angle(nv_sig):
 def do_rabi(nv_sig, opti_nv_sig, state, 
             uwave_time_range=[0, 200]):
 
-    num_steps =101
-    num_reps = int(2e4)    
-    num_runs =  5
-
-   # num_steps =51
+    # num_steps =101
     # num_reps = int(2e4)    
-    # num_runs =  10
+    # num_runs =  5
+
+    num_steps =51
+    num_reps = int(2e4)    
+    num_runs =  2
     
     rabi.main(
         nv_sig,
@@ -340,7 +340,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_reps,
         num_runs,
         opti_nv_sig = opti_nv_sig,
-        do_cos_fit = False
+        do_cos_fit = True
     )
     # nv_sig["rabi_{}".format(state.name)] = period
 
@@ -532,7 +532,7 @@ def do_spin_echo(nv_sig, state = States.HIGH, do_dq = True):
     )
     return
 
-def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
+def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_runs, do_dq_):
     
     shift = 100 #ns
     
@@ -543,11 +543,11 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
     num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
-    num_reps = 50
-    num_runs= 500
+    # num_reps = 50
+    # num_runs= 500
 
     # num_reps = 500
-    # num_runs= 50#600#300
+    # num_runs= 200
     
     state = States.HIGH
 
@@ -725,12 +725,13 @@ def do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max):
 
 def do_relaxation(nv_sig ):
     min_tau = 0
-    max_tau_omega = 5e6
+    max_tau_omega = 10e6
     max_tau_gamma = 10e3
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 1e3
-    num_runs = 400
+    # num_runs = 200
+    num_runs = 150
     
     if True:
      t1_exp_array = numpy.array(
@@ -802,10 +803,10 @@ def do_determine_standard_readout_params(nv_sig):
     
 def do_determine_charge_readout_params(nv_sig):
         num_reps = int(5e2)
-        readout_durs = [50e6]
+        readout_durs = [10e6,]
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
-        readout_powers = [0.1]
+        readout_powers = [0.4]
         
             
         determine_charge_readout_params.main(  
@@ -814,7 +815,7 @@ def do_determine_charge_readout_params(nv_sig):
           max_readout_dur=max_readout_dur,
           readout_powers=readout_powers,
           plot_readout_durs=readout_durs,
-          fit_threshold_full_model= False,)
+          fit_threshold_full_model= True,)
         
           
 # def do_time_resolved_readout(nv_sig, apd_indices):
@@ -1008,7 +1009,8 @@ if __name__ == "__main__":
     # apd_indices = [1]
     # # apd_indices = [0,1]
 
-    nd_yellow = "nd_0"
+    # nd_yellow = "nd_1.0"
+    nd_yellow = "nd_0.5"
     green_power =8000
     nd_green = 'nd_1.1'
     red_power = 180
@@ -1016,7 +1018,7 @@ if __name__ == "__main__":
     # sample_name = "ayrton12"
     green_laser = "integrated_520"
     # green_laser = "cobolt_515"
-    yellow_laser = "laserglow_589"
+    yellow_laser = "laser_LGLO_589"
     red_laser = "cobolt_638"
 
 
@@ -1143,7 +1145,7 @@ if __name__ == "__main__":
     nv_sig_4 = copy.deepcopy(sig_base)  
     nv_sig_4["coords"] = [0.030, -0.302, 5.09]  # NVC
     nv_sig_4["name"] = "{}-nv4_2023_01_16".format(sample_name,)
-    nv_sig_4["expected_count_rate"] = 43
+    nv_sig_4["expected_count_rate"] = 42
     nv_sig_4["magnet_angle"]= 53.5
     nv_sig_4["spin_readout_dur"] = 300
     nv_sig_4["waveplate_angle"] = 78
@@ -1281,8 +1283,8 @@ if __name__ == "__main__":
                do_image_sample(nv_copy)
                     
         
-       # do_optimize(nv_sig)
-       # do_image_sample(nv_sig)
+        # do_optimize(nv_sig)
+        # do_image_sample(nv_sig)
         
         # for nv_sig in nv_sig_list:
         # for nv_sig in [nv_sig_11]:
@@ -1351,21 +1353,19 @@ if __name__ == "__main__":
         T_max = 6000 #us  
         step_size = T_max/20 #us   
         
-        for boo in [True]:
-              #do_dd_cpmg(nv_sig, 32, 6000/20, T_min, 6000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 64, 6000/20, T_min, 6000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 128, 6000/20, T_min, 6000, do_dq_= boo)
-              #do_dd_cpmg(nv_sig, 256, 6000/20, T_min,6000, do_dq_= boo)
-              for i in range(12):
-                  do_dd_cpmg(nv_sig, 512, 7000/24, T_min,7000, do_dq_= boo)
-              #do_dd_cpmg(nv_sig, 1024, 7000/24, T_min,7000, do_dq_= boo)
-              #do_dd_cpmg(nv_sig, 2, 3000/20, T_min, 3000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 4, 4000/20, T_min, 4000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 8, 5000/20, T_min, 5000, do_dq_= boo)
+        # for boo in [False]:
+        #     for i in range(4):
+        #          do_dd_cpmg(nv_sig, 128, 6000/20, T_min, 6000,50, 500, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 256, 6000/20, T_min,6000, do_dq_= boo)
+            # for i in range(4):
+            #       do_dd_cpmg(nv_sig, 512, 7000/20, T_min, 7000,50, 500, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 2, 3000/20, T_min, 3000,500,200, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 4, 4000/20, T_min, 4000, 500,200,do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 8, 5000/20, T_min, 5000,500,200, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 16, step_size, T_min, 5000, 500,200,do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 32, 6000/20, T_min, 6000,500,200, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 64, 6000/20, T_min, 6000,500,200, do_dq_= boo)
              
-        #     do_dd_cpmg(nv_sig, 8, step_size, T_min, 5000, do_dq_= boo)
-        #     do_dd_cpmg(nv_sig, 2, step_size, T_min, 3000, do_dq_= boo)
-        #     do_dd_cpmg(nv_sig, 128, step_size, T_min, 6000, do_dq_= boo)
         
         #for n in [32, 64, 128, 256, 2, 4, 8]:#128
              # do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= True)
@@ -1383,7 +1383,7 @@ if __name__ == "__main__":
         ################## 
         
         #do_determine_standard_readout_params(nv_sig)
-        # do_determine_charge_readout_params(nv_sig)
+        do_determine_charge_readout_params(nv_sig)
 
     #except Exception as exc:
     #    recipient = "agardill56@gmail.com"

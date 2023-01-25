@@ -671,7 +671,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi/2023_01'
-    file = '2023_01_19-17_55_46-siena-nv1_2023_01_16'
+    file = '2023_01_20-13_33_38-siena-nv4_2023_01_16'
     data = tool_belt.get_raw_data(file, path)
     kpl.init_kplotlib()
 
@@ -690,7 +690,7 @@ if __name__ == '__main__':
     num_reps = data['num_reps']
     nv_sig = data['nv_sig']
     readout = nv_sig['spin_readout_dur']
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, NormStyle.POINT_TO_POINT)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, NormStyle.SINGLE_VALUED)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,

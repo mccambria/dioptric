@@ -992,7 +992,7 @@ if __name__ == "__main__":
     #     # print(popt)
     
     if True:
-        file_name = "2023_01_21-20_23_52-siena-nv4_2023_01_16"
+        file_name = "2023_01_23-21_42_12-siena-nv4_2023_01_16"
         folder = 'pc_rabi/branch_master/spin_echo/2023_01'
         data = tool_belt.get_raw_data(file_name, folder)
         nv_name = data['nv_sig']["name"]
@@ -1040,8 +1040,8 @@ if __name__ == "__main__":
         taus_ms = numpy.array(taus)*2/1e6
         
         
-        guess_params = [0.05, 0.5, 0.85]
-        fit_func = tool_belt.exp_t2
+        guess_params = [0.05, 0.5,]# 0.85]
+        fit_func = lambda x, a, b:  tool_belt.exp_t2(x, a, b ,0.8545)
         
         popt, pcov = curve_fit(
             fit_func,

@@ -75,6 +75,10 @@ def measure_delay(
         st = time.time()
         # optimize.main_with_cxn(cxn, nv_sig)
         optimize.main_with_cxn(cxn, nv_sig)
+        
+        charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+        charge_readout_laser_server.load_feedthrough(1.0)
+        
         # Turn on the microwaves for determining microwave delay
         sig_gen = None
         if seq_file == "uwave_delay.py":
@@ -381,16 +385,16 @@ if __name__ == "__main__":
     nd_green = 'ND_1.1'
     green_laser = "integrated_520"
     # green_laser = "cobolt_515"
-    yellow_laser = "laserglow_589"
+    yellow_laser = "laser_LGLO_589"
     red_laser = "cobolt_638"
 
 
     nv_sig = {
-            "coords":[0.294, 0.169, 4.14],
-        "name": "{}-nv8_2022_12_22".format(sample_name,),
+            "coords":[0.030, -0.302, 5.09],
+        "name": "{}-nv4_2023_01_16".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":29,
+        "expected_count_rate":42,
 
 
           "spin_laser":green_laser,
@@ -410,7 +414,7 @@ if __name__ == "__main__":
 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 153,
+        "magnet_angle": 53.5,
         "resonance_LOW":2.78059,
         "rabi_LOW":131.1,
         "uwave_power_LOW": 13,
@@ -457,15 +461,15 @@ if __name__ == "__main__":
 
 
     # laser delay
-    num_steps = 51
-    num_reps = int(5e4)
+    num_steps = 81
+    num_reps = int(1e4)
     # laser_name = 'laserglow_532'
-    delay_range = [0, 500]
+    # delay_range = [0, 500]
     # num_reps = int(1e5)
-    # laser_name = 'laserglow_589'
-    # delay_range = [800, 1700]
+    laser_name = 'laser_LGLO_589'
+    delay_range = [2500, 6500]
     # num_reps = int(1e4)
-    laser_name = 'integrated_520'
+    # laser_name = 'integrated_520'
     # laser_name = 'cobolt_515'
     # laser_power = 0.65
     # laser_name = 'cobolt_638'
@@ -474,8 +478,9 @@ if __name__ == "__main__":
     # laser_power = 0.6
     # delay_range = [0,1e3]
     with labrad.connect() as cxn:
-        aom_delay(cxn, nv_sig, apd_indices,
+        aom_delay(cxn, nv_sig, 
                   delay_range, num_steps, num_reps, laser_name, laser_power)
+
 
     # uwave_delay
     num_reps = int(1e6)

@@ -73,15 +73,15 @@ def create_fit_figure(
     text_popt = "\n".join(
         (
             r"$S(T) = e^{(- (T/T_2)^3)}$",
-            r"$T_2=$%.2f $\pm$ %.2f us" % (t2_us, t2_unc_us),
+            r"$T_2=$%.2f $\pm$ %.2f ms" % (t2_us, t2_unc_us),
         )
     )
     kpl.anchored_text(ax, text_popt, kpl.Loc.UPPER_RIGHT, size=kpl.Size.SMALL)
     
     if do_dq:
-        ax.set_title("CPMG-{} DQ baiss".format(pi_pulse_reps))
+        ax.set_title("CPMG-{} DQ basis".format(pi_pulse_reps))
     else:
-        ax.set_title("CPMG-{} SQ baiss".format(pi_pulse_reps))
+        ax.set_title("CPMG-{} SQ basis".format(pi_pulse_reps))
 
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
@@ -122,9 +122,10 @@ def fit_t2_12C(data, do_fit = True, incremental=False):
     taus = numpy.array(data['taus'])
     
     # tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
-    fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
+    # fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
+    fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, 0.8545, 3)
     
-    init_params = [ 0.1, 1200, 0.9]
+    init_params = [ 0.1, 1000]
     popt, pcov = curve_fit(
         fit_func,
         plot_taus,
@@ -182,6 +183,8 @@ def compile_12C_data(file_list, do_save = True):
     data['ref_counts']= ref_counts
     data['norm_avg_sig']= norm_avg_sig.tolist()
     data['norm_avg_sig_ste']= norm_avg_sig_ste.tolist()
+    nv_sig['norm_style'] = norm_style
+    data['nv_sig'] = nv_sig
     data['num_runs']= num_runs
     data['file_list']= file_list
     
@@ -843,27 +846,47 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
   
     
-    # file_name = "2023_01_21-18_23_04-siena-nv4_2023_01_16"
+    file_name = "2023_01_24-04_01_47-siena-nv4_2023_01_16"
 
-    # data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
-    # fit_t2_12C(data, do_fit = True, incremental=False)
+    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
+    fit_t2_12C(data, do_fit = True)
     
-    file_list =['2023_01_22-14_01_38-siena-nv4_2023_01_16',
-                '2023_01_22-15_45_14-siena-nv4_2023_01_16',
-                '2023_01_22-17_32_07-siena-nv4_2023_01_16',
-                '2023_01_22-19_16_51-siena-nv4_2023_01_16',
-                '2023_01_22-20_59_54-siena-nv4_2023_01_16',
-                '2023_01_22-22_47_20-siena-nv4_2023_01_16',
-                '2023_01_23-00_34_20-siena-nv4_2023_01_16',
-                '2023_01_23-02_19_37-siena-nv4_2023_01_16',
-                '2023_01_23-04_07_32-siena-nv4_2023_01_16',
-                '2023_01_23-05_49_51-siena-nv4_2023_01_16',
-                '2023_01_23-07_39_39-siena-nv4_2023_01_16',
-                '2023_01_23-09_25_45-siena-nv4_2023_01_16'
-        ]
+    # file_list =[
+    #     '2023_01_23-12_40_36-siena-nv4_2023_01_16',
+    #             '2023_01_23-13_58_38-siena-nv4_2023_01_16',
+    #             '2023_01_23-15_16_28-siena-nv4_2023_01_16',
+    #             '2023_01_23-16_34_07-siena-nv4_2023_01_16',
+    #             '2023_01_23-17_51_32-siena-nv4_2023_01_16',
+    #             '2023_01_23-19_09_16-siena-nv4_2023_01_16'
+    #     ]
     
-    compile_12C_data(file_list)
+    # file_list =[
+    # "2023_01_22-14_01_38-siena-nv4_2023_01_16",
+    # "2023_01_22-15_45_14-siena-nv4_2023_01_16",
+    # "2023_01_22-17_32_07-siena-nv4_2023_01_16",
+    # "2023_01_22-19_16_51-siena-nv4_2023_01_16",
+    # "2023_01_22-20_59_54-siena-nv4_2023_01_16",
+    # "2023_01_22-22_47_20-siena-nv4_2023_01_16",
+    # "2023_01_23-00_34_20-siena-nv4_2023_01_16",
+    # "2023_01_23-02_19_37-siena-nv4_2023_01_16",
+    # "2023_01_23-04_07_32-siena-nv4_2023_01_16",
+    # "2023_01_23-05_49_51-siena-nv4_2023_01_16",
+    # "2023_01_23-07_39_39-siena-nv4_2023_01_16",
+    # "2023_01_23-09_25_45-siena-nv4_2023_01_16"
+    #     ]
+    
+    # compile_12C_data(file_list, 
+    #                  do_save = True
+    #                  )
     
     
-    
+    # file_list = ['2023_01_23-22_58_52-siena-nv4_2023_01_16',
+    #              '2023_01_24-00_15_34-siena-nv4_2023_01_16',
+    #              '2023_01_24-01_31_27-siena-nv4_2023_01_16',
+    #              '2023_01_24-02_47_15-siena-nv4_2023_01_16',
+                 
+    #     ]
+    # compile_12C_data(file_list, 
+    #                   do_save = True
+    #                   )
     

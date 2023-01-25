@@ -557,6 +557,9 @@ def measure_histograms_sub(
         drift = positioning.get_drift(cxn)
         adjusted_nv_coords = coords + np.array(drift)
         positioning.set_xyz(cxn, adjusted_nv_coords)
+        
+        charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+        charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
         # print(num_reps_remaining)
 
         # Make sure the lasers are at the right powers
@@ -579,7 +582,7 @@ def measure_histograms_sub(
         else:
             num_reps_to_run = num_reps_remaining
 
-        print(seq_args_string,num_reps_to_run)
+        # print(seq_args_string,num_reps_to_run)
         pulsegen_server.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
@@ -634,6 +637,8 @@ def measure_histograms_with_cxn(
     readout_laser_power = tool_belt.set_laser_power(
         cxn, nv_sig, "charge_readout_laser"
     )
+    
+        
 
     readout_pulse_time = nv_sig["charge_readout_dur"]
 
@@ -678,6 +683,7 @@ def measure_histograms_with_cxn(
     apd_gate_channel = apd_wiring['di_apd_gate']
 
     # Green measurement
+    print('Measuring with initial green pulse')
     seq_args = gen_seq_args("nv-_prep_laser")
     
     # print(seq_args)
@@ -687,6 +693,7 @@ def measure_histograms_with_cxn(
     nvm = process_timetags(apd_gate_channel, timetags, channels)
 
     # Red measurement
+    print('Measuring with initial red pulse')
     seq_args = gen_seq_args("nv0_prep_laser")
     # print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
