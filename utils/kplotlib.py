@@ -42,6 +42,11 @@ class PlotType(Enum):
     HIST = auto()
 
 
+class Font(Enum):
+    ROBOTO = auto()
+    HELVETICA = auto()
+
+
 # Histogram type, mostly following https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 class HistType(StrEnum):
     INTEGER = "integer"  # Just plot the frequency of each integer
@@ -156,7 +161,9 @@ def zero_to_one_threshold(val):
 # region Miscellaneous
 
 
-def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
+def init_kplotlib(
+    font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False, font=Font.ROBOTO
+):
     """Runs the initialization for kplotlib, our default configuration
     of matplotlib. Plotting will be faster if latex is False - only set to True
     if you need full access to LaTeX
@@ -183,7 +190,10 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
         preamble = r""
         preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
         preamble += r"\usepackage{physics} \usepackage{upgreek}"
-        preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+        if font == Font.ROBOTO:
+            preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+        elif font == Font.HELVETICA:
+            preamble += r"\usepackage{helvet}"
 
         # Render math (e.g. axis numbers) in sans serif by default.
         # Preserve the \mathrm and \mathit commands so you can still
@@ -197,13 +207,16 @@ def init_kplotlib(font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False):
 
     # plt.rcParams["legend.handlelength"] = 0.5
     plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = "Roboto"
+    if font == Font.ROBOTO:
+        plt.rcParams["font.sans-serif"] = "Roboto"
+    if font == Font.HELVETICA:
+        plt.rcParams["font.sans-serif"] = "Helvetica"
     plt.rcParams["font.size"] = font_Size[default_font_size]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
     plt.rcParams["figure.constrained_layout.use"] = True
-    plt.rcParams['savefig.format'] = 'svg'
+    plt.rcParams["savefig.format"] = "svg"
 
 
 def get_default_color(ax, plot_type):
