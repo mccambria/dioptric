@@ -2702,22 +2702,22 @@ if __name__ == "__main__":
     #         dosave=False,
     #     )
 
-    # rates_to_plot = ["both", "both"]
-    # temp_ranges = [[120, 500], [-10, 500]]
-    # y_ranges = [[0.03, 750], [-25, 675]]
-    # yscales = ["log", "linear"]
-    # xscales = ["log", "linear"]
+    rates_to_plot = ["both", "both"]
+    temp_ranges = [[120, 500], [-10, 500]]
+    y_ranges = [[0.03, 750], [-25, 675]]
+    yscales = ["log", "linear"]
+    xscales = ["log", "linear"]
 
     # temp_ranges = [[-5, 500], [-10, 500]]
     # y_ranges = [[5e-3, 750], [-25, 675]]
     # yscales = ["log", "linear"]
     # xscales = ["linear", "linear"]
 
-    rates_to_plot = ["both", "both"]
-    temp_ranges = [[-10, 490], [120, 525]]
-    y_ranges = [[-20, 675], [0.2, 850]]
-    yscales = ["linear", "log"]
-    xscales = ["linear", "inv"]
+    # rates_to_plot = ["both", "both"]
+    # temp_ranges = [[-10, 490], [120, 500]]
+    # y_ranges = [[-20, 675], [0.03, 750]]
+    # yscales = ["linear", "log"]
+    # xscales = ["linear", "inv"]
 
     main(
         file_name,
