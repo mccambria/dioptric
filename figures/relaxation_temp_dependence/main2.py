@@ -1974,10 +1974,10 @@ def main(
     elif plot_type == "rates":
         fs = figsize
         fig, ax1 = plt.subplots(figsize=fs)
-        inset_bottom = 0.103
-        inset_height = 0.425
-        inset_left = 0.525
-        inset_width = 0.485
+        inset_bottom = 0.57
+        inset_height = 0.44
+        inset_left = 0.065
+        inset_width = 0.6
         adj = 0.05
         inset_left += adj
         inset_width -= adj
@@ -2267,10 +2267,15 @@ def main_sub(
     set_xscale = "linear" if xscale == "inv" else xscale
     ax.set_xscale(set_xscale)
     ax.set_yscale(yscale)
-    if xscale != "inv":
-        ax.set_xlim(min_temp, max_temp)
-    else:
+    if xscale == "inv":
         ax.set_xlim(1 / max_temp, 1 / min_temp)
+        ax.set_xlabel(r"Inverse Temperature $1/\mathit{T}$ (K$^{-1}$)", fontsize=15)
+        ticks = [1 / 500, 1 / 250, 1 / 167, 1 / 125]
+        ticklabels = ["1/500", "1/250", "1/167", "1/125"]
+        ax.set_xticks(ticks, labels=ticklabels)
+        ax.tick_params(axis="both", which="major", labelsize=15)
+    else:
+        ax.set_xlim(min_temp, max_temp)
     if rate_range is not None:
         ax.set_ylim(rate_range[0], rate_range[1])
 
@@ -2453,7 +2458,7 @@ def main_sub(
 
         # Legend x location
         # x_loc = 0.14
-        x_loc = 0.18
+        x_loc = 0.17
         # x_loc = 0.22
 
         if plot_type in ["rates", "residuals", "normalized_residuals"]:
@@ -2469,14 +2474,15 @@ def main_sub(
                 edgecolor=gamma_edge_color,
                 lw=marker_edge_width,
             )
+            y_leg_pos = 0.38
+            x_leg_pos = 0.0
             leg1 = ax.legend(
                 handles=[gamma_patch, omega_patch],
-                loc="upper left",
                 title="Rate",
                 handlelength=1.5,
                 handletextpad=0.75,
-                # borderpad=0.3,
-                # borderaxespad=0.3,
+                loc="upper left",
+                bbox_to_anchor=(x_leg_pos, y_leg_pos),
             )
 
         elif plot_type == "ratios":
@@ -2529,7 +2535,7 @@ def main_sub(
                 loc="upper left",
                 title=title,
                 # title="Samples",
-                bbox_to_anchor=(x_loc, 1.0),
+                bbox_to_anchor=(x_leg_pos + x_loc, y_leg_pos),
                 handlelength=1,
                 handletextpad=0.75,
                 # borderpad=0.3,
@@ -2708,8 +2714,8 @@ if __name__ == "__main__":
     # xscales = ["linear", "linear"]
 
     rates_to_plot = ["both", "both"]
-    temp_ranges = [[-10, 490], [120, 500]]
-    y_ranges = [[-20, 675], [0.03, 750]]
+    temp_ranges = [[-10, 490], [120, 525]]
+    y_ranges = [[-20, 675], [0.2, 850]]
     yscales = ["linear", "log"]
     xscales = ["linear", "inv"]
 
