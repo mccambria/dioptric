@@ -125,9 +125,15 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
                 monitor_temps.append(point["Monitor temp (K)"])
                 zfss.append(point["ZFS (GHz)"])
                 zfs_errors.append(point["ZFS error (GHz)"])
-        sq_zfs_errors = [err**2 for err in zfs_errors]
-        sum_sq_errors = np.sum(sq_zfs_errors)
-        condensed_error = np.sqrt(sum_sq_errors) / len(sq_zfs_errors)
+        weights = [val**-2 for val in zfs_errors]
+        norm = np.sum(weights)
+        # For inverse-variance weighting, condensed_error**2 = 1/norm
+        condensed_error = 0
+        for ind in range(len(zfs_errors)):
+            weight = weights[ind]
+            err = zfs_errors[ind]
+            condensed_error += (weight * err / norm) ** 2
+        condensed_error = np.sqrt(condensed_error)
         if condense_all:
             label = "Cambria"
         elif condense_samples:
@@ -137,7 +143,6 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             sample = id_split[1]
             nv = id_split[2]
             label = f"{sample}-{nv}"
-        weights = [val**-2 for val in zfs_errors]
         new_point = {
             "Setpoint temp (K)": setpoint_temp,
             "Monitor temp (K)": np.average(monitor_temps),
@@ -178,7 +183,7 @@ def data_points_to_lists(data_points):
         # if not (min_temp <= reported_temp <= max_temp):
         # if monitor_temp < 296:
         #     # zfs += 0.00042
-        #     monitor_temp *= 300.8 / 295
+        #     monitor_temp *= 300.7 / 295
         temp_list.append(monitor_temp)
         zfs_list.append(zfs)
         zfs_err = el["ZFS error (GHz)"]

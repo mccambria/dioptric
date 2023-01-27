@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Reproduce Jarmola 2012 temperature scalings
+Paper revisions version of temp dependence fitting
 
-Created on Fri Jun 26 17:40:09 2020
+Created on January 23rd, 2023
 
 @author: mccambria
 """
@@ -1893,6 +1893,7 @@ def main(
     xscale="linear",
     yscale="linear",
     dosave=False,
+    inv_temp=False,
 ):
 
     # %% Setup
@@ -1937,6 +1938,7 @@ def main(
             xscale[0],
             yscale[0],
             dosave,
+            inv_temp,
         )
         _ = main_sub(
             fig,
@@ -1950,6 +1952,7 @@ def main(
             xscale[1],
             yscale[1],
             dosave,
+            inv_temp,
         )
         # fig.text(
         #     -0.16,
@@ -1984,6 +1987,7 @@ def main(
             xscale,
             yscale,
             dosave,
+            inv_temp,
         )
 
 
@@ -1999,6 +2003,7 @@ def main_sub(
     xscale,
     yscale,
     dosave,
+    inv_temp=False,
 ):
 
     data_points = get_data_points(path, file_name, temp_range)
@@ -2011,6 +2016,8 @@ def main_sub(
     temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
 
     # Fit to Omega and gamma simultaneously
+    fit_mode = "double_orbach"
+    # fit_mode = "T5"
     (
         popt,
         pvar,
@@ -2019,7 +2026,7 @@ def main_sub(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points, "double_orbach")
+    ) = fit_simultaneous(data_points, fit_mode)
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
@@ -2052,8 +2059,12 @@ def main_sub(
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
             ls = linestyles[sample]
+            if inv_temp:
+                plot_temp_linspace = 1 / temp_linspace
+            else:
+                plot_temp_linspace = temp_linspace
             ax.plot(
-                temp_linspace,
+                plot_temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
                 label=r"$\mathrm{\Omega}$ fit",
@@ -2068,8 +2079,12 @@ def main_sub(
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
             ls = linestyles[sample]
+            if inv_temp:
+                plot_temp_linspace = 1 / temp_linspace
+            else:
+                plot_temp_linspace = temp_linspace
             ax.plot(
-                temp_linspace,
+                plot_temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
                 label=r"$\mathit{\gamma}$ fit",
@@ -2156,9 +2171,15 @@ def main_sub(
                     ls=linestyle,
                 )
 
-        ax.axvline(x=125, color="silver", zorder=-10)
+    gray_line = 125
+    if inv_temp:
+        gray_line = 1 / gray_line
+    ax.axvline(x=gray_line, color="silver", zorder=-10)
 
-    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    if inv_temp:
+        ax.set_xlabel(r"Inverse temperature $1/\mathit{T}$ (K)")
+    else:
+        ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if plot_type == "rates":
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     elif plot_type == "ratios":
@@ -2175,7 +2196,10 @@ def main_sub(
         ax.set_ylabel(r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
-    ax.set_xlim(min_temp, max_temp)
+    if inv_temp:
+        ax.set_xlim(1 / max_temp, 1 / min_temp)
+    else:
+        ax.set_xlim(min_temp, max_temp)
     if rate_range is not None:
         ax.set_ylim(rate_range[0], rate_range[1])
 
@@ -2224,8 +2248,12 @@ def main_sub(
                 elif plot_type == "normalized_residuals":
                     val = (rate - omega_lambda(temp)) / rate_err
                     val_err = 0
+                if inv_temp:
+                    plot_temp = 1 / temp
+                else:
+                    plot_temp = temp
                 ax.errorbar(
-                    temp,
+                    plot_temp,
                     val,
                     yerr=val_err,
                     xerr=temp_error,
@@ -2252,8 +2280,12 @@ def main_sub(
                 elif plot_type == "normalized_residuals":
                     val = (rate - gamma_lambda(temp)) / rate_err
                     val_err = 0
+                if inv_temp:
+                    plot_temp = 1 / temp
+                else:
+                    plot_temp = temp
                 ax.errorbar(
-                    temp,
+                    plot_temp,
                     val,
                     yerr=val_err,
                     xerr=temp_error,
@@ -2280,8 +2312,12 @@ def main_sub(
                 ratio_err = ratio * np.sqrt(
                     (omega_err / omega_val) ** 2 + (gamma_err / gamma_val) ** 2
                 )
+                if inv_temp:
+                    plot_temp = 1 / temp
+                else:
+                    plot_temp = temp
                 ax.errorbar(
-                    temp,
+                    plot_temp,
                     ratio,
                     yerr=ratio_err,
                     xerr=temp_error,
@@ -2550,7 +2586,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # tool_belt.init_matplotlib()
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(latex=True, font=kpl.Font.HELVETICA)
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
     plot_type = "rates"
@@ -2564,13 +2600,15 @@ if __name__ == "__main__":
     # rates_to_plot = "Omega"
     # rates_to_plot = 'gamma'
 
-    # temp_range = [0, 600]
-    temp_range = [0, 480]
+    temp_range = [-10, 700]
+    # temp_range = [-10, 480]
     # temp_range = [305, 480]
     # temp_range = [469.5, 475]
     xscale = "linear"
     # temp_range = [1, 500]
     # xscale = "log"
+    # temp_range = [125, 550]
+    inv_temp = False
 
     file_name = "compiled_data"
     # file_name = "compiled_data-single_ref"
@@ -2581,7 +2619,10 @@ if __name__ == "__main__":
 
     if plot_type == "rates":
         # y_params = [[[-10, 1000], "linear"]]
-        y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
+        # y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
+        # y_params = [[[4e-3, 800], "log"]]
+        y_params = [[[4e-3, 2000], "log"]]
+        # y_params = [[[0.85, 800], "log"]]
     elif plot_type == "T2_max":
         # y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
         y_params = [[[5e-4, 50], "log"]]
@@ -2597,27 +2638,27 @@ if __name__ == "__main__":
         rates_to_plot = "gamma"
     # y_params = [y_params[1]]
     # y_params = [[None, "linear"], [[0.001, 20], "log"]]
-    for el in y_params:
-        y_range, yscale = el
-        # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
-        # continue
-        main(
-            file_name,
-            path,
-            plot_type,
-            rates_to_plot,
-            temp_range,
-            y_range,
-            xscale,
-            yscale,
-            dosave=False,
-        )
+    # for el in y_params:
+    #     y_range, yscale = el
+    #     # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
+    #     # continue
+    #     main(
+    #         file_name,
+    #         path,
+    #         plot_type,
+    #         rates_to_plot,
+    #         temp_range,
+    #         y_range,
+    #         xscale,
+    #         yscale,
+    #         dosave=False,
+    #         inv_temp=inv_temp,
+    #     )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    # supp_comparison = True
-    # supp_comparison = False
-    # figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
+    supp_comparison = False
+    figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
