@@ -329,10 +329,10 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     # num_reps = int(2e4)    
     # num_runs =  5
 
-    num_steps =101
-    num_reps = int(2e4)  
-   # num_reps = int(50)   
-    num_runs =  25
+    num_steps =51
+    # num_reps = int(2e4)  
+    num_reps = int(50)   
+    num_runs =  10
     
     rabi.main(
         nv_sig,
@@ -342,8 +342,8 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_reps,
         num_runs,
         opti_nv_sig = opti_nv_sig,
-        do_scc = False,
-        do_cos_fit = False
+        do_scc = True,
+        do_cos_fit = True
     )
     # nv_sig["rabi_{}".format(state.name)] = period
 
@@ -1077,16 +1077,16 @@ if __name__ == "__main__":
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 250,
+        "nv0_ionization_dur": 300,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": None,
         "spin_shelf_dur": 0,
         
         "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_power": 0.4,  #0.35
+        "charge_readout_laser_power": 0.4,  
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_dur": 2.5e6, #5e6
+        "charge_readout_dur": 10e6,
 
         "collection_filter": "715_sp+630_lp", # NV band only
         'magnet_angle': 53.6,
@@ -1368,23 +1368,21 @@ if __name__ == "__main__":
         
         ###################
         T_min = 0 #us
-        T_max = 6000 #us  
-        step_size = T_max/20 #us   
+        T_max = 8000 #us  
+        step_size = T_max/25 #us 
+        num_runs = 80
+        num_reps = 50
         
-        # for boo in [True]:
-        #     for i in range(4):
-        #          do_dd_cpmg(nv_sig, 128, 6000/20, T_min, 6000,50, 500, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 256, 6000/20, T_min,6000, do_dq_= boo)
-            # for i in range(4):
-            #       do_dd_cpmg(nv_sig, 512, 7000/20, T_min, 7000,50, 500, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 2, 6000/20, T_min, 6000, 100, 20, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 32, 500/10, T_min, 500, 100, 10, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 4, 4000/20, T_min, 4000, 500,200,do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 8, 5000/20, T_min, 5000,500,200, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 16, step_size, T_min, 5000, 500,200,do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 32, 6000/20, T_min, 6000,500,200, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 64, 6000/20, T_min, 6000,500,200, do_dq_= boo)
-             
+        for boo in [True, False]:
+            do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 512, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 16, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 32, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 128, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
         
         #for n in [32, 64, 128, 256, 2, 4, 8]:#128
              # do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= True)

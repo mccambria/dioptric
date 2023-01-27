@@ -121,11 +121,11 @@ def fit_t2_12C(data, do_fit = True, incremental=False):
     do_dq=data['do_dq']
     taus = numpy.array(data['taus'])
     
-    # tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
-    # fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-    fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, 0.8545, 3)
+    fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
+    init_params = [ -0.1, 1000, 1.1]
+    # fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, 1.11, 3)
+    # init_params = [ -0.1, 1000]
     
-    init_params = [ 0.1, 1000]
     popt, pcov = curve_fit(
         fit_func,
         plot_taus,
@@ -526,7 +526,7 @@ def main_with_cxn(
                 arbwavegen_server.load_cpmg(pi_pulse_reps)
         else:
             if pi_pulse_reps == 1:
-              arbwavegen_server.load_arb_phases([0,0,0]) 
+                arbwavegen_server.load_arb_phases([0,0,0]) 
             else:
                 arbwavegen_server.load_cpmg(pi_pulse_reps)
             
@@ -810,6 +810,7 @@ def main_with_cxn(
         "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
         'pi_pulse_reps': pi_pulse_reps,
         "do_dq": do_dq,
+        "do_scc": do_scc,
         "uwave_freq": uwave_freq,
         "uwave_freq-units": "GHz",
         "uwave_power": uwave_power,
@@ -972,7 +973,7 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
   
     
-    file_name = "2023_01_24-04_01_47-siena-nv4_2023_01_16"
+    file_name = "2023_01_27-13_47_23-siena-nv4_2023_01_16"
 
     data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
     fit_t2_12C(data, do_fit = True)

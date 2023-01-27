@@ -645,7 +645,10 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
     #  Plot the data itself and the fitted curve
     if do_cos_fit:
-        fit_func = tool_belt.cosexp_1_at_0
+        if do_scc:
+            fit_func = tool_belt.inverted_cosexp
+        else:
+            fit_func = tool_belt.cosexp_1_at_0
         fit_fig, ax, fit_func, popt, pcov = create_cos_fit_figure(
             uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
             fit_func 
