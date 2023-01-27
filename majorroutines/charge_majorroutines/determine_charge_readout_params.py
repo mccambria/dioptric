@@ -1127,9 +1127,9 @@ if __name__ == "__main__":
     if True:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
-        fp='pc_Carr/branch_master/determine_charge_readout_params/2023_01/'
+        fp='pc_rabi/branch_master/determine_charge_readout_params/2023_01/'
         filenames = [
-            "2023_01_09-15_47_56-johnson-search"         
+            "2023_01_25-13_39_53-siena-nv4_2023_01_16"         
         ]
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
         powers_all = []
@@ -1145,7 +1145,7 @@ if __name__ == "__main__":
 
         # readout_dur = opti_readout_dur
 
-        times = [5e6]
+        times = [2e6, 5e6, 10e6, 15e6]
         # times = [4e6,1e6,400e3,100e3,50e3,10e3]
         # times = [2e6,4e6]
 

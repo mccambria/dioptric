@@ -36,6 +36,7 @@ import sys
 
 import utils.tool_belt as tool_belt
 import utils.kplotlib as kpl
+from utils.kplotlib import Size
 import utils.common as common
 from utils.tool_belt import States
 from figures.relaxation_temp_dependence.temp_dependence_fitting import (
@@ -97,9 +98,9 @@ def get_folder_list(keyword):
 # into main
 def get_data_lists(folder_name, simple_print=False):
     # Get the file list from this folder
-    data_dir = common.get_nvdata_dir()
-    file_list = tool_belt.get_files_in_folder(data_dir + '/' + folder_name, ".txt")
-
+    data_dir = str(common.get_nvdata_dir())
+    data_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata'
+    file_list = tool_belt.get_files_in_folder(data_dir + '/' + folder_name, "txt")
     # Define booleans to be used later in putting data into arrays in the
     # correct order. This was mainly put in place for older data where we
     # took measurements in an inconsistent way (unlike we are now)
@@ -548,16 +549,16 @@ def main(
                     color=edge_color,
                     markerfacecolor=face_color,
                     linestyle="None",
-                    ms=marker_Size['normal'],
-                    lw=line_widths['normal'],
-                    markeredgewidth=marker_edge_widths['normal'],
+                    ms=marker_Size[Size.NORMAL],
+                    lw=line_widths[Size.NORMAL],
+                    markeredgewidth=marker_edge_widths[Size.NORMAL],
                 )
                 if offset:
                     ax.plot(
                         zero_time_linspace,
                         exp_eq_offset(zero_time_linspace, *omega_opti_params),
                         label="fit",
-                        linewidth=line_widths['normal'],
+                        linewidth=line_widths[Size.NORMAL],
                         color=edge_color,
                     )
                 else:
@@ -565,7 +566,7 @@ def main(
                         zero_time_linspace,
                         exp_eq_omega(zero_time_linspace, *omega_opti_params),
                         label="fit",
-                        linewidth=line_widths['normal'],
+                        linewidth=line_widths[Size.NORMAL],
                         color=edge_color,
                     )
                 ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
@@ -621,9 +622,9 @@ def main(
         color=edgec,
         markerfacecolor=facec,
         linestyle="None",
-        ms=marker_Size['normal'],
-        lw=line_widths['normal'],
-        markeredgewidth=marker_edge_widths['normal'],
+        ms=marker_Size[Size.NORMAL],
+        lw=line_widths[Size.NORMAL],
+        markeredgewidth=marker_edge_widths[Size.NORMAL],
     )
     ax2.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
     ax2.set_ylabel("Normalized counts")
@@ -757,16 +758,16 @@ def main(
                 color=edge_color,
                 markerfacecolor=face_color,
                 linestyle="None",
-                ms=marker_Size['normal'],
-                lw=line_widths['normal'],
-                markeredgewidth=marker_edge_widths['normal'],
+                ms=marker_Size[Size.NORMAL],
+                lw=line_widths[Size.NORMAL],
+                markeredgewidth=marker_edge_widths[Size.NORMAL],
             )
             if offset:
                 ax.plot(
                     plus_time_linspace,
                     exp_eq_offset(plus_time_linspace, *gamma_opti_params),
                     label="fit",
-                    linewidth=line_widths['normal'],
+                    linewidth=line_widths[Size.NORMAL],
                     color=edge_color,
                 )
             else:
@@ -775,7 +776,7 @@ def main(
                     # exp_eq_gamma(plus_time_linspace, *gamma_opti_params),  # MCC
                     gamma_fit_func(plus_time_linspace, *gamma_opti_params),
                     label="fit",
-                    linewidth=line_widths['normal'],
+                    linewidth=line_widths[Size.NORMAL],
                     color=edge_color,
                 )
             ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
@@ -813,13 +814,13 @@ def main(
 
         # Saving the data
         data_dir = common.get_nvdata_dir()
-
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {
             "time_stamp": time_stamp,
             "splitting_MHz": splitting_MHz,
             "splitting_MHz-units": "MHz",
             #                    'offset_free_param?': offset,
+            'nv_sig': '',
             "manual_offset_gamma": manual_offset_gamma,
             "omega": omega,
             "omega-units": "kHz",
@@ -852,6 +853,7 @@ def main(
         )
         # print(file_path)
         # file_path = str(data_dir / path_folder / file_name)
+        # print(raw_data)
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
 
@@ -884,17 +886,17 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     temp = 295
-    folder = "2022_11_03-siena_nv1_2022_10_27" ############*****#############
+    folder = "2023_01_25-NV4_2023_01_16" ############*****#############
     # folder = "wu-nv1_2022_03_16-295K"
     # folder = "wu-nv6_2022_04_14-295K"
 
-    mode = "prediction"
-   # mode = "analysis"
+    # mode = "prediction"
+    mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 1000 #1520  # omega_calc(temp)
-        est_gamma = 3300  # gamma_calc(temp)
+        est_omega = 120 #1520  # omega_calc(temp)
+        est_gamma = 60  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
         # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
@@ -907,7 +909,7 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        path = "pc_rabi/branch_master/t1_dq_main/2022_11/"
+        path = "pc_rabi/branch_master/t1_dq_main/2023_01/"
         # path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
         # path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
 

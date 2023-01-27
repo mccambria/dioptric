@@ -715,7 +715,7 @@ def t2_func(t, amplitude, offset, t2):
     return amplitude * np.exp(-((t / t2) ** n)) + offset
 
 
-def calc_snr(sig_count, ref_count):
+def poiss_snr(sig, ref):
     """Take a list of signal and reference counts, and take their average,
     then calculate a snr.
     inputs:
@@ -724,18 +724,34 @@ def calc_snr(sig_count, ref_count):
     outputs:
         snr = list
     """
-    ref_count = np.array(ref_count)
-    sig_count = np.array(sig_count)
-    num_runs, num_points = ref_count.shape
+    
+    # Assume Poisson statistics on each count value
+    # sig_noise = np.sqrt(sig)
+    # ref_noise = np.sqrt(ref)
+    # snr = (ref - sig) / np.sqrt(sig_noise**2 + ref_noise**2)
+    # snr_per_readout = (snr / np.sqrt(num_reps))
+        
+    ref_count = np.array(ref)
+    sig_count = np.array(sig)
+    num_reps, num_points = ref_count.shape
 
-    sig_count_sum = np.sum(sig_count,1)
-    ref_count_sum = np.sum(ref_count,1)
-    dif = sig_count_sum - ref_count_sum
-    sum_ = sig_count_sum + ref_count_sum
-    noise = np.sqrt(num_points)*np.sqrt(sum_)
+    sig_count_avg = np.average(sig_count)
+    ref_count_avg = np.average(ref_count)
+    dif = sig_count_avg - ref_count_avg
+    sig_noise = np.sqrt(sig_count_avg)
+    ref_noise = np.sqrt(ref_count_avg)
+    noise = np.sqrt(sig_noise**2 + ref_noise**2)
     snr = dif / noise
+    
+    
+    N = sig_count_avg - ref_count_avg
+    d = np.sqrt(sig_noise**2 + ref_noise**2)
+    D = np.sqrt(sig_count_avg + ref_count_avg)
+    d_d = 0.5 * d / D
+    
+    snr_unc = snr * np.sqrt((N / d)**2 + (d_d / D)**2)
 
-    return snr
+    return snr, snr_unc
 
 
 def get_scan_vals(center, scan_range, num_steps, dtype=float):
@@ -1159,11 +1175,14 @@ def save_raw_data(rawData, filePath):
 
     # Casting for JSON compatibility
     nv_sig = rawData["nv_sig"]
-    for key in nv_sig:
-        if type(nv_sig[key]) == np.ndarray:
-            nv_sig[key] = nv_sig[key].tolist()
-        elif isinstance(nv_sig[key], Enum):
-            nv_sig[key] = nv_sig[key].name
+    try:
+        for key in nv_sig:
+            if type(nv_sig[key]) == np.ndarray:
+                nv_sig[key] = nv_sig[key].tolist()
+            elif isinstance(nv_sig[key], Enum):
+                nv_sig[key] = nv_sig[key].name
+    except Exception:
+        print(' ')
 
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)

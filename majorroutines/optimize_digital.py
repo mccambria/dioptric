@@ -12,6 +12,7 @@ Created on Thu Apr 11 11:19:56 2019
 
 
 import utils.tool_belt as tool_belt
+import utils.positioning as positioning
 import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -160,7 +161,7 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     # Adjust the sig we use for drift
-    drift = tool_belt.get_drift()
+    drift = positioning.get_drift()
     passed_coords = nv_sig["coords"]
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     # If optimize is disabled, just set the filters and magnet in place

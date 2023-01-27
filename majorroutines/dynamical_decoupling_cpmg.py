@@ -210,7 +210,8 @@ def main(
     num_runs,
     taus=[],
     state=States.HIGH,
-    do_dq = False
+    do_dq = False,
+    do_scc = False
 ):
 
     with labrad.connect() as cxn:
@@ -224,7 +225,8 @@ def main(
             num_runs,
             taus,
             state,
-            do_dq
+            do_dq,
+            do_scc
         )
         return angle
 
@@ -239,7 +241,8 @@ def main_with_cxn(
     num_runs,
     taus=[],
     state=States.HIGH,
-    do_dq = False
+    do_dq = False,
+    do_scc = False
 ):
 
     counter_server = tool_belt.get_server_counter(cxn)
@@ -250,13 +253,35 @@ def main_with_cxn(
 
     # %% Sequence setup
 
-    laser_key = "spin_laser"
-    laser_name = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-    polarization_time = nv_sig["spin_pol_dur"]
-    gate_time = nv_sig["spin_readout_dur"]
+    
+    if do_scc:
+        laser_tag = "nv-_reionization"
+        laser_key = "{}_laser".format(laser_tag)
+        pol_laser_name = nv_sig[laser_key]
+        pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        polarization_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "nv0_ionization"
+        laser_key = "{}_laser".format(laser_tag)
+        ion_laser_name = nv_sig[laser_key]
+        ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        ionization_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "charge_readout"
+        laser_key = "{}_laser".format(laser_tag)
+        readout_laser_name = nv_sig[laser_key]
+        readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        readout = nv_sig["{}_dur".format(laser_tag)]
+    else:
+        laser_key = "spin_laser"
+        laser_name = nv_sig[laser_key]
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        polarization_time = nv_sig["spin_pol_dur"]
+        readout = nv_sig["spin_readout_dur"]
+        
     norm_style = nv_sig['norm_style']
+        
 
     rabi_period = nv_sig["rabi_{}".format(state.name)]
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
@@ -266,10 +291,8 @@ def main_with_cxn(
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
 
-    seq_file_name = "dynamical_decoupling.py"
     # set up to drive transition through zero
     if do_dq:
-        seq_file_name = "dynamical_decoupling_dq.py"
         
        # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
@@ -314,7 +337,7 @@ def main_with_cxn(
             dtype=numpy.int32,
         )
     # taus = taus + 500
-    print(taus)
+    # print(taus)
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
@@ -362,39 +385,85 @@ def main_with_cxn(
     
     num_reps = int(num_reps)
 
-    seq_args = [
-          taus[0],
-          polarization_time,
-          gate_time,
-          uwave_pi_pulse,
-          uwave_pi_on_2_pulse,
-          taus[-1],
-          pi_pulse_reps,
-          state.value,
-          laser_name,
-          laser_power,
-      ]
     if do_dq:
-        seq_args = [
-              taus[0],
-            polarization_time,
-            gate_time,
-            uwave_pi_pulse_low,
-            uwave_pi_on_2_pulse_low,
-            uwave_pi_pulse_high,
-            uwave_pi_on_2_pulse_high,
-            taus[-1],
-            pi_pulse_reps,
-            state_activ.value,
-            state_proxy.value,
-            laser_name, 
-            laser_power
-        ]
+        if do_scc:
+            seq_file_name = "dynamical_decoupling_dq_scc.py"
+            seq_args = [
+                taus[0],
+                polarization_dur,
+                ionization_dur,
+                readout,
+                uwave_pi_pulse_low,
+                uwave_pi_on_2_pulse_low,
+                uwave_pi_pulse_high,
+                uwave_pi_on_2_pulse_high,
+                taus[-1],
+                pi_pulse_reps,
+                state_activ.value,
+                state_proxy.value,
+                pol_laser_name,
+                pol_laser_power,
+                ion_laser_name,
+                ion_laser_power,
+                readout_laser_name,
+                readout_laser_power,
+            ]
+        else:
+            seq_file_name = "dynamical_decoupling_dq.py"
+            seq_args = [
+                  taus[0],
+                polarization_time,
+                readout,
+                uwave_pi_pulse_low,
+                uwave_pi_on_2_pulse_low,
+                uwave_pi_pulse_high,
+                uwave_pi_on_2_pulse_high,
+                taus[-1],
+                pi_pulse_reps,
+                state_activ.value,
+                state_proxy.value,
+                laser_name, 
+                laser_power
+            ]
+    else:
+        if do_scc:    
+            seq_file_name = "dynamical_decoupling_scc.py"
+            seq_args = [
+                  taus[0],
+                  polarization_dur,
+                  ionization_dur,
+                  readout,
+                  uwave_pi_pulse,
+                  uwave_pi_on_2_pulse,
+                  taus[-1],
+                  pi_pulse_reps,
+                  state.value,
+                  pol_laser_name,
+                  pol_laser_power,
+                  ion_laser_name,
+                  ion_laser_power,
+                  readout_laser_name,
+                  readout_laser_power,
+              ]
+        else:
+            seq_file_name = "dynamical_decoupling.py"
+            seq_args = [
+                  taus[0],
+                  polarization_time,
+                  readout,
+                  uwave_pi_pulse,
+                  uwave_pi_on_2_pulse,
+                  taus[-1],
+                  pi_pulse_reps,
+                  state.value,
+                  laser_name,
+                  laser_power,
+              ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    print(seq_file_name)
-    print(seq_args)
+    # print(seq_file_name)
+    # print(seq_args)
     # return
         # print(seq_time)
 
@@ -450,15 +519,26 @@ def main_with_cxn(
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
             sig_gen_high_cxn.uwave_on()
-            arbwavegen_server.load_cpmg_dq(pi_pulse_reps) # phase value needs to be doubled
+            if pi_pulse_reps == 1:
+              arbwavegen_server.load_arb_phases([0,0,0]) 
+            else:
+                # arbwavegen_server.load_cpmg_dq(pi_pulse_reps)
+                arbwavegen_server.load_cpmg(pi_pulse_reps)
         else:
-            arbwavegen_server.load_cpmg(pi_pulse_reps)
+            if pi_pulse_reps == 1:
+              arbwavegen_server.load_arb_phases([0,0,0]) 
+            else:
+                arbwavegen_server.load_cpmg(pi_pulse_reps)
             
         
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        
+        if do_scc:
+            charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+            charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
 
         # Load the APD
         counter_server.start_tag_stream()
@@ -489,34 +569,79 @@ def main_with_cxn(
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
-            seq_args = [
-                  taus[tau_ind_first],
-                  polarization_time,
-                  gate_time,
-                  uwave_pi_pulse,
-                  uwave_pi_on_2_pulse,
-                  taus[tau_ind_second],
-                  pi_pulse_reps,
-                  state.value,
-                  laser_name,
-                  laser_power,
-              ]
+            
             if do_dq:
-                seq_args = [
-                    taus[tau_ind_first],
-                    polarization_time,
-                    gate_time,
-                    uwave_pi_pulse_low,
-                    uwave_pi_on_2_pulse_low,
-                    uwave_pi_pulse_high,
-                    uwave_pi_on_2_pulse_high,
-                    taus[tau_ind_second],
-                    pi_pulse_reps,
-                    state_activ.value,
-                    state_proxy.value,
-                    laser_name,
-                    laser_power, 
-                ]
+                if do_scc:
+                    seq_args = [
+                        taus[tau_ind_first],
+                        polarization_dur,
+                        ionization_dur,
+                        readout,
+                        uwave_pi_pulse_low,
+                        uwave_pi_on_2_pulse_low,
+                        uwave_pi_pulse_high,
+                        uwave_pi_on_2_pulse_high,
+                        taus[tau_ind_second],
+                        pi_pulse_reps,
+                        state_activ.value,
+                        state_proxy.value,
+                        pol_laser_name,
+                        pol_laser_power,
+                        ion_laser_name,
+                        ion_laser_power,
+                        readout_laser_name,
+                        readout_laser_power,
+                    ]
+                else:
+                    seq_args = [
+                        taus[tau_ind_first],
+                        polarization_time,
+                        readout,
+                        uwave_pi_pulse_low,
+                        uwave_pi_on_2_pulse_low,
+                        uwave_pi_pulse_high,
+                        uwave_pi_on_2_pulse_high,
+                        taus[tau_ind_second],
+                        pi_pulse_reps,
+                        state_activ.value,
+                        state_proxy.value,
+                        laser_name,
+                        laser_power, 
+                    ]
+            else:
+                if do_scc:    
+                    seq_file_name = "dynamical_decoupling_scc.py"
+                    seq_args = [
+                          taus[tau_ind_first],
+                          polarization_dur,
+                          ionization_dur,
+                          readout,
+                          uwave_pi_pulse,
+                          uwave_pi_on_2_pulse,
+                          taus[tau_ind_second],
+                          pi_pulse_reps,
+                          state.value,
+                          pol_laser_name,
+                          pol_laser_power,
+                          ion_laser_name,
+                          ion_laser_power,
+                          readout_laser_name,
+                          readout_laser_power,
+                      ]
+                else:
+                    seq_file_name = "dynamical_decoupling.py"
+                    seq_args = [
+                          taus[tau_ind_first],
+                          polarization_time,
+                          readout,
+                          uwave_pi_pulse,
+                          uwave_pi_on_2_pulse,
+                          taus[tau_ind_second],
+                          pi_pulse_reps,
+                          state.value,
+                          laser_name,
+                          laser_power,
+                      ]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -557,7 +682,7 @@ def main_with_cxn(
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
         ret_vals = tool_belt.process_counts(
-            inc_sig_counts, inc_ref_counts, num_reps, gate_time, norm_style
+            inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
         )
         (
             sig_counts_avg_kcps,
@@ -601,6 +726,7 @@ def main_with_cxn(
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
             'pi_pulse_reps': pi_pulse_reps,
             "do_dq": do_dq,
+            "do_scc": do_scc,
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -642,7 +768,7 @@ def main_with_cxn(
 
     # %% Plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,

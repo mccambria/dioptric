@@ -336,13 +336,14 @@ def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          opti_nv_sig = None,
          return_popt=False,
+         do_scc = False,
          do_cos_fit = True):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
                                          uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
-                                         opti_nv_sig, do_cos_fit)
+                                         opti_nv_sig,do_scc, do_cos_fit)
 
         if return_popt:
             return rabi_per, popt
@@ -353,6 +354,7 @@ def main(nv_sig, uwave_time_range, state,
 def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   opti_nv_sig = None,
+                  do_scc = False,
                   do_cos_fit = True):
 
     counter_server = tool_belt.get_server_counter(cxn)
@@ -376,11 +378,32 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    
+    if do_scc:
+        laser_tag = "nv-_reionization"
+        laser_key = "{}_laser".format(laser_tag)
+        pol_laser_name = nv_sig[laser_key]
+        pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        polarization_dur = nv_sig["{}_dur".format(laser_tag)]
 
+        laser_tag = "nv0_ionization"
+        laser_key = "{}_laser".format(laser_tag)
+        ion_laser_name = nv_sig[laser_key]
+        ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        ionization_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "charge_readout"
+        laser_key = "{}_laser".format(laser_tag)
+        readout_laser_name = nv_sig[laser_key]
+        readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        readout = nv_sig["{}_dur".format(laser_tag)]
+    
+    else:
+        polarization_time = nv_sig['spin_pol_dur']
+        readout = nv_sig['spin_readout_dur']
+        readout_sec = readout / (10**9)
+        
     norm_style = nv_sig["norm_style"]
-    polarization_time = nv_sig['spin_pol_dur']
-    readout = nv_sig['spin_readout_dur']
-    readout_sec = readout / (10**9)
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
@@ -396,16 +419,31 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
     # Analyze the sequence
     num_reps = int(num_reps)
-    # file_name = os.path.basename(__file__)
-    seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time,
-                state.value, laser_name, laser_power]
+    if do_scc:
+        file_name = 'rabi_scc.py'
+        seq_args = [
+                readout,
+                polarization_dur,
+                ionization_dur,
+                taus[0],
+                max_uwave_time,
+                pol_laser_name,
+                readout_laser_name,
+                ion_laser_name,
+                state.value, 
+                pol_laser_power,
+                ion_laser_power,
+                readout_laser_power,]
+    else:
+        file_name = 'rabi.py'
+        seq_args = [taus[0], polarization_time,
+                    readout, max_uwave_time,
+                    state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    file_name = 'rabi.py'
     pulsegen_server.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
@@ -468,12 +506,10 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             sig_gen_cxn.load_iq()
             # arbwavegen_server.load_arb_phases([0])
         sig_gen_cxn.uwave_on()
-
-        # TEST for split resonance
-#        sig_gen_cxn = cxn.signal_generator_bnc835
-#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
-#        sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
+        
+        if do_scc:
+            charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+            charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
 
         # Load the APD
         counter_server.start_tag_stream()
@@ -492,9 +528,24 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
-            seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time,
-                        state.value, laser_name, laser_power]
+            if do_scc:
+                seq_args = [
+                        readout,
+                        polarization_dur,
+                        ionization_dur,
+                        taus[tau_ind],
+                        max_uwave_time,
+                        pol_laser_name,
+                        readout_laser_name,
+                        ion_laser_name,
+                        state.value, 
+                        pol_laser_power,
+                        ion_laser_power,
+                        readout_laser_power,]
+            else:
+                seq_args = [taus[tau_ind], polarization_time,
+                            readout, max_uwave_time,
+                            state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
@@ -548,6 +599,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'do_scc': do_scc,
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -629,6 +681,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'do_scc': do_scc,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,
@@ -671,7 +724,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_master/rabi/2023_01'
-    file = '2023_01_20-13_33_38-siena-nv4_2023_01_16'
+    file = '2023_01_27-09_42_22-siena-nv4_2023_01_16'
     data = tool_belt.get_raw_data(file, path)
     kpl.init_kplotlib()
 
@@ -690,7 +743,7 @@ if __name__ == '__main__':
     num_reps = data['num_reps']
     nv_sig = data['nv_sig']
     readout = nv_sig['spin_readout_dur']
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, NormStyle.SINGLE_VALUED)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, NormStyle.POINT_TO_POINT)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
@@ -699,13 +752,13 @@ if __name__ == '__main__':
     ) = ret_vals
     
     
-    # create_piecewise_fit_figure(
-    #     uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
-    #     fit_func 
-    # )
+    create_piecewise_fit_figure(
+         uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+         fit_func 
+     )
     
-    create_cos_fit_figure(
-        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
-        fit_func 
-    )
+   # create_cos_fit_figure(
+   #     uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+   #     fit_func 
+   # )
 

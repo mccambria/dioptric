@@ -37,26 +37,20 @@ def get_seq(pulse_streamer, config, args):
 
     # The first 11 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(8):
+    for ind in range(7):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    tau_shrt, polarization_time, ionization_time, shelf_time, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
+    tau_shrt, polarization_time, ionization_time, readout_time, pi_pulse, pi_on_2_pulse, tau_long = durations
     
-    
-
-    # Get the APD indices
     (pi_pulse_reps, 
-     apd_index, 
      state, 
     pol_laser_name,
     pol_laser_power,
     ion_laser_name,
     ion_laser_power,
-    shelf_laser_name,
-    shelf_laser_power,
     readout_laser_name,
-    readout_laser_power) = args[8:20]
+    readout_laser_power) = args[7:18]
     
     state = States(state)
         
@@ -70,6 +64,7 @@ def get_seq(pulse_streamer, config, args):
     scc_ion_readout_buffer = config["CommonDurations"][
         "scc_ion_readout_buffer"
     ]
+    post_readout_buffer = config['CommonDurations']['uwave_buffer']
     
     # time between signal and reference without illumination
     # sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
@@ -78,14 +73,13 @@ def get_seq(pulse_streamer, config, args):
     
     pol_laser_delay = config["Optics"][pol_laser_name]["delay"]
     ion_laser_delay = config["Optics"][ion_laser_name]["delay"]
-    shelf_laser_delay = config["Optics"][shelf_laser_name]["delay"]
     readout_laser_delay = config["Optics"][readout_laser_name]["delay"]
     sig_gen_name = config['Servers']['sig_gen_{}'.format(state.name)]
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     iq_delay_time = config['Microwaves']['iq_delay']
     
     back_buffer = 200
-    delay_buffer = max(pol_laser_delay, ion_laser_delay, shelf_laser_delay,
+    delay_buffer = max(pol_laser_delay, ion_laser_delay,
                        readout_laser_delay,rf_delay_time, iq_delay_time, 100)
     #set length of IQ trigger pulse, just make sure it's shorter than pi/2 pulse
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse, 10))
@@ -98,31 +92,40 @@ def get_seq(pulse_streamer, config, args):
     half_tau_long_st =int(tau_long/2)
     half_tau_long_en = int(tau_long -  half_tau_long_st)
     
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    pulser_wiring = config['Wiring']['PulseGen']
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate']
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
-    
-    readout_laser_gate = pulser_wiring["ao_{}_am".format(readout_laser_name)]
+
 
     # %% Write the microwave sequence to be used. 
     # Also add up the total time of the uwave experiment and use for other channels
 
     uwave_experiment_train_shrt = [(pi_on_2_pulse, HIGH)]
-    rep_train = [(tau_shrt, LOW), (pi_pulse, HIGH), (tau_shrt, LOW)]*pi_pulse_reps
+    if pi_pulse_reps == 0:
+        rep_train = [(tau_shrt, LOW), (tau_shrt, LOW)]
+    else:  
+        rep_train = [(tau_shrt, LOW), (pi_pulse, HIGH), (tau_shrt, LOW)]*pi_pulse_reps
     uwave_experiment_train_shrt.extend(rep_train)
     uwave_experiment_train_shrt.extend([(pi_on_2_pulse, HIGH)])
+    uwave_experiment_train_shrt.extend([(20, LOW)]) # adding a wait between pi/2 and pi
+    uwave_experiment_train_shrt.extend([(pi_pulse, HIGH)]) # adding a pi pulse to readout
     
     uwave_experiment_dur_shrt = 0
     for el in uwave_experiment_train_shrt:
         uwave_experiment_dur_shrt += el[0]
     
     uwave_experiment_train_long = [(pi_on_2_pulse, HIGH)]
-    rep_train = [(tau_long, LOW), (pi_pulse, HIGH), (tau_long, LOW)]*pi_pulse_reps
+    if pi_pulse_reps == 0:
+        rep_train = [(tau_long, LOW), (tau_long, LOW)]
+    else:  
+        rep_train = [(tau_long, LOW), (pi_pulse, HIGH), (tau_long, LOW)]*pi_pulse_reps
     uwave_experiment_train_long.extend(rep_train)
     uwave_experiment_train_long.extend([(pi_on_2_pulse, HIGH)])
-    
+    uwave_experiment_train_long.extend([(20, LOW)]) # adding a wait between pi/2 and pi
+    uwave_experiment_train_long.extend([(pi_pulse, HIGH)]) # adding a pi pulse to readout
+        
     uwave_experiment_dur_long = 0
     for el in uwave_experiment_train_long:
         uwave_experiment_dur_long += el[0]
@@ -133,28 +136,39 @@ def get_seq(pulse_streamer, config, args):
     uwave_iq_train_shrt = [(iq_trigger_time, HIGH), 
                            (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
                            (half_tau_shrt_st, LOW)]
-    rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
-    uwave_iq_train_shrt.extend(rep_train)
-    uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
-                                (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
-                                (iq_trigger_time, HIGH), 
-                                (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-    # uwave_iq_train_shrt_dur=0
-    # for el in uwave_iq_train_shrt:
-    #     uwave_iq_train_shrt_dur += el[0]
+    if pi_pulse_reps == 0:
+        uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_shrt_en - iq_trigger_time + half_tau_shrt_st, LOW),
+                                    # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                    (half_tau_shrt_en + pi_on_2_pulse + 20 + pi_pulse, LOW)])
+    else:    
+        rep_train = [(iq_trigger_time, HIGH),
+                 (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
+        uwave_iq_train_shrt.extend(rep_train)
+        uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
+                                    (iq_trigger_time, HIGH), 
+                                    # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                    (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse + 20 + pi_pulse, LOW)])
     
     
     uwave_iq_train_long = [(iq_trigger_time, HIGH), 
                            (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
                            (half_tau_long_st, LOW)]
-    rep_train = [(iq_trigger_time, HIGH),
-             (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
-    uwave_iq_train_long.extend(rep_train)
-    uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
-                                (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
-                                (iq_trigger_time, HIGH), 
-                                (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+    if pi_pulse_reps == 0:
+        uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_long_en - iq_trigger_time + half_tau_long_st, LOW),
+                                    # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)
+                                    (half_tau_long_en + pi_on_2_pulse + 20 + pi_pulse, LOW)])
+    else:
+        rep_train = [(iq_trigger_time, HIGH),
+                 (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
+        uwave_iq_train_long.extend(rep_train)
+        uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
+                                    (iq_trigger_time, HIGH), 
+                                    # (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+                                    (half_tau_long_en - iq_trigger_time + pi_on_2_pulse + 20 + pi_pulse, LOW)])
     
 
     # %% Define the sequence
@@ -167,29 +181,28 @@ def get_seq(pulse_streamer, config, args):
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_shrt, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, HIGH),
+             (post_readout_buffer, LOW),
              (polarization_time,LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, HIGH),
+             (post_readout_buffer, LOW),
              (polarization_time,LOW),
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_long, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, HIGH),
+             (post_readout_buffer, LOW),
              (polarization_time,LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, HIGH),
@@ -206,29 +219,28 @@ def get_seq(pulse_streamer, config, args):
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_shrt, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, HIGH),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, HIGH),
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_long, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, HIGH),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
@@ -246,29 +258,28 @@ def get_seq(pulse_streamer, config, args):
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_shrt, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, HIGH),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, HIGH),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_long, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, HIGH),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, HIGH),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
@@ -286,41 +297,40 @@ def get_seq(pulse_streamer, config, args):
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_shrt, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, shelf_laser_power),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
-             (readout_time, readout_laser_power),
+             (readout_time, HIGH),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, shelf_laser_power),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
-             (readout_time, readout_laser_power),
+             (readout_time, HIGH),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (uwave_experiment_dur_long, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, shelf_laser_power),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
-             (readout_time, readout_laser_power),
+             (readout_time, HIGH),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, shelf_laser_power),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
-             (readout_time, readout_laser_power),
+             (readout_time, HIGH),
              (back_buffer + readout_laser_delay, LOW)]  
-    seq.setAnalog(readout_laser_gate, train) 
+    # seq.setAnalog(readout_laser_gate, train) 
     # power_list = [shelf_laser_power, readout_laser_power,
     #               shelf_laser_power, readout_laser_power,
     #               shelf_laser_power, readout_laser_power,
     #               shelf_laser_power, readout_laser_power,]#*4
     # print(power_list)
-    # tool_belt.process_laser_seq(pulse_streamer, seq, config,
-    #                             readout_laser_name, power_list, train)
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                readout_laser_name, [readout_laser_power], train)
     period = 0
     for el in train:
         period += el[0]
@@ -333,30 +343,29 @@ def get_seq(pulse_streamer, config, args):
     train.extend(uwave_experiment_train_shrt)
     train.extend([
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW)])
     train.extend(uwave_experiment_train_long)
     train.extend([
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
@@ -375,30 +384,29 @@ def get_seq(pulse_streamer, config, args):
     train.extend(uwave_iq_train_shrt)
     train.extend([
               (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (pre_uwave_exp_wait_time, LOW),
              (post_uwave_exp_wait_time, LOW),
-             (shelf_time, LOW),
              (ionization_time, LOW),
              (scc_ion_readout_buffer, LOW),
              (readout_time, LOW),
+             (post_readout_buffer, LOW),
              (polarization_time, LOW),])
               # (pre_uwave_exp_wait_time, LOW)])
     train.extend(uwave_iq_train_long)
     train.extend([
               (post_uwave_exp_wait_time, LOW),
-              (shelf_time, LOW),
               (ionization_time, LOW),
               (scc_ion_readout_buffer, LOW),
               (readout_time, LOW),
+              (post_readout_buffer, LOW),
               (polarization_time, LOW),
               (pre_uwave_exp_wait_time, LOW),
               (post_uwave_exp_wait_time, LOW),
-              (shelf_time, LOW),
               (ionization_time, LOW),
               (scc_ion_readout_buffer, LOW),
               (readout_time, LOW),
@@ -430,11 +438,7 @@ if __name__ == '__main__':
     # readout_laser_name,
     # readout_laser_power) = args[8:18]
     
-    seq_args = [500, 1000.0,100, 50, 5000, 50, 25, 1000, 
-                4, 1, 3, 'integrated_520', None,
-                'cobolt_638', None,
-                'laserglow_589', 1.0,
-                'laserglow_589', 0.5,]
-    seq_args = [100, 1000.0, 300, 0, 2000.0, 41, 20, 12600, 4, 1, 3, 'integrated_520', None, 'cobolt_638', None, 'cobolt_638', None, 'laserglow_589', 0.15]
+    seq_args=[100, 1000.0, 250, 10000000.0, 105, 53, 750100, 2, 3,
+              'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

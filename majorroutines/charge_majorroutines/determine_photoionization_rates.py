@@ -67,6 +67,9 @@ def main_with_cxn(cxn, nv_sig, apd_index, num_reps):
     adjusted_nv_coords = coords + numpy.array(drift)
     tool_belt.set_xyz(cxn, adjusted_nv_coords)
     
+    charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+    charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
+    
     
     # Pulse sequence to do a single pulse followed by readout           
     # seq_file = 'photoionization_rates_temp.py'
@@ -224,30 +227,30 @@ def sweep_test_pulse_length(nv_sig,  test_pulse_dur_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'johnson'
+    sample_name = 'siena'
     
     green_laser = "cobolt_515"
-    yellow_laser = 'laserglow_589'
+    yellow_laser = 'laser_LGLO_589'
     red_laser = 'cobolt_638'
-    green_power= 10
-    red_power= 120
+    green_power= 1
+    red_power= 180
     
     
     nv_sig = {
-        "coords": [249.787, 250.073, 5],
-        "name": "{}-nv1_2021_11_17".format(sample_name,),
+        "coords": [0.030, -0.302, 5.09],
+        "name": "{}-nv4_2023_01_16".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate": 55,
+        "expected_count_rate": 45,
             'test_laser': red_laser, 'test_laser_power': red_power, 'test_laser_duration': None,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': red_power, 'nv0_prep_laser_dur': 1E3,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': 'nd_1.0', 
-            'charge_readout_laser_power': 0.12, 'charge_readout_dur':100e6,
-            'collection_filter': '630_lp', 'magnet_angle': None,
-            'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'charge_readout_laser_power': 0.4, 'charge_readout_dur':10e6,
+            'collection_filter': '715_sp+630_lp', 'magnet_angle': 53.5,
+            'resonance_LOW': 2.81922, 'rabi_LOW': 144.24, 'uwave_power_LOW': 12,  # 15.5 max
+            'resonance_HIGH': 2.92155, 'rabi_HIGH': 210.73, 'uwave_power_HIGH': 10}   # 14.5 max
 
     try:
         
@@ -259,8 +262,5 @@ if __name__ == '__main__':
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
         tool_belt.reset_cfm()
-        # Kill safe stop
-        if tool_belt.check_safe_stop_alive():
-            print('\n\nRoutine complete. Press enter to exit.')
-            tool_belt.poll_safe_stop()
+        tool_belt.reset_safe_stop()
     
