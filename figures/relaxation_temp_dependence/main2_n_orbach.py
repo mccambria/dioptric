@@ -177,6 +177,15 @@ def orbach_variable_exp_const(temp, coeff_orbach, activation, coeff_power, exp, 
         )
 
 
+def single_orbach(temp, coeff1, delta1, const):
+    full_scaling = True
+    if full_scaling:
+        n1 = bose(delta1, temp)
+        return const + (coeff1 * n1 * (n1 + 1))
+    else:
+        return const + (coeff1 * bose(delta1, temp))
+
+
 def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
     full_scaling = True
     if full_scaling:
@@ -503,6 +512,54 @@ def fit_simultaneous(data_points, fit_mode=None):
         ]
 
     # Double Orbach
+    elif fit_mode == "single_orbach":
+        init_params = (
+            450,
+            1200,
+            90,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: single_orbach(
+            temp,
+            beta[0],
+            beta[2],
+            beta[3],
+        )
+        omega_wu_fit_func = lambda temp, beta: single_orbach(
+            temp,
+            beta[0],
+            beta[2],
+            beta[4],
+        )
+        gamma_hopper_fit_func = lambda temp, beta: single_orbach(
+            temp,
+            beta[1],
+            beta[2],
+            beta[5],
+        )
+        gamma_wu_fit_func = lambda temp, beta: single_orbach(
+            temp,
+            beta[1],
+            beta[2],
+            beta[6],
+        )
+        beta_desc = [
+            "Omega Orbach 1 coeff (s^-1)",
+            "gamma Orbach 1 coeff (s^-1)",
+            "Orbach 1 Delta (meV)",
+            "Orbach 2 coeff (s^-1)",
+            "Omega Orbach 2 Delta (meV)",
+            "gamma Orbach 2 Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
+    # Double Orbach
     elif fit_mode == "double_orbach":
         init_params = (
             450,
@@ -610,54 +667,70 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # Triple Orbach
     elif fit_mode == "triple_orbach":
-        init_params = (450, 1200, 65, 1200, 95, 11000, 150, 0.01, 0.01, 0.07, 0.15)
+        init_params = (
+            450,
+            1200,
+            65,
+            1200,
+            1200,
+            95,
+            5000,
+            5000,
+            160,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
         omega_hopper_fit_func = lambda temp, beta: triple_orbach(
             temp,
             beta[0],
             beta[2],
             beta[3],
-            beta[4],
             beta[5],
             beta[6],
-            beta[7],
+            beta[8],
+            beta[9],
         )
         omega_wu_fit_func = lambda temp, beta: triple_orbach(
             temp,
             beta[0],
             beta[2],
             beta[3],
-            beta[4],
             beta[5],
             beta[6],
             beta[8],
+            beta[10],
         )
         gamma_hopper_fit_func = lambda temp, beta: triple_orbach(
             temp,
             beta[1],
             beta[2],
-            beta[3],
             beta[4],
             beta[5],
-            beta[6],
-            beta[9],
+            beta[7],
+            beta[8],
+            beta[11],
         )
         gamma_wu_fit_func = lambda temp, beta: triple_orbach(
             temp,
             beta[1],
             beta[2],
-            beta[3],
             beta[4],
             beta[5],
-            beta[6],
-            beta[10],
+            beta[7],
+            beta[8],
+            beta[12],
         )
         beta_desc = [
             "Omega Orbach 1 coeff (s^-1)",
             "gamma Orbach 1 coeff (s^-1)",
             "Orbach 1 Delta (meV)",
-            "Orbach 2 coeff (s^-1)",
+            "Omega Orbach 2 coeff (s^-1)",
+            "gamma Orbach 2 coeff (s^-1)",
             "Orbach 2 Delta (meV)",
-            "Orbach 3 coeff (s^-1)",
+            "Omega Orbach 3 coeff (s^-1)",
+            "gamma Orbach 3 coeff (s^-1)",
             "Orbach 3 Delta (meV)",
             "Omega Hopper constant (s^-1)",
             "Omega Wu constant (s^-1)",
@@ -722,51 +795,50 @@ def fit_simultaneous(data_points, fit_mode=None):
     # ]
 
     # Double Orbach, fixed energies
-    elif fit_mode == "double_orbach_fixed_energies":
-        init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
-        Delta_1 = 68
-        Delta_2 = 155
-        omega_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[3],
-        )
-        omega_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[4],
-        )
-        gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[5],
-        )
-        gamma_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[6],
-        )
-        beta_desc = [
-            "Omega Orbach 1 coeff (s^-1)",
-            "gamma Orbach 1 coeff (s^-1)",
-            "Orbach 2 coeff (s^-1)",
-            "Omega Hopper constant (s^-1)",
-            "Omega Wu constant (s^-1)",
-            "gamma Hopper constant (s^-1)",
-            "gamma Wu constant (s^-1)",
-        ]
+    # init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
+    # Delta_1 = 70
+    # Delta_2 = 150
+    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[3],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[4],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[5],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[6],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # Double Orbach, second Orbach fixed
     # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
@@ -1975,27 +2047,8 @@ def main(
         return fig, ax1, ax2, leg1, T2_max_qubit_hopper_temp
     elif plot_type == "rates":
         fs = figsize
+        fs[0] *= 3 / 4
         fig, ax1 = plt.subplots(figsize=fs)
-        inset_bottom = 0.57
-        inset_height = 0.44
-        inset_left = 0.065
-        inset_width = 0.6
-        adj = 0.05
-        inset_left += adj
-        inset_width -= adj
-        ax2 = inset_axes(
-            ax1,
-            width="100%",
-            height="100%",
-            bbox_to_anchor=(
-                inset_left,
-                inset_bottom,
-                inset_width,
-                inset_height,
-            ),
-            bbox_transform=ax1.transAxes,
-            loc=1,
-        )
 
         main_sub(
             fig,
@@ -2010,25 +2063,26 @@ def main(
             yscale[0],
             dosave,
         )
-        # xticks = [125, 200, 300, 400]
-        # xticks = [0, 100, 200, 300, 400]
-        # ax1.set_xticks(xticks)
-        # ax1.xaxis.set_major_formatter(ScalarFormatter())
-        # ax1.yaxis.set_major_formatter(ScalarFormatter())
-        main_sub(
-            fig,
-            ax2,
-            file_name,
-            path,
-            "rates",
-            rates_to_plot[1],
-            temp_range[1],
-            rate_range[1],
-            xscale[1],
-            yscale[1],
-            dosave,
-            inset=True,
-        )
+        if temp_range[0][0] > 100:
+            xticks = [125, 200, 300, 400]
+            # xticks = [0, 100, 200, 300, 400]
+            ax1.set_xticks(xticks)
+            ax1.xaxis.set_major_formatter(ScalarFormatter())
+            # ax1.yaxis.set_major_formatter(ScalarFormatter())
+        # main_sub(
+        #     fig,
+        #     ax2,
+        #     file_name,
+        #     path,
+        #     "rates",
+        #     rates_to_plot[1],
+        #     temp_range[1],
+        #     rate_range[1],
+        #     xscale[1],
+        #     yscale[1],
+        #     dosave,
+        #     inset=True,
+        # )
         # ax2.set_yticks([0, 200, 400, 600])
     else:
         fs = figsize
@@ -2080,9 +2134,9 @@ def main_sub(
     temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
 
     # Fit to Omega and gamma simultaneously
-    fit_func = "double_orbach"
-    # fit_func = "double_orbach_fixed_energies"
-    # fit_func = "triple_orbach"
+    # fit_mode = "single_orbach"
+    # fit_mode = "double_orbach"
+    fit_mode = "triple_orbach"
     (
         popt,
         pvar,
@@ -2091,16 +2145,19 @@ def main_sub(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points, fit_func)
-
-    # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
-    # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
-    # omega_lambda = lambda temp: orbach_free(temp, 1e8, 400)
-    # gamma_lambda = omega_lambda
+    ) = fit_simultaneous(data_points, fit_mode)
     omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
     omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
     gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
     gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
+
+    popt_no_sample = popt.copy()
+    popt_no_sample[-1] = 0
+    popt_no_sample[-2] = 0
+    popt_no_sample[-3] = 0
+    popt_no_sample[-4] = 0
+    omega_lambda = lambda temp: omega_hopper_fit_func(temp, popt_no_sample)
+    gamma_lambda = lambda temp: gamma_hopper_fit_func(temp, popt_no_sample)
 
     # for temp in np.arange(487.5, 555, 12.5):
     #     boilerplate = "data_points.append(gen_fake_data_point({}, {}, {}))"
@@ -2118,59 +2175,68 @@ def main_sub(
         val = tool_belt.round_sig_figs(popt[ind], 5)
         err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
-        print(presentation_round_latex(val, err))
+        print(val, err)
+        # print(presentation_round_latex(val, err))
     samples_to_plot = ["hopper", "wu"]
     # samples_to_plot = ["hopper"]
     # samples_to_plot = ["wu"]
     linestyles = {"hopper": "dotted", "wu": "dashed"}
+    fit_mode_linestyles = {
+        "single_orbach": "solid",
+        "double_orbach": "solid",
+        "triple_orbach": "solid",
+    }
+    fit_mode_labels = {
+        "single_orbach": "One mode",
+        "double_orbach": "Two modes",
+        "triple_orbach": "Three modes",
+    }
+    kpl.anchored_text(ax, fit_mode_labels[fit_mode], kpl.Loc.UPPER_LEFT)
+    ls = fit_mode_linestyles[fit_mode]
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
-        for sample in samples_to_plot:
-            fit_func = eval("omega_{}_lambda".format(sample))
-            ls = linestyles[sample]
-            plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
-            ax.plot(
-                plot_temp_linspace,
-                fit_func(temp_linspace),
-                linestyle=ls,
-                label=r"$\mathrm{\Omega}$ fit",
-                color=omega_edge_color,
-                linewidth=lw,
-            )
+        fit_func = omega_lambda
+        plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
+        ax.plot(
+            plot_temp_linspace,
+            fit_func(temp_linspace),
+            linestyle=ls,
+            label=r"$\mathrm{\Omega}$ fit",
+            color=omega_edge_color,
+            linewidth=lw,
+        )
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
         # Ab initio plot
         plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
-        ax.plot(
-            plot_sim_temps,
-            sim_omega,
-            linestyle=sim_ls,
-            label=r"$\mathrm{\Omega}$ fit",
-            color=omega_face_color,
-            linewidth=lw,
-        )
+        # ax.plot(
+        #     plot_sim_temps,
+        #     sim_omega,
+        #     linestyle=sim_ls,
+        #     label=r"$\mathrm{\Omega}$ fit",
+        #     color=omega_face_color,
+        #     linewidth=lw,
+        # )
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
-        for sample in samples_to_plot:
-            fit_func = eval("gamma_{}_lambda".format(sample))
-            ls = linestyles[sample]
-            plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
-            ax.plot(
-                plot_temp_linspace,
-                fit_func(temp_linspace),
-                linestyle=ls,
-                color=gamma_edge_color,
-                linewidth=lw,
-            )
-        # Ab initio plot
-        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
+        fit_func = gamma_lambda
+        plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
         ax.plot(
-            plot_sim_temps,
-            sim_gamma,
-            linestyle=sim_ls,
-            color=gamma_face_color,
+            plot_temp_linspace,
+            fit_func(temp_linspace),
+            linestyle=ls,
+            color=gamma_edge_color,
             linewidth=lw,
         )
+        # Ab initio plot
+        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
+        # ax.plot(
+        #     plot_sim_temps,
+        #     sim_gamma,
+        #     linestyle=sim_ls,
+        #     color=gamma_face_color,
+        #     linewidth=lw,
+        # )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
 
@@ -2251,7 +2317,7 @@ def main_sub(
                     ls=linestyle,
                 )
 
-        ax.axvline(x=125, color="silver", zorder=-10)
+        # ax.axvline(x=125, color="silver", zorder=-10)
 
     if not inset:
         ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
@@ -2463,8 +2529,9 @@ def main_sub(
 
         # Legend x location
         # x_loc = 0.14
-        x_loc = 0.17
-        # x_loc = 0.22
+        # x_loc = 0.17
+        # x_loc = 0.18
+        x_loc = 0.25
 
         if plot_type in ["rates", "residuals", "normalized_residuals"]:
             omega_patch = patches.Patch(
@@ -2479,8 +2546,10 @@ def main_sub(
                 edgecolor=gamma_edge_color,
                 lw=marker_edge_width,
             )
-            y_leg_pos = 0.38
-            x_leg_pos = 0.0
+            y_leg_pos = 0.31
+            x_leg_pos = 0.45
+            # y_leg_pos = 1.0
+            # x_leg_pos = 0.0
             leg1 = ax.legend(
                 handles=[gamma_patch, omega_patch],
                 title="Rate",
@@ -2577,11 +2646,12 @@ def main_sub(
                 # borderaxespad=0.3,
             )
 
-    if plot_type == "rates":
-        # Sample-dependent vs phonon-limited line
+    # Sample-dependent vs phonon-limited line
+    if (plot_type == "rates") and (min_temp < 100) and (max_temp > 150):
+        ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
         # if (min_temp < 125 < max_temp) and inset:
-        if (min_temp < 125 < max_temp) and not inset:
-            ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
+        # if (min_temp < 125 < max_temp) and not inset:
+        # ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
 
     fig.tight_layout(pad=0.3)
 
@@ -2621,16 +2691,16 @@ def main_sub(
 
 if __name__ == "__main__":
 
-    # temp = 300
+    # temp = 475
     # # delta1 = 4
-    # delta1 = 20
+    # delta1 = 68.2
     # delta2 = 167
     # # A_1 = 580
     # # A_2 = 9000
     # n1 = bose(delta1, temp)
     # n2 = bose(delta2, temp)
-    # print(n1)
-    # # print(9000 * n2)
+    # print(580 * n1)
+    # print(9000 * n2)
     # # print(A_1 * n1 * (n1 + 1))
     # # print(A_2 * n2 * (n2 + 1))
     # # # print(bose(0.01241, 150))
@@ -2707,22 +2777,12 @@ if __name__ == "__main__":
     #         dosave=False,
     #     )
 
-    rates_to_plot = ["both", "both"]
-    temp_ranges = [[120, 500], [-10, 500]]
-    y_ranges = [[0.03, 750], [-25, 675]]
-    yscales = ["log", "linear"]
-    xscales = ["log", "linear"]
-
-    # temp_ranges = [[-5, 500], [-10, 500]]
-    # y_ranges = [[5e-3, 750], [-25, 675]]
-    # yscales = ["log", "linear"]
-    # xscales = ["linear", "linear"]
-
-    # rates_to_plot = ["both", "both"]
-    # temp_ranges = [[-10, 490], [120, 500]]
-    # y_ranges = [[-20, 675], [0.03, 750]]
-    # yscales = ["linear", "log"]
-    # xscales = ["linear", "inv"]
+    # Semi-log
+    rates_to_plot = ["both"]
+    temp_ranges = [[115, 485]]
+    y_ranges = [[0.7, 700]]
+    yscales = ["log"]
+    xscales = ["linear"]
 
     main(
         file_name,
