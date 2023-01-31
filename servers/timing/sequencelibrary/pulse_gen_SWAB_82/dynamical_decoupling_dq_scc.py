@@ -69,16 +69,17 @@ def get_seq(pulse_streamer, config, args):
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     post_readout_buffer = uwave_buffer
     scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
+    # print(scc_ion_readout_buffer)
     back_buffer = 200
-    echo_buffer = 100
+    echo_buffer =100
     coh_buffer = 100
     delay_buffer = max(green_laser_delay_time,red_laser_delay_time, yellow_laser_delay_time
                        ,uwave_delay_low, uwave_delay_high, iq_delay_time, 100)
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse_low,pi_on_2_pulse_high , 10))
     
-    # we half the tau to put an IQ pulse in between. To create shorthand,
-    # we define them here. But we need to make sure that the two halves still
-    # add up to tau
+    # we half the tau to put an IQ pulse in between.But we need to make sure 
+    # that the two halves still
+    # add up to tau. To create shorthand, we define them here. 
     half_tau_shrt_st =int(tau_shrt/2)
     half_tau_shrt_en = int(tau_shrt -  half_tau_shrt_st)
     half_tau_long_st =int(tau_long/2)
@@ -596,7 +597,7 @@ if __name__ == '__main__':
     #     green_laser_name, green_laser_power, \
     #         red_laser_name, red_laser_power, \
     #             yellow_laser_name, yellow_laser_power = args[9:19]
-    seq_args = [100, 1000.0, 250, 10000000.0, 75, 38, 108, 59, 750100, 2, 3, 1, 
-                'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
+    seq_args =[100, 1000.0, 300, 1000.0, 0, 0, 111, 59, 350, 2, 3, 1, 
+               'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

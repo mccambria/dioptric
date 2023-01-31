@@ -123,8 +123,8 @@ def fit_t2_12C(data, do_fit = True, incremental=False):
     
     fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
     init_params = [ -0.1, 1000, 1.1]
-    # fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, 1.11, 3)
-    # init_params = [ -0.1, 1000]
+    # fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, 1.108, 3)
+    # init_params = [ -0.1, 3000]
     
     popt, pcov = curve_fit(
         fit_func,
@@ -250,6 +250,7 @@ def main_with_cxn(
     arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
     
     tool_belt.reset_cfm(cxn)
+    kpl.init_kplotlib()
 
     # %% Sequence setup
 
@@ -309,6 +310,7 @@ def main_with_cxn(
         uwave_pi_pulse_high = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
         uwave_pi_on_2_pulse_high = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
         
+        
         if state.value == States.LOW.value:
             state_activ = States.LOW
             state_proxy = States.HIGH
@@ -337,7 +339,7 @@ def main_with_cxn(
             dtype=numpy.int32,
         )
     # taus = taus + 500
-    # print(taus)
+    print(taus)
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
@@ -463,7 +465,7 @@ def main_with_cxn(
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     # print(seq_file_name)
-    # print(seq_args)
+    print(seq_args)
     # return
         # print(seq_time)
 
@@ -504,11 +506,6 @@ def main_with_cxn(
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
-        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
-        sig_gen_cxn.set_freq(uwave_freq)
-        sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.load_iq()
-        sig_gen_cxn.uwave_on()
         
         if do_dq:
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
@@ -518,17 +515,23 @@ def main_with_cxn(
             sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
+            sig_gen_high_cxn.load_iq()
             sig_gen_high_cxn.uwave_on()
-            if pi_pulse_reps == 1:
-              arbwavegen_server.load_arb_phases([0,0,0]) 
-            else:
-                # arbwavegen_server.load_cpmg_dq(pi_pulse_reps)
-                arbwavegen_server.load_cpmg(pi_pulse_reps)
+            # if pi_pulse_reps == 1:
+            #   arbwavegen_server.load_arb_phases([0,0,0]) 
+            # else:
+            #     # arbwavegen_server.load_cpmg_dq(pi_pulse_reps)
+            #     arbwavegen_server.load_cpmg(pi_pulse_reps)
         else:
-            if pi_pulse_reps == 1:
-                arbwavegen_server.load_arb_phases([0,0,0]) 
-            else:
-                arbwavegen_server.load_cpmg(pi_pulse_reps)
+            sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
+            sig_gen_cxn.set_freq(uwave_freq)
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.load_iq()
+            sig_gen_cxn.uwave_on()
+        if pi_pulse_reps == 1:
+            arbwavegen_server.load_arb_phases([0,0,0]) 
+        else:
+            arbwavegen_server.load_cpmg(pi_pulse_reps)
             
         
 
@@ -704,7 +707,15 @@ def main_with_cxn(
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
-        ax.set_title("CPMG-{} Measurement".format(pi_pulse_reps))
+        if do_dq:
+            dq_text = 'DQ'
+        else:
+            dq_text = 'SQ'
+        if do_scc:
+            ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
+        else:
+            ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
+            
         ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         
@@ -787,10 +798,18 @@ def main_with_cxn(
     ax = axes_pack[1]
     ax.cla()
     ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_title("CPMG -{} Measurement".format(pi_pulse_reps))
     ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
+    if do_dq:
+        dq_text = 'DQ'
+    else:
+        dq_text = 'SQ'
+    if do_scc:
+        ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
+    else:
+        ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
+            
     raw_fig.canvas.draw()
     raw_fig.set_tight_layout(True)
     raw_fig.canvas.flush_events()
@@ -973,47 +992,21 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
   
     
-    file_name = "2023_01_27-13_47_23-siena-nv4_2023_01_16"
+    file_name = "2023_01_30-16_41_54-siena-nv4_2023_01_16"
 
     data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
     fit_t2_12C(data, do_fit = True)
     
-    # file_list =[
-    #     '2023_01_23-12_40_36-siena-nv4_2023_01_16',
-    #             '2023_01_23-13_58_38-siena-nv4_2023_01_16',
-    #             '2023_01_23-15_16_28-siena-nv4_2023_01_16',
-    #             '2023_01_23-16_34_07-siena-nv4_2023_01_16',
-    #             '2023_01_23-17_51_32-siena-nv4_2023_01_16',
-    #             '2023_01_23-19_09_16-siena-nv4_2023_01_16'
-    #     ]
     
-    # file_list =[
-    # "2023_01_22-14_01_38-siena-nv4_2023_01_16",
-    # "2023_01_22-15_45_14-siena-nv4_2023_01_16",
-    # "2023_01_22-17_32_07-siena-nv4_2023_01_16",
-    # "2023_01_22-19_16_51-siena-nv4_2023_01_16",
-    # "2023_01_22-20_59_54-siena-nv4_2023_01_16",
-    # "2023_01_22-22_47_20-siena-nv4_2023_01_16",
-    # "2023_01_23-00_34_20-siena-nv4_2023_01_16",
-    # "2023_01_23-02_19_37-siena-nv4_2023_01_16",
-    # "2023_01_23-04_07_32-siena-nv4_2023_01_16",
-    # "2023_01_23-05_49_51-siena-nv4_2023_01_16",
-    # "2023_01_23-07_39_39-siena-nv4_2023_01_16",
-    # "2023_01_23-09_25_45-siena-nv4_2023_01_16"
-    #     ]
-    
-    # compile_12C_data(file_list, 
-    #                  do_save = True
-    #                  )
-    
-    
-    # file_list = ['2023_01_23-22_58_52-siena-nv4_2023_01_16',
-    #              '2023_01_24-00_15_34-siena-nv4_2023_01_16',
-    #              '2023_01_24-01_31_27-siena-nv4_2023_01_16',
-    #              '2023_01_24-02_47_15-siena-nv4_2023_01_16',
+    # file_list = ['2023_01_27-23_54_17-siena-nv4_2023_01_16', # 256
+    #               '2023_01_29-00_59_22-siena-nv4_2023_01_16'
                  
     #     ]
+    # file_list = ['2023_01_28-00_50_58-siena-nv4_2023_01_16', #512
+    #               '2023_01_29-02_11_11-siena-nv4_2023_01_16'
+                     
+    #         ]
     # compile_12C_data(file_list, 
     #                   do_save = True
-    #                   )
+    #                    )
     

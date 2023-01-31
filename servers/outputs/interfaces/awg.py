@@ -121,24 +121,24 @@ class AWG(ABC):
         amp = self.iq_comp_amp
         self.load_iq(phases, amp)
         
-    # @setting(112, num_dd_reps="i")
-    # def load_cpmg_dq(self, c, num_dd_reps):
-    #     '''
-    #     Load phases for CPMG, which should be:
-    #         [0, (pi/2)*N, 0]
-    #     '''
+    @setting(112, num_dd_reps="i")
+    def load_cpmg_dq(self, c, num_dd_reps):
+        '''
+        Load phases for CPMG, which should be:
+            [0, (pi/2)*N, 0]
+        '''
 
-    #     # intended phase list: [0, (pi/2)*N, 0]
+        # intended phase list: [0, (pi/2)*N, 0]
 
-    #     phases = [0] + [pi] * num_dd_reps + [0]  ###
-    #     # 11/20/2022 Tried alternating phase, but for N>4, state is not coherent
-    #     # half_num_dd_reps = int(num_dd_reps/2)
-    #     # phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
-    #     # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
+        phases = [0] + [pi] * num_dd_reps + [0]  ###
+        # 11/20/2022 Tried alternating phase, but for N>4, state is not coherent
+        # half_num_dd_reps = int(num_dd_reps/2)
+        # phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
+        # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
 
-    #     phases = phases * 4
-    #     amp = self.iq_comp_amp
-    #     self.load_iq(phases, amp)
+        phases = phases * 4
+        amp = self.iq_comp_amp
+        self.load_iq(phases, amp)
         
     @abstractmethod
     def load_iq(self, phases, amp):

@@ -329,10 +329,10 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     # num_reps = int(2e4)    
     # num_runs =  5
 
-    num_steps =51
+    num_steps =101
     # num_reps = int(2e4)  
-    num_reps = int(50)   
-    num_runs =  10
+    num_reps = int(25)   
+    num_runs =  50
     
     rabi.main(
         nv_sig,
@@ -538,6 +538,7 @@ def do_spin_echo(nv_sig, state = States.HIGH, do_dq = True):
 def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_runs, do_dq_):
     
     shift = 100 #ns
+    # shift = 0 #ns
     
     max_time = T_max / (2*pi_pulse_reps)  # us
     min_time = T_min / (2*pi_pulse_reps) #us
@@ -1095,7 +1096,7 @@ if __name__ == "__main__":
         
         
         "norm_style": NormStyle.SINGLE_VALUED,
-        #"norm_style": NormStyle.POINT_TO_POINT,
+        # "norm_style": NormStyle.POINT_TO_POINT,
         "resonance_LOW": 2.7808,
         "rabi_LOW":131, 
         "resonance_HIGH": 2.9598, 
@@ -1166,7 +1167,7 @@ if __name__ == "__main__":
     nv_sig_4["waveplate_angle"] = 78
     nv_sig_4["resonance_LOW"]=2.81921
     nv_sig_4["resonance_HIGH"]= 2.92159
-    nv_sig_4["uwave_power_LOW"]= 12
+    nv_sig_4["uwave_power_LOW"]= 15
     nv_sig_4["uwave_power_HIGH"]= 10
     nv_sig_4["rabi_LOW"]= 144.24
     nv_sig_4["rabi_HIGH"]=210.73  
@@ -1174,8 +1175,8 @@ if __name__ == "__main__":
     #nv_sig_4["uwave_power_HIGH"]= -12
    # nv_sig_4["rabi_LOW"]= 1360
     #nv_sig_4["rabi_HIGH"]=1431  
-    nv_sig_4["pi_pulse_LOW"]= 76
-    nv_sig_4["pi_on_2_pulse_LOW"]= 40
+    nv_sig_4["pi_pulse_LOW"]= 67
+    nv_sig_4["pi_on_2_pulse_LOW"]= 37
     nv_sig_4["pi_pulse_HIGH"]= 111
     nv_sig_4["pi_on_2_pulse_HIGH"]= 59
     nv_sig_4["charge_readout_laser_power"]= 0.4
@@ -1294,7 +1295,7 @@ if __name__ == "__main__":
                               #  do_image_sample(nv_sig)
         # if True:
         if False:
-         for dz in numpy.linspace(-0.2, 0.2, 5 ):
+         for dz in numpy.linspace(-0.3, 0.3, 7 ):
                nv_copy = copy.deepcopy(nv_sig)
                coords= nv_sig["coords"]
                nv_copy["coords"] =[coords[0], coords[1], coords[2] + dz ]
@@ -1346,7 +1347,7 @@ if __name__ == "__main__":
         
        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
+       # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 350])
         
         
@@ -1369,20 +1370,22 @@ if __name__ == "__main__":
         ###################
         T_min = 0 #us
         T_max = 8000 #us  
-        step_size = T_max/25 #us 
-        num_runs = 80
+        step_size = (T_max - T_min)/25 #us 
+        # step_size = (T_max - T_min)/4 #us 
+        num_runs = 40 #160
         num_reps = 50
+        # num_reps = 1000
         
-        for boo in [True, False]:
-            do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 512, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+        for boo in [True]:
+        #     do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+        #     do_dd_cpmg(nv_sig, 512, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
             do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 16, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 32, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 128, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+           # do_dd_cpmg(nv_sig, 16, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+          #  do_dd_cpmg(nv_sig, 32, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+           # do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+          #  do_dd_cpmg(nv_sig, 128, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
         
         #for n in [32, 64, 128, 256, 2, 4, 8]:#128
              # do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= True)

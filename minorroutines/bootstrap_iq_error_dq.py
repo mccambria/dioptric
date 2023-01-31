@@ -122,16 +122,20 @@ def main_with_cxn(
     if do_dq:
         seq_file_name = "dynamical_decoupling_dq.py"
         
-        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
         uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
-        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
-        uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
-        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        # uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        # uwave_pi_on_2_pulse_low = tool_belt.get_pi_on_2_pulse_dur(rabi_period_low)
+        uwave_pi_pulse_low = nv_sig["pi_pulse_{}".format(States.LOW.name)]
+        uwave_pi_on_2_pulse_low = nv_sig["pi_on_2_pulse_{}".format(States.LOW.name)]
+        # rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
         uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
-        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
-        uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        # uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        # uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
+        uwave_pi_pulse_high = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
+        uwave_pi_on_2_pulse_high = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
         
         if iq_state.value == States.LOW.value:
             state_activ = States.LOW
@@ -143,13 +147,15 @@ def main_with_cxn(
     else:
         seq_file_name = "dynamical_decoupling.py"
         
-        rabi_period = nv_sig["rabi_{}".format(iq_state.name)]
+        # rabi_period = nv_sig["rabi_{}".format(iq_state.name)]
         uwave_freq = nv_sig["resonance_{}".format(iq_state.name)]
         uwave_power = nv_sig["uwave_power_{}".format(iq_state.name)]
     
         # Get pulse frequencies
-        uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
-        uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+        # uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+        # uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+        uwave_pi_pulse = nv_sig["pi_pulse_{}".format(iq_state.name)]
+        uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(iq_state.name)]
     
         
         
@@ -281,18 +287,11 @@ def main_with_cxn(
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
             sig_gen_low_cxn.set_freq(uwave_freq_low)
             sig_gen_low_cxn.set_amp(uwave_power_low)
-            # try:
-            #     sig_gen_low_cxn.load_iq()
-            # except Exception:
-            #     pass
             sig_gen_low_cxn.uwave_on()
             sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
-            # try:
             sig_gen_high_cxn.load_iq()
-            # except Exception:
-            #     pass
             sig_gen_high_cxn.uwave_on()
         else:
             sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, iq_state)
@@ -336,11 +335,14 @@ def main_with_cxn(
             print("Second phase: {}".format(phis[phi_ind]*180/pi))
 
             if pi_pulse_reps == 1:
-                arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, 0, phis[phi_ind], 0])
+                arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, 
+                                                   0, phis[phi_ind], 0])
             elif pi_pulse_reps == 0:
-                arbwavegen_server.load_arb_phases([0, phis[phi_ind], 0, phis[phi_ind]])
+                arbwavegen_server.load_arb_phases([0, phis[phi_ind], 
+                                                   0, phis[phi_ind]])
             elif pi_pulse_reps == 2:
-                arbwavegen_server.load_arb_phases([0, phis[phi_ind],phis[phi_ind], 0, phis[phi_ind],phis[phi_ind]])
+                arbwavegen_server.load_arb_phases([0, phis[phi_ind],phis[phi_ind], 0, 
+                                                   0, phis[phi_ind],phis[phi_ind], 0])
             # arbwavegen_server.load_cpmg(1)
             
             # Clear the tagger buffer of any excess counts
@@ -540,14 +542,14 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    nd_yellow = "nd_0"
+    nd_yellow = "nd_1.0"
     green_power =8000
     nd_green = 'nd_1.1'
     red_power = 120
     sample_name = "siena"
     # sample_name = "hopper"
     green_laser = "integrated_520"
-    yellow_laser = "laserglow_589"
+    yellow_laser = "laser_LGLO_589"
     red_laser = "cobolt_638"
     
     
@@ -561,7 +563,7 @@ if __name__ == "__main__":
         "spin_laser_power": green_power,
         "spin_laser_filter": nd_green,
         "spin_readout_dur": 300,
-        "spin_pol_dur": 10000.0,
+        "spin_pol_dur": 1000.0,
     
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
@@ -604,6 +606,7 @@ if __name__ == "__main__":
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_dur": 200e6, 
     
+        "norm_style": NormStyle.SINGLE_VALUED,
         "collection_filter": "715_sp+630_lp", # NV band only
         "uwave_power_LOW": 12.12,  
         "uwave_power_HIGH": 10,
@@ -612,36 +615,45 @@ if __name__ == "__main__":
     
     
     
-    nv_sig_1 = copy.deepcopy(sig_base) # 
-    nv_sig_1["coords"] = [-0.184, 0.092, 4.05]
-    nv_sig_1["name"] = "{}-nv1_2022_10_27".format(sample_name,)
-    # nv_sig_1["norm_style"]= NormStyle.POINT_TO_POINT
-    nv_sig_1["norm_style"]= NormStyle.SINGLE_VALUED
-    nv_sig_1[ "green_power_mW"] = 1.0
-    nv_sig_1["expected_count_rate"] = 19
-    nv_sig_1[ "spin_readout_dur"] = 300
-    nv_sig_1['magnet_angle'] = 151.7
-    
-    nv_sig_1["resonance_LOW"]= 2.7805
-    nv_sig_1["rabi_LOW"]=136.09 # +/- 0.54
-    nv_sig_1["resonance_HIGH"]=2.9600
-    nv_sig_1["rabi_HIGH"]= 176.3
+    nv_sig_4 = copy.deepcopy(sig_base)  
+    nv_sig_4["coords"] = [0.030, -0.302, 5.09]  # NVC
+    nv_sig_4["name"] = "{}-nv4_2023_01_16".format(sample_name,)
+    nv_sig_4["expected_count_rate"] = 42
+    nv_sig_4["magnet_angle"]= 53.5
+    nv_sig_4["spin_readout_dur"] = 300
+    nv_sig_4["waveplate_angle"] = 78
+    nv_sig_4["resonance_LOW"]=2.81921
+    nv_sig_4["resonance_HIGH"]= 2.92159
+    nv_sig_4["uwave_power_LOW"]= 15
+    nv_sig_4["uwave_power_HIGH"]= 10
+    nv_sig_4["rabi_LOW"]= 144.24
+    nv_sig_4["rabi_HIGH"]=210.73  
+    #nv_sig_4["uwave_power_LOW"]= -13
+    #nv_sig_4["uwave_power_HIGH"]= -12
+   # nv_sig_4["rabi_LOW"]= 1360
+    #nv_sig_4["rabi_HIGH"]=1431  
+    nv_sig_4["pi_pulse_LOW"]= 67
+    nv_sig_4["pi_on_2_pulse_LOW"]= 37
+    nv_sig_4["pi_pulse_HIGH"]= 111
+    nv_sig_4["pi_on_2_pulse_HIGH"]= 59
+    nv_sig_4["charge_readout_laser_power"]= 0.4
+    nv_sig_4["charge_readout_dur"]=  10e6
 
         
 
     phase_range = [0, 2*pi]
     num_steps = 51
-    num_reps = 2e4
-    num_runs = 10
+    num_reps = 2e3
+    num_runs = 20
     pi_pulse_reps = 2
     main(
-          nv_sig_1,
+          nv_sig_4,
           phase_range,
           num_steps,
           num_reps,
           num_runs,pi_pulse_reps,
           iq_state=States.HIGH,
-          do_dq=False
+          do_dq=True
       )
     
     
