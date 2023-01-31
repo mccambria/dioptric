@@ -39,6 +39,7 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     args = [2e2, 'integrated_520', None]
+    # args = [2e2, 'laser_LGLO_589', None]
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(None, config, args)
     seq.plot()

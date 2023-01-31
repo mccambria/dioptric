@@ -55,6 +55,7 @@ import majorroutines.charge_majorroutines.super_resolution_ramsey as super_resol
 import majorroutines.charge_majorroutines.super_resolution_spin_echo as super_resolution_spin_echo
 # import majorroutines.charge_majorroutines.g2_measurement as g2_SCC_branch
 import majorroutines.charge_majorroutines.determine_charge_readout_params as determine_charge_readout_params
+import majorroutines.charge_majorroutines.determine_scc_pulse_params as determine_scc_pulse_params
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 # import debug.test_major_routines as test_major_routines
@@ -257,16 +258,16 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
 def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
 
-    freq_range = 0.1
+    #freq_range = 0.1
     num_steps = 75
     num_reps = 10**4
-    num_runs = 5
+    #num_runs = 5
 
     # Zoom
-    # freq_range = 0.008
+    freq_range = 0.008
     # num_steps = 75
     # num_reps = int(1e4)
-    # num_runs =   5
+    num_runs =   30
 
     composite = False
 
@@ -324,13 +325,14 @@ def do_optimize_magnet_angle(nv_sig):
 def do_rabi(nv_sig, opti_nv_sig, state, 
             uwave_time_range=[0, 200]):
 
-    num_steps =101
-    num_reps = int(2e4)    
-    num_runs =  5
-
-   # num_steps =51
+    # num_steps =101
     # num_reps = int(2e4)    
-    # num_runs =  10
+    # num_runs =  5
+
+    num_steps =101
+    num_reps = int(2e4)  
+   # num_reps = int(50)   
+    num_runs =  25
     
     rabi.main(
         nv_sig,
@@ -340,6 +342,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_reps,
         num_runs,
         opti_nv_sig = opti_nv_sig,
+        do_scc = False,
         do_cos_fit = False
     )
     # nv_sig["rabi_{}".format(state.name)] = period
@@ -532,7 +535,7 @@ def do_spin_echo(nv_sig, state = States.HIGH, do_dq = True):
     )
     return
 
-def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
+def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_runs, do_dq_):
     
     shift = 100 #ns
     
@@ -543,11 +546,11 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
     num_steps = int((T_max - T_min) / step_size ) + 1   # 1 point per 1 us
     precession_time_range = [int(min_time*10**3+shift), int(max_time*10**3+shift)]
     
-    num_reps = 50
-    num_runs= 500
+    # num_reps = 50
+    # num_runs= 500
 
     # num_reps = 500
-    # num_runs= 50#600#300
+    # num_runs= 200
     
     state = States.HIGH
 
@@ -559,7 +562,8 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, do_dq_):
         num_reps,
         num_runs,
         state=state,
-        do_dq= do_dq_
+        do_dq= do_dq_,
+        do_scc= True
     )
     return 
 
@@ -725,14 +729,15 @@ def do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max):
 
 def do_relaxation(nv_sig ):
     min_tau = 0
-    max_tau_omega = 5e6
-    max_tau_gamma = 10e3
+    max_tau_omega = 10e6
+    max_tau_gamma = 8e6
     num_steps_omega = 21
     num_steps_gamma = 21
     num_reps = 1e3
-    num_runs = 400
+    # num_runs = 200
+    num_runs = 120
     
-    if True:
+    if False:
      t1_exp_array = numpy.array(
         [[
                 [States.ZERO, States.ZERO],
@@ -750,16 +755,16 @@ def do_relaxation(nv_sig ):
         #     ],
              
              ])
-    if False:
+    if True:
      t1_exp_array = numpy.array(
         [ 
-            #[
-            #    [States.ZERO, States.ZERO],
-            #    [min_tau, max_tau_omega],
-           #     num_steps_omega,
-            #    num_reps,
-            #    num_runs,
-           # ],
+            [
+                [States.ZERO, States.ZERO],
+                [min_tau, max_tau_omega],
+                num_steps_omega,
+                num_reps,
+                num_runs,
+            ],
         [
                 [States.ZERO, States.HIGH],
                 [min_tau, max_tau_omega],
@@ -800,12 +805,24 @@ def do_determine_standard_readout_params(nv_sig):
     determine_standard_readout_params.main(nv_sig, num_reps, 
                                            max_readouts, state=state)
     
+def do_determine_scc_pulse_params(nv_sig):
+        num_reps = int(2e3)
+        # num_reps = int(5e2)
+        ion_durs = numpy.linspace(0,700,8)
+        # ion_durs = numpy.linspace(0,600,7)
+        
+            
+        max_snr = determine_scc_pulse_params.determine_ionization_dur(nv_sig,
+                                                     num_reps, ion_durs)
+        
+        return max_snr
+        
 def do_determine_charge_readout_params(nv_sig):
-        num_reps = int(5e2)
-        readout_durs = [50e6]
+        num_reps = int(5e3)
+        readout_durs = [1e6, 5e6, 10e6, 25e6]
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
-        readout_powers = [0.1]
+        readout_powers = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
         
             
         determine_charge_readout_params.main(  
@@ -815,7 +832,6 @@ def do_determine_charge_readout_params(nv_sig):
           readout_powers=readout_powers,
           plot_readout_durs=readout_durs,
           fit_threshold_full_model= False,)
-        
           
 # def do_time_resolved_readout(nv_sig, apd_indices):
 
@@ -1008,7 +1024,8 @@ if __name__ == "__main__":
     # apd_indices = [1]
     # # apd_indices = [0,1]
 
-    nd_yellow = "nd_0"
+    # nd_yellow = "nd_1.0"
+    nd_yellow = "nd_1.0"
     green_power =8000
     nd_green = 'nd_1.1'
     red_power = 180
@@ -1016,7 +1033,7 @@ if __name__ == "__main__":
     # sample_name = "ayrton12"
     green_laser = "integrated_520"
     # green_laser = "cobolt_515"
-    yellow_laser = "laserglow_589"
+    yellow_laser = "laser_LGLO_589"
     red_laser = "cobolt_638"
 
 
@@ -1060,16 +1077,16 @@ if __name__ == "__main__":
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 300,
+        "nv0_ionization_dur": 250,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": None,
         "spin_shelf_dur": 0,
         
         "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_power": 0.15, 
+        "charge_readout_laser_power": 0.4,  #0.35
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_dur": 200e6, 
+        "charge_readout_dur": 2.5e6, #5e6
 
         "collection_filter": "715_sp+630_lp", # NV band only
         'magnet_angle': 53.6,
@@ -1143,24 +1160,27 @@ if __name__ == "__main__":
     nv_sig_4 = copy.deepcopy(sig_base)  
     nv_sig_4["coords"] = [0.030, -0.302, 5.09]  # NVC
     nv_sig_4["name"] = "{}-nv4_2023_01_16".format(sample_name,)
-    nv_sig_4["expected_count_rate"] = 43
+    nv_sig_4["expected_count_rate"] = 42
     nv_sig_4["magnet_angle"]= 53.5
     nv_sig_4["spin_readout_dur"] = 300
     nv_sig_4["waveplate_angle"] = 78
-    nv_sig_4["resonance_LOW"]=2.81922
-    nv_sig_4["resonance_HIGH"]= 2.92155
+    nv_sig_4["resonance_LOW"]=2.81921
+    nv_sig_4["resonance_HIGH"]= 2.92159
     nv_sig_4["uwave_power_LOW"]= 12
     nv_sig_4["uwave_power_HIGH"]= 10
     nv_sig_4["rabi_LOW"]= 144.24
     nv_sig_4["rabi_HIGH"]=210.73  
-    # nv_sig_4["uwave_power_LOW"]= -13
-    # nv_sig_4["uwave_power_HIGH"]= -12
-    # nv_sig_4["rabi_LOW"]= 1360
-    # nv_sig_4["rabi_HIGH"]=1431  
-    nv_sig_4["pi_pulse_LOW"]= 75
-    nv_sig_4["pi_on_2_pulse_LOW"]= 38
-    nv_sig_4["pi_pulse_HIGH"]= 108
+    #nv_sig_4["uwave_power_LOW"]= -13
+    #nv_sig_4["uwave_power_HIGH"]= -12
+   # nv_sig_4["rabi_LOW"]= 1360
+    #nv_sig_4["rabi_HIGH"]=1431  
+    nv_sig_4["pi_pulse_LOW"]= 76
+    nv_sig_4["pi_on_2_pulse_LOW"]= 40
+    nv_sig_4["pi_pulse_HIGH"]= 111
     nv_sig_4["pi_on_2_pulse_HIGH"]= 59
+    nv_sig_4["charge_readout_laser_power"]= 0.4
+    nv_sig_4["charge_readout_dur"]=  10e6
+    
         
     nv_sig_5 = copy.deepcopy(sig_base)  
     nv_sig_5["coords"] = [0.252, 0.296, 3.58]  #NVA
@@ -1281,8 +1301,8 @@ if __name__ == "__main__":
                do_image_sample(nv_copy)
                     
         
-       # do_optimize(nv_sig)
-       # do_image_sample(nv_sig)
+        # do_optimize(nv_sig)
+        # do_image_sample(nv_sig)
         
         # for nv_sig in nv_sig_list:
         # for nv_sig in [nv_sig_11]:
@@ -1324,9 +1344,9 @@ if __name__ == "__main__":
         #       do_rabi(nv_sig_copy, nv_sig_copy, States.LOW,   uwave_time_range=[0, 200])
         
         
-        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-       # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
+       # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
+       # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 250])
         # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 350])
         
         
@@ -1351,21 +1371,20 @@ if __name__ == "__main__":
         T_max = 6000 #us  
         step_size = T_max/20 #us   
         
-        for boo in [True]:
-              #do_dd_cpmg(nv_sig, 32, 6000/20, T_min, 6000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 64, 6000/20, T_min, 6000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 128, 6000/20, T_min, 6000, do_dq_= boo)
-              #do_dd_cpmg(nv_sig, 256, 6000/20, T_min,6000, do_dq_= boo)
-              for i in range(12):
-                  do_dd_cpmg(nv_sig, 512, 7000/24, T_min,7000, do_dq_= boo)
-              #do_dd_cpmg(nv_sig, 1024, 7000/24, T_min,7000, do_dq_= boo)
-              #do_dd_cpmg(nv_sig, 2, 3000/20, T_min, 3000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 4, 4000/20, T_min, 4000, do_dq_= boo)
-             # do_dd_cpmg(nv_sig, 8, 5000/20, T_min, 5000, do_dq_= boo)
+        # for boo in [True]:
+        #     for i in range(4):
+        #          do_dd_cpmg(nv_sig, 128, 6000/20, T_min, 6000,50, 500, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 256, 6000/20, T_min,6000, do_dq_= boo)
+            # for i in range(4):
+            #       do_dd_cpmg(nv_sig, 512, 7000/20, T_min, 7000,50, 500, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 2, 6000/20, T_min, 6000, 100, 20, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 32, 500/10, T_min, 500, 100, 10, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 4, 4000/20, T_min, 4000, 500,200,do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 8, 5000/20, T_min, 5000,500,200, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 16, step_size, T_min, 5000, 500,200,do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 32, 6000/20, T_min, 6000,500,200, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 64, 6000/20, T_min, 6000,500,200, do_dq_= boo)
              
-        #     do_dd_cpmg(nv_sig, 8, step_size, T_min, 5000, do_dq_= boo)
-        #     do_dd_cpmg(nv_sig, 2, step_size, T_min, 3000, do_dq_= boo)
-        #     do_dd_cpmg(nv_sig, 128, step_size, T_min, 6000, do_dq_= boo)
         
         #for n in [32, 64, 128, 256, 2, 4, 8]:#128
              # do_dd_cpmg(nv_sig, n, step_size, T_min, T_max, do_dq_= True)
@@ -1384,6 +1403,26 @@ if __name__ == "__main__":
         
         #do_determine_standard_readout_params(nv_sig)
         # do_determine_charge_readout_params(nv_sig)
+        # do_determine_scc_pulse_params(nv_sig)
+        
+        p_list = [0.3, 0.4, 0.5,]
+        t_list = [1, 2.5, 5, 10, 15, 20, 25, 30, 35, 45]
+        # t_list = [50, 60]
+        # t_list = [10]
+       # for p in p_list:
+       #     snr_list = []
+        #    for t in t_list:
+        #        nv_sig_copy = copy.deepcopy(nv_sig)
+        #        nv_sig_copy["charge_readout_laser_power"]= p
+        #        nv_sig_copy["charge_readout_dur"]= t*1e6
+        #        max_snr = do_determine_scc_pulse_params(nv_sig_copy)
+        #        snr_list.append(max_snr)
+        #    print('')
+        #    print(snr_list)
+        #    max_snr_for_power = max(snr_list)
+         #   max_ind = snr_list.index(max_snr_for_power)
+       #     max_dur = t_list[max_ind]
+       #     print('Max SNR {} at {} ms readout'.format(max_snr_for_power, max_dur))
 
     #except Exception as exc:
     #    recipient = "agardill56@gmail.com"

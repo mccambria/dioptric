@@ -61,6 +61,7 @@ class FilterSliderThorEll9k(LabradServer):
     def on_get_config(self, config):
         # Get the slider
         try:
+            logging.info("here")
             self.slider = serial.Serial(
                 config["get"],
                 9600,
@@ -71,6 +72,7 @@ class FilterSliderThorEll9k(LabradServer):
         except Exception as e:
             logging.debug(e)
             del self.slider
+        
         time.sleep(0.1)
         self.slider.flush()
         time.sleep(0.1)

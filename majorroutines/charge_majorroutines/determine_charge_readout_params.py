@@ -557,6 +557,9 @@ def measure_histograms_sub(
         drift = positioning.get_drift(cxn)
         adjusted_nv_coords = coords + np.array(drift)
         positioning.set_xyz(cxn, adjusted_nv_coords)
+        
+        charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+        charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
         # print(num_reps_remaining)
 
         # Make sure the lasers are at the right powers
@@ -579,7 +582,7 @@ def measure_histograms_sub(
         else:
             num_reps_to_run = num_reps_remaining
 
-        print(seq_args_string,num_reps_to_run)
+        # print(seq_args_string,num_reps_to_run)
         pulsegen_server.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
@@ -634,6 +637,8 @@ def measure_histograms_with_cxn(
     readout_laser_power = tool_belt.set_laser_power(
         cxn, nv_sig, "charge_readout_laser"
     )
+    
+        
 
     readout_pulse_time = nv_sig["charge_readout_dur"]
 
@@ -678,6 +683,7 @@ def measure_histograms_with_cxn(
     apd_gate_channel = apd_wiring['di_apd_gate']
 
     # Green measurement
+    print('Measuring with initial green pulse')
     seq_args = gen_seq_args("nv-_prep_laser")
     
     # print(seq_args)
@@ -687,6 +693,7 @@ def measure_histograms_with_cxn(
     nvm = process_timetags(apd_gate_channel, timetags, channels)
 
     # Red measurement
+    print('Measuring with initial red pulse')
     seq_args = gen_seq_args("nv0_prep_laser")
     # print(seq_args)
     timetags, channels, period_sec = measure_histograms_sub(
@@ -1120,9 +1127,9 @@ if __name__ == "__main__":
     if True:
         # tool_belt.init_matplotlib()
         # file_name = "2022_11_04-13_31_23-johnson-search"
-        fp='pc_Carr/branch_master/determine_charge_readout_params/2023_01/'
+        fp='pc_rabi/branch_master/determine_charge_readout_params/2023_01/'
         filenames = [
-            "2023_01_09-15_47_56-johnson-search"         
+            "2023_01_25-13_39_53-siena-nv4_2023_01_16"         
         ]
         # file_name = "2022_08_09-15_22_25-rubin-nv1"
         powers_all = []
@@ -1138,7 +1145,7 @@ if __name__ == "__main__":
 
         # readout_dur = opti_readout_dur
 
-        times = [5e6]
+        times = [2e6, 5e6, 10e6, 15e6]
         # times = [4e6,1e6,400e3,100e3,50e3,10e3]
         # times = [2e6,4e6]
 

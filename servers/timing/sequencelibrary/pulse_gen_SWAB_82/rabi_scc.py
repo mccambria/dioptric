@@ -9,7 +9,7 @@ Created on Tue Aug 9 20:40:44 2022
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import utils.tool_belt as tool_belt
-# from utils.tool_belt import States
+from utils.tool_belt import States
 import numpy
 
 LOW = 0
@@ -24,16 +24,13 @@ def get_seq(pulse_streamer, config, args):
         reion_time,
         ion_time,
         pi_pulse,
-        shelf_time,
         uwave_tau_max,
         green_laser_name,
         yellow_laser_name,
         red_laser_name,
-        sig_gen_name,
-        apd_indices,
+        state,
         reion_power,
         ion_power,
-        shelf_power,
         readout_power,
     ) = args
 
@@ -42,9 +39,13 @@ def get_seq(pulse_streamer, config, args):
     reion_time = numpy.int64(reion_time)
     ion_time = numpy.int64(ion_time)
     pi_pulse = numpy.int64(pi_pulse)
-    shelf_time = numpy.int64(shelf_time)
     uwave_tau_max = numpy.int64(uwave_tau_max)
+    
+    state = States(state)
 
+
+    sig_gen_name = config['Servers']['sig_gen_{}'.format(state.name)]
+    
     # Get the wait time between pulses
     uwave_buffer =  config["CommonDurations"]["uwave_buffer"]
     scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
@@ -68,8 +69,8 @@ def get_seq(pulse_streamer, config, args):
 
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config["Wiring"]["PulseStreamer"]
-    pulser_do_apd_gate = pulser_wiring["do_apd_{}_gate".format(apd_indices)]
+    pulser_wiring = config["Wiring"]["PulseGen"]
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate']
     pulser_do_clock = pulser_wiring["do_sample_clock"]
     sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
@@ -85,7 +86,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, HIGH),
@@ -96,7 +96,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, HIGH),
@@ -118,7 +117,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
@@ -129,7 +127,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
@@ -155,7 +152,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, HIGH),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
@@ -166,9 +162,7 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, HIGH),
-        # (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
         (post_wait_time, LOW),
@@ -193,7 +187,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, HIGH),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
@@ -204,7 +197,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, LOW),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, LOW),
@@ -218,7 +210,7 @@ def get_seq(pulse_streamer, config, args):
         period += el[0]
     print(period)
 
-    # Shelf/Readout with yellow
+    # Readout with yellow
     delay = common_delay - yellow_delay_time
     train = [
         (delay, LOW),
@@ -227,7 +219,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, HIGH),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, HIGH),
@@ -238,7 +229,6 @@ def get_seq(pulse_streamer, config, args):
         (uwave_buffer, LOW),
         (pi_pulse, LOW),
         (uwave_buffer, LOW),
-        (shelf_time, HIGH),
         (ion_time, LOW),
         (scc_ion_readout_buffer, LOW),
         (readout_time, HIGH),
@@ -246,11 +236,11 @@ def get_seq(pulse_streamer, config, args):
         (sig_ref_buffer, LOW),
         (yellow_delay_time, LOW)
     ]
-    power_list= [shelf_power, readout_power, shelf_power, readout_power]
+    # power_list= [shelf_power, readout_power, shelf_power, readout_power]
     # power_list= readout_power
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 yellow_laser_name, 
-                                power_list, train)
+                                [readout_power], train)
     period = 0
     for el in train:
         period += el[0]
@@ -268,7 +258,7 @@ if __name__ == "__main__":
     # seq_args = [10000.0, 1000.0, 100, 50, 0, 50, 
     #             'integrated_520', 'laserglow_589', 'cobolt_638', 
     #             'signal_generator_sg394', 1, None, None, 1.0, 0.5]
-    seq_args = [200000.0, 1000.0, 200, 41, 0, 41, 'integrated_520', 'laserglow_589', 'cobolt_638', 'signal_generator_sg394', 1, None, None, 0.0, 0.15]
+    seq_args = [200000.0, 1000.0, 200, 41, 41, 'integrated_520', 'laser_LGLO_589', 'cobolt_638',
+                1, None, None, None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
-    
