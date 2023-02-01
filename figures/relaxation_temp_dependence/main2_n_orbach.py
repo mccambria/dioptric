@@ -2156,8 +2156,8 @@ def main_sub(
     popt_no_sample[-2] = 0
     popt_no_sample[-3] = 0
     popt_no_sample[-4] = 0
-    popt_no_sample[3] = 0
-    popt_no_sample[4] = 0
+    # popt_no_sample[3] = 0
+    # popt_no_sample[4] = 0
     omega_lambda = lambda temp: omega_hopper_fit_func(temp, popt_no_sample)
     gamma_lambda = lambda temp: gamma_hopper_fit_func(temp, popt_no_sample)
 
