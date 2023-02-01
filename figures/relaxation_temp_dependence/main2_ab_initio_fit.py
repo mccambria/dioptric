@@ -366,18 +366,49 @@ def fit_simultaneous(data_points, fit_mode=None):
     # gamma.
     temps = []
     combined_rates = []
+    combined_errs = []
     sample_breaks = []
     sim_temps, sim_omega, sim_gamma = get_ab_initio_rates()
     for sample in ["Hopper", "Wu"]:
-        for ind in range(len(sim_temps)):
+        for ind in range(len(sim_temps) // 4):
+            ind *= 4
             temp = sim_temps[ind]
             omega = sim_omega[ind]
             gamma = sim_gamma[ind]
             temps.append(temp)
             combined_rates.append(omega)
+            combined_errs.append(0.05 * omega)
             temps.append(temp)
             combined_rates.append(gamma)
+            combined_errs.append(0.05 * gamma)
         sample_breaks.append(len(combined_rates))
+
+    # temps = []
+    # temp_errors = []
+    # combined_rates = []
+    # combined_errs = []
+    # sample_breaks = []
+    # for sample in ["Hopper", "Wu"]:
+    #     for point in data_points:
+    #         # Crash if we're trying to work with incomplete data
+    #         if (point[omega_column_title] is None) or (
+    #             point[gamma_column_title] is None
+    #         ):
+    #             crash = 1 / 0
+    #         if point[sample_column_title] != sample:
+    #             continue
+    #         temp = get_temp(point)
+    #         temps.append(temp)
+    #         temp_bounds = get_temp_bounds(point)
+    #         temp_error = get_temp_error(point)
+    #         temp_errors.append(temp_error)
+    #         combined_rates.append(point[omega_column_title])
+    #         combined_errs.append(point[omega_err_column_title])
+    #         temps.append(temp)
+    #         temp_errors.append(temp_error)
+    #         combined_rates.append(point[gamma_column_title])
+    #         combined_errs.append(point[gamma_err_column_title])
+    #     sample_breaks.append(len(combined_rates))
 
     # region DECLARE FIT FUNCTIONS HERE
 
@@ -492,49 +523,18 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # Double Orbach
     elif fit_mode == "double_orbach":
-        init_params = (
-            450,
-            1200,
-            65,
-            11000,
-            11000,
-            160,
-            0.01,
-            0.01,
-            0.07,
-            0.15,
-        )
+        init_params = (580, 1500, 65, 9000, 4800, 167)
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            beta[2],
-            beta[3],
-            beta[5],
-            beta[6],
+            temp, beta[0], beta[2], beta[3], beta[5], 0
         )
         omega_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            beta[2],
-            beta[3],
-            beta[5],
-            beta[7],
+            temp, beta[0], beta[2], beta[3], beta[5], 0
         )
         gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            beta[2],
-            beta[4],
-            beta[5],
-            beta[8],
+            temp, beta[1], beta[2], beta[4], beta[5], 0
         )
         gamma_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            beta[2],
-            beta[4],
-            beta[5],
-            beta[9],
+            temp, beta[1], beta[2], beta[4], beta[5], 0
         )
         beta_desc = [
             "Omega Orbach 1 coeff (s^-1)",
@@ -543,10 +543,6 @@ def fit_simultaneous(data_points, fit_mode=None):
             "Omega Orbach 2 coeff (s^-1)",
             "gamma Orbach 2 coeff (s^-1)",
             "Orbach 2 Delta (meV)",
-            "Omega Hopper constant (s^-1)",
-            "Omega Wu constant (s^-1)",
-            "gamma Hopper constant (s^-1)",
-            "gamma Wu constant (s^-1)",
         ]
 
     # Double Orbach, fixed high Orbach coeffs
@@ -597,60 +593,41 @@ def fit_simultaneous(data_points, fit_mode=None):
         ]
 
     # Triple Orbach
-    # init_params = (450, 1200, 65, 1200, 95, 11000, 150, 0.01, 0.01, 0.07, 0.15)
-    # omega_hopper_fit_func = lambda temp, beta: triple_orbach(
-    #     temp,
-    #     beta[0],
-    #     beta[2],
-    #     beta[3],
-    #     beta[4],
-    #     beta[5],
-    #     beta[6],
-    #     beta[7],
-    # )
-    # omega_wu_fit_func = lambda temp, beta: triple_orbach(
-    #     temp,
-    #     beta[0],
-    #     beta[2],
-    #     beta[3],
-    #     beta[4],
-    #     beta[5],
-    #     beta[6],
-    #     beta[8],
-    # )
-    # gamma_hopper_fit_func = lambda temp, beta: triple_orbach(
-    #     temp,
-    #     beta[1],
-    #     beta[2],
-    #     beta[3],
-    #     beta[4],
-    #     beta[5],
-    #     beta[6],
-    #     beta[9],
-    # )
-    # gamma_wu_fit_func = lambda temp, beta: triple_orbach(
-    #     temp,
-    #     beta[1],
-    #     beta[2],
-    #     beta[3],
-    #     beta[4],
-    #     beta[5],
-    #     beta[6],
-    #     beta[10],
-    # )
-    # beta_desc = [
-    #     "Omega Orbach 1 coeff (s^-1)",
-    #     "gamma Orbach 1 coeff (s^-1)",
-    #     "Orbach 1 Delta (meV)",
-    #     "Orbach 2 coeff (s^-1)",
-    #     "Orbach 2 Delta (meV)",
-    #     "Orbach 3 coeff (s^-1)",
-    #     "Orbach 3 Delta (meV)",
-    #     "Omega Hopper constant (s^-1)",
-    #     "Omega Wu constant (s^-1)",
-    #     "gamma Hopper constant (s^-1)",
-    #     "gamma Wu constant (s^-1)",
-    # ]
+    elif fit_mode == "triple_orbach":
+        init_params = (
+            450,
+            1200,
+            65,
+            1200,
+            1200,
+            95,
+            5000,
+            5000,
+            160,
+        )
+        omega_hopper_fit_func = lambda temp, beta: triple_orbach(
+            temp, beta[0], beta[2], beta[3], beta[5], beta[6], beta[8], 0
+        )
+        omega_wu_fit_func = lambda temp, beta: triple_orbach(
+            temp, beta[0], beta[2], beta[3], beta[5], beta[6], beta[8], 0
+        )
+        gamma_hopper_fit_func = lambda temp, beta: triple_orbach(
+            temp, beta[1], beta[2], beta[4], beta[5], beta[7], beta[8], 0
+        )
+        gamma_wu_fit_func = lambda temp, beta: triple_orbach(
+            temp, beta[1], beta[2], beta[4], beta[5], beta[7], beta[8], 0
+        )
+        beta_desc = [
+            "Omega Orbach 1 coeff (s^-1)",
+            "gamma Orbach 1 coeff (s^-1)",
+            "Orbach 1 Delta (meV)",
+            "Omega Orbach 2 coeff (s^-1)",
+            "gamma Orbach 2 coeff (s^-1)",
+            "Orbach 2 Delta (meV)",
+            "Omega Orbach 3 coeff (s^-1)",
+            "gamma Orbach 3 coeff (s^-1)",
+            "Orbach 3 Delta (meV)",
+        ]
 
     # Triple Orbach, fixed energies
     # Delta_1 = 70
@@ -709,50 +686,28 @@ def fit_simultaneous(data_points, fit_mode=None):
     # ]
 
     # Double Orbach, fixed energies
-    # init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
-    # Delta_1 = 70
-    # Delta_2 = 150
-    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[3],
-    # )
-    # omega_wu_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[4],
-    # )
-    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[5],
-    # )
-    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[6],
-    # )
-    # beta_desc = [
-    #     "Omega Orbach 1 coeff (s^-1)",
-    #     "gamma Orbach 1 coeff (s^-1)",
-    #     "Orbach 2 coeff (s^-1)",
-    #     "Omega Hopper constant (s^-1)",
-    #     "Omega Wu constant (s^-1)",
-    #     "gamma Hopper constant (s^-1)",
-    #     "gamma Wu constant (s^-1)",
-    # ]
+    if fit_mode == "double_orbach_fixed_energies":
+        init_params = (580, 1500, 9000, 4800)
+        Delta_1 = 68
+        Delta_2 = 167
+        omega_hopper_fit_func = lambda temp, beta: double_orbach(
+            temp, beta[0], Delta_1, beta[2], Delta_2, 0
+        )
+        omega_wu_fit_func = lambda temp, beta: double_orbach(
+            temp, beta[0], Delta_1, beta[2], Delta_2, 0
+        )
+        gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+            temp, beta[1], Delta_1, beta[3], Delta_2, 0
+        )
+        gamma_wu_fit_func = lambda temp, beta: double_orbach(
+            temp, beta[1], Delta_1, beta[3], Delta_2, 0
+        )
+        beta_desc = [
+            "Omega Orbach 1 coeff (s^-1)",
+            "gamma Orbach 1 coeff (s^-1)",
+            "Omega Orbach 2 coeff (s^-1)",
+            "gamma Orbach 2 coeff (s^-1)",
+        ]
 
     # Double Orbach, second Orbach fixed
     # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
@@ -857,7 +812,7 @@ def fit_simultaneous(data_points, fit_mode=None):
         sample_breaks[0],
     )
     # data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
-    data = data = RealData(temps, combined_rates)
+    data = data = RealData(temps, combined_rates, sy=combined_errs)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=np.array(init_params))
     odr.set_job(fit_type=0)
@@ -2047,6 +2002,10 @@ def main_sub(
     temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
 
     # Fit to Omega and gamma simultaneously
+    # fit_mode = "single_orbach"
+    # fit_mode = "double_orbach"
+    # fit_mode = "triple_orbach"
+    fit_mode = "double_orbach_fixed_energies"
     (
         popt,
         pvar,
@@ -2055,12 +2014,12 @@ def main_sub(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points, "double_orbach")
+    ) = fit_simultaneous(data_points, fit_mode)
 
-    popt[-1] = 0
-    popt[-2] = 0
-    popt[-3] = 0
-    popt[-4] = 0
+    # popt[-1] = 0
+    # popt[-2] = 0
+    # popt[-3] = 0
+    # popt[-4] = 0
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
