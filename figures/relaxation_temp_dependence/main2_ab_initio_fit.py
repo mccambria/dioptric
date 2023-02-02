@@ -354,7 +354,12 @@ def simultaneous_test_lambda(
         else:
             rate = "gamma"
         fit_func = eval("{}_{}_fit_func".format(rate, sample))
-        ret_vals.append(fit_func(temp_val, beta))
+        val = fit_func(temp_val, beta)
+        if val < 0.001:
+            val = -3
+        else:
+            val = np.log(val)
+        ret_vals.append(val)
 
     return np.array(ret_vals)
 
@@ -369,12 +374,18 @@ def fit_simultaneous(data_points, fit_mode=None):
     combined_errs = []
     sample_breaks = []
     sim_temps, sim_omega, sim_gamma = get_ab_initio_rates()
+    cut_factor = 4
+    sim_temps = sim_temps[::cut_factor]
+    sim_omega = sim_omega[::cut_factor]
+    sim_gamma = sim_gamma[::cut_factor]
     for sample in ["Hopper", "Wu"]:
-        for ind in range(len(sim_temps) // 4):
-            ind *= 4
+        for ind in range(len(sim_temps)):
             temp = sim_temps[ind]
+            if temp < 50:
+                continue
             omega = sim_omega[ind]
             gamma = sim_gamma[ind]
+            # gamma = omega
             temps.append(temp)
             combined_rates.append(omega)
             combined_errs.append(0.05 * omega)
@@ -689,7 +700,7 @@ def fit_simultaneous(data_points, fit_mode=None):
     if fit_mode == "double_orbach_fixed_energies":
         init_params = (580, 1500, 9000, 4800)
         Delta_1 = 68
-        Delta_2 = 167
+        Delta_2 = 150
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
             temp, beta[0], Delta_1, beta[2], Delta_2, 0
         )
@@ -812,7 +823,8 @@ def fit_simultaneous(data_points, fit_mode=None):
         sample_breaks[0],
     )
     # data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
-    data = data = RealData(temps, combined_rates, sy=combined_errs)
+    combined_rates = [np.log(rate) for rate in combined_rates]
+    data = data = RealData(temps, combined_rates)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=np.array(init_params))
     odr.set_job(fit_type=0)
@@ -2003,9 +2015,9 @@ def main_sub(
 
     # Fit to Omega and gamma simultaneously
     # fit_mode = "single_orbach"
-    # fit_mode = "double_orbach"
+    fit_mode = "double_orbach"
     # fit_mode = "triple_orbach"
-    fit_mode = "double_orbach_fixed_energies"
+    # fit_mode = "double_orbach_fixed_energies"
     (
         popt,
         pvar,
@@ -2015,6 +2027,9 @@ def main_sub(
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
     ) = fit_simultaneous(data_points, fit_mode)
+
+    # popt = [95, 1400, 120, 1000]
+    # popt = [50, 1500, 500, 5000]
 
     # popt[-1] = 0
     # popt[-2] = 0
@@ -2051,33 +2066,6 @@ def main_sub(
     samples_to_plot = ["hopper"]
     # samples_to_plot = ["wu"]
     linestyles = {"hopper": "dotted", "wu": "dashed"}
-    if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
-        for sample in samples_to_plot:
-            fit_func = eval("omega_{}_lambda".format(sample))
-            ls = "dotted"
-            plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
-            ax.plot(
-                plot_temp_linspace,
-                fit_func(temp_linspace),
-                linestyle=ls,
-                label=r"$\mathrm{\Omega}$ fit",
-                color=omega_edge_color,
-                linewidth=lw,
-                zorder=+10,
-            )
-        # Plot Jarmola 2012 Eq. 1 for S3
-        # ax.plot(temp_linspace, omega_calc(temp_linspace),
-        #         label=r'$\Omega$ fit', color=omega_edge_color)
-        # Ab initio plot
-        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
-        ax.plot(
-            plot_sim_temps,
-            sim_omega,
-            linestyle=sim_ls,
-            label=r"$\mathrm{\Omega}$ fit",
-            color=omega_face_color,
-            linewidth=lw,
-        )
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         for sample in samples_to_plot:
@@ -2091,6 +2079,7 @@ def main_sub(
                 color=gamma_edge_color,
                 linewidth=lw,
                 zorder=+10,
+                label=r"$\mathrm{\gamma} \text{ fit to } \textit{ab initio}$",
             )
         # Ab initio plot
         plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
@@ -2100,6 +2089,35 @@ def main_sub(
             linestyle=sim_ls,
             color=gamma_face_color,
             linewidth=lw,
+            label=r"$\mathrm{\gamma} \textit{ ab initio}$",
+        )
+
+    if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
+        for sample in samples_to_plot:
+            fit_func = eval("omega_{}_lambda".format(sample))
+            ls = "dotted"
+            plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
+            ax.plot(
+                plot_temp_linspace,
+                fit_func(temp_linspace),
+                linestyle=ls,
+                color=omega_edge_color,
+                linewidth=lw,
+                zorder=+10,
+                label=r"$\mathrm{\Omega} \text{ fit to } \textit{ab initio}$",
+            )
+        # Plot Jarmola 2012 Eq. 1 for S3
+        # ax.plot(temp_linspace, omega_calc(temp_linspace),
+        #         label=r'$\Omega$ fit', color=omega_edge_color)
+        # Ab initio plot
+        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
+        ax.plot(
+            plot_sim_temps,
+            sim_omega,
+            linestyle=sim_ls,
+            color=omega_face_color,
+            linewidth=lw,
+            label=r"$\mathrm{\Omega} \textit{ ab initio}$",
         )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
@@ -2413,15 +2431,15 @@ def main_sub(
             )
             # y_leg_pos = 0.31
             # x_leg_pos = 0.6
-            y_leg_pos = 1.0
-            x_leg_pos = 0.0
+            # y_leg_pos = 1.0
+            # x_leg_pos = 0.0
             leg1 = ax.legend(
-                handles=[gamma_patch, omega_patch],
-                title="Rate",
+                # handles=[gamma_patch, omega_patch],
+                # title="Rate",
                 handlelength=1.5,
                 handletextpad=0.75,
-                loc="upper left",
-                bbox_to_anchor=(x_leg_pos, y_leg_pos),
+                loc="lower right",
+                # bbox_to_anchor=(x_leg_pos, y_leg_pos),
             )
 
         elif plot_type == "ratios":
@@ -2580,7 +2598,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # tool_belt.init_matplotlib()
-    kpl.init_kplotlib(latex=True, font=kpl.Font.HELVETICA)
+    kpl.init_kplotlib(latex=True, font=kpl.Font.ROBOTO)
 
     plot_type = "rates"
     # plot_type = "T2_max"
@@ -2644,8 +2662,10 @@ if __name__ == "__main__":
 
     # Semilog
     rates_to_plot = ["both"]
-    temp_ranges = [[115, 485]]
-    y_ranges = [[0.1, 700]]
+    # temp_ranges = [[115, 485]]
+    # y_ranges = [[0.1, 700]]
+    temp_ranges = [[-5, 480]]
+    y_ranges = [[0.005, 700]]
     yscales = ["log"]
     xscales = ["linear"]
 
