@@ -24,6 +24,7 @@ from scipy.optimize import curve_fit
 import labrad
 import majorroutines.optimize as optimize
 from utils.tool_belt import NormStyle
+from utils.tool_belt import States
 
 
 
@@ -337,13 +338,14 @@ def main(nv_sig, uwave_time_range, state,
          opti_nv_sig = None,
          return_popt=False,
          do_scc = False,
+         do_dq = False,
          do_cos_fit = True):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
                                          uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
-                                         opti_nv_sig,do_scc, do_cos_fit)
+                                         opti_nv_sig,do_scc, do_dq, do_cos_fit)
 
         if return_popt:
             return rabi_per, popt
@@ -355,8 +357,10 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
                   opti_nv_sig = None,
                   do_scc = False,
+                  do_dq = False,
                   do_cos_fit = True):
-
+    do_iq = False 
+    
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
@@ -397,11 +401,21 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         readout_laser_name = nv_sig[laser_key]
         readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         readout = nv_sig["{}_dur".format(laser_tag)]
-    
     else:
         polarization_time = nv_sig['spin_pol_dur']
         readout = nv_sig['spin_readout_dur']
         readout_sec = readout / (10**9)
+        
+    if do_dq:
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
         
     norm_style = nv_sig["norm_style"]
 
@@ -412,10 +426,6 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
 
-    # check if running external iq_mod with SRS
-    iq_key = False
-    if 'uwave_iq_{}'.format(state.name) in nv_sig:
-        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
 
     # Analyze the sequence
     num_reps = int(num_reps)
@@ -435,12 +445,19 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 ion_laser_power,
                 readout_laser_power,]
     else:
-        file_name = 'rabi.py'
-        seq_args = [taus[0], polarization_time,
-                    readout, max_uwave_time,
-                    state.value, laser_name, laser_power]
+        if do_dq:
+            file_name = 'rabi_dq.py'    
+            seq_args = [taus[0], polarization_time,
+                        readout,  uwave_pi_pulse_low, uwave_pi_pulse_high, max_uwave_time,
+                        state.value, laser_name, laser_power]
+        else:
+            file_name = 'rabi.py'
+            seq_args = [taus[0], polarization_time,
+                        readout, max_uwave_time,
+                        state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
+    # print(file_name)
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -499,13 +516,31 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
-        sig_gen_cxn.set_freq(uwave_freq)
-        sig_gen_cxn.set_amp(uwave_power)
-        if iq_key:
-            sig_gen_cxn.load_iq()
-            # arbwavegen_server.load_arb_phases([0])
-        sig_gen_cxn.uwave_on()
+        phase = 0
+        if do_dq:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            if do_iq:
+                sig_gen_high_cxn.load_iq()
+                phase = numpy.pi/2
+                arbwavegen_server.load_arb_phases([phase])
+            sig_gen_high_cxn.uwave_on()
+            
+        else:
+            sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
+            sig_gen_cxn.set_freq(uwave_freq)
+            sig_gen_cxn.set_amp(uwave_power)
+            if do_iq:
+                sig_gen_cxn.load_iq()
+                # arbwavegen_server.load_arb_phases([0])
+            sig_gen_cxn.uwave_on()
+        
+        
         
         if do_scc:
             charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
@@ -543,9 +578,14 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                         ion_laser_power,
                         readout_laser_power,]
             else:
-                seq_args = [taus[tau_ind], polarization_time,
-                            readout, max_uwave_time,
-                            state.value, laser_name, laser_power]
+                if do_dq:
+                    seq_args = [taus[tau_ind], polarization_time,
+                                readout,  uwave_pi_pulse_low, uwave_pi_pulse_high, max_uwave_time,
+                                state.value, laser_name, laser_power]
+                else:
+                    seq_args = [taus[tau_ind], polarization_time,
+                                readout, max_uwave_time,
+                                state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
@@ -600,6 +640,8 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                     'nv_sig': nv_sig,
                     # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'do_scc': do_scc,
+                    'do_dq': do_dq,
+                    'phase':phase,
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -685,6 +727,8 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'nv_sig': nv_sig,
                 # 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'do_scc': do_scc,
+                'do_dq': do_dq,
+                'phase':phase,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,

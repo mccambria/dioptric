@@ -532,6 +532,12 @@ def main_with_cxn(
             arbwavegen_server.load_arb_phases([0,0,0]) 
         else:
             arbwavegen_server.load_cpmg(pi_pulse_reps)
+            # added_phase = 200*numpy.pi/180
+            # phases = [0 + added_phase] + [numpy.pi/2 + added_phase] * pi_pulse_reps + [0 + added_phase]
+            # print(phases)
+            
+            # return
+            # arbwavegen_server.load_arb_phases(phases) 
             
         
 

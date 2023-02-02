@@ -62,6 +62,7 @@ def linear_fit_errors(t, vals, errs, title):
     x_intercept =  solve[0]
     print(x_intercept)
     
+   
     
 t = [91, 101, 111, 121, 131, 141, 151]
 

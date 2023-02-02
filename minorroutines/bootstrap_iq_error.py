@@ -42,7 +42,8 @@ def measurement(cxn,
             state=States.HIGH,
             do_plot = False,
             title = None,
-            inter_pulse_time = 60):
+            do_dq = False,
+            inter_pulse_time = 175):
     '''
     The basic building block to perform these measurements. Can apply 1, 2, or 3
     MW pulses, and returns counts from [ms=0, ms=+/-1, counts after mw pulses]
@@ -116,19 +117,32 @@ def measurement(cxn,
         print(n)
         optimize.main_with_cxn(cxn, nv_sig)
         # Turn on the microwaves for determining microwave delay
-        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
-        sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
-        sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
-        sig_gen_cxn.load_iq()
-        sig_gen_cxn.uwave_on()
+        if do_dq:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(nv_sig["resonance_{}".format(States.LOW.name)])
+            sig_gen_low_cxn.set_amp(nv_sig["uwave_power_{}".format(States.LOW.name)])
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(nv_sig["resonance_{}".format(States.HIGH.name)])
+            sig_gen_high_cxn.set_amp( nv_sig["uwave_power_{}".format(States.HIGH.name)])
+            sig_gen_high_cxn.load_iq()
+            sig_gen_high_cxn.uwave_on()
+        else:
+            sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
+            sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
+            sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
+            sig_gen_cxn.load_iq()
+            sig_gen_cxn.uwave_on()
         arbwavegen_server.load_arb_phases(iq_phases)
     
         counter_server.start_tag_stream()
             
-            
-        seq_args = [gate_time, uwave_pi_pulse, 
-                pulse_1_dur, pulse_2_dur, pulse_3_dur, 
-                polarization_time, inter_pulse_time, num_uwave_pulses, state.value,  laser_name, laser_power]
+        if  do_dq:
+            seq_args = []
+        else:
+            seq_args = [gate_time, uwave_pi_pulse, 
+                    pulse_1_dur, pulse_2_dur, pulse_3_dur, 
+                    polarization_time, inter_pulse_time, num_uwave_pulses, state.value,  laser_name, laser_power]
         # print(seq_args)
         # return
         counter_server.clear_buffer()
@@ -150,7 +164,7 @@ def measurement(cxn,
     
         counter_server.stop_tag_stream()
         
-        # tool_belt.reset_cfm(cxn)
+        tool_belt.reset_cfm(cxn)
         
         
         # analysis
@@ -227,6 +241,7 @@ def measurement(cxn,
                 'state': state.name,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
+                'inter_pulse_time':inter_pulse_time,
                 'population': pop.tolist(),
                 'ref_0_avg_avg': ref_0_avg_avg,
                 'ref_H_avg_avg': ref_H_avg_avg,
@@ -466,8 +481,8 @@ def test_1_pulse(cxn,
     
     
     pi_x_phase = 0
-    pi_2_x_phase = 0
-    pi_y_phase = pi/2 + int_phase
+    pi_2_x_phase = 0 
+    pi_y_phase = pi/2+ int_phase
     pi_2_y_phase = pi/2
     
     ##### 1
@@ -540,7 +555,7 @@ def test_2_pulse(cxn,
     uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
     
     pi_x_phase = 0
-    pi_2_x_phase = 0
+    pi_2_x_phase = 0 
     pi_y_phase = pi/2 + int_phase
     pi_2_y_phase = pi/2
     
@@ -719,7 +734,7 @@ def test_3_pulse(cxn,
     
     
     pi_x_phase = 0
-    pi_2_x_phase = 0
+    pi_2_x_phase = 0 
     pi_y_phase = pi/2 + int_phase
     pi_2_y_phase = pi/2
     
@@ -866,11 +881,11 @@ def full_test(cxn,
 
 
     
-def replot_imposed_phases(file, folder):
+def replot_imposed_phases(file):
     '''
     Replotting functionality for measurements where an intentional phase was applied
     '''
-    data = tool_belt.get_raw_data(file, folder)
+    data = tool_belt.get_raw_data(file)
     
     phases = data['phases']
     phi_p_list = data['phi_p_list']
@@ -886,7 +901,7 @@ def replot_imposed_phases(file, folder):
     e_z_list = data['e_z_list']
     
     plot_errors_vs_changed_param(phases,
-                       'Imposed phase on pi/2_y pulse (deg)',
+                       'Imposed phase on pi_x pulse (deg)',
                            phi_p_list,
                            chi_p_list,
                            phi_list,
@@ -1134,7 +1149,7 @@ def measure_pulse_errors(cxn,
     print("Rotation axis error along z-axis, e_z = {:.5f} +/- {:.5f} rad".format(e_z, e_z_ste))
     print("Pi_Y pulse-------")
     print("Rotation angle error, Chi = {:.5f} +/- {:.5f} rad".format(chi, chi_ste))
-    print("Rotation axis error along x-axis, v_y = {:.5f} +/- {:.5f} rad".format(v_x, v_x_ste))
+    print("Rotation axis error along x-axis, v_x = {:.5f} +/- {:.5f} rad".format(v_x, v_x_ste))
     print("Rotation axis error along z-axis, v_z = {:.5f} +/- {:.5f} rad".format(v_z, v_z_ste))
     print('')
     print("Pi/2_X pulse-------")
@@ -1143,7 +1158,7 @@ def measure_pulse_errors(cxn,
     print("Rotation axis error along z-axis, e_z' = {:.5f} +/- {:.5f} rad".format(e_z_p, e_z_p_ste))
     print("Pi/2_Y pulse-------")
     print("Rotation angle error, Chi' = {:.5f} +/- {:.5f} rad".format(chi_p, chi_p_ste))
-    print("Rotation axis error along x-axis, v_y' = {:.5f} +/- {:.5f} rad".format(v_x_p, v_x_p_ste))
+    print("Rotation axis error along x-axis, v_x' = {:.5f} +/- {:.5f} rad".format(v_x_p, v_x_p_ste))
     print("Rotation axis error along z-axis, v_z' = {:.5f} +/- {:.5f} rad".format(v_z_p, v_z_p_ste))
     print('*******************************')
     
@@ -1198,72 +1213,129 @@ if __name__ == "__main__":
     }  
     
     with labrad.connect() as cxn:
-        num_runs = 15
-        num_reps = int(8e4)
+        num_runs = 8
+        num_reps = int(1e5)
         ### measure the phase errors, will print them out
-        measure_pulse_errors(cxn, 
-                      nv_sig,
-                      num_runs,
-                      num_reps,
-                      state=States.HIGH)
+        # measure_pulse_errors(cxn, 
+        #                nv_sig,
+        #               num_runs,
+        #                num_reps,
+        #               state=States.HIGH)
         
         # test_2_pulse(cxn, 
         #                 nv_sig,
         #                 num_runs,
         #                 num_reps,
         #                 States.HIGH,
-        #                 0,
-        #                 plot=True)
+        #                 numpy.pi/4,
+        #                 plot=False)
         
         ### Run a test by intentionally adding phase to pi_y pulses and 
         ### see that in the extracted pulse errors
-        # do_impose_phase(cxn, 
-        #               nv_sig,
-        #                 num_runs,
-        #                 num_reps,)
+        do_impose_phase(cxn, 
+                       nv_sig,
+                         num_runs,
+                         num_reps,)
         
-        
-        # pulse_error_list = []
-        # pulse_error_ste_list = []
-        # for t in [30, 40]:
+        # file ='2023_02_02-10_22_37-siena-nv4_2023_01_16'
+        # replot_imposed_phases(file)
             
-        #     num_uwave_pulses = 2
-        
-        #     # # Get pulse frequencies
-        #     uwave_pi_pulse = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
-        #     uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
-                                         
-        #     pulse_1_dur = uwave_pi_pulse + t
-        #     pulse_2_dur = uwave_pi_on_2_pulse
-        #     pulse_3_dur = 0
-            
-        #     pi_x_phase = 0
-        #     pi_2_x_phase = 0
-        #     pi_y_phase = pi/2
-        #     pi_2_y_phase = pi/2
     
-        #     iq_phases = [0, pi_y_phase, pi_2_x_phase]
-        #     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
-        #                 nv_sig,
-        #                 uwave_pi_pulse,
-        #                 num_uwave_pulses,
-        #                 iq_phases,
-        #                 pulse_1_dur,
-        #                 pulse_2_dur,
-        #                 pulse_3_dur,
-        #                 num_runs,
-        #                 num_reps,
-        #                 States.HIGH,
-        #                 do_plot = True,
-        #                 Title = 'pi_y - pi/2_x',)
-            
-        #     pe_2_1 = pulse_error
-        #     pe_2_1_err = pulse_error_ste
+    #     num_uwave_pulses = 2
+    #     state = States.HIGH
+    #     plot = False
+    #     int_phase = 0
+        
+    #     # Get pulse frequencies
+    #     uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
+    #     uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
+        
+    #     pi_x_phase = 0
+    #     pi_2_x_phase = 0
+    #     pi_y_phase = pi/2 + int_phase
+    #     pi_2_y_phase = pi/2
     
-        #     pe_2_2 = pulse_error
-        #     pe_2_2_err = pulse_error_ste
-        #     pulse_error_list.append(pulse_error)
-        #     pulse_error_ste_list.append(pulse_error_ste)
-            
-        # print('pulse_error_array = numpy.array({})'.format(pulse_error_list))
-        # print('pulse_error_ste_array = numpy.array({})'.format(pulse_error_ste_list))
+    #     pulse_1_dur = uwave_pi_on_2_pulse
+    #     pulse_2_dur = uwave_pi_on_2_pulse
+    #     pulse_3_dur = 0
+    #     iq_phases = [0,  pi_2_x_phase, pi_2_y_phase]
+    #     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+    #                 nv_sig,
+    #                 uwave_pi_pulse,
+    #                 num_uwave_pulses,
+    #                 iq_phases,
+    #                 pulse_1_dur,
+    #                 pulse_2_dur,
+    #                 pulse_3_dur,
+    #                 num_runs,
+    #                 num_reps,
+    #                 state,
+    #                 do_plot = plot,
+    #                 Title = 'pi/2_x - pi/2_y',)
+    #     pe_2_5 = pulse_error
+    #     pe_2_5_err = pulse_error_ste
+    #     ### 6
+    #     pulse_1_dur = uwave_pi_on_2_pulse
+    #     pulse_2_dur = uwave_pi_on_2_pulse
+    #     pulse_3_dur = 0
+        
+    #     iq_phases = [0,  pi_2_y_phase, pi_2_x_phase]
+    #     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+    #                 nv_sig,
+    #                 uwave_pi_pulse,
+    #                 num_uwave_pulses,
+    #                 iq_phases,
+    #                 pulse_1_dur,
+    #                 pulse_2_dur,
+    #                 pulse_3_dur,
+    #                 num_runs,
+    #                 num_reps,
+    #                 state,
+    #                 do_plot = plot,
+    #                 Title = 'pi/2_y - pi/2_x',)
+    #     pe_2_6 = pulse_error
+    #     pe_2_6_err = pulse_error_ste
+    
+    
+    #     ret_vals=test_3_pulse(cxn, 
+    #                     nv_sig,
+    #                     num_runs,
+    #                     num_reps,
+    #                     state,
+    #                     int_phase,
+    #                     plot,)
+        
+    #     pe9, pe9e, pe10, pe10e, pe11, pe11e, pe12, pe12e = ret_vals
+        
+    #     S = [pe_2_5, pe_2_6, pe9,  pe10,  pe11]
+    #     M = numpy.array([
+    #             [-1,-1,-1,0,0],
+    #             [1,-1,1,0,0],
+    #             [1,1,-1,2,0],
+    #             [-1,1,1,2,0],
+    #             [-1,-1,1,0,2],
+    #             # [1,-1,-1,0,2] #exclude last equation
+    #           ])
+    #     X = numpy.linalg.inv(M).dot(S)
+        
+    #     e_y_p = 0 # we are setting this value to 0
+    #     e_z_p = X[0]
+    #     v_x_p = X[1]
+    #     v_z_p = X[2]
+    #     e_y = X[3]
+    #     v_x = X[4]
+        
+    # print('')
+    # print('************RESULTS************')
+    # print("Pi_X pulse-------")
+    # print("Rotation axis error along y-axis, e_y = {:.5f} rad".format(e_y))
+    # print("Pi_Y pulse-------")
+    # print("Rotation axis error along x-axis, v_x = {:.5f} rad".format(v_x))
+    # print('')
+    # print("Pi/2_X pulse-------")
+    # print("Rotation axis error along y-axis, e_y' = {:.5f} rad (intentionally set to 0)".format(e_y_p))
+    # print("Rotation axis error along z-axis, e_z' = {:.5f} rad".format(e_z_p))
+    # print("Pi/2_Y pulse-------")
+    # print("Rotation axis error along x-axis, v_x' = {:.5f} rad".format(v_x_p))
+    # print("Rotation axis error along z-axis, v_z' = {:.5f} rad".format(v_z_p))
+    # print('*******************************')
