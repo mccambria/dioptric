@@ -354,7 +354,12 @@ def simultaneous_test_lambda(
         else:
             rate = "gamma"
         fit_func = eval("{}_{}_fit_func".format(rate, sample))
-        ret_vals.append(fit_func(temp_val, beta))
+        val = fit_func(temp_val, beta)
+        if val < 0.001:
+            val = -3
+        else:
+            val = np.log(val)
+        ret_vals.append(val)
 
     return np.array(ret_vals)
 
@@ -365,31 +370,56 @@ def fit_simultaneous(data_points, fit_mode=None):
     # rates. Parity determines which rate is where. Even is Omega, odd is
     # gamma.
     temps = []
-    temp_errors = []
     combined_rates = []
     combined_errs = []
     sample_breaks = []
+    sim_temps, sim_omega, sim_gamma = get_ab_initio_rates()
+    cut_factor = 4
+    sim_temps = sim_temps[::cut_factor]
+    sim_omega = sim_omega[::cut_factor]
+    sim_gamma = sim_gamma[::cut_factor]
     for sample in ["Hopper", "Wu"]:
-        for point in data_points:
-            # Crash if we're trying to work with incomplete data
-            if (point[omega_column_title] is None) or (
-                point[gamma_column_title] is None
-            ):
-                crash = 1 / 0
-            if point[sample_column_title] != sample:
+        for ind in range(len(sim_temps)):
+            temp = sim_temps[ind]
+            if temp < 50:
                 continue
-            temp = get_temp(point)
+            omega = sim_omega[ind]
+            gamma = sim_gamma[ind]
+            # gamma = omega
             temps.append(temp)
-            temp_bounds = get_temp_bounds(point)
-            temp_error = get_temp_error(point)
-            temp_errors.append(temp_error)
-            combined_rates.append(point[omega_column_title])
-            combined_errs.append(point[omega_err_column_title])
+            combined_rates.append(omega)
+            combined_errs.append(0.05 * omega)
             temps.append(temp)
-            temp_errors.append(temp_error)
-            combined_rates.append(point[gamma_column_title])
-            combined_errs.append(point[gamma_err_column_title])
+            combined_rates.append(gamma)
+            combined_errs.append(0.05 * gamma)
         sample_breaks.append(len(combined_rates))
+
+    # temps = []
+    # temp_errors = []
+    # combined_rates = []
+    # combined_errs = []
+    # sample_breaks = []
+    # for sample in ["Hopper", "Wu"]:
+    #     for point in data_points:
+    #         # Crash if we're trying to work with incomplete data
+    #         if (point[omega_column_title] is None) or (
+    #             point[gamma_column_title] is None
+    #         ):
+    #             crash = 1 / 0
+    #         if point[sample_column_title] != sample:
+    #             continue
+    #         temp = get_temp(point)
+    #         temps.append(temp)
+    #         temp_bounds = get_temp_bounds(point)
+    #         temp_error = get_temp_error(point)
+    #         temp_errors.append(temp_error)
+    #         combined_rates.append(point[omega_column_title])
+    #         combined_errs.append(point[omega_err_column_title])
+    #         temps.append(temp)
+    #         temp_errors.append(temp_error)
+    #         combined_rates.append(point[gamma_column_title])
+    #         combined_errs.append(point[gamma_err_column_title])
+    #     sample_breaks.append(len(combined_rates))
 
     # region DECLARE FIT FUNCTIONS HERE
 
@@ -504,61 +534,26 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # Double Orbach
     elif fit_mode == "double_orbach":
-        init_params = (
-            450,
-            1200,
-            65,
-            11000,
-            11000,
-            160,
-            0.01,
-            0.01,
-            0.07,
-            0.15,
-        )
+        init_params = (580, 1500, 65, 9000, 4800, 167)
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            beta[2],
-            beta[3],
-            beta[5],
-            beta[6],
+            temp, beta[0], beta[2], beta[3], beta[5], 0
         )
         omega_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            beta[2],
-            beta[3],
-            beta[5],
-            beta[7],
+            temp, beta[0], beta[2], beta[3], beta[5], 0
         )
         gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            beta[2],
-            beta[4],
-            beta[5],
-            beta[8],
+            temp, beta[1], beta[2], beta[4], beta[5], 0
         )
         gamma_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            beta[2],
-            beta[4],
-            beta[5],
-            beta[9],
+            temp, beta[1], beta[2], beta[4], beta[5], 0
         )
         beta_desc = [
             "Omega Orbach 1 coeff (s^-1)",
             "gamma Orbach 1 coeff (s^-1)",
             "Orbach 1 Delta (meV)",
-            "Orbach 2 coeff (s^-1)",
-            "Omega Orbach 2 Delta (meV)",
-            "gamma Orbach 2 Delta (meV)",
-            "Omega Hopper constant (s^-1)",
-            "Omega Wu constant (s^-1)",
-            "gamma Hopper constant (s^-1)",
-            "gamma Wu constant (s^-1)",
+            "Omega Orbach 2 coeff (s^-1)",
+            "gamma Orbach 2 coeff (s^-1)",
+            "Orbach 2 Delta (meV)",
         ]
 
     # Double Orbach, fixed high Orbach coeffs
@@ -610,59 +605,39 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # Triple Orbach
     elif fit_mode == "triple_orbach":
-        init_params = (450, 1200, 65, 1200, 95, 11000, 150, 0.01, 0.01, 0.07, 0.15)
+        init_params = (
+            450,
+            1200,
+            65,
+            1200,
+            1200,
+            95,
+            5000,
+            5000,
+            160,
+        )
         omega_hopper_fit_func = lambda temp, beta: triple_orbach(
-            temp,
-            beta[0],
-            beta[2],
-            beta[3],
-            beta[4],
-            beta[5],
-            beta[6],
-            beta[7],
+            temp, beta[0], beta[2], beta[3], beta[5], beta[6], beta[8], 0
         )
         omega_wu_fit_func = lambda temp, beta: triple_orbach(
-            temp,
-            beta[0],
-            beta[2],
-            beta[3],
-            beta[4],
-            beta[5],
-            beta[6],
-            beta[8],
+            temp, beta[0], beta[2], beta[3], beta[5], beta[6], beta[8], 0
         )
         gamma_hopper_fit_func = lambda temp, beta: triple_orbach(
-            temp,
-            beta[1],
-            beta[2],
-            beta[3],
-            beta[4],
-            beta[5],
-            beta[6],
-            beta[9],
+            temp, beta[1], beta[2], beta[4], beta[5], beta[7], beta[8], 0
         )
         gamma_wu_fit_func = lambda temp, beta: triple_orbach(
-            temp,
-            beta[1],
-            beta[2],
-            beta[3],
-            beta[4],
-            beta[5],
-            beta[6],
-            beta[10],
+            temp, beta[1], beta[2], beta[4], beta[5], beta[7], beta[8], 0
         )
         beta_desc = [
             "Omega Orbach 1 coeff (s^-1)",
             "gamma Orbach 1 coeff (s^-1)",
             "Orbach 1 Delta (meV)",
-            "Orbach 2 coeff (s^-1)",
+            "Omega Orbach 2 coeff (s^-1)",
+            "gamma Orbach 2 coeff (s^-1)",
             "Orbach 2 Delta (meV)",
-            "Orbach 3 coeff (s^-1)",
+            "Omega Orbach 3 coeff (s^-1)",
+            "gamma Orbach 3 coeff (s^-1)",
             "Orbach 3 Delta (meV)",
-            "Omega Hopper constant (s^-1)",
-            "Omega Wu constant (s^-1)",
-            "gamma Hopper constant (s^-1)",
-            "gamma Wu constant (s^-1)",
         ]
 
     # Triple Orbach, fixed energies
@@ -722,50 +697,27 @@ def fit_simultaneous(data_points, fit_mode=None):
     # ]
 
     # Double Orbach, fixed energies
-    elif fit_mode == "double_orbach_fixed_energies":
-        init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
+    if fit_mode == "double_orbach_fixed_energies":
+        init_params = (580, 1500, 9000, 4800)
         Delta_1 = 68
-        Delta_2 = 155
+        Delta_2 = 150
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[3],
+            temp, beta[0], Delta_1, beta[2], Delta_2, 0
         )
         omega_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[0],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[4],
+            temp, beta[0], Delta_1, beta[2], Delta_2, 0
         )
         gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[5],
+            temp, beta[1], Delta_1, beta[3], Delta_2, 0
         )
         gamma_wu_fit_func = lambda temp, beta: double_orbach(
-            temp,
-            beta[1],
-            Delta_1,
-            beta[2],
-            Delta_2,
-            beta[6],
+            temp, beta[1], Delta_1, beta[3], Delta_2, 0
         )
         beta_desc = [
             "Omega Orbach 1 coeff (s^-1)",
             "gamma Orbach 1 coeff (s^-1)",
-            "Orbach 2 coeff (s^-1)",
-            "Omega Hopper constant (s^-1)",
-            "Omega Wu constant (s^-1)",
-            "gamma Hopper constant (s^-1)",
-            "gamma Wu constant (s^-1)",
+            "Omega Orbach 2 coeff (s^-1)",
+            "gamma Orbach 2 coeff (s^-1)",
         ]
 
     # Double Orbach, second Orbach fixed
@@ -871,7 +823,8 @@ def fit_simultaneous(data_points, fit_mode=None):
         sample_breaks[0],
     )
     # data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
-    data = data = RealData(temps, combined_rates, sy=combined_errs)
+    combined_rates = [np.log(rate) for rate in combined_rates]
+    data = data = RealData(temps, combined_rates)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=np.array(init_params))
     odr.set_job(fit_type=0)
@@ -1976,26 +1929,6 @@ def main(
     elif plot_type == "rates":
         fs = figsize
         fig, ax1 = plt.subplots(figsize=fs)
-        inset_bottom = 0.57
-        inset_height = 0.44
-        inset_left = 0.065
-        inset_width = 0.6
-        adj = 0.05
-        inset_left += adj
-        inset_width -= adj
-        ax2 = inset_axes(
-            ax1,
-            width="100%",
-            height="100%",
-            bbox_to_anchor=(
-                inset_left,
-                inset_bottom,
-                inset_width,
-                inset_height,
-            ),
-            bbox_transform=ax1.transAxes,
-            loc=1,
-        )
 
         main_sub(
             fig,
@@ -2010,25 +1943,26 @@ def main(
             yscale[0],
             dosave,
         )
-        # xticks = [125, 200, 300, 400]
-        # xticks = [0, 100, 200, 300, 400]
-        # ax1.set_xticks(xticks)
-        # ax1.xaxis.set_major_formatter(ScalarFormatter())
-        # ax1.yaxis.set_major_formatter(ScalarFormatter())
-        main_sub(
-            fig,
-            ax2,
-            file_name,
-            path,
-            "rates",
-            rates_to_plot[1],
-            temp_range[1],
-            rate_range[1],
-            xscale[1],
-            yscale[1],
-            dosave,
-            inset=True,
-        )
+        if temp_range[0][0] > 100:
+            xticks = [125, 200, 300, 400]
+            # xticks = [0, 100, 200, 300, 400]
+            ax1.set_xticks(xticks)
+            ax1.xaxis.set_major_formatter(ScalarFormatter())
+            # ax1.yaxis.set_major_formatter(ScalarFormatter())
+        # main_sub(
+        #     fig,
+        #     ax2,
+        #     file_name,
+        #     path,
+        #     "rates",
+        #     rates_to_plot[1],
+        #     temp_range[1],
+        #     rate_range[1],
+        #     xscale[1],
+        #     yscale[1],
+        #     dosave,
+        #     inset=True,
+        # )
         # ax2.set_yticks([0, 200, 400, 600])
     else:
         fs = figsize
@@ -2080,9 +2014,10 @@ def main_sub(
     temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
 
     # Fit to Omega and gamma simultaneously
-    fit_func = "double_orbach"
-    # fit_func = "double_orbach_fixed_energies"
-    # fit_func = "triple_orbach"
+    # fit_mode = "single_orbach"
+    fit_mode = "double_orbach"
+    # fit_mode = "triple_orbach"
+    # fit_mode = "double_orbach_fixed_energies"
     (
         popt,
         pvar,
@@ -2091,7 +2026,15 @@ def main_sub(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points, fit_func)
+    ) = fit_simultaneous(data_points, fit_mode)
+
+    # popt = [95, 1400, 120, 1000]
+    # popt = [50, 1500, 500, 5000]
+
+    # popt[-1] = 0
+    # popt[-2] = 0
+    # popt[-3] = 0
+    # popt[-4] = 0
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
@@ -2118,23 +2061,50 @@ def main_sub(
         val = tool_belt.round_sig_figs(popt[ind], 5)
         err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
-        print(presentation_round_latex(val, err))
-    samples_to_plot = ["hopper", "wu"]
-    # samples_to_plot = ["hopper"]
+        # print(presentation_round_latex(val, err))
+    # samples_to_plot = ["hopper", "wu"]
+    samples_to_plot = ["hopper"]
     # samples_to_plot = ["wu"]
     linestyles = {"hopper": "dotted", "wu": "dashed"}
-    if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
+
+    if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         for sample in samples_to_plot:
-            fit_func = eval("omega_{}_lambda".format(sample))
-            ls = linestyles[sample]
+            fit_func = eval("gamma_{}_lambda".format(sample))
+            ls = "dotted"
             plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
             ax.plot(
                 plot_temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\mathrm{\Omega}$ fit",
+                color=gamma_edge_color,
+                linewidth=lw,
+                zorder=+10,
+                label=r"$\mathrm{\gamma} \text{ fit to } \textit{ab initio}$",
+            )
+        # Ab initio plot
+        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
+        ax.plot(
+            plot_sim_temps,
+            sim_gamma,
+            linestyle=sim_ls,
+            color=gamma_face_color,
+            linewidth=lw,
+            label=r"$\mathrm{\gamma} \textit{ ab initio}$",
+        )
+
+    if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
+        for sample in samples_to_plot:
+            fit_func = eval("omega_{}_lambda".format(sample))
+            ls = "dotted"
+            plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
+            ax.plot(
+                plot_temp_linspace,
+                fit_func(temp_linspace),
+                linestyle=ls,
                 color=omega_edge_color,
                 linewidth=lw,
+                zorder=+10,
+                label=r"$\mathrm{\Omega} \text{ fit to } \textit{ab initio}$",
             )
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
@@ -2145,31 +2115,9 @@ def main_sub(
             plot_sim_temps,
             sim_omega,
             linestyle=sim_ls,
-            label=r"$\mathrm{\Omega}$ fit",
             color=omega_face_color,
             linewidth=lw,
-        )
-
-    if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
-        for sample in samples_to_plot:
-            fit_func = eval("gamma_{}_lambda".format(sample))
-            ls = linestyles[sample]
-            plot_temp_linspace = 1 / temp_linspace if xscale == "inv" else temp_linspace
-            ax.plot(
-                plot_temp_linspace,
-                fit_func(temp_linspace),
-                linestyle=ls,
-                color=gamma_edge_color,
-                linewidth=lw,
-            )
-        # Ab initio plot
-        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
-        ax.plot(
-            plot_sim_temps,
-            sim_gamma,
-            linestyle=sim_ls,
-            color=gamma_face_color,
-            linewidth=lw,
+            label=r"$\mathrm{\Omega} \textit{ ab initio}$",
         )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
@@ -2251,7 +2199,7 @@ def main_sub(
                     ls=linestyle,
                 )
 
-        ax.axvline(x=125, color="silver", zorder=-10)
+        # ax.axvline(x=125, color="silver", zorder=-10)
 
     if not inset:
         ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
@@ -2291,6 +2239,7 @@ def main_sub(
     markers_list = []
 
     for point in data_points:
+        break
 
         if "marker" not in point:
             continue
@@ -2463,7 +2412,8 @@ def main_sub(
 
         # Legend x location
         # x_loc = 0.14
-        x_loc = 0.17
+        # x_loc = 0.17
+        x_loc = 0.18
         # x_loc = 0.22
 
         if plot_type in ["rates", "residuals", "normalized_residuals"]:
@@ -2479,15 +2429,17 @@ def main_sub(
                 edgecolor=gamma_edge_color,
                 lw=marker_edge_width,
             )
-            y_leg_pos = 0.38
-            x_leg_pos = 0.0
+            # y_leg_pos = 0.31
+            # x_leg_pos = 0.6
+            # y_leg_pos = 1.0
+            # x_leg_pos = 0.0
             leg1 = ax.legend(
-                handles=[gamma_patch, omega_patch],
-                title="Rate",
+                # handles=[gamma_patch, omega_patch],
+                # title="Rate",
                 handlelength=1.5,
                 handletextpad=0.75,
-                loc="upper left",
-                bbox_to_anchor=(x_leg_pos, y_leg_pos),
+                loc="lower right",
+                # bbox_to_anchor=(x_leg_pos, y_leg_pos),
             )
 
         elif plot_type == "ratios":
@@ -2535,17 +2487,17 @@ def main_sub(
                     label=label,
                 )
                 nv_patches.append(patch)
-            ax.legend(
-                handles=nv_patches,
-                loc="upper left",
-                title=title,
-                # title="Samples",
-                bbox_to_anchor=(x_leg_pos + x_loc, y_leg_pos),
-                handlelength=1,
-                handletextpad=0.75,
-                # borderpad=0.3,
-                # borderaxespad=0.3,
-            )
+            # ax.legend(
+            #     handles=nv_patches,
+            #     loc="upper left",
+            #     title=title,
+            #     # title="Samples",
+            #     bbox_to_anchor=(x_leg_pos + x_loc, y_leg_pos),
+            #     handlelength=1,
+            #     handletextpad=0.75,
+            #     # borderpad=0.3,
+            #     # borderaxespad=0.3,
+            # )
 
         if leg0 is not None:
             ax.add_artist(leg0)
@@ -2577,11 +2529,12 @@ def main_sub(
                 # borderaxespad=0.3,
             )
 
-    if plot_type == "rates":
-        # Sample-dependent vs phonon-limited line
+    # Sample-dependent vs phonon-limited line
+    if (plot_type == "rates") and (min_temp < 100) and (max_temp > 150):
+        ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
         # if (min_temp < 125 < max_temp) and inset:
-        if (min_temp < 125 < max_temp) and not inset:
-            ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
+        # if (min_temp < 125 < max_temp) and not inset:
+        # ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
 
     fig.tight_layout(pad=0.3)
 
@@ -2621,16 +2574,16 @@ def main_sub(
 
 if __name__ == "__main__":
 
-    # temp = 300
+    # temp = 475
     # # delta1 = 4
-    # delta1 = 20
+    # delta1 = 68.2
     # delta2 = 167
-    # A_1 = 580
-    # A_2 = 9000
+    # # A_1 = 580
+    # # A_2 = 9000
     # n1 = bose(delta1, temp)
     # n2 = bose(delta2, temp)
-    # print(n1)
-    # # print(9000 * n2)
+    # print(580 * n1)
+    # print(9000 * n2)
     # # print(A_1 * n1 * (n1 + 1))
     # # print(A_2 * n2 * (n2 + 1))
     # # # print(bose(0.01241, 150))
@@ -2645,7 +2598,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # tool_belt.init_matplotlib()
-    kpl.init_kplotlib(latex=True, font=kpl.Font.HELVETICA)
+    kpl.init_kplotlib(latex=True, font=kpl.Font.ROBOTO)
 
     plot_type = "rates"
     # plot_type = "T2_max"
@@ -2707,22 +2660,14 @@ if __name__ == "__main__":
     #         dosave=False,
     #     )
 
-    rates_to_plot = ["both", "both"]
-    temp_ranges = [[120, 500], [-10, 500]]
-    y_ranges = [[0.03, 750], [-25, 675]]
-    yscales = ["log", "linear"]
-    xscales = ["log", "linear"]
-
-    # temp_ranges = [[-5, 500], [-10, 500]]
-    # y_ranges = [[5e-3, 750], [-25, 675]]
-    # yscales = ["log", "linear"]
-    # xscales = ["linear", "linear"]
-
-    # rates_to_plot = ["both", "both"]
-    # temp_ranges = [[-10, 490], [120, 500]]
-    # y_ranges = [[-20, 675], [0.03, 750]]
-    # yscales = ["linear", "log"]
-    # xscales = ["linear", "inv"]
+    # Semilog
+    rates_to_plot = ["both"]
+    # temp_ranges = [[115, 485]]
+    # y_ranges = [[0.1, 700]]
+    temp_ranges = [[-5, 480]]
+    y_ranges = [[0.005, 700]]
+    yscales = ["log"]
+    xscales = ["linear"]
 
     main(
         file_name,
