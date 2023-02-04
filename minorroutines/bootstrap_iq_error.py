@@ -42,8 +42,8 @@ def measurement(cxn,
             do_plot = False,
             title = None,
             do_dq = False,
-            inter_pulse_time = 100,
-            inter_uwave_buffer = 100):
+            inter_pulse_time = 100, # between SQ/DQ MW pulses
+            inter_uwave_buffer = 110): #between pulses making up one DQ pulse
     '''
     The basic building block to perform these measurements. Can apply 1, 2, or 3
     MW pulses, and returns counts from [ms=0, ms=+/-1, counts after mw pulses]
@@ -125,6 +125,11 @@ def measurement(cxn,
     if do_dq:
         uwave_pi_pulse_low =  nv_sig["pi_pulse_{}".format(States.LOW.name)]
         uwave_pi_pulse_high =  nv_sig["pi_pulse_{}".format(States.HIGH.name)]
+        # rabi_low =  nv_sig["rabi_{}".format(States.LOW.name)]
+        # rabi_high =  nv_sig["rabi_{}".format(States.HIGH.name)]
+        # uwave_pi_pulse_low =  tool_belt.get_pi_pulse_dur(rabi_low)
+        # uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_high)
+        
     else:    
         uwave_pi_pulse =  nv_sig["pi_pulse_{}".format(state.name)]
     
@@ -165,7 +170,7 @@ def measurement(cxn,
                     polarization_time, inter_pulse_time, num_uwave_pulses, state.value,  laser_name, laser_power]
         print(seq_args)
         print(iq_phases)
-        # return
+        #return
         counter_server.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         pulsegen_server.stream_immediate(
@@ -1272,15 +1277,22 @@ if __name__ == "__main__":
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 53.5,
         "resonance_LOW":2.81921,
-        # "rabi_LOW":67*2,     
-        "uwave_power_LOW": 15,   
+        "rabi_LOW":110*2,     
+        "uwave_power_LOW": 5.4,   #12
         "resonance_HIGH":2.92159,
-        # "rabi_HIGH":210.73,
+        "rabi_HIGH":110*2,
         "uwave_power_HIGH": 10,
         
-    "pi_pulse_LOW": 67,
-    "pi_on_2_pulse_LOW": 33,# 37,
-    "pi_pulse_HIGH": 128,
+    #     #SQ
+    # "pi_pulse_LOW": 67,
+    # "pi_on_2_pulse_LOW": 33,
+    # "pi_pulse_HIGH": 128,
+    # "pi_on_2_pulse_HIGH": 59,
+    
+        #DQ
+    "pi_pulse_LOW": 110,
+    "pi_on_2_pulse_LOW": 59,# 37,
+    "pi_pulse_HIGH": 110,
     "pi_on_2_pulse_HIGH": 59,
     }  
     
@@ -1314,12 +1326,45 @@ if __name__ == "__main__":
                         nv_sig,
                           num_runs,
                           num_reps,
-                          imposed_parameter = 'pi_y',
+                          imposed_parameter = 'pi_2_y',
                             do_dq = True)
         
-       # file ='2023_02_03-00_04_03-siena-nv4_2023_01_16'
-        #replot_imposed_phases(file)
+       # file ='2023_02_03-18_58_19-siena-nv4_2023_01_16'
+       # replot_imposed_phases(file)
             
+        if False:
+            phi_p_list = []
+            phi_p_ste_list =[]
+            chi_p_list = []
+            chi_p_ste_list =[]
+            pulse_time_list = []
+            dt_list = [-10,-5,0,5,10]
+            for dt in dt_list:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                pulse_time = nv_sig['pi_on_2_pulse_HIGH'] + dt
+                nv_sig_copy['pi_on_2_pulse_HIGH']  = pulse_time
+                pe_1_1, pe_1_1_err, pe_1_2, pe_1_2_err =test_1_pulse(cxn, 
+                                nv_sig_copy,
+                                num_runs,
+                                num_reps,
+                                States.HIGH,
+                                pi_y_ph=0,
+                                pi_x_ph=0,
+                                pi_2_y_ph=0,
+                                do_dq=True,
+                                plot=False)
+                phi_p_list.append(-pe_1_1/2)
+                phi_p_ste_list.append(pe_1_1_err/2)
+                chi_p_list.append(-pe_1_2/2)
+                chi_p_ste_list.append(pe_1_2_err/2)
+                pulse_time_list.append(pulse_time)
+            print(phi_p_list)
+            print(phi_p_ste_list)
+            print(chi_p_list)
+            print(chi_p_ste_list)
+            print(pulse_time)
+        
+        
         
         
     

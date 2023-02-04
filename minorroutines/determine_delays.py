@@ -488,29 +488,29 @@ if __name__ == "__main__":
     num_reps = int(1e5)
     # num_reps = int(1e4)
     # delay_range = [-250, 250]
-    delay_range = [20, 120]
-    num_steps = 101
+    delay_range = [480, 580]
+    num_steps = 51
     # bnc 835
-    state = States.LOW
+    # state = States.LOW
     #  sg394
-    # state = States.HIGH
+    state = States.HIGH
     with labrad.connect() as cxn:
-       # iq_delay(
-       #     cxn,
-       #     nv_sig,
-       ##     state,
-        #    delay_range,
-       #     num_steps,
-       #     num_reps,
-       # )
-         uwave_delay(
-             cxn,
-             nv_sig,
-             state,
-             delay_range,
-             num_steps,
-             num_reps,
-         )
+       iq_delay(
+            cxn,
+            nv_sig,
+            state,
+            delay_range,
+            num_steps,
+            num_reps,
+        )
+        # uwave_delay(
+        #     cxn,
+        #     nv_sig,
+        #     state,
+        #     delay_range,
+        #     num_steps,
+        #     num_reps,
+        # )
          # uwave_delay(
          #    cxn,
          #     nv_sig,

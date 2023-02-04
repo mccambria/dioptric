@@ -248,7 +248,7 @@ def get_seq(pulse_streamer, config, args):
                                total_uwave_pulse_dur_1  + half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
                            (half_uwave_sig_wait - iq_trigger_time + total_uwave_pulse_dur_2+
-                               half_inter_uwave_buffer, LOW),
+                               half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
                            (half_uwave_sig_wait - iq_trigger_time + total_uwave_pulse_dur_3+
                                half_inter_uwave_buffer, LOW),
@@ -405,7 +405,7 @@ if __name__ == '__main__':
     #     uwave_pulse_dur_1, uwave_pulse_dur_2, uwave_pulse_dur_3, \
     #     polarization, inter_pulse_time = durations
     # num_uwave_pulses, state_activ,state_proxy, laser_name, laser_power = args[8:13]
-    args = [350, 67, 128, 59, 0, 0, 1000.0, 100, 50, 1, 3, 1, 'integrated_520', None]
+    args = [350, 67, 128, 59, 128, 59, 1000.0, 100, 300, 3, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence
