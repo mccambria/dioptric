@@ -488,7 +488,7 @@ if __name__ == "__main__":
     num_reps = int(1e5)
     # num_reps = int(1e4)
     # delay_range = [-250, 250]
-    delay_range = [480, 580]
+    delay_range = [510, 610]
     num_steps = 51
     # bnc 835
     # state = States.LOW

@@ -123,8 +123,8 @@ def measurement(cxn,
     ref_H_ste_list = []
     sig_ste_list = []
     if do_dq:
-        uwave_pi_pulse_low =  nv_sig["pi_pulse_{}".format(States.LOW.name)]
-        uwave_pi_pulse_high =  nv_sig["pi_pulse_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_low =  nv_sig["pi_pulse_X_{}".format(States.LOW.name)]
+        uwave_pi_pulse_high =  nv_sig["pi_pulse_X_{}".format(States.HIGH.name)]
         # rabi_low =  nv_sig["rabi_{}".format(States.LOW.name)]
         # rabi_high =  nv_sig["rabi_{}".format(States.HIGH.name)]
         # uwave_pi_pulse_low =  tool_belt.get_pi_pulse_dur(rabi_low)
@@ -226,7 +226,7 @@ def measurement(cxn,
     ref_H_ste_avg = numpy.average(ref_H_ste_list) / numpy.sqrt(num_runs)
     sig_ste_avg = numpy.average(sig_ste_list) / numpy.sqrt(num_runs)
     
-    # print(ref_0_avg_avg, ref_0_ste_avg)
+    print(ref_0_avg_avg, ref_H_avg_avg, sig_avg_avg)
     # ref_0_ste = numpy.std(
     #     ref_0_list, ddof=1
     #     ) / numpy.sqrt(num_runs)
@@ -501,10 +501,12 @@ def test_1_pulse(cxn,
     num_uwave_pulses = 1
     
     # Get pulse frequencies
-    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
-    uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
-    
-    pulse_1_dur = uwave_pi_on_2_pulse
+    # uwave_pi_pulse_X = nv_sig["pi_pulse_X_{}".format(state.name)]
+    # uwave_pi_pulse_Y = nv_sig["pi_pulse_Y_{}".format(state.name)]
+    uwave_pi_on_2_pulse_X = nv_sig["pi_on_2_pulse_X_{}".format(state.name)]
+    uwave_pi_on_2_pulse_Y = nv_sig["pi_on_2_pulse_Y_{}".format(state.name)]
+
+    pulse_1_dur = uwave_pi_on_2_pulse_X
     pulse_2_dur = 0
     pulse_3_dur = 0
     
@@ -533,6 +535,10 @@ def test_1_pulse(cxn,
     pe_1_1_err = pulse_error_ste
     
     #### 2
+    
+    pulse_1_dur = uwave_pi_on_2_pulse_Y
+    pulse_2_dur = 0
+    pulse_3_dur = 0
     iq_phases = [0, pi_2_y_phase]
     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
@@ -569,8 +575,8 @@ def test_2_pulse(cxn,
                  ):
     '''
     These are the measurements that conatin two MW pulses
-        1: pi_y - pi/2_x
-        2: pi_x - pi/2_y
+        1: pi_x - pi/2_x
+        2: pi_y - pi/2_y
         3: pi/2_x - pi_y
         4: pi/2_y - pi_x
         5: pi/2_x - pi/2_y
@@ -583,8 +589,10 @@ def test_2_pulse(cxn,
     num_uwave_pulses = 2
 
     # Get pulse frequencies
-    uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
-    uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
+    uwave_pi_pulse_X = nv_sig["pi_pulse_X_{}".format(state.name)]
+    uwave_pi_pulse_Y = nv_sig["pi_pulse_Y_{}".format(state.name)]
+    uwave_pi_on_2_pulse_X = nv_sig["pi_on_2_pulse_X_{}".format(state.name)]
+    uwave_pi_on_2_pulse_Y = nv_sig["pi_on_2_pulse_Y_{}".format(state.name)]
     
     pi_x_phase = 0 + pi_x_ph
     pi_2_x_phase = 0  + 0
@@ -592,11 +600,11 @@ def test_2_pulse(cxn,
     pi_2_y_phase = pi/2 + pi_2_y_ph
     
     ### 1
-    pulse_1_dur = uwave_pi_pulse
-    pulse_2_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_pulse_X
+    pulse_2_dur = uwave_pi_on_2_pulse_X
     pulse_3_dur = 0
     
-    iq_phases = [0, pi_y_phase, pi_2_x_phase]
+    iq_phases = [0, pi_x_phase, pi_2_x_phase]
     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 num_uwave_pulses,
@@ -609,16 +617,16 @@ def test_2_pulse(cxn,
                 do_dq,
                 state,
                 do_plot = plot,
-                Title = 'pi_y - pi/2_x',)
+                Title = 'pi_x - pi/2_x',)
     pe_2_1 = pulse_error
     pe_2_1_err = pulse_error_ste
             
     ### 2
-    pulse_1_dur = uwave_pi_pulse
-    pulse_2_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_pulse_Y
+    pulse_2_dur = uwave_pi_on_2_pulse_Y
     pulse_3_dur = 0
     
-    iq_phases = [0, pi_x_phase, pi_2_y_phase]
+    iq_phases = [0, pi_y_phase, pi_2_y_phase]
     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
                 nv_sig,
                 num_uwave_pulses,
@@ -631,12 +639,12 @@ def test_2_pulse(cxn,
                 do_dq,
                 state,
                 do_plot = plot,
-                Title='pi_x - pi/2_y',)
+                Title='pi_y - pi/2_y',)
     pe_2_2 = pulse_error
     pe_2_2_err = pulse_error_ste
     ### 3
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_X
+    pulse_2_dur = uwave_pi_pulse_Y
     pulse_3_dur = 0
     
     iq_phases = [0,pi_2_x_phase, pi_y_phase ]
@@ -656,8 +664,8 @@ def test_2_pulse(cxn,
     pe_2_3 = pulse_error
     pe_2_3_err = pulse_error_ste
     ### 4
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_Y
+    pulse_2_dur = uwave_pi_pulse_X
     pulse_3_dur = 0
     
     iq_phases = [0,  pi_2_y_phase, pi_x_phase]
@@ -677,8 +685,8 @@ def test_2_pulse(cxn,
     pe_2_4 = pulse_error
     pe_2_4_err = pulse_error_ste
     ### 5
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_X
+    pulse_2_dur = uwave_pi_on_2_pulse_Y
     pulse_3_dur = 0
     
     iq_phases = [0,  pi_2_x_phase, pi_2_y_phase]
@@ -698,8 +706,8 @@ def test_2_pulse(cxn,
     pe_2_5 = pulse_error
     pe_2_5_err = pulse_error_ste
     ### 6
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_Y
+    pulse_2_dur = uwave_pi_on_2_pulse_X
     pulse_3_dur = 0
     
     iq_phases = [0,  pi_2_y_phase, pi_2_x_phase]
@@ -758,14 +766,16 @@ def test_3_pulse(cxn,
     
 
     # Get pulse frequencies
-    uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
-    uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
+    uwave_pi_pulse_X = nv_sig["pi_pulse_X_{}".format(state.name)]
+    uwave_pi_pulse_Y = nv_sig["pi_pulse_Y_{}".format(state.name)]
+    uwave_pi_on_2_pulse_X = nv_sig["pi_on_2_pulse_X_{}".format(state.name)]
+    uwave_pi_on_2_pulse_Y = nv_sig["pi_on_2_pulse_Y_{}".format(state.name)]
     
     
     ### 1
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_pulse
-    pulse_3_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_Y
+    pulse_2_dur = uwave_pi_pulse_X
+    pulse_3_dur = uwave_pi_on_2_pulse_X
     
     
     pi_x_phase = 0 + pi_x_ph
@@ -791,9 +801,9 @@ def test_3_pulse(cxn,
     pe_3_1 = pulse_error
     pe_3_1_err = pulse_error_ste
     ### 2
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_pulse
-    pulse_3_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_X
+    pulse_2_dur = uwave_pi_pulse_X
+    pulse_3_dur = uwave_pi_on_2_pulse_Y
     
     iq_phases = [0, pi_2_x_phase, pi_x_phase, pi_2_y_phase]
     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
@@ -812,9 +822,9 @@ def test_3_pulse(cxn,
     pe_3_2 = pulse_error
     pe_3_2_err = pulse_error_ste
     ### 3
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_pulse
-    pulse_3_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_Y
+    pulse_2_dur = uwave_pi_pulse_Y
+    pulse_3_dur = uwave_pi_on_2_pulse_X
     
     iq_phases = [0, pi_2_y_phase, pi_y_phase, pi_2_x_phase]
     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
@@ -833,9 +843,9 @@ def test_3_pulse(cxn,
     pe_3_3 = pulse_error
     pe_3_3_err = pulse_error_ste
     ### 4
-    pulse_1_dur = uwave_pi_on_2_pulse
-    pulse_2_dur = uwave_pi_pulse
-    pulse_3_dur = uwave_pi_on_2_pulse
+    pulse_1_dur = uwave_pi_on_2_pulse_X
+    pulse_2_dur = uwave_pi_pulse_Y
+    pulse_3_dur = uwave_pi_on_2_pulse_Y
     
     iq_phases =  [0, pi_2_x_phase, pi_y_phase, pi_2_y_phase]
     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
@@ -1004,7 +1014,7 @@ def plot_errors_vs_changed_param(x_vals,
             x_start = min(x_vals)
             x_end = max(x_vals)
             lin_x = numpy.linspace(x_start, x_end,100)
-            ax.plot(lin_x, lin_line(lin_x, -0.5*pi/180), 'r-', label="expected")
+            ax.plot(lin_x, lin_line(lin_x, -pi/180), 'r-', label="expected")
         
         ax.set_xlabel(x_axis_label)
         ax.set_ylabel('Error')
@@ -1290,14 +1300,17 @@ if __name__ == "__main__":
     # "pi_on_2_pulse_HIGH": 59,
     
         #DQ
-    "pi_pulse_LOW": 110,
-    "pi_on_2_pulse_LOW": 59,# 37,
-    "pi_pulse_HIGH": 110,
-    "pi_on_2_pulse_HIGH": 59,
+    "pi_pulse_X_LOW": 110,
+    "pi_on_2_pulse_X_LOW": 59,# 37,
+    
+    "pi_pulse_X_HIGH": 120, 
+    "pi_on_2_pulse_X_HIGH": 50, #85
+    "pi_pulse_Y_HIGH": 120, 
+    "pi_on_2_pulse_Y_HIGH": 23,
     }  
     
     with labrad.connect() as cxn:
-        num_runs = 5
+        num_runs = 10
         num_reps = int(5e4)
         ### measure the phase errors, will print them out
         # measure_pulse_errors(cxn, 
@@ -1310,27 +1323,28 @@ if __name__ == "__main__":
         #               state=States.HIGH,
         #               do_dq = True)
         
-        # test_2_pulse(cxn, 
-        #                 nv_sig,
-        #                 num_runs,
-        #                 num_reps,
-        #                 States.HIGH,
-        #                 pi_y_ph=0,
-        #                 pi_x_ph=0,
-        #                 pi_2_y_ph=0,
-        #                 plot=False)
+        # test_1_pulse(cxn, 
+        #                  nv_sig,
+        #                  num_runs,
+        #                  num_reps,
+        #                  States.HIGH,
+        #                  pi_y_ph=0,
+        #                  pi_x_ph=0,
+        #                  pi_2_y_ph=0,
+        #                  do_dq = True,
+        #                  plot=False)
         
         ### Run a test by intentionally adding phase to pi_y pulses and 
         ### see that in the extracted pulse errors
-        do_impose_phase(cxn, 
-                        nv_sig,
-                          num_runs,
-                          num_reps,
-                          imposed_parameter = 'pi_2_y',
-                            do_dq = True)
+        # do_impose_phase(cxn, 
+        #                  nv_sig,
+        #                    num_runs,
+        #                    num_reps,
+        #                    imposed_parameter = 'pi_y',
+        #                      do_dq = True)
         
-       # file ='2023_02_03-18_58_19-siena-nv4_2023_01_16'
-       # replot_imposed_phases(file)
+        # file ='2023_02_04-13_36_17-siena-nv4_2023_01_16'
+        # replot_imposed_phases(file)
             
         if False:
             phi_p_list = []
@@ -1338,136 +1352,262 @@ if __name__ == "__main__":
             chi_p_list = []
             chi_p_ste_list =[]
             pulse_time_list = []
-            dt_list = [-10,-5,0,5,10]
+            dt_list = [-30, -20, -10, 0, 10, 20, 30]
+            state = States.HIGH
             for dt in dt_list:
                 nv_sig_copy = copy.deepcopy(nv_sig)
-                pulse_time = nv_sig['pi_on_2_pulse_HIGH'] + dt
-                nv_sig_copy['pi_on_2_pulse_HIGH']  = pulse_time
-                pe_1_1, pe_1_1_err, pe_1_2, pe_1_2_err =test_1_pulse(cxn, 
-                                nv_sig_copy,
-                                num_runs,
-                                num_reps,
-                                States.HIGH,
-                                pi_y_ph=0,
-                                pi_x_ph=0,
-                                pi_2_y_ph=0,
-                                do_dq=True,
-                                plot=False)
-                phi_p_list.append(-pe_1_1/2)
-                phi_p_ste_list.append(pe_1_1_err/2)
-                chi_p_list.append(-pe_1_2/2)
-                chi_p_ste_list.append(pe_1_2_err/2)
+                pulse_time = nv_sig['pi_on_2_pulse_{}_HIGH'.format('X')] + dt
+                nv_sig_copy['pi_on_2_pulse_{}_HIGH'.format('X')]  = pulse_time
+                nv_sig_copy['pi_on_2_pulse_{}_HIGH'.format('Y')]  = pulse_time
+                num_uwave_pulses = 1
+                
+                # Get pulse frequencies
+                uwave_pi_on_2_pulse_X = nv_sig_copy["pi_on_2_pulse_X_{}".format(state.name)]
+                uwave_pi_on_2_pulse_Y = nv_sig_copy["pi_on_2_pulse_Y_{}".format(state.name)]
+
+                pulse_1_dur = uwave_pi_on_2_pulse_X
+                pulse_2_dur = 0
+                pulse_3_dur = 0
+                
+                pi_2_x_phase = 0 
+                pi_2_y_phase = pi/2 
+                
+                ##### 1
+                iq_phases = [0, pi_2_x_phase]
+                pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+                            nv_sig_copy,
+                            num_uwave_pulses,
+                            iq_phases,
+                            pulse_1_dur,
+                            pulse_2_dur,
+                            pulse_3_dur,
+                            num_runs,
+                            num_reps,
+                            True,
+                            state=States.HIGH,
+                            do_plot = False,
+                            Title = 'pi/2_x',)
+                phi_p_list.append(pulse_error)
+                phi_p_ste_list.append(pulse_error_ste)
+                
+                pulse_1_dur = uwave_pi_on_2_pulse_Y
+                pulse_2_dur = 0
+                pulse_3_dur = 0
+                
+                pi_2_x_phase = 0 
+                pi_2_y_phase = pi/2 
+                
+                ##### 2
+                iq_phases = [0, pi_2_y_phase]
+                pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+                            nv_sig_copy,
+                            num_uwave_pulses,
+                            iq_phases,
+                            pulse_1_dur,
+                            pulse_2_dur,
+                            pulse_3_dur,
+                            num_runs,
+                            num_reps,
+                            True,
+                            state=States.HIGH,
+                            do_plot = False,
+                            Title = 'pi/2_x',)
+                chi_p_list.append(pulse_error)
+                chi_p_ste_list.append(pulse_error_ste)
                 pulse_time_list.append(pulse_time)
             print(phi_p_list)
             print(phi_p_ste_list)
             print(chi_p_list)
             print(chi_p_ste_list)
-            print(pulse_time)
+            print(pulse_time_list)
         
         
+        if True:
+            phi_list = []
+            phi_ste_list =[]
+            chi_list = []
+            chi_ste_list =[]
+            pulse_time_list = []
+            dt_list = [-20,-15,-10,-5,0,5,10,15,20,25, 30, 35,40,45,50]
+            for dt in dt_list:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                pulse_time = nv_sig['pi_pulse_X_HIGH'] + dt
+                # nv_sig_copy['pi_pulse_HIGH']  = pulse_time
+             
+                num_uwave_pulses = 2
+                state = States.HIGH
+                plot = False
+                pi_y_ph = 0
+                pi_x_ph = 0
+                pi_2_y_ph = 0
+                
+                # Get pulse frequencies
+                uwave_pi_pulse_X = nv_sig_copy["pi_pulse_X_{}".format(state.name)]+dt
+                uwave_pi_pulse_Y = nv_sig_copy["pi_pulse_Y_{}".format(state.name)]+dt
+                uwave_pi_on_2_pulse_X = nv_sig_copy["pi_on_2_pulse_X_{}".format(state.name)]
+                uwave_pi_on_2_pulse_Y = nv_sig_copy["pi_on_2_pulse_Y_{}".format(state.name)]
+                
+                pi_x_phase = 0 + pi_x_ph
+                pi_2_x_phase = 0
+                pi_y_phase = pi/2 + pi_y_ph
+                pi_2_y_phase = pi/2 + pi_2_y_ph
+                
+                ### 1
+                pulse_1_dur = uwave_pi_pulse_X
+                pulse_2_dur = uwave_pi_on_2_pulse_X
+                pulse_3_dur = 0
+                
+                iq_phases = [0, pi_x_phase, pi_2_x_phase]
+                pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+                            nv_sig_copy,
+                            num_uwave_pulses,
+                            iq_phases,
+                            pulse_1_dur,
+                            pulse_2_dur,
+                            pulse_3_dur,
+                            num_runs,
+                            num_reps,
+                            do_dq=True,
+                            state=state,
+                            do_plot = plot,
+                            Title = 'pi_x - pi/2_x',)
+                pe_2_1 = pulse_error
+                pe_2_1_err = pulse_error_ste
+                        
+                ### 2
+                pulse_1_dur = uwave_pi_pulse_Y
+                pulse_2_dur = uwave_pi_on_2_pulse_Y
+                pulse_3_dur = 0
+                
+                iq_phases = [0, pi_y_phase, pi_2_y_phase]
+                pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+                            nv_sig_copy,
+                            num_uwave_pulses,
+                            iq_phases,
+                            pulse_1_dur,
+                            pulse_2_dur,
+                            pulse_3_dur,
+                            num_runs,
+                            num_reps,
+                            do_dq=True,
+                            state=state,
+                            do_plot = plot,
+                            Title='pi_y - pi/2_y',)
+                pe_2_2 = pulse_error
+                pe_2_2_err = pulse_error_ste
+                
+                phi_list.append(pe_2_1)
+                phi_ste_list.append(pe_2_1_err)
+                chi_list.append(pe_2_2)
+                chi_ste_list.append(pe_2_2_err)
+                pulse_time_list.append(pulse_time)
+            print(phi_list)
+            print(phi_ste_list)
+            print(chi_list)
+            print(chi_ste_list)
+            print(pulse_time_list)
+            
+        if False:
+            num_uwave_pulses = 2
+            state = States.HIGH
+            plot = False
+            pi_y_ph = -30*pi/180
+            pi_x_ph = 0
+            pi_2_y_ph = 0
+            
+            # Get pulse frequencies
+            uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
+            uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
+            
+            pi_x_phase = 0 + pi_x_ph
+            pi_2_x_phase = 0
+            pi_y_phase = pi/2 + pi_y_ph
+            pi_2_y_phase = pi/2 + pi_2_y_ph
+        
+            pulse_1_dur = uwave_pi_on_2_pulse
+            pulse_2_dur = uwave_pi_on_2_pulse
+            pulse_3_dur = 0
+            iq_phases = [0,  pi_2_x_phase, pi_2_y_phase]
+            pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+                        nv_sig,
+                        num_uwave_pulses,
+                        iq_phases,
+                        pulse_1_dur,
+                        pulse_2_dur,
+                        pulse_3_dur,
+                        num_runs,
+                        num_reps,
+                        state=state,
+                        do_dq=False,
+                        do_plot = plot,
+                        Title = 'pi/2_x - pi/2_y',)
+            pe_2_5 = pulse_error
+            pe_2_5_err = pulse_error_ste
+            ### 6
+            pulse_1_dur = uwave_pi_on_2_pulse
+            pulse_2_dur = uwave_pi_on_2_pulse
+            pulse_3_dur = 0
+            
+            iq_phases = [0,  pi_2_y_phase, pi_2_x_phase]
+            pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
+                        nv_sig,
+                        num_uwave_pulses,
+                        iq_phases,
+                        pulse_1_dur,
+                        pulse_2_dur,
+                        pulse_3_dur,
+                        num_runs,
+                        num_reps,
+                        state=state,
+                        do_dq=False,
+                        do_plot = plot,
+                        Title = 'pi/2_y - pi/2_x',)
+            pe_2_6 = pulse_error
+            pe_2_6_err = pulse_error_ste
         
         
-    
-    #     num_uwave_pulses = 2
-    #     state = States.HIGH
-    #     plot = False
-    #     pi_y_ph = -30*pi/180
-    #     pi_x_ph = 0
-    #     pi_2_y_ph = 0
-        
-    #     # Get pulse frequencies
-    #     uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
-    #     uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
-        
-    #     pi_x_phase = 0 + pi_x_ph
-    #     pi_2_x_phase = 0
-    #     pi_y_phase = pi/2 + pi_y_ph
-    #     pi_2_y_phase = pi/2 + pi_2_y_ph
-    
-    #     pulse_1_dur = uwave_pi_on_2_pulse
-    #     pulse_2_dur = uwave_pi_on_2_pulse
-    #     pulse_3_dur = 0
-    #     iq_phases = [0,  pi_2_x_phase, pi_2_y_phase]
-    #     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
-    #                 nv_sig,
-    #                 num_uwave_pulses,
-    #                 iq_phases,
-    #                 pulse_1_dur,
-    #                 pulse_2_dur,
-    #                 pulse_3_dur,
-    #                 num_runs,
-    #                 num_reps,
-    #                 state=state,
-    #                 do_dq=False,
-    #                 do_plot = plot,
-    #                 Title = 'pi/2_x - pi/2_y',)
-    #     pe_2_5 = pulse_error
-    #     pe_2_5_err = pulse_error_ste
-    #     ### 6
-    #     pulse_1_dur = uwave_pi_on_2_pulse
-    #     pulse_2_dur = uwave_pi_on_2_pulse
-    #     pulse_3_dur = 0
-        
-    #     iq_phases = [0,  pi_2_y_phase, pi_2_x_phase]
-    #     pulse_error, pulse_error_ste = measure_pulse_error(cxn, 
-    #                 nv_sig,
-    #                 num_uwave_pulses,
-    #                 iq_phases,
-    #                 pulse_1_dur,
-    #                 pulse_2_dur,
-    #                 pulse_3_dur,
-    #                 num_runs,
-    #                 num_reps,
-    #                 state=state,
-    #                 do_dq=False,
-    #                 do_plot = plot,
-    #                 Title = 'pi/2_y - pi/2_x',)
-    #     pe_2_6 = pulse_error
-    #     pe_2_6_err = pulse_error_ste
-    
-    
-    #     ret_vals=test_3_pulse(cxn, 
-    #                     nv_sig,
-    #                     num_runs,
-    #                     num_reps,
-    #                     state,
-    #                     pi_y_ph,
-    #                     pi_x_ph,
-    #                     pi_2_y_ph,
-    #                     plot=plot,
-    #                     do_dq=False,)
-        
-    #     pe9, pe9e, pe10, pe10e, pe11, pe11e, pe12, pe12e = ret_vals
-        
-    #     S = [pe_2_5, pe_2_6, pe9,  pe10,  pe11]
-    #     M = numpy.array([
-    #             [-1,-1,-1,0,0],
-    #             [1,-1,1,0,0],
-    #             [1,1,-1,2,0],
-    #             [-1,1,1,2,0],
-    #             [-1,-1,1,0,2],
-    #             # [1,-1,-1,0,2] #exclude last equation
-    #           ])
-    #     X = numpy.linalg.inv(M).dot(S)
-        
-    #     e_y_p = 0 # we are setting this value to 0
-    #     e_z_p = X[0]
-    #     v_x_p = X[1]
-    #     v_z_p = X[2]
-    #     e_y = X[3]
-    #     v_x = X[4]
-        
-    # print('')
-    # print('************RESULTS************')
-    # print("Pi_X pulse-------")
-    # print("Rotation axis error along y-axis, e_y = {:.5f} rad".format(e_y))
-    # print("Pi_Y pulse-------")
-    # print("Rotation axis error along x-axis, v_x = {:.5f} rad".format(v_x))
-    # print('')
-    # print("Pi/2_X pulse-------")
-    # print("Rotation axis error along y-axis, e_y' = {:.5f} rad (intentionally set to 0)".format(e_y_p))
-    # print("Rotation axis error along z-axis, e_z' = {:.5f} rad".format(e_z_p))
-    # print("Pi/2_Y pulse-------")
-    # print("Rotation axis error along x-axis, v_x' = {:.5f} rad".format(v_x_p))
-    # print("Rotation axis error along z-axis, v_z' = {:.5f} rad".format(v_z_p))
-    # print('*******************************')
+            ret_vals=test_3_pulse(cxn, 
+                            nv_sig,
+                            num_runs,
+                            num_reps,
+                            state,
+                            pi_y_ph,
+                            pi_x_ph,
+                            pi_2_y_ph,
+                            plot=plot,
+                            do_dq=False,)
+            
+            pe9, pe9e, pe10, pe10e, pe11, pe11e, pe12, pe12e = ret_vals
+            
+            S = [pe_2_5, pe_2_6, pe9,  pe10,  pe11]
+            M = numpy.array([
+                    [-1,-1,-1,0,0],
+                    [1,-1,1,0,0],
+                    [1,1,-1,2,0],
+                    [-1,1,1,2,0],
+                    [-1,-1,1,0,2],
+                    # [1,-1,-1,0,2] #exclude last equation
+                  ])
+            X = numpy.linalg.inv(M).dot(S)
+            
+            e_y_p = 0 # we are setting this value to 0
+            e_z_p = X[0]
+            v_x_p = X[1]
+            v_z_p = X[2]
+            e_y = X[3]
+            v_x = X[4]
+            
+            print('')
+            print('************RESULTS************')
+            print("Pi_X pulse-------")
+            print("Rotation axis error along y-axis, e_y = {:.5f} rad".format(e_y))
+            print("Pi_Y pulse-------")
+            print("Rotation axis error along x-axis, v_x = {:.5f} rad".format(v_x))
+            print('')
+            print("Pi/2_X pulse-------")
+            print("Rotation axis error along y-axis, e_y' = {:.5f} rad (intentionally set to 0)".format(e_y_p))
+            print("Rotation axis error along z-axis, e_z' = {:.5f} rad".format(e_z_p))
+            print("Pi/2_Y pulse-------")
+            print("Rotation axis error along x-axis, v_x' = {:.5f} rad".format(v_x_p))
+            print("Rotation axis error along z-axis, v_z' = {:.5f} rad".format(v_z_p))
+            print('*******************************')

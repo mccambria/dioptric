@@ -124,37 +124,37 @@ def get_seq(pulse_streamer, config, args):
     
     if num_uwave_pulses == 1:
         micowave_signal_train_low = [(norm_pulse_activ_low, HIGH), (norm_pulse_activ_high, LOW),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW), #uwave_sig_wait
                                      (prep_pulse_proxy_low, HIGH), (prep_pulse_proxy_high, LOW),
                                      (inter_uwave_buffer, LOW),
                                      (uwave_pulse_dur_1_low, HIGH), (uwave_pulse_dur_1_high, LOW),
                                      (inter_uwave_buffer, LOW),
                                      (prep_pulse_proxy_low, HIGH), (prep_pulse_proxy_high, LOW),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (norm_pulse_activ_low, HIGH), (norm_pulse_activ_high, LOW)]
         
         micowave_signal_train_high = [(norm_pulse_activ_low, LOW), (norm_pulse_activ_high, HIGH),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (prep_pulse_proxy_low, LOW), (prep_pulse_proxy_high, HIGH),
                                      (inter_uwave_buffer, LOW),
                                      (uwave_pulse_dur_1_low, LOW), (uwave_pulse_dur_1_high, HIGH),
                                      (inter_uwave_buffer, LOW),
                                      (prep_pulse_proxy_low, LOW), (prep_pulse_proxy_high, HIGH),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (norm_pulse_activ_low, LOW), (norm_pulse_activ_high, HIGH)]
         iq_signal_train = [(wait_time ,LOW),
                            (norm_pi_pulse_dur, LOW),
-                           (half_inter_uwave_buffer, LOW),
+                           (half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
-                           (half_inter_uwave_buffer - iq_trigger_time +
-                            total_uwave_pulse_dur_1 + half_inter_uwave_buffer, LOW),
+                           (half_uwave_sig_wait - iq_trigger_time +
+                            total_uwave_pulse_dur_1 + half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
-                          ( half_inter_uwave_buffer - iq_trigger_time + norm_pi_pulse_dur, LOW)]
+                          ( half_uwave_sig_wait - iq_trigger_time + norm_pi_pulse_dur, LOW)]
         
         
     elif num_uwave_pulses == 2:
         micowave_signal_train_low = [(norm_pulse_activ_low, HIGH), (norm_pulse_activ_high, LOW),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (prep_pulse_proxy_low, HIGH), (prep_pulse_proxy_high, LOW),
                                      (inter_uwave_buffer, LOW),
                                      (uwave_pulse_dur_1_low, HIGH), (uwave_pulse_dur_1_high, LOW),
@@ -166,11 +166,11 @@ def get_seq(pulse_streamer, config, args):
                                      (uwave_pulse_dur_2_low, HIGH), (uwave_pulse_dur_2_high, LOW),
                                      (inter_uwave_buffer, LOW),
                                      (prep_pulse_proxy_low, HIGH), (prep_pulse_proxy_high, LOW),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (norm_pulse_activ_low, HIGH), (norm_pulse_activ_high, LOW)]
         
         micowave_signal_train_high = [(norm_pulse_activ_low, LOW), (norm_pulse_activ_high, HIGH),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (prep_pulse_proxy_low, LOW), (prep_pulse_proxy_high, HIGH),
                                      (inter_uwave_buffer, LOW),
                                      (uwave_pulse_dur_1_low, LOW), (uwave_pulse_dur_1_high, HIGH),
@@ -182,24 +182,24 @@ def get_seq(pulse_streamer, config, args):
                                      (uwave_pulse_dur_2_low, LOW), (uwave_pulse_dur_2_high, HIGH),
                                      (inter_uwave_buffer, LOW),
                                      (prep_pulse_proxy_low, LOW), (prep_pulse_proxy_high, HIGH),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (norm_pulse_activ_low, LOW), (norm_pulse_activ_high, HIGH)]
         
         
-        iq_signal_train = [(wait_time + norm_pi_pulse_dur + half_inter_uwave_buffer, LOW),
+        iq_signal_train = [(wait_time + norm_pi_pulse_dur + half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
-                           (half_inter_uwave_buffer - iq_trigger_time +
+                           (half_uwave_sig_wait - iq_trigger_time +
                                total_uwave_pulse_dur_1  + half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
                            (half_uwave_sig_wait - iq_trigger_time + total_uwave_pulse_dur_2+
-                               half_inter_uwave_buffer, LOW),
+                               half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
-                           (half_inter_uwave_buffer - iq_trigger_time + norm_pi_pulse_dur, LOW)]
+                           (half_uwave_sig_wait - iq_trigger_time + norm_pi_pulse_dur, LOW)]
                                 
     elif num_uwave_pulses == 3:
         
         micowave_signal_train_low = [(norm_pulse_activ_low, HIGH), (norm_pulse_activ_high, LOW),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (prep_pulse_proxy_low, HIGH), (prep_pulse_proxy_high, LOW),
                                      (inter_uwave_buffer, LOW),
                                      (uwave_pulse_dur_1_low, HIGH), (uwave_pulse_dur_1_high, LOW),
@@ -217,11 +217,11 @@ def get_seq(pulse_streamer, config, args):
                                      (uwave_pulse_dur_3_low, HIGH), (uwave_pulse_dur_3_high, LOW),
                                      (inter_uwave_buffer, LOW),
                                      (prep_pulse_proxy_low, HIGH), (prep_pulse_proxy_high, LOW),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (norm_pulse_activ_low, HIGH), (norm_pulse_activ_high, LOW)]
                                          
         micowave_signal_train_high = [(norm_pulse_activ_low, LOW), (norm_pulse_activ_high, HIGH),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (prep_pulse_proxy_low, LOW), (prep_pulse_proxy_high, HIGH),
                                      (inter_uwave_buffer, LOW),
                                      (uwave_pulse_dur_1_low, LOW), (uwave_pulse_dur_1_high, HIGH),
@@ -239,21 +239,21 @@ def get_seq(pulse_streamer, config, args):
                                      (uwave_pulse_dur_3_low, LOW), (uwave_pulse_dur_3_high, HIGH),
                                      (inter_uwave_buffer, LOW),
                                      (prep_pulse_proxy_low, LOW), (prep_pulse_proxy_high, HIGH),
-                                     (inter_uwave_buffer, LOW),
+                                     (uwave_sig_wait, LOW),
                                      (norm_pulse_activ_low, LOW), (norm_pulse_activ_high, HIGH)]
         
-        iq_signal_train = [(wait_time + norm_pi_pulse_dur + half_inter_uwave_buffer, LOW),
+        iq_signal_train = [(wait_time + norm_pi_pulse_dur + half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
-                           (half_inter_uwave_buffer - iq_trigger_time +
+                           (half_uwave_sig_wait - iq_trigger_time +
                                total_uwave_pulse_dur_1  + half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
                            (half_uwave_sig_wait - iq_trigger_time + total_uwave_pulse_dur_2+
                                half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
                            (half_uwave_sig_wait - iq_trigger_time + total_uwave_pulse_dur_3+
-                               half_inter_uwave_buffer, LOW),
+                               half_uwave_sig_wait, LOW),
                            (iq_trigger_time, HIGH),
-                           (half_inter_uwave_buffer - iq_trigger_time + norm_pi_pulse_dur, LOW)]    
+                           (half_uwave_sig_wait - iq_trigger_time + norm_pi_pulse_dur, LOW)]    
         
     micowave_signal_dur = 0
     for el in micowave_signal_train_low:
@@ -294,7 +294,7 @@ def get_seq(pulse_streamer, config, args):
              (wait_time, LOW),
              (polarization, HIGH),
              (wait_time, LOW),
-             (norm_pi_pulse_dur, LOW), 
+             (norm_pi_pulse_dur, LOW),
              (wait_time, LOW),
              (polarization, HIGH),
              (wait_time, LOW),
@@ -405,7 +405,7 @@ if __name__ == '__main__':
     #     uwave_pulse_dur_1, uwave_pulse_dur_2, uwave_pulse_dur_3, \
     #     polarization, inter_pulse_time = durations
     # num_uwave_pulses, state_activ,state_proxy, laser_name, laser_power = args[8:13]
-    args = [350, 67, 128, 59, 128, 59, 1000.0, 100, 300, 3, 3, 1, 'integrated_520', None]
+    args = [350, 110, 110, 150, 60, 0, 1000.0, 100, 110, 2, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

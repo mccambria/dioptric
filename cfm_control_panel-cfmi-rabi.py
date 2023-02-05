@@ -1348,8 +1348,8 @@ if __name__ == "__main__":
         
        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 350])
-       # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 350])
+        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 350])
+        do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 350])
         
         
         # uwave_time_range = [0, 400]
