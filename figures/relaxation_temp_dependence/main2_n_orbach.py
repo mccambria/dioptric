@@ -2134,9 +2134,10 @@ def main_sub(
     temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
 
     # Fit to Omega and gamma simultaneously
-    # fit_mode = "single_orbach"
-    fit_mode = "double_orbach"
+    fit_mode = "single_orbach"
+    # fit_mode = "double_orbach"
     # fit_mode = "triple_orbach"
+    # fit_mode = "T5"
     (
         popt,
         pvar,
@@ -2187,11 +2188,13 @@ def main_sub(
         "single_orbach": "solid",
         "double_orbach": "solid",
         "triple_orbach": "solid",
+        "T5": "solid",
     }
     fit_mode_labels = {
         "single_orbach": "One mode",
         "double_orbach": "Two modes",
         "triple_orbach": "Three modes",
+        "T5": "T5",
     }
     kpl.anchored_text(ax, fit_mode_labels[fit_mode], kpl.Loc.UPPER_LEFT)
     ls = fit_mode_linestyles[fit_mode]

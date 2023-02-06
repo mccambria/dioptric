@@ -355,10 +355,10 @@ def simultaneous_test_lambda(
             rate = "gamma"
         fit_func = eval("{}_{}_fit_func".format(rate, sample))
         val = fit_func(temp_val, beta)
-        if val < 0.001:
-            val = -3
-        else:
-            val = np.log(val)
+        # if val < 0.001:
+        #     val = -3
+        # else:
+        #     val = np.log(val)
         ret_vals.append(val)
 
     return np.array(ret_vals)
@@ -381,7 +381,7 @@ def fit_simultaneous(data_points, fit_mode=None):
     for sample in ["Hopper", "Wu"]:
         for ind in range(len(sim_temps)):
             temp = sim_temps[ind]
-            if temp < 50:
+            if temp < 125:
                 continue
             omega = sim_omega[ind]
             gamma = sim_gamma[ind]
@@ -823,7 +823,7 @@ def fit_simultaneous(data_points, fit_mode=None):
         sample_breaks[0],
     )
     # data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
-    combined_rates = [np.log(rate) for rate in combined_rates]
+    # combined_rates = [np.log(rate) for rate in combined_rates]
     data = data = RealData(temps, combined_rates)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=np.array(init_params))

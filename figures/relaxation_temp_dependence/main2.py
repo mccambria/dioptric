@@ -1914,7 +1914,7 @@ def main(
         inset_bottom = 0.58
         inset_height = 0.43
         inset_left = 0.52
-        inset_width = 0.485
+        inset_width = 0.50
         ax2 = inset_axes(
             ax1,
             width="100%",
@@ -2718,11 +2718,11 @@ if __name__ == "__main__":
     # yscales = ["log", "linear"]
     # xscales = ["linear", "linear"]
 
-    # rates_to_plot = ["both", "both"]
-    # temp_ranges = [[-10, 490], [120, 500]]
-    # y_ranges = [[-20, 675], [0.03, 750]]
-    # yscales = ["linear", "log"]
-    # xscales = ["linear", "inv"]
+    rates_to_plot = ["both", "both"]
+    temp_ranges = [[-10, 490], [125, 500]]
+    y_ranges = [[-20, 675], [0.2, 900]]
+    yscales = ["linear", "log"]
+    xscales = ["linear", "inv"]
 
     main(
         file_name,
