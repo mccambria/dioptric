@@ -374,15 +374,16 @@ def fit_simultaneous(data_points, fit_mode=None):
     combined_errs = []
     sample_breaks = []
     sim_temps, sim_omega, sim_gamma = get_ab_initio_rates()
-    cut_factor = 4
+    cut_factor = 10
     sim_temps = sim_temps[::cut_factor]
     sim_omega = sim_omega[::cut_factor]
     sim_gamma = sim_gamma[::cut_factor]
     for sample in ["Hopper", "Wu"]:
         for ind in range(len(sim_temps)):
             temp = sim_temps[ind]
-            if temp < 125:
-                continue
+            # if temp < 125:
+            #     # if not (125 < temp < 5000):
+            #     continue
             omega = sim_omega[ind]
             gamma = sim_gamma[ind]
             # gamma = omega
@@ -2068,6 +2069,16 @@ def main_sub(
     linestyles = {"hopper": "dotted", "wu": "dashed"}
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
+        # Ab initio plot
+        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
+        ax.plot(
+            plot_sim_temps,
+            sim_gamma,
+            linestyle=sim_ls,
+            color=gamma_face_color,
+            linewidth=lw,
+            label=r"$\mathrm{\gamma} \textit{ ab initio}$",
+        )
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
             ls = "dotted"
@@ -2081,18 +2092,18 @@ def main_sub(
                 zorder=+10,
                 label=r"$\mathrm{\gamma} \text{ fit to } \textit{ab initio}$",
             )
+
+    if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         # Ab initio plot
         plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
         ax.plot(
             plot_sim_temps,
-            sim_gamma,
+            sim_omega,
             linestyle=sim_ls,
-            color=gamma_face_color,
+            color=omega_face_color,
             linewidth=lw,
-            label=r"$\mathrm{\gamma} \textit{ ab initio}$",
+            label=r"$\mathrm{\Omega} \textit{ ab initio}$",
         )
-
-    if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
             ls = "dotted"
@@ -2109,16 +2120,6 @@ def main_sub(
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
-        # Ab initio plot
-        plot_sim_temps = 1 / sim_temps if xscale == "inv" else sim_temps
-        ax.plot(
-            plot_sim_temps,
-            sim_omega,
-            linestyle=sim_ls,
-            color=omega_face_color,
-            linewidth=lw,
-            label=r"$\mathrm{\Omega} \textit{ ab initio}$",
-        )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
 
@@ -2666,6 +2667,8 @@ if __name__ == "__main__":
     # y_ranges = [[0.1, 700]]
     temp_ranges = [[-5, 480]]
     y_ranges = [[0.005, 700]]
+    # temp_ranges = [[-5, 5000]]
+    # y_ranges = [[0.005, 10**5]]
     yscales = ["log"]
     xscales = ["linear"]
 

@@ -2719,7 +2719,7 @@ if __name__ == "__main__":
     # xscales = ["linear", "linear"]
 
     rates_to_plot = ["both", "both"]
-    temp_ranges = [[-10, 490], [125, 500]]
+    temp_ranges = [[-10, 490], [120, 520]]
     y_ranges = [[-20, 675], [0.2, 900]]
     yscales = ["linear", "log"]
     xscales = ["linear", "inv"]
