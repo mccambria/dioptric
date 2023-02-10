@@ -142,4 +142,3 @@ dependencies:
       - twisted==22.10.0
       - urllib3==1.26.13
       - zope-interface==5.5.2
-prefix: /home/mccambria/anaconda3/envs/dioptric
