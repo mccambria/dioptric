@@ -71,8 +71,8 @@ def get_seq(pulse_streamer, config, args):
     scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
     # print(scc_ion_readout_buffer)
     back_buffer = 200
-    echo_buffer =100
-    coh_buffer = 100
+    echo_buffer = 0#100
+    coh_buffer = 0#100
     delay_buffer = max(green_laser_delay_time,red_laser_delay_time, yellow_laser_delay_time
                        ,uwave_delay_low, uwave_delay_high, iq_delay_time, 100)
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse_low,pi_on_2_pulse_high , 10))
@@ -597,7 +597,7 @@ if __name__ == '__main__':
     #     green_laser_name, green_laser_power, \
     #         red_laser_name, red_laser_power, \
     #             yellow_laser_name, yellow_laser_power = args[9:19]
-    seq_args =[100, 1000.0, 300, 1000.0, 0, 0, 111, 59, 350, 2, 3, 1, 
-               'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
+    seq_args =[100, 1000.0, 300, 1000.0, 112.29, 59.58, 114, 57,
+               2000, 2, 3, 1, 'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

@@ -43,7 +43,7 @@ def measurement(cxn,
             title = None,
             do_dq = False,
             inter_pulse_time = 100, # between SQ/DQ MW pulses
-            inter_uwave_buffer = 110): #between pulses making up one DQ pulse
+            inter_uwave_buffer = 0): #between pulses making up one DQ pulse
     '''
     The basic building block to perform these measurements. Can apply 1, 2, or 3
     MW pulses, and returns counts from [ms=0, ms=+/-1, counts after mw pulses]
@@ -1261,11 +1261,11 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-            "coords":[0.030, -0.302, 5.09],
+            "coords":[0.128, -0.359, 4.24],
         "name": "{}-nv4_2023_01_16".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":42,
+        "expected_count_rate":40,
         
         
           "spin_laser":green_laser,
@@ -1300,28 +1300,28 @@ if __name__ == "__main__":
     # "pi_on_2_pulse_HIGH": 59,
     
         #DQ
-    "pi_pulse_X_LOW": 110,
-    "pi_on_2_pulse_X_LOW": 59,# 37,
+    "pi_pulse_X_LOW": 112.29,
+    "pi_on_2_pulse_X_LOW": 59.58,# 37,
     
-    "pi_pulse_X_HIGH": 120, 
-    "pi_on_2_pulse_X_HIGH": 50, #85
-    "pi_pulse_Y_HIGH": 120, 
-    "pi_on_2_pulse_Y_HIGH": 23,
+    "pi_pulse_X_HIGH": 114, 
+    "pi_on_2_pulse_X_HIGH": 57, 
+    "pi_pulse_Y_HIGH": 114, 
+    "pi_on_2_pulse_Y_HIGH": 57,
     }  
     
     with labrad.connect() as cxn:
         num_runs = 10
         num_reps = int(5e4)
         ### measure the phase errors, will print them out
-        # measure_pulse_errors(cxn, 
-        #                 nv_sig,
-        #               num_runs,
-        #                 num_reps,
-        #                 pi_y_ph = 0,
-        #                 pi_x_ph = 0,
-        #                 pi_2_y_ph = 0,
-        #               state=States.HIGH,
-        #               do_dq = True)
+        measure_pulse_errors(cxn, 
+                        nv_sig,
+                      num_runs,
+                        num_reps,
+                        pi_y_ph = 0,
+                        pi_x_ph = 0,
+                        pi_2_y_ph = 0,
+                      state=States.HIGH,
+                      do_dq = True)
         
         # test_1_pulse(cxn, 
         #                  nv_sig,
@@ -1422,7 +1422,7 @@ if __name__ == "__main__":
             print(pulse_time_list)
         
         
-        if True:
+        if False:
             phi_list = []
             phi_ste_list =[]
             chi_list = []

@@ -89,7 +89,7 @@ def create_fit_figure(
 
     return fit_fig
 
-def fit_t2_12C(data, do_fit = True, incremental=False):
+def fit_t2_12C(data, fixed_offset = None, incremental=False):
     '''
     for isotopically pure samples, this will fit t2
     '''
@@ -121,10 +121,12 @@ def fit_t2_12C(data, do_fit = True, incremental=False):
     do_dq=data['do_dq']
     taus = numpy.array(data['taus'])
     
-    fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-    init_params = [ -0.1, 1000, 1.1]
-    # fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, 1.108, 3)
-    # init_params = [ -0.1, 3000]
+    if fixed_offset:
+        fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, fixed_offset, 3)
+        init_params = [ -0.1, 3000]
+    else:
+        fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
+        init_params = [ -0.1, 1000, 1.1]
     
     popt, pcov = curve_fit(
         fit_func,
@@ -998,10 +1000,10 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
   
     
-    file_name = "2023_01_30-16_41_54-siena-nv4_2023_01_16"
+    file_name = "2023_02_06-03_33_30-siena-nv4_2023_01_16"
 
-    data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2023_01')
-    fit_t2_12C(data, do_fit = True)
+    data = tool_belt.get_raw_data(file_name)
+    fit_t2_12C(data, fixed_offset = 1.097)
     
     
     # file_list = ['2023_01_27-23_54_17-siena-nv4_2023_01_16', # 256

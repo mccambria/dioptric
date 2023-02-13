@@ -261,7 +261,7 @@ class AwgKeys33622A(LabradServer, AWG):
         for chan in [1, 2]:
             source_name = "SOUR{}:".format(chan)
             self.wave_gen.write("{}FUNC SIN".format(source_name))
-            self.wave_gen.write("{}FREQ 100".format(source_name))
+            self.wave_gen.write("{}FREQ 1000".format(source_name))
             self.wave_gen.write("{}VOLT:HIGH +0.5".format(source_name))
             self.wave_gen.write("{}VOLT:LOW -0.5".format(source_name))
         self.wave_gen.write("OUTP1 ON")
