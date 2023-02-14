@@ -20,12 +20,13 @@ root2_on_2 = numpy.sqrt(2) / 2
 class AWG(ABC):
     
 
-    @setting(2, amp="v[]")
-    def set_i_full(self, c, amp):
+    @setting(2)
+    def set_i_full(self, c):
         '''
         Set the I component fully, and the Q component to 0
         '''
 
+        amp = self.iq_comp_amp
         self.load_iq([0], amp)
         
     @setting(10, phases="*v[]")

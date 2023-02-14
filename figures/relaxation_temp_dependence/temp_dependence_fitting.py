@@ -4,7 +4,7 @@ Reproduce Jarmola 2012 temperature scalings
 
 Created on Fri Jun 26 17:40:09 2020
 
-@author: matth
+@author: mccambria
 """
 
 
@@ -136,52 +136,42 @@ def orbach_free(temp, coeff, activation):
 
 
 def raman(temp):
-    return A_3 * (temp ** 5)
+    return A_3 * (temp**5)
 
 
 def test_T_cubed(temp):
-    return A_4 * (temp ** 3)
+    return A_4 * (temp**3)
 
 
 def test_T_seventh(temp):
-    return A_7 * (temp ** 7)
+    return A_7 * (temp**7)
 
 
 def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     # activation = 78
     # coeff_T5 = 0
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
 
 
 def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
     full_scaling = True
     if full_scaling:
         n1 = bose(activation, temp)
-        return const + (coeff_orbach * n1 * (n1 + 1)) + (coeff_T5 * temp ** 5)
+        return const + (coeff_orbach * n1 * (n1 + 1)) + (coeff_T5 * temp**5)
     else:
-        return (
-            const
-            + (coeff_orbach * bose(activation, temp))
-            + (coeff_T5 * temp ** 5)
-        )
+        return const + (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
 
 
-def orbach_variable_exp_const(
-    temp, coeff_orbach, activation, coeff_power, exp, const
-):
+def orbach_variable_exp_const(temp, coeff_orbach, activation, coeff_power, exp, const):
     full_scaling = True
     if full_scaling:
         n1 = bose(activation, temp)
-        return (
-            const
-            + (coeff_orbach * n1 * (n1 + 1))
-            + (coeff_power * temp ** exp)
-        )
+        return const + (coeff_orbach * n1 * (n1 + 1)) + (coeff_power * temp**exp)
     else:
         return (
             const
             + (coeff_orbach * bose(activation, temp))
-            + (coeff_power * temp ** exp)
+            + (coeff_power * temp**exp)
         )
 
 
@@ -192,11 +182,7 @@ def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
         n2 = bose(delta2, temp)
         return const + (coeff1 * n1 * (n1 + 1)) + (coeff2 * n2 * (n2 + 1))
     else:
-        return (
-            const
-            + (coeff1 * bose(delta1, temp))
-            + (coeff2 * bose(delta2, temp))
-        )
+        return const + (coeff1 * bose(delta1, temp)) + (coeff2 * bose(delta2, temp))
 
 
 def double_orbach_ratio(
@@ -209,9 +195,7 @@ def double_orbach_ratio(
         n2 = bose(delta2, temp)
         return const + (coeff * n1 * (n1 + 1)) + (coeff * n2 * (n2 + 1))
     else:
-        return (
-            const + (coeff * bose(delta1, temp)) + (coeff * bose(delta2, temp))
-        )
+        return const + (coeff * bose(delta1, temp)) + (coeff * bose(delta2, temp))
 
 
 def triple_orbach(temp, coeff1, delta1, coeff2, delta2, coeff3, delta3, const):
@@ -235,26 +219,24 @@ def triple_orbach(temp, coeff1, delta1, coeff2, delta2, coeff3, delta3, const):
         )
 
 
-def orbach_T5_free_linear(
-    temp, coeff_orbach, activation, coeff_T5, coeff_linear
-):
+def orbach_T5_free_linear(temp, coeff_orbach, activation, coeff_T5, coeff_linear):
     return (
         (coeff_orbach * bose(activation, temp))
-        + (coeff_T5 * temp ** 5)
+        + (coeff_T5 * temp**5)
         + (coeff_linear * temp)
     )
 
 
 def orbach_T7_free(temp, coeff_orbach, activation, coeff_T7):
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp ** 7)
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp**7)
 
 
 def orbach_T3_free(temp, coeff_orbach, activation, coeff_T3):
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T3 * temp ** 3)
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T3 * temp**3)
 
 
 def T5_free(temp, coeff_T5):
-    return coeff_T5 * temp ** 5
+    return coeff_T5 * temp**5
 
 
 # %% Other functions
@@ -892,7 +874,7 @@ def fit_simultaneous(data_points, fit_mode=None):
     output = odr.run()
     popt = output.beta
     pcov = output.cov_beta
-    pvar = output.sd_beta ** 2
+    pvar = output.sd_beta**2
     red_chi_square = output.res_var
     red_chi_square_report = tool_belt.round_sig_figs(red_chi_square, 3)
     print("Reduced chi squared: {}".format(red_chi_square_report))
@@ -986,9 +968,7 @@ def get_data_points(
 
             # Set up markers if the temp is in the plotting range
             temp = get_temp(point)
-            if (temp_range is not None) and not (
-                temp_range[0] < temp < temp_range[1]
-            ):
+            if (temp_range is not None) and not (temp_range[0] < temp < temp_range[1]):
                 continue
             if nv_name not in nv_names:
                 if marker_type == "nv":
@@ -1033,9 +1013,7 @@ def plot_scalings(
     # ax.set_title('Relaxation rates')
 
     if process_to_plot in ["Walker", "both"]:
-        process_lambda = lambda temp: orbach_T5_free(
-            temp, 0, 75, 1 / (300 ** 5)
-        )
+        process_lambda = lambda temp: orbach_T5_free(temp, 0, 75, 1 / (300**5))
         process_edge_color = "blue"
         ax.plot(
             temp_linspace,
@@ -1044,9 +1022,7 @@ def plot_scalings(
             label="Walker",
         )
     if process_to_plot in ["Orbach", "both"]:
-        process_lambda = lambda temp: orbach_T5_free(
-            temp, 1 / bose(75, 300), 75, 0
-        )
+        process_lambda = lambda temp: orbach_T5_free(temp, 1 / bose(75, 300), 75, 0)
         process_edge_color = "red"
         ax.plot(
             temp_linspace,
@@ -1063,9 +1039,7 @@ def plot_scalings(
     if rate_range is not None:
         ax.set_ylim(rate_range[0], rate_range[1])
     if process_to_plot in ["Walker", "Orbach"]:
-        ax.set_title(
-            "{} Process Temperature Dependence".format(process_to_plot)
-        )
+        ax.set_title("{} Process Temperature Dependence".format(process_to_plot))
     elif process_to_plot == "both":
         ax.set_title("Relaxation Process Temperature Dependence")
         ax.legend(loc="upper left")
@@ -1150,9 +1124,7 @@ def normalized_residuals_histogram(rates_to_plot):
     ax.hist(normalized_residuals, bins=bin_edges, density=True)
 
     inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
-    norm_gaussian = lambda norm_res: inv_root_2_pi * np.exp(
-        -(norm_res ** 2) / 2
-    )
+    norm_gaussian = lambda norm_res: inv_root_2_pi * np.exp(-(norm_res**2) / 2)
     norm_res_linspace = np.linspace(*x_range, 1000)
     ax.plot(norm_res_linspace, norm_gaussian(norm_res_linspace), lw=line_width)
 
@@ -1174,24 +1146,16 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     orbach_1 = lambda temp: bose(Delta_1, temp)
     orbach_2 = lambda temp: bose(Delta_2, temp)
     orbach_3 = lambda temp: bose(Delta_3, temp)
-    orbach_1_full = lambda temp: bose(Delta_1, temp) * (
-        1 + bose(Delta_1, temp)
-    )
-    orbach_2_full = lambda temp: bose(Delta_2, temp) * (
-        1 + bose(Delta_2, temp)
-    )
-    orbach_3_full = lambda temp: bose(Delta_3, temp) * (
-        1 + bose(Delta_3, temp)
-    )
+    orbach_1_full = lambda temp: bose(Delta_1, temp) * (1 + bose(Delta_1, temp))
+    orbach_2_full = lambda temp: bose(Delta_2, temp) * (1 + bose(Delta_2, temp))
+    orbach_3_full = lambda temp: bose(Delta_3, temp) * (1 + bose(Delta_3, temp))
     for ind in [1, 2, 3]:
         orbach_lambda = eval("orbach_{}".format(ind))
         orbach_full_lambda = eval("orbach_{}_full".format(ind))
         if normalized:
             factor = orbach_lambda(300)
             factor_full = orbach_full_lambda(300)
-            plot_orbach_lambda = lambda temp: (1 / factor) * orbach_lambda(
-                temp
-            )
+            plot_orbach_lambda = lambda temp: (1 / factor) * orbach_lambda(temp)
             plot_orbach_full_lambda = lambda temp: (
                 1 / factor_full
             ) * orbach_full_lambda(temp)
@@ -1361,9 +1325,7 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
 
                 xlim = [-10, 490]
                 scatter_ax.set_xlim(xlim[0], xlim[1])
-                scatter_ax.plot(
-                    xlim, [0, 0], color="silver", zorder=-10, lw=line_width
-                )
+                scatter_ax.plot(xlim, [0, 0], color="silver", zorder=-10, lw=line_width)
 
                 # axins.set_ylim(-3.25, 3.25)
                 # axins.set_yticks(np.linspace(-3, 3, 7))
@@ -1376,9 +1338,7 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
                 yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
                 scatter_ax.set_yticks(yticks)
 
-                figure_2_residuals(
-                    scatter_ax, hist_ax, rate, data_points, fit_mode
-                )
+                figure_2_residuals(scatter_ax, hist_ax, rate, data_points, fit_mode)
 
     if supp_comparison:
         past_results = [
@@ -1912,11 +1872,9 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
     # if fit_mode == "T5":
     #     hist_ax.set_xlim(hist_xlim[::-1])
     inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
-    normal_density = lambda x: inv_root_2_pi * np.exp(-(x ** 2) / 2)
+    normal_density = lambda x: inv_root_2_pi * np.exp(-(x**2) / 2)
     err_linspace = np.linspace(hist_ylim[0], hist_ylim[1], 1000)
-    hist_ax.plot(
-        normal_density(err_linspace), err_linspace, color=edgecolor, zorder=1
-    )
+    hist_ax.plot(normal_density(err_linspace), err_linspace, color=edgecolor, zorder=1)
     hist_ax.axis("off")
 
     # print(max_norm_err)
@@ -2122,12 +2080,10 @@ def main_sub(
     # print(gamma_lambda(50))
 
     # Plot ratio
-    ratio_hopper_lambda = lambda temp: gamma_hopper_lambda(
-        temp
-    ) / omega_hopper_lambda(temp)
-    ratio_wu_lambda = lambda temp: gamma_wu_lambda(temp) / omega_wu_lambda(
+    ratio_hopper_lambda = lambda temp: gamma_hopper_lambda(temp) / omega_hopper_lambda(
         temp
     )
+    ratio_wu_lambda = lambda temp: gamma_wu_lambda(temp) / omega_wu_lambda(temp)
     if plot_type in ["ratios", "ratio_fits"]:
         # for func in [ratio_hopper_lambda, ratio_wu_lambda]:
         for sample in rates_to_plot:
@@ -2148,8 +2104,8 @@ def main_sub(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
         T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
-            (T2max ** 2) / 2
-        ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
+            (T2max**2) / 2
+        ) * np.sqrt((3 * omega_err) ** 2 + gamma_err**2)
 
         if plot_type == "T2_max":
             for sample, linestyle, label in [
@@ -2171,9 +2127,9 @@ def main_sub(
                     ls=linestyle,
                 )
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
-        T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
-            T2max ** 2
-        ) * np.sqrt(omega_err ** 2 + gamma_err ** 2)
+        T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (T2max**2) * np.sqrt(
+            omega_err**2 + gamma_err**2
+        )
         T2_max_qutrit_hopper_temp = lambda temp: T2_max_qutrit(
             omega_hopper_lambda(temp), gamma_hopper_lambda(temp)
         )
@@ -2216,9 +2172,7 @@ def main_sub(
     elif plot_type == "T2_max":
         ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
     elif plot_type == "T2_frac":
-        ax.set_ylabel(
-            r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$"
-        )
+        ax.set_ylabel(r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -2597,11 +2551,11 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
     kpl.init_kplotlib()
-    matplotlib.rcParams["axes.linewidth"] = 1.0
+    # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # plot_type = "rates"
+    plot_type = "rates"
     # plot_type = "T2_max"
-    plot_type = "ratios"
+    # plot_type = "ratios"
     # plot_type = "ratio_fits"
     # plot_type = 'residuals'
     # plot_type = "normalized_residuals"

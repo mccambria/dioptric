@@ -5,7 +5,7 @@ Created on Sat Sep  3 11:16:25 2022
 
 @author: carterfox
 
-simple readout sequence for the opx in qua
+Sequence for a ramsey type experiment with one tau and no reference measurement, using scc readout.
 
 """
 
@@ -20,41 +20,42 @@ from utils.tool_belt import States
 
 def qua_program(opx, config, args, num_reps):
     
+    ### get inputted parameters
+    durations = []
+    for ind in range(6):
+        durations.append(numpy.int64(args[ind]))
+    tau, reion_time, ion_time, readout_time, pi_pulse, pi_on_2_pulse = durations
+    state = args[6]
+    green_laser_name, red_laser_name, yellow_laser_name = args[7:10]
+    green_laser_power, red_laser_power, yellow_laser_power = args[10:13]
+    
+    ### specify number of gates and determine length of timetag streams to use 
     apd_indices =  config['apd_indices']
     num_apds = len(apd_indices)
     num_gates = 1
     total_num_gates = int(num_gates*num_reps)
-    timetag_list_size = int(15900 / num_gates / 2)    
+    timetag_list_size = int(15900 / num_gates / num_apds)    
 
-    durations = []
-    for ind in range(6):
-        durations.append(numpy.int64(args[ind]))
-        
-    # Unpack the durations
-    tau, reion_time, ion_time, readout_time, pi_pulse, pi_on_2_pulse = durations
-
-    apd_index, state = args[6:8]
-    green_laser_name, red_laser_name, yellow_laser_name = args[8:11]
-    green_laser_power, red_laser_power, yellow_laser_power = args[11:14]
-    
+    ### get laser info
     green_laser_pulse, green_laser_delay_time, green_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,green_laser_name,green_laser_power)
     red_laser_pulse, red_laser_delay_time, red_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,red_laser_name,red_laser_power)
     yellow_laser_pulse, yellow_laser_delay_time, yellow_laser_amplitude = tool_belt.get_opx_laser_pulse_info(config,yellow_laser_name,yellow_laser_power)
     
+    ### get microwave information
+    state = States(state)
+    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    pre_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
+    post_uwave_exp_wait_time = pre_uwave_exp_wait_time
+    scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
+    scc_ion_readout_buffer_cc = int(scc_ion_readout_buffer//4)
+    
+    ### get necessary times and delays and put them in clock cycles
     reion_time_cc = int(reion_time//4)
     ion_time_cc = int(ion_time//4)
     readout_time_cc = int(readout_time//4)
     green_laser_delay_time_cc = int(green_laser_delay_time//4)
     red_laser_delay_time_cc = int(red_laser_delay_time//4)
     yellow_laser_delay_time_cc = int(yellow_laser_delay_time//4)
-    
-    state = States(state)
-    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    
-    pre_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
-    post_uwave_exp_wait_time = pre_uwave_exp_wait_time
-    scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
-    scc_ion_readout_buffer_cc = int(scc_ion_readout_buffer//4)
 
     sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
@@ -63,21 +64,22 @@ def qua_program(opx, config, args, num_reps):
     back_buffer = 200
     back_buffer_cc = int(back_buffer//4)    
 
-    readout_time_cc = int(readout_time // 4)
-    period = 0 # polarization + signal_wait_time_cc + tau + signal_wait_time_cc + polarization + mid_duration + reference_laser_on
+    readout_time_cc = int(readout_time // 4)    
     
     red_m_yellow_delay_cc = max(int((red_laser_delay_time - yellow_laser_delay_time)//4),4)
     yellow_m_green_delay_cc = max(int((yellow_laser_delay_time - green_laser_delay_time)//4),4)
     rf_m_red_delay_cc = max(int((rf_delay_time - red_laser_delay_time)//4),4)
+    green_m_rf_delay = max(green_laser_delay_time-rf_delay_time , 16)
     delay21_cc = int( (post_uwave_exp_wait_time + rf_m_red_delay_cc*4)//4)
     
     wait_after_init_pulse = 2000
-    delay1_cc = int( (green_laser_delay_time - rf_delay_time + reion_time + wait_after_init_pulse) //4 )
+    delay1_cc = int( (green_m_rf_delay + reion_time + wait_after_init_pulse) //4 )
     delay2_cc = int((yellow_m_green_delay_cc*4 + sig_to_ref_wait_time_long) //4)
     tau_cc = int(tau//4)
     double_tau_cc = int(2*tau_cc)
     pi_on_2_pulse_cc = int(pi_on_2_pulse//4)
     
+    ### determine if the readout time is longer than the max opx readout time and therefore we need to loop over smaller readouts. 
     max_readout_time = config['PhotonCollection']['qm_opx_max_readout_time']
     
     if readout_time > max_readout_time:
@@ -95,6 +97,7 @@ def qua_program(opx, config, args, num_reps):
     
     with program() as seq:
         
+        ### define qua variables and streams
         counts_gate1_apd_0 = declare(int)  
         counts_gate1_apd_1 = declare(int)
         times_gate1_apd_0 = declare(int,size=timetag_list_size)
@@ -125,9 +128,7 @@ def qua_program(opx, config, args, num_reps):
         with for_(n, 0, n < num_reps, n + 1):
             
             align()    
-            
-            #'now first only measurement
-            
+                        
             play(green_laser_pulse*amp(green_laser_amplitude),green_laser_name,duration=reion_time_cc)
                         
             wait(delay1_cc, sig_gen)
@@ -159,7 +160,7 @@ def qua_program(opx, config, args, num_reps):
                     
                 if num_apds == 1:
                     wait(yellow_laser_delay_time_cc ,"do_apd_{}_gate".format(apd_indices[0]))
-                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(counts_gate1_apd_0, apd_readout_time, counts_gate1_apd))
+                    measure("readout", "do_apd_{}_gate".format(apd_indices[0]), None, time_tagging.analog(times_gate1_apd_0, apd_readout_time, counts_gate1_apd_0))
                     save(counts_gate1_apd_0, counts_st_apd_0)
                     save(0, counts_st_apd_1)
                     align("do_apd_0_gate","do_apd_1_gate")
@@ -182,6 +183,7 @@ def get_seq(opx, config, args, num_repeat): #so this will give the full desired 
 
     seq, period, num_gates = qua_program(opx,config, args, num_repeat)
     final = ''
+    ### specify what one 'sample' means for the data processing. 
     sample_size = 'all_reps'
     return seq, final, [period], num_gates, sample_size
     
@@ -203,20 +205,20 @@ if __name__ == '__main__':
             2000.0, 200, 4000, 
             80, 
             100, 
-            1, 1, 
+            1, 
             'cobolt_515', 'cobolt_638', 'laserglow_589',
             1, 1, 0.45]
-    args = [8.0, 1000, 140, 5000.0, 0, 46, 0, 1, 
+    args = [8.0, 1000, 140, 5000.0, 0, 46, 1, 
             'cobolt_515', 'cobolt_638', 'laserglow_589', None, None, 0.45]
     seq , f, p, ns, ss = get_seq([],config, args, num_repeat)
 
-    # job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    # job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
-# 
-    job = qm.execute(seq)
+    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
+    job_sim.get_simulated_samples().con1.plot()
+    plt.show()
 
-    results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
+    # job = qm.execute(seq)
+
+    # results = fetching_tool(job, data_list = ["counts_apd0","counts_apd1"], mode="wait_for_all")
     
     # a = time.time()
     # counts_apd0, counts_apd1 = results.fetch_all() 

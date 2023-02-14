@@ -8,7 +8,6 @@
         {
           "name": "IPython",
           "commands": [
-            "source ~/anaconda3/bin/activate root",
             "ipython"
           ]
         }

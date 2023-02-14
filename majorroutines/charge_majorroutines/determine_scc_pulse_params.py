@@ -11,6 +11,8 @@ reionization pulse and spin shelf pulse.
 @author: agardill
 """
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
+from utils.kplotlib import KplColors
 import numpy
 import numpy as np
 import os
@@ -22,6 +24,7 @@ import time
 from random import shuffle
 import scipy.stats as stats
 import majorroutines.optimize as optimize
+from scipy.optimize import curve_fit
 
 # import minorroutines.photonstatistics as ps
 # from scipy.optimize import curve_fit
@@ -50,25 +53,41 @@ def get_Probability_distribution(aList):
 
 def plot_snr_v_dur(dur_list, sig_counts_avg, ref_counts_avg, 
                    sig_counts_ste, ref_counts_ste, 
-                   snr_list, title, text = None):
+                   snr_list, title, text = None, fit_func = None,
+                   popt = None):
     # turn the list into an array, so we can convert into us
+    kpl.init_kplotlib
     dur_list = numpy.array(dur_list)
     
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
     ax = axes[0]
-    ax.errorbar(dur_list / 10**3, sig_counts_avg, yerr=sig_counts_ste, fmt= 'ro', 
-           label = 'W/ pi-pulse')
-    ax.errorbar(dur_list / 10**3, ref_counts_avg, yerr=ref_counts_ste, fmt= 'ko', 
-           label = 'W/out pi-pulse')
+    
+    kpl.plot_points(ax, dur_list / 10**3, sig_counts_avg, yerr=sig_counts_ste,
+                    color = KplColors.RED, label = 'W/ pi-pulse')
+    kpl.plot_points(ax, dur_list / 10**3, ref_counts_avg, yerr=sig_counts_ste,
+                    color = KplColors.BLACK, label = 'W/out pi-pulse')
     ax.set_xlabel('Test pulse length (us)')
     ax.set_ylabel('Counts (single shot measurement)')
     ax.set_title(title)
     ax.legend()
     
     ax = axes[1]    
-    ax.plot(dur_list / 10**3, snr_list, 'ro')
+    # ax.plot(dur_list / 10**3, snr_list, 'ro')
+    kpl.plot_points(ax, dur_list / 10**3, snr_list,
+                    color = KplColors.RED)
+    if (fit_func is not None) and (popt is not None):
+        smooth_durs = numpy.linspace(dur_list[0], dur_list[-1], 1000)
+        kpl.plot_line(
+            ax,
+            smooth_durs / 10**3,
+            fit_func(smooth_durs/1e3, *popt),
+            color=KplColors.BLACK,
+        )
+        text_popt ='Max SNR {:.3f} at {:.0f} ns'.format(popt[0]**2, popt[1]*1e3)
+        kpl.anchored_text(ax, text_popt, kpl.Loc.UPPER_RIGHT, size=kpl.Size.SMALL)
+        
     ax.set_xlabel('Test pulse length (us)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('SNR (single shot)')
     ax.set_title(title)
     if text:
         ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -104,9 +123,8 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
         
     readout_time = nv_sig['charge_readout_dur']
     ionization_time = nv_sig['nv0_ionization_dur']
-    print(ionization_time)
+    # print(ionization_time)
     reionization_time = nv_sig['nv-_reionization_dur']
-    shelf_time = 0 #nv_sig['spin_shelf_dur']
     
     readout_power = tool_belt.set_laser_power(
         cxn, nv_sig, "charge_readout_laser"
@@ -120,7 +138,6 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
     #  = tool_belt.set_laser_power(
     #     cxn, nv_sig, "spin_shelf_laser"
     # )
-    shelf_power = 0
 
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
@@ -132,7 +149,7 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
     red_laser_name = nv_sig['nv0_ionization_laser']
     yellow_laser_name = nv_sig['charge_readout_laser']
     sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)   
-    sig_gen_name = sig_gen_cxn.name
+    # sig_gen_name = sig_gen_cxn.name
     
     num_reps = int(num_reps)
     opti_coords_list = []
@@ -140,13 +157,13 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
     # Estimate the lenth of the sequance            
     file_name = 'rabi_scc.py'        
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pi_pulse,
-        shelf_time ,  uwave_pi_pulse, 
-        green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-        reion_power, ion_power, shelf_power, readout_power]
+        uwave_pi_pulse, 
+        green_laser_name, yellow_laser_name, red_laser_name, state.value,
+        reion_power, ion_power, readout_power]    
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(file_name, seq_args_string)
       
-    print(seq_args)
+    # print(seq_args)
     # return
     
     seq_time = int(ret_vals[0])
@@ -163,6 +180,9 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
     # Optimize
     opti_coords = optimize.main_with_cxn(cxn, nv_sig)
     opti_coords_list.append(opti_coords)
+    
+    charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+    charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
     
     # Turn on the microwaves
     sig_gen_cxn.set_freq(uwave_freq)
@@ -188,6 +208,8 @@ def measure_with_cxn(cxn, nv_sig, num_reps, state, plot):
     
     tagger_server.stop_tag_stream()
     tool_belt.reset_cfm(cxn)
+    # print(sig_counts)
+    # print(ref_counts)
 
     return sig_counts, ref_counts
 
@@ -201,8 +223,8 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
     state = States.LOW
     if ion_durs is None:
         # ion_durs = numpy.array([340])#
-        ion_durs = numpy.linspace(20,212,7)
-        # ion_durs = numpy.linspace(20,532,17)
+        # ion_durs = numpy.linspace(20,212,7)
+        ion_durs = numpy.linspace(52,436,13)
   
     num_steps = len(ion_durs)
     
@@ -244,14 +266,28 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
         ref_counts_array[ind] = ref_count_avg
         ref_counts_ste_array[ind] = ref_counts_ste
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
-        snr_array[ind] = avg_snr
- 
+        single_snr, snr_unc = tool_belt.poiss_snr([sig_counts], [ref_counts])
+        snr_array[ind] = single_snr
+        
+    fit_func = None
+    popt = None
+    max_snr = None
+    try:
+        
+        fit_func = lambda x,  coeff, mean, stdev: tool_belt.gaussian(x,  coeff, mean, stdev, 0)
+        init_guess = [0.5, 0.3, 0.2]
+        popt, pcov = curve_fit(fit_func, ion_durs/1e3,snr_array, p0=init_guess)
+        max_snr = popt[0]**2
+        print('max_snr {} at {} ns'.format(max_snr, popt[1]*1e3))
+    except Exception:
+        pass
+    
     #plot
-    title = 'Sweep ionization pulse duration'
+    title = 'Sweep ionization pulse duration\n{} V {} ms readout'.format(nv_sig['charge_readout_laser_power'],
+                                                                         nv_sig['charge_readout_dur']/1e6)
     fig = plot_snr_v_dur(ion_durs, sig_counts_array, ref_counts_array, 
                          sig_counts_ste_array, ref_counts_ste_array,
-                          snr_array, title)
+                          snr_array, title, fit_func= fit_func, popt=popt)
     # Save
     
     ion_durs = numpy.array(ion_durs)
@@ -313,7 +349,7 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
     # plt.show()
     
     # print(' \nRoutine complete!')
-    return
+    return max_snr
 
 # %%
 # def determine_reion_dur(nv_sig,apd_indices,num_reps, reion_durs):
@@ -397,80 +433,31 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
     
 if __name__ == '__main__':
     
-    threshold =4
-    file = "2022_12_10-08_56_16-johnson-search-ion_pulse_dur"
-    data = tool_belt.get_raw_data(file)
-    s = np.array(data['sig_counts_eachshot_array'])[0]
-    r = np.array(data['ref_counts_eachshot_array'])[0]
-        
-    states_s = np.copy(s)*0
-    states_s[np.where(s>=threshold)] = 1
-    states_r= np.copy(r)*0
-    states_r[np.where(r>=threshold)] = 1
-    # snr_counts = tool_belt.calc_snr(s,r)
-    # snr_states = tool_belt.calc_snr(states_s,states_r)
-    # print(snr_states)
+    file_list = ['2023_01_26-13_15_26-siena-nv4_2023_01_16-ion_pulse_dur']
     
-    plt.figure()
-    plt.hist(s,histtype='step',bins=range(int(min(s)), int(max(s)) + 1, 1))
-    plt.hist(r,histtype='step',bins=range(int(min(r)), int(max(r)) + 1, 1))
-    plt.show()
-    
-    mean_s = np.mean(s)
-    mean_r = np.mean(r)
-    std_s = np.std(s)
-    std_r = np.std(r)
-    # assign_state = False
-    # photon_thresh = 4
-    # for file in os.listdir("E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_Carr/branch_opx-setup/determine_scc_pulse_params/2022_11/readout_time+power_sweep"):
-    # for file in ['2022_11_15-09_45_21-johnson-search-ion_pulse_dur',
-    #              '2022_12_10-08_56_16-johnson-search-ion_pulse_dur']:
-    #     print(file)
+    for file in file_list:
+        data = tool_belt.get_raw_data(file)
+        nv_sig = data['nv_sig']
+        ion_durs = numpy.array(data['ion_durs'])
+        sig_counts_array = data['sig_counts_array']
+        ref_counts_array = data['ref_counts_array']
+        sig_counts_ste_array = data['sig_counts_ste_array']
+        ref_counts_ste_array = data['ref_counts_ste_array']
+        snr_array = data['snr_list']
         
-    #     data = tool_belt.get_raw_data(file)
-    #     nv_sig = data['nv_sig']
+        fit_func = lambda x,  coeff, mean, stdev: tool_belt.gaussian(x,  coeff, mean, stdev, 0)
+        init_guess = [0.5, 0.3, 0.2]
+        popt, pcov = curve_fit(fit_func, ion_durs/1e3,snr_array, p0=init_guess)
         
-    #     readout_dur = int(nv_sig['charge_readout_dur'])
-    #     readout_power = int(nv_sig['charge_readout_laser_power']*1000)
-    #     init_time = int(nv_sig['nv-_reionization_dur'])
-
-    #     timestamp = tool_belt.get_time_stamp()
-    #     # time.sleep(2)
+        print('max_snr {} at {} ns'.format(popt[0]**2, popt[1]*1e3))
         
         
-    #     save_path1 = tool_belt.get_file_path(__file__, timestamp,'-hists'+'_{}'.format(readout_dur)+
-    #                                          'ns_{}'.format(readout_power)+'mV')
+        title = 'Sweep ionization pulse duration\n{} V {} ms readout'.format(nv_sig['charge_readout_laser_power'],
+                                                                             nv_sig['charge_readout_dur']/1e6)
+        fig = plot_snr_v_dur(ion_durs, sig_counts_array, ref_counts_array, 
+                             sig_counts_ste_array, ref_counts_ste_array,
+                              snr_array, title, fit_func= fit_func, popt=popt)
         
-    #     ion_durs = numpy.array(data['ion_durs'])
-    #     sig_counts = numpy.array(data['sig_counts_eachshot_array'])[0]
-    #     ref_counts = numpy.array(data['ref_counts_eachshot_array'])[0]
-        
-    #     if assign_state:
-            
-    #         sig_counts[numpy.where(sig_counts<=photon_thresh)] = 0
-    #         sig_counts[numpy.where(sig_counts>=photon_thresh)] = 1
-            
-    #         ref_counts[numpy.where(ref_counts<=photon_thresh)] = 0
-    #         ref_counts[numpy.where(ref_counts>=photon_thresh)] = 1
-        
-    #     raw_fig, axes = plt.subplots(1, 3, figsize=(18, 4.5))
-    #     # axes.cla()
-    #     averaging_times = numpy.array([100e3,500e3,1000e3]) #us
-    #     nbins = numpy.array(averaging_times/(readout_dur/1e3),dtype=numpy.int32)
-    #     nb=0
-    #     for ax in axes:
-    #     # plt.hist(binned_data,bins=int(max(binned_data)),histtype='step',linewidth=2)
-    #         width=nbins[nb]
-    #         binned_data_sig = sig_counts[:(sig_counts.size // width) * width].reshape(-1, width).sum(axis=1)
-    #         binned_data_ref = ref_counts[:(ref_counts.size // width) * width].reshape(-1, width).sum(axis=1)
-    #         ax.hist(binned_data_sig,bins=10,histtype='step',linewidth=2,label='$m_s$=-1')
-    #         ax.hist(binned_data_ref,bins=10,histtype='step',linewidth=2,label='$m_s$=0')
-    #         ax.set_xlabel('Binned Counts (summed). Averaging Time = {} ms'.format(averaging_times[nb]/1000))
-    #         nb+=1
-    #     axes[0].legend(loc='upper right')
-    #     axes[2].set_title('{}'.format(readout_dur/1000)+'us    {}'.format(readout_power/1000)+'V')
-    #     tool_belt.save_figure(raw_fig, save_path1)
-    #     plt.show()
     
     
 

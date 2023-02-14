@@ -127,14 +127,16 @@ class PulseGenSwab82(PulseGen, LabradServer):
         self.config_dict = config_dict
         self.pulse_streamer_wiring = self.config_dict["Wiring"]["PulseGen"]
         logging.info(self.pulse_streamer_wiring)
-        self.feedthrough_lasers = []
+        self.do_feedthrough_lasers = []
         optics_dict = config_dict["Optics"]
         for key in optics_dict:
             optic = optics_dict[key]
-            feedthrough_str = optic["feedthrough"]
+            logging.info(optic)
+            feedthrough_str = optic["am_feedthrough"]
             if eval(feedthrough_str):
-                self.feedthrough_lasers.append(key)
-        logging.info(self.feedthrough_lasers)
+                self.do_feedthrough_lasers.append(key)
+        logging.info(self.do_feedthrough_lasers)
+        
         # Initialize state variables and reset
         self.seq = None
         self.loaded_seq_streamed = False
@@ -190,8 +192,8 @@ class PulseGenSwab82(PulseGen, LabradServer):
         """
 
         # Make sure the lasers that require it are set to feedthrough
-        logging.info(num_repeat)
-        for laser in self.feedthrough_lasers:
+        # logging.info(num_repeat)
+        for laser in self.do_feedthrough_lasers:
             self_client = self.client
             if hasattr(self_client, laser):
                 yield self_client[laser].load_feedthrough()

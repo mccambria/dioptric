@@ -32,8 +32,7 @@ def measurement(cxn,
             pulse_1_dur,
             pulse_2_dur,
             pulse_3_dur,
-            apd_indices,
-            num_runs = 10,
+            num_runs = 5,
             state=States.HIGH,
             do_plot = False,
             title = None,
@@ -44,6 +43,9 @@ def measurement(cxn,
     # num_reps = int(5e4)
     
     tool_belt.reset_cfm(cxn)
+    counter_server = tool_belt.get_server_counter(cxn)
+    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
     seq_file = 'test_iq_pulse_errors.py'
     #  Sequence setup
 
@@ -64,30 +66,30 @@ def measurement(cxn,
     
     for n in range(num_runs):
         print(n)
-        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        optimize.main_with_cxn(cxn, nv_sig)
         # Turn on the microwaves for determining microwave delay
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
         sig_gen_cxn.set_freq(nv_sig["resonance_{}".format(state.name)])
         sig_gen_cxn.set_amp(nv_sig["uwave_power_{}".format(state.name)])
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
-        cxn.arbitrary_waveform_generator.load_arb_phases(iq_phases)
+        arbwavegen_server.load_arb_phases(iq_phases)
     
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+        counter_server.start_tag_stream()
             
             
         seq_args = [gate_time, uwave_pi_pulse, 
                 pulse_1_dur, pulse_2_dur, pulse_3_dur, 
-                polarization_time, inter_pulse_time, num_uwave_pulses, state.value, apd_indices[0], laser_name, laser_power]
+                polarization_time, inter_pulse_time, num_uwave_pulses, state.value, laser_name, laser_power]
         # print(seq_args)
         # return
-        cxn.apd_tagger.clear_buffer()
+        counter_server.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate(
+        pulsegen_server.stream_immediate(
             seq_file, num_reps, seq_args_string
         )
     
-        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+        new_counts = counter_server.read_counter_separate_gates(1)
         sample_counts = new_counts[0]
         if len(sample_counts) != 3 * num_reps:
             print("Error!")
@@ -98,7 +100,7 @@ def measurement(cxn,
         # third are the counts after the uwave sequence
         sig_counts = sample_counts[2::3]
     
-        cxn.apd_tagger.stop_tag_stream()
+        counter_server.stop_tag_stream()
         
         tool_belt.reset_cfm(cxn)
         
@@ -150,7 +152,7 @@ def measurement(cxn,
 
     raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'nv_sig-units': tool_belt.get_nv_sig_units(cxn),
                 'num_uwave_pulses': num_uwave_pulses,
                 'iq_phases': iq_phases,
                 'pulse_durations': [pulse_1_dur, pulse_2_dur, pulse_3_dur],
@@ -170,7 +172,7 @@ def measurement(cxn,
     if do_plot:
         tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
-    print(ref_0_avg, ref_H_avg, sig_avg)
+    # print(ref_0_avg, ref_H_avg, sig_avg)
         
     return ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste
 
@@ -182,7 +184,6 @@ def measure_pulse_error(cxn,
             pulse_1_dur,
             pulse_2_dur,
             pulse_3_dur,
-            apd_indices,
             state=States.HIGH,
             do_plot = False,
             Title = None):
@@ -196,17 +197,13 @@ def measure_pulse_error(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state = States.HIGH,
                 do_plot = do_plot,
                 title = Title)
     
     ref_0_avg, ref_H_avg, sig_avg, ref_0_ste, ref_H_ste, sig_ste = ret_vals
     
-    # ref_0_avg = 29766 # 10 runs, 4e5 reps
-    # ref_H_avg = 23106
     
-    # print(ref_0_avg, ref_H_avg, sig_avg)
     
     contrast = ref_0_avg-ref_H_avg
     contrast_ste = numpy.sqrt(ref_0_ste**2 + ref_H_ste**2)
@@ -272,7 +269,6 @@ def solve_errors(meas_list):
 
 def test_1_pulse(cxn, 
                  nv_sig,
-                 apd_indices,
                  state=States.HIGH,
                  int_phase = 0,
                  plot = False):
@@ -297,8 +293,8 @@ def test_1_pulse(cxn,
     
     pi_x_phase = 0
     pi_2_x_phase = 0
-    pi_y_phase = pi/2
-    pi_2_y_phase = pi/2 + int_phase
+    pi_y_phase = pi/2 + int_phase
+    pi_2_y_phase = pi/2
     
     ##### 1
     iq_phases = [0, pi_2_x_phase]
@@ -310,7 +306,6 @@ def test_1_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state=States.HIGH,
                 do_plot = plot,
                 Title = 'pi/2_x')
@@ -327,7 +322,6 @@ def test_1_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state=States.HIGH,
                 do_plot = plot,
                 Title = 'pi/2_y')
@@ -342,7 +336,6 @@ def test_1_pulse(cxn,
 
 def test_2_pulse(cxn, 
                  nv_sig,
-                 apd_indices,
                  state=States.HIGH,
                  int_phase = 0,
                  plot = False
@@ -383,7 +376,6 @@ def test_2_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi_y - pi/2_x')
@@ -404,7 +396,6 @@ def test_2_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title='pi_x - pi/2_y')
@@ -424,7 +415,6 @@ def test_2_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi_y')
@@ -444,7 +434,6 @@ def test_2_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi_x')
@@ -464,7 +453,6 @@ def test_2_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi/2_y')
@@ -484,7 +472,6 @@ def test_2_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi/2_x')
@@ -507,7 +494,6 @@ def test_2_pulse(cxn,
 
 def test_3_pulse(cxn, 
                  nv_sig,
-                 apd_indices,
                  state=States.HIGH,
                  int_phase = 0,
                  plot = False
@@ -548,7 +534,6 @@ def test_3_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi_x - pi/2_x')
@@ -568,7 +553,6 @@ def test_3_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi_x - pi/2_y')
@@ -588,7 +572,6 @@ def test_3_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi_y - pi/2_x')
@@ -608,7 +591,6 @@ def test_3_pulse(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi_y - pi/2_y'
@@ -628,7 +610,6 @@ def test_3_pulse(cxn,
 
 def matrix_test(cxn, 
               nv_sig,
-             apd_indices,
              state=States.HIGH,
              int_phase = 0,
              plot = True):
@@ -649,9 +630,9 @@ def matrix_test(cxn,
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     
-    pi_x_phase = 0 + int_phase
+    pi_x_phase = 0
     pi_2_x_phase = 0
-    pi_y_phase = pi/2 
+    pi_y_phase = pi/2  + int_phase
     pi_2_y_phase = pi/2
     
    
@@ -669,7 +650,6 @@ def matrix_test(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi/2_y')
@@ -689,7 +669,6 @@ def matrix_test(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi/2_x')
@@ -716,11 +695,7 @@ def matrix_test(cxn,
     pulse_2_dur = uwave_pi_pulse
     pulse_3_dur = uwave_pi_on_2_pulse
     
-    
-    # pi_x_phase = 0
-    # pi_2_x_phase = 0
-    # pi_y_phase = pi/2
-    # pi_2_y_phase = pi/2 + int_phase
+
     
     
     iq_phases = [0, pi_2_y_phase, pi_x_phase, pi_2_x_phase]
@@ -732,7 +707,6 @@ def matrix_test(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi_x - pi/2_x')
@@ -752,7 +726,6 @@ def matrix_test(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi_x - pi/2_y')
@@ -772,7 +745,6 @@ def matrix_test(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_y - pi_y - pi/2_x')
@@ -792,7 +764,6 @@ def matrix_test(cxn,
                 pulse_1_dur,
                 pulse_2_dur,
                 pulse_3_dur,
-                apd_indices,
                 state,
                 do_plot = plot,
                 Title = 'pi/2_x - pi_y - pi/2_y'
@@ -1427,7 +1398,7 @@ def do_full_impose_phase(cxn,
      
 def do_impose_phase(cxn, 
               nv_sig,
-              apd_indices,
+              
               state=States.HIGH,):
                     
         phi_list = []
@@ -1447,7 +1418,7 @@ def do_impose_phase(cxn,
         
         errs_list = []
         
-        phases = numpy.linspace(-30, 30, 7)
+        phases = numpy.linspace(-30, 30, 5)
         # print(phases*pi/180)
         # return
         shuffle(phases)
@@ -1456,7 +1427,6 @@ def do_impose_phase(cxn,
             # print(phase_rad)
             s_list = matrix_test(cxn, 
                           nv_sig,
-                          apd_indices,
                           state=state,
                           int_phase = phase_rad,
                           plot = False)
@@ -1502,7 +1472,7 @@ def do_impose_phase(cxn,
         
         raw_data = {'timestamp': timestamp,
                     'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'nv_sig-units': tool_belt.get_nv_sig_units(cxn),
                     'phases': phases.tolist(),
                     'phases-units': 'degrees',
                     
@@ -1644,14 +1614,13 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    apd_indices = [1]
     
     nv_sig = { 
-            "coords":[-0.222, 0.027, 3.83],
-        "name": "{}-nv1_2022_10_27".format(sample_name,),
+            "coords":[0.030, -0.302, 5.09],
+        "name": "{}-nv4_2023_01_16".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":22,
+        "expected_count_rate":42,
         
         
           "spin_laser":green_laser,
@@ -1671,20 +1640,25 @@ if __name__ == "__main__":
 
         
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 68,
-        "resonance_LOW":2.7805,
-        "rabi_LOW":111.6,     
+        "magnet_angle": 53.5,
+        "resonance_LOW":2.81921,
+        "rabi_LOW":67*2,     
         "uwave_power_LOW": 15,   
-        "resonance_HIGH":2.9597,
-        "rabi_HIGH":127.0,
+        "resonance_HIGH":2.92159,
+        "rabi_HIGH":128*2,
         "uwave_power_HIGH": 10,
-    }  
+        
+    "pi_pulse_LOW": 67,
+    "pi_on_2_pulse_LOW": 33,# 37,
+    "pi_pulse_HIGH": 128,
+    "pi_on_2_pulse_HIGH": 59,
+    }
     
     with labrad.connect() as cxn:
         
         # do_impose_phase(cxn, 
         #               nv_sig,
-        #               apd_indices)
+        #             )
         
         # do_change_freq(cxn, 
         #               nv_sig,
@@ -1706,12 +1680,12 @@ if __name__ == "__main__":
         #               plot = False)
         # print(s_list)
             
-        init_phase =0
-        custom_phase(cxn, 
-                           nv_sig,
-                           apd_indices,
-                           init_phase,
-                           States.HIGH)
+        # init_phase =0
+        # custom_phase(cxn, 
+        #                    nv_sig,
+        #                    apd_indices,
+        #                    init_phase,
+        #                    States.HIGH)
         
         #sweep_inter_pulse_time(cxn, 
         #                 nv_sig,
@@ -1719,54 +1693,11 @@ if __name__ == "__main__":
         #                 init_phase,
         #                 States.HIGH,)
         
-        # test_1_pulse(cxn, 
-        #                   nv_sig,
-        #                   apd_indices,
-        #                   state=States.HIGH,)
-        
-        file = '2022_11_18-12_53_20-siena-nv1_2022_10_27'
-        folder = 'pc_rabi/branch_master/test_iq_pulse_errors/2022_11'
-        
-        # replot_imposed_phases(file, folder)
-        # replot_change_f1req(file, folder)
+        test_3_pulse(cxn, 
+                          nv_sig,
+                          state=States.HIGH,
+                          int_phase = 0,)
         
         
-        data = tool_belt.get_raw_data(file, folder)
-        population = data['population']
-        phi_list = data['phi_list']
-        # fit_custom_data(population,phi_list )
-        
-        
-        # phases = data['phases']
-        
-        
-        
-        
-        # S_list = numpy.array([-0.017400677548506327, 0.042425177414378235, -0.20242098184263618, -0.23655256723716384, -0.03851196329072437, -0.10847403631729852, 0.4632638643588838, 0.381755747984473, -0.5094224924012158, -0.48960701526469635, 0.4482382288743374, 0.5441888619854722])
-        S_list = numpy.array([0.003800217155266017, 0.008625817965496774, -0.24250764525993884, -0.17429259482239617, -0.07310704960835507, 0.011723329425556872, 0.37665505226480833, 0.3372781065088757, -0.48422090729783035, -0.5479947403024326, 0.3348101265822785, 0.3075620767494357])
-
-        errs = solve_errors(S_list)    
-        # print(errs)
-                      
-        
-        
-        
-        S = numpy.array([0.37665505226480833, 0.3372781065088757,
-                         -0.48422090729783035, -0.5479947403024326,
-                         0.3348101265822785, 
-                         # 0.3075620767494357
-                        ])
-        # print(S)
-        M = numpy.array([
-            [ -1, -1, -1, 0,0],
-              [1,-1,1,0,0],
-                [1,1,-1,2,0],
-                [-1,1,1,2,0],
-                [-1,-1,1,0,2],
-                # [1,-1,-1,0,2] 
-              ])
-        
-        X = numpy.linalg.inv(M).dot(S)
-        # print(X)
         
         

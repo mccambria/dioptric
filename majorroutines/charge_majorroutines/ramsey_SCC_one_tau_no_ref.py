@@ -40,7 +40,6 @@ import majorroutines.optimize as optimize
 
 def main(
     nv_sig,
-    apd_indices,
     detuning,
     precession_time,
     num_reps,
@@ -54,7 +53,6 @@ def main(
         main_with_cxn(
             cxn,
             nv_sig,
-            apd_indices,
             detuning,
             precession_time,
             num_reps,
@@ -68,7 +66,6 @@ def main(
 def main_with_cxn(
     cxn,
     nv_sig,
-    apd_indices,
     detuning,
     precession_time,
     num_reps,
@@ -138,7 +135,6 @@ def main_with_cxn(
             gate_time,
             uwave_pi_pulse,
             uwave_pi_on_2_pulse,
-            apd_indices[0],
             state.value,
             green_laser_name, red_laser_name, yellow_laser_name,
             green_laser_power, red_laser_power, yellow_laser_power,
@@ -151,7 +147,6 @@ def main_with_cxn(
             gate_time,
             uwave_pi_pulse,
             uwave_pi_on_2_pulse,
-            apd_indices[0],
             state.value,
             green_laser_name, red_laser_name, yellow_laser_name,
             green_laser_power, red_laser_power, yellow_laser_power
@@ -173,7 +168,7 @@ def main_with_cxn(
 
     # Break out of the while if the user says stop
     # Optimize and save the coords we found
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig)
     opti_coords_list.append(opti_coords)
 
     # Set up the microwaves
@@ -191,7 +186,7 @@ def main_with_cxn(
     yellow_laser_power = tool_belt.set_laser_power(cxn, nv_sig, yellow_laser_key)
 
     # Load the APD
-    counter_server.start_tag_stream(apd_indices)
+    counter_server.start_tag_stream()
 
     if conditional_logic:
         seq_args = [
@@ -201,7 +196,6 @@ def main_with_cxn(
             gate_time,
             uwave_pi_pulse,
             uwave_pi_on_2_pulse,
-            apd_indices[0],
             state.value,
             green_laser_name, red_laser_name, yellow_laser_name,
             green_laser_power, red_laser_power, yellow_laser_power,
@@ -214,7 +208,6 @@ def main_with_cxn(
             gate_time,
             uwave_pi_pulse,
             uwave_pi_on_2_pulse,
-            apd_indices[0],
             state.value,
             green_laser_name, red_laser_name, yellow_laser_name,
             green_laser_power, red_laser_power, yellow_laser_power

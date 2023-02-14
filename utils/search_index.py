@@ -155,17 +155,17 @@ def gen_search_index():
 
 if __name__ == "__main__":
 
-    # gen_search_index()
+    gen_search_index()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
-    root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2022_12"
-    file_list = [
-        "2022_12_13-10_24_13-15micro-nv1_zfs_vs_t.txt",
-        "2022_12_13-11_35_43-15micro-nv1_zfs_vs_t.txt",
-        "2022_12_13-13_04_58-15micro-nv1_zfs_vs_t.txt",
-        "2022_12_13-12_35_43-15micro-nv1_zfs_vs_t.txt",
-        "2022_12_13-12_06_41-15micro-nv1_zfs_vs_t.txt",
-    ]
-    paths = [root / el for el in file_list]
-    for el in paths:
-        add_to_search_index(el)
+    # root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2022_12"
+    # file_list = [
+    #     "2022_12_13-10_24_13-15micro-nv1_zfs_vs_t.txt",
+    #     "2022_12_13-11_35_43-15micro-nv1_zfs_vs_t.txt",
+    #     "2022_12_13-13_04_58-15micro-nv1_zfs_vs_t.txt",
+    #     "2022_12_13-12_35_43-15micro-nv1_zfs_vs_t.txt",
+    #     "2022_12_13-12_06_41-15micro-nv1_zfs_vs_t.txt",
+    # ]
+    # paths = [root / el for el in file_list]
+    # for el in paths:
+    #     add_to_search_index(el)

@@ -24,6 +24,7 @@ from scipy.optimize import curve_fit
 import labrad
 import majorroutines.optimize as optimize
 from utils.tool_belt import NormStyle
+from utils.tool_belt import States
 
 
 
@@ -65,10 +66,11 @@ def fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_s
     except Exception as e:
         print(e)
         popt = None
+        pcov = None
 
     return fit_func, popt, pcov
 
-def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
+def create_cos_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
                       norm_avg_sig_ste, fit_func=None, popt=None):
 
     min_uwave_time = uwave_time_range[0]
@@ -76,7 +78,7 @@ def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
     taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
                             num=num_steps, dtype=numpy.int32, retstep=True)
     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
-    
+    fig = None
     # Fitting
     if (fit_func is None) or (popt is None):
         fit_func, popt, pcov = fit_data(
@@ -86,31 +88,162 @@ def create_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
             norm_avg_sig,
             norm_avg_sig_ste,
         )
-
-    # Plot setup
-    fig, ax = plt.subplots()
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel("Normalized fluorescence")
-    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
-    
-    # Plotting
-    if norm_avg_sig_ste is not None:
-        kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
-    else:
-        kpl.plot_line(ax, taus, norm_avg_sig)
-    kpl.plot_line(
-        ax,
-        smooth_taus,
-        fit_func(smooth_taus, *popt),
-        color=KplColors.RED,
-    )
-    Amp = 1- popt[0]
-    base_text = "Offset = {:.3f} \nAmp = {:.3f} \n1/v = {:.1f} ns \nd = {:.1f} ns"
-    size = kpl.Size.SMALL
-    text = base_text.format(popt[0], Amp, 1/popt[1], popt[2])
-    kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
+    if (popt is not None):
+        # Plot setup
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Microwave duration (ns)')
+        ax.set_ylabel("Normalized fluorescence")
+        ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
+        
+        # Plotting
+        if norm_avg_sig_ste is not None:
+            kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
+        else:
+            kpl.plot_line(ax, taus, norm_avg_sig)
+        kpl.plot_line(
+            ax,
+            smooth_taus,
+            fit_func(smooth_taus, *popt),
+            color=KplColors.RED,
+        )
+        Amp = 1- popt[0]
+        base_text = "Offset = {:.3f} \nAmp = {:.3f} \n1/v = {:.1f} ns \nd = {:.1f} ns"
+        size = kpl.Size.SMALL
+        text = base_text.format(popt[0], Amp, 1/popt[1], popt[2])
+        kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
     
     return fig, ax, fit_func, popt, pcov
+
+
+from scipy.optimize import fsolve
+
+def solve_linear(m, b, y, z):
+   x = z[0]
+
+   F = numpy.empty((1))
+   
+   F[0] = m*x + b - y
+   return F
+
+def create_piecewise_fit_figure(uwave_time_range, num_steps, uwave_freq, norm_avg_sig,
+                      norm_avg_sig_ste, fit_func=None, popt=None):
+
+    # instead of fitting to a decay cosine, this function fits the initial slope
+    # to a linear line to find the pi/2 pulse duration and a quadratic to 
+    # the first dip to find the pi pulse duration.
+    
+    # this should accurately find the pi/2 and pi pulse times, which are not always 
+    # even fractions of the total period (possibly due to rise times on the MW switches)
+        
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
+                            num=num_steps, dtype=numpy.int32, retstep=True)
+    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
+    fig = None
+    # Fitting
+    if (fit_func is None) or (popt is None):
+        fit_func, popt, pcov = fit_data(
+            uwave_time_range,
+            num_steps,
+            fit_func,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        )
+    if (popt is not None):
+        # Plot setup
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Microwave duration (ns)')
+        ax.set_ylabel("Normalized fluorescence")
+        ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
+        
+        # Plotting
+        if norm_avg_sig_ste is not None:
+            kpl.plot_points(ax, taus, norm_avg_sig, yerr=norm_avg_sig_ste)
+        else:
+            kpl.plot_line(ax, taus, norm_avg_sig)
+            
+        # kpl.plot_line(
+        #     ax,
+        #     smooth_taus,
+        #     fit_func(smooth_taus, *popt),
+        #     color=KplColors.RED,
+        # )
+        
+        ax.axhline(popt[0])
+        
+        #prep for fitting
+        period = 1/popt[1]
+        print(period)
+        rabi_offset = popt[0]
+        Amp = 1- popt[0]
+        q=period/4# + period/25
+        q_ind=q/tau_step
+        q_range = 0.1 *period/tau_step
+        q_ind_low = int(numpy.round(q_ind-q_range)) 
+        q_ind_high = int(numpy.round(q_ind+q_range) )
+        
+        h=period/2
+        h_ind=h/tau_step
+        h_range = 0.2 *period/tau_step
+        h_ind_low = int(numpy.round(h_ind-h_range) )
+        h_ind_high = int(numpy.round(h_ind+h_range) )
+        
+        ### fit linear line to initial slope
+        fit_func_q = tool_belt.linear
+        init_params = [-Amp/(h), rabi_offset]
+        popt_q, pcov = curve_fit(fit_func_q, taus[q_ind_low : q_ind_high], norm_avg_sig[q_ind_low : q_ind_high],
+                            p0=init_params,
+                            sigma=norm_avg_sig_ste[q_ind_low : q_ind_high],
+                            absolute_sigma=True)
+        
+        # find intersection of linear line and offset (half of full range)        
+        solve_linear_func = lambda z: solve_linear(popt_q[0], popt_q[1], rabi_offset, z)
+        zGuess = numpy.array([q])
+        solve= fsolve(solve_linear_func,zGuess)
+        pi_on_2_pulse =  solve[0]
+        # print(pi_on_2_pulse)
+        
+        # plot linear line
+        smooth_taus_q = numpy.linspace(taus[q_ind_low], taus[q_ind_high], num=1000)
+        kpl.plot_line(
+            ax,
+            smooth_taus_q,
+            fit_func_q(smooth_taus_q, *popt_q),
+            color=KplColors.GREEN,
+        )
+        
+        
+        ### fit quadratic to initial slope
+        fit_func_h = lambda x, a, c, x_offset: tool_belt.quadratic(x, a, 0, c, x_offset)
+        init_params = [1e-5, 1-2*Amp, h]
+        popt_h, pcov = curve_fit(fit_func_h, taus[h_ind_low : h_ind_high], norm_avg_sig[h_ind_low : h_ind_high],
+                            p0=init_params,
+                            sigma=norm_avg_sig_ste[h_ind_low : h_ind_high],
+                            absolute_sigma=True)
+        
+        # find when quadratic is min (the x_offset param)        
+        pi_pulse =  popt_h[2]
+        # print(popt_h)
+        
+        # plot quadratic line
+        smooth_taus_h = numpy.linspace(taus[h_ind_low], taus[h_ind_high], num=1000)
+        kpl.plot_line(
+            ax,
+            smooth_taus_h,
+            fit_func_h(smooth_taus_h, *popt_h),
+            color=KplColors.RED,
+        )
+        Amp = 1- popt[0]
+        base_text = "pi pulse = {:.2f} ns \npi_on_2 pulse = {:.2f} ns"
+        size = kpl.Size.SMALL
+        text = base_text.format(pi_pulse, pi_on_2_pulse)
+        kpl.anchored_text(ax, text, kpl.Loc.LOWER_LEFT, size=size)
+        
+        # print(popt[0])
+        # ax.axhline(1-(1-popt[0])*2)
+    
+    return fig, ax, fit_func, popt, pcov, pi_pulse,pi_on_2_pulse 
 
 def create_raw_data_figure(
     taus,
@@ -183,27 +316,18 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
     ax.set_xlabel('Tau (ns)')
     ax.set_ylabel('Contrast (arb. units)')
 
-# def simulate_split(uwave_time_range, freq,
-#                    res_freq_low, res_freq_high, contrast, rabi_period):
+def hyperfine_rabi_func(t, offset, freq, decay):
+    two_pi = 2 * numpy.pi
+    amp = offset - 1
+    v= 2.2e-3
+    omega_pm= numpy.sqrt((v)**2 + freq**2)
+    omega_0= freq
+    term_0 = numpy.cos((two_pi * omega_0 * t)) 
+    term_pm = numpy.cos((two_pi * omega_pm * t))
+    
+    return offset + (numpy.exp(-t / abs(decay)) * abs(amp/3)* ( term_0  +2*term_pm) )
 
-#     rabi_freq = rabi_period**-1
 
-#     min_uwave_time = uwave_time_range[0]
-#     max_uwave_time = uwave_time_range[1]
-#     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
-#                           num=1000, dtype=numpy.int32)
-
-#     omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
-#     amp = (rabi_freq / omega)**2
-#     angle = omega * 2 * numpy.pi * smooth_taus / 2
-#     prob = amp * (numpy.sin(angle))**2
-
-#     rel_counts = 1.0 - (contrast * prob)
-
-#     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-#     ax.plot(smooth_taus, rel_counts)
-#     ax.set_xlabel('Tau (ns)')
-#     ax.set_ylabel('Contrast (arb. units)')
 
 
 # %% Main
@@ -212,13 +336,16 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 def main(nv_sig, uwave_time_range, state,
          num_steps, num_reps, num_runs,
          opti_nv_sig = None,
-         return_popt=False):
+         return_popt=False,
+         do_scc = False,
+         do_dq = False,
+         do_cos_fit = True):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts, popt = main_with_cxn(cxn, nv_sig,
                                          uwave_time_range, state,
                                          num_steps, num_reps, num_runs,
-                                         opti_nv_sig)
+                                         opti_nv_sig,do_scc, do_dq, do_cos_fit)
 
         if return_popt:
             return rabi_per, popt
@@ -228,8 +355,12 @@ def main(nv_sig, uwave_time_range, state,
 
 def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                   num_steps, num_reps, num_runs,
-                  opti_nv_sig = None):
-
+                  opti_nv_sig = None,
+                  do_scc = False,
+                  do_dq = False,
+                  do_cos_fit = True):
+    do_iq = False 
+    
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
@@ -251,11 +382,42 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    
+    if do_scc:
+        laser_tag = "nv-_reionization"
+        laser_key = "{}_laser".format(laser_tag)
+        pol_laser_name = nv_sig[laser_key]
+        pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        polarization_dur = nv_sig["{}_dur".format(laser_tag)]
 
+        laser_tag = "nv0_ionization"
+        laser_key = "{}_laser".format(laser_tag)
+        ion_laser_name = nv_sig[laser_key]
+        ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        ionization_dur = nv_sig["{}_dur".format(laser_tag)]
+
+        laser_tag = "charge_readout"
+        laser_key = "{}_laser".format(laser_tag)
+        readout_laser_name = nv_sig[laser_key]
+        readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        readout = nv_sig["{}_dur".format(laser_tag)]
+    else:
+        polarization_time = nv_sig['spin_pol_dur']
+        readout = nv_sig['spin_readout_dur']
+        readout_sec = readout / (10**9)
+        
+    if do_dq:
+        rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
+        uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
+        uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
+        
+        rabi_period_high = nv_sig["rabi_{}".format(States.HIGH.name)]
+        uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
+        uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
+        uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        
     norm_style = nv_sig["norm_style"]
-    polarization_time = nv_sig['spin_pol_dur']
-    readout = nv_sig['spin_readout_dur']
-    readout_sec = readout / (10**9)
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
@@ -264,23 +426,41 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=num_steps, dtype=numpy.int32)
 
-    # check if running external iq_mod with SRS
-    iq_key = False
-    if 'uwave_iq_{}'.format(state.name) in nv_sig:
-        iq_key = nv_sig['uwave_iq_{}'.format(state.name)]
 
     # Analyze the sequence
     num_reps = int(num_reps)
-    # file_name = os.path.basename(__file__)
-    seq_args = [taus[0], polarization_time,
-                readout, max_uwave_time,
-                state.value, laser_name, laser_power]
+    if do_scc:
+        file_name = 'rabi_scc.py'
+        seq_args = [
+                readout,
+                polarization_dur,
+                ionization_dur,
+                taus[0],
+                max_uwave_time,
+                pol_laser_name,
+                readout_laser_name,
+                ion_laser_name,
+                state.value, 
+                pol_laser_power,
+                ion_laser_power,
+                readout_laser_power,]
+    else:
+        if do_dq:
+            file_name = 'rabi_dq.py'    
+            seq_args = [taus[0], polarization_time,
+                        readout,  uwave_pi_pulse_low, uwave_pi_pulse_high, max_uwave_time,
+                        state.value, laser_name, laser_power]
+        else:
+            file_name = 'rabi.py'
+            seq_args = [taus[0], polarization_time,
+                        readout, max_uwave_time,
+                        state.value, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
+    # print(file_name)
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    file_name = 'rabi.py'
     pulsegen_server.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
@@ -336,19 +516,35 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Apply the microwaves
-        sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
-        sig_gen_cxn.set_freq(uwave_freq)
-        sig_gen_cxn.set_amp(uwave_power)
-        if iq_key:
-            sig_gen_cxn.load_iq()
-            # arbwavegen_server.load_arb_phases([0])
-        sig_gen_cxn.uwave_on()
-
-        # TEST for split resonance
-#        sig_gen_cxn = cxn.signal_generator_bnc835
-#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
-#        sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
+        phase = 0
+        if do_dq:
+            sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
+            sig_gen_low_cxn.set_freq(uwave_freq_low)
+            sig_gen_low_cxn.set_amp(uwave_power_low)
+            sig_gen_low_cxn.uwave_on()
+            sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
+            sig_gen_high_cxn.set_freq(uwave_freq_high)
+            sig_gen_high_cxn.set_amp(uwave_power_high)
+            if do_iq:
+                sig_gen_high_cxn.load_iq()
+                phase = numpy.pi/2
+                arbwavegen_server.load_arb_phases([phase])
+            sig_gen_high_cxn.uwave_on()
+            
+        else:
+            sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
+            sig_gen_cxn.set_freq(uwave_freq)
+            sig_gen_cxn.set_amp(uwave_power)
+            if do_iq:
+                sig_gen_cxn.load_iq()
+                # arbwavegen_server.load_arb_phases([0])
+            sig_gen_cxn.uwave_on()
+        
+        
+        
+        if do_scc:
+            charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+            charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
 
         # Load the APD
         counter_server.start_tag_stream()
@@ -367,9 +563,29 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
-            seq_args = [taus[tau_ind], polarization_time,
-                        readout, max_uwave_time,
-                        state.value, laser_name, laser_power]
+            if do_scc:
+                seq_args = [
+                        readout,
+                        polarization_dur,
+                        ionization_dur,
+                        taus[tau_ind],
+                        max_uwave_time,
+                        pol_laser_name,
+                        readout_laser_name,
+                        ion_laser_name,
+                        state.value, 
+                        pol_laser_power,
+                        ion_laser_power,
+                        readout_laser_power,]
+            else:
+                if do_dq:
+                    seq_args = [taus[tau_ind], polarization_time,
+                                readout,  uwave_pi_pulse_low, uwave_pi_pulse_high, max_uwave_time,
+                                state.value, laser_name, laser_power]
+                else:
+                    seq_args = [taus[tau_ind], polarization_time,
+                                readout, max_uwave_time,
+                                state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
             # Clear the tagger buffer of any excess counts
@@ -423,6 +639,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'do_scc': do_scc,
+                    'do_dq': do_dq,
+                    'phase':phase,
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -467,16 +686,30 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
 
     #  Plot the data itself and the fitted curve
-    fit_func = tool_belt.cosexp_1_at_0
-    fit_fig, ax, fit_func, popt, pcov = create_fit_figure(
-        uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
-        fit_func 
-    )
-    rabi_period = 1/popt[1]
-    v_unc = numpy.sqrt(pcov[1][1])
-    print(v_unc)
-    rabi_period_unc = rabi_period**2 * v_unc
-    print('Rabi period measured: {} +/- {} ns\n'.format('%.2f'%rabi_period, '%.2f'%rabi_period_unc))
+    if do_cos_fit:
+        if do_scc:
+            fit_func = tool_belt.inverted_cosexp
+        else:
+            fit_func = tool_belt.cosexp_1_at_0
+        fit_fig, ax, fit_func, popt, pcov = create_cos_fit_figure(
+            uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+            fit_func 
+        )
+        rabi_period = 1/popt[1]
+        v_unc = numpy.sqrt(pcov[1][1])
+        print(v_unc)
+        rabi_period_unc = rabi_period**2 * v_unc
+        print('Rabi period measured: {} +/- {} ns\n'.format('%.2f'%rabi_period, '%.2f'%rabi_period_unc))
+    else:
+        fit_func = tool_belt.cosexp_1_at_0
+        fit_fig, ax, fit_func, popt, pcov, pi_pulse,pi_on_2_pulse  = create_piecewise_fit_figure(
+            uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+            fit_func 
+        )
+        print('pi pulse: {}  ns\n'.format('%.2f'%pi_pulse))
+        print('pi_on_2 pulse: {}  ns\n'.format('%.2f'%pi_on_2_pulse))
+        rabi_period = 2*pi_pulse
+        
 
     # %% Clean up and save the data
 
@@ -493,6 +726,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'do_scc': do_scc,
+                'do_dq': do_dq,
+                'phase':phase,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,
@@ -511,7 +747,9 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                 'ref_counts': ref_counts.astype(int).tolist(),
                 'ref_counts-units': 'counts',
                 'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-                'norm_avg_sig-units': 'arb'}
+                'norm_avg_sig-units': 'arb',
+                'norm_avg_sig_ste': norm_avg_sig_ste.astype(float).tolist(),
+                'norm_avg_sig_ste-units': 'arb'}
 
     nv_name = nv_sig["name"]
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
@@ -532,80 +770,42 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/rabi_srt/2022_12'
-    file = '2022_12_15-13_47_58-siena-nv1_2022_10_27'
+    path = 'pc_rabi/branch_master/rabi/2023_01'
+    file = '2023_01_27-09_42_22-siena-nv4_2023_01_16'
     data = tool_belt.get_raw_data(file, path)
+    kpl.init_kplotlib()
 
-    # norm_avg_sig = data['norm_avg_sig']
-    # uwave_time_range = data['uwave_time_range']
-    # num_steps = data['num_steps']
-    # uwave_freq = data['uwave_freq']
+    norm_avg_sig = data['norm_avg_sig']
+    uwave_time_range = data['uwave_time_range']
+    num_steps = data['num_steps']
+    uwave_freq = data['uwave_freq']
+    norm_avg_sig_ste =None
 
-    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(uwave_time_range, uwave_freq, num_steps,
-    #                       norm_avg_sig, fit_func, popt)
-
+    fit_func = hyperfine_rabi_func
+    # fit_func = tool_belt.cosexp_1_at_0
+    
+    
     sig_counts = data['sig_counts']
     ref_counts = data['ref_counts']
-    taus = numpy.array(data['taus'])
-    num_steps = data['num_steps']
-    num_runs = data['num_runs']
-    # uwave_freq = data['uwave_freq']
-    uwave_time_range = [taus[0], taus[-1]]
-    num_steps = data['num_steps']
-    norm_avg_sig = data['norm_avg_sig']
     num_reps = data['num_reps']
     nv_sig = data['nv_sig']
     readout = nv_sig['spin_readout_dur']
-    norm_style = NormStyle.SINGLE_VALUED
-    
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, NormStyle.POINT_TO_POINT)
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
-
-    # min_uwave_time = uwave_time_range[0]
-    # max_uwave_time = uwave_time_range[1]
-    # taus = numpy.linspace(min_uwave_time, max_uwave_time,
-    #                       num=num_steps, dtype=numpy.int32)
     
-    fit_func = tool_belt.inverted_cosexp
-    fit_func, popt, pcov = fit_data(uwave_time_range, num_steps, fit_func, norm_avg_sig, norm_avg_sig_ste = None)
-    taus_linspace = numpy.linspace(uwave_time_range[0], uwave_time_range[1], 1000)
+    
+    create_piecewise_fit_figure(
+         uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+         fit_func 
+     )
+    
+   # create_cos_fit_figure(
+   #     uwave_time_range, num_steps, uwave_freq, norm_avg_sig, norm_avg_sig_ste,
+   #     fit_func 
+   # )
 
-    print(popt)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
-
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-
-    sig_perc_err = st_err_sig_counts / avg_sig_counts
-    ref_perc_err = st_err_ref_counts / avg_ref_counts
-    st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
-
-
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
-    ax = axes_pack[0]
-    ax.errorbar(taus, avg_sig_counts, yerr = st_err_sig_counts, fmt = 'r-', label = 'signal')
-    ax.errorbar(taus, avg_ref_counts, yerr = st_err_ref_counts,fmt = 'g-', label = 'refernece')
-    ax.legend()
-
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Counts')
-
-
-    ax = axes_pack[1]
-    ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'bo')
-    ax.plot(taus_linspace , fit_func(taus_linspace, *popt),  'r-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Normalized signal')
-
-    # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)

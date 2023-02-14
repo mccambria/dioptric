@@ -122,6 +122,10 @@ def create_fit_figure(
         low_text = base_text.format(contrast, hwhm, freq)
         contrast, hwhm, freq = popt[3:6]
         high_text = base_text.format(contrast, hwhm, freq)
+        print(popt[2])
+        print(np.sqrt(pcov[2][2]))
+        print(popt[5])
+        print(np.sqrt(pcov[5][5]))
     size = kpl.Size.SMALL
     if low_text is not None:
         kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
@@ -138,6 +142,7 @@ def create_raw_data_figure(
     sig_counts_avg_kcps=None,
     ref_counts_avg_kcps=None,
     norm_avg_sig=None,
+    magnet_angle= None,
 ):
     """Create a 2-panel figure showing the raw data (signal and reference) as well as the
     normalized average signal
@@ -194,6 +199,8 @@ def create_raw_data_figure(
         norm_avg_sig[:] = np.nan
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
+    if magnet_angle:
+        kpl.anchored_text(ax_norm, '{} deg'.format(magnet_angle), kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
     return fig, ax_sig_ref, ax_norm
 
 
@@ -345,7 +352,7 @@ def get_guess_params(
 
     low_freq_guess = None
     high_freq_guess = None
-    
+
     if len(peak_heights) == 0:
         fit_func = single_dip
         guess_params = [height, hwhm_mhz, freq_center]
@@ -672,7 +679,8 @@ def main_with_cxn(
 
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        freq_center, freq_range, num_steps
+        freq_center, freq_range, num_steps,
+        magnet_angle = nv_sig['magnet_angle']
     )
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
@@ -832,16 +840,24 @@ def main_with_cxn(
     run_indicator_obj.remove()
 
     # Fits
-    fit_fig, _, fit_func, popt, _ = create_fit_figure(
-        freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
-    )
+    low_freq = None
+    high_freq = None
+    fit_fig = None
+    try:
+        fit_fig, _, fit_func, popt, pcov = create_fit_figure(
+            freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+        )
 
-    if len(popt) == 3:
-        low_freq = popt[2]
-        high_freq = None
-    elif len(popt) == 6:
-        low_freq = popt[2]
-        high_freq = popt[5]
+        if len(popt) == 3:
+            low_freq = popt[2]
+            high_freq = None
+            print('Single resonance found at {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2])))
+        elif len(popt) == 6:
+            low_freq = popt[2]
+            high_freq = popt[5]
+            print('Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2]),popt[5], np.sqrt(pcov[5][5])))
+    except Exception:
+        print('Could not fit data')
 
     ### Clean up, save the data, return
 
@@ -891,10 +907,12 @@ def main_with_cxn(
 
     tool_belt.save_raw_data(data, file_path)
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tool_belt.save_figure(fit_fig, file_path)
+    single_res = None
+    if fit_fig is not None:
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+        tool_belt.save_figure(fit_fig, file_path)
 
-    single_res = return_res_with_error(data)
+        single_res = return_res_with_error(data)
     return single_res, data_file_name, [low_freq, high_freq]
 
 

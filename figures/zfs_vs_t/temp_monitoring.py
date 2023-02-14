@@ -41,8 +41,13 @@ def main(file_list, monitor_list, do_plot=False):
             with open(log_file) as csv_file:
                 reader = csv.reader(csv_file)
                 for row in reader:
-                    times_list.append(int(row[0]))
-                    temps_list.append(float(row[1]))
+                    try:
+                        time = int(row[0])
+                        temp = float(row[1])
+                    except Exception as exc:
+                        continue
+                    times_list.append(time)
+                    temps_list.append(temp)
         monitor = monitor_folder.stem
         times[monitor] = times_list
         temps[monitor] = temps_list

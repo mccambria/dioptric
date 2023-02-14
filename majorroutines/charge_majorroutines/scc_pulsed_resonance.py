@@ -73,17 +73,17 @@ def plot_esr(ref_counts, sig_counts, num_runs, freqs = None, freq_center = None,
 # %% Main
 
 
-def main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+def main(nv_sig, opti_nv_sig, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, do_plot = True,
          state=States.LOW):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig,opti_nv_sig, apd_indices, freq_center, freq_range,
+        main_with_cxn(cxn, nv_sig,opti_nv_sig, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,do_plot,
                   state)
 
 
-def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
+def main_with_cxn(cxn, nv_sig, opti_nv_sig, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, do_plot = True,
               state=States.LOW):
 
@@ -149,10 +149,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     
     # seq_args = [readout_time, reionization_time, ionization_time, uwave_pulse_dur,
     #     shelf_time ,  uwave_pulse_dur, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-    #     apd_indices[0], readout_power, shelf_power]
+    #     readout_power, shelf_power]
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pulse_dur,
         shelf_time ,  uwave_pulse_dur, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-        apd_indices[0], reion_power, ion_power, shelf_power, readout_power]
+        reion_power, ion_power, shelf_power, readout_power]
     print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -182,7 +182,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+        optimize.main_with_cxn(cxn, opti_nv_sig)
         drift = tool_belt.get_drift()
         drift_list.append(drift)
         adjusted_nv_coords = numpy.array(nv_coords) + drift
@@ -222,7 +222,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             
             current_time = time.time()
             if current_time - last_opti_time > opti_interval * 60:
-                optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+                optimize.main_with_cxn(cxn, opti_nv_sig)
                 drift = tool_belt.get_drift()
                 drift_list.append(drift)
                 adjusted_nv_coords = numpy.array(nv_coords) + drift
@@ -240,7 +240,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             sig_gen_cxn.uwave_on()
 
             # Start the tagger stream
-            tagger_server.start_tag_stream(apd_indices)
+            tagger_server.start_tag_stream()
             
             pulsegen_server.stream_immediate(seq_file, num_reps, seq_args_string)
         
@@ -358,7 +358,6 @@ if __name__ == '__main__':
     # plot_esr(ref_counts, sig_counts, num_runs, freqs=freqs)
     # exit
 
-    apd_indices = [1]
     sample_name = 'wu'    
     
     green_laser = "laserglow_532"
@@ -415,7 +414,7 @@ if __name__ == '__main__':
         
         for red_dur in numpy.linspace(75, 300, 10):
             nv_sig['nv0_ionization_dur'] = red_dur
-            main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+            main(nv_sig, opti_nv_sig, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         
         # for red_dur in numpy.linspace(75, 200, 6):
@@ -424,7 +423,7 @@ if __name__ == '__main__':
         #         nv_sig['spin_shelf_dur'] = shelf_dur
         #         for pwr in numpy.linspace(0.9, 1.0, 3):
         #             nv_sig['spin_shelf_laser_power'] = pwr
-        #             main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+        #             main(nv_sig, opti_nv_sig, freq_center, freq_range,
         #                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
             
         # for red_dur in numpy.linspace(100, 250, 4):
@@ -432,10 +431,10 @@ if __name__ == '__main__':
         # # for red_dur in numpy.linspace(100, 350, 11):
         #         nv_sig['nv0_ionization_dur'] = red_dur
         #         nv_sig['spin_shelf_dur'] = shelf_dur
-        #         main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+        #         main(nv_sig, opti_nv_sig, freq_center, freq_range,
         #               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
             
-        # main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+        # main(nv_sig, opti_nv_sig, freq_center, freq_range,
         #       num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         
         if do_plot:

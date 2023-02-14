@@ -19,51 +19,53 @@ def decay_sin(t, amp, offset, decay, freq):
 def decay_double_sin(t, amp1, amp2, offset, decay, freq1, freq2):
     return offset + (amp1 * numpy.cos(t*freq1 * 2 * numpy.pi) + amp2 * numpy.cos(t*freq2 * 2 * numpy.pi)) * numpy.exp(-t/decay)
 
-folder = "pc_rabi/branch_master/ramsey/2022_12"
+folder = "pc_rabi/branch_master/ramsey/2023_01"
 
-mode = 'SQ'
-# mode = 'DQ'
+# mode = 'SQ'
+mode = 'DQ'
 
 if mode == 'DQ':
-    file1 = '2022_12_13-15_52_32-siena-nv1_2022_10_27'
-    file10 = '2022_12_13-16_33_04-siena-nv1_2022_10_27'
-    file2 = '2022_12_13-16_41_54-siena-nv1_2022_10_27'
-    file20 = '2022_12_13-16_50_30-siena-nv1_2022_10_27'
-    file3 = '2022_12_13-16_59_46-siena-nv1_2022_10_27'
-    file4 = '2022_12_13-17_09_43-siena-nv1_2022_10_27'
-    file5 = '2022_12_13-18_44_55-siena-nv1_2022_10_27'
-    file6 = '2022_12_13-19_36_48-siena-nv1_2022_10_27'
-    file7 = '2022_12_13-20_30_53-siena-nv1_2022_10_27'
-    file8 = '2022_12_13-21_23_20-siena-nv1_2022_10_27'
+    file1 = '2023_01_03-15_56_19-siena-nv8_2022_12_22'
+    file2 = '2023_01_03-16_08_26-siena-nv8_2022_12_22'
+    file3 = '2023_01_03-16_22_29-siena-nv8_2022_12_22'
+    file4 = '2023_01_03-16_38_17-siena-nv8_2022_12_22'
+    file5 = '2023_01_03-16_55_56-siena-nv8_2022_12_22'
+    file6 = '2023_01_03-17_15_20-siena-nv8_2022_12_22'
+    file7 = '2023_01_03-17_43_23-siena-nv8_2022_12_22'
+    file8 = '2023_01_03-18_20_05-siena-nv8_2022_12_22'
+    file9 = '2023_01_03-19_05_35-siena-nv8_2022_12_22'
     file_list = [file1,
-                  file10,
                   file2,
-                  file20,
                   file3,
                   file4,
                   file5,
                   file6,
                   file7,
-                  file8
+                  file8,
+                  file9,
         ]
     freq_g = 4.4
     title = "Ramsey, DQ"
 
 elif mode == 'SQ':
-    file1 = '2022_12_13-23_10_37-siena-nv1_2022_10_27'
-    file2 = '2022_12_13-23_37_08-siena-nv1_2022_10_27'
-    file3 = '2022_12_14-00_05_18-siena-nv1_2022_10_27'
-    file4 = '2022_12_14-00_40_19-siena-nv1_2022_10_27'
-    file5 = '2022_12_14-08_34_15-siena-nv1_2022_10_27'
-    file6 = '2022_12_14-01_24_06-siena-nv1_2022_10_27'
-    file7 = '2022_12_14-02_16_36-siena-nv1_2022_10_27'
+    file1 = '2023_01_03-21_27_18-siena-nv8_2022_12_22'
+    file2 = '2023_01_03-21_39_33-siena-nv8_2022_12_22'
+    file3 = '2023_01_03-21_53_29-siena-nv8_2022_12_22'
+    file4 = '2023_01_03-22_09_08-siena-nv8_2022_12_22'
+    file5 = '2023_01_03-22_26_32-siena-nv8_2022_12_22'
+    file6 = '2023_01_03-22_45_39-siena-nv8_2022_12_22'
+    file7 = '2023_01_03-23_13_28-siena-nv8_2022_12_22'
+    file8 = '2023_01_03-23_49_57-siena-nv8_2022_12_22'
+    file9 = '2023_01_04-00_35_08-siena-nv8_2022_12_22'
     file_list = [file1,
                   file2,
-                   # file3,
-                    file4,
-                    # file5,
-                    file6,
-                    file7,
+                  file3,
+                  # file4,
+                  file5,
+                  file6,
+                  file7,
+                   file8,
+                  file9,
         ]
     freq_g = 2.4
     title = "Ramsey, SQ"
@@ -72,7 +74,7 @@ norm_avg_sig_master = []
 norm_avg_sig_ste_master = []
 taus_master = []
 
-avg = 0.907
+avg = 0.923
 
 for file in file_list:
     
@@ -107,8 +109,8 @@ for file in file_list:
 taus_us = numpy.array(taus_master)/1e3
 # Guess the other params for fitting
 amp = -0.05
-offset = .907
-decay = 50
+offset = .927
+decay = 10
 
 guess_params = (amp, offset, decay, freq_g )
 fit_func = lambda t, amp, offset, decay, freq: decay_sin(t, amp, offset, decay, freq)
@@ -121,7 +123,7 @@ popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig_master,
               sigma=norm_avg_sig_ste_master,
               absolute_sigma=True,
                 # bounds=([-numpy.infty, 0, 0, 0], [numpy.infty, numpy.infty, numpy.infty,  30])
-               )
+                )
               
 # popt = guess_params
 print(popt)
