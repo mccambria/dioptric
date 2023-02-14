@@ -624,36 +624,36 @@ def main_with_cxn(
     return img_array, x_positions_1d, y_positions_1d
 
 
-
-
 if __name__ == "__main__":
 
-    file_name = "2022_12_20-19_00_52-siena-nv_search"
+    file_name = "2023_02_12-22_11_40-wu-nvref_region5"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    x_voltages = data["x_positions_1d"]
-    y_voltages = data["y_positions_1d"]
-    x_half_pixel = (x_voltages[1] - x_voltages[0]) / 2
-    y_half_pixel = (y_voltages[1] - y_voltages[0]) / 2
-    extent = (
-    x_voltages[-1] + x_half_pixel,
-        x_voltages[0] - x_half_pixel,
-        y_voltages[0] - y_half_pixel,
-        y_voltages[-1] + y_half_pixel,
+    x_center = data["x_center"]
+    y_center = data["y_center"]
+    x_range = data["x_range"]
+    y_range = data["y_range"]
+    num_steps = data["num_steps"]
+    ret_vals = positioning.get_scan_grid_2d(
+        x_center, y_center, x_range, y_range, num_steps, num_steps
     )
+    x_voltages, y_voltages, x_voltages_1d, y_voltages_1d, extent = ret_vals
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     kpl.imshow(
         ax,
         img_array_kcps,
-        title="Replot test",
+        # title=title,
         x_label="V",
         y_label="V",
         cbar_label="kcps",
         extent=extent,
+        # vmin=vmin,
+        # vmax=vmax,
+        aspect='auto'
     )
 
     # plt.show(block=True)

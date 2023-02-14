@@ -27,7 +27,7 @@ def get_seq(pulse_streamer, config, args):
     tau_shrt, polarization_time, gate_time, pi_pulse_low, pi_pulse_high, tau_long = durations
 
     # Get the rest of the arguments
-    apd_index, init_state_value, read_state_value, laser_name, laser_power = args[6:11]
+    init_state_value, read_state_value, laser_name, laser_power = args[6:10]
             
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
@@ -39,15 +39,15 @@ def get_seq(pulse_streamer, config, args):
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
             
     aom_delay_time = config['Optics'][laser_name]['delay']
-    low_sig_gen_name = config['Microwaves']['sig_gen_LOW']
-    high_sig_gen_name = config['Microwaves']['sig_gen_HIGH']
+    low_sig_gen_name = config["Servers"][f"sig_gen_{States.LOW.name}"]
+    high_sig_gen_name = config["Servers"][f"sig_gen_{States.HIGH.name}"]
     
     rf_low_delay = config['Microwaves'][low_sig_gen_name]['delay']
     rf_high_delay = config['Microwaves'][high_sig_gen_name]['delay']
     iq_delay_time = config['Microwaves']['iq_delay']
 
-    pulser_wiring = config['Wiring']['PulseStreamer']
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    pulser_wiring = config['Wiring']['PulseGen']
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate']
     low_sig_gen_gate_chan_name = 'do_{}_gate'.format(low_sig_gen_name)
     pulser_do_sig_gen_low_gate = pulser_wiring[low_sig_gen_gate_chan_name]
     high_sig_gen_gate_chan_name = 'do_{}_gate'.format(high_sig_gen_name)
@@ -217,17 +217,11 @@ def get_seq(pulse_streamer, config, args):
 
 
 if __name__ == '__main__':
-    wiring = {'do_sample_clock': 0,
-              'do_apd_0_gate': 4,
-              'do_532_aom': 1,
-              'do_signal_generator_sg394_gate': 2,
-              'do_signal_generator_tsg4104a_gate': 3,
-              'do_arb_wave_trigger': 5,}
+    
+    seq_args = [3000, 1000, 350, 121, 105, 7300, 1, 1, "laserglow_532", None]
 
-    # seq_args = [6428, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 3571, 0, 3, 3]
-    # seq_args = [0, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 5000, 0, 3, 3]
-    # seq_args = [3000, 1000, 1000, 1000, 2000, 1000, 1000, 1080, 1005, 995, 560, 350, 121, 73, 0, 0, 3, 3]
-    seq_args = [3000, 1000, 1000, 1000, 2000, 1000, 1000, 1080, 1005, 995, 560, 350, 1200, 2100, 4000, 0, 2,2]
-
-    seq, final, ret_vals = get_seq(wiring, seq_args)
+    config = tool_belt.get_config_dict()
+    tool_belt.set_delays_to_zero(config)
+    
+    seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

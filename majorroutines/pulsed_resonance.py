@@ -345,6 +345,11 @@ def get_guess_params(
 
     low_freq_guess = None
     high_freq_guess = None
+    
+    if len(peak_heights) == 0:
+        fit_func = single_dip
+        guess_params = [height, hwhm_mhz, freq_center]
+        return fit_func, guess_params
 
     # Find the location of the highest peak
     max_peak_height = max(peak_heights)
@@ -901,7 +906,7 @@ if __name__ == "__main__":
     # print(Path(__file__).stem)
     # sys.exit()
 
-    file_name = "2023_01_12-11_46_30-wu-nv8_zfs_vs_t"
+    file_name = "2023_01_12-14_49_52-wu-nv10_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
 
     print(return_res_with_error(data))
