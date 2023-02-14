@@ -193,6 +193,7 @@ def measure_delay(
     #    sig_count_rates = (sig_counts / (num_reps * 1000)) / (readout / (10**9))
     #    ref_count_rates = (ref_counts / (num_reps * 1000)) / (readout / (10**9))
     norm_avg_sig = sig_counts / numpy.average(ref_counts)
+    # norm_avg_sig = sig_counts / ref_counts
 
     fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     ax = axes_pack[0]
@@ -338,7 +339,7 @@ def iq_delay(
     We should see a normalized signal consistent with the full pi pulse contrast.
     If there is a positive delay we'll get this sequence
 
-    iq    __|-|______________|-|______________
+    iq    __|-|_________________|-|______________
     uwave ____________________|---|______________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
@@ -418,8 +419,8 @@ if __name__ == "__main__":
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 53.5,
         "resonance_LOW":2.81921,
-        "rabi_LOW":131.1,
-        "uwave_power_LOW": 15,
+        "rabi_LOW":169,
+        "uwave_power_LOW": 8.8,
         "resonance_HIGH":2.92159,
         "rabi_HIGH":218,
         "uwave_power_HIGH": 10,
@@ -485,24 +486,24 @@ if __name__ == "__main__":
 
 
     # uwave_delay
-    num_reps = int(1e5)
+    num_reps = int(2e5)
     # num_reps = int(1e4)
-    # delay_range = [-250, 250]
-    delay_range = [510, 610]
-    num_steps = 51
+    # delay_range = [-25, 175]
+    delay_range = [545, 645]
+    num_steps = 101
     # bnc 835
     # state = States.LOW
-    #  sg394
+      # sg394
     state = States.HIGH
     with labrad.connect() as cxn:
-       iq_delay(
-            cxn,
-            nv_sig,
-            state,
-            delay_range,
-            num_steps,
-            num_reps,
-        )
+        iq_delay(
+             cxn,
+             nv_sig,
+             state,
+             delay_range,
+             num_steps,
+             num_reps,
+         )
         # uwave_delay(
         #     cxn,
         #     nv_sig,

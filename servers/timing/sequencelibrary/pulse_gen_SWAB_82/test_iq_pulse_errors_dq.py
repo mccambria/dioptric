@@ -405,7 +405,7 @@ if __name__ == '__main__':
     #     uwave_pulse_dur_1, uwave_pulse_dur_2, uwave_pulse_dur_3, \
     #     polarization, inter_pulse_time = durations
     # num_uwave_pulses, state_activ,state_proxy, laser_name, laser_power = args[8:13]
-    args = [350, 110, 110, 150, 60, 0, 1000.0, 100, 110, 2, 3, 1, 'integrated_520', None]
+    args = [350, 91.83, 107.48, 60.24, 107.48, 60.24, 1000.0, 100, 0, 3, 3, 1, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

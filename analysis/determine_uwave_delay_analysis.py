@@ -64,6 +64,7 @@ def find_uwave_delay(file):
     ax.set_xlabel('Delay (ns)')
     ax.set_ylabel("Signal")
     ax.set_title('MW delay for {}'.format(state))
+    # ax.set_title('AWG trigger delay')
     kpl.plot_line(ax, taus, norm_avg_sig)
     smooth_taus = numpy.linspace(taus[0], taus[-1], num=1000)
     kpl.plot_line(
@@ -87,7 +88,7 @@ def find_uwave_delay(file):
     kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, size=size)
 
 #%%%
-file = '2023_02_04-10_33_49-siena-nv4_2023_01_16'
+file = '2023_02_13-13_01_05-siena-nv4_2023_01_16'
 find_uwave_delay(file)
 
 

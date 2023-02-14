@@ -332,7 +332,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     num_steps =51
     num_reps = int(2e4)  
     # num_reps = int(25)   
-    num_runs =  3
+    num_runs =  10
     
     rabi.main(
         nv_sig,
@@ -1178,10 +1178,10 @@ if __name__ == "__main__":
     # nv_sig_4["uwave_power_HIGH"]= -12
     # nv_sig_4["rabi_LOW"]= 1360
     # nv_sig_4["rabi_HIGH"]=1431  
-    nv_sig_4["pi_pulse_LOW"]= 112.29
-    nv_sig_4["pi_on_2_pulse_LOW"]= 59.58
-    nv_sig_4["pi_pulse_HIGH"]= 114
-    nv_sig_4["pi_on_2_pulse_HIGH"]= 57
+    nv_sig_4["pi_pulse_LOW"]= 91.83
+    nv_sig_4["pi_on_2_pulse_LOW"]= 44.35
+    nv_sig_4["pi_pulse_HIGH"]= 107.48 
+    nv_sig_4["pi_on_2_pulse_HIGH"]= 60.24 
     nv_sig_4["charge_readout_laser_power"]= 0.4
     nv_sig_4["charge_readout_dur"]=  10e6
     
@@ -1351,7 +1351,7 @@ if __name__ == "__main__":
         
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 350])
+        # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 350])
         do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 350])
         
         
