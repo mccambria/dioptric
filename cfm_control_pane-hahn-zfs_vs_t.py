@@ -28,6 +28,7 @@ import majorroutines.determine_standard_readout_params as determine_standard_rea
 from utils.tool_belt import States, NormStyle
 from figures.zfs_vs_t.zfs_vs_t_main import cambria_fixed
 from random import shuffle
+import sys
 
 
 ### Major Routines
@@ -603,52 +604,52 @@ if __name__ == "__main__":
     nv15["expected_count_rate"] = 22
         
     nv16 = copy.deepcopy(nvref)
-    nv16["coords"] = ref_coords + np.array([0.345, -0.043, 0])
+    nv16["coords"] = ref_coords + np.array([0.144, -0.315, 0])
     nv16["name"] =  f"{sample_name}-nv16_{region_name}"
     nv16["expected_count_rate"] = 25
 
     nv17 = copy.deepcopy(nvref)
-    nv17["coords"] = ref_coords + np.array([0.414, 0.062, 0])
+    nv17["coords"] = ref_coords + np.array([0.185, -0.295, 0])
     nv17["name"] =  f"{sample_name}-nv17_{region_name}"
     nv17["expected_count_rate"] = 20
     
     nv18 = copy.deepcopy(nvref)
-    nv18["coords"] = ref_coords + np.array([0.086, 0.136, 0])
+    nv18["coords"] = ref_coords + np.array([0.241, -0.257, 0])
     nv18["name"] =  f"{sample_name}-nv18_{region_name}"
     nv18["expected_count_rate"] = 20
 
     nv19 = copy.deepcopy(nvref)
-    nv19["coords"] = ref_coords  + np.array([-0.017,  0.178, 0])
+    nv19["coords"] = ref_coords  + np.array([0.306, -0.225, 0])
     nv19["name"] =  f"{sample_name}-nv19_{region_name}"
     nv19["expected_count_rate"] = 23
     
     nv20 = copy.deepcopy(nvref)
-    nv20["coords"] = ref_coords + np.array([-0.065,  0.065, 0])
+    nv20["coords"] = ref_coords + np.array([0.267, -0.334, 0])
     nv20["name"] =  f"{sample_name}-nv20_{region_name}"
     nv20["expected_count_rate"] = 20
         
     nv21 = copy.deepcopy(nvref)
-    nv21["coords"] = ref_coords + np.array([-0.111,  0.09, 0])
+    nv21["coords"] = ref_coords + np.array([0.052, 0.318, 0])
     nv21["name"] =  f"{sample_name}-nv21_{region_name}"
     nv21["expected_count_rate"] = 20
 
     nv22 = copy.deepcopy(nvref)
-    nv22["coords"] = ref_coords + np.array([0.075, -0.222, 0])
+    nv22["coords"] = ref_coords + np.array([0.01, 0.354, 0])
     nv22["name"] =  f"{sample_name}-nv22_{region_name}"
     nv22["expected_count_rate"] = 27
     
     nv23 = copy.deepcopy(nvref)
-    nv23["coords"] = ref_coords + np.array([0.065, -0.269, 0])
+    nv23["coords"] = ref_coords + np.array([0.047, 0.366, 0])
     nv23["name"] =  f"{sample_name}-nv23_{region_name}"
     nv23["expected_count_rate"] = 28
 
     nv24 = copy.deepcopy(nvref)
-    nv24["coords"] = ref_coords  + np.array([0.482, -0.039, 0])
+    nv24["coords"] = ref_coords  + np.array([0.069, 0.393, 0])
     nv24["name"] =  f"{sample_name}-nv24_{region_name}"
     nv24["expected_count_rate"] = 24
     
     nv25 = copy.deepcopy(nvref)
-    nv25["coords"] = ref_coords + np.array([0.255, 0.197, 0])
+    nv25["coords"] = ref_coords + np.array([0.037, 0.431, 0])
     nv25["name"] =  f"{sample_name}-nv25_{region_name}"
     nv25["expected_count_rate"] = 22
 
@@ -666,6 +667,23 @@ if __name__ == "__main__":
     # nv_list.append(nv_list[0])
 
     ### Functions to run
+
+    # Coordinate calculation
+    # coords = [
+    #     [0.133, -0.34],
+    #     [0.174, -0.32],
+    #     [0.23, -0.282],
+    #     [0.295, -0.25],
+    #     [0.256, -0.359],
+    #     [0.041, 0.293],
+    #     [-0.001, 0.329],
+    #     [0.036, 0.341],
+    #     [0.058, 0.368],
+    #     [0.026, 0.406],
+    # ]
+    # for el in coords:
+    #     print(np.array(el) - ref_coords[0:2])
+    # sys.exit()
 
     try:
 
