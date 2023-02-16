@@ -410,10 +410,12 @@ def main_with_cxn(
 
     if scan_type == "XY":
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
-    elif scan_type == 'XZ':
+            x_center, y_center, x_range, y_range, x_num_steps, y_num_steps
+        )
+    elif scan_type == "XZ":
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
+            x_center, z_center, x_range, y_range, x_num_steps, y_num_steps
+        )
 
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -446,7 +448,7 @@ def main_with_cxn(
             xy_server.load_stream_xy(x_voltages, y_voltages)
         elif scan_type == "XZ":
             z_voltages = y_voltages
-            y_vals_static = [y_center]*len(x_voltages)
+            y_vals_static = [y_center] * len(x_voltages)
             xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
 
     # Initialize imgArray and set all values to NaN so that unset values
@@ -516,7 +518,7 @@ def main_with_cxn(
 
             if scan_type == "XY":
                 flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            elif scan_type == 'XZ':
+            elif scan_type == "XZ":
                 flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
 
             # Some diagnostic stuff - checking how far we are from the target pos
@@ -586,35 +588,35 @@ def main_with_cxn(
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
-    if scan_type == 'XY':
+    if scan_type == "XY":
         xy_server.write_xy(x_center, y_center)
-    elif scan_type == 'XZ':
+    elif scan_type == "XZ":
         xyz_server.write_xyz(x_center, y_center, z_center)
 
     timestamp = tool_belt.get_time_stamp()
     rawData = {
-        'timestamp': timestamp,
-                'nv_sig': nv_sig,
-                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                "x_center": x_center,
-                "y_center": y_center,
-                "z_center": z_center,
-                'x_range': x_range,
-                'x_range-units': 'um',
-                'y_range': y_range,
-                'y_range-units': 'um',
-                'num_steps': num_steps,
-                'scan_type': scan_type,
-                'readout': readout,
-                'readout-units': 'ns',
-                "title": title,
-                'x_positions_1d': x_positions_1d.tolist(),
-                'x_positions_1d-units': pos_units,
-                'y_positions_1d': y_positions_1d.tolist(),
-                'y_positions_1d-units': pos_units,
-                'img_array': img_array.astype(int).tolist(),
-                'img_array-units': 'counts',
-               }
+        "timestamp": timestamp,
+        "nv_sig": nv_sig,
+        # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+        "x_center": x_center,
+        "y_center": y_center,
+        "z_center": z_center,
+        "x_range": x_range,
+        "x_range-units": "um",
+        "y_range": y_range,
+        "y_range-units": "um",
+        "num_steps": num_steps,
+        "scan_type": scan_type,
+        "readout": readout,
+        "readout-units": "ns",
+        "title": title,
+        "x_positions_1d": x_positions_1d.tolist(),
+        "x_positions_1d-units": pos_units,
+        "y_positions_1d": y_positions_1d.tolist(),
+        "y_positions_1d-units": pos_units,
+        "img_array": img_array.astype(int).tolist(),
+        "img_array-units": "counts",
+    }
 
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
     tool_belt.save_figure(fig, filePath)
@@ -642,7 +644,7 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    kpl.imshow(
+    im = kpl.imshow(
         ax,
         img_array_kcps,
         # title=title,
@@ -653,7 +655,24 @@ if __name__ == "__main__":
         extent=extent,
         # vmin=vmin,
         # vmax=vmax,
-        aspect='auto'
+        aspect="auto",
     )
+
+    # Annotation
+    nvs = [
+        [0.334, -0.068],
+        [0.403, 0.037],
+        [0.075, 0.111],
+        [-0.028, 0.153],
+        [-0.076, 0.04],
+        [-0.122, 0.065],
+        [0.064, -0.247],
+        [0.054, -0.294],
+        [0.471, -0.064],
+        [0.244, 0.172],
+    ]
+    for ind in range(len(nvs)):
+        nv = nvs[ind]
+        plt.plot(nv[0], nv[1], marker=f"${ind+6}$", color=kpl.KplColors.GREEN, ms=10)
 
     plt.show(block=True)

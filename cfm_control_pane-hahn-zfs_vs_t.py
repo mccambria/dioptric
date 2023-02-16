@@ -48,13 +48,13 @@ def do_image_sample(nv_sig, nv_minus_init=False):
 
     # scan_range = 0.3
     # num_steps = 80
-    
+
     scan_range = 1.0
     num_steps = 90
 
     # scan_range = 1.5
     # num_steps = 180
-    
+
     # scan_range = 2.0
     # num_steps = 90*2
 
@@ -112,10 +112,8 @@ def do_stationary_count(
         nv_zero_initialization=nv_zero_initialization,
     )
 
-def do_stationary_count_bg_subt(
-    nv_sig,
-    bg_coords
-):
+
+def do_stationary_count_bg_subt(nv_sig, bg_coords):
 
     run_time = 3 * 60 * 10**9  # ns
 
@@ -212,18 +210,18 @@ def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
 def do_pulsed_resonance_batch(nv_list, temp):
 
     num_steps = 51
-    
+
     # Microdiamond
     # num_reps = 1e2
     # num_runs = 32
     # freq_range = 0.060
-    
+
     # Single
     num_reps = 5e4
     num_runs = 32
     # freq_range = 0.020
     freq_range = 0.040
-    
+
     # num_reps = 50
     # num_runs = 8
 
@@ -275,8 +273,8 @@ def do_rabi_batch(nv_list):
 
     num_reps = 1e2
     num_runs = 16
-    
-    uwave_time_range=[0, 300]
+
+    uwave_time_range = [0, 300]
     state = States.LOW
 
     for nv_sig in nv_list:
@@ -603,14 +601,65 @@ if __name__ == "__main__":
     nv15["coords"] = ref_coords + np.array([0.255, 0.197, 0])
     nv15["name"] =  f"{sample_name}-nv15_{region_name}"
     nv15["expected_count_rate"] = 22
+        
+    nv16 = copy.deepcopy(nvref)
+    nv16["coords"] = ref_coords + np.array([0.345, -0.043, 0])
+    nv16["name"] =  f"{sample_name}-nv16_{region_name}"
+    nv16["expected_count_rate"] = 25
+
+    nv17 = copy.deepcopy(nvref)
+    nv17["coords"] = ref_coords + np.array([0.414, 0.062, 0])
+    nv17["name"] =  f"{sample_name}-nv17_{region_name}"
+    nv17["expected_count_rate"] = 20
     
+    nv18 = copy.deepcopy(nvref)
+    nv18["coords"] = ref_coords + np.array([0.086, 0.136, 0])
+    nv18["name"] =  f"{sample_name}-nv18_{region_name}"
+    nv18["expected_count_rate"] = 20
+
+    nv19 = copy.deepcopy(nvref)
+    nv19["coords"] = ref_coords  + np.array([-0.017,  0.178, 0])
+    nv19["name"] =  f"{sample_name}-nv19_{region_name}"
+    nv19["expected_count_rate"] = 23
+    
+    nv20 = copy.deepcopy(nvref)
+    nv20["coords"] = ref_coords + np.array([-0.065,  0.065, 0])
+    nv20["name"] =  f"{sample_name}-nv20_{region_name}"
+    nv20["expected_count_rate"] = 20
+        
+    nv21 = copy.deepcopy(nvref)
+    nv21["coords"] = ref_coords + np.array([-0.111,  0.09, 0])
+    nv21["name"] =  f"{sample_name}-nv21_{region_name}"
+    nv21["expected_count_rate"] = 20
+
+    nv22 = copy.deepcopy(nvref)
+    nv22["coords"] = ref_coords + np.array([0.075, -0.222, 0])
+    nv22["name"] =  f"{sample_name}-nv22_{region_name}"
+    nv22["expected_count_rate"] = 27
+    
+    nv23 = copy.deepcopy(nvref)
+    nv23["coords"] = ref_coords + np.array([0.065, -0.269, 0])
+    nv23["name"] =  f"{sample_name}-nv23_{region_name}"
+    nv23["expected_count_rate"] = 28
+
+    nv24 = copy.deepcopy(nvref)
+    nv24["coords"] = ref_coords  + np.array([0.482, -0.039, 0])
+    nv24["name"] =  f"{sample_name}-nv24_{region_name}"
+    nv24["expected_count_rate"] = 24
+    
+    nv25 = copy.deepcopy(nvref)
+    nv25["coords"] = ref_coords + np.array([0.255, 0.197, 0])
+    nv25["name"] =  f"{sample_name}-nv25_{region_name}"
+    nv25["expected_count_rate"] = 22
+
     # fmt: on
 
     # nv_sig = nv11
     nv_sig = nvref
     bg_coords = np.array(nv_sig["coords"]) + np.array([0.04, -0.06, 0])
     # nv_list = [nv6, nv7, nv8, nv10, nv11]
-    nv_list = [nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13, nv14, nv15]
+    # nv_list = [nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13, nv14, nv15]
+    nv_list = [nv16, nv17, nv18, nv19, nv20, nv21, nv22, nv23, nv24, nv25]
     # nv_list = [nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv10, nv11]
     # shuffle(nv_list)
@@ -622,7 +671,7 @@ if __name__ == "__main__":
 
         # pass
 
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
@@ -646,35 +695,35 @@ if __name__ == "__main__":
         # #     z += 5
         # #     time.sleep(5)
         #     nv_sig["coords"][2] = z
-        #     do_image_sample(nv_sig) 
-        
-        # nv_sig = nvref 
+        #     do_image_sample(nv_sig)
+
+        # nv_sig = nvref
         # nv_sig['imaging_readout_dur'] = 4e7
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
-        
+
         # for nv in nv_list:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     # print(nv["coords"])
+        #     # if tool_belt.safe_stop():
+        #     #     break
+        #     print(nv["coords"])
         #     do_image_sample_zoom(nv)
-        
+
         # do_optimize(nv_sig)
-        
+
         # nv_sig['imaging_readout_dur'] = 1e8
         # do_stationary_count(nv_sig, disable_opt=True)
         # nv_sig['imaging_readout_dur'] = 1e8
         # do_stationary_count_bg_subt(nv_sig, bg_coords)
-        
+
         # do_determine_standard_readout_params(nv_sig)
 
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
         # do_rabi(nv10, States.LOW, uwave_time_range=[0, 500])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        shuffle(nv_list)
-        temp = 295
-        do_pulsed_resonance_batch(nv_list, temp)
+        # shuffle(nv_list)
+        # temp = 295
+        # do_pulsed_resonance_batch(nv_list, temp)
         # do_rabi_batch(nv_list)
 
     # except Exception as exc:
@@ -683,7 +732,7 @@ if __name__ == "__main__":
     #     raise exc
 
     finally:
-        
+
         # msg = "Experiment complete!"
         # recipient = "cambria@wisc.edu"
         # tool_belt.send_email(msg, email_to=recipient)
