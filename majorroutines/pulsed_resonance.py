@@ -67,7 +67,9 @@ def create_fit_figure(
     Returns
     -------
     matplotlib.figure.Figure
+
     matplotlib.axes.Axes
+
     Function
         Function used to fit the data
     1D array
@@ -122,10 +124,10 @@ def create_fit_figure(
         low_text = base_text.format(contrast, hwhm, freq)
         contrast, hwhm, freq = popt[3:6]
         high_text = base_text.format(contrast, hwhm, freq)
-        print(popt[2])
-        print(np.sqrt(pcov[2][2]))
-        print(popt[5])
-        print(np.sqrt(pcov[5][5]))
+        # print(popt[2])
+        # print(np.sqrt(pcov[2][2]))
+        # print(popt[5])
+        # print(np.sqrt(pcov[5][5]))
     size = kpl.Size.SMALL
     if low_text is not None:
         kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
@@ -933,68 +935,116 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    # print(Path(__file__).stem)
-    # sys.exit()
+    kpl.init_kplotlib()
 
     file_list = [
-        "2023_02_10-19_13_33-wu-nv1_region4",
-        "2023_02_10-18_51_08-wu-nv2_region4",
-        "2023_02_10-18_28_42-wu-nv3_region4",
-        "2023_02_10-18_06_16-wu-nv4_region4",
-        "2023_02_10-19_36_05-wu-nv5_region4",
+        #
+        "2023_02_14-19_34_18-wu-nv6_region5",
+        "2023_02_15-11_34_42-wu-nv6_region5",
+        #
+        "2023_02_14-18_25_12-wu-nv7_region5",
+        "2023_02_15-10_49_10-wu-nv7_region5",
+        #
+        "2023_02_14-16_31_33-wu-nv8_region5",
+        "2023_02_15-10_03_52-wu-nv8_region5",
+        #
+        "2023_02_14-19_56_53-wu-nv9_region5",
+        "2023_02_15-09_17_38-wu-nv9_region5",
+        #
+        "2023_02_14-17_39_49-wu-nv10_region5",
+        "2023_02_15-08_54_44-wu-nv10_region5",
+        #
+        "2023_02_14-18_02_32-wu-nv11_region5",
+        "2023_02_15-08_31_53-wu-nv11_region5",
+        #
+        "2023_02_14-19_11_31-wu-nv12_region5",
+        "2023_02_15-11_12_05-wu-nv12_region5",
+        #
+        "2023_02_14-16_54_38-wu-nv13_region5",
+        "2023_02_15-09_41_02-wu-nv13_region5",
+        #
+        "2023_02_14-17_17_04-wu-nv14_region5",
+        "2023_02_15-11_57_26-wu-nv14_region5",
+        #
+        "2023_02_14-18_47_39-wu-nv15_region5",
+        "2023_02_15-10_26_32-wu-nv15_region5",
     ]
 
-    for file_name in file_list:
-        # fit_func = double_dip
-        # guess_params = [0.15, 4, 2.868, 0.15, 4, 2.872]
-        fit_func = None
-        guess_params = None
+    double_list = [
+        True,
+    ] * 10
+    double_list[-4] = False  # NV12
+    double_list[-2] = False  # NV14
+
+    # for file_name in file_list:
+    for ind in range(len(file_list)):
+
+        file_name = file_list[ind]
+        double = double_list[ind // 2]
+        if double:
+            fit_func = double_dip
+            guess_params = [0.12, 2, 2.865, 0.12, 2, 2.875]
+        else:
+            fit_func = None
+            guess_params = None
+
+        file_name = "2023_02_15-10_49_10-wu-nv7_region5"
+        fit_func = double_dip
+        guess_params = [0.12, 2, 2.865, 0.15, 2, 2.875]
 
         data = tool_belt.get_raw_data(file_name)
 
+        print(file_name)
         print(return_res_with_error(data, fit_func, guess_params))
-    sys.exit()
+        print()
+        # sys.exit()
 
-    kpl.init_kplotlib()
-    freq_center = data["freq_center"]
-    freq_range = data["freq_range"]
-    num_steps = data["num_steps"]
-    ref_counts = data["ref_counts"]
-    sig_counts = data["sig_counts"]
-    num_reps = data["num_reps"]
-    nv_sig = data["nv_sig"]
-    readout = nv_sig["spin_readout_dur"]
-    try:
-        norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
-    except Exception as exc:
-        # norm_style = NormStyle.POINT_TO_POINT
-        norm_style = NormStyle.SINGLE_VALUED
+        freq_center = data["freq_center"]
+        freq_range = data["freq_range"]
+        num_steps = data["num_steps"]
+        ref_counts = data["ref_counts"]
+        sig_counts = data["sig_counts"]
+        num_reps = data["num_reps"]
+        nv_sig = data["nv_sig"]
+        readout = nv_sig["spin_readout_dur"]
+        try:
+            norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
+        except Exception as exc:
+            # norm_style = NormStyle.POINT_TO_POINT
+            norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = tool_belt.process_counts(
-        sig_counts, ref_counts, num_reps, readout, norm_style
-    )
-    (
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    ) = ret_vals
-    # create_raw_data_figure(
-    #     freq_center,
-    #     freq_range,
-    #     num_steps,
-    #     sig_counts_avg_kcps,
-    #     ref_counts_avg_kcps,
-    #     norm_avg_sig,
-    # )
-    create_fit_figure(
-        freq_center,
-        freq_range,
-        num_steps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-        fit_func=fit_func,
-        guess_params=guess_params,
-    )
+        ret_vals = tool_belt.process_counts(
+            sig_counts, ref_counts, num_reps, readout, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        # create_raw_data_figure(
+        #     freq_center,
+        #     freq_range,
+        #     num_steps,
+        #     sig_counts_avg_kcps,
+        #     ref_counts_avg_kcps,
+        #     norm_avg_sig,
+        # )
+        ret_vals = create_fit_figure(
+            freq_center,
+            freq_range,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            fit_func=fit_func,
+            guess_params=guess_params,
+        )
+        fit_fig = ret_vals[0]
+
+        file_path = tool_belt.get_raw_data_path(file_name)
+        file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
+        tool_belt.save_figure(fit_fig, file_path)
+
+        break
 
     plt.show(block=True)
