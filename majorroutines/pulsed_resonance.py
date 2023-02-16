@@ -142,7 +142,7 @@ def create_raw_data_figure(
     sig_counts_avg_kcps=None,
     ref_counts_avg_kcps=None,
     norm_avg_sig=None,
-    magnet_angle= None,
+    magnet_angle=None,
 ):
     """Create a 2-panel figure showing the raw data (signal and reference) as well as the
     normalized average signal
@@ -200,7 +200,12 @@ def create_raw_data_figure(
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
     if magnet_angle:
-        kpl.anchored_text(ax_norm, '{} deg'.format(magnet_angle), kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
+        kpl.anchored_text(
+            ax_norm,
+            "{} deg".format(magnet_angle),
+            kpl.Loc.LOWER_RIGHT,
+            size=kpl.Size.SMALL,
+        )
     return fig, ax_sig_ref, ax_norm
 
 
@@ -301,7 +306,7 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
     )
 
     if len(popt) == 6:
-        # print("Double resonance")
+        print("Double resonance")
         low_res_ind = 2
         high_res_ind = low_res_ind + 3
         avg_res = (popt[low_res_ind] + popt[high_res_ind]) / 2
@@ -674,8 +679,7 @@ def main_with_cxn(
 
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        freq_center, freq_range, num_steps,
-        magnet_angle = nv_sig['magnet_angle']
+        freq_center, freq_range, num_steps, magnet_angle=nv_sig["magnet_angle"]
     )
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
@@ -846,13 +850,21 @@ def main_with_cxn(
         if len(popt) == 3:
             low_freq = popt[2]
             high_freq = None
-            print('Single resonance found at {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2])))
+            print(
+                "Single resonance found at {:.4f} +/- {:.4f} GHz".format(
+                    popt[2], np.sqrt(pcov[2][2])
+                )
+            )
         elif len(popt) == 6:
             low_freq = popt[2]
             high_freq = popt[5]
-            print('Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2]),popt[5], np.sqrt(pcov[5][5])))
+            print(
+                "Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz".format(
+                    popt[2], np.sqrt(pcov[2][2]), popt[5], np.sqrt(pcov[5][5])
+                )
+            )
     except Exception:
-        print('Could not fit data')
+        print("Could not fit data")
 
     ### Clean up, save the data, return
 
@@ -919,10 +931,23 @@ if __name__ == "__main__":
     # print(Path(__file__).stem)
     # sys.exit()
 
-    file_name = "2023_01_12-20_55_47-wu-nv10_zfs_vs_t"
-    data = tool_belt.get_raw_data(file_name)
+    file_list = [
+        "2023_02_10-19_13_33-wu-nv1_region4",
+        "2023_02_10-18_51_08-wu-nv2_region4",
+        "2023_02_10-18_28_42-wu-nv3_region4",
+        "2023_02_10-18_06_16-wu-nv4_region4",
+        "2023_02_10-19_36_05-wu-nv5_region4",
+    ]
 
-    print(return_res_with_error(data))
+    for file_name in file_list:
+        # fit_func = double_dip
+        # guess_params = [0.15, 4, 2.868, 0.15, 4, 2.872]
+        fit_func = None
+        guess_params = None
+
+        data = tool_belt.get_raw_data(file_name)
+
+        print(return_res_with_error(data, fit_func, guess_params))
     sys.exit()
 
     kpl.init_kplotlib()
@@ -963,6 +988,8 @@ if __name__ == "__main__":
         num_steps,
         norm_avg_sig,
         norm_avg_sig_ste,
+        fit_func=fit_func,
+        guess_params=guess_params,
     )
 
     plt.show(block=True)
