@@ -543,7 +543,7 @@ def main_with_cxn(
                 readout_dur,
             ]
         elif composite_pulses:
-            seq_file = "t1_dq_knill2.py"
+            seq_file = "t1_dq_knill.py"
             seq_args = [
                 min_relaxation_time,
                 polarization_time,
