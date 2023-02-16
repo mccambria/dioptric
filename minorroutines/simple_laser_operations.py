@@ -84,8 +84,9 @@ if __name__ == "__main__":
     laser_name = "laser_LGLO_589"
     # laser_name = "integrated_520"
     laser_power = None
-    laser_filter = "nd_0"
+    # laser_filter = "nd_0"
     collection_filter = "nd_0"
+    # pos = [-0.306, 0.235, 8.0]
     pos = [0.0, 0.0, 5.0]
 
     tool_belt.init_safe_stop()

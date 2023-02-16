@@ -10,7 +10,6 @@ Created on Thu Apr 11 15:39:23 2019
 # %% Imports
 
 
-from isort import file
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import majorroutines.pulsed_resonance as pulsed_resonance
@@ -41,9 +40,7 @@ def calc_resonance_from_file(f):
     state = data["state"]
     passed_res = nv_sig[f"resonance_{state}"]
 
-    ret_vals = pulsed_resonance.process_counts(
-        ref_counts, sig_counts, num_runs
-    )
+    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
     (
         avg_ref_counts,
         avg_sig_counts,
@@ -59,9 +56,7 @@ def calc_resonance_from_file(f):
     return resonance, resonance_err
 
 
-def calc_resonance(
-    norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res
-):
+def calc_resonance(norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res):
 
     f1, f2, f3, f4 = norm_avg_sig
     f1_err, f2_err, f3_err, f4_err = norm_avg_sig_ste
@@ -83,11 +78,11 @@ def calc_resonance(
         2
         * np.sqrt(
             (
-                d_omega ** 2
+                d_omega**2
                 * (
-                    f2_err ** 2 * (f1 - f3) ** 2
-                    + f4_err ** 2 * (f1 - f3) ** 2
-                    + (f1_err ** 2 + f3_err ** 2) * (f2 - f4) ** 2
+                    f2_err**2 * (f1 - f3) ** 2
+                    + f4_err**2 * (f1 - f3) ** 2
+                    + (f1_err**2 + f3_err**2) * (f2 - f4) ** 2
                 )
             )
         )
@@ -171,7 +166,7 @@ def main_with_cxn(
 
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
-    readout_sec = readout / (10 ** 9)
+    readout_sec = readout / (10**9)
     pi_pulse_dur = tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.name}"])
     seq_args = [
         pi_pulse_dur,
@@ -237,9 +232,7 @@ def main_with_cxn(
             if tool_belt.safe_stop():
                 break
 
-            ret_vals = cxn.pulse_streamer.stream_load(
-                "rabi.py", seq_args_string
-            )
+            ret_vals = cxn.pulse_streamer.stream_load("rabi.py", seq_args_string)
 
             freq_index_master_list[run_ind].append(freq_ind)
 
@@ -271,9 +264,7 @@ def main_with_cxn(
 
     # %% Process the data
 
-    ret_vals = pulsed_resonance.process_counts(
-        ref_counts, sig_counts, num_runs
-    )
+    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
     (
         avg_ref_counts,
         avg_sig_counts,

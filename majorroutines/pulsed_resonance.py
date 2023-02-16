@@ -358,6 +358,11 @@ def get_guess_params(
     low_freq_guess = None
     high_freq_guess = None
 
+    if len(peak_heights) == 0:
+        fit_func = single_dip
+        guess_params = [height, hwhm_mhz, freq_center]
+        return fit_func, guess_params
+
     # Find the location of the highest peak
     max_peak_height = max(peak_heights)
     max_peak_peak_ind = peak_heights.index(max_peak_height)
