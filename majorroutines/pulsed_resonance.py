@@ -989,26 +989,71 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     file_list = [
-        "2023_02_16-10_53_23-wu-nv25_region5",
-        "2023_02_16-11_15_49-wu-nv21_region5",
+        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+        "2023_02_09-17_28_01-wu-nv1_region2",
+        "2023_02_09-18_02_43-wu-nv2_region2",
+        "2023_02_09-18_14_01-wu-nv3_region2",
+        "2023_02_09-17_51_24-wu-nv4_region2",
+        "2023_02_09-17_39_51-wu-nv5_region2",
+        "2023_02_09-23_28_39-wu-nv1_region3",
+        "2023_02_09-23_51_39-wu-nv2_region3",
+        "2023_02_10-00_14_56-wu-nv3_region3",
+        "2023_02_10-00_37_40-wu-nv4_region3",
+        "2023_02_10-00_59_59-wu-nv5_region3",
+        "2023_02_10-19_13_33-wu-nv1_region4",
+        "2023_02_10-18_51_08-wu-nv2_region4",
+        "2023_02_10-18_28_42-wu-nv3_region4",
+        "2023_02_10-18_06_16-wu-nv4_region4",
+        "2023_02_10-19_36_05-wu-nv5_region4",
+        "2023_02_13-11_54_40-wu-nv1_region5",
+        "2023_02_13-10_47_07-wu-nv2_region5",
+        "2023_02_13-11_32_11-wu-nv3_region5",
+        "2023_02_13-11_09_39-wu-nv4_region5",
+        "2023_02_13-12_17_20-wu-nv5_region5",
+        "2023_02_14-19_34_18-wu-nv6_region5",
+        "2023_02_15-11_34_42-wu-nv6_region5",
+        "2023_02_14-18_25_12-wu-nv7_region5",
+        "2023_02_15-10_49_10-wu-nv7_region5",
+        "2023_02_14-16_31_33-wu-nv8_region5",
+        "2023_02_15-10_03_52-wu-nv8_region5",
+        "2023_02_14-19_56_53-wu-nv9_region5",
+        "2023_02_15-09_17_38-wu-nv9_region5",
+        "2023_02_14-17_39_49-wu-nv10_region5",
+        "2023_02_15-08_54_44-wu-nv10_region5",
+        "2023_02_14-18_02_32-wu-nv11_region5",
+        "2023_02_15-08_31_53-wu-nv11_region5",
+        "2023_02_14-19_11_31-wu-nv12_region5",
+        "2023_02_15-11_12_05-wu-nv12_region5",
+        "2023_02_14-16_54_38-wu-nv13_region5",
+        "2023_02_15-09_41_02-wu-nv13_region5",
+        "2023_02_14-17_17_04-wu-nv14_region5",
+        "2023_02_15-11_57_26-wu-nv14_region5",
+        "2023_02_14-18_47_39-wu-nv15_region5",
+        "2023_02_15-10_26_32-wu-nv15_region5",
         "2023_02_16-11_38_00-wu-nv16_region5",
-        "2023_02_16-12_00_24-wu-nv22_region5",
-        "2023_02_16-12_22_59-wu-nv23_region5",
+        "2023_02_16-15_21_12-wu-nv16_region5",
         "2023_02_16-12_45_08-wu-nv17_region5",
+        "2023_02_16-16_28_17-wu-nv17_region5",
         "2023_02_16-13_07_28-wu-nv18_region5",
-        "2023_02_16-13_29_52-wu-nv24_region5",
+        "2023_02_16-17_58_56-wu-nv18_region5",
         "2023_02_16-13_52_11-wu-nv19_region5",
+        "2023_02_16-17_36_17-wu-nv19_region5",
         "2023_02_16-14_14_37-wu-nv20_region5",
         "2023_02_16-14_36_43-wu-nv20_region5",
-        "2023_02_16-14_59_00-wu-nv22_region5",
-        "2023_02_16-15_21_12-wu-nv16_region5",
-        "2023_02_16-15_43_44-wu-nv24_region5",
-        "2023_02_16-16_05_52-wu-nv25_region5",
-        "2023_02_16-16_28_17-wu-nv17_region5",
+        "2023_02_16-11_15_49-wu-nv21_region5",
         "2023_02_16-16_51_10-wu-nv21_region5",
+        "2023_02_16-12_00_24-wu-nv22_region5",
+        "2023_02_16-14_59_00-wu-nv22_region5",
+        "2023_02_16-12_22_59-wu-nv23_region5",
         "2023_02_16-17_14_04-wu-nv23_region5",
-        "2023_02_16-17_36_17-wu-nv19_region5",
-        "2023_02_16-17_58_56-wu-nv18_region5",
+        "2023_02_16-13_29_52-wu-nv24_region5",
+        "2023_02_16-15_43_44-wu-nv24_region5",
+        "2023_02_16-10_53_23-wu-nv25_region5",
+        "2023_02_16-16_05_52-wu-nv25_region5",
     ]
 
     # file_list = [
@@ -1085,18 +1130,18 @@ if __name__ == "__main__":
         pste = np.sqrt(np.diag(pcov))
         # Reverse for presentation
         popt = popt[::-1]
-        pste = popt[::-1]
-        round_popt = [tool_belt.round_sig_figs(val, 6) for val in popt]
-        round_pste = [tool_belt.round_sig_figs(val, 6) for val in pste]
+        pste = pste[::-1]
+        round_popt = [tool_belt.round_sig_figs(val, 7) for val in popt]
+        round_pste = [tool_belt.round_sig_figs(val, 3) for val in pste]
         print_list = []
         for ind in range(len(popt)):
             print_list.append(round_popt[ind])
             print_list.append(round_pste[ind])
         print(print_list)
 
-        # file_path = tool_belt.get_raw_data_path(file_name)
-        # file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
-        # tool_belt.save_figure(fit_fig, file_path)
+        file_path = tool_belt.get_raw_data_path(file_name)
+        file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
+        tool_belt.save_figure(fit_fig, file_path)
 
         # break
 

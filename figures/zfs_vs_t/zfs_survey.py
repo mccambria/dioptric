@@ -4,7 +4,7 @@ Survey of NV zero field lines in the sample Wu
 
 Created on February 16th, 2023
 
-@author: matth
+@author: mccambria
 """
 
 
@@ -32,6 +32,20 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 # endregion
 # region Functions
+
+
+def get_header():
+
+    xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
+    csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
+    compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
+    compiled_data_file.to_csv(csv_file_path, index=None, header=True)
+    with open(csv_file_path, newline="") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            header = row
+            break
+    return header
 
 
 def get_data_points(skip_lambda=None):
@@ -70,19 +84,72 @@ def get_data_points(skip_lambda=None):
             if not skip:
                 data_points.append(point)
 
+    data_points = condense_data_points(data_points)
+
     return data_points
+
+
+def condense_data_points(data_points):
+    """Combine measurements on the same NV"""
+
+    header = get_header()
+
+    condensed_data_points = []
+    identifier_set = [point["NV"] for point in data_points]
+    identifier_set = list(set(identifier_set))
+    identifier_set.sort()
+
+    for identifier in identifier_set:
+        new_point = {}
+        for col in header:
+            new_point[col] = []
+        for point in data_points:
+            test_identifier = point["NV"]
+            if test_identifier == identifier:
+                for col in header:
+                    val = point[col]
+                    if val != "":
+                        new_point[col].append(point[col])
+
+        for col in header:
+            if len(new_point[col]) == 0:
+                continue
+            first_val = new_point[col][0]
+            # Only combine numeric data (floats)
+            if type(first_val) is not float:
+                new_point[col] = new_point[col][0]
+            # Inverse-variance average the points together
+            elif col.endswith("error"):
+                errors = new_point[col]
+                if 0 in errors:
+                    new_point[col] = 0
+                    continue
+                # For inverse-variance weighting, condensed_error**2 = 1/norm
+                weights = [val**-2 for val in errors]
+                norm = np.sum(weights)
+                new_point[col] = np.sqrt(1 / norm)
+            else:
+                error_col = col + " error"
+                errors = new_point[error_col]
+                if 0 in errors:
+                    ind = np.where(np.array(errors) == 0)[0][0]
+                    new_point[col] = new_point[col][ind]
+                    continue
+                weights = [val**-2 for val in errors]
+                new_point[col] = np.average(new_point[col], weights=weights)
+
+        condensed_data_points.append(new_point)
+
+    return condensed_data_points
 
 
 def data_points_to_lists(data_points):
     """Turn a dict of data points into a list that's more convenenient for plotting"""
 
-    zfs_list = []
-    zfs_err_list = []
-    temp_list = []
-    label_list = []
-    color_list = []
-    # data_color_options = kpl.data_color_cycler.copy()
-    # data_color_options.pop(0)
+    data_lists = {}
+    header = get_header()
+    for el in header:
+        data_lists[el] = []
     data_color_options = [
         KplColors.GREEN,
         KplColors.PURPLE,
@@ -94,50 +161,17 @@ def data_points_to_lists(data_points):
     ]
     color_dict = {}
     used_labels = []  # For matching colors to labels
-    for el in data_points:
-        zfs = el["ZFS (GHz)"]
-        monitor_temp = el["Monitor temp (K)"]
-        if zfs == "" or monitor_temp == "":
-            continue
-        # if not (min_temp <= reported_temp <= max_temp):
-        # if monitor_temp < 296:
-        #     # zfs += 0.00042
-        #     monitor_temp *= 300.7 / 295
-        temp_list.append(monitor_temp)
-        zfs_list.append(zfs)
-        zfs_err = el["ZFS error (GHz)"]
-        zfs_err_list.append(zfs_err)
-        label = el["Label"]
-        label_list.append(label)
-        if label not in used_labels:
-            used_labels.append(label)
-            color_dict[label] = data_color_options.pop(0)
-        color_list.append(color_dict[label])
+    for point in data_points:
+        for col in header:
+            data_lists[col].append(point[col])
+        # label = el["Label"]
+        # label_list.append(label)
+        # if label not in used_labels:
+        #     used_labels.append(label)
+        #     color_dict[label] = data_color_options.pop(0)
+        # color_list.append(color_dict[label])
 
-    return zfs_list, zfs_err_list, temp_list, label_list, color_list
-
-
-def calc_zfs_from_compiled_data():
-
-    skip_lambda = lambda point: point["Sample"] != "Wu"
-
-    data_points = get_data_points(skip_lambda)
-    zfs_list = []
-    zfs_err_list = []
-    for el in data_points:
-        zfs_file_name = el["ZFS file"]
-        if zfs_file_name == "":
-            zfs_list.append(-1)
-            zfs_err_list.append(-1)
-            continue
-        data = tool_belt.get_raw_data(zfs_file_name)
-        res, res_err = return_res_with_error(data)
-        zfs_list.append(res)
-        zfs_err_list.append(res_err)
-    zfs_list = [round(val, 6) for val in zfs_list]
-    zfs_err_list = [round(val, 6) for val in zfs_err_list]
-    print(zfs_list)
-    print(zfs_err_list)
+    return data_lists
 
 
 # endregion
@@ -153,7 +187,52 @@ def calc_zfs_from_compiled_data():
 
 def main():
 
-    pass
+    skip_lambda = lambda pt: pt["Skip"]
+    # skip_lambda = lambda pt: pt["Skip"] or pt["Region"] == 5
+
+    data_points = get_data_points(skip_lambda)
+    data_lists = data_points_to_lists(data_points)
+    zfs_list = data_lists["ZFS (GHz)"]
+    zfs_err_list = data_lists["ZFS (GHz) error"]
+    zfs_devs = [el * 1000 - 2870 for el in zfs_list]
+    split_list = data_lists["Splitting (MHz)"]
+    split_err_list = data_lists["Splitting (MHz) error"]
+    region_list = data_lists["Region"]
+    kpl_colors_list = list(KplColors)
+    region_colors = {}
+    for ind in range(5):
+        region_colors[ind + 1] = kpl_colors_list[ind]
+    color_list = [region_colors[el] for el in region_list]
+
+    fig, ax = plt.subplots()
+
+    # Histograms
+    # kpl.histogram(ax, zfs_devs, kpl.HistType.STEP)
+    # ax.set_xlabel("Deviation from 2.87 GHz (MHz)")
+    # ax.set_ylabel("Occurrences")
+
+    # Splittings, zfs correlation
+    regions_plotted = []
+    for point in data_points:
+        region = point["Region"]
+        if region not in regions_plotted:
+            regions_plotted.append(region)
+            label = region
+        else:
+            label = None
+        color = region_colors[region]
+        kpl.plot_points(
+            ax,
+            point["Splitting (MHz)"],
+            point["ZFS (GHz)"] * 1000 - 2870,
+            xerr=point["Splitting (MHz) error"],
+            yerr=point["ZFS (GHz) error"],
+            color=color,
+            label=label,
+        )
+    ax.set_xlabel("Splitting (MHz)")
+    ax.set_ylabel("Deviation from 2.87 GHz (MHz)")
+    ax.legend(title="Region")
 
 
 if __name__ == "__main__":
