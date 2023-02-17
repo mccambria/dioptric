@@ -229,21 +229,31 @@ def refit_experiments():
     ### User setup
     # Also see below section Sample-dependent fit...
 
-    do_plot = True  # Generate raw data and fit plots?
-    do_save = True  # Save the plots?
+    do_plot = False  # Generate raw data and fit plots?
+    do_save = False  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     data_points = get_data_points()
-    # sample = "Wu"
-    sample = "15micro"
+    sample = "Wu"
+    # sample = "15micro"
     # file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
     # file_list = [file_list[57]]
     file_list = [
-        "2022_12_13-10_24_13-15micro-nv1_zfs_vs_t",
-        "2022_12_13-11_35_43-15micro-nv1_zfs_vs_t",
-        "2022_12_13-13_04_58-15micro-nv1_zfs_vs_t",
-        "2022_12_13-12_35_43-15micro-nv1_zfs_vs_t",
-        "2022_12_13-12_06_41-15micro-nv1_zfs_vs_t",
+        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+        "2023_02_09-17_28_01-wu-nv1_region2",
+        "2023_02_09-18_02_43-wu-nv2_region2",
+        "2023_02_09-18_14_01-wu-nv3_region2",
+        "2023_02_09-17_51_24-wu-nv4_region2",
+        "2023_02_09-17_39_51-wu-nv5_region2",
+        "2023_02_09-23_28_39-wu-nv1_region3",
+        "2023_02_09-23_51_39-wu-nv2_region3",
+        "2023_02_10-00_14_56-wu-nv3_region3",
+        "2023_02_10-00_37_40-wu-nv4_region3",
+        "2023_02_10-00_59_59-wu-nv5_region3",
     ]
 
     ### Loop
@@ -429,12 +439,18 @@ def refit_experiments():
     # freq2_errs = np.array(table_pste[3])
     # zfs_errs = np.sqrt(freq1_errs**2 + freq2_errs**2) / 2
 
+    zfs_vals = np.array(table_popt[2])
     zfs_errs = np.array(table_pste[2])
 
-    print("ZFS errors")
-    print(zfs_errs)
-    mean_zfs_err = np.mean(zfs_errs)
-    print(mean_zfs_err)
+    print("ZFS vals")
+    for ind in range(len(zfs_vals)):
+        # print(tool_belt.presentation_round(zfs_vals[ind], zfs_errs[ind]))
+        print(zfs_vals[ind], zfs_errs[ind])
+
+    # print("ZFS errors")
+    # print(zfs_errs)
+    # mean_zfs_err = np.mean(zfs_errs)
+    # print(mean_zfs_err)
 
 
 # endregion
@@ -1071,8 +1087,8 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    main()
-    # refit_experiments()
+    # main()
+    refit_experiments()
     # derivative_comp()
 
     plt.show(block=True)

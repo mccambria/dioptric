@@ -23,6 +23,7 @@ from random import shuffle
 import sys
 from utils.positioning import get_scan_1d as calculate_freqs
 from pathlib import Path
+from inspect import signature
 
 
 # region Plotting
@@ -67,7 +68,9 @@ def create_fit_figure(
     Returns
     -------
     matplotlib.figure.Figure
+
     matplotlib.axes.Axes
+
     Function
         Function used to fit the data
     1D array
@@ -122,10 +125,10 @@ def create_fit_figure(
         low_text = base_text.format(contrast, hwhm, freq)
         contrast, hwhm, freq = popt[3:6]
         high_text = base_text.format(contrast, hwhm, freq)
-        print(popt[2])
-        print(np.sqrt(pcov[2][2]))
-        print(popt[5])
-        print(np.sqrt(pcov[5][5]))
+        # print(popt[2])
+        # print(np.sqrt(pcov[2][2]))
+        # print(popt[5])
+        # print(np.sqrt(pcov[5][5]))
     size = kpl.Size.SMALL
     if low_text is not None:
         kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
@@ -142,7 +145,7 @@ def create_raw_data_figure(
     sig_counts_avg_kcps=None,
     ref_counts_avg_kcps=None,
     norm_avg_sig=None,
-    magnet_angle= None,
+    magnet_angle=None,
 ):
     """Create a 2-panel figure showing the raw data (signal and reference) as well as the
     normalized average signal
@@ -200,7 +203,12 @@ def create_raw_data_figure(
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
     if magnet_angle:
-        kpl.anchored_text(ax_norm, '{} deg'.format(magnet_angle), kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
+        kpl.anchored_text(
+            ax_norm,
+            "{} deg".format(magnet_angle),
+            kpl.Loc.LOWER_RIGHT,
+            size=kpl.Size.SMALL,
+        )
     return fig, ax_sig_ref, ax_norm
 
 
@@ -319,7 +327,12 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
 
 
 def get_guess_params(
-    freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+    freq_center,
+    freq_range,
+    num_steps,
+    norm_avg_sig,
+    norm_avg_sig_ste,
+    num_resonances=None,
 ):
     """Get guess params for line fitting. Most importantly how many resonances and what
     their frequencies are
@@ -329,7 +342,7 @@ def get_guess_params(
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     inverted_norm_avg_sig = 1 - norm_avg_sig
 
-    hwhm = 0.004  # GHz
+    hwhm = 0.002  # GHz
     hwhm_mhz = hwhm * 1000
     fwhm = 2 * hwhm
 
@@ -343,9 +356,9 @@ def get_guess_params(
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
-    # greater), and have a width of at least two points
+    # greater), and be wider than 1 point
     peak_inds, details = find_peaks(
-        inverted_norm_avg_sig, distance=fwhm_ind, height=height, width=2
+        inverted_norm_avg_sig, distance=fwhm_ind, height=height, width=1.5
     )
     peak_inds = peak_inds.tolist()
     peak_heights = details["peak_heights"].tolist()
@@ -363,7 +376,7 @@ def get_guess_params(
     max_peak_peak_ind = peak_heights.index(max_peak_height)
     max_peak_freq = freqs[peak_inds[max_peak_peak_ind]]
 
-    if len(peak_inds) > 1:
+    if (num_resonances > 1) and len(peak_inds) > 1:
 
         # Remove what we just found so we can find the second highest peak
         peak_inds.pop(max_peak_peak_ind)
@@ -376,7 +389,7 @@ def get_guess_params(
         )  # Index in peak_inds
         next_max_peak_freq = freqs[peak_inds[next_max_peak_peak_inds]]
 
-        # Only keep the smaller peak if it's at least 50% the height of the larger peak
+        # Only keep the smaller peak if it's at least half as tall as the larger peak
         if next_max_peak_height > 0.5 * max_peak_height:
             # Sort by frequency
             if max_peak_freq < next_max_peak_freq:
@@ -394,15 +407,10 @@ def get_guess_params(
             low_contrast_guess = max_peak_height
             high_freq_guess = None
 
-    elif len(peak_inds) == 1:
+    else:
         low_freq_guess = max_peak_freq
         high_freq_guess = None
         low_contrast_guess = max_peak_height
-    else:
-        # print("Could not locate peaks, using center frequency")
-        low_freq_guess = freq_center
-        high_freq_guess = None
-        low_contrast_guess = height
 
     # Returns
     if low_freq_guess is None:
@@ -465,24 +473,74 @@ def fit_resonance(
 
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    # Guess the fit function and params if not provided
-    if (fit_func is None) or (guess_params is None):
-        algo_fit_func, algo_guess_params = get_guess_params(
-            freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
-        )
-    if fit_func is None:
-        fit_func = algo_fit_func
-    if guess_params is None:
-        guess_params = algo_guess_params
+    # If the user gave us a hint, go with that
+    if fit_func is not None or guess_params is not None:
 
-    popt, pcov = curve_fit(
-        fit_func,
-        freqs,
-        norm_avg_sig,
-        p0=guess_params,
-        sigma=norm_avg_sig_ste,
-        absolute_sigma=True,
-    )
+        # Appropriately fill in the blank fit_func or guess_params
+        if (fit_func is None) or (guess_params is None):
+            # Determine how many resonances are expected
+            if fit_func is not None:
+                sig = signature(fit_func)
+                # After freqs the next args are triples describing the resonances
+                num_resonances = (len(sig.parameters) - 1) / 3
+            elif guess_params is not None:
+                num_resonances = len(guess_params) / 3
+            # Do the guess and fill in whatever was blank
+            algo_fit_func, algo_guess_params = get_guess_params(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                num_resonances=num_resonances,
+            )
+            if fit_func is None:
+                fit_func = algo_fit_func
+            if guess_params is None:
+                guess_params = algo_guess_params
+
+        popt, pcov = curve_fit(
+            fit_func,
+            freqs,
+            norm_avg_sig,
+            p0=guess_params,
+            sigma=norm_avg_sig_ste,
+            absolute_sigma=True,
+        )
+
+    # Otherwise try both single- and double-resonance lineshapes to see what fits best
+    else:
+        best_red_chi_sq = None
+        for num_resonances in [1, 2]:
+            test_fit_func, test_guess_params = get_guess_params(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                num_resonances=num_resonances,
+            )
+            test_popt, test_pcov = curve_fit(
+                test_fit_func,
+                freqs,
+                norm_avg_sig,
+                p0=test_guess_params,
+                sigma=norm_avg_sig_ste,
+                absolute_sigma=True,
+            )
+            fit_lambda = lambda freq: test_fit_func(freq, *test_popt)
+            chi_sq = np.sum(
+                ((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2
+            )
+            red_chi_sq = chi_sq / (len(norm_avg_sig) - len(test_popt))
+            # Determine if the new fit is better (closer to 1) than the previous one
+            if (best_red_chi_sq is None) or (
+                abs(red_chi_sq - 1) < abs(best_red_chi_sq - 1)
+            ):
+                best_red_chi_sq = red_chi_sq
+                fit_func = test_fit_func
+                popt = test_popt
+                pcov = test_pcov
 
     return fit_func, popt, pcov
 
@@ -679,8 +737,7 @@ def main_with_cxn(
 
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        freq_center, freq_range, num_steps,
-        magnet_angle = nv_sig['magnet_angle']
+        freq_center, freq_range, num_steps, magnet_angle=nv_sig["magnet_angle"]
     )
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
@@ -851,13 +908,21 @@ def main_with_cxn(
         if len(popt) == 3:
             low_freq = popt[2]
             high_freq = None
-            print('Single resonance found at {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2])))
+            print(
+                "Single resonance found at {:.4f} +/- {:.4f} GHz".format(
+                    popt[2], np.sqrt(pcov[2][2])
+                )
+            )
         elif len(popt) == 6:
             low_freq = popt[2]
             high_freq = popt[5]
-            print('Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2]),popt[5], np.sqrt(pcov[5][5])))
+            print(
+                "Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz".format(
+                    popt[2], np.sqrt(pcov[2][2]), popt[5], np.sqrt(pcov[5][5])
+                )
+            )
     except Exception:
-        print('Could not fit data')
+        print("Could not fit data")
 
     ### Clean up, save the data, return
 
@@ -921,53 +986,163 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    # print(Path(__file__).stem)
-    # sys.exit()
-
-    file_name = "2023_01_12-14_49_52-wu-nv10_zfs_vs_t"
-    data = tool_belt.get_raw_data(file_name)
-
-    print(return_res_with_error(data))
-    sys.exit()
-
     kpl.init_kplotlib()
-    freq_center = data["freq_center"]
-    freq_range = data["freq_range"]
-    num_steps = data["num_steps"]
-    ref_counts = data["ref_counts"]
-    sig_counts = data["sig_counts"]
-    num_reps = data["num_reps"]
-    nv_sig = data["nv_sig"]
-    readout = nv_sig["spin_readout_dur"]
-    try:
-        norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
-    except Exception as exc:
-        # norm_style = NormStyle.POINT_TO_POINT
-        norm_style = NormStyle.SINGLE_VALUED
 
-    ret_vals = tool_belt.process_counts(
-        sig_counts, ref_counts, num_reps, readout, norm_style
-    )
-    (
-        sig_counts_avg_kcps,
-        ref_counts_avg_kcps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    ) = ret_vals
-    # create_raw_data_figure(
-    #     freq_center,
-    #     freq_range,
-    #     num_steps,
-    #     sig_counts_avg_kcps,
-    #     ref_counts_avg_kcps,
-    #     norm_avg_sig,
-    # )
-    create_fit_figure(
-        freq_center,
-        freq_range,
-        num_steps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-    )
+    file_list = [
+        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+        "2023_02_09-17_28_01-wu-nv1_region2",
+        "2023_02_09-18_02_43-wu-nv2_region2",
+        "2023_02_09-18_14_01-wu-nv3_region2",
+        "2023_02_09-17_51_24-wu-nv4_region2",
+        "2023_02_09-17_39_51-wu-nv5_region2",
+        "2023_02_09-23_28_39-wu-nv1_region3",
+        "2023_02_09-23_51_39-wu-nv2_region3",
+        "2023_02_10-00_14_56-wu-nv3_region3",
+        "2023_02_10-00_37_40-wu-nv4_region3",
+        "2023_02_10-00_59_59-wu-nv5_region3",
+        "2023_02_10-19_13_33-wu-nv1_region4",
+        "2023_02_10-18_51_08-wu-nv2_region4",
+        "2023_02_10-18_28_42-wu-nv3_region4",
+        "2023_02_10-18_06_16-wu-nv4_region4",
+        "2023_02_10-19_36_05-wu-nv5_region4",
+        "2023_02_13-11_54_40-wu-nv1_region5",
+        "2023_02_13-10_47_07-wu-nv2_region5",
+        "2023_02_13-11_32_11-wu-nv3_region5",
+        "2023_02_13-11_09_39-wu-nv4_region5",
+        "2023_02_13-12_17_20-wu-nv5_region5",
+        "2023_02_14-19_34_18-wu-nv6_region5",
+        "2023_02_15-11_34_42-wu-nv6_region5",
+        "2023_02_14-18_25_12-wu-nv7_region5",
+        "2023_02_15-10_49_10-wu-nv7_region5",
+        "2023_02_14-16_31_33-wu-nv8_region5",
+        "2023_02_15-10_03_52-wu-nv8_region5",
+        "2023_02_14-19_56_53-wu-nv9_region5",
+        "2023_02_15-09_17_38-wu-nv9_region5",
+        "2023_02_14-17_39_49-wu-nv10_region5",
+        "2023_02_15-08_54_44-wu-nv10_region5",
+        "2023_02_14-18_02_32-wu-nv11_region5",
+        "2023_02_15-08_31_53-wu-nv11_region5",
+        "2023_02_14-19_11_31-wu-nv12_region5",
+        "2023_02_15-11_12_05-wu-nv12_region5",
+        "2023_02_14-16_54_38-wu-nv13_region5",
+        "2023_02_15-09_41_02-wu-nv13_region5",
+        "2023_02_14-17_17_04-wu-nv14_region5",
+        "2023_02_15-11_57_26-wu-nv14_region5",
+        "2023_02_14-18_47_39-wu-nv15_region5",
+        "2023_02_15-10_26_32-wu-nv15_region5",
+        "2023_02_16-11_38_00-wu-nv16_region5",
+        "2023_02_16-15_21_12-wu-nv16_region5",
+        "2023_02_16-12_45_08-wu-nv17_region5",
+        "2023_02_16-16_28_17-wu-nv17_region5",
+        "2023_02_16-13_07_28-wu-nv18_region5",
+        "2023_02_16-17_58_56-wu-nv18_region5",
+        "2023_02_16-13_52_11-wu-nv19_region5",
+        "2023_02_16-17_36_17-wu-nv19_region5",
+        "2023_02_16-14_14_37-wu-nv20_region5",
+        "2023_02_16-14_36_43-wu-nv20_region5",
+        "2023_02_16-11_15_49-wu-nv21_region5",
+        "2023_02_16-16_51_10-wu-nv21_region5",
+        "2023_02_16-12_00_24-wu-nv22_region5",
+        "2023_02_16-14_59_00-wu-nv22_region5",
+        "2023_02_16-12_22_59-wu-nv23_region5",
+        "2023_02_16-17_14_04-wu-nv23_region5",
+        "2023_02_16-13_29_52-wu-nv24_region5",
+        "2023_02_16-15_43_44-wu-nv24_region5",
+        "2023_02_16-10_53_23-wu-nv25_region5",
+        "2023_02_16-16_05_52-wu-nv25_region5",
+    ]
+
+    # file_list = [
+    #     file_list[-1],
+    # ]
+
+    for file_name in file_list:
+        # for ind in range(len(file_list)):
+
+        # file_name = file_list[ind]
+        # double = double_list[ind // 2]
+        # if double:
+        #     fit_func = double_dip
+        #     guess_params = [0.12, 2, 2.865, 0.12, 2, 2.875]
+        # else:
+        #     fit_func = None
+        #     guess_params = None
+
+        # file_name = "2023_02_15-10_49_10-wu-nv7_region5"
+        # fit_func = double_dip
+        # guess_params = [0.12, 2, 2.865, 0.15, 2, 2.875]
+
+        fit_func = None
+        guess_params = None
+
+        data = tool_belt.get_raw_data(file_name)
+
+        # print(file_name)
+        # print(return_res_with_error(data, fit_func, guess_params))
+        # print()
+        # sys.exit()
+
+        freq_center = data["freq_center"]
+        freq_range = data["freq_range"]
+        num_steps = data["num_steps"]
+        ref_counts = data["ref_counts"]
+        sig_counts = data["sig_counts"]
+        num_reps = data["num_reps"]
+        nv_sig = data["nv_sig"]
+        readout = nv_sig["spin_readout_dur"]
+        try:
+            norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
+        except Exception as exc:
+            # norm_style = NormStyle.POINT_TO_POINT
+            norm_style = NormStyle.SINGLE_VALUED
+
+        ret_vals = tool_belt.process_counts(
+            sig_counts, ref_counts, num_reps, readout, norm_style
+        )
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        # create_raw_data_figure(
+        #     freq_center,
+        #     freq_range,
+        #     num_steps,
+        #     sig_counts_avg_kcps,
+        #     ref_counts_avg_kcps,
+        #     norm_avg_sig,
+        # )
+        fit_fig, _, _, popt, pcov = create_fit_figure(
+            freq_center,
+            freq_range,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            fit_func=fit_func,
+            guess_params=guess_params,
+        )
+
+        pste = np.sqrt(np.diag(pcov))
+        # Reverse for presentation
+        popt = popt[::-1]
+        pste = pste[::-1]
+        round_popt = [tool_belt.round_sig_figs(val, 7) for val in popt]
+        round_pste = [tool_belt.round_sig_figs(val, 3) for val in pste]
+        print_list = []
+        for ind in range(len(popt)):
+            print_list.append(round_popt[ind])
+            print_list.append(round_pste[ind])
+        print(print_list)
+
+        file_path = tool_belt.get_raw_data_path(file_name)
+        file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
+        tool_belt.save_figure(fit_fig, file_path)
+
+        # break
 
     plt.show(block=True)

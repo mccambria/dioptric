@@ -1047,6 +1047,19 @@ def get_time_stamp():
     return timestamp
 
 
+def get_time_stamp_from_file_name(file_name):
+    """Get the formatted timestamp from a file name
+
+    Returns:
+        string: <year>_<month>_<day>-<hour>_<minute>_<second>
+    """
+
+    file_name_split = file_name.split("-")
+    time_stamp_parts = file_name_split[0:2]
+    timestamp = "-".join(time_stamp_parts)
+    return timestamp
+
+
 def get_files_in_folder(folderDir, filetype=None):
     """
     folderDir: str
