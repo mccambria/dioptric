@@ -11,6 +11,23 @@ Created on June 16th, 2019
 import labrad
 import utils.tool_belt as tool_belt
 import utils.positioning as positioning
+import time
+from numpy import pi
+
+def iq_test(cxn):
+    
+    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
+    
+    iq_phases = [pi/2, pi, pi, pi]
+    arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
+    arbwavegen_server.load_arb_phases(iq_phases)
+    
+    for ind in range(len(iq_phases)):
+        input("Press enter to advance")
+        pulse_gen.constant([2])
+        time.sleep(0.1)
+        pulse_gen.constant([])
+    
 
 
 def constant(cxn, laser_name, laser_power=None):
@@ -88,7 +105,7 @@ if __name__ == "__main__":
     collection_filter = "nd_0"
     pos = [0.0, 0.0, 5.0]
 
-    tool_belt.init_safe_stop()
+    # tool_belt.init_safe_stop()
     
  
     with labrad.connect() as cxn:
@@ -103,9 +120,10 @@ if __name__ == "__main__":
 
         # Some parameters you'll need to set in these functions
         # constant(cxn, laser_name)
-        square_wave(cxn, laser_name)
+        # square_wave(cxn, laser_name)
         # arb_duty_cycle(cxn, laser_name)
         # circle(cxn, laser_name)
+        iq_test(cxn)
 
     tool_belt.reset_cfm()
-    tool_belt.reset_safe_stop()
+    # tool_belt.reset_safe_stop()

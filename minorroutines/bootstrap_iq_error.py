@@ -207,7 +207,7 @@ def measurement(cxn,
             title = None,
             do_dq = False,
             inter_pulse_time = 30, # between SQ/DQ MW pulses
-            inter_uwave_buffer = 0): #between pulses making up one DQ pulse
+            inter_uwave_buffer = 60): #between pulses making up one DQ pulse
     '''
     The basic building block to perform these measurements. Can apply 1, 2, or 3
     MW pulses, and returns counts from [ms=0, ms=+/-1, counts after mw pulses]
@@ -363,51 +363,24 @@ def measurement(cxn,
         
         # analysis
         
-        # sum counts
-        # if do_sum:
-        #     ref_0 = sum(ref_0_counts)
-        #     ref_H = sum(ref_H_counts)
-        #     sig =sum(sig_counts)
-        #     ref_0_ste = numpy.std(ref_0_counts)/numpy.sqrt(num_reps)*num_reps
-        #     ref_H_ste = numpy.std(ref_H_counts)/numpy.sqrt(num_reps)*num_reps
-        #     sig_ste = numpy.std(sig_counts)/numpy.sqrt(num_reps) *num_reps
-        
-        # avg counts
-        # else:
-        #     ref_0 = numpy.average(ref_0_counts)
-        #     ref_H = numpy.average(ref_H_counts)
-        #     sig = numpy.average(sig_counts)
-        #     ref_0_ste = numpy.std(ref_0_counts)/numpy.sqrt(num_reps)
-        #     ref_H_ste = numpy.std(ref_H_counts)/numpy.sqrt(num_reps)
-        #     sig_ste = numpy.std(sig_counts)/numpy.sqrt(num_reps) 
-        
         ref_0_list.append(ref_0)
         ref_H_list.append(ref_H)
         sig_list.append(sig)
         
-        # ref_0_ste_list.append(ref_0_ste)
-        # ref_H_ste_list.append(ref_H_ste)
-        # sig_ste_list.append(sig_ste)
         
     ref_0_avg = numpy.average(ref_0_list) 
     ref_H_avg = numpy.average(ref_H_list)
     sig_avg= numpy.average(sig_list)
-    print((ref_0_avg/(num_reps*1000))/350*1e9) 
-    print((ref_H_avg/(num_reps*1000))/350*1e9)
-    print((sig_avg/(num_reps*1000))/350*1e9)
+    
+    print((ref_0_avg/(num_reps*1000))/gate_time*1e9) 
+    print((ref_H_avg/(num_reps*1000))/gate_time*1e9) 
+    print((sig_avg/(num_reps*1000))/gate_time*1e9) 
     
     
-    #summing each run
-    # if do_sum:
+    #error analysis for summing each run
     ref_0_ste_avg = numpy.sqrt(ref_0_avg) / numpy.sqrt(num_runs)
     ref_H_ste_avg = numpy.sqrt(ref_H_avg) / numpy.sqrt(num_runs)
     sig_ste_avg = numpy.sqrt(sig_avg) / numpy.sqrt(num_runs)
-    
-    # # averaging each run
-    # else:
-    #     ref_0_ste_avg = numpy.average(ref_0_ste_list) / numpy.sqrt(num_runs)
-    #     ref_H_ste_avg = numpy.average(ref_H_ste_list) / numpy.sqrt(num_runs)
-    #     sig_ste_avg = numpy.average(sig_ste_list) / numpy.sqrt(num_runs)
     
     
     sig_counts_avg = sig_avg-ref_H_avg
@@ -434,7 +407,7 @@ def measurement(cxn,
     # N_unc = numpy.sqrt( numpy.array(sig_ste_list)**2 + numpy.array(ref_H_ste_list)**2)
     # D_unc = numpy.sqrt( numpy.array(ref_0_ste_list)**2 + numpy.array(ref_H_ste_list)**2)
     
-    pop = (N/D - half_contrast)/2
+    pop = (N/D - half_contrast) * 2
     # pop_unc = pop * numpy.sqrt( (N_unc/N)**2 + (D_unc/D)**2)
     
     if do_plot:
@@ -443,6 +416,7 @@ def measurement(cxn,
         # ax.error_bar(range(num_runs), pop,y_err=pop_unc, "ro")
         ax.set_xlabel(r"Num repitition")
         ax.set_ylabel("Error")
+        kpl.anchored_text(ax, "{} ns delay between HIGH/LOW pulses\n{} ns delay between SQ/DQ pulses\npulse_error: {:.3f}".format(inter_uwave_buffer,inter_pulse_time,pulse_error ), kpl.Loc.UPPER_RIGHT)
         if title:
             ax.set_title(title)
 
@@ -626,7 +600,10 @@ def do_measurement(cxn,
             pi_2_dt = 0,
             state=States.HIGH,
             do_dq = False,
-            plot = False,):
+            plot = False,
+            inter_pulse_time = 30, # between SQ/DQ MW pulses
+            inter_uwave_buffer = 60
+            ):
     '''
     shell function to run any of the 12 measurements:
         0: pi/2_x
@@ -777,7 +754,9 @@ def do_measurement(cxn,
                 state=States.HIGH,
                 do_plot = plot,
                 title = title,
-                do_dq = do_dq,)
+                do_dq = do_dq,
+                inter_pulse_time = inter_pulse_time, # between SQ/DQ MW pulses
+                inter_uwave_buffer = inter_uwave_buffer)
                 
     return pulse_error, pulse_error_ste
 
@@ -1466,21 +1445,33 @@ if __name__ == "__main__":
     with labrad.connect() as cxn:
         num_runs = 20
         num_reps = int(5e4)
-        pulse_error, pulse_error_ste = do_measurement(cxn, 
-                      nv_sig,
-                      num_runs,
-                      num_reps,
-                      7,
-                      pi_y_ph=0,
-                      pi_x_ph=0,
-                      pi_2_y_ph= 0,
-                      pi_dt = 0,
-                      pi_2_dt = 0,
-                      state=States.HIGH,
-                      do_dq = True,
-                      plot = True,)
-        print(pulse_error)
-        print(pulse_error_ste)
+        # pulse_error_list = []
+        # pulse_ste_list = []
+        # taus = [457]#numpy.linspace(0,100,21)
+        # for t in taus:
+        #     pulse_error, pulse_error_ste = do_measurement(cxn, 
+        #                   nv_sig,
+        #                   num_runs,
+        #                   num_reps,
+        #                   7,
+        #                   pi_y_ph=0,
+        #                   pi_x_ph=0,
+        #                   pi_2_y_ph= 0,
+        #                   pi_dt = 0,
+        #                   pi_2_dt = 0,
+        #                   state=States.HIGH,
+        #                   do_dq = True,
+        #                   plot = False,
+        #                   inter_uwave_buffer = t)
+        #     pulse_error_list.append(pulse_error)
+        #     pulse_ste_list.append(pulse_error_ste)
+            
+        # fig, ax = plt.subplots()
+        # ax.errorbar(taus,pulse_error_list, yerr = pulse_ste_list, fmt= 'ro' )
+        # ax.set_xlabel('Wait time between DQ pulses (ns)')
+        # ax.set_ylabel('Error')
+        # ax.set_title('pi/2_y - pi/2_x')
+            
         
         ### measure the phase errors, will print them out
         # measure_pulse_errors(cxn, nv_sig, num_runs,num_reps, pi_y_ph = 0, pi_x_ph =0,pi_2_y_ph = 0,state=States.HIGH, do_dq = True)
@@ -1492,7 +1483,7 @@ if __name__ == "__main__":
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = False)
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = False)
         
-        #do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = True)
+        do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = True)
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = True)
         #do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = True)
         

@@ -190,6 +190,11 @@ class AwgKeys33622A(LabradServer, AWG):
         self.wave_gen.write("TRIG2:SOUR EXT")
         self.wave_gen.write("TRIG1:SLOP POS")
         self.wave_gen.write("TRIG2:SLOP POS")
+        # set the trigger level for TTL pulses to the pulse streamer voltage. 
+        # The AWG then halves this value for the threshold level.
+        self.wave_gen.write("TRIG1:LEV 2.6")
+        self.wave_gen.write("TRIG2:LEV 2.6") 
+
 
         for chan in [1, 2]:
             source_name = "SOUR{}:".format(chan)
@@ -227,15 +232,9 @@ class AwgKeys33622A(LabradServer, AWG):
                 "{}FUNC:ARB iqSwitch{}".format(source_name, chan)
             )
             self.wave_gen.write("{}FUNC ARB".format(source_name))
-
         
         self.wave_gen.write("OUTP1 ON")
         self.wave_gen.write("OUTP2 ON")
-        
-        
-        # 12/19/2022 No longr setting an initial trigger. 
-        # It seems to be working just fine if we send in a list of phases and
-        # set trigger pulses before each MW pulse. - AG
         
         
         # When you load a sequence like this, it doesn't move to the first
@@ -244,22 +243,22 @@ class AwgKeys33622A(LabradServer, AWG):
         # So let's just set the pulse streamer to constant for a second to
         # fake a trigger...
         
-        time.sleep(0.1)  # Make sure everything is propagated
-        ret_val = ensureDeferred(self.force_trigger())
-        ret_val.addCallback(self.on_force_trigger)
-
-    async def force_trigger(self):
-        self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
-        # time.sleep(0.1)
-        # self.client.pulse_streamer.constant()
-        # time.sleep(0.1)
-        # self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
-
-    def on_force_trigger(self):
-        # Some delays included here to be sure everything actually happens
-        time.sleep(0.1)
-        self.client.pulse_streamer.constant()
-        time.sleep(0.1)
+        # 2/20/2023 By viewing the AWG output on a scope and advancing a trigger
+        # manually, we see that before any trigger is sent, the AWG is in an
+        # unknown state, which is not favorable. Once it receives a trigger, it advances to
+        # the first element in the list of phases. 
+        
+        # We are not able to force the trigger
+        # with the TRIG command, so instead, the sequence should initially start with 
+        # a trigger to put the AWG into a defined state. The list of phases should
+        # accommodate for this by padding the front with with (for example) 0.
+        
+    
+    @setting(7)
+    def force_trigger(self, c):
+        # self.wave_gen.write("TRIG")
+        self.wave_gen.write("TRIG1")
+        self.wave_gen.write("TRIG2")
 
     @setting(4)
     def test_sin(self, c):

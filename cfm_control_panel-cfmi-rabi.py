@@ -332,7 +332,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
     num_steps =51
     num_reps = int(1e4)  
     # num_reps = int(25)   
-    num_runs =  30
+    num_runs =  10
     
     rabi.main(
         nv_sig,
@@ -343,7 +343,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_runs,
         opti_nv_sig = opti_nv_sig,
         do_scc = False,
-        do_dq = False,
+        do_dq = True,
         do_cos_fit = False
     )
     # nv_sig["rabi_{}".format(state.name)] = period
@@ -1259,7 +1259,7 @@ if __name__ == "__main__":
                     
         
         # do_optimize(nv_sig)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         
         # for nv_sig in nv_sig_list:
         # for nv_sig in [nv_sig_11]:
@@ -1304,7 +1304,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         #do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 150])
-        #do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 150])
+        do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 150])
         
         
         # uwave_time_range = [0, 400]

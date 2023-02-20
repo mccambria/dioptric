@@ -598,8 +598,14 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             new_counts = counter_server.read_counter_modulo_gates(2, 1)
             # print(new_counts)
             sample_counts = new_counts[0]
-            sig_counts[run_ind, tau_ind] = sample_counts[0]
-            ref_counts[run_ind, tau_ind] = sample_counts[1]
+            if do_dq:
+                ref_counts[run_ind, tau_ind] = sample_counts[0]
+                sig_counts[run_ind, tau_ind] = sample_counts[1]
+            else:
+                sig_counts[run_ind, tau_ind] = sample_counts[0]
+                ref_counts[run_ind, tau_ind] = sample_counts[1]
+            
+            
 
 
 #            run_time = time.time()

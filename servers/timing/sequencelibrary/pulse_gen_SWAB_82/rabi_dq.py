@@ -88,7 +88,9 @@ def get_seq(pulse_streamer, config, args):
 
     # %% Write the microwave sequence to be used.
     
-    uwave_experiment_train_low = [(init_pi_pulse_low, HIGH), (init_pi_pulse_high, LOW),
+    uwave_experiment_train_low = [
+                                    # (init_pi_pulse_low, HIGH), (init_pi_pulse_high, LOW),
+                                    (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW),
                                   (coh_buffer, LOW),
                                   (uwave_pulse_proxy_low, HIGH), (uwave_pulse_proxy_high, LOW),
                                     (coh_buffer, LOW),
@@ -96,21 +98,25 @@ def get_seq(pulse_streamer, config, args):
                                     (coh_buffer, LOW),
                                     (uwave_pulse_proxy_low, HIGH), (uwave_pulse_proxy_high, LOW),
                                     (coh_buffer, LOW),
-                                    (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW)]
+                                    (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW)
+                                    ]
     uwave_experiment_dur = 0
     for el in uwave_experiment_train_low:
         uwave_experiment_dur += el[0]
         
         
-    uwave_experiment_train_high = [(init_pi_pulse_low, LOW), (init_pi_pulse_high, HIGH),
-    (coh_buffer, LOW),
+    uwave_experiment_train_high = [
+                                    # (init_pi_pulse_low, LOW), (init_pi_pulse_high, HIGH),
+                                    (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH),
+                                    (coh_buffer, LOW),
                                    (uwave_pulse_proxy_low, LOW), (uwave_pulse_proxy_high, HIGH),
                                        (coh_buffer, LOW),
                                        (uwave_pulse_activ_low, LOW), (uwave_pulse_activ_high, HIGH),
                                        (coh_buffer, LOW),
                                        (uwave_pulse_proxy_low, LOW), (uwave_pulse_proxy_high, HIGH),
                                        (coh_buffer, LOW),
-                                       (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH)]
+                                       (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH)
+                                       ]
     uwave_experiment_dur = 0
     for el in uwave_experiment_train_high:
         uwave_experiment_dur += el[0]
@@ -124,13 +130,13 @@ def get_seq(pulse_streamer, config, args):
     train = [(delay_buffer, LOW),
             (polarization_time, LOW),
             (uwave_buffer, LOW),
-            (max_tau-tau, LOW),
-            (uwave_experiment_dur, LOW),
+            (max_tau, LOW),
             (uwave_buffer, LOW),
             (gate_time, HIGH),
             (polarization_time - gate_time, LOW),
             (uwave_buffer, LOW),
-            (max_tau, LOW),
+            (max_tau-tau, LOW),
+            (uwave_experiment_dur, LOW),
             (uwave_buffer, LOW),
             (gate_time, HIGH) ,
             (polarization_time - gate_time, LOW) ,
@@ -146,12 +152,12 @@ def get_seq(pulse_streamer, config, args):
     train = [(delay_buffer - aom_delay_time, LOW),
             (polarization_time, HIGH),
             (uwave_buffer, LOW),
-            (max_tau-tau, LOW),
-            (uwave_experiment_dur, LOW),
+            (max_tau, LOW),
             (uwave_buffer, LOW),
             (polarization_time, HIGH),
             (uwave_buffer, LOW),
-            (max_tau, LOW),
+            (max_tau-tau, LOW),
+            (uwave_experiment_dur, LOW),
             (uwave_buffer, LOW),
             (polarization_time, HIGH) ,
             (back_buffer + aom_delay_time, LOW)
@@ -166,14 +172,14 @@ def get_seq(pulse_streamer, config, args):
     # MW gate HIGH
     train = [(delay_buffer - rf_delay_high, LOW),
              (polarization_time, LOW),
+             (uwave_buffer, LOW),
+             (max_tau, LOW),
+             (uwave_buffer, LOW),
+             (polarization_time, LOW),
             (uwave_buffer, LOW),
             (max_tau-tau, LOW)]
     train.extend(uwave_experiment_train_high)
     train.extend([
-             (uwave_buffer, LOW),
-             (polarization_time, LOW),
-             (uwave_buffer, LOW),
-             (max_tau, LOW),
              (uwave_buffer, LOW),
              (polarization_time, LOW),
              (back_buffer + rf_delay_high, LOW)])
@@ -187,14 +193,14 @@ def get_seq(pulse_streamer, config, args):
     # MW gate LOW
     train = [(delay_buffer - rf_delay_low, LOW),
              (polarization_time, LOW),
+             (uwave_buffer, LOW),
+             (max_tau, LOW),
+             (uwave_buffer, LOW),
+             (polarization_time, LOW),
             (uwave_buffer, LOW),
             (max_tau-tau, LOW)]
     train.extend(uwave_experiment_train_low)
     train.extend([
-             (uwave_buffer, LOW),
-             (polarization_time, LOW),
-             (uwave_buffer, LOW),
-             (max_tau, LOW),
              (uwave_buffer, LOW),
              (polarization_time, LOW),
              (back_buffer + rf_delay_low, LOW)])
