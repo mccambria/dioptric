@@ -420,7 +420,7 @@ if __name__ == "__main__":
         "spin_laser": green_laser, "spin_laser_filter": "nd_0", 
         "spin_pol_dur": 1e3, "spin_readout_dur": 350,
         "norm_style": NormStyle.SINGLE_VALUED, 'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
+        'resonance_LOW': 2.87, 'rabi_LOW': 400, 'uwave_power_LOW': 0.0,  # 10.0,
         }
         
     nv1 = copy.deepcopy(nvref)
@@ -660,9 +660,9 @@ if __name__ == "__main__":
     # nv_sig = nv11
     nv_sig = nvref
     bg_coords = np.array(nv_sig["coords"]) + np.array([0.04, -0.06, 0])
-    # nv_list = [nv6, nv7, nv8, nv10, nv11]
-    # nv_list = [nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13, nv14, nv15]
-    nv_list = [nv16, nv17, nv18, nv19, nv20, nv21, nv22, nv23, nv24, nv25]
+    nv_list = [nv1, nv2, nv3, nv4, nv5]
+    nv_list.extend([nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13, nv14, nv15])
+    nv_list.extend([nv16, nv17, nv18, nv19, nv20, nv21, nv22, nv23, nv24, nv25])
     # nv_list = [nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv10, nv11]
     # shuffle(nv_list)

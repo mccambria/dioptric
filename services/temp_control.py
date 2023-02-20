@@ -218,7 +218,7 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     do_plot = True
-    target = 500
+    target = 370
     pid_coeffs = [0.5, 0.01, 0]
     integral_max = 2500
     # Bootstrap the integral term after restarting to mitigate windup,
@@ -252,7 +252,7 @@ if __name__ == "__main__":
         try:
             main_with_cxn(
                 cxn,
-                mode=Mode.MONITOR,
+                mode=Mode.CONTROL,
                 do_plot=do_plot,
                 target=target,
                 pid_coeffs=pid_coeffs,
