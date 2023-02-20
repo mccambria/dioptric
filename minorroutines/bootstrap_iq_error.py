@@ -206,7 +206,7 @@ def measurement(cxn,
             do_plot = False,
             title = None,
             do_dq = False,
-            inter_pulse_time = 10, # between SQ/DQ MW pulses
+            inter_pulse_time = 30, # between SQ/DQ MW pulses
             inter_uwave_buffer = 0): #between pulses making up one DQ pulse
     '''
     The basic building block to perform these measurements. Can apply 1, 2, or 3
@@ -391,7 +391,11 @@ def measurement(cxn,
         
     ref_0_avg = numpy.average(ref_0_list) 
     ref_H_avg = numpy.average(ref_H_list)
-    sig_avg = numpy.average(sig_list)
+    sig_avg= numpy.average(sig_list)
+    print((ref_0_avg/(num_reps*1000))/350*1e9) 
+    print((ref_H_avg/(num_reps*1000))/350*1e9)
+    print((sig_avg/(num_reps*1000))/350*1e9)
+    
     
     #summing each run
     # if do_sum:
@@ -425,22 +429,22 @@ def measurement(cxn,
     pulse_error_ste = norm_avg_sig_ste * 2
     
     
-    # N = (numpy.array(sig_list)-numpy.array(ref_H_list))
-    # D = (numpy.array(ref_0_list)-numpy.array(ref_H_list))
+    N = (numpy.array(sig_list)-numpy.array(ref_H_list))
+    D = (numpy.array(ref_0_list)-numpy.array(ref_H_list))
     # N_unc = numpy.sqrt( numpy.array(sig_ste_list)**2 + numpy.array(ref_H_ste_list)**2)
     # D_unc = numpy.sqrt( numpy.array(ref_0_ste_list)**2 + numpy.array(ref_H_ste_list)**2)
     
-    # pop = N/D
+    pop = (N/D - half_contrast)/2
     # pop_unc = pop * numpy.sqrt( (N_unc/N)**2 + (D_unc/D)**2)
     
-    # if do_plot:
-    #     fig, ax = plt.subplots()
-    #     kpl.plot_points(ax, range(num_runs), pop, yerr=pop_unc, color = KplColors.RED)
-    #     # ax.error_bar(range(num_runs), pop,y_err=pop_unc, "ro")
-    #     ax.set_xlabel(r"Num repitition")
-    #     ax.set_ylabel("Population")
-    #     if title:
-    #         ax.set_title(title)
+    if do_plot:
+        fig, ax = plt.subplots()
+        kpl.plot_points(ax, range(num_runs), pop,  color = KplColors.RED)
+        # ax.error_bar(range(num_runs), pop,y_err=pop_unc, "ro")
+        ax.set_xlabel(r"Num repitition")
+        ax.set_ylabel("Error")
+        if title:
+            ax.set_title(title)
 
 
     timestamp = tool_belt.get_time_stamp()
@@ -500,7 +504,7 @@ def solve_errors(meas_list):
     A3 = meas_list[4]
     B3 = meas_list[5]
     
-    S = meas_list[6:11]
+    # S = meas_list[6:11]
     
     
     phi_p = -A1/2
@@ -512,22 +516,32 @@ def solve_errors(meas_list):
     v_z = - (A3 - 2*phi_p)/2
     e_z = (B3 - 2*chi_p)/2
     
-    M = numpy.array([
-            [-1,-1,-1,0,0],
-            [1,-1,1,0,0],
-            [1,1,-1,2,0],
-            [-1,1,1,2,0],
-            [-1,-1,1,0,2],
-            # [1,-1,-1,0,2] #exclude last equation
-          ])
-    X = numpy.linalg.inv(M).dot(S)
+    S = meas_list[6:12]
+    e_y_p = 0
+    v_x_p = -(S[0]+S[1])/2
+    e_y = (S[2]+S[3]-2*v_x_p)/4
+    v_x = (S[4]+S[5]+2*v_x_p)/4
+    v_z_p = -(S[0] - S[1] + S[2] - S[3])/4
+    e_z_p = -(S[0] - S[1] - S[2] + S[3])/4
     
-    e_y_p = 0 # we are setting this value to 0
-    e_z_p = X[0]
-    v_x_p = X[1]
-    v_z_p = X[2]
-    e_y = X[3]
-    v_x = X[4]
+    
+    # S = meas_list[6:11]
+    # M = numpy.array([
+    #         [-1,-1,-1,0,0],
+    #         [1,-1,1,0,0],
+    #         [1,1,-1,2,0],
+    #         [-1,1,1,2,0],
+    #         [-1,-1,1,0,2],
+    #         # [1,-1,-1,0,2] #exclude last equation
+    #       ])
+    # X = numpy.linalg.inv(M).dot(S)
+    
+    # e_y_p = 0 # we are setting this value to 0
+    # e_z_p = X[0]
+    # v_x_p = X[1]
+    # v_z_p = X[2]
+    # e_y = X[3]
+    # v_x = X[4]
     
     return [phi_p, chi_p, phi, chi, v_z, e_z,  e_y_p, e_z_p, v_x_p,v_z_p,  e_y, v_x]
 
@@ -558,34 +572,45 @@ def calc_pulse_error_ste(ste_list):
     v_z_ste = numpy.sqrt((A3/2)**2 + (phi_p_ste)**2 )
     e_z_ste = numpy.sqrt((B3/2)**2 + (chi_p_ste)**2 )
     
-    # I don't know a goo way to propegate the uncertainty through a system
+    
+    
+    e_y_p_ste = 0 # we are setting this value to 0
+    v_x_p_ste = numpy.sqrt(S[0]**2+S[1]**2)/2
+    e_y_ste = numpy.sqrt(S[2]**2+S[3]**2+(2*v_x_p_ste)**2)/4
+    v_x_ste = numpy.sqrt(S[4]**2+S[5]**2+(2*v_x_p_ste)**2)/4
+    v_z_p_ste = numpy.sqrt(S[0]**2+S[1]**2+S[2]**2+S[3]**2)/4
+    e_z_p_ste = numpy.sqrt(S[0]**2+S[1]**2+S[2]**2+S[3]**2)/4
+    
+    
+    
+    # I don't know a good way to propegate the uncertainty through a system
     # of linear equations so instead, I'm going to try to give a best guess for the uncertainty
     
     # first, I take the average value of the uncert from measurements 7 and 8, and then 9-12
     # because the the respective two measurements are identical for extracting uncertainty:
     # ei: the 7th and 8th measurements result in: DS78 = Sqrt(Dey'^2 + Dez'^2 + Dvx'^2 + Dvz'^2)
     # so the ste from those measurements "should" be the sam,e so we'll just average them.
-    S78_ste = numpy.average([S[0], S[1]])
-    S910_ste = numpy.average([S[2], S[3]])
-    S112_ste = numpy.average([S[4], S[5]])
+    # S78_ste = numpy.average([S[0], S[1]])
+    # S910_ste = numpy.average([S[2], S[3]])
+    # S112_ste = numpy.average([S[4], S[5]])
     
     
-    e_y_p_ste = 0 # we are setting this value to 0
+    # e_y_p_ste = 0 # we are setting this value to 0
     
-    #then, the equations for uncert: DS78 = sqrt(Dey'^2 + Dez'^2 + Dvx'^2 + Dvz'^2)
-    # we set Dey' == 0, so then, and we will weight the other uncert equally,
-    # so i.e.: Dez' = Sqrt(DS7**2 / 3)
-    e_z_p_ste = numpy.sqrt(S78_ste**2 / 3)
-    v_x_p_ste = numpy.sqrt(S78_ste**2 / 3)
-    v_z_p_ste = numpy.sqrt(S78_ste**2 / 3)
-    # Similarly, for the final two variables, they are in the equations like:
-    # DS910 = sqrt(Dey'^2 + Dez'^2 + Dvx'^2 + Dvz'^2 + (2Dvx)^2)
-    # DS910 = sqrt(DS78^2 + (2Dvx)^2)
-    # and to get Dvx,
-    # Dvx = Sqrt((DS910^2 - DS78^2) / 2 )
-    #   note that I take the absolute difference to avoid imaginary values
-    e_y_ste = numpy.sqrt(abs(S910_ste**2 - S78_ste**2) / 2)
-    v_x_ste = numpy.sqrt(abs(S112_ste**2 - S78_ste**2) / 2)
+    # #then, the equations for uncert: DS78 = sqrt(Dey'^2 + Dez'^2 + Dvx'^2 + Dvz'^2)
+    # # we set Dey' == 0, so then, and we will weight the other uncert equally,
+    # # so i.e.: Dez' = Sqrt(DS7**2 / 3)
+    # e_z_p_ste = numpy.sqrt(S78_ste**2 / 3)
+    # v_x_p_ste = numpy.sqrt(S78_ste**2 / 3)
+    # v_z_p_ste = numpy.sqrt(S78_ste**2 / 3)
+    # # Similarly, for the final two variables, they are in the equations like:
+    # # DS910 = sqrt(Dey'^2 + Dez'^2 + Dvx'^2 + Dvz'^2 + (2Dvx)^2)
+    # # DS910 = sqrt(DS78^2 + (2Dvx)^2)
+    # # and to get Dvx,
+    # # Dvx = Sqrt((DS910^2 - DS78^2) / 2 )
+    # #   note that I take the absolute difference to avoid imaginary values
+    # e_y_ste = numpy.sqrt(abs(S910_ste**2 - S78_ste**2) / 2)
+    # v_x_ste = numpy.sqrt(abs(S112_ste**2 - S78_ste**2) / 2)
     
     return [phi_p_ste, chi_p_ste, phi_ste, chi_ste, v_z_ste, e_z_ste,  e_y_p_ste,
                         e_z_p_ste, v_x_p_ste,v_z_p_ste,  e_y_ste, v_x_ste]
@@ -624,8 +649,8 @@ def do_measurement(cxn,
     uwave_pi_on_2_pulse_X = nv_sig["pi_on_2_pulse_X_{}".format(state.name)] + pi_2_dt
     uwave_pi_on_2_pulse_Y = nv_sig["pi_on_2_pulse_Y_{}".format(state.name)] + pi_2_dt
 
-    pi_x_phase = 0 + pi_x_ph
-    pi_2_x_phase = 0  + 0
+    pi_x_phase = 0.0 + pi_x_ph
+    pi_2_x_phase = 0.0  + 0
     pi_y_phase = pi/2+ pi_y_ph
     pi_2_y_phase = pi/2 + pi_2_y_ph
     
@@ -634,7 +659,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_X
         pulse_2_dur = 0
         pulse_3_dur = 0
-        iq_phases = [0, pi_2_x_phase]
+        iq_phases = [0.0, pi_2_x_phase]
         title = 'pi/2_x'
         
     elif experiment_ind == 1:
@@ -642,7 +667,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_Y
         pulse_2_dur = 0
         pulse_3_dur = 0
-        iq_phases = [0, pi_2_y_phase]
+        iq_phases = [0.0, pi_2_y_phase]
         title = 'pi/2_y'
         
     elif experiment_ind == 2:
@@ -650,7 +675,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_pulse_X
         pulse_2_dur = uwave_pi_on_2_pulse_X
         pulse_3_dur = 0
-        iq_phases = [0, pi_x_phase, pi_2_x_phase]
+        iq_phases = [0.0, pi_x_phase, pi_2_x_phase]
         title = 'pi_x - pi/2_x'
         
     elif experiment_ind == 3:
@@ -658,7 +683,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_pulse_Y
         pulse_2_dur = uwave_pi_on_2_pulse_Y
         pulse_3_dur = 0
-        iq_phases = [0, pi_y_phase, pi_2_y_phase]
+        iq_phases = [0.0, pi_y_phase, pi_2_y_phase]
         title = 'pi_y - pi/2_y'
         
     elif experiment_ind == 4:
@@ -666,7 +691,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_X
         pulse_2_dur = uwave_pi_pulse_Y
         pulse_3_dur = 0
-        iq_phases = [0,pi_2_x_phase, pi_y_phase ]
+        iq_phases = [0.0,pi_2_x_phase, pi_y_phase ]
         title = 'pi/2_x - pi_y'
         
     elif experiment_ind == 5:
@@ -674,7 +699,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_Y
         pulse_2_dur = uwave_pi_pulse_X
         pulse_3_dur = 0
-        iq_phases = [0,  pi_2_y_phase, pi_x_phase]
+        iq_phases = [0.0,  pi_2_y_phase, pi_x_phase]
         title = 'pi/2_y - pi_x'
         
     elif experiment_ind == 6:
@@ -682,7 +707,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_X
         pulse_2_dur = uwave_pi_on_2_pulse_Y
         pulse_3_dur = 0
-        iq_phases = [0,  pi_2_x_phase, pi_2_y_phase]
+        iq_phases = [0.0,  pi_2_x_phase, pi_2_y_phase]
         title = 'pi/2_x - pi/2_y'
         
     elif experiment_ind == 7:
@@ -690,7 +715,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_Y
         pulse_2_dur = uwave_pi_on_2_pulse_X
         pulse_3_dur = 0
-        iq_phases = [0,  pi_2_y_phase, pi_2_x_phase]
+        iq_phases = [0.0,  pi_2_y_phase, pi_2_x_phase]
         title = 'pi/2_y - pi/2_x'
         
     elif experiment_ind == 8:
@@ -698,7 +723,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_Y
         pulse_2_dur = uwave_pi_pulse_X
         pulse_3_dur = uwave_pi_on_2_pulse_X    
-        iq_phases = [0, pi_2_y_phase, pi_x_phase, pi_2_x_phase]
+        iq_phases = [0.0, pi_2_y_phase, pi_x_phase, pi_2_x_phase]
         title = 'pi/2_y - pi_x - pi/2_x'
         
     elif experiment_ind == 9:
@@ -706,7 +731,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_X
         pulse_2_dur = uwave_pi_pulse_X
         pulse_3_dur = uwave_pi_on_2_pulse_Y
-        iq_phases = [0, pi_2_x_phase, pi_x_phase, pi_2_y_phase]
+        iq_phases = [0.0, pi_2_x_phase, pi_x_phase, pi_2_y_phase]
         title = 'pi/2_x - pi_x - pi/2_y'
         
     elif experiment_ind == 10:
@@ -714,7 +739,7 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_Y
         pulse_2_dur = uwave_pi_pulse_Y
         pulse_3_dur = uwave_pi_on_2_pulse_X
-        iq_phases = [0, pi_2_y_phase, pi_y_phase, pi_2_x_phase]
+        iq_phases = [0.0, pi_2_y_phase, pi_y_phase, pi_2_x_phase]
         title = 'pi/2_y - pi_y - pi/2_x'
         
     elif experiment_ind == 11:
@@ -722,13 +747,22 @@ def do_measurement(cxn,
         pulse_1_dur = uwave_pi_on_2_pulse_X
         pulse_2_dur = uwave_pi_pulse_Y
         pulse_3_dur = uwave_pi_on_2_pulse_Y
-        iq_phases = [0, pi_2_x_phase, pi_y_phase, pi_2_y_phase]
+        iq_phases = [0.0, pi_2_x_phase, pi_y_phase, pi_2_y_phase]
         title = 'pi/2_x - pi_y - pi/2_y'
+        
+        
+    elif experiment_ind == 101:
+        num_uwave_pulses = 3
+        pulse_1_dur = uwave_pi_on_2_pulse_X
+        pulse_2_dur = uwave_pi_pulse_X
+        pulse_3_dur = uwave_pi_on_2_pulse_X
+        iq_phases = [0.0, pi_2_x_phase, pi_x_phase, pi_2_x_phase]
+        title = 'pi/2_x - pi_x - pi/2_x'
         
     # for dq, we need to add in an extra phase at the end for the final pi pulse
     # to read out to be at phase 0.
     if do_dq:
-        iq_phases = iq_phases + [0]
+        iq_phases = iq_phases + [0.0]
         
     print('Running experiment index {}'.format(experiment_ind))
     pulse_error, pulse_error_ste = measurement(cxn, 
@@ -784,6 +818,8 @@ def measure_pulse_errors(cxn,
         s_list.append(pulse_error)
         ste_list.append(pulse_error_ste)
         
+    print(s_list)
+    print(ste_list)
     pulse_errors = solve_errors(s_list ) 
     pulse_ste = calc_pulse_error_ste(ste_list ) 
     
@@ -836,20 +872,20 @@ def measure_pulse_errors(cxn,
     print('')
     print('************RESULTS************')
     print("Pi_X pulse-------")
-    print("Rotation angle error, Phi = {:.5f} +/- {:.5f} rad".format(phi,phi_ste ))
+    print("Rotation angle error,             Phi = {:.5f} +/- {:.5f} rad".format(phi,phi_ste ))
     print("Rotation axis error along y-axis, e_y = {:.5f} +/- {:.5f} rad".format(e_y, e_y_ste))
     print("Rotation axis error along z-axis, e_z = {:.5f} +/- {:.5f} rad".format(e_z, e_z_ste))
     print("Pi_Y pulse-------")
-    print("Rotation angle error, Chi = {:.5f} +/- {:.5f} rad".format(chi, chi_ste))
+    print("Rotation angle error,             Chi = {:.5f} +/- {:.5f} rad".format(chi, chi_ste))
     print("Rotation axis error along x-axis, v_x = {:.5f} +/- {:.5f} rad".format(v_x, v_x_ste))
     print("Rotation axis error along z-axis, v_z = {:.5f} +/- {:.5f} rad".format(v_z, v_z_ste))
     print('')
     print("Pi/2_X pulse-------")
-    print("Rotation angle error, Phi' = {:.5f} +/- {:.5f} rad".format(phi_p, phi_p_ste))
+    print("Rotation angle error,             Phi' = {:.5f} +/- {:.5f} rad".format(phi_p, phi_p_ste))
     print("Rotation axis error along y-axis, e_y' = {:.5f} rad (intentionally set to 0)".format(e_y_p))
     print("Rotation axis error along z-axis, e_z' = {:.5f} +/- {:.5f} rad".format(e_z_p, e_z_p_ste))
     print("Pi/2_Y pulse-------")
-    print("Rotation angle error, Chi' = {:.5f} +/- {:.5f} rad".format(chi_p, chi_p_ste))
+    print("Rotation angle error,             Chi' = {:.5f} +/- {:.5f} rad".format(chi_p, chi_p_ste))
     print("Rotation axis error along x-axis, v_x' = {:.5f} +/- {:.5f} rad".format(v_x_p, v_x_p_ste))
     print("Rotation axis error along z-axis, v_z' = {:.5f} +/- {:.5f} rad".format(v_z_p, v_z_p_ste))
     print('*******************************')
@@ -1192,6 +1228,185 @@ def do_impose_pi_dur(cxn,
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
         tool_belt.save_figure(fig_chi_p, file_path)           
 
+
+def cosine_fit(x, offset, amp, freq, phase):
+    return offset + amp * numpy.cos(x* freq + phase)
+
+
+def do_two_pi_2_pulse_vary_phase(cxn, 
+              nv_sig,
+              num_runs,
+              num_reps,
+              state=States.HIGH,
+              do_dq = False,):
+    
+    kpl.init_kplotlib()
+    
+    phases = numpy.linspace(0, 540, 16)# 16)
+    s_list = []
+    s_err_list = []
+    for p in phases:
+        p_rad = p * pi/180
+        pulse_error, pulse_error_ste = do_measurement(cxn, 
+                    nv_sig,
+                    num_runs,
+                    num_reps,
+                    6,
+                    pi_y_ph=0,
+                    pi_x_ph=0,
+                    pi_2_y_ph= p_rad,
+                    pi_dt = 0,
+                    pi_2_dt = 0,
+                    state=States.HIGH,
+                    do_dq = do_dq,
+                    plot = False,)
+        s_list.append(pulse_error)
+        s_err_list.append(pulse_error_ste)
+    # print(s_list)
+    
+    x_smooth = numpy.linspace(phases[0], phases[-1], 1000)
+    
+    fit_func = lambda x, offset, amp, phase: cosine_fit(x, offset, amp, numpy.pi/180, phase)
+    init_params = [ 0,1,  -1]
+    popt, pcov = curve_fit(
+        fit_func,
+          phases,
+        s_list,
+        sigma=s_err_list,
+        absolute_sigma=True,
+        p0=init_params,
+    )
+    print(popt)
+        
+
+    # Plot setup
+    fig, ax = plt.subplots(1, 1)
+    ax.set_xlabel('Phase (deg)')
+    ax.set_ylabel("Error")
+    # ax.set_title(title)
+
+    # Plotting
+    kpl.plot_points(ax,  phases, s_list, yerr = s_err_list, label = 'data', color=KplColors.BLACK)
+    
+    kpl.plot_line(ax, x_smooth, fit_func(x_smooth,*popt ), label = 'fit', color=KplColors.RED)
+    
+    ax.legend()
+    
+    timestamp = tool_belt.get_time_stamp()
+    
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'phases': phases.tolist(),
+                'phases-units': 'deg',
+                
+                's_list':s_list,
+                's_err_list':s_err_list,
+                }
+
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig, file_path)
+    
+def vary_pi_2_y_pulse(cxn, 
+              nv_sig,
+              num_runs,
+              num_reps,
+              state=States.HIGH,
+              do_dq = False):
+    
+    kpl.init_kplotlib()
+    
+    phases = numpy.linspace(-30,30,5)# 16)
+    
+    v_x_p_list = []
+    v_x_p_err_list = []
+    s6_list = []
+    s7_list = []
+    
+    for p in phases:
+        print(p)
+        p_rad = p * pi/180
+        S6, S6_err = do_measurement(cxn, 
+                    nv_sig,
+                    num_runs,
+                    num_reps,
+                    6,
+                    pi_y_ph=0,
+                    pi_x_ph=0,
+                    pi_2_y_ph= p_rad,
+                    pi_dt = 0,
+                    pi_2_dt = 0,
+                    state=States.HIGH,
+                    do_dq = do_dq,
+                    plot = False,)
+        
+        S7, S7_err = do_measurement(cxn, 
+                    nv_sig,
+                    num_runs,
+                    num_reps,
+                    7,
+                    pi_y_ph=0,
+                    pi_x_ph=0,
+                    pi_2_y_ph= p_rad,
+                    pi_dt = 0,
+                    pi_2_dt = 0,
+                    state=States.HIGH,
+                    do_dq = do_dq,
+                    plot = False,)
+        s6_list.append(S6)
+        s7_list.append(S7)
+        vxp = -(S7 + S6)/2
+        vxp_err = numpy.sqrt(S6_err**2 + S7_err**2)/2
+        
+        v_x_p_list.append(vxp)
+        v_x_p_err_list.append(vxp_err)
+    print(s6_list)
+    print(s7_list)
+    
+    # x_smooth = numpy.linspace(phases[0], phases[-1], 1000)
+    
+    # fit_func = lambda x, offset, amp, phase: cosine_fit(x, offset, amp, numpy.pi/180, phase)
+    # init_params = [ 0,1,  -1]
+    # popt, pcov = curve_fit(
+    #     fit_func,
+    #       phases,
+    #     s_list,
+    #     sigma=s_err_list,
+    #     absolute_sigma=True,
+    #     p0=init_params,
+    # )
+    # print(popt)
+        
+
+    # # Plot setup
+    fig, ax = plt.subplots(1, 1)
+    ax.set_xlabel('Phase (deg)')
+    ax.set_ylabel("Error")
+    # # ax.set_title(title)
+
+    # Plotting
+    kpl.plot_points(ax,  phases, v_x_p_list, yerr = v_x_p_err_list, label = 'data', color=KplColors.BLACK)
+    
+    # kpl.plot_line(ax, x_smooth, fit_func(x_smooth,*popt ), label = 'fit', color=KplColors.RED)
+    
+    ax.legend()
+    timestamp = tool_belt.get_time_stamp()
+    
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'phases': phases.tolist(),
+                'phases-units': 'deg',
+                
+                'v_x_p_list':v_x_p_list,
+                'v_x_p_err_list':v_x_p_err_list,
+                }
+
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig, file_path)
+    
 # %%
 if __name__ == "__main__":
     sample_name = "siena"
@@ -1203,17 +1418,17 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-            "coords":[0.128, -0.359, 4.24],
-        "name": "{}-nv4_2023_01_16".format(sample_name,),
+            "coords":[0.0, 0.578, 4.1],
+        "name": "{}-nv5_2023_02_17".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":40,
+        "expected_count_rate":21,
         
         
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
-          "spin_readout_dur": 350,
+          "spin_readout_dur": 320,
           "spin_pol_dur": 1000.0,
         
           "imaging_laser":green_laser,
@@ -1228,56 +1443,108 @@ if __name__ == "__main__":
         
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 53.5,
-        "resonance_LOW":2.81921,
-        "rabi_LOW":110*2,     
-        "uwave_power_LOW": 5.4,   #12
-        "resonance_HIGH":2.92159,
-        "rabi_HIGH":110*2,
-        "uwave_power_HIGH": 10,
+        "resonance_LOW":2.81954,
+        # "rabi_LOW":110*2,     
+        "uwave_power_LOW": -2,   
+        "resonance_HIGH":2.92137,
+        # "rabi_HIGH":110*2,
+        "uwave_power_HIGH": -2,
         
     
         #DQ
-    "pi_pulse_X_LOW": 91.83 ,
-    "pi_on_2_pulse_X_LOW": 44.35 ,# 37,
-    "pi_pulse_Y_LOW": 91.83 ,
-    "pi_on_2_pulse_Y_LOW": 44.35 ,# 37,
+    "pi_pulse_X_LOW": 76.87 ,
+    "pi_on_2_pulse_X_LOW":  37.47,
+    "pi_pulse_Y_LOW": 76.87 ,
+    "pi_on_2_pulse_Y_LOW": 37.47 ,
     
-    "pi_pulse_X_HIGH": 107.48, 
-    "pi_on_2_pulse_X_HIGH": 65, 
-    "pi_pulse_Y_HIGH": 107.48,  
-    "pi_on_2_pulse_Y_HIGH":  65, 
+    "pi_pulse_X_HIGH": 57.56 ,
+    "pi_on_2_pulse_X_HIGH":  31.93 ,
+    "pi_pulse_Y_HIGH":  57.56  ,
+    "pi_on_2_pulse_Y_HIGH":  31.93 ,
     }  
     
     with labrad.connect() as cxn:
-        num_runs = 5
+        num_runs = 20
         num_reps = int(5e4)
-        # pulse_error, pulse_error_ste = do_measurement(cxn, 
-        #             nv_sig,
-        #             num_runs,
-        #             num_reps,
-        #             1,
-        #             pi_y_ph=0,
-        #             pi_x_ph=0,
-        #             pi_2_y_ph=0,
-        #             pi_dt = 0,
-        #             pi_2_dt = 0,
-        #             state=States.HIGH,
-        #             do_dq = False,
-        #             plot = True,)
+        pulse_error, pulse_error_ste = do_measurement(cxn, 
+                      nv_sig,
+                      num_runs,
+                      num_reps,
+                      7,
+                      pi_y_ph=0,
+                      pi_x_ph=0,
+                      pi_2_y_ph= 0,
+                      pi_dt = 0,
+                      pi_2_dt = 0,
+                      state=States.HIGH,
+                      do_dq = True,
+                      plot = True,)
+        print(pulse_error)
+        print(pulse_error_ste)
         
         ### measure the phase errors, will print them out
-        # measure_pulse_errors(cxn, nv_sig, num_runs,num_reps, pi_y_ph = 0, pi_x_ph = 30*pi/180,pi_2_y_ph = 0,state=States.HIGH, do_dq = False)
+        # measure_pulse_errors(cxn, nv_sig, num_runs,num_reps, pi_y_ph = 0, pi_x_ph =0,pi_2_y_ph = 0,state=States.HIGH, do_dq = True)
         
         
         ### Run a test by intentionally adding phase to pi_y pulses and 
         ### see that in the extracted pulse errors
-        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y', do_dq = False)
+       # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = False)
+       # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = False)
+       # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = False)
         
-        # do_impose_pi_2_dur(cxn, nv_sig,num_runs, num_reps, state=States.HIGH, do_dq = False,)
+        #do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = True)
+       # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = True)
+        #do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = True)
         
-        do_impose_pi_dur(cxn,  nv_sig, num_runs,num_reps, state=States.HIGH,do_dq = False,)
+        # do_impose_pi_2_dur(cxn, nv_sig,num_runs, num_reps, state=States.HIGH, do_dq = True,)
+        
+        # do_impose_pi_dur(cxn,  nv_sig, num_runs,num_reps, state=States.HIGH,do_dq = False,)
         
         # file ='2023_02_13-15_23_19-siena-nv4_2023_01_16'
         # replot_imposed_phases(file)
+        
+        # do_two_pi_2_pulse_vary_phase(cxn,  nv_sig, num_runs,num_reps)
+        
+        # vary_pi_2_y_pulse(cxn,  nv_sig, num_runs,num_reps, do_dq = True)
+        if False:
+         phases = numpy.linspace(0, 360, 13)
+         s_list = []
+         s_err_list = []
+         for p in phases:
+            p_rad = p * pi/180
+            pulse_error, pulse_error_ste = do_measurement(cxn, 
+                        nv_sig,
+                        num_runs,
+                        num_reps,
+                        101,
+                        pi_y_ph=0,
+                        pi_x_ph=p_rad,
+                        pi_2_y_ph=0,
+                        pi_dt = 0,
+                        pi_2_dt = 0,
+                        do_dq = True,)
+            s_list.append(pulse_error)
+            s_err_list.append(pulse_error_ste)
             
         
+         fig, ax = plt.subplots()
+         ax.errorbar(phases,s_list, yerr = s_err_list, fmt= 'ko' )
+         ax.set_xlabel('Change in phase on pi pulse (deg)')
+         ax.set_ylabel('Error')
+         ax.set_title('pi/2_x - pi_p - pi/2_x')
+        
+         timestamp = tool_belt.get_time_stamp()
+        
+         raw_data = {'timestamp': timestamp,
+                    'nv_sig': nv_sig,
+                    'phases': phases.tolist(),
+                    'phases-units': 'deg',
+                    
+                    's_list':s_list,
+                    's_err_list':s_err_list,
+                    }
+
+         nv_name = nv_sig["name"]
+         file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+         tool_belt.save_raw_data(raw_data, file_path)
+         tool_belt.save_figure(fig, file_path)

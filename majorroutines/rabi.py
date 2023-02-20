@@ -537,7 +537,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             sig_gen_cxn.set_amp(uwave_power)
             if do_iq:
                 sig_gen_cxn.load_iq()
-                # arbwavegen_server.load_arb_phases([0])
+                arbwavegen_server.load_arb_phases([0])
             sig_gen_cxn.uwave_on()
         
         

@@ -218,7 +218,7 @@ if __name__ == '__main__':
     
     # readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, polarization
     # num_uwave_pulses, state, apd_index, laser_name, laser_power = args[6:11]
-    args = [350, 64, 64, 64, 0, 1000.0, 50.0, 2, 3,  'integrated_520', None]
+    args = [350, 64, 64, 64, 64, 1000.0, 0, 3, 3,  'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

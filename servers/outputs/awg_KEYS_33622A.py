@@ -201,7 +201,7 @@ class AwgKeys33622A(LabradServer, AWG):
         # repeat until it's long enough
         while len(phases) < 32:
             phases *= 2
-        
+                
         # basedo n the angles for the phase and the amplitude, calculate
         # the amplitudes for the I and Q components
         phase_comps = tool_belt.iq_comps(phases, amp)
@@ -209,11 +209,15 @@ class AwgKeys33622A(LabradServer, AWG):
         # Convert to string and trim the brackets
         # for the I channel
         comps = phase_comps[0]
+        # last_el = comps.pop()
+        # comps.insert(0, last_el)
         seq = str(comps)[1:-1]
         self.wave_gen.write("SOUR1:DATA:ARB iqSwitch1, {}".format(seq))
 
         # for the Q channel
         comps = phase_comps[1]
+        # last_el = comps.pop()
+        # comps.insert(0, last_el)
         seq = str(comps)[1:-1]
         self.wave_gen.write("SOUR2:DATA:ARB iqSwitch2, {}".format(seq))
 
@@ -224,6 +228,7 @@ class AwgKeys33622A(LabradServer, AWG):
             )
             self.wave_gen.write("{}FUNC ARB".format(source_name))
 
+        
         self.wave_gen.write("OUTP1 ON")
         self.wave_gen.write("OUTP2 ON")
         
@@ -239,9 +244,9 @@ class AwgKeys33622A(LabradServer, AWG):
         # So let's just set the pulse streamer to constant for a second to
         # fake a trigger...
         
-        # time.sleep(0.1)  # Make sure everything is propagated
-        # ret_val = ensureDeferred(self.force_trigger())
-        # ret_val.addCallback(self.on_force_trigger)
+        time.sleep(0.1)  # Make sure everything is propagated
+        ret_val = ensureDeferred(self.force_trigger())
+        ret_val.addCallback(self.on_force_trigger)
 
     async def force_trigger(self):
         self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
