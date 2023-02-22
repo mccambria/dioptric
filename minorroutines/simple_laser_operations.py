@@ -80,31 +80,31 @@ def circle(cxn, laser_name, laser_power=None):
 
 if __name__ == "__main__":
 
-    # laser_name = "laserglow_532"
-    laser_name = "laser_LGLO_589"
+    laser_name = "laserglow_532"
+    # laser_name = "laser_LGLO_589"
     # laser_name = "integrated_520"
     laser_power = None
-    # laser_filter = "nd_0"
+    laser_filter = "nd_0.3"
     collection_filter = "nd_0"
     # pos = [-0.306, 0.235, 8.0]
-    pos = [0.0, 0.0, 5.0]
+    pos = [0.0, 0.0, 4.6]
 
     tool_belt.init_safe_stop()
     
  
     with labrad.connect() as cxn:
 
-        # positioning.set_xyz(cxn, pos)
-        # tool_belt.set_filter(
-        #     cxn, optics_name=laser_name, filter_name=laser_filter
-        # )
+        positioning.set_xyz(cxn, pos)
+        tool_belt.set_filter(
+            cxn, optics_name=laser_name, filter_name=laser_filter
+        )
         # tool_belt.set_filter(
         #     cxn, optics_name="collection", filter_name=collection_filter
         # )
 
         # Some parameters you'll need to set in these functions
-        # constant(cxn, laser_name)
-        square_wave(cxn, laser_name)
+        constant(cxn, laser_name)
+        # square_wave(cxn, laser_name)
         # arb_duty_cycle(cxn, laser_name)
         # circle(cxn, laser_name)
 

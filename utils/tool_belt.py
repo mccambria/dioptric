@@ -306,9 +306,11 @@ def process_laser_seq(
     # print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
-    am_feedthrough = config["Optics"][laser_name]["am_feedthrough"]
-    am_feedthrough = eval(am_feedthrough)
-    #    feedthrough = False
+    if "am_feedthrough" in config["Optics"][laser_name]:
+        am_feedthrough = config["Optics"][laser_name]["am_feedthrough"]
+        am_feedthrough = eval(am_feedthrough)
+    else:
+        am_feedthrough = False
 
     # LOW = 0
     # HIGH = 1
