@@ -1069,31 +1069,17 @@ if __name__ == "__main__":
         "2023_02_16-16_05_52-wu-nv25_region5",
     ]
 
-    # file_list = [
-    #     file_list[-1],
-    # ]
+    file_list = [
+        "2023_02_22-12_15_21-15micro-nv8_zfs_vs_t",
+        "2023_02_20-17_15_51-15micro-nvref_zfs_vs_t",
+    ]
 
     for file_name in file_list:
-        # for ind in range(len(file_list)):
 
-        # file_name = file_list[ind]
-        # double = double_list[ind // 2]
-        # if double:
-        #     fit_func = double_dip
-        #     guess_params = [0.12, 2, 2.865, 0.12, 2, 2.875]
-        # else:
-        #     fit_func = None
-        #     guess_params = None
-
-        # file_name = "2023_02_15-10_49_10-wu-nv7_region5"
-        # fit_func = double_dip
-        # guess_params = [0.12, 2, 2.865, 0.15, 2, 2.875]
-
-        # fit_func = None
-        # guess_params = None
-
-        fit_func = double_dip_fixed_width
-        guess_params = [0.12, 2.865, 0.12, 2.875]
+        fit_func = lambda freq, contrast, width, center: single_dip(
+            freq, contrast, width, center, dip_func=gaussian
+        )
+        guess_params = None
 
         data = tool_belt.get_raw_data(file_name)
 
@@ -1155,14 +1141,14 @@ if __name__ == "__main__":
         #     print_list.append(round_pste[ind])
         # print(print_list)
 
-        print(
-            round(1000 * ((popt[3] + popt[1]) / 2) - 2870, 1),
-            round(1000 * (popt[3] - popt[1]), 1),
-        )
+        # print(
+        #     round(1000 * ((popt[3] + popt[1]) / 2) - 2870, 1),
+        #     round(1000 * (popt[3] - popt[1]), 1),
+        # )
 
-        # file_path = tool_belt.get_raw_data_path(file_name)
-        # file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
-        # tool_belt.save_figure(fit_fig, file_path)
+        file_path = tool_belt.get_raw_data_path(file_name)
+        file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
+        tool_belt.save_figure(fit_fig, file_path)
 
         # break
 
