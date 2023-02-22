@@ -265,6 +265,19 @@ def double_dip(
     return 1.0 - (low_dip + high_dip)
 
 
+def double_dip_fixed_width(
+    freq,
+    low_contrast,
+    low_center,
+    high_contrast,
+    high_center,
+    dip_func=rabi_line,
+):
+    low_dip = dip_func(freq, low_contrast, 4.0, low_center)
+    high_dip = dip_func(freq, high_contrast, 4.0, high_center)
+    return 1.0 - (low_dip + high_dip)
+
+
 def single_dip(freq, contrast, width, center, dip_func=rabi_line):
     return 1.0 - dip_func(freq, contrast, width, center)
 
@@ -1076,8 +1089,11 @@ if __name__ == "__main__":
         # fit_func = double_dip
         # guess_params = [0.12, 2, 2.865, 0.15, 2, 2.875]
 
-        fit_func = None
-        guess_params = None
+        # fit_func = None
+        # guess_params = None
+
+        fit_func = double_dip_fixed_width
+        guess_params = [0.12, 2.865, 0.12, 2.875]
 
         data = tool_belt.get_raw_data(file_name)
 
@@ -1127,21 +1143,26 @@ if __name__ == "__main__":
             guess_params=guess_params,
         )
 
-        pste = np.sqrt(np.diag(pcov))
-        # Reverse for presentation
-        popt = popt[::-1]
-        pste = pste[::-1]
-        round_popt = [tool_belt.round_sig_figs(val, 7) for val in popt]
-        round_pste = [tool_belt.round_sig_figs(val, 3) for val in pste]
-        print_list = []
-        for ind in range(len(popt)):
-            print_list.append(round_popt[ind])
-            print_list.append(round_pste[ind])
-        print(print_list)
+        # pste = np.sqrt(np.diag(pcov))
+        # # Reverse for presentation
+        # popt = popt[::-1]
+        # pste = pste[::-1]
+        # round_popt = [tool_belt.round_sig_figs(val, 7) for val in popt]
+        # round_pste = [tool_belt.round_sig_figs(val, 3) for val in pste]
+        # print_list = []
+        # for ind in range(len(popt)):
+        #     print_list.append(round_popt[ind])
+        #     print_list.append(round_pste[ind])
+        # print(print_list)
 
-        file_path = tool_belt.get_raw_data_path(file_name)
-        file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
-        tool_belt.save_figure(fit_fig, file_path)
+        print(
+            round(1000 * ((popt[3] + popt[1]) / 2) - 2870, 1),
+            round(1000 * (popt[3] - popt[1]), 1),
+        )
+
+        # file_path = tool_belt.get_raw_data_path(file_name)
+        # file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
+        # tool_belt.save_figure(fit_fig, file_path)
 
         # break
 

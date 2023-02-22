@@ -20,7 +20,7 @@ Created on June 16th, 2019
 
 # region Imports and constants
 
-import numpy
+import numpy as np
 from numpy.linalg import eigvals
 from numpy import pi
 from scipy.optimize import minimize_scalar
@@ -33,7 +33,7 @@ import utils.kplotlib as kpl
 d_gs = 2.87  # ground state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
 gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
-inv_sqrt_2 = 1 / numpy.sqrt(2)
+inv_sqrt_2 = 1 / np.sqrt(2)
 im = 0 + 1j
 
 # endregion
@@ -41,9 +41,9 @@ im = 0 + 1j
 
 
 def calc_single_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
-    par_B = mag_B * numpy.cos(theta_B)
-    perp_B = mag_B * numpy.sin(theta_B)
-    hamiltonian = numpy.array(
+    par_B = mag_B * np.cos(theta_B)
+    perp_B = mag_B * np.sin(theta_B)
+    hamiltonian = np.array(
         [
             [
                 d_gs + par_Pi + par_B,
@@ -67,27 +67,23 @@ def calc_single_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 
 def calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     fit_vec = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
-    if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
-        hamiltonian_list = [
-            calc_single_hamiltonian(val, *fit_vec) for val in mag_B
-        ]
+    if (type(mag_B) is list) or (type(mag_B) is np.ndarray):
+        hamiltonian_list = [calc_single_hamiltonian(val, *fit_vec) for val in mag_B]
         return hamiltonian_list
     else:
         return calc_single_hamiltonian(mag_B, *fit_vec)
 
 
 def calc_res_pair(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
-    hamiltonian = calc_hamiltonian(
-        mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
-    )
-    if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
-        vals = numpy.sort(eigvals(hamiltonian), axis=1)
-        resonance_low = numpy.real(vals[:, 1] - vals[:, 0])
-        resonance_high = numpy.real(vals[:, 2] - vals[:, 0])
+    hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
+    if (type(mag_B) is list) or (type(mag_B) is np.ndarray):
+        vals = np.sort(eigvals(hamiltonian), axis=1)
+        resonance_low = np.real(vals[:, 1] - vals[:, 0])
+        resonance_high = np.real(vals[:, 2] - vals[:, 0])
     else:
-        vals = numpy.sort(eigvals(hamiltonian))
-        resonance_low = numpy.real(vals[1] - vals[0])
-        resonance_high = numpy.real(vals[2] - vals[0])
+        vals = np.sort(eigvals(hamiltonian))
+        resonance_low = np.real(vals[1] - vals[0])
+        resonance_high = np.real(vals[2] - vals[0])
     return resonance_low, resonance_high
 
 
@@ -112,11 +108,9 @@ def find_mag_B(res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 
 
 def find_mag_B_objective(x, res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
-    calculated_res_pair = calc_res_pair(
-        x, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
-    )
-    diffs = numpy.array(calculated_res_pair) - numpy.array(res_desc[1:3])
-    sum_squared_differences = numpy.sum(diffs ** 2)
+    calculated_res_pair = calc_res_pair(x, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
+    diffs = np.array(calculated_res_pair) - np.array(res_desc[1:3])
+    sum_squared_differences = np.sum(diffs**2)
     return sum_squared_differences
 
 
@@ -124,10 +118,8 @@ def plot_resonances(
     mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi, name="untitled"
 ):
 
-    smooth_mag_B = numpy.linspace(mag_B_range[0], mag_B_range[1], 1000)
-    res_pairs = calc_res_pair(
-        smooth_mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
-    )
+    smooth_mag_B = np.linspace(mag_B_range[0], mag_B_range[1], 1000)
+    res_pairs = calc_res_pair(smooth_mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
@@ -158,6 +150,22 @@ def plot_resonances(
     return fig, ax
 
 
+def plot_resonances_custom():
+    """Plot the resonances as a function of something"""
+
+    smooth_Pi = np.linspace(0, 0.025, 100)
+    res_pairs = [calc_res_pair(0.0, 0.0, 0.0, val, 0.0, 0.0) for val in smooth_Pi]
+    res_pairs = np.array(res_pairs)
+
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, smooth_Pi, res_pairs[:, 0])
+    kpl.plot_line(ax, smooth_Pi, res_pairs[:, 1])
+    ax.set_xlabel("Pi magnitude (GHz)")
+    ax.set_ylabel("Resonance (GHz)")
+
+    return fig, ax
+
+
 def chisq_func_reduced(fit_vec, par_Pi, perp_Pi, phi_B, phi_Pi, res_descs):
 
     theta_B = fit_vec[0]
@@ -173,15 +181,13 @@ def chisq_func(fit_vec, phi_B, phi_Pi, res_descs):
     # find_mag_B_objective returns the sum of squared residuals for a single
     # pair of resonances. We want to sum this over all pairs.
     squared_residuals = [
-        find_mag_B_objective(
-            mag_Bs[ind], res_descs[ind], *fit_vec, phi_B, phi_Pi
-        )
+        find_mag_B_objective(mag_Bs[ind], res_descs[ind], *fit_vec, phi_B, phi_Pi)
         for ind in range(num_resonance_descs)
     ]
-    sum_squared_residuals = numpy.sum(squared_residuals)
+    sum_squared_residuals = np.sum(squared_residuals)
 
     estimated_st_dev = 0.0001
-    estimated_var = numpy.sqrt(estimated_st_dev)
+    estimated_var = np.sqrt(estimated_st_dev)
     chisq = sum_squared_residuals / estimated_var
 
     return chisq
@@ -202,13 +208,13 @@ def main(name, res_descs):
     # fit_vec = [theta_B, par_Pi, perp_Pi,]
     param_bounds = ((0, pi / 2), (-0.050, 0.050), (0, 0.050))
 
-    res_descs = numpy.array(res_descs)
+    res_descs = np.array(res_descs)
     for desc in res_descs:
         # Set degenerate resonances to the same value
         if desc[2] is None:
             desc[2] = desc[1]
         # Make sure resonances are sorted
-        desc[1:3] = numpy.sort(desc[1:3])
+        desc[1:3] = np.sort(desc[1:3])
 
     ############ Guess par_Pi and perp_Pi by zero field ############
 
@@ -264,7 +270,7 @@ def main(name, res_descs):
         return
 
     popt = res.x
-    popt_full = numpy.append(popt, [phi_B, phi_Pi])
+    popt_full = np.append(popt, [phi_B, phi_Pi])
 
     chisq = res.fun
     print("Chi squared: {:.4g}".format(chisq))
@@ -296,17 +302,19 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # Name for the NV, sample, whatever
-    name = "test"
+    plot_resonances_custom()
 
-    # Enter the resonance descriptions as a list of lists. Each sublist should
-    # have the form (all units GHz):
-    # [magnetic field if known, lower resonance, higher resonance]
-    res_descs = [
-        [0.0, 2.87, None],
-        [None, 2.8549, 2.88687],
-    ]
+    # # Name for the NV, sample, whatever
+    # name = "test"
 
-    main(name, res_descs)
+    # # Enter the resonance descriptions as a list of lists. Each sublist should
+    # # have the form (all units GHz):
+    # # [magnetic field if known, lower resonance, higher resonance]
+    # res_descs = [
+    #     [0.0, 2.87, None],
+    #     [None, 2.8549, 2.88687],
+    # ]
+
+    # main(name, res_descs)
 
     plt.show(block=True)
