@@ -1,18 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Back out the parameters of the Hamiltonian (B field magnitude and
-alignment, electric field magnitude and alignment) based on a list
-of resonances at varying B field magnitudes of the same orientation.
+"""
+Modification of extract_hamiltonian used to to determine the field parameters
+from the resonances for a set of 4 NVs of different orientations
 
-Simple use case: determining B field alignment if you already know the 
-zero-field resonances. Eg we have the res_descs:
-res_descs = [
-    [0.0, 2.87, None],
-    [None, 2.8640, 2.8912],
-]
-which tells you that the B field 1.46 rad off the NV axis and 
-the B field magnitude is 43 Gauss.
-
-Created on June 16th, 2019
+Created on February 21st, 2023
 
 @author: mccambria
 """
@@ -30,7 +21,7 @@ from numpy import exp
 import matplotlib.pyplot as plt
 import utils.kplotlib as kpl
 
-d_gs = 2.87  # ground state zfs in GHz
+d_gs = 2.870  # ground state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
 gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
 inv_sqrt_2 = 1 / np.sqrt(2)
@@ -166,155 +157,136 @@ def plot_resonances_custom():
     return fig, ax
 
 
-def chisq_func_reduced(fit_vec, par_Pi, perp_Pi, phi_B, phi_Pi, res_descs):
+def sum_squared_residuals(e_field, meas_zfs_list, meas_splitting_list):
 
-    theta_B = fit_vec[0]
-    fit_vec = [theta_B, par_Pi, perp_Pi]
-    return chisq_func(fit_vec, phi_B, phi_Pi, res_descs)
+    test_zfs_list, test_splitting_list = calc_zfs_and_splitting(e_field)
 
-
-def chisq_func(fit_vec, phi_B, phi_Pi, res_descs):
-
-    num_resonance_descs = len(res_descs)
-    mag_Bs = [find_mag_B(desc, *fit_vec, phi_B, phi_Pi) for desc in res_descs]
-
-    # find_mag_B_objective returns the sum of squared residuals for a single
-    # pair of resonances. We want to sum this over all pairs.
-    squared_residuals = [
-        find_mag_B_objective(mag_Bs[ind], res_descs[ind], *fit_vec, phi_B, phi_Pi)
-        for ind in range(num_resonance_descs)
-    ]
+    residuals = []
+    for ind in range(4):
+        residuals.append(test_zfs_list[ind] - meas_zfs_list[ind])
+        residuals.append(test_splitting_list[ind] - meas_splitting_list[ind])
+    squared_residuals = [el**2 for el in residuals]
     sum_squared_residuals = np.sum(squared_residuals)
 
-    estimated_st_dev = 0.0001
-    estimated_var = np.sqrt(estimated_st_dev)
-    chisq = sum_squared_residuals / estimated_var
+    return sum_squared_residuals
 
-    return chisq
+
+def optimize_e_field(meas_zfs_list, meas_splitting_list):
+
+    ### Setup
+
+    param_bounds = [(-1, 1), (-1, 1), (-1, 1)]
+    args = (meas_zfs_list, meas_splitting_list)
+
+    ### Brute force first pass
+
+    param_ranges = param_bounds
+    x0 = brute(sum_squared_residuals, param_ranges, args=args, Ns=100, workers=-1)
+    guess_e_field = list(x0)
+
+    ### Fine tuning with minimize
+
+    res = minimize(
+        sum_squared_residuals,
+        guess_e_field,
+        args=args,
+        bounds=param_bounds,
+        method="SLSQP",
+    )
+
+    ### Return
+
+    if not res.success:
+        print(res.message)
+    opti_e_field = res.x
+    print(f"Optimized SSR: {res.fun}")
+    print(f"Optimized E field: {opti_e_field}")
+    return opti_e_field
+
+
+def calc_zfs_and_splitting(e_field):
+
+    e_field = [el / 1000 for el in e_field]
+    e_field_x, e_field_y, e_field_z = e_field
+
+    # For a given E field, plot the ZFS deviation and splitting for 4 orientations
+    # NV unit vectors - viewed from above with a and d sticking out of the page (+z)
+    # ....a....
+    # ....|....
+    # b---+---c
+    # ....|....
+    # ....d....
+    bond_angle = np.arccos(-1 / 3)
+    half_bond_angle = bond_angle / 2
+    nv_orientations = [
+        [0, np.sin(half_bond_angle), np.cos(half_bond_angle)],  # a
+        [-np.sin(half_bond_angle), 0, -np.cos(half_bond_angle)],  # b
+        [np.sin(half_bond_angle), 0, -np.cos(half_bond_angle)],  # c
+        [0, -np.sin(half_bond_angle), np.cos(half_bond_angle)],  # d
+    ]
+
+    e_field = np.array([e_field_x, e_field_y, e_field_z])
+
+    e_field_components = [
+        [np.dot(nv, e_field), np.linalg.norm(np.cross(nv, e_field))]
+        for nv in nv_orientations
+    ]
+    Phi_components = [[0.35 * comp[0], 17 * comp[1]] for comp in e_field_components]
+    # Phi_components = [[comp[0], comp[1]] for comp in e_field_components]
+    resonances = [
+        calc_res_pair(0, 0, comp[0], comp[1], 0, 0) for comp in Phi_components
+    ]
+
+    zfs_list = [np.mean(pair) for pair in resonances]
+    splitting_list = [pair[1] - pair[0] for pair in resonances]
+
+    # Convert to MHz
+    zfs_list = [1000 * el for el in zfs_list]
+    splitting_list = [1000 * el for el in splitting_list]
+
+    return zfs_list, splitting_list
 
 
 # endregion
 
 
-def main(name, res_descs):
+def main(meas_zfs_list, meas_splitting_list):
 
-    ############ Setup ############
+    # e_field = 0.0001 * np.array([1, 1, 1])
+    # opti_zfs_list, opti_splitting_list = calc_zfs_and_splitting(e_field)
 
-    phi_B = 0.0
-    phi_Pi = 0.0
-    # phi_B = pi/3
-    # phi_Pi = pi/3
+    opti_e_field = optimize_e_field(meas_zfs_list, meas_splitting_list)
+    opti_zfs_list, opti_splitting_list = calc_zfs_and_splitting(opti_e_field)
 
-    # fit_vec = [theta_B, par_Pi, perp_Pi,]
-    param_bounds = ((0, pi / 2), (-0.050, 0.050), (0, 0.050))
-
-    res_descs = np.array(res_descs)
-    for desc in res_descs:
-        # Set degenerate resonances to the same value
-        if desc[2] is None:
-            desc[2] = desc[1]
-        # Make sure resonances are sorted
-        desc[1:3] = np.sort(desc[1:3])
-
-    ############ Guess par_Pi and perp_Pi by zero field ############
-
-    zero_field_res_desc = None
-    par_Pi = None
-    perp_Pi = None
-    # See if we have zero-field resonances
-    for desc in res_descs:
-        if desc[0] == 0.0:
-            zero_field_res_desc = desc
-            break
-
-    if zero_field_res_desc is not None:
-
-        # Get the splitting and center_freq from the resonances
-        zero_field_low = zero_field_res_desc[1]
-        zero_field_high = zero_field_res_desc[2]
-
-        zero_field_center = (zero_field_high + zero_field_low) / 2
-        par_Pi = zero_field_center - d_gs
-
-        # Similarly
-        zero_field_splitting = zero_field_high - zero_field_low
-        perp_Pi = zero_field_splitting / 2
-
-    ############ Guess remaining parameters with brute force ############
-
-    if (par_Pi is not None) and (perp_Pi is not None):
-        # Just fit for theta_B
-        param_ranges = param_bounds[0:1]
-        args = (par_Pi, perp_Pi, phi_B, phi_Pi, res_descs)
-        x0 = brute(chisq_func_reduced, param_ranges, args=args, Ns=20)
-        guess_params = list(x0)
-        guess_params.extend([par_Pi, perp_Pi])
-    else:
-        param_ranges = param_bounds
-        args = (phi_B, phi_Pi, res_descs)
-        x0 = brute(chisq_func, param_ranges, args=args, Ns=10)
-        guess_params = list(x0)
-
-    ############ Fine tuning with minimize ############
-
-    args = (phi_B, phi_Pi, res_descs)
-    res = minimize(
-        chisq_func,
-        guess_params,
-        args=args,
-        bounds=param_bounds,
-        method="SLSQP",
-    )
-    if not res.success:
-        print(res.message)
-        return
-
-    popt = res.x
-    popt_full = np.append(popt, [phi_B, phi_Pi])
-
-    chisq = res.fun
-    print("Chi squared: {:.4g}".format(chisq))
-    degrees_of_freedom = len(res_descs) - len(x0)
-    reduced_chisq = res.fun / degrees_of_freedom
-    print("Reduced chi squared: {:.4g}".format(reduced_chisq))
-
-    ############ Plot the result ############
-
-    # Get the mag_B for each pair of resonances with this fit_vec
-    mag_Bs = [find_mag_B(desc, *popt_full) for desc in res_descs]
-
-    # Plot the calculated resonances up to the max mag_B
-    fig, ax = plot_resonances([0, max(mag_Bs)], *popt_full, name)
-
-    # Plot the resonances
-    ax.scatter(mag_Bs, res_descs[:, 1])
-    ax.scatter(mag_Bs, res_descs[:, 2])
-
-    # Return the full 5 parameters
-    print("")
-    print("theta_B, par_Pi, perp_Pi, phi_B, phi_Pi")
-    popt_full_print = [round(el, 3) for el in popt_full]
-    print(popt_full_print)
-    return popt_full
+    fig, ax = plt.subplots()
+    # plot_splitting_list = [el * 1000 for el in splitting_list]
+    # plot_zfs_list = [el * 1000 - 2870 for el in zfs_list]
+    # kpl.plot_points(ax, plot_splitting_list, plot_zfs_list, label="Optimized")
+    kpl.plot_points(ax, opti_splitting_list, opti_zfs_list, label="Optimized")
+    kpl.plot_points(ax, meas_splitting_list, meas_zfs_list, label="Measured")
+    ax.set_xlabel("Splitting (MHz)")
+    # ax.set_ylabel("Deviation from 2.87 GHz (MHz)")
+    ax.set_ylabel("ZFS (MHz)")
+    ax.legend()
 
 
 if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    plot_resonances_custom()
+    # plot_resonances_custom()
 
-    # # Name for the NV, sample, whatever
-    # name = "test"
+    # Name for the NV, sample, whatever
+    name = "Wu-region5"
 
-    # # Enter the resonance descriptions as a list of lists. Each sublist should
-    # # have the form (all units GHz):
-    # # [magnetic field if known, lower resonance, higher resonance]
-    # res_descs = [
-    #     [0.0, 2.87, None],
-    #     [None, 2.8549, 2.88687],
-    # ]
+    # All MHz
+    # meas_zfs_list = [2870.5, 2870, 2871, 2870.5]
+    meas_zfs_list = [2870.5, 2870.5, 2870.5, 2870.5]
+    meas_splitting_list = [0.0, 6, 6, 12]
 
-    # main(name, res_descs)
+    # e_field = np.array([0.1, -0.001, -0.5])
+    # meas_zfs_list, meas_splitting_list = calc_zfs_and_splitting(e_field)
+
+    main(meas_zfs_list, meas_splitting_list)
 
     plt.show(block=True)

@@ -187,8 +187,8 @@ def data_points_to_lists(data_points):
 
 def main():
 
-    skip_lambda = lambda pt: pt["Skip"]
-    # skip_lambda = lambda pt: pt["Skip"] or pt["Region"] == 5
+    # skip_lambda = lambda pt: pt["Skip"]
+    skip_lambda = lambda pt: pt["Skip"] or pt["Region"] != 5
 
     data_points = get_data_points(skip_lambda)
     data_lists = data_points_to_lists(data_points)
