@@ -157,7 +157,7 @@ def plot_resonances_custom():
     return fig, ax
 
 
-def sum_squared_residuals(e_field, meas_zfs_list, meas_splitting_list):
+def cost_func(e_field, meas_zfs_list, meas_splitting_list):
 
     test_zfs_list, test_splitting_list = calc_zfs_and_splitting(e_field)
 
@@ -166,9 +166,10 @@ def sum_squared_residuals(e_field, meas_zfs_list, meas_splitting_list):
         residuals.append(test_zfs_list[ind] - meas_zfs_list[ind])
         residuals.append(test_splitting_list[ind] - meas_splitting_list[ind])
     squared_residuals = [el**2 for el in residuals]
-    sum_squared_residuals = np.sum(squared_residuals)
+    cost = np.sum(squared_residuals)
+    # cost = np.sqrt(np.std(residuals[0::2]) ** 2 + np.std(residuals[1::2]))
 
-    return sum_squared_residuals
+    return cost
 
 
 def optimize_e_field(meas_zfs_list, meas_splitting_list):
@@ -181,13 +182,13 @@ def optimize_e_field(meas_zfs_list, meas_splitting_list):
     ### Brute force first pass
 
     param_ranges = param_bounds
-    x0 = brute(sum_squared_residuals, param_ranges, args=args, Ns=100, workers=-1)
+    x0 = brute(cost_func, param_ranges, args=args, Ns=100, workers=-1)
     guess_e_field = list(x0)
 
     ### Fine tuning with minimize
 
     res = minimize(
-        sum_squared_residuals,
+        cost_func,
         guess_e_field,
         args=args,
         bounds=param_bounds,
@@ -233,9 +234,18 @@ def calc_zfs_and_splitting(e_field):
     ]
     Phi_components = [[0.35 * comp[0], 17 * comp[1]] for comp in e_field_components]
     # Phi_components = [[comp[0], comp[1]] for comp in e_field_components]
-    resonances = [
-        calc_res_pair(0, 0, comp[0], comp[1], 0, 0) for comp in Phi_components
-    ]
+
+    calc_res_pair_Phi = lambda comps: calc_res_pair(0, 0, comps[0], comps[1], 0, 0)
+    calc_res_pair_B = lambda comps: calc_res_pair(
+        np.sqrt(comps[0] ** 2 + comps[1] ** 2),
+        np.arctan(comps[1] / comps[0]),
+        0,
+        0,
+        0,
+        0,
+    )
+    resonances = [calc_res_pair_Phi(comps) for comps in Phi_components]
+    # resonances = [calc_res_pair_B(comps) for comps in Phi_components]
 
     zfs_list = [np.mean(pair) for pair in resonances]
     splitting_list = [pair[1] - pair[0] for pair in resonances]
@@ -252,8 +262,11 @@ def calc_zfs_and_splitting(e_field):
 
 def main(meas_zfs_list, meas_splitting_list):
 
-    # e_field = 0.0001 * np.array([1, 1, 1])
-    # opti_zfs_list, opti_splitting_list = calc_zfs_and_splitting(e_field)
+    bond_angle = np.arccos(-1 / 3)
+    half_bond_angle = (0.7) * bond_angle / 2
+    orientation = [0.2, np.sin(half_bond_angle), np.cos(half_bond_angle)]
+    e_field = 1 * np.array(orientation)
+    opti_zfs_list, opti_splitting_list = calc_zfs_and_splitting(e_field)
 
     opti_e_field = optimize_e_field(meas_zfs_list, meas_splitting_list)
     opti_zfs_list, opti_splitting_list = calc_zfs_and_splitting(opti_e_field)
@@ -281,7 +294,8 @@ if __name__ == "__main__":
 
     # All MHz
     # meas_zfs_list = [2870.5, 2870, 2871, 2870.5]
-    meas_zfs_list = [2870.5, 2870.5, 2870.5, 2870.5]
+    # meas_zfs_list = [2870.5, 2870.5, 2870.5, 2870.5]
+    meas_zfs_list = [2870, 2870, 2870, 2870]
     meas_splitting_list = [0.0, 6, 6, 12]
 
     # e_field = np.array([0.1, -0.001, -0.5])

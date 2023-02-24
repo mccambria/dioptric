@@ -208,7 +208,7 @@ def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
     )
 
 
-def do_pulsed_resonance_batch(nv_list, temp, freq_range = None):
+def do_pulsed_resonance_batch(nv_list, temp, freq_range=None):
 
     num_steps = 51
 
@@ -352,7 +352,6 @@ if __name__ == "__main__":
     nv10["coords"] = ref_coords + np.array([0.106, 0.19, 0])
     nv10["name"] =  f"{sample_name}-nv10_zfs_vs_t"
 
-
     # fmt: on
 
     nv_sig = nv8
@@ -398,10 +397,10 @@ if __name__ == "__main__":
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
 
-        # for nv in nv_list:
-        #     # if tool_belt.safe_stop():
-        #     #     break
-        #     # print(nv["coords"])
+        for nv in nv_list:
+            # if tool_belt.safe_stop():
+            #     break
+            print(nv["coords"])
         #     do_image_sample_zoom(nv)
 
         # do_optimize(nv_sig)
@@ -413,8 +412,8 @@ if __name__ == "__main__":
 
         # do_determine_standard_readout_params(nv_sig)
 
-        do_pulsed_resonance(nv_sig, 2.87, 0.060)
-        do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 500])
+        # do_pulsed_resonance(nv_sig, 2.87, 0.060)
+        # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 500])
         # do_four_point_esr(nv_sig, States.LOW)
 
         # temp = 295

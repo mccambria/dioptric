@@ -627,7 +627,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_02_22-11_56_38-15micro-nvref_zfs_vs_t"
+    file_name = "2023_02_22-20_19_40-15micro-nvref_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -660,19 +660,20 @@ if __name__ == "__main__":
 
     # Annotation
     nvs = [
-        [0.334, -0.068],
-        [0.403, 0.037],
-        [0.075, 0.111],
-        [-0.028, 0.153],
-        [-0.076, 0.04],
-        [-0.122, 0.065],
-        [0.064, -0.247],
-        [0.054, -0.294],
-        [0.471, -0.064],
-        [0.244, 0.172],
+        [0.182, -0.174],
+        [0.135, -0.164],
+        [-0.064, -0.022],
+        [0.042, 0.154],
+        [0.206, 0.19],
+        [0.091, -0.06],
     ]
+    nvs_temp = []
+    for el in nvs[:-1]:
+        nvs_temp.append([el[0] + 0.01, el[1] - 0.01])
+    nvs_temp.append(nvs[-1])
+    nvs = nvs_temp
     for ind in range(len(nvs)):
         nv = nvs[ind]
-        plt.plot(nv[0], nv[1], marker=f"${ind+6}$", color=kpl.KplColors.GREEN, ms=10)
+        plt.plot(nv[0], nv[1], marker=f"${ind+6}$", color="lime", ms=10)
 
     plt.show(block=True)
