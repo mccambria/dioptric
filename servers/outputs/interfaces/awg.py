@@ -35,7 +35,7 @@ class AWG(ABC):
         Load an arbitrary list of IQ phases
         '''
 
-        phases_list = []
+        phases_list = [0]
 
         for el in phases:
             phases_list.append(el)
@@ -80,7 +80,8 @@ class AWG(ABC):
         '''
 
         phases = [0] + [0, pi / 2, 0, pi / 2] * num_dd_reps + [0]
-        phases = phases * 4
+        phases = phases * 2
+        phases = [0] + phases
 
         amp = self.iq_comp_amp
         self.load_iq(phases, amp)
@@ -98,7 +99,8 @@ class AWG(ABC):
             + [0, pi / 2, 0, pi / 2, pi / 2, 0, pi / 2, 0] * num_dd_reps
             + [0]
         )
-        phases = phases * 4
+        phases = phases * 2
+        phases = [0] + phases
 
         amp = self.iq_comp_amp
         self.load_iq(phases, amp)
@@ -118,7 +120,8 @@ class AWG(ABC):
         # phases = [0] +  [pi/2, 3*pi/2]*half_num_dd_reps + [0]###
         # phases = [0] +  [pi/2, -pi/2]*half_num_dd_reps + [0]###
 
-        phases = phases * 4
+        phases = phases * 2
+        phases = [0] + phases
         amp = self.iq_comp_amp
         self.load_iq(phases, amp)
         

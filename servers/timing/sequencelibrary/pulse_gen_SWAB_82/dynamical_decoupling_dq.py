@@ -406,7 +406,8 @@ def get_seq(pulse_streamer, config, args):
     
     # IQ modulation triggers
     train = [(delay_buffer - iq_delay_time, LOW),
-              (polarization_time,LOW),]
+             (iq_trigger_time, HIGH),
+             (polarization_time-iq_trigger_time, LOW)]
               # (uwave_buffer, LOW)]
     train.extend(uwave_iq_train_shrt)
     train.extend([

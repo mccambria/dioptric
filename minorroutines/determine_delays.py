@@ -98,8 +98,8 @@ def measure_delay(
             sig_gen_cxn.load_iq()
             sig_gen_cxn.uwave_on()
             awg_cxn = tool_belt.get_server_arb_wave_gen(cxn)
-            # awg_cxn.load_arb_phases([0, numpy.pi/2])
-            awg_cxn.load_arb_phases([numpy.pi/2, 0])
+            awg_cxn.load_arb_phases([0, numpy.pi/2])
+            # awg_cxn.load_arb_phases([numpy.pi/2, 0])
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
 
         counter_server.start_tag_stream()
@@ -393,17 +393,17 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[0.128, -0.359, 4.24],
-        "name": "{}-nv4_2023_01_16".format(sample_name,),
+            "coords":[-0.234, 0.464, 5.0] ,
+        "name": "{}-nv2_2023_02_22".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":40,
+        "expected_count_rate":30,
 
 
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
-          "spin_readout_dur": 300,
+          "spin_readout_dur": 360,
           "spin_pol_dur": 1000.0,
 
           "imaging_laser":green_laser,
@@ -418,12 +418,12 @@ if __name__ == "__main__":
 
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 53.5,
-        "resonance_LOW":2.81921,
-        "rabi_LOW":169,
-        "uwave_power_LOW": 8.8,
-        "resonance_HIGH":2.92159,
-        "rabi_HIGH":218,
-        "uwave_power_HIGH": 10,
+        "resonance_LOW":2.81980,
+        "rabi_LOW":71.404*2,
+        "uwave_power_LOW": -2,
+        "resonance_HIGH":2.92116,
+        "rabi_HIGH":54.28*2,
+        "uwave_power_HIGH": -2,
     }
 
 
@@ -486,9 +486,9 @@ if __name__ == "__main__":
 
 
     # uwave_delay
-    num_reps = int(2e5)
+    num_reps = int(1e5)
     # num_reps = int(1e4)
-    # delay_range = [-25, 175]
+    # delay_range = [-100, 200]
     delay_range = [545, 645]
     num_steps = 101
     # bnc 835
@@ -497,13 +497,13 @@ if __name__ == "__main__":
     state = States.HIGH
     with labrad.connect() as cxn:
         iq_delay(
-             cxn,
-             nv_sig,
-             state,
-             delay_range,
-             num_steps,
-             num_reps,
-         )
+              cxn,
+              nv_sig,
+              state,
+              delay_range,
+              num_steps,
+              num_reps,
+          )
         # uwave_delay(
         #     cxn,
         #     nv_sig,

@@ -625,7 +625,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_02_16-14_35_04-siena-nv_search"
+    file_name = "2023_02_22-12_46_29-ayrton12-nv_search"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -649,7 +649,7 @@ if __name__ == "__main__":
         x_label="V",
         y_label="V",
         cbar_label="kcps",
-        # vmax = 80,
+        vmax = 80,
         extent=extent,
     )
 

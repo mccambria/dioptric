@@ -207,7 +207,7 @@ def measurement(cxn,
             title = None,
             do_dq = False,
             inter_pulse_time = 30, # between SQ/DQ MW pulses
-            inter_uwave_buffer = 60): #between pulses making up one DQ pulse
+            inter_composite_time = 80): #between pulses making up one DQ pulse
     '''
     The basic building block to perform these measurements. Can apply 1, 2, or 3
     MW pulses, and returns counts from [ms=0, ms=+/-1, counts after mw pulses]
@@ -320,7 +320,7 @@ def measurement(cxn,
             seq_file = 'test_iq_pulse_errors_dq.py'
             seq_args = [gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high,
                         pulse_1_dur, pulse_2_dur, pulse_3_dur, 
-                        polarization_time, inter_pulse_time,inter_uwave_buffer,
+                        polarization_time, inter_pulse_time,inter_composite_time,
                         num_uwave_pulses, state_activ.value, state_proxy.value, laser_name, laser_power]    
         else:
             seq_file = 'test_iq_pulse_errors.py'
@@ -329,7 +329,7 @@ def measurement(cxn,
                     polarization_time, inter_pulse_time, num_uwave_pulses, state.value,  laser_name, laser_power]
         print(seq_args)
         print(iq_phases)
-        #return
+        # return
         counter_server.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         pulsegen_server.stream_immediate(
@@ -433,7 +433,7 @@ def measurement(cxn,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
                 'inter_pulse_time':inter_pulse_time,
-                'inter_uwave_buffer':inter_uwave_buffer,
+                'inter_composite_time':inter_composite_time,
                 # 'population': pop.tolist(),
                 'ref_0_avg': ref_0_avg,
                 'ref_H_avg': ref_H_avg,
@@ -602,7 +602,7 @@ def do_measurement(cxn,
             do_dq = False,
             plot = False,
             inter_pulse_time = 30, # between SQ/DQ MW pulses
-            inter_uwave_buffer = 60
+            inter_composite_time = 80
             ):
     '''
     shell function to run any of the 12 measurements:
@@ -756,7 +756,7 @@ def do_measurement(cxn,
                 title = title,
                 do_dq = do_dq,
                 inter_pulse_time = inter_pulse_time, # between SQ/DQ MW pulses
-                inter_uwave_buffer = inter_uwave_buffer)
+                inter_composite_time = inter_composite_time)
                 
     return pulse_error, pulse_error_ste
 
@@ -875,9 +875,11 @@ def do_impose_phase(cxn,
               nv_sig,
               num_runs,
               num_reps,
+              inter_composite_time,
               imposed_parameter = 'pi_y',
-              state=States.HIGH,
-              do_dq = False,):
+              state=States.LOW,
+              do_dq = False,
+              ):
         '''
         To test that the measurements are working, we can recreate Fig 1 from
         https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.105.077601
@@ -948,7 +950,8 @@ def do_impose_phase(cxn,
                                             pi_2_dt,
                                             state,
                                             do_dq,
-                                            plot = False)
+                                            plot = False,
+                                            inter_composite_time=inter_composite_time)
                 s_list.append(pulse_error)
                 ste_list.append(pulse_error_ste)
                 
@@ -992,7 +995,7 @@ def do_impose_phase(cxn,
                     'phases': phases.tolist(),
                     'phases-units': 'degrees',
                     'title': axis_title,
-                    
+                    'inter_composite_time':inter_composite_time,
                     'e_y_p_list':e_y_p_list,
                     'e_z_p_list':e_z_p_list,
                     'v_x_p_list':v_x_p_list,
@@ -1040,7 +1043,7 @@ def do_impose_pi_2_dur(cxn,
         pi_dt = 0
         # pi_2_dt = 0
         
-        dt_array = numpy.linspace(-30, 30, 5)
+        dt_array = numpy.linspace(-15, 15, 7)
         shuffle(dt_array)
         for dt in dt_array:
             s_list = []
@@ -1136,7 +1139,7 @@ def do_impose_pi_dur(cxn,
         # pi_dt = 0
         pi_2_dt = 0
         
-        dt_array = numpy.linspace(-50, 50, 5)
+        dt_array = numpy.linspace(-50, 30, 9)
         shuffle(dt_array)
         for dt in dt_array:
             s_list = []
@@ -1171,8 +1174,8 @@ def do_impose_pi_dur(cxn,
             phi_err_list.append(errs_ste[2])
             chi_err_list.append(errs_ste[3])
         
-        print(phi_p_list)
-        print(chi_p_list)
+        print(phi_list)
+        print(chi_list)
         fig_phi_p = plot_errors_vs_changed_duration(dt_array + nv_sig["pi_pulse_X_{}".format(state.name)],
                                     "pi_x Phi",
                                     phi_list,
@@ -1386,6 +1389,68 @@ def vary_pi_2_y_pulse(cxn,
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
     
+def vary_time_btween_composite_pulses(cxn, nv_sig, start_time, end_time, num_steps, int_phase = 0):
+    pulse_error_list = []
+    pulse_ste_list = []
+    taus = numpy.linspace(start_time,end_time,num_steps)
+    phase = int_phase*pi/180
+    for t in taus:
+        s6, s6_ste = do_measurement(cxn, 
+                      nv_sig,
+                      num_runs,
+                      num_reps,
+                      6,
+                      pi_y_ph=0,
+                      pi_x_ph=0,
+                      pi_2_y_ph= phase,
+                      pi_dt = 0,
+                      pi_2_dt = 0,
+                      state=States.HIGH,
+                      do_dq = True,
+                      plot = False,
+                      inter_composite_time = t)
+        s7, s7_ste  = do_measurement(cxn, 
+                      nv_sig,
+                      num_runs,
+                      num_reps,
+                      7,
+                      pi_y_ph=0,
+                      pi_x_ph=0,
+                      pi_2_y_ph= phase,
+                      pi_dt = 0,
+                      pi_2_dt = 0,
+                      state=States.HIGH,
+                      do_dq = True,
+                      plot = False,
+                      inter_composite_time = t)
+        vxp = -(s7 + s6)/2
+        vxp_err = numpy.sqrt(s6_ste**2 + s7_ste**2)/2
+        pulse_error_list.append(vxp)
+        pulse_ste_list.append(vxp_err)
+    fig, ax = plt.subplots()
+    ax.errorbar(taus,pulse_error_list, yerr = pulse_ste_list, fmt= 'ro' )
+    #ax.set_xlabel('Wait time between pulses (ns)')
+    ax.set_xlabel('Wait time between DQ pulses (ns) with {} deg phase'.format(int_phase))
+    ax.set_ylabel('Error')
+    ax.set_title('pi/2_y error')
+    timestamp = tool_belt.get_time_stamp()
+    
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'phase': phase,
+                'taus': taus.tolist(),
+                'taus-units': 'ns',
+                
+                'pulse_error_list':pulse_error_list,
+                'pulse_ste_list':pulse_ste_list,
+                }
+
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig, file_path)
+    
+    
 # %%
 if __name__ == "__main__":
     sample_name = "siena"
@@ -1397,17 +1462,17 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-            "coords":[0.0, 0.578, 4.1],
-        "name": "{}-nv5_2023_02_17".format(sample_name,),
+            "coords":[0.235, -0.348, 4.3],
+        "name": "{}-nv0_2023_02_24".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":21,
+        "expected_count_rate":27,
         
         
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
-          "spin_readout_dur": 320,
+          "spin_readout_dur": 400,
           "spin_pol_dur": 1000.0,
         
           "imaging_laser":green_laser,
@@ -1422,74 +1487,92 @@ if __name__ == "__main__":
         
         "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": 53.5,
-        "resonance_LOW":2.81954,
+        "resonance_LOW":2.82004,
         # "rabi_LOW":110*2,     
         "uwave_power_LOW": -2,   
-        "resonance_HIGH":2.92137,
+        "resonance_HIGH":2.92101,
         # "rabi_HIGH":110*2,
         "uwave_power_HIGH": -2,
         
     
         #DQ
-    "pi_pulse_X_LOW": 76.87 ,
-    "pi_on_2_pulse_X_LOW":  37.47,
-    "pi_pulse_Y_LOW": 76.87 ,
-    "pi_on_2_pulse_Y_LOW": 37.47 ,
+    "pi_pulse_X_LOW":69.71  ,
+    "pi_on_2_pulse_X_LOW":  34.41,
+    "pi_pulse_Y_LOW": 69.71   ,
+    "pi_on_2_pulse_Y_LOW": 34.41 ,
     
-    "pi_pulse_X_HIGH": 57.56 ,
-    "pi_on_2_pulse_X_HIGH":  31.93 ,
-    "pi_pulse_Y_HIGH":  57.56  ,
-    "pi_on_2_pulse_Y_HIGH":  31.93 ,
+    "pi_pulse_X_HIGH":56.38,
+    "pi_on_2_pulse_X_HIGH":  28.75 ,
+    "pi_pulse_Y_HIGH":  56.38  ,
+    "pi_on_2_pulse_Y_HIGH": 28.75 ,
     }  
     
+    import majorroutines.image_sample as image_sample
     with labrad.connect() as cxn:
         num_runs = 20
         num_reps = int(5e4)
-        # pulse_error_list = []
-        # pulse_ste_list = []
-        # taus = [457]#numpy.linspace(0,100,21)
-        # for t in taus:
-        #     pulse_error, pulse_error_ste = do_measurement(cxn, 
-        #                   nv_sig,
-        #                   num_runs,
-        #                   num_reps,
-        #                   7,
-        #                   pi_y_ph=0,
-        #                   pi_x_ph=0,
-        #                   pi_2_y_ph= 0,
-        #                   pi_dt = 0,
-        #                   pi_2_dt = 0,
-        #                   state=States.HIGH,
-        #                   do_dq = True,
-        #                   plot = False,
-        #                   inter_uwave_buffer = t)
-        #     pulse_error_list.append(pulse_error)
-        #     pulse_ste_list.append(pulse_error_ste)
-            
-        # fig, ax = plt.subplots()
-        # ax.errorbar(taus,pulse_error_list, yerr = pulse_ste_list, fmt= 'ro' )
-        # ax.set_xlabel('Wait time between DQ pulses (ns)')
-        # ax.set_ylabel('Error')
-        # ax.set_title('pi/2_y - pi/2_x')
-            
+        
+        # for t in numpy.linspace(80,200, 17):
+        #  inter_composite_time=t
+        #  do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_2_y',  do_dq = True)
+        # do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_y', do_dq = True)
+        # do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_x', do_dq = True)
+        
+        scan_range=0.1
+        num_steps=35
+        #image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+        # vary_time_btween_composite_pulses(cxn, nv_sig, 0, 300, 41, int_phase = 0)
+      #  image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+      #  vary_time_btween_composite_pulses(cxn, nv_sig, 0, 300, 41, int_phase = 30)
+      #  image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+      #  vary_time_btween_composite_pulses(cxn, nv_sig, 0, 300, 41, int_phase = -30)
+      #  image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+       # vary_time_btween_composite_pulses(cxn, nv_sig, 400, 500, 101, int_phase = 0)
+        #image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+       # vary_time_btween_composite_pulses(cxn, nv_sig, 400, 500, 101, int_phase = -30)
+        # image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+       # vary_time_btween_composite_pulses(cxn, nv_sig, 400, 500, 101, int_phase = 30)
+        # image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+        #vary_time_btween_composite_pulses(cxn, nv_sig, 800, 1000, 41, int_phase = 0)
+        # image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+       # vary_time_btween_composite_pulses(cxn, nv_sig, 800, 1000, 41, int_phase = 30)
+        # image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+        #vary_time_btween_composite_pulses(cxn, nv_sig, 800, 1000, 41, int_phase = -30)
+        # image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+        
+        if False:
+         s6, s6_ste = do_measurement(cxn, 
+                  nv_sig,
+                       num_runs,
+                       num_reps,
+                       6,
+                       pi_y_ph=0,
+                       pi_x_ph=0,
+                      pi_2_y_ph= 0,
+                       pi_dt = 0,
+                       pi_2_dt = 0,
+                       state=States.HIGH,
+                       do_dq = True,
+                       plot = False,
+                       inter_uwave_buffer = 20)
         
         ### measure the phase errors, will print them out
-        # measure_pulse_errors(cxn, nv_sig, num_runs,num_reps, pi_y_ph = 0, pi_x_ph =0,pi_2_y_ph = 0,state=States.HIGH, do_dq = True)
+       # measure_pulse_errors(cxn, nv_sig, num_runs,num_reps, pi_y_ph = -30*pi/180, pi_x_ph =0,pi_2_y_ph = 0,state=States.HIGH, do_dq = True)
         
         
         ### Run a test by intentionally adding phase to pi_y pulses and 
         ### see that in the extracted pulse errors
-       # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = False)
+        do_impose_phase(cxn, nv_sig, num_runs, num_reps,80, imposed_parameter = 'pi_2_y',  do_dq = True)
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = False)
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = False)
         
-        do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = True)
-       # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = True)
-        #do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = True)
+     #   do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = True)
+      #  do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = True)
+     #   do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = True)
         
-        # do_impose_pi_2_dur(cxn, nv_sig,num_runs, num_reps, state=States.HIGH, do_dq = True,)
+        #do_impose_pi_2_dur(cxn, nv_sig,num_runs, num_reps, state=States.HIGH, do_dq = True,)
         
-        # do_impose_pi_dur(cxn,  nv_sig, num_runs,num_reps, state=States.HIGH,do_dq = False,)
+        #do_impose_pi_dur(cxn,  nv_sig, num_runs,num_reps, state=States.HIGH,do_dq = False,)
         
         # file ='2023_02_13-15_23_19-siena-nv4_2023_01_16'
         # replot_imposed_phases(file)
@@ -1497,8 +1580,9 @@ if __name__ == "__main__":
         # do_two_pi_2_pulse_vary_phase(cxn,  nv_sig, num_runs,num_reps)
         
         # vary_pi_2_y_pulse(cxn,  nv_sig, num_runs,num_reps, do_dq = True)
+        
         if False:
-         phases = numpy.linspace(0, 360, 13)
+         phases = numpy.linspace(0, 360, 7)
          s_list = []
          s_err_list = []
          for p in phases:

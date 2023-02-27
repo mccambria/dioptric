@@ -88,7 +88,7 @@ def find_uwave_delay(file):
     kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, size=size)
 
 #%%%
-file = '2023_02_13-13_01_05-siena-nv4_2023_01_16'
+file = '2023_02_22-09_46_30-siena-nv5_2023_02_17'
 find_uwave_delay(file)
 
 

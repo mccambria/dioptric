@@ -50,7 +50,7 @@ def get_seq(pulse_streamer, config, args):
     wait_time = config['CommonDurations']['uwave_buffer']
     aom_delay_time = config['Optics'][laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen]['delay']
-    iq_trigger_time = numpy.int64(min(pi_pulse, 10))
+    iq_trigger_time = 100
     
     pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_apd_gate = pulser_wiring['do_apd_gate']
@@ -60,7 +60,7 @@ def get_seq(pulse_streamer, config, args):
     
     # Include a buffer on the front end so that we can delay channels that
     # should start off the sequence HIGH
-    front_buffer = max(max_tau+pi_pulse, aom_delay_time, rf_delay_time)
+    front_buffer = max(max_tau+pi_pulse, aom_delay_time, rf_delay_time) + iq_trigger_time
     
     seq = Sequence()
     
@@ -92,7 +92,6 @@ def get_seq(pulse_streamer, config, args):
              ]
     tool_belt.process_laser_seq(pulse_streamer, seq, config, 
                                 laser_name, laser_power, train)
-    
     period = 0
     for el in train:
         period += el[0]
@@ -115,16 +114,18 @@ def get_seq(pulse_streamer, config, args):
     print(period)
     
     # Vary the position of the iq pulses
-    train = [(front_buffer  - tau, LOW),
+    train = [(iq_trigger_time, HIGH),
+             (front_buffer  - tau - iq_trigger_time, LOW),
              (iq_trigger_time, HIGH),
              (polarization - iq_trigger_time, LOW),
              (wait_time, LOW),
              (iq_trigger_time, HIGH),
-             (pi_pulse - iq_trigger_time, LOW), 
-             (wait_time, LOW),
-             (polarization + tau, LOW)
+             (pi_pulse - iq_trigger_time + 
+              wait_time + 
+              polarization + tau, LOW)
              ]
     seq.setDigital(pulser_do_arb_wave_trigger, train)
+    print(train)
     
     period = 0
     for el in train:
@@ -146,8 +147,8 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config) 
     
-    #tau, max_tau, readout, pi_pulse, polarization = durations
-    args = [100, 10000.0, 300, 300, 1, 3, 'integrated_520', None]
+    # tau, max_tau, readout, pi_pulse, polarization, state, laser_name, laser_power 
+    args = [0, 500.0, 300, 50, 300, 3, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence
