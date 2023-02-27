@@ -39,12 +39,12 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 0.4
-    num_steps = 90
+    # scan_range = 0.4
+    # num_steps = 90
     # num_steps = 120
 
-    # scan_range = 0.5
-    # num_steps = 90
+    scan_range = 0.5
+    num_steps = 90
     # num_steps = 150
 
     # scan_range = 0.3
@@ -99,8 +99,8 @@ def do_optimize(nv_sig):
 def do_stationary_count(
     nv_sig,
     disable_opt=None,
-    nv_minus_initialization=False,
-    nv_zero_initialization=False,
+    nv_minus_init=False,
+    nv_zero_init=False,
 ):
 
     run_time = 3 * 60 * 10**9  # ns
@@ -109,8 +109,8 @@ def do_stationary_count(
         nv_sig,
         run_time,
         disable_opt=disable_opt,
-        nv_minus_initialization=nv_minus_initialization,
-        nv_zero_initialization=nv_zero_initialization,
+        nv_minus_init=nv_minus_init,
+        nv_zero_init=nv_zero_init,
     )
 
 
@@ -213,23 +213,23 @@ def do_pulsed_resonance_batch(nv_list, temp, freq_range = None):
     num_steps = 51
 
     # Microdiamond
-    # num_reps = 1e2
-    # num_runs = 32
-    # if freq_range is None:
-    #     freq_range = 0.060
-
-    # Single
-    num_reps = 5e4
+    num_reps = 1e2
     num_runs = 32
     if freq_range is None:
-        freq_range = 0.020
+        freq_range = 0.060
+
+    # Single
+    # num_reps = 5e4
+    # num_runs = 32
+    # if freq_range is None:
+    #     freq_range = 0.020
         # freq_range = 0.040
 
     # num_reps = 50
     # num_runs = 8
 
     uwave_power = 10
-    uwave_pulse_dur = 200
+    uwave_pulse_dur = 100
 
     freq_center = cambria_fixed(temp)
     # freq_center = 2.8773
@@ -307,8 +307,8 @@ if __name__ == "__main__":
     # fmt: off
     
     sample_name = "15micro"
-    z_coord = 4.5
-    ref_coords = [0.1, 0.0, z_coord]
+    z_coord = 5.8
+    ref_coords = [0.121, 0.456, z_coord]
     ref_coords = np.array(ref_coords)
     
     nvref = {
@@ -333,33 +333,33 @@ if __name__ == "__main__":
         }
     
     nv6 = copy.deepcopy(nvref)
-    nv6["coords"] = ref_coords + np.array([0.082, -0.174, 0])
+    nv6["coords"] = ref_coords + np.array([0.104, -0.136, 0])
     nv6["name"] =  f"{sample_name}-nv6_zfs_vs_t"
     
     nv7 = copy.deepcopy(nvref)
-    nv7["coords"] = ref_coords + np.array([0.035, -0.164, 0])
+    nv7["coords"] = ref_coords + np.array([0.059, -0.120, 0])
     nv7["name"] =  f"{sample_name}-nv7_zfs_vs_t"
     
     nv8 = copy.deepcopy(nvref)
-    nv8["coords"] = ref_coords + np.array([-0.164, -0.022, 0])
+    nv8["coords"] = ref_coords + np.array([-0.139, 0.022, 0])
     nv8["name"] =  f"{sample_name}-nv8_zfs_vs_t"
     
     nv9 = copy.deepcopy(nvref)
-    nv9["coords"] = ref_coords + np.array([-0.058,  0.154, 0])
+    nv9["coords"] = ref_coords + np.array([-0.030, 0.195, 0])
     nv9["name"] =  f"{sample_name}-nv9_zfs_vs_t"
     
-    nv10 = copy.deepcopy(nvref)
-    nv10["coords"] = ref_coords + np.array([0.106, 0.19, 0])
-    nv10["name"] =  f"{sample_name}-nv10_zfs_vs_t"
+    nv11 = copy.deepcopy(nvref)
+    nv11["coords"] = ref_coords
+    nv11["name"] =  f"{sample_name}-nv11_zfs_vs_t"
 
 
     # fmt: on
 
-    nv_sig = nv8
-    # nv_sig = nvref
+    # nv_sig = nv8
+    nv_sig = nvref
     bg_coords = np.array(nv_sig["coords"]) + np.array([0.04, -0.06, 0])
-    nv_list = [nv6, nv7, nv8, nv9, nv10]
-    # nv_list = [nv10, nv11]
+    nv_list = [nv6, nv7, nv8, nv9, nv11]
+    # nv_list = [nv9]
 
     ### Functions to run
 
@@ -373,8 +373,8 @@ if __name__ == "__main__":
         # with labrad.connect() as cxn:
         #     cxn.pos_xyz_ATTO_piezos.write_xy(5, 3)
 
-        with labrad.connect() as cxn:
-            positioning.set_drift(cxn, [0.0, 0.0, 0])  # Totally reset
+        # with labrad.connect() as cxn:
+        #     positioning.set_drift(cxn, [0.0, 0.0, 0])  # Totally reset
         #     drift = positioning.get_drift(cxn)
         #     positioning.set_drift(cxn, [0.0, 0.0, drift[2]])  # Keep z
         #     positioning.set_drift([drift[0], drift[1], 0.0])  # Keep xy
@@ -399,8 +399,8 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig)
 
         # for nv in nv_list:
-        #     # if tool_belt.safe_stop():
-        #     #     break
+        #     if tool_belt.safe_stop():
+        #         break
         #     # print(nv["coords"])
         #     do_image_sample_zoom(nv)
 
@@ -413,13 +413,13 @@ if __name__ == "__main__":
 
         # do_determine_standard_readout_params(nv_sig)
 
-        do_pulsed_resonance(nv_sig, 2.87, 0.060)
-        do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 500])
+        # do_pulsed_resonance(nv_sig, 2.87, 0.060)
+        # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 500])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        # temp = 295
-        # shuffle(nv_list)
-        # do_pulsed_resonance_batch(nv_list, temp, freq_range=0.020)
+        temp = 435
+        shuffle(nv_list)
+        do_pulsed_resonance_batch(nv_list, temp, freq_range=0.060)
         # shuffle(nv_list)
         # do_pulsed_resonance_batch(nv_list, temp, freq_range=0.040)
         # do_rabi_batch(nv_list)

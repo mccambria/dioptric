@@ -218,14 +218,14 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     do_plot = True
-    target = 370
+    target = 430
     pid_coeffs = [0.5, 0.01, 0]
     integral_max = 2500
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
     # integral_bootstrap = 0.0
-    integral_bootstrap = 0.7 * integral_max
-    # integral_bootstrap = 0.2 * integral_max
+    # integral_bootstrap = 0.7 * integral_max
+    integral_bootstrap = 0.2 * integral_max
     # integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
