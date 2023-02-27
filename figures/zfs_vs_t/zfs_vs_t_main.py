@@ -794,16 +794,22 @@ def main():
     plot_data = True
     plot_residuals = False
     hist_residuals = False  # Must specify nv_to_plot down below
-    condense_all = True
-    condense_samples = False
+    condense_all = False
+    condense_samples = True
     plot_prior_models = False
     desaturate_prior = False
     plot_new_model = True
     toyli_extension = False
 
-    skip_lambda = lambda point: point["Skip"]
+    # skip_lambda = lambda point: point["Skip"]
     # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
-    # skip_lambda = lambda point: point["Skip"] or not point["Monitor temp (K)"] >= 296
+    skip_lambda = lambda point: point["Skip"] or point["Sample"] != "15micro"
+    # skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 296
+    # skip_lambda = (
+    #     lambda point: point["Skip"]
+    #     or point["Sample"] != "Wu"
+    #     or point["Monitor temp (K)"] >= 296
+    # )
 
     ###
 
@@ -888,6 +894,7 @@ def main():
         *popt,
         # *guess_params,
     )
+    print(f"Predicted ZFS at 296 K: {cambria_lambda(296)}")
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
@@ -1087,8 +1094,8 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # main()
-    refit_experiments()
+    main()
+    # refit_experiments()
     # derivative_comp()
 
     plt.show(block=True)
