@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
     root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2023_02"
     file_list = [
-        "2023_02_16-17_14_04-wu-nv23_region5.txt",
+        "2023_02_24-10_33_55-15micro-nv7_zfs_vs_t.txt",
     ]
     paths = [root / el for el in file_list]
     for el in paths:
