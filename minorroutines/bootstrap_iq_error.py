@@ -490,32 +490,32 @@ def solve_errors(meas_list):
     v_z = - (A3 - 2*phi_p)/2
     e_z = (B3 - 2*chi_p)/2
     
-    S = meas_list[6:12]
-    e_y_p = 0
-    v_x_p = -(S[0]+S[1])/2
-    e_y = (S[2]+S[3]-2*v_x_p)/4
-    v_x = (S[4]+S[5]+2*v_x_p)/4
-    v_z_p = -(S[0] - S[1] + S[2] - S[3])/4
-    e_z_p = -(S[0] - S[1] - S[2] + S[3])/4
+    # S = meas_list[6:12]
+    # e_y_p = 0
+    # v_x_p = -(S[0]+S[1])/2
+    # e_y = (S[2]+S[3]-2*v_x_p)/4
+    # v_x = (S[4]+S[5]+2*v_x_p)/4
+    # v_z_p = -(S[0] - S[1] + S[2] - S[3])/4
+    # e_z_p = -(S[0] - S[1] - S[2] + S[3])/4
     
     
-    # S = meas_list[6:11]
-    # M = numpy.array([
-    #         [-1,-1,-1,0,0],
-    #         [1,-1,1,0,0],
-    #         [1,1,-1,2,0],
-    #         [-1,1,1,2,0],
-    #         [-1,-1,1,0,2],
-    #         # [1,-1,-1,0,2] #exclude last equation
-    #       ])
-    # X = numpy.linalg.inv(M).dot(S)
+    S = meas_list[6:11]
+    M = numpy.array([
+            [-1,-1,-1,0,0],
+            [1,-1,1,0,0],
+            [1,1,-1,2,0],
+            [-1,1,1,2,0],
+            [-1,-1,1,0,2],
+            # [1,-1,-1,0,2] #exclude last equation
+          ])
+    X = numpy.linalg.inv(M).dot(S)
     
-    # e_y_p = 0 # we are setting this value to 0
-    # e_z_p = X[0]
-    # v_x_p = X[1]
-    # v_z_p = X[2]
-    # e_y = X[3]
-    # v_x = X[4]
+    e_y_p = 0 # we are setting this value to 0
+    e_z_p = X[0]
+    v_x_p = X[1]
+    v_z_p = X[2]
+    e_y = X[3]
+    v_x = X[4]
     
     return [phi_p, chi_p, phi, chi, v_z, e_z,  e_y_p, e_z_p, v_x_p,v_z_p,  e_y, v_x]
 
@@ -601,7 +601,7 @@ def do_measurement(cxn,
             state=States.HIGH,
             do_dq = False,
             plot = False,
-            inter_pulse_time = 30, # between SQ/DQ MW pulses
+            inter_pulse_time = 3, # between SQ/DQ MW pulses
             inter_composite_time = 80
             ):
     '''
@@ -751,7 +751,7 @@ def do_measurement(cxn,
                 pulse_3_dur,
                 num_runs,
                 num_reps,
-                state=States.HIGH,
+                state=state,
                 do_plot = plot,
                 title = title,
                 do_dq = do_dq,
@@ -877,7 +877,7 @@ def do_impose_phase(cxn,
               num_reps,
               inter_composite_time,
               imposed_parameter = 'pi_y',
-              state=States.LOW,
+              state=States.HIGH,
               do_dq = False,
               ):
         '''
@@ -1450,6 +1450,210 @@ def vary_time_btween_composite_pulses(cxn, nv_sig, start_time, end_time, num_ste
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
     
+def do_vary_composite_timing(cxn, 
+                             nv_sig,
+                         num_runs,
+                         num_reps,
+                        time_range,
+                        num_steps,
+                         state=States.HIGH,
+                         pi_y_ph = 0,
+                         pi_x_ph = 0,
+                         pi_2_y_ph = 0,
+                         pi_dt = 0,
+                         pi_2_dt = 0,
+                         do_dq = True,
+                         plot = False,
+                         ret_ste = True,):
+    '''
+    This function runs all 12 measurements, and returns the measured signals
+    Does this for various timing between composite pulses
+    '''
+    do_dq = True
+    phi_list = []
+    chi_list = []
+    phi_p_list = []
+    chi_p_list = []
+    
+    v_z_list = []
+    e_z_list = []
+    
+    e_y_p_list = []
+    e_z_p_list = []
+    v_x_p_list = []
+    v_z_p_list = []
+    e_y_list = []
+    v_x_list = []
+    
+    
+    phi_err_list = []
+    chi_err_list = []
+    phi_p_err_list = []
+    chi_p_err_list = []
+    
+    v_z_err_list = []
+    e_z_err_list = []
+    
+    e_y_p_err_list = []
+    e_z_p_err_list = []
+    v_x_p_err_list = []
+    v_z_p_err_list = []
+    e_y_err_list = []
+    v_x_err_list = []
+    
+    t_list = numpy.linspace(time_range[0], time_range[-1], num_steps)
+    
+    measurement_ind_list = [el for el in range(12)]
+    
+    shuffle(t_list)
+    for t_comp in t_list:
+        s_list = []
+        ste_list = []
+        for ind in measurement_ind_list:
+            pulse_error, pulse_error_ste = do_measurement(cxn, 
+                                        nv_sig,
+                                        num_runs,
+                                        num_reps,
+                                        ind,
+                                        pi_y_ph,
+                                        pi_x_ph,
+                                        pi_2_y_ph,
+                                        pi_dt,
+                                        pi_2_dt,
+                                        state,
+                                        do_dq,
+                                        plot,
+                                        inter_composite_time = t_comp)
+            s_list.append(pulse_error)
+            ste_list.append(pulse_error_ste)
+            
+        pulse_errors = solve_errors(s_list ) 
+        pulse_ste = calc_pulse_error_ste(ste_list ) 
+        
+        phi_p, chi_p, phi, chi, v_z, e_z,  e_y_p, e_z_p, v_x_p,v_z_p,  e_y, v_x = pulse_errors
+        phi_p_ste, chi_p_ste, phi_ste, chi_ste, v_z_ste, e_z_ste,  e_y_p_ste, \
+                e_z_p_ste, v_x_p_ste,v_z_p_ste,  e_y_ste, v_x_ste = pulse_ste
+                
+        phi_p_list.append(phi_p)
+        chi_p_list.append(chi_p)
+        phi_list.append(phi)
+        chi_list.append(chi)
+        v_z_list.append(v_z)
+        e_z_list.append(e_z)
+        e_y_p_list.append(e_y_p)
+        e_z_p_list.append(e_z_p)
+        v_x_p_list.append(v_x_p)
+        v_z_p_list.append(v_z_p)
+        e_y_list.append(e_y)
+        v_x_list.append(v_x)
+                
+        phi_p_err_list.append(phi_p_ste)
+        chi_p_err_list.append(chi_p_ste)
+        phi_err_list.append(phi_ste)
+        chi_err_list.append(chi_ste)
+        v_z_err_list.append(v_z_ste)
+        e_z_err_list.append(e_z_ste)
+        e_y_p_err_list.append(e_y_p_ste)
+        e_z_p_err_list.append(e_z_p_ste)
+        v_x_p_err_list.append(v_x_p_ste)
+        v_z_p_err_list.append(v_z_p_ste)
+        e_y_err_list.append(e_y_ste)
+        v_x_err_list.append(v_x_ste)
+        
+    fig_pix, ax = plt.subplots()
+    ax.errorbar(t_list,phi_list, yerr = phi_err_list, fmt= 'ro', label = 'Rotation angle error' )
+    ax.errorbar(t_list,e_y_list, yerr = e_y_err_list, fmt= 'bo', label = 'Error along Y axis'  )
+    ax.errorbar(t_list,e_z_list, yerr = e_z_err_list, fmt= 'go', label = 'Error along Z axis' )
+    ax.set_xlabel('Time between composite pulses (ns)')
+    ax.set_ylabel('Error')
+    ax.set_title('Pi_x pulse')
+    ax.legend()
+    
+    fig_piy, ax = plt.subplots()
+    ax.errorbar(t_list,chi_list, yerr = chi_err_list, fmt= 'ro', label = 'Rotation angle error' )
+    ax.errorbar(t_list,v_x_list, yerr = v_x_err_list, fmt= 'bo', label = 'Error along X axis'  )
+    ax.errorbar(t_list,v_z_list, yerr = v_z_err_list, fmt= 'go', label = 'Error along Z axis' )
+    ax.set_xlabel('Time between composite pulses (ns)')
+    ax.set_ylabel('Error')
+    ax.set_title('Pi_y pulse')
+    ax.legend()
+    
+    
+    fig_pi2x, ax = plt.subplots()
+    ax.errorbar(t_list,phi_p_list, yerr = phi_p_err_list, fmt= 'ro', label = 'Rotation angle error' )
+    # ax.errorbar(t_list,e_y_p_list, yerr = e_y_p_err_list, fmt= 'bo', label = 'Error along Y axis'  )
+    ax.errorbar(t_list,e_z_p_list, yerr = e_z_p_err_list, fmt= 'go', label = 'Error along Z axis' )
+    ax.set_xlabel('Time between composite pulses (ns)')
+    ax.set_ylabel('Error')
+    ax.set_title('Pi/2_x pulse')
+    ax.legend()
+    
+    fig_pi2y, ax = plt.subplots()
+    ax.errorbar(t_list,chi_p_list, yerr = chi_p_err_list, fmt= 'ro', label = 'Rotation angle error' )
+    ax.errorbar(t_list,v_x_p_list, yerr = v_x_p_err_list, fmt= 'bo', label = 'Error along X axis'  )
+    ax.errorbar(t_list,v_z_p_list, yerr = v_z_p_err_list, fmt= 'go', label = 'Error along Z axis' )
+    ax.set_xlabel('Time between composite pulses (ns)')
+    ax.set_ylabel('Error')
+    ax.set_title('Pi/2_y pulse')
+    ax.legend()
+    
+    
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'num_runs': num_runs,
+                'num_reps': num_reps,
+                'time_range': time_range,
+                'num_steps': num_steps,
+                'state': state.name,
+                
+                't_list': t_list.tolist(),
+                'phi_list':phi_list,
+                'phi_err_list':phi_err_list,
+                'e_y_list':e_y_list,
+                'e_y_err_list':e_y_err_list,
+                'e_z_list':e_z_list,
+                'e_z_err_list':e_z_err_list,
+                
+                'chi_list':chi_list,
+                'chi_err_list':chi_err_list,
+                'v_x_list':v_x_list,
+                'v_x_err_list':v_x_err_list,
+                'v_z_list':v_z_list,
+                'v_z_err_list':v_z_err_list,
+                
+                'phi_p_list':phi_p_list,
+                'phi_p_err_list':phi_p_err_list,
+                'e_y_p_list':e_y_p_list,
+                'e_y_p_err_list':e_y_p_err_list,
+                'e_z_p_list':e_z_p_list,
+                'e_z_p_err_list':e_z_p_err_list,
+                
+                'chi_p_list':chi_p_list,
+                'chi_p_err_list':chi_p_err_list,
+                'v_x_p_list':v_x_p_list,
+                'v_x_p_err_list':v_x_p_err_list,
+                'v_z_p_list':v_z_p_list,
+                'v_z_p_err_list':v_z_p_err_list,
+                }
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig_pix, file_path)
+    time.sleep(2)
+    timestamp = tool_belt.get_time_stamp()
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig_piy, file_path)
+    time.sleep(2)
+    timestamp = tool_belt.get_time_stamp()
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig_pi2x, file_path)
+    time.sleep(2)
+    timestamp = tool_belt.get_time_stamp()
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    tool_belt.save_figure(fig_pi2y, file_path)
+    
+    
     
 # %%
 if __name__ == "__main__":
@@ -1462,17 +1666,17 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-            "coords":[0.235, -0.348, 4.3],
+            "coords":[-0.112, -0.26, 4.25],
         "name": "{}-nv0_2023_02_24".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":27,
+        "expected_count_rate":25,
         
         
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
-          "spin_readout_dur": 400,
+          "spin_readout_dur": 340,
           "spin_pol_dur": 1000.0,
         
           "imaging_laser":green_laser,
@@ -1512,9 +1716,9 @@ if __name__ == "__main__":
         num_runs = 20
         num_reps = int(5e4)
         
-        # for t in numpy.linspace(80,200, 17):
-        #  inter_composite_time=t
-        #  do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_2_y',  do_dq = True)
+        # for t in numpy.linspace(40,120, 9):
+        #   inter_composite_time=t
+        #   do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_2_y',  do_dq = True)
         # do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_y', do_dq = True)
         # do_impose_phase(cxn, nv_sig, num_runs, num_reps,inter_composite_time, imposed_parameter = 'pi_x', do_dq = True)
         
@@ -1556,17 +1760,28 @@ if __name__ == "__main__":
                        plot = False,
                        inter_uwave_buffer = 20)
         
+        if False:
+         do_vary_composite_timing(cxn, 
+                                     nv_sig,
+                                 num_runs,
+                                 num_reps,
+                                [0,500],
+                                51)
+        
         ### measure the phase errors, will print them out
        # measure_pulse_errors(cxn, nv_sig, num_runs,num_reps, pi_y_ph = -30*pi/180, pi_x_ph =0,pi_2_y_ph = 0,state=States.HIGH, do_dq = True)
         
         
         ### Run a test by intentionally adding phase to pi_y pulses and 
         ### see that in the extracted pulse errors
-        do_impose_phase(cxn, nv_sig, num_runs, num_reps,80, imposed_parameter = 'pi_2_y',  do_dq = True)
+        # do_impose_phase(cxn, nv_sig, num_runs, num_reps,80, imposed_parameter = 'pi_2_y',  do_dq = False)
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = False)
        # do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = False)
         
-     #   do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_2_y',  do_dq = True)
+       # 114, 228, 454, 285, 0
+        
+        do_impose_phase(cxn, nv_sig, num_runs, num_reps, 194,  imposed_parameter = 'pi_2_y',  do_dq = True)
+        #do_impose_phase(cxn, nv_sig, num_runs, num_reps,0,  imposed_parameter = 'pi_2_y',  do_dq = True)
       #  do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_y', do_dq = True)
      #   do_impose_phase(cxn, nv_sig, num_runs, num_reps, imposed_parameter = 'pi_x', do_dq = True)
         

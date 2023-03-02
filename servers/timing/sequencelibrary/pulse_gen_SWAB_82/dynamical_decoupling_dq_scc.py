@@ -71,8 +71,8 @@ def get_seq(pulse_streamer, config, args):
     scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
     # print(scc_ion_readout_buffer)
     back_buffer = 200
-    echo_buffer = 20
-    coh_buffer = 20
+    echo_buffer = 80
+    coh_buffer = 80
     delay_buffer = max(green_laser_delay_time,red_laser_delay_time, yellow_laser_delay_time
                        ,uwave_delay_low, uwave_delay_high, iq_delay_time, 100)
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse_low,pi_on_2_pulse_high , 10))
