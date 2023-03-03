@@ -89,7 +89,6 @@ def main(file_list, monitor_list, do_plot=False):
             ax.set_title(kpl.tex_escape(expt_file))
             expt_temps = [val - mean_expt_temp for val in expt_temps]
             kpl.plot_line(ax, expt_times, expt_temps)
-            kpl.tight_layout(fig)
 
     print(mean_temps)
     print(ptp_temps)
@@ -112,5 +111,11 @@ if __name__ == "__main__":
     # ]
     file_list = [el["ZFS file"] for el in data_points if not el["ZFS file"] == ""]
     monitor_list = [el["Monitor"] for el in data_points if not el["ZFS file"] == ""]
+
+    # file_list = [
+    #     "2023_02_24-18_21_33-15micro-nv6_zfs_vs_t",
+    #     "2023_02_24-17_26_14-15micro-nv7_zfs_vs_t",
+    # ]
+    # monitor_list = ["PT100"] * len(file_list)
 
     main(file_list, monitor_list, do_plot=False)
