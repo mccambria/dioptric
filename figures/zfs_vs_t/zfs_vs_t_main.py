@@ -25,6 +25,7 @@ from scipy.optimize import curve_fit
 import csv
 import pandas as pd
 import sys
+from analysis import three_level_rabi
 
 # fmt: off
 toyli_digitized = [300, 2.87, 309.9858044201037, 2.8690768841409784, 320.04280071681194, 2.868366259576263, 330.32149670254546, 2.8673945841666115, 340.3583384820696, 2.866304172245094, 350.05837349046874, 2.8655253065868678, 360.1625766242179, 2.8644972039180088, 370.064695695292, 2.8633133281175045, 380.2362601832661, 2.8622540708223165, 390.13837925434024, 2.8611013496481412, 399.9731369711893, 2.8600109377266243, 410.00997875071346, 2.858858216552449, 420.0468205302376, 2.857362794488654, 430.4878304351117, 2.856176937898957, 440.3899495061858, 2.8549015790086583, 450.02262316036, 2.8535619300765087, 460.1268262941091, 2.852066508012714, 469.96158401095823, 2.850633395201577, 480.5373166242823, 2.849387210148415, 490.30471298690645, 2.84789178808462, 500.2068320579806, 2.8465209845261414, 510.04158977482973, 2.844994407836017, 520.2805156170289, 2.843374367266906, 530.452080105003, 2.8417854813241243, 540.354199176077, 2.840258904634, 550.1215955387013, 2.838638864064889, 560.1584373182253, 2.837361524385398, 570.3300018061993, 2.8357103291899572, 580.2321208772735, 2.8341545786626967, 590.4036853652476, 2.8322813395045685, 600.0363590194218, 2.830756743603637, 610.005839444721, 2.829354785418829, 619.9079585157951, 2.8275789717180726, 630.4163297748942, 2.826052395027949, 640.3184488459683, 2.824556972964154, 650.2879292712674, 2.8227500046370686, 660.1269697755595, 2.821005345562641, 669.8900833507407, 2.8189160048094015, 680.4658159640647, 2.816922108724342, 690.5700190978139, 2.8151482758127777, 700.472138168888, 2.8134950998281454, 710.0374504688373, 2.812188586311517]
@@ -238,16 +239,16 @@ def refit_experiments():
     skip_lambda = (
         lambda point: point["Skip"]
         or point["ZFS file"] == ""
-        or point["Sample"] != "15micro"
-        or point["Setpoint temp (K)"] != ""
+        # or point["Sample"] != "15micro"
+        or point["Sample"] != "Wu"
+        # or point["Setpoint temp (K)"] != ""
         # or point["Setpoint temp (K)"] < 300
     )
 
     data_points = get_data_points(skip_lambda)
-    sample = "Wu"
-    # sample = "15micro"
-    # file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
     file_list = [el["ZFS file"] for el in data_points]
+    file_list = file_list[163:164]
+    # file_list = ["2022_12_01-11_55_03-15micro-nv1_zfs_vs_t"]
 
     ### Loop
 
@@ -267,8 +268,10 @@ def refit_experiments():
         sig_counts = data["sig_counts"]
         num_reps = data["num_reps"]
         nv_sig = data["nv_sig"]
+        sample = nv_sig["name"].split("-")[0]
         readout = nv_sig["spin_readout_dur"]
-        uwave_pulse_dur = data["uwave_pulse_dur"]
+        # uwave_pulse_dur = data["uwave_pulse_dur"]
+        uwave_pulse_dur = None
         try:
             norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
         except Exception as exc:
@@ -303,22 +306,45 @@ def refit_experiments():
 
         ### Sample-dependent fit functions and parameters
 
-        if sample == "Wu":
+        if sample == "wu":
 
-            fit_func = (
-                lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
-                    freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-                )
+            # line_func = (
+            #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
+            #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+            #     )
+            # )
+            # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
+            #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+            # )
+            # guess_params = [0.2, 5, freq_center]
+            # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
+            # guess_params = [0.4, 9, 2.8748]
+
+            line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
+                freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
             )
-            guess_params = [0.3, 1, freq_center]
+            guess_params = [0.2, 3, freq_center, 5]
+
+            # line_func = pesr.lorentzian_split
+            # guess_params = [0.3, 1, freq_center, 1]
+
+            # fit_func = lambda freq, contrast, rabi_freq, center: pesr.dip_sum(
+            #     freq, line_func, contrast, rabi_freq, center
+            # )
+            # popt = guess_params
 
         elif sample == "15micro":
 
-            # avg_splitting = 13.19 / 1000
             # fmt: off
             
-            fit_func = pesr.lorentzian_split
-            guess_params = [0.02, 1, freq_center, 6]
+            # line_func = lambda freq, contrast, rabi_freq, center, splitting, offset: three_level_rabi.incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, uwave_pulse_dur)
+            # guess_params = [0.05, 3, freq_center, 6, 0.005]
+
+            # line_func = pesr.lorentzian_split
+            # guess_params = [0.05, 3, freq_center, 6]
+
+            line_func = pesr.lorentzian_split_offset
+            guess_params = [0.05, 3, freq_center, 6, 0.005]
 
             # fmt: on
 
@@ -331,8 +357,10 @@ def refit_experiments():
                 num_steps,
                 norm_avg_sig,
                 norm_avg_sig_ste,
-                fit_func=fit_func,
+                line_func=line_func,
                 guess_params=guess_params,
+                # fit_func=fit_func,
+                # popt=popt,
             )
             if do_save:
                 file_path = raw_file_path.with_name((f"{file_name}-fit"))
@@ -348,7 +376,7 @@ def refit_experiments():
                 num_steps,
                 norm_avg_sig,
                 norm_avg_sig_ste,
-                fit_func=fit_func,
+                line_func=line_func,
                 guess_params=guess_params,
             )
         if table_popt is None:
@@ -397,6 +425,11 @@ def refit_experiments():
     zfs_vals = np.array(table_popt[2])
     zfs_errs = np.array(table_pste[2])
 
+    print()
+    print(np.mean(table_red_chi_sq))
+    print(np.min(table_red_chi_sq))
+    print(np.max(table_red_chi_sq))
+    print()
     print(zfs_vals)
     print()
     print(zfs_errs)
@@ -1054,8 +1087,8 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    main()
-    # refit_experiments()
+    # main()
+    refit_experiments()
     # derivative_comp()
 
     plt.show(block=True)

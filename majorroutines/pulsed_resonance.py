@@ -226,14 +226,14 @@ def create_raw_data_figure(
 
 
 def rabi_line(
-    freq, constrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True
+    freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True
 ):
     """Rabi lineshape"""
 
     rabi_freq_ghz = rabi_freq / 1000
     detuning = freq - res_freq
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
-    effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
+    effective_contrast = contrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
     if uwave_pulse_dur is None:
         uwave_pulse_dur = 1 / (2 * rabi_freq_ghz)
     angular_effective_rabi_freq = 2 * np.pi * effective_rabi_freq
@@ -289,6 +289,14 @@ def lorentzian_split(freq, contrast, hwhm, center, splitting):
     line_1 = lorentzian(freq, contrast, hwhm, center - splitting_ghz / 2)
     line_2 = lorentzian(freq, contrast, hwhm, center + splitting_ghz / 2)
     return line_1 + line_2
+
+
+def lorentzian_split_offset(freq, contrast, hwhm, center, splitting, offset):
+    """Normalized that the value at the center is the contrast"""
+    splitting_ghz = splitting / 1000
+    line_1 = lorentzian(freq, contrast, hwhm, center - splitting_ghz / 2)
+    line_2 = lorentzian(freq, contrast, hwhm, center + splitting_ghz / 2)
+    return line_1 + line_2 + offset
 
 
 def lorentzian_sum(freq, contrast, hwhm, center, splitting_mag):
