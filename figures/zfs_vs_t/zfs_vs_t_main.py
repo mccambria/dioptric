@@ -256,7 +256,26 @@ def refit_experiments():
     data_points = get_data_points(skip_lambda)
     file_list = [el["ZFS file"] for el in data_points]
     # file_list = file_list[163:164]
-    # file_list = ["2022_12_01-11_55_03-15micro-nv1_zfs_vs_t"]
+    file_list = [
+        # 1 us
+        "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
+        "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
+        "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
+        "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
+        "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
+        # 10 us
+        "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
+        "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
+        "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
+        "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
+        "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
+        # 100 us
+        "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
+        "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
+        "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
+        "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
+        "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
+    ]
 
     ### Loop
 
