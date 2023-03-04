@@ -84,6 +84,14 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
             if not skip:
                 data_points.append(point)
 
+    # MCC ad hoc adjustments
+    for point in data_points:
+        if point["Sample"] == "Wu" and point["Monitor"] == "PT100":
+            point["ZFS (GHz)"] -= 0.000500
+        elif point["Sample"] == "15micro" and point["Monitor"] == "PT100":
+            # point["ZFS (GHz)"] += 0.000750
+            point["Monitor temp (K)"] += 8
+
     if condense_all or condense_samples:
         data_points = condense_data_points(data_points, condense_all, condense_samples)
 
@@ -126,7 +134,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             if test_identifier == identifier:
                 monitor_temps.append(point["Monitor temp (K)"])
                 zfss.append(point["ZFS (GHz)"])
-                zfs_errors.append(point["ZFS error (GHz)"])
+                zfs_errors.append(point["ZFS (GHz) error"])
         weights = [val**-2 for val in zfs_errors]
         norm = np.sum(weights)
         # For inverse-variance weighting, condensed_error**2 = 1/norm
@@ -231,23 +239,23 @@ def refit_experiments():
     ### User setup
     # Also see below section Sample-dependent fit...
 
-    do_plot = True  # Generate raw data and fit plots?
+    do_plot = False  # Generate raw data and fit plots?
     do_save = False  # Save the plots?
-    do_print = False  # Print out popts and associated error bars?
+    do_print = True  # Print out popts and associated error bars?
 
     # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
     skip_lambda = (
         lambda point: point["Skip"]
-        or point["ZFS file"] == ""
+        # or point["ZFS file"] == ""
         # or point["Sample"] != "15micro"
-        or point["Sample"] != "Wu"
+        # or point["Sample"] != "Wu"
         # or point["Setpoint temp (K)"] != ""
         # or point["Setpoint temp (K)"] < 300
     )
 
     data_points = get_data_points(skip_lambda)
     file_list = [el["ZFS file"] for el in data_points]
-    file_list = file_list[163:164]
+    # file_list = file_list[163:164]
     # file_list = ["2022_12_01-11_55_03-15micro-nv1_zfs_vs_t"]
 
     ### Loop
@@ -313,17 +321,17 @@ def refit_experiments():
             #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
             #     )
             # )
-            # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
-            #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-            # )
-            # guess_params = [0.2, 5, freq_center]
+            line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
+                freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+            )
+            guess_params = [0.2, 5, freq_center]
             # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
             # guess_params = [0.4, 9, 2.8748]
 
-            line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
-                freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
-            )
-            guess_params = [0.2, 3, freq_center, 5]
+            # line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
+            #     freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
+            # )
+            # guess_params = [0.2, 3, freq_center, 5]
 
             # line_func = pesr.lorentzian_split
             # guess_params = [0.3, 1, freq_center, 1]
@@ -383,7 +391,8 @@ def refit_experiments():
             table_popt = []
             table_pste = []
             table_red_chi_sq = []
-            for ind in range(len(popt)):
+            # for ind in range(len(popt)):
+            for ind in range(5):
                 table_popt.append([])
                 table_pste.append([])
         for ind in range(len(popt)):
@@ -425,14 +434,14 @@ def refit_experiments():
     zfs_vals = np.array(table_popt[2])
     zfs_errs = np.array(table_pste[2])
 
-    print()
-    print(np.mean(table_red_chi_sq))
-    print(np.min(table_red_chi_sq))
-    print(np.max(table_red_chi_sq))
-    print()
-    print(zfs_vals)
-    print()
-    print(zfs_errs)
+    # print()
+    # print(np.mean(table_red_chi_sq))
+    # print(np.min(table_red_chi_sq))
+    # print(np.max(table_red_chi_sq))
+    # print()
+    # print(zfs_vals)
+    # print()
+    # print(zfs_errs)
 
     # print("ZFS vals")
     # for ind in range(len(zfs_vals)):
@@ -775,7 +784,7 @@ def main():
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
     temp_range = [-10, 520]
-    y_range = [2.848, 2.879]
+    y_range = [2.847, 2.879]
     # temp_range = [-10, 310]
     # y_range = [2.8685, 2.8785]
     # temp_range = [280, 320]
@@ -1087,8 +1096,8 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # main()
-    refit_experiments()
+    main()
+    # refit_experiments()
     # derivative_comp()
 
     plt.show(block=True)
