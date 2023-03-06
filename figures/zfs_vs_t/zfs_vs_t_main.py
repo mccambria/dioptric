@@ -85,12 +85,12 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
                 data_points.append(point)
 
     # MCC ad hoc adjustments
-    for point in data_points:
-        if point["Sample"] == "Wu" and point["Monitor"] == "PT100":
-            point["ZFS (GHz)"] -= 0.000500
-        elif point["Sample"] == "15micro" and point["Monitor"] == "PT100":
-            # point["ZFS (GHz)"] += 0.000750
-            point["Monitor temp (K)"] += 8
+    # for point in data_points:
+    #     if point["Sample"] == "Wu" and point["Monitor"] == "PT100":
+    #         point["ZFS (GHz)"] -= 0.000500
+    #     elif point["Sample"] == "15micro" and point["Monitor"] == "PT100":
+    #         # point["ZFS (GHz)"] += 0.000750
+    #         point["Monitor temp (K)"] += 8
 
     if condense_all or condense_samples:
         data_points = condense_data_points(data_points, condense_all, condense_samples)
@@ -239,7 +239,7 @@ def refit_experiments():
     ### User setup
     # Also see below section Sample-dependent fit...
 
-    do_plot = False  # Generate raw data and fit plots?
+    do_plot = True  # Generate raw data and fit plots?
     do_save = False  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
@@ -248,34 +248,52 @@ def refit_experiments():
         lambda point: point["Skip"]
         # or point["ZFS file"] == ""
         # or point["Sample"] != "15micro"
-        # or point["Sample"] != "Wu"
+        or point["Sample"] != "Wu"
         # or point["Setpoint temp (K)"] != ""
         # or point["Setpoint temp (K)"] < 300
     )
 
     data_points = get_data_points(skip_lambda)
     file_list = [el["ZFS file"] for el in data_points]
-    # file_list = file_list[163:164]
-    file_list = [
-        # 1 us
-        "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
-        "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
-        "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
-        "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
-        "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
-        # 10 us
-        "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
-        "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
-        "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
-        "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
-        "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
-        # 100 us
-        "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
-        "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
-        "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
-        "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
-        "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
-    ]
+    file_list = file_list[164:165]
+    # file_list = [
+    #     # # 1 us
+    #     # "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
+    #     # # 10 us
+    #     # "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
+    #     # # 100 us
+    #     # "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
+    #     # 1 ms
+    #     # "2023_03_04-11_43_50-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_04-11_06_24-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_04-12_58_51-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_04-12_21_20-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_04-13_36_17-15micro-nv11_zfs_vs_t",
+    #     # 1 us, ND 0.3 => 0.5
+    #     # "2023_03_04-16_40_09-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_04-14_55_01-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_04-15_47_39-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_04-18_25_23-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_04-17_32_26-15micro-nv11_zfs_vs_t",
+    #     # microwave 10 => 0 dBm
+    #     "2023_03_04-21_22_00-15micro-nv6_zfs_vs_t",
+    #     "2023_03_04-23_12_14-15micro-nv7_zfs_vs_t",
+    #     "2023_03_04-20_26_41-15micro-nv8_zfs_vs_t",
+    #     "2023_03_04-22_17_57-15micro-nv9_zfs_vs_t",
+    #     "2023_03_05-00_07_19-15micro-nv11_zfs_vs_t",
+    # ]
 
     ### Loop
 
@@ -340,10 +358,10 @@ def refit_experiments():
             #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
             #     )
             # )
-            line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
-                freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-            )
-            guess_params = [0.2, 5, freq_center]
+            # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
+            #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+            # )
+            # guess_params = [0.2, 4, freq_center]
             # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
             # guess_params = [0.4, 9, 2.8748]
 
@@ -351,6 +369,10 @@ def refit_experiments():
             #     freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
             # )
             # guess_params = [0.2, 3, freq_center, 5]
+            line_func = lambda freq, contrast, rabi_freq, center: three_level_rabi.coherent_line(
+                freq, contrast, rabi_freq, center, 0.0, uwave_pulse_dur
+            )
+            guess_params = [0.2, 4, freq_center]
 
             # line_func = pesr.lorentzian_split
             # guess_params = [0.3, 1, freq_center, 1]
@@ -1115,8 +1137,33 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    main()
-    # refit_experiments()
-    # derivative_comp()
+    # # main()
+    refit_experiments()
+    # # derivative_comp()
 
     plt.show(block=True)
+
+    # vals = [
+    #     [2.869549, 2.869409, 2.869265, 2.869323, 2.869320],
+    #     [2.869514, 2.869471, 2.869382, 2.869566, 2.869293],
+    #     [2.869116, 2.869526, 2.869619, 2.869388, 2.869451],
+    #     [2.869500, 2.870178, 2.869463, 2.870033, 2.869479],
+    #     [2.869472, 2.869201, 2.869634, 2.869352, 2.869265],
+    #     [2.868786, 2.869506, 2.869398, 2.869324, 2.869297],
+    # ]
+    # errs = [
+    #     [0.000122, 0.000151, 0.000122, 0.000126, 0.000136],
+    #     [0.000125, 0.000162, 0.000131, 0.000129, 0.000137],
+    #     [0.00015, 0.000187, 0.000156, 0.00015, 0.000158],
+    #     [0.000353, 0.000354, 0.000323, 0.00036, 0.000379],
+    #     [0.000132, 0.000188, 0.00014, 0.000131, 0.000138],
+    #     [0.00026, 0.000301, 0.000262, 0.000256, 0.000249],
+    # ]
+
+    # for ind in range(len(vals)):
+    #     sub_vals = np.array(vals[ind])
+    #     sub_errs = np.array(errs[ind])
+
+    #     print(np.average(sub_vals, weights=1 / (sub_errs**2)))
+    #     print(np.sqrt(1 / np.sum(1 / (sub_errs**2))))
+    #     print()

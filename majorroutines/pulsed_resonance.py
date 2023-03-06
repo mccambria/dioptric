@@ -225,9 +225,7 @@ def create_raw_data_figure(
 # region Math functions
 
 
-def rabi_line(
-    freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True
-):
+def rabi_line(freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True):
     """Rabi lineshape"""
 
     rabi_freq_ghz = rabi_freq / 1000
@@ -570,6 +568,8 @@ def fit_resonance(
         p0=guess_params,
         sigma=norm_avg_sig_ste,
         absolute_sigma=True,
+        # full_output=True,
+        # method="trf",
     )
 
     # If the user gave us a hint, go with that
@@ -584,6 +584,8 @@ def fit_resonance(
             guess_params = get_guess_params_lambda(num_resonances)
         fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
         popt, pcov = curve_fit_lambda(fit_func, guess_params)
+        # ret_vals = curve_fit_lambda(fit_func, guess_params)
+        # test = 0
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:

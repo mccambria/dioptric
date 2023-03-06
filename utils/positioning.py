@@ -257,7 +257,7 @@ def get_scan_1d(center, scan_range, num_steps):
     half_range = scan_range / 2
     low = center - half_range
     high = center + half_range
-    coords = np.linspace(low, high, num_steps)
+    coords = np.linspace(low, high, num_steps, dtype=np.float64)
     return coords
 
 

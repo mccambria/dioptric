@@ -7,6 +7,8 @@ Created on February 28th, 2023
 @author: mccambria
 """
 
+
+from mpmath import mp  # Arbitrary-precision math - necessary for matrix diagonalization
 import numpy as np
 import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
@@ -17,23 +19,20 @@ from scipy.optimize import curve_fit
 import csv
 import pandas as pd
 import sys
+import majorroutines.pulsed_resonance as pesr
 from scipy.integrate import odeint
 
 
 def gen_hamiltonian(dp, Omega, dm):
-    return np.array(
-        [
-            [dp, Omega / 2, 0],
-            [Omega / 2, 0, Omega / 2],
-            [0, Omega / 2, dm],
-        ]
+    return mp.matrix(
+        [[dp, Omega / 2, 0], [Omega / 2, 0, Omega / 2], [0, Omega / 2, dm]]
     )
 
 
 def gen_relaxation_rates(dp, Omega, dm):
     rp = Omega**2 / np.sqrt(dp**2 + Omega**2)
     rm = Omega**2 / np.sqrt(dm**2 + Omega**2)
-    return np.array(
+    return mp.matrix(
         [
             [-rp, rp, 0],
             [rp, -rp - rm, rm],
@@ -70,22 +69,25 @@ def coherent_line_single(freq, contrast, rabi_freq, center, splitting, pulse_dur
         pulse_dur = 1 / (2 * rabi_freq)
     else:
         pulse_dur /= 1000
+    rabi_freq /= mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
 
     hamiltonian = gen_hamiltonian(dp, rabi_freq, dm)
-    eigvals, eigvecs = np.linalg.eig(hamiltonian)
+    eigvals, eigvecs = mp.eighe(hamiltonian)
 
-    intial_vec = np.array([0, 1, 0])
-    initial_comps = [np.dot(intial_vec, eigvecs[:, ind]) for ind in range(3)]
+    intial_vec = mp.matrix([[0], [1], [0]])
+    initial_comps = [mp.fdot(intial_vec, eigvecs[:, ind]) for ind in range(3)]
     final_comps = [
-        initial_comps[ind] * np.exp(2 * np.pi * (0 + 1j) * eigvals[ind] * pulse_dur)
+        initial_comps[ind] * mp.exp(2 * mp.pi * (0 + 1j) * eigvals[ind] * pulse_dur)
         for ind in range(3)
     ]
-    final_vec = np.array([0, 0, 0], dtype=np.complex64)
+    final_vec = mp.matrix([[0], [0], [0]])
     for ind in range(3):
         final_vec += eigvecs[:, ind] * final_comps[ind]
 
-    line = 1 - np.absolute(final_vec[1]) ** 2
-    return contrast * line
+    line = 1 - mp.fabs(final_vec[1]) ** 2
+    ret_val = contrast * line
+
+    return np.float64(ret_val)
 
 
 def incoherent_line_single(
@@ -97,20 +99,20 @@ def incoherent_line_single(
     pulse_dur /= 1000
 
     relaxation_rates = gen_relaxation_rates(dp, rabi_freq, dm)
-    eigvals, eigvecs = np.linalg.eig(relaxation_rates)
+    eigvals, eigvecs = mp.eigsy(relaxation_rates)
 
-    intial_vec = np.array([0, 1, 0])
-    eigvals, eigvecs = np.linalg.eig(relaxation_rates)
-    initial_comps = [np.dot(intial_vec, eigvecs[:, ind]) for ind in range(3)]
+    intial_vec = mp.matrix([[0], [1], [0]])
+    initial_comps = [mp.fdot(intial_vec, eigvecs[:, ind]) for ind in range(3)]
     final_comps = [
-        initial_comps[ind] * np.exp(eigvals[ind] * pulse_dur) for ind in range(3)
+        initial_comps[ind] * mp.exp(eigvals[ind] * pulse_dur) for ind in range(3)
     ]
-    final_vec = np.array([0, 0, 0], dtype=np.float64)
+    final_vec = mp.matrix([[0], [0], [0]])
     for ind in range(3):
         final_vec += eigvecs[:, ind] * final_comps[ind]
 
     line = 1 - final_vec[1]
-    return offset + contrast * line
+    ret_val = offset + contrast * line
+    return np.float64(ret_val)
 
 
 def calc_dy_dt(y, t, relaxation_rates):
@@ -233,7 +235,11 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # main()
-    incoherent()
+    # incoherent()
     # plot_mat_els()
+
+    freqs = np.linspace(2.86, 2.88, 100)
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 5.2, 2.87, 0, None))
 
     plt.show(block=True)
