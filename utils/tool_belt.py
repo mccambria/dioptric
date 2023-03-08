@@ -88,7 +88,7 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
     if eval(mod_type).name == "ANALOG":
         laser_pulse_amplitude = laser_power
-        
+
     elif eval(mod_type).name == "DIGITAL":
         if laser_power == 0:
             laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
@@ -168,19 +168,20 @@ def set_laser_power(
             laser_server.set_laser_power(laser_power)
         return None
 
-def get_opx_uwave_pulse_info(config,pulse_time):
-    pulse_time_cc = int(round(pulse_time/4))
-    
+
+def get_opx_uwave_pulse_info(config, pulse_time):
+    pulse_time_cc = int(round(pulse_time / 4))
+
     if pulse_time_cc < 4:
-        uwave_pulse = 'uwave_OFF'
+        uwave_pulse = "uwave_OFF"
         uwave_amp = 1
         uwave_time_cc = 4
-        
+
     elif pulse_time_cc >= 4:
-        uwave_pulse = 'uwave_ON'
+        uwave_pulse = "uwave_ON"
         uwave_amp = 1
         uwave_time_cc = pulse_time_cc
-    
+
     return uwave_pulse, uwave_amp, uwave_time_cc
 
 
@@ -294,9 +295,8 @@ def get_laser_server(cxn, laser_name):
 # endregion
 # region Pulse generator utils
 
-def process_laser_seq(
-    pulse_streamer, seq, config, laser_name, laser_power, train
-):
+
+def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
     """
     Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
@@ -363,8 +363,7 @@ def process_laser_seq(
                 continue
             if dur < 75:
                 raise ValueError(
-                    "Feedthrough lasers do not support pulses shorter than"
-                    " 100 ns."
+                    "Feedthrough lasers do not support pulses shorter than" " 100 ns."
                 )
             processed_train.append((20, Digital.HIGH))
             processed_train.append((dur - 20, Digital.LOW))
@@ -372,12 +371,12 @@ def process_laser_seq(
         pulser_laser_mod = pulser_wiring["do_{}_am".format(laser_name)]
         seq.setDigital(pulser_laser_mod, processed_train)
     else:
-        if mod_type is ModTypes.DIGITAL:            
-           
+        if mod_type is ModTypes.DIGITAL:
+
             processed_train = train.copy()
             pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
             seq.setDigital(pulser_laser_mod, processed_train)
-    
+
         # Analog, convert LOW / HIGH to 0.0 / analog voltage
         # currently can't handle multiple powers of the AM within the same sequence
         # Possibly, we could pass laser_power as a list, and then build the sequences
@@ -398,11 +397,11 @@ def process_laser_seq(
                 elif type(laser_power) != list:
                     power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
                 processed_train.append((dur, power_dict[val]))
-    
+
             pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
             # print(processed_train)
             seq.setAnalog(pulser_laser_mod, processed_train)
-            
+
     # feedthrough = config["Optics"][laser_name]["feedthrough"]
     # feedthrough = eval(feedthrough)
     # #    feedthrough = False
@@ -493,7 +492,6 @@ def process_laser_seq(
     #     pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
     #     # print(processed_train)
     #     seq.setAnalog(pulser_laser_mod, processed_train)
-
 
 
 def set_delays_to_zero(config):
@@ -625,15 +623,19 @@ def exp_decay(x, amp, decay, offset):
 def linear(x, slope, y_offset):
     return slope * x + y_offset
 
+
 def quadratic(x, a, b, c, x_offset):
     x_ = x - x_offset
-    return a * (x_)**2 + b * x_ + c
+    return a * (x_) ** 2 + b * x_ + c
+
 
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 
+
 def exp_t2(x, amp, decay, offset):
     return exp_stretch_decay(x, amp, decay, offset, 3)
+
 
 def gaussian(x, *params):
     """Calculates the value of a gaussian for the given input and parameters
@@ -685,8 +687,10 @@ def sin_1_at_0_phase(t, amp, offset, freq, phase):
     # amp = 1 - offset
     return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
 
+
 def sin_phase(t, amp, offset, freq, phase):
     return offset + (abs(amp) * np.sin((freq * t + phase)))
+
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2 * np.pi
@@ -696,6 +700,8 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_2 * np.cos(two_pi * freq_2 * t)
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
+
+
 def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
     two_pi = 2 * np.pi
 
@@ -726,13 +732,13 @@ def poiss_snr(sig, ref):
     outputs:
         snr = list
     """
-    
+
     # Assume Poisson statistics on each count value
     # sig_noise = np.sqrt(sig)
     # ref_noise = np.sqrt(ref)
     # snr = (ref - sig) / np.sqrt(sig_noise**2 + ref_noise**2)
     # snr_per_readout = (snr / np.sqrt(num_reps))
-        
+
     ref_count = np.array(ref)
     sig_count = np.array(sig)
     num_reps, num_points = ref_count.shape
@@ -744,14 +750,13 @@ def poiss_snr(sig, ref):
     ref_noise = np.sqrt(ref_count_avg)
     noise = np.sqrt(sig_noise**2 + ref_noise**2)
     snr = dif / noise
-    
-    
+
     N = sig_count_avg - ref_count_avg
     d = np.sqrt(sig_noise**2 + ref_noise**2)
     D = np.sqrt(sig_count_avg + ref_count_avg)
     d_d = 0.5 * d / D
-    
-    snr_unc = snr * np.sqrt((N / d)**2 + (d_d / D)**2)
+
+    snr_unc = snr * np.sqrt((N / d) ** 2 + (d_d / D) ** 2)
 
     return snr, snr_unc
 
@@ -771,7 +776,7 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 
 
 def bose(energy, temp):
-    """Calculate Bose Einstein occupation number 
+    """Calculate Bose Einstein occupation number
 
     Parameters
     ----------
@@ -929,6 +934,7 @@ def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
     return common.get_registry_entry(cxn, "apd_indices", ["Config"])
 
+
 def get_apd_gate_channel(cxn):
     return common.get_registry_entry(cxn, "di_apd_gate", ["Config", "Wiring", "Tagger"])
 
@@ -948,7 +954,6 @@ def get_server_pulse_gen(cxn):
 def get_server_charge_readout_laser(cxn):
     """Get the laser for charge readout"""
     return common.get_server(cxn, "charge_readout_laser")
-
 
 
 def get_server_arb_wave_gen(cxn):
@@ -1197,7 +1202,7 @@ def save_raw_data(rawData, filePath):
             elif isinstance(nv_sig[key], Enum):
                 nv_sig[key] = nv_sig[key].name
     except Exception:
-        print(' ')
+        print(" ")
 
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
@@ -1287,9 +1292,7 @@ def round_sig_figs(val, num_sig_figs):
         return func(val, num_sig_figs)
 
 
-def presentation_round(val, err):
-    if val == 0:
-        return [0, None, None]
+def presentation_round_sci(val, err):
     err_mag = math.floor(math.log10(err))
     sci_err = err / (10**err_mag)
     first_err_digit = int(str(sci_err)[0])
@@ -1304,12 +1307,38 @@ def presentation_round(val, err):
     return [rounded_val, rounded_err, power_of_10]
 
 
-def presentation_round_latex(val, err):
+def presentation_round(val, err):
+
+    # Start from the scientific presentation
+    rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
+    if rounded_err > 10:
+        raise ValueError(
+            f"The value, error combination {val}, {err} should be expressed in scientific notation."
+        )
+
+    # Get the representation of the actual value, where min_digits
+    # ensures the last digit lines up with the error
+    mag = 10**power_of_10
+    str_rounded_err = np.format_float_positional(rounded_err)
+    val_str = np.format_float_positional(
+        rounded_val * mag, min_digits=len(str_rounded_err) - 2
+    )
+
+    # Get the representation of the error, which is alway just the non-zero digits
+    err_str = ""
+    for char in str_rounded_err:
+        if char not in ["0", "."]:
+            err_str += char
+
+    return f"{val_str}({err_str})"
+
+
+def presentation_round_sci_latex(val, err):
     if val == 0:
         return "0"
     # if val <= 0 or err > val:
     #     return ""
-    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
+    rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
     err_mag = math.floor(math.log10(rounded_err))
     val_mag = math.floor(math.log10(abs(rounded_val)))
 
