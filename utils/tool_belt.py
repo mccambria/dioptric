@@ -32,6 +32,7 @@ import utils.common as common
 import utils.search_index as search_index
 import signal
 import copy
+from decimal import Decimal
 
 
 class States(Enum):
@@ -1271,80 +1272,64 @@ def get_dd_model_coeff_dict():
 
 # endregion
 # region Rounding
-"""Make sure to check the end results produced by this code! Rounding turns out
-to be a nontrivial problem...
+"""
+Various rounding tools, including several for presenting data with errors. Relies on
+the decimals package for accurate arithmetic w/o binary rounding errors.
 """
 
 
 def round_sig_figs(val, num_sig_figs):
-    if val == 0:
-        return 0
+
+    # All the work is done here
     func = lambda val, num_sig_figs: round(
         val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
     )
+
+    # Check for list/array/single value
     if type(val) is list:
         return [func(el, num_sig_figs) for el in val]
     elif type(val) is np.ndarray:
-        val_list = val.tolist()
-        rounded_val_list = [func(el, num_sig_figs) for el in val_list]
+        rounded_val_list = [func(el, num_sig_figs) for el in val.tolist()]
         return np.array(rounded_val_list)
     else:
         return func(val, num_sig_figs)
 
 
 def presentation_round_sci(val, err):
+
+    val = Decimal(val)
+    err = Decimal(err)
+
     err_mag = math.floor(math.log10(err))
-    sci_err = err / (10**err_mag)
+    sci_err = err / (Decimal(10) ** err_mag)
     first_err_digit = int(str(sci_err)[0])
     if first_err_digit == 1:
         err_sig_figs = 2
     else:
         err_sig_figs = 1
+
     power_of_10 = math.floor(math.log10(abs(val)))
-    mag = 10**power_of_10
-    rounded_err = round_sig_figs(err, err_sig_figs) / mag
+    mag = Decimal(10) ** power_of_10
+    rounded_err = round_sig_figs(err / mag, err_sig_figs)
     rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
+
+    # Check for corner case where the value is e.g. 0.999 and rounds up to another decimal place
+    if rounded_val >= 10:
+        power_of_10 += 1
+        rounded_err /= Decimal(10)
+        rounded_val /= Decimal(10)
+
     return [rounded_val, rounded_err, power_of_10]
 
 
-def presentation_round(val, err):
-
-    # Start from the scientific presentation
-    rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
-    if rounded_err > 10:
-        raise ValueError(
-            f"The value, error combination {val}, {err} should be expressed in scientific notation."
-        )
-
-    # Get the representation of the actual value, where min_digits
-    # ensures the last digit lines up with the error
-    mag = 10**power_of_10
-    str_rounded_err = np.format_float_positional(rounded_err)
-    val_str = np.format_float_positional(
-        rounded_val * mag, min_digits=len(str_rounded_err) - 2
-    )
-
-    # Get the representation of the error, which is alway just the non-zero digits
-    err_str = ""
-    for char in str_rounded_err:
-        if char not in ["0", "."]:
-            err_str += char
-
-    return f"{val_str}({err_str})"
-
-
 def presentation_round_sci_latex(val, err):
-    if val == 0:
-        return "0"
-    # if val <= 0 or err > val:
-    #     return ""
+
     rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
     err_mag = math.floor(math.log10(rounded_err))
     val_mag = math.floor(math.log10(abs(rounded_val)))
 
     # Turn 0.0000016 into 0.16
-    # The round is to deal with floating point leftovers eg 9 = 9.00000002
-    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
+    shifted_rounded_err = rounded_err / (Decimal(10) ** (err_mag + 1))
     # - 1 to remove the "0." part
     err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
     pad_val_to = -err_mag + err_last_decimal_mag
@@ -1362,6 +1347,44 @@ def presentation_round_sci_latex(val, err):
     padded_val = str(rounded_val) + "0" * num_padding_zeros
     # return "{}({})e{}".format(padded_val, print_err, power_of_10)
     return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
+
+
+def presentation_round(val, err):
+
+    # If err > 10, this presentation becomes unclear
+    if err > 10:
+        return None
+        # raise ValueError(
+        #     f"The value, error combination {val}, {err} should be expressed in scientific notation."
+        # )
+
+    # Start from the scientific presentation
+    rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
+
+    # Get the representation of the actual value, where min_digits
+    # ensures the last digit lines up with the error
+    mag = Decimal(10) ** power_of_10
+    str_rounded_err = str(rounded_err)
+    val_str = np.format_float_positional(
+        rounded_val * mag, min_digits=len(str_rounded_err) - 2 - power_of_10
+    )
+
+    # Trim trailing decimal point
+    if val_str[-1] == ".":
+        val_str = val_str[:-1]
+
+    # Get the representation of the error, which is alway just the trailing non-zero digits
+    err_str = ""
+    trailing = False
+    for char in str_rounded_err:
+        if char == ".":
+            continue
+        elif char != "0":
+            trailing = True
+        if trailing:
+            err_str += char
+
+    return f"{val_str}({err_str})"
 
 
 # endregion
