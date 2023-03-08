@@ -79,6 +79,7 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
                     except Exception:
                         val = raw_val
                 point[column] = val
+            point["Label"] = f"{point['Sample']}-{point['NV']}"
 
             skip = skip_lambda is not None and skip_lambda(point)
             if not skip:
@@ -89,8 +90,8 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
     #     if point["Sample"] == "Wu" and point["Monitor"] == "PT100":
     #         point["ZFS (GHz)"] -= 0.000500
     #     elif point["Sample"] == "15micro" and point["Monitor"] == "PT100":
-    #         # point["ZFS (GHz)"] += 0.000750
-    #         point["Monitor temp (K)"] += 8
+    #         point["ZFS (GHz)"] += 0.0006
+    #         # point["Monitor temp (K)"] += 8
 
     if condense_all or condense_samples:
         data_points = condense_data_points(data_points, condense_all, condense_samples)
@@ -157,7 +158,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             "Setpoint temp (K)": setpoint_temp,
             "Monitor temp (K)": np.average(monitor_temps),
             "ZFS (GHz)": np.average(zfss, weights=weights),
-            "ZFS error (GHz)": condensed_error,
+            "ZFS (GHz) error": condensed_error,
             "Label": label,
         }
         condensed_data_points.append(new_point)
@@ -196,7 +197,7 @@ def data_points_to_lists(data_points):
         #     monitor_temp *= 300.7 / 295
         temp_list.append(monitor_temp)
         zfs_list.append(zfs)
-        zfs_err = el["ZFS error (GHz)"]
+        zfs_err = el["ZFS (GHz) error"]
         zfs_err_list.append(zfs_err)
         label = el["Label"]
         label_list.append(label)
@@ -240,15 +241,15 @@ def refit_experiments():
     # Also see below section Sample-dependent fit...
 
     do_plot = True  # Generate raw data and fit plots?
-    do_save = False  # Save the plots?
+    do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
     skip_lambda = (
         lambda point: point["Skip"]
         # or point["ZFS file"] == ""
-        # or point["Sample"] != "15micro"
-        or point["Sample"] != "Wu"
+        or point["Sample"] != "15micro"
+        # or point["Sample"] != "Wu"
         # or point["Setpoint temp (K)"] != ""
         # or point["Setpoint temp (K)"] < 300
     )
@@ -256,44 +257,68 @@ def refit_experiments():
     data_points = get_data_points(skip_lambda)
     file_list = [el["ZFS file"] for el in data_points]
     file_list = file_list[164:165]
-    # file_list = [
-    #     # # 1 us
-    #     # "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
-    #     # "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
-    #     # "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
-    #     # "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
-    #     # "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
-    #     # # 10 us
-    #     # "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
-    #     # "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
-    #     # "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
-    #     # "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
-    #     # "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
-    #     # # 100 us
-    #     # "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
-    #     # "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
-    #     # "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
-    #     # "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
-    #     # "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
-    #     # 1 ms
-    #     # "2023_03_04-11_43_50-15micro-nv6_zfs_vs_t",
-    #     # "2023_03_04-11_06_24-15micro-nv7_zfs_vs_t",
-    #     # "2023_03_04-12_58_51-15micro-nv8_zfs_vs_t",
-    #     # "2023_03_04-12_21_20-15micro-nv9_zfs_vs_t",
-    #     # "2023_03_04-13_36_17-15micro-nv11_zfs_vs_t",
-    #     # 1 us, ND 0.3 => 0.5
-    #     # "2023_03_04-16_40_09-15micro-nv6_zfs_vs_t",
-    #     # "2023_03_04-14_55_01-15micro-nv7_zfs_vs_t",
-    #     # "2023_03_04-15_47_39-15micro-nv8_zfs_vs_t",
-    #     # "2023_03_04-18_25_23-15micro-nv9_zfs_vs_t",
-    #     # "2023_03_04-17_32_26-15micro-nv11_zfs_vs_t",
-    #     # microwave 10 => 0 dBm
-    #     "2023_03_04-21_22_00-15micro-nv6_zfs_vs_t",
-    #     "2023_03_04-23_12_14-15micro-nv7_zfs_vs_t",
-    #     "2023_03_04-20_26_41-15micro-nv8_zfs_vs_t",
-    #     "2023_03_04-22_17_57-15micro-nv9_zfs_vs_t",
-    #     "2023_03_05-00_07_19-15micro-nv11_zfs_vs_t",
-    # ]
+    file_list = [
+        # # 1 us
+        # "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
+        # "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
+        # "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
+        # "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
+        # "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
+        # # 10 us
+        # "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
+        # "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
+        # "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
+        # "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
+        # "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
+        # # 100 us
+        # "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
+        # "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
+        # "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
+        # "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
+        # "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
+        # 1 ms
+        # "2023_03_04-11_43_50-15micro-nv6_zfs_vs_t",
+        # "2023_03_04-11_06_24-15micro-nv7_zfs_vs_t",
+        # "2023_03_04-12_58_51-15micro-nv8_zfs_vs_t",
+        # "2023_03_04-12_21_20-15micro-nv9_zfs_vs_t",
+        # "2023_03_04-13_36_17-15micro-nv11_zfs_vs_t",
+        # 1 us, ND 0.3 => 0.5
+        # "2023_03_04-16_40_09-15micro-nv6_zfs_vs_t",
+        # "2023_03_04-14_55_01-15micro-nv7_zfs_vs_t",
+        # "2023_03_04-15_47_39-15micro-nv8_zfs_vs_t",
+        # "2023_03_04-18_25_23-15micro-nv9_zfs_vs_t",
+        # "2023_03_04-17_32_26-15micro-nv11_zfs_vs_t",
+        # # microwave 10 => 0 dBm
+        # "2023_03_04-21_22_00-15micro-nv6_zfs_vs_t",
+        # "2023_03_04-23_12_14-15micro-nv7_zfs_vs_t",
+        # "2023_03_04-20_26_41-15micro-nv8_zfs_vs_t",
+        # "2023_03_04-22_17_57-15micro-nv9_zfs_vs_t",
+        # "2023_03_05-00_07_19-15micro-nv11_zfs_vs_t",
+        # # ND 1.0
+        # "2023_03_05-13_24_15-15micro-nv6_zfs_vs_t",
+        # "2023_03_05-11_41_45-15micro-nv7_zfs_vs_t",
+        # "2023_03_05-14_15_18-15micro-nv8_zfs_vs_t",
+        # "2023_03_05-12_33_07-15micro-nv9_zfs_vs_t",
+        # "2023_03_05-10_50_58-15micro-nv11_zfs_vs_t",
+        # # Temp control disconnected
+        # "2023_03_06-20_37_53-15micro-nv6_zfs_vs_t",
+        # "2023_03_06-20_09_53-15micro-nv7_zfs_vs_t",
+        # "2023_03_06-19_14_17-15micro-nv8_zfs_vs_t",
+        # "2023_03_06-19_42_31-15micro-nv9_zfs_vs_t",
+        # "2023_03_06-21_05_38-15micro-nv11_zfs_vs_t",
+        # 1 ms delay repeat
+        # "2023_03_07-05_26_17-15micro-nv6_zfs_vs_t",
+        # "2023_03_07-04_11_05-15micro-nv7_zfs_vs_t",
+        # "2023_03_07-02_56_13-15micro-nv8_zfs_vs_t",
+        # "2023_03_07-00_26_02-15micro-nv9_zfs_vs_t",
+        # "2023_03_07-01_41_04-15micro-nv11_zfs_vs_t",
+        # uwave polarization
+        "2023_03_07-14_27_00-15micro-nv6_zfs_vs_t",
+        "2023_03_07-12_34_04-15micro-nv7_zfs_vs_t",
+        "2023_03_07-13_30_18-15micro-nv8_zfs_vs_t",
+        "2023_03_07-13_58_48-15micro-nv9_zfs_vs_t",
+        "2023_03_07-13_02_08-15micro-nv11_zfs_vs_t",
+    ]
 
     ### Loop
 
@@ -843,10 +868,10 @@ def main():
     plot_new_model = True
     toyli_extension = False
 
-    # skip_lambda = lambda point: point["Skip"]
+    skip_lambda = lambda point: point["Skip"]
     # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
     # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "15micro"
-    skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
+    # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
     # skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 296
     # skip_lambda = (
     #     lambda point: point["Skip"]
@@ -1135,35 +1160,49 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib()
+    # kpl.init_kplotlib()
 
     # # main()
-    refit_experiments()
-    # # derivative_comp()
+    # refit_experiments()
+    # # # derivative_comp()
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
-    # vals = [
-    #     [2.869549, 2.869409, 2.869265, 2.869323, 2.869320],
-    #     [2.869514, 2.869471, 2.869382, 2.869566, 2.869293],
-    #     [2.869116, 2.869526, 2.869619, 2.869388, 2.869451],
-    #     [2.869500, 2.870178, 2.869463, 2.870033, 2.869479],
-    #     [2.869472, 2.869201, 2.869634, 2.869352, 2.869265],
-    #     [2.868786, 2.869506, 2.869398, 2.869324, 2.869297],
-    # ]
-    # errs = [
-    #     [0.000122, 0.000151, 0.000122, 0.000126, 0.000136],
-    #     [0.000125, 0.000162, 0.000131, 0.000129, 0.000137],
-    #     [0.00015, 0.000187, 0.000156, 0.00015, 0.000158],
-    #     [0.000353, 0.000354, 0.000323, 0.00036, 0.000379],
-    #     [0.000132, 0.000188, 0.00014, 0.000131, 0.000138],
-    #     [0.00026, 0.000301, 0.000262, 0.000256, 0.000249],
-    # ]
+    vals = [
+        [2.869549, 2.869409, 2.869265, 2.869323, 2.869320],
+        [2.869514, 2.869471, 2.869382, 2.869566, 2.869293],
+        [2.869116, 2.869526, 2.869619, 2.869388, 2.869451],
+        [2.869500, 2.870178, 2.869463, 2.870033, 2.869479],
+        [2.869472, 2.869201, 2.869634, 2.869352, 2.869265],
+        [2.868786, 2.869506, 2.869398, 2.869324, 2.869297],
+        [2.868402, 2.869612, 2.868951, 2.869346, 2.869729],
+        [2.869555, 2.869349, 2.869200, 2.869306, 2.869191],
+        [2.869638, 2.869301, 2.869307, 2.869410, 2.869455],
+        [2.869586, 2.869742, 2.86961, 2.869567, 2.869645],
+    ]
+    errs = [
+        [0.000122, 0.000151, 0.000122, 0.000126, 0.000136],
+        [0.000125, 0.000162, 0.000131, 0.000129, 0.000137],
+        [0.00015, 0.000187, 0.000156, 0.00015, 0.000158],
+        [0.000353, 0.000354, 0.000323, 0.00036, 0.000379],
+        [0.000132, 0.000188, 0.00014, 0.000131, 0.000138],
+        [0.00026, 0.000301, 0.000262, 0.000256, 0.000249],
+        [0.000332, 0.000436, 0.00035, 0.000332, 0.000363],
+        [0.000119, 0.000153, 0.000116, 0.000121, 0.000133],
+        [0.000246, 0.000309, 0.000244, 0.000229, 0.000231],
+        [0.000119, 0.000148, 0.000123, 0.000117, 0.000129],
+    ]
+    vals = np.array(vals)
+    errs = np.array(errs)
 
-    # for ind in range(len(vals)):
-    #     sub_vals = np.array(vals[ind])
-    #     sub_errs = np.array(errs[ind])
+    num_inds = len(vals)
+    # num_inds = 5
+    for ind in range(num_inds):
+        sub_vals = vals[ind]
+        sub_errs = errs[ind]
+        # sub_vals = vals[:, ind]
+        # sub_errs = errs[:, ind]
 
-    #     print(np.average(sub_vals, weights=1 / (sub_errs**2)))
-    #     print(np.sqrt(1 / np.sum(1 / (sub_errs**2))))
-    #     print()
+        print(np.average(sub_vals, weights=1 / (sub_errs**2)))
+        print(np.sqrt(1 / np.sum(1 / (sub_errs**2))))
+        print()

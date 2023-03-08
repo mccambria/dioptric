@@ -96,7 +96,11 @@ def incoherent_line_single(
 
     dp = (center * 1000 + splitting / 2) - (freq * 1000)
     dm = (center * 1000 - splitting / 2) - (freq * 1000)
-    pulse_dur /= 1000
+
+    if pulse_dur == None:
+        pulse_dur = 1 / (2 * rabi_freq)
+    else:
+        pulse_dur /= 1000
 
     relaxation_rates = gen_relaxation_rates(dp, rabi_freq, dm)
     eigvals, eigvecs = mp.eigsy(relaxation_rates)
