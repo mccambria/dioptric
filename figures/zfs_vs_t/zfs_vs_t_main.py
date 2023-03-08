@@ -1191,14 +1191,23 @@ if __name__ == "__main__":
     vals = np.array(vals)
     errs = np.array(errs)
 
-    num_inds = len(vals)
-    # num_inds = 5
-    for ind in range(num_inds):
-        sub_vals = vals[ind]
-        sub_errs = errs[ind]
-        # sub_vals = vals[:, ind]
-        # sub_errs = errs[:, ind]
+    sub_vals = vals[-1]
+    sub_errs = errs[-1]
+    for ind in range(len(sub_vals)):
+        val = sub_vals[ind]
+        err = sub_errs[ind]
+        print(tool_belt.presentation_round(val, err))
 
-        print(np.average(sub_vals, weights=1 / (sub_errs**2)))
-        print(np.sqrt(1 / np.sum(1 / (sub_errs**2))))
-        print()
+    # num_inds = len(vals)
+    # # num_inds = 5
+    # for ind in range(num_inds):
+    #     sub_vals = vals[ind]
+    #     sub_errs = errs[ind]
+    #     # sub_vals = vals[:, ind]
+    #     # sub_errs = errs[:, ind]
+
+    #     avg = np.average(sub_vals, weights=1 / (sub_errs**2))
+    #     err = np.sqrt(1 / np.sum(1 / (sub_errs**2)))
+
+    #     print(tool_belt.presentation_round(avg, err))
+    #     print()
