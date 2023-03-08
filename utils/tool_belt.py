@@ -1273,12 +1273,26 @@ def get_dd_model_coeff_dict():
 # endregion
 # region Rounding
 """
-Various rounding tools, including several for presenting data with errors. Relies on
-the decimals package for accurate arithmetic w/o binary rounding errors.
+Various rounding tools, including several for presenting data with errors (round_for_print). 
+Relies on the decimals package for accurate arithmetic w/o binary rounding errors.
 """
 
 
 def round_sig_figs(val, num_sig_figs):
+    """Round a value to the passed number of sig figs
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    num_sig_figs : int
+        Number of sig figs to round to
+
+    Returns
+    -------
+    numeric
+        Rounded value
+    """
 
     # All the work is done here
     func = lambda val, num_sig_figs: round(
@@ -1295,7 +1309,28 @@ def round_sig_figs(val, num_sig_figs):
         return func(val, num_sig_figs)
 
 
-def presentation_round_sci(val, err):
+def round_for_print_sci(val, err):
+    """Round a value and associated error to the appropriate level given the
+    magnitude of the error. The error will be rounded to 1 or 2 sig figs depending
+    on whether the first sig fig is >1 or =1 respectively. Returned in a form
+    suitable for scientific notation
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    err : numeric
+        Associated error
+
+    Returns
+    -------
+    Decimal
+        Rounded value as a string
+    Decimal
+        Rounded error as a string
+    int
+        Order of magnitude
+    """
 
     val = Decimal(val)
     err = Decimal(err)
@@ -1322,44 +1357,82 @@ def presentation_round_sci(val, err):
     return [rounded_val, rounded_err, power_of_10]
 
 
-def presentation_round_sci_latex(val, err):
+def strip_err(err):
+    """Get the representation of the error, which is alway just the trailing non-zero digits
 
-    rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
-    err_mag = math.floor(math.log10(rounded_err))
-    val_mag = math.floor(math.log10(abs(rounded_val)))
+    Parameters
+    ----------
+    err : str
+        Error to process
 
-    # Turn 0.0000016 into 0.16
-    shifted_rounded_err = rounded_err / (Decimal(10) ** (err_mag + 1))
-    # - 1 to remove the "0." part
-    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
-    pad_val_to = -err_mag + err_last_decimal_mag
+    Returns
+    -------
+    str
+        Trailing non-zero digits of err
+    """
 
-    if err_mag > val_mag:
-        return 1 / 0
-    elif err_mag == val_mag:
-        print_err = rounded_err
-    else:
-        print_err = int(str(shifted_rounded_err).replace(".", ""))
-
-    str_val = str(rounded_val)
-    decimal_pos = str_val.find(".")
-    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
-    padded_val = str(rounded_val) + "0" * num_padding_zeros
-    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
-    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
+    stripped_err = ""
+    trailing = False
+    for char in str(err):
+        if char == ".":
+            continue
+        elif char != "0":
+            trailing = True
+        if trailing:
+            stripped_err += char
+    return stripped_err
 
 
-def presentation_round(val, err):
+def round_for_print_sci_latex(val, err):
+    """Round a value and associated error to the appropriate level given the
+    magnitude of the error. The error will be rounded to 1 or 2 sig figs depending
+    on whether the first sig fig is >1 or =1 respectively. Returned as a string
+    to be put directly into LaTeX - the printed result will be in scientific notation
 
-    # If err > 10, this presentation becomes unclear
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    err : numeric
+        Associated error
+
+    Returns
+    -------
+    str
+        Rounded value including error and order of magnitude to be put directly into LaTeX
+    """
+
+    rounded_val, rounded_err, power_of_10 = round_for_print_sci(val, err)
+    err_str = strip_err(rounded_err)
+    return r"\num{{{}({})e{}}}".format(rounded_val, err_str, power_of_10)
+
+
+def round_for_print(val, err):
+    """Round a value and associated error to the appropriate level given the
+    magnitude of the error. The error will be rounded to 1 or 2 sig figs depending
+    on whether the first sig fig is >1 or =1 respectively. Returned as a string
+    to be printed directly in standard (not scientific) notation. As such, it is
+    assumed that err < 1, otherwise the number of sig figs will be unclear
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    err : numeric
+        Associated error
+
+    Returns
+    -------
+    str
+        Rounded value including error to be printed directly
+    """
+
+    # If err > 10, this presentation style becomes unclear
     if err > 10:
         return None
-        # raise ValueError(
-        #     f"The value, error combination {val}, {err} should be expressed in scientific notation."
-        # )
 
     # Start from the scientific presentation
-    rounded_val, rounded_err, power_of_10 = presentation_round_sci(val, err)
+    rounded_val, rounded_err, power_of_10 = round_for_print_sci(val, err)
 
     # Get the representation of the actual value, where min_digits
     # ensures the last digit lines up with the error
@@ -1369,20 +1442,12 @@ def presentation_round(val, err):
         rounded_val * mag, min_digits=len(str_rounded_err) - 2 - power_of_10
     )
 
-    # Trim trailing decimal point
+    # Trim possible trailing decimal point
     if val_str[-1] == ".":
         val_str = val_str[:-1]
 
     # Get the representation of the error, which is alway just the trailing non-zero digits
-    err_str = ""
-    trailing = False
-    for char in str_rounded_err:
-        if char == ".":
-            continue
-        elif char != "0":
-            trailing = True
-        if trailing:
-            err_str += char
+    err_str = strip_err(err)
 
     return f"{val_str}({err_str})"
 

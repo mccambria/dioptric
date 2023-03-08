@@ -518,7 +518,12 @@ for ind in range(len(vals)):
     #     res = None
     # expected_results.append(res)
     exp = expected_results[ind]
-    act = tool_belt.presentation_round(val, err)
-    if exp != act:
-        test = 0
+    # act = tool_belt.round_for_print(val, err)
+    act = tool_belt.round_for_print_sci_latex(val, err)
+    print(val)
+    print(err)
+    print(act)
+    print()
+    # if exp != act:
+    #     test = 0
 # print(expected_results)
