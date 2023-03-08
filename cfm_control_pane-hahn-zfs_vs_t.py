@@ -43,8 +43,8 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # num_steps = 90
     # num_steps = 120
 
-    scan_range = 0.5
-    num_steps = 90
+    # scan_range = 0.5
+    # num_steps = 90
     # num_steps = 150
 
     # scan_range = 0.3
@@ -56,12 +56,12 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # scan_range = 1.5
     # num_steps = 180
 
-    # scan_range = 2.0
-    # num_steps = 90*2
+    scan_range = 2.0
+    num_steps = 90
 
-    # scan_range = 3.0
+    # scan_range = 5.0
     # num_steps = 90*6
-    # num_steps = 90
+    # num_steps = 180
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(
@@ -307,8 +307,8 @@ if __name__ == "__main__":
     # fmt: off
 
     sample_name = "15micro"
-    z_coord = 5.8
-    ref_coords = [0.121, 0.456, z_coord]
+    z_coord = 5.5
+    ref_coords = [0.142, -0.162, z_coord]
     ref_coords = np.array(ref_coords)
 
     nvref = {
@@ -316,9 +316,13 @@ if __name__ == "__main__":
         'name': '{}-nvref_zfs_vs_t'.format(sample_name),
         'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 2000,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.3", 'imaging_readout_dur': 1e7,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
 
         # Microdiamond
+        # "spin_laser": green_laser, "spin_laser_filter": "nd_1.0",
+        # "spin_laser": green_laser, "spin_laser_filter": "nd_0.5",
         "spin_laser": green_laser, "spin_laser_filter": "nd_0.3",
+        # "spin_laser": green_laser, "spin_laser_filter": "nd_0",
         "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
         # "spin_laser": green_laser, "spin_laser_filter": "nd_0",
         # "spin_pol_dur": 3e6, "spin_readout_dur": 5e5,
@@ -327,25 +331,26 @@ if __name__ == "__main__":
         # "spin_laser": green_laser, "spin_laser_filter": "nd_0",
         # "spin_pol_dur": 2e3, "spin_readout_dur": 440,
 
-        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.4", 'magnet_angle': None,
+        "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.2", 'magnet_angle': None,
+        # "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0.1", 'magnet_angle': None,
         # "norm_style": NormStyle.POINT_TO_POINT, 'collection_filter': "nd_0", 'magnet_angle': None,
-        'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
+        'resonance_LOW': 2.86, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
         }
 
     nv6 = copy.deepcopy(nvref)
-    nv6["coords"] = ref_coords + np.array([0.104, -0.136, 0])
+    nv6["coords"] = ref_coords + np.array([0.103, -0.119, 0])
     nv6["name"] =  f"{sample_name}-nv6_zfs_vs_t"
 
     nv7 = copy.deepcopy(nvref)
-    nv7["coords"] = ref_coords + np.array([0.059, -0.120, 0])
+    nv7["coords"] = ref_coords + np.array([0.061, -0.109, 0])
     nv7["name"] =  f"{sample_name}-nv7_zfs_vs_t"
 
     nv8 = copy.deepcopy(nvref)
-    nv8["coords"] = ref_coords + np.array([-0.139, 0.022, 0])
+    nv8["coords"] = ref_coords + np.array([-0.143,  0.033, 0])
     nv8["name"] =  f"{sample_name}-nv8_zfs_vs_t"
 
     nv9 = copy.deepcopy(nvref)
-    nv9["coords"] = ref_coords + np.array([-0.030, 0.195, 0])
+    nv9["coords"] = ref_coords + np.array([-0.035,  0.2, 0])
     nv9["name"] =  f"{sample_name}-nv9_zfs_vs_t"
 
     nv11 = copy.deepcopy(nvref)
@@ -379,7 +384,7 @@ if __name__ == "__main__":
         #     positioning.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
         # for z in np.arange(-24, 20, 4):
-        # for z in np.arange(7.0, 3.0, -0.4):
+        # for z in np.arange(2.0, 8.0, 0.3):
         # # z = 0
         # # while True:
         #     if tool_belt.safe_stop():
@@ -394,7 +399,7 @@ if __name__ == "__main__":
 
         # nv_sig = nvref
         # nv_sig['imaging_readout_dur'] = 4e7
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
 
         # for nv in nv_list:
@@ -412,13 +417,13 @@ if __name__ == "__main__":
 
         # do_determine_standard_readout_params(nv_sig)
 
-        # do_pulsed_resonance(nv_sig, 2.87, 0.060)
+        # do_pulsed_resonance(nv_sig, 2.86, 0.060)
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 500])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        temp = 435
-        shuffle(nv_list)
-        do_pulsed_resonance_batch(nv_list, temp, freq_range=0.060)
+        # temp = 300
+        # shuffle(nv_list)
+        # do_pulsed_resonance_batch(nv_list, temp, freq_range=0.060)
         # shuffle(nv_list)
         # do_pulsed_resonance_batch(nv_list, temp, freq_range=0.040)
         # do_rabi_batch(nv_list)
