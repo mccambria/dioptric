@@ -225,15 +225,13 @@ def create_raw_data_figure(
 # region Math functions
 
 
-def rabi_line(
-    freq, constrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True
-):
+def rabi_line(freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True):
     """Rabi lineshape"""
 
     rabi_freq_ghz = rabi_freq / 1000
     detuning = freq - res_freq
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
-    effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
+    effective_contrast = contrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
     if uwave_pulse_dur is None:
         uwave_pulse_dur = 1 / (2 * rabi_freq_ghz)
     angular_effective_rabi_freq = 2 * np.pi * effective_rabi_freq
@@ -289,6 +287,14 @@ def lorentzian_split(freq, contrast, hwhm, center, splitting):
     line_1 = lorentzian(freq, contrast, hwhm, center - splitting_ghz / 2)
     line_2 = lorentzian(freq, contrast, hwhm, center + splitting_ghz / 2)
     return line_1 + line_2
+
+
+def lorentzian_split_offset(freq, contrast, hwhm, center, splitting, offset):
+    """Normalized that the value at the center is the contrast"""
+    splitting_ghz = splitting / 1000
+    line_1 = lorentzian(freq, contrast, hwhm, center - splitting_ghz / 2)
+    line_2 = lorentzian(freq, contrast, hwhm, center + splitting_ghz / 2)
+    return line_1 + line_2 + offset
 
 
 def lorentzian_sum(freq, contrast, hwhm, center, splitting_mag):
@@ -562,6 +568,8 @@ def fit_resonance(
         p0=guess_params,
         sigma=norm_avg_sig_ste,
         absolute_sigma=True,
+        # full_output=True,
+        # method="trf",
     )
 
     # If the user gave us a hint, go with that
@@ -576,6 +584,8 @@ def fit_resonance(
             guess_params = get_guess_params_lambda(num_resonances)
         fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
         popt, pcov = curve_fit_lambda(fit_func, guess_params)
+        # ret_vals = curve_fit_lambda(fit_func, guess_params)
+        # test = 0
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:

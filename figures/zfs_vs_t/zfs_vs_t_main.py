@@ -25,6 +25,7 @@ from scipy.optimize import curve_fit
 import csv
 import pandas as pd
 import sys
+from analysis import three_level_rabi
 
 # fmt: off
 toyli_digitized = [300, 2.87, 309.9858044201037, 2.8690768841409784, 320.04280071681194, 2.868366259576263, 330.32149670254546, 2.8673945841666115, 340.3583384820696, 2.866304172245094, 350.05837349046874, 2.8655253065868678, 360.1625766242179, 2.8644972039180088, 370.064695695292, 2.8633133281175045, 380.2362601832661, 2.8622540708223165, 390.13837925434024, 2.8611013496481412, 399.9731369711893, 2.8600109377266243, 410.00997875071346, 2.858858216552449, 420.0468205302376, 2.857362794488654, 430.4878304351117, 2.856176937898957, 440.3899495061858, 2.8549015790086583, 450.02262316036, 2.8535619300765087, 460.1268262941091, 2.852066508012714, 469.96158401095823, 2.850633395201577, 480.5373166242823, 2.849387210148415, 490.30471298690645, 2.84789178808462, 500.2068320579806, 2.8465209845261414, 510.04158977482973, 2.844994407836017, 520.2805156170289, 2.843374367266906, 530.452080105003, 2.8417854813241243, 540.354199176077, 2.840258904634, 550.1215955387013, 2.838638864064889, 560.1584373182253, 2.837361524385398, 570.3300018061993, 2.8357103291899572, 580.2321208772735, 2.8341545786626967, 590.4036853652476, 2.8322813395045685, 600.0363590194218, 2.830756743603637, 610.005839444721, 2.829354785418829, 619.9079585157951, 2.8275789717180726, 630.4163297748942, 2.826052395027949, 640.3184488459683, 2.824556972964154, 650.2879292712674, 2.8227500046370686, 660.1269697755595, 2.821005345562641, 669.8900833507407, 2.8189160048094015, 680.4658159640647, 2.816922108724342, 690.5700190978139, 2.8151482758127777, 700.472138168888, 2.8134950998281454, 710.0374504688373, 2.812188586311517]
@@ -78,12 +79,22 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
                     except Exception:
                         val = raw_val
                 point[column] = val
+            point["Label"] = f"{point['Sample']}-{point['NV']}"
 
             skip = skip_lambda is not None and skip_lambda(point)
             if not skip:
                 data_points.append(point)
 
-    data_points = condense_data_points(data_points, condense_all, condense_samples)
+    # MCC ad hoc adjustments
+    # for point in data_points:
+    #     if point["Sample"] == "Wu" and point["Monitor"] == "PT100":
+    #         point["ZFS (GHz)"] -= 0.000500
+    #     elif point["Sample"] == "15micro" and point["Monitor"] == "PT100":
+    #         point["ZFS (GHz)"] += 0.0006
+    #         # point["Monitor temp (K)"] += 8
+
+    if condense_all or condense_samples:
+        data_points = condense_data_points(data_points, condense_all, condense_samples)
 
     return data_points
 
@@ -124,7 +135,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             if test_identifier == identifier:
                 monitor_temps.append(point["Monitor temp (K)"])
                 zfss.append(point["ZFS (GHz)"])
-                zfs_errors.append(point["ZFS error (GHz)"])
+                zfs_errors.append(point["ZFS (GHz) error"])
         weights = [val**-2 for val in zfs_errors]
         norm = np.sum(weights)
         # For inverse-variance weighting, condensed_error**2 = 1/norm
@@ -147,7 +158,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             "Setpoint temp (K)": setpoint_temp,
             "Monitor temp (K)": np.average(monitor_temps),
             "ZFS (GHz)": np.average(zfss, weights=weights),
-            "ZFS error (GHz)": condensed_error,
+            "ZFS (GHz) error": condensed_error,
             "Label": label,
         }
         condensed_data_points.append(new_point)
@@ -186,7 +197,7 @@ def data_points_to_lists(data_points):
         #     monitor_temp *= 300.7 / 295
         temp_list.append(monitor_temp)
         zfs_list.append(zfs)
-        zfs_err = el["ZFS error (GHz)"]
+        zfs_err = el["ZFS (GHz) error"]
         zfs_err_list.append(zfs_err)
         label = el["Label"]
         label_list.append(label)
@@ -229,31 +240,84 @@ def refit_experiments():
     ### User setup
     # Also see below section Sample-dependent fit...
 
-    do_plot = False  # Generate raw data and fit plots?
-    do_save = False  # Save the plots?
+    do_plot = True  # Generate raw data and fit plots?
+    do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
-    data_points = get_data_points()
-    sample = "Wu"
-    # sample = "15micro"
-    # file_list = [el["ZFS file"] for el in data_points if el["Sample"] == sample]
-    # file_list = [file_list[57]]
+    # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
+    skip_lambda = (
+        lambda point: point["Skip"]
+        # or point["ZFS file"] == ""
+        or point["Sample"] != "15micro"
+        # or point["Sample"] != "Wu"
+        # or point["Setpoint temp (K)"] != ""
+        # or point["Setpoint temp (K)"] < 300
+    )
+
+    data_points = get_data_points(skip_lambda)
+    file_list = [el["ZFS file"] for el in data_points]
+    file_list = file_list[164:165]
     file_list = [
-        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
-        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
-        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
-        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
-        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
-        "2023_02_09-17_28_01-wu-nv1_region2",
-        "2023_02_09-18_02_43-wu-nv2_region2",
-        "2023_02_09-18_14_01-wu-nv3_region2",
-        "2023_02_09-17_51_24-wu-nv4_region2",
-        "2023_02_09-17_39_51-wu-nv5_region2",
-        "2023_02_09-23_28_39-wu-nv1_region3",
-        "2023_02_09-23_51_39-wu-nv2_region3",
-        "2023_02_10-00_14_56-wu-nv3_region3",
-        "2023_02_10-00_37_40-wu-nv4_region3",
-        "2023_02_10-00_59_59-wu-nv5_region3",
+        # # 1 us
+        # "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
+        # "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
+        # "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
+        # "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
+        # "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
+        # # 10 us
+        # "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
+        # "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
+        # "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
+        # "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
+        # "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
+        # # 100 us
+        # "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
+        # "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
+        # "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
+        # "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
+        # "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
+        # 1 ms
+        # "2023_03_04-11_43_50-15micro-nv6_zfs_vs_t",
+        # "2023_03_04-11_06_24-15micro-nv7_zfs_vs_t",
+        # "2023_03_04-12_58_51-15micro-nv8_zfs_vs_t",
+        # "2023_03_04-12_21_20-15micro-nv9_zfs_vs_t",
+        # "2023_03_04-13_36_17-15micro-nv11_zfs_vs_t",
+        # 1 us, ND 0.3 => 0.5
+        # "2023_03_04-16_40_09-15micro-nv6_zfs_vs_t",
+        # "2023_03_04-14_55_01-15micro-nv7_zfs_vs_t",
+        # "2023_03_04-15_47_39-15micro-nv8_zfs_vs_t",
+        # "2023_03_04-18_25_23-15micro-nv9_zfs_vs_t",
+        # "2023_03_04-17_32_26-15micro-nv11_zfs_vs_t",
+        # # microwave 10 => 0 dBm
+        # "2023_03_04-21_22_00-15micro-nv6_zfs_vs_t",
+        # "2023_03_04-23_12_14-15micro-nv7_zfs_vs_t",
+        # "2023_03_04-20_26_41-15micro-nv8_zfs_vs_t",
+        # "2023_03_04-22_17_57-15micro-nv9_zfs_vs_t",
+        # "2023_03_05-00_07_19-15micro-nv11_zfs_vs_t",
+        # # ND 1.0
+        # "2023_03_05-13_24_15-15micro-nv6_zfs_vs_t",
+        # "2023_03_05-11_41_45-15micro-nv7_zfs_vs_t",
+        # "2023_03_05-14_15_18-15micro-nv8_zfs_vs_t",
+        # "2023_03_05-12_33_07-15micro-nv9_zfs_vs_t",
+        # "2023_03_05-10_50_58-15micro-nv11_zfs_vs_t",
+        # # Temp control disconnected
+        # "2023_03_06-20_37_53-15micro-nv6_zfs_vs_t",
+        # "2023_03_06-20_09_53-15micro-nv7_zfs_vs_t",
+        # "2023_03_06-19_14_17-15micro-nv8_zfs_vs_t",
+        # "2023_03_06-19_42_31-15micro-nv9_zfs_vs_t",
+        # "2023_03_06-21_05_38-15micro-nv11_zfs_vs_t",
+        # 1 ms delay repeat
+        # "2023_03_07-05_26_17-15micro-nv6_zfs_vs_t",
+        # "2023_03_07-04_11_05-15micro-nv7_zfs_vs_t",
+        # "2023_03_07-02_56_13-15micro-nv8_zfs_vs_t",
+        # "2023_03_07-00_26_02-15micro-nv9_zfs_vs_t",
+        # "2023_03_07-01_41_04-15micro-nv11_zfs_vs_t",
+        # uwave polarization
+        "2023_03_07-14_27_00-15micro-nv6_zfs_vs_t",
+        "2023_03_07-12_34_04-15micro-nv7_zfs_vs_t",
+        "2023_03_07-13_30_18-15micro-nv8_zfs_vs_t",
+        "2023_03_07-13_58_48-15micro-nv9_zfs_vs_t",
+        "2023_03_07-13_02_08-15micro-nv11_zfs_vs_t",
     ]
 
     ### Loop
@@ -265,7 +329,6 @@ def refit_experiments():
 
         ### Data extraction and processing
 
-        # file_name = "2022_11_19-09_14_08-wu-nv1_zfs_vs_t"
         data = tool_belt.get_raw_data(file_name)
         raw_file_path = tool_belt.get_raw_data_path(file_name)
         freq_center = data["freq_center"]
@@ -275,7 +338,10 @@ def refit_experiments():
         sig_counts = data["sig_counts"]
         num_reps = data["num_reps"]
         nv_sig = data["nv_sig"]
+        sample = nv_sig["name"].split("-")[0]
         readout = nv_sig["spin_readout_dur"]
+        # uwave_pulse_dur = data["uwave_pulse_dur"]
+        uwave_pulse_dur = None
         try:
             norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
         except Exception as exc:
@@ -294,76 +360,62 @@ def refit_experiments():
 
         ### Raw data figure
 
-        if do_plot:
-            ret_vals = pesr.create_raw_data_figure(
-                freq_center,
-                freq_range,
-                num_steps,
-                sig_counts_avg_kcps,
-                ref_counts_avg_kcps,
-                norm_avg_sig,
-            )
-            if do_save:
-                raw_fig = ret_vals[0]
-                file_path = raw_file_path.with_suffix(".svg")
-                tool_belt.save_figure(raw_fig, file_path)
+        # if do_plot:
+        #     ret_vals = pesr.create_raw_data_figure(
+        #         freq_center,
+        #         freq_range,
+        #         num_steps,
+        #         sig_counts_avg_kcps,
+        #         ref_counts_avg_kcps,
+        #         norm_avg_sig,
+        #     )
+        #     if do_save:
+        #         raw_fig = ret_vals[0]
+        #         file_path = raw_file_path.with_suffix(".svg")
+        #         tool_belt.save_figure(raw_fig, file_path)
 
         ### Sample-dependent fit functions and parameters
 
-        if sample == "Wu":
+        if sample == "wu":
 
-            fit_func = lambda freq, contrast, rabi_freq, center: pesr.single_dip(
-                freq, contrast, rabi_freq, center, dip_func=pesr.rabi_line_hyperfine
+            # line_func = (
+            #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
+            #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+            #     )
+            # )
+            # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
+            #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+            # )
+            # guess_params = [0.2, 4, freq_center]
+            # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
+            # guess_params = [0.4, 9, 2.8748]
+
+            line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
+                freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
             )
-            guess_params = [0.1, 5, freq_center]
+            guess_params = [0.2, 4, freq_center, 5]
+
+            # line_func = pesr.lorentzian_split
+            # guess_params = [0.3, 1, freq_center, 1]
+
+            # fit_func = lambda freq, contrast, rabi_freq, center: pesr.dip_sum(
+            #     freq, line_func, contrast, rabi_freq, center
+            # )
+            # popt = guess_params
 
         elif sample == "15micro":
 
-            avg_splitting = 13.19 / 1000
             # fmt: off
-            # Just center and contrast
-            # fit_func = lambda freq, contrast, center: pesr.double_dip( freq, contrast, 8, center - avg_splitting / 2, contrast, 8, center + avg_splitting / 2, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, freq_center]
+            
+            # line_func = lambda freq, contrast, rabi_freq, center, splitting, offset: three_level_rabi.incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, uwave_pulse_dur)
+            # guess_params = [0.05, 3, freq_center, 6, 0.005]
 
-            # Fixed double Lorentzians
-            fit_func = lambda freq, contrast, width, center: pesr.double_dip( freq, contrast, width, center - avg_splitting / 2, contrast, width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
-            guess_params = [0.015, 8, freq_center]
+            # line_func = pesr.lorentzian_split
+            # guess_params = [0.05, 3, freq_center, 6]
 
-            # Fixed double Rabi
-            # fit_func = lambda freq, contrast, width, center: pesr.double_dip( freq, contrast, width, center - avg_splitting / 2, contrast, width, center + avg_splitting / 2, dip_func=pesr.rabi_line)
-            # guess_params = [0.015, 8, freq_center]
+            line_func = pesr.lorentzian_split_offset
+            guess_params = [0.05, 3, freq_center, 6, 0.005]
 
-            # Fixed double Lorentzians, indpendent freqs
-            # fit_func = lambda freq, contrast, width, low_center, high_center: pesr.double_dip( freq, contrast, width, low_center, contrast, width, high_center, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, 8, freq_center - 6.5/1000, freq_center + 6.5/1000]
-
-            # Common width
-            # fit_func = lambda freq, low_contrast, width, low_center, high_center, high_contrast: pesr.double_dip( freq, low_contrast, width, low_center, high_contrast, width, high_center, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, 8, freq_center - 6.5/1000, freq_center + 6.5/1000, 0.015]
-
-            # Common width, splitting fixed
-            # fit_func = lambda freq, low_contrast, width, center, high_contrast: pesr.double_dip( freq, low_contrast, width, center - avg_splitting / 2, high_contrast, width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, 8, freq_center, 0.015]
-
-            # Fixed double Lorentzians, indpendent center + splitting
-            # fit_func = lambda freq, contrast, width, center, splitting: pesr.double_dip( freq, contrast, width, center - splitting / 2, contrast, width, center + splitting / 2, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, 8, freq_center, 13 / 1000]
-
-            # Contrast- and width-fixed double Lorentzians
-            # fit_func = lambda freq, low_contrast, width, center, splitting, high_contrast: pesr.double_dip( freq, low_contrast, width, center - splitting / 2, high_contrast, width, center + splitting / 2, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, 8, freq_center, 13 / 1000, 0.015]
-
-            # Splitting-fixed double Lorentzians
-            # fit_func = lambda freq, low_contrast, low_width, center, high_contrast, high_width: pesr.double_dip( freq, low_contrast, low_width, center - avg_splitting / 2, high_contrast, high_width, center + avg_splitting / 2, dip_func=pesr.lorentzian)
-            # guess_params = [0.015, 8, freq_center, 0.015, 8]
-
-            # Independent double Lorentzians
-            # fit_func = lambda freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center: pesr.double_dip( freq, low_contrast, low_width, low_center, high_contrast, high_width, high_center, dip_func=pesr.lorentzian)
-            # guess_params = [ 0.015, 8, freq_center - 0.0065, 0.015, 8, freq_center + 0.0065]
-
-            # Independent double Lorentzians - reparameterized
-            # fit_func = lambda freq, low_contrast, low_width, high_contrast, high_width, center, splitting: pesr.double_dip( freq, low_contrast, low_width, center - splitting/2, high_contrast, high_width, center + splitting/2, dip_func=pesr.lorentzian)
-            # guess_params = [ 0.015, 8, 0.015, 8, freq_center, 13 / 1000]
             # fmt: on
 
         ### Raw data figure
@@ -375,8 +427,10 @@ def refit_experiments():
                 num_steps,
                 norm_avg_sig,
                 norm_avg_sig_ste,
-                fit_func=fit_func,
+                line_func=line_func,
                 guess_params=guess_params,
+                # fit_func=fit_func,
+                # popt=popt,
             )
             if do_save:
                 file_path = raw_file_path.with_name((f"{file_name}-fit"))
@@ -385,31 +439,31 @@ def refit_experiments():
 
         ### Get fit parameters and error bars
 
-        if do_print:
-            if not do_plot:
-                fit_func, popt, pcov = pesr.fit_resonance(
-                    freq_center,
-                    freq_range,
-                    num_steps,
-                    norm_avg_sig,
-                    norm_avg_sig_ste,
-                    fit_func=fit_func,
-                    guess_params=guess_params,
-                )
-            if table_popt is None:
-                table_popt = []
-                table_pste = []
-                table_red_chi_sq = []
-                for ind in range(len(popt)):
-                    table_popt.append([])
-                    table_pste.append([])
-            for ind in range(len(popt)):
-                val = popt[ind]
-                err = np.sqrt(pcov[ind, ind])
-                val_col = table_popt[ind]
-                err_col = table_pste[ind]
-                val_col.append(round(val, 6))
-                err_col.append(round(err, 6))
+        if not do_plot:
+            fit_func, popt, pcov = pesr.fit_resonance(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                line_func=line_func,
+                guess_params=guess_params,
+            )
+        if table_popt is None:
+            table_popt = []
+            table_pste = []
+            table_red_chi_sq = []
+            # for ind in range(len(popt)):
+            for ind in range(5):
+                table_popt.append([])
+                table_pste.append([])
+        for ind in range(len(popt)):
+            val = popt[ind]
+            err = np.sqrt(pcov[ind, ind])
+            val_col = table_popt[ind]
+            err_col = table_pste[ind]
+            val_col.append(round(val, 6))
+            err_col.append(round(err, 6))
 
         fit_lambda = lambda freq: fit_func(freq, *popt)
         freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
@@ -418,7 +472,7 @@ def refit_experiments():
         table_red_chi_sq.append(red_chi_sq)
 
         # Close the plots so they don't clutter everything up
-        plt.close("all")
+        # plt.close("all")
 
     ### Report the fit parameters
 
@@ -442,10 +496,19 @@ def refit_experiments():
     zfs_vals = np.array(table_popt[2])
     zfs_errs = np.array(table_pste[2])
 
-    print("ZFS vals")
-    for ind in range(len(zfs_vals)):
-        # print(tool_belt.presentation_round(zfs_vals[ind], zfs_errs[ind]))
-        print(zfs_vals[ind], zfs_errs[ind])
+    # print()
+    # print(np.mean(table_red_chi_sq))
+    # print(np.min(table_red_chi_sq))
+    # print(np.max(table_red_chi_sq))
+    # print()
+    # print(zfs_vals)
+    # print()
+    # print(zfs_errs)
+
+    # print("ZFS vals")
+    # for ind in range(len(zfs_vals)):
+    #     # print(tool_belt.presentation_round(zfs_vals[ind], zfs_errs[ind]))
+    #     print(zfs_vals[ind], zfs_errs[ind])
 
     # print("ZFS errors")
     # print(zfs_errs)
@@ -783,7 +846,7 @@ def main():
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
     temp_range = [-10, 520]
-    y_range = [2.848, 2.879]
+    y_range = [2.847, 2.879]
     # temp_range = [-10, 310]
     # y_range = [2.8685, 2.8785]
     # temp_range = [280, 320]
@@ -794,8 +857,8 @@ def main():
     plot_data = True
     plot_residuals = False
     hist_residuals = False  # Must specify nv_to_plot down below
-    condense_all = True
-    condense_samples = False
+    condense_all = False
+    condense_samples = True
     plot_prior_models = False
     desaturate_prior = False
     plot_new_model = True
@@ -803,7 +866,14 @@ def main():
 
     skip_lambda = lambda point: point["Skip"]
     # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
-    # skip_lambda = lambda point: point["Skip"] or not point["Monitor temp (K)"] >= 296
+    # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "15micro"
+    # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
+    # skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 296
+    # skip_lambda = (
+    #     lambda point: point["Skip"]
+    #     or point["Sample"] != "Wu"
+    #     or point["Monitor temp (K)"] >= 296
+    # )
 
     ###
 
@@ -888,6 +958,7 @@ def main():
         *popt,
         # *guess_params,
     )
+    print(f"Predicted ZFS at 296 K: {cambria_lambda(296)}")
     ssr = 0
     num_points = len(temp_list)
     num_params = len(guess_params)
@@ -1085,10 +1156,58 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib()
+    # kpl.init_kplotlib()
 
-    # main()
-    refit_experiments()
-    # derivative_comp()
+    # # main()
+    # refit_experiments()
+    # # # derivative_comp()
 
-    plt.show(block=True)
+    # plt.show(block=True)
+
+    vals = [
+        [2.869549, 2.869409, 2.869265, 2.869323, 2.869320],
+        [2.869514, 2.869471, 2.869382, 2.869566, 2.869293],
+        [2.869116, 2.869526, 2.869619, 2.869388, 2.869451],
+        [2.869500, 2.870178, 2.869463, 2.870033, 2.869479],
+        [2.869472, 2.869201, 2.869634, 2.869352, 2.869265],
+        [2.868786, 2.869506, 2.869398, 2.869324, 2.869297],
+        [2.868402, 2.869612, 2.868951, 2.869346, 2.869729],
+        [2.869555, 2.869349, 2.869200, 2.869306, 2.869191],
+        [2.869638, 2.869301, 2.869307, 2.869410, 2.869455],
+        [2.869586, 2.869742, 2.86961, 2.869567, 2.869645],
+    ]
+    errs = [
+        [0.000122, 0.000151, 0.000122, 0.000126, 0.000136],
+        [0.000125, 0.000162, 0.000131, 0.000129, 0.000137],
+        [0.00015, 0.000187, 0.000156, 0.00015, 0.000158],
+        [0.000353, 0.000354, 0.000323, 0.00036, 0.000379],
+        [0.000132, 0.000188, 0.00014, 0.000131, 0.000138],
+        [0.00026, 0.000301, 0.000262, 0.000256, 0.000249],
+        [0.000332, 0.000436, 0.00035, 0.000332, 0.000363],
+        [0.000119, 0.000153, 0.000116, 0.000121, 0.000133],
+        [0.000246, 0.000309, 0.000244, 0.000229, 0.000231],
+        [0.000119, 0.000148, 0.000123, 0.000117, 0.000129],
+    ]
+    vals = np.array(vals)
+    errs = np.array(errs)
+
+    sub_vals = vals[-1]
+    sub_errs = errs[-1]
+    for ind in range(len(sub_vals)):
+        val = sub_vals[ind]
+        err = sub_errs[ind]
+        print(tool_belt.presentation_round(val, err))
+
+    # num_inds = len(vals)
+    # # num_inds = 5
+    # for ind in range(num_inds):
+    #     sub_vals = vals[ind]
+    #     sub_errs = errs[ind]
+    #     # sub_vals = vals[:, ind]
+    #     # sub_errs = errs[:, ind]
+
+    #     avg = np.average(sub_vals, weights=1 / (sub_errs**2))
+    #     err = np.sqrt(1 / np.sum(1 / (sub_errs**2)))
+
+    #     print(tool_belt.presentation_round(avg, err))
+    #     print()

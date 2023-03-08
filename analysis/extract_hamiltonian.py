@@ -29,6 +29,7 @@ from scipy.optimize import brute
 from numpy import exp
 import matplotlib.pyplot as plt
 import utils.kplotlib as kpl
+import sys
 
 d_gs = 2.87  # ground state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
@@ -299,6 +300,13 @@ def main(name, res_descs):
 
 
 if __name__ == "__main__":
+
+    pair = calc_res_pair(0.05, 0.5, 0, 0.005, 0, 0)
+    print(pair)
+    print(np.mean(pair))
+    hamiltonian = calc_hamiltonian(0.05, 0.2, 0, 0.005, 0, 0)
+    test = np.linalg.eig(hamiltonian)
+    sys.exit()
 
     kpl.init_kplotlib()
 
