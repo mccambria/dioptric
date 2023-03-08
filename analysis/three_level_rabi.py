@@ -10,6 +10,7 @@ Created on February 28th, 2023
 
 from mpmath import mp  # Arbitrary-precision math - necessary for matrix diagonalization
 import numpy as np
+from pathos.multiprocessing import ProcessingPool
 import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 from utils import common
@@ -53,7 +54,9 @@ def incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, pulse_
 
 def single_conversion(single_func, freq, *args):
     if type(freq) in [list, np.ndarray]:
-        line = [single_func(f, *args) for f in freq]
+        single_func_lambda = lambda freq: single_func(freq, *args)
+        with ProcessingPool() as p:
+            line = p.map(single_func_lambda, freq)
         line = np.array(line)
         return line
     else:
@@ -69,9 +72,9 @@ def coherent_line_single(freq, contrast, rabi_freq, center, splitting, pulse_dur
         pulse_dur = 1 / (2 * rabi_freq)
     else:
         pulse_dur /= 1000
-    rabi_freq /= mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
 
-    hamiltonian = gen_hamiltonian(dp, rabi_freq, dm)
+    coupling = rabi_freq / mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
+    hamiltonian = gen_hamiltonian(dp, coupling, dm)
     eigvals, eigvecs = mp.eighe(hamiltonian)
 
     intial_vec = mp.matrix([[0], [1], [0]])

@@ -390,14 +390,10 @@ def refit_experiments():
             # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
             # guess_params = [0.4, 9, 2.8748]
 
-            # line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
-            #     freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
-            # )
-            # guess_params = [0.2, 3, freq_center, 5]
-            line_func = lambda freq, contrast, rabi_freq, center: three_level_rabi.coherent_line(
-                freq, contrast, rabi_freq, center, 0.0, uwave_pulse_dur
+            line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
+                freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
             )
-            guess_params = [0.2, 4, freq_center]
+            guess_params = [0.2, 4, freq_center, 5]
 
             # line_func = pesr.lorentzian_split
             # guess_params = [0.3, 1, freq_center, 1]
