@@ -297,6 +297,16 @@ def lorentzian_split_offset(freq, contrast, hwhm, center, splitting, offset):
     return line_1 + line_2 + offset
 
 
+def lorentzian_test(
+    freq, contrast1, hwhm1, center, splitting, offset, contrast2, hwhm2
+):
+    """Normalized that the value at the center is the contrast"""
+    splitting_ghz = splitting / 1000
+    line_1 = lorentzian(freq, contrast1, hwhm1, center - splitting_ghz / 2)
+    line_2 = lorentzian(freq, contrast2, hwhm2, center + splitting_ghz / 2)
+    return line_1 + line_2 + offset
+
+
 def lorentzian_sum(freq, contrast, hwhm, center, splitting_mag):
     """Normalized that the value at the center is the contrast"""
     num_samples = 100
