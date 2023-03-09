@@ -87,7 +87,8 @@ if __name__ == "__main__":
     laser_filter = "nd_0.3"
     collection_filter = "nd_0"
     # pos = [-0.306, 0.235, 8.0]
-    pos = [0.0, 0.0, 4.6]
+    z_coord = 4.85
+    pos = [0.142, -0.162, z_coord]
 
     tool_belt.init_safe_stop()
     
