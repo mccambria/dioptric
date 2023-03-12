@@ -1447,7 +1447,7 @@ def round_for_print(val, err):
         val_str = val_str[:-1]
 
     # Get the representation of the error, which is alway just the trailing non-zero digits
-    err_str = strip_err(err)
+    err_str = strip_err(rounded_err)
 
     return f"{val_str}({err_str})"
 

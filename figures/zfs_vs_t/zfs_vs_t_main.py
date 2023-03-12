@@ -232,6 +232,39 @@ def calc_zfs_from_compiled_data():
     print(zfs_err_list)
 
 
+def light_polarization():
+
+    # Actual angles of the half-waveplate
+    angles = [348, 88, 58, 38]
+    angles = [np.mod(el - angles[0], 360) for el in angles]
+    zfss = [
+        [2.86957, 2.869903, 2.869913, 2.869949, 2.869767],
+        [2.869699, 2.869654, 2.869838, 2.869908, 2.869865],
+        [2.869846, 2.869777, 2.86989, 2.869863, 2.869619],
+        [2.869825, 2.869832, 2.869823, 2.869929, 2.869966],
+    ]
+    zfss = np.array(zfss)
+    zfss *= 1000
+    zfss -= 2870
+    errs = [
+        [0.000124, 9e-05, 0.000132, 0.000113, 0.000108],
+        [0.000114, 0.000103, 0.000133, 0.000122, 0.000107],
+        [0.000112, 8.7e-05, 0.000128, 0.000107, 0.000112],
+        [0.00011, 8.9e-05, 0.000129, 0.000119, 0.000104],
+    ]
+    errs = np.array(errs)
+    errs *= 1000
+    labels = ["NV12", "NV13", "NV14", "NV15", "NV16"]
+
+    fig, ax = plt.subplots()
+    # for ind in range(5):
+    for ind in [4]:
+        kpl.plot_points(ax, angles, zfss[:, ind], yerr=errs[:, ind], label=labels[ind])
+    ax.set_xlabel("Waveplate angle (deg)")
+    ax.set_ylabel("ZFS - 2870 (MHz)")
+    ax.legend()
+
+
 def refit_experiments():
     """Re-run fits to experimental data, either plotting and saving the new plots
     or just printing out the fit parameters
@@ -319,7 +352,33 @@ def refit_experiments():
         # "2023_03_07-13_58_48-15micro-nv9_zfs_vs_t",
         # "2023_03_07-13_02_08-15micro-nv11_zfs_vs_t",
         # New NVs 1
-        "2023_03_09-12_14_14-15micro-nv7_offset",
+        # "2023_03_09-13_06_10-15micro-nv6_offset",
+        # "2023_03_09-12_14_14-15micro-nv7_offset",
+        # "2023_03_09-12_40_16-15micro-nv8_offset",
+        # New NVs 2, 348 degrees
+        "2023_03_09-16_14_03-15micro-nv12_offset",
+        "2023_03_09-15_46_07-15micro-nv13_offset",
+        "2023_03_09-15_18_27-15micro-nv14_offset",
+        "2023_03_09-14_50_35-15micro-nv15_offset",
+        "2023_03_09-14_21_53-15micro-nv16_offset",
+        # 88 degrees
+        "2023_03_09-23_37_19-15micro-nv12_offset",
+        "2023_03_09-18_37_07-15micro-nv13_offset",
+        "2023_03_09-23_09_00-15micro-nv14_offset",
+        "2023_03_09-17_41_03-15micro-nv15_offset",
+        "2023_03_09-18_09_53-15micro-nv16_offset",
+        # 58 degrees
+        "2023_03_10-13_45_46-15micro-nv12_offset",
+        "2023_03_10-14_13_33-15micro-nv13_offset",
+        "2023_03_10-15_39_17-15micro-nv14_offset",
+        "2023_03_10-15_11_35-15micro-nv15_offset",
+        "2023_03_10-14_42_16-15micro-nv16_offset",
+        # 38 degrees
+        "2023_03_10-17_10_38-15micro-nv12_offset",
+        "2023_03_10-19_04_01-15micro-nv13_offset",
+        "2023_03_10-17_38_32-15micro-nv14_offset",
+        "2023_03_10-18_36_06-15micro-nv15_offset",
+        "2023_03_10-18_07_29-15micro-nv16_offset",
     ]
 
     ### Loop
@@ -416,7 +475,7 @@ def refit_experiments():
             # guess_params = [0.05, 3, freq_center, 6]
 
             line_func = pesr.lorentzian_split_offset
-            guess_params = [0.05, 3, freq_center, 6, 0.005]
+            guess_params = [0.05, 3, freq_center, 6, -0.001]
 
             # line_func = lambda freq, contrast, hwhm, splitting, offset: pesr.lorentzian_split_offset(freq, contrast, hwhm, 2.87, splitting, offset)
             # guess_params = [0.05, 3, 6, 0.005]
@@ -1166,56 +1225,67 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # main()
-    refit_experiments()
-    # # derivative_comp()
+    # # main()
+    # refit_experiments()
+    # # # derivative_comp()
+    light_polarization()
 
     plt.show(block=True)
+    sys.exit()
 
-    # vals = [
-    #     [2.869549, 2.869409, 2.869265, 2.869323, 2.869320],
-    #     [2.869514, 2.869471, 2.869382, 2.869566, 2.869293],
-    #     [2.869116, 2.869526, 2.869619, 2.869388, 2.869451],
-    #     [2.869500, 2.870178, 2.869463, 2.870033, 2.869479],
-    #     [2.869472, 2.869201, 2.869634, 2.869352, 2.869265],
-    #     [2.868786, 2.869506, 2.869398, 2.869324, 2.869297],
-    #     [2.868402, 2.869612, 2.868951, 2.869346, 2.869729],
-    #     [2.869555, 2.869349, 2.869200, 2.869306, 2.869191],
-    #     [2.869638, 2.869301, 2.869307, 2.869410, 2.869455],
-    #     [2.869586, 2.869742, 2.86961, 2.869567, 2.869645],
-    # ]
-    # errs = [
-    #     [0.000122, 0.000151, 0.000122, 0.000126, 0.000136],
-    #     [0.000125, 0.000162, 0.000131, 0.000129, 0.000137],
-    #     [0.00015, 0.000187, 0.000156, 0.00015, 0.000158],
-    #     [0.000353, 0.000354, 0.000323, 0.00036, 0.000379],
-    #     [0.000132, 0.000188, 0.00014, 0.000131, 0.000138],
-    #     [0.00026, 0.000301, 0.000262, 0.000256, 0.000249],
-    #     [0.000332, 0.000436, 0.00035, 0.000332, 0.000363],
-    #     [0.000119, 0.000153, 0.000116, 0.000121, 0.000133],
-    #     [0.000246, 0.000309, 0.000244, 0.000229, 0.000231],
-    #     [0.000119, 0.000148, 0.000123, 0.000117, 0.000129],
-    # ]
-    # vals = np.array(vals)
-    # errs = np.array(errs)
+    vals = [
+        [2.869549, 2.869409, 2.869265, 2.869323, 2.869320],
+        [2.869514, 2.869471, 2.869382, 2.869566, 2.869293],
+        [2.869116, 2.869526, 2.869619, 2.869388, 2.869451],
+        [2.869500, 2.870178, 2.869463, 2.870033, 2.869479],
+        [2.869472, 2.869201, 2.869634, 2.869352, 2.869265],
+        [2.868786, 2.869506, 2.869398, 2.869324, 2.869297],
+        [2.868402, 2.869612, 2.868951, 2.869346, 2.869729],
+        [2.869555, 2.869349, 2.869200, 2.869306, 2.869191],
+        [2.869638, 2.869301, 2.869307, 2.869410, 2.869455],
+        [2.869586, 2.869742, 2.86961, 2.869567, 2.869645],
+        [2.86957, 2.869903, 2.869913, 2.869949, 2.869767],
+        [2.869699, 2.869654, 2.869838, 2.869908, 2.869865],
+        [2.869846, 2.869777, 2.86989, 2.869863, 2.869619],
+        [2.869825, 2.869832, 2.869823, 2.869929, 2.869966],
+    ]
+    errs = [
+        [0.000122, 0.000151, 0.000122, 0.000126, 0.000136],
+        [0.000125, 0.000162, 0.000131, 0.000129, 0.000137],
+        [0.00015, 0.000187, 0.000156, 0.00015, 0.000158],
+        [0.000353, 0.000354, 0.000323, 0.00036, 0.000379],
+        [0.000132, 0.000188, 0.00014, 0.000131, 0.000138],
+        [0.00026, 0.000301, 0.000262, 0.000256, 0.000249],
+        [0.000332, 0.000436, 0.00035, 0.000332, 0.000363],
+        [0.000119, 0.000153, 0.000116, 0.000121, 0.000133],
+        [0.000246, 0.000309, 0.000244, 0.000229, 0.000231],
+        [0.000119, 0.000148, 0.000123, 0.000117, 0.000129],
+        [0.000124, 9e-05, 0.000132, 0.000113, 0.000108],
+        [0.000114, 0.000103, 0.000133, 0.000122, 0.000107],
+        [0.000112, 8.7e-05, 0.000128, 0.000107, 0.000112],
+        [0.00011, 8.9e-05, 0.000129, 0.000119, 0.000104],
+    ]
+    vals = np.array(vals)
+    errs = np.array(errs)
 
-    # sub_vals = vals[-1]
-    # sub_errs = errs[-1]
-    # for ind in range(len(sub_vals)):
-    #     val = sub_vals[ind]
-    #     err = sub_errs[ind]
-    #     print(tool_belt.presentation_round(val, err))
+    sub_vals = vals[-1]
+    sub_errs = errs[-1]
+    for ind in range(len(sub_vals)):
+        val = sub_vals[ind]
+        err = sub_errs[ind]
+        print(tool_belt.round_for_print(val, err))
+    sys.exit()
 
-    # num_inds = len(vals)
-    # # num_inds = 5
-    # for ind in range(num_inds):
-    #     sub_vals = vals[ind]
-    #     sub_errs = errs[ind]
-    #     # sub_vals = vals[:, ind]
-    #     # sub_errs = errs[:, ind]
+    num_inds = len(vals)
+    # num_inds = 5
+    for ind in range(num_inds):
+        sub_vals = vals[ind]
+        sub_errs = errs[ind]
+        # sub_vals = vals[:, ind]
+        # sub_errs = errs[:, ind]
 
-    #     avg = np.average(sub_vals, weights=1 / (sub_errs**2))
-    #     err = np.sqrt(1 / np.sum(1 / (sub_errs**2)))
+        avg = np.average(sub_vals, weights=1 / (sub_errs**2))
+        err = np.sqrt(1 / np.sum(1 / (sub_errs**2)))
 
-    #     print(tool_belt.presentation_round(avg, err))
-    #     print()
+        print(tool_belt.presentation_round(avg, err))
+        print()
