@@ -235,14 +235,24 @@ def calc_zfs_from_compiled_data():
 def light_polarization():
 
     # Actual angles of the half-waveplate
-    angles = [348, 88, 58, 38]
-    angles = [np.mod(el - angles[0], 360) for el in angles]
+    angles = [348, 88, 58, 38, 38, 18, 338, 358, 248, 348]
+    # angles = [angles[ind] + 0.1 * ind for ind in range(len(angles))]
+    # angles = angles[1:]
+    # print(angles)
+    # Actual polarization angles
+    angles = [np.mod(2 * (el - angles[0]), 180) for el in angles]
+    # print(angles)
     zfss = [
         [2.86957, 2.869903, 2.869913, 2.869949, 2.869767],
         [2.869699, 2.869654, 2.869838, 2.869908, 2.869865],
         [2.869846, 2.869777, 2.86989, 2.869863, 2.869619],
-        # [2.869825, 2.869832, 2.869823, 2.869929, 2.869966],
-        [2.869906, 2.869865, 2.869828, 2.869784, 2.870061],  # 38 repeat
+        [2.869825, 2.869832, 2.869823, 2.869929, 2.869966],
+        [2.869906, 2.869828, 2.870061, 2.869784, 2.869865],  # 38 repeat
+        [2.869836, 2.869849, 2.86997, 2.869855, 2.869926],
+        [2.869817, 2.869826, 2.869789, 2.869893, 2.870104],
+        [2.869873, 2.869767, 2.869866, 2.869859, 2.869953],
+        [2.869849, 2.86972, 2.869838, 2.869856, 2.86981],
+        [2.869741, 2.869895, 2.869624, 2.8698, 2.869992],
     ]
     zfss = np.array(zfss)
     zfss *= 1000
@@ -251,20 +261,61 @@ def light_polarization():
         [0.000124, 9e-05, 0.000132, 0.000113, 0.000108],
         [0.000114, 0.000103, 0.000133, 0.000122, 0.000107],
         [0.000112, 8.7e-05, 0.000128, 0.000107, 0.000112],
-        # [0.00011, 8.9e-05, 0.000129, 0.000119, 0.000104],
-        [7.9e-05, 7.6e-05, 6.2e-05, 7.9e-05, 8.6e-05],  # 38 repeat
+        [0.00011, 8.9e-05, 0.000129, 0.000119, 0.000104],
+        [7.9e-05, 6.2e-05, 8.6e-05, 7.9e-05, 7.6e-05],  # 38 repeat
+        [0.000111, 9.3e-05, 0.000114, 0.000117, 0.000108],
+        [0.000113, 8.6e-05, 0.000112, 0.000112, 0.000107],
+        [8.3e-05, 6.5e-05, 7.9e-05, 8.3e-05, 7.4e-05],
+        [0.000117, 8.6e-05, 0.000107, 0.000118, 0.0001],
+        [0.000119, 8.9e-05, 0.000107, 0.000119, 0.000103],
     ]
     errs = np.array(errs)
     errs *= 1000
     labels = ["NV12", "NV13", "NV14", "NV15", "NV16"]
 
+    # Combine data points at same polarization angle
+    condensed_angles = []
+    condensed_zfss = []
+    condensed_errs = []
+    for ind1 in range(len(angles)):
+        angle1 = angles[ind1]
+        if angle1 in condensed_angles:
+            continue
+        sub_zfss = []
+        sub_errs = []
+        for ind2 in range(len(angles)):
+            angle2 = angles[ind2]
+            if angle1 != angle2:
+                continue
+            sub_zfss.append(zfss[ind2])
+            sub_errs.append(errs[ind2])
+        sub_zfss = np.array(sub_zfss)
+        sub_errs = np.array(sub_errs)
+        condensed_sub_zfss = []
+        condensed_sub_errs = []
+        for nv_ind in range(5):
+            weights = sub_errs[:, nv_ind] ** -2
+            condensed_sub_zfss.append(np.average(sub_zfss[:, nv_ind], weights=weights))
+            condensed_sub_errs.append(np.sqrt(1 / np.sum(weights)))
+        condensed_angles.append(angle1)
+        condensed_zfss.append(condensed_sub_zfss)
+        condensed_errs.append(condensed_sub_errs)
+    angles = np.array(condensed_angles)
+    zfss = np.array(condensed_zfss)
+    errs = np.array(condensed_errs)
+
     for ind in range(5):
         fig, ax = plt.subplots()
-        kpl.plot_points(ax, angles, zfss[:, ind], yerr=errs[:, ind], label=labels[ind])
-        # for ind in range(5):
-        # for ind in [4]:
-        #     kpl.plot_points(ax, angles, zfss[:, ind], yerr=errs[:, ind], label=labels[ind])
-        ax.set_xlabel("Waveplate angle (deg)")
+        kpl.plot_points(
+            ax,
+            angles,
+            zfss[:, ind],
+            yerr=errs[:, ind],
+            label=labels[ind],
+            color=kpl.data_color_cycler[ind],
+        )
+        # ax.set_xlabel("Waveplate angle (deg)")
+        ax.set_xlabel("Polarization angle (deg)")
         ax.set_ylabel("ZFS - 2870 (MHz)")
         ax.legend()
 
@@ -383,12 +434,42 @@ def refit_experiments():
         # "2023_03_10-17_38_32-15micro-nv14_offset",
         # "2023_03_10-18_36_06-15micro-nv15_offset",
         # "2023_03_10-18_07_29-15micro-nv16_offset",
-        # 38 degrees
-        "2023_03_10-23_44_44-15micro-nv12_offset",
-        "2023_03_11-00_42_21-15micro-nv16_offset",
-        "2023_03_11-01_37_36-15micro-nv13_offset",
-        "2023_03_11-02_35_44-15micro-nv15_offset",
-        "2023_03_11-03_31_26-15micro-nv14_offset",
+        # 38 degrees, finer average
+        # "2023_03_10-23_44_44-15micro-nv12_offset",
+        # "2023_03_11-01_37_36-15micro-nv13_offset",
+        # "2023_03_11-03_31_26-15micro-nv14_offset",
+        # "2023_03_11-02_35_44-15micro-nv15_offset",
+        # "2023_03_11-00_42_21-15micro-nv16_offset",
+        # # 18 degrees
+        # "2023_03_12-13_11_31-15micro-nv12_offset",
+        # "2023_03_12-13_39_16-15micro-nv13_offset",
+        # "2023_03_12-14_07_58-15micro-nv14_offset",
+        # "2023_03_12-14_36_30-15micro-nv15_offset",
+        # "2023_03_12-12_43_05-15micro-nv16_offset",
+        # # 338 degrees
+        # "2023_03_12-18_32_33-15micro-nv12_offset",
+        # "2023_03_12-19_58_21-15micro-nv13_offset",
+        # "2023_03_12-20_27_13-15micro-nv14_offset",
+        # "2023_03_12-19_30_29-15micro-nv15_offset",
+        # "2023_03_12-19_01_42-15micro-nv16_offset",
+        # # 358 degrees
+        # "2023_03_13-00_58_53-15micro-nv12_offset",
+        # "2023_03_13-02_51_05-15micro-nv13_offset",
+        # "2023_03_13-03_48_32-15micro-nv14_offset",
+        # "2023_03_13-01_55_57-15micro-nv15_offset",
+        # "2023_03_13-00_02_24-15micro-nv16_offset",
+        # 248 degrees
+        # "2023_03_13-13_49_30-15micro-nv12_offset",
+        # "2023_03_13-12_22_52-15micro-nv13_offset",
+        # "2023_03_13-14_18_30-15micro-nv14_offset",
+        # "2023_03_13-12_51_39-15micro-nv15_offset",
+        # "2023_03_13-13_21_04-15micro-nv16_offset",
+        # 348 degrees
+        "2023_03_13-15_33_36-15micro-nv12_offset",
+        "2023_03_13-15_05_02-15micro-nv13_offset",
+        "2023_03_13-17_00_38-15micro-nv14_offset",
+        "2023_03_13-16_02_24-15micro-nv15_offset",
+        "2023_03_13-16_31_38-15micro-nv16_offset",
     ]
 
     ### Loop
