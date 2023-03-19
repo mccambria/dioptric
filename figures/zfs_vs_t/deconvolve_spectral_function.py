@@ -50,7 +50,7 @@ def main():
                 point[column] = val
             modes.append(point)
 
-    energy_linspace = np.linspace(0, 200, 1000)
+    energy_linspace = np.linspace(0, 250, 1000)
     sigma = 7.5
     # sigma = np.sqrt(sigma)
     smearing = lambda x, mu: (1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(
@@ -73,8 +73,8 @@ def main():
         density_of_states.append(dos)
         for ind in range(3):
             spectral_functions[ind].append(sf[ind])
-            mean_couplings[ind].append(sf[ind] / (max(dos, 1.0)))
-            # mean_couplings[ind].append(sf[ind] / dos)
+            # mean_couplings[ind].append(sf[ind] / (max(dos, 1.0)))
+            mean_couplings[ind].append(sf[ind] / dos)
 
     # Plots
     labels = [r"$\mathit{S_{z}}$", r"$\mathit{S_{+}}$", r"$\mathit{S_{+}^{2}}$"]
@@ -90,8 +90,12 @@ def main():
         ax.set_ylabel("Spectral function (MHz / meV)")
         ax.legend()
     elif plot_mode == "mean_coupling":
+        plot_inds = np.where(energy_linspace < 5000)
         for ind in range(3):
-            kpl.plot_line(ax, energy_linspace, mean_couplings[ind], label=labels[ind])
+            plot_couplings = np.array(mean_couplings[ind])[plot_inds]
+            kpl.plot_line(
+                ax, energy_linspace[plot_inds], plot_couplings, label=labels[ind]
+            )
         ax.set_ylabel("Mean coupling (MHz)")
         ax.legend()
     ax.set_xlabel("Energy (meV)")
