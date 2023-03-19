@@ -19,8 +19,8 @@ import numpy as np
 def main():
 
     # plot_mode = "dos"
-    plot_mode = "spectral"
-    # plot_mode = "mean_coupling"
+    # plot_mode = "spectral"
+    plot_mode = "mean_coupling"
 
     # Get the spectral function data
     nvdata_dir = common.get_nvdata_dir()
@@ -52,7 +52,7 @@ def main():
 
     energy_linspace = np.linspace(0, 200, 1000)
     sigma = 7.5
-    sigma = np.sqrt(sigma)
+    # sigma = np.sqrt(sigma)
     smearing = lambda x, mu: (1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(
         -(1 / 2) * ((x - mu) / sigma) ** 2
     )
@@ -73,14 +73,15 @@ def main():
         density_of_states.append(dos)
         for ind in range(3):
             spectral_functions[ind].append(sf[ind])
-            mean_couplings[ind].append(sf[ind] / dos)
+            mean_couplings[ind].append(sf[ind] / (max(dos, 1.0)))
+            # mean_couplings[ind].append(sf[ind] / dos)
 
     # Plots
     labels = [r"$\mathit{S_{z}}$", r"$\mathit{S_{+}}$", r"$\mathit{S_{+}^{2}}$"]
     fig, ax = plt.subplots()
     if plot_mode == "dos":
         kpl.plot_line(ax, energy_linspace, density_of_states)
-        ax.set_ylabel("DOS")
+        ax.set_ylabel("Density of states (1 / meV)")
     elif plot_mode == "spectral":
         for ind in range(3):
             kpl.plot_line(
@@ -91,7 +92,7 @@ def main():
     elif plot_mode == "mean_coupling":
         for ind in range(3):
             kpl.plot_line(ax, energy_linspace, mean_couplings[ind], label=labels[ind])
-        ax.set_ylabel("Mean coupling")
+        ax.set_ylabel("Mean coupling (MHz)")
         ax.legend()
     ax.set_xlabel("Energy (meV)")
 

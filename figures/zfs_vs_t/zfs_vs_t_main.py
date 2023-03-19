@@ -235,7 +235,7 @@ def calc_zfs_from_compiled_data():
 def light_polarization():
 
     # Actual angles of the half-waveplate
-    angles = [348, 88, 58, 38, 38, 18, 338, 358, 248, 348]
+    angles = [348, 88, 58, 38, 38, 18, 338, 358, 248, 348, 58]
     # angles = [angles[ind] + 0.1 * ind for ind in range(len(angles))]
     # angles = angles[1:]
     # print(angles)
@@ -253,6 +253,7 @@ def light_polarization():
         [2.869873, 2.869767, 2.869866, 2.869859, 2.869953],
         [2.869849, 2.86972, 2.869838, 2.869856, 2.86981],
         [2.869741, 2.869895, 2.869624, 2.8698, 2.869992],
+        [2.869835, 2.869805, 2.86986, 2.869986, 2.869934],
     ]
     zfss = np.array(zfss)
     zfss *= 1000
@@ -268,41 +269,44 @@ def light_polarization():
         [8.3e-05, 6.5e-05, 7.9e-05, 8.3e-05, 7.4e-05],
         [0.000117, 8.6e-05, 0.000107, 0.000118, 0.0001],
         [0.000119, 8.9e-05, 0.000107, 0.000119, 0.000103],
+        [0.000115, 8.6e-05, 0.000107, 0.000112, 9.8e-05],
     ]
     errs = np.array(errs)
     errs *= 1000
     labels = ["NV12", "NV13", "NV14", "NV15", "NV16"]
 
     # Combine data points at same polarization angle
-    condensed_angles = []
-    condensed_zfss = []
-    condensed_errs = []
-    for ind1 in range(len(angles)):
-        angle1 = angles[ind1]
-        if angle1 in condensed_angles:
-            continue
-        sub_zfss = []
-        sub_errs = []
-        for ind2 in range(len(angles)):
-            angle2 = angles[ind2]
-            if angle1 != angle2:
+    do_combine = False
+    if do_combine:
+        condensed_angles = []
+        condensed_zfss = []
+        condensed_errs = []
+        for ind1 in range(len(angles)):
+            angle1 = angles[ind1]
+            if angle1 in condensed_angles:
                 continue
-            sub_zfss.append(zfss[ind2])
-            sub_errs.append(errs[ind2])
-        sub_zfss = np.array(sub_zfss)
-        sub_errs = np.array(sub_errs)
-        condensed_sub_zfss = []
-        condensed_sub_errs = []
-        for nv_ind in range(5):
-            weights = sub_errs[:, nv_ind] ** -2
-            condensed_sub_zfss.append(np.average(sub_zfss[:, nv_ind], weights=weights))
-            condensed_sub_errs.append(np.sqrt(1 / np.sum(weights)))
-        condensed_angles.append(angle1)
-        condensed_zfss.append(condensed_sub_zfss)
-        condensed_errs.append(condensed_sub_errs)
-    angles = np.array(condensed_angles)
-    zfss = np.array(condensed_zfss)
-    errs = np.array(condensed_errs)
+            sub_zfss = []
+            sub_errs = []
+            for ind2 in range(len(angles)):
+                angle2 = angles[ind2]
+                if angle1 != angle2:
+                    continue
+                sub_zfss.append(zfss[ind2])
+                sub_errs.append(errs[ind2])
+            sub_zfss = np.array(sub_zfss)
+            sub_errs = np.array(sub_errs)
+            condensed_sub_zfss = []
+            condensed_sub_errs = []
+            for nv_ind in range(5):
+                weights = sub_errs[:, nv_ind] ** -2
+                condensed_sub_zfss.append(np.average(sub_zfss[:, nv_ind], weights=weights))
+                condensed_sub_errs.append(np.sqrt(1 / np.sum(weights)))
+            condensed_angles.append(angle1)
+            condensed_zfss.append(condensed_sub_zfss)
+            condensed_errs.append(condensed_sub_errs)
+        angles = np.array(condensed_angles)
+        zfss = np.array(condensed_zfss)
+        errs = np.array(condensed_errs)
 
     for ind in range(5):
         fig, ax = plt.subplots()
@@ -465,11 +469,17 @@ def refit_experiments():
         # "2023_03_13-12_51_39-15micro-nv15_offset",
         # "2023_03_13-13_21_04-15micro-nv16_offset",
         # 348 degrees
-        "2023_03_13-15_33_36-15micro-nv12_offset",
-        "2023_03_13-15_05_02-15micro-nv13_offset",
-        "2023_03_13-17_00_38-15micro-nv14_offset",
-        "2023_03_13-16_02_24-15micro-nv15_offset",
-        "2023_03_13-16_31_38-15micro-nv16_offset",
+        # "2023_03_13-15_33_36-15micro-nv12_offset",
+        # "2023_03_13-15_05_02-15micro-nv13_offset",
+        # "2023_03_13-17_00_38-15micro-nv14_offset",
+        # "2023_03_13-16_02_24-15micro-nv15_offset",
+        # "2023_03_13-16_31_38-15micro-nv16_offset",
+        # 58 degrees
+        "2023_03_13-19_38_01-15micro-nv12_offset",
+        "2023_03_13-19_09_20-15micro-nv13_offset",
+        "2023_03_13-18_41_27-15micro-nv14_offset",
+        "2023_03_13-18_12_28-15micro-nv15_offset",
+        "2023_03_13-17_43_29-15micro-nv16_offset",
     ]
 
     ### Loop
