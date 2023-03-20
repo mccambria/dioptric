@@ -299,7 +299,9 @@ def light_polarization():
             condensed_sub_errs = []
             for nv_ind in range(5):
                 weights = sub_errs[:, nv_ind] ** -2
-                condensed_sub_zfss.append(np.average(sub_zfss[:, nv_ind], weights=weights))
+                condensed_sub_zfss.append(
+                    np.average(sub_zfss[:, nv_ind], weights=weights)
+                )
                 condensed_sub_errs.append(np.sqrt(1 / np.sum(weights)))
             condensed_angles.append(angle1)
             condensed_zfss.append(condensed_sub_zfss)
@@ -1032,16 +1034,13 @@ def main():
     plot_new_model = True
     toyli_extension = False
 
-    skip_lambda = lambda point: point["Skip"]
-    # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "Wu"
-    # skip_lambda = lambda point: point["Skip"] or point["Sample"] != "15micro"
-    # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
-    # skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 296
-    # skip_lambda = (
-    #     lambda point: point["Skip"]
-    #     or point["Sample"] != "Wu"
-    #     or point["Monitor temp (K)"] >= 296
-    # )
+    skip_lambda = lambda point: (
+        point["Skip"]
+        or point["Sample"] != "Wu"
+        # or point["Sample"] != "15micro"
+        # or point["ZFS file"] == ""
+        # or point["Monitor temp (K)"] >= 296
+    )
 
     ###
 
@@ -1326,10 +1325,10 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    # # main()
+    main()
     # refit_experiments()
     # # # derivative_comp()
-    light_polarization()
+    # light_polarization()
 
     plt.show(block=True)
     sys.exit()

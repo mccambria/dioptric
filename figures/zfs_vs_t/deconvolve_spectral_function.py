@@ -52,7 +52,7 @@ def main():
 
     energy_linspace = np.linspace(0, 250, 1000)
     sigma = 7.5
-    # sigma = np.sqrt(sigma)
+    sigma = np.sqrt(sigma)
     smearing = lambda x, mu: (1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(
         -(1 / 2) * ((x - mu) / sigma) ** 2
     )
