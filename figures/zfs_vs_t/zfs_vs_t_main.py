@@ -276,7 +276,7 @@ def light_polarization():
     labels = ["NV12", "NV13", "NV14", "NV15", "NV16"]
 
     # Combine data points at same polarization angle
-    do_combine = False
+    do_combine = True
     if do_combine:
         condensed_angles = []
         condensed_zfss = []
