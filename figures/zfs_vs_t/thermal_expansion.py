@@ -64,7 +64,7 @@ def jacobson(T):
     jacobson_total = None
     for ind in range(4):
         energy = energies[ind]
-        coeff = coeffs[ind]
+        coeff = coeffs[ind] * 10**-6 * 10**-10
         sub_lambda = lambda t: coeff * einstein_term(energy, t)
         if jacobson_total is None:
             jacobson_total = sub_lambda(T)
