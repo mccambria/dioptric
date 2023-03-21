@@ -26,7 +26,8 @@ import csv
 import pandas as pd
 import sys
 from analysis import three_level_rabi
-from scipy.integrate import quad
+import figures.zfs_vs_t.thermal_expansion as thermal_expansion
+
 
 # fmt: off
 toyli_digitized = [300, 2.87, 309.9858044201037, 2.8690768841409784, 320.04280071681194, 2.868366259576263, 330.32149670254546, 2.8673945841666115, 340.3583384820696, 2.866304172245094, 350.05837349046874, 2.8655253065868678, 360.1625766242179, 2.8644972039180088, 370.064695695292, 2.8633133281175045, 380.2362601832661, 2.8622540708223165, 390.13837925434024, 2.8611013496481412, 399.9731369711893, 2.8600109377266243, 410.00997875071346, 2.858858216552449, 420.0468205302376, 2.857362794488654, 430.4878304351117, 2.856176937898957, 440.3899495061858, 2.8549015790086583, 450.02262316036, 2.8535619300765087, 460.1268262941091, 2.852066508012714, 469.96158401095823, 2.850633395201577, 480.5373166242823, 2.849387210148415, 490.30471298690645, 2.84789178808462, 500.2068320579806, 2.8465209845261414, 510.04158977482973, 2.844994407836017, 520.2805156170289, 2.843374367266906, 530.452080105003, 2.8417854813241243, 540.354199176077, 2.840258904634, 550.1215955387013, 2.838638864064889, 560.1584373182253, 2.837361524385398, 570.3300018061993, 2.8357103291899572, 580.2321208772735, 2.8341545786626967, 590.4036853652476, 2.8322813395045685, 600.0363590194218, 2.830756743603637, 610.005839444721, 2.829354785418829, 619.9079585157951, 2.8275789717180726, 630.4163297748942, 2.826052395027949, 640.3184488459683, 2.824556972964154, 650.2879292712674, 2.8227500046370686, 660.1269697755595, 2.821005345562641, 669.8900833507407, 2.8189160048094015, 680.4658159640647, 2.816922108724342, 690.5700190978139, 2.8151482758127777, 700.472138168888, 2.8134950998281454, 710.0374504688373, 2.812188586311517]
@@ -950,30 +951,12 @@ def einstein_heat_capacity(e, T):
 
 def jacobson(temp, zfs0, coeff):
     """Coefficient of thermal expansion from Jacobson and Stoupin 2019"""
-    # X1[10−6/K]  0.0096  0.0210
-    # X2[10−6/K]  0.2656  0.3897
-    # X3[10−6/K]  2.6799  3.4447
-    # X4[10−6/K]  2.3303  2.2796
-    # Θ1 [K]      159.3   225.2
-    # Θ2 [K]      548.5   634.0
-    # Θ3 [K]      1237.9  1365.5
-    # Θ4 [K]      2117.8  3068.8
-
-    # coeffs = [0.0096, 0.2656, 2.6799, 2.3303]
-    # energies = [159.3, 548.5, 1237.9, 2117.8]  # K
-    coeffs = [0.0210, 0.3897, 3.4447, 2.2796]
-    energies = [225.2, 634.0, 1365.5, 3068.8]  # K
-    jacobson_total = None
-    for ind in range(4):
-        energy = energies[ind]
-        alpha_coeff = coeffs[ind]
-        if jacobson_total is None:
-            jacobson_total = alpha_coeff * bose(energy, temp)
-        else:
-            jacobson_total += alpha_coeff * bose(energy, temp)
-        # kpl.plot_line(ax, temp_linspace, sub_lambda(temp_linspace), label=ind)
-
-    return zfs0 * np.exp(jacobson_total)
+    lattice_constant = thermal_expansion.jacobson_lattice_constant
+    # The subtracted term below should really be at T=0 but then we get
+    # a divide by 0 in the occupation number calculator. The lattice constant
+    # doesn't change really at all between 0 and 10 K so just use 10 K.
+    delta_a = lambda T: lattice_constant(T) - lattice_constant(10)
+    return zfs0 + coeff * delta_a(temp)
 
 
 def cambria_test4(temp, zfs0, A1, Theta1):
@@ -1048,7 +1031,7 @@ def main():
     # y_range = [2.74, 2.883]
     # temp_range = [-10, 720]
     # y_range = [2.80, 2.883]
-    temp_range = [-10, 2000]
+    temp_range = [-10, 500]
     y_range = [2.847, 2.879]
     # temp_range = [-10, 310]
     # y_range = [2.8685, 2.8785]
@@ -1129,8 +1112,8 @@ def main():
     # fit_func = zfs_from_temp_barson_free
     guess_params = [
         2.87771,
-        # -8e-2,
-        -300,
+        -20,
+        # -300,
         # -4e-1,
         # 65,
         # 165,
@@ -1152,7 +1135,6 @@ def main():
         absolute_sigma=absolute_sigma,
         p0=guess_params,
     )
-    popt = [3.567, 1e-4]
     print(popt)
     print(np.sqrt(np.diag(pcov)))
     # popt[2] = 0
