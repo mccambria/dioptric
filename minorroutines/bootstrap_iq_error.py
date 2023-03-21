@@ -1666,11 +1666,11 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-            "coords":[-0.112, -0.26, 4.25],
+            "coords":[0.073, -0.259, 4.25],
         "name": "{}-nv0_2023_02_24".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":25,
+        "expected_count_rate":29,
         
         
           "spin_laser":green_laser,

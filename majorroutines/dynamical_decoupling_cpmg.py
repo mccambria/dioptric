@@ -213,11 +213,14 @@ def main(
     taus=[],
     state=States.HIGH,
     do_dq = False,
-    do_scc = False
+    do_scc = False,
+    comp_wait_time = 80,
+    do_plot = True,
+    do_save = True
 ):
 
     with labrad.connect() as cxn:
-        angle = main_with_cxn(
+        sig_counts, ref_counts = main_with_cxn(
             cxn,
             nv_sig,
             precession_dur_range,
@@ -228,9 +231,12 @@ def main(
             taus,
             state,
             do_dq,
-            do_scc
+            do_scc,
+            comp_wait_time,
+            do_plot,
+            do_save
         )
-        return angle
+        return sig_counts, ref_counts
 
 
 def main_with_cxn(
@@ -244,7 +250,10 @@ def main_with_cxn(
     taus=[],
     state=States.HIGH,
     do_dq = False,
-    do_scc = False
+    do_scc = False,
+    comp_wait_time = 80,
+    do_plot = True,
+    do_save = True
 ):
 
     counter_server = tool_belt.get_server_counter(cxn)
@@ -402,6 +411,7 @@ def main_with_cxn(
                 uwave_pi_pulse_high,
                 uwave_pi_on_2_pulse_high,
                 taus[-1],
+                comp_wait_time,
                 pi_pulse_reps,
                 state_activ.value,
                 state_proxy.value,
@@ -423,6 +433,7 @@ def main_with_cxn(
                 uwave_pi_pulse_high,
                 uwave_pi_on_2_pulse_high,
                 taus[-1],
+                comp_wait_time,
                 pi_pulse_reps,
                 state_activ.value,
                 state_proxy.value,
@@ -483,7 +494,8 @@ def main_with_cxn(
     # return
     
     # create figure
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    if do_plot:
+        raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -593,6 +605,7 @@ def main_with_cxn(
                         uwave_pi_pulse_high,
                         uwave_pi_on_2_pulse_high,
                         taus[tau_ind_second],
+                        comp_wait_time,
                         pi_pulse_reps,
                         state_activ.value,
                         state_proxy.value,
@@ -613,6 +626,7 @@ def main_with_cxn(
                         uwave_pi_pulse_high,
                         uwave_pi_on_2_pulse_high,
                         taus[tau_ind_second],
+                        comp_wait_time,
                         pi_pulse_reps,
                         state_activ.value,
                         state_proxy.value,
@@ -703,83 +717,87 @@ def main_with_cxn(
         ) = ret_vals
         
         
-        
-        ax = axes_pack[0]
-        ax.cla()
-        ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
-        ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
-        ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
-        ax.set_ylabel("kcps")
-        ax.legend()
-        
-        ax = axes_pack[1]
-        ax.cla()
-        ax.plot(plot_taus, norm_avg_sig, "b-")
-        if do_dq:
-            dq_text = 'DQ'
-        else:
-            dq_text = 'SQ'
-        if do_scc:
-            ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
-        else:
-            ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
+        if do_plot:
+            ax = axes_pack[0]
+            ax.cla()
+            ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+            ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
+            ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
+            ax.set_ylabel("kcps")
+            ax.legend()
             
-        ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
-        ax.set_ylabel("Contrast (arb. units)")
-        
-        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
-
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                verticalalignment='top', bbox=props)
-        
-        raw_fig.canvas.draw()
-        raw_fig.set_tight_layout(True)
-        raw_fig.canvas.flush_events()
+            ax = axes_pack[1]
+            ax.cla()
+            
+            kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+            # ax.errorbar(plot_taus, norm_avg_sig,yerr= norm_avg_sig_ste, color = 'b')
+            # ax.plot(plot_taus, norm_avg_sig, "b-")
+            if do_dq:
+                dq_text = 'DQ'
+            else:
+                dq_text = 'SQ'
+            if do_scc:
+                ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
+            else:
+                ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
+                
+            ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
+            ax.set_ylabel("Contrast (arb. units)")
+            
+            text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
+    
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
+                    verticalalignment='top', bbox=props)
+            
+            raw_fig.canvas.draw()
+            raw_fig.set_tight_layout(True)
+            raw_fig.canvas.flush_events()
         
         # %% Save the data we have incrementally for long T1s
-
-        raw_data = {
-            "start_timestamp": start_timestamp,
-            "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-            'pi_pulse_reps': pi_pulse_reps,
-            "do_dq": do_dq,
-            "do_scc": do_scc,
-            "uwave_freq": uwave_freq,
-            "uwave_freq-units": "GHz",
-            "uwave_power": uwave_power,
-            "uwave_power-units": "dBm",
-            "uwave_pi_pulse": uwave_pi_pulse,
-            "uwave_pi_pulse-units": "ns",
-            "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
-            "uwave_pi_on_2_pulse-units": "ns",
-            "precession_time_range": precession_time_range,
-            "precession_time_range-units": "ns",
-            "state": state.name,
-            "num_steps": num_steps,
-            "num_reps": num_reps,
-            "run_ind": run_ind,	
-            "taus": taus.tolist(),	
-            "plot_taus":plot_taus.tolist(),	
-            "taus-units": "ns",
-            "tau_index_master_list": tau_index_master_list,
-            "opti_coords_list": opti_coords_list,
-            "opti_coords_list-units": "V",
-            "sig_counts": sig_counts.astype(int).tolist(),
-            "sig_counts-units": "counts",
-            "ref_counts": ref_counts.astype(int).tolist(),
-            "ref_counts-units": "counts",
-            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
-        }
-
-        # This will continuously be the same file path so we will overwrite
-        # the existing file with the latest version
-        file_path = tool_belt.get_file_path(
-            __file__, start_timestamp, nv_sig["name"], "incremental"
-        )
-        tool_belt.save_raw_data(raw_data, file_path)
-        tool_belt.save_figure(raw_fig, file_path)
+        if do_save:
+            raw_data = {
+                "start_timestamp": start_timestamp,
+                "nv_sig": nv_sig,
+                "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+                'pi_pulse_reps': pi_pulse_reps,
+                "do_dq": do_dq,
+                "do_scc": do_scc,
+                "uwave_freq": uwave_freq,
+                "uwave_freq-units": "GHz",
+                "uwave_power": uwave_power,
+                "uwave_power-units": "dBm",
+                "uwave_pi_pulse": uwave_pi_pulse,
+                "uwave_pi_pulse-units": "ns",
+                "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
+                "uwave_pi_on_2_pulse-units": "ns",
+                "precession_time_range": precession_time_range,
+                "precession_time_range-units": "ns",
+                "state": state.name,
+                "num_steps": num_steps,
+                "num_reps": num_reps,
+                "run_ind": run_ind,	
+                "taus": taus.tolist(),	
+                "plot_taus":plot_taus.tolist(),	
+                "taus-units": "ns",
+                "tau_index_master_list": tau_index_master_list,
+                "opti_coords_list": opti_coords_list,
+                "opti_coords_list-units": "V",
+                "sig_counts": sig_counts.astype(int).tolist(),
+                "sig_counts-units": "counts",
+                "ref_counts": ref_counts.astype(int).tolist(),
+                "ref_counts-units": "counts",
+                "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
+            }
+    
+            # This will continuously be the same file path so we will overwrite
+            # the existing file with the latest version
+            file_path = tool_belt.get_file_path(
+                __file__, start_timestamp, nv_sig["name"], "incremental"
+            )
+            tool_belt.save_raw_data(raw_data, file_path)
+            if do_plot:
+                tool_belt.save_figure(raw_fig, file_path)
 
     # %% Hardware clean up
 
@@ -795,32 +813,34 @@ def main_with_cxn(
         norm_avg_sig_ste,
     ) = ret_vals
     
-    ax = axes_pack[0]
-    ax.cla()
-    ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
-    ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
-    ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("kcps")
-    ax.legend()
-
-    ax = axes_pack[1]
-    ax.cla()
-    ax.plot(plot_taus, norm_avg_sig, "b-")
-    ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
-    ax.set_ylabel("Contrast (arb. units)")
-
-    if do_dq:
-        dq_text = 'DQ'
-    else:
-        dq_text = 'SQ'
-    if do_scc:
-        ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
-    else:
-        ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
-            
-    raw_fig.canvas.draw()
-    raw_fig.set_tight_layout(True)
-    raw_fig.canvas.flush_events()
+    if do_plot:
+        ax = axes_pack[0]
+        ax.cla()
+        ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+        ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
+        ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
+        ax.set_ylabel("kcps")
+        ax.legend()
+    
+        ax = axes_pack[1]
+        ax.cla()
+        #ax.plot(plot_taus, norm_avg_sig, "b-")
+        kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+        ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
+        ax.set_ylabel("Contrast (arb. units)")
+    
+        if do_dq:
+            dq_text = 'DQ'
+        else:
+            dq_text = 'SQ'
+        if do_scc:
+            ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
+        else:
+            ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
+                
+        raw_fig.canvas.draw()
+        raw_fig.set_tight_layout(True)
+        raw_fig.canvas.flush_events()
 
     # %% Save the data
 
@@ -830,52 +850,55 @@ def main_with_cxn(
 
     timestamp = tool_belt.get_time_stamp()
 
-    raw_data = {
-        "timestamp": timestamp,
-        "timeElapsed": timeElapsed,
-        "nv_sig": nv_sig,
-        "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-        'pi_pulse_reps': pi_pulse_reps,
-        "do_dq": do_dq,
-        "do_scc": do_scc,
-        "uwave_freq": uwave_freq,
-        "uwave_freq-units": "GHz",
-        "uwave_power": uwave_power,
-        "uwave_power-units": "dBm",
-        "uwave_pi_pulse": uwave_pi_pulse,
-        "uwave_pi_pulse-units": "ns",
-        "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
-        "uwave_pi_on_2_pulse-units": "ns",
-        "precession_time_range": precession_time_range,
-        "precession_time_range-units": "ns",
-        "state": state.name,
-        "num_steps": num_steps,
-        "num_reps": num_reps,
-        "num_runs": num_runs,	
-        "taus": taus.tolist(),	
-        "plot_taus":plot_taus.tolist(),	
-        "taus-units": "ns",
-        "tau_index_master_list": tau_index_master_list,
-        "opti_coords_list": opti_coords_list,
-        "opti_coords_list-units": "V",
-        "sig_counts": sig_counts.astype(int).tolist(),
-        "sig_counts-units": "counts",
-        "ref_counts": ref_counts.astype(int).tolist(),
-        "ref_counts-units": "counts",
-        "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
-        "norm_avg_sig-units": "arb",
-        "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
-    }
-
-    nv_name = nv_sig["name"]
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
-    tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_raw_data(raw_data, file_path)
+    if do_save:
+        raw_data = {
+            "timestamp": timestamp,
+            "timeElapsed": timeElapsed,
+            "nv_sig": nv_sig,
+            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+            'pi_pulse_reps': pi_pulse_reps,
+            "do_dq": do_dq,
+            "do_scc": do_scc,
+            'comp_wait_time': comp_wait_time,
+            "uwave_freq": uwave_freq,
+            "uwave_freq-units": "GHz",
+            "uwave_power": uwave_power,
+            "uwave_power-units": "dBm",
+            "uwave_pi_pulse": uwave_pi_pulse,
+            "uwave_pi_pulse-units": "ns",
+            "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
+            "uwave_pi_on_2_pulse-units": "ns",
+            "precession_time_range": precession_time_range,
+            "precession_time_range-units": "ns",
+            "state": state.name,
+            "num_steps": num_steps,
+            "num_reps": num_reps,
+            "num_runs": num_runs,	
+            "taus": taus.tolist(),	
+            "plot_taus":plot_taus.tolist(),	
+            "taus-units": "ns",
+            "tau_index_master_list": tau_index_master_list,
+            "opti_coords_list": opti_coords_list,
+            "opti_coords_list-units": "V",
+            "sig_counts": sig_counts.astype(int).tolist(),
+            "sig_counts-units": "counts",
+            "ref_counts": ref_counts.astype(int).tolist(),
+            "ref_counts-units": "counts",
+            "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
+            "norm_avg_sig-units": "arb",
+            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
+        }
+    
+        nv_name = nv_sig["name"]
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+        tool_belt.save_figure(raw_fig, file_path)
+        if do_plot:
+            tool_belt.save_raw_data(raw_data, file_path)
 
     # Fit and save figs
 
 
-    return 
+    return sig_counts, ref_counts
 
 
     
@@ -1000,10 +1023,10 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
   
     
-    file_name = "2023_02_06-03_33_30-siena-nv4_2023_01_16"
+    file_name = "2023_03_05-00_48_42-siena-nv0_2023_02_24"
 
     data = tool_belt.get_raw_data(file_name)
-    fit_t2_12C(data, fixed_offset = 1.097)
+    fit_t2_12C(data, fixed_offset = 1.143)
     
     
     # file_list = ['2023_01_27-23_54_17-siena-nv4_2023_01_16', # 256

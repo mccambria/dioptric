@@ -14,22 +14,22 @@ import matplotlib.pyplot as plt
 # t_SCC = 50000 #us
 # t_C = 0.3 #us
 
-SNR_C = 0.012
-SNR_SCC = 0.255
-t_SCC = 10000 #us
-t_C = 0.3 #us
+# SNR_C = 0.012
+# SNR_SCC = 0.255
+# t_SCC = 10000 #us
+# t_C = 0.3 #us
 
 
-T=(SNR_C**2 * t_SCC - SNR_SCC**2 * t_C ) / (SNR_SCC**2 - SNR_C**2)
+# T=(SNR_C**2 * t_SCC - SNR_SCC**2 * t_C ) / (SNR_SCC**2 - SNR_C**2)
 
-print('{} us or longer'.format(T))
-
+# print('{} us or longer'.format(T))
+# 
 
 kpl.init_kplotlib
     
-label_list = ['0.2 V, 45 ms','0.3 V, 35 ms','0.4 V, 10 ms','0.5 V, 10 ms']
-t_r_list_ms = [45,35,10, 10]
-snr_list = [0.333,0.371,0.255, 0.236]
+label_list = ['0.15 V, 20 ms','0.2 V, 15 ms','0.25 V, 15 ms','0.25 V, 10 ms', '0.3 V, 5 ms', '0.35 V, 5 ms']
+t_r_list_ms = [20, 15, 15, 10, 5, 5]
+snr_list = [0.13, 0.22, 0.287, 0.22, 0.228, 0.179]
 
 # SNR_t = SNR_s * sqrt(T / (te + tr))
 def total_snr_per_meas_dur(t, snr, t_r):

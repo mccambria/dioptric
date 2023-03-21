@@ -81,7 +81,7 @@ def do_image_sample(nv_sig):
     # scan_range =4
     # scan_range = 2
     # scan_range = 0.75
-   # scan_range = 0.5
+    # scan_range = 0.5
     # scan_range = 0.35
     scan_range = 0.2
     # scan_range = 0.15
@@ -94,11 +94,11 @@ def do_image_sample(nv_sig):
     # num_steps = 300
     # num_steps = 200
     # num_steps = 180
-   # num_steps =120
+    # num_steps =120
     # num_steps = 90
     num_steps = 60
     # num_steps = 35
-    # num_steps = 21
+    # num_steps = 210.
 
     #individual line pairs:
     # scan_range = 0.16
@@ -118,8 +118,8 @@ def do_image_sample(nv_sig):
 
 def do_image_sample_xz(nv_sig):
 
-    x_range = 0.1
-    z_range =6
+    x_range = 0.2
+    z_range =2
     num_steps = 60
 
     image_sample.main(
@@ -128,6 +128,22 @@ def do_image_sample_xz(nv_sig):
         z_range,
         num_steps,
         scan_type = 'XZ'
+    )
+
+def do_image_sample_yz(nv_sig):
+
+    # y_range = 2
+    # z_range =5
+    y_range = 2
+    z_range =3.88
+    num_steps = 60
+
+    image_sample.main(
+        nv_sig,
+        y_range,
+        z_range,
+        num_steps,
+        scan_type = 'YZ'
     )
 
 
@@ -289,7 +305,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
     num_reps = 1e4
     num_runs = 10
     uwave_power = -2
-    uwave_pulse_dur = int(100/2)
+    uwave_pulse_dur = int(80/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -300,7 +316,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
         num_runs,
         uwave_power,
         uwave_pulse_dur,
-        state=States.HIGH,
+        state=States.LOW,
         opti_nv_sig = opti_nv_sig
     )
 
@@ -310,13 +326,13 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
     # freq_range = 0.1
     num_steps = 75
     num_reps = 10**4
-    # num_runs = 5
+    num_runs = 10
 
     # Zoom
     freq_range = 0.008
     # num_steps = 75
     # num_reps = int(1e4)
-    num_runs =   5
+    # num_runs =   10
 
     composite = False
 
@@ -343,13 +359,13 @@ def do_optimize_magnet_angle(nv_sig):
     angle_range = [0, 120]
     #    num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.15
-    num_freq_steps = 101
-    num_freq_runs = 5
+    freq_range = 0.12
+    num_freq_steps = 75
+    num_freq_runs = 10
     
     # Pulsed
     uwave_power = -2
-    uwave_pulse_dur = 100
+    uwave_pulse_dur = 80/2
     num_freq_reps = int(1e4)
 
     # CW
@@ -374,14 +390,15 @@ def do_optimize_magnet_angle(nv_sig):
 def do_rabi(nv_sig, opti_nv_sig, state, 
             uwave_time_range=[0, 200]):
 
-    # num_steps =101
-    # num_reps = int(2e4)    
-    # num_runs =  5
+    num_steps =75
+    num_reps = int(2e4)    
+    num_runs = 10
 
-    num_steps =51
-    num_reps = int(1e4)  
-    # num_reps = int(25)   
-    num_runs =  10
+    # num_steps =251
+    # num_reps = int(50)   
+    # num_runs =  40
+    
+    # nv_sig["norm_style"] = NormStyle.POINT_TO_POINT 
     
     rabi.main(
         nv_sig,
@@ -393,7 +410,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         opti_nv_sig = opti_nv_sig,
         do_scc = False,
         do_dq = False,
-        do_cos_fit = False
+        do_cos_fit = True
     )
     # nv_sig["rabi_{}".format(state.name)] = period
 
@@ -585,7 +602,7 @@ def do_spin_echo(nv_sig, state = States.HIGH, do_dq = True):
     )
     return
 
-def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_runs, do_dq_):
+def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_runs, do_dq_, comp_wait_time):
     
     shift = 100 #ns
     # shift = 0 #ns
@@ -614,10 +631,125 @@ def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_ru
         num_runs,
         state=state,
         do_dq= do_dq_,
-        do_scc= True
+        do_scc= True,
+        comp_wait_time = comp_wait_time
     )
     return 
 
+
+from random import shuffle
+def test_dd_cpmg_pulse_timing(nv_sig, pi_pulse_reps, num_steps_comp,  
+                              comp_T_min, comp_T_max, num_reps, num_runs, do_dq_=True):
+    
+    scc = True
+    shift = 100 #ns
+    # shift = 0 #ns
+    
+    T_min = 0 #us
+    T_max = 4000 #us
+    max_coh_time = T_max / (2*pi_pulse_reps)  # us
+    min_coh_time = T_min / (2*pi_pulse_reps) #us
+    num_steps_coh = 5
+    precession_time_range = [int(min_coh_time*10**3+shift), int(max_coh_time*10**3+shift)]
+    taus_coh = numpy.linspace(
+        T_min,
+        T_max,
+        num=num_steps_coh,)
+    
+    state = States.HIGH
+    
+    readout = nv_sig['spin_readout_dur']
+    norm_style = nv_sig['norm_style']
+    norm_avg_sig_list = numpy.zeros([num_steps_coh, num_steps_comp])
+    norm_avg_sig_list[:] = numpy.nan
+    norm_avg_sig_ste_list=numpy.copy(norm_avg_sig_list)
+    # sig_list = numpy.zeros([num_steps_coh, num_steps_comp, num_runs])
+    # sig_list[:] = numpy.nan
+    # ref_list =numpy.copy(sig_list)
+    comp_taus = numpy.linspace(comp_T_min, comp_T_max, num_steps_comp)
+    shuffle(comp_taus)
+    for t_ind  in range(len(comp_taus)):
+        t = comp_taus[t_ind]
+        sig_counts, ref_counts = dynamical_decoupling_cpmg.main(
+            nv_sig,
+            precession_time_range,
+            pi_pulse_reps,
+            num_steps_coh,
+            num_reps,
+            num_runs,
+            state=state,
+            do_dq= do_dq_,
+            do_scc= scc,
+            comp_wait_time = t,
+            do_plot = False,
+            do_save = False
+        )
+    
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        
+        # print(sig_counts)
+        for i in range(num_steps_coh):
+            norm_avg_sig_list[i][t_ind] = norm_avg_sig[i]
+            norm_avg_sig_ste_list[i][t_ind] = norm_avg_sig_ste[i]
+            # sig_list[i][t_ind] = sig_counts[i]
+            # ref_list[i][t_ind] = ref_counts[i]
+            
+    
+    
+    fig, ax = plt.subplots()
+    
+    for ind in range(num_steps_coh):
+        kpl.plot_points(ax, comp_taus, norm_avg_sig_list[ind], yerr=norm_avg_sig_ste_list[ind], 
+                    label = 'Coherence at T = {} ms'.format(taus_coh[ind]/1e3))
+        
+    ax.set_xlabel(r"Timing between composite pulses (ns)")
+    ax.set_ylabel("Contrast (arb. units)")
+    ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, 'DQ'))
+    ax.legend()
+
+    timestamp = tool_belt.get_time_stamp()
+
+    raw_data = {
+        "timestamp": timestamp,
+        "nv_sig": nv_sig,
+        'pi_pulse_reps': pi_pulse_reps,
+        "do_dq": True,
+        "do_scc": scc,
+        "state": state.name,
+        "num_steps_coh": num_steps_coh,
+        "num_reps": num_reps,
+        "num_runs": num_runs,
+        "T_min": T_min,
+        "T_max": T_max,
+        "T-units": "us",
+        
+        "comp_T_min":comp_T_min,
+        "comp_T_max": comp_T_max,
+        "num_steps_comp": num_steps_comp,
+        "comp_taus": comp_taus.tolist(),	
+        "comp_taus-units": "ns",
+        
+        "taus_coh": taus_coh.tolist(),
+        "norm_avg_sig_list": norm_avg_sig_list.tolist(),
+        "norm_avg_sig_ste_list": norm_avg_sig_ste_list.tolist(),
+        # "sig_list":sig_list.tolist(),
+        # "ref_list":ref_list.tolist(),
+    }
+
+    nv_name = nv_sig["name"]
+    folder_name = 'dynamical_decoupling_cpmg'
+    file_path = tool_belt.get_file_path(folder_name, timestamp, nv_name)
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+    
+    
+    return 
 
 def do_dd_xy4(nv_sig,num_xy4_reps, step_size,  T_min, T_max):
 
@@ -857,10 +989,11 @@ def do_determine_standard_readout_params(nv_sig):
                                            max_readouts, state=state)
     
 def do_determine_scc_pulse_params(nv_sig):
-        num_reps = int(4e3)
+        num_reps = int(5e3)
         # num_reps = int(5e2)
-        # ion_durs = numpy.linspace(250,350,3)
-        ion_durs = numpy.linspace(100,500,2)
+        # ion_durs = numpy.linspace(300, 1)
+        # ion_durs = numpy.linspace(200,350,3)
+        ion_durs = numpy.linspace(100,500,5)
         
             
         max_snr = determine_scc_pulse_params.determine_ionization_dur(nv_sig,
@@ -873,7 +1006,8 @@ def do_determine_charge_readout_params(nv_sig):
         readout_durs = [1e6, 5e6, 10e6, 25e6]
         readout_durs = [int(el) for el in readout_durs]
         max_readout_dur = max(readout_durs)
-        readout_powers = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
+        # readout_powers = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
+        readout_powers = [0.2,0.25, 0.3, 0.4, 0.5]
         
             
         determine_charge_readout_params.main(  
@@ -1082,6 +1216,7 @@ if __name__ == "__main__":
     red_power = 180
     sample_name = "siena"
     # sample_name = "ayrton12"
+    # sample_name = "johnson"
     green_laser = "integrated_520"
     # green_laser = "cobolt_515"
     yellow_laser = "laser_LGLO_589"
@@ -1094,11 +1229,12 @@ if __name__ == "__main__":
         # "correction_collar": 0.12,
         'expected_count_rate': None,
          "green_power_mW": 1.0,
+         "waveplate_angle" : 78,
 
         "spin_laser":green_laser,
         "spin_laser_power": green_power,
         "spin_laser_filter": nd_green,
-        "spin_readout_dur": 350,
+        "spin_readout_dur": 480,
         # "spin_pol_dur": 10000.0,
         "spin_pol_dur": 1000.0,
 
@@ -1128,7 +1264,7 @@ if __name__ == "__main__":
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 300,
+        "nv0_ionization_dur": 250,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": None,
@@ -1158,7 +1294,7 @@ if __name__ == "__main__":
 
     
     nv_search = copy.deepcopy(sig_base)
-    nv_search["coords"] = [0,0,4.885]
+    nv_search["coords"] = [0,0,5]
     nv_search["name"] = "{}-nv_search".format(sample_name,)
     # nv_search['diasble_opt'] = True
     # nv_search["expected_count_rate"] = 16
@@ -1170,53 +1306,53 @@ if __name__ == "__main__":
     
     
     nv_sig_0 = copy.deepcopy(sig_base)  
-    nv_sig_0["coords"] = [-0.112, -0.26, 4.25]  # NV A 
-    nv_sig_0["name"] = "{}-nv0_2023_02_24".format(sample_name,)
-    nv_sig_0["expected_count_rate"] = 30
-    nv_sig_0["magnet_angle"]= 53.5
-    nv_sig_0["resonance_LOW"]=2.82004
-    nv_sig_0["resonance_HIGH"]= 2.92101
-    nv_sig_0["uwave_power_LOW"]= -2
-    nv_sig_0["uwave_power_HIGH"]= -2
-    nv_sig_0["rabi_LOW"]= 148.48
-    nv_sig_0["rabi_HIGH"]=142
-    # nv_sig_0["uwave_power_LOW"]= -35
-    # nv_sig_0["uwave_power_HIGH"]= -35
-    # nv_sig_0["rabi_LOW"]= 1470
-    # nv_sig_0["rabi_HIGH"]=1730 
-    nv_sig_0["pi_pulse_LOW"]= 69.71  
-    nv_sig_0["pi_on_2_pulse_LOW"]= 34.41
-    nv_sig_0["pi_pulse_HIGH"]=56.38
-    nv_sig_0["pi_on_2_pulse_HIGH"]= 28.75  
+    nv_sig_0["coords"] = [0.04, -0.123, 7.5]   #55 um
+    nv_sig_0["name"] = "{}-nv0_2023_03_20".format(sample_name,)
+    nv_sig_0["expected_count_rate"] =10
+    nv_sig_0["magnet_angle"]= 163
+    nv_sig_0["resonance_LOW"]=2.8229
+    nv_sig_0["resonance_HIGH"]= 2.9185
+    nv_sig_0["rabi_LOW"]= 80
+    nv_sig_0["rabi_HIGH"]=75
+    nv_sig_0["uwave_power_LOW"]= -40
+    nv_sig_0["uwave_power_HIGH"]= -35
+    nv_sig_0["rabi_LOW"]= 1528
+    nv_sig_0["rabi_HIGH"]=1283
+    nv_sig_0["pi_pulse_LOW"]= 43
+    nv_sig_0["pi_on_2_pulse_LOW"]= 26
+    nv_sig_0["pi_pulse_HIGH"]=40
+    nv_sig_0["pi_on_2_pulse_HIGH"]= 22
     
+    nv_sig_1 = copy.deepcopy(sig_base)  
+    nv_sig_1["coords"] = [0.457, 0.354, 8.34] #
+    nv_sig_1["name"] = "{}-nv1_2023_03_20".format(sample_name,)
+    nv_sig_1["expected_count_rate"] =9
+    nv_sig_1["magnet_angle"]= 162.4
+    nv_sig_1["resonance_LOW"]=2.85
+    nv_sig_1["resonance_HIGH"]= 2.91816
+    nv_sig_1["rabi_LOW"]= 112
+    nv_sig_1["rabi_HIGH"]= 109
+    # nv_sig_1["uwave_power_LOW"]= -40
+    # nv_sig_1["uwave_power_HIGH"]= -35
+    # nv_sig_1["rabi_LOW"]= 1673
+    # nv_sig_1["rabi_HIGH"]=1960
+    nv_sig_1["pi_pulse_LOW"]= 70.91 
+    nv_sig_1["pi_on_2_pulse_LOW"]= 35.95
+    nv_sig_1["pi_pulse_HIGH"]=55.32
+    nv_sig_1["pi_on_2_pulse_HIGH"]= 31.17
+
     
-    nv_sig_c13 = copy.deepcopy(sig_base) # 
-    nv_sig_c13["coords"] = [0,0, 6.746]
-    nv_sig_c13["name"] = "{}-nvc13_2023_02_17".format(sample_name,)
-    nv_sig_c13["only_z_opt"] = True
-    nv_sig_c13["expected_count_rate"] = 210
-    nv_sig_c13["spin_pol_dur"] = 10000
-    nv_sig_c13["rabi_HIGH"]= 87
-    nv_sig_c13["resonance_HIGH"] =2.9379
-    nv_sig_c13["uwave_power_HIGH"] =-2
-    
-    nv_sig_list = [
-                    # nv_sig_0,
-                    # nv_sig_1,
-                    # nv_sig_4, ###
-                    # nv_sig_5,
-                    # nv_sig_8, ###
-                    # nv_sig_10,
-                    # nv_sig_11,
-                    # nv_sig_12,
-                    # nv_sig_13,
-                    # nv_sig_17,
-                    # nv_sig_18,
-                    ]
+    # nv_sig_list = [
+    #                 nv_sig_1,
+    #                 nv_sig_2, 
+    #                 nv_sig_3, 
+    #                 nv_sig_4, 
+    #                 nv_sig_5,
+    #                 ]
     
     
     nv_sig = nv_sig_0
-    
+
     # %% Functions to run
 
     try:
@@ -1225,32 +1361,45 @@ if __name__ == "__main__":
         
         # positioning.set_drift(labrad.connect(),[-0.39 +0.2, -0.012, 0.047])  
         # positioning.set_drift(labrad.connect(),[0.0,0.0,0.0])
-        # positioning.set_drift(labrad.connect(),[-0.149, -0.027, -0.06])
+        #positioning.set_drift(labrad.connect(),[-0.149, -0.027, -0.06])
         # positioning.set_drift(labrad.connect(),[-0.05, 0.353, -0.54])
-        # positioning.set_xyz(labrad.connect(), [0,0, 5.09])
+        # positioning.set_xyz(labrad.connect(), [0,0, 5.0])
         
         #     cxn.rotation_stage_ell18k.set_angle(65)
-        
-        #for x in [0.25]:
-        #       for y in [-0.25]:
-       #                    for z in numpy.linspace(3.8, 6.2, 25):
-        #                         coords= nv_sig["coords"]
-        #                         nv_sig["coords"] =[x,y, z ]
-        #                         do_image_sample(nv_sig)
         if False:
-        # if  True:
-           for dz in numpy.linspace(-0.2, 0.2, 5):
+         for x in [-0.25, 0.25]:
+                for y in [0.271-0.25, 0.271+0.25]: 
+                            for z in numpy.linspace(6.6, 8.1, 16):
+                                  coords= nv_sig["coords"]
+                                  nv_sig["coords"] =[x,y, z ]
+                                  do_image_sample(nv_sig)
+        # if False:
+        if  False:
+            for dz in numpy.linspace(-0.2, 0.2, 5):
                nv_copy = copy.deepcopy(nv_sig)
                coords= nv_sig["coords"]
                nv_copy["coords"] =[coords[0], coords[1], coords[2] + dz ]
                do_image_sample(nv_copy)
                     
         
-        # do_optimize(nv_sig)
-        # do_image_sample(nv_sig)
+        #do_optimize(nv_sig)
+        #do_image_sample(nv_sig)
         # do_image_sample_xz(nv_sig)
+        # do_image_sample_yz(nv_sig)
         
-        #do_track_optimize(nv_sig, 30)            
+        # do_optimize_magnet_angle(nv_sig)
+        # nv_sig["disable_opt"] =True
+        # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.15) 
+        
+        do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
+        do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+        # do_rabi(nv_sig, nv_sig, States.LOW,  uwave_time_range=[0, 1500])
+        # do_rabi(nv_sig, nv_sig, States.HIGH, uwave_time_range=[0,1500])
+        
+        
+        
+        #do_track_optimize(nv_sig, 30)       
+        
         
         # do_stationary_count(nv_sig)
         # do_stationary_count_bg_subt(nv_sig, bg_coords)
@@ -1259,27 +1408,6 @@ if __name__ == "__main__":
             
         # do_lifetime(nv_sig) 
         
-        # for p in [9.4, 9.6, 9.8, 10]:
-        #       nv_sig_copy = copy.deepcopy(nv_sig)
-        #       nv_sig_copy['uwave_power_HIGH'] = p
-        #       do_rabi(nv_sig_copy, nv_sig_copy, States.HIGH,   uwave_time_range=[0, 300])
-        # for p in [-3, -2,-1,0]:
-        #       nv_sig_copy = copy.deepcopy(nv_sig)
-        #       nv_sig_copy['uwave_power_HIGH'] = p
-        #       do_rabi(nv_sig_copy, nv_sig_copy, States.HIGH,   uwave_time_range=[0, 250])
-        
-        
-        
-        # do_optimize_magnet_angle(nv_sig)
-        #do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.15) 
-        # do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.1)
-        
-        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-       # do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 150])
-        # do_rabi(nv_sig, nv_sig, States.HIGH,   uwave_time_range=[0, 110])
-        
-        
         # for t1 in [0, 5e3, 10e3, 15e3, 20e3, 25e3, 50e3, 75e3, 100e3]:
         #      do_ramsey(nv_sig, nv_sig, t1)
         # do_ramsey(nv_sig, nv_sig, 0)
@@ -1287,23 +1415,54 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, do_dq=False)
 
         # do_relaxation(nv_sig)  # gamma and omega
-                
         
+        # comp_num_steps = 51
+        # comp_T_min = 300
+        # comp_T_max = 400
+        # num_runs =20
+        # num_reps = 200
+        # test_dd_cpmg_pulse_timing(nv_sig, 2, comp_num_steps,  
+        #                       comp_T_min, comp_T_max, num_reps, num_runs)
+        # test_dd_cpmg_pulse_timing(nv_sig, 8, comp_num_steps,  
+        #                       comp_T_min, comp_T_max, num_reps, num_runs)
+        # comp_T_min = 60
+        # comp_T_max = 160
+        # test_dd_cpmg_pulse_timing(nv_sig, 2, comp_num_steps,  
+        #                       comp_T_min, comp_T_max, num_reps, num_runs)
+        # test_dd_cpmg_pulse_timing(nv_sig, 8, comp_num_steps,  
+        #                       comp_T_min, comp_T_max, num_reps, num_runs)
         ###################
         T_min = 0 #us
-        T_max = 8000 #us  
-        step_size = (T_max - T_min)/31 #us 
-        # step_size = (T_max - T_min)/4 #us 
-        num_runs =350
-        num_reps = 20
-        # num_reps = 1000
+        T_max = 6000 #us  
+        # step_size = (T_max - T_min)/31 #us 
+        step_size = (T_max - T_min)/21 #us  
+        num_runs =10
+        num_reps = 200
+        # False = 1000
         if False:
-         for boo in [False, True]:
+            # try 98, 114, 334
+            
+         #do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= False, comp_wait_time = 114)
+         
+         for boo in [False]:
             #do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
             #do_dd_cpmg(nv_sig, 512, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
-            # do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            # do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
+            do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            #do_dd_cpmg(nv_sig, 4, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            # do_dd_cpmg(nv_sig, 6, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            #do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            #do_dd_cpmg(nv_sig, 2, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 334)
+            # do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 98)
+            #do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            #do_dd_cpmg(nv_sig, 8, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 334)
+            # do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 98)
+            #do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            #do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 334)
+            # do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 98)
+           # do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 114)
+            #do_dd_cpmg(nv_sig, 256, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo, comp_wait_time = 334)
             #do_dd_cpmg(nv_sig, 16, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
             # do_dd_cpmg(nv_sig, 32, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
             #do_dd_cpmg(nv_sig, 64, step_size, T_min, T_max, num_reps, num_runs, do_dq_= boo)
@@ -1326,12 +1485,12 @@ if __name__ == "__main__":
         
         # do_determine_standard_readout_params(nv_sig)
         # do_determine_charge_readout_params(nv_sig)
-        do_determine_scc_pulse_params(nv_sig)
+        # do_determine_scc_pulse_params(nv_sig)
         
-        p_list = [ 0.3,0.4, 0.5, 0.6]
+        p_list = [ 0.25, 0.3, 0.35, 0.4]
         # t_list = [1,5,10,25,100]
         # t_list = [50, 60]
-        t_list = [5,10, 15]
+        t_list = [10, 15, 20, 25, 30]
         if False:
          for p in p_list:
             snr_list = []
@@ -1340,13 +1499,13 @@ if __name__ == "__main__":
                 nv_sig_copy["charge_readout_laser_power"]= p
                 nv_sig_copy["charge_readout_dur"]= t*1e6
                 max_snr = do_determine_scc_pulse_params(nv_sig_copy)
-        #        snr_list.append(max_snr)
-        #    print('')
-        #    print(snr_list)
-        #    max_snr_for_power = max(snr_list)
-         #   max_ind = snr_list.index(max_snr_for_power)
-       #     max_dur = t_list[max_ind]
-       #     print('Max SNR {} at {} ms readout'.format(max_snr_for_power, max_dur))
+                snr_list.append(max_snr)
+            # print('')
+            # print(snr_list)
+            # max_snr_for_power = max(snr_list)
+            # max_ind = snr_list.index(max_snr_for_power)
+            # max_dur = t_list[max_ind]
+            # print('Max SNR {} at {} ms readout'.format(max_snr_for_power, max_dur))
 
     #except Exception as exc:
     #    recipient = "agardill56@gmail.com"

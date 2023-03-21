@@ -362,7 +362,9 @@ def main_with_cxn(
         cxn, "z_nm_per_unit", ["", "Config", "Positioning"]
     )
     # use whichever delay is longer:
-    if (z_delay > xy_delay) and scan_type == "XZ":
+    if (z_delay > xy_delay) and scan_type == "XZ" :
+        delay = z_delay
+    elif (z_delay > xy_delay) and scan_type == "YZ" :
         delay = z_delay
     else:
         delay = xy_delay
@@ -414,6 +416,9 @@ def main_with_cxn(
     elif scan_type == 'XZ':
         ret_vals = positioning.get_scan_grid_2d(
             x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
+    elif scan_type == 'YZ':
+        ret_vals = positioning.get_scan_grid_2d(
+            y_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
 
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -448,6 +453,10 @@ def main_with_cxn(
             z_voltages = y_voltages
             y_vals_static = [y_center]*len(x_voltages)
             xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
+        elif scan_type == "YZ":
+            z_voltages = y_voltages
+            x_vals_static = [x_center]*len(x_voltages)
+            xyz_server.load_stream_xyz( x_vals_static, x_voltages,z_voltages)
 
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
@@ -469,7 +478,7 @@ def main_with_cxn(
     title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
 
     fig, ax = plt.subplots()
-    if scan_type == "XZ":
+    if scan_type == "XZ" or scan_type == "YZ" :
         kpl.imshow(
             ax,
             img_array_kcps,
@@ -516,7 +525,7 @@ def main_with_cxn(
 
             if scan_type == "XY":
                 flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            elif scan_type == 'XZ':
+            elif scan_type == 'XZ' or scan_type == 'YZ'  :
                 flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
 
             # Some diagnostic stuff - checking how far we are from the target pos
@@ -524,7 +533,7 @@ def main_with_cxn(
             dx_list.append((actual_x_pos - cur_x_pos) * 1e3)
             if scan_type == "XY":
                 dy_list.append((actual_y_pos - cur_y_pos) * 1e3)
-            elif scan_type == "XZ":
+            elif scan_type == "XZ" or scan_type == 'YZ' :
                 cur_z_pos = cur_y_pos
                 dy_list.append((actual_z_pos - cur_z_pos) * 1e3)
             # read the counts at this location
@@ -588,7 +597,7 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
     if scan_type == 'XY':
         xy_server.write_xy(x_center, y_center)
-    elif scan_type == 'XZ':
+    else:
         xyz_server.write_xyz(x_center, y_center, z_center)
 
     timestamp = tool_belt.get_time_stamp()
@@ -625,13 +634,27 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_02_22-12_46_29-ayrton12-nv_search"
+    file_name = "2023_03_20-10_41_09-siena-nv_search"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    x_center = data["x_center"]
-    y_center = data["y_center"]
+    scan_type = data['scan_type']
+    if scan_type == 'XY':
+        x_center = data["x_center"]
+        y_center = data["y_center"]
+        # x_range = data["x_range"]
+        # y_range = data["y_range"]
+        # x_num_steps = data["num_steps"]
+        # y_num_steps = data["num_steps"]
+        
+    elif scan_type == 'XZ':
+        x_center = data["x_center"]
+        y_center = data["z_center"]
+    elif scan_type == 'YZ':
+        x_center = data["y_center"]
+        y_center = data["z_center"]
+        
     x_range = data["x_range"]
     y_range = data["y_range"]
     x_num_steps = data["num_steps"]
@@ -649,8 +672,10 @@ if __name__ == "__main__":
         x_label="V",
         y_label="V",
         cbar_label="kcps",
-        vmax = 80,
+        vmax = 60,
         extent=extent,
+        aspect="auto",
     )
 
-    plt.show(block=True)
+    # plt.show(block=True)
+    

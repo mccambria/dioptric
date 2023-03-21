@@ -39,17 +39,17 @@ def get_seq(pulse_streamer, config, args):
 
     # The first 11 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(8):
+    for ind in range(9):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
     tau_shrt, polarization_time, gate_time, pi_pulse_low, pi_on_2_pulse_low,\
-        pi_pulse_high, pi_on_2_pulse_high, tau_long = durations
+        pi_pulse_high, pi_on_2_pulse_high, tau_long, comp_wait_time = durations
     
     
 
     # Get the APD indices
-    pi_pulse_reps, state_activ, state_proxy,  laser_name, laser_power = args[8:14]
+    pi_pulse_reps, state_activ, state_proxy,  laser_name, laser_power = args[9:15]
     state_activ = States(state_activ)
     state_proxy = States(state_proxy)
     
@@ -63,8 +63,8 @@ def get_seq(pulse_streamer, config, args):
     
     uwave_buffer = config['CommonDurations']['uwave_buffer']
     back_buffer = 200
-    echo_buffer = 100
-    coh_buffer = 100
+    echo_buffer = comp_wait_time
+    coh_buffer = comp_wait_time
     delay_buffer = max(laser_delay_time,uwave_delay_low, uwave_delay_high, iq_delay_time, 100)
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse_low,pi_on_2_pulse_high , 10))
     
