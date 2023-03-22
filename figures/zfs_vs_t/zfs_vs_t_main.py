@@ -1361,10 +1361,10 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    main()
+    # main()
     # refit_experiments()
     # # # derivative_comp()
-    # light_polarization()
+    light_polarization()
 
     plt.show(block=True)
     sys.exit()
