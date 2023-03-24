@@ -15,7 +15,7 @@ from utils.tool_belt import States
 from scipy.optimize import curve_fit
 from numpy.linalg import eigvals
 
-file = '2023_03_04-12_37_48-siena-nv0_2023_02_24' #8
+file = '2023_03_23-08_43_01-siena-nv0_2023_03_20' #2
 
 data = tool_belt.get_raw_data(file)
 

@@ -215,6 +215,7 @@ def main(
     do_dq = False,
     do_scc = False,
     comp_wait_time = 80,
+    dd_wait_time = 200,
     do_plot = True,
     do_save = True
 ):
@@ -233,6 +234,7 @@ def main(
             do_dq,
             do_scc,
             comp_wait_time,
+            dd_wait_time,
             do_plot,
             do_save
         )
@@ -252,6 +254,7 @@ def main_with_cxn(
     do_dq = False,
     do_scc = False,
     comp_wait_time = 80,
+    dd_wait_time = 200,
     do_plot = True,
     do_save = True
 ):
@@ -300,8 +303,11 @@ def main_with_cxn(
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
 
     # Get pulse frequencies
-    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
-    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    # uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    # uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
+    uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
+    uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
+    
 
     # set up to drive transition through zero
     if do_dq:
@@ -451,6 +457,7 @@ def main_with_cxn(
                   uwave_pi_pulse,
                   uwave_pi_on_2_pulse,
                   taus[-1],
+                  dd_wait_time,
                   pi_pulse_reps,
                   state.value,
                   pol_laser_name,
@@ -469,6 +476,7 @@ def main_with_cxn(
                   uwave_pi_pulse,
                   uwave_pi_on_2_pulse,
                   taus[-1],
+                  dd_wait_time,
                   pi_pulse_reps,
                   state.value,
                   laser_name,
@@ -477,7 +485,7 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    # print(seq_file_name)
+    print(seq_file_name)
     print(seq_args)
     # return
         # print(seq_time)
@@ -531,11 +539,6 @@ def main_with_cxn(
             sig_gen_high_cxn.set_amp(uwave_power_high)
             sig_gen_high_cxn.load_iq()
             sig_gen_high_cxn.uwave_on()
-            # if pi_pulse_reps == 1:
-            #   arbwavegen_server.load_arb_phases([0,0,0]) 
-            # else:
-            #     # arbwavegen_server.load_cpmg_dq(pi_pulse_reps)
-            #     arbwavegen_server.load_cpmg(pi_pulse_reps)
         else:
             sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
             sig_gen_cxn.set_freq(uwave_freq)
@@ -543,15 +546,9 @@ def main_with_cxn(
             sig_gen_cxn.load_iq()
             sig_gen_cxn.uwave_on()
         if pi_pulse_reps == 1:
-            arbwavegen_server.load_arb_phases([0,0,0]) 
+              arbwavegen_server.load_arb_phases([0, 0, 0, 0, 0, 0]) 
         else:
-            arbwavegen_server.load_cpmg(pi_pulse_reps)
-            # added_phase = 200*numpy.pi/180
-            # phases = [0 + added_phase] + [numpy.pi/2 + added_phase] * pi_pulse_reps + [0 + added_phase]
-            # print(phases)
-            
-            # return
-            # arbwavegen_server.load_arb_phases(phases) 
+              arbwavegen_server.load_cpmg(pi_pulse_reps)
             
         
 
@@ -567,12 +564,14 @@ def main_with_cxn(
         counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
-        shuffle(tau_ind_list)
+        # shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
 
             # 'Flip a coin' to determine which tau (long/shrt) is used first
-            rand_boolean = numpy.random.randint(0, high=2)
+            # rand_boolean = numpy.random.randint(0, high=2)
+            rand_boolean = 0
+            
 
             if rand_boolean == 1:
                 tau_ind_first = tau_ind
@@ -635,7 +634,7 @@ def main_with_cxn(
                     ]
             else:
                 if do_scc:    
-                    seq_file_name = "dynamical_decoupling_scc.py"
+                    # seq_file_name = "dynamical_decoupling_scc.py"
                     seq_args = [
                           taus[tau_ind_first],
                           polarization_dur,
@@ -644,6 +643,7 @@ def main_with_cxn(
                           uwave_pi_pulse,
                           uwave_pi_on_2_pulse,
                           taus[tau_ind_second],
+                          dd_wait_time,
                           pi_pulse_reps,
                           state.value,
                           pol_laser_name,
@@ -654,7 +654,7 @@ def main_with_cxn(
                           readout_laser_power,
                       ]
                 else:
-                    seq_file_name = "dynamical_decoupling.py"
+                    # seq_file_name = "dynamical_decoupling.py"
                     seq_args = [
                           taus[tau_ind_first],
                           polarization_time,
@@ -662,6 +662,7 @@ def main_with_cxn(
                           uwave_pi_pulse,
                           uwave_pi_on_2_pulse,
                           taus[tau_ind_second],
+                          dd_wait_time,
                           pi_pulse_reps,
                           state.value,
                           laser_name,

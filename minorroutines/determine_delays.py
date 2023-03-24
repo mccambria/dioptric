@@ -101,6 +101,10 @@ def measure_delay(
             awg_cxn.load_arb_phases([0, numpy.pi/2])
             # awg_cxn.load_arb_phases([numpy.pi/2, 0])
             pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
+        
+        if laser_name == 'laser_LGLO_589':
+            laser_server = cxn.laser_LGLO_589
+            laser_server.load_feedthrough(laser_power)
 
         counter_server.start_tag_stream()
         ###########
@@ -115,7 +119,7 @@ def measure_delay(
         # print(tau)
         if seq_file == "aom_delay.py":
             delayed_element = 'laser'
-            readout = 5e3#,nv_sig["imaging_readout_dur"]
+            readout = 5e3#nv_sig["imaging_readout_dur"]
             seq_args = [
                 tau,
                 max_tau,
@@ -384,7 +388,7 @@ if __name__ == "__main__":
     apd_indices = [1]
     sample_name = 'siena'
     # sample_name = 'ayrton12'
-    green_power = 1
+    green_power = 8000
     nd_green = 'ND_1.1'
     green_laser = "integrated_520"
     # green_laser = "cobolt_515"
@@ -393,17 +397,17 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[-0.234, 0.464, 5.0] ,
-        "name": "{}-nv2_2023_02_22".format(sample_name,),
+            "coords":[0.04, -0.123, 7.6] ,
+        "name": "{}-nv0_2023_03_20".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":30,
+        "expected_count_rate":13,
 
 
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
          "spin_laser_filter": nd_green,
-          "spin_readout_dur": 360,
+          "spin_readout_dur": 400,
           "spin_pol_dur": 1000.0,
 
           "imaging_laser":green_laser,
@@ -412,17 +416,17 @@ if __name__ == "__main__":
           "imaging_readout_dur": 1e7,
 
          "charge_readout_laser": yellow_laser,
-          "charge_readout_laser_filter": "nd_0",
+          "charge_readout_laser_filter": "nd_0.5",
 
 
 
         "collection_filter": "715_sp+630_lp", # NV band only
-        "magnet_angle": 53.5,
-        "resonance_LOW":2.81980,
-        "rabi_LOW":71.404*2,
+        "magnet_angle": 163,
+        "resonance_LOW":2.82309,
+        "rabi_LOW":39.33*2,
         "uwave_power_LOW": -2,
-        "resonance_HIGH":2.92116,
-        "rabi_HIGH":54.28*2,
+        "resonance_HIGH":2.91872,
+        "rabi_HIGH":41.91*2,
         "uwave_power_HIGH": -2,
     }
 
@@ -464,32 +468,33 @@ if __name__ == "__main__":
 
 
     # laser delay
-    num_steps = 51
-    num_reps = int(1e4)
+    num_steps = 101
+    num_reps = int(1e5)
     # laser_name = 'laserglow_532'
     # delay_range = [0, 500]
     # num_reps = int(1e5)
-    # laser_name = 'laser_LGLO_589'
-    # delay_range = [2500, 6500]
+    laser_name = 'laser_LGLO_589'
+    delay_range = [1500, 5500]
+    laser_power = 1.0
     # num_reps = int(1e4)
-    laser_name = 'integrated_520'
+    # laser_name = 'integrated_520'
     # laser_name = 'cobolt_515'
     # laser_power = 0.65
     # laser_name = 'cobolt_638'
-    laser_power = None
+    # laser_power = None
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
-    delay_range = [0,1e3]
+    # delay_range = [0,1e3]
     # with labrad.connect() as cxn:
     #     aom_delay(cxn, nv_sig, 
     #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
 
     # uwave_delay
-    num_reps = int(1e5)
+    num_reps = int(2e5)
     # num_reps = int(1e4)
-    # delay_range = [-100, 200]
-    delay_range = [545, 645]
+    # delay_range = [-310, 490]
+    delay_range = [555, 655]
     num_steps = 101
     # bnc 835
     # state = States.LOW

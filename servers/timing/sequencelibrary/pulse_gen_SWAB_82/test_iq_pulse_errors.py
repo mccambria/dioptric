@@ -197,6 +197,7 @@ def get_seq(pulse_streamer, config, args):
              ])
     seq.setDigital(pulser_do_arb_wave_trigger, train)
     
+    print(train)
     period = 0
     for el in train:
         period += el[0]
@@ -217,9 +218,11 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     tool_belt.set_delays_to_zero(config) 
     
-    # readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, polarization
-    # num_uwave_pulses, state, apd_index, laser_name, laser_power = args[6:11]
-    args = [350, 64, 64, 64, 64, 1000.0, 0, 3, 3,  'integrated_520', None]
+    # readout, pi_pulse, uwave_pulse_dur_1, uwave_pulse_dur_2,uwave_pulse_dur_3, \
+    #     polarization, inter_pulse_time = durations
+    # num_uwave_pulses, state, laser_name, laser_power
+    
+    args = [480, 39.13, 39.13, 22.6, 0, 1000.0, 30, 2, 3, 'integrated_520', None]
     seq = get_seq(None, config, args)[0]
 
     # Plot the sequence

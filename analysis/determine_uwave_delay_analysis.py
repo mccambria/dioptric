@@ -83,12 +83,13 @@ def find_uwave_delay(file):
     print(x_intercept)
     
     base_text = "MW delay {:.1f} ns"
+    # base_text = "AWG delay {:.1f} ns"
     size = kpl.Size.SMALL
     text = base_text.format(x_intercept)
     kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, size=size)
 
 #%%%
-file = '2023_02_22-09_46_30-siena-nv5_2023_02_17'
+file = '2023_03_21-09_58_57-siena-nv0_2023_03_20'
 find_uwave_delay(file)
 
 

@@ -342,10 +342,12 @@ def process_laser_seq(
             # where we left off
             collapsed_train.append((dur, val))
             ind = next_ind
+        # print(pulse_streamer)
         # Check if this is just supposed to be always on
         if (len(collapsed_train) == 1) and (collapsed_train[0][1] == Digital.HIGH):
             if pulse_streamer is not None:
-                pulse_streamer.client[laser_name].laser_on()
+                # pulse_streamer.client[laser_name].laser_on(laser_power)
+                pulse_streamer.laser_LGLO_589.laser_on(laser_power)
             return
         # Set up the bookends
         # print(collapsed_train)

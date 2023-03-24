@@ -64,7 +64,8 @@ def get_seq(pulse_streamer, config, args):
     # Sweep the illumination delay. Place the reference
     # readout squarely in the middle of the illumination so its 
     # independent of the actual delay.
-    train = [(half_illumination, LOW),
+    train = [(100, LOW),
+             (half_illumination, LOW),
              (readout, HIGH),
              (half_illumination-readout, LOW),
              (inter_time, LOW),
@@ -73,14 +74,23 @@ def get_seq(pulse_streamer, config, args):
              (back_buffer, LOW),
              ]
     seq.setDigital(do_apd_gate, train)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
 
-    train = [(illumination, HIGH), 
+    train = [(100,LOW),
+             (illumination, HIGH), 
              (inter_time-tau, LOW), 
              (illumination, HIGH),
              (back_buffer+tau, LOW),
              ]
     tool_belt.process_laser_seq(pulse_streamer, seq, config, 
                                 laser_name, laser_power, train)
+    period = 0
+    for el in train:
+        period += el[0]
+    print(period)
     
     final_digital = [pulser_do_daq_clock]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -104,7 +114,7 @@ if __name__ == '__main__':
     # print(pulser_wiring)
 
     # Set up a dummy args list
-    args = [1000.0, 2500, 5000.0, 'laser_LGLO_589', None]
+    args = [2500.0, 6500, 5000.0, 'laser_LGLO_589', 1.0]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

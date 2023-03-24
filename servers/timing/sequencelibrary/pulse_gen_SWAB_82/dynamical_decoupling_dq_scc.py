@@ -80,10 +80,13 @@ def get_seq(pulse_streamer, config, args):
     # we half the tau to put an IQ pulse in between.But we need to make sure 
     # that the two halves still
     # add up to tau. To create shorthand, we define them here. 
-    half_tau_shrt_st =int(tau_shrt/2)
-    half_tau_shrt_en = int(tau_shrt -  half_tau_shrt_st)
-    half_tau_long_st =int(tau_long/2)
-    half_tau_long_en = int(tau_long -  half_tau_long_st)
+    half_tau_shrt_st =numpy.int64(tau_shrt/2)
+    half_tau_shrt_en = numpy.int64(tau_shrt -  half_tau_shrt_st)
+    half_tau_long_st =numpy.int64(tau_long/2)
+    half_tau_long_en = numpy.int64(tau_long -  half_tau_long_st)
+    tau_norm = numpy.int64(100)
+    half_tau_norm_st =numpy.int64(tau_norm/2)
+    half_tau_norm_en = numpy.int64(tau_norm -  half_tau_norm_st)
     
     pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_apd_gate = pulser_wiring['do_apd_gate']
@@ -122,7 +125,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_echo_pulse_dur = echo_pulse_proxy_low + echo_pulse_proxy_high + echo_buffer +\
                 echo_pulse_activ_low + echo_pulse_activ_high + echo_buffer+ \
                 echo_pulse_proxy_low + echo_pulse_proxy_high 
-    # final_pi_pulse = coh_pulse_proxy_low + coh_pulse_proxy_high
+    # final_pi_pulse = echo_pulse_activ_low + echo_pulse_activ_high
     
     ### Write the microwave sequence to be used. 
     # Also add up the total time of the uwave experiment and use for other channels
@@ -157,8 +160,8 @@ def get_seq(pulse_streamer, config, args):
                                             (coh_pulse_activ_high, LOW),
                                             ])
     # uwave_experiment_train_low_shrt.extend([(20, LOW)]) # adding a wait between pi/2 and pi
-    # uwave_experiment_train_low_shrt.extend([(coh_pulse_proxy_low, HIGH),
-    #                                         (coh_pulse_proxy_high, LOW)]) # adding a pi pulse to readout
+    # uwave_experiment_train_low_shrt.extend([(echo_pulse_activ_low, HIGH),
+    #                                         (echo_pulse_activ_high, LOW)]) # adding a pi pulse to readout
     uwave_experiment_dur_shrt = 0
     for el in uwave_experiment_train_low_shrt:
         uwave_experiment_dur_shrt += el[0]
@@ -191,11 +194,46 @@ def get_seq(pulse_streamer, config, args):
                                             (coh_pulse_activ_high, LOW),
                                             ])
     # uwave_experiment_train_low_long.extend([(20, LOW)]) # adding a wait between pi/2 and pi
-    # uwave_experiment_train_low_long.extend([(coh_pulse_proxy_low, HIGH),
-    #                                         (coh_pulse_proxy_high, LOW)]) # adding a pi pulse to readout
+    # uwave_experiment_train_low_long.extend([(echo_pulse_activ_low, HIGH),
+    #                                         (echo_pulse_activ_high, LOW)]) # adding a pi pulse to readout
     uwave_experiment_dur_long = 0
     for el in uwave_experiment_train_low_long:
         uwave_experiment_dur_long += el[0]
+        
+    ###
+    if pi_pulse_reps==0:
+        rep_train_low_norm = [(tau_norm, LOW), 
+                     (tau_norm, LOW)]
+    else:
+        rep_train_low_norm = [(tau_norm, LOW), 
+                     (echo_pulse_proxy_low, HIGH),
+                     (echo_pulse_proxy_high, LOW),
+                     (echo_buffer, LOW),
+                     (echo_pulse_activ_low, HIGH), 
+                     (echo_pulse_activ_high, LOW), 
+                     (echo_buffer, LOW),
+                     (echo_pulse_proxy_low, HIGH),
+                     (echo_pulse_proxy_high, LOW),
+                     (tau_norm, LOW)]*pi_pulse_reps
+    uwave_experiment_train_low_norm = [(coh_pulse_activ_low, HIGH),
+                                        (coh_pulse_activ_high, LOW),
+                                        (coh_buffer, LOW),
+                                        (coh_pulse_proxy_low, HIGH),
+                                        (coh_pulse_proxy_high, LOW)]
+    uwave_experiment_train_low_norm.extend(rep_train_low_norm)
+    uwave_experiment_train_low_norm.extend([(coh_pulse_proxy_low, HIGH),
+                                            (coh_pulse_proxy_high, LOW),
+                                            (coh_buffer, LOW),
+                                            (coh_pulse_activ_low, HIGH),
+                                            (coh_pulse_activ_high, LOW),
+                                            ])
+    # uwave_experiment_train_low_norm.extend([(20, LOW)]) # adding a wait between pi/2 and pi
+    # uwave_experiment_train_low_norm.extend([(echo_pulse_activ_low, HIGH),
+    #                                         (echo_pulse_activ_high, LOW)]) # adding a pi pulse to readout
+    uwave_experiment_dur_norm = 0
+    for el in uwave_experiment_train_low_norm:
+        uwave_experiment_dur_norm += el[0]
+    
     
     ###
     if pi_pulse_reps==0:
@@ -226,8 +264,8 @@ def get_seq(pulse_streamer, config, args):
                                             (coh_pulse_activ_high, HIGH),
                                             ])
     # uwave_experiment_train_high_shrt.extend([(20, LOW)]) # adding a wait between pi/2 and pi
-    # uwave_experiment_train_high_shrt.extend([(coh_pulse_proxy_low, LOW),
-    #                                         (coh_pulse_proxy_high, HIGH)]) # adding a pi pulse to readout
+    # uwave_experiment_train_high_shrt.extend([(echo_pulse_activ_high, HIGH),
+    #                                         (echo_pulse_activ_low, LOW)]) # adding a pi pulse to readout
         
     ###
     if pi_pulse_reps==0:
@@ -257,9 +295,39 @@ def get_seq(pulse_streamer, config, args):
                                             (coh_pulse_activ_high, HIGH),
                                             ])
     # uwave_experiment_train_high_long.extend([(20, LOW)]) # adding a wait between pi/2 and pi
-    # uwave_experiment_train_high_long.extend([(coh_pulse_proxy_low, LOW),
-    #                                         (coh_pulse_proxy_high, HIGH)]) # adding a pi pulse to readout
+    # uwave_experiment_train_high_long.extend([(echo_pulse_activ_high, HIGH),
+    #                                         (echo_pulse_activ_low, LOW)]) # adding a pi pulse to readout
     
+    ###
+    if pi_pulse_reps==0:
+        rep_train_high_norm = [(tau_norm, LOW), 
+                     (tau_norm, LOW)]
+    else:
+        rep_train_high_norm = [(tau_norm, LOW), 
+                     (echo_pulse_proxy_low, LOW),
+                     (echo_pulse_proxy_high, HIGH),
+                     (echo_buffer, LOW),
+                     (echo_pulse_activ_low, LOW), 
+                     (echo_pulse_activ_high, HIGH), 
+                     (echo_buffer, LOW),
+                     (echo_pulse_proxy_low, LOW),
+                     (echo_pulse_proxy_high, HIGH),
+                     (tau_norm, LOW)]*pi_pulse_reps
+    uwave_experiment_train_high_norm = [(coh_pulse_activ_low, LOW),
+                                (coh_pulse_activ_high, HIGH),
+                                (coh_buffer, LOW),
+                                (coh_pulse_proxy_low, LOW),
+                                (coh_pulse_proxy_high, HIGH)]
+    uwave_experiment_train_high_norm.extend(rep_train_high_norm)
+    uwave_experiment_train_high_norm.extend([(coh_pulse_proxy_low, LOW),
+                                            (coh_pulse_proxy_high, HIGH),
+                                            (coh_buffer, LOW),
+                                            (coh_pulse_activ_low, LOW),
+                                            (coh_pulse_activ_high, HIGH),
+                                            ])
+    # uwave_experiment_train_high_norm.extend([(20, LOW)]) # adding a wait between pi/2 and pi
+    # uwave_experiment_train_high_norm.extend([(echo_pulse_activ_high, HIGH),
+    #                                         (echo_pulse_activ_low, LOW)]) # adding a pi pulse to readout
 
     ### Write the IQ trigger pulse sequence
     # The first IQ pulse will occur right after optical pulse polarization
@@ -302,6 +370,25 @@ def get_seq(pulse_streamer, config, args):
                                     # (half_tau_long_en - iq_trigger_time + uwave_coh_pulse_dur + 20+ final_pi_pulse, LOW)])
         
 
+    
+    uwave_iq_train_norm = [(iq_trigger_time, HIGH), 
+                           (uwave_buffer + uwave_coh_pulse_dur-iq_trigger_time, LOW),
+                           (half_tau_norm_st, LOW)]
+    if pi_pulse_reps == 0:
+        uwave_iq_train_norm.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_norm_en - iq_trigger_time + half_tau_norm_st, LOW),
+                                    (half_tau_norm_en + uwave_coh_pulse_dur, LOW)])
+    else:
+        rep_train = [(iq_trigger_time, HIGH),
+                 (half_tau_norm_en - iq_trigger_time + uwave_echo_pulse_dur +\
+                  tau_norm + half_tau_norm_st, LOW)]*(pi_pulse_reps-1)
+        uwave_iq_train_norm.extend(rep_train)
+        uwave_iq_train_norm.extend([(iq_trigger_time, HIGH), 
+                                    (half_tau_norm_en - iq_trigger_time + uwave_echo_pulse_dur + half_tau_norm_st, LOW),
+                                    (iq_trigger_time, HIGH), 
+                                    (half_tau_norm_en - iq_trigger_time + uwave_coh_pulse_dur, LOW)])
+                                    # (half_tau_norm_en - iq_trigger_time + uwave_coh_pulse_dur + 20+ final_pi_pulse, LOW)])
+                                    
     ### Define the sequence
 
     seq = Sequence()
@@ -318,6 +405,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -333,6 +421,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time , LOW),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -356,6 +445,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, HIGH),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -371,6 +461,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, HIGH),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -395,6 +486,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, HIGH),
              (scc_ion_readout_buffer, LOW),
@@ -410,6 +502,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, HIGH),
              (scc_ion_readout_buffer, LOW),
@@ -434,6 +527,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -449,6 +543,7 @@ def get_seq(pulse_streamer, config, args):
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
              (uwave_buffer, LOW),
+             (uwave_experiment_dur_norm, LOW),
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -473,7 +568,9 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, LOW),
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
-             (uwave_buffer, LOW),
+             (uwave_buffer, LOW)])
+    train.extend(uwave_experiment_train_low_norm)
+    train.extend([
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -489,7 +586,9 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, LOW),
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
-             (uwave_buffer, LOW),
+             (uwave_buffer, LOW)])
+    train.extend(uwave_experiment_train_low_norm)
+    train.extend([
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -514,7 +613,9 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, LOW),
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
-             (uwave_buffer, LOW),
+             (uwave_buffer, LOW)])
+    train.extend(uwave_experiment_train_high_norm)
+    train.extend([
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -530,7 +631,9 @@ def get_seq(pulse_streamer, config, args):
              (gate_time, LOW),
              (post_readout_buffer, LOW),
              (polarization_time, LOW),
-             (uwave_buffer, LOW),
+             (uwave_buffer, LOW)])
+    train.extend(uwave_experiment_train_high_norm)
+    train.extend([
              (uwave_buffer, LOW),
              (ion_time, LOW),
              (scc_ion_readout_buffer, LOW),
@@ -555,8 +658,10 @@ def get_seq(pulse_streamer, config, args):
               (scc_ion_readout_buffer, LOW),
               (gate_time, LOW),
               (post_readout_buffer, LOW),
-              (polarization_time, LOW),
-              (uwave_buffer, LOW),
+              (polarization_time, LOW)])
+              # (uwave_buffer, LOW)])
+    train.extend(uwave_iq_train_norm)
+    train.extend([
               (uwave_buffer, LOW),
               (ion_time, LOW),
               (scc_ion_readout_buffer, LOW),
@@ -571,8 +676,10 @@ def get_seq(pulse_streamer, config, args):
               (scc_ion_readout_buffer, LOW),
               (gate_time, LOW),
               (post_readout_buffer, LOW),
-              (polarization_time, LOW),
-              (uwave_buffer, LOW),
+              (polarization_time, LOW)])
+              # (uwave_buffer, LOW)])
+    train.extend(uwave_iq_train_norm)
+    train.extend([
               (uwave_buffer, LOW),
               (ion_time, LOW),
               (scc_ion_readout_buffer, LOW),

@@ -338,7 +338,6 @@ def main_with_cxn(
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     time.sleep(1)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-
     # See if this setup has finely specified delay times, else just get the
     # one-size-fits-all value.
     dir_path = ["", "Config", "Positioning"]
@@ -402,6 +401,7 @@ def main_with_cxn(
         seq_file = "simple_readout.py"
 
     # print(seq_args)
+    # return
     ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
 
