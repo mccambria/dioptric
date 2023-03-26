@@ -11,14 +11,13 @@ Created on Fri Mar  5 12:42:32 2021
 
 # region Import and constants
 
-
 import numpy as np
+from utils import common
 from majorroutines.pulsed_resonance import return_res_with_error
 import majorroutines.pulsed_resonance as pesr
 import utils.tool_belt as tool_belt
 from utils.tool_belt import bose
 import matplotlib.pyplot as plt
-from utils import common
 from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit

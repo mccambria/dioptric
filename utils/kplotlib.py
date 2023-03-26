@@ -169,9 +169,6 @@ def init_kplotlib(
     if you need full access to LaTeX
     """
 
-    guis = ["TKAgg", "GTK4Agg", "QtAgg", "WXAgg", "WebAgg"]
-    matplotlib.use(guis[1], force=True)
-
     ### Misc setup
 
     # Reset to the default
