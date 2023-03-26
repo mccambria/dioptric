@@ -24,5 +24,4 @@ dependencies:
       - pylabrad
       - strenum
       - twisted
-      - PyGObject
       - mpmath
