@@ -52,10 +52,13 @@ def coherent_line(freq, contrast, rabi_freq, center, splitting, pulse_dur):
         else:
             line += single_conversion(coherent_line_single, freq, *args)
     line /= 3
+
     # Set the contrast to be the max of the line
-    line *= contrast / (np.max(line))
+    # line *= contrast / (np.max(line))
+    # Set the contrast to be what we'd observe for perfect population transfer
+    line *= contrast
     return line
-    #
+
     # args = [contrast, rabi_freq, center, splitting, pulse_dur]
     # return single_conversion(coherent_line_single, freq, *args)
 

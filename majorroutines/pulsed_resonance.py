@@ -107,7 +107,7 @@ def create_fit_figure(
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
-    smooth_freqs = calculate_freqs(freq_center, freq_range, 1000)
+    smooth_freqs = calculate_freqs(freq_center, freq_range, 100)  # MCC
 
     # Plotting
     if norm_avg_sig_ste is not None:
@@ -580,6 +580,10 @@ def fit_resonance(
         absolute_sigma=True,
         # full_output=True,
         # method="trf",
+        # bounds=(0, np.inf),
+        # bounds=((0, 0, 2.80, 0), (0.5, 10, 2.90, 10)),
+        # max_nfev=100,
+        # ftol=1e-4,
     )
 
     # If the user gave us a hint, go with that
@@ -594,10 +598,11 @@ def fit_resonance(
             guess_params = get_guess_params_lambda(num_resonances)
         fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
         popt, pcov = curve_fit_lambda(fit_func, guess_params)
-        # ret_vals = curve_fit_lambda(fit_func, guess_params)
+        # res = curve_fit_lambda(fit_func, guess_params)
         # test = 0
         # popt = guess_params
-        # pcov = None
+        # num_params = len(popt)
+        # pcov = np.zeros((num_params, num_params))
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:
