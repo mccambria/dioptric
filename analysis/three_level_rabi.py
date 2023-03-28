@@ -43,8 +43,21 @@ def gen_relaxation_rates(dp, Omega, dm):
 
 
 def coherent_line(freq, contrast, rabi_freq, center, splitting, pulse_dur):
-    args = [contrast, rabi_freq, center, splitting, pulse_dur]
-    return single_conversion(coherent_line_single, freq, *args)
+    # Average over the hyperfine splittings
+    line = None
+    for adj_splitting in (splitting - 4.4, splitting, splitting + 4.4):
+        args = [contrast, rabi_freq, center, adj_splitting, pulse_dur]
+        if line is None:
+            line = single_conversion(coherent_line_single, freq, *args)
+        else:
+            line += single_conversion(coherent_line_single, freq, *args)
+    line /= 3
+    # Set the contrast to be the max of the line
+    line *= contrast / (np.max(line))
+    return line
+    #
+    # args = [contrast, rabi_freq, center, splitting, pulse_dur]
+    # return single_conversion(coherent_line_single, freq, *args)
 
 
 def incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, pulse_dur):
@@ -55,9 +68,9 @@ def incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, pulse_
 def single_conversion(single_func, freq, *args):
     if type(freq) in [list, np.ndarray]:
         single_func_lambda = lambda freq: single_func(freq, *args)
-        with ProcessingPool() as p:
-            line = p.map(single_func_lambda, freq)
-        line = np.array(line)
+        # with ProcessingPool() as p:
+        #     line = p.map(single_func_lambda, freq)
+        line = np.array([single_func_lambda(f) for f in freq])
         return line
     else:
         return single_func(freq, *args)
@@ -73,7 +86,8 @@ def coherent_line_single(freq, contrast, rabi_freq, center, splitting, pulse_dur
     else:
         pulse_dur /= 1000
 
-    coupling = rabi_freq / mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
+    # coupling = rabi_freq / mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
+    coupling = rabi_freq
     hamiltonian = gen_hamiltonian(dp, coupling, dm)
     eigvals, eigvecs = mp.eighe(hamiltonian)
 
@@ -88,7 +102,8 @@ def coherent_line_single(freq, contrast, rabi_freq, center, splitting, pulse_dur
         final_vec += eigvecs[:, ind] * final_comps[ind]
 
     line = 1 - mp.fabs(final_vec[1]) ** 2
-    ret_val = contrast * line
+    ret_val = line
+    # ret_val = contrast * line
 
     return np.float64(ret_val)
 
