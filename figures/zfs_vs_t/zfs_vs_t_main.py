@@ -337,7 +337,7 @@ def refit_experiments():
     # Also see below section Sample-dependent fit...
 
     do_plot = True  # Generate raw data and fit plots?
-    do_save = False  # Save the plots?
+    do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     skip_lambda = (
@@ -356,11 +356,8 @@ def refit_experiments():
     guess_param_list = []
     for el in data_points:
         file_list.append(el["ZFS file"])
-        contrast = abs(el["Contrast"])
-        if contrast > 0.5:
-            contrast = 0.49
         guess_params = (
-            contrast,
+            abs(el["Contrast"]),
             abs(el["Width (MHz)"]),
             abs(el["ZFS (GHz)"]),
             abs(el["Splitting (MHz)"]),
@@ -543,7 +540,7 @@ def refit_experiments():
             err_col = table_pste[ind]
             val_col.append(val)
             err_col.append(err)
-        table_red_chi_sq.append(red_chi_sq)
+        table_red_chi_sq.append(round(red_chi_sq, 6))
 
     ### Report the fit parameters
 
