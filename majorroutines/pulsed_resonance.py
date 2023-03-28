@@ -596,6 +596,8 @@ def fit_resonance(
         popt, pcov = curve_fit_lambda(fit_func, guess_params)
         # ret_vals = curve_fit_lambda(fit_func, guess_params)
         # test = 0
+        # popt = guess_params
+        # pcov = None
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:

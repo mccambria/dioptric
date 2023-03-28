@@ -19,6 +19,7 @@ import utils.tool_belt as tool_belt
 from utils.tool_belt import bose
 import matplotlib.pyplot as plt
 from utils import kplotlib as kpl
+from pathos.multiprocessing import ProcessingPool
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
 import csv
@@ -343,307 +344,179 @@ def refit_experiments():
     skip_lambda = (
         lambda point: point["Skip"]
         # or point["ZFS file"] == ""
-        or point["Sample"] != "15micro"
-        # or point["Sample"] != "Wu"
+        # or point["Sample"] != "15micro"
+        or point["Sample"] != "Wu"
         # or point["Setpoint temp (K)"] != ""
         # or point["Setpoint temp (K)"] < 300
     )
 
     data_points = get_data_points(skip_lambda)
     file_list = [el["ZFS file"] for el in data_points]
-    file_list = file_list[164:165]
-    file_list = [
-        # # 1 us
-        # "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
-        # "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
-        # "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
-        # "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
-        # "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
-        # # 10 us
-        # "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
-        # "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
-        # "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
-        # "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
-        # "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
-        # # 100 us
-        # "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
-        # "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
-        # "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
-        # "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
-        # "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
-        # 1 ms
-        # "2023_03_04-11_43_50-15micro-nv6_zfs_vs_t",
-        # "2023_03_04-11_06_24-15micro-nv7_zfs_vs_t",
-        # "2023_03_04-12_58_51-15micro-nv8_zfs_vs_t",
-        # "2023_03_04-12_21_20-15micro-nv9_zfs_vs_t",
-        # "2023_03_04-13_36_17-15micro-nv11_zfs_vs_t",
-        # 1 us, ND 0.3 => 0.5
-        # "2023_03_04-16_40_09-15micro-nv6_zfs_vs_t",
-        # "2023_03_04-14_55_01-15micro-nv7_zfs_vs_t",
-        # "2023_03_04-15_47_39-15micro-nv8_zfs_vs_t",
-        # "2023_03_04-18_25_23-15micro-nv9_zfs_vs_t",
-        # "2023_03_04-17_32_26-15micro-nv11_zfs_vs_t",
-        # # microwave 10 => 0 dBm
-        # "2023_03_04-21_22_00-15micro-nv6_zfs_vs_t",
-        # "2023_03_04-23_12_14-15micro-nv7_zfs_vs_t",
-        # "2023_03_04-20_26_41-15micro-nv8_zfs_vs_t",
-        # "2023_03_04-22_17_57-15micro-nv9_zfs_vs_t",
-        # "2023_03_05-00_07_19-15micro-nv11_zfs_vs_t",
-        # # ND 1.0
-        # "2023_03_05-13_24_15-15micro-nv6_zfs_vs_t",
-        # "2023_03_05-11_41_45-15micro-nv7_zfs_vs_t",
-        # "2023_03_05-14_15_18-15micro-nv8_zfs_vs_t",
-        # "2023_03_05-12_33_07-15micro-nv9_zfs_vs_t",
-        # "2023_03_05-10_50_58-15micro-nv11_zfs_vs_t",
-        # # Temp control disconnected
-        # "2023_03_06-20_37_53-15micro-nv6_zfs_vs_t",
-        # "2023_03_06-20_09_53-15micro-nv7_zfs_vs_t",
-        # "2023_03_06-19_14_17-15micro-nv8_zfs_vs_t",
-        # "2023_03_06-19_42_31-15micro-nv9_zfs_vs_t",
-        # "2023_03_06-21_05_38-15micro-nv11_zfs_vs_t",
-        # 1 ms delay repeat
-        # "2023_03_07-05_26_17-15micro-nv6_zfs_vs_t",
-        # "2023_03_07-04_11_05-15micro-nv7_zfs_vs_t",
-        # "2023_03_07-02_56_13-15micro-nv8_zfs_vs_t",
-        # "2023_03_07-00_26_02-15micro-nv9_zfs_vs_t",
-        # "2023_03_07-01_41_04-15micro-nv11_zfs_vs_t",
-        # uwave polarization
-        # "2023_03_07-14_27_00-15micro-nv6_zfs_vs_t",
-        # "2023_03_07-12_34_04-15micro-nv7_zfs_vs_t",
-        # "2023_03_07-13_30_18-15micro-nv8_zfs_vs_t",
-        # "2023_03_07-13_58_48-15micro-nv9_zfs_vs_t",
-        # "2023_03_07-13_02_08-15micro-nv11_zfs_vs_t",
-        # New NVs 1
-        # "2023_03_09-13_06_10-15micro-nv6_offset",
-        # "2023_03_09-12_14_14-15micro-nv7_offset",
-        # "2023_03_09-12_40_16-15micro-nv8_offset",
-        # New NVs 2, 348 degrees
-        # "2023_03_09-16_14_03-15micro-nv12_offset",
-        # "2023_03_09-15_46_07-15micro-nv13_offset",
-        # "2023_03_09-15_18_27-15micro-nv14_offset",
-        # "2023_03_09-14_50_35-15micro-nv15_offset",
-        # "2023_03_09-14_21_53-15micro-nv16_offset",
-        # # 88 degrees
-        # "2023_03_09-23_37_19-15micro-nv12_offset",
-        # "2023_03_09-18_37_07-15micro-nv13_offset",
-        # "2023_03_09-23_09_00-15micro-nv14_offset",
-        # "2023_03_09-17_41_03-15micro-nv15_offset",
-        # "2023_03_09-18_09_53-15micro-nv16_offset",
-        # # 58 degrees
-        # "2023_03_10-13_45_46-15micro-nv12_offset",
-        # "2023_03_10-14_13_33-15micro-nv13_offset",
-        # "2023_03_10-15_39_17-15micro-nv14_offset",
-        # "2023_03_10-15_11_35-15micro-nv15_offset",
-        # "2023_03_10-14_42_16-15micro-nv16_offset",
-        # # 38 degrees
-        # "2023_03_10-17_10_38-15micro-nv12_offset",
-        # "2023_03_10-19_04_01-15micro-nv13_offset",
-        # "2023_03_10-17_38_32-15micro-nv14_offset",
-        # "2023_03_10-18_36_06-15micro-nv15_offset",
-        # "2023_03_10-18_07_29-15micro-nv16_offset",
-        # 38 degrees, finer average
-        # "2023_03_10-23_44_44-15micro-nv12_offset",
-        # "2023_03_11-01_37_36-15micro-nv13_offset",
-        # "2023_03_11-03_31_26-15micro-nv14_offset",
-        # "2023_03_11-02_35_44-15micro-nv15_offset",
-        # "2023_03_11-00_42_21-15micro-nv16_offset",
-        # # 18 degrees
-        # "2023_03_12-13_11_31-15micro-nv12_offset",
-        # "2023_03_12-13_39_16-15micro-nv13_offset",
-        # "2023_03_12-14_07_58-15micro-nv14_offset",
-        # "2023_03_12-14_36_30-15micro-nv15_offset",
-        # "2023_03_12-12_43_05-15micro-nv16_offset",
-        # # 338 degrees
-        # "2023_03_12-18_32_33-15micro-nv12_offset",
-        # "2023_03_12-19_58_21-15micro-nv13_offset",
-        # "2023_03_12-20_27_13-15micro-nv14_offset",
-        # "2023_03_12-19_30_29-15micro-nv15_offset",
-        # "2023_03_12-19_01_42-15micro-nv16_offset",
-        # # 358 degrees
-        # "2023_03_13-00_58_53-15micro-nv12_offset",
-        # "2023_03_13-02_51_05-15micro-nv13_offset",
-        # "2023_03_13-03_48_32-15micro-nv14_offset",
-        # "2023_03_13-01_55_57-15micro-nv15_offset",
-        # "2023_03_13-00_02_24-15micro-nv16_offset",
-        # 248 degrees
-        # "2023_03_13-13_49_30-15micro-nv12_offset",
-        # "2023_03_13-12_22_52-15micro-nv13_offset",
-        # "2023_03_13-14_18_30-15micro-nv14_offset",
-        # "2023_03_13-12_51_39-15micro-nv15_offset",
-        # "2023_03_13-13_21_04-15micro-nv16_offset",
-        # 348 degrees
-        # "2023_03_13-15_33_36-15micro-nv12_offset",
-        # "2023_03_13-15_05_02-15micro-nv13_offset",
-        # "2023_03_13-17_00_38-15micro-nv14_offset",
-        # "2023_03_13-16_02_24-15micro-nv15_offset",
-        # "2023_03_13-16_31_38-15micro-nv16_offset",
-        # 58 degrees
-        "2023_03_13-19_38_01-15micro-nv12_offset",
-        "2023_03_13-19_09_20-15micro-nv13_offset",
-        "2023_03_13-18_41_27-15micro-nv14_offset",
-        "2023_03_13-18_12_28-15micro-nv15_offset",
-        "2023_03_13-17_43_29-15micro-nv16_offset",
-    ]
+    # file_list = file_list[0:20]
+    # print(file_list)
+    # file_list = [
+    #     # # 1 us
+    #     # "2023_03_03-17_23_24-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_03-16_55_36-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_03-16_28_28-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_03-16_00_44-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_03-15_32_43-15micro-nv11_zfs_vs_t",
+    #     # # 10 us
+    #     # "2023_03_03-18_46_02-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_03-18_18_54-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_03-20_07_05-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_03-19_40_03-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_03-19_13_03-15micro-nv11_zfs_vs_t",
+    #     # # 100 us
+    #     # "2023_03_03-21_03_25-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_03-22_57_55-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_03-22_29_43-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_03-21_32_20-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_03-22_00_57-15micro-nv11_zfs_vs_t",
+    #     # 1 ms
+    #     # "2023_03_04-11_43_50-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_04-11_06_24-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_04-12_58_51-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_04-12_21_20-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_04-13_36_17-15micro-nv11_zfs_vs_t",
+    #     # 1 us, ND 0.3 => 0.5
+    #     # "2023_03_04-16_40_09-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_04-14_55_01-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_04-15_47_39-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_04-18_25_23-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_04-17_32_26-15micro-nv11_zfs_vs_t",
+    #     # # microwave 10 => 0 dBm
+    #     # "2023_03_04-21_22_00-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_04-23_12_14-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_04-20_26_41-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_04-22_17_57-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_05-00_07_19-15micro-nv11_zfs_vs_t",
+    #     # # ND 1.0
+    #     # "2023_03_05-13_24_15-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_05-11_41_45-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_05-14_15_18-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_05-12_33_07-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_05-10_50_58-15micro-nv11_zfs_vs_t",
+    #     # # Temp control disconnected
+    #     # "2023_03_06-20_37_53-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_06-20_09_53-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_06-19_14_17-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_06-19_42_31-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_06-21_05_38-15micro-nv11_zfs_vs_t",
+    #     # 1 ms delay repeat
+    #     # "2023_03_07-05_26_17-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_07-04_11_05-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_07-02_56_13-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_07-00_26_02-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_07-01_41_04-15micro-nv11_zfs_vs_t",
+    #     # uwave polarization
+    #     # "2023_03_07-14_27_00-15micro-nv6_zfs_vs_t",
+    #     # "2023_03_07-12_34_04-15micro-nv7_zfs_vs_t",
+    #     # "2023_03_07-13_30_18-15micro-nv8_zfs_vs_t",
+    #     # "2023_03_07-13_58_48-15micro-nv9_zfs_vs_t",
+    #     # "2023_03_07-13_02_08-15micro-nv11_zfs_vs_t",
+    #     # New NVs 1
+    #     # "2023_03_09-13_06_10-15micro-nv6_offset",
+    #     # "2023_03_09-12_14_14-15micro-nv7_offset",
+    #     # "2023_03_09-12_40_16-15micro-nv8_offset",
+    #     # New NVs 2, 348 degrees
+    #     # "2023_03_09-16_14_03-15micro-nv12_offset",
+    #     # "2023_03_09-15_46_07-15micro-nv13_offset",
+    #     # "2023_03_09-15_18_27-15micro-nv14_offset",
+    #     # "2023_03_09-14_50_35-15micro-nv15_offset",
+    #     # "2023_03_09-14_21_53-15micro-nv16_offset",
+    #     # # 88 degrees
+    #     # "2023_03_09-23_37_19-15micro-nv12_offset",
+    #     # "2023_03_09-18_37_07-15micro-nv13_offset",
+    #     # "2023_03_09-23_09_00-15micro-nv14_offset",
+    #     # "2023_03_09-17_41_03-15micro-nv15_offset",
+    #     # "2023_03_09-18_09_53-15micro-nv16_offset",
+    #     # # 58 degrees
+    #     # "2023_03_10-13_45_46-15micro-nv12_offset",
+    #     # "2023_03_10-14_13_33-15micro-nv13_offset",
+    #     # "2023_03_10-15_39_17-15micro-nv14_offset",
+    #     # "2023_03_10-15_11_35-15micro-nv15_offset",
+    #     # "2023_03_10-14_42_16-15micro-nv16_offset",
+    #     # # 38 degrees
+    #     # "2023_03_10-17_10_38-15micro-nv12_offset",
+    #     # "2023_03_10-19_04_01-15micro-nv13_offset",
+    #     # "2023_03_10-17_38_32-15micro-nv14_offset",
+    #     # "2023_03_10-18_36_06-15micro-nv15_offset",
+    #     # "2023_03_10-18_07_29-15micro-nv16_offset",
+    #     # 38 degrees, finer average
+    #     # "2023_03_10-23_44_44-15micro-nv12_offset",
+    #     # "2023_03_11-01_37_36-15micro-nv13_offset",
+    #     # "2023_03_11-03_31_26-15micro-nv14_offset",
+    #     # "2023_03_11-02_35_44-15micro-nv15_offset",
+    #     # "2023_03_11-00_42_21-15micro-nv16_offset",
+    #     # # 18 degrees
+    #     # "2023_03_12-13_11_31-15micro-nv12_offset",
+    #     # "2023_03_12-13_39_16-15micro-nv13_offset",
+    #     # "2023_03_12-14_07_58-15micro-nv14_offset",
+    #     # "2023_03_12-14_36_30-15micro-nv15_offset",
+    #     # "2023_03_12-12_43_05-15micro-nv16_offset",
+    #     # # 338 degrees
+    #     # "2023_03_12-18_32_33-15micro-nv12_offset",
+    #     # "2023_03_12-19_58_21-15micro-nv13_offset",
+    #     # "2023_03_12-20_27_13-15micro-nv14_offset",
+    #     # "2023_03_12-19_30_29-15micro-nv15_offset",
+    #     # "2023_03_12-19_01_42-15micro-nv16_offset",
+    #     # # 358 degrees
+    #     # "2023_03_13-00_58_53-15micro-nv12_offset",
+    #     # "2023_03_13-02_51_05-15micro-nv13_offset",
+    #     # "2023_03_13-03_48_32-15micro-nv14_offset",
+    #     # "2023_03_13-01_55_57-15micro-nv15_offset",
+    #     # "2023_03_13-00_02_24-15micro-nv16_offset",
+    #     # 248 degrees
+    #     # "2023_03_13-13_49_30-15micro-nv12_offset",
+    #     # "2023_03_13-12_22_52-15micro-nv13_offset",
+    #     # "2023_03_13-14_18_30-15micro-nv14_offset",
+    #     # "2023_03_13-12_51_39-15micro-nv15_offset",
+    #     # "2023_03_13-13_21_04-15micro-nv16_offset",
+    #     # 348 degrees
+    #     # "2023_03_13-15_33_36-15micro-nv12_offset",
+    #     # "2023_03_13-15_05_02-15micro-nv13_offset",
+    #     # "2023_03_13-17_00_38-15micro-nv14_offset",
+    #     # "2023_03_13-16_02_24-15micro-nv15_offset",
+    #     # "2023_03_13-16_31_38-15micro-nv16_offset",
+    #     # 58 degrees
+    #     "2023_03_13-19_38_01-15micro-nv12_offset",
+    #     "2023_03_13-19_09_20-15micro-nv13_offset",
+    #     "2023_03_13-18_41_27-15micro-nv14_offset",
+    #     "2023_03_13-18_12_28-15micro-nv15_offset",
+    #     "2023_03_13-17_43_29-15micro-nv16_offset",
+    # ]
 
-    ### Loop
+    ### Parallel process
 
-    table_popt = None
-    table_pste = None
+    refit_sub_lambda = lambda f: refit_experiments_sub(f, do_plot, do_save)
+    with ProcessingPool() as p:
+        results = p.map(refit_sub_lambda, file_list)
+    # results = map(refit_sub_lambda, file_list)
 
-    for file_name in file_list:
+    ### Parse results
 
-        ### Data extraction and processing
-
-        data = tool_belt.get_raw_data(file_name)
-        raw_file_path = tool_belt.get_raw_data_path(file_name)
-        freq_center = data["freq_center"]
-        freq_range = data["freq_range"]
-        num_steps = data["num_steps"]
-        ref_counts = data["ref_counts"]
-        sig_counts = data["sig_counts"]
-        num_reps = data["num_reps"]
-        nv_sig = data["nv_sig"]
-        sample = nv_sig["name"].split("-")[0]
-        readout = nv_sig["spin_readout_dur"]
-        # uwave_pulse_dur = data["uwave_pulse_dur"]
-        uwave_pulse_dur = None
-        try:
-            norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
-        except Exception as exc:
-            # norm_style = NormStyle.POINT_TO_POINT
-            norm_style = tool_belt.NormStyle.SINGLE_VALUED
-
-        ret_vals = tool_belt.process_counts(
-            sig_counts, ref_counts, num_reps, readout, norm_style
-        )
-        (
-            sig_counts_avg_kcps,
-            ref_counts_avg_kcps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-        ) = ret_vals
-
-        ### Raw data figure
-
-        # if do_plot:
-        #     ret_vals = pesr.create_raw_data_figure(
-        #         freq_center,
-        #         freq_range,
-        #         num_steps,
-        #         sig_counts_avg_kcps,
-        #         ref_counts_avg_kcps,
-        #         norm_avg_sig,
-        #     )
-        #     if do_save:
-        #         raw_fig = ret_vals[0]
-        #         file_path = raw_file_path.with_suffix(".svg")
-        #         tool_belt.save_figure(raw_fig, file_path)
-
-        ### Sample-dependent fit functions and parameters
-
-        if sample == "wu":
-
-            # line_func = (
-            #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
-            #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-            #     )
-            # )
-            # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
-            #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-            # )
-            # guess_params = [0.2, 4, freq_center]
-            # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
-            # guess_params = [0.4, 9, 2.8748]
-
-            line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
-                freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
-            )
-            guess_params = [0.2, 4, freq_center, 5]
-
-            # line_func = pesr.lorentzian_split
-            # guess_params = [0.3, 1, freq_center, 1]
-
-            # fit_func = lambda freq, contrast, rabi_freq, center: pesr.dip_sum(
-            #     freq, line_func, contrast, rabi_freq, center
-            # )
-            # popt = guess_params
-
-        elif sample == "15micro":
-
-            # fmt: off
-            
-            # line_func = lambda freq, contrast, rabi_freq, center, splitting, offset: three_level_rabi.incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, uwave_pulse_dur)
-            # guess_params = [0.05, 3, freq_center, 6, 0.005]
-
-            # line_func = pesr.lorentzian_split
-            # guess_params = [0.05, 3, freq_center, 6]
-
-            line_func = pesr.lorentzian_split_offset
-            guess_params = [0.05, 3, freq_center, 6, -0.001]
-
-            # line_func = lambda freq, contrast, hwhm, splitting, offset: pesr.lorentzian_split_offset(freq, contrast, hwhm, 2.87, splitting, offset)
-            # guess_params = [0.05, 3, 6, 0.005]
-
-            # line_func = pesr.lorentzian_test
-            # guess_params = [0.05, 3, freq_center, 6, 0.005, 0.05, 3]
-
-            # fmt: on
-
-        ### Raw data figure
-
-        if do_plot:
-            fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
-                freq_center,
-                freq_range,
-                num_steps,
-                norm_avg_sig,
-                norm_avg_sig_ste,
-                line_func=line_func,
-                guess_params=guess_params,
-                # fit_func=fit_func,
-                # popt=popt,
-            )
-            if do_save:
-                file_path = raw_file_path.with_name((f"{file_name}-fit"))
-                file_path = file_path.with_suffix(".svg")
-                tool_belt.save_figure(fit_fig, file_path)
-
-        ### Get fit parameters and error bars
-
-        if not do_plot:
-            fit_func, popt, pcov = pesr.fit_resonance(
-                freq_center,
-                freq_range,
-                num_steps,
-                norm_avg_sig,
-                norm_avg_sig_ste,
-                line_func=line_func,
-                guess_params=guess_params,
-            )
-        if table_popt is None:
-            table_popt = []
-            table_pste = []
-            table_red_chi_sq = []
-            # for ind in range(len(popt)):
-            for ind in range(5):
-                table_popt.append([])
-                table_pste.append([])
-        for ind in range(len(popt)):
-            val = popt[ind]
-            err = np.sqrt(pcov[ind, ind])
+    table_popt = []
+    table_pste = []
+    table_red_chi_sq = []
+    num_cols = 5
+    for ind in range(num_cols):
+        table_popt.append([])
+        table_pste.append([])
+    for result in results:
+        popt, pste, red_chi_sq = result
+        for ind in range(num_cols):
+            if ind < len(popt):
+                val = round(popt[ind], 6)
+                err = round(pste[ind], 6)
+            else:
+                val = None
+                err = None
             val_col = table_popt[ind]
             err_col = table_pste[ind]
-            val_col.append(round(val, 6))
-            err_col.append(round(err, 6))
-
-        fit_lambda = lambda freq: fit_func(freq, *popt)
-        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
-        chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
-        red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+            val_col.append(val)
+            err_col.append(err)
         table_red_chi_sq.append(red_chi_sq)
-
-        # Close the plots so they don't clutter everything up
-        # plt.close("all")
 
     ### Report the fit parameters
 
@@ -685,6 +558,150 @@ def refit_experiments():
     # print(zfs_errs)
     # mean_zfs_err = np.mean(zfs_errs)
     # print(mean_zfs_err)
+
+
+def refit_experiments_sub(file_name, do_plot=False, do_save=False):
+
+    data = tool_belt.get_raw_data(file_name)
+    raw_file_path = tool_belt.get_raw_data_path(file_name)
+    freq_center = data["freq_center"]
+    freq_range = data["freq_range"]
+    num_steps = data["num_steps"]
+    ref_counts = data["ref_counts"]
+    sig_counts = data["sig_counts"]
+    num_reps = data["num_reps"]
+    nv_sig = data["nv_sig"]
+    sample = nv_sig["name"].split("-")[0]
+    readout = nv_sig["spin_readout_dur"]
+    uwave_pulse_dur = data["uwave_pulse_dur"]
+    # uwave_pulse_dur = None
+    try:
+        norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
+    except Exception as exc:
+        # norm_style = NormStyle.POINT_TO_POINT
+        norm_style = tool_belt.NormStyle.SINGLE_VALUED
+
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, readout, norm_style
+    )
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
+
+    ### Raw data figure
+
+    # if do_plot:
+    #     ret_vals = pesr.create_raw_data_figure(
+    #         freq_center,
+    #         freq_range,
+    #         num_steps,
+    #         sig_counts_avg_kcps,
+    #         ref_counts_avg_kcps,
+    #         norm_avg_sig,
+    #     )
+    #     if do_save:
+    #         raw_fig = ret_vals[0]
+    #         file_path = raw_file_path.with_suffix(".svg")
+    #         tool_belt.save_figure(raw_fig, file_path)
+
+    ### Sample-dependent fit functions and parameters
+
+    if sample == "wu":
+
+        # line_func = (
+        #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
+        #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+        #     )
+        # )
+        # # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
+        # #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+        # # )
+        # guess_params = [0.2, 4, freq_center]
+        # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
+        # guess_params = [0.4, 9, 2.8748]
+
+        line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
+            freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
+        )
+        # line_func = pesr.lorentzian_split
+        guess_params = [0.9 * np.max(1 - norm_avg_sig), 2, freq_center, 3]
+
+        # line_func = pesr.lorentzian_split
+        # guess_params = [0.3, 1, freq_center, 1]
+
+        # fit_func = lambda freq, contrast, rabi_freq, center: pesr.dip_sum(
+        #     freq, line_func, contrast, rabi_freq, center
+        # )
+        # popt = guess_params
+
+    elif sample == "15micro":
+
+        # fmt: off
+        
+        # line_func = lambda freq, contrast, rabi_freq, center, splitting, offset: three_level_rabi.incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, uwave_pulse_dur)
+        # guess_params = [0.05, 3, freq_center, 6, 0.005]
+
+        # line_func = pesr.lorentzian_split
+        # guess_params = [0.05, 3, freq_center, 6]
+
+        line_func = pesr.lorentzian_split_offset
+        guess_params = [0.05, 3, freq_center, 6, -0.001]
+
+        # line_func = lambda freq, contrast, hwhm, splitting, offset: pesr.lorentzian_split_offset(freq, contrast, hwhm, 2.87, splitting, offset)
+        # guess_params = [0.05, 3, 6, 0.005]
+
+        # line_func = pesr.lorentzian_test
+        # guess_params = [0.05, 3, freq_center, 6, 0.005, 0.05, 3]
+
+        # fmt: on
+
+    ### Raw data figure
+
+    if do_plot:
+        fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
+            freq_center,
+            freq_range,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            line_func=line_func,
+            guess_params=guess_params,
+            # fit_func=fit_func,
+            # popt=popt,
+        )
+        if do_save:
+            file_path = raw_file_path.with_name((f"{file_name}-fit"))
+            file_path = file_path.with_suffix(".svg")
+            tool_belt.save_figure(fit_fig, file_path)
+
+    ### Get fit parameters and error bars
+
+    if not do_plot:
+        fit_func, popt, pcov = pesr.fit_resonance(
+            freq_center,
+            freq_range,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            line_func=line_func,
+            guess_params=guess_params,
+        )
+
+    pste = np.sqrt(np.diag(pcov))
+
+    fit_lambda = lambda freq: fit_func(freq, *popt)
+    freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+    chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+    red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+
+    return (popt, pste, red_chi_sq)
+    # return "test"
+
+    # Close the plots so they don't clutter everything up
+    # plt.close("all")
 
 
 # endregion
@@ -1343,9 +1360,9 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # main()
-    # refit_experiments()
+    refit_experiments()
     # # # derivative_comp()
-    light_polarization()
+    # light_polarization()
 
     plt.show(block=True)
     sys.exit()
