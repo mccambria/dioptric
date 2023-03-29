@@ -119,7 +119,7 @@ def main():
         )
         # ax.legend(loc="upper right")
         ax.legend(handlelength=1.5, borderpad=0.3, borderaxespad=0.3, handletextpad=0.6)
-        ax.set_xlabel("Zero-field splitting (GHz)")
+        ax.set_xlabel("Frequency (GHz)")
         ax.set_ylabel("Normalized fluorescence")
         ax.tick_params(left=False, labelleft=False)
         # ax.get_yaxis().set_visible(False)
