@@ -1084,53 +1084,7 @@ def derivative_comp():
     ax.legend()
 
 
-# endregion
-# region Main plots
-
-
-def fig():
-
-    fit_temp_range = [-10, 510]
-    temp_ranges = [[-10, 510], [-20, 1020]]
-    # temp_ranges = [[-10, 510], [-5, 105]]
-    y_ranges = [[2.847, 2.879], [2.75, 2.882]]
-    # y_ranges = [[2.847, 2.879], [2.877, 2.878]]
-
-    plot_datas = [True, False]
-    condense_all = False
-    condense_samples = True
-    plot_prior_models = True
-    desaturate_prior = True
-    plot_new_model = True
-
-    skip_lambda = lambda point: (
-        point["Skip"]
-        or point["Sample"] != "Wu"
-        # or point["Sample"] != "15micro"
-        # or point["ZFS file"] == ""
-        # or point["Monitor temp (K)"] >= 296
-    )
-
-    ###
-
-    min_temp, max_temp = fit_temp_range
-    min_temp = 0.1 if min_temp <= 0 else min_temp
-    temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    kpl_figsize = kpl.figsize
-    adj_figsize = (kpl_figsize[0], 1.75 * kpl_figsize[1])
-    fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
-
-    data_points = get_data_points(skip_lambda, condense_all, condense_samples)
-    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
-        data_points
-    )
-
-    label_set = set(label_list)
-    color_dict = {}
-    for ind in range(len(zfs_list)):
-        color_dict[label_list[ind]] = color_list[ind]
-
-    ### New model
+def get_fitted_model(temp_list, zfs_list, zfs_err_list):
 
     guess_params = [
         2.87771,
@@ -1174,6 +1128,207 @@ def fig():
         dof = num_points - num_params
         red_chi_sq = ssr / dof
         print(red_chi_sq)
+
+    return cambria_lambda
+
+
+# endregion
+# region Main plots
+
+
+def fig_main():
+
+    temp_range = [-10, 510]
+    y_range = [2.847, 2.879]
+
+    plot_data = True
+    condense_all = False
+    condense_samples = True
+    plot_prior_models = True
+    desaturate_prior = True
+    plot_new_model = True
+
+    skip_lambda = lambda point: (
+        point["Skip"]
+        or point["Sample"] != "Wu"
+        # or point["Sample"] != "15micro"
+        # or point["ZFS file"] == ""
+        # or point["Monitor temp (K)"] >= 296
+    )
+
+    min_temp, max_temp = temp_range
+    min_temp = 0.1 if min_temp <= 0 else min_temp
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+
+    # kpl_figsize = kpl.figsize
+    # adj_figsize = (kpl_figsize[0], 1.75 * kpl_figsize[1])
+    # fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
+    fig, ax = plt.subplots()
+
+    data_points = get_data_points(skip_lambda, condense_all, condense_samples)
+    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
+        data_points
+    )
+
+    label_set = set(label_list)
+    color_dict = {}
+    for ind in range(len(zfs_list)):
+        color_dict[label_list[ind]] = color_list[ind]
+
+    cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
+
+    ### Plots
+
+    min_temp, max_temp = temp_range
+    min_temp = 0.1 if min_temp <= 0 else min_temp
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+
+    used_data_labels = []
+    if plot_data:
+        for ind in range(len(zfs_list)):
+            temp = temp_list[ind]
+            val = zfs_list[ind]
+            val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
+            # label = None
+            # color = KplColors.DARK_GRAY
+            color = color_list[ind]
+            label = label_list[ind]
+            if label in used_data_labels:
+                label = None
+            else:
+                used_data_labels.append(label)
+            kpl.plot_points(
+                ax,
+                temp,
+                val,
+                yerr=val_err,
+                color=color,
+                zorder=-1,
+                # zorder=temp - 1000,
+                # label=label,
+            )
+            # print(name, val, temp)
+        if len(used_data_labels) > 1:
+            ax.legend(loc=kpl.Loc.LOWER_LEFT)
+
+    if plot_new_model:
+        color = "#0f49bd"
+        kpl.plot_line(
+            ax,
+            temp_linspace,
+            cambria_lambda(temp_linspace),
+            label="This work",
+            color=color,
+            zorder=10,
+        )
+
+    ### Prior models
+
+    # prior_models_to_plot = ["Toyli", "Barson"]
+    prior_models_to_plot = ["Toyli", "Barson", "Li", "Chen"]
+    # prior_models_to_plot = ["Toyli"]
+    if plot_prior_models:
+        prior_model_colors = [
+            KplColors.GREEN,
+            KplColors.PURPLE,
+            KplColors.RED,
+            KplColors.ORANGE,
+        ]
+        prior_model_colors.reverse()
+        prior_model_zorder = 2
+        if desaturate_prior:
+            prior_model_colors = [
+                kpl.lighten_color_hex(el) for el in prior_model_colors
+            ]
+            prior_model_zorder = -1500
+        if "Chen" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                sub_room_zfs_from_temp(temp_linspace),
+                label="Chen",
+                color=prior_model_colors[0],
+                zorder=prior_model_zorder,
+            )
+        if "Toyli" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                super_room_zfs_from_temp(temp_linspace),
+                label="Toyli",
+                color=prior_model_colors[1],
+                zorder=prior_model_zorder,
+            )
+        if "Barson" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                zfs_from_temp_barson(temp_linspace),
+                label="Barson",
+                color=prior_model_colors[2],
+                zorder=prior_model_zorder,
+            )
+        if "Li" in prior_models_to_plot:
+            kpl.plot_line(
+                ax,
+                temp_linspace,
+                zfs_from_temp_li(temp_linspace),
+                label="Li",
+                color=prior_model_colors[3],
+                zorder=prior_model_zorder,
+            )
+
+    ### Plot wrap up
+    if plot_prior_models:
+        ax.legend(loc="lower left")
+    ax.set_xlabel("Temperature $\mathit{T}$ (K)")
+    ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
+    ax.set_xlim(*temp_range)
+    ax.set_ylim(*y_range)
+
+
+def fig_comps():
+
+    temp_ranges = [[-10, 510], [-20, 1020]]
+    # temp_ranges = [[-10, 510], [-5, 105]]
+    y_ranges = [[2.847, 2.879], [2.75, 2.882]]
+    # y_ranges = [[2.847, 2.879], [2.877, 2.878]]
+
+    plot_datas = [True, False]
+    condense_all = False
+    condense_samples = True
+    plot_prior_models = True
+    desaturate_prior = True
+    plot_new_model = True
+
+    skip_lambda = lambda point: (
+        point["Skip"]
+        or point["Sample"] != "Wu"
+        # or point["Sample"] != "15micro"
+        # or point["ZFS file"] == ""
+        # or point["Monitor temp (K)"] >= 296
+    )
+
+    ###
+
+    min_temp, max_temp = temp_range
+    min_temp = 0.1 if min_temp <= 0 else min_temp
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    kpl_figsize = kpl.figsize
+    adj_figsize = (kpl_figsize[0], 1.75 * kpl_figsize[1])
+    fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
+
+    data_points = get_data_points(skip_lambda, condense_all, condense_samples)
+    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
+        data_points
+    )
+
+    label_set = set(label_list)
+    color_dict = {}
+    for ind in range(len(zfs_list)):
+        color_dict[label_list[ind]] = color_list[ind]
+
+    cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
 
     ### Plots
 
@@ -1221,7 +1376,7 @@ def fig():
                 ax,
                 temp_linspace,
                 cambria_lambda(temp_linspace),
-                label="2-mode QH",
+                label="This work",
                 color=color,
                 zorder=10,
             )
@@ -1498,7 +1653,7 @@ def main():
             ax,
             temp_linspace,
             cambria_lambda(temp_linspace),
-            label="2-mode QH",
+            label="This work",
             color=color,
             zorder=10,
         )
@@ -1614,7 +1769,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # main()
-    fig()
+    fig_main()
+    # fig()
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
