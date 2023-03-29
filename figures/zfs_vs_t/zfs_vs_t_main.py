@@ -340,7 +340,6 @@ def refit_experiments():
     do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
-    # skip_lambda = lambda point: point["Skip"] or point["ZFS file"] == ""
     skip_lambda = (
         lambda point: point["Skip"]
         # or point["ZFS file"] == ""
@@ -351,8 +350,19 @@ def refit_experiments():
     )
 
     data_points = get_data_points(skip_lambda)
-    file_list = [el["ZFS file"] for el in data_points]
-    # file_list = file_list[0:20]
+    # file_list = [el["ZFS file"] for el in data_points]
+    # data_points = data_points[2:3]
+    file_list = []
+    guess_param_list = []
+    for el in data_points:
+        file_list.append(el["ZFS file"])
+        guess_params = (
+            el["Contrast"],
+            el["Width (MHz)"],
+            el["ZFS (GHz)"],
+            el["Splitting (MHz)"]
+        )
+        guess_param_list.append(guess_params)
     # print(file_list)
     # file_list = [
     #     # # 1 us
@@ -489,10 +499,24 @@ def refit_experiments():
 
     ### Parallel process
 
-    refit_sub_lambda = lambda f: refit_experiments_sub(f, do_plot, do_save)
+    # guess_params = [0.24, 2, 2.853, 4.5]
+    # guess_param_list = [0.24, 2, 2.853, 4.5]
+    # refit_sub_lambda = lambda f: refit_experiments_sub(
+    #     f, do_plot, do_save, guess_params
+    # )
+    refit_sub_lambda = lambda f, g: refit_experiments_sub(f, g, do_plot, do_save)
     with ProcessingPool() as p:
-        results = p.map(refit_sub_lambda, file_list)
-    # results = map(refit_sub_lambda, file_list)
+        results = p.map(refit_sub_lambda, file_list, guess_param_list)
+    # results = [refit_sub_lambda(f, g) for f, g in zip(file_list, guess_param_list)]
+
+    # f = "2023_01_14-13_52_57-wu-nv10_zfs_vs_t"
+    # popt, pste, red_chi_sq = refit_sub_lambda(f)
+    # xl_str = ""
+    # for ind in range(len(popt)):
+    #     xl_str += f"{round(popt[ind], 6)}, {round(pste[ind], 6)}, "
+    # xl_str += str(red_chi_sq)
+    # print(xl_str)
+    # return
 
     ### Parse results
 
@@ -516,7 +540,7 @@ def refit_experiments():
             err_col = table_pste[ind]
             val_col.append(val)
             err_col.append(err)
-        table_red_chi_sq.append(red_chi_sq)
+        table_red_chi_sq.append(round(red_chi_sq, 6))
 
     ### Report the fit parameters
 
@@ -560,7 +584,10 @@ def refit_experiments():
     # print(mean_zfs_err)
 
 
-def refit_experiments_sub(file_name, do_plot=False, do_save=False):
+# def refit_experiments_sub(file_name, do_plot=False, do_save=False, guess_params=None):
+def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False):
+
+    # print(guess_params)
 
     data = tool_belt.get_raw_data(file_name)
     raw_file_path = tool_belt.get_raw_data_path(file_name)
@@ -627,7 +654,9 @@ def refit_experiments_sub(file_name, do_plot=False, do_save=False):
             freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
         )
         # line_func = pesr.lorentzian_split
-        guess_params = [0.9 * np.max(1 - norm_avg_sig), 2, freq_center, 3]
+        # guess_params = [1.5 * np.max(1 - norm_avg_sig), 2, freq_center, 3]
+        if guess_params is None:
+            guess_params = [0.201135, 4.537905, 2.877451, 3.456755]
 
         # line_func = pesr.lorentzian_split
         # guess_params = [0.3, 1, freq_center, 1]
@@ -648,7 +677,8 @@ def refit_experiments_sub(file_name, do_plot=False, do_save=False):
         # guess_params = [0.05, 3, freq_center, 6]
 
         line_func = pesr.lorentzian_split_offset
-        guess_params = [0.05, 3, freq_center, 6, -0.001]
+        if guess_params is None:
+            guess_params = [0.05, 3, freq_center, 6, -0.001]
 
         # line_func = lambda freq, contrast, hwhm, splitting, offset: pesr.lorentzian_split_offset(freq, contrast, hwhm, 2.87, splitting, offset)
         # guess_params = [0.05, 3, 6, 0.005]
@@ -659,6 +689,8 @@ def refit_experiments_sub(file_name, do_plot=False, do_save=False):
         # fmt: on
 
     ### Raw data figure
+
+    # try:
 
     if do_plot:
         fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
@@ -678,7 +710,6 @@ def refit_experiments_sub(file_name, do_plot=False, do_save=False):
             tool_belt.save_figure(fit_fig, file_path)
 
     ### Get fit parameters and error bars
-
     if not do_plot:
         fit_func, popt, pcov = pesr.fit_resonance(
             freq_center,
@@ -696,6 +727,12 @@ def refit_experiments_sub(file_name, do_plot=False, do_save=False):
     freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
     chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
     red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+
+    # except Exception as exc:
+    #     num_params = len(guess_params)
+    #     popt = np.zeros(num_params)
+    #     pste = np.zeros(num_params)
+    #     red_chi_sq = 10
 
     return (popt, pste, red_chi_sq)
     # return "test"
