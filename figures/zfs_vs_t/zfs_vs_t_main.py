@@ -357,10 +357,10 @@ def refit_experiments():
     for el in data_points:
         file_list.append(el["ZFS file"])
         guess_params = (
-            abs(el["Contrast"]),
-            abs(el["Width (MHz)"]),
-            abs(el["ZFS (GHz)"]),
-            abs(el["Splitting (MHz)"]),
+            el["Contrast"],
+            el["Width (MHz)"],
+            el["ZFS (GHz)"],
+            el["Splitting (MHz)"]
         )
         guess_param_list.append(guess_params)
     # print(file_list)

@@ -32,23 +32,37 @@ from figures.zfs_vs_t.zfs_vs_t_main import get_data_points
 
 def main():
 
-    fig_files = []  # In increasing temp order
-    skip_lambda = lambda point: point["ZFS file"] not in fig_files
+    setpoint_temps = ["", 350, 400, 450]  # In increasing temp order
+    skip_lambda = (
+        lambda point: point["Skip"]
+        or point["Sample"] != "Wu"
+        or point["Setpoint temp (K)"] not in setpoint_temps
+        or point["NV"] != "nv11_zfs_vs_t"
+    )
     data_points = get_data_points(skip_lambda)
 
     # Blue, green, yellow, red
-    edgecolors = ["#3285c1", "#4db449", "#f1aa30", "#f2e18"]
+    edgecolors = ["#4db449", "#f1aa30", "#fb2e18", "#8c564b"]
     facecolors = [kpl.lighten_color_hex(el) for el in edgecolors]
 
-    fig, ax = plt.subplots()
+    narrow_figsize = (0.55 * kpl.figsize[0], kpl.figsize[1])
+    fig, ax = plt.subplots(figsize=narrow_figsize)
 
-    for ind in range(4):
+    for ind in [3, 2, 1, 0]:
 
-        fig_file = fig_files[ind]
+        data_point = data_points[ind]
+
+        fig_file = data_point["ZFS file"]
         edgecolor = edgecolors[ind]
         facecolor = facecolors[ind]
+        temp = data_point["Monitor temp (K)"]
 
-        popt = []
+        popt = (
+            data_point["Contrast"],
+            data_point["Width (MHz)"],
+            data_point["ZFS (GHz)"],
+            data_point["Splitting (MHz)"],
+        )
 
         data = tool_belt.get_raw_data(fig_file)
         freq_center = data["freq_center"]
@@ -81,15 +95,34 @@ def main():
             norm_avg_sig_ste,
         ) = ret_vals
 
-        fit_func = lambda f: three_level_rabi.coherent_line(f, *popt, uwave_pulse_dur)
+        fit_func = lambda f: 1 - three_level_rabi.coherent_line(
+            f, *popt, uwave_pulse_dur
+        )
 
-        kpl.plot_line(ax, freqs, (0.5 * ind) + norm_avg_sig, color=edgecolor)
+        offset = 0.25 * ind
+        # offset = 0
+        kpl.plot_line(
+            ax,
+            freqs,
+            offset + norm_avg_sig,
+            color=edgecolor,
+            # markerfacecolor=facecolor,
+            label=f"{int(temp)} K",
+            # size=kpl.Size.SMALL,
+        )
         kpl.plot_line(
             ax,
             smooth_freqs,
-            (0.5 * ind) + fit_func(smooth_freqs),
-            color=KplColors.MEDIUM_GRAY,
+            offset + fit_func(smooth_freqs),
+            color=KplColors.DARK_GRAY,
+            # color=facecolor,
         )
+        # ax.legend(loc="upper right")
+        ax.legend(handlelength=1.5, borderpad=0.3, borderaxespad=0.3, handletextpad=0.6)
+        ax.set_xlabel("Zero-field splitting (GHz)")
+        ax.set_ylabel("Normalized fluorescence")
+        ax.tick_params(left=False, labelleft=False)
+        # ax.get_yaxis().set_visible(False)
 
 
 if __name__ == "__main__":
