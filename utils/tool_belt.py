@@ -1270,6 +1270,17 @@ def get_dd_model_coeff_dict():
     return dd_model_coeff_dict
 
 
+def single_conversion(single_func, freq, *args):
+    if type(freq) in [list, np.ndarray]:
+        single_func_lambda = lambda freq: single_func(freq, *args)
+        # with ProcessingPool() as p:
+        #     line = p.map(single_func_lambda, freq)
+        line = np.array([single_func_lambda(f) for f in freq])
+        return line
+    else:
+        return single_func(freq, *args)
+
+
 # endregion
 # region Rounding
 """

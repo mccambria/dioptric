@@ -25,6 +25,7 @@ import pandas as pd
 import sys
 from analysis import three_level_rabi
 from figures.zfs_vs_t.zfs_vs_t_main import get_data_points
+from figures.zfs_vs_t.thermal_expansion import fit_double_occupation
 
 
 # endregion
@@ -125,10 +126,47 @@ def main():
         # ax.get_yaxis().set_visible(False)
 
 
+def quasiharmonic_sketch():
+
+    kpl_figsize = kpl.figsize
+    adj_figsize = (kpl_figsize[0], 0.8 * kpl_figsize[1])
+    fig, ax = plt.subplots(figsize=adj_figsize)
+
+    min_temp = 170
+    max_temp = 230
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+
+    lattice_constant = fit_double_occupation()
+
+    parabola_points = np.linspace(180, 220, 5)
+
+    for point in parabola_points:
+        parabola_linspace = np.linspace(point - 5, point + 5, 100)
+        parabola_lambda = lambda t: 1.25e-6 * (t - point) ** 2 + lattice_constant(point)
+        if point == 200:
+            color = KplColors.DARK_GRAY
+        else:
+            color = KplColors.LIGHT_GRAY
+        kpl.plot_line(
+            ax, parabola_linspace, parabola_lambda(parabola_linspace), color=color
+        )
+
+    kpl.plot_line(
+        ax, temp_linspace, lattice_constant(temp_linspace), color=KplColors.RED
+    )
+
+    ax.set_xlim(min_temp, max_temp)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xlabel("Temperature T (K)")
+    ax.set_ylabel(r"Lattice constant ($\si{\angstrom}$)")
+
+
 if __name__ == "__main__":
 
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(latex=True)
 
-    main()
+    # main()
+    quasiharmonic_sketch()
 
     plt.show(block=True)
