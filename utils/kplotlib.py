@@ -200,6 +200,10 @@ def init_kplotlib(
         # use the serif font for variables, equations, etc.
         preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
+        preamble += r"\usepackage[T1]{fontenc}"
+        preamble += r"\usepackage{siunitx}"
+        preamble += r"\sisetup{detect-all}"
+
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
 
