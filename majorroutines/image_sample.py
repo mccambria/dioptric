@@ -634,7 +634,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_03_20-10_41_09-siena-nv_search"
+    file_name = "2023_03_27-11_32_36-siena-surface"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]

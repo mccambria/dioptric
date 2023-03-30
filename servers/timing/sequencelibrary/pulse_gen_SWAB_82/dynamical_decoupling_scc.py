@@ -492,7 +492,7 @@ if __name__ == '__main__':
     # readout_laser_name,
     # readout_laser_power) = args[7:18]
 
-    seq_args=[600, 1000.0, 300, 10000.0, 41.91, 23.23, 100, 100, 2, 3, 
+    seq_args=[100, 10000.0, 300, 1000.0, 41.91, 23.23, 600, 100, 2, 3, 
               'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

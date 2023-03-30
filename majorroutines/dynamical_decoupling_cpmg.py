@@ -123,10 +123,10 @@ def fit_t2_12C(data, fixed_offset = None, incremental=False):
     
     if fixed_offset:
         fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, fixed_offset, 3)
-        init_params = [ -0.1, 3000]
+        init_params = [ -0.01, 1000]
     else:
         fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ -0.1, 1000, 1.1]
+        init_params = [ -0.01, 3000, 1.01]
     
     popt, pcov = curve_fit(
         fit_func,
@@ -136,7 +136,8 @@ def fit_t2_12C(data, fixed_offset = None, incremental=False):
         absolute_sigma = True,
         sigma=norm_avg_sig_ste
     )
-    
+    print(popt)
+    # popt = [-0.01, 1000]
     fig = create_fit_figure(
         taus,
         num_steps,
@@ -564,13 +565,13 @@ def main_with_cxn(
         counter_server.start_tag_stream()
 
         # Shuffle the list of tau indices so that it steps thru them randomly
-        # shuffle(tau_ind_list)
+        shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
 
             # 'Flip a coin' to determine which tau (long/shrt) is used first
-            # rand_boolean = numpy.random.randint(0, high=2)
-            rand_boolean = 0
+            rand_boolean = numpy.random.randint(0, high=2)
+            #rand_boolean = 1
             
 
             if rand_boolean == 1:
@@ -1024,21 +1025,51 @@ if __name__ == "__main__":
     #     ax.set_yscale('log')
   
     
-    file_name = "2023_03_05-00_48_42-siena-nv0_2023_02_24"
+    # file_name_sq = "2023_03_24-23_02_52-siena-nv0_2023_03_20" #SQ
+    # file_name_dq = "2023_03_26-14_36_28-siena-nv0_2023_03_20" #DQ
+    
+    # file_list = [file_name_sq, file_name_dq]
+    # label_list=['SQ', 'DQ']
+    # fit_fig, ax = plt.subplots()
+    # for f in range(len(file_list)):
+    #     file = file_list[f]
+    #     data = tool_belt.get_raw_data(file)
+    #     norm_avg_sig = data['norm_avg_sig']
+    #     norm_avg_sig_ste = data['norm_avg_sig_ste']
+    #     plot_taus = data['plot_taus']
+    #     num_steps = data['num_steps']
+    #     pi_pulse_reps = data['pi_pulse_reps']
+    #     do_dq=data['do_dq']
+    #     taus = numpy.array(data['taus'])
+        
+    #     tau_T = 2*taus*pi_pulse_reps/1000
 
+    #     kpl.plot_points(ax, tau_T, norm_avg_sig, yerr=norm_avg_sig_ste,  label = label_list[f])
+    #     ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
+    #     ax.set_ylabel("Contrast (arb. units)")
+    #     ax.set_title("CPMG-{}".format(pi_pulse_reps))
+    #     ax.legend()
+        
+    
+    file_name = '2023_03_29-12_03_15-siena-nv0_2023_03_20'
     data = tool_belt.get_raw_data(file_name)
-    fit_t2_12C(data, fixed_offset = 1.143)
+    fit_t2_12C(data, fixed_offset = 1.018)
     
     
-    # file_list = ['2023_01_27-23_54_17-siena-nv4_2023_01_16', # 256
-    #               '2023_01_29-00_59_22-siena-nv4_2023_01_16'
-                 
+    # file_list = ['2023_03_24-23_02_52-siena-nv0_2023_03_20', # SQ CPMG-2
+    #               '2023_03_27-21_12_39-siena-nv0_2023_03_20'
     #     ]
-    # file_list = ['2023_01_28-00_50_58-siena-nv4_2023_01_16', #512
-    #               '2023_01_29-02_11_11-siena-nv4_2023_01_16'
-                     
+    # file_list = ['2023_03_26-14_36_28-siena-nv0_2023_03_20', # DQ CPMG-2
+    #               '2023_03_27-18_14_10-siena-nv0_2023_03_20'
     #         ]
+    # file_list = ['2023_03_27-02_35_40-siena-nv0_2023_03_20', # DQ CPMG-4
+    #               '2023_03_28-03_47_24-siena-nv0_2023_03_20'
+    #                 ]
+    file_list = ['2023_03_27-05_34_19-siena-nv0_2023_03_20', # DQ CPMG-8
+                  '2023_03_28-09_44_49-siena-nv0_2023_03_20'
+                    ]
+    
     # compile_12C_data(file_list, 
     #                   do_save = True
-    #                    )
+    #                     )
     

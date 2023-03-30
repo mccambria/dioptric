@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
 
     nv_sig = {
-            "coords":[0.04, -0.123, 7.6] ,
+            "coords":[0.032, -0.148, 7.44] ,
         "name": "{}-nv0_2023_03_20".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": False,
@@ -468,13 +468,13 @@ if __name__ == "__main__":
 
 
     # laser delay
-    num_steps = 101
-    num_reps = int(1e5)
+    num_steps = 51
+    num_reps = int(5e4)
     # laser_name = 'laserglow_532'
     # delay_range = [0, 500]
     # num_reps = int(1e5)
     laser_name = 'laser_LGLO_589'
-    delay_range = [1500, 5500]
+    delay_range = [500, 2500]
     laser_power = 1.0
     # num_reps = int(1e4)
     # laser_name = 'integrated_520'
@@ -484,10 +484,10 @@ if __name__ == "__main__":
     # laser_power = None
     # laser_name = 'laserglow_589'
     # laser_power = 0.6
-    # delay_range = [0,1e3]
-    # with labrad.connect() as cxn:
-    #     aom_delay(cxn, nv_sig, 
-    #               delay_range, num_steps, num_reps, laser_name, laser_power)
+    # delay_range = [0,500]
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, 
+                  delay_range, num_steps, num_reps, laser_name, laser_power)
 
 
     # uwave_delay
@@ -500,15 +500,15 @@ if __name__ == "__main__":
     # state = States.LOW
       # sg394
     state = States.HIGH
-    with labrad.connect() as cxn:
-        iq_delay(
-              cxn,
-              nv_sig,
-              state,
-              delay_range,
-              num_steps,
-              num_reps,
-          )
+    # with labrad.connect() as cxn:
+    #     iq_delay(
+    #           cxn,
+    #           nv_sig,
+    #           state,
+    #           delay_range,
+    #           num_steps,
+    #           num_reps,
+    #       )
         # uwave_delay(
         #     cxn,
         #     nv_sig,

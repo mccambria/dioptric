@@ -707,5 +707,7 @@ if __name__ == '__main__':
     #             yellow_laser_name, yellow_laser_power = args[9:19]
     seq_args =[100, 1000.0, 250, 10000.0, 69.71, 34.41, 56.38, 28.75, 1000, 
                132.0, 2, 3, 1, 'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
+    seq_args = [100, 6000.0, 400, 10000.0, 0, 0, 0, 0, 20001, 136, 2, 3, 1, 
+                'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

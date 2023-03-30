@@ -38,12 +38,11 @@ def get_seq(pulse_streamer, config, args):
 
     # Get other arguments
     (
-        apd_index,
         init_state_value,
         read_state_value,
         _,
         _,
-    ) = args[6:11]
+    ) = args[6:10]
 
     # Get the scc args
     (
@@ -54,12 +53,12 @@ def get_seq(pulse_streamer, config, args):
         ion_laser_power,
         ionization_dur,
         shelf_laser_name,
-        shelf_laser_power,
+        shelf_laser_power, # removed the power from the sequence, the power is always set to LOW
         shelf_dur,
         readout_laser_name,
         readout_laser_power,
         readout_dur,
-    ) = args[11:]
+    ) = args[10:]
     ionization_dur = numpy.int64(ionization_dur)
     shelf_dur = numpy.int64(shelf_dur)
     readout_dur = numpy.int64(readout_dur)
@@ -77,8 +76,10 @@ def get_seq(pulse_streamer, config, args):
     ion_laser_delay = config["Optics"][ion_laser_name]["delay"]
     shelf_laser_delay = config["Optics"][shelf_laser_name]["delay"]
     readout_laser_delay = config["Optics"][readout_laser_name]["delay"]
-    low_sig_gen_name = config["Microwaves"]["sig_gen_LOW"]
-    high_sig_gen_name = config["Microwaves"]["sig_gen_HIGH"]
+    state_low = States.LOW
+    state_high = States.HIGH
+    low_sig_gen_name = config['Servers']['sig_gen_{}'.format(state_low.name)]
+    high_sig_gen_name = config['Servers']['sig_gen_{}'.format(state_high.name)]
 
     rf_low_delay = config["Microwaves"][low_sig_gen_name]["delay"]
     rf_high_delay = config["Microwaves"][high_sig_gen_name]["delay"]
@@ -95,13 +96,13 @@ def get_seq(pulse_streamer, config, args):
         + 100
     )
 
-    pulser_wiring = config["Wiring"]["PulseStreamer"]
-    pulser_do_apd_gate = pulser_wiring["do_apd_{}_gate".format(apd_index)]
+    pulser_wiring = config['Wiring']['PulseGen']
+    pulser_do_apd_gate = pulser_wiring["do_apd_gate"]
     low_sig_gen_gate_chan_name = "do_{}_gate".format(low_sig_gen_name)
     pulser_do_sig_gen_low_gate = pulser_wiring[low_sig_gen_gate_chan_name]
     high_sig_gen_gate_chan_name = "do_{}_gate".format(high_sig_gen_name)
     pulser_do_sig_gen_high_gate = pulser_wiring[high_sig_gen_gate_chan_name]
-    readout_laser_gate = pulser_wiring["ao_{}_am".format(readout_laser_name)]
+    # readout_laser_gate = pulser_wiring["ao_{}_am".format(readout_laser_name)]
 
     # %% Some further setup
 
@@ -314,27 +315,34 @@ def get_seq(pulse_streamer, config, args):
 
     train = [
         (pre_duration - readout_laser_delay, LOW),
-        (shelf_dur, shelf_laser_power),
+        (shelf_dur, LOW),
         (ionization_dur + scc_ion_readout_buffer, LOW),
-        (readout_dur, readout_laser_power),
+        (readout_dur, HIGH),
         (end_buffer, LOW),
         (short_sig_to_short_ref, LOW),
-        (shelf_dur, shelf_laser_power),
+        (shelf_dur, LOW),
         (ionization_dur + scc_ion_readout_buffer, LOW),
-        (readout_dur, readout_laser_power),
+        (readout_dur, HIGH),
         (end_buffer, LOW),
         (short_ref_to_long_sig, LOW),
-        (shelf_dur, shelf_laser_power),
+        (shelf_dur, LOW),
         (ionization_dur + scc_ion_readout_buffer, LOW),
-        (readout_dur, readout_laser_power),
+        (readout_dur, HIGH),
         (end_buffer, LOW),
         (long_sig_to_long_ref, LOW),
-        (shelf_dur, shelf_laser_power),
+        (shelf_dur, LOW),
         (ionization_dur + scc_ion_readout_buffer, LOW),
-        (readout_dur, readout_laser_power),
+        (readout_dur, HIGH),
         (end_buffer + readout_laser_delay, LOW),
     ]
-    seq.setAnalog(readout_laser_gate, train)
+    tool_belt.process_laser_seq(
+        pulse_streamer,
+        seq,
+        config,
+        readout_laser_name,
+        readout_laser_power,
+        train,
+    )
     # durs_only = [el[0] for el in train]
     # total_dur = sum(durs_only)
     # print(total_dur)
@@ -432,13 +440,13 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == "__main__":
 
     config = tool_belt.get_config_dict()
-    tool_belt.set_delays_to_zero(config)
-    tool_belt.set_feedthroughs_to_false(config)
+    tool_belt.set_delays_to_zero(config) 
+    # tool_belt.set_feedthroughs_to_false(config)
     config["CommonDurations"]["scc_ion_readout_buffer"] = 1000
     
-    args = [100, None, None, 50, 50, 1000, 0, 1, 1, None, None, 
-            'integrated_520', None, 1000.0, 'cobolt_638', None, 0, 
-            'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 100.0]
+    args = [100, None, None, 50, 50, 1000,  1, 0, None, None, 
+            'integrated_520', None, 1000.0, 'cobolt_638', None, 400, 
+            'laser_LGLO_589', 1.0, 0, 'laser_LGLO_589', 1.0, 100.0]
     # args = [2000, None, None, 67, 91, 4000, 1, 1, 3, None, None, 
     #         'laserglow_532', None, 1000.0, 'cobolt_638', None, 200, 
     #         'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 1000.0]

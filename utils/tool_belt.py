@@ -398,7 +398,6 @@ def process_laser_seq(
                 elif type(laser_power) != list:
                     power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
                 processed_train.append((dur, power_dict[val]))
-    
             pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
             # print(processed_train)
             seq.setAnalog(pulser_laser_mod, processed_train)

@@ -67,6 +67,9 @@ class PulseGenSwab82(PulseGen, LabradServer):
 
     def on_get_config(self, config):
         self.pulse_streamer = PulseStreamer(config["get"])
+        calibration = self.pulse_streamer.getAnalogCalibration()
+        logging.info(calibration)
+        
         sequence_library_path = (
             Path.home()
             / f"Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/{self.name}"

@@ -668,6 +668,10 @@ def main_with_cxn(
                         cxn, nv_sig, laser_key
                     )
                     tool_belt.set_filter(cxn, nv_sig, laser_key)
+                   
+                charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+                charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
+            
             else:
                 laser_key = "spin_laser"
                 laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
