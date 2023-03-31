@@ -646,6 +646,8 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
                                 state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
+            # print(file_name)
+            # return
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
 

@@ -46,7 +46,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_buffer= config['CommonDurations']['uwave_buffer']
     scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
     sig_ref_buffer = uwave_buffer
-    coh_buffer = 114
+    coh_buffer = 134
     iq_trigger_time = 100
     
     green_delay_time = config['Optics'][green_laser_name]['delay']
@@ -105,8 +105,8 @@ def get_seq(pulse_streamer, config, args):
                                     (uwave_pulse_activ_low, HIGH), (uwave_pulse_activ_high, LOW),
                                     (coh_buffer, LOW),
                                     (uwave_pulse_proxy_low, HIGH), (uwave_pulse_proxy_high, LOW),
-                                    (coh_buffer, LOW),
-                                    (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW)
+                                    # (coh_buffer, LOW),
+                                    # (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW)
                                     ]
     uwave_experiment_dur = 0
     for el in uwave_experiment_train_low:
@@ -122,8 +122,8 @@ def get_seq(pulse_streamer, config, args):
                                        (uwave_pulse_activ_low, LOW), (uwave_pulse_activ_high, HIGH),
                                        (coh_buffer, LOW),
                                        (uwave_pulse_proxy_low, LOW), (uwave_pulse_proxy_high, HIGH),
-                                       (coh_buffer, LOW),
-                                       (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH)
+                                       # (coh_buffer, LOW),
+                                       # (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH)
                                        ]
     uwave_experiment_dur = 0
     for el in uwave_experiment_train_high:
@@ -338,8 +338,10 @@ if __name__ == '__main__':
     # readout_power = args[14]
     
     
-    # uwave_shrt,   polarization_time,   \
-    #         gate_time, pi_pulse_low, pi_pulse_high, uwave_long = durations
-    seq_args =[45, 50000.0, 1000.0, 250, 67, 56, 100, 3, 'integrated_520', 'laser_LGLO_589', 'cobolt_638', None, None, None]
+    # 
+    # tau,   readout_time, reion_time, ion_time,  \
+    #         pi_pulse_low, pi_pulse_high, max_tau = durations
+    seq_args =[396, 1000.0, 6000.0, 400, 39, 42, 600, 3, 
+               'integrated_520', 'laser_LGLO_589', 'cobolt_638', None, None, None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

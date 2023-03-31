@@ -390,11 +390,11 @@ def do_optimize_magnet_angle(nv_sig):
 def do_rabi(nv_sig, opti_nv_sig, state, 
             uwave_time_range=[0, 200]):
 
-    # num_steps =75
-   # num_reps = int(2e4)    
-    #num_runs = 5
+    #num_steps =75
+    # num_reps = int(2e4)    
+    # num_runs = 10
 
-    num_steps =21
+    num_steps =31
     num_reps = int(200)   
     num_runs =  5
     
@@ -409,7 +409,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
         num_runs,
         opti_nv_sig = opti_nv_sig,
         do_scc = True,
-        do_dq = False,
+        do_dq = True,
         do_cos_fit = True
     )
     # nv_sig["rabi_{}".format(state.name)] = period
@@ -604,8 +604,8 @@ def do_spin_echo(nv_sig, state = States.HIGH, do_dq = True):
 
 def do_dd_cpmg(nv_sig, pi_pulse_reps, step_size,  T_min, T_max, num_reps, num_runs, do_dq_, comp_wait_time):
     
-    shift = 100 #ns
-    # shift = 0 #ns
+    # shift = 100 #ns
+    shift = 0 #ns
     
     max_time = T_max / (2*pi_pulse_reps)  # us
     min_time = T_min / (2*pi_pulse_reps) #us
@@ -1480,7 +1480,7 @@ if __name__ == "__main__":
         
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_laser_power": None,
-        "nv0_ionization_dur": 300,
+        "nv0_ionization_dur": 400,
         
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_laser_power": None,
@@ -1535,10 +1535,10 @@ if __name__ == "__main__":
     # nv_sig_0["uwave_power_HIGH"]= -35
     # nv_sig_0["rabi_LOW"]= 1528
     # nv_sig_0["rabi_HIGH"]=1283
-    nv_sig_0["pi_pulse_LOW"]=  39.33
-    nv_sig_0["pi_on_2_pulse_LOW"]= 20.94
-    nv_sig_0["pi_pulse_HIGH"]=41.91
-    nv_sig_0["pi_on_2_pulse_HIGH"]=23.23
+    nv_sig_0["pi_pulse_LOW"]=  0#39.33
+    nv_sig_0["pi_on_2_pulse_LOW"]=0# 20.94
+    nv_sig_0["pi_pulse_HIGH"]=0#41.91
+    nv_sig_0["pi_on_2_pulse_HIGH"]=0#23.23
     
     nv_sig_1 = copy.deepcopy(sig_base)  
     nv_sig_1["coords"] = [0.457, 0.354, 8.44] #
@@ -1633,7 +1633,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
         # do_rabi(nv_sig, nv_sig, States.LOW,  uwave_time_range=[0, 100])
-        do_rabi(nv_sig, nv_sig, States.HIGH, uwave_time_range=[0,100])
+        do_rabi(nv_sig, nv_sig, States.HIGH, uwave_time_range=[0,200])
         
         
         
@@ -1689,13 +1689,12 @@ if __name__ == "__main__":
         ###################
         T_min = 0 #us
         # T_max = 8000 #us 
-        T_max = 8000 #us 
-        #T_max = 2 #us   
+        T_max = 10000 #us 
         # step_size = (T_max - T_min)/31 #us 
-        # step_size = (T_max - T_min)/21 #us  
-        step_size = (T_max - T_min)/10 #us  
+        step_size = (T_max - T_min)/20 #us  
+        # step_size = (T_max - T_min)/10 #us  
         num_reps = 200
-        num_runs =20
+        num_runs =100
         
         # num_reps =int(2e3)
         # num_runs = 20

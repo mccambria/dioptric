@@ -258,7 +258,7 @@ if __name__ == "__main__":
     # seq_args = [10000.0, 1000.0, 100, 50, 0, 50, 
     #             'integrated_520', 'laserglow_589', 'cobolt_638', 
     #             'signal_generator_sg394', 1, None, None, 1.0, 0.5]
-    seq_args = [200000.0, 1000.0, 200, 41, 41, 'integrated_520', 'laser_LGLO_589', 'cobolt_638',
+    seq_args = [2000.0, 1000.0, 200, 41, 41, 'integrated_520', 'laser_LGLO_589', 'cobolt_638',
                 1, None, None, None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

@@ -698,16 +698,14 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    tool_belt.set_delays_to_zero(config)   
+    # tool_belt.set_delays_to_zero(config)   
     # tau_shrt, polarization_time, ion_time, gate_time, pi_pulse_low, pi_on_2_pulse_low,\
     #     pi_pulse_high, pi_on_2_pulse_high, tau_long = durations
     # pi_pulse_reps, state_activ, state_proxy,  \
     #     green_laser_name, green_laser_power, \
     #         red_laser_name, red_laser_power, \
     #             yellow_laser_name, yellow_laser_power = args[9:19]
-    seq_args =[100, 1000.0, 250, 10000.0, 69.71, 34.41, 56.38, 28.75, 1000, 
+    seq_args =[100, 1000.0, 250, 10000000.0, 69.71, 34.41, 56.38, 28.75, 1000, 
                132.0, 2, 3, 1, 'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
-    seq_args = [100, 6000.0, 400, 10000.0, 0, 0, 0, 0, 20001, 136, 2, 3, 1, 
-                'integrated_520', None, 'cobolt_638', None, 'laser_LGLO_589', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
