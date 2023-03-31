@@ -105,8 +105,8 @@ def get_seq(pulse_streamer, config, args):
                                     (uwave_pulse_activ_low, HIGH), (uwave_pulse_activ_high, LOW),
                                     (coh_buffer, LOW),
                                     (uwave_pulse_proxy_low, HIGH), (uwave_pulse_proxy_high, LOW),
-                                    # (coh_buffer, LOW),
-                                    # (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW)
+                                    (coh_buffer, LOW),
+                                    (read_pi_pulse_low, HIGH), (read_pi_pulse_high, LOW)
                                     ]
     uwave_experiment_dur = 0
     for el in uwave_experiment_train_low:
@@ -122,8 +122,8 @@ def get_seq(pulse_streamer, config, args):
                                        (uwave_pulse_activ_low, LOW), (uwave_pulse_activ_high, HIGH),
                                        (coh_buffer, LOW),
                                        (uwave_pulse_proxy_low, LOW), (uwave_pulse_proxy_high, HIGH),
-                                       # (coh_buffer, LOW),
-                                       # (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH)
+                                       (coh_buffer, LOW),
+                                       (read_pi_pulse_low, LOW), (read_pi_pulse_high, HIGH)
                                        ]
     uwave_experiment_dur = 0
     for el in uwave_experiment_train_high:

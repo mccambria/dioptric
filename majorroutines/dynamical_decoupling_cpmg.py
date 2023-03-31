@@ -102,7 +102,7 @@ def fit_t2_12C(data, fixed_offset = None, incremental=False):
         gate_time = nv_sig['spin_readout_dur']
         norm_style = NormStyle.SINGLE_VALUED
         num_reps = data['num_reps']
-        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        ret_vals = tool_belt.process_counts(sig_counts[: run_ind ], ref_counts[: run_ind + 1], num_reps, gate_time, norm_style)
         (
              sig_counts_avg_kcps,
              ref_counts_avg_kcps,
@@ -126,7 +126,7 @@ def fit_t2_12C(data, fixed_offset = None, incremental=False):
         init_params = [ -0.01, 1000]
     else:
         fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ -0.01, 3000, 1.01]
+        init_params = [ -0.05, 3000, 1.05]
     
     popt, pcov = curve_fit(
         fit_func,
@@ -1051,9 +1051,10 @@ if __name__ == "__main__":
     #     ax.legend()
         
     
-    file_name = '2023_03_29-12_03_15-siena-nv0_2023_03_20'
+    file_name = '2023_03_31-11_00_56-siena-nv0_2023_03_20'
     data = tool_belt.get_raw_data(file_name)
-    fit_t2_12C(data, fixed_offset = 1.018)
+    # fit_t2_12C(data, fixed_offset = 1.06)
+    # fit_t2_12C(data,fixed_offset = 1.06, incremental = True)
     
     
     # file_list = ['2023_03_24-23_02_52-siena-nv0_2023_03_20', # SQ CPMG-2
@@ -1073,3 +1074,66 @@ if __name__ == "__main__":
     #                   do_save = True
     #                     )
     
+    data = tool_belt.get_raw_data(file_name)
+    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts']
+    run_ind = data['run_ind']
+    num_reps= data['num_reps']
+    nv_sig = data['nv_sig']
+    readout = nv_sig['charge_readout_dur']
+    norm_style = tool_belt.NormStyle.SINGLE_VALUED
+    taus = numpy.array(data['taus'])
+    pi_pulse_reps = data['pi_pulse_reps']
+    do_dq = data['do_dq']
+    do_scc = data['do_scc']
+    # Average the counts over the iterations
+    inc_sig_counts = sig_counts[: run_ind ]
+    inc_ref_counts = ref_counts[: run_ind ]
+    ret_vals = tool_belt.process_counts(
+        inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
+    )
+    (
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+    ) = ret_vals
+    
+    plot_taus = (taus * 2 * pi_pulse_reps) / 1000
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    ax = axes_pack[0]
+    ax.cla()
+    ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
+    ax.plot(plot_taus, ref_counts_avg_kcps, "g-", label="reference")
+    ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
+    ax.set_ylabel("kcps")
+    ax.legend()
+    
+    ax = axes_pack[1]
+    ax.cla()
+    
+    kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+    # ax.errorbar(plot_taus, norm_avg_sig,yerr= norm_avg_sig_ste, color = 'b')
+    # ax.plot(plot_taus, norm_avg_sig, "b-")
+    if do_dq:
+        dq_text = 'DQ'
+    else:
+        dq_text = 'SQ'
+    if do_scc:
+        ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
+    else:
+        ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
+        
+    ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
+    ax.set_ylabel("Contrast (arb. units)")
+    
+    # text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
+
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
+    #         verticalalignment='top', bbox=props)
+    
+    raw_fig.canvas.draw()
+    raw_fig.set_tight_layout(True)
+    raw_fig.canvas.flush_events()
+            
