@@ -19,6 +19,8 @@ from utils.tool_belt import bose
 import matplotlib.pyplot as plt
 from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
+import matplotlib as mpl
+from matplotlib.collections import PolyCollection
 from scipy.optimize import curve_fit
 import csv
 import pandas as pd
@@ -126,6 +128,142 @@ def main():
         # ax.get_yaxis().set_visible(False)
 
 
+def waterfall():
+
+    width = 1.0 * kpl.figsize[0]
+    height = 0.8 * width
+    fig = plt.figure(figsize=(width, height))
+    ax = fig.add_subplot(projection="3d")
+
+    setpoint_temps = np.arange(310, 500, 10)
+    setpoint_temps = setpoint_temps.tolist()
+    setpoint_temps.insert(0, "")
+    min_temp = 296
+    max_temp = setpoint_temps[-1]
+
+    min_freq = 2.84
+    max_freq = 2.881
+    freq_center = (min_freq + max_freq) / 2
+    freq_range = max_freq - min_freq
+    smooth_freqs = pesr.calculate_freqs(freq_center, freq_range, 100)
+
+    skip_lambda = (
+        lambda point: point["Skip"]
+        or point["Sample"] != "Wu"
+        or point["Setpoint temp (K)"] not in setpoint_temps
+        or point["NV"] != "nv7_zfs_vs_t"
+    )
+    data_points = get_data_points(skip_lambda)
+
+    # cmap_name = "coolwarm"
+    # cmap_name = "autumn_r"
+    # cmap_name = "magma_r"
+    cmap_name = "plasma"
+    cmap = mpl.colormaps[cmap_name]
+    cmap_offset = 0
+
+    poly_zero = 0.75
+    poly = lambda x, y: [(x[0], 1.0), *zip(x, y), (x[-1], 1.0)]
+    # verts[i] is a list of (x, y) pairs defining polygon i.
+    verts = []
+    colors = []
+    temps = []
+
+    num_sets = len(setpoint_temps)
+    for ind in range(num_sets):
+
+        # Reverse
+        ind = num_sets - 1 - ind
+
+        data_point = data_points[ind]
+        fig_file = data_point["ZFS file"]
+        temp = data_point["Monitor temp (K)"]
+        temps.append(temp)
+        norm_temp = (temp - min_temp + cmap_offset) / (
+            max_temp - min_temp + cmap_offset + 25
+        )
+        color = cmap(norm_temp)
+
+        popt = (
+            data_point["Contrast"],
+            data_point["Width (MHz)"],
+            data_point["ZFS (GHz)"],
+            data_point["Splitting (MHz)"],
+        )
+
+        data = tool_belt.get_raw_data(fig_file)
+        freq_center = data["freq_center"]
+        freq_range = data["freq_range"]
+        num_steps = data["num_steps"]
+        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+
+        ref_counts = data["ref_counts"]
+        sig_counts = data["sig_counts"]
+        num_reps = data["num_reps"]
+        nv_sig = data["nv_sig"]
+        sample = nv_sig["name"].split("-")[0]
+        readout = nv_sig["spin_readout_dur"]
+        uwave_pulse_dur = data["uwave_pulse_dur"]
+
+        try:
+            norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
+        except Exception as exc:
+            # norm_style = NormStyle.POINT_TO_POINT
+            norm_style = tool_belt.NormStyle.SINGLE_VALUED
+
+        ret_vals = tool_belt.process_counts(
+            sig_counts, ref_counts, num_reps, readout, norm_style
+        )
+        norm_avg_sig = ret_vals[2]
+
+        ax.plot(
+            freqs,
+            norm_avg_sig,
+            zs=temp,
+            zdir="x",
+            color=color,
+            linestyle="None",
+            marker="o",
+            markersize=2,
+            # alpha=0.5,
+        )
+
+        fit_func = lambda f: 1 - three_level_rabi.coherent_line(
+            f, *popt, uwave_pulse_dur
+        )
+        verts.append(poly(smooth_freqs, fit_func(smooth_freqs)))
+        colors.append(color)
+        ax.plot(
+            smooth_freqs,
+            fit_func(smooth_freqs),
+            zs=temp,
+            # color=KplColors.DARK_GRAY,
+            zdir="x",
+            color=color,
+            # alpha=0.5,
+        )
+
+    # poly = PolyCollection(verts, facecolors=colors, alpha=0.7)
+    # ax.add_collection3d(poly, zs=temps, zdir="x")
+
+    ax.set(
+        xlim=(510, 290),
+        ylim=(min_freq, max_freq),
+        zlim=(poly_zero, 1.03),
+        xlabel="\n$T$ (K)",
+        ylabel="\n$f$ (GHz)",
+        zlabel="$C$",
+        yticks=[2.84, 2.86, 2.88],
+        zticks=[0.8, 0.9, 1.0],
+    )
+    ax.view_init(elev=38, azim=-22, roll=0)
+    # ax.tick_params(left=False, labelleft=False)
+    # ax.get_yaxis().set_visible(False)
+
+    fig.tight_layout()
+    # fig.tight_layout(rect=(-0.05, 0, 0.95, 1))
+
+
 def quasiharmonic_sketch():
 
     kpl_figsize = kpl.figsize
@@ -164,9 +302,10 @@ def quasiharmonic_sketch():
 
 if __name__ == "__main__":
 
-    kpl.init_kplotlib(latex=True)
+    kpl.init_kplotlib(latex=False, constrained_layout=False)
 
     # main()
-    quasiharmonic_sketch()
+    waterfall()
+    # quasiharmonic_sketch()
 
     plt.show(block=True)
