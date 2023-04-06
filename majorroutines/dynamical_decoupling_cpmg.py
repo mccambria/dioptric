@@ -524,7 +524,7 @@ def main_with_cxn(
             sig_gen_high_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
-            # sig_gen_high_cxn.load_iq()
+            sig_gen_high_cxn.load_iq()
             sig_gen_high_cxn.uwave_on()
         else:
             sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, state)
