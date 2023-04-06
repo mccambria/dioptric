@@ -372,11 +372,9 @@ def false3d():
             freqs + x_offset,
             y_offset + norm_avg_sig,
             color=edgecolor,
-            # markerfacecolor=facecolor,
             label=f"{int(temp)} K",
-            # size=kpl.Size.SMALL,
-            # marker="o",
             markersize=4,
+            # markersize=4 - 0.25 * ind,
         )
         adj_smooth_freqs = smooth_freqs + x_offset
         kpl.plot_line(
@@ -385,6 +383,7 @@ def false3d():
             y_offset + fit_func(smooth_freqs),
             # color=KplColors.DARK_GRAY,
             color=edgecolor,
+            # linewidth=1.5 - 0.1 * ind,
         )
         last_smooth_freqs = adj_smooth_freqs[-1]
 
