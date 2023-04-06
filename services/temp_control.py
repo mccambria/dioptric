@@ -133,8 +133,7 @@ def main_with_cxn(
         plot_temps = [actual]
         kpl.plot_line(ax, plot_times, plot_temps)
         history = 600
-        max_plot_vals = history / plot_log_period
-        plot_x_extent = int(1.1 * max_plot_vals * plot_log_period)
+        plot_x_extent = int(1.05 * history)
         ax.set_xlim(0, plot_x_extent)
         ax.set_ylim(actual - 2, actual + 2)
         ax.set_xlabel("Time (s)")
@@ -150,8 +149,8 @@ def main_with_cxn(
 
         # Timing work
         now = time.time()
-        if now - start_time > 2.25*60*60:
-            break
+        # if now - start_time > 2.25*60*60:
+        #     break
         time_diff = now - prev_time
         prev_time = now
         if time_diff < cycle_dur:
@@ -170,11 +169,11 @@ def main_with_cxn(
                 kpl.plot_line_update(ax, x=plot_times, y=plot_temps)
 
                 # Relim as necessary
-                if len(plot_times) > max_plot_vals:
+                if elapsed_time - plot_times[0] > history:
                     plot_times.pop(0)
                     plot_temps.pop(0)
                 min_plot_time = min(plot_times)
-                ax.set_xlim(min_plot_time, min_plot_time + 1.05*plot_x_extent)
+                ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
                 ax.set_ylim(min(plot_temps) - 2, max(plot_temps) + 2)
 
                 cur_temp_str = f"Current temp: {round(actual, 3)} K"
@@ -185,7 +184,7 @@ def main_with_cxn(
             # Notify the user once the temp is stable (ptp < email_stability over current plot history)
             if do_email:
                 temp_check = max(plot_temps) - min(plot_temps) < email_stability
-                time_check = len(plot_times) == max_plot_vals
+                time_check = plot_times[-1] - plot_times[0] > 0.95 * history 
                 if temp_check and time_check and not email_sent:
                     msg = "Temp is stable!"
                     tool_belt.send_email(msg, email_to=email_recipient)
@@ -200,7 +199,7 @@ def main_with_cxn(
             pid_state, power = pid(pid_state, pid_coeffs, target, actual, integral_max)
             if safety_check:
                 if now - last_safety_check_time > safety_check_period:
-                    safety_check_temp = cxn.temp_controller_tc200.measure()
+                    safety_check_temp = cxn.temp_controller_THOR_tc200.measure()
                     with open(logging_file, "a+") as f:
                         f.write(
                             f"safety check: {round(now)}, {round(safety_check_temp, 1)} \n"
@@ -219,14 +218,14 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     do_plot = True
-    target = 310
+    target = 500
     pid_coeffs = [0.5, 0.01, 0]
     integral_max = 2500
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
     # integral_bootstrap = 0.0
-    # integral_bootstrap = 0.3 * integral_max
-    integral_bootstrap = 0.1 * integral_max
+    integral_bootstrap = 0.7 * integral_max
+    # integral_bootstrap = 0.5 * integral_max
     # integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
@@ -237,7 +236,7 @@ if __name__ == "__main__":
         temp_monitor.config_temp_measurement("PT100")
 
         # Set up the safety check temp monitor
-        # cxn.temp_controller_tc200.config_measurement("ptc100", "k")
+        cxn.temp_controller_THOR_tc200.config_measurement("ptc100", "k")
 
         # Set up the power supply
         power_supply.set_power_limit(30)
@@ -253,7 +252,7 @@ if __name__ == "__main__":
         try:
             main_with_cxn(
                 cxn,
-                mode=Mode.CONTROL,
+                mode=Mode.MONITOR,
                 do_plot=do_plot,
                 target=target,
                 pid_coeffs=pid_coeffs,
@@ -261,5 +260,9 @@ if __name__ == "__main__":
                 integral_max=integral_max,
                 safety_check=True,
             )
+        except Exception as exc:
+            recipient = "cambria@wisc.edu"
+            tool_belt.send_exception_email(email_to=recipient)
+            raise exc
         finally:
             power_supply.output_off()

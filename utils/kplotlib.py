@@ -162,7 +162,11 @@ def zero_to_one_threshold(val):
 
 
 def init_kplotlib(
-    font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False, font=Font.ROBOTO
+    font_size=Size.NORMAL,
+    data_size=Size.NORMAL,
+    latex=False,
+    font=Font.ROBOTO,
+    constrained_layout=True,
 ):
     """Runs the initialization for kplotlib, our default configuration
     of matplotlib. Plotting will be faster if latex is False - only set to True
@@ -200,6 +204,10 @@ def init_kplotlib(
         # use the serif font for variables, equations, etc.
         preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
+        preamble += r"\usepackage[T1]{fontenc}"
+        preamble += r"\usepackage{siunitx}"
+        preamble += r"\sisetup{detect-all}"
+
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
 
@@ -215,8 +223,9 @@ def init_kplotlib(
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
-    plt.rcParams["figure.constrained_layout.use"] = True
+    plt.rcParams["figure.constrained_layout.use"] = constrained_layout
     plt.rcParams["savefig.format"] = "svg"
+    plt.rcParams["figure.max_open_warning"] = 100
 
 
 def get_default_color(ax, plot_type):

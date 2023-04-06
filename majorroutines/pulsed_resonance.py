@@ -23,6 +23,7 @@ from random import shuffle
 import sys
 from utils.positioning import get_scan_1d as calculate_freqs
 from pathlib import Path
+from inspect import signature
 
 
 # region Plotting
@@ -36,6 +37,8 @@ def create_fit_figure(
     norm_avg_sig_ste,
     fit_func=None,
     popt=None,
+    line_func=None,
+    num_resonances=None,
     guess_params=None,
 ):
     """Create a figure showing the normalized average signal and the fit. If you pass
@@ -60,6 +63,12 @@ def create_fit_figure(
     popt : 1D array, optional
         Fit parameters for the fit function. If None, the fit function will be fit
         to the data
+    line_func : Function, optional
+        Function used to describe a single ESR line (for simplicity it should be positive and
+        have a baseline of 0). Default: Rabi line with N14 hyperfine splitting
+    num_resonances : int, optional
+        Number of ESR lines apparent in the spectrum. If None, we'll try 1 or 2 and use
+        whatever gives a better fit
     guess_params : 1D array, optional
         Guess parameters for fitting the fit function to the data. If None,
         we will estimate fit parameters by inspecting the data before actually fitting
@@ -67,7 +76,9 @@ def create_fit_figure(
     Returns
     -------
     matplotlib.figure.Figure
+
     matplotlib.axes.Axes
+
     Function
         Function used to fit the data
     1D array
@@ -84,8 +95,9 @@ def create_fit_figure(
             num_steps,
             norm_avg_sig,
             norm_avg_sig_ste,
-            fit_func,
-            guess_params,
+            line_func=line_func,
+            num_resonances=num_resonances,
+            guess_params=guess_params,
         )
     else:
         pcov = None
@@ -95,7 +107,7 @@ def create_fit_figure(
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
-    smooth_freqs = calculate_freqs(freq_center, freq_range, 1000)
+    smooth_freqs = calculate_freqs(freq_center, freq_range, 100)  # MCC
 
     # Plotting
     if norm_avg_sig_ste is not None:
@@ -113,7 +125,7 @@ def create_fit_figure(
     low_text = None
     high_text = None
     base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
-    if len(popt) == 3:
+    if 3 <= len(popt) < 6:
         contrast, hwhm, freq = popt[0:3]
         low_text = base_text.format(contrast, hwhm, freq)
         high_text = None
@@ -122,10 +134,10 @@ def create_fit_figure(
         low_text = base_text.format(contrast, hwhm, freq)
         contrast, hwhm, freq = popt[3:6]
         high_text = base_text.format(contrast, hwhm, freq)
-        print(popt[2])
-        print(np.sqrt(pcov[2][2]))
-        print(popt[5])
-        print(np.sqrt(pcov[5][5]))
+        # print(popt[2])
+        # print(np.sqrt(pcov[2][2]))
+        # print(popt[5])
+        # print(np.sqrt(pcov[5][5]))
     size = kpl.Size.SMALL
     if low_text is not None:
         kpl.anchored_text(ax, low_text, kpl.Loc.LOWER_LEFT, size=size)
@@ -142,7 +154,7 @@ def create_raw_data_figure(
     sig_counts_avg_kcps=None,
     ref_counts_avg_kcps=None,
     norm_avg_sig=None,
-    magnet_angle= None,
+    magnet_angle=None,
 ):
     """Create a 2-panel figure showing the raw data (signal and reference) as well as the
     normalized average signal
@@ -200,7 +212,12 @@ def create_raw_data_figure(
     kpl.plot_line(ax_norm, freqs, norm_avg_sig, color=KplColors.BLUE)
 
     if magnet_angle:
-        kpl.anchored_text(ax_norm, '{} deg'.format(magnet_angle), kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
+        kpl.anchored_text(
+            ax_norm,
+            "{} deg".format(magnet_angle),
+            kpl.Loc.LOWER_RIGHT,
+            size=kpl.Size.SMALL,
+        )
     return fig, ax_sig_ref, ax_norm
 
 
@@ -208,57 +225,129 @@ def create_raw_data_figure(
 # region Math functions
 
 
-def rabi_line(freq, constrast, rabi_freq, res_freq):
-    """Lineshape for PESR under a pi pulse for the actual resonant frequency"""
+def rabi_line(freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True):
+    """Rabi lineshape"""
 
     rabi_freq_ghz = rabi_freq / 1000
     detuning = freq - res_freq
     effective_rabi_freq = np.sqrt(detuning**2 + rabi_freq_ghz**2)
-    effective_contrast = constrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
-    pulse_dur = np.pi / rabi_freq_ghz  # Assumed
-    return effective_contrast * np.sin(effective_rabi_freq * pulse_dur / 2) ** 2
+    effective_contrast = contrast * ((rabi_freq_ghz / effective_rabi_freq) ** 2)
+    if uwave_pulse_dur is None:
+        uwave_pulse_dur = 1 / (2 * rabi_freq_ghz)
+    angular_effective_rabi_freq = 2 * np.pi * effective_rabi_freq
+    if coherent:
+        phase_factor = np.sin(angular_effective_rabi_freq * uwave_pulse_dur / 2) ** 2
+    else:
+        phase_factor = 1
+    return effective_contrast * phase_factor
 
 
-def rabi_line_hyperfine(freq, constrast, rabi_freq, res_freq):
+def rabi_line_n14_hyperfine(
+    freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True
+):
     """Sum of 3 Rabi lineshapes separated by hyperfine splitting for N14"""
 
     hyperfine = 2.14 / 1000  # Hyperfine in GHz
-    val = (1 / 3) * (
-        rabi_line(freq, constrast, rabi_freq, res_freq - hyperfine)
-        + rabi_line(freq, constrast, rabi_freq, res_freq)
-        + rabi_line(freq, constrast, rabi_freq, res_freq + hyperfine)
-    )
+    res_freqs = [res_freq - hyperfine, res_freq, res_freq + hyperfine]
+    val = 0
+    for el in res_freqs:
+        val += rabi_line(freq, contrast, rabi_freq, el, uwave_pulse_dur, coherent)
+    val /= 3
     return val
 
 
-def gaussian(freq, constrast, sigma, center):
+def rabi_line_n15_hyperfine(
+    freq, contrast, rabi_freq, res_freq, uwave_pulse_dur=None, coherent=True
+):
+    """Sum of 2 Rabi lineshapes separated by hyperfine splitting for N15"""
+
+    hyperfine = 3.1 / 1000  # Hyperfine in GHz
+    res_freqs = [res_freq - hyperfine / 2, res_freq + hyperfine / 2]
+    val = 0
+    for el in res_freqs:
+        val += rabi_line(freq, contrast, rabi_freq, el, uwave_pulse_dur, coherent)
+    val /= 3
+    return val
+
+
+def gaussian(freq, contrast, sigma, center):
     sigma_ghz = sigma / 1000
-    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma_ghz**2)))
+    return contrast * np.exp(-((freq - center) ** 2) / (2 * (sigma_ghz**2)))
 
 
-def lorentzian(freq, constrast, hwhm, center):
+def lorentzian(freq, contrast, hwhm, center):
     """Normalized that the value at the center is the contrast"""
     hwhm_ghz = hwhm / 1000
-    return constrast * (hwhm_ghz**2) / ((freq - center) ** 2 + hwhm_ghz**2)
+    return contrast * (hwhm_ghz**2) / ((freq - center) ** 2 + hwhm_ghz**2)
 
 
-def double_dip(
-    freq,
-    low_contrast,
-    low_width,
-    low_center,
-    high_contrast,
-    high_width,
-    high_center,
-    dip_func=rabi_line,
+def lorentzian_split(freq, contrast, hwhm, center, splitting):
+    """Normalized that the value at the center is the contrast"""
+    splitting_ghz = splitting / 1000
+    line_1 = lorentzian(freq, contrast, hwhm, center - splitting_ghz / 2)
+    line_2 = lorentzian(freq, contrast, hwhm, center + splitting_ghz / 2)
+    return line_1 + line_2
+
+
+def lorentzian_split_offset(freq, contrast, hwhm, center, splitting, offset):
+    """Normalized that the value at the center is the contrast"""
+    splitting_ghz = splitting / 1000
+    line_1 = lorentzian(freq, contrast, hwhm, center - splitting_ghz / 2)
+    line_2 = lorentzian(freq, contrast, hwhm, center + splitting_ghz / 2)
+    return line_1 + line_2 + offset
+
+
+def lorentzian_test(
+    freq, contrast1, hwhm1, center, splitting, offset, contrast2, hwhm2
 ):
-    low_dip = dip_func(freq, low_contrast, low_width, low_center)
-    high_dip = dip_func(freq, high_contrast, high_width, high_center)
-    return 1.0 - (low_dip + high_dip)
+    """Normalized that the value at the center is the contrast"""
+    splitting_ghz = splitting / 1000
+    line_1 = lorentzian(freq, contrast1, hwhm1, center - splitting_ghz / 2)
+    line_2 = lorentzian(freq, contrast2, hwhm2, center + splitting_ghz / 2)
+    return line_1 + line_2 + offset
 
 
-def single_dip(freq, contrast, width, center, dip_func=rabi_line):
-    return 1.0 - dip_func(freq, contrast, width, center)
+def lorentzian_sum(freq, contrast, hwhm, center, splitting_mag):
+    """Normalized that the value at the center is the contrast"""
+    num_samples = 100
+    # smooth_freqs = np.linspace(
+    #     center - freq_range / 2, center + freq_range / 2, num_samples
+    # )
+    # dist = np.exp(-((smooth_freqs - center) ** 2) / (2 * (20 * hwhm_ghz**2)))
+    # dist = [
+    #     1 if center - 3 * hwhm_ghz < el < center + 3 * hwhm_ghz else 0
+    #     for el in smooth_freqs
+    # ]
+    smooth_theta = np.linspace(0, np.pi, num_samples)
+    dist = [np.sin(theta) for theta in smooth_theta]
+    ret_val = 0
+    for ind in range(num_samples):
+        theta = smooth_theta[ind]
+        weight = dist[ind]
+        int_center = center + splitting_mag * np.sin(theta)
+        ret_val += weight * lorentzian(freq, contrast, hwhm, int_center)
+        int_center = center - splitting_mag * np.sin(theta)
+        ret_val += weight * lorentzian(freq, contrast, hwhm, int_center)
+    return ret_val
+
+
+def dip_sum(freq, line_func, *res_args):
+    """
+    Sum of Rabi lines for spectra with an arbitrary number of resonances.
+    A line_func is assumed to be positive and have a baseline of 0. We'll
+    return the "dip" version of this: 1-sum(line_funcs)
+    """
+    # Figure out how many parameters are used to describe a resonance
+    sig = signature(line_func)
+    len_res_desc = len(sig.parameters) - 1  # First parameter is frequency
+    # Total number of expected resonances
+    num_resonances = len(res_args) // len_res_desc
+    ret_val = 1.0
+    for ind in range(num_resonances):
+        start = ind * len_res_desc
+        stop = start + len_res_desc
+        ret_val -= line_func(freq, *res_args[start:stop])
+    return ret_val
 
 
 # endregion
@@ -319,7 +408,12 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
 
 
 def get_guess_params(
-    freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
+    freq_center,
+    freq_range,
+    num_steps,
+    norm_avg_sig,
+    norm_avg_sig_ste,
+    num_resonances=None,
 ):
     """Get guess params for line fitting. Most importantly how many resonances and what
     their frequencies are
@@ -329,7 +423,7 @@ def get_guess_params(
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     inverted_norm_avg_sig = 1 - norm_avg_sig
 
-    hwhm = 0.004  # GHz
+    hwhm = 0.002  # GHz
     hwhm_mhz = hwhm * 1000
     fwhm = 2 * hwhm
 
@@ -343,9 +437,9 @@ def get_guess_params(
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
-    # greater), and have a width of at least two points
+    # greater), and be wider than 1 point
     peak_inds, details = find_peaks(
-        inverted_norm_avg_sig, distance=fwhm_ind, height=height, width=2
+        inverted_norm_avg_sig, distance=fwhm_ind, height=height, width=1.5
     )
     peak_inds = peak_inds.tolist()
     peak_heights = details["peak_heights"].tolist()
@@ -353,12 +447,16 @@ def get_guess_params(
     low_freq_guess = None
     high_freq_guess = None
 
+    if len(peak_heights) == 0:
+        guess_params = [height, hwhm_mhz, freq_center]
+        return guess_params
+
     # Find the location of the highest peak
     max_peak_height = max(peak_heights)
     max_peak_peak_ind = peak_heights.index(max_peak_height)
     max_peak_freq = freqs[peak_inds[max_peak_peak_ind]]
 
-    if len(peak_inds) > 1:
+    if (num_resonances > 1) and len(peak_inds) > 1:
 
         # Remove what we just found so we can find the second highest peak
         peak_inds.pop(max_peak_peak_ind)
@@ -371,7 +469,7 @@ def get_guess_params(
         )  # Index in peak_inds
         next_max_peak_freq = freqs[peak_inds[next_max_peak_peak_inds]]
 
-        # Only keep the smaller peak if it's at least 50% the height of the larger peak
+        # Only keep the smaller peak if it's at least half as tall as the larger peak
         if next_max_peak_height > 0.5 * max_peak_height:
             # Sort by frequency
             if max_peak_freq < next_max_peak_freq:
@@ -389,24 +487,17 @@ def get_guess_params(
             low_contrast_guess = max_peak_height
             high_freq_guess = None
 
-    elif len(peak_inds) == 1:
+    else:
         low_freq_guess = max_peak_freq
         high_freq_guess = None
         low_contrast_guess = max_peak_height
-    else:
-        # print("Could not locate peaks, using center frequency")
-        low_freq_guess = freq_center
-        high_freq_guess = None
-        low_contrast_guess = height
 
     # Returns
     if low_freq_guess is None:
-        return None, None
+        return None
     if high_freq_guess is None:
-        fit_func = single_dip
         guess_params = [low_contrast_guess, hwhm_mhz, low_freq_guess]
     else:
-        fit_func = double_dip
         guess_params = [
             low_contrast_guess,
             hwhm_mhz,
@@ -415,7 +506,7 @@ def get_guess_params(
             hwhm_mhz,
             high_freq_guess,
         ]
-    return fit_func, guess_params
+    return guess_params
 
 
 def fit_resonance(
@@ -424,10 +515,11 @@ def fit_resonance(
     num_steps,
     norm_avg_sig,
     norm_avg_sig_ste,
-    fit_func=None,
+    line_func=None,
+    num_resonances=None,
     guess_params=None,
 ):
-    """_summary_
+    """Fit the ESR spectrum
 
     Parameters
     ----------
@@ -441,9 +533,12 @@ def fit_resonance(
         Normalized average signal
     norm_avg_sig_ste : 1D array
         Standard error of the normalized average signal
-    fit_func : Function, optional
-        Function used to fit the data. If None, we will use a default fit function - either
-        a single or double Rabi line depending on how many dips are apparent in the data
+    line_func : Function, optional
+        Function used to describe a single ESR line (for simplicity it should be positive and
+        have a baseline of 0). Default: Rabi line with N14 hyperfine splitting
+    num_resonances : int, optional
+        Number of ESR lines apparent in the spectrum. If None, we'll try 1 or 2 and use
+        whatever gives a better fit
     guess_params : 1D array, optional
         Guess parameters for fitting the fit function to the data. If None,
         we will estimate fit parameters by inspecting the data before actually fitting
@@ -458,26 +553,86 @@ def fit_resonance(
         Covariance matrix of the fit
     """
 
+    if line_func is None:
+        line_func = (
+            lambda freq, constrast, rabi_freq, res_freq: rabi_line_n14_hyperfine(
+                freq, constrast, rabi_freq, res_freq, uwave_pulse_dur=None
+            )
+        )
+
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    # Guess the fit function and params if not provided
-    if (fit_func is None) or (guess_params is None):
-        algo_fit_func, algo_guess_params = get_guess_params(
-            freq_center, freq_range, num_steps, norm_avg_sig, norm_avg_sig_ste
-        )
-    if fit_func is None:
-        fit_func = algo_fit_func
-    if guess_params is None:
-        guess_params = algo_guess_params
-
-    popt, pcov = curve_fit(
+    # Define a couple lambdas to keep things short
+    get_guess_params_lambda = lambda num_resonances: get_guess_params(
+        freq_center,
+        freq_range,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        num_resonances=num_resonances,
+    )
+    curve_fit_lambda = lambda fit_func, guess_params: curve_fit(
         fit_func,
         freqs,
         norm_avg_sig,
         p0=guess_params,
         sigma=norm_avg_sig_ste,
         absolute_sigma=True,
+        # full_output=True,
+        # method="trf",
+        # bounds=(0, np.inf),
+        # bounds=((0, 0, 2.80, 0), (0.5, 10, 2.90, 10)),
+        # max_nfev=100,
+        # ftol=1e-4,
     )
+
+    # If the user gave us a hint, go with that
+    if num_resonances is not None or guess_params is not None:
+        if guess_params is not None:
+            # Figure out how many parameters are used to describe a resonance
+            sig = signature(line_func)
+            len_res_desc = len(sig.parameters) - 1  # First parameter is frequency
+            # Total number of expected resonances
+            num_resonances = len(guess_params) / len_res_desc
+        elif num_resonances is not None:
+            guess_params = get_guess_params_lambda(num_resonances)
+        fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
+        popt, pcov = curve_fit_lambda(fit_func, guess_params)
+        # res = curve_fit_lambda(fit_func, guess_params)
+        # test = 0
+        # popt = guess_params
+        # num_params = len(popt)
+        # pcov = np.zeros((num_params, num_params))
+
+    # Otherwise try both single- and double-resonance lineshapes to see what fits best
+    else:
+        best_red_chi_sq = None
+        # for num_resonances in [1, 2]:
+        #     test_guess_params = get_guess_params_lambda(num_resonances)
+        for test_guess_params in [[[0.3, 2, 2.867]], [0.15, 1, 2.867, 0.15, 1, 2.873]]:
+            test_fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
+            try:
+                test_popt, test_pcov = curve_fit_lambda(
+                    test_fit_func, test_guess_params
+                )
+            except Exception as exc:
+                continue
+            residuals = test_fit_func(freqs, *test_popt) - norm_avg_sig
+            chi_sq = np.sum((residuals / norm_avg_sig_ste) ** 2)
+            red_chi_sq = chi_sq / (len(norm_avg_sig) - len(test_popt))
+            # Determine if the new fit is better (closer to 1) than the previous one
+            if (best_red_chi_sq is None) or (
+                abs(red_chi_sq - 1) < abs(best_red_chi_sq - 1)
+            ):
+                best_red_chi_sq = red_chi_sq
+                fit_func = test_fit_func
+                popt = test_popt
+                pcov = test_pcov
+
+    residuals = fit_func(freqs, *popt) - norm_avg_sig
+    chi_sq = np.sum((residuals / norm_avg_sig_ste) ** 2)
+    red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+    print(red_chi_sq)
 
     return fit_func, popt, pcov
 
@@ -674,8 +829,7 @@ def main_with_cxn(
 
     # Create raw data figure for incremental plotting
     raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        freq_center, freq_range, num_steps,
-        magnet_angle = nv_sig['magnet_angle']
+        freq_center, freq_range, num_steps, magnet_angle=nv_sig["magnet_angle"]
     )
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
@@ -846,13 +1000,21 @@ def main_with_cxn(
         if len(popt) == 3:
             low_freq = popt[2]
             high_freq = None
-            print('Single resonance found at {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2])))
+            print(
+                "Single resonance found at {:.4f} +/- {:.4f} GHz".format(
+                    popt[2], np.sqrt(pcov[2][2])
+                )
+            )
         elif len(popt) == 6:
             low_freq = popt[2]
             high_freq = popt[5]
-            print('Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz'.format(popt[2], np.sqrt(pcov[2][2]),popt[5], np.sqrt(pcov[5][5])))
+            print(
+                "Two resonances found at {:.4f} +/- {:.4f} GHz and {:.4f} +/- {:.4f} GHz".format(
+                    popt[2], np.sqrt(pcov[2][2]), popt[5], np.sqrt(pcov[5][5])
+                )
+            )
     except Exception:
-        print('Could not fit data')
+        print("Could not fit data")
 
     ### Clean up, save the data, return
 
@@ -916,16 +1078,19 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    # print(Path(__file__).stem)
-    # sys.exit()
-
-    file_name = "2023_01_12-20_55_47-wu-nv10_zfs_vs_t"
-    data = tool_belt.get_raw_data(file_name)
-
-    print(return_res_with_error(data))
-    sys.exit()
+    file_name = "2023_02_16-15_43_44-wu-nv24_region5"
 
     kpl.init_kplotlib()
+
+    data = tool_belt.get_raw_data(file_name)
+
+    # Just get the resonance and return
+    # print(file_name)
+    # print(return_res_with_error(data, fit_func, guess_params))
+    # print()
+    # sys.exit()
+
+    # Get what we need out of the data file
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
@@ -934,11 +1099,20 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     nv_sig = data["nv_sig"]
     readout = nv_sig["spin_readout_dur"]
+    uwave_pulse_dur = data["uwave_pulse_dur"]
     try:
         norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
     except Exception as exc:
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
+
+    # Specify the lineshape or force a fit
+    line_func = lorentzian
+    num_resonances = None
+    # guess_params = [0.01, 2, 2.87]
+    guess_params = None
+    fit_func = None
+    popt = None
 
     ret_vals = tool_belt.process_counts(
         sig_counts, ref_counts, num_reps, readout, norm_style
@@ -949,6 +1123,7 @@ if __name__ == "__main__":
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
+
     # create_raw_data_figure(
     #     freq_center,
     #     freq_range,
@@ -957,12 +1132,32 @@ if __name__ == "__main__":
     #     ref_counts_avg_kcps,
     #     norm_avg_sig,
     # )
-    create_fit_figure(
+
+    fit_fig, _, _, popt, pcov = create_fit_figure(
         freq_center,
         freq_range,
         num_steps,
         norm_avg_sig,
         norm_avg_sig_ste,
+        popt=popt,
+        fit_func=fit_func,
+        line_func=line_func,
+        num_resonances=num_resonances,
+        guess_params=guess_params,
     )
+
+    # Just fit, don't plot
+    # fit_func, popt, pcov = fit_resonance(
+    #     freq_center,
+    #     freq_range,
+    #     num_steps,
+    #     norm_avg_sig,
+    #     norm_avg_sig_ste,
+    # popt=popt,
+
+    # # Resave the updated figure
+    # file_path = tool_belt.get_raw_data_path(file_name)
+    # file_path = file_path.with_stem(file_name + "-fit").with_suffix("")
+    # tool_belt.save_figure(fit_fig, file_path)
 
     plt.show(block=True)

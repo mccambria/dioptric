@@ -40,7 +40,8 @@ marker_edge_width_inset = line_width_inset
 
 def get_ab_initio_rates():
 
-    sim_file_name = "Tdep_512_PBE.dat"
+    # sim_file_name = "Tdep_512_PBE.dat"
+    sim_file_name = "Tdep5000K.txt"  # February 6th, 2023 update, larger temp range
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
@@ -57,16 +58,22 @@ def get_ab_initio_rates():
     sim_omega = []
     sim_gamma = []
     for el in sim_data:
-        sim_temps.append(el[0])
-        sim_omega.append(el[1])
-        sim_gamma.append(el[2])
+        if sim_file_name == "Tdep_512_PBE.dat":
+            sim_temps.append(el[0])
+            sim_omega.append(el[1])
+            sim_gamma.append(el[2])
+        elif sim_file_name == "Tdep5000K.txt":
+            sim_temps.append(el[0])
+            sim_omega.append(el[2])
+            sim_gamma.append(el[3])
     sim_temps = np.array(sim_temps)
     sim_omega = np.array(sim_omega)
     sim_gamma = np.array(sim_gamma)
 
     # Correct for missing factor of 2 in calculations
-    sim_omega *= 2
-    sim_gamma *= 2
+    if sim_file_name == "Tdep_512_PBE.dat":
+        sim_omega *= 2
+        sim_gamma *= 2
 
     return sim_temps, sim_omega, sim_gamma
 

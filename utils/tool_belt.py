@@ -32,6 +32,7 @@ import utils.common as common
 import utils.search_index as search_index
 import signal
 import copy
+from decimal import Decimal
 
 
 class States(Enum):
@@ -88,7 +89,7 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
     if eval(mod_type).name == "ANALOG":
         laser_pulse_amplitude = laser_power
-        
+
     elif eval(mod_type).name == "DIGITAL":
         if laser_power == 0:
             laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
@@ -168,19 +169,20 @@ def set_laser_power(
             laser_server.set_laser_power(laser_power)
         return None
 
-def get_opx_uwave_pulse_info(config,pulse_time):
-    pulse_time_cc = int(round(pulse_time/4))
-    
+
+def get_opx_uwave_pulse_info(config, pulse_time):
+    pulse_time_cc = int(round(pulse_time / 4))
+
     if pulse_time_cc < 4:
-        uwave_pulse = 'uwave_OFF'
+        uwave_pulse = "uwave_OFF"
         uwave_amp = 1
         uwave_time_cc = 4
-        
+
     elif pulse_time_cc >= 4:
-        uwave_pulse = 'uwave_ON'
+        uwave_pulse = "uwave_ON"
         uwave_amp = 1
         uwave_time_cc = pulse_time_cc
-    
+
     return uwave_pulse, uwave_amp, uwave_time_cc
 
 
@@ -294,9 +296,8 @@ def get_laser_server(cxn, laser_name):
 # endregion
 # region Pulse generator utils
 
-def process_laser_seq(
-    pulse_streamer, seq, config, laser_name, laser_power, train
-):
+
+def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
     """
     Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
@@ -306,9 +307,11 @@ def process_laser_seq(
     # print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
-    am_feedthrough = config["Optics"][laser_name]["am_feedthrough"]
-    am_feedthrough = eval(am_feedthrough)
-    #    feedthrough = False
+    if "am_feedthrough" in config["Optics"][laser_name]:
+        am_feedthrough = config["Optics"][laser_name]["am_feedthrough"]
+        am_feedthrough = eval(am_feedthrough)
+    else:
+        am_feedthrough = False
 
     # LOW = 0
     # HIGH = 1
@@ -363,8 +366,7 @@ def process_laser_seq(
                 continue
             if dur < 75:
                 raise ValueError(
-                    "Feedthrough lasers do not support pulses shorter than"
-                    " 100 ns."
+                    "Feedthrough lasers do not support pulses shorter than" " 100 ns."
                 )
             processed_train.append((20, Digital.HIGH))
             processed_train.append((dur - 20, Digital.LOW))
@@ -372,12 +374,12 @@ def process_laser_seq(
         pulser_laser_mod = pulser_wiring["do_{}_am".format(laser_name)]
         seq.setDigital(pulser_laser_mod, processed_train)
     else:
-        if mod_type is ModTypes.DIGITAL:            
-           
+        if mod_type is ModTypes.DIGITAL:
+
             processed_train = train.copy()
             pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
             seq.setDigital(pulser_laser_mod, processed_train)
-    
+
         # Analog, convert LOW / HIGH to 0.0 / analog voltage
         # currently can't handle multiple powers of the AM within the same sequence
         # Possibly, we could pass laser_power as a list, and then build the sequences
@@ -401,7 +403,7 @@ def process_laser_seq(
             pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
             # print(processed_train)
             seq.setAnalog(pulser_laser_mod, processed_train)
-            
+
     # feedthrough = config["Optics"][laser_name]["feedthrough"]
     # feedthrough = eval(feedthrough)
     # #    feedthrough = False
@@ -492,7 +494,6 @@ def process_laser_seq(
     #     pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
     #     # print(processed_train)
     #     seq.setAnalog(pulser_laser_mod, processed_train)
-
 
 
 def set_delays_to_zero(config):
@@ -624,15 +625,19 @@ def exp_decay(x, amp, decay, offset):
 def linear(x, slope, y_offset):
     return slope * x + y_offset
 
+
 def quadratic(x, a, b, c, x_offset):
     x_ = x - x_offset
-    return a * (x_)**2 + b * x_ + c
+    return a * (x_) ** 2 + b * x_ + c
+
 
 def exp_stretch_decay(x, amp, decay, offset, B):
     return offset + amp * np.exp(-((x / decay) ** B))
 
+
 def exp_t2(x, amp, decay, offset):
     return exp_stretch_decay(x, amp, decay, offset, 3)
+
 
 def gaussian(x, *params):
     """Calculates the value of a gaussian for the given input and parameters
@@ -684,8 +689,10 @@ def sin_1_at_0_phase(t, amp, offset, freq, phase):
     # amp = 1 - offset
     return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
 
+
 def sin_phase(t, amp, offset, freq, phase):
     return offset + (abs(amp) * np.sin((freq * t + phase)))
+
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2 * np.pi
@@ -695,6 +702,8 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
         + amp_2 * np.cos(two_pi * freq_2 * t)
         + amp_3 * np.cos(two_pi * freq_3 * t)
     )
+
+
 def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
     two_pi = 2 * np.pi
 
@@ -725,13 +734,13 @@ def poiss_snr(sig, ref):
     outputs:
         snr = list
     """
-    
+
     # Assume Poisson statistics on each count value
     # sig_noise = np.sqrt(sig)
     # ref_noise = np.sqrt(ref)
     # snr = (ref - sig) / np.sqrt(sig_noise**2 + ref_noise**2)
     # snr_per_readout = (snr / np.sqrt(num_reps))
-        
+
     ref_count = np.array(ref)
     sig_count = np.array(sig)
     num_reps, num_points = ref_count.shape
@@ -743,14 +752,13 @@ def poiss_snr(sig, ref):
     ref_noise = np.sqrt(ref_count_avg)
     noise = np.sqrt(sig_noise**2 + ref_noise**2)
     snr = dif / noise
-    
-    
+
     N = sig_count_avg - ref_count_avg
     d = np.sqrt(sig_noise**2 + ref_noise**2)
     D = np.sqrt(sig_count_avg + ref_count_avg)
     d_d = 0.5 * d / D
-    
-    snr_unc = snr * np.sqrt((N / d)**2 + (d_d / D)**2)
+
+    snr_unc = snr * np.sqrt((N / d) ** 2 + (d_d / D) ** 2)
 
     return snr, snr_unc
 
@@ -770,7 +778,7 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 
 
 def bose(energy, temp):
-    """Calculate Bose Einstein occupation number 
+    """Calculate Bose Einstein occupation number
 
     Parameters
     ----------
@@ -928,6 +936,7 @@ def get_apd_indices(cxn):
     "Get a list of the APD indices in use from the registry"
     return common.get_registry_entry(cxn, "apd_indices", ["Config"])
 
+
 def get_apd_gate_channel(cxn):
     return common.get_registry_entry(cxn, "di_apd_gate", ["Config", "Wiring", "Tagger"])
 
@@ -947,7 +956,6 @@ def get_server_pulse_gen(cxn):
 def get_server_charge_readout_laser(cxn):
     """Get the laser for charge readout"""
     return common.get_server(cxn, "charge_readout_laser")
-
 
 
 def get_server_arb_wave_gen(cxn):
@@ -1045,6 +1053,19 @@ def get_time_stamp():
     timestamp = timestamp.replace(":", "_")  # Replace colon with dash
     timestamp = timestamp.replace("-", "_")  # Replace dash with underscore
     timestamp = timestamp.replace(" ", "-")  # Replace space with dash
+    return timestamp
+
+
+def get_time_stamp_from_file_name(file_name):
+    """Get the formatted timestamp from a file name
+
+    Returns:
+        string: <year>_<month>_<day>-<hour>_<minute>_<second>
+    """
+
+    file_name_split = file_name.split("-")
+    time_stamp_parts = file_name_split[0:2]
+    timestamp = "-".join(time_stamp_parts)
     return timestamp
 
 
@@ -1183,7 +1204,7 @@ def save_raw_data(rawData, filePath):
             elif isinstance(nv_sig[key], Enum):
                 nv_sig[key] = nv_sig[key].name
     except Exception:
-        print(' ')
+        print(" ")
 
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
@@ -1250,75 +1271,197 @@ def get_dd_model_coeff_dict():
     return dd_model_coeff_dict
 
 
+def single_conversion(single_func, freq, *args):
+    if type(freq) in [list, np.ndarray]:
+        single_func_lambda = lambda freq: single_func(freq, *args)
+        # with ProcessingPool() as p:
+        #     line = p.map(single_func_lambda, freq)
+        line = np.array([single_func_lambda(f) for f in freq])
+        return line
+    else:
+        return single_func(freq, *args)
+
+
 # endregion
 # region Rounding
-"""Make sure to check the end results produced by this code! Rounding turns out
-to be a nontrivial problem...
+"""
+Various rounding tools, including several for presenting data with errors (round_for_print).
+Relies on the decimals package for accurate arithmetic w/o binary rounding errors.
 """
 
 
 def round_sig_figs(val, num_sig_figs):
-    if val == 0:
-        return 0
+    """Round a value to the passed number of sig figs
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    num_sig_figs : int
+        Number of sig figs to round to
+
+    Returns
+    -------
+    numeric
+        Rounded value
+    """
+
+    # All the work is done here
     func = lambda val, num_sig_figs: round(
         val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
     )
+
+    # Check for list/array/single value
     if type(val) is list:
         return [func(el, num_sig_figs) for el in val]
     elif type(val) is np.ndarray:
-        val_list = val.tolist()
-        rounded_val_list = [func(el, num_sig_figs) for el in val_list]
+        rounded_val_list = [func(el, num_sig_figs) for el in val.tolist()]
         return np.array(rounded_val_list)
     else:
         return func(val, num_sig_figs)
 
 
-def presentation_round(val, err):
-    if val == 0:
-        return [0, None, None]
+def round_for_print_sci(val, err):
+    """Round a value and associated error to the appropriate level given the
+    magnitude of the error. The error will be rounded to 1 or 2 sig figs depending
+    on whether the first sig fig is >1 or =1 respectively. Returned in a form
+    suitable for scientific notation
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    err : numeric
+        Associated error
+
+    Returns
+    -------
+    Decimal
+        Rounded value as a string
+    Decimal
+        Rounded error as a string
+    int
+        Order of magnitude
+    """
+
+    val = Decimal(val)
+    err = Decimal(err)
+
     err_mag = math.floor(math.log10(err))
-    sci_err = err / (10**err_mag)
+    sci_err = err / (Decimal(10) ** err_mag)
     first_err_digit = int(str(sci_err)[0])
     if first_err_digit == 1:
         err_sig_figs = 2
     else:
         err_sig_figs = 1
+
     power_of_10 = math.floor(math.log10(abs(val)))
-    mag = 10**power_of_10
-    rounded_err = round_sig_figs(err, err_sig_figs) / mag
+    mag = Decimal(10) ** power_of_10
+    rounded_err = round_sig_figs(err / mag, err_sig_figs)
     rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
+
+    # Check for corner case where the value is e.g. 0.999 and rounds up to another decimal place
+    if rounded_val >= 10:
+        power_of_10 += 1
+        rounded_err /= Decimal(10)
+        rounded_val /= Decimal(10)
+
     return [rounded_val, rounded_err, power_of_10]
 
 
-def presentation_round_latex(val, err):
-    if val == 0:
-        return "0"
-    # if val <= 0 or err > val:
-    #     return ""
-    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
-    err_mag = math.floor(math.log10(rounded_err))
-    val_mag = math.floor(math.log10(abs(rounded_val)))
+def strip_err(err):
+    """Get the representation of the error, which is alway just the trailing non-zero digits
 
-    # Turn 0.0000016 into 0.16
-    # The round is to deal with floating point leftovers eg 9 = 9.00000002
-    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
-    # - 1 to remove the "0." part
-    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
-    pad_val_to = -err_mag + err_last_decimal_mag
+    Parameters
+    ----------
+    err : str
+        Error to process
 
-    if err_mag > val_mag:
-        return 1 / 0
-    elif err_mag == val_mag:
-        print_err = rounded_err
-    else:
-        print_err = int(str(shifted_rounded_err).replace(".", ""))
+    Returns
+    -------
+    str
+        Trailing non-zero digits of err
+    """
 
-    str_val = str(rounded_val)
-    decimal_pos = str_val.find(".")
-    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
-    padded_val = str(rounded_val) + "0" * num_padding_zeros
-    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
-    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
+    stripped_err = ""
+    trailing = False
+    for char in str(err):
+        if char == ".":
+            continue
+        elif char != "0":
+            trailing = True
+        if trailing:
+            stripped_err += char
+    return stripped_err
+
+
+def round_for_print_sci_latex(val, err):
+    """Round a value and associated error to the appropriate level given the
+    magnitude of the error. The error will be rounded to 1 or 2 sig figs depending
+    on whether the first sig fig is >1 or =1 respectively. Returned as a string
+    to be put directly into LaTeX - the printed result will be in scientific notation
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    err : numeric
+        Associated error
+
+    Returns
+    -------
+    str
+        Rounded value including error and order of magnitude to be put directly into LaTeX
+    """
+
+    rounded_val, rounded_err, power_of_10 = round_for_print_sci(val, err)
+    err_str = strip_err(rounded_err)
+    return r"\num{{{}({})e{}}}".format(rounded_val, err_str, power_of_10)
+
+
+def round_for_print(val, err):
+    """Round a value and associated error to the appropriate level given the
+    magnitude of the error. The error will be rounded to 1 or 2 sig figs depending
+    on whether the first sig fig is >1 or =1 respectively. Returned as a string
+    to be printed directly in standard (not scientific) notation. As such, it is
+    assumed that err < 1, otherwise the number of sig figs will be unclear
+
+    Parameters
+    ----------
+    val : numeric
+        Value to round
+    err : numeric
+        Associated error
+
+    Returns
+    -------
+    str
+        Rounded value including error to be printed directly
+    """
+
+    # If err > 10, this presentation style becomes unclear
+    if err > 10:
+        return None
+
+    # Start from the scientific presentation
+    rounded_val, rounded_err, power_of_10 = round_for_print_sci(val, err)
+
+    # Get the representation of the actual value, where min_digits
+    # ensures the last digit lines up with the error
+    mag = Decimal(10) ** power_of_10
+    str_rounded_err = str(rounded_err)
+    val_str = np.format_float_positional(
+        rounded_val * mag, min_digits=len(str_rounded_err) - 2 - power_of_10
+    )
+
+    # Trim possible trailing decimal point
+    if val_str[-1] == ".":
+        val_str = val_str[:-1]
+
+    # Get the representation of the error, which is alway just the trailing non-zero digits
+    err_str = strip_err(rounded_err)
+
+    return f"{val_str}({err_str})"
 
 
 # endregion

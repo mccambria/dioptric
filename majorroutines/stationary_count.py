@@ -18,8 +18,7 @@ import majorroutines.optimize as optimize
 
 
 def main(nv_sig, run_time, disable_opt=None, nv_minus_init=False, nv_zero_init=False,
-        background_subtraction=False,
-        background_coords=None,):
+        background_subtraction=False, background_coords=None):
     with labrad.connect() as cxn:
         average, st_dev = main_with_cxn(
             cxn, nv_sig, run_time, disable_opt, nv_minus_init, nv_zero_init,

@@ -2608,7 +2608,7 @@ if __name__ == "__main__":
     # temp_range = [1, 500]
     # xscale = "log"
     # temp_range = [125, 550]
-    inv_temp = False
+    inv_temp = True
 
     file_name = "compiled_data"
     # file_name = "compiled_data-single_ref"
@@ -2638,27 +2638,27 @@ if __name__ == "__main__":
         rates_to_plot = "gamma"
     # y_params = [y_params[1]]
     # y_params = [[None, "linear"], [[0.001, 20], "log"]]
-    # for el in y_params:
-    #     y_range, yscale = el
-    #     # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
-    #     # continue
-    #     main(
-    #         file_name,
-    #         path,
-    #         plot_type,
-    #         rates_to_plot,
-    #         temp_range,
-    #         y_range,
-    #         xscale,
-    #         yscale,
-    #         dosave=False,
-    #         inv_temp=inv_temp,
-    #     )
+    for el in y_params:
+        y_range, yscale = el
+        # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
+        # continue
+        main(
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            y_range,
+            xscale,
+            yscale,
+            dosave=False,
+            inv_temp=inv_temp,
+        )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    supp_comparison = False
-    figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
+    # supp_comparison = False
+    # figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'

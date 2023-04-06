@@ -11,7 +11,8 @@
             "program": "${file}",
             "console": "internalConsole",
             "redirectOutput": true,
-            "suppressMultipleSessionWarning": true
+            "suppressMultipleSessionWarning": true,
+            // "justMyCode": false,
         }
     ]
 }

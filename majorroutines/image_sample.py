@@ -412,8 +412,9 @@ def main_with_cxn(
 
     if scan_type == "XY":
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, y_center,x_range, y_range, x_num_steps, y_num_steps)
-    elif scan_type == 'XZ':
+            x_center, y_center, x_range, y_range, x_num_steps, y_num_steps
+        )
+    elif scan_type == "XZ":
         ret_vals = positioning.get_scan_grid_2d(
             x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
     elif scan_type == 'YZ':
@@ -451,7 +452,7 @@ def main_with_cxn(
             xy_server.load_stream_xy(x_voltages, y_voltages)
         elif scan_type == "XZ":
             z_voltages = y_voltages
-            y_vals_static = [y_center]*len(x_voltages)
+            y_vals_static = [y_center] * len(x_voltages)
             xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
         elif scan_type == "YZ":
             z_voltages = y_voltages
@@ -595,35 +596,35 @@ def main_with_cxn(
     ### Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
-    if scan_type == 'XY':
+    if scan_type == "XY":
         xy_server.write_xy(x_center, y_center)
     else:
         xyz_server.write_xyz(x_center, y_center, z_center)
 
     timestamp = tool_belt.get_time_stamp()
     rawData = {
-        'timestamp': timestamp,
-                'nv_sig': nv_sig,
-                # 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                "x_center": x_center,
-                "y_center": y_center,
-                "z_center": z_center,
-                'x_range': x_range,
-                'x_range-units': 'um',
-                'y_range': y_range,
-                'y_range-units': 'um',
-                'num_steps': num_steps,
-                'scan_type': scan_type,
-                'readout': readout,
-                'readout-units': 'ns',
-                "title": title,
-                'x_positions_1d': x_positions_1d.tolist(),
-                'x_positions_1d-units': pos_units,
-                'y_positions_1d': y_positions_1d.tolist(),
-                'y_positions_1d-units': pos_units,
-                'img_array': img_array.astype(int).tolist(),
-                'img_array-units': 'counts',
-               }
+        "timestamp": timestamp,
+        "nv_sig": nv_sig,
+        # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+        "x_center": x_center,
+        "y_center": y_center,
+        "z_center": z_center,
+        "x_range": x_range,
+        "x_range-units": "um",
+        "y_range": y_range,
+        "y_range-units": "um",
+        "num_steps": num_steps,
+        "scan_type": scan_type,
+        "readout": readout,
+        "readout-units": "ns",
+        "title": title,
+        "x_positions_1d": x_positions_1d.tolist(),
+        "x_positions_1d-units": pos_units,
+        "y_positions_1d": y_positions_1d.tolist(),
+        "y_positions_1d-units": pos_units,
+        "img_array": img_array.astype(int).tolist(),
+        "img_array-units": "counts",
+    }
 
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
     tool_belt.save_figure(fig, filePath)
@@ -647,28 +648,29 @@ if __name__ == "__main__":
         # y_range = data["y_range"]
         # x_num_steps = data["num_steps"]
         # y_num_steps = data["num_steps"]
-        
+
     elif scan_type == 'XZ':
         x_center = data["x_center"]
         y_center = data["z_center"]
     elif scan_type == 'YZ':
         x_center = data["y_center"]
         y_center = data["z_center"]
-        
+
     x_range = data["x_range"]
     y_range = data["y_range"]
     x_num_steps = data["num_steps"]
     y_num_steps = data["num_steps"]
     ret_vals = positioning.get_scan_grid_2d(
-        x_center, y_center, x_range, y_range, x_num_steps, y_num_steps
+        x_center, y_center, x_range, y_range, num_steps, num_steps
     )
     extent = ret_vals[-1]
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    kpl.imshow(
+    im = kpl.imshow(
         ax,
         img_array_kcps,
+        # title=title,
         x_label="V",
         y_label="V",
         cbar_label="kcps",
@@ -678,4 +680,3 @@ if __name__ == "__main__":
     )
 
     # plt.show(block=True)
-    
