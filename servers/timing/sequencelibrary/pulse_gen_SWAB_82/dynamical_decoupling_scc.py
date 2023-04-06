@@ -97,9 +97,9 @@ def get_seq(pulse_streamer, config, args):
     half_tau_shrt_en = numpy.int64(tau_shrt -  half_tau_shrt_st)
     half_tau_long_st =numpy.int64(tau_long/2)
     half_tau_long_en = numpy.int64(tau_long -  half_tau_long_st)
-    tau_norm = numpy.int64(100)
-    half_tau_norm_st =numpy.int64(tau_norm/2)
-    half_tau_norm_en = numpy.int64(tau_norm -  half_tau_norm_st)
+    # tau_norm = numpy.int64(100)
+    # half_tau_norm_st =numpy.int64(tau_norm/2)
+    # half_tau_norm_en = numpy.int64(tau_norm -  half_tau_norm_st)
     
     pulser_wiring = config['Wiring']['PulseGen']
     pulser_do_apd_gate = pulser_wiring['do_apd_gate']
@@ -140,19 +140,19 @@ def get_seq(pulse_streamer, config, args):
     for el in uwave_experiment_train_long:
         uwave_experiment_dur_long += el[0]
         
-    uwave_experiment_train_norm = [(pi_on_2_pulse, HIGH)]
-    if pi_pulse_reps == 0:
-        rep_train = [(tau_norm, LOW), (tau_norm, LOW)]
-    else:  
-        rep_train = [(tau_norm, LOW), (pi_pulse, HIGH), (tau_norm, LOW)]*pi_pulse_reps
-    uwave_experiment_train_norm.extend(rep_train)
-    uwave_experiment_train_norm.extend([(pi_on_2_pulse, HIGH)])
-    uwave_experiment_train_norm.extend([(final_pi_pulse_wait, LOW)]) # adding a wait between pi/2 and pi
-    uwave_experiment_train_norm.extend([(pi_pulse, HIGH)]) # adding a pi pulse to readout
+    # uwave_experiment_train_norm = [(pi_on_2_pulse, HIGH)]
+    # if pi_pulse_reps == 0:
+    #     rep_train = [(tau_norm, LOW), (tau_norm, LOW)]
+    # else:  
+    #     rep_train = [(tau_norm, LOW), (pi_pulse, HIGH), (tau_norm, LOW)]*pi_pulse_reps
+    # uwave_experiment_train_norm.extend(rep_train)
+    # uwave_experiment_train_norm.extend([(pi_on_2_pulse, HIGH)])
+    # uwave_experiment_train_norm.extend([(final_pi_pulse_wait, LOW)]) # adding a wait between pi/2 and pi
+    # uwave_experiment_train_norm.extend([(pi_pulse, HIGH)]) # adding a pi pulse to readout
     
-    uwave_experiment_dur_norm = 0
-    for el in uwave_experiment_train_norm:
-        uwave_experiment_dur_norm += el[0]
+    # uwave_experiment_dur_norm = 0
+    # for el in uwave_experiment_train_norm:
+    #     uwave_experiment_dur_norm += el[0]
 
     # %% Write the IQ trigger pulse sequence
     # The first IQ pulse will occur right after optical pulse polarization
@@ -194,23 +194,23 @@ def get_seq(pulse_streamer, config, args):
                                     # (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
                                     (half_tau_long_en - iq_trigger_time + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
     
-    uwave_iq_train_norm = [(iq_trigger_time, HIGH), 
-                           (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
-                           (half_tau_norm_st, LOW)]
-    if pi_pulse_reps == 0:
-        uwave_iq_train_norm.extend([(iq_trigger_time, HIGH), 
-                                    (half_tau_norm_en - iq_trigger_time + half_tau_norm_st, LOW),
-                                    # (half_tau_norm_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                    (half_tau_norm_en + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
-    else:
-        rep_train = [(iq_trigger_time, HIGH),
-                 (half_tau_norm_en - iq_trigger_time + pi_pulse + tau_norm + half_tau_norm_st, LOW)]*(pi_pulse_reps-1)
-        uwave_iq_train_norm.extend(rep_train)
-        uwave_iq_train_norm.extend([(iq_trigger_time, HIGH), 
-                                    (half_tau_norm_en - iq_trigger_time + pi_pulse + half_tau_norm_st, LOW),
-                                    (iq_trigger_time, HIGH), 
-                                    # (half_tau_norm_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                    (half_tau_norm_en - iq_trigger_time + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
+    # uwave_iq_train_norm = [(iq_trigger_time, HIGH), 
+    #                        (pre_uwave_exp_wait_time + pi_on_2_pulse-iq_trigger_time, LOW),
+    #                        (half_tau_norm_st, LOW)]
+    # if pi_pulse_reps == 0:
+    #     uwave_iq_train_norm.extend([(iq_trigger_time, HIGH), 
+    #                                 (half_tau_norm_en - iq_trigger_time + half_tau_norm_st, LOW),
+    #                                 # (half_tau_norm_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+    #                                 (half_tau_norm_en + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
+    # else:
+    #     rep_train = [(iq_trigger_time, HIGH),
+    #              (half_tau_norm_en - iq_trigger_time + pi_pulse + tau_norm + half_tau_norm_st, LOW)]*(pi_pulse_reps-1)
+    #     uwave_iq_train_norm.extend(rep_train)
+    #     uwave_iq_train_norm.extend([(iq_trigger_time, HIGH), 
+    #                                 (half_tau_norm_en - iq_trigger_time + pi_pulse + half_tau_norm_st, LOW),
+    #                                 (iq_trigger_time, HIGH), 
+    #                                 # (half_tau_norm_en - iq_trigger_time + pi_on_2_pulse, LOW)])
+    #                                 (half_tau_norm_en - iq_trigger_time + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
     
 
     # %% Define the sequence
