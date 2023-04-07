@@ -1292,7 +1292,7 @@ def fig(
     plot_data=True,
     condense_all=False,
     condense_samples=True,
-    plot_prior_models=True,
+    plot_prior_models=False,
     desaturate_prior=True,
     plot_new_model=True,
     plot_prior_data=False,
@@ -1409,13 +1409,14 @@ def fig(
             )
 
     if plot_new_model:
+        zorder = 10 if plot_prior_models else -2
         kpl.plot_line(
             ax,
             temp_linspace,
             cambria_lambda(temp_linspace),
             label="This work",
             color=this_work_model_color,
-            zorder=10,
+            zorder=zorder,
         )
 
     ### Prior models
@@ -1442,8 +1443,10 @@ def fig(
     ### Plot wrap up
     if plot_prior_models:
         ax.legend(loc="lower left")
-    ax.set_xlabel("Temperature $\mathit{T}$ (K)")
-    ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
+    # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
+    # ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
+    ax.set_xlabel("Temperature (K)")
+    ax.set_ylabel("ZFS (GHz)")
     ax.set_xlim(*temp_range)
     ax.set_ylim(*y_range)
 
@@ -1768,18 +1771,18 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # main()
-    # fig()  # Main
-    fig(  # Comps
-        temp_range=[-20, 820],
-        y_range=[2.80, 2.88],
-        plot_data=True,
-        condense_all=False,
-        condense_samples=True,
-        plot_prior_models=True,
-        desaturate_prior=True,
-        plot_new_model=True,
-        plot_prior_data=True,
-    )
+    fig()  # Main
+    # fig(  # Comps
+    #     temp_range=[-20, 820],
+    #     y_range=[2.80, 2.88],
+    #     plot_data=True,
+    #     condense_all=False,
+    #     condense_samples=True,
+    #     plot_prior_models=True,
+    #     desaturate_prior=True,
+    #     plot_new_model=True,
+    #     plot_prior_data=True,
+    # )
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
