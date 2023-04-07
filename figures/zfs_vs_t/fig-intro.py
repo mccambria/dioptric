@@ -38,24 +38,30 @@ from figures.zfs_vs_t.thermal_expansion import fit_double_occupation
 
 
 def main():
-
-    setpoint_temps = ["", 350, 400, 450, 500]  # In increasing temp order
+    # setpoint_temps = ["", 350, 400, 450, 500]  # In increasing temp order
+    # setpoint_temps = [10, 150, "", 400, 500]  # In increasing temp order
+    setpoint_temps = [10, 140, 250, 370, 500]  # In increasing temp order
+    # nvs = ["nv7_zfs_vs_t"]
+    nvs = ["nv3_zfs_vs_t", "nv7_zfs_vs_t"]
     skip_lambda = (
         lambda point: point["Skip"]
         or point["Sample"] != "Wu"
         or point["Setpoint temp (K)"] not in setpoint_temps
-        or point["NV"] != "nv7_zfs_vs_t"
+        or point["NV"] not in nvs
     )
     data_points = get_data_points(skip_lambda)
 
-    min_freq = 2.832
-    max_freq = 2.882
+    min_freq = 2.833
+    # max_freq = 2.882
+    max_freq = 2.889
     freq_center = (min_freq + max_freq) / 2
     freq_range = max_freq - min_freq
     smooth_freqs = pesr.calculate_freqs(freq_center, freq_range, 100)
 
+    edgecolors = []
+    # edgecolors = [KplColors.GREEN]
     # Yellow to red
-    edgecolors = ["#baa309", "#cc771d", "#d8572a", "#c32f27", "#87081f"]
+    edgecolors.extend(["#baa309", "#cc771d", "#d8572a", "#c32f27", "#87081f"])
     facecolors = [kpl.lighten_color_hex(el) for el in edgecolors]
 
     narrow_figsize = (0.65 * kpl.figsize[0], kpl.figsize[1])
@@ -63,9 +69,15 @@ def main():
     ax2 = ax.twinx()
     # ax3 = ax.twiny()
 
+    min_fluor = 0
+    max_fluor = 1.7
+    min_temp = 0
+    max_temp = 595
+    # min_temp = -70
+    # max_temp = 510
+
     num_sets = len(setpoint_temps)
     for ind in range(num_sets):
-
         # Reverse
         ind = num_sets - 1 - ind
 
@@ -119,8 +131,14 @@ def main():
         )
 
         label = f"{int(temp)} K"
-        y_offset = 0.25 * (temp - 296) / 50
-        # offset = 0
+        fit_vals = fit_func(smooth_freqs)
+        # y_offset = 0.25 * (temp - 296) / 100
+        # Set the base of the fit to the proper temp
+        y_min = min(fit_vals)
+        normed_height = (temp - min_temp) / (max_temp - min_temp)
+        # y_offset = (normed_height * (max_fluor - min_fluor)) - y_min
+        y_offset = normed_height * (max_fluor - min_fluor) + min_fluor - y_min
+        # y_offset = normed_height * (max_fluor - min_fluor) + min_fluor - 1
         # kpl.plot_line(
         kpl.plot_points(
             ax,
@@ -138,14 +156,14 @@ def main():
         kpl.plot_line(
             ax,
             smooth_freqs,
-            y_offset + fit_func(smooth_freqs),
+            y_offset + fit_vals,
             # color=KplColors.DARK_GRAY,
             color=edgecolor,
             zorder=2,
         )
 
         if ind == num_sets - 1:
-            y_pos = y_offset + 0.89
+            y_pos = y_offset + 0.88
         else:
             y_pos = y_offset + 0.92
         ax.text(min_freq + 0.0005, y_pos, label, color=edgecolor, fontsize=15)
@@ -163,7 +181,8 @@ def main():
         xlabel="ODMR freq. / ZFS (GHz)",
         ylabel="Fluorescence",
         xlim=(min_freq, max_freq),
-        ylim=(None, 2.1),
+        # ylim=(None, 2.1),
+        ylim=(min_fluor, max_fluor),
     )
 
     ### Plot D(T)
@@ -183,14 +202,15 @@ def main():
         data_points
     )
     cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
-    temp_linspace = np.linspace(250, 600, 1000)
+    temp_linspace = np.linspace(0, 600, 1000)
     d_of_t_color = KplColors.BLUE
     kpl.plot_line(ax2, cambria_lambda(temp_linspace), temp_linspace, color=d_of_t_color)
     ax2.set(
         # xlabel="Zero-field splitting (GHz)",
         # ylabel="Temperature (K)",
         # xlim=(min_freq, max_freq),
-        ylim=(284, 547),
+        # ylim=(284, 547),
+        ylim=(min_temp, max_temp),
         zorder=+1,
     )
     ax2.set_ylabel("Temperature (K)", color=d_of_t_color)
@@ -203,7 +223,6 @@ def main():
 
 
 def waterfall():
-
     width = 1.0 * kpl.figsize[0]
     height = 0.8 * width
     fig = plt.figure(figsize=(width, height))
@@ -245,7 +264,6 @@ def waterfall():
 
     num_sets = len(setpoint_temps)
     for ind in range(num_sets):
-
         # Reverse
         ind = num_sets - 1 - ind
 
@@ -339,7 +357,6 @@ def waterfall():
 
 
 def false3d():
-
     setpoint_temps = ["", 350, 400, 450, 500]  # In increasing temp order
     skip_lambda = (
         lambda point: point["Skip"]
@@ -366,7 +383,6 @@ def false3d():
 
     num_sets = len(setpoint_temps)
     for ind in range(num_sets):
-
         # Reverse
         # ind = num_sets - 1 - ind
 
@@ -484,7 +500,6 @@ def false3d():
 
 
 def quasiharmonic_sketch():
-
     kpl_figsize = kpl.figsize
     adj_figsize = (kpl_figsize[0], 0.8 * kpl_figsize[1])
     fig, ax = plt.subplots(figsize=adj_figsize)
@@ -520,7 +535,6 @@ def quasiharmonic_sketch():
 
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib(latex=False, constrained_layout=True)
 
     main()
