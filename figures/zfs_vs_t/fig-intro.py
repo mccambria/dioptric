@@ -54,11 +54,8 @@ def main():
     freq_range = max_freq - min_freq
     smooth_freqs = pesr.calculate_freqs(freq_center, freq_range, 100)
 
-    # Blue, green, yellow, red, brown
-    # edgecolors = ["#2e83c0", "#4db449", "#f1aa30", "#fb2e18", "#8c564b"]
-    # edgecolors = ["#8ea604", "#f5bb00", "#ec9f05", "#d76a03", "#bf3100"]
+    # Yellow to red
     edgecolors = ["#baa309", "#cc771d", "#d8572a", "#c32f27", "#87081f"]
-    # edgecolors = ["#59753c", "#7a7a3b", "#bfa626", "#e66119", "#772f1a"]
     facecolors = [kpl.lighten_color_hex(el) for el in edgecolors]
 
     narrow_figsize = (0.65 * kpl.figsize[0], kpl.figsize[1])
