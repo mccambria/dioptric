@@ -55,13 +55,16 @@ def main():
     smooth_freqs = pesr.calculate_freqs(freq_center, freq_range, 100)
 
     # Blue, green, yellow, red, brown
-    edgecolors = ["#2e83c0", "#4db449", "#f1aa30", "#fb2e18", "#8c564b"]
+    # edgecolors = ["#2e83c0", "#4db449", "#f1aa30", "#fb2e18", "#8c564b"]
+    # edgecolors = ["#8ea604", "#f5bb00", "#ec9f05", "#d76a03", "#bf3100"]
+    edgecolors = ["#baa309", "#cc771d", "#d8572a", "#c32f27", "#87081f"]
+    # edgecolors = ["#59753c", "#7a7a3b", "#bfa626", "#e66119", "#772f1a"]
     facecolors = [kpl.lighten_color_hex(el) for el in edgecolors]
 
     narrow_figsize = (0.65 * kpl.figsize[0], kpl.figsize[1])
     fig, ax = plt.subplots(figsize=narrow_figsize)
     ax2 = ax.twinx()
-    ax3 = ax.twiny()
+    # ax3 = ax.twiny()
 
     num_sets = len(setpoint_temps)
     for ind in range(num_sets):
@@ -160,8 +163,8 @@ def main():
     ax.tick_params(left=False, labelleft=False)
     # ax.get_yaxis().set_visible(False)
     ax.set(
-        xlabel="Frequency (GHz)",
-        ylabel="Normalized fluorescence",
+        xlabel="ODMR freq. / ZFS (GHz)",
+        ylabel="Fluorescence",
         xlim=(min_freq, max_freq),
         ylim=(None, 2.1),
     )
@@ -194,11 +197,11 @@ def main():
         zorder=+1,
     )
     ax2.set_ylabel("Temperature (K)", color=d_of_t_color)
-    ax2.tick_params(axis="y", labelcolor=d_of_t_color)
+    ax2.tick_params(axis="y", color=d_of_t_color, labelcolor=d_of_t_color)
     ax2.xaxis.label.set_color(d_of_t_color)
     ax2.spines["right"].set_color(d_of_t_color)
-    ax2.spines["top"].set_color(d_of_t_color)
-    ax3.set_xlabel("Zero-field splitting (GHz)", color=d_of_t_color)
+    # ax2.spines["top"].set_color(d_of_t_color)
+    # ax3.set_xlabel("Zero-field splitting (GHz)", color=d_of_t_color)
     # ax3.tick_params(axis="x", which="both", top=False, labeltop=False)
 
 
