@@ -29,9 +29,6 @@ from analysis import three_level_rabi
 import figures.zfs_vs_t.thermal_expansion as thermal_expansion
 
 
-# fmt: off
-toyli_digitized = [300, 2.87, 309.9858044201037, 2.8690768841409784, 320.04280071681194, 2.868366259576263, 330.32149670254546, 2.8673945841666115, 340.3583384820696, 2.866304172245094, 350.05837349046874, 2.8655253065868678, 360.1625766242179, 2.8644972039180088, 370.064695695292, 2.8633133281175045, 380.2362601832661, 2.8622540708223165, 390.13837925434024, 2.8611013496481412, 399.9731369711893, 2.8600109377266243, 410.00997875071346, 2.858858216552449, 420.0468205302376, 2.857362794488654, 430.4878304351117, 2.856176937898957, 440.3899495061858, 2.8549015790086583, 450.02262316036, 2.8535619300765087, 460.1268262941091, 2.852066508012714, 469.96158401095823, 2.850633395201577, 480.5373166242823, 2.849387210148415, 490.30471298690645, 2.84789178808462, 500.2068320579806, 2.8465209845261414, 510.04158977482973, 2.844994407836017, 520.2805156170289, 2.843374367266906, 530.452080105003, 2.8417854813241243, 540.354199176077, 2.840258904634, 550.1215955387013, 2.838638864064889, 560.1584373182253, 2.837361524385398, 570.3300018061993, 2.8357103291899572, 580.2321208772735, 2.8341545786626967, 590.4036853652476, 2.8322813395045685, 600.0363590194218, 2.830756743603637, 610.005839444721, 2.829354785418829, 619.9079585157951, 2.8275789717180726, 630.4163297748942, 2.826052395027949, 640.3184488459683, 2.824556972964154, 650.2879292712674, 2.8227500046370686, 660.1269697755595, 2.821005345562641, 669.8900833507407, 2.8189160048094015, 680.4658159640647, 2.816922108724342, 690.5700190978139, 2.8151482758127777, 700.472138168888, 2.8134950998281454, 710.0374504688373, 2.812188586311517]
-# fmt: on
 toyli_temps = toyli_digitized[0::2]
 toyli_temps = [round(val, -1) for val in toyli_temps]
 toyli_zfss = toyli_digitized[1::2]
@@ -51,7 +48,6 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 
 def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False):
-
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
     compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
@@ -59,7 +55,6 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
 
     data_points = []
     with open(csv_file_path, newline="") as f:
-
         reader = csv.reader(f)
         header = True
         for row in reader:
@@ -212,7 +207,6 @@ def data_points_to_lists(data_points):
 
 
 def calc_zfs_from_compiled_data():
-
     skip_lambda = lambda point: point["Sample"] != "Wu"
 
     data_points = get_data_points(skip_lambda)
@@ -235,7 +229,6 @@ def calc_zfs_from_compiled_data():
 
 
 def light_polarization():
-
     # Actual angles of the half-waveplate
     angles = [348, 88, 58, 38, 38, 18, 338, 358, 248, 348, 58]
     # angles = [angles[ind] + 0.1 * ind for ind in range(len(angles))]
@@ -586,7 +579,6 @@ def refit_experiments():
 
 # def refit_experiments_sub(file_name, do_plot=False, do_save=False, guess_params=None):
 def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False):
-
     # print(guess_params)
 
     data = tool_belt.get_raw_data(file_name)
@@ -637,7 +629,6 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
     ### Sample-dependent fit functions and parameters
 
     if sample == "wu":
-
         # line_func = (
         #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
         #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
@@ -667,7 +658,6 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         # popt = guess_params
 
     elif sample == "15micro":
-
         # fmt: off
         
         # line_func = lambda freq, contrast, rabi_freq, center, splitting, offset: three_level_rabi.incoherent_line(freq, contrast, rabi_freq, center, splitting, offset, uwave_pulse_dur)
@@ -784,7 +774,6 @@ def sub_room_zfs_from_temp_free(
     #     first_der = 0
     #     second_der = 0
     for ind in range(len(coeffs)):
-
         # zfs
         exp = ind
         # exp = ind * 2
@@ -881,7 +870,6 @@ def zfs_from_temp_li(temp):
 
 
 def fractional_thermal_expansion(temp):
-
     X1 = 0.4369e-7  # 1 / K
     X2 = 15.7867e-7  # 1 / K
     X3 = 42.5598e-7  # 1 / K
@@ -893,7 +881,6 @@ def fractional_thermal_expansion(temp):
 
 
 def fractional_thermal_expansion_free(temp, X1, X2, X3, Theta1, Theta2, Theta3):
-
     dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (np.exp(Theta / T) - 1)
     dV_over_V = (
         lambda T: np.exp(
@@ -911,7 +898,6 @@ def fractional_thermal_expansion_free(temp, X1, X2, X3, Theta1, Theta2, Theta3):
 
 
 def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
-
     dV_over_V = lambda temp: fractional_thermal_expansion_free(
         temp, X1, X2, X3, Theta1, Theta2, Theta3
     )
@@ -939,7 +925,6 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
 # def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2, A3):
 # def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2):
 def cambria_test(temp, zfs0, A1, A2):
-
     Theta1 = 65
     Theta2 = 150
 
@@ -955,7 +940,6 @@ def cambria_test(temp, zfs0, A1, A2):
 
 
 def cambria_fixed(temp):
-
     zfs0, A1, A2 = [2.87781899, -0.08271508, -0.22871962]
     Theta1 = 65
     Theta2 = 150
@@ -972,7 +956,6 @@ def cambria_fixed(temp):
 
 
 def cambria_test2(temp, A1, A2, Theta1, Theta2):
-
     # Fix the ZFS at T=0 to the accepted value
     zfs0 = 2.8777
 
@@ -989,7 +972,6 @@ def cambria_test2(temp, A1, A2, Theta1, Theta2):
 
 
 def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
-
     ret_val = zfs0
     for ind in range(2):
         adj_ind = ind + 1
@@ -999,7 +981,6 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
 
 
 def two_mode_qh(temp, zfs0, A1, A2, Theta1, Theta2):
-
     ret_val = zfs0
     for ind in range(2):
         adj_ind = ind + 1
@@ -1023,7 +1004,6 @@ def jacobson(temp, zfs0, coeff):
 
 
 def cambria_test4(temp, zfs0, A1, Theta1):
-
     ret_val = zfs0
     for ind in range(1):
         adj_ind = ind + 1
@@ -1037,7 +1017,6 @@ def cambria_test4(temp, zfs0, A1, Theta1):
 
 
 def derivative_comp():
-
     # Low temp fit
     skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] < 295
     data_points = get_data_points(skip_lambda, condense_all=True)
@@ -1085,7 +1064,6 @@ def derivative_comp():
 
 
 def get_fitted_model(temp_list, zfs_list, zfs_err_list):
-
     guess_params = [
         2.87771,
         -20,
@@ -1137,7 +1115,6 @@ def get_fitted_model(temp_list, zfs_list, zfs_err_list):
 
 
 def fig_main():
-
     temp_range = [-10, 510]
     y_range = [2.847, 2.879]
     plot_data = True
@@ -1297,7 +1274,6 @@ def fig(
     plot_new_model=True,
     plot_prior_data=False,
 ):
-
     ### Setup
 
     skip_lambda = lambda point: (
@@ -1452,7 +1428,6 @@ def fig(
 
 
 def main():
-
     # temp_range = [-10, 1000]
     # y_range = [2.74, 2.883]
     # temp_range = [-10, 720]
@@ -1761,7 +1736,6 @@ def main():
 # endregion
 
 if __name__ == "__main__":
-
     # print(cambria_fixed(15))
     # sys.exit()
 
