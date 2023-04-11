@@ -207,7 +207,8 @@ def data_points_to_lists(data_points):
 
 
 def calc_zfs_from_compiled_data():
-    skip_lambda = lambda point: point["Sample"] != "Wu"
+    def skip_lambda(point):
+        return point["Sample"] != "Wu"
 
     data_points = get_data_points(skip_lambda)
     zfs_list = []
@@ -554,8 +555,8 @@ def refit_experiments():
     # freq2_errs = np.array(table_pste[3])
     # zfs_errs = np.sqrt(freq1_errs**2 + freq2_errs**2) / 2
 
-    zfs_vals = np.array(table_popt[2])
-    zfs_errs = np.array(table_pste[2])
+    # zfs_vals = np.array(table_popt[2])
+    # zfs_errs = np.array(table_pste[2])
 
     # print()
     # print(np.mean(table_red_chi_sq))
@@ -596,7 +597,7 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
     # uwave_pulse_dur = None
     try:
         norm_style = tool_belt.NormStyle[str.upper(nv_sig["norm_style"])]
-    except Exception as exc:
+    except Exception:
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = tool_belt.NormStyle.SINGLE_VALUED
 
@@ -999,8 +1000,8 @@ def jacobson(temp, zfs0, coeff):
     # The subtracted term below should really be at T=0 but then we get
     # a divide by 0 in the occupation number calculator. The lattice constant
     # doesn't change really at all between 0 and 10 K so just use 10 K.
-    delta_a = lambda T: lattice_constant(T) - lattice_constant(10)
-    return zfs0 + coeff * delta_a(temp)
+    delta_a = lattice_constant(temp) - lattice_constant(10)
+    return zfs0 + coeff * delta_a
 
 
 def cambria_test4(temp, zfs0, A1, Theta1):
@@ -1273,6 +1274,8 @@ def fig(
     desaturate_prior=True,
     plot_new_model=True,
     plot_prior_data=False,
+    inverse_temp=False,
+    yscale="linear",
 ):
     ### Setup
 
@@ -1313,6 +1316,7 @@ def fig(
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    plot_temp_linspace = 1 / temp_linspace if inverse_temp else temp_linspace
 
     # kpl_figsize = kpl.figsize
     # adj_figsize = (kpl_figsize[0], 1.75 * kpl_figsize[1])
@@ -1331,6 +1335,8 @@ def fig(
 
     cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
 
+    zfs_base = 2.878
+
     ### Plots
 
     min_temp, max_temp = temp_range
@@ -1341,7 +1347,9 @@ def fig(
     if plot_data:
         for ind in range(len(zfs_list)):
             temp = temp_list[ind]
+            plot_temp = 1 / temp if inverse_temp else temp
             val = zfs_list[ind]
+            plot_val = zfs_base - val if inverse_temp else val
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
             # label = None
             # color = KplColors.DARK_GRAY
@@ -1358,8 +1366,8 @@ def fig(
                 label = None
             kpl.plot_points(
                 ax,
-                temp,
-                val,
+                plot_temp,
+                plot_val,
                 # yerr=val_err,
                 color=this_work_data_color,
                 zorder=-1,
@@ -1375,10 +1383,16 @@ def fig(
             if prior_data not in prior_data_sets:
                 continue
             color = prior_work_colors[prior_data]
+            plot_temps = np.array(prior_data_sets[prior_data]["temps"])
+            if inverse_temp:
+                plot_temps = 1 / plot_temps
+            plot_vals = np.array(prior_data_sets[prior_data]["zfss"])
+            if inverse_temp:
+                plot_vals = zfs_base - plot_vals
             kpl.plot_points(
                 ax,
-                prior_data_sets[prior_data]["temps"],
-                prior_data_sets[prior_data]["zfss"],
+                plot_temps,
+                plot_vals,
                 color=color,
                 zorder=-5,
                 label=prior_data,
@@ -1386,10 +1400,13 @@ def fig(
 
     if plot_new_model:
         zorder = 10 if plot_prior_models else -2
+        plot_vals = cambria_lambda(temp_linspace)
+        if inverse_temp:
+            plot_vals = zfs_base - plot_vals
         kpl.plot_line(
             ax,
-            temp_linspace,
-            cambria_lambda(temp_linspace),
+            plot_temp_linspace,
+            plot_vals,
             label="This work",
             color=this_work_model_color,
             zorder=zorder,
@@ -1407,24 +1424,33 @@ def fig(
         for prior_model in prior_models_to_plot:
             color = prior_work_colors[prior_model]
             fn = prior_model_fns[prior_model]
+            plot_vals = fn(temp_linspace)
+            if inverse_temp:
+                plot_vals = zfs_base - plot_vals
             kpl.plot_line(
                 ax,
-                temp_linspace,
-                fn(temp_linspace),
+                plot_temp_linspace,
+                plot_vals,
                 label=prior_model,
                 color=color,
                 zorder=prior_model_zorder,
             )
 
     ### Plot wrap up
+    leg_loc = kpl.Loc.UPPER_RIGHT if inverse_temp else kpl.Loc.LOWER_LEFT
     if plot_prior_models:
-        ax.legend(loc="lower left")
+        ax.legend(loc=leg_loc)
     # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
     # ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
-    ax.set_xlabel("Temperature (K)")
+    if inverse_temp:
+        ax.set_xlabel("Inverse temperature (K)")
+    else:
+        ax.set_xlabel("Temperature (K)")
     ax.set_ylabel("ZFS (GHz)")
-    ax.set_xlim(*temp_range)
+    xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
+    ax.set_xlim(*xlim)
     ax.set_ylim(*y_range)
+    ax.set_yscale(yscale)
 
 
 def main():
@@ -1745,7 +1771,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # main()
-    fig()  # Main
+    # fig()  # Main
     # fig(  # Comps
     #     temp_range=[-20, 820],
     #     y_range=[2.80, 2.88],
@@ -1757,6 +1783,19 @@ if __name__ == "__main__":
     #     plot_new_model=True,
     #     plot_prior_data=True,
     # )
+    fig(  # Comps semi-log vs inverse temp
+        temp_range=[125, 820],
+        y_range=[0.0005, 0.080],
+        plot_data=True,
+        condense_all=False,
+        condense_samples=True,
+        plot_prior_models=True,
+        desaturate_prior=True,
+        plot_new_model=True,
+        plot_prior_data=True,
+        inverse_temp=True,
+        yscale="log",
+    )
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
