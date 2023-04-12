@@ -21,6 +21,7 @@ from strenum import StrEnum
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 
+
 # matplotlib semantic locations for legends and text boxes
 class Loc(StrEnum):
     BEST = "best"
@@ -190,7 +191,6 @@ def init_kplotlib(
     ### Latex setup
 
     if latex:
-
         preamble = r""
         preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
         preamble += r"\usepackage{physics} \usepackage{upgreek}"
@@ -595,7 +595,6 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=10, **kwargs):
 # endregion
 
 if __name__ == "__main__":
-
     # print(cambria_fixed(15))
     # sys.exit()
 

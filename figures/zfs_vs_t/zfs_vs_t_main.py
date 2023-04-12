@@ -22,21 +22,24 @@ from utils import kplotlib as kpl
 from pathos.multiprocessing import ProcessingPool
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
+from scipy.optimize import minimize
 import csv
 import pandas as pd
 import sys
 from analysis import three_level_rabi
 import figures.zfs_vs_t.thermal_expansion as thermal_expansion
+import csv
 
 
-toyli_temps = toyli_digitized[0::2]
-toyli_temps = [round(val, -1) for val in toyli_temps]
-toyli_zfss = toyli_digitized[1::2]
 # Adjust for my poor digitization
-toyli_zfss = np.array(toyli_zfss)
-toyli_zfss -= 2.87
-toyli_zfss *= 0.9857
-toyli_zfss += 2.8701
+# toyli_zfss = np.array(toyli_zfss)
+# toyli_zfss -= 2.87
+# toyli_zfss *= 0.9857
+# toyli_zfss += 2.8701
+
+# ZFS at 0 temp, used for papers that only report shifts
+# Matches our fits 0 temp value
+base_zfs = 2.877380
 
 nvdata_dir = common.get_nvdata_dir()
 compiled_data_file_name = "zfs_vs_t"
@@ -45,6 +48,62 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 # endregion
 # region Functions
+
+
+def calibrate_digitization(file_name, fit_func):
+    temps, zfss = get_prior_work_data(file_name)
+    calc_zfss = [fit_func(el) for el in temps]
+    num_points = len(temps)
+
+    def adj_zfss_cost(x):
+        offset, factor = x
+        first_zfs = zfss[0]
+        adj_zfss = [(el - first_zfs) * factor + first_zfs + offset for el in zfss]
+        cost = 0
+        for ind in range(num_points):
+            cost += (adj_zfss[ind] - calc_zfss[ind]) ** 2
+        return cost
+
+    res = minimize(adj_zfss_cost, (0, 0))
+    return res.x
+
+
+def get_prior_work_data(file_name):
+    """Get a list of temps and zfs values from a digitized version of a figure from a prior work"""
+
+    file_path = compiled_data_path / "figures/prior_work_figs" / f"{file_name}.csv"
+    temps = []
+    zfss = []
+    with open(file_path, "r", newline="", encoding="utf-8") as csvfile:
+        csv_reader = csv.reader(csvfile)
+        for row in csv_reader:
+            if row[0].startswith("header"):
+                continue
+            temps.append(round(float(row[0]), 3))
+            zfss.append(round(float(row[1]), 6))
+
+    ### Adjustments
+    if file_name.startswith("doherty"):
+        zfss = [base_zfs + el / 1000 for el in zfss]
+    elif file_name.startswith("toyli"):
+        temps = [round(el, -1) for el in temps]
+        first_zfs = zfss[0]
+        offset = 1.44959598e-04
+        factor = 9.87806786e-01
+        zfss = [(el - first_zfs) * factor + first_zfs + offset for el in zfss]
+    elif file_name.startswith("chen"):
+        temps = [round(el) for el in temps]
+        first_zfs = zfss[0]
+        offset = 1.22295695e-09
+        factor = 1.00000076e00
+        zfss = [(el - first_zfs) * factor + first_zfs + offset for el in zfss]
+    elif file_name == "li_2017_1b":
+        temps = [round(el) for el in temps]
+        first_zfs = zfss[0]
+        offset = -5.60176242e-07
+        factor = 9.90228416e-01
+        zfss = [(el - first_zfs) * factor + first_zfs + offset for el in zfss]
+    return temps, zfss
 
 
 def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False):
@@ -842,10 +901,11 @@ def zfs_from_temp(temp):
 
 def zfs_from_temp_barson(temp):
     """
-    Comes from Barson paper!
+    Comes from Barson 2019!
     """
 
-    zfs0 = 2.87771  # GHz
+    zfs0 = base_zfs  # GHz
+    # zfs0 = 2.884624012121079  # GHz, lowest temp (6 K) value from digitized Fig. 2a
     X1 = 0.4369e-7  # 1 / K
     X2 = 15.7867e-7  # 1 / K
     X3 = 42.5598e-7  # 1 / K
@@ -861,9 +921,15 @@ def zfs_from_temp_li(temp):
     Li 2017, table I for ensemble
     """
 
+    # Ensemble
     zfs0 = 2.87769  # GHz
     A = 5.6e-7  # GHz / K**2
     B = 490  # K
+
+    # NV2
+    # zfs0 = 2.87882  # GHz
+    # A = 1.4e-7  # GHz / K**2
+    # B = 85  # K
 
     zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
 
@@ -1276,6 +1342,8 @@ def fig(
     plot_prior_data=False,
     inverse_temp=False,
     yscale="linear",
+    new_model_diff=False,
+    dash_predictions=False,
 ):
     ### Setup
 
@@ -1287,11 +1355,16 @@ def fig(
         # or point["Monitor temp (K)"] >= 296
     )
 
-    prior_data_to_plot = ["Toyli", "Barson", "Chen"]
+    # prior_data_to_plot = ["Toyli", "Barson", "Chen", "Li", "Doherty"]
+    prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty"]
+    # prior_data_to_plot = ["Toyli"]
 
     # prior_models_to_plot = ["Toyli", "Barson"]
     prior_models_to_plot = ["Toyli", "Barson", "Li", "Chen"]
     # prior_models_to_plot = ["Toyli"]
+    prior_model_data_ranges = {"Toyli": [300,710], "Barson": [0,710], "Li": [0, 295], "Chen": [0, 295]}
+
+    # prior_models_to_plot = prior_data_to_plot
 
     ###
 
@@ -1301,6 +1374,7 @@ def fig(
         "Chen": KplColors.ORANGE,
         "Toyli": KplColors.RED,
         "Barson": KplColors.PURPLE,
+        "Doherty": KplColors.PURPLE,
         "Li": KplColors.GREEN,
     }
     prior_model_fns = {
@@ -1309,9 +1383,18 @@ def fig(
         "Barson": zfs_from_temp_barson,
         "Li": zfs_from_temp_li,
     }
-    prior_data_sets = {
-        "Toyli": {"temps": toyli_temps, "zfss": toyli_zfss},
+    prior_data_file_names = {
+        "Chen": "chen_2011_3a",
+        "Toyli": "toyli_2012_5c",
+        "Barson": "barson_2019_2a",
+        "Li": "li_2017_1b",  # a is single, b is ensemble
+        "Doherty": "doherty_2014_2a",
     }
+    prior_data_sets = {}
+    for prior_work in prior_data_to_plot:
+        file_name = prior_data_file_names[prior_work]
+        prior_temps, prior_zfss = get_prior_work_data(file_name)
+        prior_data_sets[prior_work] = {"temps": prior_temps, "zfss": prior_zfss}
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
@@ -1349,7 +1432,12 @@ def fig(
             temp = temp_list[ind]
             plot_temp = 1 / temp if inverse_temp else temp
             val = zfs_list[ind]
-            plot_val = zfs_base - val if inverse_temp else val
+            if inverse_temp:
+                plot_val = val - zfs_base
+            elif new_model_diff:
+                plot_val = val - cambria_lambda(temp)
+            else:
+                plot_val = val
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
             # label = None
             # color = KplColors.DARK_GRAY
@@ -1364,11 +1452,15 @@ def fig(
                 used_data_labels.append(label)
             else:
                 label = None
+            if plot_prior_data:
+                yerr = None
+            else:
+                yerr = val_err
             kpl.plot_points(
                 ax,
                 plot_temp,
                 plot_val,
-                # yerr=val_err,
+                yerr=yerr,
                 color=this_work_data_color,
                 zorder=-1,
                 # zorder=temp - 1000,
@@ -1386,9 +1478,13 @@ def fig(
             plot_temps = np.array(prior_data_sets[prior_data]["temps"])
             if inverse_temp:
                 plot_temps = 1 / plot_temps
-            plot_vals = np.array(prior_data_sets[prior_data]["zfss"])
+            vals = np.array(prior_data_sets[prior_data]["zfss"])
             if inverse_temp:
-                plot_vals = zfs_base - plot_vals
+                plot_vals = vals - zfs_base
+            elif new_model_diff:
+                plot_vals = vals - cambria_lambda(plot_temps)
+            else:
+                plot_vals = vals
             kpl.plot_points(
                 ax,
                 plot_temps,
@@ -1398,16 +1494,18 @@ def fig(
                 label=prior_data,
             )
 
-    if plot_new_model:
+    if plot_new_model and not new_model_diff:
         zorder = 10 if plot_prior_models else -2
-        plot_vals = cambria_lambda(temp_linspace)
+        vals = cambria_lambda(temp_linspace)
         if inverse_temp:
-            plot_vals = zfs_base - plot_vals
+            plot_vals = vals - zfs_base
+        else:
+            plot_vals = vals
         kpl.plot_line(
             ax,
             plot_temp_linspace,
             plot_vals,
-            label="This work",
+            label=None if plot_data else "This work",
             color=this_work_model_color,
             zorder=zorder,
         )
@@ -1424,14 +1522,18 @@ def fig(
         for prior_model in prior_models_to_plot:
             color = prior_work_colors[prior_model]
             fn = prior_model_fns[prior_model]
-            plot_vals = fn(temp_linspace)
+            vals = fn(temp_linspace)
             if inverse_temp:
-                plot_vals = zfs_base - plot_vals
+                plot_vals = vals - zfs_base
+            elif new_model_diff:
+                plot_vals = vals - cambria_lambda(plot_temp_linspace)
+            else:
+                plot_vals = vals
             kpl.plot_line(
                 ax,
                 plot_temp_linspace,
                 plot_vals,
-                label=prior_model,
+                label=None if plot_prior_data else prior_model,
                 color=color,
                 zorder=prior_model_zorder,
             )
@@ -1762,7 +1864,9 @@ def main():
 # endregion
 
 if __name__ == "__main__":
-    # print(cambria_fixed(15))
+    # print(calibrate_digitization("chen_2011_3a", sub_room_zfs_from_temp))
+    # print(calibrate_digitization("toyli_2012_5c", super_room_zfs_from_temp))
+    # print(calibrate_digitization("li_2017_1b", zfs_from_temp_li))
     # sys.exit()
 
     # calc_zfs_from_compiled_data()
@@ -1772,9 +1876,24 @@ if __name__ == "__main__":
 
     # main()
     # fig()  # Main
-    # fig(  # Comps
-    #     temp_range=[-20, 820],
-    #     y_range=[2.80, 2.88],
+    fig(  # Comps
+        #     temp_range=[-20, 820],
+        #     y_range=[2.80, 2.88],
+        temp_range=[-20, 1020],
+        y_range=[2.76, 2.88],
+        # y_range=[-0.01, 0.01],
+        plot_data=False,
+        condense_all=False,
+        condense_samples=True,
+        plot_prior_models=True,
+        desaturate_prior=False,
+        plot_new_model=True,
+        plot_prior_data=False,
+        new_model_diff=False,
+    )
+    # fig(  # Comps semi-log vs inverse temp
+    #     temp_range=[125, 820],
+    #     y_range=[0.0005, 0.080],
     #     plot_data=True,
     #     condense_all=False,
     #     condense_samples=True,
@@ -1782,20 +1901,9 @@ if __name__ == "__main__":
     #     desaturate_prior=True,
     #     plot_new_model=True,
     #     plot_prior_data=True,
+    #     inverse_temp=True,
+    #     yscale="log",
     # )
-    fig(  # Comps semi-log vs inverse temp
-        temp_range=[125, 820],
-        y_range=[0.0005, 0.080],
-        plot_data=True,
-        condense_all=False,
-        condense_samples=True,
-        plot_prior_models=True,
-        desaturate_prior=True,
-        plot_new_model=True,
-        plot_prior_data=True,
-        inverse_temp=True,
-        yscale="log",
-    )
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
