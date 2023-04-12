@@ -163,7 +163,7 @@ def main():
         )
 
         if ind == num_sets - 1:
-            y_pos = y_offset + 0.88
+            y_pos = y_offset + 0.86
         else:
             y_pos = y_offset + 0.92
         ax.text(min_freq + 0.0005, y_pos, label, color=edgecolor, fontsize=15)
@@ -178,7 +178,8 @@ def main():
     ax.tick_params(left=False, labelleft=False)
     # ax.get_yaxis().set_visible(False)
     ax.set(
-        xlabel="ODMR freq. / ZFS (GHz)",
+        # xlabel="ODMR freq. / ZFS (GHz)",
+        xlabel="Frequency (GHz)",
         ylabel="Fluorescence",
         xlim=(min_freq, max_freq),
         # ylim=(None, 2.1),
