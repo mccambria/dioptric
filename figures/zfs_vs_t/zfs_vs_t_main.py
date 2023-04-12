@@ -29,6 +29,7 @@ import sys
 from analysis import three_level_rabi
 import figures.zfs_vs_t.thermal_expansion as thermal_expansion
 import csv
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
 # Adjust for my poor digitization
@@ -1344,6 +1345,80 @@ def fig(
     yscale="linear",
     new_model_diff=False,
     dash_predictions=False,
+    inset=False,
+):
+    fig, ax = plt.subplots()
+
+    fig_sub(
+        ax,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+    )
+
+    if inset:
+        axins = inset_axes(
+            ax,
+            width="100%",
+            height="100%",
+            bbox_to_anchor=(
+                0.1,
+                0.11,
+                0.52,
+                0.5,
+            ),
+            bbox_transform=ax.transAxes,
+            loc=1,
+        )
+        fig_sub(
+            axins,
+            [0, 300],
+            [2.870, 2.878],
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            yscale,
+            new_model_diff,
+            dash_predictions,
+            no_axis_labels=True,
+        )
+        axins.set_yticks([2.870, 2.874, 2.878])
+        axins.tick_params(axis="both", which="major", labelsize=16)
+        plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
+        axins.patch.set_alpha(0.7)
+
+
+def fig_sub(
+    ax,
+    temp_range=[-10, 510],
+    y_range=[2.847, 2.879],
+    plot_data=True,
+    condense_all=False,
+    condense_samples=True,
+    plot_prior_models=False,
+    desaturate_prior=True,
+    plot_new_model=True,
+    plot_prior_data=False,
+    inverse_temp=False,
+    yscale="linear",
+    new_model_diff=False,
+    dash_predictions=False,
+    no_axis_labels=False,
 ):
     ### Setup
 
@@ -1362,7 +1437,12 @@ def fig(
     # prior_models_to_plot = ["Toyli", "Barson"]
     prior_models_to_plot = ["Toyli", "Barson", "Li", "Chen"]
     # prior_models_to_plot = ["Toyli"]
-    prior_model_data_ranges = {"Toyli": [300,710], "Barson": [0,710], "Li": [0, 295], "Chen": [0, 295]}
+    prior_model_data_ranges = {
+        "Toyli": [300, 710],
+        "Barson": [0, 710],
+        "Li": [0, 295],
+        "Chen": [0, 295],
+    }
 
     # prior_models_to_plot = prior_data_to_plot
 
@@ -1404,7 +1484,6 @@ def fig(
     # kpl_figsize = kpl.figsize
     # adj_figsize = (kpl_figsize[0], 1.75 * kpl_figsize[1])
     # fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
-    fig, ax = plt.subplots()
 
     data_points = get_data_points(skip_lambda, condense_all, condense_samples)
     zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
@@ -1501,14 +1580,41 @@ def fig(
             plot_vals = vals - zfs_base
         else:
             plot_vals = vals
-        kpl.plot_line(
-            ax,
-            plot_temp_linspace,
-            plot_vals,
-            label=None if plot_data else "This work",
-            color=this_work_model_color,
-            zorder=zorder,
-        )
+        label = None if plot_data else "This work"
+        color = this_work_model_color
+        if dash_predictions:
+            pmdr = [0, 500]
+            in_range = np.array([pmdr[0] < el < pmdr[1] for el in plot_temp_linspace])
+            data_inds = np.nonzero(in_range)
+            pred_inds = np.nonzero(np.logical_not(in_range))
+            kpl.plot_line(
+                ax,
+                plot_temp_linspace[data_inds],
+                plot_vals[data_inds],
+                label=label,
+                color=color,
+                zorder=zorder,
+            )
+            light_color = kpl.lighten_color_hex(color)
+            kpl.plot_line(
+                ax,
+                plot_temp_linspace[pred_inds],
+                plot_vals[pred_inds],
+                # label=label,
+                # color=light_color,
+                color=color,
+                linestyle="dashed",
+                zorder=zorder,
+            )
+        else:
+            kpl.plot_line(
+                ax,
+                plot_temp_linspace,
+                plot_vals,
+                label=label,
+                color=color,
+                zorder=zorder,
+            )
 
     ### Prior models
 
@@ -1529,26 +1635,71 @@ def fig(
                 plot_vals = vals - cambria_lambda(plot_temp_linspace)
             else:
                 plot_vals = vals
-            kpl.plot_line(
-                ax,
-                plot_temp_linspace,
-                plot_vals,
-                label=None if plot_prior_data else prior_model,
-                color=color,
-                zorder=prior_model_zorder,
-            )
+            label = None if plot_prior_data else prior_model
+            if dash_predictions:
+                pmdr = prior_model_data_ranges[prior_model]
+                in_range = np.array(
+                    [pmdr[0] < el < pmdr[1] for el in plot_temp_linspace]
+                )
+                data_inds = np.nonzero(in_range)
+                pred_inds_total = np.nonzero(np.logical_not(in_range))
+                pred_inds_list = []
+                last_ind = -10
+                pred_inds = None
+                for ind in pred_inds_total[0]:
+                    if ind - last_ind != 1:
+                        if pred_inds is not None:
+                            pred_inds_list.append(np.array(pred_inds))
+                        pred_inds = []
+                    pred_inds.append(ind)
+                    last_ind = ind
+                if pred_inds is not None:
+                    pred_inds_list.append(np.array(pred_inds))
+                kpl.plot_line(
+                    ax,
+                    plot_temp_linspace[data_inds],
+                    plot_vals[data_inds],
+                    label=label,
+                    color=color,
+                )
+                light_color = kpl.lighten_color_hex(color)
+                for pred_inds in pred_inds_list:
+                    kpl.plot_line(
+                        ax,
+                        plot_temp_linspace[pred_inds],
+                        plot_vals[pred_inds],
+                        # label=label,
+                        # color=light_color,
+                        color=color,
+                        linestyle="dashed",
+                    )
+            else:
+                kpl.plot_line(
+                    ax,
+                    plot_temp_linspace,
+                    plot_vals,
+                    label=label,
+                    color=color,
+                    zorder=prior_model_zorder,
+                )
 
     ### Plot wrap up
-    leg_loc = kpl.Loc.UPPER_RIGHT if inverse_temp else kpl.Loc.LOWER_LEFT
-    if plot_prior_models:
-        ax.legend(loc=leg_loc)
-    # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
-    # ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
-    if inverse_temp:
-        ax.set_xlabel("Inverse temperature (K)")
-    else:
-        ax.set_xlabel("Temperature (K)")
-    ax.set_ylabel("ZFS (GHz)")
+    if not no_axis_labels:
+        leg_loc = (
+            kpl.Loc.UPPER_RIGHT
+            if inverse_temp or plot_prior_models
+            else kpl.Loc.LOWER_LEFT
+        )
+        handlelength = 0.5 if plot_data else 1.0
+        if plot_prior_models:
+            ax.legend(loc=leg_loc, handlelength=handlelength, fontsize=15)
+        # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
+        # ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
+        if inverse_temp:
+            ax.set_xlabel("Inverse temperature (K)")
+        else:
+            ax.set_xlabel("Temperature (K)")
+        ax.set_ylabel("ZFS (GHz)")
     xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
     ax.set_xlim(*xlim)
     ax.set_ylim(*y_range)
@@ -1879,9 +2030,14 @@ if __name__ == "__main__":
     fig(  # Comps
         #     temp_range=[-20, 820],
         #     y_range=[2.80, 2.88],
-        temp_range=[-20, 1020],
-        y_range=[2.76, 2.88],
+        #
+        # temp_range=[-20, 1020],
+        # y_range=[2.76, 2.88],
         # y_range=[-0.01, 0.01],
+        #
+        temp_range=[0, 1000],
+        y_range=[2.76, 2.88],
+        #
         plot_data=False,
         condense_all=False,
         condense_samples=True,
@@ -1890,6 +2046,8 @@ if __name__ == "__main__":
         plot_new_model=True,
         plot_prior_data=False,
         new_model_diff=False,
+        dash_predictions=True,
+        inset=True,
     )
     # fig(  # Comps semi-log vs inverse temp
     #     temp_range=[125, 820],
