@@ -30,6 +30,7 @@ from analysis import three_level_rabi
 import figures.zfs_vs_t.thermal_expansion as thermal_expansion
 import csv
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import matplotlib as mpl
 
 
 # Adjust for my poor digitization
@@ -1332,7 +1333,7 @@ def fig_main():
 
 
 def fig(
-    temp_range=[-10, 510],
+    temp_range=[0, 515],
     y_range=[2.847, 2.879],
     plot_data=True,
     condense_all=False,
@@ -1345,7 +1346,8 @@ def fig(
     yscale="linear",
     new_model_diff=False,
     dash_predictions=False,
-    inset=False,
+    inset_comp=False,
+    inset_resid=False,
 ):
     fig, ax = plt.subplots()
 
@@ -1366,7 +1368,13 @@ def fig(
         dash_predictions,
     )
 
-    if inset:
+    if inverse_temp:
+        # tick_locs = [100, 150, 300, 1000]
+        tick_locs = [150, 200, 400, 1000]
+        ax.set_xticks([1 / val for val in tick_locs])
+        ax.set_xticklabels([f"1/{int(val)}" for val in tick_locs])
+
+    if inset_comp:
         axins = inset_axes(
             ax,
             width="100%",
@@ -1375,15 +1383,17 @@ def fig(
                 0.1,
                 0.11,
                 0.52,
-                0.5,
+                0.49,
             ),
             bbox_transform=ax.transAxes,
             loc=1,
         )
         fig_sub(
             axins,
-            [0, 300],
-            [2.870, 2.878],
+            # [0, 300],
+            # [2.870, 2.878],
+            [0, 175],
+            [2.876, 2.8781],
             plot_data,
             condense_all,
             condense_samples,
@@ -1393,14 +1403,54 @@ def fig(
             plot_prior_data,
             inverse_temp,
             yscale,
-            new_model_diff,
             dash_predictions,
             no_axis_labels=True,
         )
-        axins.set_yticks([2.870, 2.874, 2.878])
+        # axins.set_yticks([2.870, 2.874, 2.878])
+        axins.set_yticks([2.876, 2.877, 2.878])
         axins.tick_params(axis="both", which="major", labelsize=16)
         plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
         axins.patch.set_alpha(0.7)
+
+    if inset_resid:
+        axins = inset_axes(
+            ax,
+            width="100%",
+            height="100%",
+            bbox_to_anchor=(
+                0.19,
+                0.11,
+                0.52,
+                0.48,
+            ),
+            bbox_transform=ax.transAxes,
+            loc=1,
+        )
+        fig_sub(
+            axins,
+            temp_range,
+            [-0.45, 0.45],
+            # [-450, 450],
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            yscale,
+            new_model_diff=True,
+            dash_predictions=False,
+            no_axis_labels=True,
+        )
+        axins.tick_params(axis="both", which="major", labelsize=16)
+        # plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
+        # axins.patch.set_alpha(0.7)
+        # tick_locs = [150, 200, 400, 1000]
+        axins.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
+        axins.set_ylabel("Residuals (MHz)")
+        # axins.set_ylabel("Residuals (kHz)")
 
 
 def fig_sub(
@@ -1497,13 +1547,16 @@ def fig_sub(
 
     cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
 
-    zfs_base = 2.878
+    # zfs_base = 2.878
 
     ### Plots
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    marker_size = (
+        kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
+    )
 
     used_data_labels = []
     if plot_data:
@@ -1514,7 +1567,7 @@ def fig_sub(
             if inverse_temp:
                 plot_val = val - zfs_base
             elif new_model_diff:
-                plot_val = val - cambria_lambda(temp)
+                plot_val = 1e3 * (val - cambria_lambda(temp))
             else:
                 plot_val = val
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
@@ -1533,15 +1586,18 @@ def fig_sub(
                 label = None
             if plot_prior_data:
                 yerr = None
+            elif new_model_diff:
+                yerr = 1e3 * val_err
             else:
                 yerr = val_err
             kpl.plot_points(
                 ax,
                 plot_temp,
                 plot_val,
+                marker_size,
                 yerr=yerr,
                 color=this_work_data_color,
-                zorder=-1,
+                zorder=15,
                 # zorder=temp - 1000,
                 label=label,
             )
@@ -1568,22 +1624,31 @@ def fig_sub(
                 ax,
                 plot_temps,
                 plot_vals,
+                marker_size,
                 color=color,
-                zorder=-5,
+                # zorder=-5,
+                zorder=11,
                 label=prior_data,
+                marker="D",
             )
 
     if plot_new_model and not new_model_diff:
         zorder = 10 if plot_prior_models else -2
         vals = cambria_lambda(temp_linspace)
+        zfs_base = cambria_lambda(1)
+        zfs_base_new_model = zfs_base
         if inverse_temp:
-            plot_vals = vals - zfs_base
+            plot_vals = zfs_base - vals
         else:
             plot_vals = vals
         label = None if plot_data else "This work"
         color = this_work_model_color
         if dash_predictions:
             pmdr = [0, 500]
+            if inverse_temp:
+                if pmdr[0] == 0:
+                    pmdr[0] = 1
+                pmdr = [1 / pmdr[1], 1 / pmdr[0]]
             in_range = np.array([pmdr[0] < el < pmdr[1] for el in plot_temp_linspace])
             data_inds = np.nonzero(in_range)
             pred_inds = np.nonzero(np.logical_not(in_range))
@@ -1629,8 +1694,10 @@ def fig_sub(
             color = prior_work_colors[prior_model]
             fn = prior_model_fns[prior_model]
             vals = fn(temp_linspace)
+            zfs_base = zfs_base_new_model if prior_model == "Toyli" else fn(1)
+
             if inverse_temp:
-                plot_vals = vals - zfs_base
+                plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temp_linspace)
             else:
@@ -1638,6 +1705,10 @@ def fig_sub(
             label = None if plot_prior_data else prior_model
             if dash_predictions:
                 pmdr = prior_model_data_ranges[prior_model]
+                if inverse_temp:
+                    if pmdr[0] == 0:
+                        pmdr[0] = 1
+                    pmdr = [1 / pmdr[1], 1 / pmdr[0]]
                 in_range = np.array(
                     [pmdr[0] < el < pmdr[1] for el in plot_temp_linspace]
                 )
@@ -1688,9 +1759,10 @@ def fig_sub(
         leg_loc = (
             kpl.Loc.UPPER_RIGHT
             if inverse_temp or plot_prior_models
+            # if True
             else kpl.Loc.LOWER_LEFT
         )
-        handlelength = 0.5 if plot_data else 1.0
+        handlelength = 0.5 if plot_data else 1.5
         if plot_prior_models:
             ax.legend(loc=leg_loc, handlelength=handlelength, fontsize=15)
         # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
@@ -1699,7 +1771,12 @@ def fig_sub(
             ax.set_xlabel("Inverse temperature (K)")
         else:
             ax.set_xlabel("Temperature (K)")
-        ax.set_ylabel("ZFS (GHz)")
+        if inverse_temp:
+            ax.set_ylabel("$\Delta D$ (GHz)")
+        elif new_model_diff:
+            ax.set_ylabel("Residuals (MHz)")
+        else:
+            ax.set_ylabel("ZFS (GHz)")
     xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
     ax.set_xlim(*xlim)
     ax.set_ylim(*y_range)
@@ -2026,41 +2103,45 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # main()
-    # fig()  # Main
-    fig(  # Comps
-        #     temp_range=[-20, 820],
-        #     y_range=[2.80, 2.88],
-        #
-        # temp_range=[-20, 1020],
-        # y_range=[2.76, 2.88],
-        # y_range=[-0.01, 0.01],
-        #
-        temp_range=[0, 1000],
-        y_range=[2.76, 2.88],
-        #
-        plot_data=False,
-        condense_all=False,
-        condense_samples=True,
-        plot_prior_models=True,
-        desaturate_prior=False,
-        plot_new_model=True,
-        plot_prior_data=False,
-        new_model_diff=False,
-        dash_predictions=True,
-        inset=True,
-    )
-    # fig(  # Comps semi-log vs inverse temp
-    #     temp_range=[125, 820],
-    #     y_range=[0.0005, 0.080],
+    fig(inset_resid=True)  # Main
+    # fig(  # Comps
+    #     #     temp_range=[-20, 820],
+    #     #     y_range=[2.80, 2.88],
+    #     #
+    #     # temp_range=[-20, 1020],
+    #     # y_range=[2.76, 2.88],
+    #     # y_range=[-0.01, 0.01],
+    #     #
+    #     temp_range=[0, 1000],
+    #     y_range=[2.76, 2.88],
+    #     #
     #     plot_data=True,
     #     condense_all=False,
     #     condense_samples=True,
     #     plot_prior_models=True,
-    #     desaturate_prior=True,
+    #     desaturate_prior=False,
     #     plot_new_model=True,
     #     plot_prior_data=True,
+    #     new_model_diff=False,
+    #     dash_predictions=True,
+    #     inset_comp=True,
+    #     inset_resid=False,
+    # )
+    # fig(  # Comps semi-log vs inverse temp
+    #     # temp_range=[100, 1000],
+    #     # y_range=[1e-5, 1],
+    #     temp_range=[150, 1000],
+    #     y_range=[5e-4, 1],
+    #     plot_data=False,
+    #     condense_all=False,
+    #     condense_samples=True,
+    #     plot_prior_models=True,
+    #     desaturate_prior=False,
+    #     plot_new_model=True,
+    #     plot_prior_data=False,
     #     inverse_temp=True,
     #     yscale="log",
+    #     dash_predictions=True,
     # )
     # refit_experiments()
     # # # derivative_comp()

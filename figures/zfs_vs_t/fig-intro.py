@@ -180,7 +180,8 @@ def main():
     ax.set(
         # xlabel="ODMR freq. / ZFS (GHz)",
         xlabel="Frequency (GHz)",
-        ylabel="Fluorescence",
+        # ylabel="Fluorescence",
+        ylabel="Normalized fluorescence",
         xlim=(min_freq, max_freq),
         # ylim=(None, 2.1),
         ylim=(min_fluor, max_fluor),

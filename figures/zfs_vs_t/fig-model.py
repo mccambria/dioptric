@@ -52,12 +52,23 @@ def fig():
     kpl.plot_line(
         ax1,
         temp_linspace,
+        jacobson_lattice_constant(temp_linspace),
+        label="Jacobson",
+        # color=kpl.KplColors.PURPLE,
+        # linestyle="dashed",
+        color=kpl.KplColors.GRAY,
+        linewidth=3.0,
+    )
+    kpl.plot_line(
+        ax1,
+        temp_linspace,
         double_occupation_lambda(temp_linspace),
         label="This work",
         color=kpl.KplColors.RED,
     )
     ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)")
     ax1.set_xlabel("Temperature (K)")
+    ax1.legend()
 
     # Second order effects
     sigma = np.sqrt(7.5)
