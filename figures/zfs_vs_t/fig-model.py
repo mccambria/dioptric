@@ -36,7 +36,6 @@ from figures.zfs_vs_t.deconvolve_spectral_function import deconvolve
 
 
 def fig():
-
     temp_linspace = np.linspace(1, 1000, 1000)
     min_energy = -5
     max_energy = 175
@@ -53,12 +52,23 @@ def fig():
     kpl.plot_line(
         ax1,
         temp_linspace,
+        jacobson_lattice_constant(temp_linspace),
+        label="Jacobson",
+        # color=kpl.KplColors.PURPLE,
+        # linestyle="dashed",
+        color=kpl.KplColors.GRAY,
+        linewidth=3.0,
+    )
+    kpl.plot_line(
+        ax1,
+        temp_linspace,
         double_occupation_lambda(temp_linspace),
         label="This work",
         color=kpl.KplColors.RED,
     )
     ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)")
     ax1.set_xlabel("Temperature (K)")
+    ax1.legend()
 
     # Second order effects
     sigma = np.sqrt(7.5)
@@ -70,16 +80,19 @@ def fig():
     plot_vals = np.array(spectral_functions[0])
     kpl.plot_line(ax2, energy_linspace, plot_vals, color=color)
     ax2.set_ylabel("Spectral function \n(MHz / meV)", color=color)
+    ax2.tick_params(axis="y", color=color, labelcolor=color)
+    # ax2.spines["left"].set_color(color)
+    ax3.spines["left"].set_color(color)  # ax3 vs 2 because 3 is written on top of 2
     ax2.set_xlabel("Energy $\hbar\omega$ (meV)")
     ax2.set_xlim(min_energy, max_energy)
-    ax2.tick_params(axis="y", labelcolor=color)
 
     # DOS
     color = KplColors.GREEN
     plot_vals = density_of_states
     kpl.plot_line(ax3, energy_linspace, plot_vals, color=color)
     ax3.set_ylabel("DOS (1 / meV)", color=color)
-    ax3.tick_params(axis="y", labelcolor=color)
+    ax3.tick_params(axis="y", color=color, labelcolor=color)
+    ax3.spines["right"].set_color(color)
 
     ### Wrap up
 
@@ -88,7 +101,6 @@ def fig():
 
 
 def fig_three_panel():
-
     temp_linspace = np.linspace(1, 1000, 1000)
     min_energy = -5
     max_energy = 175
@@ -137,7 +149,6 @@ def fig_three_panel():
 
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib(latex=True)
 
     fig()
