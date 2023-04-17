@@ -1169,6 +1169,9 @@ def get_fitted_model(temp_list, zfs_list, zfs_err_list):
         p0=guess_params,
     )
     print(popt)
+    # zfs_base = popt[0]
+    # popt = [tool_belt.round_sig_figs(val, 3) for val in popt]
+    # popt[0] = zfs_base
     print(np.sqrt(np.diag(pcov)))
     # popt[2] = 0
     cambria_lambda = lambda temp: fit_func(
@@ -2272,3 +2275,5 @@ if __name__ == "__main__":
 
         print(tool_belt.presentation_round(avg, err))
         print()
+
+

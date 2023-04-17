@@ -635,7 +635,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_03_27-11_32_36-siena-surface"
+    file_name = "2022_09_08-13_02_34-rubin-nv1_2022_08_10"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -658,8 +658,8 @@ if __name__ == "__main__":
 
     x_range = data["x_range"]
     y_range = data["y_range"]
-    x_num_steps = data["num_steps"]
-    y_num_steps = data["num_steps"]
+    num_steps = data["num_steps"]
+    num_steps = data["num_steps"]
     ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )

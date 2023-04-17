@@ -150,7 +150,7 @@ def fit_resonance(
     ref_counts=None,
 ):
 
-    hyperfine = 2.189288*1e-3
+    hyperfine = 2.16*1e-3#2.189288*1e-3
     fit_func = lambda freqs, center, a1, s1, a2, s2, a3, s3: tri_gaus(freqs,center, hyperfine, a1, s1, a2, s2, a3, s3)
     
     # hyperfine = 2.189288*1e-3
@@ -187,7 +187,7 @@ def fit_resonance(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     
-    file = "2023_03_21-08_53_45-siena-nv0_2023_03_20"
+    file = "2023_04_08-13_56_52-johnson-nv0_2023_04_06"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
