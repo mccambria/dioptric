@@ -31,6 +31,7 @@ import figures.zfs_vs_t.thermal_expansion as thermal_expansion
 import csv
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib as mpl
+import matplotlib.legend_handler
 
 
 # Adjust for my poor digitization
@@ -139,6 +140,13 @@ def get_data_points(skip_lambda=None, condense_all=False, condense_samples=False
                 point[column] = val
             point["Label"] = f"{point['Sample']}-{point['NV']}"
 
+            nv_ind = point["NV"]
+            nv_ind = nv_ind[2:]
+            nv_ind = nv_ind.split("_")
+            nv_ind = int(nv_ind[0])
+            group = "cold" if nv_ind <= 5 else "hot"
+            point["Group"] = group
+
             skip = skip_lambda is not None and skip_lambda(point)
             if not skip:
                 data_points.append(point)
@@ -194,6 +202,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
                 monitor_temps.append(point["Monitor temp (K)"])
                 zfss.append(point["ZFS (GHz)"])
                 zfs_errors.append(point["ZFS (GHz) error"])
+                group = point["Group"]  # Assumes all condensed points share a group
         weights = [val**-2 for val in zfs_errors]
         norm = np.sum(weights)
         # For inverse-variance weighting, condensed_error**2 = 1/norm
@@ -204,7 +213,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             condensed_error += (weight * err / norm) ** 2
         condensed_error = np.sqrt(condensed_error)
         if condense_all:
-            label = "Cambria"
+            label = "This work"
         elif condense_samples:
             sample = id_split[1]
             label = sample
@@ -218,6 +227,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
             "ZFS (GHz)": np.average(zfss, weights=weights),
             "ZFS (GHz) error": condensed_error,
             "Label": label,
+            "Group": group,
         }
         condensed_data_points.append(new_point)
     return condensed_data_points
@@ -231,6 +241,7 @@ def data_points_to_lists(data_points):
     temp_list = []
     label_list = []
     color_list = []
+    group_list = []  # "cold" or "hot"
     # data_color_options = kpl.data_color_cycler.copy()
     # data_color_options.pop(0)
     data_color_options = [
@@ -263,8 +274,9 @@ def data_points_to_lists(data_points):
             used_labels.append(label)
             color_dict[label] = data_color_options.pop(0)
         color_list.append(color_dict[label])
+        group_list.append(el["Group"])
 
-    return zfs_list, zfs_err_list, temp_list, label_list, color_list
+    return zfs_list, zfs_err_list, temp_list, label_list, color_list, group_list
 
 
 def calc_zfs_from_compiled_data():
@@ -1089,7 +1101,7 @@ def derivative_comp():
     # Low temp fit
     skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] < 295
     data_points = get_data_points(skip_lambda, condense_all=True)
-    zfs_list, zfs_err_list, temp_list, _, _ = data_points_to_lists(data_points)
+    zfs_list, zfs_err_list, temp_list, _, _, _ = data_points_to_lists(data_points)
     guess_params = [2.87771, -8e-2, -4e-1, 65, 165]
     fit_func = cambria_test3
     low_popt, _ = curve_fit(
@@ -1105,7 +1117,7 @@ def derivative_comp():
     # High temp fit
     skip_lambda = lambda point: point["Skip"] or point["Monitor temp (K)"] >= 295
     data_points = get_data_points(skip_lambda, condense_all=True)
-    zfs_list, zfs_err_list, temp_list, _, _ = data_points_to_lists(data_points)
+    zfs_list, zfs_err_list, temp_list, _, _, _ = data_points_to_lists(data_points)
     guess_params = [2.87771, -8e-2, -4e-1, 65, 165]
     fit_func = cambria_test3
     high_popt, _ = curve_fit(
@@ -1211,9 +1223,14 @@ def fig_main():
     fig, ax = plt.subplots()
 
     data_points = get_data_points(skip_lambda, condense_all, condense_samples)
-    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
-        data_points
-    )
+    (
+        zfs_list,
+        zfs_err_list,
+        temp_list,
+        label_list,
+        color_list,
+        group_list,
+    ) = data_points_to_lists(data_points)
 
     label_set = set(label_list)
     color_dict = {}
@@ -1403,7 +1420,8 @@ def fig(
             plot_prior_data,
             inverse_temp,
             yscale,
-            dash_predictions,
+            new_model_diff=False,
+            dash_predictions=dash_predictions,
             no_axis_labels=True,
         )
         # axins.set_yticks([2.870, 2.874, 2.878])
@@ -1413,6 +1431,14 @@ def fig(
         axins.patch.set_alpha(0.7)
 
     if inset_resid:
+        x_pos = 0.57
+        y_pos = 0.87
+        text = r"\noindent $D(T) = D_{0} + c_{1}n_{1} + c_{2}n_{2}$"
+        text += r"\\"
+        text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+        # ax.text(x_pos, y_pos, text, transform=ax.transAxes, fontsize=15, usetex=True)
+        kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, kpl.Size.SMALL, usetex=True)
+
         axins = inset_axes(
             ax,
             width="100%",
@@ -1536,9 +1562,14 @@ def fig_sub(
     # fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
 
     data_points = get_data_points(skip_lambda, condense_all, condense_samples)
-    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
-        data_points
-    )
+    (
+        zfs_list,
+        zfs_err_list,
+        temp_list,
+        label_list,
+        color_list,
+        group_list,
+    ) = data_points_to_lists(data_points)
 
     label_set = set(label_list)
     color_dict = {}
@@ -1558,7 +1589,7 @@ def fig_sub(
         kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
     )
 
-    used_data_labels = []
+    used_data_label_keys = []
     if plot_data:
         for ind in range(len(zfs_list)):
             temp = temp_list[ind]
@@ -1578,10 +1609,12 @@ def fig_sub(
                 label = "This work"
             else:
                 label = label_list[ind]
+            group = group_list[ind]
+            label_key = f"{label}-{group}"
             if (
                 plot_prior_data or len(label_set) > 1
-            ) and label not in used_data_labels:
-                used_data_labels.append(label)
+            ) and label_key not in used_data_label_keys:
+                used_data_label_keys.append(label_key)
             else:
                 label = None
             if plot_prior_data:
@@ -1590,6 +1623,8 @@ def fig_sub(
                 yerr = 1e3 * val_err
             else:
                 yerr = val_err
+            group = group_list[ind]
+            marker = "o" if group == "hot" else "s"
             kpl.plot_points(
                 ax,
                 plot_temp,
@@ -1597,12 +1632,13 @@ def fig_sub(
                 marker_size,
                 yerr=yerr,
                 color=this_work_data_color,
-                zorder=15,
-                # zorder=temp - 1000,
+                # zorder=15,
+                zorder=temp,
                 label=label,
+                marker=marker,
             )
             # print(name, val, temp)
-        if len(used_data_labels) > 1:
+        if not no_axis_labels and len(used_data_label_keys) > 1:
             ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     if plot_prior_data:
@@ -1632,11 +1668,11 @@ def fig_sub(
                 marker="D",
             )
 
+    zfs_base = cambria_lambda(1)
+    zfs_base_new_model = zfs_base
     if plot_new_model and not new_model_diff:
         zorder = 10 if plot_prior_models else -2
         vals = cambria_lambda(temp_linspace)
-        zfs_base = cambria_lambda(1)
-        zfs_base_new_model = zfs_base
         if inverse_temp:
             plot_vals = zfs_base - vals
         else:
@@ -1762,9 +1798,32 @@ def fig_sub(
             # if True
             else kpl.Loc.LOWER_LEFT
         )
-        handlelength = 0.5 if plot_data else 1.5
+        # handlelength = 0.5 if plot_data else 1.5
+        handlelength = 1.0
         if plot_prior_models:
-            ax.legend(loc=leg_loc, handlelength=handlelength, fontsize=15)
+            handles, labels = ax.get_legend_handles_labels()
+            adj_labels = []
+            for ind in range(len(handles)):
+                label = labels[ind]
+                if label not in adj_labels:
+                    adj_labels.append(label)
+            adj_handles = [[] for ind in range(len(adj_labels))]
+            for ind in range(len(handles)):
+                handle = handles[ind]
+                label = labels[ind]
+                label_ind = adj_labels.index(label)
+                adj_handles[label_ind].append(handle)
+            adj_labels = tuple(adj_labels)
+            adj_handles = [tuple(el[::-1]) for el in adj_handles]
+            adj_handles = tuple(adj_handles)
+            ax.legend(
+                handles=adj_handles,
+                labels=adj_labels,
+                loc=leg_loc,
+                handlelength=handlelength,
+                fontsize=15,
+                handler_map={tuple: matplotlib.legend_handler.HandlerTuple(None)},
+            )
         # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
         # ax.set_ylabel("Zero-field splitting $\mathit{D}$ (GHz)")
         if inverse_temp:
@@ -1823,9 +1882,14 @@ def main():
     fig, ax = plt.subplots()
 
     data_points = get_data_points(skip_lambda, condense_all, condense_samples)
-    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
-        data_points
-    )
+    (
+        zfs_list,
+        zfs_err_list,
+        temp_list,
+        label_list,
+        color_list,
+        group_list,
+    ) = data_points_to_lists(data_points)
 
     if toyli_extension:
         zfs_list.extend(toyli_zfss)
