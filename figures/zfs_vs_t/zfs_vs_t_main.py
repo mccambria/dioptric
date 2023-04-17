@@ -106,6 +106,8 @@ def get_prior_work_data(file_name):
         offset = -5.60176242e-07
         factor = 9.90228416e-01
         zfss = [(el - first_zfs) * factor + first_zfs + offset for el in zfss]
+    elif file_name == "lourette_2022_3e":
+        pass
     return temps, zfss
 
 
@@ -1510,7 +1512,8 @@ def fig_sub(
     )
 
     # prior_data_to_plot = ["Toyli", "Barson", "Chen", "Li", "Doherty"]
-    prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty"]
+    # prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty"]
+    prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty", "Lourette"]
     # prior_data_to_plot = ["Toyli"]
 
     # prior_models_to_plot = ["Toyli", "Barson"]
@@ -1521,6 +1524,7 @@ def fig_sub(
         "Barson": [0, 710],
         "Li": [0, 295],
         "Chen": [0, 295],
+        "Lourette": [75, 400],
     }
 
     # prior_models_to_plot = prior_data_to_plot
@@ -1535,6 +1539,7 @@ def fig_sub(
         "Barson": KplColors.PURPLE,
         "Doherty": KplColors.PURPLE,
         "Li": KplColors.GREEN,
+        "Lourette": KplColors.BROWN,
     }
     prior_model_fns = {
         "Chen": sub_room_zfs_from_temp,
@@ -1548,6 +1553,7 @@ def fig_sub(
         "Barson": "barson_2019_2a",
         "Li": "li_2017_1b",  # a is single, b is ensemble
         "Doherty": "doherty_2014_2a",
+        "Lourette": "lourette_2022_3e",
     }
     prior_data_sets = {}
     for prior_work in prior_data_to_plot:
@@ -2169,8 +2175,12 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
+    temps, zfss = get_prior_work_data("lourette_2022_3e")
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, temps, zfss)
+
     # main()
-    fig(inset_resid=True)  # Main
+    # fig(inset_resid=True)  # Main
     # fig(  # Comps
     #     #     temp_range=[-20, 820],
     #     #     y_range=[2.80, 2.88],
@@ -2275,5 +2285,3 @@ if __name__ == "__main__":
 
         print(tool_belt.presentation_round(avg, err))
         print()
-
-
