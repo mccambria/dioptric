@@ -75,13 +75,18 @@ def fig():
         # linewidth=2,
         zorder=0,
     )
+    diffs = [
+        np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
+        for temp in temp_linspace
+    ]
+    # print(max(diffs))
     ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)", usetex=True)
     ax1.set_xlabel("Temperature (K)")
     ax1.legend()
     ax1.set_xlim(0, 1000)
     ax1.set_yticks([3.567, 3.570, 3.573])
     ax1.set_ylim(3.5658, None)
-    text = r"\noindent$a(T) = a_{0} + c'_{1}n_{1} + c'_{2}n_{2}$"
+    text = r"\noindent$a(T) = a_{0} + b_{1}n_{1} + b_{2}n_{2}$"
     text += r"\\"
     text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
     kpl.anchored_text(ax1, text, kpl.Loc.LOWER_RIGHT, kpl.Size.SMALL, usetex=True)

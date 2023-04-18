@@ -107,7 +107,8 @@ def get_prior_work_data(file_name):
         factor = 9.90228416e-01
         zfss = [(el - first_zfs) * factor + first_zfs + offset for el in zfss]
     elif file_name == "lourette_2022_3e":
-        pass
+        temps = [val + 3.17 for val in temps]
+        zfss = [val + 0.00027 for val in zfss]
     return temps, zfss
 
 
@@ -1171,6 +1172,13 @@ def get_fitted_model(temp_list, zfs_list, zfs_err_list):
         p0=guess_params,
     )
     print(popt)
+    # popt = [
+    #     2.87738,
+    #     -0.05578,
+    #     -0.2541,
+    #     58.99,
+    #     146.9,
+    # ]
     # zfs_base = popt[0]
     # popt = [tool_belt.round_sig_figs(val, 3) for val in popt]
     # popt[0] = zfs_base
@@ -1452,7 +1460,7 @@ def fig(
                 0.19,
                 0.11,
                 0.52,
-                0.48,
+                0.47,
             ),
             bbox_transform=ax.transAxes,
             loc=1,
@@ -1532,7 +1540,8 @@ def fig_sub(
     ###
 
     this_work_data_color = KplColors.BLUE
-    this_work_model_color = "#0f49bd"
+    this_work_model_color = KplColors.BLUE
+    # this_work_model_color = "#0f49bd"
     prior_work_colors = {
         "Chen": KplColors.ORANGE,
         "Toyli": KplColors.RED,
@@ -2175,35 +2184,35 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
 
-    temps, zfss = get_prior_work_data("lourette_2022_3e")
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, temps, zfss)
+    # temps, zfss = get_prior_work_data("lourette_2022_3e")
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, temps, zfss)
 
     # main()
     # fig(inset_resid=True)  # Main
-    # fig(  # Comps
-    #     #     temp_range=[-20, 820],
-    #     #     y_range=[2.80, 2.88],
-    #     #
-    #     # temp_range=[-20, 1020],
-    #     # y_range=[2.76, 2.88],
-    #     # y_range=[-0.01, 0.01],
-    #     #
-    #     temp_range=[0, 1000],
-    #     y_range=[2.76, 2.88],
-    #     #
-    #     plot_data=True,
-    #     condense_all=False,
-    #     condense_samples=True,
-    #     plot_prior_models=True,
-    #     desaturate_prior=False,
-    #     plot_new_model=True,
-    #     plot_prior_data=True,
-    #     new_model_diff=False,
-    #     dash_predictions=True,
-    #     inset_comp=True,
-    #     inset_resid=False,
-    # )
+    fig(  # Comps
+        #     temp_range=[-20, 820],
+        #     y_range=[2.80, 2.88],
+        #
+        # temp_range=[-20, 1020],
+        # y_range=[2.76, 2.88],
+        # y_range=[-0.01, 0.01],
+        #
+        temp_range=[0, 1000],
+        y_range=[2.76, 2.88],
+        #
+        plot_data=True,
+        condense_all=False,
+        condense_samples=True,
+        plot_prior_models=True,
+        desaturate_prior=False,
+        plot_new_model=True,
+        plot_prior_data=True,
+        new_model_diff=False,
+        dash_predictions=True,
+        inset_comp=True,
+        inset_resid=False,
+    )
     # fig(  # Comps semi-log vs inverse temp
     #     # temp_range=[100, 1000],
     #     # y_range=[1e-5, 1],
