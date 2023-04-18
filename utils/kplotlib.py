@@ -347,7 +347,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
         color = kwargs["color"]
     else:
         color = get_default_color(ax, PlotType.POINTS)
-    if "facecolor" in kwargs:
+    if "markerfacecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
         face_color = lighten_color_hex(color)

@@ -1550,6 +1550,14 @@ def fig_sub(
         "Li": KplColors.GREEN,
         "Lourette": KplColors.BROWN,
     }
+    prior_work_markers = {
+        "Chen": "v",
+        "Toyli": "D",
+        "Barson": "X",
+        "Doherty": "h",
+        "Li": "^",
+        "Lourette": "p",
+    }
     prior_model_fns = {
         "Chen": sub_room_zfs_from_temp,
         "Toyli": super_room_zfs_from_temp,
@@ -1643,6 +1651,11 @@ def fig_sub(
                 yerr = val_err
             group = group_list[ind]
             marker = "o" if group == "hot" else "s"
+            fc = (
+                "none"
+                if plot_prior_data
+                else kpl.lighten_color_hex(this_work_data_color)
+            )
             kpl.plot_points(
                 ax,
                 plot_temp,
@@ -1650,6 +1663,7 @@ def fig_sub(
                 marker_size,
                 yerr=yerr,
                 color=this_work_data_color,
+                markerfacecolor=fc,
                 # zorder=15,
                 zorder=temp,
                 label=label,
@@ -1674,16 +1688,20 @@ def fig_sub(
                 plot_vals = vals - cambria_lambda(plot_temps)
             else:
                 plot_vals = vals
+            fc = "none" if plot_prior_data else kpl.lighten_color_hex(color)
+            marker = prior_work_markers[prior_data]
+            # marker = "D"
             kpl.plot_points(
                 ax,
                 plot_temps,
                 plot_vals,
                 marker_size,
                 color=color,
+                markerfacecolor=fc,
                 # zorder=-5,
                 zorder=11,
                 label=prior_data,
-                marker="D",
+                marker=marker,
             )
 
     zfs_base = cambria_lambda(1)
@@ -1830,6 +1848,8 @@ def fig_sub(
                 handle = handles[ind]
                 label = labels[ind]
                 label_ind = adj_labels.index(label)
+                # For some reason this is necessary to get the legend size to match with the marker size in the plot
+                handle[0].set_markersize(7)
                 adj_handles[label_ind].append(handle)
             adj_labels = tuple(adj_labels)
             adj_handles = [tuple(el[::-1]) for el in adj_handles]
@@ -1839,6 +1859,7 @@ def fig_sub(
                 labels=adj_labels,
                 loc=leg_loc,
                 handlelength=handlelength,
+                # handle
                 fontsize=15,
                 handler_map={tuple: matplotlib.legend_handler.HandlerTuple(None)},
             )
