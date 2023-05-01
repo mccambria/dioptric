@@ -49,7 +49,6 @@ def round_base_2(val):
 
 
 def bar_gill_replot(file_name, path):
-
     data_points = []
     with open(path / file_name, newline="") as f:
         raw_data = csv.reader(f)
@@ -119,7 +118,6 @@ def main(
     yscale,
     dosave=False,
 ):
-
     # bar_gill_label = "[10]"
     # herbschleb_label = "[11]"
     # abobeih_label = "[30]"
@@ -339,8 +337,8 @@ def main(
 
 
 if __name__ == "__main__":
-
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(font=kpl.Font.HELVETICA)
+    # kpl.init_kplotlib()
     # matplotlib.rcParams["axes.linewidth"] = 1.0
 
     file_name = "compiled_data"

@@ -201,12 +201,16 @@ def init_kplotlib(
     preamble += r"\usepackage{siunitx}"
     preamble += r"\sisetup{detect-all}"
 
+    # See note below
+    preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
+
     plt.rcParams["text.latex.preamble"] = preamble
 
-    # Note: The global usetex setting should remain off! This prevents tex from
-    # being where it doesn't belong (e.g. axis tick labels). Instead just
-    # pass usetex=True as a kwarg to any text-based command as necessary
-    plt.rc("text", usetex=False)
+    # Note: The global usetex setting should remain off. This prevents serif fonts
+    # from proliferating (e.g. to axis tick labels). Instead just pass usetex=True
+    # as a kwarg to any text-based command as necessary. If you really need global
+    # tex, uncomment the sfmath line above to keep serifs in check
+    plt.rc("text", usetex=True)
 
     ### Other rcparams
 
@@ -220,7 +224,7 @@ def init_kplotlib(
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
-    plt.rcParams["figure.constrained_layout.use"] = constrained_layout
+    # plt.rcParams["figure.constrained_layout.use"] = constrained_layout
     plt.rcParams["savefig.format"] = "svg"
     plt.rcParams["figure.max_open_warning"] = 100
 
