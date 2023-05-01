@@ -11,7 +11,7 @@ Created on June 22nd, 2022
 # region Imports and constants
 
 import utils.common as common
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from strenum import StrEnum
 from colorutils import Color
@@ -165,7 +165,6 @@ def zero_to_one_threshold(val):
 def init_kplotlib(
     font_size=Size.NORMAL,
     data_size=Size.NORMAL,
-    latex=False,
     font=Font.ROBOTO,
     constrained_layout=True,
 ):
@@ -177,7 +176,7 @@ def init_kplotlib(
     ### Misc setup
 
     # Reset to the default
-    matplotlib.rcParams.update(matplotlib.rcParamsDefault)
+    mpl.rcParams.update(mpl.rcParamsDefault)
 
     global active_axes, color_cyclers, default_font_size, default_data_size
     active_axes = []
@@ -190,26 +189,24 @@ def init_kplotlib(
 
     ### Latex setup
 
-    if latex:
-        preamble = r""
-        preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
-        preamble += r"\usepackage{physics} \usepackage{upgreek}"
-        if font == Font.ROBOTO:
-            preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-        elif font == Font.HELVETICA:
-            preamble += r"\usepackage{helvet}"
+    preamble = r""
+    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+    if font == Font.ROBOTO:
+        preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+    elif font == Font.HELVETICA:
+        preamble += r"\usepackage{helvet}"
 
-        # Render math (e.g. axis numbers) in sans serif by default.
-        # Preserve the \mathrm and \mathit commands so you can still
-        # use the serif font for variables, equations, etc.
-        preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
+    preamble += r"\usepackage[T1]{fontenc}"
+    preamble += r"\usepackage{siunitx}"
+    preamble += r"\sisetup{detect-all}"
 
-        preamble += r"\usepackage[T1]{fontenc}"
-        preamble += r"\usepackage{siunitx}"
-        preamble += r"\sisetup{detect-all}"
+    plt.rcParams["text.latex.preamble"] = preamble
 
-        plt.rcParams["text.latex.preamble"] = preamble
-        plt.rc("text", usetex=True)
+    # Note: The global usetex setting should remain off! This prevents tex from
+    # being where it doesn't belong (e.g. axis tick labels). Instead just
+    # pass usetex=True as a kwarg to any text-based command as necessary
+    plt.rc("text", usetex=False)
 
     ### Other rcparams
 
@@ -250,7 +247,7 @@ def get_default_color(ax, plot_type):
     return color
 
 
-def anchored_text(ax, text, loc, size=None):
+def anchored_text(ax, text, loc, size=None, **kwargs):
     """Add text in default style to the passed ax. To update text call set_text on the
     returned object's txt property
 
@@ -274,9 +271,11 @@ def anchored_text(ax, text, loc, size=None):
         size = default_font_size
 
     font_size = font_Size[size]
-    text_props = dict(fontsize=font_size)
+    text_props = kwargs
+    text_props["fontsize"] = font_size
+    # text_props = dict(fontsize=font_size)
     text_box = AnchoredText(text, loc, prop=text_props)
-    text_box.patch.set_boxstyle("round, pad=0.05")
+    text_box.patch.set_boxstyle("round, pad=0, rounding_size=0.2")
     text_box.patch.set_facecolor("wheat")
     text_box.patch.set_alpha(0.5)
     ax.add_artist(text_box)
@@ -348,7 +347,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
         color = kwargs["color"]
     else:
         color = get_default_color(ax, PlotType.POINTS)
-    if "facecolor" in kwargs:
+    if "markerfacecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
         face_color = lighten_color_hex(color)

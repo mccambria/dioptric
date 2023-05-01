@@ -17,6 +17,7 @@ import majorroutines.pulsed_resonance as pesr
 import utils.tool_belt as tool_belt
 from utils.tool_belt import bose
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from utils import kplotlib as kpl
 from utils.kplotlib import KplColors
 from scipy.optimize import curve_fit
@@ -37,7 +38,7 @@ from figures.zfs_vs_t.deconvolve_spectral_function import deconvolve
 
 def fig():
     temp_linspace = np.linspace(1, 1000, 1000)
-    min_energy = -5
+    min_energy = 0
     max_energy = 175
     energy_linspace = np.linspace(0, max_energy, 1000)
     kpl_figsize = kpl.figsize
@@ -54,21 +55,41 @@ def fig():
         temp_linspace,
         jacobson_lattice_constant(temp_linspace),
         label="Jacobson",
-        # color=kpl.KplColors.PURPLE,
+        color=KplColors.BLACK,
+        # color="#5A5A5A",
         # linestyle="dashed",
-        color=kpl.KplColors.GRAY,
-        linewidth=3.0,
+        # linestyle="dotted",
+        # linestyle=(0, (5, 10)),
+        linestyle=(0, (4, 5)),
+        # color=kpl.KplColors.GRAY,
+        # linewidth=2,
+        zorder=5,
     )
     kpl.plot_line(
         ax1,
         temp_linspace,
         double_occupation_lambda(temp_linspace),
         label="This work",
-        color=kpl.KplColors.RED,
+        color=KplColors.CYAN,
+        # color="#cb2222",
+        # linewidth=2,
+        zorder=0,
     )
-    ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)")
+    diffs = [
+        np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
+        for temp in temp_linspace
+    ]
+    # print(max(diffs))
+    ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)", usetex=True)
     ax1.set_xlabel("Temperature (K)")
     ax1.legend()
+    ax1.set_xlim(0, 1000)
+    ax1.set_yticks([3.567, 3.570, 3.573])
+    ax1.set_ylim(3.5658, None)
+    text = r"\noindent$a(T) = a_{0} + b_{1}n_{1} + b_{2}n_{2}$"
+    text += r"\\"
+    text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+    kpl.anchored_text(ax1, text, kpl.Loc.LOWER_RIGHT, kpl.Size.SMALL, usetex=True)
 
     # Second order effects
     sigma = np.sqrt(7.5)
@@ -83,8 +104,9 @@ def fig():
     ax2.tick_params(axis="y", color=color, labelcolor=color)
     # ax2.spines["left"].set_color(color)
     ax3.spines["left"].set_color(color)  # ax3 vs 2 because 3 is written on top of 2
-    ax2.set_xlabel("Energy $\hbar\omega$ (meV)")
+    ax2.set_xlabel("Energy $\hbar\omega$ (meV)", usetex=True)
     ax2.set_xlim(min_energy, max_energy)
+    ax2.set_ylim(0, None)
 
     # DOS
     color = KplColors.GREEN
@@ -93,6 +115,7 @@ def fig():
     ax3.set_ylabel("DOS (1 / meV)", color=color)
     ax3.tick_params(axis="y", color=color, labelcolor=color)
     ax3.spines["right"].set_color(color)
+    ax3.set_ylim(0, None)
 
     ### Wrap up
 
@@ -149,7 +172,7 @@ def fig_three_panel():
 
 
 if __name__ == "__main__":
-    kpl.init_kplotlib(latex=True)
+    kpl.init_kplotlib()
 
     fig()
     # fig_three_panel()

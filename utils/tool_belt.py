@@ -81,7 +81,6 @@ def laser_on(cxn, laser_name, laser_power=None):
 
 
 def get_opx_laser_pulse_info(config, laser_name, laser_power):
-
     mod_type = config["Optics"][laser_name]["mod_type"]
     laser_delay = config["Optics"][laser_name]["delay"]
 
@@ -101,7 +100,6 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
-
     mod_type = common.get_registry_entry(
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
@@ -375,7 +373,6 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
         seq.setDigital(pulser_laser_mod, processed_train)
     else:
         if mod_type is ModTypes.DIGITAL:
-
             processed_train = train.copy()
             pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
             seq.setDigital(pulser_laser_mod, processed_train)
@@ -1034,8 +1031,9 @@ def get_raw_data_path(
 
 
 def get_branch_name():
-    """Return the name of the active branch of kolkowitz-nv-experiment-v1.0"""
-    home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
+    """Return the name of the active branch of dioptric (fka kolkowitz-nv-experiment-v1.0)"""
+    # home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
+    home_to_repo = PurePath("Documents/GitHub/dioptric")
     repo_path = PurePath(Path.home()) / home_to_repo
     repo = Repo(repo_path)
     return repo.active_branch.name
@@ -1236,7 +1234,6 @@ def send_email(
     email_from=common.shared_email,
     email_to=common.shared_email,
 ):
-
     pc_name = socket.gethostname()
     msg = MIMEText(content)
     msg["Subject"] = f"Alert from {pc_name}"

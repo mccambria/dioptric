@@ -51,8 +51,10 @@ def cambria_test(T, a0, energy1, energy2, coeff1, coeff2):
     return a0 + total
 
 
-def double_occupation(T, a0, energy1, energy2, coeff1, coeff2):
-    energies = [energy1, energy2]  # meV
+# def double_occupation(T, a0, energy1, energy2, coeff1, coeff2):
+# energies = [energy1, energy2]  # meV
+def double_occupation(T, a0, coeff1, coeff2):
+    energies = [58.99, 146.9]
     coeffs = [coeff1, coeff2]
     total = None
     for ind in range(2):
@@ -101,13 +103,14 @@ def jacobson(T):
 
 # def fit_double_occupation(temp_linspace=None):
 
+
 #     if temp_linspace is None:
 #         temp_linspace = np.linspace(10, 1000, 1000)
 def fit_double_occupation():
-
     temp_linspace = np.linspace(10, 1000, 1000)
 
-    guess_params = [a0, 68, 167, 0.3, 3.0]
+    # guess_params = [a0, 68, 167, 0.3, 3.0]
+    guess_params = [a0, 0.3, 3.0]
     popt, pcov = curve_fit(
         double_occupation,
         temp_linspace,
@@ -120,14 +123,16 @@ def fit_double_occupation():
 
 
 def jacobson_lattice_constant(T):
-    int_jacobson = []
-    for temp in T:
-        int_jacobson.append(quad(jacobson, 10, temp)[0])
+    if type(T) in [np.ndarray, list]:
+        int_jacobson = []
+        for temp in T:
+            int_jacobson.append(quad(jacobson, 10, temp)[0])
+    else:
+        int_jacobson = quad(jacobson, 10, T)[0]
     return a0 * np.exp(int_jacobson)
 
 
 def fig():
-
     temp_linspace = np.linspace(1, 1000, 1000)
     kpl_figsize = kpl.figsize
     adj_figsize = (kpl_figsize[0], 1.2 * kpl_figsize[1])
@@ -169,7 +174,6 @@ def fig():
 
 
 def main():
-
     # occupation = lambda e, t: 1 / (np.exp(e / t) - 1)
 
     fit_linspace = np.linspace(10, 500, 1000)
@@ -224,7 +228,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib(latex=True)
     # main()
     fig()

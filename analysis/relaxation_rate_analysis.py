@@ -50,6 +50,7 @@ from utils.kplotlib import (
     marker_edge_widths,
     KplColors,
 )
+
 # marker_sizes = marker_sizes['normal']
 
 edge_color = KplColors.GREEN.value
@@ -60,22 +61,23 @@ face_color = kpl.lighten_color_hex(edge_color)
 manual_offset_gamma = 0.00
 # %% Functions
 
+
 # The exponential function without an offset
 def exp_eq_omega(t, rate, amp):
-    return amp * exp(-rate * t)
+    return amp * exp(-abs(rate) * t)
 
 
 def exp_eq_gamma(t, rate, amp):
-    return amp * exp(-rate * t) + manual_offset_gamma
+    return amp * exp(-abs(rate) * t) + manual_offset_gamma
 
 
 def biexp(t, omega, rate1, amp1, amp2):
-    return amp1 * exp(-rate1 * t) + amp2  # * exp(-3*omega*t)
+    return amp1 * exp(-abs(rate1) * t) + amp2  # * exp(-3*omega*t)
 
 
 # The exponential function with an offset
 def exp_eq_offset(t, rate, amp, offset):
-    return offset + amp * exp(-rate * t)
+    return offset + amp * exp(-abs(rate) * t)
 
 
 # A function to collect folders in mass analysis
@@ -99,8 +101,8 @@ def get_folder_list(keyword):
 def get_data_lists(folder_name, simple_print=False):
     # Get the file list from this folder
     data_dir = str(common.get_nvdata_dir())
-    data_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata'
-    file_list = tool_belt.get_files_in_folder(data_dir + '/' + folder_name, "txt")
+    # data_dir = "E:/Shared drives/Kolkowitz Lab Group/nvdata"
+    file_list = tool_belt.get_files_in_folder(data_dir + "/" + folder_name, "txt")
     # Define booleans to be used later in putting data into arrays in the
     # correct order. This was mainly put in place for older data where we
     # took measurements in an inconsistent way (unlike we are now)
@@ -136,11 +138,7 @@ def get_data_lists(folder_name, simple_print=False):
 
             # older files still used 1,-1,0 convention. This will allow old
             # and new files to be evaluated
-            if (
-                init_state_name == 1
-                or init_state_name == -1
-                or init_state_name == 0
-            ):
+            if init_state_name == 1 or init_state_name == -1 or init_state_name == 0:
                 high_state_name = 1
                 low_state_name = -1
                 zero_state_name = 0
@@ -177,9 +175,7 @@ def get_data_lists(folder_name, simple_print=False):
                 ref_counts = numpy.array(ref_counts_buffer)
 
             # Calculate time arrays in us
-            min_relaxation_time, max_relaxation_time = (
-                relaxation_time_range / 10 ** 6
-            )
+            min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             time_array = numpy.linspace(
                 min_relaxation_time, max_relaxation_time, num=num_steps
             )
@@ -205,9 +201,9 @@ def get_data_lists(folder_name, simple_print=False):
             else:
                 norm_sig = sig_counts[:num_runs] / ref_counts[:num_runs]
                 norm_avg_sig = numpy.average(norm_sig, axis=0)
-                norm_avg_sig_ste = numpy.std(
-                    norm_sig, axis=0, ddof=1
-                ) / numpy.sqrt(num_runs)
+                norm_avg_sig_ste = numpy.std(norm_sig, axis=0, ddof=1) / numpy.sqrt(
+                    num_runs
+                )
 
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
@@ -228,7 +224,6 @@ def get_data_lists(folder_name, simple_print=False):
                 # to see if this current data is the shorter or longer measurement,
                 # and either append before or after the prexisting data
                 else:
-
                     if max_relaxation_time > zero_zero_ref_max_time:
                         zero_zero_counts = numpy.concatenate(
                             (zero_zero_counts, norm_avg_sig)
@@ -236,9 +231,7 @@ def get_data_lists(folder_name, simple_print=False):
                         zero_zero_ste = numpy.concatenate(
                             (zero_zero_ste, norm_avg_sig_ste)
                         )
-                        zero_zero_time = numpy.concatenate(
-                            (zero_zero_time, time_array)
-                        )
+                        zero_zero_time = numpy.concatenate((zero_zero_time, time_array))
 
                     elif max_relaxation_time < zero_zero_ref_max_time:
                         zero_zero_counts = numpy.concatenate(
@@ -247,9 +240,7 @@ def get_data_lists(folder_name, simple_print=False):
                         zero_zero_ste = numpy.concatenate(
                             (norm_avg_sig_ste, zero_zero_ste)
                         )
-                        zero_zero_time = numpy.concatenate(
-                            (time_array, zero_zero_time)
-                        )
+                        zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
             # if init_state_name == zero_state_name and \
             #                     read_state_name == high_state_name:
@@ -259,8 +250,7 @@ def get_data_lists(folder_name, simple_print=False):
                 init_state_name == zero_state_name
                 and read_state_name == high_state_name
             ) or (
-                init_state_name == zero_state_name
-                and read_state_name == low_state_name
+                init_state_name == zero_state_name and read_state_name == low_state_name
             ):
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
@@ -270,7 +260,6 @@ def get_data_lists(folder_name, simple_print=False):
                     zero_plus_ref_max_time = max_relaxation_time
                     zero_plus_bool = True
                 else:
-
                     if max_relaxation_time > zero_plus_ref_max_time:
                         zero_plus_counts = numpy.concatenate(
                             (zero_plus_counts, norm_avg_sig)
@@ -279,9 +268,7 @@ def get_data_lists(folder_name, simple_print=False):
                             (zero_plus_ste, norm_avg_sig_ste)
                         )
 
-                        zero_plus_time = numpy.concatenate(
-                            (zero_plus_time, time_array)
-                        )
+                        zero_plus_time = numpy.concatenate((zero_plus_time, time_array))
 
                     elif max_relaxation_time < zero_plus_ref_max_time:
                         zero_plus_counts = numpy.concatenate(
@@ -291,9 +278,7 @@ def get_data_lists(folder_name, simple_print=False):
                             (norm_avg_sig_ste, zero_plus_ste)
                         )
 
-                        zero_plus_time = numpy.concatenate(
-                            (time_array, zero_plus_time)
-                        )
+                        zero_plus_time = numpy.concatenate((time_array, zero_plus_time))
 
             # if (init_state_name == high_state_name) and \
             #     (read_state_name == high_state_name):
@@ -303,8 +288,7 @@ def get_data_lists(folder_name, simple_print=False):
                 init_state_name == high_state_name
                 and read_state_name == high_state_name
             ) or (
-                init_state_name == low_state_name
-                and read_state_name == low_state_name
+                init_state_name == low_state_name and read_state_name == low_state_name
             ):
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
@@ -314,7 +298,6 @@ def get_data_lists(folder_name, simple_print=False):
                     plus_plus_ref_max_time = max_relaxation_time
                     plus_plus_bool = True
                 else:
-
                     if max_relaxation_time > plus_plus_ref_max_time:
                         plus_plus_counts = numpy.concatenate(
                             (plus_plus_counts, norm_avg_sig)
@@ -322,9 +305,7 @@ def get_data_lists(folder_name, simple_print=False):
                         plus_plus_ste = numpy.concatenate(
                             (plus_plus_ste, norm_avg_sig_ste)
                         )
-                        plus_plus_time = numpy.concatenate(
-                            (plus_plus_time, time_array)
-                        )
+                        plus_plus_time = numpy.concatenate((plus_plus_time, time_array))
 
                     elif max_relaxation_time < plus_plus_ref_max_time:
                         plus_plus_counts = numpy.concatenate(
@@ -333,20 +314,16 @@ def get_data_lists(folder_name, simple_print=False):
                         plus_plus_ste = numpy.concatenate(
                             (norm_avg_sig_ste, plus_plus_ste)
                         )
-                        plus_plus_time = numpy.concatenate(
-                            (time_array, plus_plus_time)
-                        )
+                        plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
 
             # if init_state_name == high_state_name and \
             #                     read_state_name == low_state_name:
             # if init_state_name == low_state_name and \
             #                     read_state_name == high_state_name:
             if (
-                init_state_name == high_state_name
-                and read_state_name == low_state_name
+                init_state_name == high_state_name and read_state_name == low_state_name
             ) or (
-                init_state_name == low_state_name
-                and read_state_name == high_state_name
+                init_state_name == low_state_name and read_state_name == high_state_name
             ):
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data["uwave_freq_init"]
@@ -360,7 +337,6 @@ def get_data_lists(folder_name, simple_print=False):
                     plus_minus_ref_max_time = max_relaxation_time
                     plus_minus_bool = True
                 else:
-
                     if max_relaxation_time > plus_minus_ref_max_time:
                         plus_minus_counts = numpy.concatenate(
                             (plus_minus_counts, norm_avg_sig)
@@ -383,9 +359,7 @@ def get_data_lists(folder_name, simple_print=False):
                             (time_array, plus_minus_time)
                         )
 
-                splitting_MHz = (
-                    abs(uwave_freq_init - uwave_freq_read) * 10 ** 3
-                )
+                splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
 
         except Exception as exc:
             if not simple_print:
@@ -423,7 +397,6 @@ def main(
     return_gamma_data=False,
     simple_print=True,
 ):
-
     no_text = True
 
     slow = True
@@ -461,12 +434,11 @@ def main(
         zero_plus_ste = omega_exp_list[3]
         zero_zero_time = omega_exp_list[4]
         zero_relaxation_counts = zero_zero_counts - zero_plus_counts
-        zero_relaxation_ste = numpy.sqrt(
-            zero_zero_ste ** 2 + zero_plus_ste ** 2
-        )
+        zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
         if slow:
-            init_params_list = [0.24 / 1000, 0.16]
+            # init_params_list = [0.24 / 1000, 0.16]
+            init_params_list = [0.001, -0.04]
         else:
             init_params_list = [0.1, 0.3]
 
@@ -502,7 +474,6 @@ def main(
                 print(omega_opti_params)
 
         except Exception:
-
             omega_fit_failed = True
 
             if doPlot:
@@ -515,9 +486,9 @@ def main(
                     marker="o",
                     markerfacecolor=face_color,
                     linestyle="None",
-                    ms=marker_Size['normal'],
-                    lw=line_widths['normal'],
-                    markeredgewidth=marker_edge_widths['normal'],
+                    ms=marker_Size["normal"],
+                    lw=line_widths["normal"],
+                    markeredgewidth=marker_edge_widths["normal"],
                 )
                 ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
                 ax.set_ylabel("Normalized difference")
@@ -536,9 +507,7 @@ def main(
                 )
             # Plotting the data
             if doPlot:
-                zero_time_linspace = numpy.linspace(
-                    0, zero_zero_time[-1], num=1000
-                )
+                zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
                 ax = axes_pack[0]
                 ax.errorbar(
                     zero_zero_time,
@@ -596,9 +565,7 @@ def main(
     if ax is not None:
         ax.set_title("Omega")
         # ax.set_title('(0,0) - (0,-1)')
-        ax.set_title(
-            "$\mathit{P}_{\mathrm{0,0}} - \mathit{P}_{\mathrm{0,-1}}$"
-        )
+        ax.set_title("$\mathit{P}_{\mathrm{0,0}} - \mathit{P}_{\mathrm{0,-1}}$")
         # ax.set_title('(0,0) - (0,+1)')
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
@@ -633,7 +600,7 @@ def main(
 
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts = plus_plus_counts - plus_minus_counts
-    plus_relaxation_ste = numpy.sqrt(plus_plus_ste ** 2 + plus_minus_ste ** 2)
+    plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
 
     # Skip values at t=0 to get rid of pi pulse decoherence systematic
     # See wiki March 31st, 2021
@@ -643,9 +610,7 @@ def main(
         if t == 0:
             inds_to_remove.append(ind)
     plus_plus_time = numpy.delete(plus_plus_time, inds_to_remove)
-    plus_relaxation_counts = numpy.delete(
-        plus_relaxation_counts, inds_to_remove
-    )
+    plus_relaxation_counts = numpy.delete(plus_relaxation_counts, inds_to_remove)
     plus_relaxation_ste = numpy.delete(plus_relaxation_ste, inds_to_remove)
 
     if slow:
@@ -655,7 +620,6 @@ def main(
 
     try:
         if offset:
-
             init_params_list.append(0)
             init_params = tuple(init_params_list)
             gamma_opti_params, cov_arr = curve_fit(
@@ -719,18 +683,17 @@ def main(
                 color=edge_color,
                 markerfacecolor=face_color,
                 linestyle="None",
-                ms=marker_Size['normal'],
-                lw=line_widths['normal'],
-                markeredgewidth=marker_edge_widths['normal'],
+                ms=marker_Size["normal"],
+                lw=line_widths["normal"],
+                markeredgewidth=marker_edge_widths["normal"],
             )
             ax.set_xlabel(r"Relaxation time $\mathit{\tau}$ (ms)")
             ax.set_ylabel("Normalized difference")
 
     if not gamma_fit_failed:
-
         # Calculate gamma and its ste
         gamma = (gamma_opti_params[0] - omega) / 2.0
-        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0, 0] + omega_ste ** 2)
+        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0, 0] + omega_ste**2)
 
         # Test MCC
         # gamma = 0.070
@@ -745,9 +708,7 @@ def main(
 
         # Plotting
         if doPlot:
-            plus_time_linspace = numpy.linspace(
-                0, plus_plus_time[-1], num=1000
-            )
+            plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
             ax = axes_pack[1]
             ax.errorbar(
                 plus_plus_time,
@@ -801,13 +762,10 @@ def main(
                 )
 
     if doPlot:
-
         # ax.set_title("gamma")
         # ax.set_title('(+1,+1) - (+1,-1)')
         # ax.set_title("$P_{+1,+1} - P_{-1,+1}$")
-        ax.set_title(
-            "$\mathit{P}_{\mathrm{+1,+1}} - \mathit{P}_{\mathrm{-1,+1}}$"
-        )
+        ax.set_title("$\mathit{P}_{\mathrm{+1,+1}} - \mathit{P}_{\mathrm{-1,+1}}$")
         # ax.set_title('(-1,-1) - (-1,+1)')
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -820,7 +778,7 @@ def main(
             "splitting_MHz": splitting_MHz,
             "splitting_MHz-units": "MHz",
             #                    'offset_free_param?': offset,
-            'nv_sig': '',
+            "nv_sig": "",
             "manual_offset_gamma": manual_offset_gamma,
             "omega": omega,
             "omega-units": "kHz",
@@ -854,8 +812,8 @@ def main(
         # print(file_path)
         # file_path = str(data_dir / path_folder / file_name)
         # print(raw_data)
-        tool_belt.save_raw_data(raw_data, file_path)
-        tool_belt.save_figure(fig, file_path)
+        # tool_belt.save_raw_data(raw_data, file_path)
+        # tool_belt.save_figure(fig, file_path)
 
     if gamma_fit_failed:
         print("gamma fit failed")
@@ -882,7 +840,6 @@ def main(
 # %% Run the file
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib()
 
     temp = 295
@@ -895,7 +852,7 @@ if __name__ == "__main__":
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 120 #1520  # omega_calc(temp)
+        est_omega = 120  # 1520  # omega_calc(temp)
         est_gamma = 60  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
@@ -906,12 +863,10 @@ if __name__ == "__main__":
         # print('gamma: {}'.format(est_gamma))
 
     elif mode == "analysis":
-
         plt.ion()
 
-        path = "pc_rabi/branch_master/t1_dq_main/2023_01/"
-        # path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
-        # path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
+        # path = "pc_rabi/branch_master/t1_dq_main/2023_01/"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
 
         main(
             path,
@@ -926,7 +881,6 @@ if __name__ == "__main__":
         plt.show(block=True)
 
     elif mode == "batch_analysis":
-
         # file_name = "compiled_data"
         file_name = "compiled_data-single_ref"
         home = common.get_nvdata_dir()
