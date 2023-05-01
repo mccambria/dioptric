@@ -99,12 +99,12 @@ def plot(file):
         data = json.load(f)
         
     counts = numpy.array(data['counts'])
-    wavelengths = data['wavelengths']
+    wavelengths = numpy.array(data['wavelengths'])
     
     min_counts = min(counts)
     sub_counts = counts - min_counts
     
-    yhat = savitzky_golay(sub_counts, 41, 3)
+    yhat = savitzky_golay(sub_counts, 41, 1)
     
     # Plot setup
     fig, ax = plt.subplots(1, 1,  figsize=(7, 4))
@@ -114,14 +114,16 @@ def plot(file):
 
     # Plotting
     # marker_size = 
-    # ax.plot(wavelengths, sub_counts, 'r.')
+    ax.plot(wavelengths-10, sub_counts, 'r.', color=KplColors.RED)
     # kpl.plot_points(ax,  wavelengths, sub_counts, color=KplColors.RED, size=Size.TINY)
     # kpl.plot_line(ax,  wavelengths, sub_counts, color=KplColors.RED)
-    kpl.plot_line(ax,  wavelengths, yhat, color=KplColors.RED)
+    # kpl.plot_line(ax,  wavelengths, yhat, color=KplColors.RED)
+    ax.set_xlim([609, 900])
     
     
     # ax.legend()
     
 
-file = '2020_07_16-hopper_green_illumination'
+# file = '2020_07_16-hopper_green_illumination'
+file ='2023_05_01-18_13_03-2023_04_30_nv_spectra_hoppercsv'
 plot(file)

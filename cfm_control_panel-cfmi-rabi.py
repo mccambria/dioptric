@@ -83,9 +83,9 @@ def do_image_sample(nv_sig):
     # scan_range = 0.75
     # scan_range = 0.5
     # scan_range = 0.35
-    scan_range = 0.2
+    # scan_range = 0.2
     # scan_range = 0.15
-    # scan_range = 0.1
+    scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
@@ -119,7 +119,7 @@ def do_image_sample(nv_sig):
 def do_image_sample_xz(nv_sig):
 
     x_range = 0.2
-    z_range =4
+    z_range =2
     num_steps = 60
 
     image_sample.main(
@@ -303,9 +303,9 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
     num_steps =51
     num_reps = 1e4
-    num_runs = 50
-    uwave_power = -11
-    uwave_pulse_dur = int(345/2)
+    num_runs = 5
+    uwave_power = 5
+    uwave_pulse_dur = int(90/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -323,16 +323,16 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig,  freq_center=2.87, freq_range=0.2):
 
 def do_pulsed_resonance_state(nv_sig, opti_nv_sig, state):
 
-    # freq_range = 0.1
-   # num_steps = 75
+    freq_range = 0.1
+    num_steps = 75
     num_reps = 10**4
-    num_runs = 100
+    num_runs = 10
 
     # Zoom
-    freq_range = 0.012
-    num_steps = 121
+    #freq_range = 0.012
+   # num_steps = 121
     # num_reps = int(1e4)
-    # num_runs =   10
+    # num_runs =   100
 
     composite = False
 
@@ -365,7 +365,7 @@ def do_optimize_magnet_angle(nv_sig):
     
     # Pulsed
     uwave_power = 5
-    uwave_pulse_dur = 82/2
+    uwave_pulse_dur = 90/2
     num_freq_reps = int(1e4)
 
     # CW
@@ -392,7 +392,7 @@ def do_rabi(nv_sig, opti_nv_sig, state,
 
     num_steps =75
     num_reps = int(2e4)    
-    num_runs = 25
+    num_runs = 5
 
     # num_steps =31
     # num_reps = int(200)   
@@ -1123,14 +1123,14 @@ def do_dd_xy8(nv_sig, num_xy8_reps, step_size,  T_min, T_max):
 
 def do_relaxation(nv_sig ):
     min_tau = 0
-    max_tau_omega = 10e6
+    max_tau_omega = 18e6
     max_tau_gamma = 8e6
     num_steps_omega = 21
     num_steps_gamma = 21
     # num_reps = 1e3
     # num_runs = 200
-    num_reps = 200
-    num_runs =100
+    num_reps = 1000
+    num_runs =10#150
     
     if True:
      t1_exp_array = numpy.array(
@@ -1141,13 +1141,13 @@ def do_relaxation(nv_sig ):
                 num_reps,
                 num_runs,
             ],
-         # [
-         #         [States.ZERO, States.HIGH],
-         #         [min_tau, max_tau_omega],
-         #         num_steps_omega,
-         #         num_reps,
-         #         num_runs,
-         #     ],
+          [
+                  [States.ZERO, States.HIGH],
+                  [min_tau, max_tau_omega],
+                 num_steps_omega,
+                  num_reps,
+                  num_runs,
+              ],
              
              ])
     if False:
@@ -1187,7 +1187,7 @@ def do_relaxation(nv_sig ):
             t1_exp_array,
             num_runs,
             composite_pulses=False,
-            scc_readout=True,
+            scc_readout=False,
         )
 
 def do_determine_standard_readout_params(nv_sig):
@@ -1431,7 +1431,7 @@ if __name__ == "__main__":
     red_power = 180
     # sample_name = "leavitt"
     # sample_name = "ayrton12"
-    sample_name = "johnson"
+    sample_name = "rubin"
     green_laser = "integrated_520"
     # green_laser = "cobolt_515"
     yellow_laser = "laser_LGLO_589"
@@ -1513,7 +1513,7 @@ if __name__ == "__main__":
 
     
     nv_search = copy.deepcopy(sig_base)
-    nv_search["coords"] = [-0.053, 0.118,5.563] #
+    nv_search["coords"] = [0.832, 0.492, 5.58] #
     nv_search["name"] = "{}-nv_search".format(sample_name,)
     # nv_search['diasble_opt'] = True
     # nv_search["expected_count_rate"] = 40
@@ -1526,23 +1526,19 @@ if __name__ == "__main__":
     
    # Try setting the zero value for LGLO to -0.005 (or 0.0)
     nv_sig_0 = copy.deepcopy(sig_base)  
-    nv_sig_0["coords"] = [-0.002, 0.132, 6.634]   #55 um
-    nv_sig_0["name"] = "{}-nv0_2023_04_06".format(sample_name,)
-    nv_sig_0["expected_count_rate"] =14
+    nv_sig_0["coords"] = [0.832, 0.489, 5.58]   #55 um
+    nv_sig_0["name"] = "{}-nv0_2023_05_01".format(sample_name,)
+    nv_sig_0["expected_count_rate"] =9
     # nv_sig_0["disable_opt"] =True
-    nv_sig_0["magnet_angle"]= 160
-    nv_sig_0["resonance_LOW"]=2.8205
-    nv_sig_0["resonance_HIGH"]= 2.91932
-    nv_sig_0["rabi_LOW"]= 54
-    nv_sig_0["rabi_HIGH"]=62
-    #nv_sig_0["uwave_power_LOW"]= -10
-    #nv_sig_0["uwave_power_HIGH"]=-14
-    # nv_sig_0["rabi_LOW"]= 1528
-    # nv_sig_0["rabi_HIGH"]=1283
-    nv_sig_0["pi_pulse_LOW"]=  42.27
-    nv_sig_0["pi_on_2_pulse_LOW"]= 20.98 
-    nv_sig_0["pi_pulse_HIGH"]=41.30
-    nv_sig_0["pi_on_2_pulse_HIGH"]=21.05
+    nv_sig_0["magnet_angle"]= 30
+    nv_sig_0["resonance_LOW"]=2.8202
+    nv_sig_0["resonance_HIGH"]= 2.921
+    nv_sig_0["rabi_LOW"]= 138
+    nv_sig_0["rabi_HIGH"]=99
+    nv_sig_0["pi_pulse_LOW"]=  138/2
+    nv_sig_0["pi_on_2_pulse_LOW"]= 138/4
+    nv_sig_0["pi_pulse_HIGH"]=50
+    nv_sig_0["pi_on_2_pulse_HIGH"]=25
     
     
     # nv_sig_list = [
@@ -1567,6 +1563,7 @@ if __name__ == "__main__":
         #positioning.set_drift(labrad.connect(),[-0.149, -0.027, -0.06])
         # positioning.set_drift(labrad.connect(),[-0.05, 0.353, -0.54])
         # positioning.set_xyz(labrad.connect(), [0,0, 5.0])
+        # positioning.set_xyz(labrad.connect(), [-0.081, 0.044, 6.42])
         
         #     cxn.rotation_stage_ell18k.set_angle(65)
         if False:
@@ -1590,28 +1587,9 @@ if __name__ == "__main__":
         # do_image_sample_xz(nv_sig)
         # do_image_sample_yz(nv_sig)
         
-        # do_optimize_magnet_angle(nv_sig)
+        #do_optimize_magnet_angle(nv_sig)
         # nv_sig["disable_opt"] =True
-        
-        do_rabi(nv_sig, nv_sig, States.HIGH, uwave_time_range=[0,100])
-        for angle in [160, 118, 100, 84, 70]:
-            nv_sig["magnet_angle"] =angle
-            do_resonance(nv_sig, nv_sig, 2.87, 0.15) 
-        
-        #do_pulsed_resonance(nv_sig, nv_sig, 2.87, 0.15) 
-        
-        # do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
-        p_list =[-11, -14,-17, -18.5, -20, -23, -26,-29, -31]
-        t_list = [345, 485,674,886, 1095,1423,1915,2716, 3096]
-        range_list=[3000]#[400, 400, 500, 800,1200, 1500, 2000, 2000]
-        
-        #do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
-        # do_rabi(nv_sig, nv_sig, States.LOW,  uwave_time_range=[0, 100])
-      #  for p_ind in [3,8]:# range(len(p_list)):
-        #   nv_sig["uwave_power_HIGH"] =p_list[p_ind]
-        #   nv_sig["rabi_HIGH"] =t_list[p_ind]
-        # do_rabi(nv_sig, nv_sig, States.HIGH, uwave_time_range=[0,100])
-           # do_pulsed_resonance_state(nv_sig, nv_sig,States.HIGH)
+    
         
         
         
@@ -1622,6 +1600,15 @@ if __name__ == "__main__":
         # do_stationary_count_bg_subt(nv_sig, bg_coords)
 
         # do_g2_measurement(nv_sig)
+        
+        
+        #do_pulsed_resonance(nv_sig,nv_sig)
+        #do_pulsed_resonance_state(nv_sig, nv_sig, States.LOW)
+       # do_pulsed_resonance_state(nv_sig, nv_sig, States.HIGH)
+        #do_rabi(nv_sig, nv_sig, States.LOW, uwave_time_range=[0, 200])
+        #do_rabi(nv_sig, nv_sig, States.HIGH, uwave_time_range=[0, 200])
+        
+        
             
         # do_lifetime(nv_sig) 
         
@@ -1631,7 +1618,7 @@ if __name__ == "__main__":
        # do_spin_echo(nv_sig, do_dq=True)
         #do_spin_echo(nv_sig, do_dq=False)
 
-        # do_relaxation(nv_sig)  # gamma and omega
+        do_relaxation(nv_sig)  # gamma and omega
         
         comp_num_steps = 21
         comp_T_min = 137

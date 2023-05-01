@@ -635,27 +635,32 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2022_09_08-13_02_34-rubin-nv1_2022_08_10"
+    file_name = "2023_05_01-13_02_25-rubin-nv_search"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    scan_type = data['scan_type']
-    if scan_type == 'XY':
-        x_center = data["x_center"]
-        y_center = data["y_center"]
-        # x_range = data["x_range"]
-        # y_range = data["y_range"]
-        # x_num_steps = data["num_steps"]
-        # y_num_steps = data["num_steps"]
-
-    elif scan_type == 'XZ':
-        x_center = data["x_center"]
-        y_center = data["z_center"]
-    elif scan_type == 'YZ':
-        x_center = data["y_center"]
-        y_center = data["z_center"]
-
+    try:
+        scan_type = data['scan_type']
+        if scan_type == 'XY':
+            x_center = data["x_center"]
+            y_center = data["y_center"]
+            # x_range = data["x_range"]
+            # y_range = data["y_range"]
+            # x_num_steps = data["num_steps"]
+            # y_num_steps = data["num_steps"]
+    
+        elif scan_type == 'XZ':
+            x_center = data["x_center"]
+            y_center = data["z_center"]
+        elif scan_type == 'YZ':
+            x_center = data["y_center"]
+            y_center = data["z_center"]
+    except Exception:
+        nv_sig = data['nv_sig']
+        x_center = nv_sig['coords'][0]
+        y_center = nv_sig['coords'][1]
+        
     x_range = data["x_range"]
     y_range = data["y_range"]
     num_steps = data["num_steps"]
@@ -674,7 +679,7 @@ if __name__ == "__main__":
         x_label="V",
         y_label="V",
         cbar_label="kcps",
-        vmax = 60,
+        vmax = 30,
         extent=extent,
         aspect="auto",
     )
