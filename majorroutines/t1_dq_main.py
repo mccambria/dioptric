@@ -597,7 +597,7 @@ def main_with_cxn(
             total_exp_time_h
         )
     )
-    # return
+   # return
 
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -877,7 +877,7 @@ if __name__ == "__main__":
     # plt.show(block=True)
     
     
-    file_name = "2022_12_19-10_08_14-siena-background"
+    file_name = "2023_05_01-21_38_11-rubin-nv0_2023_05_01"
     inc = True
     data = tool_belt.get_raw_data(file_name)
     params_list = data['params_master_list'][0]
@@ -892,7 +892,7 @@ if __name__ == "__main__":
     avg_sig_counts = numpy.average(sig_counts_list, axis =0)
     ref_counts_list = data['ref_counts_master_list'][0]
     avg_ref_counts = numpy.average(ref_counts_list, axis =0)
-    run_ind=  3500
+    run_ind=  88
     num_reps = params_list[3]
     nv_sig = data['nv_sig']
     readout = nv_sig['spin_readout_dur']
@@ -923,7 +923,7 @@ if __name__ == "__main__":
     popt, covarr = curve_fit(fit_func,taus,norm_avg_sig,p0 = [0.2, 5, 0.8])
     
     print(popt[1])
-    # print(numpy.sqrt(covarr[1][1]))
+    print(numpy.sqrt(covarr[1][1]))
     ax.plot(taus_fit,fit_func(taus_fit, *popt), 'r-')
     # ax.plot(taus_fit,fit_func(taus_fit, 0.2,5, 0.8), 'r-')
     
@@ -932,10 +932,10 @@ if __name__ == "__main__":
 
     ax = axes_pack[0]
     ax.plot(
-        numpy.array(taus) / 10 ** 6, sig_counts_avg_kcps, "r-", label="signal"
+        numpy.array(taus), sig_counts_avg_kcps, "r-", label="signal"
     )
     ax.plot(
-        numpy.array(taus) / 10 ** 6,
+        numpy.array(taus),
         ref_counts_avg_kcps,
         "g-",
         label="reference",
@@ -945,7 +945,7 @@ if __name__ == "__main__":
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(numpy.array(taus) / 10 ** 6, norm_avg_sig, "b-")
+    ax.plot(numpy.array(taus) , norm_avg_sig, "b-")
     ax.set_title(
         "T1 Measurement. Initial state: {}, readout state: {}".format(
             "ZERO", "ZERO"

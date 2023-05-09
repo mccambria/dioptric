@@ -39,11 +39,11 @@ import utils.kplotlib as kpl
 from utils.kplotlib import Size
 import utils.common as common
 from utils.tool_belt import States
-from figures.relaxation_temp_dependence.temp_dependence_fitting import (
-    omega_calc,
-    gamma_calc,
-    get_data_points,
-)
+# from figures.relaxation_temp_dependence.temp_dependence_fitting import (
+#     omega_calc,
+#     gamma_calc,
+#     get_data_points,
+# )
 from utils.kplotlib import (
     marker_Size,
     line_widths,
@@ -128,6 +128,7 @@ def get_data_lists(folder_name, simple_print=False):
 
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
+    splitting_MHz = 0
     for file in file_list:
         data = tool_belt.get_raw_data(file[:-4], folder_name)
         try:
@@ -279,7 +280,6 @@ def get_data_lists(folder_name, simple_print=False):
                         )
 
                         zero_plus_time = numpy.concatenate((time_array, zero_plus_time))
-
             # if (init_state_name == high_state_name) and \
             #     (read_state_name == high_state_name):
             # if (init_state_name == low_state_name) and \
@@ -499,12 +499,12 @@ def main(
             omega = omega_opti_params[0] / 3.0
             omega_ste = numpy.sqrt(cov_arr[0, 0]) / 3.0
 
-            if not simple_print:
-                print(
-                    "Omega: {} +/- {} s^-1".format(
-                        "%.3f" % (omega * 1000), "%.3f" % (omega_ste * 1000)
-                    )
+            # if not simple_print:
+            print(
+                "Omega: {} +/- {} s^-1".format(
+                    "%.3f" % (omega * 1000), "%.3f" % (omega_ste * 1000)
                 )
+            )
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -843,7 +843,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     temp = 295
-    folder = "2023_05_01_nv0_omega" ############*****#############
+    folder = "2023_05_08-nv3_2023_05_05" ############*****#############
     # folder = "wu-nv1_2022_03_16-295K"
     # folder = "wu-nv6_2022_04_14-295K"
 
@@ -865,8 +865,8 @@ if __name__ == "__main__":
     elif mode == "analysis":
         plt.ion()
 
-        # path = "pc_rabi/branch_master/t1_dq_main/2023_01/"
-        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
+        path = "pc_rabi/branch_master/t1_dq_main/2023_05/"
+        # path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
 
         main(
             path,

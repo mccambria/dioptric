@@ -40,10 +40,10 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
     transform_mag = numpy.absolute(transform)
     # Plot the fft
     fig_fft, ax= plt.subplots(1, 1, figsize=(3, 3))
-    kpl.plot_line(ax,freqs[1:45], transform_mag[1:45], color = KplColors.BLACK)  # [1:] excludes frequency 0 (DC component)
+    kpl.plot_line(ax,freqs[1:35], transform_mag[1:35], color = KplColors.BLACK)  # [1:] excludes frequency 0 (DC component)
     ax.set_xlabel('Frequency (MHz)')
     ax.set_ylabel('FFT magnitude')
-    ax.set_xticks([0,4,8,12])
+    ax.set_xticks([0,4,8,12, 16])
     fig_fft.canvas.draw()
     fig_fft.canvas.flush_events()
     
@@ -79,14 +79,14 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
 def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
 
     kpl.init_kplotlib()
-    
+    print(FreqParams)
     taus_us = numpy.array(taus)/1e3
     # Guess the other params for fitting
-    amp_1 = -0.1
-    amp_2 = -0.1
-    amp_3 = -0.1
-    decay = 1.5
-    offset = .879
+    amp_1 = -0.04
+    amp_2 = -0.03
+    amp_3 = -0.04
+    decay = 16
+    offset = .845
 
     # guess_params = (offset, decay, amp_1, FreqParams[0],
     #                     amp_2, FreqParams[1],
@@ -96,34 +96,37 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     #                     amp_2, FreqParams[1],
     #                     amp_3, FreqParams[2])
 
-    guess_params_fixed_freq = (offset, amp_1,
-                        amp_2,
-                        amp_3, )
-    cosine_sum_fixed_freq = lambda t, offset, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    guess_params_fixed_freq = (offset, decay, amp_1,
+                       amp_2,
+                       amp_3, )
+    cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
 
-    # Try the fit to a sum of three cosines
+   # Try the fit to a sum of three cosines
 
-    # fit_func = tool_belt.cosine_sum
-    # init_params = guess_params
+   # fit_func = tool_belt.cosine_sum
+   # init_params = guess_params
 
     fit_func = cosine_sum_fixed_freq
     init_params = guess_params_fixed_freq
 
+   # fit_func = tool_belt.cosine_double_sum
+   # init_params = guess_params_double
 
-    popt, pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
-                  p0=init_params,
-                    # bounds=([0, 0, -numpy.infty, -15,
-                    #             # -numpy.infty, -15,
-                    #             -numpy.infty, -15, ]
-                    #         , [numpy.infty, numpy.infty,
-                    #            numpy.infty, 15,
-                    #             # numpy.infty, 15,
-                    #             numpy.infty, 15, ]
-                            # )
-                   )
+    popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
+                     p0=init_params,
+                       # bounds=([0, 0, -numpy.infty, -15,
+                       #             # -numpy.infty, -15,
+                       #             -numpy.infty, -15, ]
+                       #         , [numpy.infty, numpy.infty,
+                       #            numpy.infty, 15,
+                       #             # numpy.infty, 15,
+                       #             numpy.infty, 15, ]
+                               # )
+                      )
     print(popt)
     print(numpy.sqrt(numpy.diag(pcov)))
     # popt=init_params
+    # popt=[ 0.8457807, -0.04351987, -0.03723193, -0.0392098 ]
     taus_us_linspace = numpy.linspace(precession_time_range[0]/1e3, precession_time_range[1]/1e3,
                           num=1000)
 
@@ -143,7 +146,8 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
 
 
 # file = '2023_04_09-14_12_48-johnson-nv0_2023_04_06'
-file = '2023_04_08-23_21_33-johnson-nv0_2023_04_06'
+# file = '2023_04_08-23_21_33-johnson-nv0_2023_04_06'
+file='2021_10_15-10_37_22-johnson-nv0_2021_10_08'
 file_name = file + '.txt'
 with open(file_name) as f:
     data = json.load(f)
@@ -152,7 +156,6 @@ norm_avg_sig = data['norm_avg_sig']
 precession_time_range = data['precession_time_range']
 num_steps = data['num_steps']
 detuning = data['detuning']
-
 taus = numpy.linspace(
     precession_time_range[0],
     precession_time_range[-1],
@@ -161,5 +164,5 @@ taus = numpy.linspace(
 _,freq_fft =extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
 # print(freq_fft)
 
-FreqParams = [2.2, 2.2-detuning, 2.2+detuning]
+FreqParams = [detuning-2.2 ,detuning,  detuning+2.2]
 fit_ramsey(norm_avg_sig, taus,  precession_time_range, FreqParams)

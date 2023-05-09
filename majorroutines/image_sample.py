@@ -635,7 +635,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_05_01-13_02_25-rubin-nv_search"
+    file_name = "2023_05_09-10_10_50-rubin-nv_search"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]

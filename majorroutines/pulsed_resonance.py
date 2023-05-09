@@ -607,9 +607,9 @@ def fit_resonance(
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:
         best_red_chi_sq = None
-        # for num_resonances in [1, 2]:
-        #     test_guess_params = get_guess_params_lambda(num_resonances)
-        for test_guess_params in [[[0.3, 2, 2.867]], [0.15, 1, 2.867, 0.15, 1, 2.873]]:
+        for num_resonances in [1, 2]:
+            test_guess_params = get_guess_params_lambda(num_resonances)
+        # for test_guess_params in [[[0.3, 2, 2.867]], [0.15, 1, 2.867, 0.15, 1, 2.873]]:
             test_fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
             try:
                 test_popt, test_pcov = curve_fit_lambda(
@@ -1078,7 +1078,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_02_16-15_43_44-wu-nv24_region5"
+    file_name = "2023_05_03-16_33_56-rubin-nv0_2023_05_03"
 
     kpl.init_kplotlib()
 

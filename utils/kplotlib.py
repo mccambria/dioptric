@@ -167,6 +167,7 @@ def init_kplotlib(
     data_size=Size.NORMAL,
     font=Font.ROBOTO,
     constrained_layout=True,
+    latex=False
 ):
     """Runs the initialization for kplotlib, our default configuration
     of matplotlib. Plotting will be faster if latex is False - only set to True
