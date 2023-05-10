@@ -224,7 +224,7 @@ def init_kplotlib(
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
-    # plt.rcParams["figure.constrained_layout.use"] = constrained_layout
+    plt.rcParams["figure.constrained_layout.use"] = constrained_layout
     plt.rcParams["savefig.format"] = "svg"
     plt.rcParams["figure.max_open_warning"] = 100
 
