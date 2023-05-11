@@ -43,22 +43,40 @@ def poisson(val, param):
     return (param**val) * np.exp(-param) / factorial(val)
 
 
+def poisson_cum(val, param):
+    # +1 in range to include the passed val
+    return sum([poisson(ind, param) for ind in range(val + 1)])
+
+
 def main():
-    param_bright = 3
-    param_dark = 0.7 * 3
+    param_bright = 4
+    param_dark = 0.7 * param_bright
 
     fig, ax = plt.subplots()
-    photon_counts = np.linspace(0, 12, 13, dtype=int)
+    max_photon_counts = 20
+    photon_counts = np.linspace(0, max_photon_counts, max_photon_counts + 1, dtype=int)
     probs_bright = [poisson(val, param_bright) for val in photon_counts]
     probs_dark = [poisson(val, param_dark) for val in photon_counts]
-    kpl.plot_points(ax, photon_counts, probs_bright)
-    kpl.plot_points(ax, photon_counts, probs_dark)
+    kpl.plot_points(ax, photon_counts, probs_bright, label=r"$m_{s}=0$")
+    kpl.plot_points(ax, photon_counts, probs_dark, label=r"$m_{s}=\pm 1$")
+    ax.set_xlabel("Photon count")
+    ax.set_ylabel("Probability")
+    ax.legend()
+
+    fig, ax = plt.subplots()
+    tp_rate = np.array([1 - poisson_cum(val, param_bright) for val in photon_counts])
+    fp_rate = np.array([1 - poisson_cum(val, param_dark) for val in photon_counts])
+    kpl.plot_points(ax, photon_counts, fp_rate / tp_rate)
+    ax.set_xlabel(r"$n$ photons", usetex=True)
+    ax.set_ylabel(r"False positive rate / true positive rate", usetex=True)
 
 
 # endregion
 
 if __name__ == "__main__":
+    print(1 - poisson_cum(15, 4))
+    sys.exit()
+
     kpl.init_kplotlib()
     main()
     plt.show(block=True)
-    sys.exit()
