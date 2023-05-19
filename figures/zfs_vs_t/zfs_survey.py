@@ -36,7 +36,6 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 
 def get_header():
-
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
     compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
@@ -50,7 +49,6 @@ def get_header():
 
 
 def get_data_points(skip_lambda=None):
-
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
     compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
@@ -58,7 +56,6 @@ def get_data_points(skip_lambda=None):
 
     data_points = []
     with open(csv_file_path, newline="") as f:
-
         reader = csv.reader(f)
         header = True
         for row in reader:
@@ -184,7 +181,6 @@ def data_points_to_lists(data_points):
 
 
 def reanalyze():
-
     file_list = [
         "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
         "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
@@ -264,7 +260,6 @@ def reanalyze():
     # file_list = file_list[21:22]
 
     for file_name in file_list:
-
         if "nv14_region5" in file_name:
             print(0.0)
             continue
@@ -405,9 +400,8 @@ def reanalyze():
 
 
 def main():
-
-    # skip_lambda = lambda pt: pt["Skip"]
-    skip_lambda = lambda pt: pt["Skip"] or pt["Region"] != 5
+    skip_lambda = lambda pt: pt["Skip"]
+    # skip_lambda = lambda pt: pt["Skip"] or pt["Region"] != 5
 
     data_points = get_data_points(skip_lambda)
     data_lists = data_points_to_lists(data_points)
@@ -455,10 +449,9 @@ def main():
 
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib()
 
     main()
-    reanalyze()
+    # reanalyze()
 
     plt.show(block=True)
