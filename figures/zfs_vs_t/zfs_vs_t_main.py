@@ -1021,6 +1021,32 @@ def zfs_from_temp_li(temp):
     return zfs
 
 
+def zfs_from_temp_doherty(temp):
+    """
+    Doherty 2014
+    """
+    zfs0 = base_zfs
+    ABe1 = 39.7e-7
+    ABe2 = -91.6e-9
+    ABe3 = 70.6e-11
+    ABe4 = -60.0e-14
+    b4 = 18.7e-10
+    b5 = -41e-13
+
+    zfs = (
+        zfs0
+        + (
+            -ABe1 * temp**2
+            - ABe2 * temp**3
+            - (b4 + ABe3) * temp**4
+            - (b5 + ABe4) * temp**5
+        )
+        / 1000
+    )
+
+    return zfs
+
+
 def fractional_thermal_expansion(temp):
     X1 = 0.4369e-7  # 1 / K
     X2 = 15.7867e-7  # 1 / K
@@ -1742,9 +1768,13 @@ def comps():
 
 def comps_sep():
     ### Setup
+    mpl.rcParams.update({"font.size": 16})
 
-    figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
+    # figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
+    figsize = [2 * kpl.figsize[0], 2.5 * kpl.figsize[1]]
     fig, axes_pack = plt.subplots(3, 2, figsize=figsize)
+    # figsize = [2 * kpl.figsize[0], 2 * kpl.figsize[1]]
+    # fig, axes_pack = plt.subplots(2, 3, figsize=figsize)
     axes_pack = axes_pack.flatten()
 
     # Shared params
@@ -1763,20 +1793,20 @@ def comps_sep():
 
     prior_models = ["Chen", "Toyli", "Barson", "Doherty", "Li", "Lourette"]
     prior_model_temp_ranges = {
-        "Toyli": [300 - 10, 710 + 10],
-        "Barson": [0 - 10, 710 + 10],
-        "Doherty": [0 - 10, 295 + 10],
-        "Li": [0 - 10, 295 + 10],
-        "Chen": [0 - 10, 295 + 10],
-        "Lourette": [75 - 10, 400 + 10],
+        "Toyli": [295 - 10, 710 + 15],
+        "Barson": [0 - 10, 710 + 15],
+        "Doherty": [0 - 10, 295 + 15],
+        "Li": [0 - 10, 295 + 15],
+        "Chen": [0 - 10, 295 + 15],
+        "Lourette": [75 - 10, 400 + 15],
     }
     y_ranges = {
-        "Toyli": [2.815, 2.874],
-        "Barson": [2.81, 2.88],
-        "Doherty": [2.867, 2.88],
-        "Li": [2.867, 2.88],
-        "Chen": [2.867, 2.88],
-        "Lourette": [2.856, 2.88],
+        "Toyli": [2.81, 2.874],
+        "Barson": [2.815, 2.88],
+        "Doherty": [2.8695, 2.8782],
+        "Li": [2.8695, 2.8782],
+        "Chen": [2.8695, 2.8782],
+        "Lourette": [2.8595, 2.8782],
     }
 
     for ind in range(len(prior_models)):
@@ -1784,6 +1814,10 @@ def comps_sep():
         prior_model = prior_models[ind]
         temp_range = prior_model_temp_ranges[prior_model]
         y_range = y_ranges[prior_model]
+
+        # Adjustments
+        if prior_model == "Barson":
+            plot_prior_data = False
 
         fig_sub(
             ax,
@@ -1803,6 +1837,16 @@ def comps_sep():
             dash_predictions,
             comp_sep=prior_model,
         )
+
+        # Adjustments
+        if prior_model == "Toyli":
+            ax.set_xticks([300, 400, 500, 600, 700])
+        elif prior_model == "Lourette":
+            ax.set_yticks([2.86, 2.865, 2.87, 2.875])
+        elif prior_model == "Barson":
+            plot_prior_data = True
+
+        # plt.setp(ax.yaxis.get_majorticklabels(), rotation=90, va="center")
 
     ### fig labels
 
@@ -1853,13 +1897,14 @@ def fig_sub(
     # prior_data_to_plot = ["Toyli"]
 
     # prior_models_to_plot = ["Toyli", "Barson"]
-    prior_models_to_plot = ["Toyli", "Barson", "Li", "Chen"]
+    prior_models_to_plot = ["Toyli", "Chen", "Li", "Doherty", "Barson"]
     # prior_models_to_plot = ["Toyli"]
     prior_model_data_ranges = {
         "Toyli": [300, 710],
         "Barson": [0, 710],
         "Li": [0, 295],
         "Chen": [0, 295],
+        "Doherty": [0, 295],
         "Lourette": [75, 400],
     }
 
@@ -1883,7 +1928,7 @@ def fig_sub(
     prior_work_colors = {
         "Chen": KplColors.ORANGE,
         "Toyli": KplColors.RED,
-        "Barson": KplColors.GREEN,
+        "Barson": KplColors.YELLOW,
         "Doherty": KplColors.GREEN,
         "Li": KplColors.PURPLE,
         "Lourette": KplColors.BROWN,
@@ -1901,6 +1946,7 @@ def fig_sub(
         "Toyli": super_room_zfs_from_temp,
         "Barson": zfs_from_temp_barson,
         "Li": zfs_from_temp_li,
+        "Doherty": zfs_from_temp_doherty,
     }
     prior_data_file_names = {
         "Chen": "chen_2011_3a",
