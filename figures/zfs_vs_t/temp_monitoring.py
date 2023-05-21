@@ -24,7 +24,6 @@ nvdata_dir = common.get_nvdata_dir()
 
 
 def main(file_list, monitor_list, do_plot=False):
-
     path_to_logs = nvdata_dir / "paper_materials/zfs_temp_dep/temp_monitoring"
 
     ###
@@ -101,21 +100,27 @@ def main(file_list, monitor_list, do_plot=False):
 # endregion
 
 if __name__ == "__main__":
-
-    data_points = zfs_vs_t_main.get_data_points()
+    # data_points = zfs_vs_t_main.get_data_points()
     # start_time_list = [
     #     el["Start time (UTC)"] for el in data_points if not el["ZFS file"] == ""
     # ]
     # end_time_list = [
     #     el["End time (UTC)"] for el in data_points if not el["ZFS file"] == ""
     # ]
-    file_list = [el["ZFS file"] for el in data_points if not el["ZFS file"] == ""]
-    monitor_list = [el["Monitor"] for el in data_points if not el["ZFS file"] == ""]
+    # file_list = [el["ZFS file"] for el in data_points if not el["ZFS file"] == ""]
+    # monitor_list = [el["Monitor"] for el in data_points if not el["ZFS file"] == ""]
 
+    file_list = [
+        "2023_01_12-15_21_57-wu-nv7_zfs_vs_t",  # 310
+        "2023_01_13-11_29_29-wu-nv10_zfs_vs_t",  # 400
+        "2023_01_14-21_23_31-wu-nv6_zfs_vs_t",  # 500
+    ]
+    monitor_list = ["PT100"] * len(file_list)
     # file_list = [
-    #     "2023_02_24-18_21_33-15micro-nv6_zfs_vs_t",
-    #     "2023_02_24-17_26_14-15micro-nv7_zfs_vs_t",
+    #     "2022_11_15-14_54_40-wu-nv5_zfs_vs_t",  # 15
+    #     "2022_11_18-11_43_24-wu-nv1_zfs_vs_t",  # 107
+    #     "2023_01_14-20_12_05-wu-nv8_zfs_vs_t",  # 500
     # ]
-    # monitor_list = ["PT100"] * len(file_list)
+    # monitor_list = ["lakeshore_X162690"] * len(file_list)
 
     main(file_list, monitor_list, do_plot=False)

@@ -1560,6 +1560,264 @@ def fig(
         # axins.set_ylabel("Residuals (kHz)")
 
 
+def comps():
+    ### Setup
+
+    figsize = [kpl.figsize[0], 2 * kpl.figsize[1]]
+    fig, axes_pack = plt.subplots(2, 1, figsize=figsize)
+
+    axins_pack = []
+    for ax in axes_pack:
+        axins = inset_axes(
+            ax,
+            width="100%",
+            height="100%",
+            # linear
+            bbox_to_anchor=(
+                0.1,
+                0.13,
+                0.52,
+                0.49,
+            ),
+            # xlog
+            # bbox_to_anchor=(
+            #     0.39,
+            #     0.13,
+            #     0.48,
+            #     0.49,
+            # ),
+            # ylog
+            # bbox_to_anchor=(
+            #     0.47,
+            #     0.13,
+            #     0.52,
+            #     0.49,
+            # ),
+            bbox_transform=ax.transAxes,
+            loc=1,
+        )
+        axins_pack.append(axins)
+        break
+
+    ### Just data
+
+    # Shared params
+    ax = axes_pack[0]
+    axins = axins_pack[0]
+    #
+    condense_all = False
+    condense_samples = True
+    plot_data = True
+    plot_prior_data = True
+    plot_new_model = False
+    plot_prior_models = False
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = True
+
+    # Main
+    temp_range = [-10, 725]
+    xscale = "linear"
+    # temp_range = [10, 720]
+    # xscale = "log"
+    y_range = [2.81, 2.88]
+    yscale = "linear"
+    # yscale = "log"
+    fig_sub(
+        ax,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+    )
+
+    # Inset
+    temp_range = [0, 175]
+    y_range = [2.876, 2.8781]
+    xscale = "linear"
+    yscale = "linear"
+    fig_sub(
+        axins,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+        no_axis_labels=True,
+    )
+    axins_polish(axins)
+
+    ### Just models
+
+    # Shared params
+    ax = axes_pack[1]
+    # axins = axins_pack[1]
+    #
+    condense_all = False
+    condense_samples = True
+    plot_data = False
+    plot_prior_data = False
+    plot_new_model = True
+    plot_prior_models = True
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = True
+
+    # Main
+    temp_range = [0, 1000]
+    xscale = "linear"
+    # temp_range = [10, 1000]
+    # xscale = "log"
+    y_range = [2.74, 2.88]
+    yscale = "linear"
+    # yscale = "log"
+    fig_sub(
+        ax,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+    )
+
+    # Inset
+    # temp_range = [0, 175]
+    # y_range = [2.876, 2.8781]
+    # xscale = "linear"
+    # yscale = "linear"
+    # fig_sub(
+    #     axins,
+    #     temp_range,
+    #     y_range,
+    #     plot_data,
+    #     condense_all,
+    #     condense_samples,
+    #     plot_prior_models,
+    #     desaturate_prior,
+    #     plot_new_model,
+    #     plot_prior_data,
+    #     inverse_temp,
+    #     xscale,
+    #     yscale,
+    #     new_model_diff,
+    #     dash_predictions,
+    #     no_axis_labels=True,
+    # )
+    # axins_polish(axins)
+
+    ### fig labels
+    fig.text(0.002, 0.97, "(a)")
+    fig.text(0.002, 0.47, "(b)")
+
+
+def comps_sep():
+    ### Setup
+
+    figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
+    fig, axes_pack = plt.subplots(3, 2, figsize=figsize)
+    axes_pack = axes_pack.flatten()
+
+    # Shared params
+    condense_all = False
+    condense_samples = True
+    plot_data = False
+    plot_prior_data = True
+    plot_new_model = True
+    plot_prior_models = True
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = True
+    xscale = "linear"
+    yscale = "linear"
+
+    prior_models = ["Chen", "Toyli", "Barson", "Doherty", "Li", "Lourette"]
+    prior_model_temp_ranges = {
+        "Toyli": [300 - 10, 710 + 10],
+        "Barson": [0 - 10, 710 + 10],
+        "Doherty": [0 - 10, 295 + 10],
+        "Li": [0 - 10, 295 + 10],
+        "Chen": [0 - 10, 295 + 10],
+        "Lourette": [75 - 10, 400 + 10],
+    }
+    y_ranges = {
+        "Toyli": [2.815, 2.874],
+        "Barson": [2.81, 2.88],
+        "Doherty": [2.867, 2.88],
+        "Li": [2.867, 2.88],
+        "Chen": [2.867, 2.88],
+        "Lourette": [2.856, 2.88],
+    }
+
+    for ind in range(len(prior_models)):
+        ax = axes_pack[ind]
+        prior_model = prior_models[ind]
+        temp_range = prior_model_temp_ranges[prior_model]
+        y_range = y_ranges[prior_model]
+
+        fig_sub(
+            ax,
+            temp_range,
+            y_range,
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            xscale,
+            yscale,
+            new_model_diff,
+            dash_predictions,
+            comp_sep=prior_model,
+        )
+
+    ### fig labels
+
+    # fig.text(0.002, 0.97, "(a)")
+    # fig.text(0.002, 0.47, "(b)")
+
+
+def axins_polish(axins):
+    # axins.set_yticks([2.870, 2.874, 2.878])
+    axins.set_yticks([2.876, 2.877, 2.878])
+    axins.tick_params(axis="both", which="major", labelsize=16)
+    plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
+    axins.patch.set_alpha(0.7)
+
+
 def fig_sub(
     ax,
     temp_range=[-10, 510],
@@ -1572,10 +1830,12 @@ def fig_sub(
     plot_new_model=True,
     plot_prior_data=False,
     inverse_temp=False,
+    xscale="linear",
     yscale="linear",
     new_model_diff=False,
     dash_predictions=False,
     no_axis_labels=False,
+    comp_sep=None,  # Specific model to compare
 ):
     ### Setup
 
@@ -1603,6 +1863,16 @@ def fig_sub(
         "Lourette": [75, 400],
     }
 
+    if comp_sep is not None:
+        if comp_sep in prior_data_to_plot:
+            prior_data_to_plot = [comp_sep]
+        else:
+            prior_data_to_plot = []
+        if comp_sep in prior_models_to_plot:
+            prior_models_to_plot = [comp_sep]
+        else:
+            prior_models_to_plot = []
+
     # prior_models_to_plot = prior_data_to_plot
 
     ###
@@ -1613,9 +1883,9 @@ def fig_sub(
     prior_work_colors = {
         "Chen": KplColors.ORANGE,
         "Toyli": KplColors.RED,
-        "Barson": KplColors.PURPLE,
-        "Doherty": KplColors.PURPLE,
-        "Li": KplColors.GREEN,
+        "Barson": KplColors.GREEN,
+        "Doherty": KplColors.GREEN,
+        "Li": KplColors.PURPLE,
         "Lourette": KplColors.BROWN,
     }
     prior_work_markers = {
@@ -1672,8 +1942,6 @@ def fig_sub(
 
     cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
 
-    # zfs_base = 2.878
-
     ### Plots
 
     min_temp, max_temp = temp_range
@@ -1683,14 +1951,16 @@ def fig_sub(
         kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
     )
 
+    # zfs_base = 2.8777
+    zfs_base = y_range[1]
     used_data_label_keys = []
     if plot_data:
         for ind in range(len(zfs_list)):
             temp = temp_list[ind]
             plot_temp = 1 / temp if inverse_temp else temp
             val = zfs_list[ind]
-            if inverse_temp:
-                plot_val = val - zfs_base
+            if inverse_temp or yscale == "log":
+                plot_val = zfs_base - val
             elif new_model_diff:
                 plot_val = 1e3 * (val - cambria_lambda(temp))
             else:
@@ -1750,8 +2020,8 @@ def fig_sub(
             if inverse_temp:
                 plot_temps = 1 / plot_temps
             vals = np.array(prior_data_sets[prior_data]["zfss"])
-            if inverse_temp:
-                plot_vals = vals - zfs_base
+            if inverse_temp or yscale == "log":
+                plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temps)
             else:
@@ -1772,12 +2042,12 @@ def fig_sub(
                 marker=marker,
             )
 
-    zfs_base = cambria_lambda(1)
+    # zfs_base = cambria_lambda(1)
     zfs_base_new_model = zfs_base
     if plot_new_model and not new_model_diff:
         zorder = 10 if plot_prior_models else -2
         vals = cambria_lambda(temp_linspace)
-        if inverse_temp:
+        if inverse_temp or yscale == "log":
             plot_vals = zfs_base - vals
         else:
             plot_vals = vals
@@ -1834,9 +2104,9 @@ def fig_sub(
             color = prior_work_colors[prior_model]
             fn = prior_model_fns[prior_model]
             vals = fn(temp_linspace)
-            zfs_base = zfs_base_new_model if prior_model == "Toyli" else fn(1)
+            # zfs_base = zfs_base_new_model if prior_model == "Toyli" else fn(1)
 
-            if inverse_temp:
+            if inverse_temp or yscale == "log":
                 plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temp_linspace)
@@ -1896,15 +2166,19 @@ def fig_sub(
 
     ### Plot wrap up
     if not no_axis_labels:
-        leg_loc = (
-            kpl.Loc.UPPER_RIGHT
-            if inverse_temp or plot_prior_models
-            # if True
-            else kpl.Loc.LOWER_LEFT
-        )
+        if comp_sep is not None:
+            leg_loc = kpl.Loc.LOWER_LEFT
+        elif yscale == "log":
+            leg_loc = kpl.Loc.UPPER_LEFT
+        elif yscale == "linear" or inverse_temp or plot_prior_models:
+            leg_loc = kpl.Loc.UPPER_RIGHT
+        else:
+            leg_loc = kpl.Loc.LOWER_LEFT
         # handlelength = 0.5 if plot_data else 1.5
         handlelength = 1.0
-        if plot_prior_models:
+        # if plot_prior_models:
+        # if plot_prior_data:
+        if True:
             handles, labels = ax.get_legend_handles_labels()
             adj_labels = []
             for ind in range(len(handles)):
@@ -1917,7 +2191,10 @@ def fig_sub(
                 label = labels[ind]
                 label_ind = adj_labels.index(label)
                 # For some reason this is necessary to get the legend size to match with the marker size in the plot
-                handle[0].set_markersize(7)
+                try:
+                    handle[0].set_markersize(7)
+                except:
+                    pass
                 adj_handles[label_ind].append(handle)
             adj_labels = tuple(adj_labels)
             adj_handles = [tuple(el[::-1]) for el in adj_handles]
@@ -1928,7 +2205,9 @@ def fig_sub(
                 loc=leg_loc,
                 handlelength=handlelength,
                 # handle
-                fontsize=15,
+                # fontsize=12,
+                fontsize=14,
+                # fontsize=15,
                 handler_map={tuple: matplotlib.legend_handler.HandlerTuple(None)},
             )
         # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
@@ -1937,7 +2216,7 @@ def fig_sub(
             ax.set_xlabel("Inverse temperature (K)")
         else:
             ax.set_xlabel("Temperature (K)")
-        if inverse_temp:
+        if inverse_temp or yscale == "log":
             ax.set_ylabel("$\Delta D$ (GHz)")
         elif new_model_diff:
             ax.set_ylabel("Residuals (MHz)")
@@ -1945,7 +2224,11 @@ def fig_sub(
             ax.set_ylabel("ZFS (GHz)")
     xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
     ax.set_xlim(*xlim)
-    ax.set_ylim(*y_range)
+    if yscale == "log":
+        ax.set_ylim(1e-5, y_range[1] - y_range[0])
+    else:
+        ax.set_ylim(*y_range)
+    ax.set_xscale(xscale)
     ax.set_yscale(yscale)
 
 
@@ -2279,29 +2562,22 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    fig(  # Comps
-        #     temp_range=[-20, 820],
-        #     y_range=[2.80, 2.88],
-        #
-        # temp_range=[-20, 1020],
-        # y_range=[2.76, 2.88],
-        # y_range=[-0.01, 0.01],
-        #
-        temp_range=[0, 1000],
-        y_range=[2.76, 2.88],
-        #
-        plot_data=True,
-        condense_all=False,
-        condense_samples=True,
-        plot_prior_models=True,
-        desaturate_prior=False,
-        plot_new_model=True,
-        plot_prior_data=True,
-        new_model_diff=False,
-        dash_predictions=True,
-        inset_comp=True,
-        inset_resid=False,
-    )
+    # fig(  # Comps
+    #     temp_range=[0, 1000],
+    #     y_range=[2.76, 2.88],
+    #     #
+    #     plot_data=True,
+    #     condense_all=False,
+    #     condense_samples=True,
+    #     plot_prior_models=True,
+    #     desaturate_prior=False,
+    #     plot_new_model=True,
+    #     plot_prior_data=True,
+    #     new_model_diff=False,
+    #     dash_predictions=True,
+    #     inset_comp=True,
+    #     inset_resid=False,
+    # )
     # fig(  # Comps semi-log vs inverse temp
     #     # temp_range=[100, 1000],
     #     # y_range=[1e-5, 1],
@@ -2318,7 +2594,9 @@ if __name__ == "__main__":
     #     yscale="log",
     #     dash_predictions=True,
     # )
-    refit_experiments()
+    # comps()
+    comps_sep()
+    # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 
