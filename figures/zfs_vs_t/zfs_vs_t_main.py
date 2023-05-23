@@ -1477,19 +1477,19 @@ def fig(
 
     fig_sub(
         ax,
-        temp_range,
-        y_range,
-        plot_data,
-        condense_all,
-        condense_samples,
-        plot_prior_models,
-        desaturate_prior,
-        plot_new_model,
-        plot_prior_data,
-        inverse_temp,
-        yscale,
-        new_model_diff,
-        dash_predictions,
+        temp_range=temp_range,
+        y_range=y_range,
+        plot_data=plot_data,
+        condense_all=condense_all,
+        condense_samples=condense_samples,
+        plot_prior_models=plot_prior_models,
+        desaturate_prior=desaturate_prior,
+        plot_new_model=plot_new_model,
+        plot_prior_data=plot_prior_data,
+        inverse_temp=inverse_temp,
+        yscale=yscale,
+        new_model_diff=new_model_diff,
+        dash_predictions=dash_predictions,
     )
 
     if inverse_temp:
@@ -1518,15 +1518,16 @@ def fig(
             # [2.870, 2.878],
             [0, 175],
             [2.876, 2.8781],
-            plot_data,
-            condense_all,
-            condense_samples,
-            plot_prior_models,
-            desaturate_prior,
-            plot_new_model,
-            plot_prior_data,
-            inverse_temp,
-            yscale,
+            #
+            plot_data=plot_data,
+            condense_all=condense_all,
+            condense_samples=condense_samples,
+            plot_prior_models=plot_prior_models,
+            desaturate_prior=desaturate_prior,
+            plot_new_model=plot_new_model,
+            plot_prior_data=plot_prior_data,
+            inverse_temp=inverse_temp,
+            yscale=yscale,
             new_model_diff=False,
             dash_predictions=dash_predictions,
             no_axis_labels=True,
@@ -1564,17 +1565,17 @@ def fig(
             temp_range,
             [-0.45, 0.45],
             # [-450, 450],
-            plot_data,
-            condense_all,
-            condense_samples,
-            plot_prior_models,
-            desaturate_prior,
-            plot_new_model,
-            plot_prior_data,
-            inverse_temp,
-            yscale,
+            plot_data=plot_data,
+            condense_all=condense_all,
+            condense_samples=condense_samples,
+            plot_prior_models=plot_prior_models,
+            desaturate_prior=desaturate_prior,
+            plot_new_model=plot_new_model,
+            plot_prior_data=plot_prior_data,
+            inverse_temp=inverse_temp,
+            yscale=yscale,
             new_model_diff=True,
-            dash_predictions=False,
+            dash_predictions=dash_predictions,
             no_axis_labels=True,
         )
         axins.tick_params(axis="both", which="major", labelsize=16)
@@ -1584,6 +1585,94 @@ def fig(
         axins.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
         axins.set_ylabel("Residuals (MHz)")
         # axins.set_ylabel("Residuals (kHz)")
+
+
+def fig_bottom_resid(
+    temp_range=[0, 515],
+    y_range=[2.847, 2.879],
+    plot_data=True,
+    condense_all=False,
+    condense_samples=True,
+    plot_prior_models=False,
+    desaturate_prior=True,
+    plot_new_model=True,
+    plot_prior_data=False,
+    inverse_temp=False,
+    yscale="linear",
+    new_model_diff=False,
+    dash_predictions=False,
+):
+    figsize = kpl.figsize
+    adj_figsize = (figsize[0], 1.1 * figsize[1])
+    fig, (ax, axbot) = plt.subplots(
+        2, 1, sharex=True, figsize=adj_figsize, height_ratios=[3, 1]
+    )
+
+    fig_sub(
+        ax,
+        temp_range=temp_range,
+        y_range=y_range,
+        plot_data=plot_data,
+        condense_all=condense_all,
+        condense_samples=condense_samples,
+        plot_prior_models=plot_prior_models,
+        desaturate_prior=desaturate_prior,
+        plot_new_model=plot_new_model,
+        plot_prior_data=plot_prior_data,
+        inverse_temp=inverse_temp,
+        yscale=yscale,
+        new_model_diff=new_model_diff,
+        dash_predictions=dash_predictions,
+    )
+
+    x_pos = 0.57
+    y_pos = 0.87
+    text = r"\noindent $D(T) = D_{0} + c_{1}n_{1} + c_{2}n_{2}$"
+    text += r"\\"
+    text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+    # ax.text(x_pos, y_pos, text, transform=ax.transAxes, fontsize=15, usetex=True)
+    kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, kpl.Size.SMALL, usetex=True)
+
+    fig_sub(
+        axbot,
+        temp_range,
+        [-0.45, 0.45],
+        # [-450, 450],
+        plot_data=plot_data,
+        condense_all=condense_all,
+        condense_samples=condense_samples,
+        plot_prior_models=plot_prior_models,
+        desaturate_prior=desaturate_prior,
+        plot_new_model=plot_new_model,
+        plot_prior_data=plot_prior_data,
+        inverse_temp=inverse_temp,
+        yscale=yscale,
+        new_model_diff=True,
+        dash_predictions=dash_predictions,
+        no_axis_labels=True,
+    )
+    # axbot.tick_params(axis="both", which="major", labelsize=16)
+    # plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
+    # axins.patch.set_alpha(0.7)
+    # tick_locs = [150, 200, 400, 1000]
+    # axbot.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
+    axbot.set_yticks([-0.3, 0.0, 0.3])
+    # axbot.set_ylabel("Residuals \n(MHz)")
+    axbot.set_ylabel("Residuals (MHz)", labelpad=13)
+    # axbot.set_ylabel("Residuals (kHz)")
+
+    ### Cleanup
+    # ax.tick_params(bottom=True, labelbottom=False)
+    # axbot.tick_params(top=True, labeltop=False, direction="in")
+    # axbot.tick_params(axis="y", which="major", pad=15)
+    ax2 = axbot.secondary_xaxis("top")
+    ax2.tick_params(axis="x", direction="inout", labeltop=False, length=6)
+    ax.set_xlabel(None)
+    axbot.set_xlabel("Temperature (K)")
+    fig.tight_layout(pad=0.1)
+    fig.tight_layout(pad=0.1)
+    fig.subplots_adjust(hspace=0)
+    # fig.tight_layout()
 
 
 def comps():
@@ -2224,7 +2313,8 @@ def fig_sub(
         handlelength = 1.0
         # if plot_prior_models:
         # if plot_prior_data:
-        if True:
+        if plot_prior_models or plot_prior_data:
+            # if True:
             handles, labels = ax.get_legend_handles_labels()
             adj_labels = []
             for ind in range(len(handles)):
@@ -2600,7 +2690,7 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(constrained_layout=True)
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()
@@ -2608,6 +2698,7 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
+    # fig_bottom_resid()  # Main
     # fig(  # Comps
     #     temp_range=[0, 1000],
     #     y_range=[2.76, 2.88],
@@ -2640,8 +2731,8 @@ if __name__ == "__main__":
     #     yscale="log",
     #     dash_predictions=True,
     # )
-    # comps()
-    comps_sep()
+    comps()
+    # comps_sep()
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
