@@ -19,7 +19,8 @@ from scipy.integrate import quad
 from utils.tool_belt import bose
 
 meV_to_K = 11.6045250061657  # 1 meV = 11.6045250061657 K
-a0 = 3.566503
+# a0 = 3.566503
+a0 = 3.5671
 
 
 def einstein_term(e, temp):
@@ -126,9 +127,9 @@ def jacobson_lattice_constant(T):
     if type(T) in [np.ndarray, list]:
         int_jacobson = []
         for temp in T:
-            int_jacobson.append(quad(jacobson, 10, temp)[0])
+            int_jacobson.append(quad(jacobson, 298, temp)[0])
     else:
-        int_jacobson = quad(jacobson, 10, T)[0]
+        int_jacobson = quad(jacobson, 298, T)[0]
     return a0 * np.exp(int_jacobson)
 
 

@@ -75,10 +75,6 @@ def fig():
         # linewidth=2,
         zorder=0,
     )
-    diffs = [
-        np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
-        for temp in temp_linspace
-    ]
     # print(max(diffs))
     ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)", usetex=True)
     ax1.set_xlabel("Temperature (K)")
@@ -121,6 +117,25 @@ def fig():
 
     fig.text(0.07, 0.965, "(a)")
     fig.text(0.07, 0.465, "(b)")
+
+    ### Lattice constant diffs
+    diffs = [
+        np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
+        for temp in temp_linspace
+    ]
+    #
+    rel_diffs = []
+    a_zero_k = jacobson_lattice_constant(1)
+    for temp in temp_linspace:
+        diff_val = np.abs(
+            jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
+        )
+        a_val = jacobson_lattice_constant(temp)
+        rel_diffs.append(diff_val / np.abs(a_val - a_zero_k))
+    #
+    fig, ax = plt.subplots()
+    # ax.plot(temp_linspace, diffs)
+    ax.plot(temp_linspace, rel_diffs)
 
 
 def fig_three_panel():
