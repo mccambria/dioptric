@@ -1667,7 +1667,7 @@ def fig_bottom_resid(
     # axbot.tick_params(axis="y", which="major", pad=15)
     ax2 = axbot.secondary_xaxis("top")
     ax2.tick_params(axis="x", direction="inout", labeltop=False, length=6)
-    # axbot.axhline(y=0, color=KplColors.MEDIUM_GRAY)
+    axbot.axhline(y=0, color=KplColors.MEDIUM_GRAY)
     ax.set_xlabel(None)
     axbot.set_xlabel("Temperature (K)")
     fig.tight_layout(pad=0.1)
@@ -2691,7 +2691,7 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib(constrained_layout=True)
+    kpl.init_kplotlib(constrained_layout=False)
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()

@@ -113,29 +113,45 @@ def fig():
     ax3.spines["right"].set_color(color)
     ax3.set_ylim(0, None)
 
+    # Energies from ZFS vs T fit
+
+    energies = [58.9, 146.9]
+    energy_errs = [2.2, 8.5]
+    for ind in range(len(energies)):
+        energy = energies[ind]
+        energy_err = energy_errs[ind]
+        ax2.axvline(energy, color=KplColors.DARK_GRAY, zorder=-10)
+        ax2.axvspan(
+            energy - energy_err,
+            energy + energy_err,
+            color=KplColors.LIGHT_GRAY,
+            zorder=-11,
+        )
+
     ### Wrap up
 
     fig.text(0.07, 0.965, "(a)")
     fig.text(0.07, 0.465, "(b)")
 
     ### Lattice constant diffs
-    diffs = [
-        np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
-        for temp in temp_linspace
-    ]
-    #
-    rel_diffs = []
-    a_zero_k = jacobson_lattice_constant(10)
-    for temp in temp_linspace:
-        diff_val = np.abs(
-            jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
-        )
-        a_val = jacobson_lattice_constant(temp)
-        rel_diffs.append(diff_val / np.abs(a_val - a_zero_k))
-    #
-    fig, ax = plt.subplots()
-    # ax.plot(temp_linspace, diffs)
-    ax.plot(temp_linspace, rel_diffs)
+    if False:
+        diffs = [
+            np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
+            for temp in temp_linspace
+        ]
+        #
+        rel_diffs = []
+        a_zero_k = jacobson_lattice_constant(1)
+        for temp in temp_linspace:
+            diff_val = np.abs(
+                jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
+            )
+            a_val = jacobson_lattice_constant(temp)
+            rel_diffs.append(diff_val / np.abs(a_val - a_zero_k))
+        #
+        fig, ax = plt.subplots()
+        # ax.plot(temp_linspace, diffs)
+        ax.plot(temp_linspace, rel_diffs)
 
 
 def fig_three_panel():
