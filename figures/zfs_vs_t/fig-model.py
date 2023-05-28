@@ -125,7 +125,7 @@ def fig():
     ]
     #
     rel_diffs = []
-    a_zero_k = jacobson_lattice_constant(1)
+    a_zero_k = jacobson_lattice_constant(10)
     for temp in temp_linspace:
         diff_val = np.abs(
             jacobson_lattice_constant(temp) - double_occupation_lambda(temp)

@@ -124,9 +124,9 @@ def main(
     # bar_gill_label = "[2]"
     # herbschleb_label = "[3]"
     # abobeih_label = "[4]"
-    bar_gill_label = "Bar-Gill"
-    herbschleb_label = "Herbschleb"
-    abobeih_label = "Abobeih"
+    bar_gill_label = "[34] Bar-Gill"
+    herbschleb_label = "[35] Herbschleb"
+    abobeih_label = "[36] Abobeih"
     # fmt: off
     data_points = [
         #
@@ -201,6 +201,9 @@ def main(
         # ax2.set_yticks([0.0, 0.2, 0.4, 0.6])
         # ax2.set_yticks([0.0, 0.1, 0.3, 0.5])
         ax2.set_yticks([0.0, 0.25, 0.5])
+        ax2.tick_params(axis="both", which="major", labelsize=16)
+        ax2.xaxis.label.set_fontsize(16)
+        ax2.yaxis.label.set_fontsize(16)
     else:
         fig, ax1, leg1, T2_max_qubit_hopper_temp = ret_vals
 
@@ -283,7 +286,8 @@ def main(
 
     # Legend shenanigans
 
-    loc = "upper right"
+    loc = kpl.Loc.UPPER_RIGHT
+    loc = kpl.Loc.LOWER_LEFT
 
     sample_A_patch = mlines.Line2D(
         [], [], label="A", lw=marker_edge_width, ls="dotted", color="black"
@@ -291,16 +295,18 @@ def main(
     sample_B_patch = mlines.Line2D(
         [], [], label="B", lw=marker_edge_width, ls="dashed", color="black"
     )
-    leg3 = ax1.legend(
-        handles=[sample_A_patch, sample_B_patch],
-        title="Sample",
-        loc=loc,
-        bbox_to_anchor=(0.492, 1.0),
-        handlelength=1.5,
-        handletextpad=0.5,
-        # borderpad=0.3,
-        # borderaxespad=0.3,
-    )
+    leg3 = None
+    if False:
+        leg3 = ax1.legend(
+            handles=[sample_A_patch, sample_B_patch],
+            title="Sample",
+            loc=loc,
+            bbox_to_anchor=(0.492, 1.0),
+            handlelength=1.5,
+            handletextpad=0.5,
+            # borderpad=0.3,
+            # borderaxespad=0.3,
+        )
 
     # Legend without errorbars
     handles, labels = ax1.get_legend_handles_labels()
@@ -319,11 +325,13 @@ def main(
         # bbox_to_anchor=(1.0, 0.82),
         handlelength=1,
         handletextpad=0.5,
-        # borderpad=0.3,
+        borderpad=0.3,
         # borderaxespad=0.3,
+        title_fontsize=15,
+        fontsize=15,
     )
     # Add back in original legend
-    if leg1 is not None:
+    if False and leg1 is not None:
         # anchor = leg2.get_bbox_to_anchor()
         # leg1.set_bbox_to_anchor(anchor)
         leg1.set_bbox_to_anchor((0.70, 1.0))
@@ -331,7 +339,8 @@ def main(
         # leg1.set_bbox_to_anchor((0.0, 0.325))
         ax1.add_artist(leg1)
 
-    ax1.add_artist(leg3)
+    if leg3 is not None:
+        ax1.add_artist(leg3)
 
     # ax.legend()
 
@@ -347,11 +356,11 @@ if __name__ == "__main__":
 
     ### Main
 
-    plot_type = "T2_max"
-    y_range = [7e-4, 30]
-    yscale = "log"
-    temp_range = [-5, 480]
-    xscale = "linear"
+    # plot_type = "T2_max"
+    # y_range = [7e-4, 30]
+    # yscale = "log"
+    # temp_range = [-5, 480]
+    # xscale = "linear"
 
     # plot_type = "T2_frac"
     # y_range = [0, 1]
@@ -359,8 +368,8 @@ if __name__ == "__main__":
     # temp_range = [-5, 310]
     # xscale = "linear"
 
-    # rates_to_plot = ["hopper"]
-    rates_to_plot = ["hopper", "wu"]
+    rates_to_plot = ["hopper"]
+    # rates_to_plot = ["hopper", "wu"]
 
     ### Supp
 
@@ -371,12 +380,12 @@ if __name__ == "__main__":
     # y_range = [[7e-4, 30], [-0.02, 0.62]]
     # rates_to_plot = [["hopper", "wu"], ["hopper"]]
 
-    # plot_type = "T2_max_supp"
-    # temp_range = [[-5, 480], [-9, 315]]
-    # xscale = ["linear", "linear"]
-    # yscale = ["log", "linear"]
-    # y_range = [[6e-4, 40], [0, 0.58]]
-    # rates_to_plot = [["hopper"], ["hopper"]]
+    plot_type = "T2_max_supp"
+    temp_range = [[-5, 480], [-9, 315]]
+    xscale = ["linear", "linear"]
+    yscale = ["log", "linear"]
+    y_range = [[6e-4, 40], [0, 0.58]]
+    rates_to_plot = [["hopper"], ["hopper"]]
 
     ###
 

@@ -2119,6 +2119,7 @@ def main_sub(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
         if plot_type == "T2_max":
+            # if False:
             for sample, linestyle, label in [
                 # ("hopper", "dotted", r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$"),
                 ("hopper", "dotted", "DQ"),
@@ -2141,6 +2142,7 @@ def main_sub(
         ax.axvline(x=125, color="silver", zorder=-10)
 
     ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    # ax.set_xlabel(r"Temperature $T$ (K)", usetex=True)
     if plot_type == "rates":
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     elif plot_type == "ratios":
@@ -2153,8 +2155,10 @@ def main_sub(
         ax.set_ylabel(r"Normalized residuals")
     elif plot_type == "T2_max":
         ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
+        # ax.set_ylabel(r"$T_{2,\textrm{max}}$ (s)", usetex=True)
     elif plot_type == "T2_frac":
         ax.set_ylabel(r"$\mathit{T}_{\mathrm{2}} / \mathit{T}_{\mathrm{2,max}}$")
+        # ax.set_ylabel(r"$T_{2} / T_{2,\textrm{max}}$", usetex=True)
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)

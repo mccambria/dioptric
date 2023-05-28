@@ -24,6 +24,7 @@ from scipy.optimize import curve_fit
 import csv
 from utils.tool_belt import States, NormStyle
 import pandas as pd
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import sys
 
 nvdata_dir = common.get_nvdata_dir()
@@ -400,6 +401,33 @@ def reanalyze():
 
 
 def main():
+    fig, ax = plt.subplots()
+
+    axins = inset_axes(
+        ax,
+        width="100%",
+        height="100%",
+        bbox_to_anchor=(
+            0.12,
+            0.45,
+            0.2,
+            0.52,
+        ),
+        bbox_transform=ax.transAxes,
+        loc=1,
+    )
+    fig_sub(ax)
+    fig_sub(axins, legend=False, axis_labels=False, size=kpl.Size.SMALL)
+    axins.set_xlim(-0.1, 0.1)
+    axins.set_xticks([-0.1, 0.0, 0.1])
+    axins.set_ylim(0.33, 0.65)
+    axins.set_yticks([0.4, 0.5, 0.6])
+    axins.tick_params("both", labelsize=15)
+    # ax.xaxis.set_tick_params(labelbottom=False)
+    # ax.yaxis.set_tick_params(labelleft=False)
+
+
+def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
     skip_lambda = lambda pt: pt["Skip"]
     # skip_lambda = lambda pt: pt["Skip"] or pt["Region"] != 5
 
@@ -416,8 +444,6 @@ def main():
     for ind in range(5):
         region_colors[ind + 1] = kpl_colors_list[ind]
     color_list = [region_colors[el] for el in region_list]
-
-    fig, ax = plt.subplots()
 
     # Histograms
     # kpl.histogram(ax, zfs_devs, kpl.HistType.STEP)
@@ -442,10 +468,18 @@ def main():
             yerr=point["ZFS (GHz) error"],
             color=color,
             label=label,
+            size=size,
         )
-    ax.set_xlabel("Splitting (MHz)")
-    ax.set_ylabel("Deviation from 2.87 GHz (MHz)")
-    ax.legend(title="Region")
+    if axis_labels:
+        ax.set_xlabel("Splitting (MHz)")
+        ax.set_ylabel("Deviation from 2.87 GHz (MHz)")
+    if legend:
+        # ax.legend(title="Region")
+        handles, labels = ax.get_legend_handles_labels()
+        order = [1, 2, 3, 4, 0]
+        ax.legend(
+            [handles[i] for i in order], [labels[i] for i in order], title="Region"
+        )
 
 
 if __name__ == "__main__":

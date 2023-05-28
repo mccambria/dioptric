@@ -32,9 +32,33 @@ class Loc(StrEnum):
 
 
 class Size(Enum):
-    NORMAL = auto()
-    SMALL = auto()
-    TINY = auto()
+    NORMAL = "NORMAL"
+    SMALL = "SMALL"
+    TINY = "TINY"
+
+
+class MarkerSize(float, Enum):
+    NORMAL = 7
+    SMALL = 6
+    TINY = 4
+
+
+class LineWidth(float, Enum):
+    NORMAL = 1.5
+    SMALL = 1.25
+    TINY = 1.0
+
+
+class MarkerEdgeWidth(float, Enum):
+    NORMAL = 1.5
+    SMALL = 1.25
+    TINY = 1.0
+
+
+class FontSize(float, Enum):
+    NORMAL = 17
+    SMALL = 15
+    TINY = 13
 
 
 class PlotType(Enum):
@@ -55,19 +79,13 @@ class HistType(StrEnum):
     BAR = "bar"  # Space between bins, filled
 
 
-# Size options
-marker_Size = {Size.NORMAL: 7, Size.SMALL: 6, Size.TINY: 4}
-line_widths = {Size.NORMAL: 1.5, Size.SMALL: 1.25, Size.TINY: 1.0}
-marker_edge_widths = line_widths.copy()
-font_Size = {Size.NORMAL: 17, Size.SMALL: 13}
-
 # Default sizes
-marker_size = marker_Size[Size.NORMAL]
-marker_size_inset = marker_Size[Size.SMALL]
-line_width = line_widths[Size.NORMAL]
-line_width_inset = line_widths[Size.SMALL]
-marker_edge_width = marker_edge_widths[Size.NORMAL]
-marker_edge_width_inset = marker_edge_widths[Size.SMALL]
+marker_size = MarkerSize.NORMAL
+marker_size_inset = MarkerSize.SMALL
+line_width = LineWidth.NORMAL
+line_width_inset = LineWidth.NORMAL
+marker_edge_width = MarkerEdgeWidth.NORMAL
+marker_edge_width_inset = MarkerEdgeWidth.NORMAL
 default_font_size = Size.NORMAL
 default_data_size = Size.NORMAL
 figsize = [6.5, 5.0]
@@ -202,7 +220,7 @@ def init_kplotlib(
     preamble += r"\sisetup{detect-all}"
 
     # See note on usetex below before uncommenting
-    # preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
+    preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
     plt.rcParams["text.latex.preamble"] = preamble
 
@@ -210,7 +228,7 @@ def init_kplotlib(
     # from proliferating (e.g. to axis tick labels). Instead just pass usetex=True
     # as a kwarg to any text-based command as necessary. If you really need global
     # tex, uncomment the sfmath line above to keep serifs in check
-    # plt.rc("text", usetex=True)
+    plt.rc("text", usetex=True)
 
     ### Other rcparams
 
@@ -220,7 +238,7 @@ def init_kplotlib(
         plt.rcParams["font.sans-serif"] = "Roboto"
     if font == Font.HELVETICA:
         plt.rcParams["font.sans-serif"] = "Helvetica"
-    plt.rcParams["font.size"] = font_Size[default_font_size]
+    plt.rcParams["font.size"] = FontSize[default_font_size.value]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
@@ -360,8 +378,8 @@ def plot_points(ax, x, y, size=None, **kwargs):
     params = {
         "linestyle": "none",
         "marker": marker_style,
-        "markersize": marker_Size[size],
-        "markeredgewidth": marker_edge_widths[size],
+        "markersize": MarkerSize[size.value],
+        "markeredgewidth": MarkerEdgeWidth[size.value],
     }
 
     # Combine passed args and defaults
