@@ -132,9 +132,10 @@ def fig():
 
     fig.text(0.07, 0.965, "(a)")
     fig.text(0.07, 0.465, "(b)")
+    print(jacobson_lattice_constant(temp))
 
     ### Lattice constant diffs
-    if False:
+    if True:
         diffs = [
             np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
             for temp in temp_linspace
@@ -152,54 +153,6 @@ def fig():
         fig, ax = plt.subplots()
         # ax.plot(temp_linspace, diffs)
         ax.plot(temp_linspace, rel_diffs)
-
-
-def fig_three_panel():
-    temp_linspace = np.linspace(1, 1000, 1000)
-    min_energy = -5
-    max_energy = 175
-    energy_linspace = np.linspace(0, max_energy, 1000)
-    kpl_figsize = kpl.figsize
-    adj_figsize = (kpl_figsize[0], 1.8 * kpl_figsize[1])
-    fig, axes_pack = plt.subplots(3, 1, figsize=adj_figsize)
-    ax1, ax2, ax3 = axes_pack
-
-    double_occupation_lambda = fit_double_occupation()
-
-    # First order effects (lattice constant)
-    kpl.plot_line(
-        ax1,
-        temp_linspace,
-        double_occupation_lambda(temp_linspace),
-        label="This work",
-        color=kpl.KplColors.RED,
-    )
-    ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)")
-    ax1.set_xlabel("Temperature (K)")
-
-    # Second order effects
-    sigma = np.sqrt(7.5)
-    density_of_states, spectral_functions, mean_couplings = deconvolve(
-        energy_linspace, sigma
-    )
-    # labels = [r"$\mathit{S_{z}}$", r"$\mathit{S_{+}}$", r"$\mathit{S_{+}^{2}}$"]
-    plot_vals = np.array(spectral_functions[0])
-    kpl.plot_line(ax2, energy_linspace, plot_vals)
-    ax2.set_ylabel("Spectral function \n(MHz / meV)")
-    ax2.set_xlabel("Energy $\hbar\omega$ (meV)")
-    ax2.set_xlim(min_energy, max_energy)
-
-    # DOS
-    plot_vals = density_of_states
-    kpl.plot_line(ax3, energy_linspace, plot_vals)
-    ax3.set_ylabel("DOS (1 / meV)")
-    ax3.set_xlabel("Energy $\hbar\omega$ (meV)")
-    ax3.set_xlim(min_energy, max_energy)
-
-    ### Wrap up
-
-    fig.text(0.07, 0.965, "(a)")
-    fig.text(0.07, 0.465, "(b)")
 
 
 if __name__ == "__main__":
