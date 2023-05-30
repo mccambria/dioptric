@@ -24,9 +24,33 @@ import majorroutines.pulsed_resonance as pesr
 from scipy.integrate import odeint
 
 
-def gen_hamiltonian(dp, Omega, dm):
+def gen_hamiltonian_v1(dp, Omega, dm):
     return mp.matrix(
         [[dp, Omega / 2, 0], [Omega / 2, 0, Omega / 2], [0, Omega / 2, dm]]
+    )
+
+
+def gen_hamiltonian(detuning, rabi_freq, rabi_phase, splitting_freq, splitting_phase):
+    rabi_coeff = np.exp(1j * rabi_phase)
+    splitting_coeff = np.exp(1j * splitting_phase)
+    return mp.matrix(
+        [
+            [
+                detuning,
+                rabi_coeff * rabi_freq / np.sqrt(2),
+                splitting_coeff * splitting_freq / 2,
+            ],
+            [
+                np.conjugate(rabi_coeff) * rabi_freq / np.sqrt(2),
+                0,
+                rabi_coeff * rabi_freq / np.sqrt(2),
+            ],
+            [
+                np.conjugate(splitting_coeff) * splitting_freq / 2,
+                np.conjugate(rabi_coeff) * rabi_freq / np.sqrt(2),
+                detuning,
+            ],
+        ]
     )
 
 
@@ -42,7 +66,7 @@ def gen_relaxation_rates(dp, Omega, dm):
     )
 
 
-def coherent_line(freq, contrast, rabi_freq, center, splitting, pulse_dur):
+def coherent_line_v1(freq, contrast, rabi_freq, center, splitting, pulse_dur):
     # Average over the hyperfine splittings
     line = None
     for adj_splitting in (splitting - 4.4, splitting, splitting + 4.4):
@@ -52,6 +76,47 @@ def coherent_line(freq, contrast, rabi_freq, center, splitting, pulse_dur):
         else:
             line += single_conversion(coherent_line_single, freq, *args)
     line /= 3
+
+    # Set the contrast to be the max of the line
+    # line *= contrast / (np.max(line))
+    # Set the contrast to be what we'd observe for perfect population transfer
+    line *= contrast
+    return line
+
+    # args = [contrast, rabi_freq, center, splitting, pulse_dur]
+    # return single_conversion(coherent_line_single, freq, *args)
+
+
+def coherent_line(
+    freq,
+    contrast,
+    center,
+    rabi_freq,
+    rabi_phase,
+    splitting_freq,
+    splitting_phase,
+    pulse_dur,
+):
+    # Average over the hyperfine splittings
+    # line = None
+    # for adj_splitting in (splitting - 4.4, splitting, splitting + 4.4):
+    #     args = [contrast, rabi_freq, center, adj_splitting, pulse_dur]
+    #     if line is None:
+    #         line = single_conversion(coherent_line_single, freq, *args)
+    #     else:
+    #         line += single_conversion(coherent_line_single, freq, *args)
+    # line /= 3
+
+    args = [
+        contrast,
+        center,
+        rabi_freq,
+        rabi_phase,
+        splitting_freq,
+        splitting_phase,
+        pulse_dur,
+    ]
+    line = single_conversion(coherent_line_single, freq, *args)
 
     # Set the contrast to be the max of the line
     # line *= contrast / (np.max(line))
@@ -79,8 +144,7 @@ def single_conversion(single_func, freq, *args):
         return single_func(freq, *args)
 
 
-def coherent_line_single(freq, contrast, rabi_freq, center, splitting, pulse_dur):
-
+def coherent_line_single_v1(freq, contrast, rabi_freq, center, splitting, pulse_dur):
     dp = (center * 1000 + splitting / 2) - (freq * 1000)
     dm = (center * 1000 - splitting / 2) - (freq * 1000)
 
@@ -111,10 +175,50 @@ def coherent_line_single(freq, contrast, rabi_freq, center, splitting, pulse_dur
     return np.float64(ret_val)
 
 
+def coherent_line_single(
+    freq,
+    contrast,
+    center,
+    rabi_freq,
+    rabi_phase,
+    splitting_freq,
+    splitting_phase,
+    pulse_dur,
+):
+    detuning = (center - freq) * 1000
+
+    if pulse_dur == None:
+        pulse_dur = 1 / (2 * rabi_freq)
+    else:
+        pulse_dur /= 1000
+
+    # coupling = rabi_freq / mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
+    # coupling = rabi_freq
+    hamiltonian = gen_hamiltonian(
+        detuning, rabi_freq, rabi_phase, splitting_freq, splitting_phase
+    )
+    eigvals, eigvecs = mp.eighe(hamiltonian)
+
+    intial_vec = mp.matrix([[0], [1], [0]])
+    initial_comps = [mp.fdot(intial_vec, eigvecs[:, ind]) for ind in range(3)]
+    final_comps = [
+        initial_comps[ind] * mp.exp(2 * mp.pi * (0 + 1j) * eigvals[ind] * pulse_dur)
+        for ind in range(3)
+    ]
+    final_vec = mp.matrix([[0], [0], [0]])
+    for ind in range(3):
+        final_vec += eigvecs[:, ind] * final_comps[ind]
+
+    line = 1 - mp.fabs(final_vec[1]) ** 2
+    ret_val = line
+    # ret_val = contrast * line
+
+    return np.float64(ret_val)
+
+
 def incoherent_line_single(
     freq, contrast, rabi_freq, center, splitting, offset, pulse_dur
 ):
-
     dp = (center * 1000 + splitting / 2) - (freq * 1000)
     dm = (center * 1000 - splitting / 2) - (freq * 1000)
 
@@ -145,7 +249,6 @@ def calc_dy_dt(y, t, relaxation_rates):
 
 
 def plot_mat_els():
-
     Omega = 1
     # half_splitting = 0.5
     half_splitting = 10
@@ -161,7 +264,6 @@ def plot_mat_els():
 
     drive_freq = wp
     for Omega in Omegas:
-
         dp = wp - drive_freq
         dm = wm - drive_freq
 
@@ -188,7 +290,6 @@ def plot_mat_els():
 
 
 def incoherent():
-
     Omega = 4
     half_splitting = 3
     # half_splitting = 5
@@ -206,7 +307,6 @@ def incoherent():
 
 
 def main():
-
     Omega = 10
     half_splitting = 0.5
     # half_splitting = 5
@@ -226,7 +326,6 @@ def main():
     # for drive_freq in drive_freqs:
     drive_freq = wp
     for t in ts:
-
         dp = wp - drive_freq
         dm = wm - drive_freq
 
@@ -256,15 +355,28 @@ def main():
 
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib()
 
     # main()
     # incoherent()
     # plot_mat_els()
 
-    freqs = np.linspace(2.86, 2.88, 100)
+    freqs = np.linspace(2.85, 2.89, 100)
     fig, ax = plt.subplots()
-    kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 5.2, 2.87, 0, None))
+
+    # contrast, center, rabi_freq, rabi_phase, splitting_freq, splitting_phase, pulse_dur
+    kpl.plot_line(
+        ax,
+        freqs,
+        coherent_line(freqs, 0.2, 2.87, 5.2, 0.0 * np.pi, 5, 0.0 * np.pi, 50),
+    )
+    kpl.plot_line(
+        ax,
+        freqs,
+        coherent_line(freqs, 0.2, 2.87, 5.2, 0.25 * np.pi, 5, 0.5 * np.pi, 50),
+    )
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, 0, 4, 1.0, 200))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, 1.0, 4, 1.0, 200))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, -1.0, 4, 1.0, 200))
 
     plt.show(block=True)

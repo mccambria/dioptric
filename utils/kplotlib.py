@@ -220,7 +220,7 @@ def init_kplotlib(
     preamble += r"\sisetup{detect-all}"
 
     # See note on usetex below before uncommenting
-    preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
+    # preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
 
     plt.rcParams["text.latex.preamble"] = preamble
 
@@ -228,7 +228,7 @@ def init_kplotlib(
     # from proliferating (e.g. to axis tick labels). Instead just pass usetex=True
     # as a kwarg to any text-based command as necessary. If you really need global
     # tex, uncomment the sfmath line above to keep serifs in check
-    plt.rc("text", usetex=True)
+    # plt.rc("text", usetex=True)
 
     ### Other rcparams
 
@@ -292,7 +292,7 @@ def anchored_text(ax, text, loc, size=None, **kwargs):
     if size is None:
         size = default_font_size
 
-    font_size = font_Size[size]
+    font_size = FontSize[size.value]
     text_props = kwargs
     text_props["fontsize"] = font_size
     # text_props = dict(fontsize=font_size)
@@ -421,7 +421,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
     # Defaults
     params = {
         "linestyle": line_style,
-        "linewidth": line_widths[size],
+        "linewidth": LineWidth[size.value],
     }
 
     # Combine passed args and defaults
