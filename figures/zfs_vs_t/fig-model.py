@@ -37,6 +37,7 @@ from figures.zfs_vs_t.deconvolve_spectral_function import deconvolve
 
 
 def fig():
+    max_temp = 1000
     temp_linspace = np.linspace(1, 1000, 1000)
     min_energy = 0
     max_energy = 175
@@ -132,7 +133,7 @@ def fig():
 
     fig.text(0.07, 0.965, "(a)")
     fig.text(0.07, 0.465, "(b)")
-    print(jacobson_lattice_constant(temp))
+    # print(jacobson_lattice_constant(257))
 
     ### Lattice constant diffs
     if True:
@@ -142,13 +143,14 @@ def fig():
         ]
         #
         rel_diffs = []
-        a_zero_k = jacobson_lattice_constant(1)
+        a_zero_k = jacobson_lattice_constant(5)  # Below 5 you get NaN
+        a_max_k = jacobson_lattice_constant(max_temp)
+        total_change = np.abs(a_max_k - a_zero_k)
         for temp in temp_linspace:
             diff_val = np.abs(
                 jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
             )
-            a_val = jacobson_lattice_constant(temp)
-            rel_diffs.append(diff_val / np.abs(a_val - a_zero_k))
+            rel_diffs.append(diff_val / total_change)
         #
         fig, ax = plt.subplots()
         # ax.plot(temp_linspace, diffs)
