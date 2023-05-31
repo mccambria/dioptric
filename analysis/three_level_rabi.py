@@ -30,26 +30,20 @@ def gen_hamiltonian_v1(dp, Omega, dm):
     )
 
 
-def gen_hamiltonian(detuning, rabi_freq, rabi_phase, splitting_freq, splitting_phase):
-    rabi_coeff = np.exp(1j * rabi_phase)
-    splitting_coeff = np.exp(1j * splitting_phase)
+def gen_hamiltonian(dp, dm, rabi_freq, splitting_freq, phase):
+    # def gen_hamiltonian(dp, dm, rabi_freq):
+    # splitting_freq = 0
+    # phase = 0
+    phase_factor = np.exp(1j * phase)
+    conj_phase_factor = np.exp(1j * phase)
+    # Include spin matrix factors
+    normed_rabi = rabi_freq / np.sqrt(2)
+    normed_splitting = splitting_freq / 2
     return mp.matrix(
         [
-            [
-                detuning,
-                rabi_coeff * rabi_freq / np.sqrt(2),
-                splitting_coeff * splitting_freq / 2,
-            ],
-            [
-                np.conjugate(rabi_coeff) * rabi_freq / np.sqrt(2),
-                0,
-                rabi_coeff * rabi_freq / np.sqrt(2),
-            ],
-            [
-                np.conjugate(splitting_coeff) * splitting_freq / 2,
-                np.conjugate(rabi_coeff) * rabi_freq / np.sqrt(2),
-                detuning,
-            ],
+            [dp, phase_factor * normed_rabi, normed_splitting],
+            [conj_phase_factor * normed_rabi, 0, phase_factor * normed_rabi],
+            [normed_splitting, conj_phase_factor * normed_rabi, dm],
         ]
     )
 
@@ -87,36 +81,21 @@ def coherent_line_v1(freq, contrast, rabi_freq, center, splitting, pulse_dur):
     # return single_conversion(coherent_line_single, freq, *args)
 
 
-def coherent_line(
-    freq,
-    contrast,
-    center,
-    rabi_freq,
-    rabi_phase,
-    splitting_freq,
-    splitting_phase,
-    pulse_dur,
-):
+def coherent_line(freq, contrast, center, rabi_freq, splitting_freq, phase, pulse_dur):
+    # def coherent_line(freq, contrast, center, rabi_freq, pulse_dur):
     # Average over the hyperfine splittings
-    # line = None
-    # for adj_splitting in (splitting - 4.4, splitting, splitting + 4.4):
-    #     args = [contrast, rabi_freq, center, adj_splitting, pulse_dur]
-    #     if line is None:
-    #         line = single_conversion(coherent_line_single, freq, *args)
-    #     else:
-    #         line += single_conversion(coherent_line_single, freq, *args)
-    # line /= 3
+    line = None
+    for Bz in (-2.2, 0, 2.2):
+        args = [contrast, center, rabi_freq, splitting_freq, phase, pulse_dur, Bz]
+        # args = [contrast, center, rabi_freq, pulse_dur, Bz]
+        if line is None:
+            line = single_conversion(coherent_line_single, freq, *args)
+        else:
+            line += single_conversion(coherent_line_single, freq, *args)
+    line /= 3
 
-    args = [
-        contrast,
-        center,
-        rabi_freq,
-        rabi_phase,
-        splitting_freq,
-        splitting_phase,
-        pulse_dur,
-    ]
-    line = single_conversion(coherent_line_single, freq, *args)
+    # args = [contrast, center, rabi_freq, splitting_freq, phase, pulse_dur]
+    # line = single_conversion(coherent_line_single, freq, *args)
 
     # Set the contrast to be the max of the line
     # line *= contrast / (np.max(line))
@@ -176,16 +155,12 @@ def coherent_line_single_v1(freq, contrast, rabi_freq, center, splitting, pulse_
 
 
 def coherent_line_single(
-    freq,
-    contrast,
-    center,
-    rabi_freq,
-    rabi_phase,
-    splitting_freq,
-    splitting_phase,
-    pulse_dur,
+    freq, contrast, center, rabi_freq, splitting_freq, phase, pulse_dur, Bz=0
 ):
+    # def coherent_line_single(freq, contrast, center, rabi_freq, pulse_dur, Bz=0):
     detuning = (center - freq) * 1000
+    dp = detuning + Bz
+    dm = detuning - Bz
 
     if pulse_dur == None:
         pulse_dur = 1 / (2 * rabi_freq)
@@ -194,9 +169,8 @@ def coherent_line_single(
 
     # coupling = rabi_freq / mp.sqrt(2)  # Account for sqrt(2) factor at splitting=0
     # coupling = rabi_freq
-    hamiltonian = gen_hamiltonian(
-        detuning, rabi_freq, rabi_phase, splitting_freq, splitting_phase
-    )
+    hamiltonian = gen_hamiltonian(dp, dm, rabi_freq, splitting_freq, phase)
+    # hamiltonian = gen_hamiltonian(dp, dm, rabi_freq)
     eigvals, eigvecs = mp.eighe(hamiltonian)
 
     intial_vec = mp.matrix([[0], [1], [0]])
@@ -365,18 +339,18 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
 
     # contrast, center, rabi_freq, rabi_phase, splitting_freq, splitting_phase, pulse_dur
-    kpl.plot_line(
-        ax,
-        freqs,
-        coherent_line(freqs, 0.2, 2.87, 5.2, 0.0 * np.pi, 5, 0.0 * np.pi, 50),
-    )
-    kpl.plot_line(
-        ax,
-        freqs,
-        coherent_line(freqs, 0.2, 2.87, 5.2, 0.25 * np.pi, 5, 0.5 * np.pi, 50),
-    )
-    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, 0, 4, 1.0, 200))
-    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, 1.0, 4, 1.0, 200))
-    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, -1.0, 4, 1.0, 200))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, 0, 0.0 * np.pi, 50))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, -10, 0.0 * np.pi, 50))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, +10, 0.0 * np.pi, 50))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.875, 5.2, 0, 0.0 * np.pi, 50))
+
+    kpl.plot_line(ax, freqs, coherent_line(freqs, 0.30, 2.87, 1.717, 1.0, 0, 200))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.30, 2.871, 1.717, 0.0, 0, 200))
+    # kpl.plot_line(
+    #     ax, freqs, coherent_line(freqs, 0.30, 2.87, 1.717, 1.133, np.pi / 4, 200)
+    # )
+    # kpl.plot_line(
+    #     ax, freqs, coherent_line(freqs, 0.30, 2.877, 1.717, 1.133, np.pi / 2, 200)
+    # )
 
     plt.show(block=True)

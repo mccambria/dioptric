@@ -126,14 +126,15 @@ def create_fit_figure(
     high_text = None
     base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
     if 3 <= len(popt) < 6:
-        contrast, hwhm, freq = popt[0:3]
-        low_text = base_text.format(contrast, hwhm, freq)
+        # contrast, width, center = popt[0:3]
+        contrast, center, width = popt[0:3]
+        low_text = base_text.format(contrast, width, center)
         high_text = None
     elif len(popt) == 6:
-        contrast, hwhm, freq = popt[0:3]
-        low_text = base_text.format(contrast, hwhm, freq)
-        contrast, hwhm, freq = popt[3:6]
-        high_text = base_text.format(contrast, hwhm, freq)
+        contrast, width, center = popt[0:3]
+        low_text = base_text.format(contrast, width, center)
+        contrast, width, center = popt[3:6]
+        high_text = base_text.format(contrast, width, center)
         # print(popt[2])
         # print(np.sqrt(pcov[2][2]))
         # print(popt[5])
@@ -457,7 +458,6 @@ def get_guess_params(
     max_peak_freq = freqs[peak_inds[max_peak_peak_ind]]
 
     if (num_resonances > 1) and len(peak_inds) > 1:
-
         # Remove what we just found so we can find the second highest peak
         peak_inds.pop(max_peak_peak_ind)
         peak_heights.pop(max_peak_peak_ind)
@@ -581,9 +581,13 @@ def fit_resonance(
         # full_output=True,
         # method="trf",
         # bounds=(0, np.inf),
-        # bounds=((0, 0, 2.80, 0), (0.5, 10, 2.90, 10)),
+        # contrast, center, rabi_freq, splitting, phase
+        bounds=(
+            (0.05, freqs[0], 0.9, 0, -2 * np.pi),
+            (0.5, freqs[-1], 8, 10, 2 * np.pi),
+        ),  # MCC
         # max_nfev=100,
-        # ftol=1e-4,
+        ftol=1e-4,  # MCC
     )
 
     # If the user gave us a hint, go with that
@@ -755,7 +759,6 @@ def main_with_cxn(
     composite=False,
     opti_nv_sig=None,
 ):
-
     ### Setup
 
     start_timestamp = tool_belt.get_time_stamp()
@@ -883,7 +886,6 @@ def main_with_cxn(
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
-
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -1077,7 +1079,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-
     file_name = "2023_02_16-15_43_44-wu-nv24_region5"
 
     kpl.init_kplotlib()

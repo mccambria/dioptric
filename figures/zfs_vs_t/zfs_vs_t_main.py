@@ -397,42 +397,6 @@ def light_polarization():
         ax.set_ylabel("ZFS - 2870 (MHz)")
         ax.legend()
 
-
-def refit_experiments():
-    """Re-run fits to experimental data, either plotting and saving the new plots
-    or just printing out the fit parameters
-    """
-
-    ### User setup
-    # Also see below section Sample-dependent fit...
-
-    do_plot = True  # Generate raw data and fit plots?
-    do_save = True  # Save the plots?
-    do_print = True  # Print out popts and associated error bars?
-
-    skip_lambda = (
-        lambda point: point["Skip"]
-        # or point["ZFS file"] == ""
-        # or point["Sample"] != "15micro"
-        or point["Sample"] != "Wu"
-        # or point["Setpoint temp (K)"] != ""
-        # or point["Setpoint temp (K)"] < 300
-    )
-
-    data_points = get_data_points(skip_lambda)
-    # file_list = [el["ZFS file"] for el in data_points]
-    # data_points = data_points[2:3]
-    file_list = []
-    guess_param_list = []
-    for el in data_points:
-        file_list.append(el["ZFS file"])
-        guess_params = (
-            el["Contrast"],
-            el["Width (MHz)"],
-            el["ZFS (GHz)"],
-            el["Splitting (MHz)"],
-        )
-        guess_param_list.append(guess_params)
     # print(file_list)
     # file_list = [
     #     # # 1 us
@@ -567,94 +531,144 @@ def refit_experiments():
     #     "2023_03_13-17_43_29-15micro-nv16_offset",
     # ]
     # From zfs_survey
-    file_list = [
-        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
-        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
-        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
-        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
-        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
-        "2023_02_09-17_28_01-wu-nv1_region2",
-        "2023_02_09-18_02_43-wu-nv2_region2",
-        "2023_02_09-18_14_01-wu-nv3_region2",
-        "2023_02_09-17_51_24-wu-nv4_region2",
-        "2023_02_09-17_39_51-wu-nv5_region2",
-        "2023_02_09-23_28_39-wu-nv1_region3",
-        "2023_02_09-23_51_39-wu-nv2_region3",
-        "2023_02_10-00_14_56-wu-nv3_region3",
-        "2023_02_10-00_37_40-wu-nv4_region3",
-        "2023_02_10-00_59_59-wu-nv5_region3",
-        "2023_02_10-19_13_33-wu-nv1_region4",
-        "2023_02_10-18_51_08-wu-nv2_region4",
-        "2023_02_10-18_28_42-wu-nv3_region4",
-        "2023_02_10-18_06_16-wu-nv4_region4",
-        "2023_02_10-19_36_05-wu-nv5_region4",
-        "2023_02_13-11_54_40-wu-nv1_region5",
-        "2023_02_13-10_47_07-wu-nv2_region5",
-        "2023_02_13-11_32_11-wu-nv3_region5",
-        "2023_02_13-11_09_39-wu-nv4_region5",
-        "2023_02_13-12_17_20-wu-nv5_region5",
-        "2023_02_14-19_34_18-wu-nv6_region5",
-        "2023_02_15-11_34_42-wu-nv6_region5",
-        "2023_02_14-18_25_12-wu-nv7_region5",
-        "2023_02_15-10_49_10-wu-nv7_region5",
-        "2023_02_14-16_31_33-wu-nv8_region5",
-        "2023_02_15-10_03_52-wu-nv8_region5",
-        "2023_02_14-19_56_53-wu-nv9_region5",
-        "2023_02_15-09_17_38-wu-nv9_region5",
-        "2023_02_14-17_39_49-wu-nv10_region5",
-        "2023_02_15-08_54_44-wu-nv10_region5",
-        "2023_02_14-18_02_32-wu-nv11_region5",
-        "2023_02_15-08_31_53-wu-nv11_region5",
-        "2023_02_14-19_11_31-wu-nv12_region5",
-        "2023_02_15-11_12_05-wu-nv12_region5",
-        "2023_02_14-16_54_38-wu-nv13_region5",
-        "2023_02_15-09_41_02-wu-nv13_region5",
-        "2023_02_14-17_17_04-wu-nv14_region5",
-        "2023_02_15-11_57_26-wu-nv14_region5",
-        "2023_02_14-18_47_39-wu-nv15_region5",
-        "2023_02_15-10_26_32-wu-nv15_region5",
-        "2023_02_16-11_38_00-wu-nv16_region5",
-        "2023_02_16-15_21_12-wu-nv16_region5",
-        "2023_02_16-12_45_08-wu-nv17_region5",
-        "2023_02_16-16_28_17-wu-nv17_region5",
-        "2023_02_16-13_07_28-wu-nv18_region5",
-        "2023_02_16-17_58_56-wu-nv18_region5",
-        "2023_02_16-13_52_11-wu-nv19_region5",
-        "2023_02_16-17_36_17-wu-nv19_region5",
-        "2023_02_16-14_14_37-wu-nv20_region5",
-        "2023_02_16-14_36_43-wu-nv20_region5",
-        "2023_02_16-11_15_49-wu-nv21_region5",
-        "2023_02_16-16_51_10-wu-nv21_region5",
-        "2023_02_16-12_00_24-wu-nv22_region5",
-        "2023_02_16-14_59_00-wu-nv22_region5",
-        "2023_02_16-12_22_59-wu-nv23_region5",
-        "2023_02_16-17_14_04-wu-nv23_region5",
-        "2023_02_16-13_29_52-wu-nv24_region5",
-        "2023_02_16-15_43_44-wu-nv24_region5",
-        "2023_02_16-10_53_23-wu-nv25_region5",
-        "2023_02_16-16_05_52-wu-nv25_region5",
-    ]
+    # file_list = [
+    #     "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+    #     "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+    #     "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+    #     "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+    #     "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+    #     "2023_02_09-17_28_01-wu-nv1_region2",
+    #     "2023_02_09-18_02_43-wu-nv2_region2",
+    #     "2023_02_09-18_14_01-wu-nv3_region2",
+    #     "2023_02_09-17_51_24-wu-nv4_region2",
+    #     "2023_02_09-17_39_51-wu-nv5_region2",
+    #     "2023_02_09-23_28_39-wu-nv1_region3",
+    #     "2023_02_09-23_51_39-wu-nv2_region3",
+    #     "2023_02_10-00_14_56-wu-nv3_region3",
+    #     "2023_02_10-00_37_40-wu-nv4_region3",
+    #     "2023_02_10-00_59_59-wu-nv5_region3",
+    #     "2023_02_10-19_13_33-wu-nv1_region4",
+    #     "2023_02_10-18_51_08-wu-nv2_region4",
+    #     "2023_02_10-18_28_42-wu-nv3_region4",
+    #     "2023_02_10-18_06_16-wu-nv4_region4",
+    #     "2023_02_10-19_36_05-wu-nv5_region4",
+    #     "2023_02_13-11_54_40-wu-nv1_region5",
+    #     "2023_02_13-10_47_07-wu-nv2_region5",
+    #     "2023_02_13-11_32_11-wu-nv3_region5",
+    #     "2023_02_13-11_09_39-wu-nv4_region5",
+    #     "2023_02_13-12_17_20-wu-nv5_region5",
+    #     "2023_02_14-19_34_18-wu-nv6_region5",
+    #     "2023_02_15-11_34_42-wu-nv6_region5",
+    #     "2023_02_14-18_25_12-wu-nv7_region5",
+    #     "2023_02_15-10_49_10-wu-nv7_region5",
+    #     "2023_02_14-16_31_33-wu-nv8_region5",
+    #     "2023_02_15-10_03_52-wu-nv8_region5",
+    #     "2023_02_14-19_56_53-wu-nv9_region5",
+    #     "2023_02_15-09_17_38-wu-nv9_region5",
+    #     "2023_02_14-17_39_49-wu-nv10_region5",
+    #     "2023_02_15-08_54_44-wu-nv10_region5",
+    #     "2023_02_14-18_02_32-wu-nv11_region5",
+    #     "2023_02_15-08_31_53-wu-nv11_region5",
+    #     "2023_02_14-19_11_31-wu-nv12_region5",
+    #     "2023_02_15-11_12_05-wu-nv12_region5",
+    #     "2023_02_14-16_54_38-wu-nv13_region5",
+    #     "2023_02_15-09_41_02-wu-nv13_region5",
+    #     "2023_02_14-17_17_04-wu-nv14_region5",
+    #     "2023_02_15-11_57_26-wu-nv14_region5",
+    #     "2023_02_14-18_47_39-wu-nv15_region5",
+    #     "2023_02_15-10_26_32-wu-nv15_region5",
+    #     "2023_02_16-11_38_00-wu-nv16_region5",
+    #     "2023_02_16-15_21_12-wu-nv16_region5",
+    #     "2023_02_16-12_45_08-wu-nv17_region5",
+    #     "2023_02_16-16_28_17-wu-nv17_region5",
+    #     "2023_02_16-13_07_28-wu-nv18_region5",
+    #     "2023_02_16-17_58_56-wu-nv18_region5",
+    #     "2023_02_16-13_52_11-wu-nv19_region5",
+    #     "2023_02_16-17_36_17-wu-nv19_region5",
+    #     "2023_02_16-14_14_37-wu-nv20_region5",
+    #     "2023_02_16-14_36_43-wu-nv20_region5",
+    #     "2023_02_16-11_15_49-wu-nv21_region5",
+    #     "2023_02_16-16_51_10-wu-nv21_region5",
+    #     "2023_02_16-12_00_24-wu-nv22_region5",
+    #     "2023_02_16-14_59_00-wu-nv22_region5",
+    #     "2023_02_16-12_22_59-wu-nv23_region5",
+    #     "2023_02_16-17_14_04-wu-nv23_region5",
+    #     "2023_02_16-13_29_52-wu-nv24_region5",
+    #     "2023_02_16-15_43_44-wu-nv24_region5",
+    #     "2023_02_16-10_53_23-wu-nv25_region5",
+    #     "2023_02_16-16_05_52-wu-nv25_region5",
+    # ]
 
-    ### Parallel process
 
-    # guess_params = [0.24, 2, 2.853, 4.5]
-    # guess_param_list = [0.24, 2, 2.853, 4.5]
-    # refit_sub_lambda = lambda f: refit_experiments_sub(
-    #     f, do_plot, do_save, guess_params
-    # )
+def refit_experiments():
+    """Re-run fits to experimental data, either plotting and saving the new plots
+    or just printing out the fit parameters
+    """
+
+    ### User setup
+    # Also see below section Sample-dependent fit...
+
+    do_plot = True  # Generate raw data and fit plots?
+    do_save = False  # Save the plots?
+    do_print = True  # Print out popts and associated error bars?
+
+    skip_lambda = (
+        lambda point: point["Skip"]
+        # or point["ZFS file"] == ""
+        # or point["Sample"] != "15micro"
+        or point["Sample"] != "Wu"
+        # or point["Setpoint temp (K)"] != ""
+        # or point["Setpoint temp (K)"] < 300
+    )
+
+    data_points = get_data_points(skip_lambda)
+    # data_points = data_points[::50]
+    data_points = data_points[145:]
+    # file_list = [el["ZFS file"] for el in data_points]
+    # data_points = data_points[2:3]
+    file_list = []
+    guess_param_list = []
+    for el in data_points:
+        file_list.append(el["ZFS file"])
+        # print(el["ZFS file"])
+        # return
+        guess_params = [
+            el["Contrast"],
+            el["ZFS (GHz)"],
+            el["Width (MHz)"],
+            el["Splitting (MHz)"],
+            np.pi / 4,
+        ]
+        guess_param_list.append(guess_params)
+
+    ### Run the fitting on each file
+
     refit_sub_lambda = lambda f, g: refit_experiments_sub(f, g, do_plot, do_save)
+
+    # Parallel
     with ProcessingPool() as p:
         results = p.map(refit_sub_lambda, file_list, guess_param_list)
+
+    # List comp
     # results = [refit_sub_lambda(f, g) for f, g in zip(file_list, guess_param_list)]
 
-    # f = "2023_01_14-13_52_57-wu-nv10_zfs_vs_t"
-    # popt, pste, red_chi_sq = refit_sub_lambda(f)
-    # xl_str = ""
-    # for ind in range(len(popt)):
-    #     xl_str += f"{round(popt[ind], 6)}, {round(pste[ind], 6)}, "
-    # xl_str += str(red_chi_sq)
-    # print(xl_str)
-    # return
+    # For loop
+    # results = []
+    # for ind in range(len(file_list)):
+    #     if ind < 147:
+    #         continue
+    #     print(ind)
+    #     print(ind + 2)
+    #     f = file_list[ind]
+    #     print(f)
+    #     g = guess_param_list[ind]
+    #     # g[0] = 0.3  # Contrast
+    #     # # g[1] = 1  # Center
+    #     # g[2] = 2  # Rabi
+    #     # g[3] = 1  # Splitting
+    #     result = refit_sub_lambda(f, g)
+    #     results.append(result)
+    #     print()
 
     ### Parse results
 
@@ -774,33 +788,65 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
     ### Sample-dependent fit functions and parameters
 
     if sample == "wu":
+        line_func = lambda freq, contrast, center, rabi_freq, splitting, phase: three_level_rabi.coherent_line(
+            freq, contrast, center, rabi_freq, splitting, phase, uwave_pulse_dur
+        )
+        fit_func = (
+            lambda freq, contrast, center, rabi_freq, splitting, phase: pesr.dip_sum(
+                freq, line_func, contrast, center, rabi_freq, splitting, phase
+            )
+        )
         # line_func = (
-        #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
-        #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+        #     lambda freq, contrast, center, rabi_freq: three_level_rabi.coherent_line(
+        #         freq, contrast, center, rabi_freq, uwave_pulse_dur
         #     )
         # )
-        # # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
-        # #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-        # # )
-        # guess_params = [0.2, 4, freq_center]
-        # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
-        # guess_params = [0.4, 9, 2.8748]
-
-        line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
-            freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
-        )
-        # line_func = pesr.lorentzian_split
-        # guess_params = [1.5 * np.max(1 - norm_avg_sig), 2, freq_center, 3]
+        # fit_func = lambda freq, contrast, center, rabi_freq: pesr.dip_sum(
+        #     freq, line_func, contrast, center, rabi_freq
+        # )
         if guess_params is None:
             guess_params = [0.201135, 4.537905, 2.877451, 3.456755]
-
-        # line_func = pesr.lorentzian_split
-        # guess_params = [0.3, 1, freq_center, 1]
-
-        # fit_func = lambda freq, contrast, rabi_freq, center: pesr.dip_sum(
-        #     freq, line_func, contrast, rabi_freq, center
-        # )
-        # popt = guess_params
+        # Cryo
+        # guess_params = [
+        #     1.1 * (1 - min(norm_avg_sig)),
+        #     guess_params[1],
+        #     2.5,
+        #     1,
+        #     np.pi / 4,
+        # ]
+        # Hot
+        if file_name.endswith("nv6_zfs_vs_t"):
+            guess_params = [
+                1.3 * (1 - min(norm_avg_sig)),
+                guess_params[1],
+                2.0,
+                0.75,
+                0,
+            ]
+        elif file_name.endswith("nv7_zfs_vs_t"):
+            guess_params = [
+                1.4 * (1 - min(norm_avg_sig)),
+                guess_params[1],
+                1.9,
+                0.5,
+                np.pi * 3 / 4,
+            ]
+        elif file_name.endswith("nv10_zfs_vs_t"):
+            guess_params = [
+                1.0 * (1 - min(norm_avg_sig)),
+                guess_params[1],
+                2.7,
+                5.5,
+                np.pi * 3 / 4,
+            ]
+        else:
+            guess_params = [
+                1.4 * (1 - min(norm_avg_sig)),
+                guess_params[1],
+                2.0,
+                0.5,
+                np.pi * 3 / 4,
+            ]
 
     elif sample == "15micro":
         # fmt: off
@@ -823,51 +869,56 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
 
         # fmt: on
 
-    ### Raw data figure
+    ### Raw data figure or just get fit params
 
-    # try:
+    try:
+        if do_plot:
+            fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                #
+                line_func=line_func,
+                guess_params=guess_params,
+                #
+                # fit_func=fit_func,
+                # popt=guess_params,
+            )
+            if do_save:
+                file_path = raw_file_path.with_name((f"{file_name}-fit"))
+                file_path = file_path.with_suffix(".svg")
+                tool_belt.save_figure(fit_fig, file_path)
+        else:
+            fit_func, popt, pcov = pesr.fit_resonance(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                line_func=line_func,
+                guess_params=guess_params,
+            )
 
-    if do_plot:
-        fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
-            freq_center,
-            freq_range,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            line_func=line_func,
-            guess_params=guess_params,
-            # fit_func=fit_func,
-            # popt=popt,
-        )
-        if do_save:
-            file_path = raw_file_path.with_name((f"{file_name}-fit"))
-            file_path = file_path.with_suffix(".svg")
-            tool_belt.save_figure(fit_fig, file_path)
+        pste = np.sqrt(np.diag(pcov))
+        # pste = None
 
-    ### Get fit parameters and error bars
-    if not do_plot:
-        fit_func, popt, pcov = pesr.fit_resonance(
-            freq_center,
-            freq_range,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            line_func=line_func,
-            guess_params=guess_params,
-        )
+        fit_lambda = lambda freq: fit_func(freq, *popt)
+        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+        chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+        red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
 
-    pste = np.sqrt(np.diag(pcov))
+    except Exception as exc:
+        print(exc)
+        num_params = len(guess_params)
+        popt = np.zeros(num_params)
+        pste = np.zeros(num_params)
+        red_chi_sq = 10
 
-    fit_lambda = lambda freq: fit_func(freq, *popt)
-    freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
-    chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
-    red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
-
-    # except Exception as exc:
-    #     num_params = len(guess_params)
-    #     popt = np.zeros(num_params)
-    #     pste = np.zeros(num_params)
-    #     red_chi_sq = 10
+    # print(guess_params)
+    # print(red_chi_sq)
+    # plt.show(block=True)
 
     return (popt, pste, red_chi_sq)
     # return "test"
@@ -2691,7 +2742,7 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib(constrained_layout=False)
+    kpl.init_kplotlib(constrained_layout=True)
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()
@@ -2699,7 +2750,7 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    fig_bottom_resid()  # Main
+    # fig_bottom_resid()  # Main
     # fig(  # Comps
     #     temp_range=[0, 1000],
     #     y_range=[2.76, 2.88],
@@ -2734,7 +2785,7 @@ if __name__ == "__main__":
     # )
     # comps()
     # comps_sep()
-    # refit_experiments()
+    refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 
