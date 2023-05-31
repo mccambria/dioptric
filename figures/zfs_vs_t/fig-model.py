@@ -85,11 +85,11 @@ def fig():
     ax1.set_ylim(3.5658, None)
     text = r"\noindent$a(T) = a_{0} + b_{1}n_{1} + b_{2}n_{2}$"
     text += r"\\"
-    text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+    text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
     kpl.anchored_text(ax1, text, kpl.Loc.LOWER_RIGHT, kpl.Size.SMALL, usetex=True)
 
     # Second order effects
-    sigma = np.sqrt(7.5)
+    sigma = 7.5
     density_of_states, spectral_functions, mean_couplings = deconvolve(
         energy_linspace, sigma
     )
@@ -136,7 +136,7 @@ def fig():
     # print(jacobson_lattice_constant(257))
 
     ### Lattice constant diffs
-    if True:
+    if False:
         diffs = [
             np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
             for temp in temp_linspace
