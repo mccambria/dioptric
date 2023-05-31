@@ -287,7 +287,7 @@ def main(
     # Legend shenanigans
 
     loc = kpl.Loc.UPPER_RIGHT
-    loc = kpl.Loc.LOWER_LEFT
+    # loc = kpl.Loc.LOWER_LEFT
 
     sample_A_patch = mlines.Line2D(
         [], [], label="A", lw=marker_edge_width, ls="dotted", color="black"
@@ -295,8 +295,8 @@ def main(
     sample_B_patch = mlines.Line2D(
         [], [], label="B", lw=marker_edge_width, ls="dashed", color="black"
     )
-    leg3 = None
-    if False:
+    # leg3 = None
+    if True:
         leg3 = ax1.legend(
             handles=[sample_A_patch, sample_B_patch],
             title="Sample",
@@ -380,12 +380,19 @@ if __name__ == "__main__":
     # y_range = [[7e-4, 30], [-0.02, 0.62]]
     # rates_to_plot = [["hopper", "wu"], ["hopper"]]
 
-    plot_type = "T2_max_supp"
-    temp_range = [[-5, 480], [-9, 315]]
-    xscale = ["linear", "linear"]
-    yscale = ["log", "linear"]
-    y_range = [[6e-4, 40], [0, 0.58]]
-    rates_to_plot = [["hopper"], ["hopper"]]
+    # plot_type = "T2_max_supp"
+    # temp_range = [[-5, 480], [-9, 315]]
+    # xscale = ["linear", "linear"]
+    # yscale = ["log", "linear"]
+    # y_range = [[6e-4, 40], [0, 0.58]]
+    # rates_to_plot = [["hopper"], ["hopper"]]
+
+    plot_type = "T2_max"
+    temp_range = [-5, 480]
+    xscale = "linear"
+    yscale = "log"
+    y_range = [6e-4, 40]
+    rates_to_plot = ["hopper", "wu"]
 
     ###
 

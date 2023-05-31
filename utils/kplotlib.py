@@ -219,16 +219,16 @@ def init_kplotlib(
     preamble += r"\usepackage{siunitx}"
     preamble += r"\sisetup{detect-all}"
 
-    # See note on usetex below before uncommenting
-    # preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
-
-    plt.rcParams["text.latex.preamble"] = preamble
-
     # Note: The global usetex setting should remain off. This prevents serif fonts
     # from proliferating (e.g. to axis tick labels). Instead just pass usetex=True
-    # as a kwarg to any text-based command as necessary. If you really need global
-    # tex, uncomment the sfmath line above to keep serifs in check
-    # plt.rc("text", usetex=True)
+    # as a kwarg to any text-based command as necessary. If really necessary, flip
+    # the flag below and use the \mathrm and \mathit macros to keep serifs in check
+    if False:
+        preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
+        plt.rcParams["text.latex.preamble"] = preamble
+        plt.rc("text", usetex=True)
+    else:
+        plt.rcParams["text.latex.preamble"] = preamble
 
     ### Other rcparams
 
