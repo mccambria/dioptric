@@ -623,7 +623,7 @@ def refit_experiments():
 
     data_points = get_data_points(skip_lambda)
     # data_points = data_points[::50]
-    data_points = data_points[145:]
+    # data_points = data_points[222:]
     # file_list = [el["ZFS file"] for el in data_points]
     # data_points = data_points[2:3]
     file_list = []
@@ -646,29 +646,29 @@ def refit_experiments():
     refit_sub_lambda = lambda f, g: refit_experiments_sub(f, g, do_plot, do_save)
 
     # Parallel
-    with ProcessingPool() as p:
-        results = p.map(refit_sub_lambda, file_list, guess_param_list)
+    # with ProcessingPool() as p:
+    #     results = p.map(refit_sub_lambda, file_list, guess_param_list)
 
     # List comp
     # results = [refit_sub_lambda(f, g) for f, g in zip(file_list, guess_param_list)]
 
     # For loop
-    # results = []
-    # for ind in range(len(file_list)):
-    #     if ind < 147:
-    #         continue
-    #     print(ind)
-    #     print(ind + 2)
-    #     f = file_list[ind]
-    #     print(f)
-    #     g = guess_param_list[ind]
-    #     # g[0] = 0.3  # Contrast
-    #     # # g[1] = 1  # Center
-    #     # g[2] = 2  # Rabi
-    #     # g[3] = 1  # Splitting
-    #     result = refit_sub_lambda(f, g)
-    #     results.append(result)
-    #     print()
+    results = []
+    for ind in range(len(file_list)):
+        if ind < 150:
+            continue
+        print(ind)
+        print(ind + 2)
+        f = file_list[ind]
+        print(f)
+        g = guess_param_list[ind]
+        # g[0] = 0.3  # Contrast
+        # # g[1] = 1  # Center
+        # g[2] = 2  # Rabi
+        # g[3] = 1  # Splitting
+        result = refit_sub_lambda(f, g)
+        results.append(result)
+        print()
 
     ### Parse results
 
@@ -844,9 +844,19 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
                 1.4 * (1 - min(norm_avg_sig)),
                 guess_params[1],
                 2.0,
-                0.5,
-                np.pi * 3 / 4,
+                3.0,
+                # np.pi * 3 / 4,
+                np.pi * 3 / 2,
             ]
+        # guess_params = [0.286211, guess_params[1], 2.13e00, 8.61e-01, 8.34e-01]
+        # guess_params = [0.2, guess_params[1], 2.3, 3, np.pi * 3 / 4]
+        guess_params = [
+            2.71769061e-01,
+            2.86946093e00,
+            2.04020876e00,
+            7.19232927e-01,
+            -1.71050225e-03,
+        ]
 
     elif sample == "15micro":
         # fmt: off
@@ -880,11 +890,11 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
                 norm_avg_sig,
                 norm_avg_sig_ste,
                 #
-                line_func=line_func,
-                guess_params=guess_params,
+                # line_func=line_func,
+                # guess_params=guess_params,
                 #
-                # fit_func=fit_func,
-                # popt=guess_params,
+                fit_func=fit_func,
+                popt=guess_params,
             )
             if do_save:
                 file_path = raw_file_path.with_name((f"{file_name}-fit"))
@@ -901,8 +911,8 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
                 guess_params=guess_params,
             )
 
-        pste = np.sqrt(np.diag(pcov))
-        # pste = None
+        # pste = np.sqrt(np.diag(pcov))
+        pste = None
 
         fit_lambda = lambda freq: fit_func(freq, *popt)
         freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
@@ -917,8 +927,9 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         red_chi_sq = 10
 
     # print(guess_params)
-    # print(red_chi_sq)
-    # plt.show(block=True)
+    print(popt)
+    print(red_chi_sq)
+    plt.show(block=True)
 
     return (popt, pste, red_chi_sq)
     # return "test"

@@ -34,10 +34,10 @@ def gen_hamiltonian(dp, dm, rabi_freq, splitting_freq, phase):
     # def gen_hamiltonian(dp, dm, rabi_freq):
     # splitting_freq = 0
     # phase = 0
-    phase_factor = np.exp(1j * phase)
-    conj_phase_factor = np.exp(1j * phase)
+    phase_factor = mp.expj(phase)
+    conj_phase_factor = mp.expj(-phase)
     # Include spin matrix factors
-    normed_rabi = rabi_freq / np.sqrt(2)
+    normed_rabi = rabi_freq / mp.sqrt(2)
     normed_splitting = splitting_freq / 2
     return mp.matrix(
         [
