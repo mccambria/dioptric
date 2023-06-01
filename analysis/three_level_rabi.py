@@ -84,18 +84,18 @@ def coherent_line_v1(freq, contrast, rabi_freq, center, splitting, pulse_dur):
 def coherent_line(freq, contrast, center, rabi_freq, splitting_freq, phase, pulse_dur):
     # def coherent_line(freq, contrast, center, rabi_freq, pulse_dur):
     # Average over the hyperfine splittings
-    line = None
-    for Bz in (-2.2, 0, 2.2):
-        args = [contrast, center, rabi_freq, splitting_freq, phase, pulse_dur, Bz]
-        # args = [contrast, center, rabi_freq, pulse_dur, Bz]
-        if line is None:
-            line = single_conversion(coherent_line_single, freq, *args)
-        else:
-            line += single_conversion(coherent_line_single, freq, *args)
-    line /= 3
+    # line = None
+    # for Bz in (-2.2, 0, 2.2):
+    #     args = [contrast, center, rabi_freq, splitting_freq, phase, pulse_dur, Bz]
+    #     # args = [contrast, center, rabi_freq, pulse_dur, Bz]
+    #     if line is None:
+    #         line = single_conversion(coherent_line_single, freq, *args)
+    #     else:
+    #         line += single_conversion(coherent_line_single, freq, *args)
+    # line /= 3
 
-    # args = [contrast, center, rabi_freq, splitting_freq, phase, pulse_dur]
-    # line = single_conversion(coherent_line_single, freq, *args)
+    args = [contrast, center, rabi_freq, splitting_freq, phase, pulse_dur]
+    line = single_conversion(coherent_line_single, freq, *args)
 
     # Set the contrast to be the max of the line
     # line *= contrast / (np.max(line))
@@ -158,6 +158,7 @@ def coherent_line_single(
     freq, contrast, center, rabi_freq, splitting_freq, phase, pulse_dur, Bz=0
 ):
     # def coherent_line_single(freq, contrast, center, rabi_freq, pulse_dur, Bz=0):
+
     detuning = (center - freq) * 1000
     dp = detuning + Bz
     dm = detuning - Bz
@@ -173,10 +174,19 @@ def coherent_line_single(
     # hamiltonian = gen_hamiltonian(dp, dm, rabi_freq)
     eigvals, eigvecs = mp.eighe(hamiltonian)
 
+    # Check degeneracy
+    diffs = [eigvals[0] - eigvals[1], eigvals[0] - eigvals[2], eigvals[1] - eigvals[2]]
+    diffs = [np.abs(val) for val in diffs]
+    degeneracies = [val < 0.01 for val in diffs]
+    # if True in degeneracies:
+    #     test = 1
+    # if 2.87488 < freq < 2.87489:
+    #     test = 1
+
     intial_vec = mp.matrix([[0], [1], [0]])
     initial_comps = [mp.fdot(intial_vec, eigvecs[:, ind]) for ind in range(3)]
     final_comps = [
-        initial_comps[ind] * mp.exp(2 * mp.pi * (0 + 1j) * eigvals[ind] * pulse_dur)
+        initial_comps[ind] * mp.expj(2 * mp.pi * eigvals[ind] * pulse_dur)
         for ind in range(3)
     ]
     final_vec = mp.matrix([[0], [0], [0]])
@@ -188,6 +198,7 @@ def coherent_line_single(
     # ret_val = contrast * line
 
     return np.float64(ret_val)
+    # return np.float64(min(diffs))
 
 
 def incoherent_line_single(
@@ -335,7 +346,8 @@ if __name__ == "__main__":
     # incoherent()
     # plot_mat_els()
 
-    freqs = np.linspace(2.85, 2.89, 100)
+    freqs = np.linspace(2.85, 2.89, 1000)
+    # freqs = np.linspace(2.8745, 2.8755, 1000)
     fig, ax = plt.subplots()
 
     # contrast, center, rabi_freq, rabi_phase, splitting_freq, splitting_phase, pulse_dur
@@ -344,7 +356,7 @@ if __name__ == "__main__":
     # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.87, 5.2, +10, 0.0 * np.pi, 50))
     # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.2, 2.875, 5.2, 0, 0.0 * np.pi, 50))
 
-    kpl.plot_line(ax, freqs, coherent_line(freqs, 0.30, 2.87, 1.717, 1.0, 0, 200))
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.30, 2.87, 1.717, 1.0, 0, 200))
     # kpl.plot_line(ax, freqs, coherent_line(freqs, 0.30, 2.871, 1.717, 0.0, 0, 200))
     # kpl.plot_line(
     #     ax, freqs, coherent_line(freqs, 0.30, 2.87, 1.717, 1.133, np.pi / 4, 200)
@@ -352,5 +364,21 @@ if __name__ == "__main__":
     # kpl.plot_line(
     #     ax, freqs, coherent_line(freqs, 0.30, 2.877, 1.717, 1.133, np.pi / 2, 200)
     # )
+    params = [
+        2.71769061e-01,
+        2.86946093e00,
+        2.04020876e00,
+        7.19232927e-01,
+        -1.71050225e-03,
+        # np.pi / 4,
+    ]
+    # kpl.plot_line(ax, freqs, coherent_line(freqs, *params, 200))
+    f = 2.875
+    detuning = (params[1] - f) * 1000
+    dp = detuning
+    dm = detuning
+    hamiltonian = gen_hamiltonian(dp, dm, params[2], params[3], 0 * params[4])
+    eigvals, eigvecs = mp.eighe(hamiltonian)
+    print(eigvals)
 
     plt.show(block=True)
