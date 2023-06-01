@@ -44,6 +44,8 @@ class MarkerSize(float, Enum):
 
 
 class LineWidth(float, Enum):
+    HUGE = 2.5
+    BIG = 2.0
     NORMAL = 1.5
     SMALL = 1.25
     TINY = 1.0

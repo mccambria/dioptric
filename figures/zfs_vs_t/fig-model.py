@@ -50,11 +50,12 @@ def fig():
     # ax3 = ax2.twinx()
 
     adj_figsize = (kpl_figsize[0], 1.4 * kpl_figsize[1])
-    fig, (ax1, ax1bot, ax2) = plt.subplots(
-        3, 1, figsize=adj_figsize, height_ratios=[3, 1, 3]
+    fig, (ax1, ax1bot, spacer, ax2) = plt.subplots(
+        4, 1, figsize=adj_figsize, height_ratios=[3, 1, 0.85, 3]
     )
-    ax1.sharex(ax1bot)
+    ax1bot.sharex(ax1)
     ax2share = ax2.twinx()
+    spacer.axis("off")
 
     double_occupation_lambda = fit_double_occupation()
 
@@ -85,22 +86,35 @@ def fig():
         zorder=0,
     )
     # print(max(diffs))
-    ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)", usetex=True)
-    ax1.set_xlabel("Temperature (K)")
+    ax1.set_ylabel(r"Lattice const. ($\si{\angstrom}$)", usetex=True)
     ax1.legend(fontsize=kpl.FontSize.SMALL, loc=kpl.Loc.LOWER_RIGHT, handlelength=2.5)
     ax1.set_xlim(0, 1000)
     ax1.set_yticks([3.567, 3.570, 3.573])
+    # ax1.set_xticks([])
     ax1.set_ylim(3.5658, None)
+    # ax1.tick_params(axis="x", which="both", bottom=False, top=False, labelbottom=False)
     text = r"\noindent$a(T) = a_{0} + b_{1}n_{1} + b_{2}n_{2}$"
     text += r"\\"
     text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
     kpl.anchored_text(ax1, text, kpl.Loc.UPPER_LEFT, kpl.Size.SMALL, usetex=True)
+    ax1.tick_params(axis="x", which="both", labeltop=False, labelbottom=False)
 
     diffs = [
         jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
         for temp in temp_linspace
     ]
-    kpl.plot_line(ax1bot, temp_linspace, diffs)
+    diffs = [1e6 * val for val in diffs]
+    kpl.plot_line(ax1bot, temp_linspace, diffs, color=KplColors.BROWN)
+    ax1bot.axhline(y=0, color=KplColors.MEDIUM_GRAY, zorder=-5)
+    ax1bot.set_ylabel(r"Diff. ($\si{\micro\angstrom}$)", labelpad=18, usetex=True)
+    ax1bot.set_ylim(-12, 12)
+    ax1bot.set_xlabel("Temperature (K)")
+    # ax1bot.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=True)
+    ax1bot2 = ax1bot.secondary_xaxis("top")
+    ax1bot2.tick_params(
+        axis="x", direction="inout", labeltop=False, labelbottom=False, length=6
+    )
+    # ax1bot.tick_params(axis="x", direction="out", labelbottom=True)
 
     # Second order effects
     # sigma = np.sqrt(7.5)
@@ -147,33 +161,34 @@ def fig():
 
     ### Wrap up
 
-    fig.text(0.07, 0.965, "(a)")
-    fig.text(0.07, 0.465, "(b)")
+    fig.text(0.03, 0.965, "(a)")
+    fig.text(0.03, 0.415, "(b)")
     # print(jacobson_lattice_constant(257))
     fig.tight_layout(pad=0.1)
     fig.tight_layout(pad=0.1)
-    # fig.subplots_adjust(hspace=0)
+    fig.subplots_adjust(hspace=0)
 
     ### Lattice constant diffs
-    if False:
-        diffs = [
-            np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
-            for temp in temp_linspace
-        ]
-        #
-        rel_diffs = []
-        a_zero_k = jacobson_lattice_constant(5)  # Below 5 you get NaN
-        a_max_k = jacobson_lattice_constant(max_temp)
-        total_change = np.abs(a_max_k - a_zero_k)
-        for temp in temp_linspace:
-            diff_val = np.abs(
-                jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
-            )
-            rel_diffs.append(diff_val / total_change)
-        #
-        fig, ax = plt.subplots()
-        # ax.plot(temp_linspace, diffs)
-        ax.plot(temp_linspace, rel_diffs)
+    # a_zero_k = jacobson_lattice_constant(5)  # Below 5 you get NaN
+    # a_max_k = jacobson_lattice_constant(max_temp)
+    # total_change = np.abs(a_max_k - a_zero_k)
+    # print(total_change)
+    # print(11e-6 / total_change)
+    # diffs = [
+    #     np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
+    #     for temp in temp_linspace
+    # ]
+    # #
+    # rel_diffs = []
+    # for temp in temp_linspace:
+    #     diff_val = np.abs(
+    #         jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
+    #     )
+    #     rel_diffs.append(diff_val / total_change)
+    # #
+    # fig, ax = plt.subplots()
+    # # ax.plot(temp_linspace, diffs)
+    # ax.plot(temp_linspace, rel_diffs)
 
 
 if __name__ == "__main__":

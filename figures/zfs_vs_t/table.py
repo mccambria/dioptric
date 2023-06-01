@@ -78,6 +78,8 @@ def main():
         temp = point["Monitor temp (K)"]
         zfs = point["ZFS (GHz)"]
         zfs_err = point["ZFS (GHz) error"]
+        zfs *= 1000
+        zfs_err *= 1000
         print_zfs = tool_belt.round_for_print(zfs, zfs_err)
         point_str = f"{nv} & {temp} & {print_zfs}"
         print_str += point_str
