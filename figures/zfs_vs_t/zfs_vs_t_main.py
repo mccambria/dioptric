@@ -609,7 +609,7 @@ def refit_experiments():
     # Also see below section Sample-dependent fit...
 
     do_plot = True  # Generate raw data and fit plots?
-    do_save = False  # Save the plots?
+    do_save = True  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     skip_lambda = (
@@ -721,29 +721,29 @@ def refit_experiments():
     refit_sub_lambda = lambda f, g: refit_experiments_sub(f, g, do_plot, do_save)
 
     # Parallel
-    # with ProcessingPool() as p:
-    #     results = p.map(refit_sub_lambda, file_list, guess_param_list)
+    with ProcessingPool() as p:
+        results = p.map(refit_sub_lambda, file_list, guess_param_list)
 
     # List comp
     # results = [refit_sub_lambda(f, g) for f, g in zip(file_list, guess_param_list)]
 
     # For loop
-    results = []
-    for ind in range(len(file_list)):
-        if ind < 190:
-            continue
-        print(ind)
-        print(ind + 2)
-        f = file_list[ind]
-        print(f)
-        g = guess_param_list[ind]
-        # g[0] = 0.3  # Contrast
-        # # g[1] = 1  # Center
-        # g[2] = 2  # Rabi
-        # g[3] = 1  # Splitting
-        result = refit_sub_lambda(f, g)
-        results.append(result)
-        print()
+    # results = []
+    # for ind in range(len(file_list)):
+    #     if ind < 45:
+    #         continue
+    #     print(ind)
+    #     print(ind + 2)
+    #     f = file_list[ind]
+    #     print(f)
+    #     g = guess_param_list[ind]
+    #     # g[0] = 0.3  # Contrast
+    #     # # g[1] = 1  # Center
+    #     # g[2] = 2  # Rabi
+    #     # g[3] = 1  # Splitting
+    #     result = refit_sub_lambda(f, g)
+    #     results.append(result)
+    #     print()
 
     ### Parse results
 
@@ -926,9 +926,19 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         # guess_params = [0.286211, guess_params[1], 2.13e00, 8.61e-01, 8.34e-01]
         # guess_params = [0.2, guess_params[1], 2.3, 3, np.pi * 3 / 4]
         # guess_params = [0.2898781, 2.86307206, 2.5, 2, 4.71850563]
+
         line_func = pesr.lorentzian_split
-        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, guess_params[2], 2]
+        fit_func = lambda freq, contrast, width, center, splitting: pesr.dip_sum(
+            freq, line_func, contrast, width, center, splitting
+        )
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, freq_center, 1]
+
         # line_func = pesr.lorentzian_split_offset
+        # fit_func = (
+        #     lambda freq, contrast, width, center, splitting, offset: pesr.dip_sum(
+        #         freq, line_func, contrast, width, center, splitting, offset
+        #     )
+        # )
         # guess_params.append(0.02)
 
     elif sample == "15micro":
@@ -954,55 +964,62 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
 
     ### Raw data figure or just get fit params
 
-    # try:
-    if do_plot:
-        fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
-            freq_center,
-            freq_range,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            #
-            line_func=line_func,
-            guess_params=guess_params,
-            #
-            # fit_func=fit_func,
-            # popt=guess_params,
-        )
-        if do_save:
-            file_path = raw_file_path.with_name((f"{file_name}-fit"))
-            file_path = file_path.with_suffix(".svg")
-            tool_belt.save_figure(fit_fig, file_path)
-    else:
-        fit_func, popt, pcov = pesr.fit_resonance(
-            freq_center,
-            freq_range,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            line_func=line_func,
-            guess_params=guess_params,
-        )
+    try:
+        if do_plot:
+            fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                #
+                line_func=line_func,
+                guess_params=guess_params,
+                #
+                # fit_func=fit_func,
+                # popt=guess_params,
+            )
+            if do_save:
+                file_path = raw_file_path.with_name((f"{file_name}-fit"))
+                file_path = file_path.with_suffix(".svg")
+                tool_belt.save_figure(fit_fig, file_path)
+        else:
+            fit_func, popt, pcov = pesr.fit_resonance(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                line_func=line_func,
+                guess_params=guess_params,
+            )
 
-    pste = np.sqrt(np.diag(pcov))
-    # pste = None
+        pste = np.sqrt(np.diag(pcov))
+        # pste = None
 
-    fit_lambda = lambda freq: fit_func(freq, *popt)
-    freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
-    chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
-    red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+        fit_lambda = lambda freq: fit_func(freq, *popt)
+        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+        chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+        red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
 
-    # except Exception as exc:
-    #     print(exc)
-    #     num_params = len(guess_params)
-    #     popt = np.zeros(num_params)
-    #     pste = np.zeros(num_params)
-    #     red_chi_sq = 10
+    except Exception as exc:
+        print(exc)
+        num_params = len(guess_params)
+        popt = np.zeros(num_params)
+        pste = np.zeros(num_params)
+        red_chi_sq = 10
 
     # print(guess_params)
-    print(popt)
-    print(red_chi_sq)
-    plt.show(block=True)
+    # print(popt)
+    # print(red_chi_sq)
+    # xl_str = ""
+    # for ind in range(len(popt)):
+    #     xl_str += str(tool_belt.round_sig_figs(popt[ind], 6))
+    #     xl_str += ", "
+    #     xl_str += str(tool_belt.round_sig_figs(pste[ind], 6))
+    #     xl_str += ", "
+    # print(xl_str)
+    # plt.show(block=True)
 
     return (popt, pste, red_chi_sq)
     # return "test"

@@ -129,6 +129,9 @@ def condense_data_points(data_points):
                 new_point[col] = np.sqrt(1 / norm)
             else:
                 error_col = col + " error"
+                if error_col not in new_point:
+                    new_point[col] = np.average(new_point[col])
+                    continue
                 errors = new_point[error_col]
                 if 0 in errors:
                     ind = np.where(np.array(errors) == 0)[0][0]
@@ -405,28 +408,27 @@ def reanalyze():
 def main():
     fig, ax = plt.subplots()
 
-    axins = inset_axes(
-        ax,
-        width="100%",
-        height="100%",
-        bbox_to_anchor=(
-            0.12,
-            0.45,
-            0.2,
-            0.52,
-        ),
-        bbox_transform=ax.transAxes,
-        loc=1,
-    )
+    # axins = inset_axes(
+    #     ax,
+    #     width="100%",
+    #     height="100%",
+    #     bbox_to_anchor=(
+    #         0.12,
+    #         0.45,
+    #         0.2,
+    #         0.52,
+    #     ),
+    #     bbox_transform=ax.transAxes,
+    #     loc=1,
+    # )
     fig_sub(ax)
-    fig_sub(axins, legend=False, axis_labels=False, size=kpl.Size.SMALL)
-    axins.set_xlim(-0.1, 0.1)
-    axins.set_xticks([-0.1, 0.0, 0.1])
-    axins.set_ylim(0.33, 0.65)
-    axins.set_yticks([0.4, 0.5, 0.6])
-    axins.tick_params("both", labelsize=15)
-    # ax.xaxis.set_tick_params(labelbottom=False)
-    # ax.yaxis.set_tick_params(labelleft=False)
+
+    # fig_sub(axins, legend=False, axis_labels=False, size=kpl.Size.SMALL)
+    # axins.set_xlim(-0.1, 0.1)
+    # axins.set_xticks([-0.1, 0.0, 0.1])
+    # axins.set_ylim(0.33, 0.65)
+    # axins.set_yticks([0.4, 0.5, 0.6])
+    # axins.tick_params("both", labelsize=15)
 
 
 def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
@@ -474,7 +476,7 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
         )
     if axis_labels:
         ax.set_xlabel("Splitting (MHz)")
-        ax.set_ylabel("Deviation from 2.87 GHz (MHz)")
+        ax.set_ylabel("Deviation from 2870 (MHz)")
     if legend:
         # ax.legend(title="Region")
         handles, labels = ax.get_legend_handles_labels()
@@ -487,7 +489,7 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # main()
-    reanalyze()
+    main()
+    # reanalyze()
 
     plt.show(block=True)
