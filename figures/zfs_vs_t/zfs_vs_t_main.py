@@ -609,7 +609,7 @@ def refit_experiments():
     # Also see below section Sample-dependent fit...
 
     do_plot = True  # Generate raw data and fit plots?
-    do_save = True  # Save the plots?
+    do_save = False  # Save the plots?
     do_print = True  # Print out popts and associated error bars?
 
     skip_lambda = (
@@ -730,7 +730,7 @@ def refit_experiments():
     # For loop
     # results = []
     # for ind in range(len(file_list)):
-    #     if ind < 45:
+    #     if ind < 57:
     #         continue
     #     print(ind)
     #     print(ind + 2)
@@ -927,11 +927,19 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         # guess_params = [0.2, guess_params[1], 2.3, 3, np.pi * 3 / 4]
         # guess_params = [0.2898781, 2.86307206, 2.5, 2, 4.71850563]
 
-        line_func = pesr.lorentzian_split
-        fit_func = lambda freq, contrast, width, center, splitting: pesr.dip_sum(
-            freq, line_func, contrast, width, center, splitting
+        line_func = pesr.voigt_split
+        fit_func = (
+            lambda freq, contrast, g_width, l_width, center, splitting: pesr.dip_sum(
+                freq, line_func, contrast, g_width, l_width, center, splitting
+            )
         )
-        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, freq_center, 1]
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
+
+        # line_func = pesr.lorentzian_split
+        # fit_func = lambda freq, contrast, width, center, splitting: pesr.dip_sum(
+        #     freq, line_func, contrast, width, center, splitting
+        # )
+        # guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, freq_center, 1]
 
         # line_func = pesr.lorentzian_split_offset
         # fit_func = (
@@ -2958,8 +2966,8 @@ if __name__ == "__main__":
     #     supp_labels=True,
     # )
     # comps()
-    comps_sep()
-    # refit_experiments()
+    # comps_sep()
+    refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 

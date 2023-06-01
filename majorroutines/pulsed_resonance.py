@@ -24,6 +24,7 @@ import sys
 from utils.positioning import get_scan_1d as calculate_freqs
 from pathlib import Path
 from inspect import signature
+from scipy.special import voigt_profile as scipy_voigt
 
 
 # region Plotting
@@ -274,6 +275,21 @@ def rabi_line_n15_hyperfine(
 def gaussian(freq, contrast, sigma, center):
     sigma_ghz = sigma / 1000
     return contrast * np.exp(-((freq - center) ** 2) / (2 * (sigma_ghz**2)))
+
+
+def voigt(freq, contrast, g_width, l_width, center):
+    g_width_ghz = g_width / 1000
+    l_width_ghz = l_width / 1000
+    norm = scipy_voigt(0, g_width_ghz, l_width_ghz)
+    ret_val = scipy_voigt(freq - center, g_width_ghz, l_width_ghz)
+    return (contrast / norm) * ret_val
+
+
+def voigt_split(freq, contrast, g_width, l_width, center, splitting):
+    splitting_ghz = splitting / 1000
+    line_1 = voigt(freq, contrast, g_width, l_width, center - splitting_ghz / 2)
+    line_2 = voigt(freq, contrast, g_width, l_width, center + splitting_ghz / 2)
+    return line_1 + line_2
 
 
 def lorentzian(freq, contrast, hwhm, center):
