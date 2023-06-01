@@ -249,21 +249,23 @@ def reanalyze():
         "2023_02_16-10_53_23-wu-nv25_region5",
         "2023_02_16-16_05_52-wu-nv25_region5",
     ]
+    # print(len(file_list))
+    # return
 
-    file_list = [
-        "2023_02_22-18_06_53-15micro-nv6_zfs_vs_t",
-        "2023_02_22-19_30_08-15micro-nv7_zfs_vs_t",
-        "2023_02_22-18_34_55-15micro-nv8_zfs_vs_t",
-        "2023_02_22-19_02_58-15micro-nv9_zfs_vs_t",
-        "2023_02_22-20_51_42-15micro-nv11_zfs_vs_t",
-    ]
+    # file_list = [
+    #     "2023_02_22-18_06_53-15micro-nv6_zfs_vs_t",
+    #     "2023_02_22-19_30_08-15micro-nv7_zfs_vs_t",
+    #     "2023_02_22-18_34_55-15micro-nv8_zfs_vs_t",
+    #     "2023_02_22-19_02_58-15micro-nv9_zfs_vs_t",
+    #     "2023_02_22-20_51_42-15micro-nv11_zfs_vs_t",
+    # ]
 
     # file_list = file_list[21:22]
 
     for file_name in file_list:
-        if "nv14_region5" in file_name:
-            print(0.0)
-            continue
+        # if "nv14_region5" in file_name:
+        #     print(0.0)
+        #     continue
 
         data = tool_belt.get_raw_data(file_name)
 
@@ -485,7 +487,7 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    main()
-    # reanalyze()
+    # main()
+    reanalyze()
 
     plt.show(block=True)

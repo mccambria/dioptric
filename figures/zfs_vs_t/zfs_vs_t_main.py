@@ -639,13 +639,82 @@ def refit_experiments():
         #     el["Splitting (MHz)"],
         #     np.pi / 4,
         # ]
-        guess_params = [
-            el["Contrast"],
-            el["Width (MHz)"],
-            el["ZFS (GHz)"],
-            el["Splitting (MHz)"],
-        ]
+        # guess_params = [
+        #     el["Contrast"],
+        #     el["Width (MHz)"],
+        #     el["ZFS (GHz)"],
+        #     el["Splitting (MHz)"],
+        # ]
+        guess_params = None
         guess_param_list.append(guess_params)
+
+    file_list = [
+        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+        "2023_02_09-17_28_01-wu-nv1_region2",
+        "2023_02_09-18_02_43-wu-nv2_region2",
+        "2023_02_09-18_14_01-wu-nv3_region2",
+        "2023_02_09-17_51_24-wu-nv4_region2",
+        "2023_02_09-17_39_51-wu-nv5_region2",
+        "2023_02_09-23_28_39-wu-nv1_region3",
+        "2023_02_09-23_51_39-wu-nv2_region3",
+        "2023_02_10-00_14_56-wu-nv3_region3",
+        "2023_02_10-00_37_40-wu-nv4_region3",
+        "2023_02_10-00_59_59-wu-nv5_region3",
+        "2023_02_10-19_13_33-wu-nv1_region4",
+        "2023_02_10-18_51_08-wu-nv2_region4",
+        "2023_02_10-18_28_42-wu-nv3_region4",
+        "2023_02_10-18_06_16-wu-nv4_region4",
+        "2023_02_10-19_36_05-wu-nv5_region4",
+        "2023_02_13-11_54_40-wu-nv1_region5",
+        "2023_02_13-10_47_07-wu-nv2_region5",
+        "2023_02_13-11_32_11-wu-nv3_region5",
+        "2023_02_13-11_09_39-wu-nv4_region5",
+        "2023_02_13-12_17_20-wu-nv5_region5",
+        "2023_02_14-19_34_18-wu-nv6_region5",
+        "2023_02_15-11_34_42-wu-nv6_region5",
+        "2023_02_14-18_25_12-wu-nv7_region5",
+        "2023_02_15-10_49_10-wu-nv7_region5",
+        "2023_02_14-16_31_33-wu-nv8_region5",
+        "2023_02_15-10_03_52-wu-nv8_region5",
+        "2023_02_14-19_56_53-wu-nv9_region5",
+        "2023_02_15-09_17_38-wu-nv9_region5",
+        "2023_02_14-17_39_49-wu-nv10_region5",
+        "2023_02_15-08_54_44-wu-nv10_region5",
+        "2023_02_14-18_02_32-wu-nv11_region5",
+        "2023_02_15-08_31_53-wu-nv11_region5",
+        "2023_02_14-19_11_31-wu-nv12_region5",
+        "2023_02_15-11_12_05-wu-nv12_region5",
+        "2023_02_14-16_54_38-wu-nv13_region5",
+        "2023_02_15-09_41_02-wu-nv13_region5",
+        "2023_02_14-17_17_04-wu-nv14_region5",
+        "2023_02_15-11_57_26-wu-nv14_region5",
+        "2023_02_14-18_47_39-wu-nv15_region5",
+        "2023_02_15-10_26_32-wu-nv15_region5",
+        "2023_02_16-11_38_00-wu-nv16_region5",
+        "2023_02_16-15_21_12-wu-nv16_region5",
+        "2023_02_16-12_45_08-wu-nv17_region5",
+        "2023_02_16-16_28_17-wu-nv17_region5",
+        "2023_02_16-13_07_28-wu-nv18_region5",
+        "2023_02_16-17_58_56-wu-nv18_region5",
+        "2023_02_16-13_52_11-wu-nv19_region5",
+        "2023_02_16-17_36_17-wu-nv19_region5",
+        "2023_02_16-14_14_37-wu-nv20_region5",
+        "2023_02_16-14_36_43-wu-nv20_region5",
+        "2023_02_16-11_15_49-wu-nv21_region5",
+        "2023_02_16-16_51_10-wu-nv21_region5",
+        "2023_02_16-12_00_24-wu-nv22_region5",
+        "2023_02_16-14_59_00-wu-nv22_region5",
+        "2023_02_16-12_22_59-wu-nv23_region5",
+        "2023_02_16-17_14_04-wu-nv23_region5",
+        "2023_02_16-13_29_52-wu-nv24_region5",
+        "2023_02_16-15_43_44-wu-nv24_region5",
+        "2023_02_16-10_53_23-wu-nv25_region5",
+        "2023_02_16-16_05_52-wu-nv25_region5",
+    ]
 
     ### Run the fitting on each file
 
@@ -1538,6 +1607,7 @@ def fig(
     dash_predictions=False,
     inset_comp=False,
     inset_resid=False,
+    x1000=False,
 ):
     fig, ax = plt.subplots()
 
@@ -1556,6 +1626,7 @@ def fig(
         yscale=yscale,
         new_model_diff=new_model_diff,
         dash_predictions=dash_predictions,
+        x1000=x1000,
     )
 
     if inverse_temp:
@@ -1583,7 +1654,7 @@ def fig(
             # [0, 300],
             # [2.870, 2.878],
             [0, 175],
-            [2.876, 2.8781],
+            [2.876, 2.878],
             #
             plot_data=plot_data,
             condense_all=condense_all,
@@ -1597,9 +1668,13 @@ def fig(
             new_model_diff=False,
             dash_predictions=dash_predictions,
             no_axis_labels=True,
+            x1000=x1000,
         )
         # axins.set_yticks([2.870, 2.874, 2.878])
-        axins.set_yticks([2.876, 2.877, 2.878])
+        ticks = [2.876, 2.877, 2.878]
+        if x1000:
+            ticks = [1000 * el for el in ticks]
+        axins.set_yticks(ticks)
         axins.tick_params(axis="both", which="major", labelsize=16)
         plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
         axins.patch.set_alpha(0.7)
@@ -2051,11 +2126,11 @@ def fig_sub(
 
     # prior_data_to_plot = ["Toyli", "Barson", "Chen", "Li", "Doherty"]
     # prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty"]
-    prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty", "Lourette"]
+    prior_data_to_plot = ["Chen", "Toyli", "Doherty", "Li", "Lourette"]
     # prior_data_to_plot = ["Toyli"]
 
     # prior_models_to_plot = ["Toyli", "Barson"]
-    prior_models_to_plot = ["Toyli", "Chen", "Li", "Doherty", "Barson"]
+    prior_models_to_plot = ["Chen", "Toyli", "Doherty", "Li", "Barson"]
     # prior_models_to_plot = ["Toyli"]
     prior_model_data_ranges = {
         "Toyli": [300, 710],
@@ -2086,11 +2161,15 @@ def fig_sub(
     prior_work_colors = {
         "Chen": KplColors.ORANGE,
         "Toyli": KplColors.RED,
-        "Barson": KplColors.YELLOW,
+        "Barson": KplColors.BROWN,
         "Doherty": KplColors.GREEN,
         "Li": KplColors.PURPLE,
-        "Lourette": KplColors.BROWN,
+        "Lourette": KplColors.YELLOW,
     }
+    for key in prior_work_colors:
+        color = prior_work_colors[key]
+        prior_work_colors[key] = kpl.lighten_color_hex(color, saturation_factor=0.85)
+    # cmap=mpl.colormaps[name]
     prior_work_markers = {
         "Chen": "v",
         "Toyli": "D",
@@ -2113,6 +2192,14 @@ def fig_sub(
         "Li": "li_2017_1b",  # a is single, b is ensemble
         "Doherty": "doherty_2014_2a",
         "Lourette": "lourette_2022_3e",
+    }
+    prior_data_labels = {
+        "Chen": "[12] Chen",
+        "Toyli": "[13] Toyli",
+        "Doherty": "[14] Doherty",
+        "Li": "[15] Li",
+        "Barson": "[16] Barson",
+        "Lourette": "[17] Lourette",
     }
     prior_data_sets = {}
     for prior_work in prior_data_to_plot:
@@ -2236,6 +2323,7 @@ def fig_sub(
                 plot_vals = vals
             fc = "none" if plot_prior_data else kpl.lighten_color_hex(color)
             marker = prior_work_markers[prior_data]
+            label = prior_data_labels[prior_data]
             # marker = "D"
             kpl.plot_points(
                 ax,
@@ -2246,7 +2334,7 @@ def fig_sub(
                 markerfacecolor=fc,
                 # zorder=-5,
                 zorder=11,
-                label=prior_data,
+                label=label,
                 marker=marker,
             )
 
@@ -2263,6 +2351,7 @@ def fig_sub(
             plot_vals = vals
         label = None if plot_data else "This work"
         color = this_work_model_color
+        lw = kpl.LineWidth.BIG if plot_prior_models else kpl.LineWidth.NORMAL
         if dash_predictions:
             pmdr = [0, 500]
             if inverse_temp:
@@ -2279,6 +2368,7 @@ def fig_sub(
                 label=label,
                 color=color,
                 zorder=zorder,
+                linewidth=lw,
             )
             light_color = kpl.lighten_color_hex(color)
             kpl.plot_line(
@@ -2290,6 +2380,7 @@ def fig_sub(
                 color=color,
                 linestyle="dashed",
                 zorder=zorder,
+                linewidth=lw,
             )
         else:
             kpl.plot_line(
@@ -2299,6 +2390,7 @@ def fig_sub(
                 label=label,
                 color=color,
                 zorder=zorder,
+                linewidth=lw,
             )
 
     ### Prior models
@@ -2324,7 +2416,7 @@ def fig_sub(
                 plot_vals = 1000 * vals
             else:
                 plot_vals = vals
-            label = None if plot_prior_data else prior_model
+            label = None if plot_prior_data else prior_data_labels[prior_model]
             if dash_predictions:
                 pmdr = prior_model_data_ranges[prior_model]
                 if inverse_temp:
@@ -2387,7 +2479,7 @@ def fig_sub(
         else:
             leg_loc = kpl.Loc.LOWER_LEFT
         # handlelength = 0.5 if plot_data else 1.5
-        handlelength = 1.0
+        handlelength = 1.3
         # if plot_prior_models:
         # if plot_prior_data:
         if plot_prior_models or plot_prior_data:
@@ -2773,7 +2865,7 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib(constrained_layout=False)
+    kpl.init_kplotlib(constrained_layout=True)
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()
@@ -2781,22 +2873,23 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    fig_bottom_resid()  # Main
+    # fig_bottom_resid()  # Main
     # fig(  # Comps
     #     temp_range=[0, 1000],
     #     y_range=[2.76, 2.88],
     #     #
-    #     plot_data=True,
+    #     plot_data=False,
     #     condense_all=False,
     #     condense_samples=True,
     #     plot_prior_models=True,
     #     desaturate_prior=False,
     #     plot_new_model=True,
-    #     plot_prior_data=True,
+    #     plot_prior_data=False,
     #     new_model_diff=False,
     #     dash_predictions=True,
     #     inset_comp=True,
     #     inset_resid=False,
+    #     x1000=True,
     # )
     # fig(  # Comps semi-log vs inverse temp
     #     # temp_range=[100, 1000],
@@ -2816,7 +2909,7 @@ if __name__ == "__main__":
     # )
     # comps()
     # comps_sep()
-    # refit_experiments()
+    refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 
