@@ -29,6 +29,8 @@ from figures.zfs_vs_t.zfs_vs_t_main import get_data_points
 from figures.zfs_vs_t.thermal_expansion import (
     fit_double_occupation,
     jacobson_lattice_constant,
+    zfs_vs_t_energies,
+    zfs_vs_t_energy_errs,
 )
 from figures.zfs_vs_t.deconvolve_spectral_function import deconvolve
 
@@ -104,6 +106,8 @@ def fig():
         for temp in temp_linspace
     ]
     diffs = [1e6 * val for val in diffs]
+    print(max(diffs))
+    print(max(diffs) / 
     kpl.plot_line(ax1bot, temp_linspace, diffs, color=KplColors.BROWN)
     ax1bot.axhline(y=0, color=KplColors.MEDIUM_GRAY, zorder=-5)
     ax1bot.set_ylabel(r"Diff. ($\si{\micro\angstrom}$)", labelpad=18, usetex=True)
@@ -146,8 +150,8 @@ def fig():
     ax2share.set_ylim(0, None)
 
     # Energies from ZFS vs T fit
-    energies = [56.85, 140.1]
-    energy_errs = [2.45, 7.5]
+    energies = zfs_vs_t_energies
+    energy_errs = zfs_vs_t_energy_errs
     for ind in range(len(energies)):
         energy = energies[ind]
         energy_err = energy_errs[ind]

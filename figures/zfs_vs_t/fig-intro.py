@@ -129,13 +129,23 @@ def main():
         #     f, *popt, uwave_pulse_dur
         # )
 
+        # popt = (
+        #     data_point["Contrast"],
+        #     data_point["Width (MHz)"],
+        #     data_point["ZFS (GHz)"],
+        #     data_point["Splitting (MHz)"],
+        # )
+        # fit_func = lambda f: 1 - pesr.lorentzian_split(f, *popt)
+
         popt = (
             data_point["Contrast"],
-            data_point["Width (MHz)"],
+            data_point["G width (MHz)"],
+            data_point["L width (MHz)"],
             data_point["ZFS (GHz)"],
             data_point["Splitting (MHz)"],
         )
-        fit_func = lambda f: 1 - pesr.lorentzian_split(f, *popt)
+        line_func = pesr.voigt_split
+        fit_func = lambda freq: pesr.dip_sum(freq, line_func, *popt)
 
         label = f"{int(temp)} K"
         fit_vals = fit_func(smooth_freqs)

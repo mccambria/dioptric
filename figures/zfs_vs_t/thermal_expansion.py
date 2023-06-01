@@ -21,6 +21,8 @@ from utils.tool_belt import bose
 meV_to_K = 11.6045250061657  # 1 meV = 11.6045250061657 K
 # a0 = 3.566503
 a0 = 3.5671
+zfs_vs_t_energies = [58.73, 145.5]
+zfs_vs_t_energy_errs = [2.32, 8.4]
 
 
 def einstein_term(e, temp):
@@ -55,7 +57,7 @@ def cambria_test(T, a0, energy1, energy2, coeff1, coeff2):
 # def double_occupation(T, a0, energy1, energy2, coeff1, coeff2):
 # energies = [energy1, energy2]  # meV
 def double_occupation(T, a0, coeff1, coeff2):
-    energies = [58.99, 146.9]
+    energies = zfs_vs_t_energies
     coeffs = [coeff1, coeff2]
     total = None
     for ind in range(2):

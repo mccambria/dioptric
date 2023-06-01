@@ -597,6 +597,7 @@ def fit_resonance(
         p0=guess_params,
         sigma=norm_avg_sig_ste,
         absolute_sigma=True,
+        bounds=(0, np.inf),
         # full_output=True,
         # method="trf",
         # bounds=(0, np.inf),
@@ -606,7 +607,7 @@ def fit_resonance(
         #     (0.5, freqs[-1], 8, 10, 2 * np.pi),
         # ),  # MCC
         # # max_nfev=100,
-        ftol=1e-4,  # MCC
+        # ftol=1e-4,  # MCC
     )
 
     # If the user gave us a hint, go with that

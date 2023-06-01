@@ -482,7 +482,10 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
         handles, labels = ax.get_legend_handles_labels()
         order = [1, 2, 3, 4, 0]
         ax.legend(
-            [handles[i] for i in order], [labels[i] for i in order], title="Region"
+            [handles[i] for i in order],
+            [labels[i] for i in order],
+            title="Region",
+            loc=kpl.Loc.LOWER_RIGHT,
         )
 
 
