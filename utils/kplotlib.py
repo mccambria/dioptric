@@ -57,8 +57,8 @@ class MarkerEdgeWidth(float, Enum):
 
 class FontSize(float, Enum):
     NORMAL = 17
-    SMALL = 15
-    TINY = 13
+    SMALL = 14
+    TINY = 11
 
 
 class PlotType(Enum):

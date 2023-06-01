@@ -632,12 +632,18 @@ def refit_experiments():
         file_list.append(el["ZFS file"])
         # print(el["ZFS file"])
         # return
+        # guess_params = [  # Three level Rabi
+        #     el["Contrast"],
+        #     el["ZFS (GHz)"],
+        #     el["Width (MHz)"],
+        #     el["Splitting (MHz)"],
+        #     np.pi / 4,
+        # ]
         guess_params = [
             el["Contrast"],
-            el["ZFS (GHz)"],
             el["Width (MHz)"],
+            el["ZFS (GHz)"],
             el["Splitting (MHz)"],
-            np.pi / 4,
         ]
         guess_param_list.append(guess_params)
 
@@ -655,7 +661,7 @@ def refit_experiments():
     # For loop
     results = []
     for ind in range(len(file_list)):
-        if ind < 150:
+        if ind < 190:
             continue
         print(ind)
         print(ind + 2)
@@ -815,48 +821,46 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         #     np.pi / 4,
         # ]
         # Hot
-        if file_name.endswith("nv6_zfs_vs_t"):
-            guess_params = [
-                1.3 * (1 - min(norm_avg_sig)),
-                guess_params[1],
-                2.0,
-                0.75,
-                0,
-            ]
-        elif file_name.endswith("nv7_zfs_vs_t"):
-            guess_params = [
-                1.4 * (1 - min(norm_avg_sig)),
-                guess_params[1],
-                1.9,
-                0.5,
-                np.pi * 3 / 4,
-            ]
-        elif file_name.endswith("nv10_zfs_vs_t"):
-            guess_params = [
-                1.0 * (1 - min(norm_avg_sig)),
-                guess_params[1],
-                2.7,
-                5.5,
-                np.pi * 3 / 4,
-            ]
-        else:
-            guess_params = [
-                1.4 * (1 - min(norm_avg_sig)),
-                guess_params[1],
-                2.0,
-                3.0,
-                # np.pi * 3 / 4,
-                np.pi * 3 / 2,
-            ]
+        # if file_name.endswith("nv6_zfs_vs_t"):
+        #     guess_params = [
+        #         1.3 * (1 - min(norm_avg_sig)),
+        #         guess_params[1],
+        #         2.0,
+        #         0.75,
+        #         0,
+        #     ]
+        # elif file_name.endswith("nv7_zfs_vs_t"):
+        #     guess_params = [
+        #         1.4 * (1 - min(norm_avg_sig)),
+        #         guess_params[1],
+        #         1.9,
+        #         0.5,
+        #         np.pi * 3 / 4,
+        #     ]
+        # elif file_name.endswith("nv10_zfs_vs_t"):
+        #     guess_params = [
+        #         1.0 * (1 - min(norm_avg_sig)),
+        #         guess_params[1],
+        #         2.7,
+        #         5.5,
+        #         np.pi * 3 / 4,
+        #     ]
+        # else:
+        #     guess_params = [
+        #         1.4 * (1 - min(norm_avg_sig)),
+        #         guess_params[1],
+        #         2.0,
+        #         3.0,
+        #         # np.pi * 3 / 4,
+        #         np.pi * 3 / 2,
+        #     ]
         # guess_params = [0.286211, guess_params[1], 2.13e00, 8.61e-01, 8.34e-01]
         # guess_params = [0.2, guess_params[1], 2.3, 3, np.pi * 3 / 4]
-        guess_params = [
-            2.71769061e-01,
-            2.86946093e00,
-            2.04020876e00,
-            7.19232927e-01,
-            -1.71050225e-03,
-        ]
+        # guess_params = [0.2898781, 2.86307206, 2.5, 2, 4.71850563]
+        line_func = pesr.lorentzian_split
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, guess_params[2], 2]
+        # line_func = pesr.lorentzian_split_offset
+        # guess_params.append(0.02)
 
     elif sample == "15micro":
         # fmt: off
@@ -881,50 +885,50 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
 
     ### Raw data figure or just get fit params
 
-    try:
-        if do_plot:
-            fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
-                freq_center,
-                freq_range,
-                num_steps,
-                norm_avg_sig,
-                norm_avg_sig_ste,
-                #
-                # line_func=line_func,
-                # guess_params=guess_params,
-                #
-                fit_func=fit_func,
-                popt=guess_params,
-            )
-            if do_save:
-                file_path = raw_file_path.with_name((f"{file_name}-fit"))
-                file_path = file_path.with_suffix(".svg")
-                tool_belt.save_figure(fit_fig, file_path)
-        else:
-            fit_func, popt, pcov = pesr.fit_resonance(
-                freq_center,
-                freq_range,
-                num_steps,
-                norm_avg_sig,
-                norm_avg_sig_ste,
-                line_func=line_func,
-                guess_params=guess_params,
-            )
+    # try:
+    if do_plot:
+        fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
+            freq_center,
+            freq_range,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            #
+            line_func=line_func,
+            guess_params=guess_params,
+            #
+            # fit_func=fit_func,
+            # popt=guess_params,
+        )
+        if do_save:
+            file_path = raw_file_path.with_name((f"{file_name}-fit"))
+            file_path = file_path.with_suffix(".svg")
+            tool_belt.save_figure(fit_fig, file_path)
+    else:
+        fit_func, popt, pcov = pesr.fit_resonance(
+            freq_center,
+            freq_range,
+            num_steps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+            line_func=line_func,
+            guess_params=guess_params,
+        )
 
-        # pste = np.sqrt(np.diag(pcov))
-        pste = None
+    pste = np.sqrt(np.diag(pcov))
+    # pste = None
 
-        fit_lambda = lambda freq: fit_func(freq, *popt)
-        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
-        chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
-        red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+    fit_lambda = lambda freq: fit_func(freq, *popt)
+    freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+    chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+    red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
 
-    except Exception as exc:
-        print(exc)
-        num_params = len(guess_params)
-        popt = np.zeros(num_params)
-        pste = np.zeros(num_params)
-        red_chi_sq = 10
+    # except Exception as exc:
+    #     print(exc)
+    #     num_params = len(guess_params)
+    #     popt = np.zeros(num_params)
+    #     pste = np.zeros(num_params)
+    #     red_chi_sq = 10
 
     # print(guess_params)
     print(popt)
@@ -1605,7 +1609,7 @@ def fig(
         y_pos = 0.87
         text = r"\noindent $D(T) = D_{0} + c_{1}n_{1} + c_{2}n_{2}$"
         text += r"\\"
-        text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+        text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
         # ax.text(x_pos, y_pos, text, transform=ax.transAxes, fontsize=15, usetex=True)
         kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, kpl.Size.SMALL, usetex=True)
 
@@ -1685,13 +1689,14 @@ def fig_bottom_resid(
         yscale=yscale,
         new_model_diff=new_model_diff,
         dash_predictions=dash_predictions,
+        x1000=True,
     )
 
     x_pos = 0.57
     y_pos = 0.87
     text = r"\noindent $D(T) = D_{0} + c_{1}n_{1} + c_{2}n_{2}$"
     text += r"\\"
-    text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+    text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
     # ax.text(x_pos, y_pos, text, transform=ax.transAxes, fontsize=15, usetex=True)
     kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, kpl.Size.SMALL, usetex=True)
 
@@ -2032,6 +2037,7 @@ def fig_sub(
     dash_predictions=False,
     no_axis_labels=False,
     comp_sep=None,  # Specific model to compare
+    x1000=False,
 ):
     ### Setup
 
@@ -2161,6 +2167,8 @@ def fig_sub(
                 plot_val = zfs_base - val
             elif new_model_diff:
                 plot_val = 1e3 * (val - cambria_lambda(temp))
+            elif x1000:
+                plot_val = 1000 * val
             else:
                 plot_val = val
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
@@ -2222,6 +2230,8 @@ def fig_sub(
                 plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temps)
+            elif x1000:
+                plot_vals = 1000 * vals
             else:
                 plot_vals = vals
             fc = "none" if plot_prior_data else kpl.lighten_color_hex(color)
@@ -2247,6 +2257,8 @@ def fig_sub(
         vals = cambria_lambda(temp_linspace)
         if inverse_temp or yscale == "log":
             plot_vals = zfs_base - vals
+        elif x1000:
+            plot_vals = 1000 * vals
         else:
             plot_vals = vals
         label = None if plot_data else "This work"
@@ -2308,6 +2320,8 @@ def fig_sub(
                 plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temp_linspace)
+            elif x1000:
+                plot_vals = 1000 * vals
             else:
                 plot_vals = vals
             label = None if plot_prior_data else prior_model
@@ -2420,13 +2434,19 @@ def fig_sub(
         elif new_model_diff:
             ax.set_ylabel("Residuals (MHz)")
         else:
-            ax.set_ylabel("ZFS (GHz)")
+            if x1000:
+                ax.set_ylabel("ZFS (MHz)")
+            else:
+                ax.set_ylabel("ZFS (MHz)")
     xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
     ax.set_xlim(*xlim)
     if yscale == "log":
         ax.set_ylim(1e-5, y_range[1] - y_range[0])
     else:
-        ax.set_ylim(*y_range)
+        if x1000:
+            ax.set_ylim(1000 * y_range[0], 1000 * y_range[1])
+        else:
+            ax.set_ylim(*y_range)
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
 
@@ -2753,7 +2773,7 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib(constrained_layout=True)
+    kpl.init_kplotlib(constrained_layout=False)
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()
@@ -2761,7 +2781,7 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    # fig_bottom_resid()  # Main
+    fig_bottom_resid()  # Main
     # fig(  # Comps
     #     temp_range=[0, 1000],
     #     y_range=[2.76, 2.88],
@@ -2796,7 +2816,7 @@ if __name__ == "__main__":
     # )
     # comps()
     # comps_sep()
-    refit_experiments()
+    # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 

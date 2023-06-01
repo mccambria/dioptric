@@ -43,10 +43,18 @@ def fig():
     max_energy = 175
     energy_linspace = np.linspace(0, max_energy, 1000)
     kpl_figsize = kpl.figsize
-    adj_figsize = (kpl_figsize[0], 1.2 * kpl_figsize[1])
-    fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
-    ax1, ax2 = axes_pack
-    ax3 = ax2.twinx()
+
+    # adj_figsize = (kpl_figsize[0], 1.2 * kpl_figsize[1])
+    # fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
+    # ax1, ax2 = axes_pack
+    # ax3 = ax2.twinx()
+
+    adj_figsize = (kpl_figsize[0], 1.4 * kpl_figsize[1])
+    fig, (ax1, ax1bot, ax2) = plt.subplots(
+        3, 1, figsize=adj_figsize, height_ratios=[3, 1, 3]
+    )
+    ax1.sharex(ax1bot)
+    ax2share = ax2.twinx()
 
     double_occupation_lambda = fit_double_occupation()
 
@@ -55,7 +63,7 @@ def fig():
         ax1,
         temp_linspace,
         jacobson_lattice_constant(temp_linspace),
-        label="Jacobson",
+        label="[25] Jacobson",
         color=KplColors.BLACK,
         # color="#5A5A5A",
         # linestyle="dashed",
@@ -79,16 +87,23 @@ def fig():
     # print(max(diffs))
     ax1.set_ylabel(r"Lattice constant ($\si{\angstrom}$)", usetex=True)
     ax1.set_xlabel("Temperature (K)")
-    ax1.legend()
+    ax1.legend(fontsize=kpl.FontSize.SMALL, loc=kpl.Loc.LOWER_RIGHT, handlelength=2.5)
     ax1.set_xlim(0, 1000)
     ax1.set_yticks([3.567, 3.570, 3.573])
     ax1.set_ylim(3.5658, None)
     text = r"\noindent$a(T) = a_{0} + b_{1}n_{1} + b_{2}n_{2}$"
     text += r"\\"
     text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
-    kpl.anchored_text(ax1, text, kpl.Loc.LOWER_RIGHT, kpl.Size.SMALL, usetex=True)
+    kpl.anchored_text(ax1, text, kpl.Loc.UPPER_LEFT, kpl.Size.SMALL, usetex=True)
+
+    diffs = [
+        jacobson_lattice_constant(temp) - double_occupation_lambda(temp)
+        for temp in temp_linspace
+    ]
+    kpl.plot_line(ax1bot, temp_linspace, diffs)
 
     # Second order effects
+    # sigma = np.sqrt(7.5)
     sigma = 7.5
     density_of_states, spectral_functions, mean_couplings = deconvolve(
         energy_linspace, sigma
@@ -100,7 +115,9 @@ def fig():
     ax2.set_ylabel("Spectral function \n(MHz / meV)", color=color)
     ax2.tick_params(axis="y", color=color, labelcolor=color)
     # ax2.spines["left"].set_color(color)
-    ax3.spines["left"].set_color(color)  # ax3 vs 2 because 3 is written on top of 2
+    ax2share.spines["left"].set_color(
+        color
+    )  # ax3 vs 2 because 3 is written on top of 2
     ax2.set_xlabel("Energy $\hbar\omega$ (meV)", usetex=True)
     ax2.set_xlim(min_energy, max_energy)
     ax2.set_ylim(0, None)
@@ -108,16 +125,15 @@ def fig():
     # DOS
     color = KplColors.GREEN
     plot_vals = density_of_states
-    kpl.plot_line(ax3, energy_linspace, plot_vals, color=color)
-    ax3.set_ylabel("DOS (1 / meV)", color=color)
-    ax3.tick_params(axis="y", color=color, labelcolor=color)
-    ax3.spines["right"].set_color(color)
-    ax3.set_ylim(0, None)
+    kpl.plot_line(ax2share, energy_linspace, plot_vals, color=color)
+    ax2share.set_ylabel("DOS (1 / meV)", color=color)
+    ax2share.tick_params(axis="y", color=color, labelcolor=color)
+    ax2share.spines["right"].set_color(color)
+    ax2share.set_ylim(0, None)
 
     # Energies from ZFS vs T fit
-
-    energies = [58.9, 146.9]
-    energy_errs = [2.2, 8.5]
+    energies = [56.85, 140.1]
+    energy_errs = [2.45, 7.5]
     for ind in range(len(energies)):
         energy = energies[ind]
         energy_err = energy_errs[ind]
@@ -134,6 +150,9 @@ def fig():
     fig.text(0.07, 0.965, "(a)")
     fig.text(0.07, 0.465, "(b)")
     # print(jacobson_lattice_constant(257))
+    fig.tight_layout(pad=0.1)
+    fig.tight_layout(pad=0.1)
+    # fig.subplots_adjust(hspace=0)
 
     ### Lattice constant diffs
     if False:
@@ -158,7 +177,7 @@ def fig():
 
 
 if __name__ == "__main__":
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(constrained_layout=False)
 
     fig()
     # fig_three_panel()

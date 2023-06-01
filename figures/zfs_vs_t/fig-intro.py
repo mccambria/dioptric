@@ -88,13 +88,6 @@ def main():
         facecolor = facecolors[ind]
         temp = data_point["Monitor temp (K)"]
 
-        popt = (
-            data_point["Contrast"],
-            data_point["Width (MHz)"],
-            data_point["ZFS (GHz)"],
-            data_point["Splitting (MHz)"],
-        )
-
         data = tool_belt.get_raw_data(fig_file)
         freq_center = data["freq_center"]
         freq_range = data["freq_range"]
@@ -126,9 +119,23 @@ def main():
             norm_avg_sig_ste,
         ) = ret_vals
 
-        fit_func = lambda f: 1 - three_level_rabi.coherent_line(
-            f, *popt, uwave_pulse_dur
+        # popt = (
+        #     data_point["Contrast"],
+        #     data_point["Width (MHz)"],
+        #     data_point["ZFS (GHz)"],
+        #     data_point["Splitting (MHz)"],
+        # )
+        # fit_func = lambda f: 1 - three_level_rabi.coherent_line(
+        #     f, *popt, uwave_pulse_dur
+        # )
+
+        popt = (
+            data_point["Contrast"],
+            data_point["Width (MHz)"],
+            data_point["ZFS (GHz)"],
+            data_point["Splitting (MHz)"],
         )
+        fit_func = lambda f: 1 - pesr.lorentzian_split(f, *popt)
 
         label = f"{int(temp)} K"
         fit_vals = fit_func(smooth_freqs)
@@ -179,7 +186,10 @@ def main():
     # ax.get_yaxis().set_visible(False)
     ax.set(
         # xlabel="ODMR freq. / ZFS (GHz)",
-        xlabel="Frequency (GHz)",
+        # xlabel="Frequency (GHz)",
+        xlabel="Frequency (MHz)",
+        xticks=[2.84, 2.86, 2.88],
+        xticklabels=[2840, 2860, 2880],
         # ylabel="Fluorescence",
         ylabel="Normalized fluorescence",
         xlim=(min_freq, max_freq),
@@ -200,9 +210,14 @@ def main():
         condense_all=False,
         condense_samples=True,
     )
-    zfs_list, zfs_err_list, temp_list, label_list, color_list = data_points_to_lists(
-        data_points
-    )
+    (
+        zfs_list,
+        zfs_err_list,
+        temp_list,
+        label_list,
+        color_list,
+        group_list,
+    ) = data_points_to_lists(data_points)
     cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
     temp_linspace = np.linspace(0, 600, 1000)
     d_of_t_color = KplColors.BLUE
@@ -345,9 +360,11 @@ def waterfall():
         ylim=(min_freq, max_freq),
         zlim=(poly_zero, 1.03),
         xlabel="\n$T$ (K)",
-        ylabel="\n$f$ (GHz)",
+        # ylabel="\n$f$ (GHz)",
+        ylabel="\n$f$ (MHz)",
         zlabel="$C$",
         yticks=[2.84, 2.86, 2.88],
+        yticklabels=[2840, 2860, 2880],
         zticks=[0.8, 0.9, 1.0],
     )
     ax.view_init(elev=38, azim=-22, roll=0)
@@ -537,7 +554,7 @@ def quasiharmonic_sketch():
 
 
 if __name__ == "__main__":
-    kpl.init_kplotlib(latex=False, constrained_layout=True)
+    kpl.init_kplotlib()
 
     main()
     # waterfall()

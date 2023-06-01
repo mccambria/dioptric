@@ -15,7 +15,7 @@ import majorroutines.optimize as optimize
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, brute
 from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States, NormStyle
@@ -126,8 +126,8 @@ def create_fit_figure(
     high_text = None
     base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
     if 3 <= len(popt) < 6:
-        # contrast, width, center = popt[0:3]
-        contrast, center, width = popt[0:3]
+        contrast, width, center = popt[0:3]
+        # contrast, center, width = popt[0:3]
         low_text = base_text.format(contrast, width, center)
         high_text = None
     elif len(popt) == 6:
@@ -343,6 +343,8 @@ def dip_sum(freq, line_func, *res_args):
     len_res_desc = len(sig.parameters) - 1  # First parameter is frequency
     # Total number of expected resonances
     num_resonances = len(res_args) // len_res_desc
+    # if num_resonances == 0:
+    #     num_resonances = 1
     ret_val = 1.0
     for ind in range(num_resonances):
         start = ind * len_res_desc
@@ -571,6 +573,7 @@ def fit_resonance(
         norm_avg_sig_ste,
         num_resonances=num_resonances,
     )
+
     curve_fit_lambda = lambda fit_func, guess_params: curve_fit(
         fit_func,
         freqs,
@@ -582,11 +585,11 @@ def fit_resonance(
         # method="trf",
         # bounds=(0, np.inf),
         # contrast, center, rabi_freq, splitting, phase
-        bounds=(
-            (0.05, freqs[0], 0.9, 0, -2 * np.pi),
-            (0.5, freqs[-1], 8, 10, 2 * np.pi),
-        ),  # MCC
-        # max_nfev=100,
+        # bounds=(
+        #     (0.05, freqs[0], 0.9, 0, -2 * np.pi),
+        #     (0.5, freqs[-1], 8, 10, 2 * np.pi),
+        # ),  # MCC
+        # # max_nfev=100,
         ftol=1e-4,  # MCC
     )
 
@@ -602,11 +605,30 @@ def fit_resonance(
             guess_params = get_guess_params_lambda(num_resonances)
         fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
         popt, pcov = curve_fit_lambda(fit_func, guess_params)
-        # res = curve_fit_lambda(fit_func, guess_params)
-        # test = 0
-        # popt = guess_params
-        # num_params = len(popt)
-        # pcov = np.zeros((num_params, num_params))
+
+        # # Brute
+        # def cost(cost_args):
+        #     cost_line = dip_sum(freqs, line_func, *cost_args)
+        #     ret_val = sum(((cost_line - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+        #     return ret_val
+
+        # # print(cost(guess_params))
+        # # guess_params[3] = 10
+        # # print(cost(guess_params))
+        # guess_center = guess_params[1]
+        # rranges = (
+        #     (0.1, 0.5),
+        #     (guess_center - 0.001, guess_center + 0.001),
+        #     (1, 8),
+        #     (0, 6),
+        #     (0, 2 * np.pi),
+        # )
+        # popt = brute(cost, rranges, Ns=3)
+        # pcov = None
+        # # test = 0
+        # # popt = guess_params
+        # # num_params = len(popt)
+        # # pcov = np.zeros((num_params, num_params))
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:
