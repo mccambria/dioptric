@@ -1625,6 +1625,7 @@ def fig(
     inset_comp=False,
     inset_resid=False,
     x1000=False,
+    supp_labels=False,
 ):
     fig, ax = plt.subplots()
 
@@ -1644,6 +1645,7 @@ def fig(
         new_model_diff=new_model_diff,
         dash_predictions=dash_predictions,
         x1000=x1000,
+        supp_labels=supp_labels,
     )
 
     if inverse_temp:
@@ -1666,12 +1668,13 @@ def fig(
             bbox_transform=ax.transAxes,
             loc=1,
         )
+        max_y = 2.878 if plot_prior_models else 2.8781
         fig_sub(
             axins,
             # [0, 300],
             # [2.870, 2.878],
             [0, 175],
-            [2.876, 2.878],
+            [2.876, max_y],
             #
             plot_data=plot_data,
             condense_all=condense_all,
@@ -1686,6 +1689,7 @@ def fig(
             dash_predictions=dash_predictions,
             no_axis_labels=True,
             x1000=x1000,
+            supp_labels=supp_labels,
         )
         # axins.set_yticks([2.870, 2.874, 2.878])
         ticks = [2.876, 2.877, 2.878]
@@ -1735,6 +1739,7 @@ def fig(
             new_model_diff=True,
             dash_predictions=dash_predictions,
             no_axis_labels=True,
+            supp_labels=supp_labels,
         )
         axins.tick_params(axis="both", which="major", labelsize=16)
         # plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
@@ -2085,22 +2090,33 @@ def comps_sep():
             new_model_diff,
             dash_predictions,
             comp_sep=prior_model,
+            x1000=True,
+            supp_labels=True,
         )
 
         # Adjustments
         if prior_model == "Toyli":
             ax.set_xticks([300, 400, 500, 600, 700])
         elif prior_model == "Lourette":
-            ax.set_yticks([2.86, 2.865, 2.87, 2.875])
+            # ax.set_yticks([2.86, 2.865, 2.87, 2.875])
+            ax.set_yticks([2860, 2865, 2870, 2875])
         elif prior_model == "Barson":
             plot_prior_data = True
 
         # plt.setp(ax.yaxis.get_majorticklabels(), rotation=90, va="center")
 
     ### fig labels
-
-    # fig.text(0.002, 0.97, "(a)")
-    # fig.text(0.002, 0.47, "(b)")
+    left = 0.001
+    right = 0.502
+    top = 0.98
+    mid = 0.64
+    bot = 0.31
+    fig.text(left, top, "(a)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, top, "(b)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, mid, "(d)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, bot, "(e)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, bot, "(f)", fontsize=kpl.FontSize.NORMAL)
 
 
 def axins_polish(axins):
@@ -2130,6 +2146,7 @@ def fig_sub(
     no_axis_labels=False,
     comp_sep=None,  # Specific model to compare
     x1000=False,
+    supp_labels=False,
 ):
     ### Setup
 
@@ -2181,7 +2198,7 @@ def fig_sub(
         "Barson": KplColors.BROWN,
         "Doherty": KplColors.GREEN,
         "Li": KplColors.PURPLE,
-        "Lourette": KplColors.YELLOW,
+        "Lourette": KplColors.GRAY,
     }
     for key in prior_work_colors:
         color = prior_work_colors[key]
@@ -2210,14 +2227,24 @@ def fig_sub(
         "Doherty": "doherty_2014_2a",
         "Lourette": "lourette_2022_3e",
     }
-    prior_data_labels = {
-        "Chen": "[12] Chen",
-        "Toyli": "[13] Toyli",
-        "Doherty": "[14] Doherty",
-        "Li": "[15] Li",
-        "Barson": "[16] Barson",
-        "Lourette": "[17] Lourette",
-    }
+    if supp_labels:
+        prior_data_labels = {
+            "Chen": "[2] Chen",
+            "Toyli": "[3] Toyli",
+            "Doherty": "[4] Doherty",
+            "Li": "[5] Li",
+            "Barson": "[6] Barson",
+            "Lourette": "[7] Lourette",
+        }
+    else:
+        prior_data_labels = {
+            "Chen": "[12] Chen",
+            "Toyli": "[13] Toyli",
+            "Doherty": "[14] Doherty",
+            "Li": "[15] Li",
+            "Barson": "[16] Barson",
+            "Lourette": "[17] Lourette",
+        }
     prior_data_sets = {}
     for prior_work in prior_data_to_plot:
         file_name = prior_data_file_names[prior_work]
@@ -2368,7 +2395,11 @@ def fig_sub(
             plot_vals = vals
         label = None if plot_data else "This work"
         color = this_work_model_color
-        lw = kpl.LineWidth.BIG if plot_prior_models else kpl.LineWidth.NORMAL
+        lw = (
+            kpl.LineWidth.BIG
+            if plot_prior_models and comp_sep is None
+            else kpl.LineWidth.NORMAL
+        )
         if dash_predictions:
             pmdr = [0, 500]
             if inverse_temp:
@@ -2496,7 +2527,7 @@ def fig_sub(
         else:
             leg_loc = kpl.Loc.LOWER_LEFT
         # handlelength = 0.5 if plot_data else 1.5
-        handlelength = 1.3
+        handlelength = 1.0 if plot_prior_data and comp_sep is None else 1.3
         # if plot_prior_models:
         # if plot_prior_data:
         if plot_prior_models or plot_prior_data:
@@ -2546,7 +2577,7 @@ def fig_sub(
             if x1000:
                 ax.set_ylabel("ZFS (MHz)")
             else:
-                ax.set_ylabel("ZFS (MHz)")
+                ax.set_ylabel("ZFS (GHz)")
     xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
     ax.set_xlim(*xlim)
     if yscale == "log":
@@ -2908,25 +2939,27 @@ if __name__ == "__main__":
     #     inset_resid=False,
     #     x1000=True,
     # )
-    # fig(  # Comps semi-log vs inverse temp
-    #     # temp_range=[100, 1000],
-    #     # y_range=[1e-5, 1],
-    #     temp_range=[150, 1000],
-    #     y_range=[5e-4, 1],
-    #     plot_data=False,
+    # fig(  # Comps exp (supp)
+    #     temp_range=[-5, 740],
+    #     y_range=[2.81, 2.88],
+    #     #
+    #     plot_data=True,
     #     condense_all=False,
     #     condense_samples=True,
-    #     plot_prior_models=True,
+    #     plot_prior_models=False,
     #     desaturate_prior=False,
-    #     plot_new_model=True,
-    #     plot_prior_data=False,
-    #     inverse_temp=True,
-    #     yscale="log",
+    #     plot_new_model=False,
+    #     plot_prior_data=True,
+    #     new_model_diff=False,
     #     dash_predictions=True,
+    #     inset_comp=True,
+    #     inset_resid=False,
+    #     x1000=True,
+    #     supp_labels=True,
     # )
     # comps()
-    # comps_sep()
-    refit_experiments()
+    comps_sep()
+    # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 
