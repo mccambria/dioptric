@@ -134,7 +134,7 @@ if __name__ == "__main__":
         for jnd in range(len(params)):
             num_sig_figs = 6 if jnd == 0 else 4
             # print_params.append(
-            #     tool_belt.round_for_print_sci_latex(params[jnd], param_errs[jnd])
+            #     tool_belt .round_for_print_sci_latex(params[jnd], param_errs[jnd])
             # )
             print_params.append(tool_belt.round_sig_figs(params[jnd], num_sig_figs))
         print(print_params)
