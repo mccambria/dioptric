@@ -106,8 +106,6 @@ def fig():
         for temp in temp_linspace
     ]
     diffs = [1e6 * val for val in diffs]
-    print(max(diffs))
-    print(max(diffs) / 
     kpl.plot_line(ax1bot, temp_linspace, diffs, color=KplColors.BROWN)
     ax1bot.axhline(y=0, color=KplColors.MEDIUM_GRAY, zorder=-5)
     ax1bot.set_ylabel(r"Diff. ($\si{\micro\angstrom}$)", labelpad=18, usetex=True)
@@ -173,11 +171,13 @@ def fig():
     fig.subplots_adjust(hspace=0)
 
     ### Lattice constant diffs
-    # a_zero_k = jacobson_lattice_constant(5)  # Below 5 you get NaN
-    # a_max_k = jacobson_lattice_constant(max_temp)
-    # total_change = np.abs(a_max_k - a_zero_k)
-    # print(total_change)
-    # print(11e-6 / total_change)
+    a_zero_k = jacobson_lattice_constant(5)  # Below 5 you get NaN
+    a_max_k = jacobson_lattice_constant(max_temp)
+    total_change = np.abs(a_max_k - a_zero_k) * 1e6
+    print(total_change)
+    max_diffs = np.nanmax(np.abs(diffs))
+    print(max_diffs)
+    print(max_diffs / total_change)
     # diffs = [
     #     np.abs(jacobson_lattice_constant(temp) - double_occupation_lambda(temp))
     #     for temp in temp_linspace
