@@ -2548,9 +2548,9 @@ def fig_sub(
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    marker_size = (
-        kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
-    )
+    # marker_size = (
+    #     kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
+    # )
     marker_size = kpl.Size.SMALL if no_axis_labels else kpl.Size.NORMAL
 
     # zfs_base = 2.8777
@@ -3221,8 +3221,8 @@ if __name__ == "__main__":
     #     supp_labels=True,
     # )
     # comps()
-    # comps_sep()
-    fit_prior_models_to_our_data()
+    comps_sep()
+    # fit_prior_models_to_our_data()
     # fit_our_model_to_prior_data()
     # refit_experiments()
     # # # derivative_comp()
