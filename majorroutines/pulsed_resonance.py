@@ -1118,7 +1118,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_02_16-15_43_44-wu-nv24_region5"
+    file_name = "2023_02_16-12_00_24-wu-nv22_region5"
 
     kpl.init_kplotlib()
 
@@ -1146,14 +1146,6 @@ if __name__ == "__main__":
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    # Specify the lineshape or force a fit
-    line_func = lorentzian
-    num_resonances = None
-    # guess_params = [0.01, 2, 2.87]
-    guess_params = None
-    fit_func = None
-    popt = None
-
     ret_vals = tool_belt.process_counts(
         sig_counts, ref_counts, num_reps, readout, norm_style
     )
@@ -1163,6 +1155,15 @@ if __name__ == "__main__":
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
+
+    # Specify the lineshape or force a fit
+    line_func = voigt_split
+    num_resonances = None
+    # guess_params = [0.01, 2, 2.87]
+    # guess_params = None
+    guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
+    fit_func = None
+    popt = None
 
     # create_raw_data_figure(
     #     freq_center,
