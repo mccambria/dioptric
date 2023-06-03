@@ -652,7 +652,19 @@ def fit_resonance(
         best_red_chi_sq = None
         # for num_resonances in [1, 2]:
         #     test_guess_params = get_guess_params_lambda(num_resonances)
-        for test_guess_params in [[[0.3, 2, 2.867]], [0.15, 1, 2.867, 0.15, 1, 2.873]]:
+        guess_contrast = 0.6 * (1 - min(norm_avg_sig))
+        qtr_range = freq_range / 4
+        half_range = freq_range / 2
+        qtr_low = freq_center - qtr_range
+        qtr_high = freq_center + qtr_range
+        half_low = freq_center - half_range
+        half_high = freq_center + half_range
+        opts = [
+            [guess_contrast, 3, 3, freq_center],
+            [guess_contrast, 3, 3, qtr_low, guess_contrast, 3, 3, qtr_high],
+            [guess_contrast, 3, 3, half_low, guess_contrast, 3, 3, half_high],
+        ]
+        for test_guess_params in opts:
             test_fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
             try:
                 test_popt, test_pcov = curve_fit_lambda(

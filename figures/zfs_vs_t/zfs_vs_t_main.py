@@ -746,8 +746,8 @@ def refit_experiments():
     # For loop
     # results = []
     # for ind in range(len(file_list)):
-    #     if ind < 31:
-    #         continue
+    #     # if ind < 31:
+    #     #     continue
     #     print(ind)
     #     print(ind + 2)
     #     f = file_list[ind]
@@ -766,7 +766,7 @@ def refit_experiments():
     table_popt = []
     table_pste = []
     table_red_chi_sq = []
-    num_cols = 5
+    num_cols = 8
     for ind in range(num_cols):
         table_popt.append([])
         table_pste.append([])
@@ -879,91 +879,15 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
     ### Sample-dependent fit functions and parameters
 
     if sample == "wu":
-        line_func = lambda freq, contrast, center, rabi_freq, splitting, phase: three_level_rabi.coherent_line(
-            freq, contrast, center, rabi_freq, splitting, phase, uwave_pulse_dur
-        )
-        fit_func = (
-            lambda freq, contrast, center, rabi_freq, splitting, phase: pesr.dip_sum(
-                freq, line_func, contrast, center, rabi_freq, splitting, phase
-            )
-        )
-        # line_func = (
-        #     lambda freq, contrast, center, rabi_freq: three_level_rabi.coherent_line(
-        #         freq, contrast, center, rabi_freq, uwave_pulse_dur
-        #     )
-        # )
-        # fit_func = lambda freq, contrast, center, rabi_freq: pesr.dip_sum(
-        #     freq, line_func, contrast, center, rabi_freq
-        # )
-        if guess_params is None:
-            guess_params = [0.201135, 4.537905, 2.877451, 3.456755]
-        # Cryo
-        # guess_params = [
-        #     1.1 * (1 - min(norm_avg_sig)),
-        #     guess_params[1],
-        #     2.5,
-        #     1,
-        #     np.pi / 4,
-        # ]
-        # Hot
-        # if file_name.endswith("nv6_zfs_vs_t"):
-        #     guess_params = [
-        #         1.3 * (1 - min(norm_avg_sig)),
-        #         guess_params[1],
-        #         2.0,
-        #         0.75,
-        #         0,
-        #     ]
-        # elif file_name.endswith("nv7_zfs_vs_t"):
-        #     guess_params = [
-        #         1.4 * (1 - min(norm_avg_sig)),
-        #         guess_params[1],
-        #         1.9,
-        #         0.5,
-        #         np.pi * 3 / 4,
-        #     ]
-        # elif file_name.endswith("nv10_zfs_vs_t"):
-        #     guess_params = [
-        #         1.0 * (1 - min(norm_avg_sig)),
-        #         guess_params[1],
-        #         2.7,
-        #         5.5,
-        #         np.pi * 3 / 4,
-        #     ]
-        # else:
-        #     guess_params = [
-        #         1.4 * (1 - min(norm_avg_sig)),
-        #         guess_params[1],
-        #         2.0,
-        #         3.0,
-        #         # np.pi * 3 / 4,
-        #         np.pi * 3 / 2,
-        #     ]
-        # guess_params = [0.286211, guess_params[1], 2.13e00, 8.61e-01, 8.34e-01]
-        # guess_params = [0.2, guess_params[1], 2.3, 3, np.pi * 3 / 4]
-        # guess_params = [0.2898781, 2.86307206, 2.5, 2, 4.71850563]
-
-        line_func = pesr.voigt_split
-        fit_func = (
-            lambda freq, contrast, g_width, l_width, center, splitting: pesr.dip_sum(
-                freq, line_func, contrast, g_width, l_width, center, splitting
-            )
-        )
-        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
-
-        # line_func = pesr.lorentzian_split
-        # fit_func = lambda freq, contrast, width, center, splitting: pesr.dip_sum(
-        #     freq, line_func, contrast, width, center, splitting
-        # )
-        # guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, freq_center, 1]
-
-        # line_func = pesr.lorentzian_split_offset
+        # line_func = pesr.voigt_split
         # fit_func = (
-        #     lambda freq, contrast, width, center, splitting, offset: pesr.dip_sum(
-        #         freq, line_func, contrast, width, center, splitting, offset
+        #     lambda freq, contrast, g_width, l_width, center, splitting: pesr.dip_sum(
+        #         freq, line_func, contrast, g_width, l_width, center, splitting
         #     )
         # )
-        # guess_params.append(0.02)
+        # guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
+
+        line_func = pesr.voigt
 
     elif sample == "15micro":
         # fmt: off
@@ -985,6 +909,8 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         # guess_params = [0.05, 3, freq_center, 6, 0.005, 0.05, 3]
 
         # fmt: on
+
+    guess_params = None
 
     ### Raw data figure or just get fit params
 
@@ -3442,7 +3368,7 @@ if __name__ == "__main__":
     # comps_sep()
     # fit_prior_models_to_our_data()
     # fit_our_model_to_prior_data()
-    # refit_experiments()
+    refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 
