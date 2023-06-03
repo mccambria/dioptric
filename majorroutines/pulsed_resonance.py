@@ -1186,6 +1186,7 @@ if __name__ == "__main__":
         num_resonances=num_resonances,
         guess_params=guess_params,
     )
+    print()
 
     # Just fit, don't plot
     # fit_func, popt, pcov = fit_resonance(
