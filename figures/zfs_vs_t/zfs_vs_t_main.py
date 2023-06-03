@@ -45,6 +45,11 @@ import matplotlib.legend_handler
 zfs_base = 2.877380
 # zfs_base = 2.87736
 zfs_deviations = [zfs_base, zfs_base + 0.0003]
+fixed_energy_vals = [58.73, 145.5]
+# fixed_energy_vals = [68, 167]
+# fixed_energy_vals = [68, 150]
+# fixed_energy_vals = [61, 149]
+# fixed_energy_vals = [77, 159]
 
 nvdata_dir = common.get_nvdata_dir()
 compiled_data_file_name = "zfs_vs_t"
@@ -1519,6 +1524,17 @@ def two_mode_qh(temp, zfs0, A1, A2, Theta1, Theta2):
     return ret_val
 
 
+def two_mode_qh_fixed_energies(temp, zfs0, A1, A2):
+    Theta1 = fixed_energy_vals[0]
+    Theta2 = fixed_energy_vals[1]
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
 def two_mode_qh_dev(temp, A1, A2, Theta1, Theta2):
     ret_val = 0
     for ind in range(2):
@@ -1529,8 +1545,8 @@ def two_mode_qh_dev(temp, A1, A2, Theta1, Theta2):
 
 
 def two_mode_qh_dev_fixed_energies(temp, A1, A2):
-    Theta1 = 58.73
-    Theta2 = 145.5
+    Theta1 = fixed_energy_vals[0]
+    Theta2 = fixed_energy_vals[1]
     ret_val = 0
     for ind in range(2):
         adj_ind = ind + 1
@@ -1613,29 +1629,41 @@ def derivative_comp():
     ax.legend()
 
 
-def get_fitted_model(temp_list, zfs_list, zfs_err_list=None, zfs_deviation=False):
+def get_fitted_model(
+    temp_list, zfs_list, zfs_err_list=None, zfs_deviation=False, fixed_energies=False
+):
     if zfs_deviation:
-        guess_params = [
-            -20,
-            -300,
-            55,
-            150,
-        ]
-        fit_func = two_mode_qh_dev
-        # guess_params = [
-        #     -20,
-        #     -300,
-        # ]
-        # fit_func = two_mode_qh_dev_fixed_energies
+        if fixed_energies:
+            guess_params = [
+                -20,
+                -300,
+            ]
+            fit_func = two_mode_qh_dev_fixed_energies
+        else:
+            guess_params = [
+                -20,
+                -300,
+                55,
+                150,
+            ]
+            fit_func = two_mode_qh_dev
     else:
-        guess_params = [
-            2.87771,
-            -20,
-            -300,
-            65,
-            165,
-        ]
-        fit_func = two_mode_qh
+        if fixed_energies:
+            guess_params = [
+                2.87771,
+                -20,
+                -300,
+            ]
+            fit_func = two_mode_qh_fixed_energies
+        else:
+            guess_params = [
+                2.87771,
+                -20,
+                -300,
+                65,
+                165,
+            ]
+            fit_func = two_mode_qh
     if zfs_err_list is None or None in zfs_err_list:
         zfs_err_list = None
         absolute_sigma = False
@@ -2444,7 +2472,7 @@ def fit_our_model_to_prior_data():
     plot_data = False
     plot_prior_data = True
     plot_new_model = True
-    plot_prior_models = True
+    plot_prior_models = False
     desaturate_prior = False
     inverse_temp = False
     new_model_diff = False
@@ -2465,7 +2493,7 @@ def fit_our_model_to_prior_data():
         "Toyli": [2.81, 2.874],
         "Barson": [2.815, 2.88],
         # "Doherty": [2.8695, 2.8782],
-        "Doherty": [2.8695 - 2.8781, 2.8782 - 2.8781],
+        "Doherty": [2.8695 - 2.8777, 2.8782 - 2.8777],
         "Li": [2.8695, 2.8782],
         "Chen": [2.8695, 2.8782],
         "Lourette": [2.8595, 2.8782],
@@ -2484,6 +2512,9 @@ def fit_our_model_to_prior_data():
         prior_model = prior_models[ind]
         temp_range = prior_model_temp_ranges[prior_model]
         y_range = y_ranges[prior_model]
+        zfs_deviation = prior_model_zfs_deviation[prior_model]
+
+        print(prior_model)
 
         # Adjustments
         if prior_model == "Barson":
@@ -2509,7 +2540,7 @@ def fit_our_model_to_prior_data():
             x1000=True,
             supp_labels=True,
             fit_data=prior_model,
-            zfs_deviation=prior_model_zfs_deviation[prior_model],
+            zfs_deviation=zfs_deviation,
         )
 
         # Adjustments
@@ -2713,22 +2744,22 @@ def fig_sub(
 
     if fit_data == None:
         cambria_lambda = get_fitted_model(
-            temp_list, zfs_list, zfs_err_list, zfs_deviation
+            temp_list,
+            zfs_list,
+            zfs_err_list,
+            zfs_deviation,
+            fixed_energies=True,
         )
     else:
         prior_temps = prior_data_sets[fit_data]["temps"]
         prior_zfss = prior_data_sets[fit_data]["zfss"]
         cambria_lambda = get_fitted_model(
-            prior_temps, prior_zfss, zfs_err_list=None, zfs_deviation=zfs_deviation
+            prior_temps,
+            prior_zfss,
+            zfs_err_list=None,
+            zfs_deviation=zfs_deviation,
+            fixed_energies=True,
         )
-        # if fit_data in ["Doherty", "Barson"]:
-        #     cambria_lambda = get_fitted_model(
-        #         prior_temps, prior_zfss, zfs_err_list=None, zfs_deviation=zfs_deviation
-        #     )
-        # else:
-        #     cambria_lambda = get_fitted_model(
-        #         prior_temps, prior_zfss, zfs_err_list=None, zfs_deviation=False
-        #     )
 
     ### Plots
 
@@ -3371,7 +3402,7 @@ if __name__ == "__main__":
     # main()
     # fig(inset_resid=True)  # Main
     # fig_bottom_resid()  # Main
-    # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
+    fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
     # fig(  # Comps models (main)
     #     temp_range=[0, 1000],
     #     y_range=[2.76, 2.88],
@@ -3410,7 +3441,7 @@ if __name__ == "__main__":
     # comps()
     # comps_sep()
     # fit_prior_models_to_our_data()
-    fit_our_model_to_prior_data()
+    # fit_our_model_to_prior_data()
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
