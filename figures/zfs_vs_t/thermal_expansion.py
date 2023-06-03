@@ -71,6 +71,21 @@ def double_occupation(T, a0, coeff1, coeff2):
     return a0 + total
 
 
+def double_occupation_free(T, a0, coeff1, coeff2, Theta1, Theta2):
+    energies = [Theta1, Theta2]
+    coeffs = [coeff1, coeff2]
+    total = None
+    for ind in range(2):
+        coeff = coeffs[ind]
+        energy = energies[ind]
+        term = coeff * bose(energy, T)
+        if total is None:
+            total = term
+        else:
+            total += term
+    return a0 + total
+
+
 # def cambria_test_single(T, energy, coeff):
 def cambria_test_single(T, coeff):
     energy = 160
@@ -112,17 +127,20 @@ def jacobson(T):
 def fit_double_occupation():
     temp_linspace = np.linspace(10, 1000, 1000)
 
-    # guess_params = [a0, 68, 167, 0.3, 3.0]
+    fit_fn = double_occupation
+    # fit_fn = double_occupation_free
+
     guess_params = [a0, 0.3, 3.0]
+    # guess_params = [a0, 0.3, 3.0, 68, 167]
     popt, pcov = curve_fit(
-        double_occupation,
+        fit_fn,
         temp_linspace,
         jacobson_lattice_constant(temp_linspace),
         p0=guess_params,
     )
     print(popt)
-    double_occupation_lambda = lambda T: double_occupation(T, *popt)
-    return double_occupation_lambda
+    fit_fn_lambda = lambda T: fit_fn(T, *popt)
+    return fit_fn_lambda
 
 
 def jacobson_lattice_constant(T):
