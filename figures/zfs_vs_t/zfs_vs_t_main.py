@@ -42,13 +42,14 @@ import matplotlib.legend_handler
 
 # ZFS at 0 temp, used for papers that only report shifts
 # Matches our fits 0 temp value
-zfs_base = 2.877380
-# zfs_base = 2.87736
+zfs_base = 2.877383
+# zfs_base = 2.877326
 zfs_deviations = [zfs_base, zfs_base + 0.0003]
 fixed_energy_vals = [58.73, 145.5]
 # fixed_energy_vals = [68, 167]
 # fixed_energy_vals = [68, 150]
 # fixed_energy_vals = [61, 149]
+# fixed_energy_vals = [64, 163]
 # fixed_energy_vals = [77, 159]
 
 nvdata_dir = common.get_nvdata_dir()
@@ -2515,6 +2516,11 @@ def fit_our_model_to_prior_data():
             ax.set_yticks([2860, 2865, 2870, 2875])
         elif prior_model == "Barson":
             plot_prior_data = True
+        if prior_model in ["Chen", "Li"]:
+            ax.set_yticks([2870, 2872, 2874, 2876, 2878])
+        if prior_model == "Doherty":
+            ax.set_ylabel(r"$\Delta$ ZFS (MHz)")
+            ax.set_yticks([-8, -6, -4, -2, 0])
 
         # plt.setp(ax.yaxis.get_majorticklabels(), rotation=90, va="center")
 
@@ -2849,7 +2855,7 @@ def fig_sub(
             plot_vals = vals
         if comp_sep_fit:
             label = "This work"
-        elif plot_data:
+        elif plot_data or comp_sep is not None:
             label = None
         else:
             label = "This work"
