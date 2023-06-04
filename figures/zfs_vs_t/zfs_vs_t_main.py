@@ -52,7 +52,9 @@ fixed_energy_vals = [58.73, 145.5]
 # fixed_energy_vals = [77, 159]
 
 nvdata_dir = common.get_nvdata_dir()
-compiled_data_file_name = "zfs_vs_t"
+# compiled_data_file_name = "zfs_vs_t"
+compiled_data_file_name = "zfs_vs_t-split_voigt"
+# compiled_data_file_name = "zfs_vs_t-ind_voigts"
 compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 
@@ -664,73 +666,73 @@ def refit_experiments():
         guess_params = None
         guess_param_list.append(guess_params)
 
-    # file_list = [
-    #     "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
-    #     "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
-    #     "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
-    #     "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
-    #     "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
-    #     "2023_02_09-17_28_01-wu-nv1_region2",
-    #     "2023_02_09-18_02_43-wu-nv2_region2",
-    #     "2023_02_09-18_14_01-wu-nv3_region2",
-    #     "2023_02_09-17_51_24-wu-nv4_region2",
-    #     "2023_02_09-17_39_51-wu-nv5_region2",
-    #     "2023_02_09-23_28_39-wu-nv1_region3",
-    #     "2023_02_09-23_51_39-wu-nv2_region3",
-    #     "2023_02_10-00_14_56-wu-nv3_region3",
-    #     "2023_02_10-00_37_40-wu-nv4_region3",
-    #     "2023_02_10-00_59_59-wu-nv5_region3",
-    #     "2023_02_10-19_13_33-wu-nv1_region4",
-    #     "2023_02_10-18_51_08-wu-nv2_region4",
-    #     "2023_02_10-18_28_42-wu-nv3_region4",
-    #     "2023_02_10-18_06_16-wu-nv4_region4",
-    #     "2023_02_10-19_36_05-wu-nv5_region4",
-    #     "2023_02_13-11_54_40-wu-nv1_region5",
-    #     "2023_02_13-10_47_07-wu-nv2_region5",
-    #     "2023_02_13-11_32_11-wu-nv3_region5",
-    #     "2023_02_13-11_09_39-wu-nv4_region5",
-    #     "2023_02_13-12_17_20-wu-nv5_region5",
-    #     "2023_02_14-19_34_18-wu-nv6_region5",
-    #     "2023_02_15-11_34_42-wu-nv6_region5",
-    #     "2023_02_14-18_25_12-wu-nv7_region5",
-    #     "2023_02_15-10_49_10-wu-nv7_region5",
-    #     "2023_02_14-16_31_33-wu-nv8_region5",
-    #     "2023_02_15-10_03_52-wu-nv8_region5",
-    #     "2023_02_14-19_56_53-wu-nv9_region5",
-    #     "2023_02_15-09_17_38-wu-nv9_region5",
-    #     "2023_02_14-17_39_49-wu-nv10_region5",
-    #     "2023_02_15-08_54_44-wu-nv10_region5",
-    #     "2023_02_14-18_02_32-wu-nv11_region5",
-    #     "2023_02_15-08_31_53-wu-nv11_region5",
-    #     "2023_02_14-19_11_31-wu-nv12_region5",
-    #     "2023_02_15-11_12_05-wu-nv12_region5",
-    #     "2023_02_14-16_54_38-wu-nv13_region5",
-    #     "2023_02_15-09_41_02-wu-nv13_region5",
-    #     "2023_02_14-17_17_04-wu-nv14_region5",
-    #     "2023_02_15-11_57_26-wu-nv14_region5",
-    #     "2023_02_14-18_47_39-wu-nv15_region5",
-    #     "2023_02_15-10_26_32-wu-nv15_region5",
-    #     "2023_02_16-11_38_00-wu-nv16_region5",
-    #     "2023_02_16-15_21_12-wu-nv16_region5",
-    #     "2023_02_16-12_45_08-wu-nv17_region5",
-    #     "2023_02_16-16_28_17-wu-nv17_region5",
-    #     "2023_02_16-13_07_28-wu-nv18_region5",
-    #     "2023_02_16-17_58_56-wu-nv18_region5",
-    #     "2023_02_16-13_52_11-wu-nv19_region5",
-    #     "2023_02_16-17_36_17-wu-nv19_region5",
-    #     "2023_02_16-14_14_37-wu-nv20_region5",
-    #     "2023_02_16-14_36_43-wu-nv20_region5",
-    #     "2023_02_16-11_15_49-wu-nv21_region5",
-    #     "2023_02_16-16_51_10-wu-nv21_region5",
-    #     "2023_02_16-12_00_24-wu-nv22_region5",
-    #     "2023_02_16-14_59_00-wu-nv22_region5",
-    #     "2023_02_16-12_22_59-wu-nv23_region5",
-    #     "2023_02_16-17_14_04-wu-nv23_region5",
-    #     "2023_02_16-13_29_52-wu-nv24_region5",
-    #     "2023_02_16-15_43_44-wu-nv24_region5",
-    #     "2023_02_16-10_53_23-wu-nv25_region5",
-    #     "2023_02_16-16_05_52-wu-nv25_region5",
-    # ]
+    file_list = [
+        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+        "2023_02_09-17_28_01-wu-nv1_region2",
+        "2023_02_09-18_02_43-wu-nv2_region2",
+        "2023_02_09-18_14_01-wu-nv3_region2",
+        "2023_02_09-17_51_24-wu-nv4_region2",
+        "2023_02_09-17_39_51-wu-nv5_region2",
+        "2023_02_09-23_28_39-wu-nv1_region3",
+        "2023_02_09-23_51_39-wu-nv2_region3",
+        "2023_02_10-00_14_56-wu-nv3_region3",
+        "2023_02_10-00_37_40-wu-nv4_region3",
+        "2023_02_10-00_59_59-wu-nv5_region3",
+        "2023_02_10-19_13_33-wu-nv1_region4",
+        "2023_02_10-18_51_08-wu-nv2_region4",
+        "2023_02_10-18_28_42-wu-nv3_region4",
+        "2023_02_10-18_06_16-wu-nv4_region4",
+        "2023_02_10-19_36_05-wu-nv5_region4",
+        "2023_02_13-11_54_40-wu-nv1_region5",
+        "2023_02_13-10_47_07-wu-nv2_region5",
+        "2023_02_13-11_32_11-wu-nv3_region5",
+        "2023_02_13-11_09_39-wu-nv4_region5",
+        "2023_02_13-12_17_20-wu-nv5_region5",
+        "2023_02_14-19_34_18-wu-nv6_region5",
+        "2023_02_15-11_34_42-wu-nv6_region5",
+        "2023_02_14-18_25_12-wu-nv7_region5",
+        "2023_02_15-10_49_10-wu-nv7_region5",
+        "2023_02_14-16_31_33-wu-nv8_region5",
+        "2023_02_15-10_03_52-wu-nv8_region5",
+        "2023_02_14-19_56_53-wu-nv9_region5",
+        "2023_02_15-09_17_38-wu-nv9_region5",
+        "2023_02_14-17_39_49-wu-nv10_region5",
+        "2023_02_15-08_54_44-wu-nv10_region5",
+        "2023_02_14-18_02_32-wu-nv11_region5",
+        "2023_02_15-08_31_53-wu-nv11_region5",
+        "2023_02_14-19_11_31-wu-nv12_region5",
+        "2023_02_15-11_12_05-wu-nv12_region5",
+        "2023_02_14-16_54_38-wu-nv13_region5",
+        "2023_02_15-09_41_02-wu-nv13_region5",
+        "2023_02_14-17_17_04-wu-nv14_region5",
+        "2023_02_15-11_57_26-wu-nv14_region5",
+        "2023_02_14-18_47_39-wu-nv15_region5",
+        "2023_02_15-10_26_32-wu-nv15_region5",
+        "2023_02_16-11_38_00-wu-nv16_region5",
+        "2023_02_16-15_21_12-wu-nv16_region5",
+        "2023_02_16-12_45_08-wu-nv17_region5",
+        "2023_02_16-16_28_17-wu-nv17_region5",
+        "2023_02_16-13_07_28-wu-nv18_region5",
+        "2023_02_16-17_58_56-wu-nv18_region5",
+        "2023_02_16-13_52_11-wu-nv19_region5",
+        "2023_02_16-17_36_17-wu-nv19_region5",
+        "2023_02_16-14_14_37-wu-nv20_region5",
+        "2023_02_16-14_36_43-wu-nv20_region5",
+        "2023_02_16-11_15_49-wu-nv21_region5",
+        "2023_02_16-16_51_10-wu-nv21_region5",
+        "2023_02_16-12_00_24-wu-nv22_region5",
+        "2023_02_16-14_59_00-wu-nv22_region5",
+        "2023_02_16-12_22_59-wu-nv23_region5",
+        "2023_02_16-17_14_04-wu-nv23_region5",
+        "2023_02_16-13_29_52-wu-nv24_region5",
+        "2023_02_16-15_43_44-wu-nv24_region5",
+        "2023_02_16-10_53_23-wu-nv25_region5",
+        "2023_02_16-16_05_52-wu-nv25_region5",
+    ]
 
     ### Run the fitting on each file
 
@@ -746,8 +748,8 @@ def refit_experiments():
     # For loop
     # results = []
     # for ind in range(len(file_list)):
-    #     # if ind < 31:
-    #     #     continue
+    #     if ind < 21:
+    #         continue
     #     print(ind)
     #     print(ind + 2)
     #     f = file_list[ind]
@@ -879,15 +881,22 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
     ### Sample-dependent fit functions and parameters
 
     if sample == "wu":
-        # line_func = pesr.voigt_split
+        line_func = pesr.voigt_split
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 4]
         # fit_func = (
         #     lambda freq, contrast, g_width, l_width, center, splitting: pesr.dip_sum(
         #         freq, line_func, contrast, g_width, l_width, center, splitting
         #     )
         # )
-        # guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
 
-        line_func = pesr.voigt
+        # line_func = pesr.voigt
+        # guess_params = None
+
+        # line_func = pesr.lorentzian_split
+        # guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, freq_center, 1]
+        # line_func = pesr.lorentzian
+        # guess_params = None
 
     elif sample == "15micro":
         # fmt: off
@@ -910,7 +919,7 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
 
         # fmt: on
 
-    guess_params = None
+    # guess_params = None
 
     ### Raw data figure or just get fit params
 
@@ -959,6 +968,7 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
         pste = np.zeros(num_params)
         red_chi_sq = 10
 
+    # if popt[-1] > 5:
     # print(guess_params)
     # print(popt)
     # print(red_chi_sq)
@@ -1602,6 +1612,7 @@ def get_fitted_model(
         sigma=zfs_err_list,
         absolute_sigma=absolute_sigma,
         p0=guess_params,
+        ftol=1e-4,  # MCC
     )
     print(popt)
     # popt = [
@@ -2318,7 +2329,7 @@ def fit_prior_models_to_our_data():
     # figsize = [2 * kpl.figsize[0], 2 * kpl.figsize[1]]
     # fig, axes_pack = plt.subplots(2, 3, figsize=figsize)
     axes_pack = axes_pack.flatten()
-    axes_pack[-1].axis("off")
+    # axes_pack[-1].axis("off")
 
     # Shared params
     temp_range = [0, 515]
@@ -2328,8 +2339,6 @@ def fit_prior_models_to_our_data():
     condense_samples = True
     plot_data = True
     plot_prior_data = False
-    plot_new_model = False
-    plot_prior_models = True
     desaturate_prior = False
     inverse_temp = False
     new_model_diff = False
@@ -2337,10 +2346,39 @@ def fit_prior_models_to_our_data():
     xscale = "linear"
     yscale = "linear"
 
-    prior_models = ["Chen", "Toyli", "Barson", "Doherty", "Li"]
+    # Plot our model first
+    plot_prior_models = False
+    plot_new_model = True
+    ax = axes_pack[0]
+    fig_sub(
+        ax,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+        comp_sep_fit=True,
+        x1000=True,
+        supp_labels=True,
+        zfs_deviation=True,
+    )
+
+    plot_prior_models = True
+    plot_new_model = False
+
+    prior_models = ["Chen", "Toyli", "Doherty", "Li", "Barson"]
 
     for ind in range(len(prior_models)):
-        ax = axes_pack[ind]
+        ax = axes_pack[ind + 1]
         prior_model = prior_models[ind]
 
         fig_sub(
@@ -2377,7 +2415,7 @@ def fit_prior_models_to_our_data():
     fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
     fig.text(right, mid, "(d)", fontsize=kpl.FontSize.NORMAL)
     fig.text(left, bot, "(e)", fontsize=kpl.FontSize.NORMAL)
-    # fig.text(right, bot, "(f)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, bot, "(f)", fontsize=kpl.FontSize.NORMAL)
 
 
 def fit_our_model_to_prior_data():
@@ -2602,6 +2640,13 @@ def fig_sub(
     }
     if comp_sep_fit:
         prior_model_fns = {
+            # "Cambria": get_fitted_model(
+            #     temp_list,
+            #     zfs_list,
+            #     zfs_err_list,
+            #     zfs_deviation=True,
+            #     fixed_energies=False,
+            # ),
             "Chen": fit_sub_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list),
             "Toyli": fit_super_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list),
             "Barson": fit_zfs_from_temp_barson_free_bs(
@@ -2674,7 +2719,7 @@ def fig_sub(
             zfs_list,
             zfs_err_list,
             zfs_deviation,
-            fixed_energies=True,
+            fixed_energies=False,
         )
     else:
         prior_temps = prior_data_sets[fit_data]["temps"]
@@ -2802,7 +2847,12 @@ def fig_sub(
             plot_vals = 1000 * vals
         else:
             plot_vals = vals
-        label = None if plot_data else "This work"
+        if comp_sep_fit:
+            label = "This work"
+        elif plot_data:
+            label = None
+        else:
+            label = "This work"
         color = this_work_model_color
         lw = (
             kpl.LineWidth.BIG
@@ -2927,7 +2977,7 @@ def fig_sub(
 
     ### Plot wrap up
     if not no_axis_labels:
-        if comp_sep is not None:
+        if comp_sep_fit or comp_sep is not None:
             leg_loc = kpl.Loc.LOWER_LEFT
         elif yscale == "log":
             leg_loc = kpl.Loc.UPPER_LEFT
@@ -2939,7 +2989,7 @@ def fig_sub(
         handlelength = 1.0 if plot_prior_data and comp_sep is None else 1.3
         # if plot_prior_models:
         # if plot_prior_data:
-        if plot_prior_models or plot_prior_data:
+        if plot_prior_models or plot_prior_data or comp_sep_fit:
             # if True:
             handles, labels = ax.get_legend_handles_labels()
             adj_labels = []
@@ -3328,7 +3378,7 @@ if __name__ == "__main__":
     # main()
     # fig(inset_resid=True)  # Main
     # fig_bottom_resid()  # Main
-    fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
+    # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
     # fig(  # Comps models (main)
     #     temp_range=[0, 1000],
     #     y_range=[2.76, 2.88],
@@ -3366,9 +3416,9 @@ if __name__ == "__main__":
     # )
     # comps()
     # comps_sep()
-    # fit_prior_models_to_our_data()
+    fit_prior_models_to_our_data()
     # fit_our_model_to_prior_data()
-    refit_experiments()
+    # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
 

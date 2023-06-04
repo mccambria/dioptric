@@ -590,25 +590,28 @@ def fit_resonance(
         num_resonances=num_resonances,
     )
 
-    curve_fit_lambda = lambda fit_func, guess_params: curve_fit(
-        fit_func,
-        freqs,
-        norm_avg_sig,
-        p0=guess_params,
-        sigma=norm_avg_sig_ste,
-        absolute_sigma=True,
-        bounds=(0, np.inf),
-        # full_output=True,
-        # method="trf",
-        # bounds=(0, np.inf),
-        # contrast, center, rabi_freq, splitting, phase
-        # bounds=(
-        #     (0.05, freqs[0], 0.9, 0, -2 * np.pi),
-        #     (0.5, freqs[-1], 8, 10, 2 * np.pi),
-        # ),  # MCC
-        # # max_nfev=100,
-        # ftol=1e-4,  # MCC
-    )
+    def curve_fit_sub(fit_func, guess_params, bounds=None):
+        if bounds is None:
+            bounds = (0, np.inf)
+        return curve_fit(
+            fit_func,
+            freqs,
+            norm_avg_sig,
+            p0=guess_params,
+            sigma=norm_avg_sig_ste,
+            absolute_sigma=True,
+            bounds=bounds,
+            # full_output=True,
+            # method="trf",
+            # bounds=(0, np.inf),
+            # contrast, center, rabi_freq, splitting, phase
+            # bounds=(
+            #     (0.05, freqs[0], 0.9, 0, -2 * np.pi),
+            #     (0.5, freqs[-1], 8, 10, 2 * np.pi),
+            # ),  # MCC
+            # # max_nfev=100,
+            # ftol=1e-4,  # MCC
+        )
 
     # If the user gave us a hint, go with that
     if num_resonances is not None or guess_params is not None:
@@ -621,7 +624,7 @@ def fit_resonance(
         elif num_resonances is not None:
             guess_params = get_guess_params_lambda(num_resonances)
         fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
-        popt, pcov = curve_fit_lambda(fit_func, guess_params)
+        popt, pcov = curve_fit_sub(fit_func, guess_params)
 
         # # Brute
         # def cost(cost_args):
@@ -650,11 +653,13 @@ def fit_resonance(
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:
         best_red_chi_sq = None
+        best_num_params = None
+        new_winner = False
         # for num_resonances in [1, 2]:
         #     test_guess_params = get_guess_params_lambda(num_resonances)
         guess_contrast = 0.6 * (1 - min(norm_avg_sig))
         qtr_range = freq_range / 4
-        half_range = freq_range / 2
+        half_range = 0.45 * freq_range
         qtr_low = freq_center - qtr_range
         qtr_high = freq_center + qtr_range
         half_low = freq_center - half_range
@@ -664,22 +669,49 @@ def fit_resonance(
             [guess_contrast, 3, 3, qtr_low, guess_contrast, 3, 3, qtr_high],
             [guess_contrast, 3, 3, half_low, guess_contrast, 3, 3, half_high],
         ]
-        for test_guess_params in opts:
+        bounds_opts = [
+            (
+                (0.05, 0, 0, freqs[0]),
+                (0.5, 5, 5, freqs[-1]),
+            ),
+            (
+                (0.05, 0, 0, freqs[0], 0.05, 0, 0, freqs[0]),
+                (0.5, 5, 5, freqs[-1], 0.5, 5, 5, freqs[-1]),
+            ),
+            (
+                (0.05, 0, 0, freqs[0], 0.05, 0, 0, freqs[0]),
+                (0.5, 5, 5, freqs[-1], 0.5, 5, 5, freqs[-1]),
+            ),
+        ]
+        # for test_guess_params in opts:
+        for ind in range(len(opts)):
+            test_guess_params = opts[ind]
+            test_bounds = bounds_opts[ind]
+            # test_bounds = None
+            new_winner = False
             test_fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
             try:
-                test_popt, test_pcov = curve_fit_lambda(
-                    test_fit_func, test_guess_params
+                test_popt, test_pcov = curve_fit_sub(
+                    test_fit_func, test_guess_params, test_bounds
                 )
             except Exception as exc:
                 continue
             residuals = test_fit_func(freqs, *test_popt) - norm_avg_sig
             chi_sq = np.sum((residuals / norm_avg_sig_ste) ** 2)
-            red_chi_sq = chi_sq / (len(norm_avg_sig) - len(test_popt))
-            # Determine if the new fit is better (closer to 1) than the previous one
-            if (best_red_chi_sq is None) or (
-                abs(red_chi_sq - 1) < abs(best_red_chi_sq - 1)
+            num_params = len(test_popt)
+            red_chi_sq = chi_sq / (num_steps - num_params)
+            # Determine if the new fit is necessary and better
+            if best_red_chi_sq is None:
+                new_winner = True
+            elif (red_chi_sq < best_red_chi_sq) and (num_params < best_num_params):
+                new_winner = True
+            elif (abs(red_chi_sq - 1) < abs(best_red_chi_sq - 1)) and (
+                best_red_chi_sq > 1
             ):
+                new_winner = True
+            if new_winner:
                 best_red_chi_sq = red_chi_sq
+                best_num_params = num_params
                 fit_func = test_fit_func
                 popt = test_popt
                 pcov = test_pcov
