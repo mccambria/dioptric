@@ -1148,6 +1148,23 @@ def zfs_from_temp_barson(temp):
     return zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3)
 
 
+def zfs_from_temp_barson_dev(temp):
+    """
+    Comes from Barson 2019!
+    """
+
+    zfs0 = 0
+    # zfs0 = 2.884624012121079  # GHz, lowest temp (6 K) value from digitized Fig. 2a
+    X1 = 0.4369e-7  # 1 / K
+    X2 = 15.7867e-7  # 1 / K
+    X3 = 42.5598e-7  # 1 / K
+    Theta1 = 200  # K
+    Theta2 = 880  # K
+    Theta3 = 2137.5  # K
+
+    return zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3)
+
+
 def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
     dV_over_V = lambda temp: fractional_thermal_expansion_free(
         temp, X1, X2, X3, Theta1, Theta2, Theta3
@@ -1313,7 +1330,18 @@ def zfs_from_temp_doherty(temp):
     """
     Doherty 2014
     """
-    coeffs = [zfs_base, 18.7e-10, -41e-13]
+    zfs0 = zfs_base  # GHz
+    coeffs = [zfs0, 18.7e-10, -41e-13]
+    zfs = zfs_from_temp_doherty_free(temp, *coeffs)
+    return zfs
+
+
+def zfs_from_temp_doherty_dev(temp):
+    """
+    Doherty 2014
+    """
+    zfs0 = 0  # GHz
+    coeffs = [zfs0, 18.7e-10, -41e-13]
     zfs = zfs_from_temp_doherty_free(temp, *coeffs)
     return zfs
 
@@ -2257,8 +2285,8 @@ def comps_sep():
     }
     y_ranges = {
         "Toyli": [2.81, 2.874],
-        "Barson": [2.815, 2.88],
-        "Doherty": [2.8695, 2.8782],
+        "Barson": [2.815 - zfs_base, 2.88 - zfs_base],
+        "Doherty": [2.8693 - zfs_base, 2.878 - zfs_base],
         "Li": [2.8695, 2.8782],
         "Chen": [2.8695, 2.8782],
         "Lourette": [2.8595, 2.8782],
@@ -2271,8 +2299,8 @@ def comps_sep():
         y_range = y_ranges[prior_model]
 
         # Adjustments
-        if prior_model == "Barson":
-            plot_prior_data = False
+        plot_prior_data = prior_model != "Barson"
+        zfs_deviation = prior_model in ["Barson", "Doherty"]
 
         fig_sub(
             ax,
@@ -2293,6 +2321,7 @@ def comps_sep():
             comp_sep=prior_model,
             x1000=True,
             supp_labels=True,
+            zfs_deviation=zfs_deviation,
         )
 
         # Adjustments
@@ -2301,8 +2330,8 @@ def comps_sep():
         elif prior_model == "Lourette":
             # ax.set_yticks([2.86, 2.865, 2.87, 2.875])
             ax.set_yticks([2860, 2865, 2870, 2875])
-        elif prior_model == "Barson":
-            plot_prior_data = True
+        if prior_model in ["Barson", "Doherty"]:
+            ax.set_ylabel("$\Delta$ ZFS (MHz)")
 
         # plt.setp(ax.yaxis.get_majorticklabels(), rotation=90, va="center")
 
@@ -2404,6 +2433,7 @@ def fit_prior_models_to_our_data():
             supp_labels=True,
             zfs_deviation=True,
         )
+        ax.set_ylabel("$\Delta$ ZFS (MHz)")
 
     ### fig labels
     left = 0.001
@@ -2663,13 +2693,21 @@ def fig_sub(
                 temp_list, zfs_list, zfs_err_list
             ),
         }
-    else:
+    elif not zfs_deviation:
         prior_model_fns = {
             "Chen": sub_room_zfs_from_temp,
             "Toyli": super_room_zfs_from_temp,
             "Barson": zfs_from_temp_barson,
             "Li": zfs_from_temp_li,
             "Doherty": zfs_from_temp_doherty,
+        }
+    else:
+        prior_model_fns = {
+            "Chen": sub_room_zfs_from_temp,
+            "Toyli": super_room_zfs_from_temp,
+            "Barson": zfs_from_temp_barson_dev,
+            "Li": zfs_from_temp_li,
+            "Doherty": zfs_from_temp_doherty_dev,
         }
     prior_data_file_names = {
         "Chen": "chen_2011_3a",
@@ -2681,12 +2719,12 @@ def fig_sub(
     }
     if supp_labels:
         prior_data_labels = {
-            "Chen": "[2] Chen",
-            "Toyli": "[3] Toyli",
-            "Doherty": "[4] Doherty",
-            "Li": "[5] Li",
-            "Barson": "[6] Barson",
-            "Lourette": "[7] Lourette",
+            "Chen": "[3] Chen",
+            "Toyli": "[4] Toyli",
+            "Doherty": "[5] Doherty",
+            "Li": "[6] Li",
+            "Barson": "[7] Barson",
+            "Lourette": "[8] Lourette",
         }
     else:
         prior_data_labels = {
@@ -3421,8 +3459,8 @@ if __name__ == "__main__":
     #     supp_labels=True,
     # )
     # comps()
-    # comps_sep()
-    fit_prior_models_to_our_data()
+    comps_sep()
+    # fit_prior_models_to_our_data()
     # fit_our_model_to_prior_data()
     # refit_experiments()
     # # # derivative_comp()

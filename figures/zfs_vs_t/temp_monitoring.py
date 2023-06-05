@@ -61,7 +61,7 @@ def main(file_list, monitor_list, do_plot=False):
         expt_file = file_list[ind]
         end_time = tool_belt.utc_from_file_name(expt_file)
         # Experiments take at least 10 minutes, so use this for the lookback
-        start_time = end_time - (10 * 60)
+        start_time = end_time - (60 * 60)
         monitor = monitor_list[ind]
         expt_times = []
         expt_temps = []
@@ -110,17 +110,19 @@ if __name__ == "__main__":
     # file_list = [el["ZFS file"] for el in data_points if not el["ZFS file"] == ""]
     # monitor_list = [el["Monitor"] for el in data_points if not el["ZFS file"] == ""]
 
-    file_list = [
-        "2023_01_12-15_21_57-wu-nv7_zfs_vs_t",  # 310
-        "2023_01_13-11_29_29-wu-nv10_zfs_vs_t",  # 400
-        "2023_01_14-21_23_31-wu-nv6_zfs_vs_t",  # 500
-    ]
-    monitor_list = ["PT100"] * len(file_list)
+    # file_list = ["2022_11_15-14_11_22-wu-nv3_zfs_vs_t"]
     # file_list = [
-    #     "2022_11_15-14_54_40-wu-nv5_zfs_vs_t",  # 15
-    #     "2022_11_18-11_43_24-wu-nv1_zfs_vs_t",  # 107
-    #     "2023_01_14-20_12_05-wu-nv8_zfs_vs_t",  # 500
+    #     "2023_01_12-15_21_57-wu-nv7_zfs_vs_t",  # 310
+    #     "2023_01_13-11_29_29-wu-nv10_zfs_vs_t",  # 400
+    #     "2023_01_14-21_23_31-wu-nv6_zfs_vs_t",  # 500
     # ]
-    # monitor_list = ["lakeshore_X162690"] * len(file_list)
+    # monitor_list = ["PT100"] * len(file_list)
+    file_list = [
+        # "2022_12_03-21_24_05-15micro-nv1_zfs_vs_t",
+        "2022_11_15-14_11_22-wu-nv3_zfs_vs_t",  # 15
+        # "2022_11_15-14_25_56-wu-nv2_zfs_vs_t",
+        # "2022_11_15-14_54_40-wu-nv5_zfs_vs_t",
+    ]
+    monitor_list = ["lakeshore_X162690"] * len(file_list)
 
-    main(file_list, monitor_list, do_plot=False)
+    main(file_list, monitor_list, do_plot=True)
