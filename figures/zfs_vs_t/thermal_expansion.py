@@ -21,7 +21,8 @@ from utils.tool_belt import bose
 meV_to_K = 11.6045250061657  # 1 meV = 11.6045250061657 K
 # a0 = 3.566503
 a0 = 3.5671
-zfs_vs_t_energies = [58.73, 145.5]
+# zfs_vs_t_energies = [58.73, 145.5]
+zfs_vs_t_energies = [64, 163]  # Offset fit
 zfs_vs_t_energy_errs = [2.32, 8.4]
 
 

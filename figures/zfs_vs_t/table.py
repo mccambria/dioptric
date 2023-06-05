@@ -96,45 +96,47 @@ def main():
 if __name__ == "__main__":
     # main()
 
-    labels = ["Chen", "Toyli", "Doherty", "Li", "Barson"]
+    labels = ["This work", "Chen", "Toyli", "Doherty", "Li", "Barson"]
     params_list = [
+        [-7.54373061e-02, -2.49004667e-01, 6.38800583e01, 1.62805204e02],
         [
-            2.87739103e00,
-            -2.18259231e-06,
-            9.35186529e-08,
-            -9.06702213e-10,
-            1.41418530e-12,
-            -8.01851281e-16,
+            -5.60672993e-06,
+            1.61129595e-07,
+            -1.30943594e-09,
+            2.31163392e-12,
+            -1.48142926e-15,
         ],
-        [2.87681320e00, 2.18345251e-05, -1.39327457e-07, -2.69568020e-11],
-        [2.87693019e00, 1.01813694e-09, -1.66233320e-12],
-        [2.87773547e00, 1.92413940e-07, 1.52014969e02],
-        [2.87743616e00, -1.77160810e-09, 4.81437544e-12, -3.78265704e-15],
+        [1.64910962e-05, -1.27410830e-07, -3.66619701e-11],
+        [1.16090179e-09, -1.93169794e-12],
+        [2.02884792e-07, 1.68769952e02],
+        [-1.81265247e-09, 4.89589231e-12, -3.79468466e-15],
     ]
     param_errs_list = [
+        [6.23938155e-03, 3.35225677e-02, 1.45275912e00, 1.15701991e01],
         [
-            7.59555359e-05,
-            2.98832757e-06,
-            3.39577677e-08,
-            1.57626332e-10,
-            3.21814315e-13,
-            2.40102970e-16,
+            1.43760347e-06,
+            2.10646783e-08,
+            1.08840964e-10,
+            2.36789920e-13,
+            1.84577121e-16,
         ],
-        [4.71585333e-05, 6.81134332e-07, 2.82191816e-09, 3.42222683e-12],
-        [1.58206229e-05, 4.31008631e-12, 8.78608098e-15],
-        [2.14739748e-05, 1.28774012e-09, 2.19116352e00],
-        [1.97216807e-05, 2.49648091e-11, 1.11643152e-13, 1.26067461e-16],
+        [3.28639435e-07, 1.84219645e-09, 2.52755062e-12],
+        [2.83471371e-12, 6.23345595e-15],
+        [1.00996510e-09, 1.47103253e00],
+        [1.80119384e-11, 8.58117690e-14, 1.01130822e-16],
     ]
 
-    for ind in range(5):
+    for ind in range(len(labels)):
+        print()
         print(labels[ind])
         params = params_list[ind]
         param_errs = param_errs_list[ind]
         print_params = []
         for jnd in range(len(params)):
-            num_sig_figs = 6 if jnd == 0 else 4
-            # print_params.append(
-            #     tool_belt .round_for_print_sci_latex(params[jnd], param_errs[jnd])
-            # )
-            print_params.append(tool_belt.round_sig_figs(params[jnd], num_sig_figs))
+            # num_sig_figs = 6 if jnd == 0 else 4
+            num_sig_figs = 4
+            print_params.append(
+                tool_belt.round_for_print_sci_latex(params[jnd], param_errs[jnd])
+            )
+            # print_params.append(tool_belt.round_sig_figs(params[jnd], num_sig_figs))
         print(print_params)

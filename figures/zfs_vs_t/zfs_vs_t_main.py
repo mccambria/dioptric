@@ -42,7 +42,7 @@ import matplotlib.legend_handler
 
 # ZFS at 0 temp, used for papers that only report shifts
 # Matches our fits 0 temp value
-zfs_base = 2.877383
+zfs_base = 2.87738256
 # zfs_base = 2.877326
 zfs_deviations = [zfs_base, zfs_base + 0.0003]
 fixed_energy_vals = [58.73, 145.5]
@@ -1924,7 +1924,6 @@ def fig(
         axins.set_yticks(ticks)
         axins.tick_params(axis="both", which="major", labelsize=16)
         plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
-        axins.patch.set_alpha(0.7)
 
     if inset_resid:
         x_pos = 0.57
@@ -2410,6 +2409,7 @@ def fit_prior_models_to_our_data():
     for ind in range(len(prior_models)):
         ax = axes_pack[ind + 1]
         prior_model = prior_models[ind]
+        print(prior_model)
 
         fig_sub(
             ax,
@@ -2434,6 +2434,8 @@ def fit_prior_models_to_our_data():
             zfs_deviation=True,
         )
         ax.set_ylabel("$\Delta$ ZFS (MHz)")
+
+        print()
 
     ### fig labels
     left = 0.001
@@ -2573,7 +2575,7 @@ def axins_polish(axins):
     axins.set_yticks([2.876, 2.877, 2.878])
     axins.tick_params(axis="both", which="major", labelsize=16)
     plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
-    axins.patch.set_alpha(0.7)
+    # axins.patch.set_alpha(0.7)
 
 
 def fig_sub(
@@ -2676,13 +2678,6 @@ def fig_sub(
     }
     if comp_sep_fit:
         prior_model_fns = {
-            # "Cambria": get_fitted_model(
-            #     temp_list,
-            #     zfs_list,
-            #     zfs_err_list,
-            #     zfs_deviation=True,
-            #     fixed_energies=False,
-            # ),
             "Chen": fit_sub_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list),
             "Toyli": fit_super_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list),
             "Barson": fit_zfs_from_temp_barson_free_bs(
@@ -3423,23 +3418,23 @@ if __name__ == "__main__":
     # fig(inset_resid=True)  # Main
     # fig_bottom_resid()  # Main
     # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
-    # fig(  # Comps models (main)
-    #     temp_range=[0, 1000],
-    #     y_range=[2.76, 2.88],
-    #     #
-    #     plot_data=False,
-    #     condense_all=False,
-    #     condense_samples=True,
-    #     plot_prior_models=True,
-    #     desaturate_prior=False,
-    #     plot_new_model=True,
-    #     plot_prior_data=False,
-    #     new_model_diff=False,
-    #     dash_predictions=True,
-    #     inset_comp=True,
-    #     inset_resid=False,
-    #     x1000=True,
-    # )
+    fig(  # Comps models (main)
+        temp_range=[0, 1000],
+        y_range=[2.76, 2.88],
+        #
+        plot_data=False,
+        condense_all=False,
+        condense_samples=True,
+        plot_prior_models=True,
+        desaturate_prior=False,
+        plot_new_model=True,
+        plot_prior_data=False,
+        new_model_diff=False,
+        dash_predictions=True,
+        inset_comp=True,
+        inset_resid=False,
+        x1000=True,
+    )
     # fig(  # Comps data (supp)
     #     temp_range=[-5, 725],
     #     y_range=[2.81, 2.88],
