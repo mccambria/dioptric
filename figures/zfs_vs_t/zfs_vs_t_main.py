@@ -2607,7 +2607,9 @@ def fig_sub(
     skip_lambda = lambda point: (
         point["Skip"]
         or point["Sample"] != "Wu"
-        # or point["Sample"] != "15micro"
+        # or point["NV"] == "nv5_zfs_vs_t"
+        # or point["NV"] == "nv4_zfs_vs_t"
+        # or point["NV"] == "nv11_zfs_vs_t"
         # or point["ZFS file"] == ""
         # or point["Monitor temp (K)"] >= 296
     )
@@ -3416,25 +3418,25 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    # fig_bottom_resid()  # Main
+    fig_bottom_resid()  # Main
     # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
-    fig(  # Comps models (main)
-        temp_range=[0, 1000],
-        y_range=[2.76, 2.88],
-        #
-        plot_data=False,
-        condense_all=False,
-        condense_samples=True,
-        plot_prior_models=True,
-        desaturate_prior=False,
-        plot_new_model=True,
-        plot_prior_data=False,
-        new_model_diff=False,
-        dash_predictions=True,
-        inset_comp=True,
-        inset_resid=False,
-        x1000=True,
-    )
+    # fig(  # Comps models (main)
+    #     temp_range=[0, 1000],
+    #     y_range=[2.76, 2.88],
+    #     #
+    #     plot_data=False,
+    #     condense_all=False,
+    #     condense_samples=True,
+    #     plot_prior_models=True,
+    #     desaturate_prior=False,
+    #     plot_new_model=True,
+    #     plot_prior_data=False,
+    #     new_model_diff=False,
+    #     dash_predictions=True,
+    #     inset_comp=True,
+    #     inset_resid=False,
+    #     x1000=True,
+    # )
     # fig(  # Comps data (supp)
     #     temp_range=[-5, 725],
     #     y_range=[2.81, 2.88],
@@ -3454,7 +3456,7 @@ if __name__ == "__main__":
     #     supp_labels=True,
     # )
     # comps()
-    comps_sep()
+    # comps_sep()
     # fit_prior_models_to_our_data()
     # fit_our_model_to_prior_data()
     # refit_experiments()

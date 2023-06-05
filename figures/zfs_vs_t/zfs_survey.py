@@ -406,7 +406,9 @@ def reanalyze():
 
 
 def main():
-    fig, ax = plt.subplots()
+    kpl_figsize = kpl.figsize
+    adj_figsize = (1.9 * kpl_figsize[0], 1.5 * kpl_figsize[1])
+    fig, ax = plt.subplots(figsize=adj_figsize)
 
     # axins = inset_axes(
     #     ax,
@@ -421,7 +423,8 @@ def main():
     #     bbox_transform=ax.transAxes,
     #     loc=1,
     # )
-    fig_sub(ax)
+    size = kpl.Size.NORMAL
+    fig_sub(ax, size=size)
 
     # fig_sub(axins, legend=False, axis_labels=False, size=kpl.Size.SMALL)
     # axins.set_xlim(-0.1, 0.1)
@@ -445,8 +448,11 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
     region_list = data_lists["Region"]
     kpl_colors_list = list(KplColors)
     region_colors = {}
-    for ind in range(5):
+    # for ind in range(5):
+    # region_colors[ind + 1] = kpl_colors_list[ind]
+    for ind in range(6):
         region_colors[ind + 1] = kpl_colors_list[ind]
+    # print(region_list)
     color_list = [region_colors[el] for el in region_list]
 
     # Histograms
@@ -464,12 +470,14 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
         else:
             label = None
         color = region_colors[region]
+        # Account for temperature difference in region 1 (set A, cryo setup) NVs
+        shift = -0.062 if region == 1 else 0
         kpl.plot_points(
             ax,
             point["Splitting (MHz)"],
-            point["ZFS (GHz)"] * 1000 - 2870,
+            1000 * point["ZFS (GHz)"] - 2870 + shift,
             xerr=point["Splitting (MHz) error"],
-            yerr=point["ZFS (GHz) error"],
+            yerr=1000 * point["ZFS (GHz) error"],
             color=color,
             label=label,
             size=size,
@@ -480,12 +488,15 @@ def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
     if legend:
         # ax.legend(title="Region")
         handles, labels = ax.get_legend_handles_labels()
-        order = [1, 2, 3, 4, 0]
+        order = [5, 1, 2, 3, 4, 0]
         ax.legend(
             [handles[i] for i in order],
             [labels[i] for i in order],
             title="Region",
             loc=kpl.Loc.LOWER_RIGHT,
+            ncols=2,
+            handlelength=0.7,
+            columnspacing=1.5,
         )
 
 

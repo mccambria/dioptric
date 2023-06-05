@@ -9,11 +9,11 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            // "console": "internalConsole",
-            "console": "integratedTerminal",
-            // "redirectOutput": true,
+            "console": "internalConsole",
+            // "console": "integratedTerminal",
+            "redirectOutput": true,
             "suppressMultipleSessionWarning": true,
-            // "justMyCode": false,
+            "justMyCode": false,
         }
     ]
 }
