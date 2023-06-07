@@ -2273,7 +2273,7 @@ def comps_sep():
     xscale = "linear"
     yscale = "linear"
 
-    prior_models = ["Chen", "Toyli", "Barson", "Doherty", "Li", "Lourette"]
+    prior_models = ["Chen", "Toyli", "Doherty", "Li", "Barson", "Lourette"]
     prior_model_temp_ranges = {
         "Toyli": [295 - 10, 710 + 15],
         "Barson": [0 - 10, 710 + 15],
@@ -2356,7 +2356,7 @@ def fit_prior_models_to_our_data():
     # fig, axes_pack_original = plt.subplots(3, 2, figsize=adj_figsize)
 
     adj_figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
-    height_ratios = [3, 1, 0.85, 3, 1, 0.85, 3, 1, 0.85]
+    height_ratios = [3, 1, 0.6] * 3
     fig, axes_pack_original = plt.subplots(
         9, 2, figsize=adj_figsize, height_ratios=height_ratios
     )
@@ -2424,7 +2424,11 @@ def fit_prior_models_to_our_data():
         )
 
         ax.set_xlabel(None)
-        ax.set_yticks([0, -10, -20])
+        ax.set_ylim(-32, 2)
+        ax.set_yticks([0, -10, -20, -30])
+        # ax.set_yticks([0, -10, -20])
+        # ax.set_ylabel("$\Delta$ ZFS (MHz)")
+        ax.set_ylabel("$\Delta$ ZFS (MHz)", labelpad=1.5)
         ax.tick_params(axis="x", which="both", labeltop=False, labelbottom=False)
 
     ### Residual plots second
@@ -2471,19 +2475,17 @@ def fit_prior_models_to_our_data():
         )
         if prior_model in ["Cambria", "Chen", "Barson"]:
             ax.set_yticks([-0.3, 0.0, 0.3])
-            ax.set_ylabel("Res. (MHz)", labelpad=2)
         elif prior_model == "Doherty":
             ax.set_yticks([-1, 0, 1])
             ax.set_ylim(-1.2, 1.2)
-            ax.set_ylabel("Res. (MHz)", labelpad=15)
         elif prior_model == "Li":
             ax.set_yticks([-0.5, 0, 0.5])
             ax.set_ylim(-0.7, 0.7)
-            ax.set_ylabel("Res. (MHz)", labelpad=2)
         elif prior_model == "Toyli":
             ax.set_yticks([-0.5, 0, 0.5])
             ax.set_ylim(-0.8, 0.8)
-            ax.set_ylabel("Res. (MHz)", labelpad=2)
+        labelpad = 10 if prior_model == "Doherty" else 0
+        ax.set_ylabel("Residuals (MHz)", labelpad=labelpad)
 
         print()
 
@@ -2493,8 +2495,8 @@ def fit_prior_models_to_our_data():
     left = 0.001
     right = 0.502
     top = 0.98
-    mid = 0.64
-    bot = 0.31
+    mid = 0.645
+    bot = 0.315
     fig.text(left, top, "(a)", fontsize=kpl.FontSize.NORMAL)
     fig.text(right, top, "(b)", fontsize=kpl.FontSize.NORMAL)
     fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
@@ -2504,7 +2506,7 @@ def fit_prior_models_to_our_data():
 
     fig.tight_layout(pad=0.1)
     fig.tight_layout(pad=0.1)
-    fig.subplots_adjust(hspace=0)
+    fig.subplots_adjust(hspace=0, wspace=0.16)
 
 
 def fit_our_model_to_prior_data():
@@ -2515,7 +2517,7 @@ def fit_our_model_to_prior_data():
     # fig, axes_pack_original = plt.subplots(3, 2, figsize=adj_figsize)
 
     adj_figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
-    height_ratios = [3, 1, 0.85, 3, 1, 0.85, 3, 1, 0.85]
+    height_ratios = [3, 1, 0.6] * 3
     fig, axes_pack_original = plt.subplots(
         9, 2, figsize=adj_figsize, height_ratios=height_ratios
     )
@@ -2529,30 +2531,33 @@ def fit_our_model_to_prior_data():
         spacer = axes_pack[adj_ind + 2]
         resid_ax.sharex(main_ax)
         spacer.axis("off")
-    axes_pack[-1].axis("off")
-    axes_pack[-2].axis("off")
-    axes_pack[-3].axis("off")
+    # axes_pack[-1].axis("off")
+    # axes_pack[-2].axis("off")
+    # axes_pack[-3].axis("off")
 
-    # prior_models = ["Cambria", "Chen", "Toyli", "Doherty", "Li", "Barson"]
-    prior_models = ["Chen", "Doherty", "Lourette", "Toyli", "Li"]
+    prior_models = ["Cambria", "Toyli", "Li", "Chen", "Doherty", "Lourette"]
+    # prior_models = ["Chen", "Doherty", "Lourette", "Toyli", "Li"]
     prior_model_temp_ranges = {
+        "Cambria": [0, 515],
         "Toyli": [295 - 10, 710 + 15],
-        "Barson": [0 - 10, 710 + 15],
-        "Doherty": [0 - 10, 295 + 15],
-        "Li": [0 - 10, 295 + 15],
-        "Chen": [0 - 10, 295 + 15],
+        "Barson": [0, 710 + 15],
+        "Doherty": [0, 295 + 15],
+        "Li": [0, 295 + 15],
+        "Chen": [0, 295 + 15],
         "Lourette": [75 - 10, 400 + 15],
     }
     y_ranges = {
-        "Toyli": [2.81, 2.874],
+        "Cambria": [2.847, 2.879],
+        "Toyli": [2.807, 2.874],
         "Barson": [2.815, 2.88],
         # "Doherty": [2.8695, 2.8782],
-        "Doherty": [2.8695 - 2.8777, 2.8782 - 2.8777],
+        "Doherty": [-8.5 / 1000, 2.8782 - 2.8777],
         "Li": [2.8695, 2.8782],
-        "Chen": [2.8695, 2.8782],
-        "Lourette": [2.8595, 2.8782],
+        "Chen": [2.869, 2.8782],
+        "Lourette": [2.858, 2.8782],
     }
     prior_model_zfs_deviation = {
+        "Cambria": False,
         "Toyli": False,
         "Barson": True,
         "Doherty": True,
@@ -2586,6 +2591,10 @@ def fit_our_model_to_prior_data():
         y_range = y_ranges[prior_model]
         zfs_deviation = prior_model_zfs_deviation[prior_model]
 
+        plot_data = prior_model == "Cambria"
+        plot_prior_data = prior_model != "Cambria"
+        fit_data = None if prior_model == "Cambria" else prior_model
+
         fig_sub(
             ax,
             temp_range,
@@ -2607,7 +2616,7 @@ def fit_our_model_to_prior_data():
             x1000=True,
             supp_labels=True,
             zfs_deviation=zfs_deviation,
-            fit_data=prior_model,
+            fit_data=fit_data,
         )
 
         ax.set_xlabel(None)
@@ -2616,17 +2625,17 @@ def fit_our_model_to_prior_data():
 
         # Adjustments
         if prior_model == "Toyli":
-            ax.set_xticks([300, 400, 500, 600, 700])
-        elif prior_model == "Lourette":
-            # ax.set_yticks([2.86, 2.865, 2.87, 2.875])
-            ax.set_yticks([2860, 2865, 2870, 2875])
-        elif prior_model == "Barson":
-            plot_prior_data = True
-        if prior_model in ["Chen", "Li"]:
-            ax.set_yticks([2870, 2872, 2874, 2876, 2878])
+            ax.set_yticks([2810, 2830, 2850, 2870])
+        # elif prior_model == "Lourette":
+        #     # ax.set_yticks([2.86, 2.865, 2.87, 2.875])
+        #     ax.set_yticks([2860, 2865, 2870, 2875])
+        # elif prior_model == "Barson":
+        #     plot_prior_data = True
+        # if prior_model in ["Chen", "Li"]:
+        #     ax.set_yticks([2870, 2872, 2874, 2876, 2878])
         if prior_model == "Doherty":
             ax.set_ylabel(r"$\Delta$ ZFS (MHz)")
-            ax.set_yticks([-8, -6, -4, -2, 0])
+            # ax.set_yticks([-8, -6, -4, -2, 0])
 
     ### Residual plots second
 
@@ -2638,6 +2647,11 @@ def fit_our_model_to_prior_data():
         temp_range = prior_model_temp_ranges[prior_model]
         y_range = None
         zfs_deviation = prior_model_zfs_deviation[prior_model]
+
+        plot_data = prior_model == "Cambria"
+        plot_prior_models = prior_model != "Cambria"
+        plot_new_model = prior_model == "Cambria"
+        fit_data = None if prior_model == "Cambria" else prior_model
 
         fig_sub(
             ax,
@@ -2661,7 +2675,7 @@ def fit_our_model_to_prior_data():
             supp_labels=True,
             zfs_deviation=zfs_deviation,
             no_axis_labels=True,
-            fit_data=prior_model,
+            fit_data=fit_data,
         )
         ax.set_ylabel("$\Delta$ ZFS (MHz)")
         ax.axhline(y=0, color=KplColors.MEDIUM_GRAY)
@@ -2670,7 +2684,10 @@ def fit_our_model_to_prior_data():
         axticks.tick_params(
             axis="x", direction="inout", labeltop=False, labelbottom=False, length=6
         )
-        ax.set_ylabel("Res. (MHz)")
+        ax.set_ylim(-0.45, 0.45)
+        ax.set_yticks([-0.3, 0, 0.3])
+        labelpad = 1 if prior_model == "Doherty" else 9
+        ax.set_ylabel("Residuals (MHz)", labelpad=labelpad)
         # if prior_model in ["Cambria", "Chen", "Barson"]:
         #     ax.set_yticks([-0.3, 0.0, 0.3])
         #     ax.set_ylabel("Res. (MHz)", labelpad=2)
@@ -2692,11 +2709,11 @@ def fit_our_model_to_prior_data():
     ### Final adjustments
 
     # Fig labels
-    left = 0.001
-    right = 0.502
+    left = 0.003
+    right = 0.506
     top = 0.98
-    mid = 0.64
-    bot = 0.31
+    mid = 0.645
+    bot = 0.315
     fig.text(left, top, "(a)", fontsize=kpl.FontSize.NORMAL)
     fig.text(right, top, "(b)", fontsize=kpl.FontSize.NORMAL)
     fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
@@ -2706,7 +2723,7 @@ def fit_our_model_to_prior_data():
 
     fig.tight_layout(pad=0.1)
     fig.tight_layout(pad=0.1)
-    fig.subplots_adjust(hspace=0)
+    fig.subplots_adjust(hspace=0, wspace=0.19)
 
 
 def axins_polish(axins):
@@ -2855,12 +2872,12 @@ def fig_sub(
     }
     if supp_labels:
         prior_data_labels = {
-            "Chen": "[3] Chen",
-            "Toyli": "[4] Toyli",
-            "Doherty": "[5] Doherty",
-            "Li": "[6] Li",
-            "Barson": "[7] Barson",
-            "Lourette": "[8] Lourette",
+            "Chen": "[8] Chen",
+            "Toyli": "[9] Toyli",
+            "Doherty": "[10] Doherty",
+            "Li": "[11] Li",
+            "Barson": "[12] Barson",
+            "Lourette": "[13] Lourette",
         }
     else:
         prior_data_labels = {
@@ -2956,17 +2973,20 @@ def fig_sub(
                 used_data_label_keys.append(label_key)
             else:
                 label = None
-            if plot_prior_data:
-                yerr = None
-            elif new_model_diff:
-                yerr = 1e3 * val_err
+            if comp_sep is not None:
+                yerr = val_err if new_model_diff else None
             else:
-                yerr = val_err
+                if plot_prior_data:
+                    yerr = None
+                else:
+                    yerr = val_err
+            if x1000 and yerr is not None:
+                yerr *= 1000
             group = group_list[ind]
             marker = "o" if group == "hot" else "s"
             fc = (
                 "none"
-                if plot_prior_data or comp_sep_fit
+                if plot_prior_data or comp_sep is not None
                 else kpl.lighten_color_hex(this_work_data_color)
             )
             kpl.plot_points(
@@ -3023,7 +3043,12 @@ def fig_sub(
     # zfs_base = cambria_lambda(1)
     zfs_base_new_model = zfs_base
     if plot_new_model and not new_model_diff:
-        zorder = 10 if plot_prior_models else -2
+        if comp_sep:
+            zorder = 15
+        elif plot_prior_models:
+            zorder = 15
+        else:
+            zorder = -2
         vals = cambria_lambda(temp_linspace)
         if inverse_temp or yscale == "log":
             plot_vals = zfs_base - vals
@@ -3210,9 +3235,9 @@ def fig_sub(
             ax.set_xlabel("Temperature (K)")
         if zfs_deviation or inverse_temp or yscale == "log":
             if x1000:
-                ax.set_ylabel("$\Delta D$ (MHz)")
+                ax.set_ylabel("$\Delta$ ZFS (MHz)")
             else:
-                ax.set_ylabel("$\Delta D$ (GHz)")
+                ax.set_ylabel("$\Delta$ ZFS (GHz)")
         elif new_model_diff:
             ax.set_ylabel("Residuals (MHz)")
         else:
@@ -3584,7 +3609,7 @@ if __name__ == "__main__":
     #     x1000=True,
     # )
     # fig(  # Comps data (supp)
-    #     temp_range=[-5, 725],
+    #     temp_range=[-5, 740],
     #     y_range=[2.81, 2.88],
     #     #
     #     plot_data=True,
