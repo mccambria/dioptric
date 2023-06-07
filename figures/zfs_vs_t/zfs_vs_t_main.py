@@ -2028,7 +2028,7 @@ def fig_bottom_resid(
     fig_sub(
         axbot,
         temp_range,
-        [-0.45, 0.45],
+        [-0.45e-3, 0.45e-3],
         # [-450, 450],
         plot_data=plot_data,
         condense_all=condense_all,
@@ -2042,6 +2042,7 @@ def fig_bottom_resid(
         new_model_diff=True,
         dash_predictions=dash_predictions,
         no_axis_labels=True,
+        x1000=True,
         zfs_deviation=zfs_deviation,
     )
     # axbot.tick_params(axis="both", which="major", labelsize=16)
@@ -2764,8 +2765,8 @@ def fig_sub(
     skip_lambda = lambda point: (
         point["Skip"]
         or point["Sample"] != "Wu"
-        # or point["NV"] == "nv5_zfs_vs_t"
-        # or point["NV"] == "nv4_zfs_vs_t"
+        or point["NV"] == "nv5_zfs_vs_t"
+        or point["NV"] == "nv4_zfs_vs_t"
         # or point["NV"] == "nv11_zfs_vs_t"
         # or point["ZFS file"] == ""
         # or point["Monitor temp (K)"] >= 296
@@ -2873,12 +2874,12 @@ def fig_sub(
     }
     if supp_labels:
         prior_data_labels = {
-            "Chen": "[8] Chen",
-            "Toyli": "[9] Toyli",
-            "Doherty": "[10] Doherty",
-            "Li": "[11] Li",
-            "Barson": "[12] Barson",
-            "Lourette": "[13] Lourette",
+            "Chen": "[5] Chen",
+            "Toyli": "[6] Toyli",
+            "Doherty": "[7] Doherty",
+            "Li": "[8] Li",
+            "Barson": "[9] Barson",
+            "Lourette": "[10] Lourette",
         }
     else:
         prior_data_labels = {
@@ -3596,7 +3597,7 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    # fig_bottom_resid()  # Main
+    fig_bottom_resid()  # Main
     # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
     fig(  # Comps models (main)
         temp_range=[0, 1000],
