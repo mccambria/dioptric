@@ -15,14 +15,26 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import quad
+import re
+import pandas as pd
 
 
 def get_data():
     # Get the spectral function data
     nvdata_dir = common.get_nvdata_dir()
+
+    # Not consistent with spin phonon relaxation paper
     # from_nvdata = "paper_materials/relaxation_temp_dependence/2023_02_06-spectral.csv"
-    from_nvdata = "paper_materials/relaxation_temp_dependence/2023_06_07-spectral.csv"
-    spectral_file_path = nvdata_dir / from_nvdata
+    # spectral_file_path = nvdata_dir / from_nvdata
+
+    # Consistent with spin phonon relaxation paper
+    file_name = "2023_06_07-spectral"
+    file_path = nvdata_dir / "paper_materials/relaxation_temp_dependence"
+    xl_file_path = file_path / f"{file_name}.xlsx"
+    spectral_file_path = file_path / f"{file_name}.csv"
+    compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
+    compiled_data_file.to_csv(spectral_file_path, index=None, header=True)
+
     modes = []
     with open(spectral_file_path, newline="") as f:
         reader = csv.reader(f)
@@ -156,8 +168,23 @@ def fig():
 
 
 if __name__ == "__main__":
-    norm = quad(smearing, -np.inf, np.inf, args=(0, 5))
-    print(norm)
+    # norm = quad(smearing, -np.inf, np.inf, args=(0, 5))
+    # print(norm)
+
+    nvdata_dir = common.get_nvdata_dir()
+    from_nvdata = (
+        "paper_materials/relaxation_temp_dependence/2023_06_07-512_atom-spin_phonon.dat"
+    )
+    spectral_file_path = nvdata_dir / from_nvdata
+
+    total = ""
+    with open(spectral_file_path) as f:
+        line = f.readline()
+        while line:
+            total += re.sub("\s+", ",", line.strip())
+            line = f.readline()
+            total += "\n"
+    print(total)
 
     # kpl.init_kplotlib(latex=True)
 

@@ -61,7 +61,7 @@ def fig():
 
     double_occupation_lambda = fit_double_occupation()
 
-    # First order effects (lattice constant)
+    ### First order effects (lattice constant)
     kpl.plot_line(
         ax1,
         temp_linspace,
@@ -136,19 +136,33 @@ def fig():
     )  # ax3 vs 2 because 3 is written on top of 2
     ax2.set_xlabel("Energy $\hbar\omega$ (meV)", usetex=True)
     ax2.set_xlim(min_energy, max_energy)
-    ax2.set_ylim(0, None)
-    # ax2.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4])
+    ax2.set_ylim(0, 1.365)
+    ax2.set_yticks([0, 0.4, 0.8, 1.2])
+    # ax2.set_yticks([0, 0.5, 1.0, 1.5])
 
-    # DOS
+    ### DOS
+
     color = KplColors.GREEN
     plot_vals = np.array(density_of_states)
+
+    # 1 / meV version
+    # kpl.plot_line(ax2share, energy_linspace, plot_vals, color=color)
+    # ax2share.set_ylabel("DOS (1 / meV)", color=color)
+
+    # Arb units version
+    dE = energy_linspace[1] - energy_linspace[0]
+    norm = np.sum(plot_vals) * dE
+    plot_vals /= norm
     kpl.plot_line(ax2share, energy_linspace, plot_vals, color=color)
-    ax2share.set_ylabel("DOS (1 / meV)", color=color)
+    ax2share.set_ylabel("DOS (arb. units)", color=color)
+
     ax2share.tick_params(axis="y", color=color, labelcolor=color)
     ax2share.spines["right"].set_color(color)
     ax2share.set_ylim(0, None)
+    # ax2share.set_ylim(0, 0.02)
+    ax2share.set_yticks([0, 0.01, 0.02])
 
-    # Energies from ZFS vs T fit
+    ### Energies from ZFS vs T fit
     energies = zfs_vs_t_energies
     energy_errs = zfs_vs_t_energy_errs
     for ind in range(len(energies)):

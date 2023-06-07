@@ -1170,6 +1170,7 @@ def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
         temp, X1, X2, X3, Theta1, Theta2, Theta3
     )
 
+    # A = 0  # MHz /GPa
     A = 14.6  # MHz /GPa
     B = 442  # GPa/strain
     b4 = -1.44e-9
@@ -3581,7 +3582,13 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib(constrained_layout=False)
+    kpl.init_kplotlib(constrained_layout=True)
+
+    # fig, ax = plt.subplots()
+    # temps = np.linspace(0, 3000, 1000)
+    # kpl.plot_line(ax, temps, fractional_thermal_expansion(temps))
+    # plt.show(block=True)
+    # sys.exit()
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()
@@ -3591,23 +3598,23 @@ if __name__ == "__main__":
     # fig(inset_resid=True)  # Main
     # fig_bottom_resid()  # Main
     # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
-    # fig(  # Comps models (main)
-    #     temp_range=[0, 1000],
-    #     y_range=[2.76, 2.88],
-    #     #
-    #     plot_data=False,
-    #     condense_all=False,
-    #     condense_samples=True,
-    #     plot_prior_models=True,
-    #     desaturate_prior=False,
-    #     plot_new_model=True,
-    #     plot_prior_data=False,
-    #     new_model_diff=False,
-    #     dash_predictions=True,
-    #     inset_comp=True,
-    #     inset_resid=False,
-    #     x1000=True,
-    # )
+    fig(  # Comps models (main)
+        temp_range=[0, 1000],
+        y_range=[2.76, 2.88],
+        #
+        plot_data=False,
+        condense_all=False,
+        condense_samples=True,
+        plot_prior_models=True,
+        desaturate_prior=False,
+        plot_new_model=True,
+        plot_prior_data=False,
+        new_model_diff=False,
+        dash_predictions=True,
+        inset_comp=True,
+        inset_resid=False,
+        x1000=True,
+    )
     # fig(  # Comps data (supp)
     #     temp_range=[-5, 740],
     #     y_range=[2.81, 2.88],
@@ -3629,7 +3636,7 @@ if __name__ == "__main__":
     # comps()
     # comps_sep()
     # fit_prior_models_to_our_data()
-    fit_our_model_to_prior_data()
+    # fit_our_model_to_prior_data()
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
