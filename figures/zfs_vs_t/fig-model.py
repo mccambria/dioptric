@@ -126,7 +126,7 @@ def fig():
     )
     # labels = [r"$\mathit{S_{z}}$", r"$\mathit{S_{+}}$", r"$\mathit{S_{+}^{2}}$"]
     color = KplColors.ORANGE
-    plot_vals = np.array(spectral_functions[0])
+    plot_vals = np.abs(np.array(spectral_functions[0]))
     kpl.plot_line(ax2, energy_linspace, plot_vals, color=color)
     ax2.set_ylabel("Spectral function \n(MHz / meV)", color=color)
     ax2.tick_params(axis="y", color=color, labelcolor=color)
@@ -137,10 +137,11 @@ def fig():
     ax2.set_xlabel("Energy $\hbar\omega$ (meV)", usetex=True)
     ax2.set_xlim(min_energy, max_energy)
     ax2.set_ylim(0, None)
+    # ax2.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4])
 
     # DOS
     color = KplColors.GREEN
-    plot_vals = density_of_states
+    plot_vals = np.array(density_of_states)
     kpl.plot_line(ax2share, energy_linspace, plot_vals, color=color)
     ax2share.set_ylabel("DOS (1 / meV)", color=color)
     ax2share.tick_params(axis="y", color=color, labelcolor=color)

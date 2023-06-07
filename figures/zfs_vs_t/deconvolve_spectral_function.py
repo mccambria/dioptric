@@ -14,13 +14,14 @@ import utils.kplotlib as kpl
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.integrate import quad
 
 
 def get_data():
-
     # Get the spectral function data
     nvdata_dir = common.get_nvdata_dir()
-    from_nvdata = "paper_materials/relaxation_temp_dependence/2023_02_06-spectral.csv"
+    # from_nvdata = "paper_materials/relaxation_temp_dependence/2023_02_06-spectral.csv"
+    from_nvdata = "paper_materials/relaxation_temp_dependence/2023_06_07-spectral.csv"
     spectral_file_path = nvdata_dir / from_nvdata
     modes = []
     with open(spectral_file_path, newline="") as f:
@@ -69,9 +70,12 @@ def deconvolve(energy_linspace, sigma):
         for mode in modes:
             smeared_mode = smearing(energy, mode["Energy (meV)"], sigma)
             dos += smeared_mode
-            sf[0] += np.abs(mode["V(2)00 (MHz)"]) * smeared_mode
-            sf[1] += np.abs(mode["V(2)+0 (MHz)"]) * smeared_mode
-            sf[2] += np.abs(mode["V(2)+- (MHz)"]) * smeared_mode
+            # sf[0] += np.abs(mode["V(2)00 (MHz)"]) * smeared_mode
+            # sf[1] += np.abs(mode["V(2)+0 (MHz)"]) * smeared_mode
+            # sf[2] += np.abs(mode["V(2)+- (MHz)"]) * smeared_mode
+            sf[0] += 2 * mode["V(2)00 (MHz)"] * smeared_mode
+            sf[1] += mode["V(2)+0 (MHz)"] * smeared_mode
+            sf[2] += mode["V(2)+- (MHz)"] * smeared_mode
         density_of_states.append(dos)
         for ind in range(3):
             spectral_functions[ind].append(sf[ind])
@@ -81,7 +85,6 @@ def deconvolve(energy_linspace, sigma):
 
 
 def main():
-
     # plot_mode = "dos"
     # plot_mode = "spectral"
     plot_mode = "mean_coupling"
@@ -119,7 +122,6 @@ def main():
 
 
 def fig():
-
     min_energy = -5
     max_energy = 175
     energy_linspace = np.linspace(0, max_energy, 1000)
@@ -154,10 +156,12 @@ def fig():
 
 
 if __name__ == "__main__":
+    norm = quad(smearing, -np.inf, np.inf, args=(0, 5))
+    print(norm)
 
-    kpl.init_kplotlib(latex=True)
+    # kpl.init_kplotlib(latex=True)
 
-    # main()
-    fig()
+    # # main()
+    # fig()
 
-    plt.show(block=True)
+    # plt.show(block=True)

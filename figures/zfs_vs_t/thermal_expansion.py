@@ -21,8 +21,8 @@ from utils.tool_belt import bose
 meV_to_K = 11.6045250061657  # 1 meV = 11.6045250061657 K
 # a0 = 3.566503
 a0 = 3.5671
-# zfs_vs_t_energies = [58.73, 145.5]
-zfs_vs_t_energies = [64, 163]  # Offset fit
+zfs_vs_t_energies = [58.73, 145.5]
+# zfs_vs_t_energies = [64, 163]  # Offset fit
 zfs_vs_t_energy_errs = [2.32, 8.4]
 
 
@@ -128,14 +128,14 @@ def jacobson(T):
 def fit_double_occupation():
     temp_linspace = np.linspace(10, 1000, 1000)
 
-    # fit_fn = double_occupation
-    # guess_params = [a0, 0.3, 3.0]
+    fit_fn = double_occupation
+    guess_params = [a0, 0.3, 3.0]
 
     # fit_fn = double_occupation_free
     # guess_params = [a0, 0.3, 3.0, 68, 167]
 
-    fit_fn = cambria_test_single
-    guess_params = [a0, 1.0, 100]
+    # fit_fn = cambria_test_single
+    # guess_params = [a0, 1.0, 100]
 
     popt, pcov = curve_fit(
         fit_fn,
