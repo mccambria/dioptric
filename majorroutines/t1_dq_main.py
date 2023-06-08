@@ -157,6 +157,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
     tau_master_list = data["tau_master_list"]
     nv_sig = data["nv_sig"]
     gate_time = nv_sig["spin_readout_dur"]
+    norm_style = nv_sig["norm_style"]
     if stop_run is None:
         # Assume incremental
         if "run_ind" in data:
@@ -186,15 +187,28 @@ def unpack_interleave(data, start_run=0, stop_run=None):
 
         avg_sig_counts_master_list.append(avg_sig_counts.tolist())
         avg_ref_counts_master_list.append(avg_ref_counts.tolist())
+        
+        num_reps = params_master_list[exp_ind][3]
 
-        # Replace x/0=inf with 0
-        try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
-        except RuntimeWarning as e:
-            print(e)
-            inf_mask = numpy.isinf(norm_avg_sig)
-            # Assign to 0 based on the passed conditional array
-            norm_avg_sig[inf_mask] = 0
+
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        
+
+
+        # # Replace x/0=inf with 0
+        # try:
+        #     norm_avg_sig = avg_sig_counts / avg_ref_counts
+        # except RuntimeWarning as e:
+        #     print(e)
+        #     inf_mask = numpy.isinf(norm_avg_sig)
+        #     # Assign to 0 based on the passed conditional array
+        #     norm_avg_sig[inf_mask] = 0
 
         norm_sig_counts_master_list.append(norm_avg_sig.tolist())
 
@@ -205,7 +219,6 @@ def unpack_interleave(data, start_run=0, stop_run=None):
         read_state_name = params_master_list[exp_ind][0][1]
         relaxation_time_range = params_master_list[exp_ind][1]
         num_steps = params_master_list[exp_ind][2]
-        num_reps = params_master_list[exp_ind][3]
         uwave_pi_pulse_init = params_master_list[exp_ind][4]
         uwave_freq_init = params_master_list[exp_ind][5]
         uwave_power_init = params_master_list[exp_ind][6]
@@ -290,6 +303,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
             "ref_counts-units": "counts",
             "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
             "norm_avg_sig-units": "arb",
+            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
         }
 
         # Save each figure
@@ -597,7 +611,7 @@ def main_with_cxn(
             total_exp_time_h
         )
     )
-   # return
+    # return
 
     # %% Get the starting time of the function, to be used to calculate run time
 

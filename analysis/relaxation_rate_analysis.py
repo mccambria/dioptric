@@ -843,7 +843,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     temp = 295
-    folder = "2023_05_08-nv3_2023_05_05" ############*****#############
+    # folder = "2023_05_11-nv3_2023_05_09" ############*****#############
+    folder = "2023_06_01-nv2_2023_05_30" ############*****#############
     # folder = "wu-nv1_2022_03_16-295K"
     # folder = "wu-nv6_2022_04_14-295K"
 
@@ -852,7 +853,7 @@ if __name__ == "__main__":
     # mode = "batch_analysis"
 
     if mode == "prediction":
-        est_omega = 120  # 1520  # omega_calc(temp)
+        est_omega = 300  # 1520  # omega_calc(temp)
         est_gamma = 60  # gamma_calc(temp)
         print("good times in ms")
         # print("Omega: {}".format(4000 / (3 * est_omega)))
@@ -865,7 +866,7 @@ if __name__ == "__main__":
     elif mode == "analysis":
         plt.ion()
 
-        path = "pc_rabi/branch_master/t1_dq_main/2023_05/"
+        path = "pc_rabi/branch_master/t1_dq_main/2023_06/"
         # path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
 
         main(

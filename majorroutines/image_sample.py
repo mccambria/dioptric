@@ -635,11 +635,13 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_05_09-10_10_50-rubin-nv_search"
+    file_name = "2023_05_30-15_39_39-rubin-nv3_2023_05_30"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
+    
+    do_presentation = False
     try:
         scan_type = data['scan_type']
         if scan_type == 'XY':
@@ -661,10 +663,26 @@ if __name__ == "__main__":
         x_center = nv_sig['coords'][0]
         y_center = nv_sig['coords'][1]
         
+        
+        
     x_range = data["x_range"]
     y_range = data["y_range"]
     num_steps = data["num_steps"]
     num_steps = data["num_steps"]
+    xlabel = "V"
+    ylabel = "V"
+    if do_presentation:
+        x_center=0
+        y_center=0
+        with labrad.connect() as cxn:
+            scale = common.get_registry_entry(
+                cxn, "xy_nm_per_unit", ["", "Config", "Positioning"])
+        scale=35000
+        x_range = x_range * scale/1000
+        y_range = y_range * scale/1000
+        xlabel = "um"
+        ylabel = "um"
+        
     ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )
@@ -676,12 +694,12 @@ if __name__ == "__main__":
         ax,
         img_array_kcps,
         # title=title,
-        x_label="V",
-        y_label="V",
+        x_label=xlabel,
+        y_label=ylabel,
         cbar_label="kcps",
-        vmax = 30,
+        vmax = 55,
         extent=extent,
-        aspect="auto",
+        # aspect="auto",
     )
 
     # plt.show(block=True)

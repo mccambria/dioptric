@@ -51,9 +51,9 @@ def fit_t1(file, rabi_amp):
     taus_ms = taus/1e6
     smooth_taus_ms = numpy.linspace(taus_ms[0], taus_ms[-1], 1000)
     
-    amp=rabi_amp*2*2/3
-    fit_func = lambda x,  decay: tool_belt.exp_decay(x, amp, decay, 1-amp)
-    init_params = [4]
+    # amp=rabi_amp*2*2/3
+    fit_func = lambda x,  decay, amp: tool_belt.exp_decay(x, amp, decay, 1-amp)
+    init_params = [4, 0.12]
     popt, pcov = curve_fit(fit_func, taus_ms, norm_avg_sig,
                         p0=init_params,
                         sigma=norm_avg_sig_ste,
@@ -127,11 +127,13 @@ def compare_t1(file_list, label_list):
         #%%
         
     
-file_0 = '2023_05_04-07_39_28-rubin-nv0_2023_05_03'
-file_3= '2023_05_03-10_22_27-rubin-nv3_2023_05_01'
+file_0 = '2023_05_31-22_05_59-rubin-nv0_2023_05_30'
+file_1 = '2023_05_31-14_11_46-rubin-nv1_2023_05_30'
+file_2 = '2023_05_31-18_08_58-rubin-nv2_2023_05_30'
+file_3= '2023_06_01-02_05_36-rubin-nv3_2023_05_30'
 
 file_list= [file_0, file_3]
 label_list = ['Area B', 'Area, A']
 
-fit_t1(file_0, 0.103)
+fit_t1(file_2, None)
 # compare_t1(file_list, label_list)
