@@ -15,7 +15,7 @@ import majorroutines.optimize as optimize
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, brute
 from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States, NormStyle
@@ -24,6 +24,7 @@ import sys
 from utils.positioning import get_scan_1d as calculate_freqs
 from pathlib import Path
 from inspect import signature
+from scipy.special import voigt_profile as scipy_voigt
 
 
 # region Plotting
@@ -126,14 +127,15 @@ def create_fit_figure(
     high_text = None
     base_text = "A = {:.3f} \nwidth = {:.1f} MHz \nf = {:.4f} GHz"
     if 3 <= len(popt) < 6:
-        contrast, hwhm, freq = popt[0:3]
-        low_text = base_text.format(contrast, hwhm, freq)
+        contrast, width, center = popt[0:3]
+        # contrast, center, width = popt[0:3]
+        low_text = base_text.format(contrast, width, center)
         high_text = None
     elif len(popt) == 6:
-        contrast, hwhm, freq = popt[0:3]
-        low_text = base_text.format(contrast, hwhm, freq)
-        contrast, hwhm, freq = popt[3:6]
-        high_text = base_text.format(contrast, hwhm, freq)
+        contrast, width, center = popt[0:3]
+        low_text = base_text.format(contrast, width, center)
+        contrast, width, center = popt[3:6]
+        high_text = base_text.format(contrast, width, center)
         # print(popt[2])
         # print(np.sqrt(pcov[2][2]))
         # print(popt[5])
@@ -275,6 +277,21 @@ def gaussian(freq, contrast, sigma, center):
     return contrast * np.exp(-((freq - center) ** 2) / (2 * (sigma_ghz**2)))
 
 
+def voigt(freq, contrast, g_width, l_width, center):
+    g_width_ghz = g_width / 1000
+    l_width_ghz = l_width / 1000
+    norm = scipy_voigt(0, g_width_ghz, l_width_ghz)
+    ret_val = scipy_voigt(freq - center, g_width_ghz, l_width_ghz)
+    return (contrast / norm) * ret_val
+
+
+def voigt_split(freq, contrast, g_width, l_width, center, splitting):
+    splitting_ghz = splitting / 1000
+    line_1 = voigt(freq, contrast, g_width, l_width, center - splitting_ghz / 2)
+    line_2 = voigt(freq, contrast, g_width, l_width, center + splitting_ghz / 2)
+    return line_1 + line_2
+
+
 def lorentzian(freq, contrast, hwhm, center):
     """Normalized that the value at the center is the contrast"""
     hwhm_ghz = hwhm / 1000
@@ -342,6 +359,8 @@ def dip_sum(freq, line_func, *res_args):
     len_res_desc = len(sig.parameters) - 1  # First parameter is frequency
     # Total number of expected resonances
     num_resonances = len(res_args) // len_res_desc
+    # if num_resonances == 0:
+    #     num_resonances = 1
     ret_val = 1.0
     for ind in range(num_resonances):
         start = ind * len_res_desc
@@ -457,7 +476,6 @@ def get_guess_params(
     max_peak_freq = freqs[peak_inds[max_peak_peak_ind]]
 
     if (num_resonances > 1) and len(peak_inds) > 1:
-
         # Remove what we just found so we can find the second highest peak
         peak_inds.pop(max_peak_peak_ind)
         peak_heights.pop(max_peak_peak_ind)
@@ -571,20 +589,29 @@ def fit_resonance(
         norm_avg_sig_ste,
         num_resonances=num_resonances,
     )
-    curve_fit_lambda = lambda fit_func, guess_params: curve_fit(
-        fit_func,
-        freqs,
-        norm_avg_sig,
-        p0=guess_params,
-        sigma=norm_avg_sig_ste,
-        absolute_sigma=True,
-        # full_output=True,
-        # method="trf",
-        # bounds=(0, np.inf),
-        # bounds=((0, 0, 2.80, 0), (0.5, 10, 2.90, 10)),
-        # max_nfev=100,
-        # ftol=1e-4,
-    )
+
+    def curve_fit_sub(fit_func, guess_params, bounds=None):
+        if bounds is None:
+            bounds = (0, np.inf)
+        return curve_fit(
+            fit_func,
+            freqs,
+            norm_avg_sig,
+            p0=guess_params,
+            sigma=norm_avg_sig_ste,
+            absolute_sigma=True,
+            bounds=bounds,
+            # full_output=True,
+            # method="trf",
+            # bounds=(0, np.inf),
+            # contrast, center, rabi_freq, splitting, phase
+            # bounds=(
+            #     (0.05, freqs[0], 0.9, 0, -2 * np.pi),
+            #     (0.5, freqs[-1], 8, 10, 2 * np.pi),
+            # ),  # MCC
+            # # max_nfev=100,
+            # ftol=1e-4,  # MCC
+        )
 
     # If the user gave us a hint, go with that
     if num_resonances is not None or guess_params is not None:
@@ -597,34 +624,94 @@ def fit_resonance(
         elif num_resonances is not None:
             guess_params = get_guess_params_lambda(num_resonances)
         fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
-        popt, pcov = curve_fit_lambda(fit_func, guess_params)
-        # res = curve_fit_lambda(fit_func, guess_params)
-        # test = 0
-        # popt = guess_params
-        # num_params = len(popt)
-        # pcov = np.zeros((num_params, num_params))
+        popt, pcov = curve_fit_sub(fit_func, guess_params)
+
+        # # Brute
+        # def cost(cost_args):
+        #     cost_line = dip_sum(freqs, line_func, *cost_args)
+        #     ret_val = sum(((cost_line - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+        #     return ret_val
+
+        # # print(cost(guess_params))
+        # # guess_params[3] = 10
+        # # print(cost(guess_params))
+        # guess_center = guess_params[1]
+        # rranges = (
+        #     (0.1, 0.5),
+        #     (guess_center - 0.001, guess_center + 0.001),
+        #     (1, 8),
+        #     (0, 6),
+        #     (0, 2 * np.pi),
+        # )
+        # popt = brute(cost, rranges, Ns=3)
+        # pcov = None
+        # # test = 0
+        # # popt = guess_params
+        # # num_params = len(popt)
+        # # pcov = np.zeros((num_params, num_params))
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
     else:
         best_red_chi_sq = None
-        for num_resonances in [1, 2]:
-            test_guess_params = get_guess_params_lambda(num_resonances)
-        # for test_guess_params in [[[0.3, 2, 2.867]], [0.15, 1, 2.867, 0.15, 1, 2.873]]:
+        best_num_params = None
+        new_winner = False
+        # for num_resonances in [1, 2]:
+        #     test_guess_params = get_guess_params_lambda(num_resonances)
+        guess_contrast = 0.6 * (1 - min(norm_avg_sig))
+        qtr_range = freq_range / 4
+        half_range = 0.45 * freq_range
+        qtr_low = freq_center - qtr_range
+        qtr_high = freq_center + qtr_range
+        half_low = freq_center - half_range
+        half_high = freq_center + half_range
+        opts = [
+            [guess_contrast, 3, 3, freq_center],
+            [guess_contrast, 3, 3, qtr_low, guess_contrast, 3, 3, qtr_high],
+            [guess_contrast, 3, 3, half_low, guess_contrast, 3, 3, half_high],
+        ]
+        bounds_opts = [
+            (
+                (0.05, 0, 0, freqs[0]),
+                (0.5, 5, 5, freqs[-1]),
+            ),
+            (
+                (0.05, 0, 0, freqs[0], 0.05, 0, 0, freqs[0]),
+                (0.5, 5, 5, freqs[-1], 0.5, 5, 5, freqs[-1]),
+            ),
+            (
+                (0.05, 0, 0, freqs[0], 0.05, 0, 0, freqs[0]),
+                (0.5, 5, 5, freqs[-1], 0.5, 5, 5, freqs[-1]),
+            ),
+        ]
+        # for test_guess_params in opts:
+        for ind in range(len(opts)):
+            test_guess_params = opts[ind]
+            test_bounds = bounds_opts[ind]
+            # test_bounds = None
+            new_winner = False
             test_fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
             try:
-                test_popt, test_pcov = curve_fit_lambda(
-                    test_fit_func, test_guess_params
+                test_popt, test_pcov = curve_fit_sub(
+                    test_fit_func, test_guess_params, test_bounds
                 )
             except Exception as exc:
                 continue
             residuals = test_fit_func(freqs, *test_popt) - norm_avg_sig
             chi_sq = np.sum((residuals / norm_avg_sig_ste) ** 2)
-            red_chi_sq = chi_sq / (len(norm_avg_sig) - len(test_popt))
-            # Determine if the new fit is better (closer to 1) than the previous one
-            if (best_red_chi_sq is None) or (
-                abs(red_chi_sq - 1) < abs(best_red_chi_sq - 1)
+            num_params = len(test_popt)
+            red_chi_sq = chi_sq / (num_steps - num_params)
+            # Determine if the new fit is necessary and better
+            if best_red_chi_sq is None:
+                new_winner = True
+            elif (red_chi_sq < best_red_chi_sq) and (num_params < best_num_params):
+                new_winner = True
+            elif (abs(red_chi_sq - 1) < abs(best_red_chi_sq - 1)) and (
+                best_red_chi_sq > 1
             ):
+                new_winner = True
+            if new_winner:
                 best_red_chi_sq = red_chi_sq
+                best_num_params = num_params
                 fit_func = test_fit_func
                 popt = test_popt
                 pcov = test_pcov
@@ -755,7 +842,6 @@ def main_with_cxn(
     composite=False,
     opti_nv_sig=None,
 ):
-
     ### Setup
 
     start_timestamp = tool_belt.get_time_stamp()
@@ -883,7 +969,6 @@ def main_with_cxn(
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
-
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -1077,8 +1162,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-
-    file_name = "2023_05_03-16_33_56-rubin-nv0_2023_05_03"
+    file_name = "2023_02_16-12_00_24-wu-nv22_region5"
 
     kpl.init_kplotlib()
 
@@ -1106,14 +1190,6 @@ if __name__ == "__main__":
         # norm_style = NormStyle.POINT_TO_POINT
         norm_style = NormStyle.SINGLE_VALUED
 
-    # Specify the lineshape or force a fit
-    line_func = lorentzian
-    num_resonances = None
-    # guess_params = [0.01, 2, 2.87]
-    guess_params = None
-    fit_func = None
-    popt = None
-
     ret_vals = tool_belt.process_counts(
         sig_counts, ref_counts, num_reps, readout, norm_style
     )
@@ -1123,6 +1199,15 @@ if __name__ == "__main__":
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
+
+    # Specify the lineshape or force a fit
+    line_func = voigt_split
+    num_resonances = None
+    # guess_params = [0.01, 2, 2.87]
+    # guess_params = None
+    guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
+    fit_func = None
+    popt = None
 
     # create_raw_data_figure(
     #     freq_center,
@@ -1145,6 +1230,7 @@ if __name__ == "__main__":
         num_resonances=num_resonances,
         guess_params=guess_params,
     )
+    print()
 
     # Just fit, don't plot
     # fit_func, popt, pcov = fit_resonance(

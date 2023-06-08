@@ -19,7 +19,11 @@ from scipy.integrate import quad
 from utils.tool_belt import bose
 
 meV_to_K = 11.6045250061657  # 1 meV = 11.6045250061657 K
-a0 = 3.566503
+# a0 = 3.566503
+a0 = 3.5671
+zfs_vs_t_energies = [58.73, 145.5]
+# zfs_vs_t_energies = [64, 163]  # Offset fit
+zfs_vs_t_energy_errs = [2.32, 8.4]
 
 
 def einstein_term(e, temp):
@@ -54,7 +58,7 @@ def cambria_test(T, a0, energy1, energy2, coeff1, coeff2):
 # def double_occupation(T, a0, energy1, energy2, coeff1, coeff2):
 # energies = [energy1, energy2]  # meV
 def double_occupation(T, a0, coeff1, coeff2):
-    energies = [58.99, 146.9]
+    energies = zfs_vs_t_energies
     coeffs = [coeff1, coeff2]
     total = None
     for ind in range(2):
@@ -68,10 +72,25 @@ def double_occupation(T, a0, coeff1, coeff2):
     return a0 + total
 
 
-# def cambria_test_single(T, energy, coeff):
-def cambria_test_single(T, coeff):
-    energy = 160
-    return coeff * einstein_term(energy * meV_to_K, T)
+def double_occupation_free(T, a0, coeff1, coeff2, Theta1, Theta2):
+    energies = [Theta1, Theta2]
+    coeffs = [coeff1, coeff2]
+    total = None
+    for ind in range(2):
+        coeff = coeffs[ind]
+        energy = energies[ind]
+        term = coeff * bose(energy, T)
+        if total is None:
+            total = term
+        else:
+            total += term
+    return a0 + total
+
+
+def cambria_test_single(T, a0, coeff, energy):
+    # def cambria_test_single(T, coeff):
+    #     energy = 160
+    return a0 + coeff * einstein_term(energy * meV_to_K, T)
 
 
 def jacobson(T):
@@ -109,26 +128,33 @@ def jacobson(T):
 def fit_double_occupation():
     temp_linspace = np.linspace(10, 1000, 1000)
 
-    # guess_params = [a0, 68, 167, 0.3, 3.0]
+    fit_fn = double_occupation
     guess_params = [a0, 0.3, 3.0]
+
+    # fit_fn = double_occupation_free
+    # guess_params = [a0, 0.3, 3.0, 68, 167]
+
+    # fit_fn = cambria_test_single
+    # guess_params = [a0, 1.0, 100]
+
     popt, pcov = curve_fit(
-        double_occupation,
+        fit_fn,
         temp_linspace,
         jacobson_lattice_constant(temp_linspace),
         p0=guess_params,
     )
     print(popt)
-    double_occupation_lambda = lambda T: double_occupation(T, *popt)
-    return double_occupation_lambda
+    fit_fn_lambda = lambda T: fit_fn(T, *popt)
+    return fit_fn_lambda
 
 
 def jacobson_lattice_constant(T):
     if type(T) in [np.ndarray, list]:
         int_jacobson = []
         for temp in T:
-            int_jacobson.append(quad(jacobson, 10, temp)[0])
+            int_jacobson.append(quad(jacobson, 298, temp)[0])
     else:
-        int_jacobson = quad(jacobson, 10, T)[0]
+        int_jacobson = quad(jacobson, 298, T)[0]
     return a0 * np.exp(int_jacobson)
 
 

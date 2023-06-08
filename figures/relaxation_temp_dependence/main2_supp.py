@@ -30,7 +30,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import copy
 import utils.kplotlib as kpl
-from utils.tool_belt import presentation_round, presentation_round_latex
+from utils.tool_belt import round_for_print
 from utils.kplotlib import figsize, double_figsize
 from ab_initio_rates import get_ab_initio_rates
 from matplotlib.ticker import ScalarFormatter
@@ -245,7 +245,6 @@ def T5_free(temp, coeff_T5):
 
 
 def get_past_results(res):
-
     omega_temps = None
     omega_rates = None
     gamma_temps = None
@@ -360,7 +359,6 @@ def simultaneous_test_lambda(
 
 
 def fit_simultaneous(data_points, fit_mode=None):
-
     # To fit to Omega and gamma simultaneously, set up a combined list of the
     # rates. Parity determines which rate is where. Even is Omega, odd is
     # gamma.
@@ -903,7 +901,6 @@ def get_data_points(
     marker_type="sample",
     override_skips=False,
 ):
-
     file_path = path / "{}.xlsx".format(file_name)
     csv_file_path = path / "{}.csv".format(file_name)
 
@@ -1000,7 +997,6 @@ def plot_scalings(
     xscale="linear",
     yscale="linear",
 ):
-
     # %% Setup
 
     min_temp = temp_range[0]
@@ -1054,7 +1050,6 @@ def plot_T2_max(
     xscale="linear",
     yscale="linear",
 ):
-
     omega_fit_func = orbach_T5_free
     gamma_fit_func = orbach_free
 
@@ -1078,7 +1073,6 @@ def plot_T2_max(
 
 
 def normalized_residuals_histogram(rates_to_plot):
-
     data_points = get_data_points(path, file_name)
     # Fit to Omega and gamma simultaneously
     popt, _, _, omega_fit_func, gamma_fit_func = fit_simultaneous(data_points)
@@ -1134,7 +1128,6 @@ def normalized_residuals_histogram(rates_to_plot):
 
 
 def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
-
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
@@ -1188,7 +1181,6 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
 
 
 def figure_2(file_name, path, dosave=False, supp_comparison=False):
-
     data_points = get_data_points(path, file_name)  # , temp_range)
     # fit_modes = ["double_orbach_fixed", "T5"]
     # fit_modes = ["double_orbach", "variable_exp"]
@@ -1317,7 +1309,6 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
         for rate_ind in range(2):
             rate = rates[rate_ind]
             for fit_mode_ind in range(2):
-
                 scatter_ax = scatter_axes_b[rate_ind][fit_mode_ind]
                 hist_ax = hist_axes_b[rate_ind][fit_mode_ind]
                 hist_ax.get_xaxis().set_visible(False)
@@ -1403,7 +1394,6 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
 
 
 def figure_2_raw_data(ax, axins, data_points):
-
     # %% Setup
 
     if axins is None:
@@ -1479,7 +1469,6 @@ def figure_2_raw_data(ax, axins, data_points):
         markers_list = []
 
         for point in data_points:
-
             if "marker" not in point:
                 continue
             sample = point[sample_column_title]
@@ -1696,7 +1685,6 @@ def figure_2_raw_data(ax, axins, data_points):
 
 
 def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
-
     samples_to_plot = ["hopper", "wu"]
     linestyles = {"hopper": "dotted", "wu": "dashed"}
     # linestyles = {"hopper": "dotted", "wu": "solid"}
@@ -1711,7 +1699,6 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
         axes = [ax_a, axins_a]
 
     for ax in axes:
-
         min_temp, max_temp = ax.get_xlim()
 
         linspace_min_temp = min_temp if min_temp > 0 else 0
@@ -1737,7 +1724,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
             val = tool_belt.round_sig_figs(popt[ind], 5)
             err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
             print("{}: {}, {}".format(desc, val, err))
-            print(presentation_round_latex(val, err))
+            print(round_for_print(val, err))
 
         # Plot the rate fits
         line_color = omega_edge_color
@@ -1773,7 +1760,6 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
 
 
 def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
-
     plot_rate = plot_rate.lower()
     samples_to_plot = ["hopper", "wu"]
     # temp_range = [-5, 480]
@@ -1816,7 +1802,6 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
     facecolor = eval("{}_face_color".format(plot_rate))
 
     for point in data_points:
-
         if "marker" not in point:
             continue
         sample = point[sample_column_title]
@@ -1896,11 +1881,9 @@ def main(
     yscale="linear",
     dosave=False,
 ):
-
     # %% Setup
 
     if plot_type in "T2_max_supp":
-
         ### (a) and (b) version
         # fs = double_figsize
         # fig, axes_pack = plt.subplots(1, 2, figsize=fs)
@@ -2041,7 +2024,6 @@ def main_sub(
     dosave,
     inset=False,
 ):
-
     if inset:
         ms = kpl.marker_size_inset
         lw = kpl.line_width_inset
@@ -2094,7 +2076,7 @@ def main_sub(
         val = tool_belt.round_sig_figs(popt[ind], 5)
         err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
-        print(presentation_round_latex(val, err))
+        print(round_for_print(val, err))
     samples_to_plot = ["hopper", "wu"]
     # samples_to_plot = ["hopper"]
     # samples_to_plot = ["wu"]
@@ -2267,7 +2249,6 @@ def main_sub(
     markers_list = []
 
     for point in data_points:
-
         if "marker" not in point:
             continue
         sample = point[sample_column_title]
@@ -2436,7 +2417,6 @@ def main_sub(
     # %% Legend
     leg1 = None
     if not inset:
-
         # Legend x location
         # x_loc = 0.14
         # x_loc = 0.17
@@ -2600,7 +2580,6 @@ def main_sub(
 
 
 if __name__ == "__main__":
-
     # temp = 475
     # # delta1 = 4
     # delta1 = 68.2
@@ -2615,17 +2594,17 @@ if __name__ == "__main__":
     # # print(A_2 * n2 * (n2 + 1))
     # # # print(bose(0.01241, 150))
     # # # print(bose(65, 450) * (bose(65, 450) + 1))
-    # # # print(presentation_round_latex(145.88, 26.55))
-    # # # print(presentation_round_latex(145.88, 16.55))
-    # # # print(presentation_round_latex(145.88, 1.2))
-    # # # print(presentation_round_latex(145.88, 6.55))
-    # # # print(presentation_round_latex(145.88999, 0.002))
-    # # # print(presentation_round_latex(15.88999, 0.00167))
-    # # # print(presentation_round_latex(0.0288999, 0.0000167))
+    # # # print(round_for_print(145.88, 26.55))
+    # # # print(round_for_print(145.88, 16.55))
+    # # # print(round_for_print(145.88, 1.2))
+    # # # print(round_for_print(145.88, 6.55))
+    # # # print(round_for_print(145.88999, 0.002))
+    # # # print(round_for_print(15.88999, 0.00167))
+    # # # print(round_for_print(0.0288999, 0.0000167))
     # sys.exit()
 
     # tool_belt.init_matplotlib()
-    kpl.init_kplotlib(latex=True, font=kpl.Font.HELVETICA)
+    kpl.init_kplotlib(font=kpl.Font.HELVETICA)
 
     plot_type = "rates"
     # plot_type = "T2_max"
@@ -2700,6 +2679,12 @@ if __name__ == "__main__":
     y_ranges = [[0.004, 800]]
     yscales = ["log"]
     xscales = ["log"]
+
+    rates_to_plot = ["both"]
+    temp_ranges = [[-10, 480]]
+    y_ranges = [[0.004, 800]]
+    yscales = ["log"]
+    xscales = ["linear"]
 
     # Sample-dep zoom
     # rates_to_plot = ["both"]

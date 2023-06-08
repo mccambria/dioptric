@@ -1360,36 +1360,11 @@ def round_for_print_sci(val, err):
     # Check for corner case where the value is e.g. 0.999 and rounds up to another decimal place
     if rounded_val >= 10:
         power_of_10 += 1
-        rounded_err /= Decimal(10)
-        rounded_val /= Decimal(10)
+        # Just shift the decimal over and recast to Decimal to ensure proper rounding
+        rounded_err = Decimal(_shift_decimal_left(str(rounded_err)))
+        rounded_val = Decimal(_shift_decimal_left(str(rounded_val)))
 
     return [rounded_val, rounded_err, power_of_10]
-
-
-def strip_err(err):
-    """Get the representation of the error, which is alway just the trailing non-zero digits
-
-    Parameters
-    ----------
-    err : str
-        Error to process
-
-    Returns
-    -------
-    str
-        Trailing non-zero digits of err
-    """
-
-    stripped_err = ""
-    trailing = False
-    for char in str(err):
-        if char == ".":
-            continue
-        elif char != "0":
-            trailing = True
-        if trailing:
-            stripped_err += char
-    return stripped_err
 
 
 def round_for_print_sci_latex(val, err):
@@ -1412,7 +1387,7 @@ def round_for_print_sci_latex(val, err):
     """
 
     rounded_val, rounded_err, power_of_10 = round_for_print_sci(val, err)
-    err_str = strip_err(rounded_err)
+    err_str = _strip_err(rounded_err)
     return r"\num{{{}({})e{}}}".format(rounded_val, err_str, power_of_10)
 
 
@@ -1456,9 +1431,44 @@ def round_for_print(val, err):
         val_str = val_str[:-1]
 
     # Get the representation of the error, which is alway just the trailing non-zero digits
-    err_str = strip_err(rounded_err)
+    err_str = _strip_err(rounded_err)
 
     return f"{val_str}({err_str})"
+
+
+def _shift_decimal_left(val_str):
+    """Finds the . character in a string and moves it one place to the left"""
+
+    decimal_pos = val_str.find(".")
+    left_char = val_str[decimal_pos - 1]
+    val_str = val_str.replace(f"{left_char}.", f".{left_char}")
+    return val_str
+
+
+def _strip_err(err):
+    """Get the representation of the error, which is alway just the trailing non-zero digits
+
+    Parameters
+    ----------
+    err : str
+        Error to process
+
+    Returns
+    -------
+    str
+        Trailing non-zero digits of err
+    """
+
+    stripped_err = ""
+    trailing = False
+    for char in str(err):
+        if char == ".":
+            continue
+        elif char != "0":
+            trailing = True
+        if trailing:
+            stripped_err += char
+    return stripped_err
 
 
 # endregion
@@ -1544,3 +1554,8 @@ def reset_cfm_with_cxn(cxn):
 
 
 # endregion
+
+
+# Testing
+if __name__ == "__main__":
+    print(round_for_print_sci(0.997, 0.0940))

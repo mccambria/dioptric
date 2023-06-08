@@ -10,9 +10,10 @@
             "request": "launch",
             "program": "${file}",
             "console": "internalConsole",
+            // "console": "integratedTerminal",
             "redirectOutput": true,
             "suppressMultipleSessionWarning": true,
-            // "justMyCode": false,
+            "justMyCode": false,
         }
     ]
 }

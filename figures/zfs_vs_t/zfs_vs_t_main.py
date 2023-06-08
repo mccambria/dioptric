@@ -42,10 +42,20 @@ import matplotlib.legend_handler
 
 # ZFS at 0 temp, used for papers that only report shifts
 # Matches our fits 0 temp value
-base_zfs = 2.877380
+zfs_base = 2.87738256
+# zfs_base = 2.877326
+zfs_deviations = [zfs_base, zfs_base + 0.0003]
+fixed_energy_vals = [58.73, 145.5]
+# fixed_energy_vals = [68, 167]
+# fixed_energy_vals = [68, 150]
+# fixed_energy_vals = [61, 149]
+# fixed_energy_vals = [64, 163]
+# fixed_energy_vals = [77, 159]
 
 nvdata_dir = common.get_nvdata_dir()
-compiled_data_file_name = "zfs_vs_t"
+# compiled_data_file_name = "zfs_vs_t"
+compiled_data_file_name = "zfs_vs_t-split_voigt"
+# compiled_data_file_name = "zfs_vs_t-ind_voigts"
 compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 
@@ -71,7 +81,7 @@ def calibrate_digitization(file_name, fit_func):
     return res.x
 
 
-def get_prior_work_data(file_name):
+def get_prior_work_data(file_name, zfs_deviation=False):
     """Get a list of temps and zfs values from a digitized version of a figure from a prior work"""
 
     file_path = compiled_data_path / "figures/prior_work_figs" / f"{file_name}.csv"
@@ -87,7 +97,9 @@ def get_prior_work_data(file_name):
 
     ### Adjustments
     if file_name.startswith("doherty"):
-        zfss = [base_zfs + el / 1000 for el in zfss]
+        zfss = [el / 1000 for el in zfss]
+        if not zfs_deviation:
+            zfss = [zfs_base + el for el in zfss]
     elif file_name.startswith("toyli"):
         temps = [round(el, -1) for el in temps]
         first_zfs = zfss[0]
@@ -236,7 +248,7 @@ def condense_data_points(data_points, condense_all=False, condense_samples=False
     return condensed_data_points
 
 
-def data_points_to_lists(data_points):
+def data_points_to_lists(data_points, zfs_deviation=False):
     """Turn a dict of data points into a list that's more convenenient for plotting"""
 
     zfs_list = []
@@ -259,6 +271,7 @@ def data_points_to_lists(data_points):
     color_dict = {}
     used_labels = []  # For matching colors to labels
     for el in data_points:
+        group = el["Group"]
         zfs = el["ZFS (GHz)"]
         monitor_temp = el["Monitor temp (K)"]
         if zfs == "" or monitor_temp == "":
@@ -268,7 +281,13 @@ def data_points_to_lists(data_points):
         #     # zfs += 0.00042
         #     monitor_temp *= 300.7 / 295
         temp_list.append(monitor_temp)
-        zfs_list.append(zfs)
+        if zfs_deviation:
+            if group == "cold":
+                zfs_list.append(zfs - zfs_deviations[0])
+            elif group == "hot":
+                zfs_list.append(zfs - zfs_deviations[1])
+        else:
+            zfs_list.append(zfs)
         zfs_err = el["ZFS (GHz) error"]
         zfs_err_list.append(zfs_err)
         label = el["Label"]
@@ -277,7 +296,7 @@ def data_points_to_lists(data_points):
             used_labels.append(label)
             color_dict[label] = data_color_options.pop(0)
         color_list.append(color_dict[label])
-        group_list.append(el["Group"])
+        group_list.append(group)
 
     return zfs_list, zfs_err_list, temp_list, label_list, color_list, group_list
 
@@ -397,42 +416,6 @@ def light_polarization():
         ax.set_ylabel("ZFS - 2870 (MHz)")
         ax.legend()
 
-
-def refit_experiments():
-    """Re-run fits to experimental data, either plotting and saving the new plots
-    or just printing out the fit parameters
-    """
-
-    ### User setup
-    # Also see below section Sample-dependent fit...
-
-    do_plot = True  # Generate raw data and fit plots?
-    do_save = True  # Save the plots?
-    do_print = True  # Print out popts and associated error bars?
-
-    skip_lambda = (
-        lambda point: point["Skip"]
-        # or point["ZFS file"] == ""
-        # or point["Sample"] != "15micro"
-        or point["Sample"] != "Wu"
-        # or point["Setpoint temp (K)"] != ""
-        # or point["Setpoint temp (K)"] < 300
-    )
-
-    data_points = get_data_points(skip_lambda)
-    # file_list = [el["ZFS file"] for el in data_points]
-    # data_points = data_points[2:3]
-    file_list = []
-    guess_param_list = []
-    for el in data_points:
-        file_list.append(el["ZFS file"])
-        guess_params = (
-            el["Contrast"],
-            el["Width (MHz)"],
-            el["ZFS (GHz)"],
-            el["Splitting (MHz)"],
-        )
-        guess_param_list.append(guess_params)
     # print(file_list)
     # file_list = [
     #     # # 1 us
@@ -566,34 +549,227 @@ def refit_experiments():
     #     "2023_03_13-18_12_28-15micro-nv15_offset",
     #     "2023_03_13-17_43_29-15micro-nv16_offset",
     # ]
+    # From zfs_survey
+    # file_list = [
+    #     "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+    #     "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+    #     "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+    #     "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+    #     "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+    #     "2023_02_09-17_28_01-wu-nv1_region2",
+    #     "2023_02_09-18_02_43-wu-nv2_region2",
+    #     "2023_02_09-18_14_01-wu-nv3_region2",
+    #     "2023_02_09-17_51_24-wu-nv4_region2",
+    #     "2023_02_09-17_39_51-wu-nv5_region2",
+    #     "2023_02_09-23_28_39-wu-nv1_region3",
+    #     "2023_02_09-23_51_39-wu-nv2_region3",
+    #     "2023_02_10-00_14_56-wu-nv3_region3",
+    #     "2023_02_10-00_37_40-wu-nv4_region3",
+    #     "2023_02_10-00_59_59-wu-nv5_region3",
+    #     "2023_02_10-19_13_33-wu-nv1_region4",
+    #     "2023_02_10-18_51_08-wu-nv2_region4",
+    #     "2023_02_10-18_28_42-wu-nv3_region4",
+    #     "2023_02_10-18_06_16-wu-nv4_region4",
+    #     "2023_02_10-19_36_05-wu-nv5_region4",
+    #     "2023_02_13-11_54_40-wu-nv1_region5",
+    #     "2023_02_13-10_47_07-wu-nv2_region5",
+    #     "2023_02_13-11_32_11-wu-nv3_region5",
+    #     "2023_02_13-11_09_39-wu-nv4_region5",
+    #     "2023_02_13-12_17_20-wu-nv5_region5",
+    #     "2023_02_14-19_34_18-wu-nv6_region5",
+    #     "2023_02_15-11_34_42-wu-nv6_region5",
+    #     "2023_02_14-18_25_12-wu-nv7_region5",
+    #     "2023_02_15-10_49_10-wu-nv7_region5",
+    #     "2023_02_14-16_31_33-wu-nv8_region5",
+    #     "2023_02_15-10_03_52-wu-nv8_region5",
+    #     "2023_02_14-19_56_53-wu-nv9_region5",
+    #     "2023_02_15-09_17_38-wu-nv9_region5",
+    #     "2023_02_14-17_39_49-wu-nv10_region5",
+    #     "2023_02_15-08_54_44-wu-nv10_region5",
+    #     "2023_02_14-18_02_32-wu-nv11_region5",
+    #     "2023_02_15-08_31_53-wu-nv11_region5",
+    #     "2023_02_14-19_11_31-wu-nv12_region5",
+    #     "2023_02_15-11_12_05-wu-nv12_region5",
+    #     "2023_02_14-16_54_38-wu-nv13_region5",
+    #     "2023_02_15-09_41_02-wu-nv13_region5",
+    #     "2023_02_14-17_17_04-wu-nv14_region5",
+    #     "2023_02_15-11_57_26-wu-nv14_region5",
+    #     "2023_02_14-18_47_39-wu-nv15_region5",
+    #     "2023_02_15-10_26_32-wu-nv15_region5",
+    #     "2023_02_16-11_38_00-wu-nv16_region5",
+    #     "2023_02_16-15_21_12-wu-nv16_region5",
+    #     "2023_02_16-12_45_08-wu-nv17_region5",
+    #     "2023_02_16-16_28_17-wu-nv17_region5",
+    #     "2023_02_16-13_07_28-wu-nv18_region5",
+    #     "2023_02_16-17_58_56-wu-nv18_region5",
+    #     "2023_02_16-13_52_11-wu-nv19_region5",
+    #     "2023_02_16-17_36_17-wu-nv19_region5",
+    #     "2023_02_16-14_14_37-wu-nv20_region5",
+    #     "2023_02_16-14_36_43-wu-nv20_region5",
+    #     "2023_02_16-11_15_49-wu-nv21_region5",
+    #     "2023_02_16-16_51_10-wu-nv21_region5",
+    #     "2023_02_16-12_00_24-wu-nv22_region5",
+    #     "2023_02_16-14_59_00-wu-nv22_region5",
+    #     "2023_02_16-12_22_59-wu-nv23_region5",
+    #     "2023_02_16-17_14_04-wu-nv23_region5",
+    #     "2023_02_16-13_29_52-wu-nv24_region5",
+    #     "2023_02_16-15_43_44-wu-nv24_region5",
+    #     "2023_02_16-10_53_23-wu-nv25_region5",
+    #     "2023_02_16-16_05_52-wu-nv25_region5",
+    # ]
 
-    ### Parallel process
 
-    # guess_params = [0.24, 2, 2.853, 4.5]
-    # guess_param_list = [0.24, 2, 2.853, 4.5]
-    # refit_sub_lambda = lambda f: refit_experiments_sub(
-    #     f, do_plot, do_save, guess_params
-    # )
+def refit_experiments():
+    """Re-run fits to experimental data, either plotting and saving the new plots
+    or just printing out the fit parameters
+    """
+
+    ### User setup
+    # Also see below section Sample-dependent fit...
+
+    do_plot = True  # Generate raw data and fit plots?
+    do_save = False  # Save the plots?
+    do_print = True  # Print out popts and associated error bars?
+
+    skip_lambda = (
+        lambda point: point["Skip"]
+        # or point["ZFS file"] == ""
+        # or point["Sample"] != "15micro"
+        or point["Sample"] != "Wu"
+        # or point["Setpoint temp (K)"] != ""
+        # or point["Setpoint temp (K)"] < 300
+    )
+
+    data_points = get_data_points(skip_lambda)
+    # data_points = data_points[::50]
+    # data_points = data_points[222:]
+    # file_list = [el["ZFS file"] for el in data_points]
+    # data_points = data_points[2:3]
+    file_list = []
+    guess_param_list = []
+    for el in data_points:
+        file_list.append(el["ZFS file"])
+        # print(el["ZFS file"])
+        # return
+        # guess_params = [  # Three level Rabi
+        #     el["Contrast"],
+        #     el["ZFS (GHz)"],
+        #     el["Width (MHz)"],
+        #     el["Splitting (MHz)"],
+        #     np.pi / 4,
+        # ]
+        # guess_params = [
+        #     el["Contrast"],
+        #     el["Width (MHz)"],
+        #     el["ZFS (GHz)"],
+        #     el["Splitting (MHz)"],
+        # ]
+        guess_params = None
+        guess_param_list.append(guess_params)
+
+    file_list = [
+        "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
+        "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
+        "2023_02_09-14_14_33-wu-nv8_zfs_vs_t",
+        "2023_02_09-13_07_10-wu-nv10_zfs_vs_t",
+        "2023_02_09-14_37_43-wu-nv11_zfs_vs_t",
+        "2023_02_09-17_28_01-wu-nv1_region2",
+        "2023_02_09-18_02_43-wu-nv2_region2",
+        "2023_02_09-18_14_01-wu-nv3_region2",
+        "2023_02_09-17_51_24-wu-nv4_region2",
+        "2023_02_09-17_39_51-wu-nv5_region2",
+        "2023_02_09-23_28_39-wu-nv1_region3",
+        "2023_02_09-23_51_39-wu-nv2_region3",
+        "2023_02_10-00_14_56-wu-nv3_region3",
+        "2023_02_10-00_37_40-wu-nv4_region3",
+        "2023_02_10-00_59_59-wu-nv5_region3",
+        "2023_02_10-19_13_33-wu-nv1_region4",
+        "2023_02_10-18_51_08-wu-nv2_region4",
+        "2023_02_10-18_28_42-wu-nv3_region4",
+        "2023_02_10-18_06_16-wu-nv4_region4",
+        "2023_02_10-19_36_05-wu-nv5_region4",
+        "2023_02_13-11_54_40-wu-nv1_region5",
+        "2023_02_13-10_47_07-wu-nv2_region5",
+        "2023_02_13-11_32_11-wu-nv3_region5",
+        "2023_02_13-11_09_39-wu-nv4_region5",
+        "2023_02_13-12_17_20-wu-nv5_region5",
+        "2023_02_14-19_34_18-wu-nv6_region5",
+        "2023_02_15-11_34_42-wu-nv6_region5",
+        "2023_02_14-18_25_12-wu-nv7_region5",
+        "2023_02_15-10_49_10-wu-nv7_region5",
+        "2023_02_14-16_31_33-wu-nv8_region5",
+        "2023_02_15-10_03_52-wu-nv8_region5",
+        "2023_02_14-19_56_53-wu-nv9_region5",
+        "2023_02_15-09_17_38-wu-nv9_region5",
+        "2023_02_14-17_39_49-wu-nv10_region5",
+        "2023_02_15-08_54_44-wu-nv10_region5",
+        "2023_02_14-18_02_32-wu-nv11_region5",
+        "2023_02_15-08_31_53-wu-nv11_region5",
+        "2023_02_14-19_11_31-wu-nv12_region5",
+        "2023_02_15-11_12_05-wu-nv12_region5",
+        "2023_02_14-16_54_38-wu-nv13_region5",
+        "2023_02_15-09_41_02-wu-nv13_region5",
+        "2023_02_14-17_17_04-wu-nv14_region5",
+        "2023_02_15-11_57_26-wu-nv14_region5",
+        "2023_02_14-18_47_39-wu-nv15_region5",
+        "2023_02_15-10_26_32-wu-nv15_region5",
+        "2023_02_16-11_38_00-wu-nv16_region5",
+        "2023_02_16-15_21_12-wu-nv16_region5",
+        "2023_02_16-12_45_08-wu-nv17_region5",
+        "2023_02_16-16_28_17-wu-nv17_region5",
+        "2023_02_16-13_07_28-wu-nv18_region5",
+        "2023_02_16-17_58_56-wu-nv18_region5",
+        "2023_02_16-13_52_11-wu-nv19_region5",
+        "2023_02_16-17_36_17-wu-nv19_region5",
+        "2023_02_16-14_14_37-wu-nv20_region5",
+        "2023_02_16-14_36_43-wu-nv20_region5",
+        "2023_02_16-11_15_49-wu-nv21_region5",
+        "2023_02_16-16_51_10-wu-nv21_region5",
+        "2023_02_16-12_00_24-wu-nv22_region5",
+        "2023_02_16-14_59_00-wu-nv22_region5",
+        "2023_02_16-12_22_59-wu-nv23_region5",
+        "2023_02_16-17_14_04-wu-nv23_region5",
+        "2023_02_16-13_29_52-wu-nv24_region5",
+        "2023_02_16-15_43_44-wu-nv24_region5",
+        "2023_02_16-10_53_23-wu-nv25_region5",
+        "2023_02_16-16_05_52-wu-nv25_region5",
+    ]
+
+    ### Run the fitting on each file
+
     refit_sub_lambda = lambda f, g: refit_experiments_sub(f, g, do_plot, do_save)
+
+    # Parallel
     with ProcessingPool() as p:
         results = p.map(refit_sub_lambda, file_list, guess_param_list)
+
+    # List comp
     # results = [refit_sub_lambda(f, g) for f, g in zip(file_list, guess_param_list)]
 
-    # f = "2023_01_14-13_52_57-wu-nv10_zfs_vs_t"
-    # popt, pste, red_chi_sq = refit_sub_lambda(f)
-    # xl_str = ""
-    # for ind in range(len(popt)):
-    #     xl_str += f"{round(popt[ind], 6)}, {round(pste[ind], 6)}, "
-    # xl_str += str(red_chi_sq)
-    # print(xl_str)
-    # return
+    # For loop
+    # results = []
+    # for ind in range(len(file_list)):
+    #     if ind < 21:
+    #         continue
+    #     print(ind)
+    #     print(ind + 2)
+    #     f = file_list[ind]
+    #     print(f)
+    #     g = guess_param_list[ind]
+    #     # g[0] = 0.3  # Contrast
+    #     # # g[1] = 1  # Center
+    #     # g[2] = 2  # Rabi
+    #     # g[3] = 1  # Splitting
+    #     result = refit_sub_lambda(f, g)
+    #     results.append(result)
+    #     print()
 
     ### Parse results
 
     table_popt = []
     table_pste = []
     table_red_chi_sq = []
-    num_cols = 5
+    num_cols = 8
     for ind in range(num_cols):
         table_popt.append([])
         table_pste.append([])
@@ -706,33 +882,22 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
     ### Sample-dependent fit functions and parameters
 
     if sample == "wu":
-        # line_func = (
-        #     lambda freq, contrast, rabi_freq, center: pesr.rabi_line_n14_hyperfine(
-        #         freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
+        line_func = pesr.voigt_split
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 1]
+        guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, 3, freq_center, 4]
+        # fit_func = (
+        #     lambda freq, contrast, g_width, l_width, center, splitting: pesr.dip_sum(
+        #         freq, line_func, contrast, g_width, l_width, center, splitting
         #     )
         # )
-        # # line_func = lambda freq, contrast, rabi_freq, center: pesr.rabi_line(
-        # #     freq, contrast, rabi_freq, center, uwave_pulse_dur=uwave_pulse_dur
-        # # )
-        # guess_params = [0.2, 4, freq_center]
-        # guess_params = [0.3, 500 / uwave_pulse_dur, freq_center]
-        # guess_params = [0.4, 9, 2.8748]
 
-        line_func = lambda freq, contrast, rabi_freq, center, splitting: three_level_rabi.coherent_line(
-            freq, contrast, rabi_freq, center, splitting, uwave_pulse_dur
-        )
-        # line_func = pesr.lorentzian_split
-        # guess_params = [1.5 * np.max(1 - norm_avg_sig), 2, freq_center, 3]
-        if guess_params is None:
-            guess_params = [0.201135, 4.537905, 2.877451, 3.456755]
+        # line_func = pesr.voigt
+        # guess_params = None
 
         # line_func = pesr.lorentzian_split
-        # guess_params = [0.3, 1, freq_center, 1]
-
-        # fit_func = lambda freq, contrast, rabi_freq, center: pesr.dip_sum(
-        #     freq, line_func, contrast, rabi_freq, center
-        # )
-        # popt = guess_params
+        # guess_params = [0.6 * (1 - min(norm_avg_sig)), 3, freq_center, 1]
+        # line_func = pesr.lorentzian
+        # guess_params = None
 
     elif sample == "15micro":
         # fmt: off
@@ -755,51 +920,67 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
 
         # fmt: on
 
-    ### Raw data figure
+    # guess_params = None
 
-    # try:
+    ### Raw data figure or just get fit params
 
-    if do_plot:
-        fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
-            freq_center,
-            freq_range,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            line_func=line_func,
-            guess_params=guess_params,
-            # fit_func=fit_func,
-            # popt=popt,
-        )
-        if do_save:
-            file_path = raw_file_path.with_name((f"{file_name}-fit"))
-            file_path = file_path.with_suffix(".svg")
-            tool_belt.save_figure(fit_fig, file_path)
+    try:
+        if do_plot:
+            fit_fig, _, fit_func, popt, pcov = pesr.create_fit_figure(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                #
+                line_func=line_func,
+                guess_params=guess_params,
+                #
+                # fit_func=fit_func,
+                # popt=guess_params,
+            )
+            if do_save:
+                file_path = raw_file_path.with_name((f"{file_name}-fit"))
+                file_path = file_path.with_suffix(".svg")
+                tool_belt.save_figure(fit_fig, file_path)
+        else:
+            fit_func, popt, pcov = pesr.fit_resonance(
+                freq_center,
+                freq_range,
+                num_steps,
+                norm_avg_sig,
+                norm_avg_sig_ste,
+                line_func=line_func,
+                guess_params=guess_params,
+            )
 
-    ### Get fit parameters and error bars
-    if not do_plot:
-        fit_func, popt, pcov = pesr.fit_resonance(
-            freq_center,
-            freq_range,
-            num_steps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-            line_func=line_func,
-            guess_params=guess_params,
-        )
+        pste = np.sqrt(np.diag(pcov))
+        # pste = None
 
-    pste = np.sqrt(np.diag(pcov))
+        fit_lambda = lambda freq: fit_func(freq, *popt)
+        freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
+        chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
+        red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
 
-    fit_lambda = lambda freq: fit_func(freq, *popt)
-    freqs = pesr.calculate_freqs(freq_center, freq_range, num_steps)
-    chi_sq = np.sum(((fit_lambda(freqs) - norm_avg_sig) / norm_avg_sig_ste) ** 2)
-    red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+    except Exception as exc:
+        print(exc)
+        num_params = len(guess_params)
+        popt = np.zeros(num_params)
+        pste = np.zeros(num_params)
+        red_chi_sq = 10
 
-    # except Exception as exc:
-    #     num_params = len(guess_params)
-    #     popt = np.zeros(num_params)
-    #     pste = np.zeros(num_params)
-    #     red_chi_sq = 10
+    # if popt[-1] > 5:
+    # print(guess_params)
+    # print(popt)
+    # print(red_chi_sq)
+    # xl_str = ""
+    # for ind in range(len(popt)):
+    #     xl_str += str(tool_belt.round_sig_figs(popt[ind], 6))
+    #     xl_str += ", "
+    #     xl_str += str(tool_belt.round_sig_figs(pste[ind], 6))
+    #     xl_str += ", "
+    # print(xl_str)
+    # plt.show(block=True)
 
     return (popt, pste, red_chi_sq)
     # return "test"
@@ -812,82 +993,116 @@ def refit_experiments_sub(file_name, guess_params, do_plot=False, do_save=False)
 # region Fitting functions
 
 
-def sub_room_zfs_from_temp(temp):
-    coeffs = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
+def fit_model_to_data(fit_func, guess_params, temp_list, zfs_list, zfs_err_list):
+    if None in zfs_err_list:
+        zfs_err_list = None
+        absolute_sigma = False
+    else:
+        absolute_sigma = True
+    popt, pcov = curve_fit(
+        fit_func,
+        temp_list,
+        zfs_list,
+        sigma=zfs_err_list,
+        absolute_sigma=absolute_sigma,
+        p0=guess_params,
+    )
+    print(popt)
+    # popt = [
+    #     2.87738,
+    #     -0.05578,
+    #     -0.2541,
+    #     58.99,
+    #     146.9,
+    # ]
+    # zfs_base = popt[0]
+    # popt = [tool_belt.round_sig_figs(val, 3) for val in popt]
+    # popt[0] = zfs_base
+    print(np.sqrt(np.diag(pcov)))
+    # popt[2] = 0
+    cambria_lambda = lambda temp: fit_func(
+        temp,
+        *popt,
+        # *guess_params,
+    )
+    print(f"Predicted ZFS at 296 K: {cambria_lambda(296)}")
+    ssr = 0
+    num_points = len(temp_list)
+    num_params = len(guess_params)
+    if zfs_err_list is not None:
+        for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
+            calc_zfs = cambria_lambda(temp)
+            ssr += ((zfs - calc_zfs) / zfs_err) ** 2
+        dof = num_points - num_params
+        red_chi_sq = ssr / dof
+        print(red_chi_sq)
+
+    return cambria_lambda
+
+
+def sub_room_zfs_from_temp_free(temp, a0, a1, a2, a3, a4, a5):
+    coeffs = [a0, a1, a2, a3, a4, a5]
     ret_val = 0
     for ind in range(6):
         ret_val += coeffs[ind] * (temp**ind)
     return ret_val
 
 
-def sub_room_zfs_from_temp_free(
-    temp,
-    coeff_1,
-    coeff_2,
-    coeff_3,
-    coeff_4,
-    coeff_5,
-    coeff_6,
-    # temp,
-    # coeff_0,
-    # # coeff_1,
-    # coeff_2,
-    # # coeff_3,
-    # coeff_4,
-    # # coeff_5,
-    # coeff_6,
-    # skip_derivatives_check=False,
-):
-    coeffs = [coeff_1, coeff_2, coeff_3, coeff_4, coeff_5, coeff_6]
-    # coeffs = [coeff_0, coeff_2, coeff_4, coeff_6]
-
-    # Calculate the zfs and its first and second derivatives
+def sub_room_zfs_from_temp_free_dev(temp, a1, a2, a3, a4, a5):
+    a0 = 0
+    coeffs = [a0, a1, a2, a3, a4, a5]
     ret_val = 0
-    # Only consider this a valid trial fit function if it has negative first and second derivatives everywhere
-    # if not skip_derivatives_check:
-    #     num_test_points = 1000
-    #     max_test_temp = 300
-    #     test_temps = np.linspace(1, max_test_temp, num_test_points)
-    #     first_der = 0
-    #     second_der = 0
-    for ind in range(len(coeffs)):
-        # zfs
-        exp = ind
-        # exp = ind * 2
-        ret_val += coeffs[ind] * (temp**exp)
-
-        # if not skip_derivatives_check:
-        #     # First derivative
-        #     if ind in [0]:
-        #         continue
-        #     exp = ind - 1
-        #     first_der += ind * coeffs[ind] * (test_temps ** exp)
-
-        #     # Second derivative
-        #     if ind in [0, 1]:
-        #     # if ind in [0]:
-        #         continue
-        #     exp = ind - 2
-        #     second_der += ind * (ind - 1) * coeffs[ind] * (test_temps ** exp)
-
-    # Only consider this a valid trial fit function if it has negative first and second derivatives everywhere
-    # if not skip_derivatives_check:
-    #     if np.any(first_der > 0) or np.any(second_der > 0):
-    #         if type(temp) in [list, np.ndarray]:
-    #             ret_val = np.array([0] * len(temp))
-    #         else:
-    #             ret_val = 0
-
+    for ind in range(6):
+        ret_val += coeffs[ind] * (temp**ind)
     return ret_val
+
+
+def sub_room_zfs_from_temp(temp):
+    coeffs = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
+    return sub_room_zfs_from_temp_free(temp, *coeffs)
+
+
+def fit_sub_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list):
+    print()
+    print("Chen")
+    # guess_params = [2.87771, -4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
+    # fit_func = sub_room_zfs_from_temp_free
+    guess_params = [-4.625e-6, 1.067e-7, -9.325e-10, 1.739e-12, -1.838e-15]
+    fit_func = sub_room_zfs_from_temp_free_dev
+    return fit_model_to_data(fit_func, guess_params, temp_list, zfs_list, zfs_err_list)
 
 
 def super_room_zfs_from_temp(temp):
     coeffs = [2.8697, 9.7e-5, -3.7e-7, 1.7e-10]
     coeff_errs = [0.0009, 0.6e-5, 0.1e-7, 0.1e-10]
+    return super_room_zfs_from_temp_free(temp, *coeffs)
+
+
+def super_room_zfs_from_temp_free(temp, d0, d1, d2, d3):
+    coeffs = [d0, d1, d2, d3]
     ret_val = 0
     for ind in range(4):
         ret_val += coeffs[ind] * (temp**ind)
     return ret_val
+
+
+def super_room_zfs_from_temp_free_dev(temp, d1, d2, d3):
+    d0 = 0
+    coeffs = [d0, d1, d2, d3]
+    ret_val = 0
+    for ind in range(4):
+        ret_val += coeffs[ind] * (temp**ind)
+    return ret_val
+
+
+def fit_super_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list):
+    print()
+    print("Toyli")
+    # guess_params = [2.8697, 9.7e-5, -3.7e-7, 1.7e-10]
+    # fit_func = super_room_zfs_from_temp_free
+    guess_params = [9.7e-5, -3.7e-7, 1.7e-10]
+    fit_func = super_room_zfs_from_temp_free_dev
+    return fit_model_to_data(fit_func, guess_params, temp_list, zfs_list, zfs_err_list)
 
 
 def zfs_from_temp(temp):
@@ -921,7 +1136,7 @@ def zfs_from_temp_barson(temp):
     Comes from Barson 2019!
     """
 
-    zfs0 = base_zfs  # GHz
+    zfs0 = zfs_base  # GHz
     # zfs0 = 2.884624012121079  # GHz, lowest temp (6 K) value from digitized Fig. 2a
     X1 = 0.4369e-7  # 1 / K
     X2 = 15.7867e-7  # 1 / K
@@ -931,6 +1146,140 @@ def zfs_from_temp_barson(temp):
     Theta3 = 2137.5  # K
 
     return zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3)
+
+
+def zfs_from_temp_barson_dev(temp):
+    """
+    Comes from Barson 2019!
+    """
+
+    zfs0 = 0
+    # zfs0 = 2.884624012121079  # GHz, lowest temp (6 K) value from digitized Fig. 2a
+    X1 = 0.4369e-7  # 1 / K
+    X2 = 15.7867e-7  # 1 / K
+    X3 = 42.5598e-7  # 1 / K
+    Theta1 = 200  # K
+    Theta2 = 880  # K
+    Theta3 = 2137.5  # K
+
+    return zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3)
+
+
+def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
+    dV_over_V = lambda temp: fractional_thermal_expansion_free(
+        temp, X1, X2, X3, Theta1, Theta2, Theta3
+    )
+
+    # A = 0  # MHz /GPa
+    A = 14.6  # MHz /GPa
+    B = 442  # GPa/strain
+    b4 = -1.44e-9
+    b5 = 3.1e-12
+    b6 = -1.8e-15
+    D_of_T = (
+        lambda T: zfs0
+        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6)) / 1000
+    )
+    # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
+    if type(temp) in [list, np.ndarray]:
+        ret_vals = []
+        for val in temp:
+            ret_vals.append(D_of_T(val))
+        ret_vals = np.array(ret_vals)
+        return ret_vals
+    else:
+        return D_of_T(temp)
+
+
+def zfs_from_temp_barson_free_dev(temp, X1, X2, X3, Theta1, Theta2, Theta3):
+    dV_over_V = lambda temp: fractional_thermal_expansion_free(
+        temp, X1, X2, X3, Theta1, Theta2, Theta3
+    )
+
+    A = 14.6  # MHz /GPa
+    B = 442  # GPa/strain
+    b4 = -1.44e-9
+    b5 = 3.1e-12
+    b6 = -1.8e-15
+    D_of_T = (
+        lambda T: (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
+        / 1000
+    )
+    # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
+    if type(temp) in [list, np.ndarray]:
+        ret_vals = []
+        for val in temp:
+            ret_vals.append(D_of_T(val))
+        ret_vals = np.array(ret_vals)
+        return ret_vals
+    else:
+        return D_of_T(temp)
+
+
+def zfs_from_temp_barson_free_bs(temp, zfs0, b4, b5, b6):
+    X1 = 0.4369e-7  # 1 / K
+    X2 = 15.7867e-7  # 1 / K
+    X3 = 42.5598e-7  # 1 / K
+    Theta1 = 200  # K
+    Theta2 = 880  # K
+    Theta3 = 2137.5  # K
+    dV_over_V = lambda temp: fractional_thermal_expansion_free(
+        temp, X1, X2, X3, Theta1, Theta2, Theta3
+    )
+
+    A = 14.6  # MHz /GPa
+    B = 442  # GPa/strain
+    D_of_T = (
+        lambda T: zfs0
+        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6)) / 1000
+    )
+    # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
+    if type(temp) in [list, np.ndarray]:
+        ret_vals = []
+        for val in temp:
+            ret_vals.append(D_of_T(val))
+        ret_vals = np.array(ret_vals)
+        return ret_vals
+    else:
+        return D_of_T(temp)
+
+
+def zfs_from_temp_barson_free_bs_dev(temp, b4, b5, b6):
+    X1 = 0.4369e-7  # 1 / K
+    X2 = 15.7867e-7  # 1 / K
+    X3 = 42.5598e-7  # 1 / K
+    Theta1 = 200  # K
+    Theta2 = 880  # K
+    Theta3 = 2137.5  # K
+    dV_over_V = lambda temp: fractional_thermal_expansion_free(
+        temp, X1, X2, X3, Theta1, Theta2, Theta3
+    )
+
+    A = 14.6  # MHz /GPa
+    B = 442  # GPa/strain
+    D_of_T = (
+        lambda T: (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6))
+        / 1000
+    )
+    # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
+    if type(temp) in [list, np.ndarray]:
+        ret_vals = []
+        for val in temp:
+            ret_vals.append(D_of_T(val))
+        ret_vals = np.array(ret_vals)
+        return ret_vals
+    else:
+        return D_of_T(temp)
+
+
+def fit_zfs_from_temp_barson_free_bs(temp_list, zfs_list, zfs_err_list):
+    print()
+    print("Barson")
+    # guess_params = [zfs_base, -1.44e-9, 3.1e-12, -1.8e-15]
+    # fit_func = zfs_from_temp_barson_free_bs
+    guess_params = [-1.44e-9, 3.1e-12, -1.8e-15]
+    fit_func = zfs_from_temp_barson_free_bs_dev
+    return fit_model_to_data(fit_func, guess_params, temp_list, zfs_list, zfs_err_list)
 
 
 def zfs_from_temp_li(temp):
@@ -948,9 +1297,102 @@ def zfs_from_temp_li(temp):
     # A = 1.4e-7  # GHz / K**2
     # B = 85  # K
 
-    zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
-
+    zfs = zfs_from_temp_li_free(temp, zfs0, A, B)
     return zfs
+
+
+def zfs_from_temp_li_free(temp, zfs0, A, B):
+    """
+    Li 2017, table I for ensemble
+    """
+    zfs = zfs0 - A * temp**4 / ((temp + B) ** 2)
+    return zfs
+
+
+def zfs_from_temp_li_free_dev(temp, A, B):
+    """
+    Li 2017, table I for ensemble
+    """
+    zfs = -A * temp**4 / ((temp + B) ** 2)
+    return zfs
+
+
+def fit_zfs_from_temp_li_free(temp_list, zfs_list, zfs_err_list):
+    print()
+    print("Li")
+    # guess_params = [zfs_base, 5.6e-7, 490]
+    # fit_func = zfs_from_temp_li_free
+    guess_params = [5.6e-7, 490]
+    fit_func = zfs_from_temp_li_free_dev
+    return fit_model_to_data(fit_func, guess_params, temp_list, zfs_list, zfs_err_list)
+
+
+def zfs_from_temp_doherty(temp):
+    """
+    Doherty 2014
+    """
+    zfs0 = zfs_base  # GHz
+    coeffs = [zfs0, 18.7e-10, -41e-13]
+    zfs = zfs_from_temp_doherty_free(temp, *coeffs)
+    return zfs
+
+
+def zfs_from_temp_doherty_dev(temp):
+    """
+    Doherty 2014
+    """
+    zfs0 = 0  # GHz
+    coeffs = [zfs0, 18.7e-10, -41e-13]
+    zfs = zfs_from_temp_doherty_free(temp, *coeffs)
+    return zfs
+
+
+def zfs_from_temp_doherty_free(temp, zfs0, b4, b5):
+    """
+    Doherty 2014
+    """
+    ABe1 = 39.7e-7
+    ABe2 = -91.6e-9
+    ABe3 = 70.6e-11
+    ABe4 = -60.0e-14
+    zfs = (
+        zfs0
+        + (
+            -ABe1 * temp**2
+            - ABe2 * temp**3
+            - (b4 + ABe3) * temp**4
+            - (b5 + ABe4) * temp**5
+        )
+        / 1000
+    )
+    return zfs
+
+
+def zfs_from_temp_doherty_free_dev(temp, b4, b5):
+    """
+    Doherty 2014
+    """
+    ABe1 = 39.7e-7
+    ABe2 = -91.6e-9
+    ABe3 = 70.6e-11
+    ABe4 = -60.0e-14
+    zfs = (
+        -ABe1 * temp**2
+        - ABe2 * temp**3
+        - (b4 + ABe3) * temp**4
+        - (b5 + ABe4) * temp**5
+    ) / 1000
+    return zfs
+
+
+def fit_zfs_from_temp_doherty_free(temp_list, zfs_list, zfs_err_list):
+    print()
+    print("Doherty")
+    # guess_params = [zfs_base, 18.7e-10, -41e-13]
+    # fit_func = zfs_from_temp_doherty_free
+    guess_params = [18.7e-10, -41e-13]
+    fit_func = zfs_from_temp_doherty_free_dev
+    return fit_model_to_data(fit_func, guess_params, temp_list, zfs_list, zfs_err_list)
 
 
 def fractional_thermal_expansion(temp):
@@ -979,31 +1421,6 @@ def fractional_thermal_expansion_free(temp, X1, X2, X3, Theta1, Theta2, Theta3):
     )
 
     return dV_over_V(temp)
-
-
-def zfs_from_temp_barson_free(temp, zfs0, X1, X2, X3, Theta1, Theta2, Theta3):
-    dV_over_V = lambda temp: fractional_thermal_expansion_free(
-        temp, X1, X2, X3, Theta1, Theta2, Theta3
-    )
-
-    A = 14.6  # MHz /GPa
-    B = 442  # GPa/strain
-    b4 = -1.44e-9
-    b5 = 3.1e-12
-    b6 = -1.8e-15
-    D_of_T = (
-        lambda T: zfs0
-        + (-(A * B * dV_over_V(T)) + (b4 * T**4 + b5 * T**5 + b6 * T**6)) / 1000
-    )
-    # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
-    if type(temp) in [list, np.ndarray]:
-        ret_vals = []
-        for val in temp:
-            ret_vals.append(D_of_T(val))
-        ret_vals = np.array(ret_vals)
-        return ret_vals
-    else:
-        return D_of_T(temp)
 
 
 # def cambria_test(temp, zfs0, A1, A2, Theta1, Theta2, A3):
@@ -1066,6 +1483,37 @@ def cambria_test3(temp, zfs0, A1, A2, Theta1, Theta2):
 
 def two_mode_qh(temp, zfs0, A1, A2, Theta1, Theta2):
     ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
+def two_mode_qh_fixed_energies(temp, zfs0, A1, A2):
+    Theta1 = fixed_energy_vals[0]
+    Theta2 = fixed_energy_vals[1]
+    ret_val = zfs0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
+def two_mode_qh_dev(temp, A1, A2, Theta1, Theta2):
+    ret_val = 0
+    for ind in range(2):
+        adj_ind = ind + 1
+        ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
+
+    return ret_val
+
+
+def two_mode_qh_dev_fixed_energies(temp, A1, A2):
+    Theta1 = fixed_energy_vals[0]
+    Theta2 = fixed_energy_vals[1]
+    ret_val = 0
     for ind in range(2):
         adj_ind = ind + 1
         ret_val += eval(f"A{adj_ind}") * bose(eval(f"Theta{adj_ind}"), temp)
@@ -1147,18 +1595,42 @@ def derivative_comp():
     ax.legend()
 
 
-def get_fitted_model(temp_list, zfs_list, zfs_err_list):
-    guess_params = [
-        2.87771,
-        -20,
-        -300,
-        65,
-        165,
-    ]
-    # fit_func = cambria_test
-    fit_func = two_mode_qh
-    # fit_func = jacobson
-    if None in zfs_err_list:
+def get_fitted_model(
+    temp_list, zfs_list, zfs_err_list=None, zfs_deviation=False, fixed_energies=False
+):
+    if zfs_deviation:
+        if fixed_energies:
+            guess_params = [
+                -20,
+                -300,
+            ]
+            fit_func = two_mode_qh_dev_fixed_energies
+        else:
+            guess_params = [
+                -20,
+                -300,
+                55,
+                150,
+            ]
+            fit_func = two_mode_qh_dev
+    else:
+        if fixed_energies:
+            guess_params = [
+                2.87771,
+                -20,
+                -300,
+            ]
+            fit_func = two_mode_qh_fixed_energies
+        else:
+            guess_params = [
+                2.87771,
+                -20,
+                -300,
+                65,
+                165,
+            ]
+            fit_func = two_mode_qh
+    if zfs_err_list is None or None in zfs_err_list:
         zfs_err_list = None
         absolute_sigma = False
     else:
@@ -1170,6 +1642,7 @@ def get_fitted_model(temp_list, zfs_list, zfs_err_list):
         sigma=zfs_err_list,
         absolute_sigma=absolute_sigma,
         p0=guess_params,
+        ftol=1e-4,  # MCC
     )
     print(popt)
     # popt = [
@@ -1378,24 +1851,28 @@ def fig(
     dash_predictions=False,
     inset_comp=False,
     inset_resid=False,
+    x1000=False,
+    supp_labels=False,
 ):
     fig, ax = plt.subplots()
 
     fig_sub(
         ax,
-        temp_range,
-        y_range,
-        plot_data,
-        condense_all,
-        condense_samples,
-        plot_prior_models,
-        desaturate_prior,
-        plot_new_model,
-        plot_prior_data,
-        inverse_temp,
-        yscale,
-        new_model_diff,
-        dash_predictions,
+        temp_range=temp_range,
+        y_range=y_range,
+        plot_data=plot_data,
+        condense_all=condense_all,
+        condense_samples=condense_samples,
+        plot_prior_models=plot_prior_models,
+        desaturate_prior=desaturate_prior,
+        plot_new_model=plot_new_model,
+        plot_prior_data=plot_prior_data,
+        inverse_temp=inverse_temp,
+        yscale=yscale,
+        new_model_diff=new_model_diff,
+        dash_predictions=dash_predictions,
+        x1000=x1000,
+        supp_labels=supp_labels,
     )
 
     if inverse_temp:
@@ -1418,37 +1895,43 @@ def fig(
             bbox_transform=ax.transAxes,
             loc=1,
         )
+        max_y = 2.878 if plot_prior_models else 2.8781
         fig_sub(
             axins,
             # [0, 300],
             # [2.870, 2.878],
             [0, 175],
-            [2.876, 2.8781],
-            plot_data,
-            condense_all,
-            condense_samples,
-            plot_prior_models,
-            desaturate_prior,
-            plot_new_model,
-            plot_prior_data,
-            inverse_temp,
-            yscale,
+            [2.876, max_y],
+            #
+            plot_data=plot_data,
+            condense_all=condense_all,
+            condense_samples=condense_samples,
+            plot_prior_models=plot_prior_models,
+            desaturate_prior=desaturate_prior,
+            plot_new_model=plot_new_model,
+            plot_prior_data=plot_prior_data,
+            inverse_temp=inverse_temp,
+            yscale=yscale,
             new_model_diff=False,
             dash_predictions=dash_predictions,
             no_axis_labels=True,
+            x1000=x1000,
+            supp_labels=supp_labels,
         )
         # axins.set_yticks([2.870, 2.874, 2.878])
-        axins.set_yticks([2.876, 2.877, 2.878])
+        ticks = [2.876, 2.877, 2.878]
+        if x1000:
+            ticks = [1000 * el for el in ticks]
+        axins.set_yticks(ticks)
         axins.tick_params(axis="both", which="major", labelsize=16)
         plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
-        axins.patch.set_alpha(0.7)
 
     if inset_resid:
         x_pos = 0.57
         y_pos = 0.87
         text = r"\noindent $D(T) = D_{0} + c_{1}n_{1} + c_{2}n_{2}$"
         text += r"\\"
-        text += r"$n=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+        text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
         # ax.text(x_pos, y_pos, text, transform=ax.transAxes, fontsize=15, usetex=True)
         kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, kpl.Size.SMALL, usetex=True)
 
@@ -1470,18 +1953,19 @@ def fig(
             temp_range,
             [-0.45, 0.45],
             # [-450, 450],
-            plot_data,
-            condense_all,
-            condense_samples,
-            plot_prior_models,
-            desaturate_prior,
-            plot_new_model,
-            plot_prior_data,
-            inverse_temp,
-            yscale,
+            plot_data=plot_data,
+            condense_all=condense_all,
+            condense_samples=condense_samples,
+            plot_prior_models=plot_prior_models,
+            desaturate_prior=desaturate_prior,
+            plot_new_model=plot_new_model,
+            plot_prior_data=plot_prior_data,
+            inverse_temp=inverse_temp,
+            yscale=yscale,
             new_model_diff=True,
-            dash_predictions=False,
+            dash_predictions=dash_predictions,
             no_axis_labels=True,
+            supp_labels=supp_labels,
         )
         axins.tick_params(axis="both", which="major", labelsize=16)
         # plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
@@ -1490,6 +1974,766 @@ def fig(
         axins.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
         axins.set_ylabel("Residuals (MHz)")
         # axins.set_ylabel("Residuals (kHz)")
+
+
+def fig_bottom_resid(
+    temp_range=[0, 515],
+    y_range=[2.847, 2.879],
+    plot_data=True,
+    condense_all=False,
+    condense_samples=True,
+    plot_prior_models=False,
+    desaturate_prior=True,
+    plot_new_model=True,
+    plot_prior_data=False,
+    inverse_temp=False,
+    yscale="linear",
+    new_model_diff=False,
+    dash_predictions=False,
+    zfs_deviation=False,
+):
+    figsize = kpl.figsize
+    adj_figsize = (figsize[0], 1.1 * figsize[1])
+    fig, (ax, axbot) = plt.subplots(
+        2, 1, sharex=True, figsize=adj_figsize, height_ratios=[3, 1]
+    )
+
+    fig_sub(
+        ax,
+        temp_range=temp_range,
+        y_range=y_range,
+        plot_data=plot_data,
+        condense_all=condense_all,
+        condense_samples=condense_samples,
+        plot_prior_models=plot_prior_models,
+        desaturate_prior=desaturate_prior,
+        plot_new_model=plot_new_model,
+        plot_prior_data=plot_prior_data,
+        inverse_temp=inverse_temp,
+        yscale=yscale,
+        new_model_diff=new_model_diff,
+        dash_predictions=dash_predictions,
+        x1000=True,
+        zfs_deviation=zfs_deviation,
+    )
+
+    x_pos = 0.57
+    y_pos = 0.87
+    text = r"\noindent $D(T) = D_{0} + c_{1}n_{1} + c_{2}n_{2}$"
+    text += r"\\"
+    text += r"$n_{i}=\left(\exp(\Delta_{i} / k_{\mathrm{B}}T)-1\right)^{-1}$"
+    # ax.text(x_pos, y_pos, text, transform=ax.transAxes, fontsize=15, usetex=True)
+    kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT, kpl.Size.SMALL, usetex=True)
+
+    fig_sub(
+        axbot,
+        temp_range,
+        [-0.45e-3, 0.45e-3],
+        # [-450, 450],
+        plot_data=plot_data,
+        condense_all=condense_all,
+        condense_samples=condense_samples,
+        plot_prior_models=plot_prior_models,
+        desaturate_prior=desaturate_prior,
+        plot_new_model=plot_new_model,
+        plot_prior_data=plot_prior_data,
+        inverse_temp=inverse_temp,
+        yscale=yscale,
+        new_model_diff=True,
+        dash_predictions=dash_predictions,
+        no_axis_labels=True,
+        x1000=True,
+        zfs_deviation=zfs_deviation,
+    )
+    # axbot.tick_params(axis="both", which="major", labelsize=16)
+    # plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
+    # axins.patch.set_alpha(0.7)
+    # tick_locs = [150, 200, 400, 1000]
+    # axbot.set_yticks([-0.4, -0.2, 0.0, 0.2, 0.4])
+    axbot.set_yticks([-0.3, 0.0, 0.3])
+    # axbot.set_ylabel("Residuals \n(MHz)")
+    axbot.set_ylabel("Residuals (MHz)", labelpad=13)
+    # axbot.set_ylabel("Residuals (kHz)")
+
+    ### Cleanup
+    # ax.tick_params(bottom=True, labelbottom=False)
+    # axbot.tick_params(top=True, labeltop=False, direction="in")
+    # axbot.tick_params(axis="y", which="major", pad=15)
+    ax2 = axbot.secondary_xaxis("top")
+    ax2.tick_params(axis="x", direction="inout", labeltop=False, length=6)
+    axbot.axhline(y=0, color=KplColors.MEDIUM_GRAY)
+    ax.set_xlabel(None)
+    axbot.set_xlabel("Temperature (K)")
+    fig.tight_layout(pad=0.1)
+    fig.tight_layout(pad=0.1)
+    fig.subplots_adjust(hspace=0)
+    # fig.tight_layout()
+
+
+def comps():
+    ### Setup
+
+    figsize = [kpl.figsize[0], 2 * kpl.figsize[1]]
+    fig, axes_pack = plt.subplots(2, 1, figsize=figsize)
+
+    axins_pack = []
+    for ax in axes_pack:
+        axins = inset_axes(
+            ax,
+            width="100%",
+            height="100%",
+            # linear
+            bbox_to_anchor=(
+                0.1,
+                0.13,
+                0.52,
+                0.49,
+            ),
+            # xlog
+            # bbox_to_anchor=(
+            #     0.39,
+            #     0.13,
+            #     0.48,
+            #     0.49,
+            # ),
+            # ylog
+            # bbox_to_anchor=(
+            #     0.47,
+            #     0.13,
+            #     0.52,
+            #     0.49,
+            # ),
+            bbox_transform=ax.transAxes,
+            loc=1,
+        )
+        axins_pack.append(axins)
+        break
+
+    ### Just data
+
+    # Shared params
+    ax = axes_pack[0]
+    axins = axins_pack[0]
+    #
+    condense_all = False
+    condense_samples = True
+    plot_data = True
+    plot_prior_data = True
+    plot_new_model = False
+    plot_prior_models = False
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = True
+
+    # Main
+    temp_range = [-10, 725]
+    xscale = "linear"
+    # temp_range = [10, 720]
+    # xscale = "log"
+    y_range = [2.81, 2.88]
+    yscale = "linear"
+    # yscale = "log"
+    fig_sub(
+        ax,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+    )
+
+    # Inset
+    temp_range = [0, 175]
+    y_range = [2.876, 2.8781]
+    xscale = "linear"
+    yscale = "linear"
+    fig_sub(
+        axins,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+        no_axis_labels=True,
+    )
+    axins_polish(axins)
+
+    ### Just models
+
+    # Shared params
+    ax = axes_pack[1]
+    # axins = axins_pack[1]
+    #
+    condense_all = False
+    condense_samples = True
+    plot_data = False
+    plot_prior_data = False
+    plot_new_model = True
+    plot_prior_models = True
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = True
+
+    # Main
+    temp_range = [0, 1000]
+    xscale = "linear"
+    # temp_range = [10, 1000]
+    # xscale = "log"
+    y_range = [2.74, 2.88]
+    yscale = "linear"
+    # yscale = "log"
+    fig_sub(
+        ax,
+        temp_range,
+        y_range,
+        plot_data,
+        condense_all,
+        condense_samples,
+        plot_prior_models,
+        desaturate_prior,
+        plot_new_model,
+        plot_prior_data,
+        inverse_temp,
+        xscale,
+        yscale,
+        new_model_diff,
+        dash_predictions,
+    )
+
+    # Inset
+    # temp_range = [0, 175]
+    # y_range = [2.876, 2.8781]
+    # xscale = "linear"
+    # yscale = "linear"
+    # fig_sub(
+    #     axins,
+    #     temp_range,
+    #     y_range,
+    #     plot_data,
+    #     condense_all,
+    #     condense_samples,
+    #     plot_prior_models,
+    #     desaturate_prior,
+    #     plot_new_model,
+    #     plot_prior_data,
+    #     inverse_temp,
+    #     xscale,
+    #     yscale,
+    #     new_model_diff,
+    #     dash_predictions,
+    #     no_axis_labels=True,
+    # )
+    # axins_polish(axins)
+
+    ### fig labels
+    fig.text(0.002, 0.97, "(a)")
+    fig.text(0.002, 0.47, "(b)")
+
+
+def comps_sep():
+    ### Setup
+    mpl.rcParams.update({"font.size": 16})
+
+    # figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
+    figsize = [2 * kpl.figsize[0], 2.5 * kpl.figsize[1]]
+    fig, axes_pack = plt.subplots(3, 2, figsize=figsize)
+    # figsize = [2 * kpl.figsize[0], 2 * kpl.figsize[1]]
+    # fig, axes_pack = plt.subplots(2, 3, figsize=figsize)
+    axes_pack = axes_pack.flatten()
+
+    # Shared params
+    condense_all = False
+    condense_samples = True
+    plot_data = False
+    plot_prior_data = True
+    plot_new_model = True
+    plot_prior_models = True
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = True
+    xscale = "linear"
+    yscale = "linear"
+
+    prior_models = ["Chen", "Toyli", "Doherty", "Li", "Barson", "Lourette"]
+    prior_model_temp_ranges = {
+        "Toyli": [295 - 10, 710 + 15],
+        "Barson": [0 - 10, 710 + 15],
+        "Doherty": [0 - 10, 295 + 15],
+        "Li": [0 - 10, 295 + 15],
+        "Chen": [0 - 10, 295 + 15],
+        "Lourette": [75 - 10, 400 + 15],
+    }
+    y_ranges = {
+        "Toyli": [2.81, 2.874],
+        "Barson": [2.815 - zfs_base, 2.88 - zfs_base],
+        "Doherty": [2.8693 - zfs_base, 2.878 - zfs_base],
+        "Li": [2.8695, 2.8782],
+        "Chen": [2.8695, 2.8782],
+        "Lourette": [2.8595, 2.8782],
+    }
+
+    for ind in range(len(prior_models)):
+        ax = axes_pack[ind]
+        prior_model = prior_models[ind]
+        temp_range = prior_model_temp_ranges[prior_model]
+        y_range = y_ranges[prior_model]
+
+        # Adjustments
+        plot_prior_data = prior_model != "Barson"
+        zfs_deviation = prior_model in ["Barson", "Doherty"]
+
+        fig_sub(
+            ax,
+            temp_range,
+            y_range,
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            xscale,
+            yscale,
+            new_model_diff,
+            dash_predictions,
+            comp_sep=prior_model,
+            x1000=True,
+            supp_labels=True,
+            zfs_deviation=zfs_deviation,
+        )
+
+        # Adjustments
+        if prior_model == "Toyli":
+            ax.set_xticks([300, 400, 500, 600, 700])
+        elif prior_model == "Lourette":
+            # ax.set_yticks([2.86, 2.865, 2.87, 2.875])
+            ax.set_yticks([2860, 2865, 2870, 2875])
+        if prior_model in ["Barson", "Doherty"]:
+            ax.set_ylabel("$\Delta$ ZFS (MHz)")
+
+        # plt.setp(ax.yaxis.get_majorticklabels(), rotation=90, va="center")
+
+    ### fig labels
+    left = 0.001
+    right = 0.502
+    top = 0.98
+    mid = 0.64
+    bot = 0.31
+    fig.text(left, top, "(a)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, top, "(b)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, mid, "(d)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, bot, "(e)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, bot, "(f)", fontsize=kpl.FontSize.NORMAL)
+
+
+def fit_prior_models_to_our_data():
+    ### Setup
+    mpl.rcParams.update({"font.size": 16})
+
+    # adj_figsize = [2 * kpl.figsize[0], 2.5 * kpl.figsize[1]]
+    # fig, axes_pack_original = plt.subplots(3, 2, figsize=adj_figsize)
+
+    adj_figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
+    height_ratios = [3, 1, 0.6] * 3
+    fig, axes_pack_original = plt.subplots(
+        9, 2, figsize=adj_figsize, height_ratios=height_ratios
+    )
+    axes_pack = []
+    axes_pack.extend(axes_pack_original[:, 0])
+    axes_pack.extend(axes_pack_original[:, 1])
+    for ind in range(6):
+        adj_ind = ind * 3
+        main_ax = axes_pack[adj_ind]
+        resid_ax = axes_pack[adj_ind + 1]
+        spacer = axes_pack[adj_ind + 2]
+        resid_ax.sharex(main_ax)
+        spacer.axis("off")
+
+    # prior_models = ["Cambria", "Chen", "Toyli", "Doherty", "Li", "Barson"]
+    prior_models = ["Cambria", "Toyli", "Li", "Chen", "Doherty", "Barson"]
+
+    ### Main plots first
+
+    # Shared params
+    temp_range = [0, 515]
+    # y_range = [2.847, 2.879]
+    y_range = None
+    condense_all = False
+    condense_samples = True
+    plot_data = True
+    plot_prior_data = False
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = False
+    xscale = "linear"
+    yscale = "linear"
+
+    for ind in range(6):
+        adj_ind = ind * 3
+        ax = axes_pack[adj_ind]
+        prior_model = prior_models[ind]
+        # print(prior_model)
+
+        plot_prior_models = prior_model != "Cambria"
+        plot_new_model = prior_model == "Cambria"
+
+        fig_sub(
+            ax,
+            temp_range,
+            y_range,
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            xscale,
+            yscale,
+            new_model_diff=False,
+            dash_predictions=dash_predictions,
+            comp_sep=prior_model,
+            comp_sep_fit=True,
+            x1000=True,
+            supp_labels=True,
+            zfs_deviation=True,
+        )
+
+        ax.set_xlabel(None)
+        ax.set_ylim(-32, 2)
+        ax.set_yticks([0, -10, -20, -30])
+        # ax.set_yticks([0, -10, -20])
+        # ax.set_ylabel("$\Delta$ ZFS (MHz)")
+        ax.set_ylabel("$\Delta$ ZFS (MHz)", labelpad=1.5)
+        ax.tick_params(axis="x", which="both", labeltop=False, labelbottom=False)
+
+    ### Residual plots second
+
+    for ind in range(6):
+        adj_ind = ind * 3
+        ax = axes_pack[adj_ind + 1]
+        prior_model = prior_models[ind]
+        print(prior_model)
+
+        plot_prior_models = prior_model != "Cambria"
+        plot_prior_models = False
+        plot_new_model = prior_model == "Cambria"
+
+        fig_sub(
+            ax,
+            temp_range,
+            y_range,
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            xscale,
+            yscale,
+            new_model_diff=True,
+            dash_predictions=dash_predictions,
+            comp_sep=prior_model,
+            comp_sep_fit=True,
+            x1000=True,
+            supp_labels=True,
+            zfs_deviation=True,
+            no_axis_labels=True,
+        )
+        ax.set_ylabel("$\Delta$ ZFS (MHz)")
+        ax.axhline(y=0, color=KplColors.MEDIUM_GRAY)
+        ax.set_xlabel("Temperature (K)")
+        axticks = ax.secondary_xaxis("top")
+        axticks.tick_params(
+            axis="x", direction="inout", labeltop=False, labelbottom=False, length=6
+        )
+        if prior_model in ["Cambria", "Chen", "Barson"]:
+            ax.set_yticks([-0.3, 0.0, 0.3])
+        elif prior_model == "Doherty":
+            ax.set_yticks([-1, 0, 1])
+            ax.set_ylim(-1.2, 1.2)
+        elif prior_model == "Li":
+            ax.set_yticks([-0.5, 0, 0.5])
+            ax.set_ylim(-0.7, 0.7)
+        elif prior_model == "Toyli":
+            ax.set_yticks([-0.5, 0, 0.5])
+            ax.set_ylim(-0.8, 0.8)
+        labelpad = 10 if prior_model == "Doherty" else 0
+        ax.set_ylabel("Residuals (MHz)", labelpad=labelpad)
+
+        print()
+
+    ### Final adjustments
+
+    # Fig labels
+    left = 0.001
+    right = 0.502
+    top = 0.98
+    mid = 0.645
+    bot = 0.315
+    fig.text(left, top, "(a)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, top, "(b)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, mid, "(d)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, bot, "(e)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, bot, "(f)", fontsize=kpl.FontSize.NORMAL)
+
+    fig.tight_layout(pad=0.1)
+    fig.tight_layout(pad=0.1)
+    fig.subplots_adjust(hspace=0, wspace=0.16)
+
+
+def fit_our_model_to_prior_data():
+    ### Setup
+    mpl.rcParams.update({"font.size": 16})
+
+    # adj_figsize = [2 * kpl.figsize[0], 2.5 * kpl.figsize[1]]
+    # fig, axes_pack_original = plt.subplots(3, 2, figsize=adj_figsize)
+
+    adj_figsize = [2 * kpl.figsize[0], 3 * kpl.figsize[1]]
+    height_ratios = [3, 1, 0.6] * 3
+    fig, axes_pack_original = plt.subplots(
+        9, 2, figsize=adj_figsize, height_ratios=height_ratios
+    )
+    axes_pack = []
+    axes_pack.extend(axes_pack_original[:, 0])
+    axes_pack.extend(axes_pack_original[:, 1])
+    for ind in range(6):
+        adj_ind = ind * 3
+        main_ax = axes_pack[adj_ind]
+        resid_ax = axes_pack[adj_ind + 1]
+        spacer = axes_pack[adj_ind + 2]
+        resid_ax.sharex(main_ax)
+        spacer.axis("off")
+    # axes_pack[-1].axis("off")
+    # axes_pack[-2].axis("off")
+    # axes_pack[-3].axis("off")
+
+    prior_models = ["Cambria", "Toyli", "Li", "Chen", "Doherty", "Lourette"]
+    # prior_models = ["Chen", "Doherty", "Lourette", "Toyli", "Li"]
+    prior_model_temp_ranges = {
+        "Cambria": [0, 515],
+        "Toyli": [295 - 10, 710 + 15],
+        "Barson": [0, 710 + 15],
+        "Doherty": [0, 295 + 15],
+        "Li": [0, 295 + 15],
+        "Chen": [0, 295 + 15],
+        "Lourette": [75 - 10, 400 + 15],
+    }
+    y_ranges = {
+        "Cambria": [2.847, 2.879],
+        "Toyli": [2.807, 2.874],
+        "Barson": [2.815, 2.88],
+        # "Doherty": [2.8695, 2.8782],
+        "Doherty": [-8.5 / 1000, 2.8782 - 2.8777],
+        "Li": [2.8695, 2.8782],
+        "Chen": [2.869, 2.8782],
+        "Lourette": [2.858, 2.8782],
+    }
+    prior_model_zfs_deviation = {
+        "Cambria": False,
+        "Toyli": False,
+        "Barson": True,
+        "Doherty": True,
+        "Li": False,
+        "Chen": False,
+        "Lourette": False,
+    }
+
+    # Shared params
+    condense_all = False
+    condense_samples = True
+    plot_data = False
+    plot_prior_data = True
+    plot_new_model = True
+    plot_prior_models = False
+    desaturate_prior = False
+    inverse_temp = False
+    new_model_diff = False
+    dash_predictions = False
+    xscale = "linear"
+    yscale = "linear"
+
+    ### Main plots first
+
+    for ind in range(len(prior_models)):
+        adj_ind = ind * 3
+        ax = axes_pack[adj_ind]
+        prior_model = prior_models[ind]
+        # print(prior_model)
+        temp_range = prior_model_temp_ranges[prior_model]
+        y_range = y_ranges[prior_model]
+        zfs_deviation = prior_model_zfs_deviation[prior_model]
+
+        plot_data = prior_model == "Cambria"
+        plot_prior_data = prior_model != "Cambria"
+        fit_data = None if prior_model == "Cambria" else prior_model
+
+        fig_sub(
+            ax,
+            temp_range,
+            y_range,
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            xscale,
+            yscale,
+            new_model_diff=False,
+            dash_predictions=dash_predictions,
+            comp_sep=prior_model,
+            comp_sep_fit=False,
+            x1000=True,
+            supp_labels=True,
+            zfs_deviation=zfs_deviation,
+            fit_data=fit_data,
+        )
+
+        ax.set_xlabel(None)
+        # ax.set_yticks([0, -10, -20])
+        ax.tick_params(axis="x", which="both", labeltop=False, labelbottom=False)
+
+        # Adjustments
+        if prior_model == "Toyli":
+            ax.set_yticks([2810, 2830, 2850, 2870])
+        # elif prior_model == "Lourette":
+        #     # ax.set_yticks([2.86, 2.865, 2.87, 2.875])
+        #     ax.set_yticks([2860, 2865, 2870, 2875])
+        # elif prior_model == "Barson":
+        #     plot_prior_data = True
+        # if prior_model in ["Chen", "Li"]:
+        #     ax.set_yticks([2870, 2872, 2874, 2876, 2878])
+        if prior_model == "Doherty":
+            ax.set_ylabel(r"$\Delta$ ZFS (MHz)")
+            # ax.set_yticks([-8, -6, -4, -2, 0])
+
+    ### Residual plots second
+
+    for ind in range(len(prior_models)):
+        adj_ind = ind * 3
+        ax = axes_pack[adj_ind + 1]
+        prior_model = prior_models[ind]
+        print(prior_model)
+        temp_range = prior_model_temp_ranges[prior_model]
+        y_range = None
+        zfs_deviation = prior_model_zfs_deviation[prior_model]
+
+        plot_data = prior_model == "Cambria"
+        plot_prior_models = prior_model != "Cambria"
+        plot_new_model = prior_model == "Cambria"
+        fit_data = None if prior_model == "Cambria" else prior_model
+
+        fig_sub(
+            ax,
+            temp_range,
+            y_range,
+            plot_data,
+            condense_all,
+            condense_samples,
+            plot_prior_models,
+            desaturate_prior,
+            plot_new_model,
+            plot_prior_data,
+            inverse_temp,
+            xscale,
+            yscale,
+            new_model_diff=True,
+            dash_predictions=dash_predictions,
+            comp_sep=prior_model,
+            comp_sep_fit=False,
+            x1000=True,
+            supp_labels=True,
+            zfs_deviation=zfs_deviation,
+            no_axis_labels=True,
+            fit_data=fit_data,
+        )
+        ax.set_ylabel("$\Delta$ ZFS (MHz)")
+        ax.axhline(y=0, color=KplColors.MEDIUM_GRAY)
+        ax.set_xlabel("Temperature (K)")
+        axticks = ax.secondary_xaxis("top")
+        axticks.tick_params(
+            axis="x", direction="inout", labeltop=False, labelbottom=False, length=6
+        )
+        ax.set_ylim(-0.45, 0.45)
+        ax.set_yticks([-0.3, 0, 0.3])
+        labelpad = 1 if prior_model == "Doherty" else 9
+        ax.set_ylabel("Residuals (MHz)", labelpad=labelpad)
+        # if prior_model in ["Cambria", "Chen", "Barson"]:
+        #     ax.set_yticks([-0.3, 0.0, 0.3])
+        #     ax.set_ylabel("Res. (MHz)", labelpad=2)
+        # elif prior_model == "Doherty":
+        #     ax.set_yticks([-1, 0, 1])
+        #     ax.set_ylim(-1.2, 1.2)
+        #     ax.set_ylabel("Res. (MHz)", labelpad=15)
+        # elif prior_model == "Li":
+        #     ax.set_yticks([-0.5, 0, 0.5])
+        #     ax.set_ylim(-0.7, 0.7)
+        #     ax.set_ylabel("Res. (MHz)", labelpad=2)
+        # elif prior_model == "Toyli":
+        #     ax.set_yticks([-0.5, 0, 0.5])
+        #     ax.set_ylim(-0.8, 0.8)
+        #     ax.set_ylabel("Res. (MHz)", labelpad=2)
+
+        print()
+
+    ### Final adjustments
+
+    # Fig labels
+    left = 0.003
+    right = 0.506
+    top = 0.98
+    mid = 0.645
+    bot = 0.315
+    fig.text(left, top, "(a)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, top, "(b)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, mid, "(c)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, mid, "(d)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(left, bot, "(e)", fontsize=kpl.FontSize.NORMAL)
+    fig.text(right, bot, "(f)", fontsize=kpl.FontSize.NORMAL)
+
+    fig.tight_layout(pad=0.1)
+    fig.tight_layout(pad=0.1)
+    fig.subplots_adjust(hspace=0, wspace=0.19)
+
+
+def axins_polish(axins):
+    # axins.set_yticks([2.870, 2.874, 2.878])
+    axins.set_yticks([2.876, 2.877, 2.878])
+    axins.tick_params(axis="both", which="major", labelsize=16)
+    plt.setp(axins.yaxis.get_majorticklabels(), rotation=90, va="center")
+    # axins.patch.set_alpha(0.7)
 
 
 def fig_sub(
@@ -1504,40 +2748,70 @@ def fig_sub(
     plot_new_model=True,
     plot_prior_data=False,
     inverse_temp=False,
+    xscale="linear",
     yscale="linear",
     new_model_diff=False,
     dash_predictions=False,
     no_axis_labels=False,
+    comp_sep=None,  # Specific model to compare
+    comp_sep_fit=False,  # Fit a specific prior model to our data
+    x1000=False,
+    supp_labels=False,
+    zfs_deviation=False,
+    fit_data=None,
 ):
     ### Setup
 
     skip_lambda = lambda point: (
         point["Skip"]
         or point["Sample"] != "Wu"
-        # or point["Sample"] != "15micro"
+        or point["NV"] == "nv5_zfs_vs_t"
+        or point["NV"] == "nv4_zfs_vs_t"
+        # or point["NV"] == "nv11_zfs_vs_t"
         # or point["ZFS file"] == ""
         # or point["Monitor temp (K)"] >= 296
     )
 
     # prior_data_to_plot = ["Toyli", "Barson", "Chen", "Li", "Doherty"]
     # prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty"]
-    prior_data_to_plot = ["Toyli", "Chen", "Li", "Doherty", "Lourette"]
+    prior_data_to_plot = ["Chen", "Toyli", "Doherty", "Li", "Lourette"]
     # prior_data_to_plot = ["Toyli"]
 
     # prior_models_to_plot = ["Toyli", "Barson"]
-    prior_models_to_plot = ["Toyli", "Barson", "Li", "Chen"]
+    prior_models_to_plot = ["Chen", "Toyli", "Doherty", "Li", "Barson"]
     # prior_models_to_plot = ["Toyli"]
     prior_model_data_ranges = {
         "Toyli": [300, 710],
         "Barson": [0, 710],
         "Li": [0, 295],
         "Chen": [0, 295],
+        "Doherty": [0, 295],
         "Lourette": [75, 400],
     }
+
+    if comp_sep is not None:
+        if comp_sep in prior_data_to_plot:
+            prior_data_to_plot = [comp_sep]
+        else:
+            prior_data_to_plot = []
+        if comp_sep in prior_models_to_plot:
+            prior_models_to_plot = [comp_sep]
+        else:
+            prior_models_to_plot = []
 
     # prior_models_to_plot = prior_data_to_plot
 
     ###
+
+    data_points = get_data_points(skip_lambda, condense_all, condense_samples)
+    (
+        zfs_list,
+        zfs_err_list,
+        temp_list,
+        label_list,
+        color_list,
+        group_list,
+    ) = data_points_to_lists(data_points, zfs_deviation=zfs_deviation)
 
     this_work_data_color = KplColors.BLUE
     this_work_model_color = KplColors.BLUE
@@ -1545,11 +2819,15 @@ def fig_sub(
     prior_work_colors = {
         "Chen": KplColors.ORANGE,
         "Toyli": KplColors.RED,
-        "Barson": KplColors.PURPLE,
-        "Doherty": KplColors.PURPLE,
-        "Li": KplColors.GREEN,
-        "Lourette": KplColors.BROWN,
+        "Barson": KplColors.BROWN,
+        "Doherty": KplColors.GREEN,
+        "Li": KplColors.PURPLE,
+        "Lourette": KplColors.GRAY,
     }
+    for key in prior_work_colors:
+        color = prior_work_colors[key]
+        prior_work_colors[key] = kpl.lighten_color_hex(color, saturation_factor=0.85)
+    # cmap=mpl.colormaps[name]
     prior_work_markers = {
         "Chen": "v",
         "Toyli": "D",
@@ -1558,12 +2836,34 @@ def fig_sub(
         "Li": "^",
         "Lourette": "p",
     }
-    prior_model_fns = {
-        "Chen": sub_room_zfs_from_temp,
-        "Toyli": super_room_zfs_from_temp,
-        "Barson": zfs_from_temp_barson,
-        "Li": zfs_from_temp_li,
-    }
+    if comp_sep_fit:
+        prior_model_fns = {
+            "Chen": fit_sub_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list),
+            "Toyli": fit_super_room_zfs_from_temp(temp_list, zfs_list, zfs_err_list),
+            "Barson": fit_zfs_from_temp_barson_free_bs(
+                temp_list, zfs_list, zfs_err_list
+            ),
+            "Li": fit_zfs_from_temp_li_free(temp_list, zfs_list, zfs_err_list),
+            "Doherty": fit_zfs_from_temp_doherty_free(
+                temp_list, zfs_list, zfs_err_list
+            ),
+        }
+    elif not zfs_deviation:
+        prior_model_fns = {
+            "Chen": sub_room_zfs_from_temp,
+            "Toyli": super_room_zfs_from_temp,
+            "Barson": zfs_from_temp_barson,
+            "Li": zfs_from_temp_li,
+            "Doherty": zfs_from_temp_doherty,
+        }
+    else:
+        prior_model_fns = {
+            "Chen": sub_room_zfs_from_temp,
+            "Toyli": super_room_zfs_from_temp,
+            "Barson": zfs_from_temp_barson_dev,
+            "Li": zfs_from_temp_li,
+            "Doherty": zfs_from_temp_doherty_dev,
+        }
     prior_data_file_names = {
         "Chen": "chen_2011_3a",
         "Toyli": "toyli_2012_5c",
@@ -1572,10 +2872,30 @@ def fig_sub(
         "Doherty": "doherty_2014_2a",
         "Lourette": "lourette_2022_3e",
     }
+    if supp_labels:
+        prior_data_labels = {
+            "Chen": "[5] Chen",
+            "Toyli": "[6] Toyli",
+            "Doherty": "[7] Doherty",
+            "Li": "[8] Li",
+            "Barson": "[9] Barson",
+            "Lourette": "[10] Lourette",
+        }
+    else:
+        prior_data_labels = {
+            "Chen": "[12] Chen",
+            "Toyli": "[13] Toyli",
+            "Doherty": "[14] Doherty",
+            "Li": "[15] Li",
+            "Barson": "[16] Barson",
+            "Lourette": "[17] Lourette",
+        }
     prior_data_sets = {}
     for prior_work in prior_data_to_plot:
         file_name = prior_data_file_names[prior_work]
-        prior_temps, prior_zfss = get_prior_work_data(file_name)
+        prior_temps, prior_zfss = get_prior_work_data(
+            file_name, zfs_deviation=zfs_deviation
+        )
         prior_data_sets[prior_work] = {"temps": prior_temps, "zfss": prior_zfss}
 
     min_temp, max_temp = temp_range
@@ -1587,33 +2907,39 @@ def fig_sub(
     # adj_figsize = (kpl_figsize[0], 1.75 * kpl_figsize[1])
     # fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
 
-    data_points = get_data_points(skip_lambda, condense_all, condense_samples)
-    (
-        zfs_list,
-        zfs_err_list,
-        temp_list,
-        label_list,
-        color_list,
-        group_list,
-    ) = data_points_to_lists(data_points)
-
     label_set = set(label_list)
     color_dict = {}
     for ind in range(len(zfs_list)):
         color_dict[label_list[ind]] = color_list[ind]
 
-    cambria_lambda = get_fitted_model(temp_list, zfs_list, zfs_err_list)
-
-    # zfs_base = 2.878
+    if fit_data == None:
+        cambria_lambda = get_fitted_model(
+            temp_list,
+            zfs_list,
+            zfs_err_list,
+            zfs_deviation,
+            fixed_energies=False,
+        )
+    else:
+        prior_temps = prior_data_sets[fit_data]["temps"]
+        prior_zfss = prior_data_sets[fit_data]["zfss"]
+        cambria_lambda = get_fitted_model(
+            prior_temps,
+            prior_zfss,
+            zfs_err_list=None,
+            zfs_deviation=zfs_deviation,
+            fixed_energies=True,
+        )
 
     ### Plots
 
     min_temp, max_temp = temp_range
     min_temp = 0.1 if min_temp <= 0 else min_temp
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    marker_size = (
-        kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
-    )
+    # marker_size = (
+    #     kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
+    # )
+    marker_size = kpl.Size.SMALL if no_axis_labels else kpl.Size.NORMAL
 
     used_data_label_keys = []
     if plot_data:
@@ -1621,10 +2947,16 @@ def fig_sub(
             temp = temp_list[ind]
             plot_temp = 1 / temp if inverse_temp else temp
             val = zfs_list[ind]
-            if inverse_temp:
-                plot_val = val - zfs_base
+            if inverse_temp or yscale == "log":
+                plot_val = zfs_base - val
             elif new_model_diff:
-                plot_val = 1e3 * (val - cambria_lambda(temp))
+                if comp_sep_fit and comp_sep != "Cambria":
+                    model = prior_model_fns[comp_sep]
+                else:
+                    model = cambria_lambda
+                plot_val = 1e3 * (val - model(temp))
+            elif x1000:
+                plot_val = 1000 * val
             else:
                 plot_val = val
             val_err = zfs_err_list[ind] if (zfs_err_list is not None) else None
@@ -1643,17 +2975,20 @@ def fig_sub(
                 used_data_label_keys.append(label_key)
             else:
                 label = None
-            if plot_prior_data:
-                yerr = None
-            elif new_model_diff:
-                yerr = 1e3 * val_err
+            if comp_sep is not None:
+                yerr = val_err if new_model_diff else None
             else:
-                yerr = val_err
+                if plot_prior_data:
+                    yerr = None
+                else:
+                    yerr = val_err
+            if x1000 and yerr is not None:
+                yerr *= 1000
             group = group_list[ind]
             marker = "o" if group == "hot" else "s"
             fc = (
                 "none"
-                if plot_prior_data
+                if plot_prior_data or comp_sep is not None
                 else kpl.lighten_color_hex(this_work_data_color)
             )
             kpl.plot_points(
@@ -1682,14 +3017,17 @@ def fig_sub(
             if inverse_temp:
                 plot_temps = 1 / plot_temps
             vals = np.array(prior_data_sets[prior_data]["zfss"])
-            if inverse_temp:
-                plot_vals = vals - zfs_base
+            if inverse_temp or yscale == "log":
+                plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temps)
             else:
                 plot_vals = vals
+            if x1000:
+                plot_vals = 1000 * plot_vals
             fc = "none" if plot_prior_data else kpl.lighten_color_hex(color)
             marker = prior_work_markers[prior_data]
+            label = prior_data_labels[prior_data]
             # marker = "D"
             kpl.plot_points(
                 ax,
@@ -1700,21 +3038,38 @@ def fig_sub(
                 markerfacecolor=fc,
                 # zorder=-5,
                 zorder=11,
-                label=prior_data,
+                label=label,
                 marker=marker,
             )
 
-    zfs_base = cambria_lambda(1)
+    # zfs_base = cambria_lambda(1)
     zfs_base_new_model = zfs_base
     if plot_new_model and not new_model_diff:
-        zorder = 10 if plot_prior_models else -2
+        if comp_sep:
+            zorder = 15
+        elif plot_prior_models:
+            zorder = 15
+        else:
+            zorder = -2
         vals = cambria_lambda(temp_linspace)
-        if inverse_temp:
+        if inverse_temp or yscale == "log":
             plot_vals = zfs_base - vals
+        elif x1000:
+            plot_vals = 1000 * vals
         else:
             plot_vals = vals
-        label = None if plot_data else "This work"
+        if comp_sep_fit:
+            label = "This work"
+        elif plot_data or comp_sep is not None:
+            label = None
+        else:
+            label = "This work"
         color = this_work_model_color
+        lw = (
+            kpl.LineWidth.BIG
+            if plot_prior_models and comp_sep is None
+            else kpl.LineWidth.NORMAL
+        )
         if dash_predictions:
             pmdr = [0, 500]
             if inverse_temp:
@@ -1731,6 +3086,7 @@ def fig_sub(
                 label=label,
                 color=color,
                 zorder=zorder,
+                linewidth=lw,
             )
             light_color = kpl.lighten_color_hex(color)
             kpl.plot_line(
@@ -1742,6 +3098,7 @@ def fig_sub(
                 color=color,
                 linestyle="dashed",
                 zorder=zorder,
+                linewidth=lw,
             )
         else:
             kpl.plot_line(
@@ -1751,12 +3108,13 @@ def fig_sub(
                 label=label,
                 color=color,
                 zorder=zorder,
+                linewidth=lw,
             )
 
     ### Prior models
 
     if plot_prior_models:
-        prior_model_zorder = 2
+        prior_model_zorder = 2000 if comp_sep_fit else 2
         if desaturate_prior:
             for key in prior_work_colors:
                 current = prior_work_colors[key]
@@ -1766,15 +3124,17 @@ def fig_sub(
             color = prior_work_colors[prior_model]
             fn = prior_model_fns[prior_model]
             vals = fn(temp_linspace)
-            zfs_base = zfs_base_new_model if prior_model == "Toyli" else fn(1)
+            # zfs_base = zfs_base_new_model if prior_model == "Toyli" else fn(1)
 
-            if inverse_temp:
+            if inverse_temp or yscale == "log":
                 plot_vals = zfs_base - vals
             elif new_model_diff:
                 plot_vals = vals - cambria_lambda(plot_temp_linspace)
+            elif x1000:
+                plot_vals = 1000 * vals
             else:
                 plot_vals = vals
-            label = None if plot_prior_data else prior_model
+            label = None if plot_prior_data else prior_data_labels[prior_model]
             if dash_predictions:
                 pmdr = prior_model_data_ranges[prior_model]
                 if inverse_temp:
@@ -1828,15 +3188,20 @@ def fig_sub(
 
     ### Plot wrap up
     if not no_axis_labels:
-        leg_loc = (
-            kpl.Loc.UPPER_RIGHT
-            if inverse_temp or plot_prior_models
-            # if True
-            else kpl.Loc.LOWER_LEFT
-        )
+        if comp_sep_fit or comp_sep is not None:
+            leg_loc = kpl.Loc.LOWER_LEFT
+        elif yscale == "log":
+            leg_loc = kpl.Loc.UPPER_LEFT
+        elif yscale == "linear" or inverse_temp or plot_prior_models:
+            leg_loc = kpl.Loc.UPPER_RIGHT
+        else:
+            leg_loc = kpl.Loc.LOWER_LEFT
         # handlelength = 0.5 if plot_data else 1.5
-        handlelength = 1.0
-        if plot_prior_models:
+        handlelength = 1.0 if plot_prior_data and comp_sep is None else 1.3
+        # if plot_prior_models:
+        # if plot_prior_data:
+        if plot_prior_models or plot_prior_data or comp_sep_fit:
+            # if True:
             handles, labels = ax.get_legend_handles_labels()
             adj_labels = []
             for ind in range(len(handles)):
@@ -1848,8 +3213,6 @@ def fig_sub(
                 handle = handles[ind]
                 label = labels[ind]
                 label_ind = adj_labels.index(label)
-                # For some reason this is necessary to get the legend size to match with the marker size in the plot
-                handle[0].set_markersize(7)
                 adj_handles[label_ind].append(handle)
             adj_labels = tuple(adj_labels)
             adj_handles = [tuple(el[::-1]) for el in adj_handles]
@@ -1859,8 +3222,11 @@ def fig_sub(
                 labels=adj_labels,
                 loc=leg_loc,
                 handlelength=handlelength,
+                handletextpad=0.6,
                 # handle
-                fontsize=15,
+                # fontsize=12,
+                fontsize=14,
+                # fontsize=15,
                 handler_map={tuple: matplotlib.legend_handler.HandlerTuple(None)},
             )
         # ax.set_xlabel("Temperature $\mathit{T}$ (K)")
@@ -1869,15 +3235,29 @@ def fig_sub(
             ax.set_xlabel("Inverse temperature (K)")
         else:
             ax.set_xlabel("Temperature (K)")
-        if inverse_temp:
-            ax.set_ylabel("$\Delta D$ (GHz)")
+        if zfs_deviation or inverse_temp or yscale == "log":
+            if x1000:
+                ax.set_ylabel("$\Delta$ ZFS (MHz)")
+            else:
+                ax.set_ylabel("$\Delta$ ZFS (GHz)")
         elif new_model_diff:
             ax.set_ylabel("Residuals (MHz)")
         else:
-            ax.set_ylabel("ZFS (GHz)")
+            if x1000:
+                ax.set_ylabel("ZFS (MHz)")
+            else:
+                ax.set_ylabel("ZFS (GHz)")
     xlim = (1 / temp_range[1], 1 / temp_range[0]) if inverse_temp else temp_range
     ax.set_xlim(*xlim)
-    ax.set_ylim(*y_range)
+    if y_range is not None:
+        if yscale == "log":
+            ax.set_ylim(1e-5, y_range[1] - y_range[0])
+        else:
+            if x1000:
+                ax.set_ylim(1000 * y_range[0], 1000 * y_range[1])
+            else:
+                ax.set_ylim(*y_range)
+    ax.set_xscale(xscale)
     ax.set_yscale(yscale)
 
 
@@ -2203,7 +3583,13 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(constrained_layout=True)
+
+    # fig, ax = plt.subplots()
+    # temps = np.linspace(0, 3000, 1000)
+    # kpl.plot_line(ax, temps, fractional_thermal_expansion(temps))
+    # plt.show(block=True)
+    # sys.exit()
 
     # temps, zfss = get_prior_work_data("lourette_2022_3e")
     # fig, ax = plt.subplots()
@@ -2211,45 +3597,47 @@ if __name__ == "__main__":
 
     # main()
     # fig(inset_resid=True)  # Main
-    fig(  # Comps
-        #     temp_range=[-20, 820],
-        #     y_range=[2.80, 2.88],
-        #
-        # temp_range=[-20, 1020],
-        # y_range=[2.76, 2.88],
-        # y_range=[-0.01, 0.01],
-        #
+    fig_bottom_resid()  # Main
+    # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
+    fig(  # Comps models (main)
         temp_range=[0, 1000],
         y_range=[2.76, 2.88],
         #
-        plot_data=True,
+        plot_data=False,
         condense_all=False,
         condense_samples=True,
         plot_prior_models=True,
         desaturate_prior=False,
         plot_new_model=True,
-        plot_prior_data=True,
+        plot_prior_data=False,
         new_model_diff=False,
         dash_predictions=True,
         inset_comp=True,
         inset_resid=False,
+        x1000=True,
     )
-    # fig(  # Comps semi-log vs inverse temp
-    #     # temp_range=[100, 1000],
-    #     # y_range=[1e-5, 1],
-    #     temp_range=[150, 1000],
-    #     y_range=[5e-4, 1],
-    #     plot_data=False,
+    # fig(  # Comps data (supp)
+    #     temp_range=[-5, 740],
+    #     y_range=[2.81, 2.88],
+    #     #
+    #     plot_data=True,
     #     condense_all=False,
     #     condense_samples=True,
-    #     plot_prior_models=True,
+    #     plot_prior_models=False,
     #     desaturate_prior=False,
-    #     plot_new_model=True,
-    #     plot_prior_data=False,
-    #     inverse_temp=True,
-    #     yscale="log",
+    #     plot_new_model=False,
+    #     plot_prior_data=True,
+    #     new_model_diff=False,
     #     dash_predictions=True,
+    #     inset_comp=True,
+    #     inset_resid=False,
+    #     x1000=True,
+    #     supp_labels=True,
     # )
+    # comps()
+    # comps_sep()
+    # fit_prior_models_to_our_data()
+    # fit_our_model_to_prior_data()
     # refit_experiments()
     # # # derivative_comp()
     # light_polarization()
