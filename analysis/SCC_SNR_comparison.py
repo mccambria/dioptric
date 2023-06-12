@@ -3,19 +3,8 @@ import utils.kplotlib as kpl
 from utils.kplotlib import KplColors
 import matplotlib.pyplot as plt
 
-# SNR_C = 0.025
-# SNR_SCC = 0.1
-# t_SCC = 50000 #us
-# t_C = 0.3 #us
-
-
-# SNR_C = 0.025
-# SNR_SCC = 0.5
-# t_SCC = 50000 #us
-# t_C = 0.3 #us
-
-SNR_C = 0.012
-SNR_SCC = 0.255
+SNR_C = 0.016
+SNR_SCC = 0.06
 t_SCC = 10000 #us
 t_C = 0.3 #us
 
@@ -23,13 +12,13 @@ t_C = 0.3 #us
 T=(SNR_C**2 * t_SCC - SNR_SCC**2 * t_C ) / (SNR_SCC**2 - SNR_C**2)
 
 print('{} us or longer'.format(T))
-
+# 
 
 kpl.init_kplotlib
     
-label_list = ['0.2 V, 45 ms','0.3 V, 35 ms','0.4 V, 10 ms','0.5 V, 10 ms']
-t_r_list_ms = [45,35,10, 10]
-snr_list = [0.333,0.371,0.255, 0.236]
+label_list = ['0.3 V,10 ms', '0.3 V,15 ms','0.3 V,25 ms',]
+t_r_list_ms = [10, 15, 25]
+snr_list = [0.06, 0.07, 0.04]
 
 # SNR_t = SNR_s * sqrt(T / (te + tr))
 def total_snr_per_meas_dur(t, snr, t_r):

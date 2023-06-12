@@ -147,18 +147,18 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     #                     amp_2, FreqParams[1],
     #                     amp_3, FreqParams[2])
 
-    # guess_params_fixed_freq = (offset, decay, amp_1,
-    #                     amp_2,
-    #                     amp_3, )
-    # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    guess_params_fixed_freq = (offset, decay, amp_1,
+                        amp_2,
+                        amp_3, )
+    cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
 
     # Try the fit to a sum of three cosines
 
-    fit_func = tool_belt.cosine_sum
-    init_params = guess_params
+    # fit_func = tool_belt.cosine_sum
+    # init_params = guess_params
 
-    # fit_func = cosine_sum_fixed_freq
-    # init_params = guess_params_fixed_freq
+    fit_func = cosine_sum_fixed_freq
+    init_params = guess_params_fixed_freq
 
     # fit_func = tool_belt.cosine_double_sum
     # init_params = guess_params_double
@@ -166,13 +166,14 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     try:
         popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
                       p0=init_params,
-                        bounds=([0, 0, -numpy.infty, -15,
-                                    # -numpy.infty, -15,
-                                    -numpy.infty, -15, ]
-                                , [numpy.infty, numpy.infty,
-                                   numpy.infty, 15,
-                                    # numpy.infty, 15,
-                                    numpy.infty, 15, ])
+                        # bounds=([0, 0, -numpy.infty, -15,
+                        #             # -numpy.infty, -15,
+                        #             -numpy.infty, -15, ]
+                        #         , [numpy.infty, numpy.infty,
+                        #            numpy.infty, 15,
+                        #             # numpy.infty, 15,
+                        #             numpy.infty, 15, ]
+                                # )
                        )
     except Exception:
         print('Something went wrong!')
@@ -183,7 +184,7 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
                           num=1000)
 
     fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus_us, norm_avg_sig,'b',label='data')
+    ax.plot(taus_us, norm_avg_sig,'bo',label='data')
     ax.plot(taus_us_linspace, fit_func(taus_us_linspace,*popt),'r',label='fit')
     ax.set_xlabel(r'Free precesion time ($\mu$s)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -195,18 +196,18 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     #                     r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
     #                     ))
 
-    text1 = "\n".join((r'$C + e^{-t/d} \sum_i^3 a_i \mathrm{cos}(2 \pi \nu_i t)$',
-                        r'$d = $' + '%.2f'%(abs(popt[1]/1e6)) + ' us',
-                        r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
-                        r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
-                        # r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
-                        ))
+    # text1 = "\n".join((r'$C + e^{-t/d} \sum_i^3 a_i \mathrm{cos}(2 \pi \nu_i t)$',
+    #                     r'$d = $' + '%.2f'%(abs(popt[1]/1e6)) + ' us',
+    #                     r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
+    #                     r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
+    #                     r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
+    #                     ))
 
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     # print(text1)
 
-    ax.text(0.70, 0.25, text1, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
+    # ax.text(0.70, 0.25, text1, transform=ax.transAxes, fontsize=12,
+    #                         verticalalignment="top", bbox=props)
 
 
 
@@ -752,8 +753,8 @@ if __name__ == "__main__":
     analytics = False
     if analysis:
 
-        folder = "pc_rabi/branch_master/ramsey/2022_12"
-        file = '2022_12_13-14_21_22-siena-nv1_2022_10_27'
+        folder = "pc_rabi/branch_master/ramsey/2021_10"
+        file = '2021_10_15-10_37_22-johnson-nv0_2021_10_08'
 
         # detuning = 0
         data = tool_belt.get_raw_data(file, folder)
@@ -777,9 +778,9 @@ if __name__ == "__main__":
             )
 
 
-        # _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
-        # print(FreqParams)
-        FreqParams = [0, 3.9, 8.2]
+        _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
+        print(FreqParams)
+        FreqParams = [2.6, 4.8, 7]
         fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
 
     if analytics:

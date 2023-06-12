@@ -157,6 +157,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
     tau_master_list = data["tau_master_list"]
     nv_sig = data["nv_sig"]
     gate_time = nv_sig["spin_readout_dur"]
+    norm_style = nv_sig["norm_style"]
     if stop_run is None:
         # Assume incremental
         if "run_ind" in data:
@@ -186,15 +187,28 @@ def unpack_interleave(data, start_run=0, stop_run=None):
 
         avg_sig_counts_master_list.append(avg_sig_counts.tolist())
         avg_ref_counts_master_list.append(avg_ref_counts.tolist())
+        
+        num_reps = params_master_list[exp_ind][3]
 
-        # Replace x/0=inf with 0
-        try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
-        except RuntimeWarning as e:
-            print(e)
-            inf_mask = numpy.isinf(norm_avg_sig)
-            # Assign to 0 based on the passed conditional array
-            norm_avg_sig[inf_mask] = 0
+
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        (
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
+        ) = ret_vals
+        
+
+
+        # # Replace x/0=inf with 0
+        # try:
+        #     norm_avg_sig = avg_sig_counts / avg_ref_counts
+        # except RuntimeWarning as e:
+        #     print(e)
+        #     inf_mask = numpy.isinf(norm_avg_sig)
+        #     # Assign to 0 based on the passed conditional array
+        #     norm_avg_sig[inf_mask] = 0
 
         norm_sig_counts_master_list.append(norm_avg_sig.tolist())
 
@@ -205,7 +219,6 @@ def unpack_interleave(data, start_run=0, stop_run=None):
         read_state_name = params_master_list[exp_ind][0][1]
         relaxation_time_range = params_master_list[exp_ind][1]
         num_steps = params_master_list[exp_ind][2]
-        num_reps = params_master_list[exp_ind][3]
         uwave_pi_pulse_init = params_master_list[exp_ind][4]
         uwave_freq_init = params_master_list[exp_ind][5]
         uwave_power_init = params_master_list[exp_ind][6]
@@ -290,6 +303,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
             "ref_counts-units": "counts",
             "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
             "norm_avg_sig-units": "arb",
+            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
         }
 
         # Save each figure
@@ -668,6 +682,10 @@ def main_with_cxn(
                         cxn, nv_sig, laser_key
                     )
                     tool_belt.set_filter(cxn, nv_sig, laser_key)
+                   
+                charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
+                charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
+            
             else:
                 laser_key = "spin_laser"
                 laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -873,7 +891,7 @@ if __name__ == "__main__":
     # plt.show(block=True)
     
     
-    file_name = "2022_12_19-10_08_14-siena-background"
+    file_name = "2023_05_01-21_38_11-rubin-nv0_2023_05_01"
     inc = True
     data = tool_belt.get_raw_data(file_name)
     params_list = data['params_master_list'][0]
@@ -888,7 +906,7 @@ if __name__ == "__main__":
     avg_sig_counts = numpy.average(sig_counts_list, axis =0)
     ref_counts_list = data['ref_counts_master_list'][0]
     avg_ref_counts = numpy.average(ref_counts_list, axis =0)
-    run_ind=  3500
+    run_ind=  88
     num_reps = params_list[3]
     nv_sig = data['nv_sig']
     readout = nv_sig['spin_readout_dur']
@@ -919,7 +937,7 @@ if __name__ == "__main__":
     popt, covarr = curve_fit(fit_func,taus,norm_avg_sig,p0 = [0.2, 5, 0.8])
     
     print(popt[1])
-    # print(numpy.sqrt(covarr[1][1]))
+    print(numpy.sqrt(covarr[1][1]))
     ax.plot(taus_fit,fit_func(taus_fit, *popt), 'r-')
     # ax.plot(taus_fit,fit_func(taus_fit, 0.2,5, 0.8), 'r-')
     
@@ -928,10 +946,10 @@ if __name__ == "__main__":
 
     ax = axes_pack[0]
     ax.plot(
-        numpy.array(taus) / 10 ** 6, sig_counts_avg_kcps, "r-", label="signal"
+        numpy.array(taus), sig_counts_avg_kcps, "r-", label="signal"
     )
     ax.plot(
-        numpy.array(taus) / 10 ** 6,
+        numpy.array(taus),
         ref_counts_avg_kcps,
         "g-",
         label="reference",
@@ -941,7 +959,7 @@ if __name__ == "__main__":
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(numpy.array(taus) / 10 ** 6, norm_avg_sig, "b-")
+    ax.plot(numpy.array(taus) , norm_avg_sig, "b-")
     ax.set_title(
         "T1 Measurement. Initial state: {}, readout state: {}".format(
             "ZERO", "ZERO"

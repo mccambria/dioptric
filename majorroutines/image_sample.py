@@ -338,7 +338,6 @@ def main_with_cxn(
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     time.sleep(1)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-
     # See if this setup has finely specified delay times, else just get the
     # one-size-fits-all value.
     dir_path = ["", "Config", "Positioning"]
@@ -362,7 +361,9 @@ def main_with_cxn(
         cxn, "z_nm_per_unit", ["", "Config", "Positioning"]
     )
     # use whichever delay is longer:
-    if (z_delay > xy_delay) and scan_type == "XZ":
+    if (z_delay > xy_delay) and scan_type == "XZ" :
+        delay = z_delay
+    elif (z_delay > xy_delay) and scan_type == "YZ" :
         delay = z_delay
     else:
         delay = xy_delay
@@ -400,6 +401,7 @@ def main_with_cxn(
         seq_file = "simple_readout.py"
 
     # print(seq_args)
+    # return
     ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
 
@@ -414,8 +416,10 @@ def main_with_cxn(
         )
     elif scan_type == "XZ":
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, z_center, x_range, y_range, x_num_steps, y_num_steps
-        )
+            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
+    elif scan_type == 'YZ':
+        ret_vals = positioning.get_scan_grid_2d(
+            y_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
 
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -450,6 +454,10 @@ def main_with_cxn(
             z_voltages = y_voltages
             y_vals_static = [y_center] * len(x_voltages)
             xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
+        elif scan_type == "YZ":
+            z_voltages = y_voltages
+            x_vals_static = [x_center]*len(x_voltages)
+            xyz_server.load_stream_xyz( x_vals_static, x_voltages,z_voltages)
 
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
@@ -471,7 +479,7 @@ def main_with_cxn(
     title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
 
     fig, ax = plt.subplots()
-    if scan_type == "XZ":
+    if scan_type == "XZ" or scan_type == "YZ" :
         kpl.imshow(
             ax,
             img_array_kcps,
@@ -518,7 +526,7 @@ def main_with_cxn(
 
             if scan_type == "XY":
                 flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            elif scan_type == "XZ":
+            elif scan_type == 'XZ' or scan_type == 'YZ'  :
                 flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
 
             # Some diagnostic stuff - checking how far we are from the target pos
@@ -526,7 +534,7 @@ def main_with_cxn(
             dx_list.append((actual_x_pos - cur_x_pos) * 1e3)
             if scan_type == "XY":
                 dy_list.append((actual_y_pos - cur_y_pos) * 1e3)
-            elif scan_type == "XZ":
+            elif scan_type == "XZ" or scan_type == 'YZ' :
                 cur_z_pos = cur_y_pos
                 dy_list.append((actual_z_pos - cur_z_pos) * 1e3)
             # read the counts at this location
@@ -590,7 +598,7 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
     if scan_type == "XY":
         xy_server.write_xy(x_center, y_center)
-    elif scan_type == "XZ":
+    else:
         xyz_server.write_xyz(x_center, y_center, z_center)
 
     timestamp = tool_belt.get_time_stamp()
@@ -632,11 +640,49 @@ if __name__ == "__main__":
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    x_center = data["x_center"]
-    y_center = data["y_center"]
+
+    do_presentation = False
+    try:
+        scan_type = data['scan_type']
+        if scan_type == 'XY':
+            x_center = data["x_center"]
+            y_center = data["y_center"]
+            # x_range = data["x_range"]
+            # y_range = data["y_range"]
+            # x_num_steps = data["num_steps"]
+            # y_num_steps = data["num_steps"]
+
+        elif scan_type == 'XZ':
+            x_center = data["x_center"]
+            y_center = data["z_center"]
+        elif scan_type == 'YZ':
+            x_center = data["y_center"]
+            y_center = data["z_center"]
+    except Exception:
+        nv_sig = data['nv_sig']
+        x_center = nv_sig['coords'][0]
+        y_center = nv_sig['coords'][1]
+
+
+
     x_range = data["x_range"]
     y_range = data["y_range"]
     num_steps = data["num_steps"]
+    num_steps = data["num_steps"]
+    xlabel = "V"
+    ylabel = "V"
+    if do_presentation:
+        x_center=0
+        y_center=0
+        with labrad.connect() as cxn:
+            scale = common.get_registry_entry(
+                cxn, "xy_nm_per_unit", ["", "Config", "Positioning"])
+        scale=35000
+        x_range = x_range * scale/1000
+        y_range = y_range * scale/1000
+        xlabel = "um"
+        ylabel = "um"
+
     ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )
@@ -644,24 +690,16 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array_kcps, cbar_label="kcps", extent=extent, aspect="auto")
+    im = kpl.imshow(
+        ax,
+        img_array_kcps,
+        # title=title,
+        x_label=xlabel,
+        y_label=ylabel,
+        cbar_label="kcps",
+        vmax = 55,
+        extent=extent,
+        # aspect="auto",
+    )
 
-    # Annotation
-    # nvs = [
-    #     [0.182, -0.174],
-    #     [0.135, -0.164],
-    #     [-0.064, -0.022],
-    #     [0.042, 0.154],
-    #     [0.206, 0.19],
-    #     [0.091, -0.06],
-    # ]
-    # nvs_temp = []
-    # for el in nvs[:-1]:
-    #     nvs_temp.append([el[0] + 0.01, el[1] - 0.01])
-    # nvs_temp.append(nvs[-1])
-    # nvs = nvs_temp
-    # for ind in range(len(nvs)):
-    #     nv = nvs[ind]
-    #     plt.plot(nv[0], nv[1], marker=f"${ind+6}$", color="lime", ms=10)
-
-    plt.show(block=True)
+    # plt.show(block=True)

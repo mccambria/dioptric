@@ -220,7 +220,7 @@ def determine_ionization_dur(nv_sig, num_reps, ion_durs=None):
     This function will test red pulse lengths between 0 and 600 ns on the LOW
     NV state.
     '''
-    state = States.LOW
+    state = States.HIGH
     if ion_durs is None:
         # ion_durs = numpy.array([340])#
         # ion_durs = numpy.linspace(20,212,7)

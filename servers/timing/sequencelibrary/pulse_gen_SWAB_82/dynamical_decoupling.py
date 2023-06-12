@@ -39,16 +39,16 @@ def get_seq(pulse_streamer, config, args):
 
     # The first 11 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(6):
+    for ind in range(7):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long = durations
+    tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long, dd_wait_time = durations
     
     
 
     # Get the APD indices
-    pi_pulse_reps, state, laser_name, laser_power = args[6:11]
+    pi_pulse_reps, state, laser_name, laser_power = args[7:12]
     state = States(state)
         
     # time of illumination during which signal readout occurs
@@ -72,6 +72,7 @@ def get_seq(pulse_streamer, config, args):
     back_buffer = 200
     delay_buffer = max(laser_delay_time,rf_delay_time, iq_delay_time, 100)
     iq_trigger_time = numpy.int64(min(pi_on_2_pulse, 10))
+    final_pi_pulse_wait = dd_wait_time
     
     # we half the tau to put an IQ pulse in between. To create shorthand,
     # we define them here. But we need to make sure that the two halves still
@@ -97,7 +98,7 @@ def get_seq(pulse_streamer, config, args):
         rep_train = [(tau_shrt, LOW), (pi_pulse, HIGH), (tau_shrt, LOW)]*pi_pulse_reps
     uwave_experiment_train_shrt.extend(rep_train)
     uwave_experiment_train_shrt.extend([(pi_on_2_pulse, HIGH)])
-    uwave_experiment_train_shrt.extend([(20, LOW)]) # adding a wait between pi/2 and pi
+    uwave_experiment_train_shrt.extend([(final_pi_pulse_wait, LOW)]) # adding a wait between pi/2 and pi
     uwave_experiment_train_shrt.extend([(pi_pulse, HIGH)]) # adding a pi pulse to readout
     
     uwave_experiment_dur_shrt = 0
@@ -111,7 +112,7 @@ def get_seq(pulse_streamer, config, args):
         rep_train = [(tau_long, LOW), (pi_pulse, HIGH), (tau_long, LOW)]*pi_pulse_reps
     uwave_experiment_train_long.extend(rep_train)
     uwave_experiment_train_long.extend([(pi_on_2_pulse, HIGH)])
-    uwave_experiment_train_long.extend([(20, LOW)]) # adding a wait between pi/2 and pi
+    uwave_experiment_train_long.extend([(final_pi_pulse_wait, LOW)]) # adding a wait between pi/2 and pi
     uwave_experiment_train_long.extend([(pi_pulse, HIGH)]) # adding a pi pulse to readout
         
     uwave_experiment_dur_long = 0
@@ -128,7 +129,7 @@ def get_seq(pulse_streamer, config, args):
         uwave_iq_train_shrt.extend([(iq_trigger_time, HIGH), 
                                     (half_tau_shrt_en - iq_trigger_time + half_tau_shrt_st, LOW),
                                     # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                    (half_tau_shrt_en + pi_on_2_pulse + 20 + pi_pulse, LOW)])
+                                    (half_tau_shrt_en + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
     else:    
         rep_train = [(iq_trigger_time, HIGH),
                  (half_tau_shrt_en - iq_trigger_time + pi_pulse + tau_shrt + half_tau_shrt_st, LOW)]*(pi_pulse_reps-1)
@@ -137,7 +138,7 @@ def get_seq(pulse_streamer, config, args):
                                     (half_tau_shrt_en - iq_trigger_time + pi_pulse + half_tau_shrt_st, LOW),
                                     (iq_trigger_time, HIGH), 
                                     # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                    (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse + 20 + pi_pulse, LOW)])
+                                    (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
     
     
     uwave_iq_train_long = [(iq_trigger_time, HIGH), 
@@ -147,7 +148,7 @@ def get_seq(pulse_streamer, config, args):
         uwave_iq_train_long.extend([(iq_trigger_time, HIGH), 
                                     (half_tau_long_en - iq_trigger_time + half_tau_long_st, LOW),
                                     # (half_tau_shrt_en - iq_trigger_time + pi_on_2_pulse, LOW)
-                                    (half_tau_long_en + pi_on_2_pulse + 20 + pi_pulse, LOW)])
+                                    (half_tau_long_en + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
     else:
         rep_train = [(iq_trigger_time, HIGH),
                  (half_tau_long_en - iq_trigger_time + pi_pulse + tau_long + half_tau_long_st, LOW)]*(pi_pulse_reps-1)
@@ -156,7 +157,7 @@ def get_seq(pulse_streamer, config, args):
                                     (half_tau_long_en - iq_trigger_time + pi_pulse + half_tau_long_st, LOW),
                                     (iq_trigger_time, HIGH), 
                                     # (half_tau_long_en - iq_trigger_time + pi_on_2_pulse, LOW)])
-                                    (half_tau_long_en - iq_trigger_time + pi_on_2_pulse + 20 + pi_pulse, LOW)])
+                                    (half_tau_long_en - iq_trigger_time + pi_on_2_pulse + final_pi_pulse_wait + pi_pulse, LOW)])
     
 
     # %% Define the sequence
@@ -239,7 +240,8 @@ def get_seq(pulse_streamer, config, args):
 
     # IQ modulation triggers
     train = [(delay_buffer - iq_delay_time, LOW),
-              (polarization_time,LOW),]
+             (iq_trigger_time, HIGH),
+             (polarization_time-iq_trigger_time, LOW)]
               # (pre_uwave_exp_wait_time, LOW)]
     train.extend(uwave_iq_train_shrt)
     train.extend([

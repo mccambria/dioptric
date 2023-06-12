@@ -383,29 +383,6 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     
-    if do_scc:
-        laser_tag = "nv-_reionization"
-        laser_key = "{}_laser".format(laser_tag)
-        pol_laser_name = nv_sig[laser_key]
-        pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        polarization_dur = nv_sig["{}_dur".format(laser_tag)]
-
-        laser_tag = "nv0_ionization"
-        laser_key = "{}_laser".format(laser_tag)
-        ion_laser_name = nv_sig[laser_key]
-        ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        ionization_dur = nv_sig["{}_dur".format(laser_tag)]
-
-        laser_tag = "charge_readout"
-        laser_key = "{}_laser".format(laser_tag)
-        readout_laser_name = nv_sig[laser_key]
-        readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        readout = nv_sig["{}_dur".format(laser_tag)]
-    else:
-        polarization_time = nv_sig['spin_pol_dur']
-        readout = nv_sig['spin_readout_dur']
-        readout_sec = readout / (10**9)
-        
     if do_dq:
         rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_pi_pulse_low = tool_belt.get_pi_pulse_dur(rabi_period_low)
@@ -416,6 +393,49 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
         uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
         uwave_freq_high = nv_sig["resonance_{}".format(States.HIGH.name)]
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
+        
+        if do_scc:
+            laser_tag = "nv-_reionization"
+            laser_key = "{}_laser".format(laser_tag)
+            pol_laser_name = nv_sig[laser_key]
+            pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            polarization_dur = nv_sig["{}_dur".format(laser_tag)]
+    
+            laser_tag = "nv0_ionization"
+            laser_key = "{}_laser".format(laser_tag)
+            ion_laser_name = nv_sig[laser_key]
+            ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            ionization_dur = nv_sig["{}_dur".format(laser_tag)]
+    
+            laser_tag = "charge_readout"
+            laser_key = "{}_laser".format(laser_tag)
+            readout_laser_name = nv_sig[laser_key]
+            readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            readout = nv_sig["{}_dur".format(laser_tag)]
+    else:
+        if do_scc:
+            laser_tag = "nv-_reionization"
+            laser_key = "{}_laser".format(laser_tag)
+            pol_laser_name = nv_sig[laser_key]
+            pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            polarization_dur = nv_sig["{}_dur".format(laser_tag)]
+    
+            laser_tag = "nv0_ionization"
+            laser_key = "{}_laser".format(laser_tag)
+            ion_laser_name = nv_sig[laser_key]
+            ion_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            ionization_dur = nv_sig["{}_dur".format(laser_tag)]
+    
+            laser_tag = "charge_readout"
+            laser_key = "{}_laser".format(laser_tag)
+            readout_laser_name = nv_sig[laser_key]
+            readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            readout = nv_sig["{}_dur".format(laser_tag)]
+        else:
+            polarization_time = nv_sig['spin_pol_dur']
+            readout = nv_sig['spin_readout_dur']
+            readout_sec = readout / (10**9)
+        
         
     norm_style = nv_sig["norm_style"]
 
@@ -429,27 +449,47 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
 
     # Analyze the sequence
     num_reps = int(num_reps)
-    if do_scc:
-        file_name = 'rabi_scc.py'
-        seq_args = [
-                readout,
-                polarization_dur,
-                ionization_dur,
-                taus[0],
-                max_uwave_time,
-                pol_laser_name,
-                readout_laser_name,
-                ion_laser_name,
-                state.value, 
-                pol_laser_power,
-                ion_laser_power,
-                readout_laser_power,]
-    else:
-        if do_dq:
+    if do_dq:
+        if do_scc:
+            file_name = 'rabi_dq_scc.py'    
+            seq_args = [
+                    taus[0],
+                    readout,
+                    polarization_dur,
+                    ionization_dur,
+                    uwave_pi_pulse_low,
+                    uwave_pi_pulse_high,
+                    max_uwave_time,
+                    state.value,
+                    pol_laser_name,
+                    readout_laser_name,
+                    ion_laser_name,
+                    pol_laser_power,
+                    ion_laser_power,
+                    readout_laser_power,]
+        else:
+                
             file_name = 'rabi_dq.py'    
             seq_args = [taus[0], polarization_time,
                         readout,  uwave_pi_pulse_low, uwave_pi_pulse_high, max_uwave_time,
                         state.value, laser_name, laser_power]
+
+    else:    
+        if do_scc:
+            file_name = 'rabi_scc.py'
+            seq_args = [
+                    readout,
+                    polarization_dur,
+                    ionization_dur,
+                    taus[0],
+                    max_uwave_time,
+                    pol_laser_name,
+                    readout_laser_name,
+                    ion_laser_name,
+                    state.value, 
+                    pol_laser_power,
+                    ion_laser_power,
+                    readout_laser_power,]
         else:
             file_name = 'rabi.py'
             seq_args = [taus[0], polarization_time,
@@ -537,7 +577,7 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             sig_gen_cxn.set_amp(uwave_power)
             if do_iq:
                 sig_gen_cxn.load_iq()
-                # arbwavegen_server.load_arb_phases([0])
+                arbwavegen_server.load_arb_phases([0])
             sig_gen_cxn.uwave_on()
         
         
@@ -563,31 +603,51 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
             # Stream the sequence
-            if do_scc:
-                seq_args = [
-                        readout,
-                        polarization_dur,
-                        ionization_dur,
-                        taus[tau_ind],
-                        max_uwave_time,
-                        pol_laser_name,
-                        readout_laser_name,
-                        ion_laser_name,
-                        state.value, 
-                        pol_laser_power,
-                        ion_laser_power,
-                        readout_laser_power,]
-            else:
-                if do_dq:
+            
+            if do_dq:
+                if do_scc:    
+                    seq_args = [
+                            taus[tau_ind],
+                            readout,
+                            polarization_dur,
+                            ionization_dur,
+                            uwave_pi_pulse_low,
+                            uwave_pi_pulse_high,
+                            max_uwave_time,
+                            state.value,
+                            pol_laser_name,
+                            readout_laser_name,
+                            ion_laser_name,
+                            pol_laser_power,
+                            ion_laser_power,
+                            readout_laser_power,]
+                else:
                     seq_args = [taus[tau_ind], polarization_time,
                                 readout,  uwave_pi_pulse_low, uwave_pi_pulse_high, max_uwave_time,
                                 state.value, laser_name, laser_power]
+            else:
+                if do_scc:
+                    seq_args = [
+                            readout,
+                            polarization_dur,
+                            ionization_dur,
+                            taus[tau_ind],
+                            max_uwave_time,
+                            pol_laser_name,
+                            readout_laser_name,
+                            ion_laser_name,
+                            state.value, 
+                            pol_laser_power,
+                            ion_laser_power,
+                            readout_laser_power,]
                 else:
                     seq_args = [taus[tau_ind], polarization_time,
                                 readout, max_uwave_time,
                                 state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
+            # print(file_name)
+            # return
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
 
@@ -598,8 +658,14 @@ def main_with_cxn(cxn, nv_sig,  uwave_time_range, state,
             new_counts = counter_server.read_counter_modulo_gates(2, 1)
             # print(new_counts)
             sample_counts = new_counts[0]
-            sig_counts[run_ind, tau_ind] = sample_counts[0]
-            ref_counts[run_ind, tau_ind] = sample_counts[1]
+            if do_dq:
+                ref_counts[run_ind, tau_ind] = sample_counts[0]
+                sig_counts[run_ind, tau_ind] = sample_counts[1]
+            else:
+                sig_counts[run_ind, tau_ind] = sample_counts[0]
+                ref_counts[run_ind, tau_ind] = sample_counts[1]
+            
+            
 
 
 #            run_time = time.time()

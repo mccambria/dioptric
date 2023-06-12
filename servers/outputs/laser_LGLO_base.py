@@ -119,7 +119,7 @@ class LaserLgloBase(LabradServer):
     def laser_on(self, c, voltage):
         self.close_task_internal()
         with nidaqmx.Task() as task:
-            task.ao_channels.add_ao_voltage_chan(self.ao_feedthrough, min_val=0.0, max_val=1.0)
+            task.ao_channels.add_ao_voltage_chan(self.ao_feedthrough, min_val=-0.1, max_val=1.0)
             task.write([voltage])
         
         

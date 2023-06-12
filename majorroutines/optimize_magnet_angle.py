@@ -58,7 +58,8 @@ def fit_data(splittings, angles):
 
     fit_func = AbsCos
     amp = max(splittings)
-    phase = angles[numpy.argmax(splittings)] % 180
+    # phase = angles[numpy.argmax(splittings)] % 180
+    phase = 180-20
     offset = 0
     guess_params = [offset, amp, phase]
     bounds = ([0, 0, 0], [numpy.inf, numpy.inf, 180])
@@ -222,9 +223,8 @@ def main_with_cxn(cxn, nv_sig, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2023_01_18-13_44_29-siena-nv12_2023_01_16'
-    folder = "pc_rabi/branch_master/optimize_magnet_angle/2023_01"
-    data = tool_belt.get_raw_data(file, folder)
+    file = '2023_04_07-11_58_25-johnson-nv0_2023_04_06'
+    data = tool_belt.get_raw_data(file)
     splittings = data['splittings']
     print(splittings)
 

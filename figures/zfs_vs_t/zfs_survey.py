@@ -24,6 +24,7 @@ from scipy.optimize import curve_fit
 import csv
 from utils.tool_belt import States, NormStyle
 import pandas as pd
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import sys
 
 nvdata_dir = common.get_nvdata_dir()
@@ -36,7 +37,6 @@ compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
 
 def get_header():
-
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
     compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
@@ -50,7 +50,6 @@ def get_header():
 
 
 def get_data_points(skip_lambda=None):
-
     xl_file_path = compiled_data_path / f"{compiled_data_file_name}.xlsx"
     csv_file_path = compiled_data_path / f"{compiled_data_file_name}.csv"
     compiled_data_file = pd.read_excel(xl_file_path, engine="openpyxl")
@@ -58,7 +57,6 @@ def get_data_points(skip_lambda=None):
 
     data_points = []
     with open(csv_file_path, newline="") as f:
-
         reader = csv.reader(f)
         header = True
         for row in reader:
@@ -131,6 +129,9 @@ def condense_data_points(data_points):
                 new_point[col] = np.sqrt(1 / norm)
             else:
                 error_col = col + " error"
+                if error_col not in new_point:
+                    new_point[col] = np.average(new_point[col])
+                    continue
                 errors = new_point[error_col]
                 if 0 in errors:
                     ind = np.where(np.array(errors) == 0)[0][0]
@@ -184,7 +185,6 @@ def data_points_to_lists(data_points):
 
 
 def reanalyze():
-
     file_list = [
         "2023_02_09-13_52_02-wu-nv6_zfs_vs_t",
         "2023_02_09-13_29_32-wu-nv7_zfs_vs_t",
@@ -252,22 +252,23 @@ def reanalyze():
         "2023_02_16-10_53_23-wu-nv25_region5",
         "2023_02_16-16_05_52-wu-nv25_region5",
     ]
+    # print(len(file_list))
+    # return
 
-    file_list = [
-        "2023_02_22-18_06_53-15micro-nv6_zfs_vs_t",
-        "2023_02_22-19_30_08-15micro-nv7_zfs_vs_t",
-        "2023_02_22-18_34_55-15micro-nv8_zfs_vs_t",
-        "2023_02_22-19_02_58-15micro-nv9_zfs_vs_t",
-        "2023_02_22-20_51_42-15micro-nv11_zfs_vs_t",
-    ]
+    # file_list = [
+    #     "2023_02_22-18_06_53-15micro-nv6_zfs_vs_t",
+    #     "2023_02_22-19_30_08-15micro-nv7_zfs_vs_t",
+    #     "2023_02_22-18_34_55-15micro-nv8_zfs_vs_t",
+    #     "2023_02_22-19_02_58-15micro-nv9_zfs_vs_t",
+    #     "2023_02_22-20_51_42-15micro-nv11_zfs_vs_t",
+    # ]
 
     # file_list = file_list[21:22]
 
     for file_name in file_list:
-
-        if "nv14_region5" in file_name:
-            print(0.0)
-            continue
+        # if "nv14_region5" in file_name:
+        #     print(0.0)
+        #     continue
 
         data = tool_belt.get_raw_data(file_name)
 
@@ -405,9 +406,37 @@ def reanalyze():
 
 
 def main():
+    kpl_figsize = kpl.figsize
+    adj_figsize = (1.9 * kpl_figsize[0], 1.5 * kpl_figsize[1])
+    fig, ax = plt.subplots(figsize=adj_figsize)
 
-    # skip_lambda = lambda pt: pt["Skip"]
-    skip_lambda = lambda pt: pt["Skip"] or pt["Region"] != 5
+    # axins = inset_axes(
+    #     ax,
+    #     width="100%",
+    #     height="100%",
+    #     bbox_to_anchor=(
+    #         0.12,
+    #         0.45,
+    #         0.2,
+    #         0.52,
+    #     ),
+    #     bbox_transform=ax.transAxes,
+    #     loc=1,
+    # )
+    size = kpl.Size.NORMAL
+    fig_sub(ax, size=size)
+
+    # fig_sub(axins, legend=False, axis_labels=False, size=kpl.Size.SMALL)
+    # axins.set_xlim(-0.1, 0.1)
+    # axins.set_xticks([-0.1, 0.0, 0.1])
+    # axins.set_ylim(0.33, 0.65)
+    # axins.set_yticks([0.4, 0.5, 0.6])
+    # axins.tick_params("both", labelsize=15)
+
+
+def fig_sub(ax, legend=True, axis_labels=True, size=kpl.Size.NORMAL):
+    skip_lambda = lambda pt: pt["Skip"]
+    # skip_lambda = lambda pt: pt["Skip"] or pt["Region"] != 5
 
     data_points = get_data_points(skip_lambda)
     data_lists = data_points_to_lists(data_points)
@@ -419,11 +448,12 @@ def main():
     region_list = data_lists["Region"]
     kpl_colors_list = list(KplColors)
     region_colors = {}
-    for ind in range(5):
+    # for ind in range(5):
+    # region_colors[ind + 1] = kpl_colors_list[ind]
+    for ind in range(6):
         region_colors[ind + 1] = kpl_colors_list[ind]
+    # print(region_list)
     color_list = [region_colors[el] for el in region_list]
-
-    fig, ax = plt.subplots()
 
     # Histograms
     # kpl.histogram(ax, zfs_devs, kpl.HistType.STEP)
@@ -440,25 +470,40 @@ def main():
         else:
             label = None
         color = region_colors[region]
+        # Account for temperature difference in region 1 (set A, cryo setup) NVs
+        shift = -0.062 if region == 1 else 0
         kpl.plot_points(
             ax,
             point["Splitting (MHz)"],
-            point["ZFS (GHz)"] * 1000 - 2870,
+            1000 * point["ZFS (GHz)"] - 2870 + shift,
             xerr=point["Splitting (MHz) error"],
-            yerr=point["ZFS (GHz) error"],
+            yerr=1000 * point["ZFS (GHz) error"],
             color=color,
             label=label,
+            size=size,
         )
-    ax.set_xlabel("Splitting (MHz)")
-    ax.set_ylabel("Deviation from 2.87 GHz (MHz)")
-    ax.legend(title="Region")
+    if axis_labels:
+        ax.set_xlabel("Splitting (MHz)")
+        ax.set_ylabel("Deviation from 2870 (MHz)")
+    if legend:
+        # ax.legend(title="Region")
+        handles, labels = ax.get_legend_handles_labels()
+        order = [5, 1, 2, 3, 4, 0]
+        ax.legend(
+            [handles[i] for i in order],
+            [labels[i] for i in order],
+            title="Region",
+            loc=kpl.Loc.LOWER_RIGHT,
+            ncols=2,
+            handlelength=0.7,
+            columnspacing=1.5,
+        )
 
 
 if __name__ == "__main__":
-
     kpl.init_kplotlib()
 
     main()
-    reanalyze()
+    # reanalyze()
 
     plt.show(block=True)

@@ -81,7 +81,6 @@ def laser_on(cxn, laser_name, laser_power=None):
 
 
 def get_opx_laser_pulse_info(config, laser_name, laser_power):
-
     mod_type = config["Optics"][laser_name]["mod_type"]
     laser_delay = config["Optics"][laser_name]["delay"]
 
@@ -101,7 +100,6 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
-
     mod_type = common.get_registry_entry(
         cxn, "mod_type", ["", "Config", "Optics", laser_name]
     )
@@ -345,10 +343,12 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
             # where we left off
             collapsed_train.append((dur, val))
             ind = next_ind
+        # print(pulse_streamer)
         # Check if this is just supposed to be always on
         if (len(collapsed_train) == 1) and (collapsed_train[0][1] == Digital.HIGH):
             if pulse_streamer is not None:
-                pulse_streamer.client[laser_name].laser_on()
+                # pulse_streamer.client[laser_name].laser_on(laser_power)
+                pulse_streamer.laser_LGLO_589.laser_on(laser_power)
             return
         # Set up the bookends
         # print(collapsed_train)
@@ -373,7 +373,6 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
         seq.setDigital(pulser_laser_mod, processed_train)
     else:
         if mod_type is ModTypes.DIGITAL:
-
             processed_train = train.copy()
             pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
             seq.setDigital(pulser_laser_mod, processed_train)
@@ -398,7 +397,6 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
                 elif type(laser_power) != list:
                     power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
                 processed_train.append((dur, power_dict[val]))
-
             pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
             # print(processed_train)
             seq.setAnalog(pulser_laser_mod, processed_train)
@@ -1033,8 +1031,9 @@ def get_raw_data_path(
 
 
 def get_branch_name():
-    """Return the name of the active branch of kolkowitz-nv-experiment-v1.0"""
+    """Return the name of the active branch of dioptric (fka kolkowitz-nv-experiment-v1.0)"""
     home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
+    # home_to_repo = PurePath("Documents/GitHub/dioptric")
     repo_path = PurePath(Path.home()) / home_to_repo
     repo = Repo(repo_path)
     return repo.active_branch.name
@@ -1235,7 +1234,6 @@ def send_email(
     email_from=common.shared_email,
     email_to=common.shared_email,
 ):
-
     pc_name = socket.gethostname()
     msg = MIMEText(content)
     msg["Subject"] = f"Alert from {pc_name}"
@@ -1270,10 +1268,21 @@ def get_dd_model_coeff_dict():
     return dd_model_coeff_dict
 
 
+def single_conversion(single_func, freq, *args):
+    if type(freq) in [list, np.ndarray]:
+        single_func_lambda = lambda freq: single_func(freq, *args)
+        # with ProcessingPool() as p:
+        #     line = p.map(single_func_lambda, freq)
+        line = np.array([single_func_lambda(f) for f in freq])
+        return line
+    else:
+        return single_func(freq, *args)
+
+
 # endregion
 # region Rounding
 """
-Various rounding tools, including several for presenting data with errors (round_for_print). 
+Various rounding tools, including several for presenting data with errors (round_for_print).
 Relies on the decimals package for accurate arithmetic w/o binary rounding errors.
 """
 
@@ -1351,36 +1360,11 @@ def round_for_print_sci(val, err):
     # Check for corner case where the value is e.g. 0.999 and rounds up to another decimal place
     if rounded_val >= 10:
         power_of_10 += 1
-        rounded_err /= Decimal(10)
-        rounded_val /= Decimal(10)
+        # Just shift the decimal over and recast to Decimal to ensure proper rounding
+        rounded_err = Decimal(_shift_decimal_left(str(rounded_err)))
+        rounded_val = Decimal(_shift_decimal_left(str(rounded_val)))
 
     return [rounded_val, rounded_err, power_of_10]
-
-
-def strip_err(err):
-    """Get the representation of the error, which is alway just the trailing non-zero digits
-
-    Parameters
-    ----------
-    err : str
-        Error to process
-
-    Returns
-    -------
-    str
-        Trailing non-zero digits of err
-    """
-
-    stripped_err = ""
-    trailing = False
-    for char in str(err):
-        if char == ".":
-            continue
-        elif char != "0":
-            trailing = True
-        if trailing:
-            stripped_err += char
-    return stripped_err
 
 
 def round_for_print_sci_latex(val, err):
@@ -1403,7 +1387,7 @@ def round_for_print_sci_latex(val, err):
     """
 
     rounded_val, rounded_err, power_of_10 = round_for_print_sci(val, err)
-    err_str = strip_err(rounded_err)
+    err_str = _strip_err(rounded_err)
     return r"\num{{{}({})e{}}}".format(rounded_val, err_str, power_of_10)
 
 
@@ -1447,9 +1431,44 @@ def round_for_print(val, err):
         val_str = val_str[:-1]
 
     # Get the representation of the error, which is alway just the trailing non-zero digits
-    err_str = strip_err(err)
+    err_str = _strip_err(rounded_err)
 
     return f"{val_str}({err_str})"
+
+
+def _shift_decimal_left(val_str):
+    """Finds the . character in a string and moves it one place to the left"""
+
+    decimal_pos = val_str.find(".")
+    left_char = val_str[decimal_pos - 1]
+    val_str = val_str.replace(f"{left_char}.", f".{left_char}")
+    return val_str
+
+
+def _strip_err(err):
+    """Get the representation of the error, which is alway just the trailing non-zero digits
+
+    Parameters
+    ----------
+    err : str
+        Error to process
+
+    Returns
+    -------
+    str
+        Trailing non-zero digits of err
+    """
+
+    stripped_err = ""
+    trailing = False
+    for char in str(err):
+        if char == ".":
+            continue
+        elif char != "0":
+            trailing = True
+        if trailing:
+            stripped_err += char
+    return stripped_err
 
 
 # endregion
@@ -1535,3 +1554,8 @@ def reset_cfm_with_cxn(cxn):
 
 
 # endregion
+
+
+# Testing
+if __name__ == "__main__":
+    print(round_for_print_sci(0.997, 0.0940))

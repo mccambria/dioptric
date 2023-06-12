@@ -11,7 +11,7 @@ Created on June 22nd, 2022
 # region Imports and constants
 
 import utils.common as common
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from strenum import StrEnum
 from colorutils import Color
@@ -20,6 +20,7 @@ from enum import Enum, auto
 from strenum import StrEnum
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
+
 
 # matplotlib semantic locations for legends and text boxes
 class Loc(StrEnum):
@@ -31,9 +32,35 @@ class Loc(StrEnum):
 
 
 class Size(Enum):
-    NORMAL = auto()
-    SMALL = auto()
-    TINY = auto()
+    NORMAL = "NORMAL"
+    SMALL = "SMALL"
+    TINY = "TINY"
+
+
+class MarkerSize(float, Enum):
+    NORMAL = 7
+    SMALL = 6
+    TINY = 4
+
+
+class LineWidth(float, Enum):
+    HUGE = 2.5
+    BIG = 2.0
+    NORMAL = 1.5
+    SMALL = 1.25
+    TINY = 1.0
+
+
+class MarkerEdgeWidth(float, Enum):
+    NORMAL = 1.5
+    SMALL = 1.25
+    TINY = 1.0
+
+
+class FontSize(float, Enum):
+    NORMAL = 17
+    SMALL = 14
+    TINY = 11
 
 
 class PlotType(Enum):
@@ -54,19 +81,13 @@ class HistType(StrEnum):
     BAR = "bar"  # Space between bins, filled
 
 
-# Size options
-marker_Size = {Size.NORMAL: 7, Size.SMALL: 6, Size.TINY: 4}
-line_widths = {Size.NORMAL: 1.5, Size.SMALL: 1.25, Size.TINY: 1.0}
-marker_edge_widths = line_widths.copy()
-font_Size = {Size.NORMAL: 17, Size.SMALL: 13}
-
 # Default sizes
-marker_size = marker_Size[Size.NORMAL]
-marker_size_inset = marker_Size[Size.SMALL]
-line_width = line_widths[Size.NORMAL]
-line_width_inset = line_widths[Size.SMALL]
-marker_edge_width = marker_edge_widths[Size.NORMAL]
-marker_edge_width_inset = marker_edge_widths[Size.SMALL]
+marker_size = MarkerSize.NORMAL
+marker_size_inset = MarkerSize.SMALL
+line_width = LineWidth.NORMAL
+line_width_inset = LineWidth.NORMAL
+marker_edge_width = MarkerEdgeWidth.NORMAL
+marker_edge_width_inset = MarkerEdgeWidth.NORMAL
 default_font_size = Size.NORMAL
 default_data_size = Size.NORMAL
 figsize = [6.5, 5.0]
@@ -162,7 +183,11 @@ def zero_to_one_threshold(val):
 
 
 def init_kplotlib(
-    font_size=Size.NORMAL, data_size=Size.NORMAL, latex=False, font=Font.ROBOTO
+    font_size=Size.NORMAL,
+    data_size=Size.NORMAL,
+    font=Font.ROBOTO,
+    constrained_layout=True,
+    latex=False
 ):
     """Runs the initialization for kplotlib, our default configuration
     of matplotlib. Plotting will be faster if latex is False - only set to True
@@ -172,7 +197,7 @@ def init_kplotlib(
     ### Misc setup
 
     # Reset to the default
-    matplotlib.rcParams.update(matplotlib.rcParamsDefault)
+    mpl.rcParams.update(mpl.rcParamsDefault)
 
     global active_axes, color_cyclers, default_font_size, default_data_size
     active_axes = []
@@ -185,23 +210,28 @@ def init_kplotlib(
 
     ### Latex setup
 
-    if latex:
+    preamble = r""
+    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+    if font == Font.ROBOTO:
+        preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+    elif font == Font.HELVETICA:
+        preamble += r"\usepackage{helvet}"
 
-        preamble = r""
-        preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
-        preamble += r"\usepackage{physics} \usepackage{upgreek}"
-        if font == Font.ROBOTO:
-            preamble += r"\usepackage{roboto}"  # Google's free Helvetica
-        elif font == Font.HELVETICA:
-            preamble += r"\usepackage{helvet}"
+    preamble += r"\usepackage[T1]{fontenc}"
+    preamble += r"\usepackage{siunitx}"
+    preamble += r"\sisetup{detect-all}"
 
-        # Render math (e.g. axis numbers) in sans serif by default.
-        # Preserve the \mathrm and \mathit commands so you can still
-        # use the serif font for variables, equations, etc.
+    # Note: The global usetex setting should remain off. This prevents serif fonts
+    # from proliferating (e.g. to axis tick labels). Instead just pass usetex=True
+    # as a kwarg to any text-based command as necessary. If really necessary, flip
+    # the flag below and use the \mathrm and \mathit macros to keep serifs in check
+    if False:
         preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
-
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
+    else:
+        plt.rcParams["text.latex.preamble"] = preamble
 
     ### Other rcparams
 
@@ -211,11 +241,11 @@ def init_kplotlib(
         plt.rcParams["font.sans-serif"] = "Roboto"
     if font == Font.HELVETICA:
         plt.rcParams["font.sans-serif"] = "Helvetica"
-    plt.rcParams["font.size"] = font_Size[default_font_size]
+    plt.rcParams["font.size"] = FontSize[default_font_size.value]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
     plt.rcParams["image.cmap"] = "inferno"
-    plt.rcParams["figure.constrained_layout.use"] = True
+    plt.rcParams["figure.constrained_layout.use"] = constrained_layout
     plt.rcParams["savefig.format"] = "svg"
     plt.rcParams["figure.max_open_warning"] = 100
 
@@ -242,7 +272,7 @@ def get_default_color(ax, plot_type):
     return color
 
 
-def anchored_text(ax, text, loc, size=None):
+def anchored_text(ax, text, loc, size=None, **kwargs):
     """Add text in default style to the passed ax. To update text call set_text on the
     returned object's txt property
 
@@ -265,10 +295,12 @@ def anchored_text(ax, text, loc, size=None):
     if size is None:
         size = default_font_size
 
-    font_size = font_Size[size]
-    text_props = dict(fontsize=font_size)
+    font_size = FontSize[size.value]
+    text_props = kwargs
+    text_props["fontsize"] = font_size
+    # text_props = dict(fontsize=font_size)
     text_box = AnchoredText(text, loc, prop=text_props)
-    text_box.patch.set_boxstyle("round, pad=0.05")
+    text_box.patch.set_boxstyle("round, pad=0, rounding_size=0.2")
     text_box.patch.set_facecolor("wheat")
     text_box.patch.set_alpha(0.5)
     ax.add_artist(text_box)
@@ -340,7 +372,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
         color = kwargs["color"]
     else:
         color = get_default_color(ax, PlotType.POINTS)
-    if "facecolor" in kwargs:
+    if "markerfacecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
         face_color = lighten_color_hex(color)
@@ -349,8 +381,8 @@ def plot_points(ax, x, y, size=None, **kwargs):
     params = {
         "linestyle": "none",
         "marker": marker_style,
-        "markersize": marker_Size[size],
-        "markeredgewidth": marker_edge_widths[size],
+        "markersize": MarkerSize[size.value],
+        "markeredgewidth": MarkerEdgeWidth[size.value],
     }
 
     # Combine passed args and defaults
@@ -392,7 +424,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
     # Defaults
     params = {
         "linestyle": line_style,
-        "linewidth": line_widths[size],
+        "linewidth": LineWidth[size.value],
     }
 
     # Combine passed args and defaults
@@ -587,7 +619,6 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=10, **kwargs):
 # endregion
 
 if __name__ == "__main__":
-
     # print(cambria_fixed(15))
     # sys.exit()
 
