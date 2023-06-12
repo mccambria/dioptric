@@ -87,15 +87,15 @@ if __name__ == "__main__":
     laser_filter = "nd_0.3"
     collection_filter = "nd_0"
     # pos = [-0.306, 0.235, 8.0]
-    z_coord = 4.85
-    pos = [0.142, -0.162, z_coord]
+    z_coord = 5.0
+    pos = [0.0, 0.0, z_coord]
 
     tool_belt.init_safe_stop()
     
  
     with labrad.connect() as cxn:
 
-        positioning.set_xyz(cxn, pos)
+        # positioning.set_xyz(cxn, pos)
         tool_belt.set_filter(
             cxn, optics_name=laser_name, filter_name=laser_filter
         )

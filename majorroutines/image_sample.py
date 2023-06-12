@@ -627,7 +627,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_02_22-20_19_40-15micro-nvref_zfs_vs_t"
+    file_name = "2023_03_07-18_29_26-15micro-nvref_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -644,36 +644,24 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    im = kpl.imshow(
-        ax,
-        img_array_kcps,
-        # title=title,
-        x_label="V",
-        y_label="V",
-        cbar_label="kcps",
-        # vmax = 80,
-        extent=extent,
-        # vmin=vmin,
-        # vmax=vmax,
-        aspect="auto",
-    )
+    im = kpl.imshow(ax, img_array_kcps, cbar_label="kcps", extent=extent, aspect="auto")
 
     # Annotation
-    nvs = [
-        [0.182, -0.174],
-        [0.135, -0.164],
-        [-0.064, -0.022],
-        [0.042, 0.154],
-        [0.206, 0.19],
-        [0.091, -0.06],
-    ]
-    nvs_temp = []
-    for el in nvs[:-1]:
-        nvs_temp.append([el[0] + 0.01, el[1] - 0.01])
-    nvs_temp.append(nvs[-1])
-    nvs = nvs_temp
-    for ind in range(len(nvs)):
-        nv = nvs[ind]
-        plt.plot(nv[0], nv[1], marker=f"${ind+6}$", color="lime", ms=10)
+    # nvs = [
+    #     [0.182, -0.174],
+    #     [0.135, -0.164],
+    #     [-0.064, -0.022],
+    #     [0.042, 0.154],
+    #     [0.206, 0.19],
+    #     [0.091, -0.06],
+    # ]
+    # nvs_temp = []
+    # for el in nvs[:-1]:
+    #     nvs_temp.append([el[0] + 0.01, el[1] - 0.01])
+    # nvs_temp.append(nvs[-1])
+    # nvs = nvs_temp
+    # for ind in range(len(nvs)):
+    #     nv = nvs[ind]
+    #     plt.plot(nv[0], nv[1], marker=f"${ind+6}$", color="lime", ms=10)
 
     plt.show(block=True)

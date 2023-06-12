@@ -43,8 +43,8 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # num_steps = 90
     # num_steps = 120
 
-    # scan_range = 0.5
-    # num_steps = 90
+    scan_range = 0.5
+    num_steps = 90
     # num_steps = 150
 
     # scan_range = 0.3
@@ -56,11 +56,11 @@ def do_image_sample(nv_sig, nv_minus_init=False):
     # scan_range = 1.5
     # num_steps = 180
 
-    scan_range = 2.0
-    num_steps = 90
+    # scan_range = 2.0
+    # num_steps = 90
 
     # scan_range = 5.0
-    # num_steps = 90*6
+    # num_steps = 90*4
     # num_steps = 180
 
     # For now we only support square scans so pass scan_range twice
@@ -307,8 +307,9 @@ if __name__ == "__main__":
     # fmt: off
 
     sample_name = "15micro"
-    z_coord = 5.5
-    ref_coords = [0.142, -0.162, z_coord]
+    z_coord = 5.75
+    ref_coords = [0.064, -0.038, z_coord]
+    # ref_coords = [-0.004, -0.058, z_coord]
     ref_coords = np.array(ref_coords)
 
     nvref = {
@@ -316,7 +317,7 @@ if __name__ == "__main__":
         'name': '{}-nvref_zfs_vs_t'.format(sample_name),
         'disable_opt': True, "disable_z_opt": True, 'expected_count_rate': 2000,
         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.3", 'imaging_readout_dur': 1e7,
-        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_1.0", 'imaging_readout_dur': 1e7,
 
         # Microdiamond
         # "spin_laser": green_laser, "spin_laser_filter": "nd_1.0",
@@ -337,33 +338,39 @@ if __name__ == "__main__":
         'resonance_LOW': 2.86, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
         }
 
-    nv6 = copy.deepcopy(nvref)
-    nv6["coords"] = ref_coords + np.array([0.103, -0.119, 0])
-    nv6["name"] =  f"{sample_name}-nv6_zfs_vs_t"
+    nv12 = copy.deepcopy(nvref)
+    # nv12["coords"] = np.array([0.161, -0.408, z_coord])
+    nv12["coords"] = ref_coords + np.array([0.165, -0.35, 0])
+    nv12["name"] =  f"{sample_name}-nv12_offset"
 
-    nv7 = copy.deepcopy(nvref)
-    nv7["coords"] = ref_coords + np.array([0.061, -0.109, 0])
-    nv7["name"] =  f"{sample_name}-nv7_zfs_vs_t"
+    nv13 = copy.deepcopy(nvref)
+    # nv13["coords"] = np.array([0.037, -0.303, z_coord])
+    nv13["coords"] = ref_coords + np.array([0.041, -0.245, 0])
+    nv13["name"] =  f"{sample_name}-nv13_offset"
 
-    nv8 = copy.deepcopy(nvref)
-    nv8["coords"] = ref_coords + np.array([-0.143,  0.033, 0])
-    nv8["name"] =  f"{sample_name}-nv8_zfs_vs_t"
+    nv14 = copy.deepcopy(nvref)
+    # nv14["coords"] = np.array([0.324, -0.179, z_coord])
+    nv14["coords"] = ref_coords + np.array([0.328, -0.121, 0])
+    nv14["name"] =  f"{sample_name}-nv14_offset"
 
-    nv9 = copy.deepcopy(nvref)
-    nv9["coords"] = ref_coords + np.array([-0.035,  0.2, 0])
-    nv9["name"] =  f"{sample_name}-nv9_zfs_vs_t"
+    nv15 = copy.deepcopy(nvref)
+    # nv15["coords"] = np.array([0.0, -0.027, z_coord])
+    nv15["coords"] = ref_coords + np.array([0.004, 0.031, 0])
+    nv15["name"] =  f"{sample_name}-nv15_offset"
 
-    nv11 = copy.deepcopy(nvref)
-    nv11["coords"] = ref_coords
-    nv11["name"] =  f"{sample_name}-nv11_zfs_vs_t"
+    nv16 = copy.deepcopy(nvref)
+    nv16["coords"] = ref_coords
+    # nv16["coords"] = ref_coords
+    nv16["name"] =  f"{sample_name}-nv16_offset"
 
     # fmt: on
 
     # nv_sig = nv8
     nv_sig = nvref
     bg_coords = np.array(nv_sig["coords"]) + np.array([0.04, -0.06, 0])
-    nv_list = [nv6, nv7, nv8, nv9, nv11]
-    # nv_list = [nv9]
+    nv_list = [nv12, nv13, nv14, nv15, nv16]
+    # nv_list = [nv12, nv14]
+    # nv_list = [nv14]
 
     ### Functions to run
 
@@ -399,13 +406,14 @@ if __name__ == "__main__":
 
         # nv_sig = nvref
         # nv_sig['imaging_readout_dur'] = 4e7
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
 
         # for nv in nv_list:
         #     if tool_belt.safe_stop():
         #         break
         #     # print(nv["coords"])
+        #     # print(nv["coords"] - ref_coords)
         #     do_image_sample_zoom(nv)
 
         # do_optimize(nv_sig)
@@ -421,9 +429,9 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 500])
         # do_four_point_esr(nv_sig, States.LOW)
 
-        # temp = 300
-        # shuffle(nv_list)
-        # do_pulsed_resonance_batch(nv_list, temp, freq_range=0.060)
+        temp = 300
+        shuffle(nv_list)
+        do_pulsed_resonance_batch(nv_list, temp, freq_range=0.060)
         # shuffle(nv_list)
         # do_pulsed_resonance_batch(nv_list, temp, freq_range=0.040)
         # do_rabi_batch(nv_list)
