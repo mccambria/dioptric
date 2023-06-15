@@ -635,12 +635,12 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_06_08-15_19_28-leavitt-nv_search"
+    file_name = "2023_03_07-18_29_26-15micro-nvref_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    
+
     do_presentation = False
     try:
         scan_type = data['scan_type']
@@ -651,7 +651,7 @@ if __name__ == "__main__":
             # y_range = data["y_range"]
             # x_num_steps = data["num_steps"]
             # y_num_steps = data["num_steps"]
-    
+
         elif scan_type == 'XZ':
             x_center = data["x_center"]
             y_center = data["z_center"]
@@ -662,9 +662,9 @@ if __name__ == "__main__":
         nv_sig = data['nv_sig']
         x_center = nv_sig['coords'][0]
         y_center = nv_sig['coords'][1]
-        
-        
-        
+
+
+
     x_range = data["x_range"]
     y_range = data["y_range"]
     num_steps = data["num_steps"]
@@ -682,7 +682,7 @@ if __name__ == "__main__":
         y_range = y_range * scale/1000
         xlabel = "um"
         ylabel = "um"
-        
+
     ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )
