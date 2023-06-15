@@ -86,28 +86,28 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     amp_2 = -0.03
     amp_3 = -0.04
     decay = 16
-    offset = .845
+    offset = .91
 
-    # guess_params = (offset, decay, amp_1, FreqParams[0],
-    #                     amp_2, FreqParams[1],
-    #                     amp_3, FreqParams[2])
+    guess_params = (offset, decay, amp_1, FreqParams[0],
+                        amp_2, FreqParams[1],
+                        amp_3, FreqParams[2])
     # guess_params_double = (offset, decay,
     #                 # amp_1, FreqParams[0],
     #                     amp_2, FreqParams[1],
     #                     amp_3, FreqParams[2])
 
-    guess_params_fixed_freq = (offset, decay, amp_1,
-                       amp_2,
-                       amp_3, )
-    cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    # guess_params_fixed_freq = (offset, decay, amp_1,
+    #                    amp_2,
+    #                    amp_3, )
+    # cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
 
    # Try the fit to a sum of three cosines
 
-   # fit_func = tool_belt.cosine_sum
-   # init_params = guess_params
+    fit_func = tool_belt.cosine_sum
+    init_params = guess_params
 
-    fit_func = cosine_sum_fixed_freq
-    init_params = guess_params_fixed_freq
+    # fit_func = cosine_sum_fixed_freq
+    # init_params = guess_params_fixed_freq
 
    # fit_func = tool_belt.cosine_double_sum
    # init_params = guess_params_double
@@ -147,7 +147,11 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
 
 # file = '2023_04_09-14_12_48-johnson-nv0_2023_04_06'
 # file = '2023_04_08-23_21_33-johnson-nv0_2023_04_06'
-file='2021_10_15-10_37_22-johnson-nv0_2021_10_08'
+# file='2021_10_15-10_37_22-johnson-nv0_2021_10_08'
+# file = '2023_01_24-12_41_54-E6-nv1'
+# file = '2023_01_31-16_05_52-E6-nv1'
+# file='2023_03_06-19_52_44-E6-nv1'
+file='2022_07_30-11_35_20-johnson-nv1'
 file_name = file + '.txt'
 with open(file_name) as f:
     data = json.load(f)
