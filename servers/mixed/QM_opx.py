@@ -158,8 +158,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def set_steady_state_option_on_off(self, selection): #selection should be true or false
         self.steady_state_option = selection
         
-    #%% sequence loading and executing functions ###
-    ### looks good. It's ready to queue up both the experiment job and the infinite loop job. I can test it with simple programs and config
+    ### sequence loading and executing functions ###
+    # looks good. It's ready to queue up both the experiment job and the infinite loop job. I can test it with simple programs and config
     
     # compiles the program ands adds it to the desired quantum machine 
     def compile_qua_sequence(self,quantum_machine,program):
@@ -281,9 +281,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         args_string = tool_belt.encode_seq_args(args)
         self.stream_immediate(c,seq_file='constant_program.py', num_repeat=1, seq_args_string=args_string)
         
-    #%% counting and time tagging functions ### 
-    ### currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
-    ### these also need to be tested once I get the opx up and running again
+    ### counting and time tagging functions ### 
+    # currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
+    # these also need to be tested once I get the opx up and running again
     
     def read_counter_internal(self): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
         """This is the core function that any tagger we have needs. 
@@ -453,8 +453,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         pass
 
     
-    #%% arbitary waveform generator functions. 
-    ### mostly just pass
+    ### arbitary waveform generator functions. 
+    # mostly just pass
 
     #all the 'load' functions are not necessary on the OPX
     #the pulses need to exist in the configuration file and they are used in the qua sequence
@@ -494,7 +494,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     #     pass
     
     
-    # %% reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
+    ###  reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
     @setting(26)
     def reset(self, c):
         
@@ -509,7 +509,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         pass
         
 
-    #%%
+    ###
 
 
 __server__ = QmOpx()
