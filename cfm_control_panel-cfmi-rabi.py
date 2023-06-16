@@ -85,8 +85,8 @@ def do_image_sample(nv_sig):
     # scan_range = 0.35
     # scan_range = 0.2
     # scan_range = 0.15
-    # scan_range = 0.1
-    scan_range = 0.05
+    scan_range = 0.1
+    # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
 
@@ -95,9 +95,9 @@ def do_image_sample(nv_sig):
     # num_steps = 200
     # num_steps = 180
     # num_steps =120
-    # num_steps = 90
+    num_steps = 90
     # num_steps = 60
-    num_steps = 35
+    # num_steps = 35
     # num_steps = 210.
 
     #individual line pairs:
@@ -119,7 +119,7 @@ def do_image_sample(nv_sig):
 def do_image_sample_xz(nv_sig):
 
     x_range = 0.2
-    z_range = 4
+    z_range = 3
     num_steps = 60
 
     image_sample.main(
@@ -1537,7 +1537,7 @@ if __name__ == "__main__":
 
     
     nv_search = copy.deepcopy(sig_base)
-    nv_search["coords"] = [0.059, -0.079, 5.974] #
+    nv_search["coords"] = [0.091, -0.071, 5.884] #
     nv_search["name"] = "{}-nv_search".format(sample_name,)
     # nv_search['disable_opt'] = True
     # nv_search["expected_count_rate"] = 46
@@ -1548,8 +1548,8 @@ if __name__ == "__main__":
     
    
     nv_sig_0 = copy.deepcopy(sig_base)  
-    nv_sig_0["coords"] = [-0.129, -0.116,5.264]    #
-    nv_sig_0["name"] = "{}-nv0_2023_06_06".format(sample_name,)
+    nv_sig_0["coords"] = [1.331, -0.053,5.884]    #
+    nv_sig_0["name"] = "{}-nv0_2023_06_08".format(sample_name,)
     # nv_sig_0["expected_count_rate"] =10
     nv_sig_0["magnet_angle"]= 120
     nv_sig_0["resonance_LOW"]=2.8268
@@ -1557,6 +1557,16 @@ if __name__ == "__main__":
     nv_sig_0["rabi_LOW"]= 70
     nv_sig_0["rabi_HIGH"]=422
     
+   
+    nv_sig_1 = copy.deepcopy(sig_base)  
+    nv_sig_1["coords"] = [0.334, -0.476,5.884]    #
+    nv_sig_1["name"] = "{}-nv1_2023_06_08".format(sample_name,)
+    # nv_sig_1["expected_count_rate"] =10
+    nv_sig_1["magnet_angle"]= 120
+    nv_sig_1["resonance_LOW"]=2.8268
+    nv_sig_1["resonance_HIGH"]= 2.9131
+    nv_sig_1["rabi_LOW"]= 70
+    nv_sig_1["rabi_HIGH"]=422
     
     nv_sig_list = [
                     nv_sig_0,
@@ -1568,7 +1578,7 @@ if __name__ == "__main__":
                     ]
     
     
-    nv_sig = nv_search
+    nv_sig = nv_sig_1
     # %% Functions to run
 
     try:
@@ -1599,7 +1609,7 @@ if __name__ == "__main__":
                do_image_sample(nv_copy)
                     
         
-        do_optimize(nv_sig)
+        # do_optimize(nv_sig)
         do_image_sample(nv_sig)
         # do_image_sample_xz(nv_sig)
         # do_image_sample_yz(nv_sig)
@@ -1624,7 +1634,6 @@ if __name__ == "__main__":
         # do_stationary_count_bg_subt(nv_sig, bg_coords)
 
         # do_g2_measurement(nv_sig)
-        
         
         # do_resonance(nv_sig,nv_sig, freq_range = 0.1)
         
