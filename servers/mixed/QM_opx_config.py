@@ -92,7 +92,7 @@ tsg4104_I_total_delay = common_delay - tsg4104_I_delay
 tsg4104_Q_total_delay = common_delay - tsg4104_Q_delay 
 
 
-config_opx = {
+config_dict = {
     "version": 1,
     "controllers": {
         "con1": {

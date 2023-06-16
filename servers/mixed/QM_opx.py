@@ -23,7 +23,7 @@ timeout = 5
 """
 
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from qm.qua import *
+from qm import qua
 from qm import SimulationConfig
 from qualang_tools.results import fetching_tool, progress_counter
 import matplotlib.pyplot as plt
@@ -31,6 +31,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 from numpy import count_nonzero, nonzero, concatenate
+from utils import common
 import numpy as np
 import importlib
 import numpy
@@ -48,32 +49,33 @@ from pathlib import Path
 # u = unit()
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
-from opx_configuration_file import *
+import QM_opx_config
+from QM_opx_config import config_dict as opx_config_dict
+nvdata_path = common.get_nvdata_path()
+dioptric_path = common.get_dioptric_path()
 
 
 class QmOpx(Tagger, PulseGen, LabradServer):
+    
+    #region Setup
 
     name = "QM_opx"
     pc_name = socket.gethostname()
     # steady_state_program_file = 'steady_state_program_test_opx.py'
     
-
     def initServer(self):
-        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = nvdata_path / 'pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.get_config_dict()
-        logging.info(qop_ip)
-        self.qmm = QuantumMachinesManager(qop_ip) # opens communication with the QOP so we can make a quantum machine
-        self.qm = self.qmm.open_qm(config_opx)
+        logging.info(QM_opx_config.qop_ip)
+        self.qmm = QuantumMachinesManager(QM_opx_config.qop_ip) # opens communication with the QOP so we can make a quantum machine
+        self.qm = self.qmm.open_qm(opx_config_dict)
         self.steady_state_program_file = 'constant_program.py'
         
-        opx_sequence_library_path = (
-            Path.home()
-            / "Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/QM_opx"
-        )
+        opx_sequence_library_path = dioptric_path / "servers/timing/sequencelibrary/QM_opx"
         sys.path.append(str(opx_sequence_library_path))
         self.steady_state_option = False
         # logging.info(tool_belt.get_mod_type('cobolt_515'))
@@ -154,6 +156,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             self.qmm.close()
         except:
             pass
+        
+    #endregion
     
     def set_steady_state_option_on_off(self, selection): #selection should be true or false
         self.steady_state_option = selection
@@ -221,7 +225,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """
         # logging.info('made it here')
         self.qmm.close_all_quantum_machines()
-        self.qm = self.qmm.open_qm(config_opx)
+        self.qm = self.qmm.open_qm(QM_opx_config.config_dict)
         self.seq_file = seq_file
         self.seq_args_string = seq_args_string
         # logging.info(seq_args_string)
@@ -247,7 +251,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         
         if num_repeat >= 2:   # if we want to repeat it, get the sequence again but with all the repetitions.
             self.qmm.close_all_quantum_machines()
-            self.qm = self.qmm.open_qm(config_opx)
+            self.qm = self.qmm.open_qm(opx_config_dict)
             
             seq, final, ret_vals = self.get_seq(self.seq_file, self.seq_args_string, num_repeat) #gets the full sequence
             self.pending_experiment_compiled_program_id = self.compile_qua_sequence(self.qm, seq)
@@ -499,57 +503,17 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def reset(self, c):
         
         self.qmm.close_all_quantum_machines()
-        self.qm = self.qmm.open_qm(config_opx)
+        self.qm = self.qmm.open_qm(opx_config_dict)
         
         if self.steady_state_option:
             self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,self.steady_state_seq)
             self.pending_steady_state_job = self.add_qua_sequence_to_qm_queue(self.qm,self.pending_steady_state_compiled_program_id)
             self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
-        
-        pass
-        
-
-    ###
 
 
 __server__ = QmOpx()
 
 if __name__ == "__main__":
     
-    # opx_configuration_file_path = "C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
-    # sys.path.append(opx_configuration_file_path)
-
-    # from opx_configuration_file import *
-    # sys.path.append("C:/Users/kolkowitz/Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/OPX_sequences")
-    
     from labrad import util
-
     util.runServer(__server__)
-    
-    # opx = OPX()
-    # opx.initServer()
-    # # meas_len=1000
-    # # opx.set_steady_state_option_on_off(True)
-    # # delay, readout_time, apd_index, laser_name, laser_power = args
-    # readout_time = 120000
-    # args_test = [200,readout_time,0,'green_laser_do',1]
-    # args_test_str = tool_belt.encode_seq_args(args_test)
-    # opx.stream_load('test_program_opx.py',args_test_str)
-    # opx.stream_start(1)
-    # all_counts = opx.read_counter_complete()
-    # counts_simple = opx.read_counter_simple()
-    # counts_gates = opx.read_counter_separate_gates()
-    # # times, channels = opx.read_tag_stream()
-    # print('')
-    # print('')
-    # print(all_counts)
-    # print('')
-    # print(counts_simple)
-    # print('')
-    # print(counts_gates)
-    # print('')
-    # # print(times)
-    # print('')
-    # # print(channels)
-    # # opx.stream_immediate('test_program_opx.py')
-    # # print('hi')

@@ -142,9 +142,9 @@ if __name__ == "__main__":
 
     # List of branches to archive
     branches_to_archive = [
-        "working_branch_sam",
+        "none",
     ]
 
-    skip_merged_check = True
+    skip_merged_check = False
 
     main(repo_path, branches_to_archive, skip_merged_check)

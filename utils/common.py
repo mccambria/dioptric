@@ -14,19 +14,33 @@ from pathlib import Path
 ### Lab-specific stuff here
 
 shared_email = "kolkowitznvlab@gmail.com"
-windows_nvdata_dir = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-linux_nvdata_dir = Path.home() / "E/nvdata"
+home = Path.home()
+windows_nvdata_path = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
+linux_nvdata_path = home / "E/nvdata"
+windows_dioptric_path = home / "Documents/GitHub/dioptric"
+linux_dioptric_path = home / "E/nvdata"
 
 ###
 
 
-def get_nvdata_dir():
+def get_nvdata_path():
     """Returns an OS-dependent Path to the nvdata directory (configured above)"""
     os_name = platform.system()
     if os_name == "Windows":
-        nvdata_dir = windows_nvdata_dir
+        nvdata_dir = windows_nvdata_path
     elif os_name == "Linux":
-        nvdata_dir = linux_nvdata_dir
+        nvdata_dir = linux_nvdata_path
+
+    return nvdata_dir
+
+
+def get_dioptric_path():
+    """Returns an OS-dependent Path to the dioptric repo directory (configured above)"""
+    os_name = platform.system()
+    if os_name == "Windows":
+        nvdata_dir = windows_dioptric_path
+    elif os_name == "Linux":
+        nvdata_dir = linux_dioptric_path
 
     return nvdata_dir
 

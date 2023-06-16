@@ -24,3 +24,5 @@ dependencies:
       - strenum
       - twisted
       - mpmath
+      - qualang-tools
+      - qm-qua
