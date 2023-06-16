@@ -159,17 +159,16 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         
     #endregion
     
-    def set_steady_state_option_on_off(self, selection): #selection should be true or false
-        self.steady_state_option = selection
-        
-    ### sequence loading and executing functions ###
-    # looks good. It's ready to queue up both the experiment job and the infinite loop job. I can test it with simple programs and config
+    #region Sequencing
     
     # compiles the program ands adds it to the desired quantum machine 
     def compile_qua_sequence(self,quantum_machine,program):
         compilied_program_id = quantum_machine.compile(program)
         return compilied_program_id
     
+    def set_steady_state_option_on_off(self, selection): #selection should be true or false
+        self.steady_state_option = selection
+        
     def add_qua_sequence_to_qm_queue(self,quantum_machine,compilied_program_id):
         # logging.info('start here')
         # a = time.time()
@@ -205,7 +204,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = seq_module.get_seq(self,self.config_dict, args, num_repeat )
         
         return seq, final, ret_vals
-
 
     
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
@@ -285,10 +283,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         args_string = tool_belt.encode_seq_args(args)
         self.stream_immediate(c,seq_file='constant_program.py', num_repeat=1, seq_args_string=args_string)
         
-    ### counting and time tagging functions ### 
-    # currently in good shape. Waiting to see if the time tag processing function I made will work with how timetags are saved
-    # these also need to be tested once I get the opx up and running again
-    
+        
+    #endregion
+    #region Time tagging
+        
     def read_counter_internal(self): #from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
         """This is the core function that any tagger we have needs. 
         For the OPX this fetches the data from the job that was created when the program was executed. 
@@ -357,22 +355,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # logging.info('done processing counts')
         # logging.info(time.time()-st)
         return return_counts
-    
-    
-    @setting(10805, num_streams="i")
-    def get_cond_logic_num_ops(self,c,num_streams):
-        """
-        This function assumes you are trying to save a num_ops stream in the sequence to keep track of how many conditional logic
-        operations you do in each run. For instance, how many readouts did you do in each iteration of the sequence, where you stop reading
-        out if you met some condition.
-        """
-        
-        data_list = ["num_ops_{}".format(1+i) for i in range(num_streams)]
-        logging.info('at cond logic')
-        results = fetching_tool(self.experiment_job, data_list, mode="wait_for_all")
-        return_streams = results.fetch_all() 
-        return return_streams
-        
     
     def read_raw_stream(self):
         """
@@ -452,13 +434,30 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         pass
     
     @setting(19)
-    def clear_buffer(self, c): # from apd tagger
-        """OPX doesn't need it"""
+    def clear_buffer(self, c):
+        """OPX does not need this - used by Swabian Time Tagger"""
         pass
-
     
-    ### arbitary waveform generator functions. 
-    # mostly just pass
+    #endregion
+    #region Conditional logic
+    
+    
+    @setting(10805, num_streams="i")
+    def get_cond_logic_num_ops(self,c,num_streams):
+        """
+        This function assumes you are trying to save a num_ops stream in the sequence to keep track of how many conditional logic
+        operations you do in each run. For instance, how many readouts did you do in each iteration of the sequence, where you stop reading
+        out if you met some condition.
+        """
+        
+        data_list = ["num_ops_{}".format(1+i) for i in range(num_streams)]
+        logging.info('at cond logic')
+        results = fetching_tool(self.experiment_job, data_list, mode="wait_for_all")
+        return_streams = results.fetch_all() 
+        return return_streams
+    
+    #endregion
+    #region AWG and RF signal generator 
 
     #all the 'load' functions are not necessary on the OPX
     #the pulses need to exist in the configuration file and they are used in the qua sequence
@@ -496,9 +495,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     # @setting(25, num_dd_reps="i")
     # def load_cpmg(self, c, num_dd_reps):
     #     pass
+    #endregion
     
-    
-    ###  reset the opx. this is called in reset_cfm in the tool_belt. we don't need it to do anything
     @setting(26)
     def reset(self, c):
         
