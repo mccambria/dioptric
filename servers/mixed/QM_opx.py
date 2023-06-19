@@ -73,7 +73,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         logging.info(QM_opx_config.qop_ip)
         self.qmm = QuantumMachinesManager(QM_opx_config.qop_ip) # opens communication with the QOP so we can make a quantum machine
         self.qm = self.qmm.open_qm(opx_config_dict)
-        self.steady_state_program_file = 'constant_program.py'
+        self.steady_state_program_file = 'constant.py'
         
         opx_sequence_library_path = dioptric_path / "servers/timing/sequencelibrary/QM_opx"
         sys.path.append(str(opx_sequence_library_path))
@@ -198,7 +198,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         file_name, file_ext = os.path.splitext(seq_file)
 
         if file_ext == ".py":  # py: import as a module
-            seq_module = importlib.import_module(file_name+"_opx")
+            seq_module = importlib.import_module(file_name)
             args = tool_belt.decode_seq_args(seq_args_string)
                         
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = seq_module.get_seq(self,self.config_dict, args, num_repeat )
@@ -368,6 +368,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         c1 = counts_apd0.tolist()
         c2 = counts_apd1.tolist()
         
+        # *1000 to convert ps to ns
         t1 = (times_apd0[1::]*1000).tolist()
         t2 = (times_apd1[1::]*1000).tolist()
         

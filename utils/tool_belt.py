@@ -1493,11 +1493,11 @@ def init_safe_stop():
     except Exception as exc:
         print("\nPress CTRL + C to stop...\n")
     SAFESTOPFLAG = False
-    signal.signal(signal.SIGINT, safe_stop_handler)
+    signal.signal(signal.SIGINT, _safe_stop_handler)
     return
 
 
-def safe_stop_handler(sig, frame):
+def _safe_stop_handler(sig, frame):
     """This should never need to be called directly"""
     global SAFESTOPFLAG
     SAFESTOPFLAG = True

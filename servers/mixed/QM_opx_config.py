@@ -1,15 +1,12 @@
 import numpy as np
 
 
-#######################
-# AUXILIARY FUNCTIONS #
-#######################
+#region Functions
 
 # IQ imbalance matrix
 def IQ_imbalance(g, phi):
     """
-    Creates the correction matrix for the mixer imbalance caused by the gain and phase imbalances, more information can
-    be seen here:
+    Correction matrix for the mixer gain and phase imbalance - more info here:
     https://docs.qualang.io/libs/examples/mixer-calibration/#non-ideal-mixer
 
     :param g: relative gain imbalance between the I & Q ports (unit-less). Set to 0 for no gain imbalance.
@@ -21,9 +18,8 @@ def IQ_imbalance(g, phi):
     return [float(N * x) for x in [(1 - g) * c, (1 + g) * s, (1 - g) * s, (1 + g) * c]]
 
 
-#############
-# VARIABLES #
-#############
+#endregion
+#region Variables
 
 qop_ip = "128.104.160.117"
 analog_output_delay = 136 #ns
@@ -90,6 +86,8 @@ AOD_total_delay = common_delay - aod_delay
 yellow_AOM_total_delay = common_delay - yellow_aom_delay
 tsg4104_I_total_delay = common_delay - tsg4104_I_delay
 tsg4104_Q_total_delay = common_delay - tsg4104_Q_delay 
+
+#endregion
 
 
 config_dict = {
