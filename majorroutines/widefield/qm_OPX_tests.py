@@ -36,19 +36,25 @@ def main():
 
 
 def main_with_cxn(cxn):
+    
     opx = cxn.QM_opx
-
-    seq_args = [10]
+    laser_name = "laserglow_589"
+    
+    # Channel, freq, amplitude, duration
+    seq_args = [f"{laser_name}_x", 10, 0.1, 1e6]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "rf_test.py"
-    opx.stream_immediate(seq_file, -1, seq_args_string)
+    opx.stream_immediate(seq_file, 100, seq_args_string)
 
-    tb.poll_safe_stop()
+    # tb.poll_safe_stop()
 
 
 # endregion
 
 if __name__ == "__main__":
-    kpl.init_kplotlib()
+    config = common.get_config_dict()
+    config = common.get_config_dict()
+    print(config)
+    # kpl.init_kplotlib()
 
-    plt.show(block=True)
+    # plt.show(block=True)

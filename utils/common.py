@@ -12,6 +12,9 @@ import platform
 from pathlib import Path
 import socket
 import json
+from importlib import import_module
+import sys
+
 
 ### Lab-specific stuff here
 
@@ -47,10 +50,18 @@ def get_repo_path():
     return nvdata_dir
 
 
-def get_config_dict():
-    repo_path = get_repo_path()
+def get_config_module():
     pc_name = socket.gethostname()
-    json_path = repo_path / f"{pc_name}.json"
-    with json_path.open() as f:
-        res = json.load(f)
-        return res
+    module_name = f"config.{pc_name}"
+    module = import_module(module_name)  
+    return module
+
+
+def get_config_dict():
+    module = get_config_module() 
+    return module.config
+
+def get_server(cxn, server_name):
+    config = get_config_dict()
+    dev_name = config["Servers"]["server_name"]
+    return eval(f"cxn.{dev_name}")

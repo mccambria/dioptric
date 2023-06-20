@@ -4,14 +4,12 @@ Sequence for generating constants outputs with the opx, such as for leaving a la
 
 import time
 from qm import SimulationConfig
-from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from opx_configuration_file import *
 import matplotlib.pyplot as plt
 import numpy as np
 import utils.tool_belt as tool_belt
-import numpy
-from qualang_tools.units import unit
+from qm.qua import program, play, infinite_loop_, update_frequency
+from qm import qua
 
 period = 0 
 
@@ -31,10 +29,11 @@ def qua_program(opx, config,args, num_reps):
             with infinite_loop_():
                 play('constant_HIGH',dig_element)
                 
-        for an_element,an_freq,an_amp in zip(analog_elements_to_set, analog_frequencies, analog_amplitudes):
-            update_frequency(an_element,an_freq)
+        loop_zip = zip(analog_elements_to_set, analog_frequencies, analog_amplitudes)
+        for el, freq, amp in loop_zip:
+            update_frequency(el, freq)
             with infinite_loop_():
-                play("cw"*amp(an_amp),an_element)
+                play("cw"*qua.amp(amp), el)
        
     return seq
         

@@ -19,10 +19,10 @@ import sqlite3
 import time
 
 search_index_file_name = "search_index.db"
-nvdata_dir = common.get_nvdata_dir()
-nvdata_dir_str = str(nvdata_dir)
+nvdata_path = common.get_nvdata_path()
+nvdata_path_str = str(nvdata_path)
 date_glob = "[0-9][0-9][0-9][0-9]_[0-9][0-9]"
-search_index_glob = f"{nvdata_dir_str}/pc_*/branch_*/*/{date_glob}/*.txt"
+search_index_glob = f"{nvdata_path_str}/pc_*/branch_*/*/{date_glob}/*.txt"
 
 # endregion
 # region Private functions
@@ -54,7 +54,7 @@ def process_full_path(full_path):
 
 def add_to_search_index(data_full_path):
     db_vals = process_full_path(data_full_path)
-    search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
+    search_index = sqlite3.connect(nvdata_path / search_index_file_name)
     cursor = search_index.cursor()
     cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
     search_index.commit()
@@ -66,7 +66,7 @@ def add_to_search_index(data_full_path):
 
 def get_data_path_from_nvdata(data_file_name):
     try:
-        search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
+        search_index = sqlite3.connect(nvdata_path / search_index_file_name)
         cursor = search_index.cursor()
         cursor.execute(
             "SELECT * FROM search_index WHERE file_name = '{}'".format(data_file_name)
@@ -92,7 +92,7 @@ def index_on_the_fly(data_file_name):
     data_full_path = None
     yyyy_mm = data_file_name[0:7]
 
-    for root, _, files in os.walk(nvdata_dir):
+    for root, _, files in os.walk(nvdata_path):
         path_root = PurePath(root)
         # Before looping through all the files make sure the folder fits
         # the glob
@@ -128,13 +128,13 @@ def gen_search_index():
 
     # Create the table
     temp_name = "new_" + search_index_file_name
-    search_index = sqlite3.connect(nvdata_dir / temp_name)
+    search_index = sqlite3.connect(nvdata_path / temp_name)
     cursor = search_index.cursor()
     cursor.execute(
         """CREATE TABLE search_index (file_name text, path_from_nvdata text)"""
     )
 
-    for root, _, files in os.walk(nvdata_dir):
+    for root, _, files in os.walk(nvdata_path):
         path_root = PurePath(root)
         # Before looping through all the files make sure the folder fits
         # the glob
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # gen_search_index()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
-    root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2023_02"
+    root = nvdata_path / "pc_hahn/branch_master/pulsed_resonance/2023_02"
     file_list = [
         "2023_02_24-10_33_55-15micro-nv7_zfs_vs_t.txt",
     ]

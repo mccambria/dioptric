@@ -22,27 +22,17 @@ from utils.tool_belt import States
 
 def qua_program(opx, config, args, num_reps):
     ### get inputted parameters
-    rf_freq = args[0]
+    freq, amp, duration = args
 
     with program() as seq:
-        ### define qua variables and streams
-        counts_gate1_apd_0 = declare(int)
-        counts_gate1_apd_1 = declare(int)
-        times_gate1_apd_0 = declare(int, size=timetag_list_size)
-        times_gate1_apd_1 = declare(int, size=timetag_list_size)
-        counts_gate2_apd_0 = declare(int)
-        counts_gate2_apd_1 = declare(int)
-        times_gate2_apd_0 = declare(int, size=timetag_list_size)
-        times_gate2_apd_1 = declare(int, size=timetag_list_size)
+        
+        align()
+        qua.update_frequency(element, new_frequency)
+        qua.play(
+            qua.laser_pulse * amp(laser_amplitude), laser_name, duration=polarization_cc
+        )
 
-        counts_st_apd_0 = declare_stream()
-        counts_st_apd_1 = declare_stream()
-
-        ### declare a qua variable for the microwave time so we can use a qua if statement to allow for the tau<16ns case.
-        tau_cc_qua = declare(int)
-        assign(tau_cc_qua, tau_cc)
-
-        n = declare(int)
+        align()
 
         with for_(n, 0, n < num_reps, n + 1):
             align()

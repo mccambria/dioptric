@@ -26,37 +26,19 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import qua
 from qm import SimulationConfig
 from qualang_tools.results import fetching_tool, progress_counter
-import matplotlib.pyplot as plt
 from labrad.server import LabradServer
 from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-from numpy import count_nonzero, nonzero, concatenate
 from utils import common
+from utils import tool_belt as tb
 import numpy as np
 import importlib
 import numpy
 import logging
-import re
 import sys
-import time
 import os
-import utils.tool_belt as tool_belt
 import socket
-from numpy import pi
-
-root2_on_2 = numpy.sqrt(2) / 2
-from qualang_tools.units import unit
-from pathlib import Path
-
-# u = unit()
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
-import QM_opx_config
-from QM_opx_config import config_dict as opx_config_dict
-
-nvdata_path = common.get_nvdata_path()
-dioptric_path = common.get_dioptric_path()
-
 
 class QmOpx(Tagger, PulseGen, LabradServer):
     # region Setup
@@ -66,106 +48,47 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     # steady_state_program_file = 'steady_state_program_test_opx.py'
 
     def initServer(self):
-        filename = nvdata_path / "pc_{}/labrad_logging/{}.log"
-        filename = filename.format(self.pc_name, self.name)
+        
+        nvdata_path = common.get_nvdata_path()
+        filename = nvdata_path / f"pc_{self.pc_name}/labrad_logging/{self.name}.log"
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        self.get_config_dict()
-        logging.info(QM_opx_config.qop_ip)
-        self.qmm = QuantumMachinesManager(
-            QM_opx_config.qop_ip
-        )  # opens communication with the QOP so we can make a quantum machine
-        self.qm = self.qmm.open_qm(opx_config_dict)
+        
+        config_module = common.get_config_module()
+        opx_config = config_module.opx_config
+        config = common.get_config_dict()
+        self.config = config
+        self.opx_config = opx_config
+        
+        ip_address = config["DeviceIDs"]["qop_ip"]
+        logging.info(ip_address)
+        self.qmm = QuantumMachinesManager(ip_address)
+        self.qm = self.qmm.open_qm(opx_config)
         self.steady_state_program_file = "constant.py"
 
+        repo_path = common.get_repo_path()
         opx_sequence_library_path = (
-            dioptric_path / "servers/timing/sequencelibrary/QM_opx"
+            repo_path / f"servers/timing/sequencelibrary/{self.name}"
         )
         sys.path.append(str(opx_sequence_library_path))
         self.steady_state_option = False
-        # logging.info(tool_belt.get_mod_type('cobolt_515'))
+        # logging.info(tb.get_mod_type('cobolt_515'))
 
         # steady_state_seq, final_ss, period_ss = get_seq(self, self.steady_state_program_file, self.steady_state_seq_args_string, 1)
         # self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,steady_state_seq)
 
-    def get_config_dict(self):
-        """
-        Get the config dictionary on the registry recursively. Very similar
-        to the function of the same name in tool_belt.
-        """
-        config_dict = {}
-        _ = ensureDeferred(self.populate_config_dict(["", "Config"], config_dict))
-        _.addCallback(self.on_get_config_dict, config_dict)
-
-    async def populate_config_dict(self, reg_path, dict_to_populate):
-        """Populate the config dictionary recursively"""
-
-        # Sub-folders
-        p = self.client.registry.packet()
-        p.cd(reg_path)
-        p.dir()
-        result = await p.send()
-        sub_folders, keys = result["dir"]
-        for el in sub_folders:
-            sub_dict = {}
-            sub_path = reg_path + [el]
-            await self.populate_config_dict(sub_path, sub_dict)
-            dict_to_populate[el] = sub_dict
-
-        # Keys
-        if len(keys) == 1:
-            p = self.client.registry.packet()
-            p.cd(reg_path)
-            key = keys[0]
-            p.get(key)
-            result = await p.send()
-            val = result["get"]
-            dict_to_populate[key] = val
-
-        elif len(keys) > 1:
-            p = self.client.registry.packet()
-            p.cd(reg_path)
-            for key in keys:
-                p.get(key)
-            result = await p.send()
-            vals = result["get"]
-
-            for ind in range(len(keys)):
-                key = keys[ind]
-                val = vals[ind]
-                dict_to_populate[key] = val
-
-    def on_get_config_dict(self, _, config_dict):
-        self.config_dict = config_dict
-        self.apd_indices = config_dict["apd_indices"]
-        self.steady_state_digital_on = config_dict["SteadyStateParameters"]["QmOpx"][
-            "steady_state_digital_on"
-        ]
-        self.steady_state_analog_on = config_dict["SteadyStateParameters"]["QmOpx"][
-            "steady_state_analog_on"
-        ]
-        self.steady_state_analog_freqs = (
-            np.array(
-                config_dict["SteadyStateParameters"]["QmOpx"][
-                    "steady_state_analog_freqs"
-                ]
-            )
-            .astype(float)
-            .tolist()
-        )
-        self.steady_state_analog_amps = (
-            np.array(
-                config_dict["SteadyStateParameters"]["QmOpx"][
-                    "steady_state_analog_amps"
-                ]
-            )
-            .astype(float)
-            .tolist()
-        )
+        self.apd_indices = config["apd_indices"]
+        ss_params = config["SteadyStateParameters"]["QmOpx"]
+        self.steady_state_digital_on = ss_params["steady_state_digital_on"]
+        self.steady_state_analog_on = ss_params["steady_state_analog_on"]
+        val = ss_params["steady_state_analog_freqs"]
+        self.steady_state_analog_freqs = np.array(val).astype(float).tolist()
+        val = ss_params["steady_state_analog_amps"]
+        self.steady_state_analog_amps = np.array(val).astype(float).tolist()
 
         self.steady_state_seq_args = [
             self.steady_state_digital_on,
@@ -173,7 +96,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             self.steady_state_analog_freqs,
             self.steady_state_analog_amps,
         ]
-        self.steady_state_seq_args_string = tool_belt.encode_seq_args(
+        self.steady_state_seq_args_string = tb.encode_seq_args(
             self.steady_state_seq_args
         )
 
@@ -181,7 +104,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             self.steady_state_program_file, self.steady_state_seq_args_string, 1
         )
         logging.info("Init complete")
-        self.tagger_di_clock = int(self.config_dict["Wiring"]["Tagger"]["di_apd_gate"])
+        self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
 
     def stopServer(self):
         try:
@@ -236,7 +159,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            args = tool_belt.decode_seq_args(seq_args_string)
+            args = tb.decode_seq_args(seq_args_string)
 
             (
                 seq,
@@ -244,14 +167,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
                 ret_vals,
                 self.num_gates_per_rep,
                 self.sample_size,
-            ) = seq_module.get_seq(self, self.config_dict, args, num_repeat)
+            ) = seq_module.get_seq(self, self.config, args, num_repeat)
 
         return seq, final, ret_vals
 
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
-    def stream_load(
-        self, c, seq_file, seq_args_string=""
-    ):  # from pulse streamer. for the opx all this function does is return back some property(s) of the sequence you want. DONE
+    def stream_load(self, c, seq_file, seq_args_string=""):  
         """For the OPX, this will just grab a single iteration of the desired sequence and return the parameter of interest
         Params
             seq_file: str
@@ -267,7 +188,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """
         # logging.info('made it here')
         self.qmm.close_all_quantum_machines()
-        self.qm = self.qmm.open_qm(QM_opx_config.config_dict)
+        self.qm = self.qmm.open_qm(self.opx_config)
         self.seq_file = seq_file
         self.seq_args_string = seq_args_string
         # logging.info(seq_args_string)
@@ -299,7 +220,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             num_repeat >= 2
         ):  # if we want to repeat it, get the sequence again but with all the repetitions.
             self.qmm.close_all_quantum_machines()
-            self.qm = self.qmm.open_qm(opx_config_dict)
+            self.qm = self.qmm.open_qm(self.opx_config)
 
             seq, final, ret_vals = self.get_seq(
                 self.seq_file, self.seq_args_string, num_repeat
@@ -353,9 +274,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         ]
         # logging.info(args)
 
-        args_string = tool_belt.encode_seq_args(args)
+        args_string = tb.encode_seq_args(args)
         self.stream_immediate(
-            c, seq_file="constant_program.py", num_repeat=1, seq_args_string=args_string
+            c, seq_file="constant.py", num_repeat=1, seq_args_string=args_string
         )
 
     # endregion
@@ -473,10 +394,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         t1 = (times_apd0[1::] * 1000).tolist()
         t2 = (times_apd1[1::] * 1000).tolist()
 
-        max_readout_time = (
-            1000 * self.config_dict["PhotonCollection"]["qm_opx_max_readout_time"]
-        )
-        gate_open_channel = int(self.config_dict["Wiring"]["Tagger"]["di_apd_gate"])
+        config = self.config
+        max_readout_time = config["PhotonCollection"]["qm_opx_max_readout_time"]
+        max_readout_time *= 1000  # To ns
+        gate_open_channel = config["Wiring"]["Tagger"]["di_apd_gate"]
         gate_close_channel = int(-1 * gate_open_channel)
 
         all_time_tags = []
@@ -616,7 +537,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     @setting(26)
     def reset(self, c):
         self.qmm.close_all_quantum_machines()
-        self.qm = self.qmm.open_qm(opx_config_dict)
+        self.qm = self.qmm.open_qm(self.opx_config)
 
         if self.steady_state_option:
             self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(

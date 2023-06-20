@@ -33,6 +33,7 @@ import utils.search_index as search_index
 import signal
 import copy
 from decimal import Decimal
+from importlib import import_module
 
 
 class States(Enum):
@@ -64,10 +65,8 @@ Boltzmann = 8.617e-2  # meV / K
 
 
 def get_mod_type(laser_name):
-    with labrad.connect() as cxn:
-        mod_type = common.get_registry_entry(
-            cxn, "mod_type", ["", "Config", "Optics", laser_name]
-        )
+    config = common.get_config_dict()
+    mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
     return mod_type.name
 
@@ -100,27 +99,18 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
-    mod_type = common.get_registry_entry(
-        cxn, "mod_type", ["", "Config", "Optics", laser_name]
-    )
+    config = common.get_config_dict()
+    mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
     pulse_gen = get_server_pulse_gen(cxn)
 
     if mod_type is ModTypes.DIGITAL:
         if turn_on:
-            laser_chan = common.get_registry_entry(
-                cxn,
-                "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseGen"],
-            )
+            laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             pulse_gen.constant([laser_chan])
     elif mod_type is ModTypes.ANALOG:
         if turn_on:
-            laser_chan = common.get_registry_entry(
-                cxn,
-                "do_{}_dm".format(laser_name),
-                ["", "Config", "Wiring", "PulseGen"],
-            )
+            laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             if laser_chan == 0:
                 pulse_gen.constant([], 0.0, laser_power)
             elif laser_chan == 1:
@@ -155,9 +145,8 @@ def set_laser_power(
 
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
-    mod_type = common.get_registry_entry(
-        cxn, "mod_type", ["", "Config", "Optics", laser_name]
-    )
+    config = common.get_config_dict()
+    mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
     if mod_type == ModTypes.ANALOG:
         return laser_power
@@ -211,37 +200,30 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
     filter_server = get_filter_server(cxn, optics_name)
     if filter_server is None:
         return
-    pos = common.get_registry_entry(
-        cxn,
-        filter_name,
-        ["", "Config", "Optics", optics_name, "FilterMapping"],
-    )
-    # print(filter_server)
-    # print(pos)
+    config = common.get_config_dict()
+    pos = config["Optics"][optics_name]["FilterMapping"][filter_name]
     filter_server.set_filter(pos)
 
 
 def get_filter_server(cxn, optics_name):
-    """Try to get a filter server. If there isn't one listed on the registry,
+    """Try to get a filter server. If there isn't one listed in the config,
     just return None.
     """
     try:
-        server_name = common.get_registry_entry(
-            cxn, "filter_server", ["", "Config", "Optics", optics_name]
-        )
+        config = common.get_config_dict()
+        server_name = config["Optics"][optics_name]["filter_server"]
         return getattr(cxn, server_name)
     except Exception:
         return None
 
 
 def get_laser_server(cxn, laser_name):
-    """Try to get a laser server. If there isn't one listed on the registry,
+    """Try to get a laser server. If there isn't one listed in the config,
     just return None.
     """
     try:
-        server_name = common.get_registry_entry(
-            cxn, "laser_server", ["", "Config", "Optics", laser_name]
-        )
+        config = common.get_config_dict()
+        server_name = config["Optics"][laser_name]["laser_server"]
         return getattr(cxn, server_name)
     except Exception:
         return None
@@ -551,24 +533,15 @@ def decode_seq_args(seq_args_string):
 
 
 def get_pulse_streamer_wiring(cxn):
-    config = get_config_dict(cxn)
-    pulse_streamer_wiring = config["Wiring"]["PulseGen"]
-    return pulse_streamer_wiring
+    config = common.get_config_dict(cxn)
+    wiring = config["Wiring"]["PulseGen"]
+    return wiring
 
 
 def get_tagger_wiring(cxn):
-    cxn.registry.cd(["", "Config", "Wiring", "Tagger"])
-    _, keys = cxn.registry.dir()
-    if keys == []:
-        return {}
-    p = cxn.registry.packet()
-    for key in keys:
-        p.get(key, key=key)  # Return as a dictionary
-    wiring = p.send()
-    tagger_wiring = {}
-    for key in keys:
-        tagger_wiring[key] = wiring[key]
-    return tagger_wiring
+    config = common.get_config_dict(cxn)
+    wiring = config["Wiring"]["Tagger"]
+    return wiring
 
 
 # endregion
@@ -886,11 +859,9 @@ def get_apd_gate_channel(cxn):
     return config_dict["Wiring"]["Tagger"]["di_apd_gate"]
 
 
-"""
-Server getters
-Each getter looks up the requested server from the config and
-returns a usable reference to the requested server (i.e. cxn.<server>)
-"""
+# Server getters
+# Each getter looks up the requested server from the config and
+# returns a usable reference to the requested server (i.e. cxn.<server>)
 
 
 def get_server_pulse_gen(cxn):
@@ -1094,7 +1065,8 @@ def get_nv_sig_units_no_cxn():
 
 def get_nv_sig_units(cxn):
     try:
-        nv_sig_units = common.get_registry_entry(cxn, "nv_sig_units", "Config")
+        config = common.get_config_dict()
+        nv_sig_units = config["nv_sig_units"]
     except Exception:
         nv_sig_units = ""
     return nv_sig_units
@@ -1137,7 +1109,7 @@ def save_raw_data(rawData, filePath):
     # nv_sig_units. If these have already been defined in the routine,
     # then they'll just be overwritten.
     try:
-        rawData["config"] = get_config_dict()  # Include a snapshot of the config
+        rawData["config"] = common.get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
 
