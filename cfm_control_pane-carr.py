@@ -18,13 +18,13 @@ import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.rabi as rabi
+from majorroutines.widefield import qm_OPX_tests
 
 
 ### Major Routines
 
 
 def do_image_sample(nv_sig):
-
     scan_range = 0.2
     num_steps = 60
 
@@ -46,7 +46,6 @@ def do_image_sample_zoom(nv_sig):
 
 
 def do_optimize(nv_sig):
-
     optimize.main(nv_sig, set_to_opti_coords=False, save_data=True, plot_data=True)
 
 
@@ -56,7 +55,6 @@ def do_stationary_count(nv_sig, disable_opt=None):
 
 
 def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
-
     num_steps = 51
 
     # num_reps = 2e4
@@ -81,7 +79,6 @@ def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
 
 
 def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
-
     num_steps = 51
 
     # num_reps = 2e4
@@ -94,11 +91,14 @@ def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
     nv_sig["rabi_{}".format(state.name)] = period
 
 
+def do_qm_OPX_tests(nv_sig):
+    qm_OPX_tests.main(nv_sig)
+
+
 ### Run the file
 
 
 if __name__ == "__main__":
-
     ### Shared parameters
 
     green_laser = "laserglow_532"
@@ -137,7 +137,6 @@ if __name__ == "__main__":
 
     email_recipient = "cambria@wisc.edu"
     try:
-
         # pass
 
         tool_belt.init_safe_stop()
@@ -154,7 +153,6 @@ if __name__ == "__main__":
         raise exc
 
     finally:
-
         msg = "Experiment complete!"
         recipient = email_recipient
         tool_belt.send_email(msg, email_to=recipient)

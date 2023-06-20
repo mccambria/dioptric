@@ -872,75 +872,23 @@ def process_counts(
 
 
 # endregion
-# region LabRAD registry utils
-# Core registry functions in Common
-
-
-def get_config_dict(cxn=None):
-    """Get the whole config from the registry as a dictionary"""
-    if cxn is None:
-        with labrad.connect() as cxn:
-            return get_config_dict_sub(cxn)
-    else:
-        return get_config_dict_sub(cxn)
-
-
-def get_config_dict_sub(cxn):
-    config_dict = {}
-    populate_config_dict(cxn, ["", "Config"], config_dict)
-    return config_dict
-
-
-def populate_config_dict(cxn, reg_path, dict_to_populate):
-    """Populate the config dictionary recursively"""
-
-    # Sub-folders
-    cxn.registry.cd(reg_path)
-    sub_folders, keys = cxn.registry.dir()
-    for el in sub_folders:
-        sub_dict = {}
-        sub_path = reg_path + [el]
-        populate_config_dict(cxn, sub_path, sub_dict)
-        dict_to_populate[el] = sub_dict
-
-    # Keys
-    if len(keys) == 1:
-        cxn.registry.cd(reg_path)
-        p = cxn.registry.packet()
-        key = keys[0]
-        p.get(key)
-        val = p.send()["get"]
-        if type(val) == np.ndarray:
-            val = val.tolist()
-        dict_to_populate[key] = val
-
-    elif len(keys) > 1:
-        cxn.registry.cd(reg_path)
-        p = cxn.registry.packet()
-        for key in keys:
-            p.get(key)
-        vals = p.send()["get"]
-
-        for ind in range(len(keys)):
-            key = keys[ind]
-            val = vals[ind]
-            if type(val) == np.ndarray:
-                val = val.tolist()
-            dict_to_populate[key] = val
+# region Config getters
 
 
 def get_apd_indices(cxn):
-    "Get a list of the APD indices in use from the registry"
-    return common.get_registry_entry(cxn, "apd_indices", ["Config"])
+    "Get a list of the APD indices in use from the config"
+    config_dict = common.get_config_dict()
+    return config_dict["apd_indices"]
 
 
 def get_apd_gate_channel(cxn):
-    return common.get_registry_entry(cxn, "di_apd_gate", ["Config", "Wiring", "Tagger"])
+    config_dict = common.get_config_dict()
+    return config_dict["Wiring"]["Tagger"]["di_apd_gate"]
 
 
-# endregion
-# region Server getters
-"""Each getter looks up the requested server from the registry and
+"""
+Server getters
+Each getter looks up the requested server from the config and
 returns a usable reference to the requested server (i.e. cxn.<server>)
 """
 

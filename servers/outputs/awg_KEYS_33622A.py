@@ -30,10 +30,12 @@ import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import socket
 import logging
 import time
+
 # import numpy
 from numpy import pi
 import utils.tool_belt as tool_belt
 from servers.outputs.interfaces.awg import AWG
+from utils import common
 
 # root2_on_2 = numpy.sqrt(2) / 2
 # amp = 0.5  # from SRS sig gen datasheet, ( I^2 + Q^2 ) ^ (1/2) = 0.5 V for full scale input. The amp should then be 0.5 V. This relates to 1.0 Vpp from the AWG
@@ -56,8 +58,7 @@ class AwgKeys33622A(LabradServer, AWG):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -66,26 +67,14 @@ class AwgKeys33622A(LabradServer, AWG):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
-
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get("arb_wave_gen_visa_address")
-        p.cd(["", "Config", "Wiring", "PulseGen"])
-        p.get("do_arb_wave_trigger")
-        p.cd(["", "Config", "Microwaves"])
-        p.get("iq_comp_amp")
-        result = await p.send()
-        return result["get"]
-
-    def on_get_config(self, config):
-        address = config[0]
-        self.do_arb_wave_trigger = int(config[1])
+        config = common.get_config_dict()
+        self.do_arb_wave_trigger = int(
+            config["Wiring"]["PulseGen"]["do_arb_wave_trigger"]
+        )
         resource_manager = visa.ResourceManager()
-        self.wave_gen = resource_manager.open_resource(address)
-        self.iq_comp_amp = config[2]
+        device_id = config["DeviceIDs"]["arb_wave_gen_visa_address"]
+        self.wave_gen = resource_manager.open_resource(device_id)
+        self.iq_comp_amp = config["Microwaves"]["iq_comp_amp"]
         self.reset(None)
         logging.info("Init complete")
 
@@ -180,7 +169,6 @@ class AwgKeys33622A(LabradServer, AWG):
     #     amp = self.iq_comp_amp
     #     self.load_iq(phases, amp)
 
-
     def load_iq(self, phases, amp):
         """
         Load IQ modulation
@@ -190,11 +178,10 @@ class AwgKeys33622A(LabradServer, AWG):
         self.wave_gen.write("TRIG2:SOUR EXT")
         self.wave_gen.write("TRIG1:SLOP POS")
         self.wave_gen.write("TRIG2:SLOP POS")
-        # set the trigger level for TTL pulses to the pulse streamer voltage. 
+        # set the trigger level for TTL pulses to the pulse streamer voltage.
         # The AWG then halves this value for the threshold level.
         self.wave_gen.write("TRIG1:LEV 2.6")
-        self.wave_gen.write("TRIG2:LEV 2.6") 
-
+        self.wave_gen.write("TRIG2:LEV 2.6")
 
         for chan in [1, 2]:
             source_name = "SOUR{}:".format(chan)
@@ -206,11 +193,11 @@ class AwgKeys33622A(LabradServer, AWG):
         # repeat until it's long enough
         while len(phases) < 32:
             phases *= 2
-                
+
         # basedo n the angles for the phase and the amplitude, calculate
         # the amplitudes for the I and Q components
         phase_comps = tool_belt.iq_comps(phases, amp)
-        
+
         # Convert to string and trim the brackets
         # for the I channel
         comps = phase_comps[0]
@@ -228,32 +215,28 @@ class AwgKeys33622A(LabradServer, AWG):
 
         for chan in [1, 2]:
             source_name = "SOUR{}:".format(chan)
-            self.wave_gen.write(
-                "{}FUNC:ARB iqSwitch{}".format(source_name, chan)
-            )
+            self.wave_gen.write("{}FUNC:ARB iqSwitch{}".format(source_name, chan))
             self.wave_gen.write("{}FUNC ARB".format(source_name))
-        
+
         self.wave_gen.write("OUTP1 ON")
         self.wave_gen.write("OUTP2 ON")
-        
-        
+
         # When you load a sequence like this, it doesn't move to the first
         # point of the sequence until it gets a trigger. Supposedly just
         # 'TRIG[1:2]' forces a trigger event, but I can't get it to work.
         # So let's just set the pulse streamer to constant for a second to
         # fake a trigger...
-        
+
         # 2/20/2023 By viewing the AWG output on a scope and advancing a trigger
         # manually, we see that before any trigger is sent, the AWG is in an
         # unknown state, which is not favorable. Once it receives a trigger, it advances to
-        # the first element in the list of phases. 
-        
+        # the first element in the list of phases.
+
         # We are not able to force the trigger
-        # with the TRIG command, so instead, the sequence should initially start with 
+        # with the TRIG command, so instead, the sequence should initially start with
         # a trigger to put the AWG into a defined state. The list of phases should
         # accommodate for this by padding the front with with (for example) 0.
-        
-    
+
     @setting(7)
     def force_trigger(self, c):
         # self.wave_gen.write("TRIG")

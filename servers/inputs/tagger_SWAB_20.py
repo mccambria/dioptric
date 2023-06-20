@@ -21,6 +21,7 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
+from utils import common
 import TimeTagger
 import numpy as np
 import logging
@@ -35,6 +36,8 @@ class TaggerSwab20(Tagger, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
+        ### Logging
+
         filename = (
             "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
@@ -45,59 +48,36 @@ class TaggerSwab20(Tagger, LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        self.reset_tag_stream_state()
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
 
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config"])
-        p.get("apd_indices")
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get(f"{self.name}_serial")
-        p.cd(["", "Config", "Wiring", "Tagger"])
-        p.get("di_clock")
-        p.get("di_apd_gate")
-        p.dir()
-        result = await p.send()
-        return result
+        ### Configure
 
-    def on_get_config(self, config):
-        get_result = config["get"]
-        self.config_apd_indices = get_result[0]
-        tagger_serial = get_result[1]
+        config = common.get_config_dict()
+        self.config_apd_indices = config["apd_indices"]
+        tagger_serial = config["DeviceIDs"][f"{self.name}_serial"]
         try:
             self.tagger = TimeTagger.createTimeTagger(tagger_serial)
         except Exception as e:
             logging.info(e)
         self.tagger.reset()
-        # The APDs share a clock and gate
-        self.tagger_di_clock = get_result[2]
-        self.tagger_di_apd_gate = get_result[3]
-        # Determine how many APDs we're supposed to set up
+
+        # Wiring
+        wiring = config["Wiring"]["Tagger"]
+        self.tagger_di_clock = wiring["di_clock"]
+        self.tagger_di_apd_gate = wiring["di_apd_gate"]
+
+        # Get the APD channels
         apd_indices = []
-        keys = config["dir"][1]
+        self.tagger_di_apd = {}
+        keys = wiring.keys()
         for key in keys:
             if re.fullmatch(r"di_apd_[0-9]+", key):
-                apd_indices.append(int(key.split("_")[2]))
-        wiring = ensureDeferred(self.get_wiring(apd_indices))
-        wiring.addCallback(self.on_get_wiring, apd_indices)
+                apd_index = key.split("_")[2]
+                di_apd = wiring[key]
+                self.tagger_di_apd[apd_index] = di_apd
 
-    async def get_wiring(self, apd_indices):
-        p = self.client.registry.packet()
-        for ind in apd_indices:
-            p.get(f"di_apd_{ind}")
-        result = await p.send()
-        return result["get"]
+        ### Wrap up
 
-    def on_get_wiring(self, wiring, apd_indices):
-        self.tagger_di_apd = {}
-        # Loop through the available APDs
-        for loop_index in range(len(apd_indices)):
-            apd_index = apd_indices[loop_index]
-            di_apd = wiring[loop_index]
-            self.tagger_di_apd[apd_index] = di_apd
-        self.reset_tag_stream_state()  # Initialize state variables
+        self.reset_tag_stream_state()
         self.reset(None)
         logging.info("init complete")
 

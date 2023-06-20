@@ -36,6 +36,7 @@ import logging
 import socket
 from pathlib import Path
 from servers.timing.interfaces.pulse_gen import PulseGen
+from utils import common
 
 
 class PulseGenSwab82(PulseGen, LabradServer):
@@ -44,8 +45,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -54,84 +54,24 @@ class PulseGenSwab82(PulseGen, LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
 
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get(f"{self.name}_ip")
-        p.dir()
-        result = await p.send()
-        return result
-
-    def on_get_config(self, config):
-        self.pulse_streamer = PulseStreamer(config["get"])
+        config = common.get_config_dict()
+        device_id = config["DeviceIDs"][f"{self.name}_ip"]
+        self.pulse_streamer = PulseStreamer(device_id)
         calibration = self.pulse_streamer.getAnalogCalibration()
         logging.info(calibration)
-        
+
         sequence_library_path = (
-            Path.home()
-            / f"Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary/{self.name}"
+            common.get_repo_path() / "servers/timing/sequencelibrary/{self.name}"
         )
+
         sys.path.append(str(sequence_library_path))
-        self.get_config_dict()
 
-    def get_config_dict(self):
-        """
-        Get the config dictionary on the registry recursively. Very similar
-        to the function of the same name in tool_belt.
-        """
-        config_dict = {}
-        _ = ensureDeferred(
-            self.populate_config_dict(["", "Config"], config_dict)
-        )
-        _.addCallback(self.on_get_config_dict, config_dict)
-
-    async def populate_config_dict(self, reg_path, dict_to_populate):
-        """Populate the config dictionary recursively"""
-
-        # Sub-folders
-        p = self.client.registry.packet()
-        p.cd(reg_path)
-        p.dir()
-        result = await p.send()
-        sub_folders, keys = result["dir"]
-        for el in sub_folders:
-            sub_dict = {}
-            sub_path = reg_path + [el]
-            await self.populate_config_dict(sub_path, sub_dict)
-            dict_to_populate[el] = sub_dict
-
-        # Keys
-        if len(keys) == 1:
-            p = self.client.registry.packet()
-            p.cd(reg_path)
-            key = keys[0]
-            p.get(key)
-            result = await p.send()
-            val = result["get"]
-            dict_to_populate[key] = val
-
-        elif len(keys) > 1:
-            p = self.client.registry.packet()
-            p.cd(reg_path)
-            for key in keys:
-                p.get(key)
-            result = await p.send()
-            vals = result["get"]
-
-            for ind in range(len(keys)):
-                key = keys[ind]
-                val = vals[ind]
-                dict_to_populate[key] = val
-
-    def on_get_config_dict(self, _, config_dict):
-        self.config_dict = config_dict
-        self.pulse_streamer_wiring = self.config_dict["Wiring"]["PulseGen"]
+        self.config = config
+        self.pulse_streamer_wiring = self.config["Wiring"]["PulseGen"]
         logging.info(self.pulse_streamer_wiring)
         self.do_feedthrough_lasers = []
-        optics_dict = config_dict["Optics"]
+        optics_dict = config["Optics"]
         for key in optics_dict:
             optic = optics_dict[key]
             logging.info(optic)
@@ -139,7 +79,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
             if eval(feedthrough_str):
                 self.do_feedthrough_lasers.append(key)
         logging.info(self.do_feedthrough_lasers)
-        
+
         # Initialize state variables and reset
         self.seq = None
         self.loaded_seq_streamed = False
@@ -152,9 +92,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tool_belt.decode_seq_args(seq_args_string)
-            seq, final, ret_vals = seq_module.get_seq(
-                self, self.config_dict, args
-            )
+            seq, final, ret_vals = seq_module.get_seq(self, self.config, args)
         return seq, final, ret_vals
 
     @setting(2, seq_file="s", seq_args_string="s", returns="*?")
@@ -224,9 +162,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         """Set the PulseStreamer to a constant output state."""
 
         digital_channels = [int(el) for el in digital_channels]
-        state = OutputState(
-            digital_channels, analog_0_voltage, analog_1_voltage
-        )
+        state = OutputState(digital_channels, analog_0_voltage, analog_1_voltage)
         self.pulse_streamer.constant(state)
 
     @setting(5)

@@ -33,6 +33,7 @@ import pyvisa as visa
 import time
 import numpy
 import serial
+from utils import common
 
 
 class TempControllerThorTc200(LabradServer):
@@ -41,8 +42,7 @@ class TempControllerThorTc200(LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -51,21 +51,11 @@ class TempControllerThorTc200(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
-
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get("{}_com".format(self.name))
-        result = await p.send()
-        return result["get"]
-
-    def on_get_config(self, config):
-        # Get the slider
+        config = common.get_config_dict()
+        device_id = config["DeviceIDs"][self.name]
         try:
             self.controller = serial.Serial(
-                config,
+                device_id,
                 115200,
                 serial.EIGHTBITS,
                 serial.PARITY_NONE,

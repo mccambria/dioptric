@@ -31,6 +31,7 @@ import socket
 import time
 import math
 import serial
+from utils import common
 
 
 class TempMonitorLake218(LabradServer):
@@ -40,8 +41,7 @@ class TempMonitorLake218(LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -50,21 +50,11 @@ class TempMonitorLake218(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
-
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get(f"{self.name}_com")
-        result = await p.send()
-        return result["get"]
-
-    def on_get_config(self, config):
-        # Get the COM address
+        config = common.get_config_dict()
+        device_id = config["DeviceIDs"][self.name]
         try:
             self.monitor = serial.Serial(
-                config,
+                device_id,
                 9600,
                 serial.SEVENBITS,
                 serial.PARITY_ODD,
@@ -485,12 +475,12 @@ class TempMonitorLake218(LabradServer):
 
         # # Optional read for debugging
         for ind in range(num_points):
-            cmd = "CRVPT? {}, {}".format(curve_num, ind+1)
+            cmd = "CRVPT? {}, {}".format(curve_num, ind + 1)
             self.write(cmd)
             ret_val = self.read()
             logging.info(ret_val)
             time.sleep(0.25)
-        
+
         # Set the channel to use the curve we just set up
         cmd = "INCRV {}, {}".format(channel, curve_num)
         self.write(cmd)
@@ -503,13 +493,12 @@ class TempMonitorLake218(LabradServer):
         ret_val = self.read()
         reading = float(ret_val)
         return reading
-    
+
     @setting(7, cmd="s", returns="s")
     def arb_cmd(self, c, cmd):
         self.write(cmd)
         ret_val = self.read()
         return ret_val
-        
 
     @setting(6)
     def reset_cfm_opt_out(self, c):
