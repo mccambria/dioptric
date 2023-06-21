@@ -64,7 +64,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.config = config
         self.opx_config = opx_config
         
-        ip_address = config["DeviceIDs"]["qop_ip"]
+        ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
         self.qm = self.qmm.open_qm(opx_config)
@@ -135,10 +135,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # logging.info('end here')
         return program_job
 
-    def get_seq(
-        self, seq_file, seq_args_string, num_repeat
-    ):  # this returns the qua sequence without repeats. from pulse streamer. DONE
-        """For the OPX, this will grab the desired sequence with the desired number of repetitions
+    def get_seq(self, seq_file, seq_args_string, num_reps):
+        """
+        For the OPX, this will grab the desired sequence with the desired number of repetitions
             seq_file: str
                 A qua sequence file from the sequence library
             seq_args_string: list(any)
@@ -160,14 +159,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-
-            (
-                seq,
-                final,
-                ret_vals,
-                self.num_gates_per_rep,
-                self.sample_size,
-            ) = seq_module.get_seq(self, self.config, args, num_repeat)
+            ret_vals = seq_module.get_seq(self, self.config, args, num_reps)
+            seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
 
         return seq, final, ret_vals
 
@@ -200,34 +193,37 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         return ret_vals
 
-    @setting(14, num_repeat="i")
-    def stream_start(
-        self, c, num_repeat=1
-    ):  # from pulse streamer. It will start the full sequence. DONE
-        """For the OPX, this will run the qua program already grabbed by stream_load(). If num_repeat is greater than 1, it will get the sequence again, this time with the
-        number of repetitions and then run it.
-        num_repeat: int
+    @setting(14, num_reps="i")
+    def stream_start(self, c, num_reps=1):
+        """
+        For the OPX, this will run the qua program already grabbed by 
+        stream_load(). If num_reps is greater than 1, it will get the 
+        sequence again, this time with the number of repetitions and then run it.
+        num_reps: int
             The number of times the sequence is repeated, such as the number of reps in a rabi routine
         """
-        self.num_reps = num_repeat
+        
+        self.num_reps = num_reps
 
-        if num_repeat == -1:
-            num_repeat = 10000  # just make it go a bunch of times for now. canceling it will just kill the operation
-            self.num_reps = 1
-            logging.info("repeating 1000000 times instead of indefinitely")
+        # if num_reps == -1:
+        #     num_reps = 10000  # just make it go a bunch of times for now. canceling it will just kill the operation
+        #     self.num_reps = 1
+        #     logging.info(f"repeating {num_reps} times instead of indefinitely")
+        # # if we want to repeat it, get the sequence again but with all the repetitions.
+        # elif num_reps >= 2:  
+        #     self.qmm.close_all_quantum_machines()
+        #     self.qm = self.qmm.open_qm(self.opx_config)
 
-        if (
-            num_repeat >= 2
-        ):  # if we want to repeat it, get the sequence again but with all the repetitions.
-            self.qmm.close_all_quantum_machines()
-            self.qm = self.qmm.open_qm(self.opx_config)
-
-            seq, final, ret_vals = self.get_seq(
-                self.seq_file, self.seq_args_string, num_repeat
-            )  # gets the full sequence
-            self.pending_experiment_compiled_program_id = self.compile_qua_sequence(
-                self.qm, seq
-            )
+        #     seq, final, ret_vals = self.get_seq(
+        #         self.seq_file, self.seq_args_string, num_reps
+        #     )  # gets the full sequence
+        #     self.pending_experiment_compiled_program_id = self.compile_qua_sequence(
+        #         self.qm, seq
+        #     )
+            
+        seq, final, ret_vals = self.get_seq(
+            self.seq_file, self.seq_args_string, num_reps
+        )
 
         # logging.info('starting here')
         # st = time.time()
@@ -244,22 +240,14 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         return
 
-    @setting(
-        15,
-        high_digital_channels="*s",
-        analog_elements_to_set="*s",
-        analog_frequencies="*v[]",
-        analog_amplitudes="*v[]",
-    )
-    def constant(
-        self,
-        c,
-        high_digital_channels=[],
-        analog_elements_to_set=[],
-        analog_frequencies=[],
-        analog_amplitudes=[],
-    ):
-        """Set the OPX to an infinite loop, ouputing the desired things on each channel."""
+    @setting(15, high_digital_channels="*s", analog_elements_to_set="*s",
+             analog_frequencies="*v[]", analog_amplitudes="*v[]")
+    def constant(self, c, high_digital_channels=[], analog_elements_to_set=[],
+                 analog_frequencies=[], analog_amplitudes=[]):
+        """
+        Set the OPX to an infinite loop, ouputing the desired things on 
+        each channel.
+        """
 
         high_digital_channels = np.asarray(high_digital_channels)
         analog_amplitudes = np.asarray(analog_amplitudes)
@@ -276,20 +264,21 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         args_string = tb.encode_seq_args(args)
         self.stream_immediate(
-            c, seq_file="constant.py", num_repeat=1, seq_args_string=args_string
+            c, seq_file="constant.py", num_reps=1, seq_args_string=args_string
         )
 
     # endregion
     # region Time tagging
-
-    def read_counter_internal(
-        self,
-    ):  # from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
-        """This is the core function that any tagger we have needs.
-        For the OPX this fetches the data from the job that was created when the program was executed.
-        Assumes "counts" is one of the data streams
-        The count stream should be a three level list. First level is the sample, second is the apds, third is the different gates.
-        first index gives the sample. next level gives the gate. next level gives which apd
+    # from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
+    def read_counter_internal(self):  
+        """
+        This is the core function that any tagger needs in order to function 
+        as a counter. 
+        For the OPX this fetches the data from the job that was created when 
+        the program was executed. Assumes "counts" is one of the data streams
+        The count stream should be a three level list. First level is the 
+        sample, second is the apds, third is the different gates. First index 
+        gives the sample. next level gives the gate. next level gives which apd
         [  [ [],[] ] , [ [],[] ], [ [],[] ]  ]
 
         Params
@@ -376,7 +365,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     def read_raw_stream(self):
         """
-        read the raw stream. currently it waits for all data in the job to come in and reports it all. Ideally it would do it live
+        Read the raw stream. currently it waits for all data in the job to 
+        come in and reports it all. Ideally it would do it live
         """
         # logging.info('at read raw stream')
         results = fetching_tool(

@@ -11,27 +11,53 @@ Created on June 21st, 2023
 
 import numpy
 import utils.tool_belt as tool_belt
-from qm.QuantumMachinesManager import QuantumMachinesManager
+import qm
 from qm import qua
-from qm import SimulationConfig
+from qm.QuantumMachinesManager import QuantumMachinesManager
+from qm.simulate import SimulationConfig
 from qm.qua import program, declare, declare_stream, stream_processing
-from qm.qua import measure, wait, save, play, align, fixed
+from qm.qua import measure, wait, save, play, align, fixed, assign
+from qm.qua import infinite_loop_, while_
 from utils.tool_belt import States
+from utils import tool_belt as tb
+from utils import kplotlib as kpl
+import matplotlib.pyplot as plt
+from utils import common
 
 
-def qua_program(element, freq, amp, duration):
-
+def qua_program(element, freq, amp, duration, num_reps):
+    
+    # def one_loop():
+    #     qua.play("continuous" * qua.amp(a), element, duration=duration)
+        
+    
     with program() as seq:
+        
+        ### Non-loop stuff here
         qua.update_frequency(element, freq * 1e6)
         a = declare(fixed, value=amp)
+        
+        ### Boilerplate for handling num_reps
+        align()
         qua.play("continuous" * qua.amp(a), element, duration=duration)
-
+        align()
+        # if num_reps == -1:
+        #     with infinite_loop_():
+        #         # one_loop()
+        #         qua.play("continuous" * qua.amp(a), element, duration=duration)
+        # else:
+        #     ind = declare(fixed)
+        #     assign(ind, 0)
+        #     with while_(ind<num_reps):
+        #         # one_loop()
+        #         qua.play("continuous" * qua.amp(a), element, duration=duration)
+        #         assign(ind, ind+1)
     return seq
 
 
-def get_seq(opx, config, args, num_repeat):
+def get_seq(opx, config, args, num_reps):
     element, freq, amp, duration = args
-    seq = qua_program(element, freq, amp, duration)
+    seq = qua_program(element, freq, amp, duration, num_reps)
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"
@@ -39,24 +65,28 @@ def get_seq(opx, config, args, num_repeat):
     return seq, final, [], num_gates, sample_size
 
 
-if __name__ == "__main__":b
-    from qualang_tools.results import fetching_tool, progress_counter
-    import matplotlib.pylab as plt
-    import time
+if __name__ == "__main__":
+    # pass
 
-    config = tool_belt.get_config_dict()
-    qmm = QuantumMachinesManager(host="128.104.160.117", port="80")
-    qm = qmm.open_qm(config_opx)
+    config_module = common.get_config_module()
+    config = config_module.config
+    opx_config = config_module.opx_config
+    
+    ip_address = config["DeviceIDs"]["QM_opx_ip"]
+    qmm = QuantumMachinesManager(ip_address)
+    opx = qmm.open_qm(opx_config)
+    
+    args = ["laserglow_589_x", 10, 0.1, 100, 10]
+    seq = qua_program(*args)
 
-    simulation_duration = 35000 // 4  # clock cycle units - 4ns
-
-    num_repeat = 3
-
-    args = [100, 1000.0, 350, 100, 3, "cobolt_515", 1]
-    seq, f, p, ns, ss = get_seq([], config, args, num_repeat)
-
-    plt.figure()
-
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
-    plt.show()
+    sim_config = SimulationConfig(
+        duration=20000 // 4, extraProcessingTimeoutInMs=int(1e3)
+    )
+    sim = opx.simulate(seq, sim_config)
+    print("got sim")
+    samples = sim.get_simulated_samples()
+    print("got samples")
+    samples.con1.plot()
+    
+    qmm.close_all_quantum_machines()
+    qmm.close()

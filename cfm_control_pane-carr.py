@@ -136,26 +136,30 @@ if __name__ == "__main__":
     ### Functions to run
 
     email_recipient = "cambria@wisc.edu"
+    do_email = False
     try:
         # pass
 
         tool_belt.init_safe_stop()
 
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
+        do_qm_OPX_tests(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_optimize(nv_sig)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
 
     except Exception as exc:
-        recipient = email_recipient
-        tool_belt.send_exception_email(email_to=recipient)
+        if do_email:
+            recipient = email_recipient
+            tool_belt.send_exception_email(email_to=recipient)
         raise exc
 
     finally:
-        msg = "Experiment complete!"
-        recipient = email_recipient
-        tool_belt.send_email(msg, email_to=recipient)
+        if do_email:
+            msg = "Experiment complete!"
+            recipient = email_recipient
+            tool_belt.send_email(msg, email_to=recipient)
 
         # Make sure everything is reset
         tool_belt.reset_cfm()

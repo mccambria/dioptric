@@ -28,7 +28,7 @@ config = {
         "piezo_stage_616_3cd_serial": "0121089079",
         "rotation_stage_ell18k_address": "COM5",
         "signal_generator_tsg4104a_visa_address": "TCPIP0::128.104.160.112::5025::SOCKET",
-        "qop_ip": "128.104.160.117",  # Quantum Machines OPX
+        "QM_opx_ip": "128.104.160.117",  
     },
     ###
     "Microwaves": {
@@ -131,6 +131,7 @@ config = {
 analog_output_delay = 136  # ns
 
 # Frequencies
+base_intermediate_frequency = 10e6
 NV_IF_freq = 40e6  # in units of Hz
 NV2_IF_freq = 45e6
 NV_LO_freq = 2.83e9  # in units of Hz
@@ -238,41 +239,41 @@ opx_config = {
     ###
     "elements": {
         "laserglow_589_x": {
-            "singleInput": {"port": ("con1", 3)},
-            "intermediate_frequency": NV_IF_freq,
+            "singleInput": {"port": ("con1", 1)},
+            "intermediate_frequency": base_intermediate_frequency,
             "operations": {
-                "cw": "const_freq_out",
+                "continuous": "continuous",
             },
         },
-        "AOD_1Y": {
-            "singleInput": {"port": ("con1", 4)},
-            "intermediate_frequency": NV_IF_freq,
-            "operations": {
-                "cw": "const_freq_out",
-            },
-        },
-        "sig_gen_TEKT_tsg4104a_I": {
-            "singleInput": {"port": ("con1", 6)},
-            "intermediate_frequency": 0.0,
-            "operations": {
-                "cw": "const_freq_out",
-            },
-        },
-        "sig_gen_TEKT_tsg4104a_Q": {
-            "singleInput": {"port": ("con1", 7)},
-            "intermediate_frequency": 0.0,
-            "operations": {
-                "cw": "const_freq_out",
-            },
-        },
-        "laserglow_589": {
-            "singleInput": {"port": ("con1", 5)},
-            "intermediate_frequency": 0,
-            "operations": {
-                "laser_ON_ANALOG": "laser_ON_ANALOG",
-                "cw": "const_freq_out",
-            },
-        },
+        # "AOD_1Y": {
+        #     "singleInput": {"port": ("con1", 4)},
+        #     "intermediate_frequency": NV_IF_freq,
+        #     "operations": {
+        #         "cw": "const_freq_out",
+        #     },
+        # },
+        # "sig_gen_TEKT_tsg4104a_I": {
+        #     "singleInput": {"port": ("con1", 6)},
+        #     "intermediate_frequency": 0.0,
+        #     "operations": {
+        #         "cw": "const_freq_out",
+        #     },
+        # },
+        # "sig_gen_TEKT_tsg4104a_Q": {
+        #     "singleInput": {"port": ("con1", 7)},
+        #     "intermediate_frequency": 0.0,
+        #     "operations": {
+        #         "cw": "const_freq_out",
+        #     },
+        # },
+        # "laserglow_589": {
+        #     "singleInput": {"port": ("con1", 5)},
+        #     "intermediate_frequency": 0,
+        #     "operations": {
+        #         "laser_ON_ANALOG": "laser_ON_ANALOG",
+        #         "cw": "const_freq_out",
+        #     },
+        # },
         "sig_gen_TEKT_tsg4104a": {
             "digitalInputs": {
                 "marker": {
@@ -328,29 +329,29 @@ opx_config = {
                 "zero_clock_pulse": "zero_clock_pulse",
             },
         },
-        "do_apd_0_gate": {
-            "singleInput": {"port": ("con1", 1)},
-            "digitalInputs": {
-                "marker": {
-                    "port": ("con1", 2),
-                    "delay": apd_0_total_delay,
-                    "buffer": 0,
-                },
-            },
-            "operations": {
-                "readout": "readout_pulse",
-                "long_readout": "long_readout_pulse",
-            },
-            "outputs": {"out1": ("con1", 1)},
-            "outputPulseParameters": {
-                "signalThreshold": signal_threshold,
-                "signalPolarity": "Below",
-                "derivativeThreshold": 1800,
-                "derivativePolarity": "Below",
-            },
-            "time_of_flight": detection_delay,
-            "smearing": 15,  # tries to account for length of count pulses being finite.
-        },
+        # "do_apd_0_gate": {
+        #     "singleInput": {"port": ("con1", 1)},
+        #     "digitalInputs": {
+        #         "marker": {
+        #             "port": ("con1", 2),
+        #             "delay": apd_0_total_delay,
+        #             "buffer": 0,
+        #         },
+        #     },
+        #     "operations": {
+        #         "readout": "readout_pulse",
+        #         "long_readout": "long_readout_pulse",
+        #     },
+        #     "outputs": {"out1": ("con1", 1)},
+        #     "outputPulseParameters": {
+        #         "signalThreshold": signal_threshold,
+        #         "signalPolarity": "Below",
+        #         "derivativeThreshold": 1800,
+        #         "derivativePolarity": "Below",
+        #     },
+        #     "time_of_flight": detection_delay,
+        #     "smearing": 15,  # tries to account for length of count pulses being finite.
+        # },
         "do_apd_1_gate": {
             "singleInput": {"port": ("con1", 2)},
             "digitalInputs": {

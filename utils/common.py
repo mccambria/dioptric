@@ -50,15 +50,16 @@ def get_repo_path():
     return nvdata_dir
 
 
-def get_config_module():
-    pc_name = socket.gethostname()
+def get_config_module(pc_name=None):
+    if pc_name is None:
+        pc_name = socket.gethostname()
     module_name = f"config.{pc_name}"
     module = import_module(module_name)  
     return module
 
 
-def get_config_dict():
-    module = get_config_module() 
+def get_config_dict(pc_name=None):
+    module = get_config_module(pc_name) 
     return module.config
 
 def get_server(cxn, server_name):

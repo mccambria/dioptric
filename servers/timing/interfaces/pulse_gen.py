@@ -12,7 +12,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 
 
-class PulseGen(LabradServer,ABC):
+class PulseGen(LabradServer, ABC):
     
     
     @setting(1, seq_file="s", num_repeat="i", seq_args_string="s", returns="*?")

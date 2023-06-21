@@ -30,21 +30,21 @@ def poisson(val, param):
 # region Main
 
 
-def main():
+def main(nv_sig):
     with labrad.connect() as cxn:
-        return main_with_cxn(cxn)
+        return main_with_cxn(cxn, nv_sig)
 
 
-def main_with_cxn(cxn):
+def main_with_cxn(cxn, nv_sig):
     
     opx = cxn.QM_opx
     laser_name = "laserglow_589"
     
     # Channel, freq, amplitude, duration
-    seq_args = [f"{laser_name}_x", 10, 0.1, 1e6]
+    seq_args = [f"{laser_name}_x", 1, 0.1, 1e6]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "rf_test.py"
-    opx.stream_immediate(seq_file, 100, seq_args_string)
+    opx.stream_immediate(seq_file, 1, seq_args_string)
 
     # tb.poll_safe_stop()
 

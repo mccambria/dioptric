@@ -122,8 +122,8 @@ class PulseGenSwab82(PulseGen, LabradServer):
             self.final = final
         return ret_vals
 
-    @setting(3, num_repeat="i")
-    def stream_start(self, c, num_repeat=1):
+    @setting(3, num_reps="i")
+    def stream_start(self, c, num_reps=1):
         """Run the currently loaded stream for the specified number of
         repitions.
 
@@ -133,7 +133,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         """
 
         # Make sure the lasers that require it are set to feedthrough
-        # logging.info(num_repeat)
+        # logging.info(num_reps)
         for laser in self.do_feedthrough_lasers:
             self_client = self.client
             if hasattr(self_client, laser):
@@ -142,7 +142,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         if self.seq == None:
             raise RuntimeError("Stream started with no sequence.")
         if not self.loaded_seq_streamed:
-            self.pulse_streamer.stream(self.seq, num_repeat, self.final)
+            self.pulse_streamer.stream(self.seq, num_reps, self.final)
             self.loaded_seq_streamed = True
         self.pulse_streamer.startNow()
 
