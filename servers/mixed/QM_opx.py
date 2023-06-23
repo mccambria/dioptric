@@ -58,47 +58,28 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             filename=filename,
         )
 
+        # Get config dicts
         config_module = common.get_config_module()
         opx_config = config_module.opx_config
         self.opx_config = opx_config
         config = common.get_config_dict()
         self.config = config
 
+        # Get manager and OPX
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
         self.opx = self.qmm.open_qm(opx_config)
-        self.steady_state_program_file = "constant.py"
 
+        # Add sequence directory to path
         repo_path = common.get_repo_path()
         opx_sequence_library_path = (
             repo_path / f"servers/timing/sequencelibrary/{self.name}"
         )
         sys.path.append(str(opx_sequence_library_path))
-        self.steady_state_option = False
 
+        # Tagger setup
         self.apd_indices = config["apd_indices"]
-        ss_params = config["SteadyStateParameters"]["QmOpx"]
-        self.steady_state_digital_on = ss_params["steady_state_digital_on"]
-        self.steady_state_analog_on = ss_params["steady_state_analog_on"]
-        val = ss_params["steady_state_analog_freqs"]
-        self.steady_state_analog_freqs = np.array(val).astype(float).tolist()
-        val = ss_params["steady_state_analog_amps"]
-        self.steady_state_analog_amps = np.array(val).astype(float).tolist()
-
-        self.steady_state_seq_args = [
-            self.steady_state_digital_on,
-            self.steady_state_analog_on,
-            self.steady_state_analog_freqs,
-            self.steady_state_analog_amps,
-        ]
-        self.steady_state_seq_args_string = tb.encode_seq_args(
-            self.steady_state_seq_args
-        )
-
-        self.steady_state_seq, final_ss, period_ss = self.get_seq(
-            self.steady_state_program_file, self.steady_state_seq_args_string, 1
-        )
         self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
 
         logging.info("Init complete")
@@ -109,9 +90,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     # endregion
     # region Sequencing
-
-    def set_steady_state_option_on_off(self, selection):
-        self.steady_state_option = selection
 
     def get_seq(self, seq_file, seq_args_string, num_reps):
         """
@@ -155,25 +133,21 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         handled in the sequence build for the OPX
         """
 
-        ### Reconcile the stored and passed sequence parameters
-
+        # Reconcile the stored and passed sequence parameters
         if seq_file is None:
             seq_file = self.seq_file
         else:
             self.seq_file = seq_file
-
         if seq_args_string is None:
             seq_args_string = self.seq_args_string
         else:
             self.seq_args_string = seq_args_string
-
         if num_reps is None:
             num_reps = self.num_reps
         else:
             self.num_reps = num_reps
 
-        ### Process the sequence
-
+        # Process the sequence
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
         return seq, final, ret_vals
 

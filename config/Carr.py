@@ -101,15 +101,6 @@ config = {
         "tagger": "QM_opx",
     },
     ###
-    "SteadyStateParameters": {
-        "QmOpx": {
-            "steady_state_analog_amps": [],
-            "steady_state_analog_freqs": [],
-            "steady_state_analog_on": [],
-            "steady_state_digital_on": [],
-        },
-    },
-    ###
     "Wiring": {
         "PulseGen": {
             "do_apd_0_gate": 1,
