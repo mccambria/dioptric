@@ -10,6 +10,8 @@ Created June 20th, 2023
 from utils.tool_belt import ModTypes
 from utils.positioning import ControlStyle
 
+# region Base config
+
 config = {
     ###
     "apd_indices": [0],
@@ -28,7 +30,7 @@ config = {
         "piezo_stage_616_3cd_serial": "0121089079",
         "rotation_stage_ell18k_address": "COM5",
         "signal_generator_tsg4104a_visa_address": "TCPIP0::128.104.160.112::5025::SOCKET",
-        "QM_opx_ip": "128.104.160.117",  
+        "QM_opx_ip": "128.104.160.117",
     },
     ###
     "Microwaves": {
@@ -127,11 +129,13 @@ config = {
     },
 }
 
+# endregion
+# region OPX variables
 
 analog_output_delay = 136  # ns
 
-# Frequencies
-base_intermediate_frequency = 10e6
+# "Intermediate" frequencies
+default_int_freq = 10e6  #
 NV_IF_freq = 40e6  # in units of Hz
 NV2_IF_freq = 45e6
 NV_LO_freq = 2.83e9  # in units of Hz
@@ -200,11 +204,16 @@ yellow_AOM_total_delay = common_delay - yellow_aom_delay
 tsg4104_I_total_delay = common_delay - tsg4104_I_delay
 tsg4104_Q_total_delay = common_delay - tsg4104_Q_delay
 
+default_len = 1000
+
+# endregion
+# region OPX config
+
 opx_config = {
     "version": 1,
-    ###
+    # region Elements
     "controllers": {
-        "con1": {
+        "opx1": {
             "type": "opx1",
             "analog_outputs": {
                 1: {"offset": 0.0, "delay": NV_total_delay},  # will be I for sig gen
@@ -212,14 +221,11 @@ opx_config = {
                 3: {"offset": 0.0, "delay": AOD_total_delay},  # AOD_1X
                 4: {"offset": 0.0, "delay": AOD_total_delay},  # AOD_1Y
                 5: {"offset": 0.0, "delay": yellow_AOM_total_delay},  # yellow AOM
-                6: {
-                    "offset": 0.0,
-                    "delay": tsg4104_I_total_delay,
-                },  # I for tsg4104 signal generator
-                7: {
-                    "offset": 0.0,
-                    "delay": tsg4104_Q_total_delay,
-                },  # Q for tsg4104 signal generator
+                6: {"offset": 0.0, "delay": tsg4104_I_total_delay},  # sig gen tsg4104 I
+                7: {"offset": 0.0, "delay": tsg4104_Q_total_delay},  # sig gen tsg4104 Q
+                8: {"offset": 0.0, "delay": 0},
+                9: {"offset": 0.0, "delay": 0},
+                10: {"offset": 0.0, "delay": 0},
             },
             "digital_outputs": {
                 1: {},  #
@@ -229,6 +235,7 @@ opx_config = {
                 7: {},  # tsg4104 sig gen switch
                 8: {},  # cobolt 638
                 9: {},  # cobolt 515
+                10: {},  # cobolt 515
             },
             "analog_inputs": {
                 1: {"offset": 0},  # APD0
@@ -236,49 +243,101 @@ opx_config = {
             },
         },
     },
-    ###
+    # endregion
+    # region Elements
     "elements": {
-        
-        "laserglow_589_x": {
-            "singleInput": {"port": ("con1", 1)},
-            "intermediate_frequency": base_intermediate_frequency,
-            "operations": {
-                "continuous": "continuous",
-            },
+        # Region Bare channels
+        "do1": {
+            "digitalInputs": {"chan": {"port": ("opx1", 1)}},
+            "operations": {"on": "on", "off": "off"},
         },
-        # "AOD_1Y": {
-        #     "singleInput": {"port": ("con1", 4)},
-        #     "intermediate_frequency": NV_IF_freq,
-        #     "operations": {
-        #         "cw": "const_freq_out",
-        #     },
-        # },
-        # "sig_gen_TEKT_tsg4104a_I": {
-        #     "singleInput": {"port": ("con1", 6)},
-        #     "intermediate_frequency": 0.0,
-        #     "operations": {
-        #         "cw": "const_freq_out",
-        #     },
-        # },
-        # "sig_gen_TEKT_tsg4104a_Q": {
-        #     "singleInput": {"port": ("con1", 7)},
-        #     "intermediate_frequency": 0.0,
-        #     "operations": {
-        #         "cw": "const_freq_out",
-        #     },
-        # },
-        # "laserglow_589": {
-        #     "singleInput": {"port": ("con1", 5)},
-        #     "intermediate_frequency": 0,
-        #     "operations": {
-        #         "laser_ON_ANALOG": "laser_ON_ANALOG",
-        #         "cw": "const_freq_out",
-        #     },
-        # },
+        "do2": {
+            "digitalInputs": {"chan": {"port": ("opx1", 2)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do3": {
+            "digitalInputs": {"chan": {"port": ("opx1", 3)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do4": {
+            "digitalInputs": {"chan": {"port": ("opx1", 4)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do5": {
+            "digitalInputs": {"chan": {"port": ("opx1", 5)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do6": {
+            "digitalInputs": {"chan": {"port": ("opx1", 6)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do7": {
+            "digitalInputs": {"chan": {"port": ("opx1", 7)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do8": {
+            "digitalInputs": {"chan": {"port": ("opx1", 8)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do9": {
+            "digitalInputs": {"chan": {"port": ("opx1", 9)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "do10": {
+            "digitalInputs": {"chan": {"port": ("opx1", 10)}},
+            "operations": {"on": "on", "off": "off"},
+        },
+        "ao1": {
+            "singleInput": {"port": ("opx1", 1)},
+            "operations": {"constant": "constant"},
+        },
+        "ao2": {
+            "singleInput": {"port": ("opx1", 2)},
+            "operations": {"constant": "constant"},
+        },
+        "ao3": {
+            "singleInput": {"port": ("opx1", 3)},
+            "operations": {"constant": "constant"},
+        },
+        "ao4": {
+            "singleInput": {"port": ("opx1", 4)},
+            "operations": {"constant": "constant"},
+        },
+        "ao5": {
+            "singleInput": {"port": ("opx1", 5)},
+            "operations": {"constant": "constant"},
+        },
+        "ao6": {
+            "singleInput": {"port": ("opx1", 6)},
+            "operations": {"constant": "constant"},
+        },
+        "ao7": {
+            "singleInput": {"port": ("opx1", 7)},
+            "operations": {"constant": "constant"},
+        },
+        "ao8": {
+            "singleInput": {"port": ("opx1", 8)},
+            "operations": {"constant": "constant"},
+        },
+        "ao9": {
+            "singleInput": {"port": ("opx1", 9)},
+            "operations": {"constant": "constant"},
+        },
+        "ao10": {
+            "singleInput": {"port": ("opx1", 10)},
+            "operations": {"constant": "constant"},
+        },
+        # endregion
+        # region Actual "elements", or physical things to control
+        "laserglow_589_x": {
+            "singleInput": {"port": ("opx1", 1)},
+            "intermediate_frequency": default_int_freq,
+            "operations": {"constant": "constant"},
+        },
         "sig_gen_TEKT_tsg4104a": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 7),
+                    "port": ("opx1", 7),
                     "delay": uwave_total_delay,
                     "buffer": 0,
                 },
@@ -292,22 +351,8 @@ opx_config = {
         "cobolt_515": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 9),
+                    "port": ("opx1", 9),
                     "delay": green_laser_total_delay,
-                    "buffer": 0,
-                },
-            },
-            "operations": {
-                "laser_ON_DIGITAL": "laser_ON_DIGITAL",
-                "laser_OFF_DIGITAL": "laser_OFF_DIGITAL",
-                "constant_HIGH": "constant_HIGH",
-            },
-        },
-        "cobolt_638": {
-            "digitalInputs": {
-                "marker": {
-                    "port": ("con1", 8),
-                    "delay": red_laser_total_delay,
                     "buffer": 0,
                 },
             },
@@ -320,7 +365,7 @@ opx_config = {
         "do_sample_clock": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 5),
+                    "port": ("opx1", 5),
                     "delay": common_delay,
                     "buffer": 0,
                 },
@@ -331,10 +376,10 @@ opx_config = {
             },
         },
         # "do_apd_0_gate": {
-        #     "singleInput": {"port": ("con1", 1)},
+        #     "singleInput": {"port": ("opx1", 1)},
         #     "digitalInputs": {
         #         "marker": {
-        #             "port": ("con1", 2),
+        #             "port": ("opx1", 2),
         #             "delay": apd_0_total_delay,
         #             "buffer": 0,
         #         },
@@ -343,7 +388,7 @@ opx_config = {
         #         "readout": "readout_pulse",
         #         "long_readout": "long_readout_pulse",
         #     },
-        #     "outputs": {"out1": ("con1", 1)},
+        #     "outputs": {"out1": ("opx1", 1)},
         #     "outputPulseParameters": {
         #         "signalThreshold": signal_threshold,
         #         "signalPolarity": "Below",
@@ -354,10 +399,10 @@ opx_config = {
         #     "smearing": 15,  # tries to account for length of count pulses being finite.
         # },
         "do_apd_1_gate": {
-            "singleInput": {"port": ("con1", 2)},
+            "singleInput": {"port": ("opx1", 2)},
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 3),
+                    "port": ("opx1", 3),
                     "delay": apd_1_total_delay,
                     "buffer": 0,
                 },
@@ -366,7 +411,7 @@ opx_config = {
                 "readout": "readout_pulse",
                 "long_readout": "long_readout_pulse",
             },
-            "outputs": {"out1": ("con1", 2)},
+            "outputs": {"out1": ("opx1", 2)},
             "outputPulseParameters": {
                 "signalThreshold": signal_threshold,
                 "signalPolarity": "Below",
@@ -377,74 +422,49 @@ opx_config = {
             "smearing": 15,
         },
     },
-    ###
+    # endregion
+    # region Pulses
     "pulses": {
-        "continuous": {
+        ### Analog
+        "constant": {
             "operation": "control",
-            "length": 1000,
-            "waveforms": {"single": "continuous"},
+            "length": default_len,
+            "waveforms": {"single": "constant"},
         },
         "laser_ON_ANALOG": {
             "operation": "control",
             "length": initialization_len,
-            "waveforms": {"single": "continuous"},
+            "waveforms": {"single": "constant"},
         },
-        "laser_ON_DIGITAL": {
+        ### Digital
+        "on": {
             "operation": "control",
-            "length": initialization_len,
-            "digital_marker": "ON",
+            "length": default_len,
+            "digital_marker": "on",
         },
-        "laser_OFF_DIGITAL": {
+        "off": {
             "operation": "control",
-            "length": initialization_len,
-            "digital_marker": "OFF",
-        },
-        "constant_HIGH": {
-            "operation": "control",
-            "length": initialization_len,
-            "digital_marker": "ON",
-        },
-        "clock_pulse": {
-            "operation": "control",
-            "length": 100,
-            "digital_marker": "ON",
-        },
-        "zero_clock_pulse": {
-            "operation": "control",
-            "length": 100,
-            "digital_marker": "OFF",
-        },
-        "uwave_ON": {
-            "operation": "control",
-            "length": uwave_len,
-            "digital_marker": "ON",
-        },
-        "uwave_OFF": {
-            "operation": "control",
-            "length": uwave_len,
-            "digital_marker": "OFF",
+            "length": default_len,
+            "digital_marker": "off",
         },
         "readout_pulse": {
             "operation": "measurement",
             "length": meas_len,
             "digital_marker": "ON",
-            "waveforms": {"single": "zero"},
-        },
-        "long_readout_pulse": {
-            "operation": "measurement",
-            "length": long_meas_len,
-            "digital_marker": "ON",
-            "waveforms": {"single": "zero"},
+            "waveforms": {"single": "constant"},
         },
     },
-    ###
+    # endregion
+    # region Waveforms
+    ### Analog
     "waveforms": {
-        "continuous": {"type": "constant", "sample": 0.5},
-        "zero": {"type": "constant", "sample": 0.0},
+        "constant": {"type": "constant", "sample": 0.5},
     },
-    ###
+    ### Digital
     "digital_waveforms": {
-        "ON": {"samples": [(1, 0)]},  # [(on/off, ns)
-        "OFF": {"samples": [(0, 0)]},  # [(on/off, ns)
+        "on": {"samples": [(1, 0)]},  # [(on/off, ns)
+        "off": {"samples": [(0, 0)]},  # [(on/off, ns)
     },
+    # endregion
 }
+# endregion

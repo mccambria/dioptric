@@ -40,6 +40,7 @@ import socket
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
 
+
 class QmOpx(Tagger, PulseGen, LabradServer):
     # region Setup
 
@@ -48,7 +49,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     # steady_state_program_file = 'steady_state_program_test_opx.py'
 
     def initServer(self):
-        
         nvdata_path = common.get_nvdata_path()
         filename = nvdata_path / f"pc_{self.pc_name}/labrad_logging/{self.name}.log"
         logging.basicConfig(
@@ -57,13 +57,13 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        
+
         config_module = common.get_config_module()
         opx_config = config_module.opx_config
         self.opx_config = opx_config
         config = common.get_config_dict()
         self.config = config
-        
+
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
@@ -104,7 +104,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             self.steady_state_program_file, self.steady_state_seq_args_string, 1
         )
         self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
-        
+
         logging.info("Init complete")
 
     def stopServer(self):
@@ -146,62 +146,76 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
 
         return seq, final, ret_vals
-    
-    
+
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
-    def stream_load(self, c, seq_file, seq_args_string=""):  
+    def stream_load(self, c, seq_file, seq_args_string=""):
         """See pulse_gen interface"""
-        
+
         _, _, ret_vals = self._stream_load(seq_file, seq_args_string, num_reps=1)
         return ret_vals
-    
-    def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):  
+
+    def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):
         """
         Internal version of stream_load with support for num_reps since that's
         handled in the sequence build for the OPX
         """
-        
+
         ### Reconcile the stored and passed sequence parameters
-        
+
         if seq_file is None:
             seq_file = self.seq_file
         else:
             self.seq_file = seq_file
-            
+
         if seq_args_string is None:
             seq_args_string = self.seq_args_string
         else:
             self.seq_args_string = seq_args_string
-            
+
         if num_reps is None:
             num_reps = self.num_reps
         else:
             self.num_reps = num_reps
-            
+
         ### Process the sequence
-        
+
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
         return seq, final, ret_vals
 
     @setting(14, num_reps="i")
     def stream_start(self, c, num_reps=1):
         """See pulse_gen interface"""
-        
+
         seq, _, _ = self._stream_load(num_reps=num_reps)
         program_id = self.opx.compile(seq)
-        pending_job  = self.opx.queue.add_compiled(program_id)
+        pending_job = self.opx.queue.add_compiled(program_id)
         job = pending_job.wait_for_execution()
         self.counter_index = 0
-        
+
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
     def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
         """See pulse_gen interface"""
 
         analog_freqs = [0.0 for el in analog_channels]
-        self.constant_ac(c, digital_channels, analog_channels, analog_voltages, analog_freqs)
+        self.constant_ac(
+            c, digital_channels, analog_channels, analog_voltages, analog_freqs
+        )
 
-    @setting(16, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", analog_freqs="*v[]")
-    def constant_ac(self, c, digital_channels=[], analog_channels=[], analog_voltages=[], analog_freqs=[]):
+    @setting(
+        16,
+        digital_channels="*i",
+        analog_channels="*i",
+        analog_voltages="*v[]",
+        analog_freqs="*v[]",
+    )
+    def constant_ac(
+        self,
+        c,
+        digital_channels=[],
+        analog_channels=[],
+        analog_voltages=[],
+        analog_freqs=[],
+    ):
         """
         Version of constant() with support for AC signals on the analog outputs.
         Freqs in Hz
@@ -214,23 +228,23 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         args = [digital_channels, analog_channels, analog_voltages, analog_freqs]
         seq_args_string = tb.encode_seq_args(args)
-        
+
         self.stream_immediate(
-            c, seq_file="constant.py", num_reps=-1, seq_args_string=seq_args_string
+            seq_file="constant.py", seq_args_string=seq_args_string, num_reps=-1
         )
 
     # endregion
     # region Time tagging
     # from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
-    
-    def read_counter_internal(self):  
+
+    def read_counter_internal(self):
         """
-        This is the core function that any tagger needs in order to function 
-        as a counter. 
-        For the OPX this fetches the data from the job that was created when 
+        This is the core function that any tagger needs in order to function
+        as a counter.
+        For the OPX this fetches the data from the job that was created when
         the program was executed. Assumes "counts" is one of the data streams
-        The count stream should be a three level list. First level is the 
-        sample, second is the apds, third is the different gates. First index 
+        The count stream should be a three level list. First level is the
+        sample, second is the apds, third is the different gates. First index
         gives the sample. next level gives the gate. next level gives which apd
         [  [ [],[] ] , [ [],[] ], [ [],[] ]  ]
 
@@ -318,7 +332,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     def read_raw_stream(self):
         """
-        Read the raw stream. currently it waits for all data in the job to 
+        Read the raw stream. currently it waits for all data in the job to
         come in and reports it all. Ideally it would do it live
         """
         # logging.info('at read raw stream')
@@ -479,12 +493,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     @setting(40)
     def reset(self, c):
-        
         # Update the config
         config_module = common.get_config_module()
         opx_config = config_module.opx_config
         self.opx_config = opx_config
-        
+
         # Refresh the OPX
         self.qmm.close_all_quantum_machines()
         self.opx = self.qmm.open_qm(self.opx_config)
