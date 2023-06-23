@@ -60,14 +60,14 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         
         config_module = common.get_config_module()
         opx_config = config_module.opx_config
+        self.opx_config = opx_config
         config = common.get_config_dict()
         self.config = config
-        self.opx_config = opx_config
         
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
-        self.qm = self.qmm.open_qm(opx_config)
+        self.opx = self.qmm.open_qm(opx_config)
         self.steady_state_program_file = "constant.py"
 
         repo_path = common.get_repo_path()
@@ -103,37 +103,20 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.steady_state_seq, final_ss, period_ss = self.get_seq(
             self.steady_state_program_file, self.steady_state_seq_args_string, 1
         )
-        logging.info("Init complete")
         self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
+        
+        logging.info("Init complete")
 
     def stopServer(self):
-        try:
-            self.qmm.close_all_quantum_machines()
-            self.qmm.close()
-        except:
-            pass
+        self.qmm.close_all_quantum_machines()
+        self.qmm.close()
 
     # endregion
 
     # region Sequencing
 
-    # compiles the program ands adds it to the desired quantum machine
-    def compile_qua_sequence(self, quantum_machine, program):
-        compilied_program_id = quantum_machine.compile(program)
-        return compilied_program_id
-
-    def set_steady_state_option_on_off(
-        self, selection
-    ):  # selection should be true or false
+    def set_steady_state_option_on_off(self, selection):
         self.steady_state_option = selection
-
-    def add_qua_sequence_to_qm_queue(self, quantum_machine, compilied_program_id):
-        # logging.info('start here')
-        # a = time.time()
-        program_job = quantum_machine.queue.add_compiled(compilied_program_id)
-        # logging.info(time.time()-a)
-        # logging.info('end here')
-        return program_job
 
     def get_seq(self, seq_file, seq_args_string, num_reps):
         """
@@ -159,117 +142,87 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-            ret_vals = seq_module.get_seq(self, self.config, args, num_reps)
+            ret_vals = seq_module.get_seq(self.opx_config, self.config, args, num_reps)
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
 
         return seq, final, ret_vals
-
+    
+    
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
     def stream_load(self, c, seq_file, seq_args_string=""):  
-        """For the OPX, this will just grab a single iteration of the desired sequence and return the parameter of interest
-        Params
-            seq_file: str
-                A qua sequence file from the sequence library
-            args: list(any)
-                Arbitrary list used to modulate a sequence from the sequence
-                library - see simple_readout.py for an example. Default is
-                None
-
-        Returns
-            list(any)
-                Arbitrary list returned by the sequence file
-        """
-        # logging.info('made it here')
-        self.qmm.close_all_quantum_machines()
-        self.qm = self.qmm.open_qm(self.opx_config)
-        self.seq_file = seq_file
-        self.seq_args_string = seq_args_string
-        # logging.info(seq_args_string)
-        seq, final, ret_vals = self.get_seq(self.seq_file, seq_args_string, 1)
-        # logging.info('hi')
-        self.pending_experiment_compiled_program_id = self.compile_qua_sequence(
-            self.qm, seq
-        )
-
+        """See pulse_gen interface"""
+        
+        _, _, ret_vals = self._stream_load(seq_file, seq_args_string, num_reps=1)
         return ret_vals
+    
+    def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):  
+        """
+        Internal version of stream_load with support for num_reps since that's
+        handled in the sequence build for the OPX
+        """
+        
+        ### Reconcile the stored and passed sequence parameters
+        
+        if seq_file is None:
+            seq_file = self.seq_file
+        else:
+            self.seq_file = seq_file
+            
+        if seq_args_string is None:
+            seq_args_string = self.seq_args_string
+        else:
+            self.seq_args_string = seq_args_string
+            
+        if num_reps is None:
+            num_reps = self.num_reps
+        else:
+            self.num_reps = num_reps
+            
+        ### Process the sequence
+        
+        seq, final, ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+        return seq, final, ret_vals
 
     @setting(14, num_reps="i")
     def stream_start(self, c, num_reps=1):
-        """
-        For the OPX, this will run the qua program already grabbed by 
-        stream_load(). If num_reps is greater than 1, it will get the 
-        sequence again, this time with the number of repetitions and then run it.
-        num_reps: int
-            The number of times the sequence is repeated, such as the number of reps in a rabi routine
-        """
+        """See pulse_gen interface"""
         
-        self.num_reps = num_reps
-
-        # if num_reps == -1:
-        #     num_reps = 10000  # just make it go a bunch of times for now. canceling it will just kill the operation
-        #     self.num_reps = 1
-        #     logging.info(f"repeating {num_reps} times instead of indefinitely")
-        # # if we want to repeat it, get the sequence again but with all the repetitions.
-        # elif num_reps >= 2:  
-        #     self.qmm.close_all_quantum_machines()
-        #     self.qm = self.qmm.open_qm(self.opx_config)
-
-        #     seq, final, ret_vals = self.get_seq(
-        #         self.seq_file, self.seq_args_string, num_reps
-        #     )  # gets the full sequence
-        #     self.pending_experiment_compiled_program_id = self.compile_qua_sequence(
-        #         self.qm, seq
-        #     )
-            
-        seq, final, ret_vals = self.get_seq(
-            self.seq_file, self.seq_args_string, num_reps
-        )
-
-        # logging.info('starting here')
-        # st = time.time()
-        self.pending_experiment_job = self.add_qua_sequence_to_qm_queue(
-            self.qm, self.pending_experiment_compiled_program_id
-        )
-        # logging.info(time.time() - st)
-
-        self.experiment_job = self.pending_experiment_job.wait_for_execution()
-        # logging.info(time.time() - st)
-        # logging.info('ending')
-
+        seq, _, _ = self._stream_load(num_reps=num_reps)
+        program_id = self.opx.compile(seq)
+        pending_job  = self.opx.queue.add_compiled(program_id)
+        job = pending_job.wait_for_execution()
         self.counter_index = 0
+        
+    @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
+    def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
+        """See pulse_gen interface"""
 
-        return
+        analog_freqs = [0.0 for el in analog_channels]
+        self.constant_ac(c, digital_channels, analog_channels, analog_voltages, analog_freqs)
 
-    @setting(15, high_digital_channels="*s", analog_elements_to_set="*s",
-             analog_frequencies="*v[]", analog_amplitudes="*v[]")
-    def constant(self, c, high_digital_channels=[], analog_elements_to_set=[],
-                 analog_frequencies=[], analog_amplitudes=[]):
+    @setting(16, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", analog_freqs="*v[]")
+    def constant_ac(self, c, digital_channels=[], analog_channels=[], analog_voltages=[], analog_freqs=[]):
         """
-        Set the OPX to an infinite loop, ouputing the desired things on 
-        each channel.
+        Version of constant() with support for AC signals on the analog outputs.
+        Freqs in Hz
         """
 
-        high_digital_channels = np.asarray(high_digital_channels)
-        analog_amplitudes = np.asarray(analog_amplitudes)
-        analog_elements_to_set = np.asarray(analog_elements_to_set)
-        analog_frequencies = np.asarray(analog_frequencies)
+        digital_channels = [int(el) for el in digital_channels]
+        analog_channels = [int(el) for el in analog_channels]
+        analog_voltages = [float(el) for el in analog_voltages]
+        analog_freqs = [float(el) for el in analog_freqs]
 
-        args = [
-            high_digital_channels.tolist(),
-            analog_elements_to_set.tolist(),
-            analog_frequencies.tolist(),
-            analog_amplitudes.tolist(),
-        ]
-        # logging.info(args)
-
-        args_string = tb.encode_seq_args(args)
+        args = [digital_channels, analog_channels, analog_voltages, analog_freqs]
+        seq_args_string = tb.encode_seq_args(args)
+        
         self.stream_immediate(
-            c, seq_file="constant.py", num_reps=1, seq_args_string=args_string
+            c, seq_file="constant.py", num_reps=-1, seq_args_string=seq_args_string
         )
 
     # endregion
     # region Time tagging
     # from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
+    
     def read_counter_internal(self):  
         """
         This is the core function that any tagger needs in order to function 
@@ -451,17 +404,17 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         return t_return, np.array(all_channels)
 
-    @setting(17, gate_indices="*i", clock="b")  # from apd tagger.
+    @setting(20, gate_indices="*i", clock="b")  # from apd tagger.
     def start_tag_stream(self, c, gate_indices=None, clock=True):
         self.stream = True
         pass
 
-    @setting(18)  # from apd tagger.
+    @setting(21)  # from apd tagger.
     def stop_tag_stream(self, c):
         self.stream = None
         pass
 
-    @setting(19)
+    @setting(22)
     def clear_buffer(self, c):
         """OPX does not need this - used by Swabian Time Tagger"""
         pass
@@ -469,7 +422,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     # endregion
     # region Conditional logic
 
-    @setting(10805, num_streams="i")
+    @setting(30, num_streams="i")
     def get_cond_logic_num_ops(self, c, num_streams):
         """
         This function assumes you are trying to save a num_ops stream in the sequence to keep track of how many conditional logic
@@ -524,17 +477,25 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     #     pass
     # endregion
 
-    @setting(26)
+    @setting(40)
     def reset(self, c):
+        
+        # Update the config
+        config_module = common.get_config_module()
+        opx_config = config_module.opx_config
+        self.opx_config = opx_config
+        
+        # Refresh the OPX
         self.qmm.close_all_quantum_machines()
-        self.qm = self.qmm.open_qm(self.opx_config)
+        self.opx = self.qmm.open_qm(self.opx_config)
 
+        # Turn on steady state output
         if self.steady_state_option:
             self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(
-                self.qm, self.steady_state_seq
+                self.opx, self.steady_state_seq
             )
             self.pending_steady_state_job = self.add_qua_sequence_to_qm_queue(
-                self.qm, self.pending_steady_state_compiled_program_id
+                self.opx, self.pending_steady_state_compiled_program_id
             )
             self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
 

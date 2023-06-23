@@ -69,7 +69,6 @@ class PulseGenSwab82(PulseGen, LabradServer):
 
         self.config = config
         self.pulse_streamer_wiring = self.config["Wiring"]["PulseGen"]
-        logging.info(self.pulse_streamer_wiring)
         self.do_feedthrough_lasers = []
         optics_dict = config["Optics"]
         for key in optics_dict:
@@ -96,23 +95,8 @@ class PulseGenSwab82(PulseGen, LabradServer):
         return seq, final, ret_vals
 
     @setting(2, seq_file="s", seq_args_string="s", returns="*?")
-    def stream_load(self, c, seq_file, seq_args_string=""):
-        """Load the sequence from seq_file. Set it to end in the specified
-        final output state. The sequence will not run until you call
-        stream_start.
-
-        Params
-            seq_file: str
-                A sequence file from the sequence library
-            args: list(any)
-                Arbitrary list used to modulate a sequence from the sequence
-                library - see simple_readout.py for an example. Default is
-                None
-
-        Returns
-            list(any)
-                Arbitrary list returned by the sequence file
-        """
+    def stream_load(self, c, seq_file, seq_args_string="", num_reps=1):
+        """See pulse_gen interface"""
 
         self.pulse_streamer.setTrigger(start=TriggerStart.SOFTWARE)
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string)
@@ -124,13 +108,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
 
     @setting(3, num_reps="i")
     def stream_start(self, c, num_reps=1):
-        """Run the currently loaded stream for the specified number of
-        repitions.
-
-        Params
-            num_repeat: int
-                Number of times to repeat the sequence. Default is 1
-        """
+        """See pulse_gen interface"""
 
         # Make sure the lasers that require it are set to feedthrough
         # logging.info(num_reps)
@@ -146,28 +124,33 @@ class PulseGenSwab82(PulseGen, LabradServer):
             self.loaded_seq_streamed = True
         self.pulse_streamer.startNow()
 
-    @setting(
-        4,
-        digital_channels="*i",
-        analog_0_voltage="v[]",
-        analog_1_voltage="v[]",
-    )
-    def constant(
-        self,
-        c,
-        digital_channels=[],
-        analog_0_voltage=0.0,
-        analog_1_voltage=0.0,
-    ):
-        """Set the PulseStreamer to a constant output state."""
+    @setting(4, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
+    def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
+        """See pulse_gen interface"""
 
+        # Digital
         digital_channels = [int(el) for el in digital_channels]
+        
+        # Analog
+        analog_0_voltage = 0.0
+        analog_1_voltage = 0.0
+        for chan in [0,1]:
+            if chan in analog_channels:
+                ind = analog_channels.index(chan)
+                voltage = analog_voltages[ind]
+                if chan == 0:
+                    analog_0_voltage = voltage
+                elif chan == 1:
+                    analog_1_voltage = voltage
+                    
+        # Run the operation
         state = OutputState(digital_channels, analog_0_voltage, analog_1_voltage)
         self.pulse_streamer.constant(state)
 
     @setting(5)
     def force_final(self, c):
-        """Force the PulseStreamer its current final output state.
+        """
+        Force the PulseStreamer its current final output state.
         Essentially a stop command.
         """
 

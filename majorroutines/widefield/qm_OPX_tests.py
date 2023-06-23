@@ -11,9 +11,9 @@ Created on June 19th, 2023
 # region Import and constants
 
 import numpy as np
-from utils import common
-from utils import tool_belt as tb
-from utils import kplotlib as kpl
+import utils.common as common
+import utils.tool_belt as tb
+import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
 import labrad
 
@@ -41,10 +41,10 @@ def main_with_cxn(cxn, nv_sig):
     laser_name = "laserglow_589"
     
     # Channel, freq, amplitude, duration
-    seq_args = [f"{laser_name}_x", 1, 0.1, 1e6]
+    seq_args = [f"{laser_name}_x", 10, 0.4, 1000]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "rf_test.py"
-    opx.stream_immediate(seq_file, 1, seq_args_string)
+    opx.stream_immediate(seq_file, 10, seq_args_string)
 
     # tb.poll_safe_stop()
 

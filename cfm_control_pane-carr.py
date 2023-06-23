@@ -18,7 +18,7 @@ import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.rabi as rabi
-from majorroutines.widefield import qm_OPX_tests
+import majorroutines.widefield.qm_OPX_tests as qm_OPX_tests
 
 
 ### Major Routines

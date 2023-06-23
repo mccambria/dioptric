@@ -238,6 +238,7 @@ opx_config = {
     },
     ###
     "elements": {
+        
         "laserglow_589_x": {
             "singleInput": {"port": ("con1", 1)},
             "intermediate_frequency": base_intermediate_frequency,

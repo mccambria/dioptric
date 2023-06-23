@@ -42,7 +42,7 @@ class Tagger(Counter, ABC):
         """
         pass
 
-    @setting(16, num_to_read="i", returns="*s*i")
+    @setting(301, num_to_read="i", returns="*s*i")
     def read_tag_stream(self, c, num_to_read=None):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the

@@ -1,76 +1,88 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Sequence for generating constants outputs with the opx, such as for leaving a laser on during alignment. 
+Constant sequence for the QM OPX
+
+Created on June 21st, 2023
+
+@author: mccambria
 """
 
-import time
-from qm import SimulationConfig
-from qm.QuantumMachinesManager import QuantumMachinesManager
-import matplotlib.pyplot as plt
-import numpy as np
-import utils.tool_belt as tool_belt
-from qm.qua import program, play, infinite_loop_, update_frequency
+
+import numpy
+import qm
 from qm import qua
+from qm.QuantumMachinesManager import QuantumMachinesManager
+from qm.simulate import SimulationConfig
+from qm.qua import program, declare, declare_stream, stream_processing
+from qm.qua import measure, wait, save, play, align, fixed, assign
+from qm.qua import infinite_loop_, while_
+from utils.tool_belt import States
+import utils.common as common
+import utils.tool_belt as tb
+import utils.kplotlib as kpl
+import matplotlib.pyplot as plt
 
-period = 0 
 
-def qua_program(opx, config,args, num_reps):
-    
-    opx_wiring = config['Wiring']['QmOpx']    
-    high_digital_channels = args[0]
-    analog_elements_to_set = args[1]
-    analog_frequencies = args[2]
-    analog_amplitudes = args[3]
+def qua_program(digital_channels, analog_channels, analog_voltages, analog_freqs, num_reps=1):
     
     with program() as seq:
         
-        play('zero_clock_pulse',"do_sample_clock")
-    
-        for dig_element in high_digital_channels:
+        ### Non-loop stuff here
+        qua.update_frequency(element, freq * 1e6)
+        a = declare(fixed, value=amp)
+        
+        ### Define one pass through the loop - call it in boilerplate below
+        def one_loop():
+            qua.play("continuous" * qua.amp(a), element, duration=duration)
+        
+        ### Boilerplate for handling num_reps
+        if num_reps == -1:
             with infinite_loop_():
-                play('constant_HIGH',dig_element)
+                one_loop()
+        else:
+            ind = declare(fixed)
+            assign(ind, 0)
+            with while_(ind<num_reps):
+                one_loop()
+                assign(ind, ind+1)
                 
-        loop_zip = zip(analog_elements_to_set, analog_frequencies, analog_amplitudes)
-        for el, freq, amp in loop_zip:
-            update_frequency(el, freq)
-            with infinite_loop_():
-                play("cw"*qua.amp(amp), el)
-       
     return seq
-        
-        
-def get_seq(opx,config, args, num_repeat): #so this will give just the sequence, no repeats
-    
-    seq = qua_program(opx, config,args, num_reps=num_repeat)
-    final = ''
-    period = ''
+
+
+def get_seq(opx_config, config, args, num_reps=1):
+    digital_channels, analog_channels, analog_voltages, analog_freqs = args
+    seq = qua_program(digital_channels, analog_channels, 
+                      analog_voltages, analog_freqs, num_reps)
+    final = ""
+    # specify what one 'sample' means for  readout
+    sample_size = "all_reps"
     num_gates = 0
-    sample_size = None
-    return seq, final, [period], num_gates, sample_size
+    return seq, final, [], num_gates, sample_size
 
 
-if __name__ == '__main__':
-    from opx_configuration_file import *
+if __name__ == "__main__":
 
-    from qualang_tools.results import fetching_tool, progress_counter
-    import matplotlib.pylab as plt
-    import time
+    config_module = common.get_config_module()
+    config = config_module.config
+    opx_config = config_module.opx_config
     
-    config = tool_belt.get_config_dict()
-    qmm = QuantumMachinesManager(host="128.104.160.117",port="80")
-    qm = qmm.open_qm(config_opx)
+    ip_address = config["DeviceIDs"]["QM_opx_ip"]
+    qmm = QuantumMachinesManager(ip_address)
+    opx = qmm.open_qm(opx_config)
     
-    simulation_duration =  10000 // 4 # clock cycle units - 4ns
-    num_repeat=3
-    delay = 1000
-    args = [['do_laserglow_532_dm', 'do_signal_generator'], ['AOD_1X', 'AOD_1Y'], [0.0, 10000000.0], [1.0, 0.5]]
-    args = [],['laserglow_589'],[0],[.5]
-    seq , f, p, ng, ss = get_seq([],config, args, num_repeat)
+    try:
     
-    job_sim = qm.simulate(seq, SimulationConfig(simulation_duration))
-    job_sim.get_simulated_samples().con1.plot()
-    # plt.show()
-# 
-    # job = qm.execute(seq)
+        args = ["laserglow_589_x", 10, 0.2, 100, 5]
+        seq = qua_program(*args)
     
-    # print('job.halt() to end infinite loop')
-    
+        sim_config = SimulationConfig(duration=5000 // 4)
+        sim = opx.simulate(seq, sim_config)
+        samples = sim.get_simulated_samples()
+        samples.con1.plot()
+        
+    except Exception as exc:
+        print(exc)
+    finally:
+        qmm.close_all_quantum_machines()
+        qmm.close()

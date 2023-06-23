@@ -36,11 +36,11 @@ class Counter(LabradServer, ABC):
 
         return counts
 
-    @setting(7, num_to_read="i", returns="*3w")
+    @setting(207, num_to_read="i", returns="*3w")
     def read_counter_complete(self, c, num_to_read=None):
         return self.read_counter_setting_internal(num_to_read)
 
-    @setting(8, num_to_read="i", returns="*w")
+    @setting(208, num_to_read="i", returns="*w")
     def read_counter_simple(self, c, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
@@ -56,7 +56,7 @@ class Counter(LabradServer, ABC):
 
         return return_counts
 
-    @setting(9, num_to_read="i", returns="*2w")
+    @setting(209, num_to_read="i", returns="*2w")
     def read_counter_separate_gates(self, c, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
@@ -75,7 +75,7 @@ class Counter(LabradServer, ABC):
 
         return return_counts
 
-    @setting(10, modulus="i", num_to_read="i", returns="*2w")
+    @setting(210, modulus="i", num_to_read="i", returns="*2w")
     def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
@@ -108,7 +108,7 @@ class Counter(LabradServer, ABC):
 
         return return_counts
 
-    @setting(11, num_to_read="i", returns="*2w")
+    @setting(211, num_to_read="i", returns="*2w")
     def read_counter_separate_apds(self, c, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
