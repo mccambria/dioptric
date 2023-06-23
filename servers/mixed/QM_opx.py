@@ -76,10 +76,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
         sys.path.append(str(opx_sequence_library_path))
         self.steady_state_option = False
-        # logging.info(tb.get_mod_type('cobolt_515'))
-
-        # steady_state_seq, final_ss, period_ss = get_seq(self, self.steady_state_program_file, self.steady_state_seq_args_string, 1)
-        # self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(self.qm,steady_state_seq)
 
         self.apd_indices = config["apd_indices"]
         ss_params = config["SteadyStateParameters"]["QmOpx"]
@@ -112,7 +108,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.qmm.close()
 
     # endregion
-
     # region Sequencing
 
     def set_steady_state_option_on_off(self, selection):
@@ -201,21 +196,14 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             c, digital_channels, analog_channels, analog_voltages, analog_freqs
         )
 
+    # fmt: off
     @setting(
-        16,
-        digital_channels="*i",
-        analog_channels="*i",
-        analog_voltages="*v[]",
-        analog_freqs="*v[]",
+        16, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", analog_freqs="*v[]",
     )
     def constant_ac(
-        self,
-        c,
-        digital_channels=[],
-        analog_channels=[],
-        analog_voltages=[],
-        analog_freqs=[],
+        self, c, digital_channels=[], analog_channels=[], analog_voltages=[], analog_freqs=[],
     ):
+    # fmt: on
         """
         Version of constant() with support for AC signals on the analog outputs.
         Freqs in Hz
@@ -235,7 +223,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     # endregion
     # region Time tagging
-    # from apd tagger. for the opx it fetches the results from the job. Don't think num_to_read has to do anything
 
     def read_counter_internal(self):
         """

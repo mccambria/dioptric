@@ -50,7 +50,7 @@ def qua_program(
                 chan = analog_channels[ind]
                 element = f"ao{chan}"
                 amp = amps[ind]
-                qua.play("continous" * amp, element, duration=1000)
+                qua.play("constant" * amp, element, duration=1000)
 
         ### Boilerplate for handling num_reps
         if num_reps == -1:
