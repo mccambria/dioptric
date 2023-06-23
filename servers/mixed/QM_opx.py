@@ -46,7 +46,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     name = "QM_opx"
     pc_name = socket.gethostname()
-    # steady_state_program_file = 'steady_state_program_test_opx.py'
 
     def initServer(self):
         nvdata_path = common.get_nvdata_path()
@@ -159,6 +158,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         program_id = self.opx.compile(seq)
         pending_job = self.opx.queue.add_compiled(program_id)
         job = pending_job.wait_for_execution()
+        logging.info(job)
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
@@ -192,7 +192,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         seq_args_string = tb.encode_seq_args(args)
 
         self.stream_immediate(
-            seq_file="constant.py", seq_args_string=seq_args_string, num_reps=-1
+            c, seq_file="constant.py", seq_args_string=seq_args_string, num_reps=-1
         )
 
     # endregion
@@ -462,16 +462,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # Refresh the OPX
         self.qmm.close_all_quantum_machines()
         self.opx = self.qmm.open_qm(self.opx_config)
-
-        # Turn on steady state output
-        if self.steady_state_option:
-            self.pending_steady_state_compiled_program_id = self.compile_qua_sequence(
-                self.opx, self.steady_state_seq
-            )
-            self.pending_steady_state_job = self.add_qua_sequence_to_qm_queue(
-                self.opx, self.pending_steady_state_compiled_program_id
-            )
-            self.steady_state_job = self.pending_steady_state_job.wait_for_execution()
 
 
 __server__ = QmOpx()

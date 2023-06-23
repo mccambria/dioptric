@@ -27,11 +27,12 @@ import matplotlib.pyplot as plt
 def qua_program(
     digital_channels, analog_channels, analog_voltages, analog_freqs, num_reps=-1
 ):
+    clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
     with program() as seq:
         ### Non-loop stuff here
         num_analog_channels = len(analog_channels)
         amps = [None] * num_analog_channels
-        for ind in len(analog_channels):
+        for ind in range(len(analog_channels)):
             # Update freqs
             chan = analog_channels[ind]
             element = f"ao{chan}"
@@ -45,20 +46,19 @@ def qua_program(
         def one_loop():
             for chan in digital_channels:
                 element = f"do{chan}"
-                qua.play("on", element, duration=1000)
-            for ind in len(analog_channels):
+                qua.play("on", element, duration=clock_cycles)
+            for ind in range(len(analog_channels)):
                 chan = analog_channels[ind]
                 element = f"ao{chan}"
                 amp = amps[ind]
-                qua.play("constant" * amp, element, duration=1000)
+                qua.play("cw" * qua.amp(amp), element, duration=clock_cycles)
 
         ### Boilerplate for handling num_reps
         if num_reps == -1:
             with infinite_loop_():
                 one_loop()
         else:
-            ind = declare(fixed)
-            assign(ind, 0)
+            ind = declare(int, value=0)
             with while_(ind < num_reps):
                 one_loop()
                 assign(ind, ind + 1)

@@ -204,7 +204,7 @@ opx_config = {
     "version": 1,
     # region Elements
     "controllers": {
-        "opx1": {
+        "con1": {
             "type": "opx1",
             "analog_outputs": {
                 1: {"offset": 0.0, "delay": NV_total_delay},  # will be I for sig gen
@@ -222,7 +222,9 @@ opx_config = {
                 1: {},  #
                 2: {},  # apd 1 virtual gate
                 3: {},  # apd 2 virtual gate
+                4: {},  # apd 2 virtual gate
                 5: {},  # clock
+                6: {},  # clock
                 7: {},  # tsg4104 sig gen switch
                 8: {},  # cobolt 638
                 9: {},  # cobolt 515
@@ -239,147 +241,133 @@ opx_config = {
     "elements": {
         # Region Bare channels
         "do1": {
-            "digitalInputs": {"chan": {"port": ("opx1", 1)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do2": {
-            "digitalInputs": {"chan": {"port": ("opx1", 2)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 2), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do3": {
-            "digitalInputs": {"chan": {"port": ("opx1", 3)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do4": {
-            "digitalInputs": {"chan": {"port": ("opx1", 4)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do5": {
-            "digitalInputs": {"chan": {"port": ("opx1", 5)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do6": {
-            "digitalInputs": {"chan": {"port": ("opx1", 6)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 6), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do7": {
-            "digitalInputs": {"chan": {"port": ("opx1", 7)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 7), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do8": {
-            "digitalInputs": {"chan": {"port": ("opx1", 8)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 8), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do9": {
-            "digitalInputs": {"chan": {"port": ("opx1", 9)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "do10": {
-            "digitalInputs": {"chan": {"port": ("opx1", 10)}},
-            "operations": {"on": "on", "off": "off"},
+            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao1": {
-            "singleInput": {"port": ("opx1", 1)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 1)},
+            "intermediate_frequency": default_int_freq,
+            "operations": {"cw": "ao_cw"},
         },
         "ao2": {
-            "singleInput": {"port": ("opx1", 2)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 2)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao3": {
-            "singleInput": {"port": ("opx1", 3)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 3)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao4": {
-            "singleInput": {"port": ("opx1", 4)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 4)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao5": {
-            "singleInput": {"port": ("opx1", 5)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 5)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao6": {
-            "singleInput": {"port": ("opx1", 6)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 6)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao7": {
-            "singleInput": {"port": ("opx1", 7)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 7)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao8": {
-            "singleInput": {"port": ("opx1", 8)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 8)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao9": {
-            "singleInput": {"port": ("opx1", 9)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 9)},
+            "operations": {"cw": "ao_cw"},
         },
         "ao10": {
-            "singleInput": {"port": ("opx1", 10)},
-            "operations": {"constant": "constant"},
+            "singleInput": {"port": ("con1", 10)},
+            "operations": {"cw": "ao_cw"},
         },
         # endregion
         # region Actual "elements", or physical things to control
         "laserglow_589_x": {
-            "singleInput": {"port": ("opx1", 1)},
+            "singleInput": {"port": ("con1", 1)},
             "intermediate_frequency": default_int_freq,
-            "operations": {"constant": "constant"},
+            "operations": {"cw": "ao_cw"},
         },
         "sig_gen_TEKT_tsg4104a": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("opx1", 7),
-                    "delay": uwave_total_delay,
-                    "buffer": 0,
+                    "port": ("con1", 7), "delay": uwave_total_delay, "buffer": 0,
                 },
             },
-            "operations": {
-                "uwave_ON": "uwave_ON",
-                "uwave_OFF": "uwave_OFF",
-                "constant_HIGH": "constant_HIGH",
-            },
+            "operations": {"uwave_on": "do_on", "uwave_off": "do_off"},
         },
         "cobolt_515": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("opx1", 9),
-                    "delay": green_laser_total_delay,
-                    "buffer": 0,
+                    "port": ("con1", 9), "delay": green_laser_total_delay, "buffer": 0
                 },
             },
-            "operations": {
-                "laser_ON_DIGITAL": "laser_ON_DIGITAL",
-                "laser_OFF_DIGITAL": "laser_OFF_DIGITAL",
-                "constant_HIGH": "constant_HIGH",
-            },
+            "operations": {"laser_on": "do_on", "laser_off": "do_off"},
         },
         "do_sample_clock": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("opx1", 5),
-                    "delay": common_delay,
-                    "buffer": 0,
+                    "port": ("con1", 5), "delay": common_delay, "buffer": 0
                 },
             },
             "operations": {
-                "clock_pulse": "clock_pulse",
-                "zero_clock_pulse": "zero_clock_pulse",
+                "clock_pulse": "do_short_pulse",
             },
         },
-        # "do_apd_0_gate": {
-        #     "singleInput": {"port": ("opx1", 1)},
+        ###
+        # "do_apd_1_gate": {
+        #     "singleInput": {"port": ("opx1", 2)},
         #     "digitalInputs": {
         #         "marker": {
-        #             "port": ("opx1", 2),
-        #             "delay": apd_0_total_delay,
+        #             "port": ("opx1", 3),
+        #             "delay": apd_1_total_delay,
         #             "buffer": 0,
         #         },
         #     },
         #     "operations": {
-        #         "readout": "readout_pulse",
-        #         "long_readout": "long_readout_pulse",
+        #         "readout": "do_on",
         #     },
-        #     "outputs": {"out1": ("opx1", 1)},
+        #     "outputs": {"out1": ("opx1", 2)},
         #     "outputPulseParameters": {
         #         "signalThreshold": signal_threshold,
         #         "signalPolarity": "Below",
@@ -387,74 +375,47 @@ opx_config = {
         #         "derivativePolarity": "Below",
         #     },
         #     "time_of_flight": detection_delay,
-        #     "smearing": 15,  # tries to account for length of count pulses being finite.
+        #     "smearing": 15,
         # },
-        "do_apd_1_gate": {
-            "singleInput": {"port": ("opx1", 2)},
-            "digitalInputs": {
-                "marker": {
-                    "port": ("opx1", 3),
-                    "delay": apd_1_total_delay,
-                    "buffer": 0,
-                },
-            },
-            "operations": {
-                "readout": "readout_pulse",
-                "long_readout": "long_readout_pulse",
-            },
-            "outputs": {"out1": ("opx1", 2)},
-            "outputPulseParameters": {
-                "signalThreshold": signal_threshold,
-                "signalPolarity": "Below",
-                "derivativeThreshold": 1800,
-                "derivativePolarity": "Below",
-            },
-            "time_of_flight": detection_delay,
-            "smearing": 15,
-        },
     },
     # endregion
     # region Pulses
     "pulses": {
         ### Analog
-        "constant": {
+        "ao_cw": {
             "operation": "control",
             "length": default_len,
-            "waveforms": {"single": "constant"},
-        },
-        "laser_ON_ANALOG": {
-            "operation": "control",
-            "length": initialization_len,
-            "waveforms": {"single": "constant"},
+            "waveforms": {"single": "cw"},
         },
         ### Digital
-        "on": {
+        "do_on": {
             "operation": "control",
             "length": default_len,
             "digital_marker": "on",
         },
-        "off": {
+        "do_off": {
             "operation": "control",
             "length": default_len,
             "digital_marker": "off",
         },
-        "readout_pulse": {
-            "operation": "measurement",
-            "length": meas_len,
-            "digital_marker": "ON",
-            "waveforms": {"single": "constant"},
+        "do_short_pulse": {
+            "operation": "control",
+            "length": default_len,
+            "digital_marker": "square",
         },
+        ### Mixed
     },
     # endregion
     # region Waveforms
     ### Analog
     "waveforms": {
-        "constant": {"type": "constant", "sample": 0.5},
+        "cw": {"type": "constant", "sample": 0.5},
     },
-    ### Digital
+    ### Digital, format is list of tuples: (on/off, ns)
     "digital_waveforms": {
-        "on": {"samples": [(1, 0)]},  # [(on/off, ns)
-        "off": {"samples": [(0, 0)]},  # [(on/off, ns)
+        "on": {"samples": [(1, 0)]},  
+        "off": {"samples": [(0, 0)]},
+        "square": {"samples": [(1, 100), (0, 100)]},
     },
     # endregion
 }
