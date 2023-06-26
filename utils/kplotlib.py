@@ -187,7 +187,7 @@ def init_kplotlib(
     data_size=Size.NORMAL,
     font=Font.ROBOTO,
     constrained_layout=True,
-    latex=False
+    latex=False,
 ):
     """Runs the initialization for kplotlib, our default configuration
     of matplotlib. Plotting will be faster if latex is False - only set to True
@@ -226,7 +226,7 @@ def init_kplotlib(
     # from proliferating (e.g. to axis tick labels). Instead just pass usetex=True
     # as a kwarg to any text-based command as necessary. If really necessary, flip
     # the flag below and use the \mathrm and \mathit macros to keep serifs in check
-    if False:
+    if False:  # Global usetex?
         preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
         plt.rcParams["text.latex.preamble"] = preamble
         plt.rc("text", usetex=True)
