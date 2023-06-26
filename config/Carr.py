@@ -9,6 +9,9 @@ Created June 20th, 2023
 
 from utils.tool_belt import ModTypes
 from utils.positioning import ControlStyle
+from pathlib import Path
+
+home = Path.home()
 
 # region Base config
 
@@ -16,6 +19,11 @@ config = {
     ###
     "apd_indices": [0],
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
+    "shared_email": "kolkowitznvlab@gmail.com",
+    "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
+    "linux_nvdata_path": home / "E/nvdata",
+    "windows_repo_path": home / "Documents/GitHub/dioptric",
+    "linux_repo_path": home / "Documents/GitHub/dioptric",
     ###
     "CommonDurations": {
         "cw_meas_buffer": 5000,
@@ -331,7 +339,9 @@ opx_config = {
         "sig_gen_TEKT_tsg4104a": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 7), "delay": uwave_total_delay, "buffer": 0,
+                    "port": ("con1", 7),
+                    "delay": uwave_total_delay,
+                    "buffer": 0,
                 },
             },
             "operations": {"uwave_on": "do_on", "uwave_off": "do_off"},
@@ -339,16 +349,16 @@ opx_config = {
         "cobolt_515": {
             "digitalInputs": {
                 "marker": {
-                    "port": ("con1", 9), "delay": green_laser_total_delay, "buffer": 0
+                    "port": ("con1", 9),
+                    "delay": green_laser_total_delay,
+                    "buffer": 0,
                 },
             },
             "operations": {"laser_on": "do_on", "laser_off": "do_off"},
         },
         "do_sample_clock": {
             "digitalInputs": {
-                "marker": {
-                    "port": ("con1", 5), "delay": common_delay, "buffer": 0
-                },
+                "marker": {"port": ("con1", 5), "delay": common_delay, "buffer": 0},
             },
             "operations": {
                 "clock_pulse": "do_short_pulse",
@@ -413,7 +423,7 @@ opx_config = {
     },
     ### Digital, format is list of tuples: (on/off, ns)
     "digital_waveforms": {
-        "on": {"samples": [(1, 0)]},  
+        "on": {"samples": [(1, 0)]},
         "off": {"samples": [(0, 0)]},
         "square": {"samples": [(1, 100), (0, 100)]},
     },

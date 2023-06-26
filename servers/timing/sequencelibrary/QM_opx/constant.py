@@ -16,7 +16,7 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 from qm.qua import program, declare, declare_stream, stream_processing
 from qm.qua import measure, wait, save, play, align, fixed, assign
-from qm.qua import infinite_loop_, while_
+import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 from utils.tool_belt import States
 import utils.common as common
 import utils.tool_belt as tb
@@ -29,7 +29,7 @@ def qua_program(
 ):
     clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
     with program() as seq:
-        ### Non-loop stuff here
+        ### Non-repeated stuff here
         num_analog_channels = len(analog_channels)
         amps = [None] * num_analog_channels
         for ind in range(len(analog_channels)):
@@ -42,8 +42,8 @@ def qua_program(
             amp = analog_voltages[ind]
             amps[ind] = declare(fixed, value=amp)
 
-        ### Define one pass through the loop - call it in boilerplate below
-        def one_loop():
+        ### Define one rep here
+        def one_rep():
             for chan in digital_channels:
                 element = f"do{chan}"
                 qua.play("on", element, duration=clock_cycles)
@@ -53,15 +53,8 @@ def qua_program(
                 amp = amps[ind]
                 qua.play("cw" * qua.amp(amp), element, duration=clock_cycles)
 
-        ### Boilerplate for handling num_reps
-        if num_reps == -1:
-            with infinite_loop_():
-                one_loop()
-        else:
-            ind = declare(int, value=0)
-            with while_(ind < num_reps):
-                one_loop()
-                assign(ind, ind + 1)
+        ### Handle the reps in the utils code
+        seq_utils.handle_reps(one_rep, num_reps)
 
     return seq
 

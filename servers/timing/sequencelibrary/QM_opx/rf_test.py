@@ -18,6 +18,7 @@ from qm.qua import program, declare, declare_stream, stream_processing
 from qm.qua import measure, wait, save, play, align, fixed, assign
 from qm.qua import infinite_loop_, while_
 from utils.tool_belt import States
+import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 import utils.common as common
 import utils.tool_belt as tb
 import utils.kplotlib as kpl
@@ -26,24 +27,17 @@ import matplotlib.pyplot as plt
 
 def qua_program(element, freq, amp, duration, num_reps=1):
     with program() as seq:
-        ### Non-loop stuff here
+        ### Non-repeated stuff here
         qua.update_frequency(element, freq * 1e6)
         a = declare(fixed, value=amp)
         clock_cycles = round(duration / 4)
-        
-        ### Define one pass through the loop - call it in boilerplate below
-        def one_loop():
+
+        ### Define one rep here
+        def one_rep():
             qua.play("cw" * qua.amp(a), element, duration=clock_cycles)
 
-        ### Boilerplate for handling num_reps
-        if num_reps == -1:
-            with infinite_loop_():
-                one_loop()
-        else:
-            ind = declare(int, value=0)
-            with while_(ind < num_reps):
-                one_loop()
-                assign(ind, ind + 1)
+        ### Handle the reps in the utils code
+        seq_utils.handle_reps(one_rep, num_reps)
 
     return seq
 
@@ -59,9 +53,8 @@ def get_seq(opx_config, config, args, num_reps=1):
 
 
 if __name__ == "__main__":
-    
     kpl.init_kplotlib(font_size=kpl.Size.SMALL)
-    
+
     config_module = common.get_config_module()
     config = config_module.config
     opx_config = config_module.opx_config

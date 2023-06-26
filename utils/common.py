@@ -16,51 +16,36 @@ from importlib import import_module
 import sys
 
 
-### Lab-specific stuff here
-
-shared_email = "kolkowitznvlab@gmail.com"
-home = Path.home()
-windows_nvdata_path = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-linux_nvdata_path = home / "E/nvdata"
-windows_repo_path = home / "Documents/GitHub/dioptric"
-linux_repo_path = home / "Documents/GitHub/dioptric"
-
-###
-
-
-def get_nvdata_path():
-    """Returns an OS-dependent Path to the nvdata directory (configured above)"""
-    os_name = platform.system()
-    if os_name == "Windows":
-        nvdata_dir = windows_nvdata_path
-    elif os_name == "Linux":
-        nvdata_dir = linux_nvdata_path
-
-    return nvdata_dir
-
-
-def get_repo_path():
-    """Returns an OS-dependent Path to the repo directory (configured above)"""
-    os_name = platform.system()
-    if os_name == "Windows":
-        nvdata_dir = windows_repo_path
-    elif os_name == "Linux":
-        nvdata_dir = linux_repo_path
-
-    return nvdata_dir
-
-
 def get_config_module(pc_name=None):
     if pc_name is None:
         pc_name = socket.gethostname()
     module_name = f"config.{pc_name}"
-    module = import_module(module_name)  
+    module = import_module(module_name)
     return module
 
 
 def get_config_dict(pc_name=None):
-    module = get_config_module(pc_name) 
+    module = get_config_module(pc_name)
     return module.config
+
+
+def _get_os_config_val(key):
+    os_name = platform.system()  # Windows or Linux
+    os_name_lower = os_name.lower()
+    config = get_config_dict()
+    val = config[f"{os_name_lower}_{key}"]
+    return val
+
+
+def get_nvdata_path():
+    """Returns an OS-dependent Path to the nvdata directory"""
+    return _get_os_config_val("nvdata_path")
+
+
+def get_repo_path():
+    """Returns an OS-dependent Path to the repo directory"""
+    return _get_os_config_val("repo_path")
+
 
 def get_server(cxn, server_name):
     config = get_config_dict()

@@ -42,7 +42,7 @@ from servers.timing.interfaces.pulse_gen import PulseGen
 
 
 class QmOpx(Tagger, PulseGen, LabradServer):
-    # region Setup
+    # region Setup and utils
 
     name = "QM_opx"
     pc_name = socket.gethostname()
@@ -58,9 +58,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
 
         # Get config dicts
-        config_module = common.get_config_module()
-        opx_config = config_module.opx_config
-        self.opx_config = opx_config
+        self.refresh_opx_config()
         config = common.get_config_dict()
         self.config = config
 
@@ -68,7 +66,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
-        self.opx = self.qmm.open_qm(opx_config)
 
         # Add sequence directory to path
         repo_path = common.get_repo_path()
@@ -87,12 +84,15 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.qmm.close_all_quantum_machines()
         self.qmm.close()
 
+    def refresh_opx_config(self):
+        config_module = common.get_config_module()
+        self.opx_config = config_module.opx_config
+
     # endregion
     # region Sequencing
 
     def get_seq(self, seq_file, seq_args_string, num_reps):
-        """
-        For the OPX, this will grab the desired sequence with the desired number of repetitions
+        """Construct a sequence in the passed seq file
             seq_file: str
                 A qua sequence file from the sequence library
             seq_args_string: list(any)
@@ -111,11 +111,15 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
 
+        self.refresh_opx_config()
+
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
             ret_vals = seq_module.get_seq(self.opx_config, self.config, args, num_reps)
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
+
+        self.refresh_opx_config()
 
         return seq, final, ret_vals
 
@@ -155,11 +159,13 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """See pulse_gen interface"""
 
         seq, _, _ = self._stream_load(num_reps=num_reps)
-        program_id = self.opx.compile(seq)
-        pending_job = self.opx.queue.add_compiled(program_id)
+        opx = self.qmm.open_qm(self.opx_config)
+        program_id = opx.compile(seq)
+        pending_job = opx.queue.add_compiled(program_id)
         job = pending_job.wait_for_execution()
         logging.info(job)
         self.counter_index = 0
+        self.qmm.close_all_quantum_machines()
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
     def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
@@ -454,14 +460,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     @setting(40)
     def reset(self, c):
-        # Update the config
-        config_module = common.get_config_module()
-        opx_config = config_module.opx_config
-        self.opx_config = opx_config
+        self.refresh_opx_config()
 
-        # Refresh the OPX
+        # Make sure there are no active connections
         self.qmm.close_all_quantum_machines()
-        self.opx = self.qmm.open_qm(self.opx_config)
 
 
 __server__ = QmOpx()
