@@ -35,6 +35,7 @@ import nidaqmx.stream_writers as stream_writers
 import socket
 from pathlib import Path
 import time
+from utils import common
 
 
 class PosXyzPi6163cdDigital(LabradServer):
@@ -63,6 +64,7 @@ class PosXyzPi6163cdDigital(LabradServer):
 
     def sub_init_server_xyz(self):
         """Sub-routine to be called by xyz server"""
+        config = common.get_config_dict()
         config = ensureDeferred(self.get_config_xyz())
         config.addCallback(self.on_get_config_xyz)
 

@@ -32,6 +32,7 @@ import numpy as np
 import logging
 import socket
 from servers.outputs.interfaces.pos_xy_stream import PosXyStream
+from utils import common
 
 
 class PosXyThorGvs212(LabradServer, PosXyStream):
@@ -54,22 +55,11 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
 
     def sub_init_server_xy(self):
         """Sub-routine to be called by xyz server"""
-        config = ensureDeferred(self.get_config_xy())
-        config.addCallback(self.on_get_config_xy)
-
-    async def get_config_xy(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_galvo_x")
-        p.get("ao_galvo_y")
-        p.get("di_clock")
-        result = await p.send()
-        return result["get"]
-
-    def on_get_config_xy(self, config):
-        self.daq_ao_galvo_x = config[0]
-        self.daq_ao_galvo_y = config[1]
-        self.daq_di_clock = config[2]
+        config = common.get_config_dict()
+        wiring = config["Wiring"]["Daq"]
+        self.daq_ao_galvo_x = wiring["ao_galvo_x"]
+        self.daq_ao_galvo_y = wiring["ao_galvo_y"]
+        self.daq_di_clock = wiring["di_clock"]
         logging.debug("Init complete")
 
     def stopServer(self):
@@ -131,7 +121,6 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
 
     @setting(2, coords_x="*v[]", coords_y="*v[]", continuous="b")
     def load_stream_xy(self, c, coords_x, coords_y, continuous=False):
-
         voltages = np.vstack((coords_x, coords_y))
 
         # Close the existing task if there is one
@@ -187,7 +176,7 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
         # Close the task once we've written all the samples
         task.register_done_event(self.close_task_internal)
         task.start()
-        
+
     @setting(3)
     def reset(self, c):
         self.close_task_internal()
