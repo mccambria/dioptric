@@ -33,6 +33,7 @@ import numpy
 import nidaqmx.stream_writers as stream_writers
 import socket
 from pathlib import Path
+from utils import common
 
 
 class PosXyPi6262cd(LabradServer):
@@ -41,8 +42,7 @@ class PosXyPi6262cd(LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -62,56 +62,31 @@ class PosXyPi6262cd(LabradServer):
         self.y_last_position = None
         self.y_current_direction = None
         self.y_last_turning_position = None
-        config = ensureDeferred(self.get_config_xy())
-        config.addCallback(self.on_get_config_xy)
 
-    async def get_config_xy(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])  # change this in registry
-        p.get("piezo_stage_626_2cd_model")
-        p.get("piezo_stage_626_2cd_serial")
-        p.cd(["", "Config", "Wiring", "Piezo_stage_E727"])
-        p.get("piezo_stage_channel_x")
-        p.get("piezo_stage_channel_y")
-        p.cd(["", "Config", "Positioning"])
-        p.get("piezo_stage_voltage_range_factor")
-        p.get("daq_voltage_range_factor")
-        p.get("piezo_stage_scaling_offset")
-        p.get("piezo_stage_scaling_gain")
-        p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_piezo_stage_626_2cd_x")
-        p.get("ao_piezo_stage_626_2cd_y")
-        p.get("di_clock")
-        # p.cd(["", "Config", "Positioning"])
-        # p.get("x_hysteresis_linearity")
-        # p.get("y_hysteresis_linearity")
-        result = await p.send()
-        return result["get"]
-
-    def on_get_config_xy(self, config):
-        # Load the generic device
-        gcs_dll_path = str(Path.home())
-        gcs_dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
-        gcs_dll_path += (
-            "\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll"
-        )
-
-        self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
+        config = common.get_config_dict()
+        repo_path = common.get_repo_path()
+        gcs_dll_path = repo_path / "servers/outputs/GCSTranslator/PI_GCS2_DLL_x64.dll"
+        model = config["DeviceIDs"]["piezo_stage_626_2cd_model"]
+        serial = config["DeviceIDs"]["piezo_stage_626_2cd_serial"]
+        self.piezo = GCSDevice(devname=model, gcsdll=gcs_dll_path)
         # Connect the specific device with the serial number
-        self.piezo.ConnectUSB(config[1])
+        self.piezo.ConnectUSB(serial)
 
         # Just one axis for this device
         self.axis_0 = self.piezo.axes[0]
         self.axis_1 = self.piezo.axes[1]
 
-        self.piezo_stage_channel_x = config[2]
-        self.piezo_stage_channel_y = config[3]
+        piexo_wiring = config["Wiring"]["Piezo_stage_E727"]
+        self.piezo_stage_channel_x = piexo_wiring["piezo_stage_channel_x"]
+        self.piezo_stage_channel_y = piexo_wiring["piezo_stage_channel_y"]
 
-        self.piezo_stage_voltage_range_factor = config[4]
-        self.daq_voltage_range_factor = config[5]
-
-        self.piezo_stage_scaling_offset = config[6]
-        self.piezo_stage_scaling_gain = config[7]
+        positioning = config["Positioning"]
+        self.piezo_stage_voltage_range_factor = positioning[
+            "piezo_stage_voltage_range_factor"
+        ]
+        self.daq_voltage_range_factor = positioning["daq_voltage_range_factor"]
+        self.piezo_stage_scaling_offset = positioning["piezo_stage_scaling_offset"]
+        self.piezo_stage_scaling_gain = positioning["piezo_stage_scaling_gain"]
         # The command SPA allows us to rewrite volatile memory parameters.
         # The inputs are {item ID, Parameter ID, PArameter Value}
 
@@ -122,16 +97,16 @@ class PosXyPi6262cd(LabradServer):
         elif self.piezo_stage_voltage_range_factor == 10.0:
             psvrf_value = 2
         else:
-            logging.debug(
-                "Piezo stage voltage range factor must be either 5.0 or 10.0"
-            )
+            logging.debug("Piezo stage voltage range factor must be either 5.0 or 10.0")
             raise ValueError(
                 "Piezo stage voltage range factor must be either 5.0 or 10.0"
             )
         self.piezo.SPA(self.piezo_stage_channel_x, 0x02000100, psvrf_value)
         self.piezo.SPA(self.piezo_stage_channel_y, 0x02000100, psvrf_value)
         logging.debug(
-            "Piezo stage voltage range factor set to: {}".format(config[4])
+            "Piezo stage voltage range factor set to: {}".format(
+                self.daq_voltage_range_factor
+            )
         )
 
         # NExt, we need to set the right scaling for the input voltage to what the controller sends the piezo stage.
@@ -162,7 +137,9 @@ class PosXyPi6262cd(LabradServer):
                 self.piezo_stage_scaling_offset
             )
         )
-        logging.debug("Piezo stage scaling GAIN set to: {}".format(config[7]))
+        logging.debug(
+            "Piezo stage scaling GAIN set to: {}".format(self.piezo_stage_scaling_gain)
+        )
 
         # Finally, internally connect the controller's X/Y axis to the incomming signal on channels 4/5
         self.piezo.SPA(
@@ -182,14 +159,14 @@ class PosXyPi6262cd(LabradServer):
             )
         )
 
-        self.daq_ao_piezo_stage_x = config[8]
-        self.daq_ao_piezo_stage_y = config[9]
-        self.daq_di_clock = config[10]
+        daq_wiring = config["Wiring"]["Piezo_stage_E727"]
+        self.daq_ao_piezo_stage_x = daq_wiring["ao_piezo_stage_626_2cd_x"]
+        self.daq_ao_piezo_stage_y = daq_wiring["ao_piezo_stage_626_2cd_y"]
+        self.daq_di_clock = daq_wiring["di_clock"]
         logging.debug("Init Complete")
 
-    # %%
+    # 
     def load_stream_writer_xy(self, c, task_name, voltages, period):
-
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
@@ -249,9 +226,7 @@ class PosXyPi6262cd(LabradServer):
 
         task.start()
 
-    def close_task_internal(
-        self, task_handle=None, status=None, callback_data=None
-    ):
+    def close_task_internal(self, task_handle=None, status=None, callback_data=None):
         task = self.task
         if task is not None:
             task.close()
@@ -382,9 +357,7 @@ class PosXyPi6262cd(LabradServer):
         # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
 
         # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-        x_inter = numpy.concatenate(
-            (x_voltages_1d, numpy.flipud(x_voltages_1d))
-        )
+        x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
         # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
         if y_num_steps % 2 == 0:  # Even x size
             x_voltages = numpy.tile(x_inter, int(y_num_steps / 2))
@@ -413,9 +386,7 @@ class PosXyPi6262cd(LabradServer):
         period="i",
         returns="*v[]*v[]",
     )
-    def load_cross_scan_xy(
-        self, c, x_center, y_center, xy_range, num_steps, period
-    ):
+    def load_cross_scan_xy(self, c, x_center, y_center, xy_range, num_steps, period):
         """Load a scan that will first step through xy_range in x keeping y
         constant at its center, then step through xy_range in y keeping x
         constant at its center.
@@ -449,12 +420,8 @@ class PosXyPi6262cd(LabradServer):
         x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
         y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
 
-        x_voltages = numpy.concatenate(
-            [x_voltages_1d, numpy.full(num_steps, x_center)]
-        )
-        y_voltages = numpy.concatenate(
-            [numpy.full(num_steps, y_center), y_voltages_1d]
-        )
+        x_voltages = numpy.concatenate([x_voltages_1d, numpy.full(num_steps, x_center)])
+        y_voltages = numpy.concatenate([numpy.full(num_steps, y_center), y_voltages_1d])
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
@@ -515,9 +482,7 @@ class PosXyPi6262cd(LabradServer):
         period="i",
         returns="*v[]",
     )
-    def load_scan_x(
-        self, c, x_center, y_center, scan_range, num_steps, period
-    ):
+    def load_scan_x(self, c, x_center, y_center, scan_range, num_steps, period):
         """Load a scan that will step through scan_range in x keeping y
         constant at its center.
 
@@ -548,9 +513,7 @@ class PosXyPi6262cd(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(
-            c, "Piezo_stage-load_scan_x", voltages, period
-        )
+        self.load_stream_writer_xy(c, "Piezo_stage-load_scan_x", voltages, period)
 
         return x_voltages
 
@@ -563,9 +526,7 @@ class PosXyPi6262cd(LabradServer):
         period="i",
         returns="*v[]",
     )
-    def load_scan_y(
-        self, c, x_center, y_center, scan_range, num_steps, period
-    ):
+    def load_scan_y(self, c, x_center, y_center, scan_range, num_steps, period):
         """Load a scan that will step through scan_range in y keeping x
         constant at its center.
 
@@ -596,9 +557,7 @@ class PosXyPi6262cd(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(
-            c, "Piezo_stage-load_scan_y", voltages, period
-        )
+        self.load_stream_writer_xy(c, "Piezo_stage-load_scan_y", voltages, period)
 
         return y_voltages
 
@@ -621,9 +580,7 @@ class PosXyPi6262cd(LabradServer):
 
         voltages = numpy.vstack((x_points, y_points))
 
-        self.load_stream_writer_xy(
-            c, "Piezo_stage-load_arb_scan_xy", voltages, period
-        )
+        self.load_stream_writer_xy(c, "Piezo_stage-load_arb_scan_xy", voltages, period)
 
         return
 

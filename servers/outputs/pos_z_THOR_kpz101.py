@@ -35,6 +35,8 @@ import nidaqmx.stream_writers as stream_writers
 import socket
 import ctypes
 import traceback
+from utils import common
+from pathlib import Path
 
 
 class PosZThorKpz101(LabradServer):
@@ -43,8 +45,7 @@ class PosZThorKpz101(LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab"
-            " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
@@ -66,24 +67,13 @@ class PosZThorKpz101(LabradServer):
         self.z_last_position = None
         self.z_current_direction = None
         self.z_last_turning_position = None
-        config = ensureDeferred(self.get_config_z())
-        config.addCallback(self.on_get_config_z)
+        config = common.get_config_dict()
+        device_id = config["DeviceIDs"]["z_piezo_kpz101_serial"]
+        ao_channel = config["Wiring"]["Daq"]["ao_z_piezo_kpz101"]
+        di_clock = config["Wiring"]["Daq"]["di_clock"]
+        hysteresis_linearity = config["Positioning"]["z_hysteresis_linearity"]
 
-    async def get_config_z(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get("z_piezo_kpz101_serial")
-        p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_z_piezo_kpz101")
-        p.get("di_clock")
-        p.cd(["", "Config", "Positioning"])
-        p.get("z_hysteresis_linearity")
-        result = await p.send()
-        return result["get"]
-
-    def on_get_config_z(self, config):
-
-        # Connect to the device and set it to external control mode
+        ### Connect to the device and set it to external control mode
 
         # Get the dll
         dll_path = (
@@ -94,33 +84,34 @@ class PosZThorKpz101(LabradServer):
         self.piezo_lib.TLI_BuildDeviceList()
 
         # Get the serial number and convert it to bytes for the C library
-        self.serial = str(config[0]).encode("utf-8")
+        serial = str(device_id).encode("utf-8")
+        self.serial = serial
 
         # Make sure existing connections are closed
-        self.piezo_lib.PCC_Close(self.serial)
+        self.piezo_lib.PCC_Close(serial)
 
         # Open the connection and start the polling loop to monitor status
-        self.piezo_lib.PCC_Open(self.serial)
-        self.piezo_lib.PCC_StartPolling(self.serial, 10)
+        self.piezo_lib.PCC_Open(serial)
+        self.piezo_lib.PCC_StartPolling(serial, 10)
 
         # Set the control mode and enable the output.
-        self.piezo_lib.PCC_SetMaxOutputVoltage(self.serial, 150)
+        self.piezo_lib.PCC_SetMaxOutputVoltage(serial, 150)
         # 1 for open_loop, 2 for closed loop
-        self.piezo_lib.PCC_SetPositionControlMode(self.serial, 1)
+        self.piezo_lib.PCC_SetPositionControlMode(serial, 1)
         # 1 for all hub bays, 2 for adjacent hub bays, 3 for external SMA
-        self.piezo_lib.PCC_SetHubAnalogInput(self.serial, 3)
-        self.piezo_lib.PCC_Enable(self.serial)
+        self.piezo_lib.PCC_SetHubAnalogInput(serial, 3)
+        self.piezo_lib.PCC_Enable(serial)
         # self.piezo_lib.PCC_Disable(self.serial)
         # 0 for software only, 1 is software and external,
         # 2 for software and potentiometer, 3 for all three.
-        self.piezo_lib.PCC_SetVoltageSource(self.serial, 1)
+        self.piezo_lib.PCC_SetVoltageSource(serial, 1)
 
         # DAQ setup
-        self.daq_ao_z_piezo_kpz101 = config[1]
-        self.daq_di_clock = config[2]
+        self.daq_ao_z_piezo_kpz101 = ao_channel
+        self.daq_di_clock = di_clock
 
         # Hysteresis compensation
-        self.z_hysteresis_b = config[3]
+        self.z_hysteresis_b = hysteresis_linearity
         # Define a such that 1 nominal volt corresponds to
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
@@ -176,7 +167,6 @@ class PosZThorKpz101(LabradServer):
         # on the nth value
         compensated_voltage = []
         for val in position:
-
             # First determine if we're turning around - if we're not moving,
             # don't consider us to be turning around
             movement_direction = numpy.sign(val - last_position)
@@ -208,7 +198,6 @@ class PosZThorKpz101(LabradServer):
             return numpy.array(compensated_voltage)
 
     def load_stream_writer_z(self, c, task_name, voltages, period):
-
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
@@ -253,9 +242,7 @@ class PosZThorKpz101(LabradServer):
 
         task.start()
 
-    def close_task_internal(
-        self, task_handle=None, status=None, callback_data=None
-    ):
+    def close_task_internal(self, task_handle=None, status=None, callback_data=None):
         task = self.task
         if task is not None:
             task.close()
@@ -287,9 +274,7 @@ class PosZThorKpz101(LabradServer):
         with nidaqmx.Task() as task:
             output_chan = self.daq_ao_z_piezo_kpz101.split("/")[1]
             input_chan = "dev1/_{}_vs_aognd".format(output_chan.lower())
-            task.ai_channels.add_ai_voltage_chan(
-                input_chan, min_val=0.0, max_val=10.0
-            )
+            task.ai_channels.add_ai_voltage_chan(input_chan, min_val=0.0, max_val=10.0)
             voltage = task.read()
         return voltage
 
@@ -308,9 +293,7 @@ class PosZThorKpz101(LabradServer):
         low = center - half_scan_range
         high = center + half_scan_range
         voltages = numpy.linspace(low, high, num_steps)
-        self.load_stream_writer_z(
-            c, "ZPiezoKpz101-load_scan_z", voltages, period
-        )
+        self.load_stream_writer_z(c, "ZPiezoKpz101-load_scan_z", voltages, period)
         return voltages
 
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -327,7 +310,7 @@ class PosZThorKpz101(LabradServer):
 
     @setting(25)
     def reset(self, c):
-        self.piezo_lib.PCC_Disable(self.serialNo)
+        self.piezo_lib.PCC_Disable(self.serial)
 
 
 __server__ = PosZThorKpz101()

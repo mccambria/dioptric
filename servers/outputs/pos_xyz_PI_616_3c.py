@@ -33,6 +33,7 @@ import numpy
 import nidaqmx.stream_writers as stream_writers
 import socket
 from pathlib import Path
+from utils import common
 
 
 class PosXyzPi6163c(LabradServer):
@@ -64,6 +65,7 @@ class PosXyzPi6163c(LabradServer):
         self.z_last_position = None
         self.z_current_direction = None
         self.z_last_turning_position = None
+        config = common.get_config_dict()
         config = ensureDeferred(self.get_config_xyz())
         config.addCallback(self.on_get_config_xyz)
 

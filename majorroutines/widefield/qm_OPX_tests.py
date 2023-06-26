@@ -38,18 +38,19 @@ def main(nv_sig):
 def main_with_cxn(cxn, nv_sig):
     opx = cxn.QM_opx
 
-    # Single RF tone
-    laser_name = "laserglow_589"
-    # Channel, freq, amplitude, duration
-    seq_args = [f"{laser_name}_x", 10, 0.4, 1000]
-    seq_args_string = tb.encode_seq_args(seq_args)
-    seq_file = "rf_test.py"
-    opx.stream_immediate(seq_file, 10, seq_args_string)
+    # # Single RF tone
+    # laser_name = "laserglow_589"
+    # # Channel, freq, amplitude, duration
+    # seq_args = [f"{laser_name}_x", 10, 0.4, 1000]
+    # seq_args = ["ao1", 10, 0.4, 100]
+    # seq_args_string = tb.encode_seq_args(seq_args)
+    # seq_file = "rf_test.py"
+    # opx.stream_immediate(seq_file, seq_args_string, -1)
 
     # Digital channels, analog channels, analog voltages, analog frequencies
-    # opx.constant_ac([], [1], [0.3], [5e6])
+    opx.constant_ac([], [1], [0.3], [0])
 
-    # tb.poll_safe_stop()
+    tb.poll_safe_stop()
 
 
 # endregion

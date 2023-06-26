@@ -29,18 +29,18 @@ def qua_program(element, freq, amp, duration, num_reps=1):
         ### Non-loop stuff here
         qua.update_frequency(element, freq * 1e6)
         a = declare(fixed, value=amp)
-
+        clock_cycles = round(duration / 4)
+        
         ### Define one pass through the loop - call it in boilerplate below
         def one_loop():
-            qua.play("constant" * qua.amp(a), element, duration=duration)
+            qua.play("cw" * qua.amp(a), element, duration=clock_cycles)
 
         ### Boilerplate for handling num_reps
         if num_reps == -1:
             with infinite_loop_():
                 one_loop()
         else:
-            ind = declare(fixed)
-            assign(ind, 0)
+            ind = declare(int, value=0)
             with while_(ind < num_reps):
                 one_loop()
                 assign(ind, ind + 1)
@@ -59,6 +59,9 @@ def get_seq(opx_config, config, args, num_reps=1):
 
 
 if __name__ == "__main__":
+    
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
+    
     config_module = common.get_config_module()
     config = config_module.config
     opx_config = config_module.opx_config
@@ -68,13 +71,13 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = ["laserglow_589_x", 10, 0.2, 100, 5]
-        seq = qua_program(*args)
+        seq_args = ["ao1", 10, 0.4, 100]
+        seq = qua_program(*seq_args, 10)
 
         sim_config = SimulationConfig(duration=5000 // 4)
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
-        samples.con1.plot()
+        samples.con1.plot(analog_ports=["1"])
 
     except Exception as exc:
         print(exc)
