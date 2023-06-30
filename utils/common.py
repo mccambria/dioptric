@@ -29,6 +29,11 @@ def get_config_dict(pc_name=None):
     return module.config
 
 
+def get_default_email():
+    config = get_config_dict()
+    return config["default_email"]
+
+
 def _get_os_config_val(key):
     os_name = platform.system()  # Windows or Linux
     os_name_lower = os_name.lower()

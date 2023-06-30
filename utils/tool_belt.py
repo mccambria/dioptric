@@ -9,8 +9,6 @@ Created on November 23rd, 2018
 @author: mccambria
 """
 
-# region Imports and constants
-
 import os
 import csv
 from datetime import datetime
@@ -30,37 +28,13 @@ import keyring
 import math
 import utils.common as common
 import utils.search_index as search_index
+import utils.constants as constants
+from utils.constants import States, NormStyle, ModTypes, Digital, Boltzmann
 import signal
 import copy
 from decimal import Decimal
 from importlib import import_module
 
-
-class States(Enum):
-    LOW = auto()
-    ZERO = auto()
-    HIGH = auto()
-
-
-# Normalization style for comparing experimental data to reference data
-class NormStyle(Enum):
-    SINGLE_VALUED = auto()  # Use a single-valued reference
-    POINT_TO_POINT = auto()  # Normalize each signal point by its own reference
-
-
-class ModTypes(Enum):
-    DIGITAL = auto()
-    ANALOG = auto()
-
-
-class Digital(IntEnum):
-    LOW = 0
-    HIGH = 1
-
-
-Boltzmann = 8.617e-2  # meV / K
-
-# endregion
 # region Laser utils
 
 
@@ -1135,10 +1109,12 @@ def save_raw_data(rawData, filePath):
 # region Email utils
 
 
-def send_exception_email(
-    email_from=common.shared_email,
-    email_to=common.shared_email,
-):
+def send_exception_email(email_from=None, email_to=None):
+    default_email = common.get_default_email()
+    if email_from is None:
+        email_from = default_email
+    if email_to is None:
+        email_to = default_email
     # format_exc extracts the stack and error message from
     # the exception currently being handled.
     now = time.localtime()
@@ -1149,11 +1125,12 @@ def send_exception_email(
     send_email(content, email_from=email_from, email_to=email_to)
 
 
-def send_email(
-    content,
-    email_from=common.shared_email,
-    email_to=common.shared_email,
-):
+def send_email(content, email_from=None, email_to=None):
+    default_email = common.get_default_email()
+    if email_from is None:
+        email_from = default_email
+    if email_to is None:
+        email_to = default_email
     pc_name = socket.gethostname()
     msg = MIMEText(content)
     msg["Subject"] = f"Alert from {pc_name}"
