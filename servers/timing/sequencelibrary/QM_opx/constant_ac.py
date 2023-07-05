@@ -22,6 +22,7 @@ import utils.common as common
 import utils.tool_belt as tb
 import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
+from qm import generate_qua_script
 
 
 def qua_program(
@@ -81,10 +82,16 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = ["laserglow_589_x", 10, 0.2, 100, 5]
-        seq = qua_program(*args)
+        args = [[], [1,], [0.1], [0.0]]
+        ret_vals = get_seq(opx_config, config, args, -1)
+        seq, final, ret_vals, _, _ = ret_vals
+        
+        # Serialize to file
+        # sourceFile = open('debug2.py', 'w')
+        # print(generate_qua_script(seq, opx_config), file=sourceFile)
+        # sourceFile.close()
 
-        sim_config = SimulationConfig(duration=5000 // 4)
+        sim_config = SimulationConfig(duration=50000 // 4)
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -23,6 +23,7 @@ import utils.common as common
 import utils.tool_belt as tb
 import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
+from qm import generate_qua_script
 
 
 def qua_program(element, freq, amp, duration, num_reps=1):
@@ -66,6 +67,11 @@ if __name__ == "__main__":
     try:
         seq_args = ["ao1", 10, 0.4, 100]
         seq = qua_program(*seq_args, 10)
+        
+        # Serialize to file
+        # sourceFile = open('debug.py', 'w')
+        # print(generate_qua_script(seq, opx_config), file=sourceFile)
+        # sourceFile.close()
 
         sim_config = SimulationConfig(duration=5000 // 4)
         sim = opx.simulate(seq, sim_config)

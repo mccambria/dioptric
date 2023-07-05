@@ -39,6 +39,7 @@ import os
 import socket
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
+from qm import generate_qua_script
 
 
 class QmOpx(Tagger, PulseGen, LabradServer):
@@ -116,6 +117,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
+            logging.info(f"get_seq {num_reps}")
             ret_vals = seq_module.get_seq(self.opx_config, self.config, args, num_reps)
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
 
@@ -160,12 +162,15 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         seq, _, _ = self._stream_load(num_reps=num_reps)
         opx = self.qmm.open_qm(self.opx_config)
+        # Serialize to file
+        sourceFile = open('debug3.py', 'w')
+        print(generate_qua_script(seq, self.opx_config), file=sourceFile)
+        sourceFile.close()
         program_id = opx.compile(seq)
         pending_job = opx.queue.add_compiled(program_id)
         job = pending_job.wait_for_execution()
         logging.info(job)
         self.counter_index = 0
-        self.qmm.close_all_quantum_machines()
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
     def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
@@ -177,12 +182,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
 
     # fmt: off
-    @setting(
-        16, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", analog_freqs="*v[]",
-    )
-    def constant_ac(
-        self, c, digital_channels=[], analog_channels=[], analog_voltages=[], analog_freqs=[],
-    ):
+    @setting(16, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", analog_freqs="*v[]")
+    def constant_ac(self, c, digital_channels=[], analog_channels=[], analog_voltages=[], analog_freqs=[]):
     # fmt: on
         """
         Version of constant() with support for AC signals on the analog outputs.
@@ -198,7 +199,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         seq_args_string = tb.encode_seq_args(args)
 
         self.stream_immediate(
-            c, seq_file="constant.py", seq_args_string=seq_args_string, num_reps=-1
+            c, seq_file="constant_ac.py", seq_args_string=seq_args_string, num_reps=-1
         )
 
     # endregion
