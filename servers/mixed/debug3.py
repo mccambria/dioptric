@@ -1,14 +1,14 @@
 
-# Single QUA script generated at 2023-07-04 17:35:28.403608
+# Single QUA script generated at 2023-07-10 15:02:03.125744
 # QUA library version: 1.1.3
 
 from qm.qua import *
 
 with program() as prog:
-    v1 = declare(fixed, value=0.1)
+    v1 = declare(fixed, value=0.4)
     v2 = declare(fixed, value=0.4)
     v3 = declare(fixed, value=0.4)
-    update_frequency("ao1", 0.0, "Hz", False)
+    update_frequency("ao1", 110000000.0, "Hz", False)
     update_frequency("ao2", 110000000.0, "Hz", False)
     update_frequency("ao3", 110000000.0, "Hz", False)
     with infinite_loop_():

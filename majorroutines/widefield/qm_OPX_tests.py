@@ -48,7 +48,9 @@ def main_with_cxn(cxn, nv_sig):
     # opx.stream_immediate(seq_file, seq_args_string, -1)
 
     # Digital channels, analog channels, analog voltages, analog frequencies
-    opx.constant_ac([], [1, 2, 3], [0.1, 0.4, 0.4], [0, 110e6, 110e6])
+    v = 0.4
+    opx.constant_ac([], [1, 2, 3], [v, v, v], [110e6, 110e6, 110e6])
+    # opx.constant_ac([], [3], [0.34], [110e6])
     # opx.constant_ac([], [1,], [0.1], [0])
 
     tb.poll_safe_stop()
