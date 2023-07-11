@@ -13,11 +13,12 @@ Created on June 16th, 2023
 
 import numpy as np
 import utils.tool_belt as tool_belt
-import majorroutines.image_sample as image_sample
-import majorroutines.optimize as optimize
-import majorroutines.stationary_count as stationary_count
-import majorroutines.pulsed_resonance as pulsed_resonance
-import majorroutines.rabi as rabi
+import majorroutines.widefield.image_sample as image_sample
+
+# import majorroutines.widefield.optimize as optimize
+# import majorroutines.widefield.stationary_count as stationary_count
+# import majorroutines.widefield.pulsed_resonance as pulsed_resonance
+# import majorroutines.widefield.rabi as rabi
 import majorroutines.widefield.qm_OPX_tests as qm_OPX_tests
 
 
@@ -40,55 +41,55 @@ def do_image_sample(nv_sig):
 
 
 def do_image_sample_zoom(nv_sig):
-    scan_range = 0.05
+    scan_range = 10e6
     num_steps = 30
     image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
-def do_optimize(nv_sig):
-    optimize.main(nv_sig, set_to_opti_coords=False, save_data=True, plot_data=True)
+# def do_optimize(nv_sig):
+#     optimize.main(nv_sig, set_to_opti_coords=False, save_data=True, plot_data=True)
 
 
-def do_stationary_count(nv_sig, disable_opt=None):
-    run_time = 3 * 60 * 10**9  # ns
-    stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
+# def do_stationary_count(nv_sig, disable_opt=None):
+#     run_time = 3 * 60 * 10**9  # ns
+#     stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
 
 
-def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
-    num_steps = 51
+# def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
+#     num_steps = 51
 
-    # num_reps = 2e4
-    # num_runs = 16
+#     # num_reps = 2e4
+#     # num_runs = 16
 
-    num_reps = 1e2
-    num_runs = 32
+#     num_reps = 1e2
+#     num_runs = 32
 
-    uwave_power = 4
-    uwave_pulse_dur = 100
+#     uwave_power = 4
+#     uwave_pulse_dur = 100
 
-    pulsed_resonance.main(
-        nv_sig,
-        freq_center,
-        freq_range,
-        num_steps,
-        num_reps,
-        num_runs,
-        uwave_power,
-        uwave_pulse_dur,
-    )
+#     pulsed_resonance.main(
+#         nv_sig,
+#         freq_center,
+#         freq_range,
+#         num_steps,
+#         num_reps,
+#         num_runs,
+#         uwave_power,
+#         uwave_pulse_dur,
+#     )
 
 
-def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
-    num_steps = 51
+# def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
+#     num_steps = 51
 
-    # num_reps = 2e4
-    # num_runs = 16
+#     # num_reps = 2e4
+#     # num_runs = 16
 
-    num_reps = 1e2
-    num_runs = 16
+#     num_reps = 1e2
+#     num_runs = 16
 
-    period = rabi.main(nv_sig, uwave_time_range, state, num_steps, num_reps, num_runs)
-    nv_sig["rabi_{}".format(state.name)] = period
+#     period = rabi.main(nv_sig, uwave_time_range, state, num_steps, num_reps, num_runs)
+#     nv_sig["rabi_{}".format(state.name)] = period
 
 
 def do_qm_OPX_tests(nv_sig):
@@ -106,17 +107,18 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     sample_name = "wu"
-    ref_coords = [0.437, -0.295, 0]
+    ref_coords = [75e6, 75e6, 0]
     ref_coords = np.array(ref_coords)
 
     nv_sig = {
         "coords": ref_coords,
-        "name": "{}-nvref_zfs_vs_t".format(sample_name),
+        # "name": f"{sample_name}-nvref",
+        "name": "test",
         "disable_opt": False,
         "disable_z_opt": True,
         "expected_count_rate": 10,
         #
-        "imaging_laser": green_laser,
+        "imaging_laser": red_laser,
         "imaging_laser_filter": "nd_0",
         "imaging_readout_dur": 1e7,
         #

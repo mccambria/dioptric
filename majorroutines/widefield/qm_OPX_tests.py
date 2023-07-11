@@ -31,7 +31,7 @@ def poisson(val, param):
 
 
 def main(nv_sig):
-    with labrad.connect() as cxn:
+    with labrad.connect(username="", password="") as cxn:
         return main_with_cxn(cxn, nv_sig)
 
 
@@ -48,8 +48,9 @@ def main_with_cxn(cxn, nv_sig):
     # opx.stream_immediate(seq_file, seq_args_string, -1)
 
     # Digital channels, analog channels, analog voltages, analog frequencies
-    v = 0.4
-    opx.constant_ac([], [1, 2, 3], [v, v, v], [110e6, 110e6, 110e6])
+    # v = 0.34  # 0.7 W, 520 nm
+    v = 0.45  # 1 W, 638 nm
+    opx.constant_ac([], [1, 2, 3], [v, v, v], [75e6, 75e6, 75e6])
     # opx.constant_ac([], [3], [0.34], [110e6])
     # opx.constant_ac([], [1,], [0.1], [0])
 

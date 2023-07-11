@@ -286,14 +286,13 @@ def get_scan_grid_2d(
     -------
     array(numeric)
         Values to write to the first axis for the snake scan
+        e.g. 
     array(numeric)
         Values to write to the second axis for the snake scan
     array(numeric)
-        First-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
+        First-axis coordinates (i.e. coordinates scanned through if second axis were fixed)
     array(numeric)
-        Second-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
-    array(numeric)
-        Second-axis coordinates (grid is Cartesian product of first- and second-axis coordinates)
+        Second-axis coordinates (i.e. coordinates scanned through if first axis were fixed)
     list(float)
         Extent of the grid in the form [left, right, bottom, top] - includes half-pixel adjusment to
         min/max written vals for each axis so that the pixels in an image are properly centered
