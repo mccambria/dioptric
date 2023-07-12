@@ -52,7 +52,15 @@ def get_repo_path():
     return _get_os_config_val("repo_path")
 
 
-def get_server(cxn, server_name):
+def get_server(server_name):
     config = get_config_dict()
-    dev_name = config["Servers"]["server_name"]
+    dev_name = config["Servers"][server_name]
     return eval(f"cxn.{dev_name}")
+
+
+def get_registry_entry(cxn, key, directory):
+    """Get an entry from the LabRAD registry"""
+    p = cxn.registry.packet()
+    p.cd("", *directory)
+    p.get(key)
+    return p.send()["get"]

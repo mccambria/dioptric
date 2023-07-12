@@ -203,6 +203,7 @@ def get_z_control_style(cxn):
 
 def get_drift(cxn):
     drift = common.get_registry_entry(cxn, "DRIFT", ["", "State"])
+    config = common.get_config_dict()
     xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
     xy_dtype = eval(xy_dtype)
     z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
@@ -236,7 +237,7 @@ or whatever, variables are named axis-agnostically as <var>_<axis_ind>
 """
 
 
-def get_scan_1d(center, scan_range, num_steps):
+def get_scan_1d(center, scan_range, num_steps, dtype=np.float64):
     """Get a linear spacing of coords about the passed center
 
     Parameters
@@ -257,13 +258,19 @@ def get_scan_1d(center, scan_range, num_steps):
     half_range = scan_range / 2
     low = center - half_range
     high = center + half_range
-    coords = np.linspace(low, high, num_steps, dtype=np.float64)
+    coords = np.linspace(low, high, num_steps, dtype=dtype)
     return coords
 
 
 # load_sweep_scan_xy
 def get_scan_grid_2d(
-    center_1, center_2, scan_range_1, scan_range_2, num_steps_1, num_steps_2
+    center_1,
+    center_2,
+    scan_range_1,
+    scan_range_2,
+    num_steps_1,
+    num_steps_2,
+    dtype=np.float64,
 ):
     """Create a grid of points for a snake scan
 
@@ -286,7 +293,7 @@ def get_scan_grid_2d(
     -------
     array(numeric)
         Values to write to the first axis for the snake scan
-        e.g. 
+        e.g.
     array(numeric)
         Values to write to the second axis for the snake scan
     array(numeric)
@@ -298,8 +305,8 @@ def get_scan_grid_2d(
         min/max written vals for each axis so that the pixels in an image are properly centered
     """
 
-    coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1)
-    coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2)
+    coords_1_1d = get_scan_1d(center_1, scan_range_1, num_steps_1, dtype)
+    coords_2_1d = get_scan_1d(center_2, scan_range_2, num_steps_2, dtype)
 
     ### Winding cartesian product
     # The first axis values are repeated - the second axis values are mirrored and tiled

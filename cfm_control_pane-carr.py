@@ -12,32 +12,27 @@ Created on June 16th, 2023
 
 
 import numpy as np
-import utils.tool_belt as tool_belt
+import utils.tool_belt as tb
 import majorroutines.widefield.image_sample as image_sample
+import majorroutines.widefield.qm_OPX_tests as qm_OPX_tests
 
 # import majorroutines.widefield.optimize as optimize
 # import majorroutines.widefield.stationary_count as stationary_count
 # import majorroutines.widefield.pulsed_resonance as pulsed_resonance
 # import majorroutines.widefield.rabi as rabi
-import majorroutines.widefield.qm_OPX_tests as qm_OPX_tests
 
 
 ### Major Routines
 
 
 def do_image_sample(nv_sig):
-    scan_range = 0.2
-    num_steps = 60
+    scan_range = 30e6
+    num_steps = 30
 
     # scan_range = 1.0
     # num_steps = 180
 
-    image_sample.main(
-        nv_sig,
-        scan_range,
-        scan_range,
-        num_steps,
-    )
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_image_sample_zoom(nv_sig):
@@ -142,7 +137,7 @@ if __name__ == "__main__":
     try:
         # pass
 
-        tool_belt.init_safe_stop()
+        tb.init_safe_stop()
 
         # do_image_sample(nv_sig)
         do_qm_OPX_tests(nv_sig)
@@ -154,15 +149,19 @@ if __name__ == "__main__":
     except Exception as exc:
         if do_email:
             recipient = email_recipient
-            tool_belt.send_exception_email(email_to=recipient)
+            tb.send_exception_email(email_to=recipient)
         raise exc
 
     finally:
         if do_email:
             msg = "Experiment complete!"
             recipient = email_recipient
-            tool_belt.send_email(msg, email_to=recipient)
+            tb.send_email(msg, email_to=recipient)
+
+        print("Routine complete")
+        # This is to make sure we don't interrupt a sequence prematurely
+        tb.poll_safe_stop()
 
         # Make sure everything is reset
-        tool_belt.reset_cfm()
-        tool_belt.reset_safe_stop()
+        tb.reset_cfm()
+        tb.reset_safe_stop()

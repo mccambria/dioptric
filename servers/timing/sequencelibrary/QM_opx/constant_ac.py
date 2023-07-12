@@ -79,6 +79,8 @@ if __name__ == "__main__":
 
     ip_address = config["DeviceIDs"]["QM_opx_ip"]
     qmm = QuantumMachinesManager(ip_address)
+    # qmm.close_all_quantum_machines()
+    # print(qmm.list_open_quantum_machines())
     opx = qmm.open_qm(opx_config)
 
     try:

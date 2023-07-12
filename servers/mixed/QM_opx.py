@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-server for the Quantum Machines OPX
+Server for the Quantum Machines OPX
 
 Created on August 29th, 2022
 
@@ -117,7 +117,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-            logging.info(f"get_seq {num_reps}")
+            # logging.info(f"get_seq {num_reps}")
             ret_vals = seq_module.get_seq(self.opx_config, self.config, args, num_reps)
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
 
@@ -163,9 +163,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         seq, _, _ = self._stream_load(num_reps=num_reps)
         opx = self.qmm.open_qm(self.opx_config)
         # Serialize to file
-        sourceFile = open('debug3.py', 'w')
-        print(generate_qua_script(seq, self.opx_config), file=sourceFile)
-        sourceFile.close()
+        # sourceFile = open('debug3.py', 'w')
+        # print(generate_qua_script(seq, self.opx_config), file=sourceFile)
+        # sourceFile.close()
         program_id = opx.compile(seq)
         pending_job = opx.queue.add_compiled(program_id)
         job = pending_job.wait_for_execution()

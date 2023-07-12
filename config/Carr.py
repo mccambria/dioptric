@@ -340,6 +340,16 @@ opx_config = {
         },
         # endregion
         # region Actual "elements", or physical things to control
+        "cobolt_638_x": {
+            "singleInput": {"port": ("con1", 2)},
+            "intermediate_frequency": default_int_freq,
+            "operations": {"cw": "ao_cw", "readout": "readout"},
+        },
+        "cobolt_638_y": {
+            "singleInput": {"port": ("con1", 3)},
+            "intermediate_frequency": default_int_freq,
+            "operations": {"cw": "ao_cw", "readout": "readout"},
+        },
         "laserglow_589_x": {
             "singleInput": {"port": ("con1", 1)},
             "intermediate_frequency": default_int_freq,
@@ -406,6 +416,11 @@ opx_config = {
             "length": default_len,
             "waveforms": {"single": "cw"},
         },
+        "readout": {
+            "operation": "control",
+            "length": 1e7,
+            "waveforms": {"single": "readout"},
+        },
         ### Digital
         "do_on": {
             "operation": "control",
@@ -429,6 +444,10 @@ opx_config = {
     ### Analog
     "waveforms": {
         "cw": {"type": "constant", "sample": 0.5},
+        "cw_0.5": {"type": "constant", "sample": 0.5},
+        "cw_0.45": {"type": "constant", "sample": 0.45},
+        "cw_0.4": {"type": "constant", "sample": 0.4},
+        "readout": {"type": "constant", "sample": 0.45},
     },
     ### Digital, format is list of tuples: (on/off, ns)
     "digital_waveforms": {
