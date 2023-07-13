@@ -83,8 +83,8 @@ if __name__ == "__main__":
         # nv.do_stationary_count(nv_sig)
         
         ### Autotracking functions
-        # nv.do_auto_check_location(nv_sig)
-        nv.do_update_haystack_file(nv_sig)
+        nv.do_auto_check_location(nv_sig)
+        # nv.do_update_haystack_file(nv_sig)
         
         ### Turn laser on 
         # tool_belt.laser_on('cobolt_515') # turn the laser
