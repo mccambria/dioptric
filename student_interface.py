@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
         ####### Useful global functions #######
         ### Get/Set drift
-        # nv.set_drift([0,0,0])
+        nv.set_drift([0,0,0])
         # nv.reset_xy_drift() #Check that this is noted in lab manual
         # nv.reset_xyz_drift()
         # print(nv.get_drift())
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         # nv.do_stationary_count(nv_sig)
         
         ### Autotracking functions
-        nv.do_auto_check_location(nv_sig)
+        # nv.do_auto_check_location(nv_sig)
         # nv.do_update_haystack_file(nv_sig)
         
         ### Turn laser on 
