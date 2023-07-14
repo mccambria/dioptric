@@ -49,23 +49,39 @@ def main_with_cxn(cxn, nv_sig):
 
     # Digital channels, analog channels, analog voltages, analog frequencies
     # v = 0.34  # 0.7 W, 520 nm
-    v = 0.45  # 1 W, 638 nm
-    # opx.constant_ac([], [1, 2, 3], [v, v, v], [75e6, 75e6, 75e6])
+    v = 0.52  # 0.41 V = 1 W, 638 nm
+    opx.constant_ac([], [1, 2, 3], [v, v, v], [75e6, 75e6, 75e6])
     # opx.constant_ac([], [3], [0.34], [110e6])
     # opx.constant_ac([], [1,], [0.1], [0])
 
-    x_freqs = np.arange(55, 96, 8)
-    y_freqs = np.arange(55, 96, 8)
-    for x_freq in x_freqs:
-        for y_freq in y_freqs:
-            print()
-            print(f"coords in MHz: {x_freq}, {y_freq}")
-            opx.constant_ac([], [2, 3], [v, v], [x_freq * 1e6, y_freq * 1e6])
-            stop = input("Enter to advance or c to stop: ") == "c"
-            if stop:
-                break
-        if stop:
-            break
+    # x_freqs = np.arange(55, 96, 10)
+    # y_freqs = np.arange(55, 96, 10)
+    # # x_freqs = [65, 75, 85]
+    # # y_freqs = [65, 75, 85]
+    # for x_freq in x_freqs:
+    #     for y_freq in y_freqs:
+    #         print()
+    #         print(f"coords in MHz: {x_freq}, {y_freq}")
+    #         opx.constant_ac([], [2, 3], [v, v], [x_freq * 1e6, y_freq * 1e6])
+    #         stop = input("Enter to advance or c to stop: ") == "c"
+    #         if stop:
+    #             break
+    #     if stop:
+    #         break
+
+    # x_freq = 75
+    # y_freq = 75
+    # # powers = np.arange(0.5, 1.4, 0.1)
+    # powers = [1.6, 1.7, 1.6, 1.8, 1.9, 2.0]
+    # for p in powers:
+    #     print()
+    #     print(f"RF power: {p} W")
+    #     v = 0.41 * np.sqrt(p)
+    #     print(f"Voltage: {v} V")
+    #     opx.constant_ac([], [2, 3], [v, v], [x_freq * 1e6, y_freq * 1e6])
+    #     stop = input("Enter to advance or c to stop: ") == "c"
+    #     if stop:
+    #         break
 
 
 # endregion

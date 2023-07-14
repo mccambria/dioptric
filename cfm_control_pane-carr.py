@@ -26,7 +26,7 @@ import majorroutines.widefield.qm_OPX_tests as qm_OPX_tests
 
 
 def do_image_sample(nv_sig):
-    scan_range = 30e6
+    scan_range = 40e6
     num_steps = 30
 
     # scan_range = 1.0
@@ -158,6 +158,7 @@ if __name__ == "__main__":
             recipient = email_recipient
             tb.send_email(msg, email_to=recipient)
 
+        print()
         print("Routine complete")
         # This is to make sure we don't interrupt a sequence prematurely
         tb.poll_safe_stop()

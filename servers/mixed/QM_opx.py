@@ -462,8 +462,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     @setting(40)
     def reset(self, c):
         self.refresh_opx_config()
-
-        # Make sure there are no active connections
+        # self.qmm.clear_all_job_results()
+        # self.qmm.reset_data_processing()
         self.qmm.close_all_quantum_machines()
 
 
