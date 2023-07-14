@@ -646,7 +646,6 @@ def process_counts(
     sig_counts_ste = np.sqrt(sig_counts_avg) / np.sqrt(num_runs)
     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
-
     if norm_style == NormStyle.SINGLE_VALUED:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(

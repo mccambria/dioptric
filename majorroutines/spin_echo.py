@@ -307,7 +307,7 @@ def fit_data(data,revival_time_guess=None,num_revivals_guess=None):
         spin_readout_dur = nv_sig['spin_readout_dur']
         norm_style = nv_sig['norm_style']
         
-        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, spin_readout_dur, norm_style)
+        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, spin_readout_dur)
         (
             sig_counts_avg_kcps,
             ref_counts_avg_kcps,
@@ -503,15 +503,15 @@ def create_fit_figure(
             r"$T_{2}=$%.3f $\mathrm{\mu s}$" % (T_2 / 1000),
         ))
 
-    text_B = "\n".join(
-        (
-            "Estimated D.C magnetic field",
-            r"from $T_r$ is $B=$%.3f G" % (mag_B_from_revival_time(revival_time)),
-        ))
+    # text_B = "\n".join(
+    #     (
+    #         "Estimated D.C magnetic field",
+    #         r"from $T_r$ is $B=$%.3f G" % (mag_B_from_revival_time(revival_time)),
+    #     ))
     
     kpl.anchored_text(ax, eq_text, kpl.Loc.UPPER_RIGHT, size=kpl.Size.SMALL)
     kpl.anchored_text(ax, text_popt, kpl.Loc.LOWER_LEFT, size=kpl.Size.SMALL)
-    kpl.anchored_text(ax, text_B, kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
+    # kpl.anchored_text(ax, text_B, kpl.Loc.LOWER_RIGHT, size=kpl.Size.SMALL)
 
     return fit_fig
 
@@ -953,10 +953,12 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2023_02_28-15_38_15-E6-nv1"
-    file_name = '2023_01_31-21_37_45-E6-nv1'
+    # file_name = "2023_01_31-21_37_45-E6-nv1"
+    # data = tool_belt.get_raw_data(file_name)
+    file_name = '2022_07_21-19_48_29-johnson-nv1'
+    folder = 'retired/pc_fzx31065/branch_instructional-lab/spin_echo/2022_07'
+    data = tool_belt.get_raw_data(file_name, folder)
     
-    data = tool_belt.get_raw_data(file_name)
     nv_name = data['nv_sig']["name"]
     timestamp = data['timestamp']
 

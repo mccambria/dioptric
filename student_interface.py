@@ -23,7 +23,7 @@ if __name__ == "__main__":
     
     # %%%%%%%%%%%%%%% NV Parameters %%%%%%%%%%%%%%%
     
-    nv_coords = [4.959, 5.267, 4.88]# V  #
+    nv_coords = [4.513, 4.715, 4.88]# V  #
     # expected_count_rate = None
     expected_count_rate = None#17.3
     # kps
@@ -75,8 +75,8 @@ if __name__ == "__main__":
 
         ####### Useful global functions #######
         ### Get/Set drift
-        nv.set_drift([0,0,0])
-        # nv.reset_xy_drift() #Check that this is noted in lab manual
+        # nv.set_drift([0,0,0])
+        nv.reset_xy_drift() #Check that this is noted in lab manual
         # nv.reset_xyz_drift()
         # print(nv.get_drift())
         # nv_sig['disable_opt']=True
@@ -101,7 +101,7 @@ if __name__ == "__main__":
                 
         
         # Optimize on NV
-        # nv.do_optimize(nv_sig)
+        nv.do_optimize(nv_sig)
             
         
         ####### EXPERIMENT 1: CW electron spin resonance #######
