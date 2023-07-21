@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Enums and other constants
+"""Enums and other constants. Should not import anything other user modules
+or else we will probably get a circular import
 
 Created on June 26th, 2023
 
@@ -7,6 +8,11 @@ Created on June 26th, 2023
 """
 
 from enum import Enum, IntEnum, auto
+
+
+class ControlStyle(Enum):
+    STEP = auto()
+    STREAM = auto()
 
 
 class States(Enum):

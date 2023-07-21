@@ -11,15 +11,8 @@ Created on Decemeber 1st, 2022
 
 import numpy as np
 import time
-import labrad
-from enum import Enum, IntEnum, auto
 import utils.common as common
 import utils.tool_belt as tool_belt
-
-
-class ControlStyle(Enum):
-    STEP = auto()
-    STREAM = auto()
 
 
 # endregion

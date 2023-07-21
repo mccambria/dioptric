@@ -7,8 +7,7 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes
-from utils.positioning import ControlStyle
+from utils.constants import ModTypes, ControlStyle
 from pathlib import Path
 
 home = Path.home()
@@ -129,3 +128,6 @@ config = {
 }
 
 # endregion
+
+if __name__ == "__main__":
+    print(config)
