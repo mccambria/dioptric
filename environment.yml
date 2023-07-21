@@ -17,6 +17,7 @@ dependencies:
   - scipy
   - keyring
   - chardet
+  - numba
   - pip:
       - colorutils
       - nidaqmx
@@ -26,3 +27,7 @@ dependencies:
       - mpmath
       - qualang-tools
       - qm-qua
+      - pyserial
+      - PIPython
+      - pyvisa
+      - pulsestreamer
