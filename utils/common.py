@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Functions, etc to be referenced only by other utils. If you're running into
-a circular reference in utils, put the function or whatever here. 
+Functions, etc to be used mainly by other utils. If you're running into
+a circular reference in utils, put the problem code here. 
 
 Created September 10th, 2021
 
@@ -14,6 +14,8 @@ import socket
 import json
 from importlib import import_module
 import sys
+import labrad
+import numpy as np
 
 
 def get_config_module(pc_name=None):
@@ -58,9 +60,68 @@ def get_server(server_name):
     return eval(f"cxn.{dev_name}")
 
 
+# region LabRAD registry utilities - deprecated in favor of config file
+
+
 def get_registry_entry(cxn, key, directory):
     """Get an entry from the LabRAD registry"""
     p = cxn.registry.packet()
     p.cd("", *directory)
     p.get(key)
     return p.send()["get"]
+
+
+def _labrad_get_config_dict(cxn=None):
+    """Get the whole config from the registry as a dictionary"""
+    if cxn is None:
+        with labrad.connect() as cxn:
+            return _labrad_get_config_dict_sub(cxn)
+    else:
+        return _labrad_get_config_dict_sub(cxn)
+
+
+def _labrad_get_config_dict_sub(cxn):
+    config_dict = {}
+    _labrad_populate_config_dict(cxn, ["", "Config"], config_dict)
+    return config_dict
+
+
+def _labrad_populate_config_dict(cxn, reg_path, dict_to_populate):
+    """Populate the config dictionary recursively"""
+
+    # Sub-folders
+    cxn.registry.cd(reg_path)
+    sub_folders, keys = cxn.registry.dir()
+    for el in sub_folders:
+        sub_dict = {}
+        sub_path = reg_path + [el]
+        _labrad_populate_config_dict(cxn, sub_path, sub_dict)
+        dict_to_populate[el] = sub_dict
+
+    # Keys
+    if len(keys) == 1:
+        cxn.registry.cd(reg_path)
+        p = cxn.registry.packet()
+        key = keys[0]
+        p.get(key)
+        val = p.send()["get"]
+        if type(val) == np.ndarray:
+            val = val.tolist()
+        dict_to_populate[key] = val
+
+    elif len(keys) > 1:
+        cxn.registry.cd(reg_path)
+        p = cxn.registry.packet()
+        for key in keys:
+            p.get(key)
+        vals = p.send()["get"]
+
+        for ind in range(len(keys)):
+            key = keys[ind]
+            val = vals[ind]
+            if type(val) == np.ndarray:
+                val = val.tolist()
+            dict_to_populate[key] = val
+
+
+# endregion
