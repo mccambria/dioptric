@@ -11,16 +11,17 @@ Created on April 11th, 2019
 # region Imports and constant
 
 
-import utils.tool_belt as tool_belt
-import utils.positioning as positioning
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
 import labrad
-from utils.positioning import ControlStyle
+from utils import tool_belt as tb
+from utils import positioning
+from utils.constants import ControlStyle
 
+# endregion
 # region Plotting functions
 
 
@@ -60,8 +61,7 @@ def update_figure(fig, axis_ind, voltages, count_rates, text=None):
 
 
 def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
-
-    fit_func = tool_belt.gaussian
+    fit_func = tb.gaussian
 
     # The order of parameters is
     # 0: coefficient that defines the peak height
@@ -77,8 +77,8 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
     #        background_count_rate = 0  # Guess 0
     #    background_count_rate = float(background_count_rate)
     background_count_rate = 0.0  # Guess 0
-    low_voltage = numpy.min(scan_vals)
-    high_voltage = numpy.max(scan_vals)
+    low_voltage = np.min(scan_vals)
+    high_voltage = np.max(scan_vals)
     scan_range = high_voltage - low_voltage
     coords = nv_sig["coords"]
     init_fit = (
@@ -89,7 +89,7 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
     )
     opti_params = None
     try:
-        inf = numpy.inf
+        inf = np.inf
         low_bounds = [0, low_voltage, 0, 0]
         high_bounds = [inf, high_voltage, inf, inf]
         opti_params, cov_arr = curve_fit(
@@ -114,7 +114,7 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
     # Plot
     if (fig is not None) and (opti_params is not None):
         # Plot the fit
-        linspace_voltages = numpy.linspace(low_voltage, high_voltage, num=1000)
+        linspace_voltages = np.linspace(low_voltage, high_voltage, num=1000)
         fit_count_rates = fit_func(linspace_voltages, *opti_params)
         # Add info to the axes
         # a: coefficient that defines the peak height
@@ -138,9 +138,8 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 
 
 def read_timed_counts(cxn, num_steps, period):
-
-    counter_server = tool_belt.get_server_counter(cxn)
-    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    counter_server = tb.get_server_counter(cxn)
+    pulsegen_server = tb.get_server_pulse_gen(cxn)
     counter_server.start_tag_stream()
 
     num_read_so_far = 0
@@ -152,12 +151,11 @@ def read_timed_counts(cxn, num_steps, period):
     pulsegen_server.stream_start(num_steps)
 
     while num_read_so_far < num_steps:
-
         if time.time() > timeout_inst:
             break
 
         # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
+        if tb.safe_stop():
             break
 
         # Read the samples and update the image
@@ -169,21 +167,19 @@ def read_timed_counts(cxn, num_steps, period):
 
     counter_server.stop_tag_stream()
 
-    return numpy.array(counts, dtype=int)
+    return np.array(counts, dtype=int)
 
 
 def read_manual_counts(cxn, period, axis_write_func, scan_vals):
-
-    counter_server = tool_belt.get_server_counter(cxn)
-    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    counter_server = tb.get_server_counter(cxn)
+    pulsegen_server = tb.get_server_pulse_gen(cxn)
     counter_server.start_tag_stream()
 
     counts = []
 
     for ind in range(len(scan_vals)):
-
         # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
+        if tb.safe_stop():
             break
 
         # Write the new value to the axis and run a rep. The delay to account
@@ -200,19 +196,18 @@ def read_manual_counts(cxn, period, axis_write_func, scan_vals):
 
     counter_server.stop_tag_stream()
 
-    return numpy.array(counts, dtype=int)
+    return np.array(counts, dtype=int)
 
 
 def stationary_count_lite(cxn, nv_sig, coords, config):
-
-    counter_server = tool_belt.get_server_counter(cxn)
-    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    counter_server = tb.get_server_counter(cxn)
+    pulsegen_server = tb.get_server_pulse_gen(cxn)
 
     seq_file_name = "simple_readout.py"
 
     # Some initial values
     laser_name = nv_sig["imaging_laser"]
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, "imaging_laser")
+    laser_power = tb.set_laser_power(cxn, nv_sig, "imaging_laser")
     readout = nv_sig["imaging_readout_dur"]
     total_num_samples = 2
     x_center, y_center, z_center = coords
@@ -225,11 +220,11 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
 
     config_positioning = config["Positioning"]
     if "xy_small_response_delay" in config_positioning:
-        delay = config["Positioning"]["xy_small_response_delay"]
+        delay = config_positioning["xy_small_response_delay"]
     else:
-        delay = config["Positioning"]["xy_delay"]
+        delay = config_positioning["xy_delay"]
     seq_args = [delay, readout, laser_name, laser_power]
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    seq_args_string = tb.encode_seq_args(seq_args)
     pulsegen_server.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
@@ -237,7 +232,7 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
     pulsegen_server.stream_start(total_num_samples)
     new_samples = counter_server.read_counter_simple(total_num_samples)
 
-    new_samples_avg = numpy.average(new_samples)
+    new_samples_avg = np.average(new_samples)
     counter_server.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10**9)
 
@@ -253,15 +248,15 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     Prepares the microscope for a measurement. In particular,
     sets up the optics (positioning, collection filter, etc) and magnet.
     The laser set up must be handled by each routine since the same laser
-    
+
     If coords are not passed, it will add drift to the nv_sig coords
     """
 
     if coords is None:
-        coords_nv_sig = nv_sig['coords']
+        coords_nv_sig = nv_sig["coords"]
         drift = positioning.get_drift(cxn)
-        coords = numpy.array(coords_nv_sig) + drift
-        
+        coords = np.array(coords_nv_sig) + drift
+
     if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
         positioning.set_xyz_ramp(cxn, coords)
     else:
@@ -270,12 +265,12 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
         if filter_name is not None:
-            tool_belt.set_filter(cxn, optics_name="collection", filter_name=filter_name)
+            tb.set_filter(cxn, optics_name="collection", filter_name=filter_name)
 
     magnet_angle = nv_sig["magnet_angle"]
     if magnet_angle is not None:
         try:
-            rotation_stage_server = tool_belt.get_server_magnet_rotation(cxn)
+            rotation_stage_server = tb.get_server_magnet_rotation(cxn)
             rotation_stage_server.set_angle(magnet_angle)
         except:
             print("trying to set magnet angle with no rotation stage. check config?")
@@ -284,22 +279,19 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
 
 def optimize_list(nv_sig_list):
-
-    with labrad.connect() as cxn:
+    with labrad.connect(username="", password="") as cxn:
         optimize_list_with_cxn(cxn, nv_sig_list)
 
 
 def optimize_list_with_cxn(cxn, nv_sig_list):
-
-    tool_belt.init_safe_stop()
+    tb.init_safe_stop()
 
     opti_coords_list = []
     opti_counts_list = []
     for ind in range(len(nv_sig_list)):
-
         print("Optimizing on NV {}...".format(ind))
 
-        if tool_belt.safe_stop():
+        if tb.safe_stop():
             break
 
         nv_sig = nv_sig_list[ind]
@@ -323,13 +315,12 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
-
     xy_control_style = positioning.get_xy_control_style(cxn)
     z_control_style = positioning.get_z_control_style(cxn)
 
     num_steps = 31
 
-    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
+    pulsegen_server = tb.get_server_pulse_gen(cxn)
 
     seq_file_name = "simple_readout.py"
 
@@ -338,8 +329,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     x_center, y_center, z_center = coords
 
     if "opti_offset" in nv_sig:
-        adj_coords = numpy.array(coords)
-        opti_offset = numpy.array(nv_sig["opti_offset"])
+        adj_coords = np.array(coords)
+        opti_offset = np.array(nv_sig["opti_offset"])
         adj_coords += opti_offset
         sweep_x_center, sweep_y_center, sweep_z_center = adj_coords
     else:
@@ -348,11 +339,10 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     readout = nv_sig["imaging_readout_dur"]
     laser_key = "imaging_laser"
     laser_name = nv_sig[laser_key]
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
 
     # xy
     if axis_ind in [0, 1]:
-
         xy_server = positioning.get_server_pos_xy(cxn)
 
         config_positioning = config["Positioning"]
@@ -378,16 +368,13 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             else:
                 positioning.set_xyz(cxn, start_coords)
             auto_scan = False
-            
-            
-            
 
         elif xy_control_style == ControlStyle.STREAM:
             # no need to move to first position. loading the daq already does that
             auto_scan = True
 
         seq_args = [delay, readout, laser_name, laser_power]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        seq_args_string = tb.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
 
@@ -395,8 +382,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
             if auto_scan:
                 scan_func = xy_server.load_stream_xy
                 scan_vals, fixed_vals = positioning.get_scan_one_axis_2d(
-                    sweep_x_center, sweep_y_center, 
-                    scan_range,num_steps
+                    sweep_x_center, sweep_y_center, scan_range, num_steps
                 )
                 scan_func(scan_vals, fixed_vals)
             else:
@@ -404,13 +390,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
                 scan_vals = positioning.get_scan_1d(
                     sweep_x_center, scan_range, num_steps
                 )
-                
+
         elif axis_ind == 1:
             if auto_scan:
                 scan_func = xy_server.load_stream_xy
                 scan_vals, fixed_vals = positioning.get_scan_one_axis_2d(
-                    sweep_y_center, sweep_x_center, 
-                    scan_range,num_steps
+                    sweep_y_center, sweep_x_center, scan_range, num_steps
                 )
                 scan_func(fixed_vals, scan_vals)
             else:
@@ -421,9 +406,10 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
     # z
     elif axis_ind == 2:
-
         scan_range = config["Positioning"]["z_optimize_range"]
-        scan_dtype = eval(config["Positioning"]["z_dtype"]) #matt, make sure this still works for your piezo
+        scan_dtype = eval(
+            config["Positioning"]["z_dtype"]
+        )  # matt, make sure this still works for your piezo
         delay = config["Positioning"]["z_delay"]
 
         if z_control_style == ControlStyle.STEP:
@@ -431,7 +417,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         elif z_control_style == ControlStyle.STREAM:
             # no need to move to first position. loading the daq already does that
             auto_scan = True
-            
+
         # Move to first point in scan
         half_scan_range = scan_range / 2
         z_low = sweep_z_center - half_scan_range
@@ -444,24 +430,23 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         z_server = positioning.get_server_pos_z(cxn)
 
         seq_args = [delay, readout, laser_name, laser_power]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        seq_args_string = tb.encode_seq_args(seq_args)
         ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
-
 
         if auto_scan:
             scan_func = z_server.load_stream_z
             scan_vals = positioning.get_scan_1d(
-                sweep_z_center,scan_range,num_steps,
+                sweep_z_center,
+                scan_range,
+                num_steps,
             )
             scan_func(scan_vals)
 
         else:
             manual_write_func = z_server.write_z
-            scan_vals = positioning.get_scan_1d(
-                sweep_z_center, scan_range, num_steps
-            )
-            
+            scan_vals = positioning.get_scan_1d(sweep_z_center, scan_range, num_steps)
+
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period)
     else:
@@ -479,11 +464,14 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     return opti_coord, scan_vals, counts
 
 
-# %% Main
+# endregion
+
+
+# region Main
 def main(
     nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False, set_drift=True
 ):
-    with labrad.connect() as cxn:
+    with labrad.connect(username="", password="") as cxn:
         return main_with_cxn(
             cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift
         )
@@ -501,14 +489,14 @@ def main_with_cxn(
     z_control_style = positioning.get_z_control_style(cxn)
 
     startFunctionTime = time.time()
-    tool_belt.reset_cfm(cxn)
+    tb.reset_cfm(cxn)
 
-    tool_belt.init_safe_stop()
+    tb.init_safe_stop()
 
     # Adjust the sig we use for drift
     drift = positioning.get_drift(cxn)
     passed_coords = nv_sig["coords"]
-    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
+    adjusted_coords = (np.array(passed_coords) + np.array(drift)).tolist()
     # If optimize is disabled, just set the filters and magnet in place
     if nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig, adjusted_coords)
@@ -516,12 +504,12 @@ def main_with_cxn(
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig["coords"] = adjusted_coords
 
-    tool_belt.set_filter(cxn, nv_sig, "collection")
-    tool_belt.set_filter(cxn, nv_sig, "imaging_laser")
+    tb.set_filter(cxn, nv_sig, "collection")
+    tb.set_filter(cxn, nv_sig, "imaging_laser")
 
     expected_count_rate = adjusted_nv_sig["expected_count_rate"]
 
-    config = tool_belt.get_config_dict(cxn)
+    config = tb.get_config_dict(cxn)
 
     opti_succeeded = False
 
@@ -560,12 +548,11 @@ def main_with_cxn(
     # print(num_attempts)
 
     for ind in range(num_attempts):
-
         # Break out of the loop if optimization succeeded or was unnecessary
         if opti_succeeded or opti_unnecessary:
             break
 
-        if tool_belt.safe_stop():
+        if tb.safe_stop():
             break
 
         if ind > 0:
@@ -585,8 +572,8 @@ def main_with_cxn(
         if "only_z_opt" in nv_sig and nv_sig["only_z_opt"]:
             opti_coords = [adjusted_coords[0], adjusted_coords[1]]
             for i in range(2):
-                scan_vals_by_axis.append(numpy.array([]))
-                counts_by_axis.append(numpy.array([]))
+                scan_vals_by_axis.append(np.array([]))
+                counts_by_axis.append(np.array([]))
         else:
             for axis_ind in range(2):
                 # print(axis_ind)
@@ -624,8 +611,8 @@ def main_with_cxn(
         if z_control_style == ControlStyle.STREAM:
             if "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]:
                 opti_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-                scan_vals_by_axis.append(numpy.array([]))
-                counts_by_axis.append(numpy.array([]))
+                scan_vals_by_axis.append(np.array([]))
+                counts_by_axis.append(np.array([]))
             else:
                 # Help z out by ensuring we're centered in xy first
                 if None not in opti_coords:
@@ -661,7 +648,7 @@ def main_with_cxn(
         # We failed to get optimized coordinates, try again
         if None in opti_coords:
             continue
-        
+
         # print(opti_coords)
 
         # Check the count rate
@@ -670,7 +657,6 @@ def main_with_cxn(
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
-
             print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
             # If the count rate close to what we expect, we succeeded!
@@ -699,7 +685,7 @@ def main_with_cxn(
     ### Calculate the drift relative to the passed coordinates
 
     if opti_succeeded and set_drift:
-        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
+        drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
         positioning.set_drift(cxn, drift)
 
     ### Set to the optimized coordinates, or just tell the user what they are
@@ -734,25 +720,24 @@ def main_with_cxn(
 
     ### Clean up and save the data
 
-    tool_belt.reset_cfm(cxn)
+    tb.reset_cfm(cxn)
     endFunctionTime = time.time()
     time_elapsed = endFunctionTime - startFunctionTime
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
     if save_data and not opti_unnecessary:
-
         if len(scan_vals_by_axis) < 3:
             z_scan_vals = None
         else:
             z_scan_vals = scan_vals_by_axis[2].tolist()
 
-        timestamp = tool_belt.get_time_stamp()
+        timestamp = tb.get_time_stamp()
         rawData = {
             "timestamp": timestamp,
             "time_elapsed": time_elapsed,
             "nv_sig": nv_sig,
-            "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
+            "nv_sig-units": tb.get_nv_sig_units(cxn),
             "opti_coords": opti_coords,
             "x_scan_vals": scan_vals_by_axis[0].tolist(),
             "y_scan_vals": scan_vals_by_axis[1].tolist(),
@@ -767,11 +752,13 @@ def main_with_cxn(
             "z_control_type": z_control_style.name,
         }
 
-        filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
+        filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
         if fig is not None:
-            tool_belt.save_figure(fig, filePath)
-        tool_belt.save_raw_data(rawData, filePath)
+            tb.save_figure(fig, filePath)
+        tb.save_raw_data(rawData, filePath)
 
-    # %% Return the optimized coordinates we found
-
+    # Return the optimized coordinates we found
     return opti_coords, opti_count_rate
+
+
+# endregion

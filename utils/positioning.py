@@ -11,8 +11,8 @@ Created on Decemeber 1st, 2022
 
 import numpy as np
 import time
-import utils.common as common
-import utils.tool_belt as tool_belt
+from utils import common
+from utils import tool_belt as tb
 
 
 # endregion
@@ -20,10 +20,9 @@ import utils.tool_belt as tool_belt
 
 
 def set_xyz(cxn, coords):
-    xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
-    z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    xy_dtype = eval(xy_dtype)
-    z_dtype = eval(z_dtype)
+    config = common.get_config_dict()
+    xy_dtype = config["Positioning"]["xy_dtype"]
+    z_dtype = config["Positioning"]["z_dtype"]
     pos_xy_server = get_server_pos_xy(cxn)
     pos_z_server = get_server_pos_z(cxn)
     pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
@@ -34,29 +33,18 @@ def set_xyz(cxn, coords):
 
 def set_xyz_ramp(cxn, coords):
     """Step incrementally to this position from the current position"""
-    xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
-    z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    # Get the min step size
-    step_size_xy = common.get_registry_entry(
-        cxn, "xy_incremental_step_size", ["", "Config", "Positioning"]
-    )
-    step_size_z = common.get_registry_entry(
-        cxn, "z_incremental_step_size", ["", "Config", "Positioning"]
-    )
-    # Get the delay between movements
-    try:
-        xy_delay = common.get_registry_entry(
-            cxn, "xy_delay", ["", "Config", "Positioning"]
-        )
 
-    except Exception:
-        xy_delay = common.get_registry_entry(
-            cxn,
-            "xy_large_response_delay",  # AG Eventually pahse out large angle response
-            ["", "Config", "Positioning"],
-        )
+    config = common.get_config_dict()
+    config_positioning = config["Positioning"]
 
-    z_delay = common.get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
+    xy_dtype = config_positioning["xy_dtype"]
+    z_dtype = config_positioning["z_dtype"]
+
+    step_size_xy = config_positioning["xy_incremental_step_size"]
+    step_size_z = config_positioning["z_incremental_step_size"]
+
+    xy_delay = config_positioning["xy_delay"]
+    z_delay = config_positioning["z_delay"]
 
     # Take whichever one is longer
     if xy_delay > z_delay:
@@ -65,7 +53,7 @@ def set_xyz_ramp(cxn, coords):
         total_movement_delay = z_delay
 
     xyz_server = get_server_pos_xyz(cxn)
-    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
+    pulse_gen = tb.get_server_pulse_gen(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
@@ -132,7 +120,7 @@ def set_xyz_ramp(cxn, coords):
         # Run a simple clock pulse repeatedly to move through votlages
         file_name = "simple_clock.py"
         seq_args = [movement_delay]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(file_name, seq_args_string)
         # period = ret_vals[0]
         # print(z_points)
@@ -171,22 +159,14 @@ def get_server_pos_xyz(cxn):
     return common.get_server(cxn, "pos_xyz")
 
 
-def get_xy_control_style(cxn):
-    """Talk to the registry to get the xy control type for this setup"""
-    xy_control_style_return = common.get_registry_entry(
-        cxn, "xy_control_style", ["", "Config", "Positioning"]
-    )
-    xy_control_style_return = eval(xy_control_style_return)
-    return xy_control_style_return
+def get_xy_control_style():
+    config = common.get_config_dict()
+    return config["Positioning"]["xy_control_style"]
 
 
-def get_z_control_style(cxn):
-    """Talk to the registry to get the z control type for this setup"""
-    z_control_style_return = common.get_registry_entry(
-        cxn, "z_control_style", ["", "Config", "Positioning"]
-    )
-    z_control_style_return = eval(z_control_style_return)
-    return z_control_style_return
+def get_z_control_style():
+    config = common.get_config_dict()
+    return config["Positioning"]["z_control_style"]
 
 
 # endregion
@@ -194,13 +174,12 @@ def get_z_control_style(cxn):
 """Implemented with a drift tracking global stored on the registry"""
 
 
-def get_drift(cxn):
-    drift = common.get_registry_entry(cxn, "DRIFT", ["", "State"])
+def get_drift(cxn=None):
+    drift = common.get_registry_entry("DRIFT", ["", "State"], cxn)
     config = common.get_config_dict()
-    xy_dtype = common.get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
-    xy_dtype = eval(xy_dtype)
-    z_dtype = common.get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    z_dtype = eval(z_dtype)
+    config_positioning = config["Positioning"]
+    xy_dtype = config_positioning["xy_dtype"]
+    z_dtype = config_positioning["z_dtype"]
     drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     return drift
 

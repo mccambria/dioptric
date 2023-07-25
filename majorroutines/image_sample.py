@@ -11,14 +11,14 @@ Created on April 9th, 2019
 
 import matplotlib.pyplot as plt
 import numpy as np
-import utils.tool_belt as tool_belt
-from utils.positioning import ControlStyle
-import utils.common as common
 import time
 import labrad
 import majorroutines.optimize as optimize
-import utils.kplotlib as kpl
-import utils.positioning as positioning
+from utils.constants import ControlStyle
+from utils import tool_belt as tb
+from utils import common
+from utils import kplotlib as kpl
+from utils import positioning
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -88,8 +88,7 @@ def main(
     vmax=None,
     scan_type="XY",
 ):
-
-    with labrad.connect() as cxn:
+    with labrad.connect(username="", password="") as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(
             cxn,
             nv_sig,
@@ -118,67 +117,54 @@ def main_with_cxn(
     vmax=None,
     scan_type="XY",
 ):
-
     ### Some initial setup
 
-    xy_control_style = positioning.get_xy_control_style(cxn)
+    xy_control_style = positioning.get_xy_control_style()
 
-    tool_belt.reset_cfm(cxn)
+    tb.reset_cfm(cxn)
     x_center, y_center, z_center = positioning.set_xyz_on_nv(cxn, nv_sig)
     optimize.prepare_microscope(cxn, nv_sig)
     xy_server = positioning.get_server_pos_xy(cxn)
     # print(xy_server)
     xyz_server = positioning.get_server_pos_xyz(cxn)
-    counter = tool_belt.get_server_counter(cxn)
-    pulse_gen = tool_belt.get_server_pulse_gen(cxn)
+    counter = tb.get_server_counter(cxn)
+    pulse_gen = tb.get_server_pulse_gen(cxn)
     total_num_samples = num_steps**2
 
     laser_key = "imaging_laser"
     readout_laser = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    tb.set_filter(cxn, nv_sig, laser_key)
     time.sleep(1)
-    readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
+
     # See if this setup has finely specified delay times, else just get the
     # one-size-fits-all value.
-    dir_path = ["", "Config", "Positioning"]
-    cxn.registry.cd(*dir_path)
-    _, keys = cxn.registry.dir()
+    config = common.get_config_dict()
+    config_positioning = config["Positioning"]
 
-    if "xy_small_response_delay" in keys:
-        xy_delay = common.get_registry_entry(cxn, "xy_small_response_delay", dir_path)
+    if "xy_small_response_delay" in config_positioning:
+        xy_delay = config_positioning["xy_small_response_delay"]
     else:
-        xy_delay = common.get_registry_entry(cxn, "xy_delay", dir_path)
+        xy_delay = config_positioning["xy_delay"]
+    z_delay = config_positioning["z_delay"]
 
     # Get the scale in um per unit
-    xy_scale = common.get_registry_entry(cxn, "xy_nm_per_unit", dir_path)
-    if xy_scale == -1:
-        um_scaled = False
-    else:
-        xy_scale *= 1000
+    if um_scaled:
+        if "xy_nm_per_unit" in config_positioning:
+            xy_scale = config_positioning["xy_nm_per_unit"] * 1000
+        if "z_nm_per_unit" in config_positioning:
+            z_scale = config_positioning["z_nm_per_unit"] * 1000
 
-    z_delay = common.get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
-    z_scale = common.get_registry_entry(
-        cxn, "z_nm_per_unit", ["", "Config", "Positioning"]
-    )
-    # use whichever delay is longer:
-    if (z_delay > xy_delay) and scan_type == "XZ" :
+    # Use whichever delay is longer
+    if (z_delay > xy_delay) and scan_type == "XZ":
         delay = z_delay
-    elif (z_delay > xy_delay) and scan_type == "YZ" :
+    elif (z_delay > xy_delay) and scan_type == "YZ":
         delay = z_delay
     else:
         delay = xy_delay
 
-    try:
-        xy_units = common.get_registry_entry(
-            cxn, "xy_units", ["", "Config", "Positioning"]
-        )
-        z_units = common.get_registry_entry(
-            cxn, "z_units", ["", "Config", "Positioning"]
-        )
-    except Exception as exc:
-        print("xy_units or z_units not in config")
-        xy_units = None
-        z_units = None
+    xy_units = config_positioning["xy_units"]
+    z_units = config_positioning["z_units"]
 
     ### Load the pulse generator
 
@@ -188,16 +174,16 @@ def main_with_cxn(
 
     if nv_minus_init:
         laser_key = "nv-_prep_laser"
-        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        tb.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig["{}_dur".format(laser_key)]
         init_laser = nv_sig[laser_key]
-        init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        init_power = tb.set_laser_power(cxn, nv_sig, laser_key)
         seq_args = [init, readout, init_laser, init_power, readout_laser, readout_power]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "charge_init-simple_readout.py"
     else:
         seq_args = [xy_delay, readout, readout_laser, readout_power]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "simple_readout.py"
 
     # print(seq_args)
@@ -216,10 +202,12 @@ def main_with_cxn(
         )
     elif scan_type == "XZ":
         ret_vals = positioning.get_scan_grid_2d(
-            x_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
-    elif scan_type == 'YZ':
+            x_center, z_center, x_range, y_range, x_num_steps, y_num_steps
+        )
+    elif scan_type == "YZ":
         ret_vals = positioning.get_scan_grid_2d(
-            y_center, z_center,x_range, y_range, x_num_steps, y_num_steps)
+            y_center, z_center, x_range, y_range, x_num_steps, y_num_steps
+        )
 
     if xy_control_style == ControlStyle.STEP:
         x_positions, y_positions, x_positions_1d, y_positions_1d, extent = ret_vals
@@ -256,8 +244,8 @@ def main_with_cxn(
             xyz_server.load_stream_xyz(x_voltages, y_vals_static, z_voltages)
         elif scan_type == "YZ":
             z_voltages = y_voltages
-            x_vals_static = [x_center]*len(x_voltages)
-            xyz_server.load_stream_xyz( x_vals_static, x_voltages,z_voltages)
+            x_vals_static = [x_center] * len(x_voltages)
+            xyz_server.load_stream_xyz(x_vals_static, x_voltages, z_voltages)
 
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
@@ -279,7 +267,7 @@ def main_with_cxn(
     title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
 
     fig, ax = plt.subplots()
-    if scan_type == "XZ" or scan_type == "YZ" :
+    if scan_type == "XZ" or scan_type == "YZ":
         kpl.imshow(
             ax,
             img_array_kcps,
@@ -308,25 +296,23 @@ def main_with_cxn(
     ### Collect the data
 
     counter.start_tag_stream()
-    tool_belt.init_safe_stop()
+    tb.init_safe_stop()
 
     if xy_control_style == ControlStyle.STEP:
-
         dx_list = []
         dy_list = []
         dz_list = []
 
         for i in range(total_num_samples):
-
             cur_x_pos = x_positions[i]
             cur_y_pos = y_positions[i]
 
-            if tool_belt.safe_stop():
+            if tb.safe_stop():
                 break
 
             if scan_type == "XY":
                 flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            elif scan_type == 'XZ' or scan_type == 'YZ'  :
+            elif scan_type == "XZ" or scan_type == "YZ":
                 flag = xyz_server.write_xyz(cur_x_pos, y_center, cur_y_pos)
 
             # Some diagnostic stuff - checking how far we are from the target pos
@@ -334,7 +320,7 @@ def main_with_cxn(
             dx_list.append((actual_x_pos - cur_x_pos) * 1e3)
             if scan_type == "XY":
                 dy_list.append((actual_y_pos - cur_y_pos) * 1e3)
-            elif scan_type == "XZ" or scan_type == 'YZ' :
+            elif scan_type == "XZ" or scan_type == "YZ":
                 cur_z_pos = cur_y_pos
                 dy_list.append((actual_z_pos - cur_z_pos) * 1e3)
             # read the counts at this location
@@ -358,7 +344,6 @@ def main_with_cxn(
             kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
 
     elif xy_control_style == ControlStyle.STREAM:
-
         pulse_gen.stream_start(total_num_samples)
 
         charge_init = nv_minus_init
@@ -368,8 +353,7 @@ def main_with_cxn(
         num_read_so_far = 0
 
         while num_read_so_far < total_num_samples:
-
-            if (time.time() > timeout_inst) or tool_belt.safe_stop():
+            if (time.time() > timeout_inst) or tb.safe_stop():
                 break
 
             # Read the samples
@@ -395,17 +379,17 @@ def main_with_cxn(
 
     ### Clean up and save the data
 
-    tool_belt.reset_cfm(cxn)
+    tb.reset_cfm(cxn)
     if scan_type == "XY":
         xy_server.write_xy(x_center, y_center)
     else:
         xyz_server.write_xyz(x_center, y_center, z_center)
 
-    timestamp = tool_belt.get_time_stamp()
+    timestamp = tb.get_time_stamp()
     rawData = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        # 'nv_sig-units': tool_belt.get_nv_sig_units(),
+        # 'nv_sig-units': tb.get_nv_sig_units(),
         "x_center": x_center,
         "y_center": y_center,
         "z_center": z_center,
@@ -426,25 +410,24 @@ def main_with_cxn(
         "img_array-units": "counts",
     }
 
-    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
-    tool_belt.save_figure(fig, filePath)
-    tool_belt.save_raw_data(rawData, filePath)
+    filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+    tb.save_figure(fig, filePath)
+    tb.save_raw_data(rawData, filePath)
 
     return img_array, x_positions_1d, y_positions_1d
 
 
 if __name__ == "__main__":
-
     file_name = "2023_03_07-18_29_26-15micro-nvref_zfs_vs_t"
-    data = tool_belt.get_raw_data(file_name)
+    data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
 
     do_presentation = False
     try:
-        scan_type = data['scan_type']
-        if scan_type == 'XY':
+        scan_type = data["scan_type"]
+        if scan_type == "XY":
             x_center = data["x_center"]
             y_center = data["y_center"]
             # x_range = data["x_range"]
@@ -452,18 +435,16 @@ if __name__ == "__main__":
             # x_num_steps = data["num_steps"]
             # y_num_steps = data["num_steps"]
 
-        elif scan_type == 'XZ':
+        elif scan_type == "XZ":
             x_center = data["x_center"]
             y_center = data["z_center"]
-        elif scan_type == 'YZ':
+        elif scan_type == "YZ":
             x_center = data["y_center"]
             y_center = data["z_center"]
     except Exception:
-        nv_sig = data['nv_sig']
-        x_center = nv_sig['coords'][0]
-        y_center = nv_sig['coords'][1]
-
-
+        nv_sig = data["nv_sig"]
+        x_center = nv_sig["coords"][0]
+        y_center = nv_sig["coords"][1]
 
     x_range = data["x_range"]
     y_range = data["y_range"]
@@ -472,16 +453,17 @@ if __name__ == "__main__":
     xlabel = "V"
     ylabel = "V"
     if do_presentation:
-        x_center=0
-        y_center=0
-        with labrad.connect() as cxn:
-            scale = common.get_registry_entry(
-                cxn, "xy_nm_per_unit", ["", "Config", "Positioning"])
-        scale=35000
-        x_range = x_range * scale/1000
-        y_range = y_range * scale/1000
-        xlabel = "um"
-        ylabel = "um"
+        pass
+        # x_center=0
+        # y_center=0
+        # with labrad.connect() as cxn:
+        #     scale = common.get_registry_entry(
+        #         cxn, "xy_nm_per_unit", ["", "Config", "Positioning"])
+        # scale=35000
+        # x_range = x_range * scale/1000
+        # y_range = y_range * scale/1000
+        # xlabel = "um"
+        # ylabel = "um"
 
     ret_vals = positioning.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
@@ -497,7 +479,7 @@ if __name__ == "__main__":
         x_label=xlabel,
         y_label=ylabel,
         cbar_label="kcps",
-        vmax = 55,
+        vmax=55,
         extent=extent,
         # aspect="auto",
     )

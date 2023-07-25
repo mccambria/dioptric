@@ -33,6 +33,7 @@ import logging
 import socket
 from servers.outputs.interfaces.pos_xy_stream import PosXyStream
 from utils import common
+from utils import tool_belt as tb
 
 
 class PosXyThorGvs212(LabradServer, PosXyStream):
@@ -40,16 +41,7 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
         self.task = None
         self.sub_init_server_xy()
 
@@ -150,8 +142,7 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
         )
 
         # Set up the output stream
-        output_stream = nidaqmx.task.OutStream(task)
-        writer = stream_writers.AnalogMultiChannelWriter(output_stream)
+        writer = stream_writers.AnalogMultiChannelWriter(task.out_stream)
 
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.

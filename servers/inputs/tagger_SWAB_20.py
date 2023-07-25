@@ -71,7 +71,7 @@ class TaggerSwab20(Tagger, LabradServer):
         keys = wiring.keys()
         for key in keys:
             if re.fullmatch(r"di_apd_[0-9]+", key):
-                apd_index = key.split("_")[2]
+                apd_index = int(key.split("_")[2])
                 di_apd = wiring[key]
                 self.tagger_di_apd[apd_index] = di_apd
 

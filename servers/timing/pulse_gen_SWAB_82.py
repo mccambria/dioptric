@@ -31,7 +31,7 @@ from pulsestreamer import OutputState
 import importlib
 import os
 import sys
-import utils.tool_belt as tool_belt
+from utils import tool_belt as tb
 import logging
 import socket
 from pathlib import Path
@@ -44,16 +44,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
 
         config = common.get_config_dict()
         device_id = config["DeviceIDs"][f"{self.name}_ip"]
@@ -62,27 +53,19 @@ class PulseGenSwab82(PulseGen, LabradServer):
         logging.info(calibration)
 
         sequence_library_path = (
-            common.get_repo_path() / "servers/timing/sequencelibrary/{self.name}"
+            common.get_repo_path() / f"servers/timing/sequencelibrary/{self.name}"
         )
 
         sys.path.append(str(sequence_library_path))
 
         self.config = config
         self.pulse_streamer_wiring = self.config["Wiring"]["PulseGen"]
-        self.do_feedthrough_lasers = []
-        optics_dict = config["Optics"]
-        for key in optics_dict:
-            optic = optics_dict[key]
-            logging.info(optic)
-            feedthrough_str = optic["am_feedthrough"]
-            if eval(feedthrough_str):
-                self.do_feedthrough_lasers.append(key)
-        logging.info(self.do_feedthrough_lasers)
 
         # Initialize state variables and reset
         self.seq = None
         self.loaded_seq_streamed = False
         self.reset(None)
+
         logging.info("Init complete")
 
     def get_seq(self, seq_file, seq_args_string):
@@ -90,7 +73,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            args = tool_belt.decode_seq_args(seq_args_string)
+            args = tb.decode_seq_args(seq_args_string)
             seq, final, ret_vals = seq_module.get_seq(self, self.config, args)
         return seq, final, ret_vals
 
@@ -110,13 +93,6 @@ class PulseGenSwab82(PulseGen, LabradServer):
     def stream_start(self, c, num_reps=1):
         """See pulse_gen interface"""
 
-        # Make sure the lasers that require it are set to feedthrough
-        # logging.info(num_reps)
-        for laser in self.do_feedthrough_lasers:
-            self_client = self.client
-            if hasattr(self_client, laser):
-                yield self_client[laser].load_feedthrough()
-
         if self.seq == None:
             raise RuntimeError("Stream started with no sequence.")
         if not self.loaded_seq_streamed:
@@ -126,15 +102,15 @@ class PulseGenSwab82(PulseGen, LabradServer):
 
     @setting(4, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
     def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
-        """See pulse_gen interface"""
+        """See pulse_gen interface. Default is everything off"""
 
         # Digital
         digital_channels = [int(el) for el in digital_channels]
-        
+
         # Analog
         analog_0_voltage = 0.0
         analog_1_voltage = 0.0
-        for chan in [0,1]:
+        for chan in [0, 1]:
             if chan in analog_channels:
                 ind = analog_channels.index(chan)
                 voltage = analog_voltages[ind]
@@ -142,7 +118,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
                     analog_0_voltage = voltage
                 elif chan == 1:
                     analog_1_voltage = voltage
-                    
+
         # Run the operation
         state = OutputState(digital_channels, analog_0_voltage, analog_1_voltage)
         self.pulse_streamer.constant(state)
@@ -160,9 +136,7 @@ class PulseGenSwab82(PulseGen, LabradServer):
     def reset(self, c):
         # Probably don't need to force_final right before constant but...
         self.force_final(c)
-        self.constant(
-            c, digital_channels=[], analog_0_voltage=0.0, analog_1_voltage=0.0
-        )
+        self.constant(c)
         self.seq = None
         self.loaded_seq_streamed = False
 

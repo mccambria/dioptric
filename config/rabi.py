@@ -19,6 +19,7 @@ config = {
     "apd_indices": [0],
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
+    # Access the OS-specific keys with getters from common
     "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
     "linux_nvdata_path": home / "E/nvdata",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
@@ -35,9 +36,9 @@ config = {
     "DeviceIDs": {
         "arb_wave_gen_visa_address": "TCPIP0::128.104.160.119::5025::SOCKET",
         "daq0_name": "Dev1",
-        "filter_slider_ell9k_2_address": "COM11",
-        "filter_slider_ell9k_3_address": "COM9",
-        "filter_slider_ell9k_address": "COM5",
+        "filter_slider_THOR_ell9k_2_com": "COM11",
+        "filter_slider_THOR_ell9k_3_com": "COM9",
+        "filter_slider_THOR_ell9k_com": "COM5",
         "gcs_dll_path": home
         / "Documents/GitHub/dioptric/servers/outputs/GCSTranslator/PI_GCS2_DLL_x64.dll",
         "objective_piezo_model": "E709",
@@ -82,7 +83,7 @@ config = {
                 "no_filter": 3,
             },
         },
-        "integrated_520": {
+        "laser_INTE_520": {
             "delay": 250,
             "mod_type": ModTypes.DIGITAL,
         },
@@ -155,8 +156,8 @@ config = {
             "ao_laser_LGLO_589_am": 1,
             "do_apd_gate": 5,
             "do_arb_wave_trigger": 2,
-            "do_cobolt_638_dm": 7,
-            "do_integrated_520_dm": 3,
+            "do_laser_COBO_638_dm": 7,
+            "do_laser_INTE_520_dm": 3,
             "do_laser_LGLO_589_am": 6,
             "do_sample_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,

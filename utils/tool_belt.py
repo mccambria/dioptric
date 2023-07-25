@@ -34,6 +34,34 @@ import signal
 import copy
 from decimal import Decimal
 from importlib import import_module
+import logging
+
+# region Server utils
+# Utility functions to be used by LabRAD servers
+
+
+def configure_logging(inst, level=logging.INFO):
+    """Setup logging for a LabRAD server
+
+    Parameters
+    ----------
+    inst : Class instance
+        Pass self from the LabRAD server class
+    level : logging level, optional
+        by default logging.DEBUG
+    """
+    nvdata_path = common.get_nvdata_path()
+    filename = nvdata_path / f"pc_{inst.pc_name}/labrad_logging/{inst.name}.log"
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        datefmt="%y-%m-%d_%H-%M-%S",
+        filename=filename,
+    )
+
+
+# endregion
+
 
 # region Laser utils
 
@@ -41,7 +69,6 @@ from importlib import import_module
 def get_mod_type(laser_name):
     config = common.get_config_dict()
     mod_type = config["Optics"][laser_name]["mod_type"]
-    mod_type = eval(mod_type)
     return mod_type.name
 
 
@@ -57,14 +84,14 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
     mod_type = config["Optics"][laser_name]["mod_type"]
     laser_delay = config["Optics"][laser_name]["delay"]
 
-    laser_pulse_name = "laser_ON_{}".format(eval(mod_type).name)
+    laser_pulse_name = f"laser_ON_{mod_type.name}"
 
-    if eval(mod_type).name == "ANALOG":
+    if mod_type == ModTypes.ANALOG:
         laser_pulse_amplitude = laser_power
 
-    elif eval(mod_type).name == "DIGITAL":
+    elif mod_type == ModTypes.DIGITAL:
         if laser_power == 0:
-            laser_pulse_name = "laser_OFF_{}".format(eval(mod_type).name)
+            laser_pulse_name = f"laser_OFF_{mod_type.name}"
             laser_pulse_amplitude = 1
         else:
             laser_pulse_amplitude = 1
@@ -75,7 +102,6 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     config = common.get_config_dict()
     mod_type = config["Optics"][laser_name]["mod_type"]
-    mod_type = eval(mod_type)
     pulse_gen = get_server_pulse_gen(cxn)
 
     if mod_type is ModTypes.DIGITAL:
@@ -121,7 +147,6 @@ def set_laser_power(
     # to the pulse streamer
     config = common.get_config_dict()
     mod_type = config["Optics"][laser_name]["mod_type"]
-    mod_type = eval(mod_type)
     if mod_type == ModTypes.ANALOG:
         return laser_power
     else:
@@ -203,250 +228,36 @@ def get_laser_server(cxn, laser_name):
         return None
 
 
-# def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
-#     """Some lasers may require special processing of their Pulse Streamer
-#     sequence. For example, the Cobolt lasers expect 3.5 V for digital
-#     modulation, but the Pulse Streamer only supplies 2.6 V.
-#     """
-
-#     pulser_wiring = config["Wiring"]["PulseGen"]
-#     # print(config)
-#     mod_type = config["Optics"][laser_name]["mod_type"]
-#     mod_type = eval(mod_type)
-
-#     processed_train = []
-
-#     if mod_type is ModTypes.DIGITAL:
-#         processed_train = train.copy()
-#         pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
-#         seq.setDigital(pulser_laser_mod, processed_train)
-
-#     # Analog, convert LOW / HIGH to 0.0 / analog voltage
-#     # currently can't handle multiple powers of the AM within the same sequence
-#     # Possibly, we could pass laser_power as a list, and then build the sequences
-#     # for each power (element) in the list.
-#     elif mod_type is ModTypes.ANALOG:
-#         high_count = 0
-#         for el in train:
-#             dur = el[0]
-#             val = el[1]
-#             if type(laser_power) == list:
-#                 if val == 0:
-#                     power_dict = {Digital.LOW: 0.0}
-#                 else:
-#                     power_dict = {Digital.HIGH: laser_power[high_count]}
-#                     if val == Digital.HIGH:
-#                         high_count += 1
-#             # If a list wasn't passed, just use the single value for laser_power
-#             elif type(laser_power) != list:
-#                 power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
-#             processed_train.append((dur, power_dict[val]))
-
-#         pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
-#         # print(processed_train)
-#         seq.setAnalog(pulser_laser_mod, processed_train)
-
-
 # endregion
 # region Pulse generator utils
 
 
-def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
+def process_laser_seq(seq, laser_name, laser_power, train):
     """
-    Some lasers may require special processing of their Pulse Streamer
-    sequence. For example, the Cobolt lasers expect 3.5 V for digital
-    modulation, but the Pulse Streamer only supplies 2.6 V.
+    Automatically process simple laser sequences. Simple here means that the modulation
+    is digital or, if the modulation is analog, then only one power is used)
     """
-    pulser_wiring = config["Wiring"]["PulseGen"]
+
+    config = common.get_config_dict()
     # print(config)
+    pulser_wiring = config["Wiring"]["PulseGen"]
     mod_type = config["Optics"][laser_name]["mod_type"]
-    mod_type = eval(mod_type)
-    if "am_feedthrough" in config["Optics"][laser_name]:
-        am_feedthrough = config["Optics"][laser_name]["am_feedthrough"]
-        am_feedthrough = eval(am_feedthrough)
-    else:
-        am_feedthrough = False
 
-    # LOW = 0
-    # HIGH = 1
-
-    processed_train = []
-    # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
-    # Assumes we always leave the laser on (or off) for at least 100 ns
-    if am_feedthrough:
-        # Collapse the sequence so that no two adjacent elements have the
-        # same value
-        collapsed_train = []
-        ind = 0
-        len_train = len(train)
-        while ind < len_train:
-            el = train[ind]
+    # Digital: do nothing
+    if mod_type is ModTypes.DIGITAL:
+        pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
+        seq.setDigital(pulser_laser_mod, train)
+    # Analog:convert LOW / HIGH to 0.0 / analog voltage
+    elif mod_type is ModTypes.ANALOG:
+        processed_train = []
+        power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
+        for el in train:
             dur = el[0]
             val = el[1]
-            next_ind = ind + 1
-            while next_ind < len_train:
-                next_el = train[next_ind]
-                next_dur = next_el[0]
-                next_val = next_el[1]
-                # If the next element shares the same value as the current
-                # one, combine them
-                if next_val == val:
-                    dur += next_dur
-                    next_ind += 1
-                else:
-                    break
-            # Append the current pulse and start back
-            # where we left off
-            collapsed_train.append((dur, val))
-            ind = next_ind
-        # print(pulse_streamer)
-        # Check if this is just supposed to be always on
-        if (len(collapsed_train) == 1) and (collapsed_train[0][1] == Digital.HIGH):
-            if pulse_streamer is not None:
-                # pulse_streamer.client[laser_name].laser_on(laser_power)
-                pulse_streamer.laser_LGLO_589.laser_on(laser_power)
-            return
-        # Set up the bookends
-        # print(collapsed_train)
-        for ind in range(len(collapsed_train)):
-            el = collapsed_train[ind]
-            dur = el[0]
-            val = el[1]
-            # print(Digital.LOW)
-            # For the first element, just leave things LOW
-            # Assumes the laser is off prior to the start of the sequence
-            if (ind == 0) and (val == 0):
-                processed_train.append((dur, Digital.LOW))
-                continue
-            if dur < 75:
-                raise ValueError(
-                    "Feedthrough lasers do not support pulses shorter than" " 100 ns."
-                )
-            processed_train.append((20, Digital.HIGH))
-            processed_train.append((dur - 20, Digital.LOW))
+            processed_train.append((dur, power_dict[val]))
+        pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
         # print(processed_train)
-        pulser_laser_mod = pulser_wiring["do_{}_am".format(laser_name)]
-        seq.setDigital(pulser_laser_mod, processed_train)
-    else:
-        if mod_type is ModTypes.DIGITAL:
-            processed_train = train.copy()
-            pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
-            seq.setDigital(pulser_laser_mod, processed_train)
-
-        # Analog, convert LOW / HIGH to 0.0 / analog voltage
-        # currently can't handle multiple powers of the AM within the same sequence
-        # Possibly, we could pass laser_power as a list, and then build the sequences
-        # for each power (element) in the list.
-        elif mod_type is ModTypes.ANALOG:
-            high_count = 0
-            for el in train:
-                dur = el[0]
-                val = el[1]
-                if type(laser_power) == list:
-                    if val == 0:
-                        power_dict = {Digital.LOW: 0.0}
-                    else:
-                        power_dict = {Digital.HIGH: laser_power[high_count]}
-                        if val == Digital.HIGH:
-                            high_count += 1
-                # If a list wasn't passed, just use the single value for laser_power
-                elif type(laser_power) != list:
-                    power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
-                processed_train.append((dur, power_dict[val]))
-            pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
-            # print(processed_train)
-            seq.setAnalog(pulser_laser_mod, processed_train)
-
-    # feedthrough = config["Optics"][laser_name]["feedthrough"]
-    # feedthrough = eval(feedthrough)
-    # #    feedthrough = False
-
-    # # LOW = 0
-    # # HIGH = 1
-
-    # processed_train = []
-
-    # if mod_type is ModTypes.DIGITAL:
-    #     # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
-    #     # Assumes we always leave the laser on (or off) for at least 100 ns
-    #     if feedthrough:
-    #         # Collapse the sequence so that no two adjacent elements have the
-    #         # same value
-    #         collapsed_train = []
-    #         ind = 0
-    #         len_train = len(train)
-    #         while ind < len_train:
-    #             el = train[ind]
-    #             dur = el[0]
-    #             val = el[1]
-    #             next_ind = ind + 1
-    #             while next_ind < len_train:
-    #                 next_el = train[next_ind]
-    #                 next_dur = next_el[0]
-    #                 next_val = next_el[1]
-    #                 # If the next element shares the same value as the current
-    #                 # one, combine them
-    #                 if next_val == val:
-    #                     dur += next_dur
-    #                     next_ind += 1
-    #                 else:
-    #                     break
-    #             # Append the current pulse and start back
-    #             # where we left off
-    #             collapsed_train.append((dur, val))
-    #             ind = next_ind
-    #         # Check if this is just supposed to be always on
-    #         if (len(collapsed_train) == 1) and (collapsed_train[0][1] == Digital.HIGH):
-    #             if pulse_streamer is not None:
-    #                 pulse_streamer.client[laser_name].laser_on()
-    #             return
-    #         # Set up the bookends
-    #         for ind in range(len(collapsed_train)):
-    #             el = collapsed_train[ind]
-    #             dur = el[0]
-    #             val = el[1]
-    #             # For the first element, just leave things LOW
-    #             # Assumes the laser is off prior to the start of the sequence
-    #             if (ind == 0) and (val is Digital.LOW):
-    #                 processed_train.append((dur, Digital.LOW))
-    #                 continue
-    #             if dur < 75:
-    #                 raise ValueError(
-    #                     "Feedthrough lasers do not support pulses shorter than"
-    #                     " 100 ns."
-    #                 )
-    #             processed_train.append((20, Digital.HIGH))
-    #             processed_train.append((dur - 20, Digital.LOW))
-    #     # Digital, no feedthrough, do nothing
-    #     else:
-    #         processed_train = train.copy()
-    #     pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
-    #     seq.setDigital(pulser_laser_mod, processed_train)
-
-    # # Analog, convert LOW / HIGH to 0.0 / analog voltage
-    # # currently can't handle multiple powers of the AM within the same sequence
-    # # Possibly, we could pass laser_power as a list, and then build the sequences
-    # # for each power (element) in the list.
-    # elif mod_type is ModTypes.ANALOG:
-    #     high_count = 0
-    #     for el in train:
-    #         dur = el[0]
-    #         val = el[1]
-    #         if type(laser_power) == list:
-    #             if val == 0:
-    #                 power_dict = {Digital.LOW: 0.0}
-    #             else:
-    #                 power_dict = {Digital.HIGH: laser_power[high_count]}
-    #                 if val == Digital.HIGH:
-    #                     high_count += 1
-    #         # If a list wasn't passed, just use the single value for laser_power
-    #         elif type(laser_power) != list:
-    #             power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
-    #         processed_train.append((dur, power_dict[val]))
-
-    #     pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
-    #     # print(processed_train)
-    #     seq.setAnalog(pulser_laser_mod, processed_train)
+        seq.setAnalog(pulser_laser_mod, processed_train)
 
 
 def set_delays_to_zero(config):
@@ -822,13 +633,13 @@ def process_counts(
 # region Config getters
 
 
-def get_apd_indices(cxn):
+def get_apd_indices():
     "Get a list of the APD indices in use from the config"
     config_dict = common.get_config_dict()
     return config_dict["apd_indices"]
 
 
-def get_apd_gate_channel(cxn):
+def get_apd_gate_channel():
     config_dict = common.get_config_dict()
     return config_dict["Wiring"]["Tagger"]["di_apd_gate"]
 
@@ -925,9 +736,7 @@ def get_raw_data_path(
 
 def get_branch_name():
     """Return the name of the active branch of dioptric (fka kolkowitz-nv-experiment-v1.0)"""
-    home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
-    # home_to_repo = PurePath("Documents/GitHub/dioptric")
-    repo_path = PurePath(Path.home()) / home_to_repo
+    repo_path = common.get_repo_path()
     repo = Repo(repo_path)
     return repo.active_branch.name
 
@@ -996,14 +805,14 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
             Subfolder to save to under file name
     """
 
-    nvdata_dir = common.get_nvdata_dir()
+    nvdata_path = common.get_nvdata_path()
     pc_name = socket.gethostname()
     branch_name = get_branch_name()
     source_name = Path(source_file).stem
     date_folder = "_".join(time_stamp.split("_")[0:2])  # yyyy_mm
 
     folder_dir = (
-        nvdata_dir
+        nvdata_path
         / f"pc_{pc_name}"
         / f"branch_{branch_name}"
         / source_name
@@ -1060,7 +869,7 @@ def save_figure(fig, file_path):
     fig.savefig(str(file_path.with_suffix(".svg")), dpi=300)
 
 
-def save_raw_data(rawData, filePath):
+def save_raw_data(raw_data, file_path):
     """Save raw data in the form of a dictionary to a text file. New lines
     will be printed between entries in the dictionary.
 
@@ -1072,37 +881,35 @@ def save_raw_data(rawData, filePath):
             extension
     """
 
-    # Just to be safe, work with a copy of the raw data rather than the
-    # raw data itself
-    rawData = copy.deepcopy(rawData)
-
-    file_path_ext = filePath.with_suffix(".txt")
-
-    # Add in a few things that should always be saved here. In particular,
-    # sharedparameters so we have as snapshot of the configuration and
-    # nv_sig_units. If these have already been defined in the routine,
-    # then they'll just be overwritten.
-    try:
-        rawData["config"] = common.get_config_dict()  # Include a snapshot of the config
-    except Exception as e:
-        print(e)
-
-    # Casting for JSON compatibility
-    nv_sig = rawData["nv_sig"]
-    try:
-        for key in nv_sig:
-            if type(nv_sig[key]) == np.ndarray:
-                nv_sig[key] = nv_sig[key].tolist()
-            elif isinstance(nv_sig[key], Enum):
-                nv_sig[key] = nv_sig[key].name
-    except Exception:
-        print(" ")
-
+    # Work with a copy of the raw data to avoid mutation
+    raw_data = copy.deepcopy(raw_data)
+    
+    file_path_ext = file_path.with_suffix(".txt")
+    
+    # Always include the config
+    raw_data["config"] = common.get_config_dict()  
+    
+    _json_escape(raw_data)
+    
     with open(file_path_ext, "w") as file:
-        json.dump(rawData, file, indent=2)
+        json.dump(raw_data, file, indent=2)
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
+        
+        
+def _json_escape(raw_data):
+    """Recursively escape a raw data object for JSON"""
+    for key in raw_data:
+        val = raw_data[key]
+        if type(val) == np.ndarray:
+            raw_data[key] = val.tolist()
+        elif isinstance(val, Enum):
+            raw_data[key] = val.name
+        elif isinstance(val, Path):
+            raw_data[key] = str(val)
+        elif isinstance(val, dict):
+            raw_data[key] = _json_escape(val)
 
 
 # endregion
@@ -1433,7 +1240,7 @@ def reset_cfm(cxn=None):
     routine where they matter anyway).
     """
     if cxn is None:
-        with labrad.connect() as cxn:
+        with labrad.connect(username="", password="") as cxn:
             reset_cfm_with_cxn(cxn)
     else:
         reset_cfm_with_cxn(cxn)

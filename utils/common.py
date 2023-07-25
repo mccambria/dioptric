@@ -54,17 +54,25 @@ def get_repo_path():
     return _get_os_config_val("repo_path")
 
 
-def get_server(server_name):
+def get_server(cxn, server_name):
     config = get_config_dict()
     dev_name = config["Servers"][server_name]
-    return eval(f"cxn.{dev_name}")
+    return cxn[dev_name]
 
 
-# region LabRAD registry utilities - deprecated in favor of config file
+# region LabRAD registry utilities - mostly deprecated in favor of config file
 
 
-def get_registry_entry(cxn, key, directory):
+def get_registry_entry(key, directory, cxn=None):
     """Get an entry from the LabRAD registry"""
+    if cxn is None:
+        with labrad.connect(username="", password="") as cxn:
+            return _get_registry_entry_sub(key, directory, cxn)
+    else:
+        return _get_registry_entry_sub(key, directory, cxn)
+
+
+def _get_registry_entry_sub(key, directory, cxn):
     p = cxn.registry.packet()
     p.cd("", *directory)
     p.get(key)

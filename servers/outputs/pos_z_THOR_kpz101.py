@@ -37,6 +37,7 @@ import ctypes
 import traceback
 from utils import common
 from pathlib import Path
+from utils import tool_belt as tb
 
 
 class PosZThorKpz101(LabradServer):
@@ -44,16 +45,7 @@ class PosZThorKpz101(LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
         try:
             self.task = None
             self.sub_init_server_z()
@@ -76,10 +68,8 @@ class PosZThorKpz101(LabradServer):
         ### Connect to the device and set it to external control mode
 
         # Get the dll
-        dll_path = (
-            "C:\\Program"
-            " Files\\Thorlabs\\Kinesis\\Thorlabs.MotionControl.KCube.Piezo.dll"
-        )
+        file_name = "Thorlabs.MotionControl.KCube.Piezo.dll"
+        dll_path = Path(f"C:\Program Files\Thorlabs\Kinesis\{file_name}")
         self.piezo_lib = ctypes.windll.LoadLibrary(dll_path)
         self.piezo_lib.TLI_BuildDeviceList()
 

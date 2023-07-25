@@ -36,6 +36,7 @@ import socket
 from pathlib import Path
 import time
 from utils import common
+from utils import tool_belt as tb
 
 
 class PiezoStageDigital(LabradServer):
@@ -43,16 +44,7 @@ class PiezoStageDigital(LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,  # INFO
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging()
         self.task = None
         self.sub_init_server_xyz()
 

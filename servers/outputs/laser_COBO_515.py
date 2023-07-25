@@ -30,16 +30,17 @@ import nidaqmx.stream_writers as stream_writers
 import numpy
 import logging
 import socket
-from laser_COBO_base import CoboltBase
+from laser_COBO_base import LaserCoboBase
 
 
 class LaserCobo515(LaserCoboBase):
     wavelength = 515
-    name = f'laser_COBO_{wavelength}'
-        
-        
+    name = f"laser_COBO_{wavelength}"
+
+
 __server__ = LaserCobo515()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from labrad import util
+
     util.runServer(__server__)

@@ -34,6 +34,7 @@ import nidaqmx.stream_writers as stream_writers
 import socket
 from pathlib import Path
 from utils import common
+from utils import tool_belt as tb
 
 
 class PosXyPi6262cd(LabradServer):
@@ -41,16 +42,7 @@ class PosXyPi6262cd(LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging()
         self.task = None
         self.sub_init_server_xy()
 
