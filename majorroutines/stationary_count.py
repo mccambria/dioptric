@@ -17,11 +17,23 @@ import labrad
 import majorroutines.optimize as optimize
 
 
-def main(nv_sig, run_time, disable_opt=None, nv_minus_init=False, nv_zero_init=False,
-        background_subtraction=False, background_coords=None):
-    with labrad.connect() as cxn:
+def main(
+    nv_sig,
+    run_time,
+    disable_opt=None,
+    nv_minus_init=False,
+    nv_zero_init=False,
+    background_subtraction=False,
+    background_coords=None,
+):
+    with labrad.connect(username="", password="") as cxn:
         average, st_dev = main_with_cxn(
-            cxn, nv_sig, run_time, disable_opt, nv_minus_init, nv_zero_init,
+            cxn,
+            nv_sig,
+            run_time,
+            disable_opt,
+            nv_minus_init,
+            nv_zero_init,
             background_subtraction,
             background_coords,
         )
@@ -29,11 +41,15 @@ def main(nv_sig, run_time, disable_opt=None, nv_minus_init=False, nv_zero_init=F
 
 
 def main_with_cxn(
-    cxn, nv_sig, run_time, disable_opt=None, nv_minus_init=False, nv_zero_init=False,
+    cxn,
+    nv_sig,
+    run_time,
+    disable_opt=None,
+    nv_minus_init=False,
+    nv_zero_init=False,
     background_subtraction=False,
     background_coords=None,
 ):
-
     ### Initial setup
 
     if disable_opt is not None:
@@ -42,24 +58,27 @@ def main_with_cxn(
     readout = nv_sig["imaging_readout_dur"]
     readout_sec = readout / 10**9
     charge_init = nv_minus_init or nv_zero_init
-    optimize.main_with_cxn(cxn, nv_sig)  # Is there something wrong with this line? Let me (Matt) know and let's fix it
+    optimize.main_with_cxn(
+        cxn, nv_sig
+    )  # Is there something wrong with this line? Let me (Matt) know and let's fix it
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     counter_server = tool_belt.get_server_counter(cxn)
-    
+
     # Background subtraction setup
-    
+
     if background_subtraction:
         drift = np.array(positioning.get_drift(cxn))
         adj_coords = np.array(nv_sig["coords"]) + drift
         adj_bg_coords = np.array(background_coords) + drift
-        x_voltages, y_voltages = positioning.get_scan_two_point_2d(adj_coords[0], adj_coords[1],
-                                                                   adj_bg_coords[0], adj_bg_coords[1])
+        x_voltages, y_voltages = positioning.get_scan_two_point_2d(
+            adj_coords[0], adj_coords[1], adj_bg_coords[0], adj_bg_coords[1]
+        )
         xy_server = positioning.get_server_pos_xy(cxn)
         xy_server.load_stream_xy(x_voltages, y_voltages, True)
 
     # Imaging laser
 
-    laser_key = 'imaging_laser'
+    laser_key = "imaging_laser"
     readout_laser = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -97,7 +116,7 @@ def main_with_cxn(
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     kpl.plot_line(ax, x_vals, samples)
-    ax.set_xlim(-0.05*run_time_s, 1.05*run_time_s)
+    ax.set_xlim(-0.05 * run_time_s, 1.05 * run_time_s)
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Count rate (kcps)")
     plt.get_current_fig_manager().window.showMaximized()  # Maximize the window
@@ -132,11 +151,10 @@ def main_with_cxn(
         # Read the samples and update the image
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-
             # If we did charge init, subtract out the non-initialized count rate
             if charge_init:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-                
+
             if background_subtraction:
                 # Make sure we have an even number of samples
                 new_samples = np.array(new_samples, dtype=int)
@@ -148,8 +166,11 @@ def main_with_cxn(
                 else:
                     leftover_sample = new_samples[-1]
                     new_samples = new_samples[:-1]
-                new_samples = [snr(new_samples[2*ind], new_samples[2*ind+1]) for ind in range(num_new_samples // 2)]
-            
+                new_samples = [
+                    snr(new_samples[2 * ind], new_samples[2 * ind + 1])
+                    for ind in range(num_new_samples // 2)
+                ]
+
             # Update number of new samples to reflect difference-taking etc
             num_new_net_samples = len(new_samples)
             num_samples = np.count_nonzero(~np.isnan(samples))
@@ -159,7 +180,9 @@ def main_with_cxn(
             if overflow > 0:
                 num_nans = max(total_num_samples - num_samples, 0)
                 samples[::] = np.append(
-                    samples[num_new_net_samples - num_nans : total_num_samples - num_nans],
+                    samples[
+                        num_new_net_samples - num_nans : total_num_samples - num_nans
+                    ],
                     new_samples,
                 )
             else:
@@ -170,8 +193,7 @@ def main_with_cxn(
 
             # Update the figure in k counts per sec
             samples_kcps = samples / (10**3 * readout_sec)
-            kpl.plot_line_update(ax, x =x_vals, y =samples_kcps, relim_x=False)
-            
+            kpl.plot_line_update(ax, x=x_vals, y=samples_kcps, relim_x=False)
 
     ### Clean up and report average and standard deviation
 

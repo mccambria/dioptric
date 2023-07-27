@@ -77,7 +77,7 @@ config = {
         "collection": {
             "filter_server": "filter_slider_ell9k_3",
             "filter_mapping": {
-                "715_sp+630_lp": 0,
+                "514_notch+630_lp": 0,
                 "740_bp": 1,
                 "715_lp": 2,
                 "no_filter": 3,
@@ -170,4 +170,5 @@ config = {
 # endregion
 
 if __name__ == "__main__":
-    print(config)
+    # print(config)
+    print(config["DeviceIDs"]["gcs_dll_path"])

@@ -19,6 +19,7 @@ import copy
 import labrad
 from utils import tool_belt as tb
 from utils import positioning
+from utils import common
 from utils.constants import ControlStyle
 
 # endregion
@@ -315,8 +316,8 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
-    xy_control_style = positioning.get_xy_control_style(cxn)
-    z_control_style = positioning.get_z_control_style(cxn)
+    xy_control_style = positioning.get_xy_control_style()
+    z_control_style = positioning.get_z_control_style()
 
     num_steps = 31
 
@@ -347,7 +348,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
-        scan_dtype = eval(config_positioning["xy_dtype"])
+        scan_dtype = config_positioning["xy_dtype"]
         if "xy_small_response_delay" in config_positioning:
             delay = config["Positioning"]["xy_small_response_delay"]
         else:
@@ -407,9 +408,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
     # z
     elif axis_ind == 2:
         scan_range = config["Positioning"]["z_optimize_range"]
-        scan_dtype = eval(
-            config["Positioning"]["z_dtype"]
-        )  # matt, make sure this still works for your piezo
+        scan_dtype = config["Positioning"]["z_dtype"]
         delay = config["Positioning"]["z_delay"]
 
         if z_control_style == ControlStyle.STEP:
@@ -485,8 +484,8 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
 ):
-    xy_control_style = positioning.get_xy_control_style(cxn)
-    z_control_style = positioning.get_z_control_style(cxn)
+    xy_control_style = positioning.get_xy_control_style()
+    z_control_style = positioning.get_z_control_style()
 
     startFunctionTime = time.time()
     tb.reset_cfm(cxn)
@@ -509,7 +508,7 @@ def main_with_cxn(
 
     expected_count_rate = adjusted_nv_sig["expected_count_rate"]
 
-    config = tb.get_config_dict(cxn)
+    config = common.get_config_dict()
 
     opti_succeeded = False
 
