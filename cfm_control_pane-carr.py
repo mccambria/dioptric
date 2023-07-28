@@ -139,8 +139,8 @@ if __name__ == "__main__":
 
         tb.init_safe_stop()
 
-        # do_image_sample(nv_sig)
-        do_qm_OPX_tests(nv_sig)
+        do_image_sample(nv_sig)
+        # do_qm_OPX_tests(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_optimize(nv_sig)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
