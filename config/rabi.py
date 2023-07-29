@@ -162,6 +162,7 @@ config = {
             "do_sample_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,
             "do_sig_gen_STAN_sg394_gate": 4,
+            "do_camera_trigger": 4,
         },
         "Tagger": {"di_apd_0": 2, "di_apd_1": 4, "di_apd_gate": 3, "di_clock": 1},
     },

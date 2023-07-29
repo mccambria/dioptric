@@ -87,6 +87,7 @@ def main(
     vmin=None,
     vmax=None,
     scan_type="XY",
+    camera=False,
 ):
     with labrad.connect(username="", password="") as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(
@@ -100,6 +101,7 @@ def main(
             vmin,
             vmax,
             scan_type,
+            camera,
         )
 
     return img_array, x_voltages, y_voltages
@@ -116,6 +118,7 @@ def main_with_cxn(
     vmin=None,
     vmax=None,
     scan_type="XY",
+    camera=False,
 ):
     ### Some initial setup
 
@@ -181,10 +184,14 @@ def main_with_cxn(
         seq_args = [init, readout, init_laser, init_power, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "charge_init-simple_readout.py"
-    else:
+    elif camera:
         seq_args = [xy_delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "simple_readout.py"
+    else:
+        seq_args = [xy_delay, readout, readout_laser, readout_power]
+        seq_args_string = tb.encode_seq_args(seq_args)
+        seq_file = "simple_readout-camera.py"
 
     # print(seq_args)
     # return
@@ -247,7 +254,7 @@ def main_with_cxn(
             x_vals_static = [x_center] * len(x_voltages)
             xyz_server.load_stream_xyz(x_vals_static, x_voltages, z_voltages)
 
-    # Initialize imgArray and set all values to NaN so that unset values
+    # Initialize img_array and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
     img_array = np.empty((x_num_steps, y_num_steps))
     img_array[:] = np.nan
@@ -267,31 +274,18 @@ def main_with_cxn(
     title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
 
     fig, ax = plt.subplots()
-    if scan_type == "XZ" or scan_type == "YZ":
-        kpl.imshow(
-            ax,
-            img_array_kcps,
-            title=title,
-            x_label=axes_labels[0],
-            y_label=axes_labels[1],
-            cbar_label="kcps",
-            extent=extent,
-            vmin=vmin,
-            vmax=vmax,
-            aspect="auto",
-        )
-    else:
-        kpl.imshow(
-            ax,
-            img_array_kcps,
-            title=title,
-            x_label=axes_labels[0],
-            y_label=axes_labels[1],
-            cbar_label="kcps",
-            extent=extent,
-            vmin=vmin,
-            vmax=vmax,
-        )
+    kpl.imshow(
+        ax,
+        img_array_kcps,
+        title=title,
+        x_label=axes_labels[0],
+        y_label=axes_labels[1],
+        cbar_label="kcps",
+        extent=extent,
+        vmin=vmin,
+        vmax=vmax,
+        aspect="auto",
+    )
 
     ### Collect the data
 
