@@ -45,7 +45,7 @@ config = {
         "objective_piezo_serial": "0119008970",
         "piezo_stage_626_2cd_model": "E727",
         "piezo_stage_626_2cd_serial": "0116058375",
-        "pulse_gen_SWAB_82_ip": "192.168.0.111",
+        "pulse_gen_SWAB_82_ip": "128.104.160.111",
         "rotation_stage_ell18k_address": "COM6",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.160.114::inst0::INSTR",
         "sig_gen_STAN_sg394_visa": "TCPIP::128.104.160.118::inst0::INSTR",

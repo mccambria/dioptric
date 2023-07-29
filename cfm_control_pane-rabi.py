@@ -23,9 +23,9 @@ import matplotlib.pyplot as plt
 
 
 def do_image_sample(nv_sig):
-    # scan_range = 0.2
-    scan_range = 0.05
-    num_steps = 60
+    scan_range = 0.2
+    # scan_range = 0.05
+    num_steps = 180
 
     # scan_range = 1.0
     # num_steps = 180
