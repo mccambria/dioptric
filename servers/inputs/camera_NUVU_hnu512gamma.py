@@ -27,7 +27,9 @@ from utils import common
 from utils import tool_belt as tb
 import numpy as np
 import socket
-import ctypes
+
+# Keep the C stuff in the nuvu_camera folder - for simplicity, don't put any in this file
+from .nuvu_camera.nc_camera import NcCamera
 
 
 class CameraNuvuHnu512gamma(LabradServer):
@@ -36,7 +38,6 @@ class CameraNuvuHnu512gamma(LabradServer):
 
     def initServer(self):
         tb.configure_logging(self)
-        self.libc = ctypes.CDLL("nc_driver_x64")
 
     @setting(0)
     def test(self, c):
