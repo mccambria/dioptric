@@ -15,7 +15,17 @@ import labrad
 
 def main(cxn):
     cam = cxn.camera_NUVU_hnu512gamma
-    img_array = cam.get_img_array()
+    pulse_gen = cxn.pulse_gen_SWAB_82
+
+    seq_args = [0, 1e7, "laser_INTE_520", 0]
+    seq_args_string = tb.encode_seq_args(seq_args)
+    seq_file = "simple_readout-camera.py"
+
+    cam.arm(1)
+    pulse_gen.stream_immediate(seq_file, seq_args_string, 100)
+    img_array = cam.read()
+    cam.disarm()
+
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
 

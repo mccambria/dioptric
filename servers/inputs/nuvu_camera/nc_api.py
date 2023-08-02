@@ -73,15 +73,20 @@ ncCamGetTimeout = nuvuLib.ncCamGetTimeout
 ncCamGetTimeout.restype = c_int
 ncCamGetTimeout.argtypes = [NCCAM, POINTER(c_int)]
 
-# Set Shutermode
+# Set shutter mode
 ncCamSetShutterMode = nuvuLib.ncCamSetShutterMode
 ncCamSetShutterMode.restype = c_int
 ncCamSetShutterMode.argtypes = [NCCAM, c_int]
 
-# Get Shutermode
+# Get shutter mode
 ncCamGetShutterMode = nuvuLib.ncCamGetShutterMode
 ncCamGetShutterMode.restype = c_int
 ncCamGetShutterMode.argtypes = [NCCAM, c_int, POINTER(c_int)]
+
+# Set trigger mode
+ncCamSetTriggerMode = nuvuLib.ncCamSetTriggerMode
+ncCamSetTriggerMode.restype = c_int
+ncCamSetTriggerMode.argtypes = [NCCAM, c_int, c_int]
 
 # Cam Start
 ncCamStart = nuvuLib.ncCamStart

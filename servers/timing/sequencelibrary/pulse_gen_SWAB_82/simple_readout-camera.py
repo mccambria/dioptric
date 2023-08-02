@@ -48,8 +48,8 @@ def get_seq(pulse_streamer, config, args):
     train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(do_daq_gate, train)
 
-    train = [(period, HIGH)]
-    tb.process_laser_seq(seq, laser_name, laser_power, train)
+    # train = [(period, HIGH)]
+    # tb.process_laser_seq(seq, laser_name, laser_power, train)
 
     train = [(period, HIGH)]
     seq.setDigital(do_camera_trigger, train)

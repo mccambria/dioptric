@@ -30,6 +30,7 @@ import socket
 
 # Keep the C stuff in the nuvu_camera folder - for simplicity, don't put any in this file
 from servers.inputs.nuvu_camera.nc_camera import NcCamera
+from servers.inputs.nuvu_camera.defines import TriggerMode, ReadoutMode
 
 
 class CameraNuvuHnu512gamma(LabradServer):
@@ -39,20 +40,34 @@ class CameraNuvuHnu512gamma(LabradServer):
     def initServer(self):
         tb.configure_logging(self)
 
+        # Instantiate the software camera and connect to the harware camera
         self.cam = NcCamera()
-        self.cam.open_cam()  # Assumes there's just one camera available
+        self.cam.connect()  # Assumes there's just one camera available
+
+        # Configure the camera
+        self.cam.set_readout_mode(ReadoutMode.EM)
+        self.cam.set_trigger_mode(TriggerMode.CONT_LOW_HIGH)
+
+    def stopServer(self):
+        self.cam.disconnect()
 
     @setting(0)
-    def get_img_array(self, c):
-        return self.cam.get_img_array()
+    def arm(self, c, num_images=0):
+        self.cam.open_shutter()
+        self.cam.start(num_images)
 
     @setting(1)
-    def list_cams(self, c):
-        return self.cam.get_img_array()
+    def disarm(self, c):
+        self.cam.stop()
+        self.cam.close_shutter()
+
+    @setting(2)
+    def read(self, c):
+        return self.cam.read()
 
     @setting(5)
     def reset(self, c):
-        self.cam.close_cam()
+        self.disarm()
 
 
 __server__ = CameraNuvuHnu512gamma()
