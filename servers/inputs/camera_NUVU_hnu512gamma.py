@@ -29,7 +29,7 @@ import numpy as np
 import socket
 
 # Keep the C stuff in the nuvu_camera folder - for simplicity, don't put any in this file
-from .nuvu_camera.nc_camera import NcCamera
+from servers.inputs.nuvu_camera.nc_camera import NcCamera
 
 
 class CameraNuvuHnu512gamma(LabradServer):
