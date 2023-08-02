@@ -36,23 +36,26 @@ class NuvuException(Exception):
 
 class NcCamera:
     """
-        Classe nc_camera, Hérite: aucun
-        donne une interface python-like au sdk de Nuvu.
-    :attributs: -macAdress:     Adresse mac de la caméra que l'on tente de controler
-                -ncCam:         pointeur sur le handle de l'api de la caméra
-                -ncImage:       pointeur sur le handle de l'image de la caméra
-                -readoutTime:   type c_double temps de lecture, initialisé a -1
-                -WaitingTime:   type c_double temps d'attente, initialisé a -1
-                -ExposureTime:  type c_double temps d'exposition, initialisé a -1
-                -shutterMode:   type c_int état du shutter de la caméra, (0=NOT SET, 1=open, 2=closed, 3=auto)
-                -name:          nom de sauvegarde de l'images sur le disque si l'on utilise les fonction du sdk
-                -comment:       Commentaire dans les méta données de l'image sauvegardée avec les fonction du sdk
-                -width:         largeur de l'image en pixels
-                -height:        hauteur de l'image en pixels
-                -inMemoryAccess:bool détermine si l'on alloue un pointeur sur un array pour l'image
-                -saveFormat:    détermine le format des images enregistrées par le sdk
-                -targetdetectorTempMin: température minimum cible du détecteur
-                -targetdetectorTempMax: température maximum cible du détecteur
+    Class nc_camera, Inherits: none
+
+    Provides a Python-like interface to the Nuvu SDK.
+
+    Attributes:
+    - macAdress: Mac address of the camera being controlled.
+    - ncCam: Pointer to the handle of the camera API.
+    - ncImage: Pointer to the handle of the camera image.
+    - readoutTime: c_double type readout time, initialized to -1.
+    - WaitingTime: c_double type waiting time, initialized to -1.
+    - ExposureTime: c_double type exposure time, initialized to -1.
+    - shutterMode: c_int type camera shutter state (0=NOT SET, 1=open, 2=closed, 3=auto).
+    - name: Save name of the image on the disk if using SDK functions.
+    - comment: Comment in the metadata of the image saved with SDK functions.
+    - width: Image width in pixels.
+    - height: Image height in pixels.
+    - inMemoryAccess: Boolean that determines if a pointer is allocated to an array for the image.
+    - saveFormat: Determines the format of images saved by the SDK.
+    - targetdetectorTempMin: Minimum target detector temperature.
+    - targetdetectorTempMax: Maximum target detector temperature.
     """
 
     def __init__(self, MacAdress=None):
@@ -96,9 +99,8 @@ class NcCamera:
 
     def errorHandling(self, error):
         """
-        Méthode qui assure une réaction appropriée aux erreurs
-        Jusqu'a présent, la fonction plante le programme, ferme le driver et sort du logiciel
-        :param error: numéro de l'erreur retournée par le sdk
+        Method that ensures an appropriate reaction to errors. So far, the function crashes the program, closes the driver, and exits the software.
+        :param error: error number returned by the SDK.
         :return: None
         """
         if error == 107:
@@ -118,29 +120,28 @@ class NcCamera:
             self.closeCam(noRaise=True)
             sys.exit("Erreur d'exécution du driver Nuvu")
 
-    def openCam(self, nbBuff=4):
+    def open_cam(self, num_buffer=1):
         """
-        Ouvre la connection avec la caméra, si la classe à été initialisée avec l'adresse mac de la caméra,
-        la méthode tentera de se conecter directement a cette caméra
-        :param nbBuff: Nombre de buffer initialisés dans l'api de nuvu
-        :return:None
+        Opens the connection with the camera. If the class has been initialized with the camera's MAC address, the method will try to connect directly to that camera.
+        :param nbBuff: Number of buffers initialized in the Nuvu API. (Number of images stored in memory at a time, I think...)
+        :return: None
         """
         try:
             if self.macAdress is None:
-                error = ncCamOpen(0x00000000, 0x0000FFFF, nbBuff, byref(self.ncCam))
+                error = ncCamOpen(0x00000000, 0x0000FFFF, num_buffer, byref(self.ncCam))
                 if error:
                     raise NuvuException(error)
-                self.nbBuff = nbBuff
+                self.nbBuff = num_buffer
             else:
                 print("Still not implemented")
 
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def closeCam(self, noRaise=False):
+    def close_cam(self, noRaise=False):
         """
-        Fonction qui ferme le driver de la caméra
-        :param noRaise: Paramètre interne qui permet de ne pas raise d'erreur si le driver est déja fermé.
+        Function that closes the camera driver.
+        :param noRaise: Internal parameter that allows not raising an error if the driver is already closed.
         :return: None
         """
         try:
@@ -152,7 +153,7 @@ class NcCamera:
 
     def setReadoutMode(self, mode):
         """
-        Permet de sélectionner le mode de lecture de la caméra
+        Allows selecting the camera's readout mode.
         :param mode: (int) mode nothing=0, EM = 1, CONV = 2
         :return: None
         """
@@ -166,8 +167,7 @@ class NcCamera:
 
     def getReadoutTime(self):
         """
-        Méthode permettant de faire un appel a la caméra pour connaitre le temps de lecture, stoque le mode dans
-        l'attribut readoutTime
+        Method that makes a call to the camera to retrieve the readout time and stores the value in the attribute readoutTime.
         :return: None
         """
         try:
@@ -180,8 +180,8 @@ class NcCamera:
 
     def setExposureTime(self, exposureTime):
         """
-        Méthode permettant de sélectionner le temps d'exposition des images.
-        :param exposureTime: (float) le temps d'exposition en ms
+        Method to select the exposure time for the images.
+        :param exposureTime: (float) the exposure time in milliseconds.
         :return: None
         """
         try:
@@ -194,9 +194,8 @@ class NcCamera:
 
     def getExposureTime(self, cameraCall=1):
         """
-        Méthode qui récupère le temps d'exposition sur la caméra
-        :param cameraCall: Sélectionne si on vérifie la valeur dans le driver (0) ou dans la caméra (1)
-        A noter: un appel à la caméra prend du temps
+        Method that retrieves the exposure time from the camera.
+        :param cameraCall: Selects whether to check the value in the driver (0) or in the camera (1). Note: calling the camera takes time.
         :return: None
         """
         try:
@@ -326,7 +325,7 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def getImg(self):
+    def get_img_array(self):
         """
         Méthode qui apelle read() puis cast le pointeur vers l'image en array de 16 bit que l'on copie vers une autre
         partie de la mémoire.

@@ -39,13 +39,16 @@ class CameraNuvuHnu512gamma(LabradServer):
     def initServer(self):
         tb.configure_logging(self)
 
+        self.cam = NcCamera()
+        self.cam.open_cam()  # Assumes there's just one camera available
+
     @setting(0)
-    def test(self, c):
-        return self.stream_channels
+    def get_img_array(self, c):
+        return self.cam.get_img_array()
 
     @setting(5)
     def reset(self, c):
-        self.stop_tag_stream_internal()
+        self.cam.close_cam()
 
 
 __server__ = CameraNuvuHnu512gamma()
