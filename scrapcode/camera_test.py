@@ -24,7 +24,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     try:
-        with labrad.connect(usename="", password="") as cxn:
+        with labrad.connect(username="", password="") as cxn:
             main(cxn)
     finally:
         tb.reset_cfm()

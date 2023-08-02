@@ -117,18 +117,19 @@ class NcCamera:
                 + str(error)
                 + ". \n Se référer au fichier erreur.h du SDK de Nuvu."
             )
-            self.closeCam(noRaise=True)
+            self.close_cam(noRaise=True)
             sys.exit("Erreur d'exécution du driver Nuvu")
 
     def open_cam(self, num_buffer=1):
         """
-        Opens the connection with the camera. If the class has been initialized with the camera's MAC address, the method will try to connect directly to that camera.
+        Opens the connection with the camera (assumes there is only one available).
+        If the class has been initialized with the camera's MAC address, the method will try to connect directly to that camera.
         :param nbBuff: Number of buffers initialized in the Nuvu API. (Number of images stored in memory at a time, I think...)
         :return: None
         """
         try:
             if self.macAdress is None:
-                error = ncCamOpen(0x00000000, 0x0000FFFF, num_buffer, byref(self.ncCam))
+                error = ncCamOpen(NC_AUTO_UNIT, NC_AUTO_CHANNEL, -1, byref(self.ncCam))
                 if error:
                     raise NuvuException(error)
                 self.nbBuff = num_buffer
