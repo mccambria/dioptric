@@ -23,14 +23,18 @@ import matplotlib.pyplot as plt
 
 
 def do_image_sample(nv_sig):
-    scan_range = 0.2
-    # scan_range = 0.05
-    num_steps = 180
-
     # scan_range = 1.0
     # num_steps = 180
 
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    scan_range = 0.2
+    num_steps = 180
+
+    # scan_range = 0.05
+    # num_steps = 60
+
+    camera = True
+
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps, camera=camera)
 
 
 def do_image_sample_zoom(nv_sig):
@@ -103,7 +107,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.5
+    z_coord = 5.6
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.087, -0.07, z_coord]
     ref_coords = np.array(ref_coords)

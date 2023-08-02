@@ -10,7 +10,8 @@ Created on July 29th, 2023
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 from utils import tool_belt as tb
-import numpy
+from utils import common
+import numpy as np
 
 LOW = 0
 HIGH = 1
@@ -24,13 +25,13 @@ def get_seq(pulse_streamer, config, args):
     pulse_gen_wiring = config["Wiring"]["PulseGen"]
     do_daq_clock = pulse_gen_wiring["do_sample_clock"]
     do_daq_gate = pulse_gen_wiring["do_apd_gate"]
-    do_clock_trigger = pulse_gen_wiring["do_clock_trigger"]
+    do_camera_trigger = pulse_gen_wiring["do_camera_trigger"]
 
     # Convert the 32 bit ints into 64 bit ints
-    delay = numpy.int64(delay)
-    readout_time = numpy.int64(readout_time)
+    delay = np.int64(delay)
+    readout_time = np.int64(readout_time)
 
-    period = numpy.int64(delay + readout_time + 300)
+    period = np.int64(delay + readout_time + 300)
 
     # tb.check_laser_power(laser_name, laser_power)
 
@@ -51,7 +52,7 @@ def get_seq(pulse_streamer, config, args):
     tb.process_laser_seq(seq, laser_name, laser_power, train)
 
     train = [(period, HIGH)]
-    seq.setDigital(do_clock_trigger, train)
+    seq.setDigital(do_camera_trigger, train)
 
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -60,8 +61,8 @@ def get_seq(pulse_streamer, config, args):
 
 
 if __name__ == "__main__":
-    config = tb.get_config_dict()
-    args = [500000, 10000000.0, "laser_LGLO_589", 1.0]
+    config = common.get_config_dict()
+    args = [1000, 3000.0, "laser_INTE_520", 0.0]
     # args = [5000, 10000.0, 1, 'integrated_520',None]
     #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(None, config, args)

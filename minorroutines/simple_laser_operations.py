@@ -34,6 +34,13 @@ def constant(cxn, laser_name, laser_power=None):
     tb.poll_safe_stop()
     tb.laser_off(cxn, laser_name)
 
+    # pulse_gen = tb.get_server_pulse_gen(cxn)
+    # pulse_gen.constant([7])
+    # print("start")
+    # time.sleep(5)
+    # print("stop")
+    # pulse_gen.constant([])
+
 
 def square_wave(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""

@@ -187,11 +187,11 @@ def main_with_cxn(
     elif camera:
         seq_args = [xy_delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
-        seq_file = "simple_readout.py"
+        seq_file = "simple_readout-camera.py"
     else:
         seq_args = [xy_delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
-        seq_file = "simple_readout-camera.py"
+        seq_file = "simple_readout.py"
 
     # print(seq_args)
     # return
