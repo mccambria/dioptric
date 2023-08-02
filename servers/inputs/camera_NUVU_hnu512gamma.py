@@ -46,6 +46,10 @@ class CameraNuvuHnu512gamma(LabradServer):
     def get_img_array(self, c):
         return self.cam.get_img_array()
 
+    @setting(1)
+    def list_cams(self, c):
+        return self.cam.get_img_array()
+
     @setting(5)
     def reset(self, c):
         self.cam.close_cam()
