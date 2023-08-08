@@ -87,7 +87,7 @@ def main(
     vmin=None,
     vmax=None,
     scan_type="XY",
-    camera=False,
+    camera_mode=False,
 ):
     with labrad.connect(username="", password="") as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(
@@ -101,7 +101,7 @@ def main(
             vmin,
             vmax,
             scan_type,
-            camera,
+            camera_mode,
         )
 
     return img_array, x_voltages, y_voltages
@@ -118,7 +118,7 @@ def main_with_cxn(
     vmin=None,
     vmax=None,
     scan_type="XY",
-    camera=False,
+    camera_mode=False,
 ):
     ### Some initial setup
 
@@ -169,6 +169,9 @@ def main_with_cxn(
     xy_units = config_positioning["xy_units"]
     z_units = config_positioning["z_units"]
 
+    if camera_mode:
+        cam = cxn.camera_NUVU_hnu512gamma
+
     ### Load the pulse generator
 
     readout = nv_sig["imaging_readout_dur"]
@@ -184,7 +187,7 @@ def main_with_cxn(
         seq_args = [init, readout, init_laser, init_power, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "charge_init-simple_readout.py"
-    elif camera:
+    elif camera_mode:
         seq_args = [xy_delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "simple_readout-camera.py"
@@ -263,7 +266,7 @@ def main_with_cxn(
 
     ### Set up the image display
 
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL, latex=False)
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
 
     if um_scaled:
         extent = [el * xy_scale for el in extent]
@@ -274,22 +277,24 @@ def main_with_cxn(
     title = f"{scan_type} image under {readout_laser}, {readout_us} us readout"
 
     fig, ax = plt.subplots()
-    kpl.imshow(
-        ax,
-        img_array_kcps,
-        title=title,
-        x_label=axes_labels[0],
-        y_label=axes_labels[1],
-        cbar_label="kcps",
-        extent=extent,
-        vmin=vmin,
-        vmax=vmax,
-        aspect="auto",
-    )
+    if not camera_mode:
+        kpl.imshow(
+            ax,
+            img_array_kcps,
+            title=title,
+            x_label=axes_labels[0],
+            y_label=axes_labels[1],
+            cbar_label="kcps",
+            extent=extent,
+            vmin=vmin,
+            vmax=vmax,
+            aspect="auto",
+        )
 
     ### Collect the data
 
-    counter.start_tag_stream()
+    if not camera_mode:
+        counter.start_tag_stream()
     tb.init_safe_stop()
 
     if xy_control_style == ControlStyle.STEP:
@@ -338,38 +343,60 @@ def main_with_cxn(
             kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
 
     elif xy_control_style == ControlStyle.STREAM:
+        if camera_mode:
+            cam.arm()
+
         pulse_gen.stream_start(total_num_samples)
 
-        charge_init = nv_minus_init
+        if camera_mode:
+            img_array = cam.read()
+            cam.disarm()
 
-        timeout_duration = ((period * (10**-9)) * total_num_samples) + 10
-        timeout_inst = time.time() + timeout_duration
-        num_read_so_far = 0
+            kpl.imshow(
+                ax,
+                img_array,
+                title=title,
+                x_label=axes_labels[0],
+                y_label=axes_labels[1],
+                cbar_label="Pixel values",
+                extent=extent,
+                vmin=vmin,
+                vmax=vmax,
+                aspect="auto",
+            )
 
-        while num_read_so_far < total_num_samples:
-            if (time.time() > timeout_inst) or tb.safe_stop():
-                break
+        else:
+            charge_init = nv_minus_init
 
-            # Read the samples
-            if charge_init:
-                new_samples = counter.read_counter_modulo_gates(2)
-            else:
-                new_samples = counter.read_counter_simple()
+            timeout_duration = ((period * (10**-9)) * total_num_samples) + 10
+            timeout_inst = time.time() + timeout_duration
+            num_read_so_far = 0
 
-            # Update the image
-            num_new_samples = len(new_samples)
-            if num_new_samples > 0:
-                # If we did charge initialization, subtract out the non-initialized counts
+            while num_read_so_far < total_num_samples:
+                if (time.time() > timeout_inst) or tb.safe_stop():
+                    break
+
+                # Read the samples
                 if charge_init:
-                    new_samples = [
-                        max(int(el[0]) - int(el[1]), 0) for el in new_samples
-                    ]
-                populate_img_array(new_samples, img_array, img_write_pos)
-                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
-                num_read_so_far += num_new_samples
+                    new_samples = counter.read_counter_modulo_gates(2)
+                else:
+                    new_samples = counter.read_counter_simple()
 
-    counter.clear_buffer()
+                # Update the image
+                num_new_samples = len(new_samples)
+                if num_new_samples > 0:
+                    # If we did charge initialization, subtract out the non-initialized counts
+                    if charge_init:
+                        new_samples = [
+                            max(int(el[0]) - int(el[1]), 0) for el in new_samples
+                        ]
+                    populate_img_array(new_samples, img_array, img_write_pos)
+                    img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+                    kpl.imshow_update(ax, img_array_kcps, vmin, vmax)
+                    num_read_so_far += num_new_samples
+
+    if not camera_mode:
+        counter.clear_buffer()
 
     ### Clean up and save the data
 

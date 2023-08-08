@@ -203,6 +203,14 @@ ncCamSetCalibratedEmGain = nuvuLib.ncCamSetCalibratedEmGain
 ncCamSetCalibratedEmGain.restype = c_int
 ncCamSetCalibratedEmGain.argtypes = [NCCAM, c_int]
 
+ncCamSetProcType = nuvuLib.ncCamSetProcType
+ncCamSetProcType.restype = c_int
+ncCamSetProcType.argtypes = [NCCAM, c_int, c_int]
+
+ncCamCreateBias = nuvuLib.ncCamCreateBias
+ncCamCreateBias.restype = c_int
+ncCamCreateBias.argtypes = [NCCAM, c_int, c_int]
+
 # get calibrated em gain
 ncCamGetCalibratedEmGain = nuvuLib.ncCamGetCalibratedEmGain
 ncCamGetCalibratedEmGain.restype = c_int

@@ -17,9 +17,11 @@ NC_USE_MAC_ADRESS = 0x20000000
 
 
 class ShutterMode(Enum):
+    SHUT_NOT_SET = 0
     OPEN = 1
     CLOSE = 2
     AUTO = 3
+    BIAS_DEFAULT = CLOSE
 
 
 class ReadoutMode(Enum):
@@ -36,3 +38,9 @@ class TriggerMode(Enum):
     EXT_LOW_HIGH = 1
     EXT_LOW_HIGH_EXP = 2
     CONT_LOW_HIGH = 3
+
+
+class ProcessingType(Enum):
+    NO_PROCESSING = 0x00
+    BACKGROUND_SUBTRACTION = 0x01
+    PHOTON_COUNTING = 0x02

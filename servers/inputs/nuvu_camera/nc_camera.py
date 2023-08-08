@@ -11,6 +11,7 @@ Obtained on August 1st, 2023
 from .nc_api import *
 import numpy as np
 import sys
+import logging
 
 
 class NuvuException(Exception):
@@ -119,28 +120,28 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def disconnect(self, noRaise=False):
+    def disconnect(self, no_raise=False):
         """
         Function that closes the camera driver.
-        :param noRaise: Internal parameter that allows not raising an error if the driver is already closed.
+        :param no_raise: Internal parameter that allows not raising an error if the driver is already closed.
         :return: None
         """
         try:
             error = ncCamClose(self.ncCam)
-            if error and not noRaise:
+            if error and not no_raise:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def _set_shutter_mode(self, mode):
+    def _set_shutter_mode(self, shutter_mode, no_raise=False):
         """
         Méthode qui sélectionne le mode de l'obturateur
         :param mode: (int) mode de l'obturateur
         :return: None
         """
         try:
-            error = ncCamSetShutterMode(self.ncCam, mode)
-            if error:
+            error = ncCamSetShutterMode(self.ncCam, shutter_mode.value)
+            if error and not no_raise:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
@@ -148,8 +149,8 @@ class NcCamera:
     def open_shutter(self):
         self._set_shutter_mode(ShutterMode.OPEN)
 
-    def close_shutter(self):
-        self._set_shutter_mode(ShutterMode.CLOSE)
+    def close_shutter(self, no_raise=False):
+        self._set_shutter_mode(ShutterMode.CLOSE, no_raise)
 
     def set_readout_mode(self, readout_mode):
         """
@@ -165,9 +166,79 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def set_trigger_mode(self, trigger_mode):
+    def set_trigger_mode(self, trigger_mode, num_images=0):
         try:
-            error = ncCamSetTriggerMode(self.ncCam, trigger_mode.value, 1)
+            error = ncCamSetTriggerMode(self.ncCam, trigger_mode.value, num_images)
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def set_timeout(self, timeout):
+        """
+        Method that allows selecting a timeout period representing the time before the driver declares an error if it waits for a new image to enter a buffer.
+        :param timeout: (float) waiting time (in ms), -1 to turn off timeout
+        :return: None
+        """
+        try:
+            error = ncCamSetTimeout(self.ncCam, int(timeout))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def set_target_detector_temp(self, temp):
+        """
+        Method for setting the target temperature of the detector for the camera.
+        :param temp: (float) Target temperature
+        :return: None
+        """
+        try:
+            error = ncCamSetTargetDetectorTemp(self.ncCam, c_double(temp))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def get_detector_temp(self):
+        """
+        Get the current temperature of the detector
+        :return: float
+        """
+        self.getComponentTemp(0)
+        return self.detectorTemp.value
+
+    def get_size(self):
+        """
+        Method that retrieves the height and width of the images from the camera,
+        setting these two values to the 'height' and 'width' attributes of the camera class.
+        :return: None
+        """
+        try:
+            error = ncCamGetSize(self.ncCam, byref(self.width), byref(self.height))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def set_processing_type(self, processing_type, num_images_for_photon_counting=1):
+        """
+        Sets the processing type that will be applied on any future acquisition.
+        A valid bias must be in place prior to the start of images acquisition with processing.
+        :return: None
+        """
+        try:
+            error = ncCamSetProcType(
+                self.ncCam, processing_type.value, num_images_for_photon_counting
+            )
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def update_bias(self, num_images=300, shutter_mode=ShutterMode.BIAS_DEFAULT):
+        try:
+            error = ncCamCreateBias(self.ncCam, num_images, shutter_mode.value)
             if error:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
@@ -186,14 +257,14 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def stop(self):
+    def stop(self, no_raise=True):
         """
         Method that stops all image acquisition on the camera.
         :return: None
         """
         try:
             error = ncCamAbort(self.ncCam)
-            if error:
+            if error and not no_raise:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
@@ -204,7 +275,7 @@ class NcCamera:
         :return: None
         """
         try:
-            error = ncCamReadChronological(self.ncCam, self.ncImage, byref(c_int()))
+            error = ncCamRead(self.ncCam, self.ncImage)
             if error:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
@@ -212,17 +283,16 @@ class NcCamera:
 
     def read(self):
         """
-        Method that calls _read() and then casts the pointer to the image into a 16-bit array, which is copied to another
-        part of memory.
+        Method that calls _read() and then casts the pointer to the image into a 16-bit array,
+        which is copied to another part of memory.
         :return: None
         """
         self._read()
-        return np.copy(
-            np.ctypeslib.as_array(
-                cast(self.ncImage, POINTER(c_uint16)),
-                (self.width.value, self.height.value),
-            )
+        np_img_array_pointer = np.ctypeslib.as_array(
+            cast(self.ncImage, POINTER(c_uint16)),
+            (self.width.value, self.height.value),
         )
+        return np_img_array_pointer.astype(int)
 
     # endregion
 
@@ -231,7 +301,8 @@ class NcCamera:
 
     def errorHandling(self, error):
         """
-        Method that ensures an appropriate reaction to errors. So far, the function crashes the program, closes the driver, and exits the software.
+        Method that ensures an appropriate reaction to errors. So far, the function crashes the program,
+        closes the driver, and exits the software.
         :param error: error number returned by the SDK.
         :return: None
         """
@@ -244,13 +315,10 @@ class NcCamera:
         if error == 27:
             raise NuvuException("Error 27: Could not find camera")
         else:
-            print(
-                "Code d'erreur: "
-                + str(error)
-                + ". \n Se référer au fichier erreur.h du SDK de Nuvu."
-            )
-            self.close_cam(noRaise=True)
-            sys.exit("Erreur d'exécution du driver Nuvu")
+            self.stop(no_raise=True)
+            self.close_shutter(no_raise=True)
+            self.disconnect(no_raise=True)
+            raise NuvuException(error)
 
     def getReadoutTime(self):
         """
@@ -322,20 +390,6 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-    def setTimeout(self, timeout):
-        """
-        Méthode qui permet de sélectionner un temps de timeout qui représente le temps avant que le driver déclare une
-        erreur si il attend qu'une nouvelle image entre dans un buffer.
-        :param timeout: (float) temps d'attente (en ms)
-        :return: None
-        """
-        try:
-            error = ncCamSetTimeout(self.ncCam, int(timeout))
-            if error:
-                raise NuvuException(error)
-        except NuvuException as nuvuException:
-            self.errorHandling(nuvuException.value())
-
     def getShutterMode(self, cameraCall=1):
         """
         Méthode qui récupère le mode de l'obturateur
@@ -344,19 +398,6 @@ class NcCamera:
         """
         try:
             error = ncCamGetShutterMode(self.ncCam, cameraCall, byref(self.shutterMode))
-            if error:
-                raise NuvuException(error)
-        except NuvuException as nuvuException:
-            self.errorHandling(nuvuException.value())
-
-    def getSize(self):
-        """
-        Méthode qui récupère la hauteur et la largeur des images de la caméra, ces deux valeurs aux attributs height
-        et width de la classe caméra
-        :return: None
-        """
-        try:
-            error = ncCamGetSize(self.ncCam, byref(self.width), byref(self.height))
             if error:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
@@ -431,19 +472,6 @@ class NcCamera:
                 comp = -1
 
             error = ncCamGetComponentTemp(self.ncCam, c_int(comp), byref(temp))
-            if error:
-                raise NuvuException(error)
-        except NuvuException as nuvuException:
-            self.errorHandling(nuvuException.value())
-
-    def setTargetDetectorTemp(self, temp):
-        """
-        Méthode permettant de donner à la caméra la température visée du détecteur
-        :param temp: (float) Température visée
-        :return: None
-        """
-        try:
-            error = ncCamSetTargetDetectorTemp(self.ncCam, c_double(temp))
             if error:
                 raise NuvuException(error)
         except NuvuException as nuvuException:

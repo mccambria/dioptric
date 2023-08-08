@@ -27,7 +27,6 @@ import numpy as np
 import logging
 import re
 import socket
-import servers.inputs.interfaces.tagger as tagger
 from servers.inputs.interfaces.tagger import Tagger
 
 
@@ -105,7 +104,7 @@ class TaggerSwab20(Tagger, LabradServer):
 
         # Do the hard work in the fast sub function
         apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]
-        return_counts, leftover_channels = tagger.tags_to_counts(
+        return_counts, leftover_channels = Tagger.tags_to_counts(
             buffer_channels,
             self.tagger_di_clock,
             self.tagger_di_apd_gate,
