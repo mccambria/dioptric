@@ -7,7 +7,6 @@ Created June 20th, 2023
 @author: mccambria
 """
 
-from utils.positioning import ControlStyle
 from pathlib import Path
 
 home = Path.home()
