@@ -73,15 +73,20 @@ ncCamGetTimeout = nuvuLib.ncCamGetTimeout
 ncCamGetTimeout.restype = c_int
 ncCamGetTimeout.argtypes = [NCCAM, POINTER(c_int)]
 
-# Set Shutermode
+# Set shutter mode
 ncCamSetShutterMode = nuvuLib.ncCamSetShutterMode
 ncCamSetShutterMode.restype = c_int
 ncCamSetShutterMode.argtypes = [NCCAM, c_int]
 
-# Get Shutermode
+# Get shutter mode
 ncCamGetShutterMode = nuvuLib.ncCamGetShutterMode
 ncCamGetShutterMode.restype = c_int
 ncCamGetShutterMode.argtypes = [NCCAM, c_int, POINTER(c_int)]
+
+# Set trigger mode
+ncCamSetTriggerMode = nuvuLib.ncCamSetTriggerMode
+ncCamSetTriggerMode.restype = c_int
+ncCamSetTriggerMode.argtypes = [NCCAM, c_int, c_int]
 
 # Cam Start
 ncCamStart = nuvuLib.ncCamStart
@@ -197,6 +202,14 @@ ncCamGetRawEmGainRange.argtypes = [NCCAM, POINTER(c_int), POINTER(c_int)]
 ncCamSetCalibratedEmGain = nuvuLib.ncCamSetCalibratedEmGain
 ncCamSetCalibratedEmGain.restype = c_int
 ncCamSetCalibratedEmGain.argtypes = [NCCAM, c_int]
+
+ncCamSetProcType = nuvuLib.ncCamSetProcType
+ncCamSetProcType.restype = c_int
+ncCamSetProcType.argtypes = [NCCAM, c_int, c_int]
+
+ncCamCreateBias = nuvuLib.ncCamCreateBias
+ncCamCreateBias.restype = c_int
+ncCamCreateBias.argtypes = [NCCAM, c_int, c_int]
 
 # get calibrated em gain
 ncCamGetCalibratedEmGain = nuvuLib.ncCamGetCalibratedEmGain

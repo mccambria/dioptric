@@ -13,7 +13,7 @@ version = 1.0
 description =
 [startup]
 cmdline = %PYTHON% %FILE%
-timeout = 20
+timeout = 60
 [shutdown]
 message = 987654321
 timeout = 5
@@ -27,9 +27,11 @@ from utils import common
 from utils import tool_belt as tb
 import numpy as np
 import socket
+import logging
 
 # Keep the C stuff in the nuvu_camera folder - for simplicity, don't put any in this file
 from servers.inputs.nuvu_camera.nc_camera import NcCamera
+from servers.inputs.nuvu_camera.defines import TriggerMode, ReadoutMode, ProcessingType
 
 
 class CameraNuvuHnu512gamma(LabradServer):
@@ -39,20 +41,50 @@ class CameraNuvuHnu512gamma(LabradServer):
     def initServer(self):
         tb.configure_logging(self)
 
+        # Instantiate the software camera and connect to the hardware camera
         self.cam = NcCamera()
-        self.cam.open_cam()  # Assumes there's just one camera available
+        self.cam.connect()  # Assumes there's just one camera available
 
-    @setting(0)
-    def get_img_array(self, c):
-        return self.cam.get_img_array()
+        # Configure the camera
+        self.cam.set_target_detector_temp(-60)
+        self.cam.set_readout_mode(ReadoutMode.EM)
+        self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
+        self.cam.update_bias()
+        self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
+        self.cam.set_timeout(-1)
+        self.cam.get_size()
+
+    def stopServer(self):
+        self.reset(None)
+        self.cam.disconnect()
+
+    @setting(6)
+    def get_detector_temp(self, c):
+        return self.cam.get_detector_temp()
+
+    @setting(0, num_images="i")
+    def arm(self, c, num_images=0):
+        self.cam.open_shutter()
+        self.cam.start(num_images)
 
     @setting(1)
-    def list_cams(self, c):
-        return self.cam.get_img_array()
+    def disarm(self, c):
+        self.cam.stop()
+        self.cam.close_shutter()
+
+    @setting(3)
+    def disarm(self, c):
+        self.cam.stop()
+        self.cam.close_shutter()
+
+    @setting(2, returns="*2i")
+    def read(self, c):
+        img_array = self.cam.read()
+        return img_array
 
     @setting(5)
     def reset(self, c):
-        self.cam.close_cam()
+        self.disarm(c)
 
 
 __server__ = CameraNuvuHnu512gamma()
