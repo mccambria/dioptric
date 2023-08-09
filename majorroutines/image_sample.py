@@ -439,7 +439,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_03_07-18_29_26-15micro-nvref_zfs_vs_t"
+    file_name = "2023_08_06-19_07_39-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -471,8 +471,8 @@ if __name__ == "__main__":
     y_range = data["y_range"]
     num_steps = data["num_steps"]
     num_steps = data["num_steps"]
-    xlabel = "V"
-    ylabel = "V"
+    xlabel = "X"
+    ylabel = "Y"
     if do_presentation:
         pass
         # x_center=0
@@ -495,14 +495,16 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     im = kpl.imshow(
         ax,
-        img_array_kcps,
+        img_array,
+        # img_array_kcps,
         # title=title,
         x_label=xlabel,
         y_label=ylabel,
-        cbar_label="kcps",
-        vmax=55,
+        # cbar_label="kcps",
+        cbar_label="Pixel values",
+        # vmax=55,
         extent=extent,
         # aspect="auto",
     )
 
-    # plt.show(block=True)
+    plt.show(block=True)

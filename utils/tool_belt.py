@@ -725,7 +725,7 @@ def get_raw_data_path(
 ):
     """Same as get_raw_data, but just returns the path to the file"""
     if nvdata_dir is None:
-        nvdata_dir = common.get_nvdata_dir()
+        nvdata_dir = common.get_nvdata_path()
     if path_from_nvdata is None:
         path_from_nvdata = search_index.get_data_path_from_nvdata(file_name)
     data_dir = nvdata_dir / path_from_nvdata
@@ -883,21 +883,21 @@ def save_raw_data(raw_data, file_path):
 
     # Work with a copy of the raw data to avoid mutation
     raw_data = copy.deepcopy(raw_data)
-    
+
     file_path_ext = file_path.with_suffix(".txt")
-    
+
     # Always include the config
-    raw_data["config"] = common.get_config_dict()  
-    
+    raw_data["config"] = common.get_config_dict()
+
     _json_escape(raw_data)
-    
+
     with open(file_path_ext, "w") as file:
         json.dump(raw_data, file, indent=2)
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
-        
-        
+
+
 def _json_escape(raw_data):
     """Recursively escape a raw data object for JSON"""
     for key in raw_data:
