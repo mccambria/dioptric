@@ -28,8 +28,8 @@ def do_image_sample(nv_sig):
 
     scan_range = 0.5
     # scan_range = 0.2
-    num_steps = int(180 * 0.5 / 0.2)
-    # num_steps = 180
+    # num_steps = int(180 * 0.5 / 0.2)
+    num_steps = 180
 
     # scan_range = 0.05
     # num_steps = 60
