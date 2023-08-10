@@ -19,6 +19,41 @@ from utils import tool_belt as tb
 from utils import common
 from utils import kplotlib as kpl
 from utils import positioning
+from scipy import ndimage
+from numpy import fft
+
+
+def circle_mask(radius, center=None):
+    h = 512
+    w = 512
+
+    if center is None:  # use the middle of the image
+        center = (int(w / 2), int(h / 2))
+    if radius is None:  # use the smallest distance between the center and image walls
+        radius = min(center[0], center[1], w - center[0], h - center[1])
+
+    Y, X = np.ogrid[:h, :w]
+    dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
+
+    mask = dist_from_center > radius
+    return mask
+
+
+def widefield_process(img_array):
+    lowpass = ndimage.gaussian_filter(img_array, 7)
+    highpass = img_array - lowpass
+    # highpass = ndimage.gaussian_filter(highpass, 3)
+
+    # highpass = fft.fft2(img_array)
+    # highpass = fft.fftshift(highpass)
+    # # highpass = np.abs(fft.fft2(img_array))
+    # highpass *= circle_mask(10)
+    # highpass = fft.ifftshift(highpass)
+    # highpass = fft.ifft2(highpass)
+
+    # highpass = circle_mask(100)
+    # return np.abs(highpass)
+    return highpass
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -496,6 +531,23 @@ if __name__ == "__main__":
     im = kpl.imshow(
         ax,
         img_array,
+        # img_array_kcps,
+        # title=title,
+        x_label=xlabel,
+        y_label=ylabel,
+        # cbar_label="kcps",
+        cbar_label="Pixel values",
+        # vmax=55,
+        extent=extent,
+        # aspect="auto",
+    )
+
+    # Processing tests
+    fig, ax = plt.subplots()
+    process_img_array = widefield_process(img_array)
+    im = kpl.imshow(
+        ax,
+        process_img_array,
         # img_array_kcps,
         # title=title,
         x_label=xlabel,
