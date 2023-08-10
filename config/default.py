@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Config file for laptop knuth
+Default config file for laptops, home PCs, etc 
 
-Created June 20th, 2023
+Created August 8th, 2023
 
 @author: mccambria
 """
