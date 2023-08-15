@@ -14,7 +14,6 @@ Created on June 16th, 2023
 import numpy as np
 import utils.tool_belt as tb
 from majorroutines import image_sample
-from majorroutines import stationary_count
 from majorroutines import optimize
 import matplotlib.pyplot as plt
 
@@ -26,13 +25,17 @@ def do_image_sample(nv_sig):
     # scan_range = 1.0
     # num_steps = 180
 
-    scan_range = 0.5
-    # scan_range = 0.2
-    # num_steps = int(180 * 0.5 / 0.2)
-    num_steps = 180
+    # # scan_range = 0.5
+    # scan_range = 0.4
+    # # scan_range = 0.2
+    # # num_steps = int(180 * 0.5 / 0.2)
+    # num_steps = 180
 
     # scan_range = 0.05
     # num_steps = 60
+
+    scan_range = 0.0
+    num_steps = 60
 
     camera_mode = True
 
@@ -111,7 +114,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 7.0
+    z_coord = 5.75
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -150,7 +153,12 @@ if __name__ == "__main__":
 
         tb.init_safe_stop()
 
-        do_image_sample(nv_sig)
+        for x in [-0.15, 0, 0.15]:
+            for y in [-0.15, 0, 0.15]:
+                nv_sig["coords"] = [x, y, z_coord]
+                do_image_sample(nv_sig)
+
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_stationary_count(nv_sig)
         # do_optimize(nv_sig)

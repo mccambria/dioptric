@@ -21,12 +21,14 @@ import numpy as np
 def get_config_module(pc_name=None):
     if pc_name is None:
         pc_name = socket.gethostname()
-    try:
-        module_name = f"config.{pc_name}"
-        module = import_module(module_name)
-    except Exception as exc:  # Fallback to the default
-        module_name = "config.default"
-        module = import_module(module_name)
+    module_name = f"config.{pc_name}"
+    module = import_module(module_name)
+    # try:
+    #     module_name = f"config.{pc_name}"
+    #     module = import_module(module_name)
+    # except Exception as exc:  # Fallback to the default
+    #     module_name = "config.default"
+    #     module = import_module(module_name)
     return module
 
 
