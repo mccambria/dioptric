@@ -49,12 +49,9 @@ def widefield_process(img_array):
     # highpass = img_array - lowpass
     # highpass = ndimage.gaussian_filter(highpass, 3)
 
-    # highpass = fft.fft2(img_array)
-    # highpass = fft.fftshift(highpass)
-    # # highpass = np.abs(fft.fft2(img_array))
-    # highpass *= circle_mask(10)
-    # highpass = fft.ifftshift(highpass)
-    # highpass = fft.ifft2(highpass)
+    lowpass = ndimage.gaussian_filter(img_array, 5)
+    proc = img_array - lowpass
+    # proc = ndimage.gaussian_filter(proc, 3)
 
     # highpass = circle_mask(100)
     # return np.abs(highpass)
