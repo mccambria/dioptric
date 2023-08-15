@@ -25,17 +25,17 @@ def do_image_sample(nv_sig):
     # scan_range = 1.0
     # num_steps = 180
 
-    # # scan_range = 0.5
-    # scan_range = 0.4
-    # # scan_range = 0.2
-    # # num_steps = int(180 * 0.5 / 0.2)
-    # num_steps = 180
+    # scan_range = 0.5
+    scan_range = 0.4
+    # scan_range = 0.2
+    # num_steps = int(180 * 0.5 / 0.2)
+    num_steps = 180
 
     # scan_range = 0.05
     # num_steps = 60
 
-    scan_range = 0.0
-    num_steps = 60
+    # scan_range = 0.0
+    # num_steps = 20
 
     camera_mode = True
 
@@ -153,12 +153,17 @@ if __name__ == "__main__":
 
         tb.init_safe_stop()
 
-        for x in [-0.15, 0, 0.15]:
-            for y in [-0.15, 0, 0.15]:
-                nv_sig["coords"] = [x, y, z_coord]
-                do_image_sample(nv_sig)
+        # for x in [-0.15, 0, 0.15]:
+        #     for y in [-0.15, 0, 0.15]:
+        # for x in [-0.136, -0.135, 0.134]:
+        #     for y in [0.162, 0.163, 0.164]:
+        #         nv_sig["coords"] = [x, y, z_coord]
+        #         do_image_sample(nv_sig)
 
-        # do_image_sample(nv_sig)
+        # 0.155, 0 => 308.158, 309.335
+        # -0.135, 0.162 => 124.633, 196.258
+
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_stationary_count(nv_sig)
         # do_optimize(nv_sig)
