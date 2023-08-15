@@ -48,7 +48,7 @@ config = {
         "pulse_gen_SWAB_82_ip": "192.168.0.111",
         "rotation_stage_ell18k_address": "COM6",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.160.114::inst0::INSTR",
-        "sig_gen_STAN_sg394_visa": "TCPIP::128.104.160.118::inst0::INSTR",
+        "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.112::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.160.112::5025::SOCKET",
         "tagger_SWAB_20_serial": "1740000JEH",
         "temp_ctrl_tc200": "COM10",

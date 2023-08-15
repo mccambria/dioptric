@@ -40,8 +40,13 @@ def circle_mask(radius, center=None):
 
 
 def widefield_process(img_array):
-    lowpass = ndimage.gaussian_filter(img_array, 7)
-    highpass = img_array - lowpass
+    subt_img = "2023_08_14-14_36_52-johnson-nvref"
+    subt_img_data = tb.get_raw_data(subt_img)
+    subt_img_array = subt_img_data["img_array"]
+    ret_img_array = subt_img_array - img_array
+
+    # lowpass = ndimage.gaussian_filter(img_array, 7)
+    # highpass = img_array - lowpass
     # highpass = ndimage.gaussian_filter(highpass, 3)
 
     # highpass = fft.fft2(img_array)
@@ -53,7 +58,8 @@ def widefield_process(img_array):
 
     # highpass = circle_mask(100)
     # return np.abs(highpass)
-    return highpass
+    # return highpass
+    return ret_img_array
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -394,7 +400,7 @@ def main_with_cxn(
                 x_label=axes_labels[0],
                 y_label=axes_labels[1],
                 cbar_label="Pixel values",
-                extent=extent,
+                # extent=extent,
                 vmin=vmin,
                 vmax=vmax,
                 aspect="auto",
@@ -474,7 +480,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_06-19_07_39-johnson-nvref"
+    file_name = "2023_08_14-14_29_39-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
@@ -538,7 +544,7 @@ if __name__ == "__main__":
         # cbar_label="kcps",
         cbar_label="Pixel values",
         # vmax=55,
-        extent=extent,
+        # extent=extent,
         # aspect="auto",
     )
 
@@ -555,7 +561,7 @@ if __name__ == "__main__":
         # cbar_label="kcps",
         cbar_label="Pixel values",
         # vmax=55,
-        extent=extent,
+        # extent=extent,
         # aspect="auto",
     )
 

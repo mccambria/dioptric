@@ -881,13 +881,15 @@ def save_raw_data(raw_data, file_path):
             extension
     """
 
+    file_path_ext = file_path.with_suffix(".txt")
+
     # Work with a copy of the raw data to avoid mutation
     raw_data = copy.deepcopy(raw_data)
 
-    file_path_ext = file_path.with_suffix(".txt")
-
     # Always include the config
-    raw_data["config"] = common.get_config_dict()
+    config = common.get_config_dict()
+    config = copy.deepcopy(config)
+    raw_data["config"] = config
 
     _json_escape(raw_data)
 
