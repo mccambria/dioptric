@@ -40,20 +40,28 @@ def circle_mask(radius, center=None):
 
 
 def widefield_process(img_array):
-    lowpass = ndimage.gaussian_filter(img_array, 7)
-    highpass = img_array - lowpass
-    # highpass = ndimage.gaussian_filter(highpass, 3)
+    bg_file = "2023_08_09-14_54_53-johnson-nvref"
+    bg_data = tb.get_raw_data(bg_file)
+    bg = bg_data["img_array"]
+    bg_smooth = ndimage.gaussian_filter(bg, 7)
+    # proc = img_array - bg_smooth
+    img_array -= bg_smooth
+    # proc = bg_smooth
 
-    # highpass = fft.fft2(img_array)
-    # highpass = fft.fftshift(highpass)
-    # # highpass = np.abs(fft.fft2(img_array))
-    # highpass *= circle_mask(10)
-    # highpass = fft.ifftshift(highpass)
-    # highpass = fft.ifft2(highpass)
+    lowpass = ndimage.gaussian_filter(img_array, 5)
+    proc = img_array - lowpass
+    # proc = ndimage.gaussian_filter(proc, 3)
 
-    # highpass = circle_mask(100)
-    # return np.abs(highpass)
-    return highpass
+    # proc = fft.fft2(img_array)
+    # proc = fft.fftshift(proc)
+    # # highprocpass = np.abs(fft.fft2(img_array))
+    # proc *= circle_mask(10)
+    # proc = fft.ifftshift(proc)
+    # proc = fft.ifft2(proc)
+
+    # proc = circle_mask(100)
+    # return np.abs(proc)
+    return proc
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -474,7 +482,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_06-19_07_39-johnson-nvref"
+    file_name = "2023_08_12-17_56_31-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
