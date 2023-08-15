@@ -16,6 +16,14 @@ from utils import tool_belt as tb
 
 
 # endregion
+# region Widefield
+
+
+def pixel_to_scanning():
+    pass
+
+
+# endregion
 # region Simple sets
 
 
