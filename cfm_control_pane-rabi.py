@@ -12,7 +12,8 @@ Created on June 16th, 2023
 
 
 import numpy as np
-import utils.tool_belt as tb
+from utils import tool_belt as tb
+from utils import positioning as pos
 from majorroutines import image_sample
 from majorroutines import optimize
 import matplotlib.pyplot as plt
@@ -60,10 +61,10 @@ def do_optimize(nv_sig):
     )
 
 
-def do_stationary_count(nv_sig, disable_opt=True):
-    nv_sig["imaging_readout_dur"] *= 10
-    run_time = 3 * 60 * 10**9  # ns
-    stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
+# def do_stationary_count(nv_sig, disable_opt=True):
+#     nv_sig["imaging_readout_dur"] *= 10
+#     run_time = 3 * 60 * 10**9  # ns
+#     stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
 
 
 # def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
@@ -119,6 +120,12 @@ if __name__ == "__main__":
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
 
+    ref_pixel_coords = [317.4, 237.1]
+    ref_scanning_coords = pos.pixel_to_scanning(ref_pixel_coords)
+    ref_coords = ref_coords.extend(z_coord)
+    ref_coords = np.array(ref_coords)
+    print(ref_coords)
+
     nv_sig = {
         "coords": ref_coords,
         "name": f"{sample_name}-nvref",
@@ -149,7 +156,7 @@ if __name__ == "__main__":
     email_recipient = "cambria@wisc.edu"
     do_email = False
     try:
-        # pass
+        pass
 
         tb.init_safe_stop()
 
