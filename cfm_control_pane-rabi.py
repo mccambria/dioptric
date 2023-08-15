@@ -12,7 +12,8 @@ Created on June 16th, 2023
 
 
 import numpy as np
-import utils.tool_belt as tb
+from utils import tool_belt as tb
+from utils import positioning as pos
 from majorroutines import image_sample
 from majorroutines import optimize
 import matplotlib.pyplot as plt
@@ -25,17 +26,17 @@ def do_image_sample(nv_sig):
     # scan_range = 1.0
     # num_steps = 180
 
-    # # scan_range = 0.5
-    # scan_range = 0.4
-    # # scan_range = 0.2
-    # # num_steps = int(180 * 0.5 / 0.2)
-    # num_steps = 180
+    # scan_range = 0.5
+    scan_range = 0.4
+    # scan_range = 0.2
+    # num_steps = int(180 * 0.5 / 0.2)
+    num_steps = 180
 
     # scan_range = 0.05
     # num_steps = 60
 
-    scan_range = 0.0
-    num_steps = 60
+    # scan_range = 0.0
+    # num_steps = 20
 
     camera_mode = True
 
@@ -60,10 +61,10 @@ def do_optimize(nv_sig):
     )
 
 
-def do_stationary_count(nv_sig, disable_opt=True):
-    nv_sig["imaging_readout_dur"] *= 10
-    run_time = 3 * 60 * 10**9  # ns
-    stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
+# def do_stationary_count(nv_sig, disable_opt=True):
+#     nv_sig["imaging_readout_dur"] *= 10
+#     run_time = 3 * 60 * 10**9  # ns
+#     stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
 
 
 # def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
@@ -119,6 +120,12 @@ if __name__ == "__main__":
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
 
+    ref_pixel_coords = [317.4, 237.1]
+    ref_scanning_coords = pos.pixel_to_scanning(ref_pixel_coords)
+    ref_coords = ref_coords.extend(z_coord)
+    ref_coords = np.array(ref_coords)
+    print(ref_coords)
+
     nv_sig = {
         "coords": ref_coords,
         "name": f"{sample_name}-nvref",
@@ -149,16 +156,21 @@ if __name__ == "__main__":
     email_recipient = "cambria@wisc.edu"
     do_email = False
     try:
-        # pass
+        pass
 
         tb.init_safe_stop()
 
-        for x in [-0.15, 0, 0.15]:
-            for y in [-0.15, 0, 0.15]:
-                nv_sig["coords"] = [x, y, z_coord]
-                do_image_sample(nv_sig)
+        # for x in [-0.15, 0, 0.15]:
+        #     for y in [-0.15, 0, 0.15]:
+        # for x in [-0.136, -0.135, 0.134]:
+        #     for y in [0.162, 0.163, 0.164]:
+        #         nv_sig["coords"] = [x, y, z_coord]
+        #         do_image_sample(nv_sig)
 
-        # do_image_sample(nv_sig)
+        # 0.155, 0 => 308.158, 309.335
+        # -0.135, 0.162 => 124.633, 196.258
+
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_stationary_count(nv_sig)
         # do_optimize(nv_sig)

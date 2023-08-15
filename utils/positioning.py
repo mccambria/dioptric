@@ -16,6 +16,86 @@ from utils import tool_belt as tb
 
 
 # endregion
+# region Widefield
+
+
+def pixel_to_scanning(pixel_coords):
+    """Convert camera pixel coordinates to scanning coordinates (e.g. galvo voltages)
+    using two calibrated NV coordinate pairs from the config file
+
+    Parameters
+    ----------
+    pixel_coords : list(numeric)
+        Camera pixel coordinates to convert
+
+    Returns
+    -------
+    list(numeric)
+        Scanning coordinates
+    """
+    config = common.get_config_dict()
+    config_pos = config["Positioning"]
+
+    NV1_pixel_coords = config_pos["NV1_pixel_coords"]
+    NV1_scanning_coords = config_pos["NV1_scanning_coords"]
+    NV2_pixel_coords = config_pos["NV2_pixel_coords"]
+    NV2_scanning_coords = config_pos["NV2_scanning_coords"]
+
+    # Assume (independent) linear relations for both x and y
+
+    scanning_diff = NV2_scanning_coords[0] - NV1_scanning_coords[0]
+    pixel_diff = NV2_pixel_coords[0] - NV1_pixel_coords[0]
+    m_x = scanning_diff / pixel_diff
+    b_x = NV1_scanning_coords[0] - m_x * NV1_pixel_coords[0]
+
+    scanning_diff = NV2_scanning_coords[1] - NV1_scanning_coords[1]
+    pixel_diff = NV2_pixel_coords[1] - NV1_pixel_coords[1]
+    m_y = scanning_diff / pixel_diff
+    b_y = NV1_scanning_coords[1] - m_y * NV1_pixel_coords[1]
+
+    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[0] + b_y]
+    return scanning_coords
+
+
+def scanning_to_pixel(scanning_coords):
+    """Convert scanning coordinates (e.g. galvo voltages) to camera pixel coordinates
+    using two calibrated NV coordinate pairs from the config file
+
+    Parameters
+    ----------
+    scanning_coords : list(numeric)
+        Scanning coordinates to convert
+
+    Returns
+    -------
+    list(numeric)
+        Camera pixel coordinates
+    """
+    config = common.get_config_dict()
+    config_pos = config["Positioning"]
+
+    NV1_pixel_coords = config_pos["NV1_pixel_coords"]
+    NV1_scanning_coords = config_pos["NV1_scanning_coords"]
+    NV2_pixel_coords = config_pos["NV2_pixel_coords"]
+    NV2_scanning_coords = config_pos["NV2_scanning_coords"]
+
+    # Assume (independent) linear relations for both x and y
+
+    pixel_diff = NV2_pixel_coords[0] - NV1_pixel_coords[0]
+    scanning_diff = NV2_scanning_coords[0] - NV1_scanning_coords[0]
+    m_x = pixel_diff / scanning_diff
+    b_x = NV1_pixel_coords[0] - m_x * NV1_scanning_coords[0]
+
+    pixel_diff = NV2_pixel_coords[1] - NV1_pixel_coords[1]
+    scanning_diff = NV2_scanning_coords[1] - NV1_scanning_coords[1]
+    m_y = pixel_diff / scanning_diff
+    b_y = NV1_pixel_coords[1] - m_y * NV1_scanning_coords[1]
+
+    pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[0] + b_y]
+    return pixel_coords
+
+
+# endregion
 # region Simple sets
 
 
