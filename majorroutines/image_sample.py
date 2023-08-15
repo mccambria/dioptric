@@ -477,7 +477,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_14-14_29_39-johnson-nvref"
+    file_name = "2023_08_15-14_34_47-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
