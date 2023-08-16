@@ -483,6 +483,8 @@ if __name__ == "__main__":
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
 
+    # 114.5, 134.5, 206.5, 186.5
+
     do_presentation = False
     try:
         scan_type = data["scan_type"]
