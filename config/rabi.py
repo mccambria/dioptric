@@ -17,6 +17,7 @@ home = Path.home()
 config = {
     ###
     "apd_indices": [0],
+    "count_rate": False,  # Present data as a count rate? (As opposed to just number of counts)
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
     # Access the OS-specific keys with getters from common
@@ -108,14 +109,14 @@ config = {
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.95,
         "xy_small_response_delay": 800,
-        "xy_units": "V",
+        "xy_units": "Voltage (V)",
         "z_control_style": ControlStyle.STREAM,
         "z_delay": 50000000,
         "z_dtype": float,
         "z_nm_per_unit": 1000,
         "z_optimize_range": 4,
         "z_small_response_delay": 50000000,
-        "z_units": "V",
+        "z_units": "Voltage (V)",
         "NV1_pixel_coords": [308.158, 309.335],
         "NV1_scanning_coords": [0.155, 0],
         "NV2_pixel_coords": [124.633, 196.258],
