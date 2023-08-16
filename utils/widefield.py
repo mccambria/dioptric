@@ -11,6 +11,7 @@ Created on August 15th, 2023
 import matplotlib.pyplot as plt
 import numpy as np
 from utils import common
+from scipy.optimize import curve_fit
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
 
@@ -120,18 +121,50 @@ def counts_from_img_array(img_array, pixel_coords, radius):
     return counts
 
 
+def _circle_gaussian(xy, amplitude, xo, yo, sigma, offset):
+    x, y = xy
+    xo = float(xo)
+    yo = float(yo)
+    g = offset + amplitude * np.exp(
+        -(1 / (2 * sigma**2)) * (((x - xo) ** 2) + ((y - yo) ** 2))
+    )
+    return g.ravel()
+
+
+def optimize_pixel(img_array, pixel_coords, radius, set_drift=True):
+    round_x = round(pixel_coords[0])
+    round_y = round(pixel_coords[1])
+    round_r = round(radius)
+    bg_guess = img_array[round_y, round_x + round_r]
+    amp_guess = img_array[round_y, round_x] - bg_guess
+    guess = (amp_guess, *pixel_coords, radius / 2, bg_guess)
+    shape = img_array.shape
+    x = np.linspace(0, shape[0] - 1, shape[0])
+    y = np.linspace(0, shape[1] - 1, shape[1])
+    x, y = np.meshgrid(x, y)
+    popt, pcov = curve_fit(_circle_gaussian, (x, y), img_array.ravel(), p0=guess)
+    opti_pixel_coords = popt[1:3]
+    return opti_pixel_coords
+
+
 if __name__ == "__main__":
     file_name = "2023_08_15-14_34_47-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
 
-    counts = counts_from_img_array(img_array, [124.5, 196.5], 8)
+    pixel_coords = [124.5, 196.5]
+    radius = 8
+
+    counts = counts_from_img_array(img_array, pixel_coords, radius)
     print(counts)
+
+    opt = optimize_pixel(img_array, pixel_coords, radius)
+    print(opt)
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     im = kpl.imshow(ax, img_array, x_label="X", y_label="Y", cbar_label="Pixel values")
-    ax.set_xlim([124.5 - 15, 124.5 + 15])
-    ax.set_ylim([196.5 + 15, 196.5 - 15])
+    ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
+    ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
 
     plt.show(block=True)
