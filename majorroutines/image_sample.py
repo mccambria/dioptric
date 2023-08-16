@@ -546,22 +546,25 @@ if __name__ == "__main__":
         # extent=extent,
         # aspect="auto",
     )
+    ax.set_xlim([124.5-15, 124.5+15])
+    ax.set_ylim([196.5+15, 196.5-15])
 
     # Processing tests
-    fig, ax = plt.subplots()
-    process_img_array = widefield_process(img_array)
-    im = kpl.imshow(
-        ax,
-        process_img_array,
-        # img_array_kcps,
-        # title=title,
-        x_label=xlabel,
-        y_label=ylabel,
-        # cbar_label="kcps",
-        cbar_label="Pixel values",
-        # vmax=55,
-        # extent=extent,
-        # aspect="auto",
-    )
+    if False:
+        fig, ax = plt.subplots()
+        process_img_array = widefield_process(img_array)
+        im = kpl.imshow(
+            ax,
+            process_img_array,
+            # img_array_kcps,
+            # title=title,
+            x_label=xlabel,
+            y_label=ylabel,
+            # cbar_label="kcps",
+            cbar_label="Pixel values",
+            # vmax=55,
+            # extent=extent,
+            # aspect="auto",
+        )
 
     plt.show(block=True)
