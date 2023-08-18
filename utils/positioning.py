@@ -53,7 +53,7 @@ def pixel_to_scanning(pixel_coords):
     m_y = scanning_diff / pixel_diff
     b_y = NV1_scanning_coords[1] - m_y * NV1_pixel_coords[1]
 
-    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[0] + b_y]
+    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
     return scanning_coords
 
 

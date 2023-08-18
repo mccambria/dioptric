@@ -116,9 +116,9 @@ config = {
         "z_optimize_range": 4,
         "z_small_response_delay": 50000000,
         "z_units": "V",
-        "NV1_pixel_coords": [308.158, 309.335],
-        "NV1_scanning_coords": [0.155, 0],
-        "NV2_pixel_coords": [124.633, 196.258],
+        "NV1_pixel_coords": [306.79, 310.572],
+        "NV1_scanning_coords": [0.155, -0.003],
+        "NV2_pixel_coords": [123.251, 198.218],
         "NV2_scanning_coords": [-0.135, 0.162],
     },
     ###

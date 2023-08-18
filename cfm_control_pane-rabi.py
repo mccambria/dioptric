@@ -26,17 +26,17 @@ def do_image_sample(nv_sig):
     # scan_range = 1.0
     # num_steps = 180
 
-    # scan_range = 0.5
-    scan_range = 0.4
-    # scan_range = 0.2
-    # num_steps = int(180 * 0.5 / 0.2)
-    num_steps = 180
+    # # scan_range = 0.5
+    # scan_range = 0.4
+    # # scan_range = 0.2
+    # # num_steps = int(180 * 0.5 / 0.2)
+    # num_steps = 180
 
     # scan_range = 0.05
     # num_steps = 60
 
-    # scan_range = 0.0
-    # num_steps = 20
+    scan_range = 0.0
+    num_steps = 20
 
     camera_mode = True
 
@@ -120,11 +120,12 @@ if __name__ == "__main__":
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
 
-    ref_pixel_coords = [317.4, 237.1]
+    ref_pixel_coords = [316.7, 238.8]
+    # ref_pixel_coords = [306.79, 310.572]
+    # ref_pixel_coords = [123.251, 198.218]
     ref_scanning_coords = pos.pixel_to_scanning(ref_pixel_coords)
-    ref_coords = ref_coords.extend(z_coord)
-    ref_coords = np.array(ref_coords)
-    print(ref_coords)
+    ref_coords = np.array([*ref_scanning_coords, z_coord])
+    # print(ref_coords)
 
     nv_sig = {
         "coords": ref_coords,
@@ -156,19 +157,17 @@ if __name__ == "__main__":
     email_recipient = "cambria@wisc.edu"
     do_email = False
     try:
-        pass
+        # pass
 
         tb.init_safe_stop()
 
-        # for x in [-0.15, 0, 0.15]:
-        #     for y in [-0.15, 0, 0.15]:
-        # for x in [-0.136, -0.135, 0.134]:
-        #     for y in [0.162, 0.163, 0.164]:
+        # coords = nv_sig["coords"]
+        # # for x in [-0.15, 0, 0.15]:
+        # #     for y in [-0.15, 0, 0.15]:
+        # for x in [coords[0] - 0.001, coords[0], coords[0] + 0.001]:
+        #     for y in [coords[1] - 0.001, coords[1], coords[1] + 0.001]:
         #         nv_sig["coords"] = [x, y, z_coord]
         #         do_image_sample(nv_sig)
-
-        # 0.155, 0 => 308.158, 309.335
-        # -0.135, 0.162 => 124.633, 196.258
 
         do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
