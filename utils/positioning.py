@@ -19,7 +19,14 @@ from utils import tool_belt as tb
 # region Simple sets
 
 
-def set_xyz(cxn, coords):
+def set_xyz(cxn, coords, ramp=False):
+    if ramp:
+        return _set_xyz_ramp(cxn, coords)
+    else:
+        return _set_xyz(cxn, coords)
+
+
+def _set_xyz(cxn, coords):
     config = common.get_config_dict()
     xy_dtype = config["Positioning"]["xy_dtype"]
     z_dtype = config["Positioning"]["z_dtype"]
@@ -31,7 +38,7 @@ def set_xyz(cxn, coords):
     time.sleep(0.002)
 
 
-def set_xyz_ramp(cxn, coords):
+def _set_xyz_ramp(cxn, coords):
     """Step incrementally to this position from the current position"""
 
     config = common.get_config_dict()

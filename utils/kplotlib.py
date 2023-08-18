@@ -332,11 +332,12 @@ def tex_escape(text):
     return regex.sub(lambda match: conv[match.group()], text)
 
 
-def flush_update(ax):
+def flush_update(ax=None, fig=None):
     """Call this after making some change to an existing figure to have the figure
     actually update in the window
     """
-    fig = ax.get_figure()
+    if fig is None:
+        fig = ax.get_figure()
     fig.canvas.draw()
     fig.canvas.flush_events()
 
