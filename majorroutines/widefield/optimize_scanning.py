@@ -12,6 +12,7 @@ Created on August 16th, 2023
 
 
 import numpy as np
+from numpy import inf
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
@@ -35,7 +36,7 @@ def create_figure():
     for ind in range(3):
         ax = axes_pack[ind]
         ax.set_title(axis_titles[ind])
-        xlabel_key = "xy_units" if ind != 3 else "z_units"
+        xlabel_key = "xy_units" if ind < 2 else "z_units"
         xlabel = config["Positioning"][xlabel_key]
         ax.set_xlabel(xlabel)
         ylabel = "Count rate (kcps)" if config["count_rate"] else "Counts"
@@ -43,100 +44,54 @@ def create_figure():
     return fig
 
 
-def update_figure(fig, axis_ind, scan_vals, plot_vals, text=None):
+def update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
     axes = fig.get_axes()
     ax = axes[axis_ind]
-    ax.plot(scan_vals, plot_vals)
-
+    ax.plot(scan_vals, count_vals)
     if text is not None:
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(
-            0.05,
-            0.95,
-            text,
-            transform=ax.transAxes,
-            fontsize=12,
-            verticalalignment="top",
-            bbox=props,
-        )
-        kpl.anchored_text(
-            ax,
-            text,
-        )
-
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+        kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT)
+    kpl.flush_update(fig=fig)
 
 
-def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
+def fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=None):
+    # Param order: amplitude, center, sd width, offset
     fit_func = tb.gaussian
-
-    # The order of parameters is
-    # 0: coefficient that defines the peak height
-    # 1: mean, defines the center of the Gaussian
-    # 2: standard deviation, defines the width of the Gaussian
-    # 3: constant y value to account for background
-    expected_count_rate = nv_sig["expected_count_rate"]
-    if expected_count_rate is None:
-        expected_count_rate = 50  # Guess 50
-    expected_count_rate = float(expected_count_rate)
-    #    background_count_rate = nv_sig[4]
-    #    if background_count_rate is None:
-    #        background_count_rate = 0  # Guess 0
-    #    background_count_rate = float(background_count_rate)
-    background_count_rate = 0.0  # Guess 0
-    low_voltage = np.min(scan_vals)
-    high_voltage = np.max(scan_vals)
-    scan_range = high_voltage - low_voltage
+    bg_guess = 0.0  # Guess 0
+    low = np.min(scan_vals)
+    high = np.max(scan_vals)
+    scan_range = high - low
     coords = nv_sig["coords"]
-    init_fit = (
-        expected_count_rate - background_count_rate,
-        coords[axis_ind],
-        scan_range / 3,
-        background_count_rate,
-    )
-    opti_params = None
+    guess = (max(count_vals) - bg_guess, coords[axis_ind], scan_range / 3, bg_guess)
+    popt = None
     try:
-        inf = np.inf
-        low_bounds = [0, low_voltage, 0, 0]
-        high_bounds = [inf, high_voltage, inf, inf]
-        opti_params, cov_arr = curve_fit(
-            fit_func,
-            scan_vals,
-            count_rates,
-            p0=init_fit,
-            bounds=(low_bounds, high_bounds),
-        )
+        low_bounds = [0, low, 0, 0]
+        high_bounds = [inf, high, inf, inf]
+        bounds = (low_bounds, high_bounds)
+        popt, pcov = curve_fit(fit_func, scan_vals, count_vals, p0=guess, bounds=bounds)
         # Consider it a failure if we railed or somehow got out of bounds
-        for ind in range(len(opti_params)):
-            param = opti_params[ind]
+        for ind in range(len(popt)):
+            param = popt[ind]
             if not (low_bounds[ind] < param < high_bounds[ind]):
-                opti_params = None
+                popt = None
     except Exception as ex:
         print(ex)
         # pass
 
-    if opti_params is None:
+    if popt is None:
         print("Optimization failed for axis {}".format(axis_ind))
 
     # Plot
-    if (fig is not None) and (opti_params is not None):
+    if (fig is not None) and (popt is not None):
         # Plot the fit
-        linspace_voltages = np.linspace(low_voltage, high_voltage, num=1000)
-        fit_count_rates = fit_func(linspace_voltages, *opti_params)
-        # Add info to the axes
-        # a: coefficient that defines the peak height
-        # mu: mean, defines the center of the Gaussian
-        # sigma: standard deviation, defines the width of the Gaussian
-        # offset: constant y value to account for background
-        text = "a={:.3f}\n $\mu$={:.3f}\n $\sigma$={:.3f}\n offset={:.3f}".format(
-            *opti_params
-        )
+        linspace_voltages = np.linspace(low, high, num=1000)
+        fit_count_rates = fit_func(linspace_voltages, *popt)
+        # Add popt to the axes
+        text = "a={:.3f}\n $\mu$={:.3f}\n $\sigma$={:.3f}\n offset={:.3f}".format(*popt)
         update_figure(fig, axis_ind, linspace_voltages, fit_count_rates, text)
 
     center = None
-    if opti_params is not None:
-        center = opti_params[1]
+    if popt is not None:
+        center = popt[1]
 
     return center
 
@@ -145,106 +100,86 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 # region Misc functions
 
 
-def read_timed_counts(cxn, num_steps, period):
-    counter_server = tb.get_server_counter(cxn)
-    pulsegen_server = tb.get_server_pulse_gen(cxn)
-    counter_server.start_tag_stream()
+def read_counts(
+    cxn, num_steps, period, control_style, axis_write_func=None, scan_vals=None
+):
+    counter = tb.get_server_counter(cxn)
+    pulse_gen = tb.get_server_pulse_gen(cxn)
+    counter.start_tag_stream()
 
-    num_read_so_far = 0
     counts = []
-
     timeout_duration = ((period * (10**-9)) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
-    pulsegen_server.stream_start(num_steps)
+    if control_style == ControlStyle.STREAM:
+        num_read_so_far = 0
+        pulse_gen.stream_start(num_steps)
+        while num_read_so_far < num_steps:
+            # Break if user says stop or timeout
+            if tb.safe_stop() or time.time() > timeout_inst:
+                break
 
-    while num_read_so_far < num_steps:
-        if time.time() > timeout_inst:
-            break
+            new_samples = counter.read_counter_simple()
+            num_new_samples = len(new_samples)
+            if num_new_samples > 0:
+                counts.extend(new_samples)
+                num_read_so_far += num_new_samples
 
-        # Break out of the while if the user says stop
-        if tb.safe_stop():
-            break
+    elif control_style == ControlStyle.STEP:
+        for ind in range(len(scan_vals)):
+            # Break if user says stop or timeout
+            if tb.safe_stop() or time.time() > timeout_inst:
+                break
 
-        # Read the samples and update the image
-        new_samples = counter_server.read_counter_simple()
-        num_new_samples = len(new_samples)
-        if num_new_samples > 0:
+            axis_write_func(scan_vals[ind])
+            pulse_gen.stream_start(1)
+
+            # Read the samples and update the image
+            new_samples = counter.read_counter_simple(1)
             counts.extend(new_samples)
-            num_read_so_far += num_new_samples
 
-    counter_server.stop_tag_stream()
-
-    return np.array(counts, dtype=int)
-
-
-def read_manual_counts(cxn, period, axis_write_func, scan_vals):
-    counter_server = tb.get_server_counter(cxn)
-    pulsegen_server = tb.get_server_pulse_gen(cxn)
-    counter_server.start_tag_stream()
-
-    counts = []
-
-    for ind in range(len(scan_vals)):
-        # Break out of the while if the user says stop
-        if tb.safe_stop():
-            break
-
-        # Write the new value to the axis and run a rep. The delay to account
-        # for the time it takes the axis to move is already handled in the
-        # sequence loaded on the pulse streamer. Also note that server calls
-        # are synchronous so if the write function has a built-in wait until
-        # the write completes, then no delay is necessary in the sequence
-        axis_write_func(scan_vals[ind])
-        pulsegen_server.stream_start(1)
-
-        # Read the samples and update the image
-        new_samples = counter_server.read_counter_simple(1)
-        counts.extend(new_samples)
-
-    counter_server.stop_tag_stream()
+    counter.stop_tag_stream()
 
     return np.array(counts, dtype=int)
 
 
-def stationary_count_lite(cxn, nv_sig, coords, config):
+def stationary_count_lite(cxn, nv_sig, coords):
+    # Set up
+    config = common.get_config_dict()
     counter_server = tb.get_server_counter(cxn)
     pulsegen_server = tb.get_server_pulse_gen(cxn)
-
     seq_file_name = "simple_readout.py"
-
-    # Some initial values
     laser_name = nv_sig["imaging_laser"]
     laser_power = tb.set_laser_power(cxn, nv_sig, "imaging_laser")
     readout = nv_sig["imaging_readout_dur"]
-    total_num_samples = 2
+    num_samples = 2
     x_center, y_center, z_center = coords
 
-    if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-        positioning.set_xyz_ramp(cxn, [x_center, y_center, z_center])
-    else:
-        positioning.set_xyz(cxn, [x_center, y_center, z_center])
-    time.sleep(0.5)  # finding we need a bit more time to settle at new position
+    # Set coordinates
+    ramp = "set_xyz_ramp" in config and config["set_xyz_ramp"]
+    positioning.set_xyz(cxn, [x_center, y_center, z_center], ramp)
 
+    # Load the sequence
     config_positioning = config["Positioning"]
-    if "xy_small_response_delay" in config_positioning:
-        delay = config_positioning["xy_small_response_delay"]
-    else:
-        delay = config_positioning["xy_delay"]
+    delay = config_positioning["xy_delay"]
     seq_args = [delay, readout, laser_name, laser_power]
     seq_args_string = tb.encode_seq_args(seq_args)
     pulsegen_server.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
     counter_server.start_tag_stream()
-    pulsegen_server.stream_start(total_num_samples)
-    new_samples = counter_server.read_counter_simple(total_num_samples)
-
-    new_samples_avg = np.average(new_samples)
+    pulsegen_server.stream_start(num_samples)
+    new_samples = counter_server.read_counter_simple(num_samples)
     counter_server.stop_tag_stream()
-    counts_kcps = (new_samples_avg / 1000) / (readout / 10**9)
 
-    return counts_kcps
+    # Return
+    avg_counts = np.average(new_samples)
+    config = common.get_config_dict()
+    if config["count_rate"]:
+        count_rate = (avg_counts / 1000) / (readout / 10**9)
+        return count_rate
+    else:
+        return avg_counts
 
 
 # endregion
@@ -254,34 +189,30 @@ def stationary_count_lite(cxn, nv_sig, coords, config):
 def prepare_microscope(cxn, nv_sig, coords=None):
     """
     Prepares the microscope for a measurement. In particular,
-    sets up the optics (positioning, collection filter, etc) and magnet.
-    The laser set up must be handled by each routine since the same laser
+    sets up the optics (positioning, collection filter, etc) and magnet,
+    and sets the coordinates. The laser set up must be handled by each routine
 
-    If coords are not passed, it will add drift to the nv_sig coords
+    If coords are not passed, the nv_sig coords (plus drift) will be used
     """
 
-    if coords is None:
-        coords_nv_sig = nv_sig["coords"]
-        drift = positioning.get_drift(cxn)
-        coords = np.array(coords_nv_sig) + drift
+    config = common.get_config_dict()
+    ramp = "set_xyz_ramp" in config and config["set_xyz_ramp"]
 
-    if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
-        positioning.set_xyz_ramp(cxn, coords)
-    else:
-        positioning.set_xyz(cxn, coords)
+    if coords is None:
+        coords = nv_sig["coords"]
+        coords = positioning.adjust_coords_for_drift(coords, cxn)
+
+    positioning.set_xyz(cxn, coords, ramp)
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
         if filter_name is not None:
             tb.set_filter(cxn, optics_name="collection", filter_name=filter_name)
 
-    magnet_angle = nv_sig["magnet_angle"]
+    magnet_angle = None if "magnet_angle" not in nv_sig else nv_sig["magnet_angle"]
     if magnet_angle is not None:
-        try:
-            rotation_stage_server = tb.get_server_magnet_rotation(cxn)
-            rotation_stage_server.set_angle(magnet_angle)
-        except:
-            print("trying to set magnet angle with no rotation stage. check config?")
+        rotation_stage_server = tb.get_server_magnet_rotation(cxn)
+        rotation_stage_server.set_angle(magnet_angle)
 
     time.sleep(0.01)
 
@@ -304,10 +235,7 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
         nv_sig = nv_sig_list[ind]
         opti_coords, opti_counts = main_with_cxn(
-            cxn,
-            nv_sig,
-            set_to_opti_coords=False,
-            set_drift=False,
+            cxn, nv_sig, set_to_opti_coords=False, set_drift=False
         )
 
         if opti_coords is not None:
@@ -318,13 +246,19 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
     for coords in opti_coords_list:
         print(coords)
-    for counts in opti_counts_list:
-        print(counts)
 
 
 def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
+    """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
     xy_control_style = positioning.get_xy_control_style()
     z_control_style = positioning.get_z_control_style()
+    control_style = xy_control_style if axis_ind < 2 else z_control_style
+    if axis_ind == 0:
+        axis_write_func = xy_server.write_x
+    if axis_ind == 1:
+        axis_write_func = xy_server.write_y
+    if axis_ind == 2:
+        axis_write_func = z_server.write_z
 
     num_steps = 31
 
@@ -394,7 +328,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
                 )
                 scan_func(scan_vals, fixed_vals)
             else:
-                manual_write_func = xy_server.write_x
+                axis_write_func = xy_server.write_x
                 scan_vals = positioning.get_scan_1d(
                     sweep_x_center, scan_range, num_steps
                 )
@@ -407,7 +341,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
                 )
                 scan_func(fixed_vals, scan_vals)
             else:
-                manual_write_func = xy_server.write_y
+                axis_write_func = xy_server.write_y
                 scan_vals = positioning.get_scan_1d(
                     sweep_y_center, scan_range, num_steps
                 )
@@ -418,6 +352,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
         scan_dtype = config["Positioning"]["z_dtype"]
         delay = config["Positioning"]["z_delay"]
 
+        control_style = z_control_style
         if z_control_style == ControlStyle.STEP:
             auto_scan = False
         elif z_control_style == ControlStyle.STREAM:
@@ -442,24 +377,16 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, fig=None):
 
         if auto_scan:
             scan_func = z_server.load_stream_z
-            scan_vals = positioning.get_scan_1d(
-                sweep_z_center,
-                scan_range,
-                num_steps,
-            )
+            scan_vals = positioning.get_scan_1d(sweep_z_center, scan_range, num_steps)
             scan_func(scan_vals)
 
         else:
-            manual_write_func = z_server.write_z
+            axis_write_func = z_server.write_z
             scan_vals = positioning.get_scan_1d(sweep_z_center, scan_range, num_steps)
 
-    if auto_scan:
-        counts = read_timed_counts(cxn, num_steps, period)
-    else:
-        counts = read_manual_counts(cxn, period, manual_write_func, scan_vals)
-
-    # print(scan_vals)
-    # counts = read_timed_counts(cxn, num_steps, period)
+    counts = read_counts(
+        cxn, num_steps, period, control_style, axis_write_func, scan_vals
+    )
     count_rates = (counts / 1000) / (readout / 10**9)
 
     if fig is not None:
@@ -491,202 +418,196 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
 ):
-    xy_control_style = positioning.get_xy_control_style()
-    z_control_style = positioning.get_z_control_style()
-
-    startFunctionTime = time.time()
-    tb.reset_cfm(cxn)
-
-    tb.init_safe_stop()
-
-    # Adjust the sig we use for drift
-    drift = positioning.get_drift(cxn)
-    passed_coords = nv_sig["coords"]
-    adjusted_coords = (np.array(passed_coords) + np.array(drift)).tolist()
-    # If optimize is disabled, just set the filters and magnet in place
+    # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig, adjusted_coords)
         return [], None
+
+    ### Setup
+
+    tb.reset_cfm(cxn)
+
+    # Adjust the sig we use for drift
+    passed_coords = nv_sig["coords"]
+    adjusted_coords = positioning.adjust_coords_for_drift(passed_coords, cxn)
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig["coords"] = adjusted_coords
 
+    # Define a few things
+    xy_control_style = positioning.get_xy_control_style()
+    z_control_style = positioning.get_z_control_style()
+    start_time = time.time()
+    tb.init_safe_stop()
+    expected_counts = (
+        None
+        if "expected_counts" not in adjusted_nv_sig
+        else adjusted_nv_sig["expected_counts"]
+    )
+    config = common.get_config_dict()
+
+    # Default values for status variables
+    opti_succeeded = False
+    opti_necessary = True
+    opti_coords = None
+
+    # Filter sets for imaging
     tb.set_filter(cxn, nv_sig, "collection")
     tb.set_filter(cxn, nv_sig, "imaging_laser")
 
-    expected_count_rate = adjusted_nv_sig["expected_count_rate"]
+    ### Check if we even need to optimize by reading counts at current coordinates
 
-    config = common.get_config_dict()
+    print(f"Expected count rate: {expected_counts}")
 
-    opti_succeeded = False
-
-    ### Check if we need to optimize
-
-    print("Expected count rate: {}".format(expected_count_rate))
-
-    if expected_count_rate is not None:
-        lower_threshold = expected_count_rate * 9 / 10
-        upper_threshold = expected_count_rate * 6 / 5
+    if expected_counts is not None:
+        lower_threshold = expected_counts * 9 / 10
+        upper_threshold = expected_counts * 6 / 5
 
     # Check the count rate
-    opti_count_rate = stationary_count_lite(cxn, nv_sig, adjusted_coords, config)
+    opti_counts = stationary_count_lite(cxn, nv_sig, adjusted_coords)
 
-    print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
+    print(f"Counts at optimized coordinates: {opti_counts}")
 
     # If the count rate close to what we expect, we succeeded!
-    if (expected_count_rate is not None) and (
-        lower_threshold <= opti_count_rate <= upper_threshold
-    ):
-        print("No need to optimize.")
-        opti_unnecessary = True
-        # opti_unnecessary = False
-        opti_coords = adjusted_coords
-    else:
-        print("Count rate at optimized coordinates out of bounds.")
-        opti_unnecessary = False
+    if expected_counts is not None:
+        if lower_threshold <= opti_counts <= upper_threshold:
+            print("No need to optimize.")
+            opti_necessary = False
+            opti_coords = adjusted_coords
+        else:
+            print("Count rate at optimized coordinates out of bounds.")
 
     ### Try to optimize.
 
-    if xy_control_style == ControlStyle.STREAM:
-        num_attempts = 20
-    elif xy_control_style == ControlStyle.STEP:
-        num_attempts = 4
-    # print(xy_control_style)
-    # print(num_attempts)
+    if opti_necessary:
+        if xy_control_style == ControlStyle.STREAM:
+            num_attempts = 20
+        elif xy_control_style == ControlStyle.STEP:
+            num_attempts = 4
 
-    for ind in range(num_attempts):
-        # Break out of the loop if optimization succeeded or was unnecessary
-        if opti_succeeded or opti_unnecessary:
-            break
+        for ind in range(num_attempts):
+            # Break out of the loop if we succeeded or user canceled
+            if opti_succeeded or tb.safe_stop():
+                break
 
-        if tb.safe_stop():
-            break
+            if ind > 0:
+                print("Trying again...")
 
-        if ind > 0:
-            print("Trying again...")
+            # Create 3 plots in the figure, one for each axis
+            fig = create_figure() if plot_data else None
 
-        # Create 3 plots in the figure, one for each axis
-        fig = None
-        if plot_data:
-            fig = create_figure()
+            # Optimize on each axis
+            opti_coords = []
+            scan_vals_by_axis = []
+            counts_by_axis = []
 
-        # Optimize on each axis
-        opti_coords = []
-        scan_vals_by_axis = []
-        counts_by_axis = []
-
-        # xy
-        if "only_z_opt" in nv_sig and nv_sig["only_z_opt"]:
-            opti_coords = [adjusted_coords[0], adjusted_coords[1]]
-            for i in range(2):
-                scan_vals_by_axis.append(np.array([]))
-                counts_by_axis.append(np.array([]))
-        else:
-            for axis_ind in range(2):
-                # print(axis_ind)
-                ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
-
-                opti_coords.append(ret_vals[0])
-                scan_vals_by_axis.append(ret_vals[1])
-                counts_by_axis.append(ret_vals[2])
-            # Check the count rate before moving on to z
-            if z_control_style == ControlStyle.STREAM:
-                if expected_count_rate is not None:
-                    test_coords = [
-                        opti_coords[0],
-                        opti_coords[1],
-                        adjusted_coords[2],
-                    ]
-                    opti_count_rate = stationary_count_lite(
-                        cxn, nv_sig, test_coords, config
+            # X, Y
+            only_z_opt = "only_z_opt" in nv_sig and nv_sig["only_z_opt"]
+            if only_z_opt:
+                opti_coords = [adjusted_coords[0], adjusted_coords[1]]
+                for i in range(2):
+                    scan_vals_by_axis.append(np.array([]))
+                    counts_by_axis.append(np.array([]))
+            else:
+                for axis_ind in range(2):
+                    ret_vals = optimize_on_axis(
+                        cxn, adjusted_nv_sig, axis_ind, config, fig
                     )
-                    if lower_threshold <= opti_count_rate <= upper_threshold:
-                        opti_coords = test_coords
-                        print("Z optimization unnecessary.")
-                        print(
-                            "Count rate at optimized coordinates: {:.1f}".format(
-                                opti_count_rate
+                    opti_coords.append(ret_vals[0])
+                    scan_vals_by_axis.append(ret_vals[1])
+                    counts_by_axis.append(ret_vals[2])
+                # Check the count rate before moving on to z, stop if xy optimization was sufficient
+                if expected_counts is not None:
+                    if z_control_style == ControlStyle.STREAM:
+                        test_coords = [*opti_coords[0:2], adjusted_coords[2]]
+                        opti_counts = stationary_count_lite(cxn, nv_sig, test_coords)
+                        r_opti_counts = round(opti_counts, 1)
+                        if lower_threshold <= opti_counts <= upper_threshold:
+                            opti_coords = test_coords
+                            print("Z optimization unnecessary.")
+                            print(
+                                f"Count rate at optimized coordinates: {r_opti_counts}"
                             )
-                        )
-                        print("Optimization succeeded!")
-                        opti_succeeded = True
-                        break
-            else:
-                pass
+                            print("Optimization succeeded!")
+                            opti_succeeded = True
+                            break
+                    elif z_control_style == ControlStyle.STEP:
+                        pass  # Not implemented yet
 
-        # z
-        if z_control_style == ControlStyle.STREAM:
-            if "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]:
-                opti_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-                scan_vals_by_axis.append(np.array([]))
-                counts_by_axis.append(np.array([]))
-            else:
-                # Help z out by ensuring we're centered in xy first
+            # Z
+            if z_control_style == ControlStyle.STREAM:
+                disable_z_opt = "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]
+                if disable_z_opt:
+                    opti_coords = [*opti_coords[0:2], adjusted_coords[2]]
+                    scan_vals_by_axis.append(np.array([]))
+                    counts_by_axis.append(np.array([]))
+                else:
+                    # Help z out by ensuring we're centered in xy first
+                    if None not in opti_coords:
+                        int_coords = [
+                            opti_coords[0],
+                            opti_coords[1],
+                            adjusted_coords[2],
+                        ]
+                        positioning.set_xyz(cxn, int_coords)
+                    axis_ind = 2
+                    ret_vals = optimize_on_axis(
+                        cxn, adjusted_nv_sig, axis_ind, config, fig
+                    )
+                    opti_coords.append(ret_vals[0])
+                    scan_vals_by_axis.append(ret_vals[1])
+                    counts_by_axis.append(ret_vals[2])
+
+            elif z_control_style == ControlStyle.STEP:
                 if None not in opti_coords:
                     int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-                    positioning.set_xyz(cxn, int_coords)
+                    adjusted_nv_sig_z = copy.deepcopy(nv_sig)
+                    adjusted_nv_sig_z["coords"] = int_coords
+                else:
+                    adjusted_nv_sig_z = copy.deepcopy(nv_sig)
+                    adjusted_nv_sig_z["coords"] = adjusted_coords
                 axis_ind = 2
-                ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, config, fig)
+                ret_vals = optimize_on_axis(
+                    cxn, adjusted_nv_sig_z, axis_ind, config, fig
+                )
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
 
-        elif z_control_style == ControlStyle.STEP:
-            if None not in opti_coords:
-                int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-                adjusted_nv_sig_z = copy.deepcopy(nv_sig)
-                adjusted_nv_sig_z["coords"] = int_coords
+            # We failed to get optimized coordinates, try again
+            if None in opti_coords:
+                continue
+
+            # Check the count rate
+            opti_counts = stationary_count_lite(cxn, nv_sig, opti_coords)
+
+            # Verify that our optimization found a reasonable spot by checking
+            # the count rate at the center against the expected count rate
+            if expected_counts is not None:
+                print("Count rate at optimized coordinates: {:.1f}".format(opti_counts))
+
+                # If the count rate close to what we expect, we succeeded!
+                if lower_threshold <= opti_counts <= upper_threshold:
+                    print("Optimization succeeded!")
+                    opti_succeeded = True
+                else:
+                    print("Count rate at optimized coordinates out of bounds.")
+                    # If we failed by expected counts, try again with the
+                    # coordinates we found. If x/y are off initially, then
+                    # z will give a false optimized coordinate. x/y will give
+                    # true optimized coordinates regardless of the other initial
+                    # coordinates, however. So we might succeed by trying z again
+                    # at the optimized x/y.
+                    adjusted_nv_sig["coords"] = opti_coords
+
+            # If the threshold is not set, we succeed based only on optimize
             else:
-                adjusted_nv_sig_z = copy.deepcopy(nv_sig)
-                adjusted_nv_sig_z["coords"] = adjusted_coords
-            axis_ind = 2
-            ret_vals = optimize_on_axis(cxn, adjusted_nv_sig_z, axis_ind, config, fig)
-            opti_coords.append(ret_vals[0])
-            scan_vals_by_axis.append(ret_vals[1])
-            counts_by_axis.append(ret_vals[2])
-
-        # MCC: What is this doing here? It breaks optimize for me (xy and z are streams and disable_z_opt is set)
-        # opti_coords.append(ret_vals[0])
-        # scan_vals_by_axis.append(ret_vals[1])
-        # counts_by_axis.append(ret_vals[2])
-        # CF: I fixed it. it needed to be specifically in the other paths of the if statements and not in the path your was going down.
-
-        # return
-        # We failed to get optimized coordinates, try again
-        if None in opti_coords:
-            continue
-
-        # print(opti_coords)
-
-        # Check the count rate
-        opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords, config)
-
-        # Verify that our optimization found a reasonable spot by checking
-        # the count rate at the center against the expected count rate
-        if expected_count_rate is not None:
-            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
-
-            # If the count rate close to what we expect, we succeeded!
-            if lower_threshold <= opti_count_rate <= upper_threshold:
-                print("Optimization succeeded!")
+                print("Count rate at optimized coordinates: {:.1f}".format(opti_counts))
+                print("Optimization succeeded! (No expected count rate passed.)")
                 opti_succeeded = True
-            else:
-                print("Count rate at optimized coordinates out of bounds.")
-                # If we failed by expected counts, try again with the
-                # coordinates we found. If x/y are off initially, then
-                # z will give a false optimized coordinate. x/y will give
-                # true optimized coordinates regardless of the other initial
-                # coordinates, however. So we might succeed by trying z again
-                # at the optimized x/y.
-                adjusted_nv_sig["coords"] = opti_coords
 
-        # If the threshold is not set, we succeed based only on optimize
-        else:
-            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
-            print("Optimization succeeded! (No expected count rate passed.)")
-            opti_succeeded = True
-
-    if not opti_unnecessary and not opti_succeeded:
-        opti_coords = None
+            # Reset opti_coords if the coords didn't cut it
+            if not opti_succeeded:
+                opti_coords = None
 
     ### Calculate the drift relative to the passed coordinates
 
@@ -697,7 +618,7 @@ def main_with_cxn(
     ### Set to the optimized coordinates, or just tell the user what they are
 
     if set_to_opti_coords:
-        if opti_succeeded or opti_unnecessary:
+        if opti_succeeded or opti_necessary:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
             msg = "Optimization failed."
@@ -712,7 +633,7 @@ def main_with_cxn(
             # )
             # prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
-        if opti_succeeded or opti_unnecessary:
+        if opti_succeeded or opti_necessary:
             print("Optimized coordinates: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
@@ -727,12 +648,12 @@ def main_with_cxn(
     ### Clean up and save the data
 
     tb.reset_cfm(cxn)
-    endFunctionTime = time.time()
-    time_elapsed = endFunctionTime - startFunctionTime
+    end_time = time.time()
+    time_elapsed = end_time - start_time
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
-    if save_data and not opti_unnecessary:
+    if save_data and not opti_necessary:
         if len(scan_vals_by_axis) < 3:
             z_scan_vals = None
         else:
@@ -764,7 +685,7 @@ def main_with_cxn(
         tb.save_raw_data(rawData, filePath)
 
     # Return the optimized coordinates we found
-    return opti_coords, opti_count_rate
+    return opti_coords, opti_counts
 
 
 # endregion
