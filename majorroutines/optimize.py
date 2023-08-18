@@ -187,16 +187,18 @@ def _read_counts_widefield(
     return np.array(counts, dtype=int)
 
 
-def _stationary_count_lite(cxn, nv_sig, coords):
+def _stationary_count_lite(cxn, nv_sig, coords, laser_name=None):
     # Set up
     config = common.get_config_dict()
-    counter_server = tb.get_server_counter(cxn)
-    pulsegen_server = tb.get_server_pulse_gen(cxn)
-    seq_file_name = "simple_readout.py"
-    laser_name = nv_sig["imaging_laser"]
-    laser_power = tb.set_laser_power(cxn, nv_sig, "imaging_laser")
-    readout = nv_sig["imaging_readout_dur"]
-    num_samples = 2
+    collection_mode = config["collection_mode"]
+    pulse_gen = tb.get_server_pulse_gen(cxn)
+    if laser_name == None:
+        laser_name = nv_sig["imaging_laser"]
+        readout = nv_sig["imaging_readout_dur"]
+    else:
+        readout = nv_sig[f"readout-{laser_name}"]
+    laser_power = tb.set_laser_power(cxn, nv_sig, laser_name=laser_name)
+    num_samples = 1
     x_center, y_center, z_center = coords
 
     # Set coordinates
@@ -204,16 +206,33 @@ def _stationary_count_lite(cxn, nv_sig, coords):
 
     # Load the sequence
     config_positioning = config["Positioning"]
-    delay = config_positioning["xy_delay"]
+    delay = 0
     seq_args = [delay, readout, laser_name, laser_power]
     seq_args_string = tb.encode_seq_args(seq_args)
-    pulsegen_server.stream_load(seq_file_name, seq_args_string)
+    if collection_mode == CollectionMode.CONFOCAL:
+        seq_file_name = "simple_readout.py"
+    elif collection_mode == CollectionMode.WIDEFIELD:
+        seq_file_name = "simple_readout-camera.py"
+    pulse_gen.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
-    counter_server.start_tag_stream()
-    pulsegen_server.stream_start(num_samples)
-    new_samples = counter_server.read_counter_simple(num_samples)
-    counter_server.stop_tag_stream()
+    if collection_mode == CollectionMode.CONFOCAL:
+        counter_server = tb.get_server_counter(cxn)
+        counter_server.start_tag_stream()
+        pulse_gen.stream_start(num_samples)
+        new_samples = counter_server.read_counter_simple(num_samples)
+        counter_server.stop_tag_stream()
+    elif collection_mode == CollectionMode.WIDEFIELD:
+        pixel_coords = nv_sig["pixel_coords"]
+        camera = tb.get_server_camera(cxn)
+        camera.arm()
+        new_samples = []
+        for ind in range(num_samples):
+            pulse_gen.stream_start(1)
+            img_array = camera.read()
+            sample = widefield.counts_from_img_array(img_array, pixel_coords)
+            new_samples.extend(sample)
+        camera.disarm()
 
     # Return
     avg_counts = np.average(new_samples)
@@ -226,7 +245,7 @@ def _stationary_count_lite(cxn, nv_sig, coords):
         return count_rate
 
 
-def _optimize_on_axis(cxn, nv_sig, axis_ind, fig=None):
+def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_name=None, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     # Basic setup and definitions
@@ -239,10 +258,12 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, fig=None):
         seq_file_name = "simple_readout.py"
     elif collection_mode == CollectionMode.WIDEFIELD:
         seq_file_name = "simple_readout-widefield.py"
-    readout = nv_sig["imaging_readout_dur"]
-    laser_key = "imaging_laser"
-    laser_name = nv_sig[laser_key]
-    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
+    if laser_name == None:
+        laser_name = nv_sig["imaging_laser"]
+        readout = nv_sig["imaging_readout_dur"]
+    else:
+        readout = nv_sig[f"readout-{laser_name}"]
+    laser_power = tb.set_laser_power(cxn, nv_sig, laser_name=laser_name)
 
     # This flag allows a different NV at a specified offset to be used as a proxy for
     # optiimizing on the actual target NV. Useful if, e.g., the target is poorly isolated
@@ -411,6 +432,7 @@ def main_with_cxn(
     save_data=False,
     plot_data=False,
     set_drift=True,
+    laser_name=None,
 ):
     # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
@@ -444,7 +466,8 @@ def main_with_cxn(
 
     # Filter sets for imaging
     tb.set_filter(cxn, nv_sig, "collection")
-    tb.set_filter(cxn, nv_sig, "imaging_laser")
+    if laser_name == None:
+        tb.set_filter(cxn, nv_sig, "imaging_laser")
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
@@ -453,7 +476,7 @@ def main_with_cxn(
         print(f"Expected counts: {expected_counts}")
     if count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
-    current_counts = _stationary_count_lite(cxn, nv_sig, adjusted_coords)
+    current_counts = _stationary_count_lite(cxn, nv_sig, adjusted_coords, laser_name)
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
         print("No need to optimize.")
@@ -490,14 +513,18 @@ def main_with_cxn(
                     counts_by_axis.append(np.array([]))
             else:
                 for axis_ind in range(2):
-                    ret_vals = _optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, fig)
+                    ret_vals = _optimize_on_axis(
+                        cxn, adjusted_nv_sig, axis_ind, laser_name, fig
+                    )
                     opti_coords.append(ret_vals[0])
                     scan_vals_by_axis.append(ret_vals[1])
                     counts_by_axis.append(ret_vals[2])
                 # Check the counts before moving on to z, stop if xy optimization was sufficient
                 if expected_counts is not None:
                     test_coords = [*opti_coords[0:2], adjusted_coords[2]]
-                    current_counts = _stationary_count_lite(cxn, nv_sig, test_coords)
+                    current_counts = _stationary_count_lite(
+                        cxn, nv_sig, test_coords, laser_name
+                    )
                     if lower_bound < current_counts < upper_bound:
                         print("Z optimization unnecessary.")
                         scan_vals_by_axis.append(np.array([]))
@@ -517,7 +544,9 @@ def main_with_cxn(
                     int_coords = [*opti_coords[0:2], adjusted_coords[2]]
                     positioning.set_xyz(cxn, int_coords)
                 axis_ind = 2
-                ret_vals = _optimize_on_axis(cxn, adjusted_nv_sig, axis_ind, fig)
+                ret_vals = _optimize_on_axis(
+                    cxn, adjusted_nv_sig, axis_ind, laser_name, fig
+                )
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
                 counts_by_axis.append(ret_vals[2])
@@ -529,7 +558,9 @@ def main_with_cxn(
                 continue
 
             # Check the counts
-            current_counts = _stationary_count_lite(cxn, nv_sig, opti_coords)
+            current_counts = _stationary_count_lite(
+                cxn, nv_sig, opti_coords, laser_name
+            )
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
             if expected_counts is not None:
                 if lower_bound < current_counts < upper_bound:
