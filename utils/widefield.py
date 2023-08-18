@@ -10,6 +10,7 @@ Created on August 15th, 2023
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import inf
 from utils import common
 from scipy.optimize import curve_fit
 from utils import tool_belt as tb
@@ -145,21 +146,30 @@ def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
     bg_guess = img_array[round_y, round_x + round_r]
     amp_guess = img_array[round_y, round_x] - bg_guess
     guess = (amp_guess, *pixel_coords, radius / 2, bg_guess)
+    diam = radius * 2
+    lower_bounds = (0, pixel_coords[0] - diam, pixel_coords[1] - diam, 0, 0)
+    upper_bounds = (inf, pixel_coords[0] + diam, pixel_coords[1] + diam, inf, inf)
+    bounds = (lower_bounds, upper_bounds)
     shape = img_array.shape
     x = np.linspace(0, shape[0] - 1, shape[0])
     y = np.linspace(0, shape[1] - 1, shape[1])
     x, y = np.meshgrid(x, y)
-    popt, pcov = curve_fit(_circle_gaussian, (x, y), img_array.ravel(), p0=guess)
+    popt, pcov = curve_fit(
+        _circle_gaussian, (x, y), img_array.ravel(), p0=guess, bounds=bounds
+    )
     opti_pixel_coords = popt[1:3]
     return opti_pixel_coords
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_15-14_34_47-johnson-nvref"
+    file_name = "2023_08_18-14_24_46-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
 
-    pixel_coords = [124.5, 196.5]
+    # pixel_coords = (300.427, 264.859)
+    pixel_coords = (285.948, 204.777)
+    # pixel_coords = (130.308, 305.58)
+    # pixel_coords = (177.965, 393.7)
     radius = 8
 
     counts = counts_from_img_array(img_array, pixel_coords, radius)

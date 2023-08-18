@@ -14,9 +14,11 @@ Created on June 16th, 2023
 import numpy as np
 from utils import tool_belt as tb
 from utils import positioning as pos
+from utils import widefield
 from majorroutines import image_sample
 from majorroutines import optimize
 import matplotlib.pyplot as plt
+import copy
 
 
 ### Major Routines
@@ -38,11 +40,13 @@ def do_image_sample(nv_sig):
     # scan_range = 0.0
     # num_steps = 20
 
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+
+
+def do_image_sample(nv_list):
     camera_mode = True
 
-    image_sample.main(
-        nv_sig, scan_range, scan_range, num_steps, camera_mode=camera_mode
-    )
+    image_sample.main(nv_list)
 
 
 def do_image_sample_zoom(nv_sig):
@@ -115,42 +119,50 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.75
+    z_coord = 5.9
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
 
-    ref_pixel_coords = [316.7, 238.8]
-    # ref_pixel_coords = [306.79, 310.572]
-    # ref_pixel_coords = [123.251, 198.218]
-    ref_scanning_coords = widefield.pixel_to_scanning(ref_pixel_coords)
-    ref_coords = np.array([*ref_scanning_coords, z_coord])
-    # print(ref_coords)
+    # ref_pixel_coords = [316.7, 238.8]
+    # # ref_pixel_coords = [306.79, 310.572]
+    # # ref_pixel_coords = [123.251, 198.218]
+    # ref_scanning_coords = widefield.pixel_to_scanning(ref_pixel_coords)
+    # ref_coords = np.array([*ref_scanning_coords, z_coord])
+    # # print(ref_coords)
 
+    # fmt: off
     nv_sig = {
-        "coords": ref_coords,
-        "name": f"{sample_name}-nvref",
-        # "name": "test",
-        "disable_opt": False,
-        "disable_z_opt": True,
-        "expected_count_rate": None,
+        "coords": ref_coords, "name": f"{sample_name}-nvref",
+        "disable_opt": False, "disable_z_opt": True, "expected_count_rate": None,
         #
-        "imaging_laser": green_laser,
-        # "imaging_laser_filter": "nd_0",
-        "imaging_readout_dur": 1e7,
+        "imaging_laser": green_laser, "imaging_readout_dur": 1e7, # "imaging_laser_filter": "nd_0",
         #
-        "spin_laser": green_laser,
-        # "spin_laser_filter": "nd_0",
-        "spin_pol_dur": 2e3,
-        "spin_readout_dur": 440,
+        "spin_laser": green_laser, "spin_pol_dur": 2e3, "spin_readout_dur": 440, # "spin_laser_filter": "nd_0",
         #
-        "collection_filter": "514_notch+630_lp",
-        "magnet_angle": None,
+        "collection_filter": "514_notch+630_lp", "magnet_angle": None,
         #
-        "resonance_LOW": 2.885,
-        "rabi_LOW": 150,
-        "uwave_power_LOW": 10.0,
+        "resonance_LOW": 2.885, "rabi_LOW": 150, "uwave_power_LOW": 10.0,
     }
+    # fmt: on
+
+    nv0 = copy.deepcopy(nv_sig)
+    nv0["name"] = f"{sample_name}-nv0_2023_08_18"
+    nv0["pixel_coords"] = (300.427, 264.859)
+
+    nv1 = copy.deepcopy(nv_sig)
+    nv1["name"] = f"{sample_name}-nv1_2023_08_18"
+    nv1["pixel_coords"] = (285.948, 204.777)
+
+    nv2 = copy.deepcopy(nv_sig)
+    nv2["name"] = f"{sample_name}-nv2_2023_08_18"
+    nv2["pixel_coords"] = (130.308, 305.58)
+
+    nv3 = copy.deepcopy(nv_sig)
+    nv3["name"] = f"{sample_name}-nv3_2023_08_18"
+    nv3["pixel_coords"] = (177.965, 393.7)
+
+    nv_list = [nv0, nv1, nv2, nv3]
 
     ### Functions to run
 
@@ -170,6 +182,7 @@ if __name__ == "__main__":
         #         do_image_sample(nv_sig)
 
         do_image_sample(nv_sig)
+        # do_image_points(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_stationary_count(nv_sig)
         # do_optimize(nv_sig)

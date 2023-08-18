@@ -17,6 +17,7 @@ import majorroutines.optimize as optimize
 from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
+from utils.constants import CollectionMode
 from utils import kplotlib as kpl
 from utils import positioning
 from scipy import ndimage
@@ -125,7 +126,6 @@ def main(
     vmin=None,
     vmax=None,
     scan_type="XY",
-    camera_mode=False,
 ):
     with labrad.connect(username="", password="") as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(
@@ -139,7 +139,6 @@ def main(
             vmin,
             vmax,
             scan_type,
-            camera_mode,
         )
 
     return img_array, x_voltages, y_voltages
@@ -156,9 +155,12 @@ def main_with_cxn(
     vmin=None,
     vmax=None,
     scan_type="XY",
-    camera_mode=False,
 ):
     ### Some initial setup
+
+    config = common.get_config_dict()
+    collection_mode = config["collection_mode"]
+    camera_mode = collection_mode == CollectionMode.WIDEFIELD
 
     xy_control_style = positioning.get_xy_control_style()
 
@@ -546,8 +548,8 @@ if __name__ == "__main__":
         # extent=extent,
         # aspect="auto",
     )
-    ax.set_xlim([124.5-15, 124.5+15])
-    ax.set_ylim([196.5+15, 196.5-15])
+    ax.set_xlim([124.5 - 15, 124.5 + 15])
+    ax.set_ylim([196.5 + 15, 196.5 - 15])
 
     # Processing tests
     if False:
