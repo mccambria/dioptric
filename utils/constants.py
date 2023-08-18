@@ -10,6 +10,11 @@ Created on June 26th, 2023
 from enum import Enum, IntEnum, auto
 
 
+class CollectionMode(Enum):
+    CONFOCAL = auto()
+    WIDEFIELD = auto()
+
+
 class CountFormat(Enum):
     KCPS = auto()  # Count rate in kilo counts per second
     RAW = auto()  # Just the raw number of counts

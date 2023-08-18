@@ -94,7 +94,11 @@ def scanning_to_pixel(scanning_coords):
     return pixel_coords
 
 
-def counts_from_img_array(img_array, pixel_coords, radius):
+def counts_from_img_array(img_array, pixel_coords, radius=None):
+    if radius is None:
+        config = common.get_config_dict()
+        radius = config["camera_spot_radius"]
+
     edge_pixels = []
     inner_pixels = []
     pixel_x = pixel_coords[0]
@@ -131,7 +135,10 @@ def _circle_gaussian(xy, amplitude, xo, yo, sigma, offset):
     return g.ravel()
 
 
-def optimize_pixel(img_array, pixel_coords, radius, set_drift=True):
+def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
+    if radius is None:
+        config = common.get_config_dict()
+        radius = config["camera_spot_radius"]
     round_x = round(pixel_coords[0])
     round_y = round(pixel_coords[1])
     round_r = round(radius)
