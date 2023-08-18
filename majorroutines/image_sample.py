@@ -477,11 +477,13 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_14-14_29_39-johnson-nvref"
+    file_name = "2023_08_15-14_34_47-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
+
+    # 114.5, 134.5, 206.5, 186.5
 
     do_presentation = False
     try:
@@ -544,22 +546,25 @@ if __name__ == "__main__":
         # extent=extent,
         # aspect="auto",
     )
+    ax.set_xlim([124.5-15, 124.5+15])
+    ax.set_ylim([196.5+15, 196.5-15])
 
     # Processing tests
-    fig, ax = plt.subplots()
-    process_img_array = widefield_process(img_array)
-    im = kpl.imshow(
-        ax,
-        process_img_array,
-        # img_array_kcps,
-        # title=title,
-        x_label=xlabel,
-        y_label=ylabel,
-        # cbar_label="kcps",
-        cbar_label="Pixel values",
-        # vmax=55,
-        # extent=extent,
-        # aspect="auto",
-    )
+    if False:
+        fig, ax = plt.subplots()
+        process_img_array = widefield_process(img_array)
+        im = kpl.imshow(
+            ax,
+            process_img_array,
+            # img_array_kcps,
+            # title=title,
+            x_label=xlabel,
+            y_label=ylabel,
+            # cbar_label="kcps",
+            cbar_label="Pixel values",
+            # vmax=55,
+            # extent=extent,
+            # aspect="auto",
+        )
 
     plt.show(block=True)

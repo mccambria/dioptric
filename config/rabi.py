@@ -7,7 +7,7 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes, ControlStyle
+from utils.constants import ModTypes, ControlStyle, CountFormat, CollectionMode
 from pathlib import Path
 
 home = Path.home()
@@ -17,6 +17,9 @@ home = Path.home()
 config = {
     ###
     "apd_indices": [0],
+    "count_format": CountFormat.RAW,
+    "collection_mode": CollectionMode.WIDEFIELD,
+    "camera_spot_radius": 8,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
     # Access the OS-specific keys with getters from common
@@ -108,17 +111,17 @@ config = {
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.95,
         "xy_small_response_delay": 800,
-        "xy_units": "V",
+        "xy_units": "Voltage (V)",
         "z_control_style": ControlStyle.STREAM,
         "z_delay": 50000000,
         "z_dtype": float,
         "z_nm_per_unit": 1000,
         "z_optimize_range": 4,
         "z_small_response_delay": 50000000,
-        "z_units": "V",
-        "NV1_pixel_coords": [306.79, 310.572],
-        "NV1_scanning_coords": [0.155, -0.003],
-        "NV2_pixel_coords": [123.251, 198.218],
+        "z_units": "Voltage (V)",
+        "NV1_pixel_coords": [308.158, 309.335],
+        "NV1_scanning_coords": [0.155, 0],
+        "NV2_pixel_coords": [124.633, 196.258],
         "NV2_scanning_coords": [-0.135, 0.162],
     },
     ###
