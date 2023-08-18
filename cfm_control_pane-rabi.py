@@ -26,17 +26,17 @@ def do_image_sample(nv_sig):
     # scan_range = 1.0
     # num_steps = 180
 
-    # # scan_range = 0.5
-    # scan_range = 0.4
-    # # scan_range = 0.2
-    # # num_steps = int(180 * 0.5 / 0.2)
-    # num_steps = 180
+    # scan_range = 0.5
+    scan_range = 0.4
+    # scan_range = 0.2
+    # num_steps = int(180 * 0.5 / 0.2)
+    num_steps = 180
 
     # scan_range = 0.05
     # num_steps = 60
 
-    scan_range = 0.0
-    num_steps = 20
+    # scan_range = 0.0
+    # num_steps = 20
 
     camera_mode = True
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     ref_pixel_coords = [316.7, 238.8]
     # ref_pixel_coords = [306.79, 310.572]
     # ref_pixel_coords = [123.251, 198.218]
-    ref_scanning_coords = pos.pixel_to_scanning(ref_pixel_coords)
+    ref_scanning_coords = widefield.pixel_to_scanning(ref_pixel_coords)
     ref_coords = np.array([*ref_scanning_coords, z_coord])
     # print(ref_coords)
 
