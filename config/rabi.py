@@ -7,7 +7,7 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes, ControlStyle
+from utils.constants import ModTypes, ControlStyle, CountFormat
 from pathlib import Path
 
 home = Path.home()
@@ -17,7 +17,7 @@ home = Path.home()
 config = {
     ###
     "apd_indices": [0],
-    "count_rate": False,  # Present data as a count rate? (As opposed to just number of counts)
+    "count_format": CountFormat.RAW,
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
     # Access the OS-specific keys with getters from common

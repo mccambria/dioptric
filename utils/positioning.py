@@ -19,7 +19,11 @@ from utils import tool_belt as tb
 # region Simple sets
 
 
-def set_xyz(cxn, coords, ramp=False):
+def set_xyz(cxn, coords, ramp=None):
+    if ramp is None:
+        config = common.get_config_dict()
+        key = "set_xyz_ramp"
+        ramp = key in config and config[key]
     if ramp:
         return _set_xyz_ramp(cxn, coords)
     else:
