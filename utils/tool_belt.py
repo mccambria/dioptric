@@ -664,6 +664,11 @@ def get_server_arb_wave_gen(cxn):
     return common.get_server(cxn, "arb_wave_gen")
 
 
+def get_server_camera(cxn):
+    """Get the camera server"""
+    return common.get_server(cxn, "camera")
+
+
 def get_server_counter(cxn):
     """Get the photon counter server for this setup, e.g. opx or swabian"""
     return common.get_server(cxn, "counter")
