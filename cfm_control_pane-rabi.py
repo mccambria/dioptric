@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Control panel for the PC Carr
+Control panel for the PC Rabi
 
 Created on June 16th, 2023
 
@@ -43,9 +43,7 @@ def do_image_sample(nv_sig):
     image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
-def do_image_sample(nv_list):
-    camera_mode = True
-
+def do_image_nv_list(nv_list):
     image_sample.main(nv_list)
 
 
@@ -181,8 +179,8 @@ if __name__ == "__main__":
         #         nv_sig["coords"] = [x, y, z_coord]
         #         do_image_sample(nv_sig)
 
-        do_image_sample(nv_sig)
-        # do_image_points(nv_sig)
+        # do_image_sample(nv_sig)
+        do_image_nv_list(nv_list)
         # do_image_sample_zoom(nv_sig)
         # do_stationary_count(nv_sig)
         # do_optimize(nv_sig)
