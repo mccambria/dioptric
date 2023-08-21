@@ -15,6 +15,7 @@ import numpy as np
 from utils import tool_belt as tb
 from utils import positioning as pos
 from utils import widefield
+from utils.constants import LaserKey
 from majorroutines import image_sample
 from majorroutines import optimize
 import matplotlib.pyplot as plt
@@ -134,7 +135,7 @@ if __name__ == "__main__":
         "coords": ref_coords, "name": f"{sample_name}-nvref",
         "disable_opt": False, "disable_z_opt": True, "expected_count_rate": None,
         #
-        "imaging_laser": green_laser, "imaging_readout_dur": 1e7, # "imaging_laser_filter": "nd_0",
+        LaserKey.IMAGING: green_laser, "imaging_readout_dur": 1e7, # "imaging_laser_filter": "nd_0",
         #
         "spin_laser": green_laser, "spin_pol_dur": 2e3, "spin_readout_dur": 440, # "spin_laser_filter": "nd_0",
         #
@@ -166,6 +167,8 @@ if __name__ == "__main__":
 
     nv_list = [nv0, nv1, nv2, nv3]
 
+    nv_sig = nv_list[0]
+
     ### Functions to run
 
     email_recipient = "cambria@wisc.edu"
@@ -184,10 +187,10 @@ if __name__ == "__main__":
         #         do_image_sample(nv_sig)
 
         # do_image_sample(nv_sig)
-        do_image_nv_list(nv_list)
+        # do_image_nv_list(nv_list)
         # do_image_sample_zoom(nv_sig)
         # do_stationary_count(nv_sig)
-        # do_optimize(nv_sig)
+        do_optimize(nv_sig)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
 

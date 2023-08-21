@@ -458,7 +458,7 @@ def main_with_cxn(
 
     # Adjust the sig we use for drift
     passed_coords = nv_sig["coords"]
-    adjusted_coords = positioning.adjust_coords_for_drift(passed_coords, cxn)
+    adjusted_coords = positioning.adjust_coords_for_drift(passed_coords)
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig["coords"] = adjusted_coords
 
@@ -466,8 +466,9 @@ def main_with_cxn(
     config = common.get_config_dict()
     key = "expected_counts"
     expected_counts = adjusted_nv_sig[key] if key in adjusted_nv_sig else None
-    lower_bound = 0.9 * expected_counts
-    upper_bound = 1.2 * expected_counts
+    if expected_counts is not None:
+        lower_bound = 0.9 * expected_counts
+        upper_bound = 1.2 * expected_counts
 
     start_time = time.time()
     tb.init_safe_stop()
