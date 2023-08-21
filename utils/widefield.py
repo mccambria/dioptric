@@ -15,8 +15,28 @@ from utils import common
 from scipy.optimize import minimize
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
+from utils.constants import CountFormat
 
 # endregion
+
+
+def imshow(ax, img_array, count_format=None, **kwargs):
+    """Version of kplotlib's imshow with additional defaults for a camera"""
+
+    config = common.get_config_dict()
+    if count_format is None:
+        count_format = config["count_format"]
+    if count_format == CountFormat.RAW:
+        cbar_label = "Counts"
+    if count_format == CountFormat.KCPS:
+        cbar_label = "Kcps"
+    default_kwargs = {
+        "x_label": "X",
+        "y_label": "Y",
+        "cbar_label": cbar_label,
+    }
+    passed_kwargs = {**default_kwargs, **kwargs}
+    kpl.imshow(ax, img_array, **passed_kwargs)
 
 
 def pixel_to_scanning(pixel_coords):
@@ -183,27 +203,34 @@ def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_name = "2023_08_18-14_24_46-johnson-nvref"
+    file_name = "2023_08_21-11_54_12-johnson-nvref"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
 
-    # pixel_coords = (300.427, 264.859)
-    pixel_coords = (285.948, 204.777)
-    # pixel_coords = (130.308, 305.58)
-    # pixel_coords = (177.965, 393.7)
+    # pixel_coords = [189.87, 267.62]
+    # pixel_coords = [241.78, 194.4]
+    # pixel_coords = [296.26, 198.03]
+    pixel_coords = [217.28, 275.39]
     radius = 8
 
-    counts = counts_from_img_array(img_array, pixel_coords, radius)
-    print(counts)
+    # counts = counts_from_img_array(img_array, pixel_coords, radius)
+    # print(counts)
 
-    opt = optimize_pixel(img_array, pixel_coords, radius)
-    print(opt)
-    opt_counts = counts_from_img_array(img_array, opt, radius)
-    print(opt_counts)
+    # opt = optimize_pixel(img_array, pixel_coords, radius)
+    # r_opt = [round(el, 2) for el in opt]
+    # print(r_opt)
+    # opt_counts = counts_from_img_array(img_array, opt, radius)
+    # print(opt_counts)
 
-    fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array)
-    ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
-    ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
+    scanning_coords = pixel_to_scanning(pixel_coords)
+    r_scanning_coords = [round(el, 3) for el in scanning_coords]
+    print(r_scanning_coords)
 
-    plt.show(block=True)
+    # Plot
+    if False:
+        fig, ax = plt.subplots()
+        im = kpl.imshow(ax, img_array)
+        ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
+        ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
+
+        plt.show(block=True)

@@ -505,7 +505,7 @@ def imshow(
     fig = ax.get_figure()
 
     # Get a default aspect ratio
-    if "extent" in kwargs:
+    if "extent" in kwargs and kwargs["extent"] is not None:
         extent = tuple(kwargs["extent"])
         kwargs["extent"] = extent
         if "aspect" not in kwargs:

@@ -106,18 +106,17 @@ config = {
     ###
     "Positioning": {
         "xy_control_style": ControlStyle.STREAM,
-        "xy_delay": 50000000,
+        "xy_delay": int(400e3),  # 400 us for galvo
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.95,
         "xy_small_response_delay": 800,
         "xy_units": "Voltage (V)",
         "z_control_style": ControlStyle.STREAM,
-        "z_delay": 50000000,
+        "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
         "z_nm_per_unit": 1000,
         "z_optimize_range": 4,
-        "z_small_response_delay": 50000000,
         "z_units": "Voltage (V)",
         "NV1_pixel_coords": [308.158, 309.335],
         "NV1_scanning_coords": [0.155, 0],
@@ -139,6 +138,7 @@ config = {
         "sig_gen_omni": "sig_gen_BERK_bnc835",
         "sig_gen_single": "sig_gen_STAN_sg394",
         "tagger": "tagger_SWAB_20",
+        "camera": "camera_NUVU_hnu512gamma",
     },
     ###
     "Wiring": {

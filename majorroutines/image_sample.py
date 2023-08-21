@@ -117,6 +117,7 @@ def main_with_cxn(
     ### Some initial setup
 
     config = common.get_config_dict()
+    config_positioning = config["Positioning"]
     collection_mode = config["collection_mode"]
     xy_control_style = pos.get_xy_control_style()
     z_control_style = pos.get_z_control_style()
@@ -131,7 +132,7 @@ def main_with_cxn(
         control_style = ControlStyle.STEP
 
     tb.reset_cfm(cxn)
-    center_coords = pos.set_xyz_on_nv(cxn, nv_sig)
+    center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
     x_center, y_center, z_center = center_coords
     optimize.prepare_microscope(cxn, nv_sig)
     pos_server = (
@@ -141,15 +142,12 @@ def main_with_cxn(
     )
     counter = tb.get_server_counter(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
-    total_num_samples = num_steps**2
 
     laser_key = "imaging_laser"
     readout_laser = nv_sig[laser_key]
     tb.set_filter(cxn, nv_sig, laser_key)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
 
-    config = common.get_config_dict()
-    config_positioning = config["Positioning"]
 
     xy_delay = config_positioning["xy_delay"]
     z_delay = config_positioning["z_delay"]
@@ -164,9 +162,10 @@ def main_with_cxn(
     # Only support square grids at the moment
     num_steps_1 = num_steps
     num_steps_2 = num_steps
+    total_num_samples = num_steps_1 * num_steps_2
 
     if collection_mode == CollectionMode.WIDEFIELD:
-        camera = tb.get_server_camera()
+        camera = tb.get_server_camera(cxn)
 
     ### Load the pulse generator
 
@@ -177,8 +176,8 @@ def main_with_cxn(
     if collection_mode == CollectionMode.WIDEFIELD:
         seq_args = [delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
-        seq_file = "simple_readout-camera.py"
-    if collection_mode == CollectionMode.CONFOCAL:
+        seq_file = "widefield-simple_readout.py"
+    elif collection_mode == CollectionMode.CONFOCAL:
         if nv_minus_init:
             laser_key = "nv-_prep_laser"
             tb.set_filter(cxn, nv_sig, laser_key)
@@ -200,6 +199,7 @@ def main_with_cxn(
             seq_args_string = tb.encode_seq_args(seq_args)
             seq_file = "simple_readout.py"
 
+    # print(seq_file)
     # print(seq_args)
     # return
     ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
@@ -232,29 +232,38 @@ def main_with_cxn(
             x_vals_static = [x_center] * num_pixels
             pos_server.load_stream_xyz(x_vals_static, coords_1, coords_2)
 
-    # Initialize img_array and set all values to NaN so that unset values
-    # are not interpreted as 0 by matplotlib's colobar
-    img_array = np.empty((num_steps_1, num_steps_2))
-    img_array[:] = np.nan
-    img_write_pos = []
+    # Initialize tracking variables that will be populated as the image is collected in
+    # a scanning configuration, e.g. with an APD as opposed to a camera
+    count_format = config["count_format"]
+    if collection_mode != CollectionMode.WIDEFIELD:
+        img_array = np.empty((num_steps_1, num_steps_2))
+        # matplotlib will show nothing for NaN, instead of 0 or a random value
+        img_array[:] = np.nan
+        img_write_pos = []
+        if count_format == CountFormat.KCPS:
+            img_array_kcps = np.copy(img_array)
 
     ### Set up the image display
 
     kpl.init_kplotlib(font_size=kpl.Size.SMALL)
-    hor_label = xy_units
-    ver_label = xy_units if scan_axes == ScanAxes.XY else z_units
-    count_format = config["count_format"]
+    if collection_mode == CollectionMode.WIDEFIELD:
+        hor_label = "X"
+        ver_label = "Y"
+    else:
+        hor_label = xy_units
+        ver_label = xy_units if scan_axes == ScanAxes.XY else z_units
     if count_format == CountFormat.RAW:
         cbar_label = "Counts"
     if count_format == CountFormat.KCPS:
         cbar_label = "Kcps"
-    title = f"{scan_axes} image under {readout_laser}, {readout_us} us readout"
+    title = f"{scan_axes.name} image under {readout_laser}, {readout_us} us readout"
+    imshow_extent = None if collection_mode == CollectionMode.WIDEFIELD else extent
     imshow_kwargs = {
         "title": title,
         "x_label": hor_label,
         "y_label": ver_label,
         "cbar_label": cbar_label,
-        "extent": extent,
+        "extent": imshow_extent,
     }
 
     fig, ax = plt.subplots()
@@ -301,7 +310,11 @@ def main_with_cxn(
         if collection_mode == CollectionMode.WIDEFIELD:
             img_array = camera.read()
             camera.disarm()
-            kpl.imshow(ax, img_array, **imshow_kwargs)
+            if count_format == CountFormat.RAW:
+                kpl.imshow(ax, img_array, **imshow_kwargs)
+            elif count_format == CountFormat.KCPS:
+                img_array_kcps = (np.copy(img_array) / 1000) / readout_sec
+                kpl.imshow(ax, img_array_kcps, **imshow_kwargs)
 
         elif collection_mode == CollectionMode.CONFOCAL:
             charge_init = nv_minus_init

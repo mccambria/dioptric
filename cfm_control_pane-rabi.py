@@ -117,7 +117,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.9
+    z_coord = 5.85
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -145,20 +145,24 @@ if __name__ == "__main__":
     # fmt: on
 
     nv0 = copy.deepcopy(nv_sig)
-    nv0["name"] = f"{sample_name}-nv0_2023_08_18"
-    nv0["pixel_coords"] = (300.427, 264.859)
+    nv0["name"] = f"{sample_name}-nv0_2023_08_21"
+    nv0["pixel_coords"] = [189.87, 267.62]
+    nv0["coords"] = [-0.032, 0.171, z_coord]
 
     nv1 = copy.deepcopy(nv_sig)
-    nv1["name"] = f"{sample_name}-nv1_2023_08_18"
-    nv1["pixel_coords"] = (285.948, 204.777)
+    nv1["name"] = f"{sample_name}-nv1_2023_08_21"
+    nv1["pixel_coords"] = [241.78, 194.4]
+    nv1["coords"] = [0.05, 0.097, z_coord]
 
     nv2 = copy.deepcopy(nv_sig)
-    nv2["name"] = f"{sample_name}-nv2_2023_08_18"
-    nv2["pixel_coords"] = (130.308, 305.58)
+    nv2["name"] = f"{sample_name}-nv2_2023_08_21"
+    nv2["pixel_coords"] = [296.26, 198.03]
+    nv2["coords"] = [0.136, 0.019, z_coord]
 
     nv3 = copy.deepcopy(nv_sig)
-    nv3["name"] = f"{sample_name}-nv3_2023_08_18"
-    nv3["pixel_coords"] = (177.965, 393.7)
+    nv3["name"] = f"{sample_name}-nv3_2023_08_21"
+    nv3["pixel_coords"] = [217.28, 275.39]
+    nv3["coords"] = [0.011, 0.132, z_coord]
 
     nv_list = [nv0, nv1, nv2, nv3]
 

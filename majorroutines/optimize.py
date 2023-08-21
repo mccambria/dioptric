@@ -268,7 +268,7 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_name=None, fig=None):
     # This flag allows a different NV at a specified offset to be used as a proxy for
     # optiimizing on the actual target NV. Useful if, e.g., the target is poorly isolated
     coords = nv_sig["coords"]
-    if "opti_offset" in nv_sig:
+    if "opti_offset" in nv_sig and nv_sig["opti_offset"] is not None:
         adj_coords = np.array(coords)
         opti_offset = np.array(nv_sig["opti_offset"])
         adj_coords += opti_offset

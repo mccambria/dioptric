@@ -13,7 +13,7 @@ Created on June 16th, 2023
 
 import numpy as np
 import utils.tool_belt as tb
-import majorroutines.widefield.image_sample as image_sample
+import majorroutines.widefield.resonance as resonance
 import majorroutines.widefield.qm_OPX_tests as qm_OPX_tests
 
 # import majorroutines.widefield.optimize as optimize
@@ -32,13 +32,13 @@ def do_image_sample(nv_sig):
     # scan_range = 1.0
     # num_steps = 180
 
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    resonance.main(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_image_sample_zoom(nv_sig):
     scan_range = 10e6
     num_steps = 30
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    resonance.main(nv_sig, scan_range, scan_range, num_steps)
 
 
 # def do_optimize(nv_sig):
