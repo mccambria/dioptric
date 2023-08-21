@@ -186,17 +186,15 @@ def _read_counts_widefield(
     return np.array(counts, dtype=int)
 
 
-def _stationary_count_lite(cxn, nv_sig, coords, laser_name=None):
+def _stationary_count_lite(cxn, nv_sig, coords, laser_key):
     # Set up
     config = common.get_config_dict()
     collection_mode = config["collection_mode"]
     pulse_gen = tb.get_server_pulse_gen(cxn)
-    if laser_name == None:
-        laser_name = nv_sig["imaging_laser"]
-        readout = nv_sig["imaging_readout_dur"]
-    else:
-        readout = nv_sig[f"readout-{laser_name}"]
-    laser_power = tb.set_laser_power(cxn, nv_sig, laser_name=laser_name)
+    laser_dict = nv_sig[laser_key]
+    laser_name = laser_dict["laser"]
+    readout = laser_dict["readout_dur"]
+    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     num_samples = 1
     x_center, y_center, z_center = coords
 
@@ -244,7 +242,7 @@ def _stationary_count_lite(cxn, nv_sig, coords, laser_name=None):
         return count_rate
 
 
-def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_name=None, fig=None):
+def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     # Basic setup and definitions
@@ -257,12 +255,10 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_name=None, fig=None):
         seq_file_name = "simple_readout.py"
     elif collection_mode == CollectionMode.WIDEFIELD:
         seq_file_name = "simple_readout-widefield.py"
-    if laser_name == None:
-        laser_name = nv_sig["imaging_laser"]
-        readout = nv_sig["imaging_readout_dur"]
-    else:
-        readout = nv_sig[f"readout-{laser_name}"]
-    laser_power = tb.set_laser_power(cxn, nv_sig, laser_name=laser_name)
+    laser_dict = nv_sig[laser_key]
+    laser_name = laser_dict["laser"]
+    readout = laser_dict["readout_dur"]
+    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
 
     # This flag allows a different NV at a specified offset to be used as a proxy for
     # optiimizing on the actual target NV. Useful if, e.g., the target is poorly isolated
@@ -422,7 +418,6 @@ def main(
     plot_data=False,
     set_drift=True,
     laser_key=LaserKey.IMAGING,
-    laser_name=None,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
@@ -433,7 +428,6 @@ def main(
             plot_data,
             set_drift,
             laser_key,
-            laser_name,
         )
 
 
@@ -445,7 +439,6 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
     laser_key=LaserKey.IMAGING,
-    laser_name=None,
 ):
     # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
@@ -480,9 +473,7 @@ def main_with_cxn(
 
     # Filter sets for imaging
     tb.set_filter(cxn, nv_sig, "collection")
-    if laser_name == None:
-        laser_name = nv_sig[laser_key]
-        tb.set_filter(cxn, nv_sig, laser_key)
+    tb.set_filter(cxn, nv_sig, laser_key)
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
@@ -491,7 +482,7 @@ def main_with_cxn(
         print(f"Expected counts: {expected_counts}")
     elif count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
-    current_counts = _stationary_count_lite(cxn, nv_sig, adjusted_coords, laser_name)
+    current_counts = _stationary_count_lite(cxn, nv_sig, adjusted_coords, laser_key)
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
         print("No need to optimize.")
@@ -529,7 +520,7 @@ def main_with_cxn(
             else:
                 for axis_ind in range(2):
                     ret_vals = _optimize_on_axis(
-                        cxn, adjusted_nv_sig, axis_ind, laser_name, fig
+                        cxn, adjusted_nv_sig, axis_ind, laser_key, fig
                     )
                     opti_coords.append(ret_vals[0])
                     scan_vals_by_axis.append(ret_vals[1])
@@ -538,7 +529,7 @@ def main_with_cxn(
                 if expected_counts is not None:
                     test_coords = [*opti_coords[0:2], adjusted_coords[2]]
                     current_counts = _stationary_count_lite(
-                        cxn, nv_sig, test_coords, laser_name
+                        cxn, nv_sig, test_coords, laser_key
                     )
                     if lower_bound < current_counts < upper_bound:
                         print("Z optimization unnecessary.")
@@ -560,7 +551,7 @@ def main_with_cxn(
                     positioning.set_xyz(cxn, int_coords)
                 axis_ind = 2
                 ret_vals = _optimize_on_axis(
-                    cxn, adjusted_nv_sig, axis_ind, laser_name, fig
+                    cxn, adjusted_nv_sig, axis_ind, laser_key, fig
                 )
                 opti_coords.append(ret_vals[0])
                 scan_vals_by_axis.append(ret_vals[1])
@@ -574,7 +565,7 @@ def main_with_cxn(
 
             # Check the counts
             current_counts = _stationary_count_lite(
-                cxn, nv_sig, opti_coords, laser_name
+                cxn, nv_sig, opti_coords, laser_key
             )
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
             if expected_counts is not None:
@@ -599,7 +590,7 @@ def main_with_cxn(
 
     if opti_succeeded and set_drift:
         drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
-        positioning.set_drift(drift, laser_name=laser_name)
+        positioning.set_drift(drift, nv_sig, laser_key)
 
     ### Set to the optimized coordinates, or just tell the user what they are
 

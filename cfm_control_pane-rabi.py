@@ -15,7 +15,7 @@ import numpy as np
 from utils import tool_belt as tb
 from utils import positioning as pos
 from utils import widefield
-from utils.constants import LaserKey
+from utils.constants import LaserKey, NVSpinStates
 from majorroutines import image_sample
 from majorroutines import optimize
 import matplotlib.pyplot as plt
@@ -130,20 +130,22 @@ if __name__ == "__main__":
     # ref_coords = np.array([*ref_scanning_coords, z_coord])
     # # print(ref_coords)
 
-    # fmt: off
     nv_sig = {
-        "coords": ref_coords, "name": f"{sample_name}-nvref",
-        "disable_opt": False, "disable_z_opt": True, "expected_count_rate": None,
+        "coords": ref_coords,
+        "name": f"{sample_name}-nvref",
+        "disable_opt": False,
+        "disable_z_opt": True,
+        "expected_count_rate": None,
         #
-        LaserKey.IMAGING: green_laser, "imaging_readout_dur": 1e7, # "imaging_laser_filter": "nd_0",
+        LaserKey.IMAGING: {"laser": green_laser, "readout_dur": 1e7, "filter": None},
         #
-        "spin_laser": green_laser, "spin_pol_dur": 2e3, "spin_readout_dur": 440, # "spin_laser_filter": "nd_0",
+        LaserKey.SPIN: {"laser": green_laser, "pol_dur": 2e3, "readout_dur": 440},
         #
-        "collection_filter": "514_notch+630_lp", "magnet_angle": None,
+        "collection_filter": "514_notch+630_lp",
+        "magnet_angle": None,
         #
-        "resonance_LOW": 2.885, "rabi_LOW": 150, "uwave_power_LOW": 10.0,
+        NVSpinStates.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
     }
-    # fmt: on
 
     nv0 = copy.deepcopy(nv_sig)
     nv0["name"] = f"{sample_name}-nv0_2023_08_21"
