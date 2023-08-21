@@ -28,8 +28,7 @@ import keyring
 import math
 import utils.common as common
 import utils.search_index as search_index
-import utils.constants as constants
-from utils.constants import States, NormStyle, ModTypes, Digital, Boltzmann
+from utils.constants import NormStyle, ModTypes, Digital, Boltzmann
 import signal
 import copy
 from decimal import Decimal
@@ -131,11 +130,11 @@ def set_laser_power(
     """
 
     if (nv_sig is not None) and (laser_key is not None):
-        laser_name = nv_sig[laser_key]
-        power_key = "{}_power".format(laser_key)
+        laser_dict = nv_sig[laser_key]
+        laser_name = laser_dict["laser"]
         # If the power isn't specified, then we assume it's set some other way
-        if power_key in nv_sig:
-            laser_power = nv_sig[power_key]
+        if "power" in laser_dict:
+            laser_power = laser_dict["power"]
     elif (laser_name is not None) and (laser_power is not None):
         pass  # All good
     else:

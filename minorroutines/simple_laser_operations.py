@@ -11,6 +11,7 @@ Created on June 16th, 2019
 import labrad
 from utils import tool_belt as tb
 from utils import positioning
+from utils import common
 import time
 from numpy import pi
 
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     pos = [0.0, 0.0, z_coord]
 
     try:
-        with labrad.connect(username="", password="") as cxn:
+        with common.labrad_connect() as cxn:
             # positioning.set_xyz(cxn, pos)
             # tb.set_filter(cxn, optics_name=laser_name, filter_name=laser_filter)
             # tb.set_filter(

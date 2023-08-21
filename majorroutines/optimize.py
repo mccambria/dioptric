@@ -228,7 +228,7 @@ def _stationary_count_lite(cxn, nv_sig, coords, laser_key):
             pulse_gen.stream_start(1)
             img_array = camera.read()
             sample = widefield.counts_from_img_array(img_array, pixel_coords)
-            new_samples.extend(sample)
+            new_samples.append(sample)
         camera.disarm()
 
     # Return
@@ -254,7 +254,7 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     if collection_mode == CollectionMode.CONFOCAL:
         seq_file_name = "simple_readout.py"
     elif collection_mode == CollectionMode.WIDEFIELD:
-        seq_file_name = "simple_readout-widefield.py"
+        seq_file_name = "widefield-simple_readout.py"
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["laser"]
     readout = laser_dict["readout_dur"]
@@ -283,12 +283,12 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
 
     if axis_ind == 0:
         server = positioning.get_server_pos_xy(cxn)
-        axis_write_func = server.write_x
+        axis_write_func = server.write_xy
         if control_style == ControlStyle.STREAM:
             load_stream = server.load_stream_xy
     if axis_ind == 1:
         server = positioning.get_server_pos_xy(cxn)
-        axis_write_func = server.write_y
+        axis_write_func = server.write_xy
         if control_style == ControlStyle.STREAM:
             load_stream = server.load_stream_xy
     if axis_ind == 2:
@@ -564,9 +564,7 @@ def main_with_cxn(
                 continue
 
             # Check the counts
-            current_counts = _stationary_count_lite(
-                cxn, nv_sig, opti_coords, laser_key
-            )
+            current_counts = _stationary_count_lite(cxn, nv_sig, opti_coords, laser_key)
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
             if expected_counts is not None:
                 if lower_bound < current_counts < upper_bound:
