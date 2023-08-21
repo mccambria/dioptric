@@ -16,7 +16,6 @@ from scipy.optimize import minimize
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
 from utils.constants import CountFormat
-import labrad
 
 # endregion
 

@@ -22,6 +22,7 @@ config = {
     "camera_spot_radius": 8,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
+    "common_drift": True,  #  Whether lasers/collection paths have shared versus separate positioning controllers
     # Access the OS-specific keys with getters from common
     "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
     "linux_nvdata_path": home / "E/nvdata",

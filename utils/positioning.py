@@ -185,8 +185,24 @@ def get_z_control_style():
 """Implemented with a drift tracking global stored on the registry"""
 
 
+def _get_drift_key(nv_sig=None, laser_key=None, laser_name=None):
+    config = common.get_config_dict()
+    common_drift = config["common_drift"]
+    if common_drift:
+        key = "DRIFT"
+    elif laser_name is not None:
+        key = f"DRIFT-{laser_name}"
+    elif nv_sig is not None:
+        laser_name = nv_sig[laser_key]
+        key = f"DRIFT-{laser_name}"
+    else:
+        key = "DRIFT"
+    return key
+
+
 def get_drift(nv_sig=None, laser_key=None, laser_name=None):
-    drift = common.get_registry_entry(["State"], "DRIFT")
+    key = _get_drift_key(nv_sig, laser_key, laser_name)
+    drift = common.get_registry_entry(["State"], key)
     config = common.get_config_dict()
     config_positioning = config["Positioning"]
     xy_dtype = config_positioning["xy_dtype"]
@@ -196,11 +212,12 @@ def get_drift(nv_sig=None, laser_key=None, laser_name=None):
 
 
 def set_drift(drift, nv_sig=None, laser_key=None, laser_name=None):
-    return common.set_registry_entry(["State"], "DRIFT", drift)
+    key = _get_drift_key(nv_sig, laser_key, laser_name)
+    return common.set_registry_entry(["State"], key, drift)
 
 
-def reset_drift(cxn, nv_sig=None, laser_key=None, laser_name=None):
-    return set_drift(cxn, [0.0, 0.0, 0.0])
+def reset_drift(nv_sig=None, laser_key=None, laser_name=None):
+    return set_drift([0.0, 0.0, 0.0], nv_sig, laser_key, laser_name)
 
 
 def adjust_coords_for_drift(
@@ -208,7 +225,7 @@ def adjust_coords_for_drift(
 ):
     """Current drift will be retrieved from registry if passed drift is None"""
     if drift is None:
-        drift = get_drift()
+        drift = get_drift(nv_sig, laser_key, laser_name)
     adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
     return adjusted_coords
 

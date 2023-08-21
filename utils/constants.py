@@ -20,6 +20,11 @@ class CountFormat(Enum):
     RAW = auto()  # Just the raw number of counts
 
 
+class LaserKey(Enum):
+    IMAGING = auto()
+    SPIN = auto()
+
+
 class ControlStyle(Enum):
     STEP = auto()
     STREAM = auto()

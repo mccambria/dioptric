@@ -17,13 +17,12 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
-import labrad
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
 from utils import positioning
 from utils import common
 from utils import widefield
-from utils.constants import ControlStyle, CountFormat, CollectionMode
+from utils.constants import ControlStyle, CountFormat, CollectionMode, LaserKey
 
 # endregion
 # region Plotting functions
@@ -386,7 +385,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
 
 def optimize_list(nv_sig_list):
-    with labrad.connect(username="", password="") as cxn:
+    with common.labrad_connect() as cxn:
         optimize_list_with_cxn(cxn, nv_sig_list)
 
 
@@ -417,11 +416,24 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
 
 def main(
-    nv_sig, set_to_opti_coords=True, save_data=False, plot_data=False, set_drift=True
+    nv_sig,
+    set_to_opti_coords=True,
+    save_data=False,
+    plot_data=False,
+    set_drift=True,
+    laser_key=LaserKey.IMAGING,
+    laser_name=None,
 ):
-    with labrad.connect(username="", password="") as cxn:
+    with common.labrad_connect() as cxn:
         return main_with_cxn(
-            cxn, nv_sig, set_to_opti_coords, save_data, plot_data, set_drift
+            cxn,
+            nv_sig,
+            set_to_opti_coords,
+            save_data,
+            plot_data,
+            set_drift,
+            laser_key,
+            laser_name,
         )
 
 
@@ -432,6 +444,7 @@ def main_with_cxn(
     save_data=False,
     plot_data=False,
     set_drift=True,
+    laser_key=LaserKey.IMAGING,
     laser_name=None,
 ):
     # If optimize is disabled, just do prep and return
@@ -467,14 +480,15 @@ def main_with_cxn(
     # Filter sets for imaging
     tb.set_filter(cxn, nv_sig, "collection")
     if laser_name == None:
-        tb.set_filter(cxn, nv_sig, "imaging_laser")
+        laser_name = nv_sig[laser_key]
+        tb.set_filter(cxn, nv_sig, laser_key)
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
     count_format = config["count_format"]
     if count_format == CountFormat.RAW:
         print(f"Expected counts: {expected_counts}")
-    if count_format == CountFormat.KCPS:
+    elif count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
     current_counts = _stationary_count_lite(cxn, nv_sig, adjusted_coords, laser_name)
     print(f"Counts at initial coordinates: {current_counts}")
@@ -584,7 +598,7 @@ def main_with_cxn(
 
     if opti_succeeded and set_drift:
         drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
-        positioning.set_drift(cxn, drift)
+        positioning.set_drift(drift, laser_name=laser_name)
 
     ### Set to the optimized coordinates, or just tell the user what they are
 
