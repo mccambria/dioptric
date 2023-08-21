@@ -67,24 +67,31 @@ def get_server(cxn, server_name):
 # region LabRAD registry utilities - mostly deprecated in favor of config file
 
 
-def get_registry_entry(key, directory, cxn=None):
+def labrad_connect():
+    """Return a labrad connection with default username and password"""
+    return labrad.connect(username="", password="")
+
+
+def set_registry_entry(directory, key, value):
+    """Set an entry in the LabRAD registry"""
+    with labrad_connect() as cxn:
+        p = cxn.registry.packet()
+        p.cd("", *directory)
+        p.set(key, value)
+        return p.send()["set"]
+
+
+def get_registry_entry(directory, key):
     """Get an entry from the LabRAD registry"""
-    if cxn is None:
-        with labrad.connect(username="", password="") as cxn:
-            return _get_registry_entry_sub(key, directory, cxn)
-    else:
-        return _get_registry_entry_sub(key, directory, cxn)
-
-
-def _get_registry_entry_sub(key, directory, cxn):
-    p = cxn.registry.packet()
-    p.cd("", *directory)
-    p.get(key)
-    return p.send()["get"]
+    with labrad_connect() as cxn:
+        p = cxn.registry.packet()
+        p.cd("", *directory)
+        p.get(key)
+        return p.send()["get"]
 
 
 def _labrad_get_config_dict(cxn=None):
-    """Get the whole config from the registry as a dictionary"""
+    """DEPRECATED. Get the whole config from the registry as a dictionary"""
     if cxn is None:
         with labrad.connect() as cxn:
             return _labrad_get_config_dict_sub(cxn)
@@ -93,13 +100,14 @@ def _labrad_get_config_dict(cxn=None):
 
 
 def _labrad_get_config_dict_sub(cxn):
+    """DEPRECATED"""
     config_dict = {}
     _labrad_populate_config_dict(cxn, ["", "Config"], config_dict)
     return config_dict
 
 
 def _labrad_populate_config_dict(cxn, reg_path, dict_to_populate):
-    """Populate the config dictionary recursively"""
+    """DEPRECATED. Populate the config dictionary recursively"""
 
     # Sub-folders
     cxn.registry.cd(reg_path)

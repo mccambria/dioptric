@@ -16,6 +16,7 @@ from scipy.optimize import minimize
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
 from utils.constants import CountFormat
+import labrad
 
 # endregion
 
@@ -198,7 +199,30 @@ def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
     # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
 
     opti_pixel_coords = popt[1:3]
+    if set_drift:
+        drift = (np.array(opti_pixel_coords) - np.array(pixel_coords)).tolist()
+        set_pixel_drift(drift)
     return opti_pixel_coords
+
+
+def get_pixel_drift():
+    return common.get_registry_entry(["State"], "PIXEL_DRIFT")
+
+
+def set_pixel_drift(drift):
+    return common.set_registry_entry(["State"], "PIXEL_DRIFT", drift)
+
+
+def reset_pixel_drift():
+    return set_pixel_drift([0.0, 0.0])
+
+
+def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
+    """Current drift will be retrieved from registry if passed drift is None"""
+    if drift is None:
+        drift = get_pixel_drift()
+    adjusted_coords = (np.array(pixel_coords) + np.array(drift)).tolist()
+    return adjusted_coords
 
 
 if __name__ == "__main__":
