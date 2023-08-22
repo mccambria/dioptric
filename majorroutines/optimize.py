@@ -267,11 +267,8 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
         adj_coords = np.array(coords)
         opti_offset = np.array(nv_sig["opti_offset"])
         adj_coords += opti_offset
-        axis_center = adj_coords[axis_ind]
-        x_center, y_center, z_center = adj_coords
-    else:
-        axis_center = coords[axis_ind]
-        x_center, y_center, z_center = coords
+        coords = adj_coords
+    axis_center = coords[axis_ind]
 
     # Axis-specific definitions
     config_axis_labels = {0: "xy", 1: "xy", 2: "z"}
@@ -283,14 +280,14 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
 
     if axis_ind == 0:
         server = positioning.get_server_pos_xy(cxn)
-        axis_write_func = server.write_xy
+        axis_write_func = server.write_x
         if control_style == ControlStyle.STREAM:
-            load_stream = server.load_stream_xy
+            load_stream = server.load_stream_x
     if axis_ind == 1:
         server = positioning.get_server_pos_xy(cxn)
-        axis_write_func = server.write_xy
+        axis_write_func = server.write_y
         if control_style == ControlStyle.STREAM:
-            load_stream = server.load_stream_xy
+            load_stream = server.load_stream_y
     if axis_ind == 2:
         server = positioning.get_server_pos_z(cxn)
         axis_write_func = server.write_z
@@ -298,15 +295,13 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
             load_stream = server.load_stream_z
 
     # Move to first point in scan if we're in step mode
-    if control_style == ControlStyle.STEP:
+    if (control_style == ControlStyle.STEP) or (
+        collection_mode == CollectionMode.WIDEFIELD
+    ):
         half_scan_range = scan_range / 2
         lower = axis_center - half_scan_range
-        if axis_ind == 0:
-            start_coords = [lower, coords[1], coords[2]]
-        elif axis_ind == 1:
-            start_coords = [coords[0], lower, coords[2]]
-        elif axis_ind == 2:
-            start_coords = [coords[0], coords[1], lower]
+        start_coords = np.copy(coords)
+        start_coords[axis_ind] = lower
         positioning.set_xyz(cxn, start_coords)
 
     # Sequence loading
@@ -316,20 +311,9 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     period = ret_vals[0]
 
     # Get the scan values
+    scan_vals = positioning.get_scan_1d(axis_center, scan_range, num_steps)
     if control_style == ControlStyle.STREAM:
-        if axis_ind == 0:
-            scan_vals, fixed_vals = positioning.get_scan_one_axis_2d(
-                x_center, y_center, scan_range, num_steps
-            )
-        elif axis_ind == 1:
-            scan_vals, fixed_vals = positioning.get_scan_one_axis_2d(
-                y_center, x_center, scan_range, num_steps
-            )
-        elif axis_ind == 2:
-            scan_vals = positioning.get_scan_1d(z_center, scan_range, num_steps)
-        load_stream(scan_vals, fixed_vals)
-    elif control_style == ControlStyle.STEP:
-        scan_vals = positioning.get_scan_1d(axis_center, scan_range, num_steps)
+        load_stream(scan_vals)
 
     counts = _read_counts(
         cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals
