@@ -12,7 +12,7 @@ Created on August 21st, 2023
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
-from utils.constants import ControlStyle
+from utils.constants import ControlStyle, LaserKey
 from utils import tool_belt as tb
 from utils import common
 from utils.constants import CountFormat
@@ -21,13 +21,18 @@ from utils import positioning as pos
 from utils import widefield
 
 
-def main(nv_list, num_reps):
+def image_single_nv(nv_sig):
+    nv_list = [nv_sig]
     with common.labrad_connect() as cxn:
-        img_array = main_with_cxn(cxn, nv_list, num_reps)
-    return img_array
+        return main_with_cxn(cxn, nv_list)
 
 
-def main_with_cxn(cxn, nv_list, num_reps):
+def main(nv_list):
+    with common.labrad_connect() as cxn:
+        return main_with_cxn(cxn, nv_list)
+
+
+def main_with_cxn(cxn, nv_list):
     ### Some initial setup
 
     tb.reset_cfm(cxn)
@@ -47,12 +52,14 @@ def main_with_cxn(cxn, nv_list, num_reps):
     # Use first NV for some basic setup
     nv_sig = nv_list[0]
     optimize.prepare_microscope(cxn, nv_sig)
-    laser_key = "imaging_laser"
-    readout_laser = nv_sig[laser_key]
+    laser_key = LaserKey.IMAGING
+    laser_dict = nv_sig[laser_key]
+    readout_laser = laser_dict["laser"]
     tb.set_filter(cxn, nv_sig, laser_key)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
-    readout = nv_sig["imaging_readout_dur"]
+    readout = laser_dict["readout_dur"]
     readout_sec = readout / 10**9
+    num_reps = laser_dict["num_reps"]
 
     num_nvs = len(nv_list)
 
@@ -70,10 +77,14 @@ def main_with_cxn(cxn, nv_list, num_reps):
 
     ### Set up the positioning server, either xy_server or xyz_server
 
-    x_coords = [sig["coords"][0] for sig in nv_list]
-    y_coords = [sig["coords"][1] for sig in nv_list]
-    if control_style == ControlStyle.STREAM:
-        pos_server = pos_server.load_stream_xy(x_coords, y_coords)
+    if num_nvs == 1:
+        nv_sig = nv_list[0]
+        coords = nv_sig["coords"]
+        pos_server.write_xy(*coords[0:2])
+    elif control_style == ControlStyle.STREAM:
+        x_coords = [sig["coords"][0] for sig in nv_list]
+        y_coords = [sig["coords"][1] for sig in nv_list]
+        pos_server.load_stream_xy(x_coords, y_coords)
 
     ### Set up the image display
 
@@ -104,7 +115,7 @@ def main_with_cxn(cxn, nv_list, num_reps):
     pos.set_xyz_on_nv(cxn, nv_sig)
 
     timestamp = tb.get_time_stamp()
-    rawData = {
+    raw_data = {
         "timestamp": timestamp,
         "nv_list": nv_list,
         "num_reps": num_reps,
@@ -116,7 +127,7 @@ def main_with_cxn(cxn, nv_list, num_reps):
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, filePath)
-    tb.save_raw_data(rawData, filePath)
+    tb.save_raw_data(raw_data, filePath)
 
     return img_array
 

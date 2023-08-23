@@ -29,7 +29,7 @@ from utils.constants import ControlStyle, CountFormat, CollectionMode, LaserKey
 
 
 def _create_figure():
-    kpl.init_kplotlib()
+    kpl.init_kplotlib(kpl.Size.SMALL)
     config = common.get_config_dict()
     fig, axes_pack = plt.subplots(1, 3, figsize=kpl.double_figsize)
     axis_titles = ["X Axis", "Y Axis", "Z Axis"]
@@ -105,26 +105,39 @@ def _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=None):
 
 
 def _read_counts(
-    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals
+    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals, laser_key
 ):
+    laser_dict = nv_sig[laser_key]
+    num_reps = laser_dict["num_reps"] if "num_reps" in laser_dict else 1
+
     config = common.get_config_dict()
     collection_mode = config["collection_mode"]
     if collection_mode == CollectionMode.CONFOCAL:
         fn = _read_counts_confocal
     if collection_mode == CollectionMode.WIDEFIELD:
         fn = _read_counts_widefield
-    return fn(cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals)
+    counts = fn(
+        cxn,
+        nv_sig,
+        num_steps,
+        period,
+        control_style,
+        axis_write_func,
+        scan_vals,
+        num_reps,
+    )
+    return counts
 
 
 def _read_counts_confocal(
-    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals
+    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals, num_reps
 ):
     counter = tb.get_server_counter(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
     counter.start_tag_stream()
 
     counts = []
-    timeout_duration = ((period * (10**-9)) * num_steps) + 10
+    timeout_duration = ((period * (10**-9) * num_reps) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
     if control_style == ControlStyle.STREAM:
@@ -146,10 +159,10 @@ def _read_counts_confocal(
             if tb.safe_stop() or time.time() > timeout_inst:
                 break
             axis_write_func(scan_vals[ind])
-            pulse_gen.stream_start(1)
+            pulse_gen.stream_start(num_reps)
             # Read the samples and update the image
-            new_samples = counter.read_counter_simple(1)
-            counts.extend(new_samples)
+            new_samples = counter.read_counter_simple(num_reps)
+            counts.append(np.average(new_samples))
 
     counter.stop_tag_stream()
 
@@ -157,7 +170,7 @@ def _read_counts_confocal(
 
 
 def _read_counts_widefield(
-    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals
+    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals, num_reps
 ):
     """Similar to confocal with step control_style"""
 
@@ -167,7 +180,7 @@ def _read_counts_widefield(
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
     counts = []
-    timeout_duration = ((period * (10**-9)) * num_steps) + 10
+    timeout_duration = ((period * (10**-9) * num_reps) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
     camera.arm()
@@ -176,10 +189,10 @@ def _read_counts_widefield(
         if tb.safe_stop() or time.time() > timeout_inst:
             break
         axis_write_func(scan_vals[ind])
-        pulse_gen.stream_start(1)
+        pulse_gen.stream_start(num_reps)
         img_array = camera.read()
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
-        counts.extend(sample)
+        counts.append(sample)
 
     camera.disarm()
 
@@ -194,8 +207,8 @@ def _stationary_count_lite(cxn, nv_sig, coords, laser_key):
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["laser"]
     readout = laser_dict["readout_dur"]
+    num_reps = laser_dict["num_reps"]
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
-    num_samples = 1
     x_center, y_center, z_center = coords
 
     # Set coordinates
@@ -209,26 +222,25 @@ def _stationary_count_lite(cxn, nv_sig, coords, laser_key):
     if collection_mode == CollectionMode.CONFOCAL:
         seq_file_name = "simple_readout.py"
     elif collection_mode == CollectionMode.WIDEFIELD:
-        seq_file_name = "simple_readout-camera.py"
+        seq_file_name = "widefield-simple_readout.py"
     pulse_gen.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
     if collection_mode == CollectionMode.CONFOCAL:
         counter_server = tb.get_server_counter(cxn)
         counter_server.start_tag_stream()
-        pulse_gen.stream_start(num_samples)
-        new_samples = counter_server.read_counter_simple(num_samples)
+        pulse_gen.stream_start(num_reps)
+        new_samples = counter_server.read_counter_simple(num_reps)
         counter_server.stop_tag_stream()
     elif collection_mode == CollectionMode.WIDEFIELD:
         pixel_coords = nv_sig["pixel_coords"]
         camera = tb.get_server_camera(cxn)
         camera.arm()
         new_samples = []
-        for ind in range(num_samples):
-            pulse_gen.stream_start(1)
-            img_array = camera.read()
-            sample = widefield.counts_from_img_array(img_array, pixel_coords)
-            new_samples.append(sample)
+        pulse_gen.stream_start(num_reps)
+        img_array = camera.read()
+        sample = widefield.counts_from_img_array(img_array, pixel_coords)
+        new_samples.append(sample)
         camera.disarm()
 
     # Return
@@ -277,11 +289,17 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     scan_dtype = config_positioning[f"{label}_dtype"]
     delay = config_positioning[f"{label}_delay"]
     control_style = config_positioning[f"{label}_control_style"]
+    streaming = (control_style == ControlStyle.STREAM) and (
+        collection_mode != CollectionMode.WIDEFIELD
+    )
+    stepping = (control_style == ControlStyle.STEP) or (
+        collection_mode == CollectionMode.CONFOCAL
+    )
 
     if axis_ind == 0:
         server = positioning.get_server_pos_xy(cxn)
         axis_write_func = server.write_x
-        if control_style == ControlStyle.STREAM:
+        if streaming:
             load_stream = server.load_stream_x
     if axis_ind == 1:
         server = positioning.get_server_pos_xy(cxn)
@@ -291,13 +309,11 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     if axis_ind == 2:
         server = positioning.get_server_pos_z(cxn)
         axis_write_func = server.write_z
-        if control_style == ControlStyle.STREAM:
+        if streaming:
             load_stream = server.load_stream_z
 
     # Move to first point in scan if we're in step mode
-    if (control_style == ControlStyle.STEP) or (
-        collection_mode == CollectionMode.WIDEFIELD
-    ):
+    if stepping:
         half_scan_range = scan_range / 2
         lower = axis_center - half_scan_range
         start_coords = np.copy(coords)
@@ -312,11 +328,18 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
 
     # Get the scan values
     scan_vals = positioning.get_scan_1d(axis_center, scan_range, num_steps)
-    if control_style == ControlStyle.STREAM:
+    if streaming:
         load_stream(scan_vals)
 
     counts = _read_counts(
-        cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals
+        cxn,
+        nv_sig,
+        num_steps,
+        period,
+        control_style,
+        axis_write_func,
+        scan_vals,
+        laser_key,
     )
 
     # Plot and fit
@@ -347,7 +370,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
     if coords is None:
         coords = nv_sig["coords"]
-        coords = positioning.adjust_coords_for_drift(coords, cxn)
+        coords = positioning.adjust_coords_for_drift(coords)
 
     positioning.set_xyz(cxn, coords)
 
@@ -570,8 +593,8 @@ def main_with_cxn(
 
     ### Calculate the drift relative to the passed coordinates
 
+    drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
     if opti_succeeded and set_drift:
-        drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
         positioning.set_drift(drift, nv_sig, laser_key)
 
     ### Set to the optimized coordinates, or just tell the user what they are

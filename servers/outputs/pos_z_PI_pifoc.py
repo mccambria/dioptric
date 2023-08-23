@@ -247,21 +247,6 @@ class PosZPiPifoc(LabradServer):
         period = 1e6
         self.load_stream_writer_z(c, "ObjectivePiezo-load_scan_z", coords_z, period)
 
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    @setting(24, z_voltages="*v[]", period="i", returns="*v[]")
-    def load_arb_scan_z(self, c, z_voltages, period):
-        """Load a list of voltages with the DAQ"""
-
-        self.load_stream_writer_z(
-            c,
-            "ObjectivePiezo-load_arb_scan_z",
-            numpy.array(z_voltages),
-            period,
-        )
-        return z_voltages
-
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
 __server__ = PosZPiPifoc()
 

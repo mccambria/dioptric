@@ -17,7 +17,7 @@ import majorroutines.optimize as optimize
 from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
-from utils.constants import CollectionMode, CountFormat
+from utils.constants import CollectionMode, CountFormat, LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from scipy import ndimage
@@ -140,14 +140,17 @@ def main_with_cxn(
         if scan_axes == ScanAxes.XY
         else pos.get_server_pos_xyz(cxn)
     )
-    counter = tb.get_server_counter(cxn)
+    if collection_mode == CollectionMode.CONFOCAL:
+        counter = tb.get_server_counter(cxn)
+    elif collection_mode == CollectionMode.WIDEFIELD:
+        camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
-    laser_key = "imaging_laser"
-    readout_laser = nv_sig[laser_key]
+    laser_key = LaserKey.IMAGING
+    laser_dict = nv_sig[laser_key]
+    readout_laser = laser_dict["laser"]
     tb.set_filter(cxn, nv_sig, laser_key)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
-
 
     xy_delay = config_positioning["xy_delay"]
     z_delay = config_positioning["z_delay"]
@@ -164,12 +167,9 @@ def main_with_cxn(
     num_steps_2 = num_steps
     total_num_samples = num_steps_1 * num_steps_2
 
-    if collection_mode == CollectionMode.WIDEFIELD:
-        camera = tb.get_server_camera(cxn)
-
     ### Load the pulse generator
 
-    readout = nv_sig["imaging_readout_dur"]
+    readout = laser_dict["readout_dur"]
     readout_us = readout / 10**3
     readout_sec = readout / 10**9
 
@@ -372,11 +372,11 @@ def main_with_cxn(
         "readout": readout,
         "readout-units": "ns",
         "title": title,
-        "coords_1_1d": coords_1_1d.tolist(),
+        "coords_1_1d": coords_1_1d,
         "coords_1_1d-units": axis_1_units,
-        "coords_2_1d": coords_1_1d.tolist(),
+        "coords_2_1d": coords_1_1d,
         "coords_2_1d-units": axis_2_units,
-        "img_array": img_array.astype(int).tolist(),
+        "img_array": img_array.astype(int),
         "img_array-units": "counts",
     }
 

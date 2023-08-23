@@ -110,7 +110,7 @@ config = {
         "xy_delay": int(400e3),  # 400 us for galvo
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
-        "xy_optimize_range": 0.95,
+        "xy_optimize_range": 0.01,
         "xy_small_response_delay": 800,
         "xy_units": "Voltage (V)",
         "z_control_style": ControlStyle.STREAM,
@@ -119,10 +119,10 @@ config = {
         "z_nm_per_unit": 1000,
         "z_optimize_range": 4,
         "z_units": "Voltage (V)",
-        "NV1_pixel_coords": [308.158, 309.335],
-        "NV1_scanning_coords": [0.155, 0],
-        "NV2_pixel_coords": [124.633, 196.258],
-        "NV2_scanning_coords": [-0.135, 0.162],
+        "NV1_pixel_coords": [191.0, 261.23],
+        "NV1_scanning_coords": [-0.027, 0.066],
+        "NV2_pixel_coords": [299.34, 365.34],
+        "NV2_scanning_coords": [0.146, -0.087],
     },
     ###
     "Servers": {

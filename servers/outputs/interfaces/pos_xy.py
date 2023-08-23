@@ -25,6 +25,28 @@ class PosXy(ABC):
         pass
 
     @abstractmethod
+    def write_x(self, c, x_coord):
+        """Set the positioner to the passed coordinates
+
+        Parameters
+        ----------
+        x_coord : numeric
+            Could be int or float depending on exact hardware
+        """
+        pass
+
+    @abstractmethod
+    def write_y(self, c, y_coord):
+        """Set the positioner to the passed coordinates
+
+        Parameters
+        ----------
+        y_coord : numeric
+            Could be int or float depending on exact hardware
+        """
+        pass
+
+    @abstractmethod
     def reset(self, c):
         """Make sure the device is in a neutral state for the next experiment"""
 

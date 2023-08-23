@@ -906,16 +906,34 @@ def save_raw_data(raw_data, file_path):
 
 def _json_escape(raw_data):
     """Recursively escape a raw data object for JSON"""
-    for key in raw_data:
+
+    # See what kind of loop we need to do through the object
+    if isinstance(raw_data, dict):
+        # Just get the original keys
+        keys = list(raw_data.keys())
+    elif isinstance(raw_data, list):
+        keys = range(len(raw_data))
+
+    for key in keys:
         val = raw_data[key]
+
+        # Escape the key itself if necessary
+        if isinstance(key, Enum):
+            raw_data[str(key)] = val
+            del raw_data[key]
+
+        # Escape the value
         if type(val) == np.ndarray:
             raw_data[key] = val.tolist()
         elif isinstance(val, Enum):
-            raw_data[key] = val.name
+            raw_data[key] = str(val)
         elif isinstance(val, Path):
             raw_data[key] = str(val)
-        elif isinstance(val, dict):
-            raw_data[key] = _json_escape(val)
+        elif isinstance(val, type):
+            raw_data[key] = str(val)
+        # Recursion for dictionaries and lists
+        elif isinstance(val, dict) or isinstance(val, list):
+            _json_escape(val)
 
 
 # endregion

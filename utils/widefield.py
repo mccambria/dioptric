@@ -39,7 +39,7 @@ def imshow(ax, img_array, count_format=None, **kwargs):
     kpl.imshow(ax, img_array, **passed_kwargs)
 
 
-def pixel_to_scanning(pixel_coords):
+def pixel_to_scanning_coords(pixel_coords):
     """Convert camera pixel coordinates to scanning coordinates (e.g. galvo voltages)
     using two calibrated NV coordinate pairs from the config file
 
@@ -73,11 +73,11 @@ def pixel_to_scanning(pixel_coords):
     m_y = scanning_diff / pixel_diff
     b_y = NV1_scanning_coords[1] - m_y * NV1_pixel_coords[1]
 
-    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[0] + b_y]
+    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
     return scanning_coords
 
 
-def scanning_to_pixel(scanning_coords):
+def scanning_to_pixel_coords(scanning_coords):
     """Convert scanning coordinates (e.g. galvo voltages) to camera pixel coordinates
     using two calibrated NV coordinate pairs from the config file
 
@@ -111,7 +111,7 @@ def scanning_to_pixel(scanning_coords):
     m_y = pixel_diff / scanning_diff
     b_y = NV1_pixel_coords[1] - m_y * NV1_scanning_coords[1]
 
-    pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[0] + b_y]
+    pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[1] + b_y]
     return pixel_coords
 
 

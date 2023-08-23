@@ -149,7 +149,7 @@ def set_xyz_on_nv(cxn, nv_sig, drift_adjust=True):
     """Returns the coords actually used in the set"""
     coords = nv_sig["coords"]
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords, cxn)
+        coords = adjust_coords_for_drift(coords)
     set_xyz(cxn, nv_sig["coords"])
     return coords
 

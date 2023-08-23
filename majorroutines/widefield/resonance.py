@@ -16,7 +16,7 @@ import majorroutines.optimize as optimize
 from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
-from utils.constants import States, NormStyle
+from utils.constants import NVSpinStates, NormStyle
 from utils.constants import CollectionMode, CountFormat
 from utils import kplotlib as kpl
 from utils import positioning as pos
@@ -28,9 +28,10 @@ def main(
     freq_center,
     freq_range,
     num_steps,
+    num_reps,
     num_runs,
     uwave_power,
-    state=States.LOW,
+    state=NVSpinStates.LOW,
 ):
     with common.labrad_connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(
@@ -39,6 +40,7 @@ def main(
             freq_center,
             freq_range,
             num_steps,
+            num_reps,
             num_runs,
             uwave_power,
             state,
@@ -53,9 +55,10 @@ def main_with_cxn(
     freq_center,
     freq_range,
     num_steps,
+    num_reps,
     num_runs,
     uwave_power,
-    state=States.LOW,
+    state=NVSpinStates.LOW,
 ):
     ### Some initial setup
 
