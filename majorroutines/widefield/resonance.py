@@ -26,6 +26,18 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 
 
+# def process_img_arrays(img_arrays, nv_list, freqs, freq_ind_master_list):
+#     num_nvs = len(nv_list)
+#     num_runs = len(freq_ind_master_list)
+#     num_steps = len(freq_ind_master_list[0])
+#     sig_counts = []
+#     for nv_ind in range(num_nvs):
+#         nv_sig_counts = [[] for ind in range(num_runs)]
+#         for run_ind in range(num_runs):
+#             for freq_ind in range(num_steps):
+#                 img_array = img_arrays[run_ind]
+
+
 def main(
     nv_list,
     freq_center,
@@ -127,7 +139,7 @@ def main_with_cxn(
 
     ### Data tracking
 
-    img_arrays = [[] for ind in range(num_runs)]
+    img_arrays = np.empty([num_runs, num_steps])
     freq_ind_master_list = [[] for ind in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
 
@@ -150,17 +162,12 @@ def main_with_cxn(
                 pulse_gen.stream_start(num_nvs * num_reps)
                 img_array = camera.read()
                 camera.disarm()
-                img_arrays[run_ind].append(img_array)
+                img_arrays[run_ind, freq_ind](img_array)
 
     ### Data processing and plotting
 
     img_arrays = np.array(img_arrays, dtype=int)
-    # sig_counts = []
-    # for ind in range(num_nvs):
-    #     nv_sig_counts = [[] for ind in range(num_runs)]
-    #     for run_ind in range(num_runs):
-    #         for freq_ind in range(num_steps):
-    #             img_array = img_arrays[run_ind]
+    # process_img_arrays(img_arrays, nv_list, freqs, freq_ind_master_list)
 
     ### Clean up and save the data
 
@@ -202,6 +209,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_22-21_19_41-johnson-nv0_2023_08_21"
+    file_name = "2023_08_22-21_45_58-johnson-nv0_2023_08_21"
 
     plt.show(block=True)
