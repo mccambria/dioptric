@@ -189,7 +189,7 @@ def main_with_cxn(
     }
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, filePath)
+    # tb.save_figure(fig, filePath)
     tb.save_raw_data(raw_data, filePath)
 
     return img_array
