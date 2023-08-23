@@ -24,6 +24,7 @@ def get_seq(pulse_streamer, config, args):
     sig_gen_name = config["Servers"][f"sig_gen_{state_name}"]
     sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
     pulser_do_sig_gen_gate = pulse_gen_wiring[sig_gen_gate_chan_name]
+    delay = config["Positioning"]["xy_delay"]
     do_daq_clock = pulse_gen_wiring["do_sample_clock"]
     do_daq_gate = pulse_gen_wiring["do_apd_gate"]
     do_camera_trigger = pulse_gen_wiring["do_camera_trigger"]
