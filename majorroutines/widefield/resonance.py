@@ -38,13 +38,14 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
                 pixel_drift = pixel_drifts[run_ind, freq_ind]
+
                 adj_pixel_coords = widefield.adjust_pixel_coords_for_drift(
                     pixel_coords, pixel_drift
                 )
                 # Plot each img_array
-                if nv_ind == 0:
-                    fig, ax = plt.subplots()
-                    widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
+                # if nv_ind == 0:
+                #     fig, ax = plt.subplots()
+                #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
                 counts = widefield.counts_from_img_array(
                     img_array, adj_pixel_coords, pixel_drift=pixel_drift
                 )
@@ -192,6 +193,7 @@ def main_with_cxn(
                 pos_server.load_stream_xy(x_coords, y_coords, True)
             pixel_drifts[run_ind][freq_ind] = widefield.get_pixel_drift()
 
+            # Load the sequence and the signal generator
             pulse_gen.stream_load(seq_file, seq_args_string)
 
             freq_ind_master_list[run_ind].append(freq_ind)
@@ -199,6 +201,7 @@ def main_with_cxn(
             sig_gen.set_freq(freq)
             sig_gen.uwave_on()
 
+            # Record the image
             if control_style == ControlStyle.STEP:
                 pass
             elif control_style == ControlStyle.STREAM:
