@@ -17,11 +17,11 @@ import numpy as np
 
 def get_seq(pulse_streamer, config, args):
     # Unpack the args
-    readout_time, state, laser_name, laser_power = args
+    readout_time, state_name, laser_name, laser_power = args
 
     # Get what we need out of the wiring dictionary
     pulse_gen_wiring = config["Wiring"]["PulseGen"]
-    sig_gen_name = config["Servers"][f"sig_gen_{state.name}"]
+    sig_gen_name = config["Servers"][f"sig_gen_{state_name}"]
     sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
     pulser_do_sig_gen_gate = pulse_gen_wiring[sig_gen_gate_chan_name]
     do_daq_clock = pulse_gen_wiring["do_sample_clock"]
