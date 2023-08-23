@@ -174,13 +174,13 @@ if __name__ == "__main__":
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_08_21"
-    nv1["pixel_coords"] = [245.6, 192.72]
-    nv1["coords"] = [0.059, 0.166, z_coord]
+    nv1["pixel_coords"] = [248.596, 195.202]
+    nv1["coords"] = [0.063, 0.165, z_coord]
 
     nv2 = copy.deepcopy(nv_ref)
     nv2["name"] = f"{sample_name}-nv2_2023_08_21"
-    nv2["pixel_coords"] = [298.03, 192.28]
-    nv2["coords"] = [0.134, 0.169, z_coord]
+    nv2["pixel_coords"] = [297.056, 192.717]
+    nv2["coords"] = [0.138, 0.167, z_coord]
 
     nv3 = copy.deepcopy(nv_ref)
     nv3["name"] = f"{sample_name}-nv3_2023_08_21"
@@ -192,11 +192,12 @@ if __name__ == "__main__":
     nv4["pixel_coords"] = [299.34, 365.34]
     nv4["coords"] = [0.146, -0.087, z_coord]
 
-    nv_list = [nv0, nv1, nv2, nv3, nv4]
-    # nv_list = [nv1, nv2, nv3]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4]
+    nv_list = [nv0, nv1, nv3, nv4]
+    # nv_list = [nv1, nv2]
     # nv_list = [nv0]
 
-    # nv_sig = nv_list[1]
+    nv_sig = nv1
 
     ### Functions to run
 
@@ -231,7 +232,9 @@ if __name__ == "__main__":
         # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
         # do_image_single_nv(nv_sig)
-        do_image_nv_list(nv_list)
+        # for nv in nv_list:
+        #     do_image_single_nv(nv)
+        # do_image_nv_list(nv_list)
         # do_stationary_count(nv_sig)
         # do_widefield_cwesr(nv_list)
         # do_optimize(nv_sig)
