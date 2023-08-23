@@ -17,6 +17,8 @@ from utils import positioning as pos
 from utils import widefield
 from utils.constants import LaserKey, NVSpinStates
 from majorroutines import image_sample
+from majorroutines.widefield import image_nv_list
+from majorroutines.widefield import resonance
 from majorroutines import optimize
 import matplotlib.pyplot as plt
 import copy
@@ -44,14 +46,19 @@ def do_image_sample(nv_sig):
     image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
-def do_image_nv_list(nv_list):
-    image_sample.main(nv_list)
-
-
 def do_image_sample_zoom(nv_sig):
     scan_range = 0.02
+    # scan_range = 0.005
     num_steps = 60
     image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+
+
+def do_image_nv_list(nv_list):
+    return image_nv_list.main(nv_list)
+
+
+def do_image_single_nv(nv_sig):
+    return image_nv_list.image_single_nv(nv_sig)
 
 
 def do_optimize(nv_sig):
@@ -61,6 +68,19 @@ def do_optimize(nv_sig):
         save_data=True,
         plot_data=True,
         set_drift=False,
+    )
+
+
+def do_widefield_cwesr(nv_list):
+    num_reps = 10
+    freq_center = 2.87
+    freq_range = 0.100
+    num_steps = 20
+    num_reps = 10
+    num_runs = 10
+    uwave_power = -5
+    resonance.main(
+        nv_list, freq_center, freq_range, num_steps, num_reps, num_runs, uwave_power
     )
 
 
@@ -130,14 +150,14 @@ if __name__ == "__main__":
     # ref_coords = np.array([*ref_scanning_coords, z_coord])
     # # print(ref_coords)
 
-    nv_sig = {
+    nv_ref = {
         "coords": ref_coords,
         "name": f"{sample_name}-nvref",
         "disable_opt": False,
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        LaserKey.IMAGING: {"laser": green_laser, "readout_dur": 1e7, "filter": None},
+        LaserKey.IMAGING: {"laser": green_laser, "readout_dur": 1e7, "num_reps": 100},
         #
         LaserKey.SPIN: {"laser": green_laser, "pol_dur": 2e3, "readout_dur": 440},
         #
@@ -147,29 +167,36 @@ if __name__ == "__main__":
         NVSpinStates.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
     }
 
-    nv0 = copy.deepcopy(nv_sig)
+    nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_08_21"
-    nv0["pixel_coords"] = [189.87, 267.62]
-    nv0["coords"] = [-0.032, 0.171, z_coord]
+    nv0["pixel_coords"] = [191.0, 261.23]
+    nv0["coords"] = [-0.027, 0.066, z_coord]
 
-    nv1 = copy.deepcopy(nv_sig)
+    nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_08_21"
-    nv1["pixel_coords"] = [241.78, 194.4]
-    nv1["coords"] = [0.05, 0.097, z_coord]
+    nv1["pixel_coords"] = [245.6, 192.72]
+    nv1["coords"] = [0.059, 0.166, z_coord]
 
-    nv2 = copy.deepcopy(nv_sig)
+    nv2 = copy.deepcopy(nv_ref)
     nv2["name"] = f"{sample_name}-nv2_2023_08_21"
-    nv2["pixel_coords"] = [296.26, 198.03]
-    nv2["coords"] = [0.136, 0.019, z_coord]
+    nv2["pixel_coords"] = [298.03, 192.28]
+    nv2["coords"] = [0.134, 0.169, z_coord]
 
-    nv3 = copy.deepcopy(nv_sig)
+    nv3 = copy.deepcopy(nv_ref)
     nv3["name"] = f"{sample_name}-nv3_2023_08_21"
-    nv3["pixel_coords"] = [217.28, 275.39]
-    nv3["coords"] = [0.011, 0.132, z_coord]
+    nv3["pixel_coords"] = [218.92, 269.62]
+    nv3["coords"] = [0.014, 0.053, z_coord]
 
-    nv_list = [nv0, nv1, nv2, nv3]
+    nv4 = copy.deepcopy(nv_ref)
+    nv4["name"] = f"{sample_name}-nv4_2023_08_21"
+    nv4["pixel_coords"] = [299.34, 365.34]
+    nv4["coords"] = [0.146, -0.087, z_coord]
 
-    nv_sig = nv_list[0]
+    nv_list = [nv0, nv1, nv2, nv3, nv4]
+    # nv_list = [nv1, nv2, nv3]
+    # nv_list = [nv0]
+
+    # nv_sig = nv_list[1]
 
     ### Functions to run
 
@@ -180,19 +207,36 @@ if __name__ == "__main__":
 
         tb.init_safe_stop()
 
-        # coords = nv_sig["coords"]
-        # # for x in [-0.15, 0, 0.15]:
-        # #     for y in [-0.15, 0, 0.15]:
-        # for x in [coords[0] - 0.001, coords[0], coords[0] + 0.001]:
-        #     for y in [coords[1] - 0.001, coords[1], coords[1] + 0.001]:
-        #         nv_sig["coords"] = [x, y, z_coord]
-        #         do_image_sample(nv_sig)
+        # Optimize pixels coords
+        # raw_data = tb.get_raw_data("2023_08_22-17_53_03-johnson-nv0_2023_08_21")
+        # img_array = np.array(raw_data["img_array"])
+        # for nv in nv_list:
+        #     # pixel_coords = widefield.optimize_pixel(img_array, nv["pixel_coords"])
+        #     # pixel_coords = [round(el, 2) for el in pixel_coords]
+        #     # print(pixel_coords)
+        #     pixel_coords = nv["pixel_coords"]
+        #     scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords)
+        #     scanning_coords = [round(el, 3) for el in scanning_coords]
+        #     print(scanning_coords)
 
-        # do_image_sample(nv_sig)
-        # do_image_nv_list(nv_list)
+        # Take an image and update the pixel coords from that image
+        # img_array = do_image_single_nv(nv_sig)
+        # pixel_coords = nv_sig["pixel_coords"]
+        # pixel_coords = widefield.optimize_pixel(
+        #     img_array, pixel_coords, set_drift=False
+        # )
+        # pixel_coords = [round(el, 2) for el in pixel_coords]
+        # print(pixel_coords)
+
+        # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
+        # do_image_single_nv(nv_sig)
+        do_image_nv_list(nv_list)
         # do_stationary_count(nv_sig)
-        do_optimize(nv_sig)
+        # do_widefield_cwesr(nv_list)
+        # do_optimize(nv_sig)
+        # for nv in nv_list:
+        #     do_optimize(nv)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
 
