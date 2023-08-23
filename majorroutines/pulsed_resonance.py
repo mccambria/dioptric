@@ -1118,6 +1118,8 @@ def main_with_cxn(
         "freq_center-units": "GHz",
         "freq_range": freq_range,
         "freq_range-units": "GHz",
+        "freqs": freqs,
+        "freqs-units": "GHz",
         "uwave_pulse_dur": uwave_pulse_dur,
         "uwave_pulse_dur-units": "ns",
         "state": state.name,
