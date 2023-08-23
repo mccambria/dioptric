@@ -17,9 +17,7 @@ from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield
-from utils.constants import LaserKey
-from utils.constants import NVSpinStates, NormStyle
-from utils.constants import CollectionMode, CountFormat
+from utils.constants import LaserKey, NVSpinStates, CountFormat
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
@@ -38,7 +36,11 @@ def process_img_arrays(img_arrays, nv_list, pixel_drift=None):
         for run_ind in range(num_runs):
             freq_counts = []
             for freq_ind in range(num_steps):
-                img_array = img_arrays[run_ind]
+                img_array = img_arrays[run_ind, freq_ind]
+                # Plot each img_array
+                # if nv_ind == 0:
+                #     fig, ax = plt.subplots()
+                #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
                 counts = widefield.counts_from_img_array(
                     img_array, pixel_coords, 8, pixel_drift=pixel_drift
                 )
@@ -54,7 +56,10 @@ def create_figure(freqs, sig_counts):
     num_nvs = sig_counts.shape[0]
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        kpl.plot_line(ax, freqs, sig_counts)
+        kpl.plot_line(ax, freqs, sig_counts[ind])
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("Counts")
+    return fig
 
 
 def main(
@@ -186,7 +191,8 @@ def main_with_cxn(
     ### Data processing and plotting
 
     img_arrays = np.array(img_arrays, dtype=int)
-    # process_img_arrays(img_arrays, nv_list, freqs, freq_ind_master_list)
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drift)
+    fig = create_figure(freqs, sig_counts)
 
     ### Clean up and save the data
 
@@ -222,20 +228,23 @@ def main_with_cxn(
     }
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    # tb.save_figure(fig, filePath)
+    tb.save_figure(fig, filePath)
     tb.save_raw_data(raw_data, filePath)
 
     return img_array
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
+
     file_name = "2023_08_22-23_24_33-johnson-nv0_2023_08_21"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
     nv_list = data["nv_list"]
+    pixel_drift = np.array(data["pixel_drift"])
 
-    sig_counts = process_img_arrays(img_arrays, nv_list)
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drift)
     create_figure(freqs, sig_counts)
 
     plt.show(block=True)
