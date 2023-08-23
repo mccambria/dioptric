@@ -207,7 +207,8 @@ def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
 
 
 def get_pixel_drift():
-    return common.get_registry_entry(["State"], "PIXEL_DRIFT")
+    pixel_drift = common.get_registry_entry(["State"], "PIXEL_DRIFT")
+    return np.array(pixel_drift)
 
 
 def set_pixel_drift(drift):

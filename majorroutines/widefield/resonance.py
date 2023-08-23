@@ -158,7 +158,7 @@ def main_with_cxn(
 
     ### Data tracking
 
-    img_arrays = np.empty([num_runs, num_steps])
+    img_arrays = [[None] * num_steps for ind in range(num_runs)]
     freq_ind_master_list = [[] for ind in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
 
@@ -181,7 +181,7 @@ def main_with_cxn(
                 pulse_gen.stream_start(num_nvs * num_reps)
                 img_array = camera.read()
                 camera.disarm()
-                img_arrays[run_ind, freq_ind](img_array)
+                img_arrays[run_ind][freq_ind] = img_array
 
     ### Data processing and plotting
 
@@ -218,6 +218,7 @@ def main_with_cxn(
         "readout": readout,
         "readout-units": "ns",
         "freq_ind_master_list": freq_ind_master_list,
+        "pixel_drift": widefield.get_pixel_drift(),
     }
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
