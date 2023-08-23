@@ -115,15 +115,17 @@ def scanning_to_pixel_coords(scanning_coords):
     return pixel_coords
 
 
-def counts_from_img_array(img_array, pixel_coords, radius=None):
+def counts_from_img_array(img_array, pixel_coords, radius=None, pixel_drift=None):
     if radius is None:
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
 
     edge_pixels = []
     inner_pixels = []
-    pixel_x = pixel_coords[0]
-    pixel_y = pixel_coords[1]
+    if pixel_drift is None:
+        pixel_drift = get_pixel_drift()
+    pixel_x = pixel_coords[0] + pixel_drift[0]
+    pixel_y = pixel_coords[1] + pixel_drift[1]
 
     # Don't loop through all the pixels, just the ones that might be relevant
     left = int(np.floor(pixel_x - radius))
