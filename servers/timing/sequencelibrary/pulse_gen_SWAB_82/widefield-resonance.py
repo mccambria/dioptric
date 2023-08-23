@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Variation of simple readout but with a constant high line connected to the camera trigger
+Variation of simple readout but with a constant Digital.HIGH line connected to the camera trigger
 
 Created on July 29th, 2023
 
@@ -17,10 +17,13 @@ import numpy as np
 
 def get_seq(pulse_streamer, config, args):
     # Unpack the args
-    delay, readout_time, laser_name, laser_power = args
+    readout_time, state, laser_name, laser_power = args
 
     # Get what we need out of the wiring dictionary
     pulse_gen_wiring = config["Wiring"]["PulseGen"]
+    sig_gen_name = config["Servers"][f"sig_gen_{state.name}"]
+    sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
+    pulser_do_sig_gen_gate = pulse_gen_wiring[sig_gen_gate_chan_name]
     do_daq_clock = pulse_gen_wiring["do_sample_clock"]
     do_daq_gate = pulse_gen_wiring["do_apd_gate"]
     do_camera_trigger = pulse_gen_wiring["do_camera_trigger"]
@@ -36,20 +39,23 @@ def get_seq(pulse_streamer, config, args):
     # Define the sequence
     seq = Sequence()
 
-    # The clock signal will be high for 100 ns with buffers of 100 ns on
-    # either side. During the buffers, everything should be low. The buffers
+    # The clock signal will be Digital.HIGH for 100 ns with buffers of 100 ns on
+    # either side. During the buffers, everything should be Digital.LOW. The buffers
     # account for any timing jitters/delays and ensure that everything we
     # expect to be on one side of the clock signal is indeed on that side.
-    train = [(period - 200, LOW), (100, HIGH), (100, LOW)]
+    train = [(period - 200, Digital.LOW), (100, Digital.HIGH), (100, Digital.LOW)]
     seq.setDigital(do_daq_clock, train)
 
-    train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
+    train = [(delay, Digital.LOW), (readout_time, Digital.HIGH), (300, Digital.LOW)]
     seq.setDigital(do_daq_gate, train)
 
-    train = [(period, HIGH)]
+    train = [(period, Digital.HIGH)]
     tb.process_laser_seq(seq, laser_name, laser_power, train)
 
-    train = [(period, HIGH)]
+    train = [(period, Digital.HIGH)]
+    seq.setDigital(pulser_do_sig_gen_gate, train)
+
+    train = [(period, Digital.HIGH)]
     seq.setDigital(do_camera_trigger, train)
 
     final_digital = []

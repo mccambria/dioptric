@@ -96,7 +96,7 @@ def main_with_cxn(
     if control_style in [ControlStyle.STEP, ControlStyle.STREAM]:
         seq_args = [delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
-        seq_file = "widefield-simple_readout.py"
+        seq_file = "widefield-resonance.py"
 
     # print(seq_file)
     # print(seq_args)
@@ -155,6 +155,12 @@ def main_with_cxn(
     ### Data processing and plotting
 
     img_arrays = np.array(img_arrays, dtype=int)
+    # sig_counts = []
+    # for ind in range(num_nvs):
+    #     nv_sig_counts = [[] for ind in range(num_runs)]
+    #     for run_ind in range(num_runs):
+    #         for freq_ind in range(num_steps):
+    #             img_array = img_arrays[run_ind]
 
     ### Clean up and save the data
 
@@ -196,18 +202,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_15-14_34_47-johnson-nvref"
-
-    data = tb.get_raw_data(file_name)
-    img_array = np.array(data["img_array"])
-    readout = data["readout"]
-    img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    extent = data["extent"] if "extent" in data else None
-
-    kpl.init_kplotlib()
-    fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array, extent=extent)
-    # ax.set_xlim([124.5 - 15, 124.5 + 15])
-    # ax.set_ylim([196.5 + 15, 196.5 - 15])
+    file_name = "2023_08_22-21_19_41-johnson-nv0_2023_08_21"
 
     plt.show(block=True)
