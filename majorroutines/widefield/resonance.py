@@ -26,16 +26,35 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 
 
-# def process_img_arrays(img_arrays, nv_list, freqs, freq_ind_master_list):
-#     num_nvs = len(nv_list)
-#     num_runs = len(freq_ind_master_list)
-#     num_steps = len(freq_ind_master_list[0])
-#     sig_counts = []
-#     for nv_ind in range(num_nvs):
-#         nv_sig_counts = [[] for ind in range(num_runs)]
-#         for run_ind in range(num_runs):
-#             for freq_ind in range(num_steps):
-#                 img_array = img_arrays[run_ind]
+def process_img_arrays(img_arrays, nv_list, pixel_drift=None):
+    num_nvs = len(nv_list)
+    num_runs = img_arrays.shape[0]
+    num_steps = img_arrays.shape[1]
+    sig_counts = []
+    for nv_ind in range(num_nvs):
+        nv_sig = nv_list[nv_ind]
+        pixel_coords = nv_sig["pixel_coords"]
+        nv_counts = []
+        for run_ind in range(num_runs):
+            freq_counts = []
+            for freq_ind in range(num_steps):
+                img_array = img_arrays[run_ind]
+                counts = widefield.counts_from_img_array(
+                    img_array, pixel_coords, 8, pixel_drift=pixel_drift
+                )
+                freq_counts.append(counts)
+            nv_counts.append(freq_counts)
+        nv_counts = np.array(nv_counts)
+        sig_counts.append(np.average(nv_counts, axis=0))
+    return np.array(sig_counts)
+
+
+def create_figure(freqs, sig_counts):
+    kpl.init_kplotlib()
+    num_nvs = sig_counts.shape[0]
+    fig, ax = plt.subplots()
+    for ind in range(num_nvs):
+        kpl.plot_line(ax, freqs, sig_counts)
 
 
 def main(
@@ -209,6 +228,13 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_22-21_45_58-johnson-nv0_2023_08_21"
+    file_name = "2023_08_22-23_24_33-johnson-nv0_2023_08_21"
+    data = tb.get_raw_data(file_name)
+    freqs = data["freqs"]
+    img_arrays = np.array(data["img_arrays"], dtype=int)
+    nv_list = data["nv_list"]
+
+    sig_counts = process_img_arrays(img_arrays, nv_list)
+    create_figure(freqs, sig_counts)
 
     plt.show(block=True)
