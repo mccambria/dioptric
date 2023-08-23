@@ -54,7 +54,7 @@ def main_with_cxn(cxn, nv_list):
     optimize.prepare_microscope(cxn, nv_sig)
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
-    readout_laser = laser_dict["laser"]
+    laser = laser_dict["laser"]
     tb.set_filter(cxn, nv_sig, laser_key)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     readout = laser_dict["readout_dur"]
@@ -66,7 +66,7 @@ def main_with_cxn(cxn, nv_list):
     ### Load the pulse generator
 
     if control_style in [ControlStyle.STEP, ControlStyle.STREAM]:
-        seq_args = [delay, readout, readout_laser, readout_power]
+        seq_args = [delay, readout, laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "widefield-simple_readout.py"
 
@@ -77,13 +77,16 @@ def main_with_cxn(cxn, nv_list):
 
     ### Set up the positioning server, either xy_server or xyz_server
 
+    # Update the coordinates for drift
+    adj_coords_list = [
+        pos.adjust_coords_for_drift(nv_sig=nv, laser_name=laser) for nv in nv_list
+    ]
     if num_nvs == 1:
-        nv_sig = nv_list[0]
-        coords = nv_sig["coords"]
+        coords = adj_coords_list[0]
         pos_server.write_xy(*coords[0:2])
     elif control_style == ControlStyle.STREAM:
-        x_coords = [sig["coords"][0] for sig in nv_list]
-        y_coords = [sig["coords"][1] for sig in nv_list]
+        x_coords = [coords[0] for coords in adj_coords_list]
+        y_coords = [coords[1] for coords in adj_coords_list]
         pos_server.load_stream_xy(x_coords, y_coords, True)
 
     ### Set up the image display

@@ -24,7 +24,7 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 
 
-def process_img_arrays(img_arrays, nv_list, pixel_drift=None):
+def process_img_arrays(img_arrays, nv_list, pixel_drifts):
     num_nvs = len(nv_list)
     num_runs = img_arrays.shape[0]
     num_steps = img_arrays.shape[1]
@@ -37,12 +37,16 @@ def process_img_arrays(img_arrays, nv_list, pixel_drift=None):
             freq_counts = []
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
+                pixel_drift = pixel_drifts[run_ind, freq_ind]
+                adj_pixel_coords = widefield.adjust_pixel_coords_for_drift(
+                    pixel_coords, pixel_drift
+                )
                 # Plot each img_array
-                # if nv_ind == 0:
-                #     fig, ax = plt.subplots()
-                #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
+                if nv_ind == 0:
+                    fig, ax = plt.subplots()
+                    widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
                 counts = widefield.counts_from_img_array(
-                    img_array, pixel_coords, 8, pixel_drift=pixel_drift
+                    img_array, adj_pixel_coords, pixel_drift=pixel_drift
                 )
                 freq_counts.append(counts)
             nv_counts.append(freq_counts)
@@ -118,7 +122,7 @@ def main_with_cxn(
     optimize.prepare_microscope(cxn, nv_sig)
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
-    readout_laser = laser_dict["laser"]
+    laser = laser_dict["laser"]
     tb.set_filter(cxn, nv_sig, laser_key)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     readout = laser_dict["readout_dur"]
@@ -127,10 +131,13 @@ def main_with_cxn(
 
     num_nvs = len(nv_list)
 
+    last_opt_time = None
+    opt_period = 120
+
     ### Load the pulse generator
 
     if control_style in [ControlStyle.STEP, ControlStyle.STREAM]:
-        seq_args = [readout, state.name, readout_laser, readout_power]
+        seq_args = [readout, state.name, laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "widefield-resonance.py"
 
@@ -138,17 +145,6 @@ def main_with_cxn(
     # print(seq_args)
     # return
     pulse_gen.stream_load(seq_file, seq_args_string)
-
-    ### Set up the positioning server, either xy_server or xyz_server
-
-    if num_nvs == 1:
-        nv_sig = nv_list[0]
-        coords = nv_sig["coords"]
-        pos_server.write_xy(*coords[0:2])
-    elif control_style == ControlStyle.STREAM:
-        x_coords = [sig["coords"][0] for sig in nv_list]
-        y_coords = [sig["coords"][1] for sig in nv_list]
-        pos_server.load_stream_xy(x_coords, y_coords, True)
 
     ### Set up the image display
 
@@ -159,28 +155,52 @@ def main_with_cxn(
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     sig_gen = tb.get_server_sig_gen(cxn, state)
     sig_gen.set_amp(uwave_power)
-    sig_gen.uwave_on()
 
     ### Data tracking
 
     img_arrays = [[None] * num_steps for ind in range(num_runs)]
     freq_ind_master_list = [[] for ind in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
+    pixel_drifts = [[None] * num_steps for ind in range(num_runs)]
 
     ### Collect the data
 
     tb.init_safe_stop()
+    start_time = time.time()
 
     for run_ind in range(num_runs):
         shuffle(freq_ind_list)
+
         for freq_ind in freq_ind_list:
+            # Optimize
+            now = time.time()
+            if (last_opt_time is None) or (now - last_opt_time > opt_period):
+                last_opt_time = now
+                optimize.main(nv_sig)
+
+            # Update the coordinates for drift
+            adj_coords_list = [
+                pos.adjust_coords_for_drift(nv_sig=nv, laser_name=laser)
+                for nv in nv_list
+            ]
+            if num_nvs == 1:
+                coords = adj_coords_list[0]
+                pos_server.write_xy(*coords[0:2])
+            elif control_style == ControlStyle.STREAM:
+                x_coords = [coords[0] for coords in adj_coords_list]
+                y_coords = [coords[1] for coords in adj_coords_list]
+                pos_server.load_stream_xy(x_coords, y_coords, True)
+            pixel_drifts[run_ind][freq_ind] = widefield.get_pixel_drift()
+
+            pulse_gen.stream_load(seq_file, seq_args_string)
+
             freq_ind_master_list[run_ind].append(freq_ind)
             freq = freqs[freq_ind]
             sig_gen.set_freq(freq)
+            sig_gen.uwave_on()
 
             if control_style == ControlStyle.STEP:
                 pass
-
             elif control_style == ControlStyle.STREAM:
                 camera.arm()
                 pulse_gen.stream_start(num_nvs * num_reps)
@@ -188,15 +208,17 @@ def main_with_cxn(
                 camera.disarm()
                 img_arrays[run_ind][freq_ind] = img_array
 
+            sig_gen.uwave_off()
+
     ### Data processing and plotting
 
     img_arrays = np.array(img_arrays, dtype=int)
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drift)
+    pixel_drifts = np.array(pixel_drifts, dtype=float)
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
     fig = create_figure(freqs, sig_counts)
 
     ### Clean up and save the data
 
-    sig_gen.uwave_off()
     tb.reset_cfm(cxn)
     pos.set_xyz_on_nv(cxn, nv_sig)
 
@@ -209,6 +231,8 @@ def main_with_cxn(
         "readout-units": "ns",
         "img_arrays": img_arrays,
         "img_arrays-units": "counts",
+        "pixel_drifts": pixel_drifts,
+        "pixel_drifts-units": "pixels",
         "freq_center": freq_center,
         "freq_center-units": "GHz",
         "freq_range": freq_range,
@@ -224,27 +248,24 @@ def main_with_cxn(
         "readout": readout,
         "readout-units": "ns",
         "freq_ind_master_list": freq_ind_master_list,
-        "pixel_drift": widefield.get_pixel_drift(),
     }
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, filePath)
     tb.save_raw_data(raw_data, filePath)
 
-    return img_array
-
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_22-23_24_33-johnson-nv0_2023_08_21"
+    file_name = "2023_08_23-14_47_33-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
     nv_list = data["nv_list"]
-    pixel_drift = np.array(data["pixel_drift"])
+    pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
 
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drift)
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
     create_figure(freqs, sig_counts)
 
     plt.show(block=True)

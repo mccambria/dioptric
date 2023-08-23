@@ -221,11 +221,13 @@ def reset_drift(nv_sig=None, laser_key=None, laser_name=None):
 
 
 def adjust_coords_for_drift(
-    coords, drift=None, nv_sig=None, laser_key=None, laser_name=None
+    coords=None, drift=None, nv_sig=None, laser_key=None, laser_name=None
 ):
     """Current drift will be retrieved from registry if passed drift is None"""
     if drift is None:
         drift = get_drift(nv_sig, laser_key, laser_name)
+    if coords is None:
+        coords = nv_sig["coords"]
     adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
     return adjusted_coords
 

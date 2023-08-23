@@ -388,7 +388,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_15-14_34_47-johnson-nvref"
+    file_name = "2023_08_23-13_06_56-johnson-nv0_2023_08_23"
 
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
@@ -398,7 +398,8 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array, extent=extent)
+    im = kpl.imshow(ax, img_array)
+    # im = kpl.imshow(ax, img_array_kcps, extent=extent)
     # ax.set_xlim([124.5 - 15, 124.5 + 15])
     # ax.set_ylim([196.5 + 15, 196.5 - 15])
 

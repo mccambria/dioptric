@@ -199,7 +199,7 @@ def _read_counts_widefield(
     return np.array(counts, dtype=int)
 
 
-def _stationary_count_lite(cxn, nv_sig, coords, laser_key):
+def _stationary_count_lite(cxn, nv_sig, coords, laser_key, set_pixel_drift=False):
     # Set up
     config = common.get_config_dict()
     collection_mode = config["collection_mode"]
@@ -239,9 +239,11 @@ def _stationary_count_lite(cxn, nv_sig, coords, laser_key):
         new_samples = []
         pulse_gen.stream_start(num_reps)
         img_array = camera.read()
+        camera.disarm()
+        if set_pixel_drift:
+            widefield.optimize_pixel(img_array, pixel_coords)
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         new_samples.append(sample)
-        camera.disarm()
 
     # Return
     avg_counts = np.average(new_samples)
@@ -258,7 +260,7 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     # Basic setup and definitions
-    num_steps = 31
+    num_steps = 20
     config = common.get_config_dict()
     collection_mode = config["collection_mode"]
     config_positioning = config["Positioning"]
@@ -351,6 +353,9 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
     opti_coord = _fit_gaussian(nv_sig, scan_vals, f_counts, axis_ind, fig)
+
+    # Go to the best spot for the next axis
+    axis_write_func(opti_coord)
 
     return opti_coord, scan_vals, f_counts
 
@@ -489,7 +494,9 @@ def main_with_cxn(
         print(f"Expected counts: {expected_counts}")
     elif count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
-    current_counts = _stationary_count_lite(cxn, nv_sig, adjusted_coords, laser_key)
+    current_counts = _stationary_count_lite(
+        cxn, nv_sig, adjusted_coords, laser_key, set_pixel_drift=set_drift
+    )
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
         print("No need to optimize.")
@@ -552,10 +559,6 @@ def main_with_cxn(
                 scan_vals_by_axis.append(np.array([]))
                 counts_by_axis.append(np.array([]))
             else:
-                # Help z out by ensuring we're centered in xy first
-                if None not in opti_coords:
-                    int_coords = [*opti_coords[0:2], adjusted_coords[2]]
-                    positioning.set_xyz(cxn, int_coords)
                 axis_ind = 2
                 ret_vals = _optimize_on_axis(
                     cxn, adjusted_nv_sig, axis_ind, laser_key, fig

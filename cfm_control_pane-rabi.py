@@ -62,6 +62,10 @@ def do_image_single_nv(nv_sig):
 
 
 def do_optimize(nv_sig):
+    optimize.main(nv_sig)
+
+
+def do_optimize_plot(nv_sig):
     optimize.main(
         nv_sig,
         set_to_opti_coords=False,
@@ -76,8 +80,8 @@ def do_widefield_cwesr(nv_list):
     freq_range = 0.02
     num_steps = 20
     num_reps = 100
-    num_runs = 1
-    uwave_power = -10
+    num_runs = 4
+    uwave_power = -15.0
     resonance.main(
         nv_list, freq_center, freq_range, num_steps, num_reps, num_runs, uwave_power
     )
@@ -167,36 +171,36 @@ if __name__ == "__main__":
     }
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_08_21"
-    nv0["pixel_coords"] = [191.0, 261.23]
-    nv0["coords"] = [-0.027, 0.066, z_coord]
+    nv0["name"] = f"{sample_name}-nv0_2023_08_23"
+    nv0["pixel_coords"] = [182.37, 264.94]
+    nv0["coords"] = [-0.040, 0.060, z_coord]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_08_21"
-    nv1["pixel_coords"] = [248.596, 195.202]
-    nv1["coords"] = [0.063, 0.165, z_coord]
+    nv1["name"] = f"{sample_name}-nv1_2023_08_23"
+    nv1["pixel_coords"] = [265.54, 217.13]
+    nv1["coords"] = [0.087, 0.136, z_coord]
 
     nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_08_21"
-    nv2["pixel_coords"] = [297.056, 192.717]
-    nv2["coords"] = [0.138, 0.167, z_coord]
+    nv2["name"] = f"{sample_name}-nv2_2023_08_23"
+    nv2["pixel_coords"] = [288.543, 194.541]
+    nv2["coords"] = [0.124, 0.169, z_coord]
 
     nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_08_21"
-    nv3["pixel_coords"] = [218.92, 269.62]
-    nv3["coords"] = [0.014, 0.053, z_coord]
+    nv3["name"] = f"{sample_name}-nv3_2023_08_23"
+    nv3["pixel_coords"] = [229.52, 267.04]
+    nv3["coords"] = [0.033, 0.057, z_coord]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_08_21"
-    nv4["pixel_coords"] = [299.34, 365.34]
-    nv4["coords"] = [0.146, -0.087, z_coord]
+    nv4["name"] = f"{sample_name}-nv4_2023_08_23"
+    nv4["pixel_coords"] = [292.12, 336.25]
+    nv4["coords"] = [0.132, -0.045, z_coord]
 
-    # nv_list = [nv0, nv1, nv2, nv3, nv4]
-    nv_list = [nv0, nv1, nv3, nv4]
+    nv_list = [nv0, nv1, nv2, nv3, nv4]
+    # nv_list = [nv0, nv1, nv3, nv4]
     # nv_list = [nv1, nv2]
-    # nv_list = [nv0]
+    # nv_list = [nv2]
 
-    nv_sig = nv1
+    nv_sig = nv0
 
     ### Functions to run
 
@@ -208,7 +212,7 @@ if __name__ == "__main__":
         tb.init_safe_stop()
 
         # Optimize pixels coords
-        # raw_data = tb.get_raw_data("2023_08_22-17_53_03-johnson-nv0_2023_08_21")
+        # raw_data = tb.get_raw_data("2023_08_23-12_20_08-johnson-nvref")
         # img_array = np.array(raw_data["img_array"])
         # for nv in nv_list:
         #     # pixel_coords = widefield.optimize_pixel(img_array, nv["pixel_coords"])
@@ -237,6 +241,7 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig)
         do_widefield_cwesr(nv_list)
         # do_optimize(nv_sig)
+        # do_optimize_plot(nv_sig)
         # for nv in nv_list:
         #     do_optimize(nv)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
