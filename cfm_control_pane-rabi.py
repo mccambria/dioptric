@@ -72,13 +72,12 @@ def do_optimize(nv_sig):
 
 
 def do_widefield_cwesr(nv_list):
-    num_reps = 10
     freq_center = 2.87
-    freq_range = 0.100
+    freq_range = 0.02
     num_steps = 20
-    num_reps = 10
-    num_runs = 10
-    uwave_power = -5
+    num_reps = 100
+    num_runs = 1
+    uwave_power = -10
     resonance.main(
         nv_list, freq_center, freq_range, num_steps, num_reps, num_runs, uwave_power
     )
@@ -236,7 +235,7 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv)
         # do_image_nv_list(nv_list)
         # do_stationary_count(nv_sig)
-        # do_widefield_cwesr(nv_list)
+        do_widefield_cwesr(nv_list)
         # do_optimize(nv_sig)
         # for nv in nv_list:
         #     do_optimize(nv)

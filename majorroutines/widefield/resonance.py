@@ -94,7 +94,7 @@ def main_with_cxn(
     ### Load the pulse generator
 
     if control_style in [ControlStyle.STEP, ControlStyle.STREAM]:
-        seq_args = [delay, readout, readout_laser, readout_power]
+        seq_args = [readout, state.name, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "widefield-resonance.py"
 
