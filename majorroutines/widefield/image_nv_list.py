@@ -84,7 +84,7 @@ def main_with_cxn(cxn, nv_list):
     elif control_style == ControlStyle.STREAM:
         x_coords = [sig["coords"][0] for sig in nv_list]
         y_coords = [sig["coords"][1] for sig in nv_list]
-        pos_server.load_stream_xy(x_coords, y_coords, continuous=True)
+        pos_server.load_stream_xy(x_coords, y_coords, True)
 
     ### Set up the image display
 
