@@ -30,7 +30,7 @@ class ControlStyle(Enum):
     STREAM = auto()
 
 
-class NVSpinStates(Enum):
+class NVSpinState(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()

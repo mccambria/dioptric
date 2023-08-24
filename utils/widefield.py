@@ -115,7 +115,14 @@ def scanning_to_pixel_coords(scanning_coords):
     return pixel_coords
 
 
-def counts_from_img_array(img_array, pixel_coords, radius=None, pixel_drift=None):
+def counts_from_img_array(
+    img_array, pixel_coords, radius=None, drift_adjust=True, pixel_drift=None
+):
+    # Make copies so we don't mutate the originals
+    pixel_coords = pixel_coords.copy()
+    if drift_adjust:
+        pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, pixel_drift)
+
     if radius is None:
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
@@ -155,7 +162,21 @@ def _circle_gaussian(x, y, amp, x0, y0, sigma, offset):
     return ret_array
 
 
-def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
+def optimize_pixel(
+    img_array,
+    pixel_coords,
+    radius=None,
+    set_drift=True,
+    drift_adjust=True,
+    pixel_drift=None,
+):
+    # Make copies so we don't mutate the originals
+    original_pixel_coords = pixel_coords.copy()
+    pixel_coords = pixel_coords.copy()
+    if drift_adjust:
+        pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, pixel_drift)
+
+    # Bounds and guesses
     if radius is None:
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
@@ -201,7 +222,7 @@ def optimize_pixel(img_array, pixel_coords, radius=None, set_drift=True):
 
     opti_pixel_coords = popt[1:3]
     if set_drift:
-        drift = (np.array(opti_pixel_coords) - np.array(pixel_coords)).tolist()
+        drift = (np.array(opti_pixel_coords) - np.array(original_pixel_coords)).tolist()
         set_pixel_drift(drift)
     return opti_pixel_coords
 

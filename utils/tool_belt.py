@@ -1286,4 +1286,5 @@ def reset_cfm_with_cxn(cxn):
 
 # Testing
 if __name__ == "__main__":
-    print(round_for_print_sci(0.997, 0.0940))
+    file_name = "2023_08_23-14_47_33-johnson-nv0_2023_08_23"
+    data = get_raw_data(file_name)

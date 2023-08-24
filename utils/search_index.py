@@ -154,13 +154,12 @@ def gen_search_index():
 
 
 if __name__ == "__main__":
-
     # gen_search_index()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
-    root = nvdata_path / "pc_hahn/branch_master/pulsed_resonance/2023_02"
+    root = nvdata_path / "pc_rabi/branch_master/resonance/2023_08"
     file_list = [
-        "2023_02_24-10_33_55-15micro-nv7_zfs_vs_t.txt",
+        "2023_08_23-15_22_42-johnson-nv0_2023_08_23.txt",
     ]
     paths = [root / el for el in file_list]
     for el in paths:

@@ -17,7 +17,7 @@ from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield
-from utils.constants import LaserKey, NVSpinStates, CountFormat
+from utils.constants import LaserKey, NVSpinState, CountFormat
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
@@ -38,18 +38,19 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
                 pixel_drift = pixel_drifts[run_ind, freq_ind]
-
-                adj_pixel_coords = widefield.adjust_pixel_coords_for_drift(
-                    pixel_coords, pixel_drift
+                opt_pixel_coords = widefield.optimize_pixel(
+                    img_array, pixel_coords, set_drift=False, pixel_drift=pixel_drift
                 )
+                counts = widefield.counts_from_img_array(
+                    img_array, opt_pixel_coords, drift_adjust=False
+                )
+                freq_counts.append(counts)
+
                 # Plot each img_array
                 # if nv_ind == 0:
                 #     fig, ax = plt.subplots()
                 #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
-                counts = widefield.counts_from_img_array(
-                    img_array, adj_pixel_coords, pixel_drift=pixel_drift
-                )
-                freq_counts.append(counts)
+
             nv_counts.append(freq_counts)
         nv_counts = np.array(nv_counts)
         sig_counts.append(np.average(nv_counts, axis=0))
@@ -75,7 +76,7 @@ def main(
     num_reps,
     num_runs,
     uwave_power,
-    state=NVSpinStates.LOW,
+    state=NVSpinState.LOW,
 ):
     with common.labrad_connect() as cxn:
         main_with_cxn(
@@ -100,7 +101,7 @@ def main_with_cxn(
     num_reps,
     num_runs,
     uwave_power,
-    state=NVSpinStates.LOW,
+    state=NVSpinState.LOW,
 ):
     ### Some initial setup
 
@@ -261,7 +262,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_23-14_47_33-johnson-nv0_2023_08_23"
+    file_name = "2023_08_23-15_22_42-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)

@@ -77,7 +77,7 @@ def do_optimize_plot(nv_sig):
 
 def do_widefield_cwesr(nv_list):
     freq_center = 2.87
-    freq_range = 0.02
+    freq_range = 0.05
     num_steps = 20
     num_reps = 100
     num_runs = 4
