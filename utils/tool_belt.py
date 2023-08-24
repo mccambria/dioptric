@@ -199,7 +199,7 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
     if filter_server is None:
         return
     config = common.get_config_dict()
-    pos = config["Optics"][optics_name]["FilterMapping"][filter_name]
+    pos = config["Optics"][optics_name]["filter_mapping"][filter_name]
     filter_server.set_filter(pos)
 
 
@@ -718,8 +718,22 @@ def get_raw_data(
     """
     file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
     with file_path.open() as f:
-        res = json.load(f)
-        return res
+        data = json.load(f)
+
+    # Find and decompress the linked numpy arrays
+    npz_file = None
+    for key in data:
+        val = data[key]
+        if isinstance(val, str) and val.endswith(".npz"):
+            if npz_file is None:
+                # The npz_file path is saved without the part up to nvdata so that
+                # it isn't tied to a specific PC
+                generic_path = val
+                full_path = common.get_nvdata_path() / generic_path
+                npz_file = np.load(full_path)
+            data[key] = npz_file[key]
+
+    return data
 
 
 def get_raw_data_path(
@@ -873,22 +887,41 @@ def save_figure(fig, file_path):
     fig.savefig(str(file_path.with_suffix(".svg")), dpi=300)
 
 
-def save_raw_data(raw_data, file_path):
+def save_raw_data(raw_data, file_path, keys_to_compress=None):
     """Save raw data in the form of a dictionary to a text file. New lines
     will be printed between entries in the dictionary.
 
     Params:
-        rawData: dict
+        raw_data: dict
             The raw data as a dictionary - will be saved via JSON
-        filePath: string
+        file_path: string
             The file path to save to including the file name, excluding the
             extension
+        keys_to_compress: list(string)
+            Keys to values in raw_data that we want to extract and save to
+            a separate compressed file. Currently supports numpy arrays
     """
 
     file_path_ext = file_path.with_suffix(".txt")
 
     # Work with a copy of the raw data to avoid mutation
     raw_data = copy.deepcopy(raw_data)
+
+    # Compress numpy arrays to linked file
+    if keys_to_compress is not None:
+        file_path_npz = file_path.with_suffix(".npz")
+        # Get a generic version of the path so that the part up to nvdata can be
+        # filled in upon retrieval
+        _, file_path_npz_generic = search_index.process_full_path(file_path_npz)
+        file_path_npz_generic = Path(file_path_npz_generic)
+        file_path_npz_generic /= file_path_npz.name
+        kwargs = {}
+        for key in keys_to_compress:
+            kwargs[key] = raw_data[key]
+            # Replace the value in the data with the npz file path
+            raw_data[key] = file_path_npz_generic
+        with open(file_path_npz, "wb") as f:
+            np.savez_compressed(f, **kwargs)
 
     # Always include the config
     config = common.get_config_dict()
@@ -1290,16 +1323,24 @@ if __name__ == "__main__":
     data = get_raw_data(file_name)
 
     img_arrays = np.array(data["img_arrays"], dtype=np.uint16)
-    del data["img_arrays"]
+    # data["img_arrays"] = img_arrays
 
-    file_path = Path.home() / "lab/test.npz"
-    # with open(file_path, "wb") as f:
-    #     np.savez_compressed(f, img_arrays=img_arrays)
+    # timestamp = get_time_stamp()
+    # new_file_path = get_file_path(__file__, timestamp, "test")
+    # save_raw_data(data, new_file_path, keys_to_compress=["img_arrays"])
 
-    # file_path = Path.home() / "lab/test.txt"
-    # with open(file_path, "w") as f:
-    #     json.dump(data, f, indent=2)
+    new_file_name = "2023_08_24-13_59_27-test"
+    # new_file_name = new_file_path.stem
+    new_data = get_raw_data(new_file_name)
 
-    npz_file = np.load(file_path)
-    img_arrays_test = npz_file["img_arrays"]
+    # file_path = Path.home() / "test/test.npz"
+    # # with open(file_path, "wb") as f:
+    # #     np.savez_compressed(f, img_arrays=img_arrays)
+
+    # # file_path = Path.home() / "test/test.txt"
+    # # with open(file_path, "w") as f:
+    # #     json.dump(data, f, indent=2)
+
+    # npz_file = np.load(file_path)
+    img_arrays_test = new_data["img_arrays"]
     print(np.array_equal(img_arrays_test, img_arrays))

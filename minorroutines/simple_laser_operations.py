@@ -117,7 +117,7 @@ if __name__ == "__main__":
     try:
         with common.labrad_connect() as cxn:
             # positioning.set_xyz(cxn, pos)
-            # tb.set_filter(cxn, optics_name=laser_name, filter_name=laser_filter)
+            tb.set_filter(cxn, optics_name=laser_name, filter_name=laser_filter)
             # tb.set_filter(
             #     cxn, optics_name="collection", filter_name=collection_filter
             # )

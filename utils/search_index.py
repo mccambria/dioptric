@@ -29,7 +29,7 @@ search_index_glob = f"{nvdata_path_str}/pc_*/branch_*/*/{date_glob}/*.txt"
 
 
 def process_full_path(full_path):
-    """Return just what we want for writing to the database. Expects a string
+    """Return just what we want for writing to the database. Expects a Path
     containing the entire path to the file, including nvdata, the file
     name, the extension...
     """

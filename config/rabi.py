@@ -40,9 +40,7 @@ config = {
     "DeviceIDs": {
         "arb_wave_gen_visa_address": "TCPIP0::128.104.160.119::5025::SOCKET",
         "daq0_name": "Dev1",
-        "filter_slider_THOR_ell9k_2_com": "COM11",
-        "filter_slider_THOR_ell9k_3_com": "COM9",
-        "filter_slider_THOR_ell9k_com": "COM5",
+        "filter_slider_THOR_ell9k_com": "COM13",
         "gcs_dll_path": home
         / "Documents/GitHub/dioptric/servers/outputs/GCSTranslator/PI_GCS2_DLL_x64.dll",
         "objective_piezo_model": "E709",
@@ -90,6 +88,8 @@ config = {
         "laser_INTE_520": {
             "delay": 250,
             "mod_type": ModTypes.DIGITAL,
+            "filter_server": "filter_slider_THOR_ell9k",
+            "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
         "laser_LGLO_589": {
             "delay": 2500,
@@ -110,7 +110,7 @@ config = {
         "xy_delay": int(400e3),  # 400 us for galvo
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
-        "xy_optimize_range": 0.01,
+        "xy_optimize_range": 0.02,
         "xy_small_response_delay": 800,
         "xy_units": "Voltage (V)",
         "z_control_style": ControlStyle.STREAM,

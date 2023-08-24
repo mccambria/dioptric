@@ -15,7 +15,7 @@ import numpy as np
 from utils import tool_belt as tb
 from utils import positioning as pos
 from utils import widefield
-from utils.constants import LaserKey, NVSpinStates
+from utils.constants import LaserKey, NVSpinState
 from majorroutines import image_sample
 from majorroutines.widefield import image_nv_list
 from majorroutines.widefield import resonance
@@ -82,8 +82,16 @@ def do_widefield_cwesr(nv_list):
     num_reps = 100
     num_runs = 4
     uwave_power = -15.0
+    laser_filter = "nd_0.7"
     resonance.main(
-        nv_list, freq_center, freq_range, num_steps, num_reps, num_runs, uwave_power
+        nv_list,
+        freq_center,
+        freq_range,
+        num_steps,
+        num_reps,
+        num_runs,
+        uwave_power,
+        laser_filter=laser_filter,
     )
 
 
@@ -141,7 +149,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.85
+    z_coord = 5.80
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -167,7 +175,7 @@ if __name__ == "__main__":
         "collection_filter": "514_notch+630_lp",
         "magnet_angle": None,
         #
-        NVSpinStates.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
+        NVSpinState.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -232,14 +240,14 @@ if __name__ == "__main__":
         # pixel_coords = [round(el, 2) for el in pixel_coords]
         # print(pixel_coords)
 
-        # do_image_sample(nv_ref)
+        do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_image_nv_list(nv_list)
         # do_stationary_count(nv_sig)
-        do_widefield_cwesr(nv_list)
+        # do_widefield_cwesr(nv_list)
         # do_optimize(nv_sig)
         # do_optimize_plot(nv_sig)
         # for nv in nv_list:

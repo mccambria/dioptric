@@ -77,6 +77,7 @@ def main(
     num_runs,
     uwave_power,
     state=NVSpinState.LOW,
+    laser_filter=None,
 ):
     with common.labrad_connect() as cxn:
         main_with_cxn(
@@ -89,6 +90,7 @@ def main(
             num_runs,
             uwave_power,
             state,
+            laser_filter,
         )
 
 
@@ -102,6 +104,7 @@ def main_with_cxn(
     num_runs,
     uwave_power,
     state=NVSpinState.LOW,
+    laser_filter=None,
 ):
     ### Some initial setup
 
@@ -179,6 +182,9 @@ def main_with_cxn(
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
                 last_opt_time = now
                 optimize.main(nv_sig)
+                # Reset the filter
+                if laser_filter is not None:
+                    tb.set_filter(cxn, laser, laser_filter)
 
             # Update the coordinates for drift
             adj_coords_list = [
@@ -256,7 +262,7 @@ def main_with_cxn(
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, filePath)
-    tb.save_raw_data(raw_data, filePath)
+    tb.save_raw_data(raw_data, filePath, keys_to_compress=["img_arrays"])
 
 
 if __name__ == "__main__":
