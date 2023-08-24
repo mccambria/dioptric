@@ -1288,3 +1288,18 @@ def reset_cfm_with_cxn(cxn):
 if __name__ == "__main__":
     file_name = "2023_08_23-14_47_33-johnson-nv0_2023_08_23"
     data = get_raw_data(file_name)
+
+    img_arrays = np.array(data["img_arrays"], dtype=np.uint16)
+    del data["img_arrays"]
+
+    file_path = Path.home() / "lab/test.npz"
+    # with open(file_path, "wb") as f:
+    #     np.savez_compressed(f, img_arrays=img_arrays)
+
+    # file_path = Path.home() / "lab/test.txt"
+    # with open(file_path, "w") as f:
+    #     json.dump(data, f, indent=2)
+
+    npz_file = np.load(file_path)
+    img_arrays_test = npz_file["img_arrays"]
+    print(np.array_equal(img_arrays_test, img_arrays))
