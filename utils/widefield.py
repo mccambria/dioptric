@@ -14,6 +14,7 @@ from numpy import inf
 from utils import common
 from scipy.optimize import minimize
 from utils import tool_belt as tb
+from utils import positioning as pos
 from utils import kplotlib as kpl
 from utils.constants import CountFormat
 
@@ -53,6 +54,13 @@ def pixel_to_scanning_coords(pixel_coords):
     list(numeric)
         Scanning coordinates
     """
+    m_x, b_x, m_y, b_y = _pixel_to_scanning_coords()
+    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
+    return scanning_coords
+
+
+def _pixel_to_scanning_coords():
+    """Get the linear parameters for the conversion"""
     config = common.get_config_dict()
     config_pos = config["Positioning"]
 
@@ -73,8 +81,7 @@ def pixel_to_scanning_coords(pixel_coords):
     m_y = scanning_diff / pixel_diff
     b_y = NV1_scanning_coords[1] - m_y * NV1_pixel_coords[1]
 
-    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
-    return scanning_coords
+    return m_x, b_x, m_y, b_y
 
 
 def scanning_to_pixel_coords(scanning_coords):
@@ -91,6 +98,14 @@ def scanning_to_pixel_coords(scanning_coords):
     list(numeric)
         Camera pixel coordinates
     """
+
+    m_x, b_x, m_y, b_y = _scanning_to_pixel_coords()
+    pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[1] + b_y]
+    return pixel_coords
+
+
+def _scanning_to_pixel_coords():
+    """Get the linear parameters for the conversion"""
     config = common.get_config_dict()
     config_pos = config["Positioning"]
 
@@ -111,8 +126,7 @@ def scanning_to_pixel_coords(scanning_coords):
     m_y = pixel_diff / scanning_diff
     b_y = NV1_pixel_coords[1] - m_y * NV1_scanning_coords[1]
 
-    pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[1] + b_y]
-    return pixel_coords
+    return m_x, b_x, m_y, b_y
 
 
 def counts_from_img_array(
@@ -248,36 +262,19 @@ def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
     return adjusted_coords
 
 
+def set_scanning_drift_from_pixel_drift(pixel_drift=None):
+    scanning_drift = pixel_to_scanning_drift(pixel_drift)
+    pos.set_drift(scanning_drift)
+
+
+def pixel_to_scanning_drift(pixel_drift=None):
+    if pixel_drift is None:
+        pixel_drift = get_pixel_drift()
+    m_x, _, m_y, _ = _pixel_to_scanning_coords()
+    return [m_x * pixel_drift[0], m_y * pixel_drift[1]]
+
+
 if __name__ == "__main__":
-    kpl.init_kplotlib()
-    file_name = "2023_08_21-11_54_12-johnson-nvref"
-    data = tb.get_raw_data(file_name)
-    img_array = np.array(data["img_array"])
-
-    # pixel_coords = [189.87, 267.62]
-    # pixel_coords = [241.78, 194.4]
-    # pixel_coords = [296.26, 198.03]
-    pixel_coords = [217.28, 275.39]
-    radius = 8
-
-    # counts = counts_from_img_array(img_array, pixel_coords, radius)
-    # print(counts)
-
-    # opt = optimize_pixel(img_array, pixel_coords, radius)
-    # r_opt = [round(el, 2) for el in opt]
-    # print(r_opt)
-    # opt_counts = counts_from_img_array(img_array, opt, radius)
-    # print(opt_counts)
-
-    scanning_coords = pixel_to_scanning(pixel_coords)
-    r_scanning_coords = [round(el, 3) for el in scanning_coords]
-    print(r_scanning_coords)
-
-    # Plot
-    if False:
-        fig, ax = plt.subplots()
-        im = kpl.imshow(ax, img_array)
-        ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
-        ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
-
-        plt.show(block=True)
+    pixel_drift = [-5.56, 5.64]
+    test = pixel_to_scanning_drift(pixel_drift)
+    print(test)
