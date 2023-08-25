@@ -136,12 +136,11 @@ def main_with_cxn(
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     readout = laser_dict["readout_dur"]
     readout_sec = readout / 10**9
-    num_reps = laser_dict["num_reps"]
 
     num_nvs = len(nv_list)
 
     last_opt_time = time.time()
-    opt_period = 15 * 60
+    opt_period = 10 * 60
 
     ### Load the pulse generator
 
@@ -153,7 +152,7 @@ def main_with_cxn(
     # print(seq_file)
     # print(seq_args)
     # return
-    pulse_gen.stream_load(seq_file, seq_args_string)
+    ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
 
     ### Set up the image display
 
@@ -231,8 +230,8 @@ def main_with_cxn(
 
     img_arrays = np.array(img_arrays, dtype=int)
     pixel_drifts = np.array(pixel_drifts, dtype=float)
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
-    fig = create_figure(freqs, sig_counts)
+    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
+    # fig = create_figure(freqs, sig_counts)
 
     ### Clean up and save the data
 
@@ -268,7 +267,7 @@ def main_with_cxn(
     }
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, filePath)
+    # tb.save_figure(fig, filePath)
     tb.save_raw_data(raw_data, filePath, keys_to_compress=["img_arrays"])
 
 
