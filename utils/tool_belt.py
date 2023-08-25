@@ -131,7 +131,7 @@ def set_laser_power(
 
     if (nv_sig is not None) and (laser_key is not None):
         laser_dict = nv_sig[laser_key]
-        laser_name = laser_dict["laser"]
+        laser_name = laser_dict["name"]
         # If the power isn't specified, then we assume it's set some other way
         if "power" in laser_dict:
             laser_power = laser_dict["power"]
@@ -177,23 +177,22 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
     """
 
     if (nv_sig is not None) and (optics_key is not None):
-        if optics_key in nv_sig:
-            optics_name = nv_sig[optics_key]
+        # Quit out if there's not enough info in the sig
+        if optics_key not in nv_sig:
+            return 
+        optics_dict = nv_sig[optics_key]
+        if "filter" not in optics_dict:
+            return
+        
+        if "name" in optics_dict:
+            optics_name = optics_dict["name"]
         else:
             optics_name = optics_key
-        filter_key = "{}_filter".format(optics_key)
-        # Just exit if there's no filter specified in the nv_sig
-        if filter_key not in nv_sig:
-            return
-        filter_name = nv_sig[filter_key]
-        if filter_name is None:
-            return
-    elif (optics_name is not None) and (filter_name is not None):
-        pass  # All good
-    else:
-        raise Exception(
-            "Specify either an optics_key/nv_sig or an" " optics_name/filter_name."
-        )
+        filter_name = optics_dict["filter"]
+    
+    # Quit out if we don't have what we need to go forward
+    if (optics_name is None) or (filter_name is None):
+        return
 
     filter_server = get_filter_server(cxn, optics_name)
     if filter_server is None:

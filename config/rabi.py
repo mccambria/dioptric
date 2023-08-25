@@ -7,12 +7,28 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes, ControlStyle, CountFormat, CollectionMode
+from utils.constants import ModTypes, ControlStyle, CountFormat
+from utils.constants import CollectionMode, LaserKey
 from pathlib import Path
 
 home = Path.home()
 
 # region Base config
+
+widefield_calibration_nv_shell = {
+    "name": "widefield_calibration_nv1",
+    "disable_opt": False,
+    "disable_z_opt": True,
+    "expected_count_rate": None,
+    LaserKey.IMAGING: {
+        "name": "laser_INTE_520",
+        "readout_dur": 1e7,
+        "num_reps": 100,
+        "filter": "nd_0",
+    },
+    "collection_filter": None,
+    "magnet_angle": None,
+}
 
 config = {
     ###
@@ -119,10 +135,8 @@ config = {
         "z_nm_per_unit": 1000,
         "z_optimize_range": 4,
         "z_units": "Voltage (V)",
-        "NV1_pixel_coords": [191.0, 261.23],
-        "NV1_scanning_coords": [-0.027, 0.066],
-        "NV2_pixel_coords": [299.34, 365.34],
-        "NV2_scanning_coords": [0.146, -0.087],
+        "widefield_calibration_nv1": widefield_calibration_nv_shell.copy(),
+        "widefield_calibration_nv2": widefield_calibration_nv_shell.copy(),
     },
     ###
     "Servers": {

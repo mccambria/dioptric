@@ -38,8 +38,12 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
                 pixel_drift = pixel_drifts[run_ind, freq_ind]
-                opt_pixel_coords = widefield.optimize_pixel(
-                    img_array, pixel_coords, set_drift=False, pixel_drift=pixel_drift
+                opt_pixel_coords = optimize.optimize_pixel(
+                    img_array,
+                    pixel_coords,
+                    set_scanning_drift=False,
+                    set_pixel_drift=False,
+                    pixel_drift=pixel_drift,
                 )
                 counts = widefield.counts_from_img_array(
                     img_array, opt_pixel_coords, drift_adjust=False
@@ -127,8 +131,8 @@ def main_with_cxn(
     optimize.prepare_microscope(cxn, nv_sig)
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
-    laser = laser_dict["laser"]
-    tb.set_filter(cxn, nv_sig, laser_key)
+    laser = laser_dict["name"]
+    tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     readout = laser_dict["readout_dur"]
     readout_sec = readout / 10**9
@@ -136,8 +140,8 @@ def main_with_cxn(
 
     num_nvs = len(nv_list)
 
-    last_opt_time = None
-    opt_period = 120
+    last_opt_time = time.time()
+    opt_period = 15 * 60
 
     ### Load the pulse generator
 
@@ -175,16 +179,20 @@ def main_with_cxn(
 
     for run_ind in range(num_runs):
         shuffle(freq_ind_list)
-
         for freq_ind in freq_ind_list:
+            print(run_ind)
+            print(freq_ind)
+            print()
+
             # Optimize
             now = time.time()
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
                 last_opt_time = now
-                optimize.main(nv_sig)
-                # Reset the filter
-                if laser_filter is not None:
-                    tb.set_filter(cxn, laser, laser_filter)
+                optimize.optimize_widefield_calibration(cxn)
+
+                # Reset the pulse streamer and laser filter
+                tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
+                pulse_gen.stream_load(seq_file, seq_args_string)
 
             # Update the coordinates for drift
             adj_coords_list = [
@@ -198,10 +206,6 @@ def main_with_cxn(
                 x_coords = [coords[0] for coords in adj_coords_list]
                 y_coords = [coords[1] for coords in adj_coords_list]
                 pos_server.load_stream_xy(x_coords, y_coords, True)
-            pixel_drifts[run_ind][freq_ind] = widefield.get_pixel_drift()
-
-            # Load the sequence and the signal generator
-            pulse_gen.stream_load(seq_file, seq_args_string)
 
             freq_ind_master_list[run_ind].append(freq_ind)
             freq = freqs[freq_ind]
@@ -216,7 +220,10 @@ def main_with_cxn(
                 pulse_gen.stream_start(num_nvs * num_reps)
                 img_array = camera.read()
                 camera.disarm()
-                img_arrays[run_ind][freq_ind] = img_array
+
+            img_arrays[run_ind][freq_ind] = img_array
+            optimize.optimize_pixel(img_array, nv_sig["pixel_coords"])
+            pixel_drifts[run_ind][freq_ind] = widefield.get_pixel_drift()
 
             sig_gen.uwave_off()
 

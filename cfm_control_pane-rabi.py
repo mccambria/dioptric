@@ -15,6 +15,7 @@ import numpy as np
 from utils import tool_belt as tb
 from utils import positioning as pos
 from utils import widefield
+from utils import common
 from utils.constants import LaserKey, NVSpinState
 from majorroutines import image_sample
 from majorroutines.widefield import image_nv_list
@@ -65,6 +66,17 @@ def do_optimize(nv_sig):
     optimize.main(nv_sig)
 
 
+def do_optimize_pixel(nv_sig):
+    with common.labrad_connect() as cxn:
+        img_array = optimize.stationary_count_lite(cxn, nv_sig, ret_img_array=True)
+    optimize.optimize_pixel(img_array, nv_sig["pixel_coords"])
+
+
+def do_optimize_widefield_calibration():
+    with common.labrad_connect() as cxn:
+        optimize.optimize_widefield_calibration(cxn)
+
+
 def do_optimize_plot(nv_sig):
     optimize.main(
         nv_sig,
@@ -75,11 +87,11 @@ def do_optimize_plot(nv_sig):
     )
 
 
-def do_widefield_cwesr(nv_list):
+def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.05
     num_steps = 20
-    num_reps = 100
+    num_reps = 400
     num_runs = 4
     uwave_power = -15.0
     laser_filter = "nd_0.7"
@@ -149,7 +161,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.80
+    z_coord = 5.77
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -168,11 +180,16 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        LaserKey.IMAGING: {"laser": green_laser, "readout_dur": 1e7, "num_reps": 100},
+        LaserKey.IMAGING: {
+            "name": green_laser,
+            "readout_dur": 1e7,
+            "num_reps": 100,
+            "filter": "nd_0",
+        },
         #
-        LaserKey.SPIN: {"laser": green_laser, "pol_dur": 2e3, "readout_dur": 440},
+        LaserKey.SPIN: {"name": green_laser, "pol_dur": 2e3, "readout_dur": 440},
         #
-        "collection_filter": "514_notch+630_lp",
+        "collection": {"filter": "514_notch+630_lp"},
         "magnet_angle": None,
         #
         NVSpinState.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
@@ -240,16 +257,18 @@ if __name__ == "__main__":
         # pixel_coords = [round(el, 2) for el in pixel_coords]
         # print(pixel_coords)
 
-        do_image_sample(nv_ref)
+        # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
+        do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
-        # do_image_nv_list(nv_list)
         # do_stationary_count(nv_sig)
-        # do_widefield_cwesr(nv_list)
+        # do_resonance(nv_list)
         # do_optimize(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_optimize_plot(nv_sig)
+        # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)

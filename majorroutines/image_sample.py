@@ -148,7 +148,7 @@ def main_with_cxn(
 
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
-    readout_laser = laser_dict["laser"]
+    readout_laser = laser_dict["name"]
     tb.set_filter(cxn, nv_sig, laser_key)
     readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
 
