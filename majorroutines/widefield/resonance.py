@@ -38,15 +38,19 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
                 pixel_drift = pixel_drifts[run_ind, freq_ind]
-                opt_pixel_coords = optimize.optimize_pixel(
+                # opt_pixel_coords = optimize.optimize_pixel(
+                #     img_array,
+                #     pixel_coords,
+                #     set_scanning_drift=False,
+                #     set_pixel_drift=False,
+                #     pixel_drift=pixel_drift,
+                # )
+                counts = widefield.counts_from_img_array(
                     img_array,
                     pixel_coords,
-                    set_scanning_drift=False,
-                    set_pixel_drift=False,
+                    drift_adjust=True,
                     pixel_drift=pixel_drift,
-                )
-                counts = widefield.counts_from_img_array(
-                    img_array, opt_pixel_coords, drift_adjust=False
+                    radius=13,
                 )
                 freq_counts.append(counts)
 
@@ -274,7 +278,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_23-15_22_42-johnson-nv0_2023_08_23"
+    file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)

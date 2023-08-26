@@ -319,24 +319,31 @@ def optimize_widefield_calibration(cxn):
     to convert between pixel and scanning coordinates
     """
     # Get the calibration NV sig shells from config
-    
+
     config = common.get_config_dict()
     config_positioning = config["Positioning"]
     nv1 = config_positioning["widefield_calibration_nv1"].copy()
     nv2 = config_positioning["widefield_calibration_nv2"].copy()
     calibration_directory = ["State", "WidefieldCalibration"]
-    
+
     # Calculate the differential drift and assign the NVs updated coordinates
-    
+
     ret_vals = widefield.get_widefield_calibration_params()
-    nv1_scanning_coords, nv1_pixel_coords, nv2_scanning_coords, nv2_pixel_coords = ret_vals[0:4]
+    (
+        nv1_scanning_coords,
+        nv1_pixel_coords,
+        nv2_scanning_coords,
+        nv2_pixel_coords,
+    ) = ret_vals[0:4]
     last_scanning_drift, last_pixel_drift = ret_vals[4:6]
-    
+
     current_scanning_drift = pos.get_drift()
     current_pixel_drift = widefield.get_pixel_drift()
-    diff_scanning_drift = np.array(current_scanning_drift) - np.array(last_scanning_drift)
+    diff_scanning_drift = np.array(current_scanning_drift) - np.array(
+        last_scanning_drift
+    )
     diff_pixel_drift = np.array(current_pixel_drift) - np.array(last_pixel_drift)
-    
+
     # Save the current drifts to the registry for the next differential drift calculation
     common.set_registry_entry(calibration_directory, "DRIFT", current_scanning_drift)
     common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
@@ -347,7 +354,7 @@ def optimize_widefield_calibration(cxn):
     nv2["pixel_coords"] = nv2_pixel_coords + diff_pixel_drift
 
     # Optimize on the two NVs
-    
+
     nvs = [nv1, nv2]
     pixel_coords_list = []
     scanning_coords_list = []
@@ -361,18 +368,19 @@ def optimize_widefield_calibration(cxn):
 
         # Optimize pixel coordinates
         img_array = stationary_count_lite(
-            cxn, nv, scanning_coords, ret_img_array=True, drift_adjust=False
+            cxn, nv, scanning_coords, ret_img_array=True, scanning_drift_adjust=False
         )
         pixel_coords = optimize_pixel(
             img_array,
             nv["pixel_coords"],
-            set_pixel_drift=True,
+            set_pixel_drift=False,
             set_scanning_drift=False,
+            drift_adjust=False,
         )
         pixel_coords_list.append(pixel_coords)
 
     # Save the optimized coordinates to the registry
-    
+
     nv_names = ["NV1", "NV2"]
     for ind in range(2):
         nv_name = nv_names[ind]
@@ -464,7 +472,8 @@ def stationary_count_lite(
     coords=None,
     laser_key=LaserKey.IMAGING,
     ret_img_array=False,
-    drift_adjust=True,
+    scanning_drift_adjust=True,
+    pixel_drift_adjust=True,
 ):
     # Set up
     config = common.get_config_dict()
@@ -478,7 +487,7 @@ def stationary_count_lite(
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
         coords = nv_sig["coords"]
-    if drift_adjust:
+    if scanning_drift_adjust:
         coords = pos.adjust_coords_for_drift(coords)
     x_center, y_center, z_center = coords
 
@@ -505,13 +514,17 @@ def stationary_count_lite(
         counter_server.stop_tag_stream()
     elif collection_mode == CollectionMode.WIDEFIELD:
         pixel_coords = nv_sig["pixel_coords"]
+        if pixel_drift_adjust:
+            pixel_coords = widefield.adjust_pixel_coords_for_drift(pixel_coords)
         camera = tb.get_server_camera(cxn)
         camera.arm()
         new_samples = []
         pulse_gen.stream_start(num_reps)
         img_array = camera.read()
         camera.disarm()
-        sample = widefield.counts_from_img_array(img_array, pixel_coords)
+        sample = widefield.counts_from_img_array(
+            img_array, pixel_coords, drift_adjust=False
+        )
         new_samples.append(sample)
 
     # Return
@@ -593,7 +606,7 @@ def main(
     plot_data=False,
     set_drift=True,
     laser_key=LaserKey.IMAGING,
-    drift_adjust=False
+    drift_adjust=True,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
@@ -604,7 +617,7 @@ def main(
             plot_data,
             set_drift,
             laser_key,
-            drift_adjust=drift_adjust
+            drift_adjust=drift_adjust,
         )
 
 
@@ -616,7 +629,7 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
     laser_key=LaserKey.IMAGING,
-    drift_adjust=False
+    drift_adjust=True,
 ):
     # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
@@ -664,7 +677,7 @@ def main_with_cxn(
     elif count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
     current_counts = stationary_count_lite(
-        cxn, nv_sig, adjusted_coords, laser_key, drift_adjust=False
+        cxn, nv_sig, adjusted_coords, laser_key, scanning_drift_adjust=False
     )
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
@@ -712,7 +725,7 @@ def main_with_cxn(
                 if expected_counts is not None:
                     test_coords = [*opti_coords[0:2], adjusted_coords[2]]
                     current_counts = stationary_count_lite(
-                        cxn, nv_sig, test_coords, laser_key, drift_adjust=False
+                        cxn, nv_sig, test_coords, laser_key, scanning_drift_adjust=False
                     )
                     if lower_bound < current_counts < upper_bound:
                         print("Z optimization unnecessary.")
@@ -744,7 +757,7 @@ def main_with_cxn(
 
             # Check the counts
             current_counts = stationary_count_lite(
-                cxn, nv_sig, opti_coords, laser_key, drift_adjust=False
+                cxn, nv_sig, opti_coords, laser_key, scanning_drift_adjust=False
             )
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
             if expected_counts is not None:
