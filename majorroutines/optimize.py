@@ -298,7 +298,8 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     opti_coord = _fit_gaussian(nv_sig, scan_vals, f_counts, axis_ind, fig)
 
     # Go to the best spot for the next axis
-    axis_write_func(opti_coord)
+    if opti_coord is not None:
+        axis_write_func(opti_coord)
 
     return opti_coord, scan_vals, f_counts
 

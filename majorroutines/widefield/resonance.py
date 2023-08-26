@@ -188,14 +188,14 @@ def main_with_cxn(
             print()
 
             # Optimize
-            now = time.time()
-            if (last_opt_time is None) or (now - last_opt_time > opt_period):
-                last_opt_time = now
-                optimize.optimize_widefield_calibration(cxn)
+            # now = time.time()
+            # if (last_opt_time is None) or (now - last_opt_time > opt_period):
+            #     last_opt_time = now
+            #     optimize.optimize_widefield_calibration(cxn)
 
-                # Reset the pulse streamer and laser filter
-                tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
-                pulse_gen.stream_load(seq_file, seq_args_string)
+            #     # Reset the pulse streamer and laser filter
+            #     tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
+            #     pulse_gen.stream_load(seq_file, seq_args_string)
 
             # Update the coordinates for drift
             adj_coords_list = [
