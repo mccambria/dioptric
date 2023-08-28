@@ -431,9 +431,9 @@ def optimize_pixel(
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
 
     # Don't both trying to optimize if all we have is noise
-    # res = normaltest(img_array_crop.flatten())
-    # if res.pvalue > 0.001:
-    #     return pixel_coords
+    res = normaltest(img_array_crop.flatten())
+    if res.pvalue > 0.001:
+        return pixel_coords
 
     def cost(fit_params):
         amp, x0, y0, twice_var, offset = fit_params
@@ -443,7 +443,8 @@ def optimize_pixel(
         diff_array = gaussian_array - img_array_crop
         return np.sum(diff_array**2)
 
-    res = minimize(cost, guess, bounds=bounds, options={"maxiter": 10})
+    # res = minimize(cost, guess, bounds=bounds, options={"maxiter": 10})
+    res = minimize(cost, guess, bounds=bounds)
     popt = res.x
 
     # Testing

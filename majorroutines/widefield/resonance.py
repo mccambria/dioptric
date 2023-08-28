@@ -23,6 +23,7 @@ from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 from cProfile import Profile
+from pathos.multiprocessing import ProcessingPool
 
 
 def process_img_arrays(img_arrays, nv_list, pixel_drifts):
@@ -30,48 +31,58 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
     num_runs = img_arrays.shape[0]
     # num_runs = 16
     num_steps = img_arrays.shape[1]
-    sig_counts = []
+    # sig_counts = []
+    sig_counts = [
+        [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
+    ]
+
+    def process_img_arrays_sub(nv_ind, freq_ind, run_ind):
+        pixel_coords = nv_list[nv_ind]["pixel_coords"]
+        img_array = img_arrays[run_ind, freq_ind]
+        pixel_drift = pixel_drifts[run_ind, freq_ind]
+        opt_pixel_coords = optimize.optimize_pixel(
+            img_array,
+            pixel_coords,
+            set_scanning_drift=False,
+            set_pixel_drift=False,
+            pixel_drift=pixel_drift,
+        )
+        counts = widefield.counts_from_img_array(
+            img_array,
+            opt_pixel_coords,
+            drift_adjust=False,
+            # pixel_coords,
+            # drift_adjust=True,
+            # pixel_drift=pixel_drift,
+        )
+        return counts
+
     for nv_ind in range(num_nvs):
-        nv_sig = nv_list[nv_ind]
-        pixel_coords = nv_sig["pixel_coords"]
-        nv_counts = []
         for run_ind in range(num_runs):
-            # run_ind += 1
-            freq_counts = []
-            for freq_ind in range(num_steps):
-                img_array = img_arrays[run_ind, freq_ind]
-                # plt.imshow(img_array)
-                # plt.show(block=True)
-                pixel_drift = pixel_drifts[run_ind, freq_ind]
-                opt_pixel_coords = optimize.optimize_pixel(
-                    img_array,
-                    pixel_coords,
-                    set_scanning_drift=False,
-                    set_pixel_drift=False,
-                    pixel_drift=pixel_drift,
-                )
-                counts = widefield.counts_from_img_array(
-                    img_array,
-                    opt_pixel_coords,
-                    drift_adjust=False,
-                    # pixel_coords,
-                    # drift_adjust=True,
-                    # pixel_drift=pixel_drift,
-                )
-                # if counts < 1000:
-                #     counts = np.NaN
-                freq_counts.append(counts)
+            # Multi threaded
+            def process_img_arrays_sub_wrapper(freq_ind):
+                return process_img_arrays_sub(nv_ind, freq_ind, run_ind)
 
-                # Plot each img_array
-                # if nv_ind == 0:
-                #     fig, ax = plt.subplots()
-                #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
+            with ProcessingPool() as p:
+                line = p.map(process_img_arrays_sub_wrapper, range(num_steps))
+            sig_counts[nv_ind][run_ind] = line
 
-            nv_counts.append(freq_counts)
-        nv_counts = np.array(nv_counts)
-        # sig_counts.append(np.average(nv_counts, axis=0))
-        sig_counts.append(np.nanmean(nv_counts, axis=0))
-    return np.array(sig_counts)
+            # Single threaded
+            # for freq_ind in range(num_steps):
+            #     counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind)
+            #     # if counts < 1000:
+            #     #     counts = np.NaN
+            #     # freq_counts.append(counts)
+
+            #     # Plot each img_array
+            #     # if nv_ind == 0:
+            #     #     fig, ax = plt.subplots()
+            #     #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
+
+            #     sig_counts[nv_ind][run_ind][freq_ind] = counts
+
+    sig_counts = np.array(sig_counts)
+    return np.mean(sig_counts, axis=1)
 
 
 def create_figure(freqs, sig_counts):
