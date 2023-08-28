@@ -167,10 +167,14 @@ def counts_from_img_array(
 
     edge_pixels = []
     inner_pixels = []
-    if pixel_drift is None:
-        pixel_drift = get_pixel_drift()
-    pixel_x = pixel_coords[0] + pixel_drift[0]
-    pixel_y = pixel_coords[1] + pixel_drift[1]
+    if drift_adjust:
+        if pixel_drift is None:
+            pixel_drift = get_pixel_drift()
+        pixel_x = pixel_coords[0] + pixel_drift[0]
+        pixel_y = pixel_coords[1] + pixel_drift[1]
+    else:
+        pixel_x = pixel_coords[0]
+        pixel_y = pixel_coords[1]
 
     # Don't loop through all the pixels, just the ones that might be relevant
     left = int(np.floor(pixel_x - radius))

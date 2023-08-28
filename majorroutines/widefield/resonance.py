@@ -22,11 +22,13 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
+from cProfile import Profile
 
 
 def process_img_arrays(img_arrays, nv_list, pixel_drifts):
     num_nvs = len(nv_list)
     num_runs = img_arrays.shape[0]
+    num_runs = 1
     num_steps = img_arrays.shape[1]
     sig_counts = []
     for nv_ind in range(num_nvs):
@@ -38,19 +40,20 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
                 pixel_drift = pixel_drifts[run_ind, freq_ind]
-                # opt_pixel_coords = optimize.optimize_pixel(
-                #     img_array,
-                #     pixel_coords,
-                #     set_scanning_drift=False,
-                #     set_pixel_drift=False,
-                #     pixel_drift=pixel_drift,
-                # )
-                counts = widefield.counts_from_img_array(
+                opt_pixel_coords = optimize.optimize_pixel(
                     img_array,
                     pixel_coords,
-                    drift_adjust=True,
+                    set_scanning_drift=False,
+                    set_pixel_drift=False,
                     pixel_drift=pixel_drift,
-                    radius=13,
+                )
+                counts = widefield.counts_from_img_array(
+                    img_array,
+                    opt_pixel_coords,
+                    drift_adjust=False,
+                    # pixel_coords,
+                    # drift_adjust=True,
+                    # pixel_drift=pixel_drift,
                 )
                 freq_counts.append(counts)
 
@@ -285,7 +288,14 @@ if __name__ == "__main__":
     nv_list = data["nv_list"]
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
 
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
+    print("start")
+    start = time.time()
+    with Profile() as pr:
+        sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
+        pr.print_stats("cumulative")
+    stop = time.time()
+    print("stop")
+    print(f"Time elapsed: {stop - start}")
     create_figure(freqs, sig_counts)
 
     plt.show(block=True)

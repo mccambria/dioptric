@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     root = nvdata_path / "pc_rabi/branch_master/resonance/2023_08"
     file_list = [
-        "2023_08_23-15_22_42-johnson-nv0_2023_08_23.txt",
+        "2023_08_25-15_44_53-johnson-nv0_2023_08_23.txt",
     ]
     paths = [root / el for el in file_list]
     for el in paths:

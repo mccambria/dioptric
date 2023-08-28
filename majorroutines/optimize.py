@@ -417,8 +417,9 @@ def optimize_pixel(
     initial_x = pixel_coords[0]
     initial_y = pixel_coords[1]
     bg_guess = int(img_array[round(initial_y), round(initial_x + radius)])
-    amp_guess = int(img_array[round(initial_y), round(initial_x)]) - bg_guess
-    guess = (amp_guess, *pixel_coords, radius / 2, bg_guess)
+    amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
+    amp_guess = max(10, amp_guess)
+    guess = (amp_guess, *pixel_coords, radius, bg_guess)
     diam = radius * 2
     half_range = radius
     # lower_bounds = (0, pixel_coords[0] - diam, pixel_coords[1] - diam, 0, 0)
@@ -428,18 +429,16 @@ def optimize_pixel(
     top = round(initial_y - half_range)
     bottom = round(initial_y + half_range)
     bounds = ((0, inf), (left, right), (top, bottom), (1, diam), (0, inf))
-    shape = img_array.shape
-    x = np.linspace(0, shape[0] - 1, shape[0])
-    y = np.linspace(0, shape[1] - 1, shape[1])
-    x, y = np.meshgrid(x, y)
+    x_crop = np.linspace(left, right, right - left + 1)
+    y_crop = np.linspace(top, bottom, bottom - top + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
 
     def cost(fit_params):
         amp, x0, y0, sigma, offset = fit_params
-        gaussian_array = _circle_gaussian(x, y, amp, x0, y0, sigma, offset)
+        gaussian_array = _circle_gaussian(x_crop_mesh, y_crop_mesh, amp, x0, y0, sigma, offset)
         # Limit the range to the NV we're looking at
-        diff_array = (
-            gaussian_array[top:bottom, left:right] - img_array[top:bottom, left:right]
-        )
+        diff_array = gaussian_array - img_array_crop
         return np.sum(diff_array**2)
 
     res = minimize(cost, guess, bounds=bounds)
