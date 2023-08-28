@@ -217,7 +217,7 @@ def main_with_cxn(
 
             # Record the image
             if control_style == ControlStyle.STEP:
-                pass
+                passb
             elif control_style == ControlStyle.STREAM:
                 camera.arm()
                 pulse_gen.stream_start(num_nvs * num_reps)
