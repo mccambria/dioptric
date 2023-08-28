@@ -24,6 +24,7 @@ from utils import positioning as pos
 from utils import common
 from utils import widefield
 from utils.constants import ControlStyle, CountFormat, CollectionMode, LaserKey
+from numba import njit
 
 # endregion
 # region Plotting functions
@@ -387,6 +388,16 @@ def optimize_widefield_calibration(cxn):
         common.set_registry_entry(calibration_directory, key, scanning_coords)
 
 
+@njit
+def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, twice_var, offset = fit_params
+    gaussian_array = offset + amp * np.exp(
+        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / twice_var
+    )
+    diff_array = gaussian_array - img_array_crop
+    return np.sum(diff_array**2)
+
+
 def optimize_pixel(
     img_array,
     pixel_coords,
@@ -423,28 +434,28 @@ def optimize_pixel(
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
     bottom = round(initial_y + half_range)
-    bounds = ((0, inf), (left, right), (top, bottom), (1, diam**2), (0, inf))
     # Limit the range to the NV we're looking at
     x_crop = np.linspace(left, right, right - left + 1)
     y_crop = np.linspace(top, bottom, bottom - top + 1)
     x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
+    min_img_array_crop = np.min(img_array_crop)
+    max_img_array_crop = np.max(img_array_crop)
+    bounds = (
+        ((1 / 2) * min_img_array_crop, 2 * max_img_array_crop),
+        (left, right),
+        (top, bottom),
+        (1, diam**2),
+        (0, 2 * (max_img_array_crop - min_img_array_crop)),
+    )
 
     # Don't both trying to optimize if all we have is noise
-    res = normaltest(img_array_crop.flatten())
-    if res.pvalue > 0.001:
-        return pixel_coords
+    # res = normaltest(img_array_crop.flatten())
+    # if res.pvalue > 0.001:
+    #     return pixel_coords
 
-    def cost(fit_params):
-        amp, x0, y0, twice_var, offset = fit_params
-        gaussian_array = offset + amp * np.exp(
-            -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / twice_var
-        )
-        diff_array = gaussian_array - img_array_crop
-        return np.sum(diff_array**2)
-
-    # res = minimize(cost, guess, bounds=bounds, options={"maxiter": 10})
-    res = minimize(cost, guess, bounds=bounds)
+    args = (x_crop_mesh, y_crop_mesh, img_array_crop)
+    res = minimize(_optimize_pixel_cost, guess, bounds=bounds, args=args)
     popt = res.x
 
     # Testing
