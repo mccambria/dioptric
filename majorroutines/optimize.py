@@ -15,6 +15,7 @@ import numpy as np
 from numpy import inf
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, minimize
+from scipy.stats import normaltest
 import time
 import copy
 from utils import tool_belt as tb
@@ -304,13 +305,6 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     return opti_coord, scan_vals, f_counts
 
 
-def _circle_gaussian(x, y, amp, x0, y0, sigma, offset):
-    ret_array = offset + amp * np.exp(
-        -(1 / (2 * sigma**2)) * (((x - x0) ** 2) + ((y - y0) ** 2))
-    )
-    return ret_array
-
-
 # endregion
 # region Widefield public functions
 
@@ -417,9 +411,10 @@ def optimize_pixel(
     initial_x = pixel_coords[0]
     initial_y = pixel_coords[1]
     bg_guess = int(img_array[round(initial_y), round(initial_x + radius)])
+    bg_guess = min(300, bg_guess)
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
     amp_guess = max(10, amp_guess)
-    guess = (amp_guess, *pixel_coords, radius, bg_guess)
+    guess = (amp_guess, *pixel_coords, (radius**2) / 2, bg_guess)
     diam = radius * 2
     half_range = radius
     # lower_bounds = (0, pixel_coords[0] - diam, pixel_coords[1] - diam, 0, 0)
@@ -428,20 +423,27 @@ def optimize_pixel(
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
     bottom = round(initial_y + half_range)
-    bounds = ((0, inf), (left, right), (top, bottom), (1, diam), (0, inf))
+    bounds = ((0, inf), (left, right), (top, bottom), (1, diam**2), (0, inf))
+    # Limit the range to the NV we're looking at
     x_crop = np.linspace(left, right, right - left + 1)
     y_crop = np.linspace(top, bottom, bottom - top + 1)
     x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
 
+    # Don't both trying to optimize if all we have is noise
+    # res = normaltest(img_array_crop.flatten())
+    # if res.pvalue > 0.001:
+    #     return pixel_coords
+
     def cost(fit_params):
-        amp, x0, y0, sigma, offset = fit_params
-        gaussian_array = _circle_gaussian(x_crop_mesh, y_crop_mesh, amp, x0, y0, sigma, offset)
-        # Limit the range to the NV we're looking at
+        amp, x0, y0, twice_var, offset = fit_params
+        gaussian_array = offset + amp * np.exp(
+            -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / twice_var
+        )
         diff_array = gaussian_array - img_array_crop
         return np.sum(diff_array**2)
 
-    res = minimize(cost, guess, bounds=bounds)
+    res = minimize(cost, guess, bounds=bounds, options={"maxiter": 10})
     popt = res.x
 
     # Testing

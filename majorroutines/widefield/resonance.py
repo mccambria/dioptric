@@ -28,7 +28,7 @@ from cProfile import Profile
 def process_img_arrays(img_arrays, nv_list, pixel_drifts):
     num_nvs = len(nv_list)
     num_runs = img_arrays.shape[0]
-    num_runs = 1
+    # num_runs = 16
     num_steps = img_arrays.shape[1]
     sig_counts = []
     for nv_ind in range(num_nvs):
@@ -36,9 +36,12 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
         pixel_coords = nv_sig["pixel_coords"]
         nv_counts = []
         for run_ind in range(num_runs):
+            # run_ind += 1
             freq_counts = []
             for freq_ind in range(num_steps):
                 img_array = img_arrays[run_ind, freq_ind]
+                # plt.imshow(img_array)
+                # plt.show(block=True)
                 pixel_drift = pixel_drifts[run_ind, freq_ind]
                 opt_pixel_coords = optimize.optimize_pixel(
                     img_array,
@@ -55,6 +58,8 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
                     # drift_adjust=True,
                     # pixel_drift=pixel_drift,
                 )
+                # if counts < 1000:
+                #     counts = np.NaN
                 freq_counts.append(counts)
 
                 # Plot each img_array
@@ -64,7 +69,8 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts):
 
             nv_counts.append(freq_counts)
         nv_counts = np.array(nv_counts)
-        sig_counts.append(np.average(nv_counts, axis=0))
+        # sig_counts.append(np.average(nv_counts, axis=0))
+        sig_counts.append(np.nanmean(nv_counts, axis=0))
     return np.array(sig_counts)
 
 
@@ -220,7 +226,7 @@ def main_with_cxn(
 
             # Record the image
             if control_style == ControlStyle.STEP:
-                passb
+                pass
             elif control_style == ControlStyle.STREAM:
                 camera.arm()
                 pulse_gen.stream_start(num_nvs * num_reps)
