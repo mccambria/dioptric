@@ -297,7 +297,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_25-15_44_53-johnson-nv0_2023_08_23"
+    file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
@@ -306,18 +306,18 @@ if __name__ == "__main__":
     radius = data["config"]["camera_spot_radius"]
 
     # Profiling
-    # print("start")
-    # start = time.time()
-    # with Profile() as pr:
-    #     sig_counts = process_img_arrays(
-    #         img_arrays, nv_list, pixel_drifts, radius=radius
-    #     )
-    #     pr.print_stats("cumulative")
-    # stop = time.time()
-    # print("stop")
-    # print(f"Time elapsed: {stop - start}")
+    print("start")
+    start = time.time()
+    with Profile() as pr:
+        sig_counts = process_img_arrays(
+            img_arrays, nv_list, pixel_drifts, radius=radius
+        )
+        pr.print_stats("cumulative")
+    stop = time.time()
+    print("stop")
+    print(f"Time elapsed: {stop - start}")
 
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
     avg_counts, avg_counts_ste = process_counts(sig_counts)
     create_figure(freqs, avg_counts, avg_counts_ste)
 
