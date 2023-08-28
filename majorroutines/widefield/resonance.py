@@ -36,7 +36,7 @@ def process_counts(sig_counts):
 
 def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     num_nvs = len(nv_list)
-    num_runs = img_arrays.shape[0] - 1
+    num_runs = img_arrays.shape[0]
     num_steps = img_arrays.shape[1]
     sig_counts = [
         [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
@@ -55,13 +55,7 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
             pixel_drift=pixel_drift,
         )
         counts = widefield.counts_from_img_array(
-            img_array,
-            opt_pixel_coords,
-            radius=radius,
-            drift_adjust=False,
-            # pixel_coords,
-            # drift_adjust=True,
-            # pixel_drift=pixel_drift,
+            img_array, opt_pixel_coords, radius=radius, drift_adjust=False
         )
         return counts
 
@@ -76,7 +70,7 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
 
             # Single threaded
             for freq_ind in range(num_steps):
-                counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
+                counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind)
                 sig_counts[nv_ind][run_ind][freq_ind] = counts
 
     sig_counts = np.array(sig_counts)
@@ -253,8 +247,11 @@ def main_with_cxn(
 
     img_arrays = np.array(img_arrays, dtype=int)
     pixel_drifts = np.array(pixel_drifts, dtype=float)
-    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
-    # fig = create_figure(freqs, sig_counts)
+    radius = config["camera_spot_radius"]
+    avg_counts, avg_counts_ste = process_img_arrays(
+        img_arrays, nv_list, pixel_drifts, radius=radius
+    )
+    fig = create_figure(freqs, avg_counts, avg_counts_ste)
 
     ### Clean up and save the data
 
@@ -289,15 +286,15 @@ def main_with_cxn(
         "freq_ind_master_list": freq_ind_master_list,
     }
 
-    filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    # tb.save_figure(fig, filePath)
-    tb.save_raw_data(raw_data, filePath, keys_to_compress=["img_arrays"])
+    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+    tb.save_figure(fig, file_path)
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_arrays"])
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_25-15_44_53-johnson-nv0_2023_08_23"
+    file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
