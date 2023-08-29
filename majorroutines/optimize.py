@@ -389,13 +389,44 @@ def optimize_widefield_calibration(cxn):
 
 
 @njit
+def _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh):
+    return np.exp(
+        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / (2 * sigma**2)
+    )
+
+
+@njit
 def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
     amp, x0, y0, twice_var, offset = fit_params
-    gaussian_array = offset + amp * np.exp(
-        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / twice_var
+    gaussian_array = offset + amp * _2d_gaussian_exp(
+        x0, y0, twice_var, x_crop_mesh, y_crop_mesh
     )
     diff_array = gaussian_array - img_array_crop
     return np.sum(diff_array**2)
+
+
+@njit
+def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    inv_twice_var = 1 / (2 * sigma**2)
+    gaussian_exp = _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh)
+    x_diff = x_crop_mesh - x0
+    y_diff = y_crop_mesh - y0
+    spatial_der_coeff = 2 * amp * gaussian_exp * inv_twice_var
+    gaussian_jac_0 = gaussian_exp
+    gaussian_jac_1 = spatial_der_coeff * x_diff
+    gaussian_jac_2 = spatial_der_coeff * y_diff
+    gaussian_jac_3 = amp * gaussian_exp * (x_diff**2 + y_diff**2) / (sigma**3)
+    gaussian_jac_4 = 1
+    coeff = 2 * ((offset + amp * gaussian_exp) - img_array_crop)
+    cost_jac = [
+        np.sum(coeff * gaussian_jac_0),
+        np.sum(coeff * gaussian_jac_1),
+        np.sum(coeff * gaussian_jac_2),
+        np.sum(coeff * gaussian_jac_3),
+        np.sum(coeff * gaussian_jac_4),
+    ]
+    return np.array(cost_jac)
 
 
 def optimize_pixel(
@@ -425,11 +456,9 @@ def optimize_pixel(
     bg_guess = min(300, bg_guess)
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
     amp_guess = max(10, amp_guess)
-    guess = (amp_guess, *pixel_coords, (radius**2) / 2, bg_guess)
+    guess = (amp_guess, *pixel_coords, radius, bg_guess)
     diam = radius * 2
     half_range = radius
-    # lower_bounds = (0, pixel_coords[0] - diam, pixel_coords[1] - diam, 0, 0)
-    # upper_bounds = (inf, pixel_coords[0] + diam, pixel_coords[1] + diam, diam, inf)
     left = round(initial_x - half_range)
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
@@ -442,20 +471,21 @@ def optimize_pixel(
     min_img_array_crop = np.min(img_array_crop)
     max_img_array_crop = np.max(img_array_crop)
     bounds = (
-        ((1 / 2) * min_img_array_crop, 2 * max_img_array_crop),
+        (0, 2 * (max_img_array_crop - min_img_array_crop)),
         (left, right),
         (top, bottom),
-        (1, diam**2),
-        (0, 2 * (max_img_array_crop - min_img_array_crop)),
+        (1, diam),
+        ((1 / 2) * min_img_array_crop, 2 * max_img_array_crop),
     )
 
-    # Don't both trying to optimize if all we have is noise
-    # res = normaltest(img_array_crop.flatten())
-    # if res.pvalue > 0.001:
-    #     return pixel_coords
-
     args = (x_crop_mesh, y_crop_mesh, img_array_crop)
-    res = minimize(_optimize_pixel_cost, guess, bounds=bounds, args=args)
+    res = minimize(
+        _optimize_pixel_cost,
+        guess,
+        bounds=bounds,
+        args=args,
+        jac=_optimize_pixel_cost_jac,
+    )
     popt = res.x
 
     # Testing
