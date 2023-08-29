@@ -388,24 +388,24 @@ def optimize_widefield_calibration(cxn):
         common.set_registry_entry(calibration_directory, key, scanning_coords)
 
 
-@njit
+@njit(cache=True)
 def _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh):
     return np.exp(
         -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / (2 * sigma**2)
     )
 
 
-@njit
+@njit(cache=True)
 def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
-    amp, x0, y0, twice_var, offset = fit_params
+    amp, x0, y0, sigma, offset = fit_params
     gaussian_array = offset + amp * _2d_gaussian_exp(
-        x0, y0, twice_var, x_crop_mesh, y_crop_mesh
+        x0, y0, sigma, x_crop_mesh, y_crop_mesh
     )
     diff_array = gaussian_array - img_array_crop
     return np.sum(diff_array**2)
 
 
-@njit
+@njit(cache=True)
 def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
     amp, x0, y0, sigma, offset = fit_params
     inv_twice_var = 1 / (2 * sigma**2)
@@ -446,36 +446,39 @@ def optimize_pixel(
             pixel_coords, pixel_drift
         )
 
-    # Bounds and guesses
+    # Get coordinates
     if radius is None:
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
     initial_x = pixel_coords[0]
     initial_y = pixel_coords[1]
-    bg_guess = int(img_array[round(initial_y), round(initial_x + radius)])
-    bg_guess = min(300, bg_guess)
-    amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
-    amp_guess = max(10, amp_guess)
-    guess = (amp_guess, *pixel_coords, radius, bg_guess)
-    diam = radius * 2
+
+    # Limit the range to the NV we're looking at
     half_range = radius
     left = round(initial_x - half_range)
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
     bottom = round(initial_y + half_range)
-    # Limit the range to the NV we're looking at
     x_crop = np.linspace(left, right, right - left + 1)
     y_crop = np.linspace(top, bottom, bottom - top + 1)
     x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
+
+    # Bounds and guesses
+    bg_guess = 300
+    amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
+    amp_guess = max(10, amp_guess)
+    guess = (amp_guess, *pixel_coords, radius, bg_guess)
+    diam = radius * 2
     min_img_array_crop = np.min(img_array_crop)
     max_img_array_crop = np.max(img_array_crop)
+
     bounds = (
-        (0, 2 * (max_img_array_crop - min_img_array_crop)),
+        (0, max_img_array_crop - min_img_array_crop),
         (left, right),
         (top, bottom),
         (1, diam),
-        ((1 / 2) * min_img_array_crop, 2 * max_img_array_crop),
+        (min(250, min_img_array_crop), max(350, max_img_array_crop)),
     )
 
     args = (x_crop_mesh, y_crop_mesh, img_array_crop)

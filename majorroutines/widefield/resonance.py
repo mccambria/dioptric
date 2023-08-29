@@ -311,8 +311,8 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
-    # file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
+    # file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
+    file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
