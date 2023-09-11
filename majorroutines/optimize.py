@@ -311,7 +311,8 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
 
 
 def optimize_widefield_calibration(cxn):
-    """Update the coordinates for the pair of NVs used
+    """
+    Update the coordinates for the pair of NVs used
     to convert between pixel and scanning coordinates
     """
     # Get the calibration NV sig shells from config

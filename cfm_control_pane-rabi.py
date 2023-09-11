@@ -49,8 +49,9 @@ def do_image_sample(nv_sig):
 
 def do_image_sample_zoom(nv_sig):
     scan_range = 0.02
-    # scan_range = 0.005
     num_steps = 60
+    # scan_range = 0.005
+    # num_steps = 30
     image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -66,10 +67,32 @@ def do_optimize(nv_sig):
     optimize.main(nv_sig)
 
 
+def do_optimize_plot(nv_sig):
+    opti_coords, _ = optimize.main(
+        nv_sig,
+        set_to_opti_coords=False,
+        save_data=True,
+        plot_data=True,
+        set_drift=False,
+    )
+    r_opti_coords = [
+        round(opti_coords[0], 3),
+        round(opti_coords[1], 3),
+        round(opti_coords[2], 2),
+    ]
+    nv_sig["coords"] = r_opti_coords
+
+
 def do_optimize_pixel(nv_sig):
-    with common.labrad_connect() as cxn:
-        img_array = optimize.stationary_count_lite(cxn, nv_sig, ret_img_array=True)
-    optimize.optimize_pixel(img_array, nv_sig["pixel_coords"])
+    # Take an image and update the pixel coords from that image
+    img_array = do_image_single_nv(nv_sig)
+    pixel_coords = nv_sig["pixel_coords"]
+    pixel_coords = optimize.optimize_pixel(
+        img_array, pixel_coords, set_pixel_drift=False, set_scanning_drift=False
+    )
+    pixel_coords = [round(el, 2) for el in pixel_coords]
+    print(pixel_coords)
+    nv_sig["pixel_coords"] = pixel_coords
 
 
 def do_optimize_widefield_calibration():
@@ -77,19 +100,9 @@ def do_optimize_widefield_calibration():
         optimize.optimize_widefield_calibration(cxn)
 
 
-def do_optimize_plot(nv_sig):
-    optimize.main(
-        nv_sig,
-        set_to_opti_coords=False,
-        save_data=True,
-        plot_data=True,
-        set_drift=False,
-    )
-
-
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.020
+    freq_range = 0.030
     num_steps = 20
     num_reps = 400
     num_runs = 64
@@ -161,7 +174,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.77
+    z_coord = 5.78
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -195,37 +208,53 @@ if __name__ == "__main__":
         NVSpinState.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
     }
 
+    # Experiment NVs
+
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_08_23"
-    nv0["pixel_coords"] = [182.37, 264.94]
-    nv0["coords"] = [-0.040, 0.060, z_coord]
+    nv0["name"] = f"{sample_name}-nv0_2023_09_11"
+    nv0["pixel_coords"] = [183.66, 201.62]
+    nv0["coords"] = [-0.039, 0.157, z_coord]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_08_23"
-    nv1["pixel_coords"] = [265.54, 217.13]
-    nv1["coords"] = [0.087, 0.136, z_coord]
+    nv1["name"] = f"{sample_name}-nv1_2023_09_11"
+    nv1["pixel_coords"] = [177.28, 233.34]
+    nv1["coords"] = [-0.047, 0.108, z_coord]
 
     nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_08_23"
-    nv2["pixel_coords"] = [288.543, 194.541]
-    nv2["coords"] = [0.124, 0.169, z_coord]
+    nv2["name"] = f"{sample_name}-nv2_2023_09_11"
+    nv2["pixel_coords"] = [237.42, 314.84]
+    nv2["coords"] = [0.05, -0.013, z_coord]
 
     nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_08_23"
-    nv3["pixel_coords"] = [229.52, 267.04]
-    nv3["coords"] = [0.033, 0.057, z_coord]
+    nv3["name"] = f"{sample_name}-nv3_2023_09_11"
+    nv3["pixel_coords"] = [239.56, 262.84]
+    nv3["coords"] = [0.049, 0.066, z_coord]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_08_23"
-    nv4["pixel_coords"] = [292.12, 336.25]
-    nv4["coords"] = [0.132, -0.045, z_coord]
+    nv4["name"] = f"{sample_name}-nv4_2023_09_11"
+    nv4["pixel_coords"] = [323.67, 219.96]
+    nv4["coords"] = [0.176, 0.137, z_coord]
+
+    # Calibration NVs
+
+    nv5 = copy.deepcopy(nv_ref)
+    nv5["name"] = f"{sample_name}-cal_check1"
+    nv5["pixel_coords"] = [139.26, 258.46]
+    nv5["coords"] = [-0.103, 0.067, z_coord]
+    nv5["disable_z_opt"] = False
+
+    nv6 = copy.deepcopy(nv_ref)
+    nv6["name"] = f"{sample_name}-cal_check2"
+    nv6["pixel_coords"] = [225.69, 324.16]
+    nv6["coords"] = [0.029, -0.029, z_coord]
 
     nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv3, nv4]
     # nv_list = [nv1, nv2]
-    # nv_list = [nv2]
+    # nv_list = [nv4]
 
-    nv_sig = nv0
+    # nv_sig = nv6
+    nv_sig = nv_ref
 
     ### Functions to run
 
@@ -234,16 +263,21 @@ if __name__ == "__main__":
     try:
         # pass
 
-        tb.init_safe_stop()
+        # tb.init_safe_stop()
 
         # pos.reset_drift()
         # widefield.reset_pixel_drift()
 
-        # Optimize pixels coords
-        # raw_data = tb.get_raw_data("2023_08_23-12_20_08-johnson-nvref")
+        # Optimize pixels coords batch
+        # raw_data = tb.get_raw_data("2023_09_11-13_52_01-johnson-nvref")
         # img_array = np.array(raw_data["img_array"])
         # for nv in nv_list:
-        #     # pixel_coords = widefield.optimize_pixel(img_array, nv["pixel_coords"])
+        #     # pixel_coords = optimize.optimize_pixel(
+        #     #     img_array,
+        #     #     nv["pixel_coords"],
+        #     #     set_pixel_drift=False,
+        #     #     set_scanning_drift=False,
+        #     # )
         #     # pixel_coords = [round(el, 2) for el in pixel_coords]
         #     # print(pixel_coords)
         #     pixel_coords = nv["pixel_coords"]
@@ -251,23 +285,21 @@ if __name__ == "__main__":
         #     scanning_coords = [round(el, 3) for el in scanning_coords]
         #     print(scanning_coords)
 
-        # Take an image and update the pixel coords from that image
-        # img_array = do_image_single_nv(nv_sig)
-        # pixel_coords = nv_sig["pixel_coords"]
-        # pixel_coords = widefield.optimize_pixel(
-        #     img_array, pixel_coords, set_drift=False
-        # )
-        # pixel_coords = [round(el, 2) for el in pixel_coords]
-        # print(pixel_coords)
+        # for nv in nv_list:
+        #     do_optimize_pixel(nv)
+        #     do_optimize_plot(nv)
+        # for nv in nv_list:
+        #     print(nv["pixel_coords"])
+        #     print(nv["coords"])
 
         # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
-        do_image_nv_list(nv_list)
+        # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_plot(nv_sig)

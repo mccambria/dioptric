@@ -15,10 +15,10 @@ home = Path.home()
 
 # region Base config
 
-widefield_calibration_nv_shell = {
+widefield_calibration_nv1_shell = {
     "name": "widefield_calibration_nv1",
     "disable_opt": False,
-    "disable_z_opt": True,
+    "disable_z_opt": False,
     "expected_count_rate": None,
     LaserKey.IMAGING: {
         "name": "laser_INTE_520",
@@ -29,6 +29,10 @@ widefield_calibration_nv_shell = {
     "collection_filter": None,
     "magnet_angle": None,
 }
+
+widefield_calibration_nv2_shell = widefield_calibration_nv1_shell.copy()
+widefield_calibration_nv2_shell["name"] = "widefield_calibration_nv2"
+widefield_calibration_nv2_shell["disable_z_opt"] = True
 
 config = {
     ###
@@ -127,16 +131,15 @@ config = {
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.02,
-        "xy_small_response_delay": 800,
         "xy_units": "Voltage (V)",
         "z_control_style": ControlStyle.STREAM,
         "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
         "z_nm_per_unit": 1000,
-        "z_optimize_range": 4,
+        "z_optimize_range": 0.3,
         "z_units": "Voltage (V)",
-        "widefield_calibration_nv1": widefield_calibration_nv_shell.copy(),
-        "widefield_calibration_nv2": widefield_calibration_nv_shell.copy(),
+        "widefield_calibration_nv1": widefield_calibration_nv1_shell.copy(),
+        "widefield_calibration_nv2": widefield_calibration_nv2_shell.copy(),
     },
     ###
     "Servers": {

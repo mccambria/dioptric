@@ -160,8 +160,8 @@ def main_with_cxn(
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
-    # Use first NV for some basic setup
-    nv_sig = nv_list[0]
+    # Use one NV for some basic setup
+    nv_sig = nv_list[1]
     optimize.prepare_microscope(cxn, nv_sig)
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
@@ -174,7 +174,7 @@ def main_with_cxn(
     num_nvs = len(nv_list)
 
     last_opt_time = time.time()
-    opt_period = 10 * 60
+    opt_period = 5 * 60
 
     ### Load the pulse generator
 
@@ -213,19 +213,19 @@ def main_with_cxn(
     for run_ind in range(num_runs):
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
-            print(run_ind)
-            print(freq_ind)
-            print()
+            # print(run_ind)
+            # print(freq_ind)
+            # print()
 
             # Optimize
-            # now = time.time()
-            # if (last_opt_time is None) or (now - last_opt_time > opt_period):
-            #     last_opt_time = now
-            #     optimize.optimize_widefield_calibration(cxn)
+            now = time.time()
+            if (last_opt_time is None) or (now - last_opt_time > opt_period):
+                last_opt_time = now
+                optimize.optimize_widefield_calibration(cxn)
 
-            #     # Reset the pulse streamer and laser filter
-            #     tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
-            #     pulse_gen.stream_load(seq_file, seq_args_string)
+                # Reset the pulse streamer and laser filter
+                tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
+                pulse_gen.stream_load(seq_file, seq_args_string)
 
             # Update the coordinates for drift
             adj_coords_list = [
