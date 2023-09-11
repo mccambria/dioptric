@@ -22,51 +22,85 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
+from cProfile import Profile
+from pathos.multiprocessing import ProcessingPool
 
 
-def process_img_arrays(img_arrays, nv_list, pixel_drifts):
+def process_counts(sig_counts):
+    run_ax = 1
+    avg_counts = np.mean(sig_counts, axis=run_ax)
+    num_runs = sig_counts.shape[run_ax]
+    avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+    return avg_counts, avg_counts_ste
+
+
+def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     num_nvs = len(nv_list)
-    num_runs = img_arrays.shape[0]
+    num_runs = img_arrays.shape[0] - 1
     num_steps = img_arrays.shape[1]
-    sig_counts = []
+    sig_counts = [
+        [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
+    ]
+
+    def process_img_arrays_sub(nv_ind, freq_ind, run_ind):
+        pixel_coords = nv_list[nv_ind]["pixel_coords"]
+        img_array = img_arrays[run_ind, freq_ind]
+        pixel_drift = pixel_drifts[run_ind, freq_ind]
+        opt_pixel_coords = optimize.optimize_pixel(
+            img_array,
+            pixel_coords,
+            set_scanning_drift=False,
+            set_pixel_drift=False,
+            pixel_drift=pixel_drift,
+        )
+        counts = widefield.counts_from_img_array(
+            img_array, opt_pixel_coords, radius=radius, drift_adjust=False
+        )
+        return counts
+
+    # for freq_ind in range(num_steps):
     for nv_ind in range(num_nvs):
-        nv_sig = nv_list[nv_ind]
-        pixel_coords = nv_sig["pixel_coords"]
-        nv_counts = []
         for run_ind in range(num_runs):
-            freq_counts = []
+            ### Multi threaded (too much memory)
+            # pixel_coords = nv_list[nv_ind]["pixel_coords"]
+            # img_array_sub = img_arrays[run_ind, :]
+            # pixel_drift_sub = pixel_drifts[run_ind, :]
+
+            # def process_img_arrays_sub(freq_ind):
+            #     img_array = img_array_sub[freq_ind]
+            #     pixel_drift = pixel_drift_sub[freq_ind]
+            #     opt_pixel_coords = optimize.optimize_pixel(
+            #         img_array,
+            #         pixel_coords,
+            #         set_scanning_drift=False,
+            #         set_pixel_drift=False,
+            #         pixel_drift=pixel_drift,
+            #     )
+            #     counts = widefield.counts_from_img_array(
+            #         img_array, opt_pixel_coords, radius=radius, drift_adjust=False
+            #     )
+            #     return counts
+
+            # with ProcessingPool() as p:
+            #     line = p.map(process_img_arrays_sub, steps_linspace)
+            # sig_counts[nv_ind][run_ind] = line
+
+            ### Single threaded
             for freq_ind in range(num_steps):
-                img_array = img_arrays[run_ind, freq_ind]
-                pixel_drift = pixel_drifts[run_ind, freq_ind]
-                opt_pixel_coords = optimize.optimize_pixel(
-                    img_array,
-                    pixel_coords,
-                    set_scanning_drift=False,
-                    set_pixel_drift=False,
-                    pixel_drift=pixel_drift,
-                )
-                counts = widefield.counts_from_img_array(
-                    img_array, opt_pixel_coords, drift_adjust=False
-                )
-                freq_counts.append(counts)
+                counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
+                sig_counts[nv_ind][run_ind][freq_ind] = counts
 
-                # Plot each img_array
-                # if nv_ind == 0:
-                #     fig, ax = plt.subplots()
-                #     widefield.imshow(ax, img_array, count_format=CountFormat.RAW)
-
-            nv_counts.append(freq_counts)
-        nv_counts = np.array(nv_counts)
-        sig_counts.append(np.average(nv_counts, axis=0))
-    return np.array(sig_counts)
+    sig_counts = np.array(sig_counts)
+    return sig_counts
 
 
-def create_figure(freqs, sig_counts):
+def create_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
     num_nvs = sig_counts.shape[0]
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        kpl.plot_line(ax, freqs, sig_counts[ind])
+        # kpl.plot_line(ax, freqs, counts[ind])
+        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind])
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Counts")
     return fig
@@ -230,8 +264,11 @@ def main_with_cxn(
 
     img_arrays = np.array(img_arrays, dtype=int)
     pixel_drifts = np.array(pixel_drifts, dtype=float)
-    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
-    # fig = create_figure(freqs, sig_counts)
+    radius = config["camera_spot_radius"]
+    avg_counts, avg_counts_ste = process_img_arrays(
+        img_arrays, nv_list, pixel_drifts, radius=radius
+    )
+    fig = create_figure(freqs, avg_counts, avg_counts_ste)
 
     ### Clean up and save the data
 
@@ -266,22 +303,38 @@ def main_with_cxn(
         "freq_ind_master_list": freq_ind_master_list,
     }
 
-    filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    # tb.save_figure(fig, filePath)
-    tb.save_raw_data(raw_data, filePath, keys_to_compress=["img_arrays"])
+    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+    tb.save_figure(fig, file_path)
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_arrays"])
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_08_23-15_22_42-johnson-nv0_2023_08_23"
+    # file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
+    file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
     nv_list = data["nv_list"]
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
+    radius = data["config"]["camera_spot_radius"]
 
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts)
-    create_figure(freqs, sig_counts)
+    # Profiling
+    print("start")
+    start = time.time()
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    # with Profile() as pr:
+    #     sig_counts = process_img_arrays(
+    #         img_arrays, nv_list, pixel_drifts, radius=radius
+    #     )
+    #     pr.print_stats("cumulative")
+    stop = time.time()
+    print("stop")
+    print(f"Time elapsed: {stop - start}")
+
+    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    avg_counts, avg_counts_ste = process_counts(sig_counts)
+    create_figure(freqs, avg_counts, avg_counts_ste)
 
     plt.show(block=True)

@@ -165,26 +165,31 @@ def counts_from_img_array(
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
 
-    edge_pixels = []
-    inner_pixels = []
-    if pixel_drift is None:
-        pixel_drift = get_pixel_drift()
-    pixel_x = pixel_coords[0] + pixel_drift[0]
-    pixel_y = pixel_coords[1] + pixel_drift[1]
+    if drift_adjust:
+        if pixel_drift is None:
+            pixel_drift = get_pixel_drift()
+        pixel_x = pixel_coords[0] + pixel_drift[0]
+        pixel_y = pixel_coords[1] + pixel_drift[1]
+    else:
+        pixel_x = pixel_coords[0]
+        pixel_y = pixel_coords[1]
 
-    # Don't loop through all the pixels, just the ones that might be relevant
+    # Don't work through all the pixels, just the ones that might be relevant
     left = int(np.floor(pixel_x - radius))
     right = int(np.ceil(pixel_x + radius))
-    bottom = int(np.floor(pixel_y - radius))
-    top = int(np.ceil(pixel_y + radius))
-    for x in np.linspace(left, right, right - left + 1, dtype=int):
-        for y in np.linspace(bottom, top, top - bottom + 1, dtype=int):
-            dist = np.sqrt((x - pixel_x) ** 2 + (y - pixel_y) ** 2)
-            val = img_array[y, x]
-            if abs(dist - radius) < 0.5:
-                edge_pixels.append(val)
-            elif dist < radius:
-                inner_pixels.append(val)
+    top = int(np.floor(pixel_y - radius))
+    bottom = int(np.ceil(pixel_y + radius))
+    x_crop = np.linspace(left, right, right - left + 1)
+    y_crop = np.linspace(top, bottom, bottom - top + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
+    dist = np.sqrt((x_crop_mesh - pixel_x) ** 2 + (y_crop_mesh - pixel_y) ** 2)
+    edge_pixels = np.where(np.abs(dist - radius) < 0.5, img_array_crop, np.nan)
+    edge_pixels = edge_pixels.flatten()
+    edge_pixels = edge_pixels[~np.isnan(edge_pixels)]
+    inner_pixels = np.where(dist < radius, img_array_crop, np.nan)
+    inner_pixels = inner_pixels.flatten()
+    inner_pixels = inner_pixels[~np.isnan(inner_pixels)]
 
     bg = np.median(edge_pixels)
     total_bg = bg * len(inner_pixels)

@@ -18,4 +18,5 @@ config = {
     "linux_nvdata_path": home / "E/nvdata",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
+    "camera_spot_radius": 13,
 }

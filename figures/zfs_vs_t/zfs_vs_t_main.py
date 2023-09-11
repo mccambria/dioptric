@@ -32,6 +32,7 @@ import csv
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib as mpl
 import matplotlib.legend_handler
+from utils.constants import Boltzmann
 
 
 # Adjust for my poor digitization
@@ -52,9 +53,9 @@ fixed_energy_vals = [58.73, 145.5]
 # fixed_energy_vals = [64, 163]
 # fixed_energy_vals = [77, 159]
 
-nvdata_dir = common.get_nvdata_dir()
-# compiled_data_file_name = "zfs_vs_t"
-compiled_data_file_name = "zfs_vs_t-split_voigt"
+nvdata_dir = common.get_nvdata_path()
+compiled_data_file_name = "zfs_vs_t"
+# compiled_data_file_name = "zfs_vs_t-split_voigt"
 # compiled_data_file_name = "zfs_vs_t-ind_voigts"
 compiled_data_path = nvdata_dir / "paper_materials/zfs_temp_dep"
 
@@ -1655,7 +1656,8 @@ def get_fitted_model(
     # zfs_base = popt[0]
     # popt = [tool_belt.round_sig_figs(val, 3) for val in popt]
     # popt[0] = zfs_base
-    print(np.sqrt(np.diag(pcov)))
+    pste = np.sqrt(np.diag(pcov))
+    print(pste)
     # popt[2] = 0
     cambria_lambda = lambda temp: fit_func(
         temp,
@@ -1673,6 +1675,54 @@ def get_fitted_model(
         dof = num_points - num_params
         red_chi_sq = ssr / dof
         print(red_chi_sq)
+
+    # Slope at 295 K
+    temp = 295
+    temp_meV = Boltzmann * temp
+    slope = 0
+    ders = [None] * 5
+    for ind in range(2):
+        coeff = popt[ind + 1]
+        delta = popt[ind + 3]
+        delta_frac = delta / temp_meV
+        exp_part = np.exp(delta_frac)
+        no_coeff = (delta_frac / temp) * exp_part / ((exp_part - 1) ** 2)
+        ders[ind + 1] = no_coeff
+        slope += coeff * no_coeff
+    ders[0] = 0
+    for ind in [3, 4]:
+        coeff = popt[ind - 2]
+        delta = popt[ind]
+        delta_frac = delta / temp_meV
+        exp_part = np.exp(delta_frac)
+        ders[ind] = (
+            (coeff / ((temp_meV**2) * temp))
+            * exp_part
+            * (temp_meV * (exp_part - 1) - delta * (exp_part + 1))
+            / ((exp_part - 1) ** 3)
+        )
+    slope_err = 0
+    for ind in range(len(popt)):
+        slope_err += (ders[ind] * pste[ind]) ** 2
+    slope_err = np.sqrt(slope_err)
+    print("slope")
+    print(slope)
+    print(slope_err)
+
+    # Plot the diffs
+    actual_temp = np.linspace(temp - 5, temp + 5)
+    actual_freq = cambria_lambda(actual_temp)
+    offset = cambria_lambda(temp)
+    # calc_freq = slope * (actual_temp - temp) + offset
+    calc_temp = ((actual_freq - offset) / slope) + temp
+    temp_diff = calc_temp - actual_temp
+    rel_error = temp_diff / (actual_temp - temp)
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, actual_temp, calc_temp)
+
+    # actual_temp = 291.1
+    # print(cambria_lambda(actual_temp))
+    # print(slope * (actual_temp - temp) + offset)
 
     return cambria_lambda
 
@@ -2765,8 +2815,8 @@ def fig_sub(
     skip_lambda = lambda point: (
         point["Skip"]
         or point["Sample"] != "Wu"
-        or point["NV"] == "nv5_zfs_vs_t"
-        or point["NV"] == "nv4_zfs_vs_t"
+        # or point["NV"] == "nv5_zfs_vs_t"
+        # or point["NV"] == "nv4_zfs_vs_t"
         # or point["NV"] == "nv11_zfs_vs_t"
         # or point["ZFS file"] == ""
         # or point["Monitor temp (K)"] >= 296
@@ -3583,7 +3633,7 @@ if __name__ == "__main__":
     # calc_zfs_from_compiled_data()
     # sys.exit()
 
-    kpl.init_kplotlib(constrained_layout=True)
+    kpl.init_kplotlib()
 
     # fig, ax = plt.subplots()
     # temps = np.linspace(0, 3000, 1000)

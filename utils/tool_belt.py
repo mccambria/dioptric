@@ -18,7 +18,7 @@ import json
 import time
 import labrad
 from git import Repo
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PosixPath
 from enum import Enum, IntEnum, auto
 import socket
 import smtplib
@@ -179,17 +179,17 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
     if (nv_sig is not None) and (optics_key is not None):
         # Quit out if there's not enough info in the sig
         if optics_key not in nv_sig:
-            return 
+            return
         optics_dict = nv_sig[optics_key]
         if "filter" not in optics_dict:
             return
-        
+
         if "name" in optics_dict:
             optics_name = optics_dict["name"]
         else:
             optics_name = optics_key
         filter_name = optics_dict["filter"]
-    
+
     # Quit out if we don't have what we need to go forward
     if (optics_name is None) or (filter_name is None):
         return
@@ -863,7 +863,7 @@ def get_nv_sig_units_no_cxn():
     return nv_sig_units
 
 
-def get_nv_sig_units(cxn):
+def get_nv_sig_units():
     try:
         config = common.get_config_dict()
         nv_sig_units = config["nv_sig_units"]
@@ -912,7 +912,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         # Get a generic version of the path so that the part up to nvdata can be
         # filled in upon retrieval
         _, file_path_npz_generic = search_index.process_full_path(file_path_npz)
-        file_path_npz_generic = Path(file_path_npz_generic)
+        file_path_npz_generic = PosixPath(file_path_npz_generic)
         file_path_npz_generic /= file_path_npz.name
         kwargs = {}
         for key in keys_to_compress:

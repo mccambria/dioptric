@@ -15,6 +15,7 @@ import numpy as np
 from numpy import inf
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, minimize
+from scipy.stats import normaltest
 import time
 import copy
 from utils import tool_belt as tb
@@ -23,6 +24,7 @@ from utils import positioning as pos
 from utils import common
 from utils import widefield
 from utils.constants import ControlStyle, CountFormat, CollectionMode, LaserKey
+from numba import njit
 
 # endregion
 # region Plotting functions
@@ -304,13 +306,6 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     return opti_coord, scan_vals, f_counts
 
 
-def _circle_gaussian(x, y, amp, x0, y0, sigma, offset):
-    ret_array = offset + amp * np.exp(
-        -(1 / (2 * sigma**2)) * (((x - x0) ** 2) + ((y - y0) ** 2))
-    )
-    return ret_array
-
-
 # endregion
 # region Widefield public functions
 
@@ -320,24 +315,31 @@ def optimize_widefield_calibration(cxn):
     to convert between pixel and scanning coordinates
     """
     # Get the calibration NV sig shells from config
-    
+
     config = common.get_config_dict()
     config_positioning = config["Positioning"]
     nv1 = config_positioning["widefield_calibration_nv1"].copy()
     nv2 = config_positioning["widefield_calibration_nv2"].copy()
     calibration_directory = ["State", "WidefieldCalibration"]
-    
+
     # Calculate the differential drift and assign the NVs updated coordinates
-    
+
     ret_vals = widefield.get_widefield_calibration_params()
-    nv1_scanning_coords, nv1_pixel_coords, nv2_scanning_coords, nv2_pixel_coords = ret_vals[0:4]
+    (
+        nv1_scanning_coords,
+        nv1_pixel_coords,
+        nv2_scanning_coords,
+        nv2_pixel_coords,
+    ) = ret_vals[0:4]
     last_scanning_drift, last_pixel_drift = ret_vals[4:6]
-    
+
     current_scanning_drift = pos.get_drift()
     current_pixel_drift = widefield.get_pixel_drift()
-    diff_scanning_drift = np.array(current_scanning_drift) - np.array(last_scanning_drift)
+    diff_scanning_drift = np.array(current_scanning_drift) - np.array(
+        last_scanning_drift
+    )
     diff_pixel_drift = np.array(current_pixel_drift) - np.array(last_pixel_drift)
-    
+
     # Save the current drifts to the registry for the next differential drift calculation
     common.set_registry_entry(calibration_directory, "DRIFT", current_scanning_drift)
     common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
@@ -348,7 +350,7 @@ def optimize_widefield_calibration(cxn):
     nv2["pixel_coords"] = nv2_pixel_coords + diff_pixel_drift
 
     # Optimize on the two NVs
-    
+
     nvs = [nv1, nv2]
     pixel_coords_list = []
     scanning_coords_list = []
@@ -362,18 +364,19 @@ def optimize_widefield_calibration(cxn):
 
         # Optimize pixel coordinates
         img_array = stationary_count_lite(
-            cxn, nv, scanning_coords, ret_img_array=True, drift_adjust=False
+            cxn, nv, scanning_coords, ret_img_array=True, scanning_drift_adjust=False
         )
         pixel_coords = optimize_pixel(
             img_array,
             nv["pixel_coords"],
-            set_pixel_drift=True,
+            set_pixel_drift=False,
             set_scanning_drift=False,
+            drift_adjust=False,
         )
         pixel_coords_list.append(pixel_coords)
 
     # Save the optimized coordinates to the registry
-    
+
     nv_names = ["NV1", "NV2"]
     for ind in range(2):
         nv_name = nv_names[ind]
@@ -383,6 +386,47 @@ def optimize_widefield_calibration(cxn):
         scanning_coords = scanning_coords_list[ind]
         key = f"{nv_name}_SCANNING_COORDS"
         common.set_registry_entry(calibration_directory, key, scanning_coords)
+
+
+@njit(cache=True)
+def _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh):
+    return np.exp(
+        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / (2 * sigma**2)
+    )
+
+
+@njit(cache=True)
+def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    gaussian_array = offset + amp * _2d_gaussian_exp(
+        x0, y0, sigma, x_crop_mesh, y_crop_mesh
+    )
+    diff_array = gaussian_array - img_array_crop
+    return np.sum(diff_array**2)
+
+
+@njit(cache=True)
+def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    inv_twice_var = 1 / (2 * sigma**2)
+    gaussian_exp = _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh)
+    x_diff = x_crop_mesh - x0
+    y_diff = y_crop_mesh - y0
+    spatial_der_coeff = 2 * amp * gaussian_exp * inv_twice_var
+    gaussian_jac_0 = gaussian_exp
+    gaussian_jac_1 = spatial_der_coeff * x_diff
+    gaussian_jac_2 = spatial_der_coeff * y_diff
+    gaussian_jac_3 = amp * gaussian_exp * (x_diff**2 + y_diff**2) / (sigma**3)
+    gaussian_jac_4 = 1
+    coeff = 2 * ((offset + amp * gaussian_exp) - img_array_crop)
+    cost_jac = [
+        np.sum(coeff * gaussian_jac_0),
+        np.sum(coeff * gaussian_jac_1),
+        np.sum(coeff * gaussian_jac_2),
+        np.sum(coeff * gaussian_jac_3),
+        np.sum(coeff * gaussian_jac_4),
+    ]
+    return np.array(cost_jac)
 
 
 def optimize_pixel(
@@ -402,39 +446,49 @@ def optimize_pixel(
             pixel_coords, pixel_drift
         )
 
-    # Bounds and guesses
+    # Get coordinates
     if radius is None:
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
     initial_x = pixel_coords[0]
     initial_y = pixel_coords[1]
-    bg_guess = int(img_array[round(initial_y), round(initial_x + radius)])
-    amp_guess = int(img_array[round(initial_y), round(initial_x)]) - bg_guess
-    guess = (amp_guess, *pixel_coords, radius / 2, bg_guess)
-    diam = radius * 2
+
+    # Limit the range to the NV we're looking at
     half_range = radius
-    # lower_bounds = (0, pixel_coords[0] - diam, pixel_coords[1] - diam, 0, 0)
-    # upper_bounds = (inf, pixel_coords[0] + diam, pixel_coords[1] + diam, diam, inf)
     left = round(initial_x - half_range)
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
     bottom = round(initial_y + half_range)
-    bounds = ((0, inf), (left, right), (top, bottom), (1, diam), (0, inf))
-    shape = img_array.shape
-    x = np.linspace(0, shape[0] - 1, shape[0])
-    y = np.linspace(0, shape[1] - 1, shape[1])
-    x, y = np.meshgrid(x, y)
+    x_crop = np.linspace(left, right, right - left + 1)
+    y_crop = np.linspace(top, bottom, bottom - top + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
 
-    def cost(fit_params):
-        amp, x0, y0, sigma, offset = fit_params
-        gaussian_array = _circle_gaussian(x, y, amp, x0, y0, sigma, offset)
-        # Limit the range to the NV we're looking at
-        diff_array = (
-            gaussian_array[top:bottom, left:right] - img_array[top:bottom, left:right]
-        )
-        return np.sum(diff_array**2)
+    # Bounds and guesses
+    bg_guess = 300
+    amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
+    amp_guess = max(10, amp_guess)
+    guess = (amp_guess, *pixel_coords, radius, bg_guess)
+    diam = radius * 2
+    min_img_array_crop = np.min(img_array_crop)
+    max_img_array_crop = np.max(img_array_crop)
 
-    res = minimize(cost, guess, bounds=bounds)
+    bounds = (
+        (0, max_img_array_crop - min_img_array_crop),
+        (left, right),
+        (top, bottom),
+        (1, diam),
+        (min(250, min_img_array_crop), max(350, max_img_array_crop)),
+    )
+
+    args = (x_crop_mesh, y_crop_mesh, img_array_crop)
+    res = minimize(
+        _optimize_pixel_cost,
+        guess,
+        bounds=bounds,
+        args=args,
+        jac=_optimize_pixel_cost_jac,
+    )
     popt = res.x
 
     # Testing
@@ -465,7 +519,8 @@ def stationary_count_lite(
     coords=None,
     laser_key=LaserKey.IMAGING,
     ret_img_array=False,
-    drift_adjust=True,
+    scanning_drift_adjust=True,
+    pixel_drift_adjust=True,
 ):
     # Set up
     config = common.get_config_dict()
@@ -479,7 +534,7 @@ def stationary_count_lite(
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
         coords = nv_sig["coords"]
-    if drift_adjust:
+    if scanning_drift_adjust:
         coords = pos.adjust_coords_for_drift(coords)
     x_center, y_center, z_center = coords
 
@@ -506,13 +561,17 @@ def stationary_count_lite(
         counter_server.stop_tag_stream()
     elif collection_mode == CollectionMode.WIDEFIELD:
         pixel_coords = nv_sig["pixel_coords"]
+        if pixel_drift_adjust:
+            pixel_coords = widefield.adjust_pixel_coords_for_drift(pixel_coords)
         camera = tb.get_server_camera(cxn)
         camera.arm()
         new_samples = []
         pulse_gen.stream_start(num_reps)
         img_array = camera.read()
         camera.disarm()
-        sample = widefield.counts_from_img_array(img_array, pixel_coords)
+        sample = widefield.counts_from_img_array(
+            img_array, pixel_coords, drift_adjust=False
+        )
         new_samples.append(sample)
 
     # Return
@@ -594,7 +653,7 @@ def main(
     plot_data=False,
     set_drift=True,
     laser_key=LaserKey.IMAGING,
-    drift_adjust=False
+    drift_adjust=True,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
@@ -605,7 +664,7 @@ def main(
             plot_data,
             set_drift,
             laser_key,
-            drift_adjust=drift_adjust
+            drift_adjust=drift_adjust,
         )
 
 
@@ -617,7 +676,7 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
     laser_key=LaserKey.IMAGING,
-    drift_adjust=False
+    drift_adjust=True,
 ):
     # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
@@ -665,7 +724,7 @@ def main_with_cxn(
     elif count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
     current_counts = stationary_count_lite(
-        cxn, nv_sig, adjusted_coords, laser_key, drift_adjust=False
+        cxn, nv_sig, adjusted_coords, laser_key, scanning_drift_adjust=False
     )
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
@@ -713,7 +772,7 @@ def main_with_cxn(
                 if expected_counts is not None:
                     test_coords = [*opti_coords[0:2], adjusted_coords[2]]
                     current_counts = stationary_count_lite(
-                        cxn, nv_sig, test_coords, laser_key, drift_adjust=False
+                        cxn, nv_sig, test_coords, laser_key, scanning_drift_adjust=False
                     )
                     if lower_bound < current_counts < upper_bound:
                         print("Z optimization unnecessary.")
@@ -745,7 +804,7 @@ def main_with_cxn(
 
             # Check the counts
             current_counts = stationary_count_lite(
-                cxn, nv_sig, opti_coords, laser_key, drift_adjust=False
+                cxn, nv_sig, opti_coords, laser_key, scanning_drift_adjust=False
             )
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
             if expected_counts is not None:

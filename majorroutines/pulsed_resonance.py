@@ -18,7 +18,7 @@ import time
 from scipy.optimize import curve_fit, brute
 from scipy.signal import find_peaks
 import labrad
-from utils.tool_belt import States, NormStyle
+from utils.constants import NVSpinState, NormStyle
 from random import shuffle
 import sys
 from utils.positioning import get_scan_1d as calculate_freqs
@@ -768,7 +768,7 @@ def main(
     num_runs,
     uwave_power,
     uwave_pulse_dur,
-    state=States.HIGH,
+    state=NVSpinState.HIGH,
     composite=False,
     opti_nv_sig=None,
 ):
@@ -838,7 +838,7 @@ def main_with_cxn(
     num_runs,
     uwave_power,
     uwave_pulse_dur,
-    state=States.HIGH,
+    state=NVSpinState.HIGH,
     composite=False,
     opti_nv_sig=None,
 ):
