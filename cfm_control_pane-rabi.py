@@ -89,10 +89,10 @@ def do_optimize_plot(nv_sig):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.03
+    freq_range = 0.020
     num_steps = 20
     num_reps = 400
-    num_runs = 16
+    num_runs = 64
     uwave_power = -15.0
     laser_filter = "nd_0.7"
     resonance.main(
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.80
+    z_coord = 5.77
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -262,12 +262,12 @@ if __name__ == "__main__":
 
         # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
-        # do_image_nv_list(nv_list)
+        do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_plot(nv_sig)
