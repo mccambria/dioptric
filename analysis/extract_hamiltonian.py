@@ -118,7 +118,6 @@ def find_mag_B_objective(x, res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 def plot_resonances(
     mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi, name="untitled"
 ):
-
     smooth_mag_B = np.linspace(mag_B_range[0], mag_B_range[1], 1000)
     res_pairs = calc_res_pair(smooth_mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
 
@@ -168,14 +167,12 @@ def plot_resonances_custom():
 
 
 def chisq_func_reduced(fit_vec, par_Pi, perp_Pi, phi_B, phi_Pi, res_descs):
-
     theta_B = fit_vec[0]
     fit_vec = [theta_B, par_Pi, perp_Pi]
     return chisq_func(fit_vec, phi_B, phi_Pi, res_descs)
 
 
 def chisq_func(fit_vec, phi_B, phi_Pi, res_descs):
-
     num_resonance_descs = len(res_descs)
     mag_Bs = [find_mag_B(desc, *fit_vec, phi_B, phi_Pi) for desc in res_descs]
 
@@ -198,7 +195,6 @@ def chisq_func(fit_vec, phi_B, phi_Pi, res_descs):
 
 
 def main(name, res_descs):
-
     ############ Setup ############
 
     phi_B = 0.0
@@ -229,7 +225,6 @@ def main(name, res_descs):
             break
 
     if zero_field_res_desc is not None:
-
         # Get the splitting and center_freq from the resonances
         zero_field_low = zero_field_res_desc[1]
         zero_field_high = zero_field_res_desc[2]
@@ -300,12 +295,22 @@ def main(name, res_descs):
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
+    zfss = []
+    angles = np.linspace(0, np.pi / 2, 100)
+    for angle in angles:
+        pair = calc_res_pair(0.5 * gmuB_GHz, angle, 0, 0.0, 0, 0)
+        zfss.append(np.mean(pair))
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, angles, zfss)
+    plt.show(block=True)
 
-    pair = calc_res_pair(0.05, 0.5, 0, 0.005, 0, 0)
     print(pair)
     print(np.mean(pair))
-    hamiltonian = calc_hamiltonian(0.05, 0.2, 0, 0.005, 0, 0)
-    test = np.linalg.eig(hamiltonian)
+
+    # hamiltonian = calc_hamiltonian(0.05, 0.2, 0, 0.005, 0, 0)
+    # test = np.linalg.eig(hamiltonian)
+
     sys.exit()
 
     kpl.init_kplotlib()

@@ -312,8 +312,8 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
 
 def optimize_widefield_calibration(cxn):
     """
-    Update the coordinates for the pair of NVs used
-    to convert between pixel and scanning coordinates
+    Update the coordinates for the pair of NVs used to convert between pixel and
+    scanning coordinates. Also set the z drift
     """
     # Get the calibration NV sig shells from config
 
@@ -341,14 +341,11 @@ def optimize_widefield_calibration(cxn):
     )
     diff_pixel_drift = np.array(current_pixel_drift) - np.array(last_pixel_drift)
 
-    # Save the current drifts to the registry for the next differential drift calculation
-    common.set_registry_entry(calibration_directory, "DRIFT", current_scanning_drift)
-    common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
-
     nv1["coords"] = nv1_scanning_coords + diff_scanning_drift
     nv1["pixel_coords"] = nv1_pixel_coords + diff_pixel_drift
     nv2["coords"] = nv2_scanning_coords + diff_scanning_drift
     nv2["pixel_coords"] = nv2_pixel_coords + diff_pixel_drift
+    z_initial = nv1["coords"][2]
 
     # Optimize on the two NVs
 
@@ -361,6 +358,8 @@ def optimize_widefield_calibration(cxn):
         # Optimize scanning coordinates
         ret_vals = main_with_cxn(cxn, nv, drift_adjust=False, set_drift=False)
         scanning_coords = ret_vals[0]
+        if ind == 0:
+            z_final = scanning_coords[2]
         scanning_coords_list.append(scanning_coords)
 
         # Optimize pixel coordinates
@@ -377,7 +376,6 @@ def optimize_widefield_calibration(cxn):
         pixel_coords_list.append(pixel_coords)
 
     # Save the optimized coordinates to the registry
-
     nv_names = ["NV1", "NV2"]
     for ind in range(2):
         nv_name = nv_names[ind]
@@ -387,6 +385,19 @@ def optimize_widefield_calibration(cxn):
         scanning_coords = scanning_coords_list[ind]
         key = f"{nv_name}_SCANNING_COORDS"
         common.set_registry_entry(calibration_directory, key, scanning_coords)
+
+    # Update the z drift in the registry
+    z_change = z_final - z_initial
+    current_scanning_drift = pos.get_drift()
+    current_scanning_drift = list(current_scanning_drift)
+    current_scanning_drift[2] += z_change
+    pos.set_drift(current_scanning_drift)
+
+    # Save the current drifts to the registry for the next differential drift calculation
+    current_scanning_drift = pos.get_drift()
+    current_pixel_drift = widefield.get_pixel_drift()
+    common.set_registry_entry(calibration_directory, "DRIFT", current_scanning_drift)
+    common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
 
 
 @njit(cache=True)
