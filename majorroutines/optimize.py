@@ -356,12 +356,12 @@ def optimize_widefield_calibration(cxn):
         nv = nvs[ind]
 
         # Optimize scanning coordinates
+        if ind > 0:
+            nv["coords"][2] = z_final
         ret_vals = main_with_cxn(cxn, nv, drift_adjust=False, set_drift=False)
         scanning_coords = ret_vals[0]
         if ind == 0:
             z_final = scanning_coords[2]
-        else:
-            nv["coords"][2] = z_final
         scanning_coords_list.append(scanning_coords)
 
         # Optimize pixel coordinates

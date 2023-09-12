@@ -174,7 +174,7 @@ def main_with_cxn(
     num_nvs = len(nv_list)
 
     last_opt_time = time.time()
-    opt_period = 5 * 60
+    opt_period = 3 * 60
 
     ### Load the pulse generator
 
@@ -220,8 +220,8 @@ def main_with_cxn(
             # Optimize
             now = time.time()
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
-                last_opt_time = now
                 optimize.optimize_widefield_calibration(cxn)
+                last_opt_time = time.time()
 
                 # Reset the pulse streamer and laser filter
                 tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)

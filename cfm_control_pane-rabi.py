@@ -105,8 +105,8 @@ def do_resonance(nv_list):
     freq_range = 0.030
     num_steps = 20
     num_reps = 400
-    num_runs = 64
-    uwave_power = -15.0
+    num_runs = 16
+    uwave_power = -18.0
     laser_filter = "nd_0.7"
     resonance.main(
         nv_list,
@@ -299,11 +299,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_plot(nv_sig)
-        do_optimize_widefield_calibration()
+        # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
