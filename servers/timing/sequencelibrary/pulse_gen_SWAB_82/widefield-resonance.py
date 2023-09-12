@@ -47,13 +47,13 @@ def get_seq(pulse_streamer, config, args):
     train = [(period - 200, Digital.LOW), (100, Digital.HIGH), (100, Digital.LOW)]
     seq.setDigital(do_daq_clock, train)
 
-    train = [(delay, Digital.LOW), (readout_time, Digital.HIGH), (300, Digital.LOW)]
-    seq.setDigital(do_daq_gate, train)
+    # train = [(delay, Digital.LOW), (readout_time, Digital.HIGH), (300, Digital.LOW)]
+    # seq.setDigital(do_daq_gate, train)
 
-    train = [(period, Digital.HIGH)]
+    train = [(delay, Digital.LOW), (readout_time, Digital.HIGH), (300, Digital.LOW)]
     tb.process_laser_seq(seq, laser_name, laser_power, train)
 
-    train = [(period, Digital.HIGH)]
+    train = [(delay, Digital.LOW), (readout_time, Digital.HIGH), (300, Digital.LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
     train = [(period, Digital.HIGH)]
