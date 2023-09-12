@@ -299,11 +299,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_plot(nv_sig)
-        # do_optimize_widefield_calibration()
+        do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
