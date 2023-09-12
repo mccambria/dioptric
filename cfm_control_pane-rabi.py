@@ -105,7 +105,7 @@ def do_resonance(nv_list):
     freq_range = 0.030
     num_steps = 20
     num_reps = 400
-    num_runs = 16
+    num_runs = 4
     uwave_power = -18.0
     laser_filter = "nd_0.7"
     resonance.main(
@@ -253,8 +253,8 @@ if __name__ == "__main__":
     # nv_list = [nv1, nv2]
     # nv_list = [nv4]
 
-    # nv_sig = nv6
-    nv_sig = nv_ref
+    nv_sig = nv5
+    # nv_sig = nv_ref
 
     ### Functions to run
 

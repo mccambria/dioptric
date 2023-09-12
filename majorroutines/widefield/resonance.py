@@ -96,7 +96,7 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
 
 def create_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
-    num_nvs = sig_counts.shape[0]
+    num_nvs = counts.shape[0]
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
         # kpl.plot_line(ax, freqs, counts[ind])
@@ -213,6 +213,7 @@ def main_with_cxn(
     for run_ind in range(num_runs):
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
+            print(f"{run_ind}, {freq_ind}")
             # print(run_ind)
             # print(freq_ind)
             # print()
@@ -265,9 +266,8 @@ def main_with_cxn(
     img_arrays = np.array(img_arrays, dtype=int)
     pixel_drifts = np.array(pixel_drifts, dtype=float)
     radius = config["camera_spot_radius"]
-    avg_counts, avg_counts_ste = process_img_arrays(
-        img_arrays, nv_list, pixel_drifts, radius=radius
-    )
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    avg_counts, avg_counts_ste = process_counts(sig_counts)
     fig = create_figure(freqs, avg_counts, avg_counts_ste)
 
     ### Clean up and save the data

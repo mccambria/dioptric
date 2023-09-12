@@ -912,8 +912,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         # Get a generic version of the path so that the part up to nvdata can be
         # filled in upon retrieval
         _, file_path_npz_generic = search_index.process_full_path(file_path_npz)
-        file_path_npz_generic = PosixPath(file_path_npz_generic)
-        file_path_npz_generic /= file_path_npz.name
+        file_path_npz_generic += f"/{file_path_npz.name}"
         kwargs = {}
         for key in keys_to_compress:
             kwargs[key] = raw_data[key]
