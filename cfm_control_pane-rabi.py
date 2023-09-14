@@ -281,6 +281,11 @@ if __name__ == "__main__":
         # pos.reset_xy_drift()
         # widefield.reset_pixel_drift()
 
+        with common.labrad_connect() as cxn:
+            camera = tb.get_server_camera(cxn)
+            readout_mode = camera.get_readout_mode()
+            print(readout_mode)
+
         # Optimize pixels coords batch
         # raw_data = tb.get_raw_data("2023_09_11-13_52_01-johnson-nvref")
         # img_array = np.array(raw_data["img_array"])
