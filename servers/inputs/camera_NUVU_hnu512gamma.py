@@ -86,6 +86,11 @@ class CameraNuvuHnu512gamma(LabradServer):
     def reset(self, c):
         self.disarm(c)
 
+    @setting(7, returns="i")
+    def get_readout_mode(self, c):
+        readout_mode = self.cam.get_readout_mode()
+        return readout_mode
+
 
 __server__ = CameraNuvuHnu512gamma()
 
