@@ -161,7 +161,7 @@ def main_with_cxn(
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
     # Use one NV for some basic setup
-    nv_sig = nv_list[1]
+    nv_sig = nv_list[0]
     optimize.prepare_microscope(cxn, nv_sig)
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
@@ -172,9 +172,10 @@ def main_with_cxn(
     readout_sec = readout / 10**9
 
     num_nvs = len(nv_list)
+    nv_list_shuffle = nv_list.copy()
 
     last_opt_time = time.time()
-    opt_period = 3 * 60
+    opt_period = 5 * 60
 
     ### Load the pulse generator
 
@@ -218,6 +219,8 @@ def main_with_cxn(
             # print(freq_ind)
             # print()
 
+            shuffle(nv_list_shuffle)
+
             # Optimize
             now = time.time()
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
@@ -231,7 +234,7 @@ def main_with_cxn(
             # Update the coordinates for drift
             adj_coords_list = [
                 pos.adjust_coords_for_drift(nv_sig=nv, laser_name=laser)
-                for nv in nv_list
+                for nv in nv_list_shuffle
             ]
             if num_nvs == 1:
                 coords = adj_coords_list[0]
@@ -256,6 +259,7 @@ def main_with_cxn(
                 camera.disarm()
 
             img_arrays[run_ind][freq_ind] = img_array
+            nv_sig = nv_list_shuffle[0]
             optimize.optimize_pixel(img_array, nv_sig["pixel_coords"])
             pixel_drifts[run_ind][freq_ind] = widefield.get_pixel_drift()
 

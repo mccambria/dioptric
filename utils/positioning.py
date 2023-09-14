@@ -220,6 +220,11 @@ def reset_drift(nv_sig=None, laser_key=None, laser_name=None):
     return set_drift([0.0, 0.0, 0.0], nv_sig, laser_key, laser_name)
 
 
+def reset_xy_drift(nv_sig=None, laser_key=None, laser_name=None):
+    drift = get_drift(nv_sig, laser_key, laser_name)
+    return set_drift([0.0, 0.0, drift[2]], nv_sig, laser_key, laser_name)
+
+
 def adjust_coords_for_drift(
     coords=None, drift=None, nv_sig=None, laser_key=None, laser_name=None
 ):

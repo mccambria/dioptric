@@ -95,6 +95,18 @@ def do_optimize_pixel(nv_sig):
     nv_sig["pixel_coords"] = pixel_coords
 
 
+def do_optimize_pixel_set_drift(nv_sig):
+    # Take an image and update the pixel coords from that image
+    img_array = do_image_single_nv(nv_sig)
+    pixel_coords = nv_sig["pixel_coords"]
+    pixel_coords = optimize.optimize_pixel(
+        img_array, pixel_coords, set_pixel_drift=True, set_scanning_drift=True
+    )
+    pixel_coords = [round(el, 2) for el in pixel_coords]
+    print(pixel_coords)
+    nv_sig["pixel_coords"] = pixel_coords
+
+
 def do_optimize_widefield_calibration():
     with common.labrad_connect() as cxn:
         optimize.optimize_widefield_calibration(cxn)
@@ -105,8 +117,8 @@ def do_resonance(nv_list):
     freq_range = 0.030
     num_steps = 20
     num_reps = 400
-    num_runs = 4
-    uwave_power = -18.0
+    num_runs = 64
+    uwave_power = -16.0
     laser_filter = "nd_0.7"
     resonance.main(
         nv_list,
@@ -231,29 +243,30 @@ if __name__ == "__main__":
     nv3["coords"] = [0.049, 0.066, z_coord]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_09_11"
-    nv4["pixel_coords"] = [323.67, 219.96]
-    nv4["coords"] = [0.176, 0.137, z_coord]
+    nv4["name"] = f"{sample_name}-nv4_2023_09_12"
+    nv4["pixel_coords"] = [315.58, 203.56]
+    nv4["coords"] = [0.162, 0.161, z_coord]
 
     # Calibration NVs
 
     nv5 = copy.deepcopy(nv_ref)
     nv5["name"] = f"{sample_name}-cal_check1"
-    nv5["pixel_coords"] = [139.26, 258.46]
-    nv5["coords"] = [-0.103, 0.067, z_coord]
+    nv5["pixel_coords"] = [139.5840657600651, 257.70994378810946]
+    nv5["coords"] = [-0.10233730341013306, 0.0699854266603339, z_coord]
     nv5["disable_z_opt"] = False
 
     nv6 = copy.deepcopy(nv_ref)
     nv6["name"] = f"{sample_name}-cal_check2"
-    nv6["pixel_coords"] = [225.69, 324.16]
-    nv6["coords"] = [0.029, -0.029, z_coord]
+    nv6["pixel_coords"] = [324.4796398557366, 218.27466265286117]
+    nv6["coords"] = [0.1770304266201686, 0.1391538157833249, z_coord]
 
     nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv3, nv4]
     # nv_list = [nv1, nv2]
+    # nv_list = [nv5, nv6]
     # nv_list = [nv4]
 
-    nv_sig = nv5
+    nv_sig = nv2
     # nv_sig = nv_ref
 
     ### Functions to run
@@ -265,7 +278,7 @@ if __name__ == "__main__":
 
         # tb.init_safe_stop()
 
-        # pos.reset_drift()
+        # pos.reset_xy_drift()
         # widefield.reset_pixel_drift()
 
         # Optimize pixels coords batch
@@ -299,9 +312,10 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
+        # do_optimize_pixel_set_drift(nv_sig)
         # do_optimize_plot(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
