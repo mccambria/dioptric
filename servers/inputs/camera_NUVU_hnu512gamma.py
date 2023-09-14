@@ -47,7 +47,7 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         # Configure the camera
         self.cam.set_target_detector_temp(-60)
-        self.cam.set_readout_mode(ReadoutMode.EM)
+        self.cam.set_readout_mode(ReadoutMode.CONV)
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
