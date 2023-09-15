@@ -384,8 +384,8 @@ def optimize_widefield_calibration(cxn):
         key = f"{nv_name}_PIXEL_COORDS"
         pixel_coords = pixel_coords_list[ind]
         common.set_registry_entry(calibration_directory, key, pixel_coords)
-        scanning_coords = scanning_coords_list[ind]
         key = f"{nv_name}_SCANNING_COORDS"
+        scanning_coords = scanning_coords_list[ind]
         common.set_registry_entry(calibration_directory, key, scanning_coords)
 
     # Update the z drift in the registry

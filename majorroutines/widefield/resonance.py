@@ -97,12 +97,14 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
 def create_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
     num_nvs = counts.shape[0]
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
     for ind in range(num_nvs):
+        fig, ax = plt.subplots()
         # kpl.plot_line(ax, freqs, counts[ind])
-        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind])
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Counts")
+        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Counts")
+        ax.legend()
     return fig
 
 
@@ -311,8 +313,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
-    file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
+    file_name = "2023_09_12-18_23_32-johnson-nv1_2023_09_11"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
