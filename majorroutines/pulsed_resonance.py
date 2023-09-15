@@ -284,13 +284,6 @@ def voigt_split(freq, contrast, g_width, l_width, center, splitting):
     return line_1 + line_2
 
 
-def voigt_split_not_normed(freq, norm, contrast, g_width, l_width, center, splitting):
-    splitting_ghz = splitting / 1000
-    line_1 = voigt(freq, contrast, g_width, l_width, center - splitting_ghz / 2)
-    line_2 = voigt(freq, contrast, g_width, l_width, center + splitting_ghz / 2)
-    return norm * (line_1 + line_2)
-
-
 def lorentzian(freq, contrast, hwhm, center):
     """Normalized that the value at the center is the contrast"""
     hwhm_ghz = hwhm / 1000
@@ -527,6 +520,7 @@ def fit_resonance(
     freqs,
     norm_avg_sig,
     norm_avg_sig_ste,
+    fit_func=None,
     line_func=None,
     num_resonances=None,
     guess_params=None,
@@ -541,9 +535,12 @@ def fit_resonance(
         Normalized average signal
     norm_avg_sig_ste : 1D array
         Standard error of the normalized average signal
+    fit_func: Function, optional
+        Complete function used to fit the data
     line_func : Function, optional
-        Function used to describe a single ESR line (for simplicity it should be positive and
-        have a baseline of 0). Default: Rabi line with N14 hyperfine splitting
+        Function used to describe a single ESR line. Should be positive and have a
+        baseline of 0 - it will be converted to a dip relative to 1 automatically.
+        Default: Rabi line with N14 hyperfine splitting
     num_resonances : int, optional
         Number of ESR lines apparent in the spectrum. If None, we'll try 1 or 2 and use
         whatever gives a better fit
@@ -609,7 +606,8 @@ def fit_resonance(
             num_resonances = len(guess_params) / len_res_desc
         elif num_resonances is not None:
             guess_params = get_guess_params_lambda(num_resonances)
-        fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
+        if fit_func is None:
+            fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
         popt, pcov = curve_fit_sub(fit_func, guess_params)
 
         # # Brute
@@ -637,7 +635,7 @@ def fit_resonance(
         # # pcov = np.zeros((num_params, num_params))
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
-    else:
+    elif fit_func is None:
         best_red_chi_sq = None
         best_num_params = None
         new_winner = False

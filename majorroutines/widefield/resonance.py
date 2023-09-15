@@ -13,7 +13,7 @@ import numpy as np
 import time
 import labrad
 import majorroutines.optimize as optimize
-from majorroutines.pulsed_resonance import fit_resonance, voigt_split_not_normed
+from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
@@ -25,16 +25,21 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 from cProfile import Profile
 import itertools
-
-# from pathos.multiprocessing import ProcessingPool
 from multiprocessing import Pool
 
 
 def process_counts(sig_counts):
     run_ax = 1
-    avg_counts = np.mean(sig_counts, axis=run_ax)
+    
+    # avg_counts = np.mean(sig_counts, axis=run_ax)
+    # num_runs = sig_counts.shape[run_ax]
+    # avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+    
+    avg_counts = np.median(sig_counts, axis=run_ax)
     num_runs = sig_counts.shape[run_ax]
-    avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+    dist_to_median = abs(sig_counts - )
+    avg_counts_ste = np.median(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+    
     return avg_counts, avg_counts_ste
 
 
@@ -43,13 +48,12 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     num_runs = img_arrays.shape[0]
     # num_runs = 8
     num_steps = img_arrays.shape[1]
-    sig_counts = [
-        [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
-    ]
 
-    global process_img_arrays_sub  # Necessary for multiprocessing
+    # Run through the images in parallel
 
-    def process_img_arrays_sub(nv_ind, freq_ind, run_ind):
+    global process_img_arrays_sub  # Necessary for multiprocessing to pickle the function
+
+    def process_img_arrays_sub(nv_ind, run_ind, freq_ind):
         pixel_coords = nv_list[nv_ind]["pixel_coords"]
         img_array = img_arrays[run_ind, freq_ind]
         pixel_drift = pixel_drifts[run_ind, freq_ind]
@@ -65,30 +69,24 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
         )
         return counts
 
+    # List of Cartesian product of the indices
     nvs_range = range(num_nvs)
     runs_range = range(num_runs)
     steps_range = range(num_steps)
     index_list = itertools.product(nvs_range, runs_range, steps_range)
+
     with Pool() as p:
-        sig_counts_list = p.starmap(process_img_arrays_sub, index_list)
+        sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=50)
+
     sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
-
-    # for nv_ind in range(num_nvs):
-    #     for run_ind in range(num_runs):
-    #         for freq_ind in range(num_steps):
-    #             counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
-    #             sig_counts[nv_ind][run_ind][freq_ind] = counts
-
-    sig_counts = np.array(sig_counts)
     return sig_counts
 
 
 def create_raw_data_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
     num_nvs = counts.shape[0]
-    # fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        fig, ax = plt.subplots()
         kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Counts")
@@ -100,27 +98,52 @@ def create_fit_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
     num_nvs = counts.shape[0]
     fig, ax = plt.subplots()
-    line_func = voigt_split_not_normed
+    freq_linspace = np.linspace(min(freqs) - 0.001, max(freqs) + 0.001, 100)
+    shift_factor = 0.25
+    offset_inds = list(range(num_nvs))
+    # shuffle(offset_inds)
     for ind in range(num_nvs):
         nv_counts = counts[ind]
         nv_counts_ste = counts_ste[ind]
-        # norm, contrast, g_width, l_width, center, splitting
-        guess_params = [nv_counts[0], 0.15, 2, 2, 2.87, 5]
+        if ind != 2:
+            # norm, contrast, g_width, l_width, center
+            guess_params = [nv_counts[0], 0.15, 2, 2, 2.87]
+            fit_func = lambda freq, norm, contrast, g_width, l_width, center: norm * (
+                1 - voigt(freq, contrast, g_width, l_width, center)
+            )
+        else:
+            # norm, contrast, g_width, l_width, center, splitting
+            guess_params = [nv_counts[0], 0.15, 2, 2, 2.87, 5]
+            fit_func = (
+                lambda freq, norm, contrast, g_width, l_width, center, splitting: norm
+                * (1 - voigt_split(freq, contrast, g_width, l_width, center, splitting))
+            )
+
         fit_func, popt, pcov = fit_resonance(
             freqs,
             nv_counts,
             nv_counts_ste,
-            line_func=line_func,
+            fit_func=fit_func,
             guess_params=guess_params,
         )
+        offset_ind = offset_inds[ind]
         norm = popt[0]
         # kpl.plot_line(ax, freqs, counts[ind])
-        kpl.plot_line(ax, freqs, 0.5 * ind + fit_func(freqs, *popt) / norm)
+        kpl.plot_line(
+            ax,
+            freq_linspace,
+            shift_factor * offset_ind + fit_func(freq_linspace, *popt) / norm,
+        )
         kpl.plot_points(
-            ax, freqs, 0.5 * ind + nv_counts / norm, yerr=nv_counts_ste / norm
+            ax,
+            freqs,
+            shift_factor * offset_ind + nv_counts / norm,
+            yerr=nv_counts_ste / norm,
+            label=ind,
         )
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
+    ax.legend()
     return fig
 
 
@@ -290,7 +313,8 @@ def main_with_cxn(
     radius = config["camera_spot_radius"]
     sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
     avg_counts, avg_counts_ste = process_counts(sig_counts)
-    fig = create_figure(freqs, avg_counts, avg_counts_ste)
+    raw_data_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
     ### Clean up and save the data
 
@@ -306,6 +330,9 @@ def main_with_cxn(
         "readout-units": "ns",
         "img_arrays": img_arrays,
         "img_arrays-units": "counts",
+        "sig_counts": sig_counts,
+        "avg_counts": avg_counts,
+        "avg_counts_ste": avg_counts_ste,
         "pixel_drifts": pixel_drifts,
         "pixel_drifts-units": "pixels",
         "freq_center": freq_center,
@@ -325,26 +352,37 @@ def main_with_cxn(
         "freq_ind_master_list": freq_ind_master_list,
     }
 
-    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, file_path)
+    nv_name = nv_list[0]["name"]
+    file_path = tb.get_file_path(__file__, timestamp, nv_name)
+    tb.save_figure(raw_data_fig, file_path)
     tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_arrays"])
+    file_path = tb.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tb.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-<<<<<<< HEAD
-    file_name = "2023_09_12-18_23_32-johnson-nv1_2023_09_11"
-=======
     # file_name = "2023_09_13-15_32_35-johnson-nv1_2023_09_11"
     file_name = "2023_09_14-07_15_21-johnson-nv2_2023_09_11"
->>>>>>> a4f9633156ef8b5be0dd20feaf99e554e78ba655
     data = tb.get_raw_data(file_name)
-    freqs = data["freqs"]
+    freqs = np.array(data["freqs"])
     img_arrays = np.array(data["img_arrays"], dtype=int)
+    img_arrays = np.delete(img_arrays, 0, 0)
     nv_list = data["nv_list"]
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
     radius = data["config"]["camera_spot_radius"]
+    freq_ind_master_list = data["freq_ind_master_list"]
+
+    # num_nvs = len(nv_list)
+    # num_runs = img_arrays.shape[0]
+    # num_steps = img_arrays.shape[1]
+    # for run_ind in range(num_runs):
+    #     print(run_ind)
+    #     for freq_ind in freq_ind_master_list[run_ind][0:1]:
+    #         fig, ax = plt.subplots()
+    #         kpl.imshow(ax, img_arrays[run_ind, freq_ind])
+    #         plt.show(block=True)
 
     # Profiling
     print("start")
