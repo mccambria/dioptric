@@ -13,6 +13,7 @@ import numpy as np
 import time
 import labrad
 import majorroutines.optimize as optimize
+from majorroutines.pulsed_resonance import fit_resonance, voigt_split_not_normed
 from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
@@ -23,7 +24,10 @@ from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 from cProfile import Profile
-from pathos.multiprocessing import ProcessingPool
+import itertools
+
+# from pathos.multiprocessing import ProcessingPool
+from multiprocessing import Pool
 
 
 def process_counts(sig_counts):
@@ -36,11 +40,14 @@ def process_counts(sig_counts):
 
 def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     num_nvs = len(nv_list)
-    num_runs = img_arrays.shape[0] - 1
+    num_runs = img_arrays.shape[0]
+    # num_runs = 8
     num_steps = img_arrays.shape[1]
     sig_counts = [
         [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
     ]
+
+    global process_img_arrays_sub  # Necessary for multiprocessing
 
     def process_img_arrays_sub(nv_ind, freq_ind, run_ind):
         pixel_coords = nv_list[nv_ind]["pixel_coords"]
@@ -58,51 +65,60 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
         )
         return counts
 
-    # for freq_ind in range(num_steps):
-    for nv_ind in range(num_nvs):
-        for run_ind in range(num_runs):
-            ### Multi threaded (too much memory)
-            # pixel_coords = nv_list[nv_ind]["pixel_coords"]
-            # img_array_sub = img_arrays[run_ind, :]
-            # pixel_drift_sub = pixel_drifts[run_ind, :]
+    nvs_range = range(num_nvs)
+    runs_range = range(num_runs)
+    steps_range = range(num_steps)
+    index_list = itertools.product(nvs_range, runs_range, steps_range)
+    with Pool() as p:
+        sig_counts_list = p.starmap(process_img_arrays_sub, index_list)
+    sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
 
-            # def process_img_arrays_sub(freq_ind):
-            #     img_array = img_array_sub[freq_ind]
-            #     pixel_drift = pixel_drift_sub[freq_ind]
-            #     opt_pixel_coords = optimize.optimize_pixel(
-            #         img_array,
-            #         pixel_coords,
-            #         set_scanning_drift=False,
-            #         set_pixel_drift=False,
-            #         pixel_drift=pixel_drift,
-            #     )
-            #     counts = widefield.counts_from_img_array(
-            #         img_array, opt_pixel_coords, radius=radius, drift_adjust=False
-            #     )
-            #     return counts
-
-            # with ProcessingPool() as p:
-            #     line = p.map(process_img_arrays_sub, steps_linspace)
-            # sig_counts[nv_ind][run_ind] = line
-
-            ### Single threaded
-            for freq_ind in range(num_steps):
-                counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
-                sig_counts[nv_ind][run_ind][freq_ind] = counts
+    # for nv_ind in range(num_nvs):
+    #     for run_ind in range(num_runs):
+    #         for freq_ind in range(num_steps):
+    #             counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
+    #             sig_counts[nv_ind][run_ind][freq_ind] = counts
 
     sig_counts = np.array(sig_counts)
     return sig_counts
 
 
-def create_figure(freqs, counts, counts_ste):
+def create_raw_data_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
     num_nvs = counts.shape[0]
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        # kpl.plot_line(ax, freqs, counts[ind])
         kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind])
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Counts")
+    return fig
+
+
+def create_fit_figure(freqs, counts, counts_ste):
+    kpl.init_kplotlib()
+    num_nvs = counts.shape[0]
+    fig, ax = plt.subplots()
+    line_func = voigt_split_not_normed
+    for ind in range(num_nvs):
+        nv_counts = counts[ind]
+        nv_counts_ste = counts_ste[ind]
+        # norm, contrast, g_width, l_width, center, splitting
+        guess_params = [nv_counts[0], 0.15, 2, 2, 2.87, 5]
+        fit_func, popt, pcov = fit_resonance(
+            freqs,
+            nv_counts,
+            nv_counts_ste,
+            line_func=line_func,
+            guess_params=guess_params,
+        )
+        norm = popt[0]
+        # kpl.plot_line(ax, freqs, counts[ind])
+        kpl.plot_line(ax, freqs, 0.5 * ind + fit_func(freqs, *popt) / norm)
+        kpl.plot_points(
+            ax, freqs, 0.5 * ind + nv_counts / norm, yerr=nv_counts_ste / norm
+        )
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("Normalized fluorescence")
     return fig
 
 
@@ -315,8 +331,8 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
-    file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
+    # file_name = "2023_09_13-15_32_35-johnson-nv1_2023_09_11"
+    file_name = "2023_09_14-07_15_21-johnson-nv2_2023_09_11"
     data = tb.get_raw_data(file_name)
     freqs = data["freqs"]
     img_arrays = np.array(data["img_arrays"], dtype=int)
@@ -339,6 +355,7 @@ if __name__ == "__main__":
 
     # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
     avg_counts, avg_counts_ste = process_counts(sig_counts)
-    create_figure(freqs, avg_counts, avg_counts_ste)
+    create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
