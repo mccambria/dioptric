@@ -47,7 +47,7 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         # Configure the camera
         self.cam.set_target_detector_temp(-60)
-        self.cam.set_readout_mode(ReadoutMode.EM)
+        self.cam.set_readout_mode(ReadoutMode.CONV)
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
@@ -85,6 +85,11 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(5)
     def reset(self, c):
         self.disarm(c)
+
+    @setting(7, returns="i")
+    def get_readout_mode(self, c):
+        readout_mode = self.cam.get_readout_mode()
+        return readout_mode
 
 
 __server__ = CameraNuvuHnu512gamma()

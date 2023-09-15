@@ -166,6 +166,27 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
+    def get_readout_mode(self):
+        """
+        Méthode permettant de récupérer les informations du readout mode utilisé
+        :return: None
+        """
+        try:
+            error = ncCamGetCurrentReadoutMode(
+                self.ncCam,
+                byref(self.readoutMode),
+                byref(self.ampliType),
+                self.ampliString.encode(),
+                byref(self.vertFreq),
+                byref(self.horizFreq),
+            )
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+        return self.readoutMode
+
     def set_trigger_mode(self, trigger_mode, num_images=0):
         try:
             error = ncCamSetTriggerMode(self.ncCam, trigger_mode.value, num_images)
@@ -585,25 +606,6 @@ class NcCamera:
                 self.ncCam,
                 byref(self.calibratedEmGainTempMin),
                 byref(self.calibratedEmGainTempMax),
-            )
-            if error:
-                raise NuvuException(error)
-        except NuvuException as nuvuException:
-            self.errorHandling(nuvuException.value())
-
-    def getCurrentReadoutMode(self):
-        """
-        Méthode permettant de récupérer les informations du readout mode utilisé
-        :return: None
-        """
-        try:
-            error = ncCamGetCurrentReadoutMode(
-                self.ncCam,
-                byref(self.readoutMode),
-                byref(self.ampliType),
-                self.ampliString.encode(),
-                byref(self.vertFreq),
-                byref(self.horizFreq),
             )
             if error:
                 raise NuvuException(error)
