@@ -26,20 +26,24 @@ from random import shuffle
 from cProfile import Profile
 import itertools
 from multiprocessing import Pool
+import json
 
 
 def process_counts(sig_counts):
     run_ax = 1
-    
-    # avg_counts = np.mean(sig_counts, axis=run_ax)
-    # num_runs = sig_counts.shape[run_ax]
-    # avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
-    
-    avg_counts = np.median(sig_counts, axis=run_ax)
+
+    avg_counts = np.mean(sig_counts, axis=run_ax)
     num_runs = sig_counts.shape[run_ax]
-    dist_to_median = abs(sig_counts - )
-    avg_counts_ste = np.median(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
-    
+    avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+
+    # avg_counts = np.median(sig_counts, axis=run_ax)
+    # dist_to_median = abs(sig_counts - avg_counts[:, np.newaxis, :])
+    # avg_counts_ste = np.median(dist_to_median, axis=run_ax) / 10
+
+    # avg_counts = np.max(sig_counts, axis=run_ax)
+    # avg_counts = np.percentile(sig_counts, 75, axis=run_ax)
+    # avg_counts_ste = np.sqrt(avg_counts)
+
     return avg_counts, avg_counts_ste
 
 
@@ -368,12 +372,15 @@ if __name__ == "__main__":
     data = tb.get_raw_data(file_name)
     freqs = np.array(data["freqs"])
     img_arrays = np.array(data["img_arrays"], dtype=int)
-    img_arrays = np.delete(img_arrays, 0, 0)
     nv_list = data["nv_list"]
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
     radius = data["config"]["camera_spot_radius"]
     freq_ind_master_list = data["freq_ind_master_list"]
+    sig_counts = np.array(data["sig_counts"])
+    avg_counts = np.array(data["avg_counts"])
+    avg_counts_ste = np.array(data["avg_counts_ste"])
 
+    # Play the images back like a movie
     # num_nvs = len(nv_list)
     # num_runs = img_arrays.shape[0]
     # num_steps = img_arrays.shape[1]
@@ -384,22 +391,28 @@ if __name__ == "__main__":
     #         kpl.imshow(ax, img_arrays[run_ind, freq_ind])
     #         plt.show(block=True)
 
-    # Profiling
-    print("start")
-    start = time.time()
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
-    # with Profile() as pr:
-    #     sig_counts = process_img_arrays(
-    #         img_arrays, nv_list, pixel_drifts, radius=radius
-    #     )
-    #     pr.print_stats("cumulative")
-    stop = time.time()
-    print("stop")
-    print(f"Time elapsed: {stop - start}")
-
+    # Process images
+    # print("start")
+    # start = time.time()
     # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    # stop = time.time()
+    # print("stop")
+    # print(f"Time elapsed: {stop - start}")
     avg_counts, avg_counts_ste = process_counts(sig_counts)
+
     create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
     create_fit_figure(freqs, avg_counts, avg_counts_ste)
+
+    # Update saved values
+    # data["sig_counts"] = sig_counts.tolist()
+    # data["avg_counts"] = avg_counts.tolist()
+    # data["avg_counts_ste"] = avg_counts_ste.tolist()
+    # data[
+    #     "img_arrays"
+    # ] = "pc_rabi/branch_master/resonance/2023_09/2023_09_14-07_15_21-johnson-nv2_2023_09_11.npz"
+    # nvdata = common.get_nvdata_path()
+    # full_path = nvdata / f"pc_rabi/branch_master/resonance/2023_09/{file_name}.txt"
+    # with open(full_path, "w") as f:
+    #     json.dump(data, f, indent=2)
 
     plt.show(block=True)
