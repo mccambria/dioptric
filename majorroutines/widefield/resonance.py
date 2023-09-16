@@ -32,6 +32,15 @@ import json
 def process_counts(sig_counts):
     run_ax = 1
 
+    # sig_counts = sig_counts.astype(float)
+    # for ind in range(5):
+    #     for jnd in range(20):
+    #         low = np.percentile(sig_counts[ind, :, jnd], 20)
+    #         sig_counts[ind, sig_counts[ind, :, jnd] < low, jnd] = np.nan
+    # avg_counts = np.nanmean(sig_counts, axis=run_ax)
+    # num_runs = np.count_nonzero(~np.isnan(sig_counts), axis=run_ax)
+    # avg_counts_ste = np.nanstd(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+
     avg_counts = np.mean(sig_counts, axis=run_ax)
     num_runs = sig_counts.shape[run_ax]
     avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
@@ -81,8 +90,18 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
 
     with Pool() as p:
         sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=50)
-
     sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
+
+    # Single threaded
+    # sig_counts = [
+    #     [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
+    # ]
+    # for nv_ind in range(num_nvs):
+    #     for run_ind in range(num_runs):
+    #         for freq_ind in range(num_steps):
+    #             counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
+    #             sig_counts[nv_ind][run_ind][freq_ind] = counts
+
     return sig_counts
 
 
@@ -380,13 +399,20 @@ if __name__ == "__main__":
     avg_counts = np.array(data["avg_counts"])
     avg_counts_ste = np.array(data["avg_counts_ste"])
 
+    # Histograms
+    # for ind in range(5):
+    #     fig, ax = plt.subplots()
+    #     nv_counts = sig_counts[ind, :, :]
+    #     ax.hist(nv_counts.flatten(), 100)
+    # plt.show(block=True)
+
     # Play the images back like a movie
-    # num_nvs = len(nv_list)
-    # num_runs = img_arrays.shape[0]
-    # num_steps = img_arrays.shape[1]
+    num_nvs = len(nv_list)
+    num_runs = img_arrays.shape[0]
+    num_steps = img_arrays.shape[1]
     # for run_ind in range(num_runs):
     #     print(run_ind)
-    #     for freq_ind in freq_ind_master_list[run_ind][0:1]:
+    #     for freq_ind in freq_ind_master_list[run_ind][-2:-1]:
     #         fig, ax = plt.subplots()
     #         kpl.imshow(ax, img_arrays[run_ind, freq_ind])
     #         plt.show(block=True)
@@ -398,10 +424,18 @@ if __name__ == "__main__":
     # stop = time.time()
     # print("stop")
     # print(f"Time elapsed: {stop - start}")
-    avg_counts, avg_counts_ste = process_counts(sig_counts)
+    # avg_counts, avg_counts_ste = process_counts(sig_counts)
 
     create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
     create_fit_figure(freqs, avg_counts, avg_counts_ste)
+
+    ordered_sig_counts = []
+    for run_ind in range(num_runs):
+        for freq_ind in freq_ind_master_list[run_ind]:
+            ordered_sig_counts.append(sig_counts[:, run_ind, freq_ind])
+    ordered_sig_counts = np.array(ordered_sig_counts)
+    fig, ax = plt.subplots()
+    ax.plot(ordered_sig_counts)
 
     # Update saved values
     # data["sig_counts"] = sig_counts.tolist()
