@@ -89,7 +89,8 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     index_list = itertools.product(nvs_range, runs_range, steps_range)
 
     with Pool() as p:
-        sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=50)
+        sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=100)
+
     sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
 
     # Single threaded
@@ -112,7 +113,11 @@ def create_raw_data_figure(freqs, counts, counts_ste):
     for ind in range(num_nvs):
         kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
     ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("ADUs")
+    min_freqs = min(freqs)
+    max_freqs = max(freqs)
+    excess = 0.08 * (max_freqs - min_freqs)
+    ax.set_xlim(min_freqs - excess, max_freqs + excess)
     ax.legend()
     return fig
 
@@ -123,7 +128,7 @@ def create_fit_figure(freqs, counts, counts_ste):
     fig, ax = plt.subplots()
     freq_linspace = np.linspace(min(freqs) - 0.001, max(freqs) + 0.001, 100)
     shift_factor = 0.25
-    offset_inds = list(range(num_nvs))
+    offset_inds = [num_nvs - 1 - ind for ind in list(range(num_nvs))]
     # shuffle(offset_inds)
     for ind in range(num_nvs):
         nv_counts = counts[ind]
@@ -166,6 +171,10 @@ def create_fit_figure(freqs, counts, counts_ste):
         )
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
+    min_freqs = min(freqs)
+    max_freqs = max(freqs)
+    excess = 0.08 * (max_freqs - min_freqs)
+    ax.set_xlim(min_freqs - excess, max_freqs + excess)
     ax.legend()
     return fig
 
@@ -429,13 +438,13 @@ if __name__ == "__main__":
     create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
     create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
-    ordered_sig_counts = []
-    for run_ind in range(num_runs):
-        for freq_ind in freq_ind_master_list[run_ind]:
-            ordered_sig_counts.append(sig_counts[:, run_ind, freq_ind])
-    ordered_sig_counts = np.array(ordered_sig_counts)
-    fig, ax = plt.subplots()
-    ax.plot(ordered_sig_counts)
+    # ordered_sig_counts = []
+    # for run_ind in range(num_runs):
+    #     for freq_ind in freq_ind_master_list[run_ind]:
+    #         ordered_sig_counts.append(sig_counts[:, run_ind, freq_ind])
+    # ordered_sig_counts = np.array(ordered_sig_counts)
+    # fig, ax = plt.subplots()
+    # ax.plot(ordered_sig_counts)
 
     # Update saved values
     # data["sig_counts"] = sig_counts.tolist()
