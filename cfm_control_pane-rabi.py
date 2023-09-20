@@ -266,7 +266,7 @@ if __name__ == "__main__":
     # nv_list = [nv5, nv6]
     # nv_list = [nv4]
 
-    nv_sig = nv2
+    nv_sig = nv3
     # nv_sig = nv_ref
 
     ### Functions to run
