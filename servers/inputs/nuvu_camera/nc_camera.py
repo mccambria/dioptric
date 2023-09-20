@@ -185,7 +185,7 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-        return self.readoutMode
+        return self.readoutMode.value
 
     def set_trigger_mode(self, trigger_mode, num_images=0):
         try:

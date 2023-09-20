@@ -252,7 +252,7 @@ if __name__ == "__main__":
     nv5 = copy.deepcopy(nv_ref)
     nv5["name"] = f"{sample_name}-cal_check1"
     nv5["pixel_coords"] = [139.5840657600651, 257.70994378810946]
-    nv5["coords"] = [-0.10233730341013306, 0.0699854266603339, z_coord]
+    nv5["coords"] = [-0.10233730341013306, 0.04, z_coord]
     nv5["disable_z_opt"] = False
 
     nv6 = copy.deepcopy(nv_ref)
@@ -281,10 +281,10 @@ if __name__ == "__main__":
         # pos.reset_xy_drift()
         # widefield.reset_pixel_drift()
 
-        with common.labrad_connect() as cxn:
-            camera = tb.get_server_camera(cxn)
-            readout_mode = camera.get_readout_mode()
-            print(readout_mode)
+        # with common.labrad_connect() as cxn:
+        #     camera = tb.get_server_camera(cxn)
+        #     readout_mode = camera.get_readout_mode()
+        #     print(readout_mode)
 
         # Optimize pixels coords batch
         # raw_data = tb.get_raw_data("2023_09_11-13_52_01-johnson-nvref")
@@ -311,7 +311,7 @@ if __name__ == "__main__":
         #     print(nv["coords"])
 
         # do_image_sample(nv_ref)
-        # do_image_sample_zoom(nv_sig)
+        do_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
