@@ -31,9 +31,7 @@ from scipy.special import voigt_profile as scipy_voigt
 
 
 def create_fit_figure(
-    freq_center,
-    freq_range,
-    num_steps,
+    freqs,
     norm_avg_sig,
     norm_avg_sig_ste,
     fit_func=None,
@@ -48,12 +46,8 @@ def create_fit_figure(
 
     Parameters
     ----------
-    freq_center : numeric
-        Center of the frequency range used in the ESR scan
-    freq_range : numeric
-        Frequency range of the ESR scan
-    num_steps : numeric
-        Number of steps in the ESR scan
+    freqs : array(numeric)
+        Frequencies scanned
     norm_avg_sig : 1D array
         Normalized average signal
     norm_avg_sig_ste : 1D array
@@ -91,9 +85,7 @@ def create_fit_figure(
     # Fitting
     if (fit_func is None) or (popt is None):
         fit_func, popt, pcov = fit_resonance(
-            freq_center,
-            freq_range,
-            num_steps,
+            freqs,
             norm_avg_sig,
             norm_avg_sig_ste,
             line_func=line_func,
@@ -427,9 +419,7 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
 
 
 def get_guess_params(
-    freq_center,
-    freq_range,
-    num_steps,
+    freqs,
     norm_avg_sig,
     norm_avg_sig_ste,
     num_resonances=None,
@@ -439,7 +429,6 @@ def get_guess_params(
     """
 
     # Setup for scipy's peak finding algorithm
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
     inverted_norm_avg_sig = 1 - norm_avg_sig
 
     hwhm = 0.002  # GHz
@@ -528,11 +517,10 @@ def get_guess_params(
 
 
 def fit_resonance(
-    freq_center,
-    freq_range,
-    num_steps,
+    freqs,
     norm_avg_sig,
     norm_avg_sig_ste,
+    fit_func=None,
     line_func=None,
     num_resonances=None,
     guess_params=None,
@@ -541,19 +529,18 @@ def fit_resonance(
 
     Parameters
     ----------
-    freq_center : numeric
-        Center of the frequency range used in the ESR scan
-    freq_range : numeric
-        Frequency range of the ESR scan
-    num_steps : numeric
-        Number of steps in the ESR scan
+    freqs : array(numeric)
+        Frequencies scanned
     norm_avg_sig : 1D array
         Normalized average signal
     norm_avg_sig_ste : 1D array
         Standard error of the normalized average signal
+    fit_func: Function, optional
+        Complete function used to fit the data
     line_func : Function, optional
-        Function used to describe a single ESR line (for simplicity it should be positive and
-        have a baseline of 0). Default: Rabi line with N14 hyperfine splitting
+        Function used to describe a single ESR line. Should be positive and have a
+        baseline of 0 - it will be converted to a dip relative to 1 automatically.
+        Default: Rabi line with N14 hyperfine splitting
     num_resonances : int, optional
         Number of ESR lines apparent in the spectrum. If None, we'll try 1 or 2 and use
         whatever gives a better fit
@@ -578,13 +565,9 @@ def fit_resonance(
             )
         )
 
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
-
     # Define a couple lambdas to keep things short
     get_guess_params_lambda = lambda num_resonances: get_guess_params(
-        freq_center,
-        freq_range,
-        num_steps,
+        freqs,
         norm_avg_sig,
         norm_avg_sig_ste,
         num_resonances=num_resonances,
@@ -623,7 +606,8 @@ def fit_resonance(
             num_resonances = len(guess_params) / len_res_desc
         elif num_resonances is not None:
             guess_params = get_guess_params_lambda(num_resonances)
-        fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
+        if fit_func is None:
+            fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
         popt, pcov = curve_fit_sub(fit_func, guess_params)
 
         # # Brute
@@ -651,13 +635,15 @@ def fit_resonance(
         # # pcov = np.zeros((num_params, num_params))
 
     # Otherwise try both single- and double-resonance lineshapes to see what fits best
-    else:
+    elif fit_func is None:
         best_red_chi_sq = None
         best_num_params = None
         new_winner = False
         # for num_resonances in [1, 2]:
         #     test_guess_params = get_guess_params_lambda(num_resonances)
         guess_contrast = 0.6 * (1 - min(norm_avg_sig))
+        freq_range = max(freqs) - min(freqs)
+        freq_center = (max(freqs) + min(freqs)) / 2
         qtr_range = freq_range / 4
         half_range = 0.45 * freq_range
         qtr_low = freq_center - qtr_range
@@ -1177,9 +1163,13 @@ if __name__ == "__main__":
     # sys.exit()
 
     # Get what we need out of the data file
-    freq_center = data["freq_center"]
-    freq_range = data["freq_range"]
-    num_steps = data["num_steps"]
+    if "freqs" in data:
+        freqs = data["freqs"]
+    else:
+        freq_center = data["freq_center"]
+        freq_range = data["freq_range"]
+        num_steps = data["num_steps"]
+        freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ref_counts = data["ref_counts"]
     sig_counts = data["sig_counts"]
     num_reps = data["num_reps"]
@@ -1212,18 +1202,14 @@ if __name__ == "__main__":
     popt = None
 
     # create_raw_data_figure(
-    #     freq_center,
-    #     freq_range,
-    #     num_steps,
+    #     freqs,
     #     sig_counts_avg_kcps,
     #     ref_counts_avg_kcps,
     #     norm_avg_sig,
     # )
 
     fit_fig, _, _, popt, pcov = create_fit_figure(
-        freq_center,
-        freq_range,
-        num_steps,
+        freqs,
         norm_avg_sig,
         norm_avg_sig_ste,
         popt=popt,
@@ -1236,9 +1222,7 @@ if __name__ == "__main__":
 
     # Just fit, don't plot
     # fit_func, popt, pcov = fit_resonance(
-    #     freq_center,
-    #     freq_range,
-    #     num_steps,
+    #     freqs,
     #     norm_avg_sig,
     #     norm_avg_sig_ste,
     # popt=popt,

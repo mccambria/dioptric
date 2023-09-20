@@ -384,8 +384,8 @@ def optimize_widefield_calibration(cxn):
         key = f"{nv_name}_PIXEL_COORDS"
         pixel_coords = pixel_coords_list[ind]
         common.set_registry_entry(calibration_directory, key, pixel_coords)
-        scanning_coords = scanning_coords_list[ind]
         key = f"{nv_name}_SCANNING_COORDS"
+        scanning_coords = scanning_coords_list[ind]
         common.set_registry_entry(calibration_directory, key, scanning_coords)
 
     # Update the z drift in the registry
@@ -506,13 +506,17 @@ def optimize_pixel(
     popt = res.x
 
     # Testing
-    # print(cost(guess))
-    # print(cost(popt))
+    # opti_pixel_coords = popt[1:3]
+    # print(_optimize_pixel_cost(guess, *args))
+    # print(_optimize_pixel_cost(popt, *args))
     # fig, ax = plt.subplots()
-    # gaussian_array = _circle_gaussian(x, y, *popt)
-    # kpl.imshow(ax, gaussian_array)
+    # # gaussian_array = _circle_gaussian(x, y, *popt)
+    # # ax.plot(popt[2], popt[1], color="white", zorder=100, marker="o", ms=6)
+    # ax.plot(*opti_pixel_coords, color="white", zorder=100, marker="o", ms=6)
+    # kpl.imshow(ax, img_array)
     # ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
     # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
+    # plt.show(block=True)
 
     opti_pixel_coords = popt[1:3]
     if set_pixel_drift:

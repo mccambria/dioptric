@@ -13,6 +13,7 @@ import numpy as np
 import time
 import labrad
 import majorroutines.optimize as optimize
+from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
@@ -23,26 +24,49 @@ from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 from cProfile import Profile
-from pathos.multiprocessing import ProcessingPool
+import itertools
+from multiprocessing import Pool
+import json
 
 
 def process_counts(sig_counts):
     run_ax = 1
+
+    # sig_counts = sig_counts.astype(float)
+    # for ind in range(5):
+    #     for jnd in range(20):
+    #         low = np.percentile(sig_counts[ind, :, jnd], 20)
+    #         sig_counts[ind, sig_counts[ind, :, jnd] < low, jnd] = np.nan
+    # avg_counts = np.nanmean(sig_counts, axis=run_ax)
+    # num_runs = np.count_nonzero(~np.isnan(sig_counts), axis=run_ax)
+    # avg_counts_ste = np.nanstd(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+
     avg_counts = np.mean(sig_counts, axis=run_ax)
     num_runs = sig_counts.shape[run_ax]
     avg_counts_ste = np.std(sig_counts, axis=run_ax, ddof=1) / np.sqrt(num_runs)
+
+    # avg_counts = np.median(sig_counts, axis=run_ax)
+    # dist_to_median = abs(sig_counts - avg_counts[:, np.newaxis, :])
+    # avg_counts_ste = np.median(dist_to_median, axis=run_ax) / 10
+
+    # avg_counts = np.max(sig_counts, axis=run_ax)
+    # avg_counts = np.percentile(sig_counts, 75, axis=run_ax)
+    # avg_counts_ste = np.sqrt(avg_counts)
+
     return avg_counts, avg_counts_ste
 
 
 def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     num_nvs = len(nv_list)
-    num_runs = img_arrays.shape[0] - 1
+    num_runs = img_arrays.shape[0]
+    # num_runs = 8
     num_steps = img_arrays.shape[1]
-    sig_counts = [
-        [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
-    ]
 
-    def process_img_arrays_sub(nv_ind, freq_ind, run_ind):
+    # Run through the images in parallel
+
+    global process_img_arrays_sub  # Necessary for multiprocessing to pickle the function
+
+    def process_img_arrays_sub(nv_ind, run_ind, freq_ind):
         pixel_coords = nv_list[nv_ind]["pixel_coords"]
         img_array = img_arrays[run_ind, freq_ind]
         pixel_drift = pixel_drifts[run_ind, freq_ind]
@@ -58,51 +82,100 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
         )
         return counts
 
-    # for freq_ind in range(num_steps):
-    for nv_ind in range(num_nvs):
-        for run_ind in range(num_runs):
-            ### Multi threaded (too much memory)
-            # pixel_coords = nv_list[nv_ind]["pixel_coords"]
-            # img_array_sub = img_arrays[run_ind, :]
-            # pixel_drift_sub = pixel_drifts[run_ind, :]
+    # List of Cartesian product of the indices
+    nvs_range = range(num_nvs)
+    runs_range = range(num_runs)
+    steps_range = range(num_steps)
+    index_list = itertools.product(nvs_range, runs_range, steps_range)
 
-            # def process_img_arrays_sub(freq_ind):
-            #     img_array = img_array_sub[freq_ind]
-            #     pixel_drift = pixel_drift_sub[freq_ind]
-            #     opt_pixel_coords = optimize.optimize_pixel(
-            #         img_array,
-            #         pixel_coords,
-            #         set_scanning_drift=False,
-            #         set_pixel_drift=False,
-            #         pixel_drift=pixel_drift,
-            #     )
-            #     counts = widefield.counts_from_img_array(
-            #         img_array, opt_pixel_coords, radius=radius, drift_adjust=False
-            #     )
-            #     return counts
+    with Pool() as p:
+        sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=100)
 
-            # with ProcessingPool() as p:
-            #     line = p.map(process_img_arrays_sub, steps_linspace)
-            # sig_counts[nv_ind][run_ind] = line
+    sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
 
-            ### Single threaded
-            for freq_ind in range(num_steps):
-                counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
-                sig_counts[nv_ind][run_ind][freq_ind] = counts
+    # Single threaded
+    # sig_counts = [
+    #     [[None] * num_steps for ind in range(num_runs)] for jnd in range(num_nvs)
+    # ]
+    # for nv_ind in range(num_nvs):
+    #     for run_ind in range(num_runs):
+    #         for freq_ind in range(num_steps):
+    #             counts = process_img_arrays_sub(nv_ind, freq_ind, run_ind + 1)
+    #             sig_counts[nv_ind][run_ind][freq_ind] = counts
 
-    sig_counts = np.array(sig_counts)
     return sig_counts
 
 
-def create_figure(freqs, counts, counts_ste):
+def create_raw_data_figure(freqs, counts, counts_ste):
     kpl.init_kplotlib()
     num_nvs = counts.shape[0]
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        # kpl.plot_line(ax, freqs, counts[ind])
-        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind])
+        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
     ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("ADUs")
+    min_freqs = min(freqs)
+    max_freqs = max(freqs)
+    excess = 0.08 * (max_freqs - min_freqs)
+    ax.set_xlim(min_freqs - excess, max_freqs + excess)
+    ax.legend()
+    return fig
+
+
+def create_fit_figure(freqs, counts, counts_ste):
+    kpl.init_kplotlib()
+    num_nvs = counts.shape[0]
+    fig, ax = plt.subplots()
+    freq_linspace = np.linspace(min(freqs) - 0.001, max(freqs) + 0.001, 100)
+    shift_factor = 0.25
+    offset_inds = [num_nvs - 1 - ind for ind in list(range(num_nvs))]
+    # shuffle(offset_inds)
+    for ind in range(num_nvs):
+        nv_counts = counts[ind]
+        nv_counts_ste = counts_ste[ind]
+        if ind != 2:
+            # norm, contrast, g_width, l_width, center
+            guess_params = [nv_counts[0], 0.15, 2, 2, 2.87]
+            fit_func = lambda freq, norm, contrast, g_width, l_width, center: norm * (
+                1 - voigt(freq, contrast, g_width, l_width, center)
+            )
+        else:
+            # norm, contrast, g_width, l_width, center, splitting
+            guess_params = [nv_counts[0], 0.15, 2, 2, 2.87, 5]
+            fit_func = (
+                lambda freq, norm, contrast, g_width, l_width, center, splitting: norm
+                * (1 - voigt_split(freq, contrast, g_width, l_width, center, splitting))
+            )
+
+        fit_func, popt, pcov = fit_resonance(
+            freqs,
+            nv_counts,
+            nv_counts_ste,
+            fit_func=fit_func,
+            guess_params=guess_params,
+        )
+        offset_ind = offset_inds[ind]
+        norm = popt[0]
+        # kpl.plot_line(ax, freqs, counts[ind])
+        kpl.plot_line(
+            ax,
+            freq_linspace,
+            shift_factor * offset_ind + fit_func(freq_linspace, *popt) / norm,
+        )
+        kpl.plot_points(
+            ax,
+            freqs,
+            shift_factor * offset_ind + nv_counts / norm,
+            yerr=nv_counts_ste / norm,
+            label=ind,
+        )
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("Normalized fluorescence")
+    min_freqs = min(freqs)
+    max_freqs = max(freqs)
+    excess = 0.08 * (max_freqs - min_freqs)
+    ax.set_xlim(min_freqs - excess, max_freqs + excess)
+    ax.legend()
     return fig
 
 
@@ -272,7 +345,8 @@ def main_with_cxn(
     radius = config["camera_spot_radius"]
     sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
     avg_counts, avg_counts_ste = process_counts(sig_counts)
-    fig = create_figure(freqs, avg_counts, avg_counts_ste)
+    raw_data_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
     ### Clean up and save the data
 
@@ -288,6 +362,9 @@ def main_with_cxn(
         "readout-units": "ns",
         "img_arrays": img_arrays,
         "img_arrays-units": "counts",
+        "sig_counts": sig_counts,
+        "avg_counts": avg_counts,
+        "avg_counts_ste": avg_counts_ste,
         "pixel_drifts": pixel_drifts,
         "pixel_drifts-units": "pixels",
         "freq_center": freq_center,
@@ -307,38 +384,78 @@ def main_with_cxn(
         "freq_ind_master_list": freq_ind_master_list,
     }
 
-    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, file_path)
+    nv_name = nv_list[0]["name"]
+    file_path = tb.get_file_path(__file__, timestamp, nv_name)
+    tb.save_figure(raw_data_fig, file_path)
     tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_arrays"])
+    file_path = tb.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tb.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_08_25-21_47_02-johnson-nv0_2023_08_23"
-    file_name = "2023_08_26-07_58_44-johnson-nv0_2023_08_23"
+    # file_name = "2023_09_13-15_32_35-johnson-nv1_2023_09_11"
+    file_name = "2023_09_14-07_15_21-johnson-nv2_2023_09_11"
     data = tb.get_raw_data(file_name)
-    freqs = data["freqs"]
+    freqs = np.array(data["freqs"])
     img_arrays = np.array(data["img_arrays"], dtype=int)
     nv_list = data["nv_list"]
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
     radius = data["config"]["camera_spot_radius"]
+    freq_ind_master_list = data["freq_ind_master_list"]
+    sig_counts = np.array(data["sig_counts"])
+    avg_counts = np.array(data["avg_counts"])
+    avg_counts_ste = np.array(data["avg_counts_ste"])
 
-    # Profiling
-    print("start")
-    start = time.time()
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
-    # with Profile() as pr:
-    #     sig_counts = process_img_arrays(
-    #         img_arrays, nv_list, pixel_drifts, radius=radius
-    #     )
-    #     pr.print_stats("cumulative")
-    stop = time.time()
-    print("stop")
-    print(f"Time elapsed: {stop - start}")
+    # Histograms
+    # for ind in range(5):
+    #     fig, ax = plt.subplots()
+    #     nv_counts = sig_counts[ind, :, :]
+    #     ax.hist(nv_counts.flatten(), 100)
+    # plt.show(block=True)
 
+    # Play the images back like a movie
+    num_nvs = len(nv_list)
+    num_runs = img_arrays.shape[0]
+    num_steps = img_arrays.shape[1]
+    # for run_ind in range(num_runs):
+    #     print(run_ind)
+    #     for freq_ind in freq_ind_master_list[run_ind][-2:-1]:
+    #         fig, ax = plt.subplots()
+    #         kpl.imshow(ax, img_arrays[run_ind, freq_ind])
+    #         plt.show(block=True)
+
+    # Process images
+    # print("start")
+    # start = time.time()
     # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
-    avg_counts, avg_counts_ste = process_counts(sig_counts)
-    create_figure(freqs, avg_counts, avg_counts_ste)
+    # stop = time.time()
+    # print("stop")
+    # print(f"Time elapsed: {stop - start}")
+    # avg_counts, avg_counts_ste = process_counts(sig_counts)
+
+    create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    create_fit_figure(freqs, avg_counts, avg_counts_ste)
+
+    # ordered_sig_counts = []
+    # for run_ind in range(num_runs):
+    #     for freq_ind in freq_ind_master_list[run_ind]:
+    #         ordered_sig_counts.append(sig_counts[:, run_ind, freq_ind])
+    # ordered_sig_counts = np.array(ordered_sig_counts)
+    # fig, ax = plt.subplots()
+    # ax.plot(ordered_sig_counts)
+
+    # Update saved values
+    # data["sig_counts"] = sig_counts.tolist()
+    # data["avg_counts"] = avg_counts.tolist()
+    # data["avg_counts_ste"] = avg_counts_ste.tolist()
+    # data[
+    #     "img_arrays"
+    # ] = "pc_rabi/branch_master/resonance/2023_09/2023_09_14-07_15_21-johnson-nv2_2023_09_11.npz"
+    # nvdata = common.get_nvdata_path()
+    # full_path = nvdata / f"pc_rabi/branch_master/resonance/2023_09/{file_name}.txt"
+    # with open(full_path, "w") as f:
+    #     json.dump(data, f, indent=2)
 
     plt.show(block=True)
