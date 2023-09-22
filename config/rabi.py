@@ -18,7 +18,7 @@ home = Path.home()
 widefield_calibration_nv_shell = {
     "name": "widefield_calibration_nv1",
     "disable_opt": False,
-    "disable_z_opt": False,
+    "disable_z_opt": True,
     "expected_count_rate": None,
     LaserKey.IMAGING: {
         "name": "laser_INTE_520",
@@ -32,13 +32,15 @@ widefield_calibration_nv_shell = {
 widefield_calibration_nv1 = widefield_calibration_nv_shell.copy()
 widefield_calibration_nv2 = widefield_calibration_nv_shell.copy()
 widefield_calibration_nv2["name"] = "widefield_calibration_nv2"
+widefield_calibration_nv1["disable_z_opt"] = False
 widefield_calibration_nv2["disable_z_opt"] = True
 
 # Coords
-widefield_calibration_nv1["pixel_coords"] = [139.584, 257.709]
-widefield_calibration_nv1["coords"] = [-0.102, 0.070]
-widefield_calibration_nv2["pixel_coords"] = [324.580, 218.275]
-widefield_calibration_nv2["coords"] = [0.177, 0.139]
+z_coord = 5.82
+widefield_calibration_nv1["pixel_coords"] = [191.4, 285.58]
+widefield_calibration_nv1["coords"] = [-0.023, 0.028, z_coord]
+widefield_calibration_nv2["pixel_coords"] = [327.61, 215.15]
+widefield_calibration_nv2["coords"] = [0.181, 0.144, z_coord]
 
 # endregion
 # region Base config

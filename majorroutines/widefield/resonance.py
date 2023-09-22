@@ -295,10 +295,15 @@ def main_with_cxn(
 
             shuffle(nv_list_shuffle)
 
-            # Full optimize
+            # Optimize in z by scanning, then in xy with pixels again.
+            # Note: Each optimization routine must be identical or else there
+            # will be a potentially large source of variance between runs
             now = time.time()
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
-                optimize.main(nv_sig, set_to_opti_coords=False)
+                # This first optimize is just for z
+                optimize.main(nv_sig, set_to_opti_coords=False, only_z_opt=True)
+                # The optimization
+                optimize.optimize_pixel(nv_sig)
                 # optimize.optimize_widefield_calibration(cxn)
                 last_opt_time = time.time()
 
@@ -344,10 +349,10 @@ def main_with_cxn(
     img_arrays = np.array(img_arrays, dtype=int)
     pixel_drifts = np.array(pixel_drifts, dtype=float)
     radius = config["camera_spot_radius"]
-    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
-    avg_counts, avg_counts_ste = process_counts(sig_counts)
-    raw_data_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
+    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    # avg_counts, avg_counts_ste = process_counts(sig_counts)
+    # raw_data_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
     ### Clean up and save the data
 
@@ -363,9 +368,9 @@ def main_with_cxn(
         "readout-units": "ns",
         "img_arrays": img_arrays,
         "img_arrays-units": "counts",
-        "sig_counts": sig_counts,
-        "avg_counts": avg_counts,
-        "avg_counts_ste": avg_counts_ste,
+        # "sig_counts": sig_counts,
+        # "avg_counts": avg_counts,
+        # "avg_counts_ste": avg_counts_ste,
         "pixel_drifts": pixel_drifts,
         "pixel_drifts-units": "pixels",
         "freq_center": freq_center,
@@ -387,10 +392,10 @@ def main_with_cxn(
 
     nv_name = nv_list[0]["name"]
     file_path = tb.get_file_path(__file__, timestamp, nv_name)
-    tb.save_figure(raw_data_fig, file_path)
+    # tb.save_figure(raw_data_fig, file_path)
     tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_arrays"])
     file_path = tb.get_file_path(__file__, timestamp, nv_name + "-fit")
-    tb.save_figure(fit_fig, file_path)
+    # tb.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":

@@ -69,10 +69,10 @@ def _pixel_to_scanning_coords():
     """Get the linear parameters for the conversion"""
 
     nv1, nv2 = get_widefield_calibration_nvs()
-    nv1_scanning_coords = nv1["pixel_coords"]
-    nv1_pixel_coords = nv1["coords"]
-    nv2_scanning_coords = nv2["pixel_coords"]
-    nv2_pixel_coords = nv2["coords"]
+    nv1_scanning_coords = nv1["coords"]
+    nv1_pixel_coords = nv1["pixel_coords"]
+    nv2_scanning_coords = nv2["coords"]
+    nv2_pixel_coords = nv2["pixel_coords"]
 
     # Assume (independent) linear relations for both x and y
 
@@ -113,10 +113,10 @@ def _scanning_to_pixel_coords():
     """Get the linear parameters for the conversion"""
 
     nv1, nv2 = get_widefield_calibration_nvs()
-    nv1_scanning_coords = nv1["pixel_coords"]
-    nv1_pixel_coords = nv1["coords"]
-    nv2_scanning_coords = nv2["pixel_coords"]
-    nv2_pixel_coords = nv2["coords"]
+    nv1_scanning_coords = nv1["coords"]
+    nv1_pixel_coords = nv1["pixel_coords"]
+    nv2_scanning_coords = nv2["coords"]
+    nv2_pixel_coords = nv2["pixel_coords"]
 
     # Assume (independent) linear relations for both x and y
 
@@ -132,12 +132,14 @@ def _scanning_to_pixel_coords():
 
     return m_x, b_x, m_y, b_y
 
-def set_calibration_coords(nv1_pixel_coords, nv1_scanning_coords, nv2_pixel_coords, nv2_scanning_coords):
-    
+
+def set_calibration_coords(
+    nv1_pixel_coords, nv1_scanning_coords, nv2_pixel_coords, nv2_scanning_coords
+):
     calibration_directory = ["State", "WidefieldCalibration"]
     pixel_coords_list = [nv1_pixel_coords, nv2_pixel_coords]
     scanning_coords_list = [nv1_scanning_coords, nv2_scanning_coords]
-    
+
     nv_names = ["NV1", "NV2"]
     for ind in range(2):
         nv_name = nv_names[ind]

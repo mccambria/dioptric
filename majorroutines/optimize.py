@@ -713,6 +713,7 @@ def main_with_cxn(
     set_drift=True,
     laser_key=LaserKey.IMAGING,
     drift_adjust=True,
+    only_z_opt=None,
 ):
     # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
@@ -789,8 +790,8 @@ def main_with_cxn(
             counts_by_axis = []
 
             ### xy
-
-            only_z_opt = "only_z_opt" in nv_sig and nv_sig["only_z_opt"]
+            if only_z_opt is None:
+                only_z_opt = "only_z_opt" in nv_sig and nv_sig["only_z_opt"]
             if only_z_opt:
                 opti_coords = [adjusted_coords[0], adjusted_coords[1]]
                 for i in range(2):
