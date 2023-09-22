@@ -31,7 +31,7 @@ def get_config_module(pc_name=None):
 
 
 def get_config_dict(pc_name=None):
-    pc_name = "rabi"
+    # pc_name = "rabi"
     module = get_config_module(pc_name)
     return module.config
 
