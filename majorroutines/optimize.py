@@ -378,15 +378,12 @@ def optimize_widefield_calibration(cxn):
         pixel_coords_list.append(pixel_coords)
 
     # Save the optimized coordinates to the registry
-    nv_names = ["NV1", "NV2"]
-    for ind in range(2):
-        nv_name = nv_names[ind]
-        key = f"{nv_name}_PIXEL_COORDS"
-        pixel_coords = pixel_coords_list[ind]
-        common.set_registry_entry(calibration_directory, key, pixel_coords)
-        key = f"{nv_name}_SCANNING_COORDS"
-        scanning_coords = scanning_coords_list[ind]
-        common.set_registry_entry(calibration_directory, key, scanning_coords)
+    widefield.set_calibration_coords(
+        pixel_coords_list[0],
+        scanning_coords_list[0],
+        pixel_coords_list[1],
+        scanning_coords_list[1],
+    )
 
     # Update the z drift in the registry
     z_change = z_final - z_initial
@@ -497,7 +494,7 @@ def optimize_pixel(
     bg_guess = 300
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
     amp_guess = max(10, amp_guess)
-    guess = (amp_guess, *pixel_coords, radius, bg_guess)
+    guess = (amp_guess, *pixel_coords, 2.5, bg_guess)
     diam = radius * 2
     min_img_array_crop = np.min(img_array_crop)
     max_img_array_crop = np.max(img_array_crop)
@@ -524,6 +521,8 @@ def optimize_pixel(
     # opti_pixel_coords = popt[1:3]
     # print(_optimize_pixel_cost(guess, *args))
     # print(_optimize_pixel_cost(popt, *args))
+    # print(guess)
+    # print(popt)
     # fig, ax = plt.subplots()
     # # gaussian_array = _circle_gaussian(x, y, *popt)
     # # ax.plot(popt[2], popt[1], color="white", zorder=100, marker="o", ms=6)

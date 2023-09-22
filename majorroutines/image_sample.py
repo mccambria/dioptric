@@ -388,10 +388,7 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    # file_name = "2023_09_11-10_38_18-johnson-nvref"
-    # file_name = "2023_09_11-13_52_01-johnson-nvref"
-    file_name = "2023_09_11-19_16_08-johnson-nv0_2023_09_11"
-    # file_name = "2023_09_11-19_46_20-johnson-nv0_2023_09_11"
+    file_name = "2023_09_11-13_52_01-johnson-nvref"
 
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
@@ -406,5 +403,21 @@ if __name__ == "__main__":
     # im = kpl.imshow(ax, img_array_kcps, extent=extent)
     # ax.set_xlim([124.5 - 15, 124.5 + 15])
     # ax.set_ylim([196.5 + 15, 196.5 - 15])
+
+    plot_coords = [
+        [183.66, 201.62],
+        [177.28, 233.34],
+        [237.42, 314.84],
+        [239.56, 262.84],
+        [315.58, 203.56],
+    ]
+    cal_coords = [
+        [139.5840657600651, 257.70994378810946],
+        [324.4796398557366, 218.27466265286117],
+    ]
+    for coords in plot_coords:
+        ax.plot(*coords, color="blue", marker="o", markersize=3)
+    for coords in cal_coords:
+        ax.plot(*coords, color="green", marker="o", markersize=3)
 
     plt.show(block=True)

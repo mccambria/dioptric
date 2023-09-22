@@ -132,6 +132,22 @@ def _scanning_to_pixel_coords():
 
     return m_x, b_x, m_y, b_y
 
+def set_calibration_coords(nv1_pixel_coords, nv1_scanning_coords, nv2_pixel_coords, nv2_scanning_coords):
+    
+    calibration_directory = ["State", "WidefieldCalibration"]
+    pixel_coords_list = [nv1_pixel_coords, nv2_pixel_coords]
+    scanning_coords_list = [nv1_scanning_coords, nv2_scanning_coords]
+    
+    nv_names = ["NV1", "NV2"]
+    for ind in range(2):
+        nv_name = nv_names[ind]
+        key = f"{nv_name}_PIXEL_COORDS"
+        pixel_coords = pixel_coords_list[ind]
+        common.set_registry_entry(calibration_directory, key, pixel_coords)
+        key = f"{nv_name}_SCANNING_COORDS"
+        scanning_coords = scanning_coords_list[ind]
+        common.set_registry_entry(calibration_directory, key, scanning_coords)
+
 
 def counts_from_img_array(
     img_array, pixel_coords, radius=None, drift_adjust=True, pixel_drift=None
