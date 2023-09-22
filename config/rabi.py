@@ -36,9 +36,9 @@ widefield_calibration_nv2["disable_z_opt"] = True
 
 # Coords
 widefield_calibration_nv1["pixel_coords"] = [139.584, 257.709]
-widefield_calibration_nv1["coords"] = [-0.102, 0.070, 5.78]
+widefield_calibration_nv1["coords"] = [-0.102, 0.070]
 widefield_calibration_nv2["pixel_coords"] = [324.580, 218.275]
-widefield_calibration_nv2["coords"] = [0.177, 0.139, 5.78]
+widefield_calibration_nv2["coords"] = [0.177, 0.139]
 
 # endregion
 # region Base config

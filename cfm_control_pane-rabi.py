@@ -291,14 +291,14 @@ if __name__ == "__main__":
         #     scanning_coords = [round(el, 3) for el in scanning_coords]
         #     print(scanning_coords)
 
-        # for nv in nv_list:
-        #     do_optimize_pixel(nv)
-        #     do_optimize_plot(nv)
-        # for nv in nv_list:
-        #     print(nv["pixel_coords"])
-        #     print(nv["coords"][0:2])
+        for nv in nv_list:
+            do_optimize_pixel(nv)
+            do_optimize_plot(nv)
+        for nv in nv_list:
+            print(nv["pixel_coords"])
+            print(nv["coords"][0:2])
 
-        do_image_sample(nv_ref)
+        # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
