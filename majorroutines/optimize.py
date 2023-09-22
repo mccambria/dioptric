@@ -450,6 +450,7 @@ def optimize_pixel(
     scanning_drift_adjust=True,
     pixel_drift_adjust=True,
     pixel_drift=None,
+    plot_data=False,
 ):
     if img_array is None:
         with common.labrad_connect() as cxn:
@@ -461,6 +462,9 @@ def optimize_pixel(
                 scanning_drift_adjust=scanning_drift_adjust,
                 pixel_drift_adjust=pixel_drift_adjust,
             )
+    if plot_data:
+        fig, ax = plt.subplots()
+        kpl.imshow(ax, img_array, x_label="X", y_label="Y", cbar_label="ADUs")
 
     # Make copies so we don't mutate the originals
     if pixel_coords is None:
