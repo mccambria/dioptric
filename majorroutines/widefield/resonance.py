@@ -133,19 +133,19 @@ def create_fit_figure(freqs, counts, counts_ste):
     for ind in range(num_nvs):
         nv_counts = counts[ind]
         nv_counts_ste = counts_ste[ind]
-        if True:
-            # if ind != 2:
-            # norm, contrast, g_width, l_width, center
-            guess_params = [nv_counts[0], 0.15, 2, 2, 2.87]
-            fit_func = lambda freq, norm, contrast, g_width, l_width, center: norm * (
-                1 - voigt(freq, contrast, g_width, l_width, center)
-            )
-        else:
+        # if False:
+        if ind in [3, 4]:
             # norm, contrast, g_width, l_width, center, splitting
             guess_params = [nv_counts[0], 0.15, 2, 2, 2.87, 5]
             fit_func = (
                 lambda freq, norm, contrast, g_width, l_width, center, splitting: norm
                 * (1 - voigt_split(freq, contrast, g_width, l_width, center, splitting))
+            )
+        else:
+            # norm, contrast, g_width, l_width, center
+            guess_params = [nv_counts[0], 0.15, 2, 2, 2.87]
+            fit_func = lambda freq, norm, contrast, g_width, l_width, center: norm * (
+                1 - voigt(freq, contrast, g_width, l_width, center)
             )
 
         fit_func, popt, pcov = fit_resonance(
@@ -402,8 +402,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_09_14-07_15_21-johnson-nv2_2023_09_11"
-    file_name = "2023_09_22-09_30_29-johnson-nv0_2023_09_11"
+    file_name = "2023_09_22-12_01_45-johnson-nv0_2023_09_11"
     data = tb.get_raw_data(file_name)
     freqs = np.array(data["freqs"])
     img_arrays = np.array(data["img_arrays"], dtype=int)
@@ -424,6 +423,9 @@ if __name__ == "__main__":
     # plt.show(block=True)
 
     # Play the images back like a movie
+    start_ind = 1
+    img_arrays = img_arrays[start_ind:]
+    pixel_drifts = pixel_drifts[start_ind:]
     num_nvs = len(nv_list)
     num_runs = img_arrays.shape[0]
     num_steps = img_arrays.shape[1]
@@ -458,9 +460,7 @@ if __name__ == "__main__":
     # data["sig_counts"] = sig_counts.tolist()
     # data["avg_counts"] = avg_counts.tolist()
     # data["avg_counts_ste"] = avg_counts_ste.tolist()
-    # data[
-    #     "img_arrays"
-    # ] = "pc_rabi/branch_master/resonance/2023_09/2023_09_14-07_15_21-johnson-nv2_2023_09_11.npz"
+    # data["img_arrays"] = f"pc_rabi/branch_master/resonance/2023_09/{file_name}.npz"
     # nvdata = common.get_nvdata_path()
     # full_path = nvdata / f"pc_rabi/branch_master/resonance/2023_09/{file_name}.txt"
     # with open(full_path, "w") as f:
