@@ -396,8 +396,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_09_13-15_32_35-johnson-nv1_2023_09_11"
-    file_name = "2023_09_14-07_15_21-johnson-nv2_2023_09_11"
+    file_name = ""
     data = tb.get_raw_data(file_name)
     freqs = np.array(data["freqs"])
     img_arrays = np.array(data["img_arrays"], dtype=int)
@@ -405,9 +404,9 @@ if __name__ == "__main__":
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
     radius = data["config"]["camera_spot_radius"]
     freq_ind_master_list = data["freq_ind_master_list"]
-    sig_counts = np.array(data["sig_counts"])
-    avg_counts = np.array(data["avg_counts"])
-    avg_counts_ste = np.array(data["avg_counts_ste"])
+    # sig_counts = np.array(data["sig_counts"])
+    # avg_counts = np.array(data["avg_counts"])
+    # avg_counts_ste = np.array(data["avg_counts_ste"])
 
     # Histograms
     # for ind in range(5):
