@@ -10,7 +10,7 @@ Created on July 31st, 2023
 [info]
 name = camera_NUVU_hnu512gamma
 version = 1.0
-description =
+description = 120
 [startup]
 cmdline = %PYTHON% %FILE%
 timeout = 60
@@ -47,7 +47,7 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         # Configure the camera
         self.cam.set_target_detector_temp(-60)
-        self.cam.set_readout_mode(ReadoutMode.CONV)
+        self.cam.set_readout_mode(6)
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
@@ -72,11 +72,6 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.stop()
         self.cam.close_shutter()
 
-    @setting(3)
-    def disarm(self, c):
-        self.cam.stop()
-        self.cam.close_shutter()
-
     @setting(2, returns="*2i")
     def read(self, c):
         img_array = self.cam.read()
@@ -86,10 +81,46 @@ class CameraNuvuHnu512gamma(LabradServer):
     def reset(self, c):
         self.disarm(c)
 
-    @setting(7, returns="i")
+    @setting(8, readout_mode="i")
+    def set_readout_mode(self, c, readout_mode):
+        """
+        Set the camera's readout mode, including amplifier and vertical/horizontal frequencies.
+        Good defaults starred below
+
+        readout_mode options:
+            EM amplifier
+                 Mode:  1; vertical frequency: 2000000; horizontal frequency: 10000000
+                 Mode:  2; vertical frequency: 3333000; horizontal frequency: 10000000
+                 Mode:  3; vertical frequency: 1000000; horizontal frequency: 10000000
+                 Mode:  4; vertical frequency:  200000; horizontal frequency: 10000000
+                *Mode: 16; vertical frequency: 2000000; horizontal frequency: 20000000
+                 Mode: 17; vertical frequency: 3333000; horizontal frequency: 20000000
+                 Mode: 18; vertical frequency: 1000000; horizontal frequency: 20000000
+                 Mode: 19; vertical frequency:  200000; horizontal frequency: 20000000
+            Conventional amplifier
+                 Mode:  5; vertical frequency: 1000000; horizontal frequency:  3333000
+                *Mode:  6; vertical frequency: 3333000; horizontal frequency:  3333000
+                 Mode:  7; vertical frequency: 2000000; horizontal frequency:  3333000
+                 Mode:  8; vertical frequency:  200000; horizontal frequency:  3333000
+                 Mode:  9; vertical frequency: 1000000; horizontal frequency:  1000000
+                 Mode: 10; vertical frequency: 3333000; horizontal frequency:  1000000
+                 Mode: 11; vertical frequency: 2000000; horizontal frequency:  1000000
+                 Mode: 12; vertical frequency:  200000; horizontal frequency:  1000000
+                 Mode: 13; vertical frequency: 1000000; horizontal frequency:   100000
+                 Mode: 14; vertical frequency: 2000000; horizontal frequency:   100000
+                 Mode: 15; vertical frequency: 3333000; horizontal frequency:   100000
+        """
+        self.cam.stop()  # Make sure the camera is stopped or else this won't work
+        self.cam.set_readout_mode(readout_mode)
+
+    @setting(7, returns="s")
     def get_readout_mode(self, c):
         readout_mode = self.cam.get_readout_mode()
         return readout_mode
+
+    @setting(10, returns="i")
+    def get_num_readout_modes(self, c):
+        return self.cam.get_num_readout_modes()
 
 
 __server__ = CameraNuvuHnu512gamma()

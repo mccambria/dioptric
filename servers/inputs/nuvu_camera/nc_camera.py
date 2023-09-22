@@ -154,15 +154,13 @@ class NcCamera:
 
     def set_readout_mode(self, readout_mode):
         """
-        Allows selecting the camera's readout mode.
-        :param readout_mode: ReadoutMode
-        :return: None
+        Set the camera's readout mode, including amplifier and vertical/horizontal frequencies.
+        See camera_NUVU_hnu512gamma for more specificity
         """
         try:
-            error = ncCamSetReadoutMode(self.ncCam, readout_mode.value)
+            error = ncCamSetReadoutMode(self.ncCam, readout_mode)
             if error:
                 raise NuvuException(error)
-
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
@@ -185,7 +183,23 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
-        return self.readoutMode.value
+        # return self.readoutMode.value
+        ret_string = f"Mode: {self.readoutMode.value}; amplifier: {self.ampliType.value}; vertical frequency: {self.vertFreq.value}; horizontal frequency: {self.horizFreq.value}"
+        return ret_string
+
+    def get_num_readout_modes(self):
+        """
+        Récupère le nombre de readoutmode disponibles
+        :return:
+        """
+        try:
+            error = ncCamGetNbrReadoutModes(self.ncCam, byref(self.nbrReadoutMode))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+        return self.nbrReadoutMode.value
 
     def set_trigger_mode(self, trigger_mode, num_images=0):
         try:
@@ -607,18 +621,6 @@ class NcCamera:
                 byref(self.calibratedEmGainTempMin),
                 byref(self.calibratedEmGainTempMax),
             )
-            if error:
-                raise NuvuException(error)
-        except NuvuException as nuvuException:
-            self.errorHandling(nuvuException.value())
-
-    def getNbrReadoutModes(self):
-        """
-        Récupère le nombre de readoutmode disponibles
-        :return:
-        """
-        try:
-            error = ncCamGetNbrReadoutModes(self.ncCam, byref(self.nbrReadoutMode))
             if error:
                 raise NuvuException(error)
         except NuvuException as nuvuException:

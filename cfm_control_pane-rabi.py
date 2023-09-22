@@ -13,6 +13,7 @@ Created on June 16th, 2023
 
 import numpy as np
 from utils import tool_belt as tb
+from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import widefield
 from utils import common
@@ -36,10 +37,10 @@ def do_image_sample(nv_sig):
     scan_range = 0.4
     # scan_range = 0.2
     # num_steps = int(180 * 0.5 / 0.2)
-    num_steps = 180
+    # num_steps = 180
 
     # scan_range = 0.05
-    # num_steps = 60
+    num_steps = 60
 
     # scan_range = 0.0
     # num_steps = 20
@@ -114,10 +115,10 @@ def do_optimize_widefield_calibration():
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.030
+    freq_range = 0.040
     num_steps = 20
     num_reps = 400
-    num_runs = 64
+    num_runs = 16
     uwave_power = -16.0
     laser_filter = "nd_0.7"
     resonance.main(
@@ -130,6 +131,22 @@ def do_resonance(nv_list):
         uwave_power,
         laser_filter=laser_filter,
     )
+
+
+def do_camera_test():
+    with common.labrad_connect() as cxn:
+        pulse_gen = tb.get_server_pulse_gen(cxn)
+        camera = tb.get_server_camera(cxn)
+
+        seq_file_name = "camera_test.py"
+        pulse_gen.stream_load(seq_file_name, "")
+        camera.arm()
+        pulse_gen.stream_start(1)
+        img_array = camera.read()
+        camera.disarm()
+
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array)
 
 
 # def do_stationary_count(nv_sig, disable_opt=True):
@@ -224,49 +241,53 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_09_11"
-    nv0["pixel_coords"] = [183.66, 201.62]
-    nv0["coords"] = [-0.039, 0.157, z_coord]
+    nv0["pixel_coords"] = [180.86, 198.5]
+    nv0["coords"] = [-0.044, 0.159]
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_09_11"
-    nv1["pixel_coords"] = [177.28, 233.34]
-    nv1["coords"] = [-0.047, 0.108, z_coord]
+    nv1["pixel_coords"] = [180.78, 237.66]
+    nv1["coords"] = [-0.04, 0.098]
 
     nv2 = copy.deepcopy(nv_ref)
     nv2["name"] = f"{sample_name}-nv2_2023_09_11"
-    nv2["pixel_coords"] = [237.42, 314.84]
-    nv2["coords"] = [0.05, -0.013, z_coord]
+    nv2["pixel_coords"] = [247.39, 264.77]
+    nv2["coords"] = [0.063, 0.062]
 
     nv3 = copy.deepcopy(nv_ref)
     nv3["name"] = f"{sample_name}-nv3_2023_09_11"
-    nv3["pixel_coords"] = [239.56, 262.84]
-    nv3["coords"] = [0.049, 0.066, z_coord]
+    nv3["pixel_coords"] = [245.6, 320.45]
+    nv3["coords"] = [0.064, -0.024]
 
     nv4 = copy.deepcopy(nv_ref)
     nv4["name"] = f"{sample_name}-nv4_2023_09_12"
-    nv4["pixel_coords"] = [315.58, 203.56]
-    nv4["coords"] = [0.162, 0.161, z_coord]
+    nv4["pixel_coords"] = [312.72, 250.68]
+    nv4["coords"] = [0.162, 0.091]
 
     # Calibration NVs
 
     nv5 = copy.deepcopy(nv_ref)
     nv5["name"] = f"{sample_name}-cal_check1"
-    nv5["pixel_coords"] = [139.5840657600651, 257.70994378810946]
-    nv5["coords"] = [-0.10233730341013306, 0.04, z_coord]
+    nv5["pixel_coords"] = [206.39, 338.42]
+    nv5["coords"] = [0.004, -0.052]
     nv5["disable_z_opt"] = False
 
     nv6 = copy.deepcopy(nv_ref)
     nv6["name"] = f"{sample_name}-cal_check2"
-    nv6["pixel_coords"] = [324.4796398557366, 218.27466265286117]
-    nv6["coords"] = [0.1770304266201686, 0.1391538157833249, z_coord]
+    nv6["pixel_coords"] = [302.13, 196.04]
+    nv6["coords"] = [0.142, 0.17]
+    nv6["disable_z_opt"] = True
 
     nv_list = [nv0, nv1, nv2, nv3, nv4]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv0, nv1, nv3, nv4]
     # nv_list = [nv1, nv2]
-    # nv_list = [nv5, nv6]
-    # nv_list = [nv4]
+    nv_list = [nv5, nv6]
+    # nv_list = [nv6]
+    for nv in nv_list:
+        nv["coords"].append(z_coord)
 
-    nv_sig = nv3
+    nv_sig = nv6
     # nv_sig = nv_ref
 
     ### Functions to run
@@ -279,25 +300,17 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # pos.reset_xy_drift()
+        # # pos.reset_drift()
         # widefield.reset_pixel_drift()
+        # widefield.set_calibration_coords(
+        #     nv5["pixel_coords"],
+        #     nv5["coords"],
+        #     nv6["pixel_coords"],
+        #     nv6["coords"],
+        # )
 
-        # with common.labrad_connect() as cxn:
-        #     camera = tb.get_server_camera(cxn)
-        #     readout_mode = camera.get_readout_mode()
-        #     print(readout_mode)
-
-        # Optimize pixels coords batch
-        # raw_data = tb.get_raw_data("2023_09_11-13_52_01-johnson-nvref")
-        # img_array = np.array(raw_data["img_array"])
+        # Convert pixel coords to scanning coords
         # for nv in nv_list:
-        #     # pixel_coords = optimize.optimize_pixel(
-        #     #     img_array,
-        #     #     nv["pixel_coords"],
-        #     #     set_pixel_drift=False,
-        #     #     set_scanning_drift=False,
-        #     # )
-        #     # pixel_coords = [round(el, 2) for el in pixel_coords]
-        #     # print(pixel_coords)
         #     pixel_coords = nv["pixel_coords"]
         #     scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords)
         #     scanning_coords = [round(el, 3) for el in scanning_coords]
@@ -308,10 +321,10 @@ if __name__ == "__main__":
         #     do_optimize_plot(nv)
         # for nv in nv_list:
         #     print(nv["pixel_coords"])
-        #     print(nv["coords"])
+        #     print(nv["coords"][0:2])
 
-        # do_image_sample(nv_ref)
-        do_image_sample_zoom(nv_sig)
+        do_image_sample(nv_ref)
+        # do_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
