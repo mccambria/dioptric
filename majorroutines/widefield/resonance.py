@@ -248,7 +248,8 @@ def main_with_cxn(
     num_nvs = len(nv_list)
     nv_list_shuffle = nv_list.copy()
 
-    last_opt_time = time.time()
+    # last_opt_time = time.time()
+    last_opt_time = None
     opt_period = 5 * 60
 
     ### Load the pulse generator

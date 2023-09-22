@@ -106,7 +106,7 @@ def do_resonance(nv_list):
     freq_range = 0.040
     num_steps = 20
     num_reps = 400
-    num_runs = 2
+    num_runs = 16
     uwave_power = -16.0
     laser_filter = "nd_0.7"
     resonance.main(
