@@ -450,6 +450,7 @@ def optimize_pixel(
     scanning_drift_adjust=True,
     pixel_drift_adjust=True,
     pixel_drift=None,
+    plot_data=False,
 ):
     if img_array is None:
         with common.labrad_connect() as cxn:
@@ -461,6 +462,9 @@ def optimize_pixel(
                 scanning_drift_adjust=scanning_drift_adjust,
                 pixel_drift_adjust=pixel_drift_adjust,
             )
+    if plot_data:
+        fig, ax = plt.subplots()
+        kpl.imshow(ax, img_array, x_label="X", y_label="Y", cbar_label="ADUs")
 
     # Make copies so we don't mutate the originals
     if pixel_coords is None:
@@ -920,3 +924,18 @@ def main_with_cxn(
 
 
 # endregion
+
+if __name__ == "__main__":
+    file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
+    data = tb.get_raw_data(file_name)
+
+    fig = _create_figure()
+    nv_sig = data["nv_sig"]
+    keys = ["x", "y", "z"]
+    for axis_ind in range(3):
+        scan_vals = data[f"{keys[axis_ind]}_scan_vals"]
+        count_vals = data[f"{keys[axis_ind]}_counts"]
+        _update_figure(fig, axis_ind, scan_vals, count_vals)
+        _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=fig)
+
+    plt.show(block=True)

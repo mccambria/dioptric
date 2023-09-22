@@ -409,7 +409,7 @@ def gaussian(x, *params):
     coeff, mean, stdev, offset = params
     var = stdev**2  # variance
     centDist = x - mean  # distance from the center
-    return offset + coeff**2 * np.exp(-(centDist**2) / (2 * var))
+    return offset + coeff * np.exp(-(centDist**2) / (2 * var))
 
 
 def sinexp(t, offset, amp, freq, decay):

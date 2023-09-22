@@ -86,7 +86,10 @@ def do_optimize_plot(nv_sig):
 
 def do_optimize_pixel(nv_sig, set_pixel_drift=False, set_scanning_drift=False):
     pixel_coords = optimize.optimize_pixel(
-        nv_sig, set_pixel_drift=set_pixel_drift, set_scanning_drift=set_scanning_drift
+        nv_sig,
+        set_pixel_drift=set_pixel_drift,
+        set_scanning_drift=set_scanning_drift,
+        plot_data=True,
     )
     pixel_coords = [round(el, 2) for el in pixel_coords]
     print(pixel_coords)
