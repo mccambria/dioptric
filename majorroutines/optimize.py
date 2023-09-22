@@ -920,3 +920,11 @@ def main_with_cxn(
 
 
 # endregion
+
+if __name__ == "__main__":
+    file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
+    data = tb.get_raw_data(file_name)
+
+    nv_sig = data["nv_sig"]
+    for ind in range(3):
+        _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=None)
