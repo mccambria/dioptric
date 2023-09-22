@@ -690,6 +690,7 @@ def main(
     set_drift=True,
     laser_key=LaserKey.IMAGING,
     drift_adjust=True,
+    only_z_opt=None,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
@@ -700,7 +701,8 @@ def main(
             plot_data,
             set_drift,
             laser_key,
-            drift_adjust=drift_adjust,
+            drift_adjust,
+            only_z_opt,
         )
 
 
