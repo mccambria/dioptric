@@ -13,9 +13,9 @@ from pathlib import Path
 
 home = Path.home()
 
-# region Base config
+# region Widefield calibration NVs
 
-widefield_calibration_nv1_shell = {
+widefield_calibration_nv_shell = {
     "name": "widefield_calibration_nv1",
     "disable_opt": False,
     "disable_z_opt": False,
@@ -29,10 +29,19 @@ widefield_calibration_nv1_shell = {
     "collection_filter": None,
     "magnet_angle": None,
 }
+widefield_calibration_nv1 = widefield_calibration_nv_shell.copy()
+widefield_calibration_nv2 = widefield_calibration_nv_shell.copy()
+widefield_calibration_nv2["name"] = "widefield_calibration_nv2"
+widefield_calibration_nv2["disable_z_opt"] = True
 
-widefield_calibration_nv2_shell = widefield_calibration_nv1_shell.copy()
-widefield_calibration_nv2_shell["name"] = "widefield_calibration_nv2"
-widefield_calibration_nv2_shell["disable_z_opt"] = True
+# Coords
+widefield_calibration_nv1["pixel_coords"] = [139.584, 257.709]
+widefield_calibration_nv1["coords"] = [-0.102, 0.070, 5.78]
+widefield_calibration_nv2["pixel_coords"] = [324.580, 218.275]
+widefield_calibration_nv2["coords"] = [0.177, 0.139, 5.78]
+
+# endregion
+# region Base config
 
 config = {
     ###
@@ -138,8 +147,8 @@ config = {
         "z_nm_per_unit": 1000,
         "z_optimize_range": 0.3,
         "z_units": "Voltage (V)",
-        "widefield_calibration_nv1": widefield_calibration_nv1_shell.copy(),
-        "widefield_calibration_nv2": widefield_calibration_nv2_shell.copy(),
+        "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
+        "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
     },
     ###
     "Servers": {

@@ -249,6 +249,8 @@ if __name__ == "__main__":
 
     # Calibration NVs
 
+    nv5, nv6 = widefield.get_widefield_calibration_nvs()
+
     nv5 = copy.deepcopy(nv_ref)
     nv5["name"] = f"{sample_name}-cal_check1"
     nv5["pixel_coords"] = [139.5840657600651, 257.70994378810946]
@@ -319,7 +321,7 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig)
         # do_resonance(nv_list)
         # do_optimize(nv_sig)
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_optimize_pixel_set_drift(nv_sig)
         # do_optimize_plot(nv_sig)
         # do_optimize_widefield_calibration()

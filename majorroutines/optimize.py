@@ -444,18 +444,33 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 
 
 def optimize_pixel(
-    img_array,
-    pixel_coords,
+    nv_sig=None,
+    pixel_coords=None,
+    img_array=None,
     radius=None,
-    set_pixel_drift=True,
     set_scanning_drift=True,
-    drift_adjust=True,
+    set_pixel_drift=True,
+    scanning_drift_adjust=True,
+    pixel_drift_adjust=True,
     pixel_drift=None,
 ):
+    if img_array is None:
+        with common.labrad_connect() as cxn:
+            # prepare_microscope(cxn, nv_sig)
+            img_array = stationary_count_lite(
+                cxn,
+                nv_sig,
+                ret_img_array=True,
+                scanning_drift_adjust=scanning_drift_adjust,
+                pixel_drift_adjust=pixel_drift_adjust,
+            )
+
     # Make copies so we don't mutate the originals
+    if pixel_coords is None:
+        pixel_coords = nv_sig["pixel_coords"]
     original_pixel_coords = pixel_coords.copy()
     pixel_coords = pixel_coords.copy()
-    if drift_adjust:
+    if pixel_drift_adjust:
         pixel_coords = widefield.adjust_pixel_coords_for_drift(
             pixel_coords, pixel_drift
         )

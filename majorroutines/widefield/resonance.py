@@ -88,7 +88,7 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     steps_range = range(num_steps)
     index_list = itertools.product(nvs_range, runs_range, steps_range)
 
-    with Pool() as p:
+    with Pool(6) as p:
         sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=100)
 
     sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
@@ -234,7 +234,8 @@ def main_with_cxn(
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
     # Use one NV for some basic setup
-    nv_sig = nv_list[0]
+
+    nv_sig, _ = widefield.get_widefield_calibration_nvs()
     optimize.prepare_microscope(cxn, nv_sig)
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
@@ -294,15 +295,16 @@ def main_with_cxn(
 
             shuffle(nv_list_shuffle)
 
-            # Optimize
+            # Full optimize
             now = time.time()
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
-                optimize.optimize_widefield_calibration(cxn)
+                optimize.main(nv_sig, set_to_opti_coords=False)
+                # optimize.optimize_widefield_calibration(cxn)
                 last_opt_time = time.time()
 
-                # Reset the pulse streamer and laser filter
-                tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
-                pulse_gen.stream_load(seq_file, seq_args_string)
+            # Reset the pulse streamer and laser filter
+            tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
+            pulse_gen.stream_load(seq_file, seq_args_string)
 
             # Update the coordinates for drift
             adj_coords_list = [
@@ -332,8 +334,7 @@ def main_with_cxn(
                 camera.disarm()
 
             img_arrays[run_ind][freq_ind] = img_array
-            nv_sig = nv_list_shuffle[0]
-            optimize.optimize_pixel(img_array, nv_sig["pixel_coords"])
+            optimize.optimize_pixel(nv_sig)
             pixel_drifts[run_ind][freq_ind] = widefield.get_pixel_drift()
 
             sig_gen.uwave_off()
@@ -427,13 +428,13 @@ if __name__ == "__main__":
     #         plt.show(block=True)
 
     # Process images
-    # print("start")
-    # start = time.time()
-    # sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
-    # stop = time.time()
-    # print("stop")
-    # print(f"Time elapsed: {stop - start}")
-    # avg_counts, avg_counts_ste = process_counts(sig_counts)
+    print("start")
+    start = time.time()
+    sig_counts = process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=radius)
+    stop = time.time()
+    print("stop")
+    print(f"Time elapsed: {stop - start}")
+    avg_counts, avg_counts_ste = process_counts(sig_counts)
 
     create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
     create_fit_figure(freqs, avg_counts, avg_counts_ste)

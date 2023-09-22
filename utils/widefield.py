@@ -39,27 +39,11 @@ def imshow(ax, img_array, count_format=None, **kwargs):
     kpl.imshow(ax, img_array, **passed_kwargs)
 
 
-def get_widefield_calibration_params():
-    directory = ["State", "WidefieldCalibration"]
-
-    # Get the last drift trackers
-    last_scanning_drift = common.get_registry_entry(directory, "DRIFT")
-    last_pixel_drift = common.get_registry_entry(directory, "PIXEL_DRIFT")
-
-    # Get the NVs lastr coordinates
-    nv1_scanning_coords = common.get_registry_entry(directory, "NV1_SCANNING_COORDS")
-    nv1_pixel_coords = common.get_registry_entry(directory, "NV1_PIXEL_COORDS")
-    nv2_scanning_coords = common.get_registry_entry(directory, "NV2_SCANNING_COORDS")
-    nv2_pixel_coords = common.get_registry_entry(directory, "NV2_PIXEL_COORDS")
-
-    return (
-        nv1_scanning_coords,
-        nv1_pixel_coords,
-        nv2_scanning_coords,
-        nv2_pixel_coords,
-        last_scanning_drift,
-        last_pixel_drift,
-    )
+def get_widefield_calibration_nvs():
+    module = common.get_config_module()
+    nv1 = module.widefield_calibration_nv1.copy()
+    nv2 = module.widefield_calibration_nv2.copy()
+    return nv1, nv2
 
 
 def pixel_to_scanning_coords(pixel_coords):
@@ -84,13 +68,11 @@ def pixel_to_scanning_coords(pixel_coords):
 def _pixel_to_scanning_coords():
     """Get the linear parameters for the conversion"""
 
-    ret_vals = get_widefield_calibration_params()
-    (
-        nv1_scanning_coords,
-        nv1_pixel_coords,
-        nv2_scanning_coords,
-        nv2_pixel_coords,
-    ) = ret_vals[0:4]
+    nv1, nv2 = get_widefield_calibration_nvs()
+    nv1_scanning_coords = nv1["pixel_coords"]
+    nv1_pixel_coords = nv1["coords"]
+    nv2_scanning_coords = nv2["pixel_coords"]
+    nv2_pixel_coords = nv2["coords"]
 
     # Assume (independent) linear relations for both x and y
 
@@ -130,13 +112,11 @@ def scanning_to_pixel_coords(scanning_coords):
 def _scanning_to_pixel_coords():
     """Get the linear parameters for the conversion"""
 
-    ret_vals = get_widefield_calibration_params()
-    (
-        nv1_scanning_coords,
-        nv1_pixel_coords,
-        nv2_scanning_coords,
-        nv2_pixel_coords,
-    ) = ret_vals[0:4]
+    nv1, nv2 = get_widefield_calibration_nvs()
+    nv1_scanning_coords = nv1["pixel_coords"]
+    nv1_pixel_coords = nv1["coords"]
+    nv2_scanning_coords = nv2["pixel_coords"]
+    nv2_pixel_coords = nv2["coords"]
 
     # Assume (independent) linear relations for both x and y
 
