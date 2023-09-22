@@ -84,24 +84,9 @@ def do_optimize_plot(nv_sig):
     nv_sig["coords"] = r_opti_coords
 
 
-def do_optimize_pixel(nv_sig):
-    # Take an image and update the pixel coords from that image
-    img_array = do_image_single_nv(nv_sig)
-    pixel_coords = nv_sig["pixel_coords"]
+def do_optimize_pixel(nv_sig, set_pixel_drift=False, set_scanning_drift=False):
     pixel_coords = optimize.optimize_pixel(
-        img_array, pixel_coords, set_pixel_drift=False, set_scanning_drift=False
-    )
-    pixel_coords = [round(el, 2) for el in pixel_coords]
-    print(pixel_coords)
-    nv_sig["pixel_coords"] = pixel_coords
-
-
-def do_optimize_pixel_set_drift(nv_sig):
-    # Take an image and update the pixel coords from that image
-    img_array = do_image_single_nv(nv_sig)
-    pixel_coords = nv_sig["pixel_coords"]
-    pixel_coords = optimize.optimize_pixel(
-        img_array, pixel_coords, set_pixel_drift=True, set_scanning_drift=True
+        nv_sig, set_pixel_drift=set_pixel_drift, set_scanning_drift=set_scanning_drift
     )
     pixel_coords = [round(el, 2) for el in pixel_coords]
     print(pixel_coords)
@@ -268,18 +253,6 @@ if __name__ == "__main__":
 
     nv5, nv6 = widefield.get_widefield_calibration_nvs()
 
-    nv5 = copy.deepcopy(nv_ref)
-    nv5["name"] = f"{sample_name}-cal_check1"
-    nv5["pixel_coords"] = [206.39, 338.42]
-    nv5["coords"] = [0.004, -0.052]
-    nv5["disable_z_opt"] = False
-
-    nv6 = copy.deepcopy(nv_ref)
-    nv6["name"] = f"{sample_name}-cal_check2"
-    nv6["pixel_coords"] = [302.13, 196.04]
-    nv6["coords"] = [0.142, 0.17]
-    nv6["disable_z_opt"] = True
-
     nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv0, nv1, nv3, nv4]
@@ -334,8 +307,8 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig)
         # do_resonance(nv_list)
         # do_optimize(nv_sig)
-        do_optimize_pixel(nv_sig)
-        # do_optimize_pixel_set_drift(nv_sig)
+        # do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)
         # do_optimize_plot(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
