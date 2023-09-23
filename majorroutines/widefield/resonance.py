@@ -407,6 +407,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     file_name = "2023_09_22-12_01_45-johnson-nv0_2023_09_11"
+    file_name = "2023_09_22-21_09_53-johnson-nv0_2023_09_11"
     data = tb.get_raw_data(file_name)
     freqs = np.array(data["freqs"])
     img_arrays = np.array(data["img_arrays"], dtype=int)
