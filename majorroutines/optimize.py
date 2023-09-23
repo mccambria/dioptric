@@ -687,7 +687,8 @@ def main(
     set_to_opti_coords=True,
     save_data=False,
     plot_data=False,
-    set_drift=True,
+    set_scanning_drift=True,
+    set_pixel_drift=False, 
     laser_key=LaserKey.IMAGING,
     drift_adjust=True,
     only_z_opt=None,
@@ -699,7 +700,8 @@ def main(
             set_to_opti_coords,
             save_data,
             plot_data,
-            set_drift,
+            set_scanning_drift,
+            set_pixel_drift,
             laser_key,
             drift_adjust,
             only_z_opt,
@@ -712,7 +714,8 @@ def main_with_cxn(
     set_to_opti_coords=True,
     save_data=False,
     plot_data=False,
-    set_drift=True,
+    set_scanning_drift=True,
+    set_pixel_drift=True,
     laser_key=LaserKey.IMAGING,
     drift_adjust=True,
     only_z_opt=None,
@@ -867,8 +870,10 @@ def main_with_cxn(
     ### Calculate the drift relative to the passed coordinates
 
     drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
-    if opti_succeeded and set_drift:
+    if opti_succeeded and set_scanning_drift:
         pos.set_drift(drift, nv_sig, laser_key)
+    if opti_succeeded and set_pixel_drift:
+        widefield.set_pixel_drift_from_scanning_drift(drift)
 
     ### Set to the optimized coordinates, or just tell the user what they are
 

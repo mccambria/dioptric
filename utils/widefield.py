@@ -222,12 +222,24 @@ def set_scanning_drift_from_pixel_drift(pixel_drift=None):
     pos.set_drift(scanning_drift)
 
 
+def set_pixel_drift_from_scanning_drift(scanning_drift=None):
+    pixel_drift = scanning_to_pixel_drift(scanning_drift)
+    set_pixel_drift(pixel_drift)
+
+
 def pixel_to_scanning_drift(pixel_drift=None):
-    scanning_drift = common.get_registry_entry(["State"], "DRIFT")
+    z_scanning_drift = pos.get_drift()[2]
     if pixel_drift is None:
         pixel_drift = get_pixel_drift()
     m_x, _, m_y, _ = _pixel_to_scanning_coords()
-    return [m_x * pixel_drift[0], m_y * pixel_drift[1], scanning_drift[2]]
+    return [m_x * pixel_drift[0], m_y * pixel_drift[1], z_scanning_drift]
+
+
+def scanning_to_pixel_drift(scanning_drift=None):
+    if scanning_drift is None:
+        scanning_drift = pos.get_drift()
+    m_x, _, m_y, _ = _scanning_to_pixel_coords()
+    return [m_x * scanning_drift[0], m_y * scanning_drift[1]]
 
 
 if __name__ == "__main__":

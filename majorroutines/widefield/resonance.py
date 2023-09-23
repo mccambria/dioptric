@@ -25,8 +25,13 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from random import shuffle
 from cProfile import Profile
 import itertools
-from multiprocessing import Pool
 import json
+
+# from multiprocessing import Pool
+from pathos.pools import ProcessPool as Pool
+
+# Necessary for multiprocessing to pickle the image processing function
+# process_img_arrays_sub = None
 
 
 def process_counts(sig_counts):
@@ -64,9 +69,11 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
 
     # Run through the images in parallel
 
-    global process_img_arrays_sub  # Necessary for multiprocessing to pickle the function
+    # global process_img_arrays_sub
 
-    def process_img_arrays_sub(nv_ind, run_ind, freq_ind):
+    # def process_img_arrays_sub(nv_ind, run_ind, freq_ind):
+    def process_img_arrays_sub(args):
+        nv_ind, run_ind, freq_ind = args
         pixel_coords = nv_list[nv_ind]["pixel_coords"]
         img_array = img_arrays[run_ind, freq_ind]
         pixel_drift = pixel_drifts[run_ind, freq_ind]
@@ -87,9 +94,11 @@ def process_img_arrays(img_arrays, nv_list, pixel_drifts, radius=None):
     runs_range = range(num_runs)
     steps_range = range(num_steps)
     index_list = itertools.product(nvs_range, runs_range, steps_range)
+    # args_list = []
 
     with Pool(6) as p:
-        sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=100)
+        # sig_counts_list = p.starmap(process_img_arrays_sub, index_list, chunksize=100)
+        sig_counts_list = p.map(process_img_arrays_sub, index_list, chunksize=100)
 
     sig_counts = np.reshape(sig_counts_list, (num_nvs, num_runs, num_steps))
 
@@ -251,7 +260,7 @@ def main_with_cxn(
 
     # last_opt_time = time.time()
     last_opt_time = None
-    opt_period = 5 * 60
+    opt_period = 3 * 60
 
     ### Load the pulse generator
 
@@ -290,24 +299,18 @@ def main_with_cxn(
     for run_ind in range(num_runs):
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
-            print(f"{run_ind}, {freq_ind}")
-            # print(run_ind)
-            # print(freq_ind)
-            # print()
-
-            shuffle(nv_list_shuffle)
 
             # Optimize in z by scanning, then in xy with pixels again.
             # Note: Each optimization routine must be identical or else there
             # will be a potentially large source of variance between runs
             now = time.time()
             if (last_opt_time is None) or (now - last_opt_time > opt_period):
-                # This first optimize is just for z
                 optimize.main(nv_sig, set_to_opti_coords=False, only_z_opt=True)
-                # The optimization
                 optimize.optimize_pixel(nv_sig)
-                # optimize.optimize_widefield_calibration(cxn)
                 last_opt_time = time.time()
+                
+            print(f"{run_ind}, {freq_ind}")
+            shuffle(nv_list_shuffle)
 
             # Reset the pulse streamer and laser filter
             tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
@@ -370,9 +373,9 @@ def main_with_cxn(
         "readout-units": "ns",
         "img_arrays": img_arrays,
         "img_arrays-units": "counts",
-        # "sig_counts": sig_counts,
-        # "avg_counts": avg_counts,
-        # "avg_counts_ste": avg_counts_ste,
+        "sig_counts": sig_counts,
+        "avg_counts": avg_counts,
+        "avg_counts_ste": avg_counts_ste,
         "pixel_drifts": pixel_drifts,
         "pixel_drifts-units": "pixels",
         "freq_center": freq_center,
@@ -424,7 +427,7 @@ if __name__ == "__main__":
     # plt.show(block=True)
 
     # Play the images back like a movie
-    start_ind = 1
+    start_ind = 0
     img_arrays = img_arrays[start_ind:]
     pixel_drifts = pixel_drifts[start_ind:]
     num_nvs = len(nv_list)
@@ -432,7 +435,7 @@ if __name__ == "__main__":
     num_steps = img_arrays.shape[1]
     # for run_ind in range(num_runs):
     #     print(run_ind)
-    #     for freq_ind in freq_ind_master_list[run_ind][-2:-1]:
+    #     for freq_ind in freq_ind_master_list[run_ind]:
     #         fig, ax = plt.subplots()
     #         kpl.imshow(ax, img_arrays[run_ind, freq_ind])
     #         plt.show(block=True)
@@ -449,13 +452,13 @@ if __name__ == "__main__":
     create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
     create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
-    # ordered_sig_counts = []
-    # for run_ind in range(num_runs):
-    #     for freq_ind in freq_ind_master_list[run_ind]:
-    #         ordered_sig_counts.append(sig_counts[:, run_ind, freq_ind])
-    # ordered_sig_counts = np.array(ordered_sig_counts)
-    # fig, ax = plt.subplots()
-    # ax.plot(ordered_sig_counts)
+    ordered_sig_counts = []
+    for run_ind in range(num_runs):
+        for freq_ind in freq_ind_master_list[run_ind]:
+            ordered_sig_counts.append(sig_counts[:, run_ind, freq_ind])
+    ordered_sig_counts = np.array(ordered_sig_counts)
+    fig, ax = plt.subplots()
+    ax.plot(ordered_sig_counts)
 
     # Update saved values
     # data["sig_counts"] = sig_counts.tolist()

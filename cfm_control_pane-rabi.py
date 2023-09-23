@@ -64,17 +64,14 @@ def do_image_single_nv(nv_sig):
     return image_nv_list.image_single_nv(nv_sig)
 
 
-def do_optimize(nv_sig):
-    optimize.main(nv_sig)
-
-
-def do_optimize_plot(nv_sig):
+def do_optimize(nv_sig, set_drift=False, plot_data=False):
     opti_coords, _ = optimize.main(
         nv_sig,
         set_to_opti_coords=False,
-        save_data=True,
-        plot_data=True,
-        set_drift=False,
+        save_data=plot_data,
+        plot_data=plot_data,
+        set_scanning_drift=set_drift,
+        set_pixel_drift=set_drift,
     )
     r_opti_coords = [
         round(opti_coords[0], 3),
@@ -106,7 +103,7 @@ def do_resonance(nv_list):
     freq_range = 0.040
     num_steps = 20
     num_reps = 400
-    num_runs = 16
+    num_runs = 17
     uwave_power = -16.0
     laser_filter = "nd_0.7"
     resonance.main(
@@ -284,6 +281,8 @@ if __name__ == "__main__":
         # pos.reset_xy_drift()
         # pos.reset_drift()
         # widefield.reset_pixel_drift()
+        # z_drift = pos.get_drift()[2]
+        # pos.set_drift([+0.03, +0.03, z_drift])
 
         # Convert pixel coords to scanning coords
         # for nv in nv_list:
@@ -309,10 +308,9 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
         do_resonance(nv_list)
-        # do_optimize(nv_sig)
+        # do_optimize(nv_sig, set_drift=True, plot_data=True)
         # do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)
-        # do_optimize_plot(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
