@@ -190,8 +190,13 @@ def counts_from_img_array(
     inner_pixels = inner_pixels[~np.isnan(inner_pixels)]
 
     bg = np.median(edge_pixels)
-    total_bg = bg * len(inner_pixels)
-    counts = np.sum(inner_pixels) - total_bg
+    # print(bg)
+    # total_bg = bg * len(inner_pixels)
+    # total_bg = 330 * len(inner_pixels)
+    # counts = np.sum(inner_pixels) - total_bg
+    clamp = 300
+    total_clamp = clamp * len(inner_pixels)
+    counts = np.sum(inner_pixels) - total_clamp
 
     return counts
 

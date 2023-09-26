@@ -531,6 +531,8 @@ def optimize_pixel(
     # # gaussian_array = _circle_gaussian(x, y, *popt)
     # # ax.plot(popt[2], popt[1], color="white", zorder=100, marker="o", ms=6)
     # ax.plot(*opti_pixel_coords, color="white", zorder=100, marker="o", ms=6)
+    # circle = plt.Circle(opti_pixel_coords, radius, fill=False, color="white")
+    # ax.add_patch(circle)
     # kpl.imshow(ax, img_array)
     # ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
     # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
@@ -688,7 +690,7 @@ def main(
     save_data=False,
     plot_data=False,
     set_scanning_drift=True,
-    set_pixel_drift=False, 
+    set_pixel_drift=False,
     laser_key=LaserKey.IMAGING,
     drift_adjust=True,
     only_z_opt=None,
