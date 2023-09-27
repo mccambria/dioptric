@@ -117,12 +117,12 @@ def create_raw_data_figure(freqs, counts, counts_ste):
     for ind in range(num_nvs):
         kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
     ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("ADUs")
+    ax.set_ylabel("Counts (ADU)")
     min_freqs = min(freqs)
     max_freqs = max(freqs)
     excess = 0.08 * (max_freqs - min_freqs)
     ax.set_xlim(min_freqs - excess, max_freqs + excess)
-    ax.legend()
+    ax.legend(loc=kpl.Loc.LOWER_RIGHT)
     return fig
 
 
@@ -131,7 +131,7 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
     num_nvs = counts.shape[0]
     fig, ax = plt.subplots()
     freq_linspace = np.linspace(min(freqs) - 0.001, max(freqs) + 0.001, 1000)
-    shift_factor = 0.05
+    shift_factor = 0.075
     offset_inds = [num_nvs - 1 - ind for ind in list(range(num_nvs))]
     # shuffle(offset_inds)
     for ind in range(num_nvs):
@@ -186,12 +186,12 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
         # Normalized residuals
 
         # Contrast in units of counts
-        # contrast_counts = popt[0] * popt[1]
-        # mean_err = np.mean(nv_counts_ste)
+        contrast_counts = popt[0] * popt[1]
+        mean_err = np.mean(nv_counts_ste)
         # print(contrast_counts)
-        # print(mean_err)
-        # print(mean_err / contrast_counts)
-        # print()
+        print(mean_err)
+        print(contrast_counts / mean_err)
+        print()
 
     ax.set_xlabel("Frequency (GHz)")
     if plot_residuals:
@@ -434,7 +434,9 @@ if __name__ == "__main__":
     nv_list = data["nv_list"]
     pixel_drifts = np.array(data["pixel_drifts"], dtype=float)
     # radius = data["config"]["camera_spot_radius"]
+    # radius = 6.0
     radius = 8.0  # First zero
+    # radius = [(0, 8), (10, 12)]  # First zero
     # radius = 15  # Second zero
     freq_ind_master_list = data["freq_ind_master_list"]
     # sig_counts = np.array(data["sig_counts"])
@@ -458,7 +460,9 @@ if __name__ == "__main__":
     # 0.12660818200417942
 
     # Clip runs
-    runs_to_remove = [0, 1, 2, 12]
+    # runs_to_remove = [0, 1, 2, 12]
+    # runs_to_remove = [0, 1, 2]
+    runs_to_remove = [0, 1]
     # runs_to_remove = [0]
     # runs_to_remove = []
     img_arrays = np.delete(img_arrays, runs_to_remove, 0)

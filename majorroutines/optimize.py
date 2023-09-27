@@ -480,11 +480,15 @@ def optimize_pixel(
     if radius is None:
         config = common.get_config_dict()
         radius = config["camera_spot_radius"]
+    if type(radius) is list:
+        single_radius = radius[0][1]
+    else:
+        single_radius = radius
     initial_x = pixel_coords[0]
     initial_y = pixel_coords[1]
 
     # Limit the range to the NV we're looking at
-    half_range = radius
+    half_range = single_radius
     left = round(initial_x - half_range)
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
@@ -499,7 +503,7 @@ def optimize_pixel(
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
     amp_guess = max(10, amp_guess)
     guess = (amp_guess, *pixel_coords, 2.5, bg_guess)
-    diam = radius * 2
+    diam = single_radius * 2
     min_img_array_crop = np.min(img_array_crop)
     max_img_array_crop = np.max(img_array_crop)
 
@@ -531,8 +535,14 @@ def optimize_pixel(
     # # gaussian_array = _circle_gaussian(x, y, *popt)
     # # ax.plot(popt[2], popt[1], color="white", zorder=100, marker="o", ms=6)
     # ax.plot(*opti_pixel_coords, color="white", zorder=100, marker="o", ms=6)
-    # circle = plt.Circle(opti_pixel_coords, radius, fill=False, color="white")
-    # ax.add_patch(circle)
+    # if type(radius) is list:
+    #     for ind in range(len(radius)):
+    #         for sub_radius in radius[ind]:
+    #             circle = plt.Circle(opti_pixel_coords, sub_radius, fill=False, color="white")
+    #             ax.add_patch(circle)
+    # else:
+    #     circle = plt.Circle(opti_pixel_coords, single_radius, fill=False, color="white")
+    #     ax.add_patch(circle)
     # kpl.imshow(ax, img_array)
     # ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
     # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
