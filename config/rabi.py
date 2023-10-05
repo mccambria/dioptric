@@ -124,17 +124,17 @@ config = {
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
-        "laser_LGLO_589": {
+        "laser_OPTO_589": {
             "delay": 2500,
             "mod_type": ModTypes.DIGITAL,
             "filter_server": "filter_slider_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
         },
-        "laserglow_532": {
-            "delay": 1030,
+        "laser_COBO_638": {
+            "delay": 250,
             "mod_type": ModTypes.DIGITAL,
-            "filter_server": "filter_slider_ell9k_2",
-            "filter_mapping": {"nd_2.0": 0, "nd_1.0": 1, "nd_0.5": 2, "nd_0": 3},
+            "filter_server": "filter_slider_THOR_ell9k",
+            "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
     },
     ###
@@ -157,18 +157,14 @@ config = {
     ###
     "Servers": {
         "arb_wave_gen": "awg_KEYS_33622A",
-        "charge_readout_laser": "laser_LGLO_589",
-        "counter": "tagger_SWAB_20",
+        "counter": "QM_opx",
         "magnet_rotation": "rotation_stage_thor_ell18k",
         "pos_xy": "pos_xyz_THOR_gvs212_PI_pifoc",
-        "pos_xyz": "pos_xyz_THOR_gvs212_PI_pifoc",
-        "pos_z": "pos_xyz_THOR_gvs212_PI_pifoc",
-        "pulse_gen": "pulse_gen_SWAB_82",
+        "pos_z": "pos_z_PI_pifoc",
+        "pulse_gen": "QM_opx",
         "sig_gen_HIGH": "sig_gen_STAN_sg394",
         "sig_gen_LOW": "sig_gen_STAN_sg394",
-        "sig_gen_omni": "sig_gen_STAN_sg394",
-        "sig_gen_single": "sig_gen_STAN_sg394",
-        "tagger": "tagger_SWAB_20",
+        "tagger": "QM_opx",
         "camera": "camera_NUVU_hnu512gamma",
     },
     ###
@@ -196,7 +192,7 @@ config = {
             "do_arb_wave_trigger": 2,
             "do_laser_COBO_638_dm": 7,
             "do_laser_INTE_520_dm": 3,
-            "do_laser_LGLO_589_am": 6,
+            "do_laser_LGLO_589_dm": 3,
             "do_sample_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,
             "do_sig_gen_STAN_sg394_gate": 4,
