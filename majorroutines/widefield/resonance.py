@@ -256,11 +256,10 @@ def main_with_cxn(
     readout_sec = readout / 10**9
 
     num_nvs = len(nv_list)
-    nv_list_shuffle = nv_list.copy()
 
     # last_opt_time = time.time()
     last_opt_time = None
-    opt_period = 3 * 60
+    opt_period = 5 * 60
 
     ### Load the pulse generator
 
@@ -299,7 +298,6 @@ def main_with_cxn(
     for run_ind in range(num_runs):
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
-
             # Optimize in z by scanning, then in xy with pixels again.
             # Note: Each optimization routine must be identical or else there
             # will be a potentially large source of variance between runs
@@ -308,9 +306,8 @@ def main_with_cxn(
                 optimize.main(nv_sig, set_to_opti_coords=False, only_z_opt=True)
                 optimize.optimize_pixel(nv_sig)
                 last_opt_time = time.time()
-                
+
             print(f"{run_ind}, {freq_ind}")
-            shuffle(nv_list_shuffle)
 
             # Reset the pulse streamer and laser filter
             tb.set_filter(cxn, optics_name=laser, filter_name=laser_filter)
@@ -319,7 +316,7 @@ def main_with_cxn(
             # Update the coordinates for drift
             adj_coords_list = [
                 pos.adjust_coords_for_drift(nv_sig=nv, laser_name=laser)
-                for nv in nv_list_shuffle
+                for nv in nv_list
             ]
             if num_nvs == 1:
                 coords = adj_coords_list[0]

@@ -88,8 +88,7 @@ def main_with_cxn(cxn, nv_sig):
 
 if __name__ == "__main__":
     config = common.get_config_dict()
-    config = common.get_config_dict()
-    print(config)
+    # print(config)
     # kpl.init_kplotlib()
 
     # plt.show(block=True)

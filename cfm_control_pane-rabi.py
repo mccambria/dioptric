@@ -37,10 +37,10 @@ def do_image_sample(nv_sig):
     scan_range = 0.4
     # scan_range = 0.2
     # num_steps = int(180 * 0.5 / 0.2)
-    # num_steps = 180
+    num_steps = 180
 
     # scan_range = 0.05
-    num_steps = 60
+    # num_steps = 60
 
     # scan_range = 0.0
     # num_steps = 20
@@ -101,10 +101,10 @@ def do_optimize_widefield_calibration():
 def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.040
-    num_steps = 20
-    num_reps = 400
+    num_steps = 30
+    num_reps = 200
     num_runs = 17
-    uwave_power = -16.0
+    uwave_power = -23.0
     laser_filter = "nd_0.7"
     resonance.main(
         nv_list,
@@ -132,6 +132,15 @@ def do_camera_test():
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
+
+
+def do_opx_constant_ac():
+    with common.labrad_connect() as cxn:
+        opx = cxn.QM_opx
+        # opx.constant_ac([])
+        opx.constant_ac([3])
+        input("Press enter to stop...")
+        # opx.constant_ac()
 
 
 # def do_stationary_count(nv_sig, disable_opt=True):
@@ -188,7 +197,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.81
+    z_coord = 5.65
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -267,6 +276,7 @@ if __name__ == "__main__":
 
     nv_sig = nv5
     # nv_sig = nv_ref
+    nv_sig["coords"][2] = z_coord
 
     ### Functions to run
 
@@ -300,14 +310,16 @@ if __name__ == "__main__":
         #     print(nv["pixel_coords"])
         #     print(nv["coords"][0:2])
 
-        # do_image_sample(nv_ref)
+        do_opx_constant_ac()
+
+        do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_optimize(nv_sig, set_drift=True, plot_data=True)
         # do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)

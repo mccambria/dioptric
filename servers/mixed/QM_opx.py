@@ -14,7 +14,7 @@ description =
 
 [startup]
 cmdline = %PYTHON% %FILE%
-timeout = 20
+timeout = 120
 
 [shutdown]
 message = 987654321

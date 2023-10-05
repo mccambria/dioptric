@@ -17,7 +17,6 @@ from qm.simulate import SimulationConfig
 from qm.qua import program, declare, declare_stream, stream_processing
 from qm.qua import measure, wait, save, play, align, fixed, assign
 import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
-from utils.tool_belt import States
 import utils.common as common
 import utils.tool_belt as tb
 import utils.kplotlib as kpl
@@ -84,10 +83,10 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [[], [1,], [0.1], [0.0]]
+        args = [[], [1], [0.1], [1e6]]
         ret_vals = get_seq(opx_config, config, args, -1)
         seq, final, ret_vals, _, _ = ret_vals
-        
+
         # Serialize to file
         # sourceFile = open('debug2.py', 'w')
         # print(generate_qua_script(seq, opx_config), file=sourceFile)
@@ -97,6 +96,7 @@ if __name__ == "__main__":
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
+        plt.show(block=True)
 
     except Exception as exc:
         print(exc)
