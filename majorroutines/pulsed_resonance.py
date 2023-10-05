@@ -705,6 +705,7 @@ def fit_resonance(
     residuals = fit_func(freqs, *popt) - norm_avg_sig
     chi_sq = np.sum((residuals / norm_avg_sig_ste) ** 2)
     red_chi_sq = chi_sq / (len(norm_avg_sig) - len(popt))
+    # red_chi_sq = chi_sq / (len(norm_avg_sig))
     print(red_chi_sq)
 
     return fit_func, popt, pcov
