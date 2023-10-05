@@ -101,14 +101,6 @@ config = {
     },
     ###
     "Optics": {
-        "cobolt_515": {
-            "delay": 120,
-            "mod_type": ModTypes.DIGITAL,
-        },
-        "cobolt_638": {
-            "delay": 80,
-            "mod_type": ModTypes.DIGITAL,
-        },
         "collection": {
             "filter_server": "filter_slider_ell9k_3",
             "filter_mapping": {
