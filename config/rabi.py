@@ -76,17 +76,12 @@ config = {
         / "Documents/GitHub/dioptric/servers/outputs/GCSTranslator/PI_GCS2_DLL_x64.dll",
         "objective_piezo_model": "E709",
         "objective_piezo_serial": "0119008970",
-        "piezo_stage_626_2cd_model": "E727",
-        "piezo_stage_626_2cd_serial": "0116058375",
         "pulse_gen_SWAB_82_ip": "192.168.0.111",
         "rotation_stage_ell18k_address": "COM6",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.160.114::inst0::INSTR",
         "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.112::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.160.112::5025::SOCKET",
         "tagger_SWAB_20_serial": "1740000JEH",
-        "temp_ctrl_tc200": "COM10",
-        "z_piezo_kpz101_serial": "29502179",
-        # "QM_opx_ip": "128.104.160.117",
         "QM_opx_ip": "192.168.0.117",
     },
     ###
@@ -148,7 +143,6 @@ config = {
     },
     ###
     "Servers": {
-        "arb_wave_gen": "awg_KEYS_33622A",
         "counter": "QM_opx",
         "magnet_rotation": "rotation_stage_thor_ell18k",
         "pos_xy": "pos_xyz_THOR_gvs212_PI_pifoc",
@@ -162,29 +156,16 @@ config = {
     ###
     "Wiring": {
         "Daq": {
-            "ai_photodiode": "Dev1/AI0",
-            "ai_thermistor_ref": "dev1/AI1",
             "ao_galvo_x": "dev1/AO0",
             "ao_galvo_y": "dev1/AO1",
-            "ao_laser_LGLO_589_feedthrough": "dev1/AO3",
             "ao_objective_piezo": "dev1/AO2",
-            "ao_piezo_stage_626_2cd_x": "dev1/AO0",
-            "ao_piezo_stage_626_2cd_y": "dev1/AO1",
-            "ao_uwave_sig_gen_mod": "",
-            "ao_z_piezo_kpz101": "dev1/AO2",
             "di_clock": "PFI12",
-            "di_laser_LGLO_589_feedthrough": "PFI0",
         },
-        "Piezo_stage_E727": {"piezo_stage_channel_x": 4, "piezo_stage_channel_y": 5},
         "PulseGen": {
-            "ao_fm_sig_gen_BERK_bnc835": 1,
-            "ao_fm_sig_gen_STAN_sg394": 0,
-            "ao_laser_LGLO_589_am": 1,
             "do_apd_gate": 5,
-            "do_arb_wave_trigger": 2,
-            "do_laser_COBO_638_dm": 7,
             "do_laser_INTE_520_dm": 3,
-            "do_laser_LGLO_589_dm": 3,
+            "do_laser_OPTO_589_dm": 3,
+            "do_laser_COBO_638_dm": 7,
             "do_sample_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,
             "do_sig_gen_STAN_sg394_gate": 4,
@@ -276,7 +257,6 @@ default_len = 1000
 
 opx_config = {
     "version": 1,
-    # region Elements
     "controllers": {
         "con1": {
             "type": "opx1",
@@ -310,10 +290,8 @@ opx_config = {
             },
         },
     },
-    # endregion
-    # region Elements
     "elements": {
-        # Region Bare channels
+        # region Bare channels
         "do1": {
             "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off"},
@@ -406,74 +384,16 @@ opx_config = {
         },
         # endregion
         # region Actual "elements", or physical things to control
-        "cobolt_638_x": {
-            "singleInput": {"port": ("con1", 2)},
-            "intermediate_frequency": default_int_freq,
-            "operations": {"cw": "ao_cw", "readout": "readout"},
+        "do_laser_OPTO_589_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
-        "cobolt_638_y": {
-            "singleInput": {"port": ("con1", 3)},
-            "intermediate_frequency": default_int_freq,
-            "operations": {"cw": "ao_cw", "readout": "readout"},
+        "do_camera_trigger": {
+            "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
         },
-        "laserglow_589_x": {
-            "singleInput": {"port": ("con1", 1)},
-            "intermediate_frequency": default_int_freq,
-            "operations": {"cw": "ao_cw"},
-        },
-        "sig_gen_TEKT_tsg4104a": {
-            "digitalInputs": {
-                "marker": {
-                    "port": ("con1", 7),
-                    "delay": uwave_total_delay,
-                    "buffer": 0,
-                },
-            },
-            "operations": {"uwave_on": "do_on", "uwave_off": "do_off"},
-        },
-        "cobolt_515": {
-            "digitalInputs": {
-                "marker": {
-                    "port": ("con1", 9),
-                    "delay": green_laser_total_delay,
-                    "buffer": 0,
-                },
-            },
-            "operations": {"laser_on": "do_on", "laser_off": "do_off"},
-        },
-        "do_sample_clock": {
-            "digitalInputs": {
-                "marker": {"port": ("con1", 5), "delay": common_delay, "buffer": 0},
-            },
-            "operations": {
-                "clock_pulse": "do_short_pulse",
-            },
-        },
-        ###
-        # "do_apd_1_gate": {
-        #     "singleInput": {"port": ("opx1", 2)},
-        #     "digitalInputs": {
-        #         "marker": {
-        #             "port": ("opx1", 3),
-        #             "delay": apd_1_total_delay,
-        #             "buffer": 0,
-        #         },
-        #     },
-        #     "operations": {
-        #         "readout": "do_on",
-        #     },
-        #     "outputs": {"out1": ("opx1", 2)},
-        #     "outputPulseParameters": {
-        #         "signalThreshold": signal_threshold,
-        #         "signalPolarity": "Below",
-        #         "derivativeThreshold": 1800,
-        #         "derivativePolarity": "Below",
-        #     },
-        #     "time_of_flight": detection_delay,
-        #     "smearing": 15,
-        # },
+        # endregion
     },
-    # endregion
     # region Pulses
     "pulses": {
         ### Analog

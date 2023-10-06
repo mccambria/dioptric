@@ -34,9 +34,6 @@ def main_with_cxn(cxn, nv_sig):
     ### Some initial setup
 
     config = common.get_config_dict()
-    config_positioning = config["Positioning"]
-    xy_control_style = pos.get_xy_control_style()
-    z_control_style = pos.get_z_control_style()
 
     tb.reset_cfm(cxn)
     optimize.prepare_microscope(cxn, nv_sig)
@@ -47,7 +44,6 @@ def main_with_cxn(cxn, nv_sig):
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
     tb.set_filter(cxn, nv_sig, laser_key)
-    readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
 
     ### Load the pulse generator
 
@@ -56,7 +52,7 @@ def main_with_cxn(cxn, nv_sig):
     readout_sec = readout / 10**9
 
     delay = 0
-    seq_args = [delay, readout, readout_laser, readout_power]
+    seq_args = [delay, readout, readout_laser]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "widefield-simple_readout.py"
 
