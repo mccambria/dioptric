@@ -18,7 +18,7 @@ from utils import positioning as pos
 from utils import widefield
 from utils import common
 from utils.constants import LaserKey, NVSpinState
-from majorroutines import image_sample
+from majorroutines.widefield import image_sample
 from majorroutines.widefield import image_nv_list
 from majorroutines.widefield import resonance
 from majorroutines import optimize
@@ -30,22 +30,7 @@ import copy
 
 
 def do_image_sample(nv_sig):
-    # scan_range = 1.0
-    # num_steps = 180
-
-    # scan_range = 0.5
-    scan_range = 0.4
-    # scan_range = 0.2
-    # num_steps = int(180 * 0.5 / 0.2)
-    num_steps = 180
-
-    # scan_range = 0.05
-    # num_steps = 60
-
-    # scan_range = 0.0
-    # num_steps = 20
-
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    image_sample.main(nv_sig)
 
 
 def do_image_sample_zoom(nv_sig):
@@ -193,11 +178,11 @@ if __name__ == "__main__":
     ### Shared parameters
 
     green_laser = "laser_INTE_520"
-    yellow_laser = "laser_LGLO_589"
+    yellow_laser = "laser_OPTO_589"
     red_laser = "laser_COBO_638"
 
     sample_name = "johnson"
-    z_coord = 5.65
+    z_coord = 7.3
     # ref_coords = [0.0, 0.0, z_coord]
     ref_coords = [0.0, 0.0, z_coord]
     ref_coords = np.array(ref_coords)
@@ -217,8 +202,8 @@ if __name__ == "__main__":
         "expected_count_rate": None,
         #
         LaserKey.IMAGING: {
-            "name": green_laser,
-            "readout_dur": 1e7,
+            "name": yellow_laser,
+            "readout_dur": 5e9,
             "num_reps": 100,
             "filter": "nd_0",
         },
@@ -274,9 +259,9 @@ if __name__ == "__main__":
         else:
             nv["coords"][2] = z_coord
 
-    nv_sig = nv5
-    # nv_sig = nv_ref
-    nv_sig["coords"][2] = z_coord
+    # nv_sig = nv5
+    nv_sig = nv_ref
+    # nv_sig["coords"][2] = z_coord
 
     ### Functions to run
 
@@ -310,7 +295,11 @@ if __name__ == "__main__":
         #     print(nv["pixel_coords"])
         #     print(nv["coords"][0:2])
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
+
+        # for z in np.linspace(7.0, 8.9, 20):
+        #     nv_ref["coords"][2] = z
+        #     do_image_sample(nv_ref)
 
         do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)

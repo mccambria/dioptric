@@ -49,6 +49,7 @@ def main_with_cxn(cxn, nv_sig):
 
     readout = laser_dict["readout_dur"]
     readout_us = readout / 10**3
+    readout_ms = round(readout / 10**6)
     readout_sec = readout / 10**9
 
     delay = 0
@@ -56,8 +57,7 @@ def main_with_cxn(cxn, nv_sig):
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "widefield-simple_readout.py"
 
-    ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
-    period = ret_vals[0]
+    pulse_gen.stream_load(seq_file, seq_args_string)
 
     ### Set up the image display
 
@@ -65,7 +65,7 @@ def main_with_cxn(cxn, nv_sig):
     hor_label = "X"
     ver_label = "Y"
     cbar_label = "Counts"
-    title = f"Widefield image under {readout_laser}, {readout_us} us readout"
+    title = f"Widefield, {readout_laser}, {readout_ms} ms"
     imshow_kwargs = {
         "title": title,
         "x_label": hor_label,

@@ -36,8 +36,10 @@ def _set_xyz(cxn, coords):
     z_dtype = config["Positioning"]["z_dtype"]
     pos_xy_server = get_server_pos_xy(cxn)
     pos_z_server = get_server_pos_z(cxn)
-    pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-    pos_z_server.write_z(z_dtype(coords[2]))
+    if pos_xy_server is not None:
+        pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
+    if pos_z_server is not None:
+        pos_z_server.write_z(z_dtype(coords[2]))
     # Force some delay before proceeding to account for the effective write time
     time.sleep(0.002)
 

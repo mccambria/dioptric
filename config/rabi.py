@@ -145,7 +145,7 @@ config = {
     "Servers": {
         "counter": "QM_opx",
         "magnet_rotation": "rotation_stage_thor_ell18k",
-        "pos_xy": "pos_xyz_THOR_gvs212_PI_pifoc",
+        # "pos_xy": "pos_xyz_THOR_gvs212_PI_pifoc",
         "pos_z": "pos_z_PI_pifoc",
         "pulse_gen": "QM_opx",
         "sig_gen_HIGH": "sig_gen_STAN_sg394",

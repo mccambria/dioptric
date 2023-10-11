@@ -61,7 +61,10 @@ def get_repo_path():
 
 def get_server(cxn, server_name):
     config = get_config_dict()
-    dev_name = config["Servers"][server_name]
+    confg_servers = config["Servers"]
+    if server_name not in confg_servers:
+        return None
+    dev_name = confg_servers[server_name]
     return cxn[dev_name]
 
 
