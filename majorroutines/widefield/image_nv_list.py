@@ -136,18 +136,33 @@ def main_with_cxn(cxn, nv_list):
 
 
 if __name__ == "__main__":
-    file_name = "2023_08_15-14_34_47-johnson-nvref"
+    file_name = "2023_09_27-11_53_03-johnson-nvref"
 
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    extent = data["extent"] if "extent" in data else None
 
     kpl.init_kplotlib()
+
+    mu = "\u03bc"
+    pixels_to_first_node = 7.5
+    microns_to_first_node = 0.61 * 0.7 / 1.3  # um
+    scale_bar_length_um = 5
+    scale_bar_length_pixels = scale_bar_length_um * (
+        pixels_to_first_node / microns_to_first_node
+    )
+
     fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array, extent=extent)
-    # ax.set_xlim([124.5 - 15, 124.5 + 15])
-    # ax.set_ylim([196.5 + 15, 196.5 - 15])
+    kpl.imshow(ax, img_array, cbar_label="Counts (ADU)")
+    # ax.set_xlim(154.5, 225.5)
+    # ax.set_ylim(250.5, 179.5)
+    ax.axis(False)
+    kpl.scale_bar(
+        ax,
+        scale_bar_length_pixels,
+        f"{scale_bar_length_um} {mu}m",
+        kpl.Loc.UPPER_RIGHT,
+    )
 
     plt.show(block=True)
