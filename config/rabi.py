@@ -126,12 +126,12 @@ config = {
     },
     ###
     "Positioning": {
-        "xy_control_style": ControlStyle.STREAM,
+        "xy_control_style": ControlStyle.SEQUENCE,
         "xy_delay": int(400e3),  # 400 us for galvo
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.02,
-        "xy_units": "Voltage (V)",
+        "xy_units": "MHz",
         "z_control_style": ControlStyle.STREAM,
         "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
@@ -388,9 +388,18 @@ opx_config = {
             "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off"},
         },
+        "do_laser_INTE_520_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
+        },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off"},
+        },
+        "ao_laser_INTE_520_x": {
+            "singleInput": {"port": ("con1", 8)},
+            "intermediate_frequency": default_int_freq,
+            "operations": {"cw": "ao_cw"},
         },
         # endregion
     },

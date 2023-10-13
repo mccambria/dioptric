@@ -26,8 +26,16 @@ class LaserKey(Enum):
 
 
 class ControlStyle(Enum):
+    """
+    STEP: Manual control with individual function calls
+    STREAM: A stream of values can be loaded onto the controller - the controller will step
+        through the stream automatically in response to a clock signal from the pulse generator
+    SEQUENCE: Controlled  directly from the pulse generator sequence
+    """
+
     STEP = auto()
     STREAM = auto()
+    SEQUENCE = auto()
 
 
 class NVSpinState(Enum):

@@ -18,7 +18,8 @@ from utils import positioning as pos
 from utils import widefield
 from utils import common
 from utils.constants import LaserKey, NVSpinState
-from majorroutines.widefield import image_sample
+from majorroutines.widefield import widefield_image_sample
+from majorroutines.widefield import scanning_image_sample
 from majorroutines.widefield import image_nv_list
 from majorroutines.widefield import resonance
 from majorroutines import optimize
@@ -29,8 +30,14 @@ import copy
 ### Major Routines
 
 
+def do_widefield_image_sample(nv_sig):
+    widefield_image_sample.main(nv_sig)
+
+
 def do_image_sample(nv_sig):
-    image_sample.main(nv_sig)
+    scan_range = 10
+    num_steps = 60
+    scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_image_sample_zoom(nv_sig):
@@ -38,7 +45,7 @@ def do_image_sample_zoom(nv_sig):
     num_steps = 60
     # scan_range = 0.005
     # num_steps = 30
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_image_nv_list(nv_list):
