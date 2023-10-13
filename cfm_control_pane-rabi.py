@@ -34,9 +34,9 @@ def do_widefield_image_sample(nv_sig):
     widefield_image_sample.main(nv_sig)
 
 
-def do_image_sample(nv_sig):
+def do_scanning_image_sample(nv_sig):
     scan_range = 10
-    num_steps = 60
+    num_steps = 10
     scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     sample_name = "johnson"
     z_coord = 7.1
     # ref_coords = [0.0, 0.0, z_coord]
-    ref_coords = [0.0, 0.0, z_coord]
+    ref_coords = [110.0, 110.0, z_coord]
     ref_coords = np.array(ref_coords)
 
     # ref_pixel_coords = [316.7, 238.8]
@@ -213,11 +213,16 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
+        # LaserKey.IMAGING: {
+        #     "name": yellow_laser,
+        #     "readout_dur": 5e9,
+        #     "num_reps": 100,
+        #     "filter": "nd_0",
+        # },
         LaserKey.IMAGING: {
-            "name": yellow_laser,
-            "readout_dur": 5e9,
+            "name": green_laser,
+            "readout_dur": 10e6,
             "num_reps": 100,
-            "filter": "nd_0",
         },
         #
         LaserKey.SPIN: {"name": green_laser, "pol_dur": 2e3, "readout_dur": 440},
@@ -311,10 +316,11 @@ if __name__ == "__main__":
         #     pos.set_xyz(cxn, [0.0, 0.0, 5.0])
         # do_opx_constant_ac()
 
-        for z in np.linspace(3.0, 7.0, 21):
-            nv_ref["coords"][2] = z
-            do_image_sample(nv_ref)
+        # for z in np.linspace(3.0, 7.0, 21):
+        #     nv_ref["coords"][2] = z
+        #     do_image_sample(nv_ref)
 
+        do_scanning_image_sample(nv_ref)
         # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)

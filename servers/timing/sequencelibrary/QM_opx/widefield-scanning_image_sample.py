@@ -14,7 +14,7 @@ from qm import qua
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 from qm.qua import program, declare, declare_stream, stream_processing
-from qm.qua import measure, wait, save, play, align, fixed, assign
+from qm.qua import wait, update_frequency, play, align, fixed, assign, for_each_
 import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 import utils.common as common
 import utils.tool_belt as tb
@@ -25,19 +25,20 @@ from qm import generate_qua_script
 
 def qua_program(coords_1, coords_2, readout, readout_laser, readout_power):
     laser_element = f"do_{readout_laser}_dm"
-    camera_element = f"do_camera_trigger".
-    x_element = f""
-    digital_elements = [laser_element, camera_element]
-    num_reps = readout / 1000  # Num of us cycles
-    clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
+    camera_element = f"do_camera_trigger"
+    x_element = f"ao_{readout_laser}_x"
+    y_element = f"ao_{readout_laser}_y"
+    clock_cycles = readout / 4  # * 4 ns / clock_cycle = 1 us
+    x_freq = declare(fixed)
+    y_freq = declare(fixed)
     with program() as seq:
-        ### Define one rep here
-        def one_rep():
-            for el in digital_elements:
-                qua.play("on", el, duration=clock_cycles)
-
-        ### Handle the reps in the utils code
-        seq_utils.handle_reps(one_rep, num_reps)
+        with for_each_((x_freq, y_freq), (coords_1, coords_2)):
+            update_frequency(x_element, x_freq * 10**6)
+            update_frequency(y_element, y_freq * 10**6)
+            play("cw", x_element, duration=clock_cycles)
+            play("cw", y_element, duration=clock_cycles)
+            play("on", laser_element, duration=clock_cycles)
+            play("on", camera_element, duration=clock_cycles)
 
     return seq
 

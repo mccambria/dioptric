@@ -397,7 +397,12 @@ opx_config = {
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_INTE_520_x": {
-            "singleInput": {"port": ("con1", 8)},
+            "singleInput": {"port": ("con1", 6)},
+            "intermediate_frequency": default_int_freq,
+            "operations": {"cw": "ao_cw"},
+        },
+        "ao_laser_INTE_520_y": {
+            "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": default_int_freq,
             "operations": {"cw": "ao_cw"},
         },
@@ -438,7 +443,7 @@ opx_config = {
     # region Waveforms
     ### Analog
     "waveforms": {
-        "cw": {"type": "constant", "sample": 0.5},
+        "cw": {"type": "constant", "sample": 0.7},
         "cw_0.5": {"type": "constant", "sample": 0.5},
         "cw_0.45": {"type": "constant", "sample": 0.45},
         "cw_0.4": {"type": "constant", "sample": 0.4},
