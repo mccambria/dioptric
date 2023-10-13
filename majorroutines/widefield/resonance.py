@@ -159,6 +159,7 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
             fit_func=fit_func,
             guess_params=guess_params,
         )
+        pste = np.sqrt(np.diag(pcov))
 
         if plot_residuals:
             kpl.plot_points(
@@ -186,12 +187,14 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
         # Normalized residuals
 
         # Contrast in units of counts
-        contrast_counts = popt[0] * popt[1]
-        mean_err = np.mean(nv_counts_ste)
-        # print(contrast_counts)
-        print(mean_err)
-        print(contrast_counts / mean_err)
-        print()
+        # contrast_counts = popt[0] * popt[1]
+        # mean_err = np.mean(nv_counts_ste)
+        # # print(contrast_counts)
+        # print(mean_err)
+        # print(contrast_counts / mean_err)
+        # print(popt)
+        # print(pste)
+        # print()
 
     ax.set_xlabel("Frequency (GHz)")
     if plot_residuals:
@@ -492,13 +495,30 @@ if __name__ == "__main__":
     # ax.set_ylabel("Mean index")
 
     # Play the images back like a movie
-    # for run_ind in range(num_runs):
-    #     print(run_ind)
-    #     for freq_ind in freq_ind_master_list[run_ind]:
-    #         fig, ax = plt.subplots()
-    #         kpl.imshow(ax, img_arrays[run_ind, freq_ind])
-    #         # ax.hist(img_arrays.flatten(), 100, (285, 315))
-    #         plt.show(block=True)
+    mu = "\u03bc"
+    pixels_to_first_node = 7.5
+    microns_to_first_node = 0.61 * 0.7 / 1.3  # um
+    scale_bar_length_um = 5
+    scale_bar_length_pixels = scale_bar_length_um * (
+        pixels_to_first_node / microns_to_first_node
+    )
+    for run_ind in range(num_runs):
+        print(run_ind)
+        for freq_ind in freq_ind_master_list[run_ind]:
+            fig, ax = plt.subplots()
+            kpl.imshow(ax, img_arrays[run_ind, freq_ind], cbar_label="Counts (ADU)")
+            # ax.set_xlim(154.5, 225.5)
+            # ax.set_ylim(250.5, 179.5)
+            ax.axis(False)
+            kpl.scale_bar(
+                ax,
+                scale_bar_length_pixels,
+                f"{scale_bar_length_um} {mu}m",
+                # "500 nm",
+                kpl.Loc.UPPER_RIGHT,
+            )
+            # ax.hist(img_arrays.flatten(), 100, (285, 315))
+            plt.show(block=True)
 
     # Process images
     print("start")

@@ -19,6 +19,7 @@ import re
 from enum import Enum, auto
 from strenum import StrEnum
 from matplotlib.offsetbox import AnchoredText
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import numpy as np
 
 
@@ -307,6 +308,23 @@ def anchored_text(ax, text, loc, size=None, **kwargs):
     return text_box
 
 
+def scale_bar(ax, length, label, loc):
+    ylim = ax.get_ylim()
+    size_vertical = 0.01 * (max(ylim) - min(ylim))
+    bar = AnchoredSizeBar(
+        ax.transData,
+        length,
+        label,
+        loc,
+        size_vertical=size_vertical,
+        borderpad=0.2,
+        pad=0.2,
+        sep=4,
+    )
+    ax.add_artist(bar)
+    return bar
+
+
 def tex_escape(text):
     """Escape TeX characters in the passed text"""
     conv = {
@@ -503,16 +521,6 @@ def imshow(
     """
 
     fig = ax.get_figure()
-
-    # Get a default aspect ratio
-    if "extent" in kwargs and kwargs["extent"] is not None:
-        extent = tuple(kwargs["extent"])
-        kwargs["extent"] = extent
-        if "aspect" not in kwargs:
-            height = abs(extent[3] - extent[2])
-            width = abs(extent[1] - extent[0])
-            aspect = height / width
-            kwargs["aspect"] = aspect
 
     img = ax.imshow(img_array, **kwargs)
 
