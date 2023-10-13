@@ -123,7 +123,12 @@ def do_opx_constant_ac():
     with common.labrad_connect() as cxn:
         opx = cxn.QM_opx
         # opx.constant_ac([])
-        opx.constant_ac([3])
+        opx.constant_ac(
+            [4],  # Digital channels
+            [4, 6],  # Analog channels
+            [0.34, 0.34],  # Analog voltages
+            [110e6, 110e6],  # Analog frequencies
+        )
         input("Press enter to stop...")
         # opx.constant_ac()
 
@@ -295,13 +300,15 @@ if __name__ == "__main__":
         #     print(nv["pixel_coords"])
         #     print(nv["coords"][0:2])
 
+        # with common.labrad_connect() as cxn:
+        #     pos.set_xyz(cxn, [0.0, 0.0, 5.0])
         # do_opx_constant_ac()
 
-        # for z in np.linspace(7.0, 8.9, 20):
-        #     nv_ref["coords"][2] = z
-        #     do_image_sample(nv_ref)
+        for z in np.linspace(3.0, 7.0, 21):
+            nv_ref["coords"][2] = z
+            do_image_sample(nv_ref)
 
-        do_image_sample(nv_ref)
+        # do_image_sample(nv_ref)
         # do_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)

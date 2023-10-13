@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    im = kpl.imshow(ax, 575img_array, cbar_label="counts")
+    im = kpl.imshow(ax, img_array, cbar_label="counts")
     ax.set_xticks(range(0, 501, 100))
     # im = kpl.imshow(ax, img_array_kcps, extent=extent)
     # ax.set_xlim([124.5 - 15, 124.5 + 15])
