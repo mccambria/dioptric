@@ -87,7 +87,8 @@ if __name__ == "__main__":
             "laser_INTE_520",
             None,
         ]
-        ret_vals = get_seq(opx_config, config, args, 1)
+        args = [[110.0], [110.0], 10000.0, "laser_INTE_520", None]
+        ret_vals = get_seq(opx_config, config, args, 4)
         seq, final, ret_vals, _, _ = ret_vals
 
         sim_config = SimulationConfig(duration=round(10e4 / 4))

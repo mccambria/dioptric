@@ -68,6 +68,8 @@ def main_with_cxn(cxn, nv_list):
     readout_ms = readout / 10**6
     readout_sec = readout / 10**9
     seq_args = [x_coords, y_coords, readout, readout_laser, readout_power]
+    # print(seq_args)
+    # return
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "widefield-scanning_image_sample.py"
 
