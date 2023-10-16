@@ -85,7 +85,7 @@ def main_with_cxn(cxn, nv_sig, range_1, range_2, num_steps, nv_minus_init=False)
 
     kpl.init_kplotlib(font_size=kpl.Size.SMALL)
     cbar_label = "Counts"
-    title = f"Widefield, {readout_laser}, {readout_ms} ms"
+    title = f"Scanning, {readout_laser}, {readout_ms} ms"
     imshow_kwargs = {"title": title, "cbar_label": cbar_label}
     fig, ax = plt.subplots()
 

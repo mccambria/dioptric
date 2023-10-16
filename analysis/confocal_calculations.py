@@ -167,8 +167,8 @@ def widefield_oof():
 
     # Initial field at objective from NV
     r_linspace = np.linspace(0, radius, num_points)
-    distances = np.sqrt(r_linspace**2 + (1.0 * focal_length) ** 2)
-    field = np.exp(1j * k * distances) / distances
+    # distances = np.sqrt(r_linspace**2 + (1.0 * focal_length) ** 2)
+    # field = np.exp(1j * k * distances) / distances
     # field = np.where(r_linspace < aperture, field, 0)
 
     # field = np.array([1] * num_points)
@@ -180,23 +180,51 @@ def widefield_oof():
     # field = aperture_propagate(field, r_linspace, r_linspace, 200e-3, aperture)
 
     field = gu_psf(r_linspace, 0, np.arctan(aperture / 200e-3))
-    # field += gu_psf(r_linspace, 100 * 100e-6, np.arctan(aperture / 200e-3))
+    # field = gu_psf(r_linspace, -100 * 100e-6, np.arctan(aperture / 200e-3))
 
-    field = np.where(r_linspace < 100 * 200e-9, field, 0)
+    # Image plane
+    # field = np.where(r_linspace < 100 * 200e-9, field, 0)
 
     field = aperture_propagate(field, r_linspace, r_linspace, 50e-3, 12e-3)
+    iris = 5e-4
+    # iris = 12e-3
+    for ind in range(1):
+        field = lens_phase_mask(field, r_linspace, 50e-3)
+        field = aperture_propagate(field, r_linspace, r_linspace, 100e-3, iris)
+        # field = aperture_propagate(field, r_linspace, r_linspace, 50e-3, 12e-3)
+        # field = np.where(r_linspace > 1e-4, field, 0)
+        # fig, ax = plt.subplots()
+        # kpl.plot_line(ax, r_linspace, intensity(field))
+        # return
+        # field = aperture_propagate(field, r_linspace, r_linspace, 50e-3, iris)
+        field = lens_phase_mask(field, r_linspace, 50e-3)
+        # field = aperture_propagate(field, r_linspace, r_linspace, 100e-3, 12e-3)
+        field = aperture_propagate(field, r_linspace, r_linspace, 100e-3, iris)
     field = lens_phase_mask(field, r_linspace, 50e-3)
     field = aperture_propagate(field, r_linspace, r_linspace, 50e-3, 12e-3)
+
+    # field = aperture_propagate(field, r_linspace, r_linspace, 50e-3, 12e-3)
+    # field = lens_phase_mask(field, r_linspace, 50e-3)
+    # fig, ax = plt.subplots()
+    # field = aperture_propagate(field, r_linspace, r_linspace, 10e-3, 12e-3)
+    # for ind in range(10):
+    #     prop = 10 + ind * 20
+    #     kpl.plot_line(
+    #         ax, r_linspace, intensity(normalize_field(field, r_linspace)), label=prop
+    #     )
+    #     field = aperture_propagate(field, r_linspace, r_linspace, 20e-3, 12e-3)
+    # ax.legend()
 
     # Fourier plane
     # field = np.where(r_linspace > 0.0004, field, 0)
 
-    field = aperture_propagate(field, r_linspace, r_linspace, 150e-3, 12e-3)
+    field = aperture_propagate(field, r_linspace, r_linspace, 150e-3, 5e-3)
     field = lens_phase_mask(field, r_linspace, 150e-3)
     field = aperture_propagate(field, r_linspace, r_linspace, 150e-3, 12e-3)
 
     fig, ax = plt.subplots()
     kpl.plot_line(ax, r_linspace, intensity(field))
+    print(get_intensity_norm(field, r_linspace))
     # kpl.plot_line(ax, r_linspace, np.real(field))
     # kpl.plot_line(ax, r_linspace, distances)
 

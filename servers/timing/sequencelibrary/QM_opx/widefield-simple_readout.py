@@ -9,7 +9,6 @@ Created on October 5th, 2023
 
 
 import numpy
-import qm
 from qm import qua
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.simulate import SimulationConfig
