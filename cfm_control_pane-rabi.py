@@ -192,11 +192,7 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     # Imaging laser dicts
-    yellow_laser_dict = {
-        "name": yellow_laser,
-        "readout_dur": 5e9,
-        "num_reps": 100
-    }
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 100}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 100}
 
     sample_name = "johnson"
@@ -311,7 +307,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_ref)
         # do_scanning_image_sample_zoom(nv_ref)
         # do_image_nv_list(nv_list)
-        do_image_single_nv(nv_sig)
+        # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

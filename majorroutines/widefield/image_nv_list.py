@@ -36,19 +36,11 @@ def main(nv_list):
 def main_with_cxn(cxn, nv_list):
     ### Some initial setup
 
-    config = common.get_config_dict()
-    config_positioning = config["Positioning"]
-    xy_units = config_positioning["xy_units"]
-    axis_1_units = xy_units
-    axis_2_units = xy_units
-
-    # First NV to represent the others
-    nv_sig = nv_list[0]
+    nv_sig = nv_list[0]  # First NV represents the list
     num_nvs = len(nv_list)
 
     tb.reset_cfm(cxn)
     center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
-    x_center, y_center, z_center = center_coords
     optimize.prepare_microscope(cxn, nv_sig)
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
