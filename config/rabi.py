@@ -394,23 +394,32 @@ opx_config = {
         },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
+            "sticky": {"analog": True, "digital": True, "duration": 160},
+            # "hold_offset": {"duration": 200},
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": default_int_freq,
-            "operations": {"cw": "ao_cw"},
+            # "sticky": {"analog": True},
+            "operations": {"aod_cw": "aod_cw"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": default_int_freq,
-            "operations": {"cw": "ao_cw"},
+            # "sticky": {"analog": True},
+            "operations": {"aod_cw": "aod_cw"},
         },
         # endregion
     },
     # region Pulses
     "pulses": {
         ### Analog
+        "aod_cw": {
+            "operation": "control",
+            "length": default_len,
+            "waveforms": {"single": "aod_cw"},
+        },
         "ao_cw": {
             "operation": "control",
             "length": default_len,
@@ -443,7 +452,8 @@ opx_config = {
     # region Waveforms
     ### Analog
     "waveforms": {
-        "cw": {"type": "constant", "sample": 0.7},
+        "aod_cw": {"type": "constant", "sample": 0.35},
+        "cw": {"type": "constant", "sample": 0.5},
         "cw_0.5": {"type": "constant", "sample": 0.5},
         "cw_0.45": {"type": "constant", "sample": 0.45},
         "cw_0.4": {"type": "constant", "sample": 0.4},

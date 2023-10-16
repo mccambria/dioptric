@@ -37,6 +37,7 @@ def qua_program(delay, readout, readout_laser):
 
         ### Handle the reps in the utils code
         seq_utils.handle_reps(one_rep, num_reps)
+        qua.play("off", camera_element, duration=clock_cycles)
 
     return seq
 

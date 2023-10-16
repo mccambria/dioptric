@@ -35,16 +35,14 @@ def do_widefield_image_sample(nv_sig):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 10
-    num_steps = 10
+    scan_range = 9
+    num_steps = 60
     scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
-def do_image_sample_zoom(nv_sig):
-    scan_range = 0.02
-    num_steps = 60
-    # scan_range = 0.005
-    # num_steps = 30
+def do_scanning_image_sample_zoom(nv_sig):
+    scan_range = 0.2
+    num_steps = 30
     scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -193,18 +191,19 @@ if __name__ == "__main__":
     yellow_laser = "laser_OPTO_589"
     red_laser = "laser_COBO_638"
 
+    # Imaging laser dicts
+    yellow_laser_dict = {
+        "name": yellow_laser,
+        "readout_dur": 5e9,
+        "num_reps": 100
+    }
+    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 100}
+
     sample_name = "johnson"
-    z_coord = 7.1
-    # ref_coords = [0.0, 0.0, z_coord]
+    z_coord = 4.0
+    # ref_coords = [111.0, 113.0, z_coord]
     ref_coords = [110.0, 110.0, z_coord]
     ref_coords = np.array(ref_coords)
-
-    # ref_pixel_coords = [316.7, 238.8]
-    # # ref_pixel_coords = [306.79, 310.572]
-    # # ref_pixel_coords = [123.251, 198.218]
-    # ref_scanning_coords = widefield.pixel_to_scanning(ref_pixel_coords)
-    # ref_coords = np.array([*ref_scanning_coords, z_coord])
-    # # print(ref_coords)
 
     nv_ref = {
         "coords": ref_coords,
@@ -213,17 +212,8 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        # LaserKey.IMAGING: {
-        #     "name": yellow_laser,
-        #     "readout_dur": 5e9,
-        #     "num_reps": 100,
-        #     "filter": "nd_0",
-        # },
-        LaserKey.IMAGING: {
-            "name": green_laser,
-            "readout_dur": 10e6,
-            "num_reps": 100,
-        },
+        # LaserKey.IMAGING: yellow_laser_dict,
+        LaserKey.IMAGING: green_laser_dict,
         #
         LaserKey.SPIN: {"name": green_laser, "pol_dur": 2e3, "readout_dur": 440},
         #
@@ -233,7 +223,7 @@ if __name__ == "__main__":
         NVSpinState.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
     }
 
-    # Experiment NVs
+    # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_09_11"
@@ -260,16 +250,13 @@ if __name__ == "__main__":
     nv4["pixel_coords"] = [248.11, 302.35]
     nv4["coords"] = [0.064, 0.001]
 
+    # endregion
     # Calibration NVs
 
     nv5, nv6 = widefield.get_widefield_calibration_nvs()
 
     nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
-    # nv_list = [nv0, nv1, nv3, nv4]
-    # nv_list = [nv1, nv2]
-    # nv_list = [nv5, nv6]
-    # nv_list = [nv6]
     for nv in nv_list:
         if len(nv["coords"]) < 3:
             nv["coords"].append(z_coord)
@@ -278,7 +265,6 @@ if __name__ == "__main__":
 
     # nv_sig = nv5
     nv_sig = nv_ref
-    # nv_sig["coords"][2] = z_coord
 
     ### Functions to run
 
@@ -320,11 +306,12 @@ if __name__ == "__main__":
         #     nv_ref["coords"][2] = z
         #     do_image_sample(nv_ref)
 
-        do_scanning_image_sample(nv_ref)
-        # do_image_sample(nv_ref)
-        # do_image_sample_zoom(nv_sig)
+        # nv_ref[LaserKey.IMAGING] = yellow_laser_dict
+        # do_widefield_image_sample(nv_ref)
+        # do_scanning_image_sample(nv_ref)
+        # do_scanning_image_sample_zoom(nv_ref)
         # do_image_nv_list(nv_list)
-        # do_image_single_nv(nv_sig)
+        do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

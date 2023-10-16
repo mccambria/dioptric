@@ -9,12 +9,11 @@ Created on October 13th, 2023
 
 
 import numpy
-import qm
 from qm import qua
-from qm.QuantumMachinesManager import QuantumMachinesManager
+from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-from qm.qua import program, declare, declare_stream, stream_processing
-from qm.qua import wait, update_frequency, play, align, fixed, assign, for_each_
+from qm.qua import program, declare, strict_timing_
+from qm.qua import wait, update_frequency, play, align, fixed, for_each_
 import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 import utils.common as common
 import utils.tool_belt as tb
@@ -29,16 +28,21 @@ def qua_program(coords_1, coords_2, readout, readout_laser, readout_power):
     x_element = f"ao_{readout_laser}_x"
     y_element = f"ao_{readout_laser}_y"
     clock_cycles = readout / 4  # * 4 ns / clock_cycle = 1 us
-    x_freq = declare(fixed)
-    y_freq = declare(fixed)
+    coords_1_hz = [round(el * 10**6) for el in coords_1]
+    coords_2_hz = [round(el * 10**6) for el in coords_2]
     with program() as seq:
-        with for_each_((x_freq, y_freq), (coords_1, coords_2)):
-            update_frequency(x_element, x_freq * 10**6)
-            update_frequency(y_element, y_freq * 10**6)
-            play("cw", x_element, duration=clock_cycles)
-            play("cw", y_element, duration=clock_cycles)
+        x_freq = declare(int)
+        y_freq = declare(int)
+        # play("on", laser_element, duration=clock_cycles)
+        with for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
+            update_frequency(x_element, x_freq)
+            update_frequency(y_element, y_freq)
+            play("aod_cw", x_element, duration=clock_cycles)
+            play("aod_cw", y_element, duration=clock_cycles)
             play("on", laser_element, duration=clock_cycles)
             play("on", camera_element, duration=clock_cycles)
+        play("off", camera_element, duration=20)
+        # play("on", laser_element, duration=clock_cycles)
 
     return seq
 
@@ -59,24 +63,31 @@ if __name__ == "__main__":
     opx_config = config_module.opx_config
 
     ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(ip_address)
+    qmm = QuantumMachinesManager(host=ip_address)
+    # qmm = QuantumMachinesManager()
     # qmm.close_all_quantum_machines()
     # print(qmm.list_open_quantum_machines())
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [0, 1e6, "laser_OPTO_589"]
+        # coords_1, coords_2, readout, readout_laser, readout_power
+        args = [
+            [105.0, 110.0, 115.0, 115.0],
+            [105.0, 105.0, 105.0, 110.0],
+            10000.0,
+            "laser_INTE_520",
+            None,
+        ]
         ret_vals = get_seq(opx_config, config, args)
         seq, final, ret_vals, _, _ = ret_vals
 
-        sim_config = SimulationConfig(duration=round(1.5e6 / 4))
+        sim_config = SimulationConfig(duration=round(5e4 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
         plt.show(block=True)
 
     except Exception as exc:
-        print(exc)
+        raise exc
     finally:
         qmm.close_all_quantum_machines()
-        qmm.close()

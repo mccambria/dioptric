@@ -73,12 +73,13 @@ def main_with_cxn(cxn, nv_sig, range_1, range_2, num_steps, nv_minus_init=False)
     readout_us = readout / 10**3
     readout_ms = readout / 10**6
     readout_sec = readout / 10**9
-    seq_args = [coords_1, coords_2, readout, readout_laser, readout_power]
+    seq_args = [list(coords_1), list(coords_2), readout, readout_laser, readout_power]
+    # print(seq_args)
+    # return
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "widefield-scanning_image_sample.py"
 
-    ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
-    period = ret_vals[0]
+    pulse_gen.stream_load(seq_file, seq_args_string)
 
     ### Set up the image display
 
