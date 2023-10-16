@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def qua_program(coords_1, coords_2, readout, readout_laser, readout_power):
+def qua_program(coords_1, coords_2, readout, readout_laser, readout_power, num_reps):
     laser_element = f"do_{readout_laser}_dm"
     camera_element = f"do_camera_trigger"
     x_element = f"ao_{readout_laser}_x"
@@ -33,14 +33,21 @@ def qua_program(coords_1, coords_2, readout, readout_laser, readout_power):
     with program() as seq:
         x_freq = declare(int)
         y_freq = declare(int)
+
         # play("on", laser_element, duration=clock_cycles)
-        with for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
-            update_frequency(x_element, x_freq)
-            update_frequency(y_element, y_freq)
-            play("aod_cw", x_element, duration=clock_cycles)
-            play("aod_cw", y_element, duration=clock_cycles)
-            play("on", laser_element, duration=clock_cycles)
-            play("on", camera_element, duration=clock_cycles)
+        ### Define one rep here
+        def one_rep():
+            with for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
+                update_frequency(x_element, x_freq)
+                update_frequency(y_element, y_freq)
+                play("aod_cw", x_element, duration=clock_cycles)
+                play("aod_cw", y_element, duration=clock_cycles)
+                play("on", laser_element, duration=clock_cycles)
+                play("on", camera_element, duration=clock_cycles)
+
+        ### Handle the reps in the utils code
+        seq_utils.handle_reps(one_rep, num_reps)
+
         play("off", camera_element, duration=20)
         # play("on", laser_element, duration=clock_cycles)
 
@@ -49,7 +56,9 @@ def qua_program(coords_1, coords_2, readout, readout_laser, readout_power):
 
 def get_seq(opx_config, config, args, num_reps=-1):
     coords_1, coords_2, readout, readout_laser, readout_power = args
-    seq = qua_program(coords_1, coords_2, readout, readout_laser, readout_power)
+    seq = qua_program(
+        coords_1, coords_2, readout, readout_laser, readout_power, num_reps
+    )
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"
