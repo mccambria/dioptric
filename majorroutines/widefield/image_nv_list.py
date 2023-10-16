@@ -76,7 +76,7 @@ def main_with_cxn(cxn, nv_list):
     ### Collect the data
 
     camera.arm()
-    pulse_gen.stream_start(num_nvs * num_reps)
+    pulse_gen.stream_start(num_reps)
     img_array = camera.read()
     camera.disarm()
 
