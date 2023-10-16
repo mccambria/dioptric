@@ -87,10 +87,10 @@ if __name__ == "__main__":
             "laser_INTE_520",
             None,
         ]
-        ret_vals = get_seq(opx_config, config, args)
+        ret_vals = get_seq(opx_config, config, args, 1)
         seq, final, ret_vals, _, _ = ret_vals
 
-        sim_config = SimulationConfig(duration=round(5e4 / 4))
+        sim_config = SimulationConfig(duration=round(10e4 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
