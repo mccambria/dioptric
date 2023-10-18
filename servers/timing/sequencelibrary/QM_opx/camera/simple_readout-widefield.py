@@ -22,11 +22,13 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def qua_program(readout, readout_laser):
+def qua_program(readout, readout_laser, num_reps):
     laser_element = f"do_{readout_laser}_dm"
     camera_element = f"do_camera_trigger"
     digital_elements = [laser_element, camera_element]
-    num_reps = readout / 1000  # Num of us cycles
+    # Limit the readout to 1 us (for OPX technical purposes)
+    # Increase the number of reps to account for this
+    num_reps = num_reps * readout / 1000  # Num of us cycles
     clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
     with program() as seq:
         ### Define one rep here
@@ -43,7 +45,7 @@ def qua_program(readout, readout_laser):
 
 def get_seq(opx_config, config, args, num_reps=-1):
     readout, readout_laser = args
-    seq = qua_program(readout, readout_laser)
+    seq = qua_program(readout, readout_laser, num_reps)
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"

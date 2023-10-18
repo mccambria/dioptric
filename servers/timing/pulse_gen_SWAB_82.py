@@ -51,9 +51,13 @@ class PulseGenSwab82(PulseGen, LabradServer):
         self.pulse_streamer = PulseStreamer(device_id)
         calibration = self.pulse_streamer.getAnalogCalibration()
         logging.info(calibration)
+        collection_mode = config["collection_mode"]
+        collection_mode_str = collection_mode.name.lower()
 
+        repo_path = common.get_repo_path()
         sequence_library_path = (
-            common.get_repo_path() / f"servers/timing/sequencelibrary/{self.name}"
+            repo_path
+            / f"servers/timing/sequencelibrary/{self.name}/{collection_mode_str}"
         )
 
         sys.path.append(str(sequence_library_path))

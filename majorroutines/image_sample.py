@@ -140,9 +140,9 @@ def main_with_cxn(
         if scan_axes == ScanAxes.XY
         else pos.get_server_pos_xyz(cxn)
     )
-    if collection_mode == CollectionMode.CONFOCAL:
+    if collection_mode == CollectionMode.COUNTER:
         counter = tb.get_server_counter(cxn)
-    elif collection_mode == CollectionMode.WIDEFIELD:
+    elif collection_mode == CollectionMode.CAMERA:
         camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
@@ -173,11 +173,11 @@ def main_with_cxn(
     readout_us = readout / 10**3
     readout_sec = readout / 10**9
 
-    if collection_mode == CollectionMode.WIDEFIELD:
+    if collection_mode == CollectionMode.CAMERA:
         seq_args = [delay, readout, readout_laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "widefield-simple_readout.py"
-    elif collection_mode == CollectionMode.CONFOCAL:
+    elif collection_mode == CollectionMode.COUNTER:
         if nv_minus_init:
             laser_key = "nv-_prep_laser"
             tb.set_filter(cxn, nv_sig, laser_key)
@@ -235,7 +235,7 @@ def main_with_cxn(
     # Initialize tracking variables that will be populated as the image is collected in
     # a scanning configuration, e.g. with an APD as opposed to a camera
     count_format = config["count_format"]
-    if collection_mode != CollectionMode.WIDEFIELD:
+    if collection_mode != CollectionMode.CAMERA:
         img_array = np.empty((num_steps_1, num_steps_2))
         # matplotlib will show nothing for NaN, instead of 0 or a random value
         img_array[:] = np.nan
@@ -246,7 +246,7 @@ def main_with_cxn(
     ### Set up the image display
 
     kpl.init_kplotlib(font_size=kpl.Size.SMALL)
-    if collection_mode == CollectionMode.WIDEFIELD:
+    if collection_mode == CollectionMode.CAMERA:
         hor_label = "X"
         ver_label = "Y"
     else:
@@ -257,7 +257,7 @@ def main_with_cxn(
     if count_format == CountFormat.KCPS:
         cbar_label = "Kcps"
     title = f"{scan_axes.name} image under {readout_laser}, {readout_us} us readout"
-    imshow_extent = None if collection_mode == CollectionMode.WIDEFIELD else extent
+    imshow_extent = None if collection_mode == CollectionMode.CAMERA else extent
     imshow_kwargs = {
         "title": title,
         "x_label": hor_label,
@@ -270,7 +270,7 @@ def main_with_cxn(
 
     ### Collect the data
 
-    if collection_mode == CollectionMode.CONFOCAL:
+    if collection_mode == CollectionMode.COUNTER:
         # Show blank image to be filled
         kpl.imshow(ax, img_array, **imshow_kwargs)
         counter.start_tag_stream()
@@ -302,12 +302,12 @@ def main_with_cxn(
                 kpl.imshow_update(ax, img_array_kcps)
 
     elif control_style == ControlStyle.STREAM:
-        if collection_mode == CollectionMode.WIDEFIELD:
+        if collection_mode == CollectionMode.CAMERA:
             camera.arm()
 
         pulse_gen.stream_start(total_num_samples)
 
-        if collection_mode == CollectionMode.WIDEFIELD:
+        if collection_mode == CollectionMode.CAMERA:
             img_array = camera.read()
             camera.disarm()
             if count_format == CountFormat.RAW:
@@ -316,7 +316,7 @@ def main_with_cxn(
                 img_array_kcps = (np.copy(img_array) / 1000) / readout_sec
                 kpl.imshow(ax, img_array_kcps, **imshow_kwargs)
 
-        elif collection_mode == CollectionMode.CONFOCAL:
+        elif collection_mode == CollectionMode.COUNTER:
             charge_init = nv_minus_init
 
             timeout_duration = ((period * (10**-9)) * total_num_samples) + 10
@@ -349,7 +349,7 @@ def main_with_cxn(
                         kpl.imshow_update(ax, img_array_kcps)
                     num_read_so_far += num_new_samples
 
-    if collection_mode == CollectionMode.CONFOCAL:
+    if collection_mode == CollectionMode.COUNTER:
         counter.clear_buffer()
 
     ### Clean up and save the data

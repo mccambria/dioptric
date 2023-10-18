@@ -49,7 +49,7 @@ config = {
     ###
     "apd_indices": [0],
     "count_format": CountFormat.RAW,
-    "collection_mode": CollectionMode.WIDEFIELD,
+    "collection_mode": CollectionMode.CAMERA,
     "camera_spot_radius": 13,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",

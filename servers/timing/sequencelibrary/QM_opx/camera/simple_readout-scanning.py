@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def qua_program(coords_1, coords_2, readout, readout_laser, num_reps):
+def qua_program(readout, readout_laser, coords_1, coords_2, num_reps):
     laser_element = f"do_{readout_laser}_dm"
     camera_element = f"do_camera_trigger"
     x_element = f"ao_{readout_laser}_x"

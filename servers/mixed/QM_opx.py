@@ -69,9 +69,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.qmm = QuantumMachinesManager(ip_address)
 
         # Add sequence directory to path
+        collection_mode = config["collection_mode"]
+        collection_mode_str = collection_mode.name.lower()
         repo_path = common.get_repo_path()
         opx_sequence_library_path = (
-            repo_path / f"servers/timing/sequencelibrary/{self.name}"
+            repo_path
+            / f"servers/timing/sequencelibrary/{self.name}/{collection_mode_str}"
         )
         sys.path.append(str(opx_sequence_library_path))
 

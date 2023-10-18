@@ -11,8 +11,8 @@ from enum import Enum, IntEnum, auto
 
 
 class CollectionMode(Enum):
-    CONFOCAL = auto()
-    WIDEFIELD = auto()
+    COUNTER = auto()  # Count all photons incident on a detector (e.g. PMT or APD)
+    CAMERA = auto()  # Collect photons onto a camera
 
 
 class CountFormat(Enum):
