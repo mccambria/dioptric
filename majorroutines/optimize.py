@@ -106,88 +106,50 @@ def _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=None):
 # region Misc private functions
 
 
-def _read_counts(
-    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals, laser_key
-):
-    laser_dict = nv_sig[laser_key]
-    num_reps = laser_dict["num_reps"] if "num_reps" in laser_dict else 1
-
-    config = common.get_config_dict()
-    collection_mode = config["collection_mode"]
-    if collection_mode == CollectionMode.CONFOCAL:
-        fn = _read_counts_confocal
-    if collection_mode == CollectionMode.WIDEFIELD:
-        fn = _read_counts_widefield
-    counts = fn(
-        cxn,
-        nv_sig,
-        num_steps,
-        period,
-        control_style,
-        axis_write_func,
-        scan_vals,
-        num_reps,
-    )
-    return counts
-
-
-def _read_counts_confocal(
-    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals, num_reps
-):
+def _read_counts_confocal_stream(cxn, num_steps, timeout_inst):
     counter = tb.get_server_counter(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
-    counter.start_tag_stream()
-
     counts = []
-    timeout_duration = ((period * (10**-9) * num_reps) * num_steps) + 10
-    timeout_inst = time.time() + timeout_duration
-
-    if control_style == ControlStyle.STREAM:
-        num_read_so_far = 0
-        pulse_gen.stream_start(num_steps)
-        while num_read_so_far < num_steps:
-            # Break if user says stop or timeout
-            if tb.safe_stop() or time.time() > timeout_inst:
-                break
-            new_samples = counter.read_counter_simple()
-            num_new_samples = len(new_samples)
-            if num_new_samples > 0:
-                counts.extend(new_samples)
-                num_read_so_far += num_new_samples
-
-    elif control_style == ControlStyle.STEP:
-        for ind in range(len(scan_vals)):
-            # Break if user says stop or timeout
-            if tb.safe_stop() or time.time() > timeout_inst:
-                break
-            axis_write_func(scan_vals[ind])
-            pulse_gen.stream_start(num_reps)
-            # Read the samples and update the image
-            new_samples = counter.read_counter_simple(num_reps)
-            counts.append(np.average(new_samples))
-
+    num_read_so_far = 0
+    counter.start_tag_stream()
+    pulse_gen.stream_start(num_steps)
+    while num_read_so_far < num_steps:
+        if tb.safe_stop() or time.time() > timeout_inst:
+            break
+        new_samples = counter.read_counter_simple()
+        num_new_samples = len(new_samples)
+        if num_new_samples > 0:
+            counts.extend(new_samples)
+            num_read_so_far += num_new_samples
     counter.stop_tag_stream()
-
     return np.array(counts, dtype=int)
 
 
-def _read_counts_widefield(
-    cxn, nv_sig, num_steps, period, control_style, axis_write_func, scan_vals, num_reps
+def _read_counts_confocal_step(cxn, axis_write_func, scan_vals, timeout_inst):
+    counter = tb.get_server_counter(cxn)
+    pulse_gen = tb.get_server_pulse_gen(cxn)
+    counter.start_tag_stream()
+    counts = []
+    for ind in range(len(scan_vals)):
+        if tb.safe_stop() or time.time() > timeout_inst:
+            break
+        axis_write_func(scan_vals[ind])
+        pulse_gen.stream_start(1)
+        new_samples = counter.read_counter_simple(1)
+        counts.append(np.average(new_samples))
+    counter.stop_tag_stream()
+    return np.array(counts, dtype=int)
+
+
+def _read_counts_widefield_step(
+    cxn, nv_sig, axis_write_func, scan_vals, num_reps, timeout_inst
 ):
-    """Similar to confocal with step control_style"""
-
     pixel_coords = nv_sig["pixel_coords"]
-
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
-
     counts = []
-    timeout_duration = ((period * (10**-9) * num_reps) * num_steps) + 10
-    timeout_inst = time.time() + timeout_duration
-
     camera.arm()
     for ind in range(len(scan_vals)):
-        # Break if user says stop or timeout
         if tb.safe_stop() or time.time() > timeout_inst:
             break
         axis_write_func(scan_vals[ind])
@@ -195,9 +157,27 @@ def _read_counts_widefield(
         img_array = camera.read()
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         counts.append(sample)
-
     camera.disarm()
+    return np.array(counts, dtype=int)
 
+
+def _read_counts_widefield_sequence(
+    cxn, nv_sig, axis_write_func, scan_vals, num_reps, timeout_inst
+):
+    pixel_coords = nv_sig["pixel_coords"]
+    camera = tb.get_server_camera(cxn)
+    pulse_gen = tb.get_server_pulse_gen(cxn)
+    counts = []
+    camera.arm()
+    for ind in range(len(scan_vals)):
+        if tb.safe_stop() or time.time() > timeout_inst:
+            break
+        axis_write_func(scan_vals[ind])
+        pulse_gen.stream_start(num_reps)
+        img_array = camera.read()
+        sample = widefield.counts_from_img_array(img_array, pixel_coords)
+        counts.append(sample)
+    camera.disarm()
     return np.array(counts, dtype=int)
 
 
@@ -278,6 +258,8 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     if streaming:
         load_stream(scan_vals)
 
+    timeout_duration = ((period * (10**-9) * num_reps) * num_steps) + 10
+    timeout_inst = time.time() + timeout_duration
     counts = _read_counts(
         cxn,
         nv_sig,
