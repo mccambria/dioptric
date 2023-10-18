@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
     # Imaging laser dicts
     yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 100}
-    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
+    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 500}
 
     sample_name = "johnson"
     z_coord = 4.0
@@ -287,6 +287,17 @@ if __name__ == "__main__":
         # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords)
         # print([round(el, 3) for el in scanning_coords])
 
+        center = [108, 107.92]
+        half_range = 0.01
+        num_steps = 5
+        for x in np.linspace(center[0] - half_range, center[0] + half_range, num_steps):
+            for y in np.linspace(
+                center[1] - half_range, center[1] + half_range, num_steps
+            ):
+                nv_sig["coords"][0] = round(x, 6)
+                nv_sig["coords"][1] = round(y, 6)
+                do_image_single_nv(nv_sig)
+
         # for nv in nv_list:
         #     do_optimize_pixel(nv)
         #     do_optimize_plot(nv)
@@ -307,7 +318,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_ref)
         # do_scanning_image_sample_zoom(nv_ref)
         # do_image_nv_list(nv_list)
-        do_image_single_nv(nv_sig)
+        # do_image_single_nv(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
