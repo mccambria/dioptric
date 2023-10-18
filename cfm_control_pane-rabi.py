@@ -17,7 +17,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import widefield
 from utils import common
-from utils.constants import LaserKey, NVSpinState
+from utils.constants import LaserKey, NVSpinState, LaserPosStyle
 from majorroutines.widefield import image_sample
 from majorroutines.widefield import resonance
 from majorroutines import optimize
@@ -190,7 +190,8 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     # Imaging laser dicts
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 100}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 1}
+    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
 
     sample_name = "johnson"

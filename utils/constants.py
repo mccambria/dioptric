@@ -25,7 +25,12 @@ class LaserKey(Enum):
     SPIN = auto()
 
 
-class ControlStyle(Enum):
+class LaserPosMode(Enum):
+    SCANNING = auto()
+    WIDEFIELD = auto()
+
+
+class ControlMode(Enum):
     """
     STEP: Manual control with individual function calls
     STREAM: A stream of values can be loaded onto the controller - the controller will step
@@ -44,13 +49,13 @@ class NVSpinState(Enum):
     HIGH = auto()
 
 
-# Normalization style for comparing experimental data to reference data
-class NormStyle(Enum):
+# Normalization mode for comparing experimental data to reference data
+class NormMode(Enum):
     SINGLE_VALUED = auto()  # Use a single-valued reference
     POINT_TO_POINT = auto()  # Normalize each signal point by its own reference
 
 
-class ModTypes(Enum):
+class ModMode(Enum):
     DIGITAL = auto()
     ANALOG = auto()
 

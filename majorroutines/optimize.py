@@ -544,28 +544,30 @@ def stationary_count_lite(
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
-    num_reps = laser_dict["num_reps"]
+    num_reps = laser_dict["num_reps"] if num_reps in laser_dict else 1
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
         coords = nv_sig["coords"]
     if scanning_drift_adjust:
         coords = pos.adjust_coords_for_drift(coords)
-    x_center, y_center, z_center = coords
-
-    # Set coordinates
-    pos.set_xyz(cxn, [x_center, y_center, z_center])
+    pos.set_xyz(cxn, coords)
 
     # Load the sequence
     config_positioning = config["Positioning"]
-    delay = 0
-    seq_args = [delay, readout, laser_name, laser_power]
-    seq_args_string = tb.encode_seq_args(seq_args)
-    if collection_mode == CollectionMode.COUNTER:
+    xy_control_style = config_positioning["xy_control_style"]
+    xy_sequence_control = xy_control_style == ControlStyle.SEQUENCE
+    if xy_sequence_control:
+        seq_args = [readout, laser_name, coords[0], coords[1]]
+        seq_args_string = tb.encode_seq_args(seq_args)
+        seq_file_name = "simple_readout-scanning.py"
+        pulse_gen.stream_load(seq_file_name, seq_args_string)
+    else:
+        delay = 0
+        seq_args = [delay, readout, laser_name, laser_power]
+        seq_args_string = tb.encode_seq_args(seq_args)
         seq_file_name = "simple_readout.py"
-    elif collection_mode == CollectionMode.CAMERA:
-        seq_file_name = "widefield-simple_readout.py"
-    pulse_gen.stream_load(seq_file_name, seq_args_string)
+        pulse_gen.stream_load(seq_file_name, seq_args_string)
 
     # Collect the data
     if collection_mode == CollectionMode.COUNTER:

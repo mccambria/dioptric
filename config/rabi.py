@@ -8,7 +8,7 @@ Created July 20th, 2023
 """
 
 from utils.constants import ModTypes, ControlStyle, CountFormat
-from utils.constants import CollectionMode, LaserKey
+from utils.constants import CollectionMode, LaserKey, LaserPosStyle
 from pathlib import Path
 
 home = Path.home()
@@ -108,18 +108,21 @@ config = {
         "laser_INTE_520": {
             "delay": 250,
             "mod_type": ModTypes.DIGITAL,
+            "pos_style": LaserPosStyle.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
         "laser_OPTO_589": {
             "delay": 2500,
             "mod_type": ModTypes.DIGITAL,
+            "pos_style": LaserPosStyle.WIDEFIELD,
             "filter_server": "filter_slider_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
         },
         "laser_COBO_638": {
             "delay": 250,
             "mod_type": ModTypes.DIGITAL,
+            "pos_style": LaserPosStyle.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
