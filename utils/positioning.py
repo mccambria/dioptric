@@ -13,6 +13,7 @@ import numpy as np
 import time
 from utils import common
 from utils import tool_belt as tb
+from utils.constants import ControlStyle
 
 
 # endregion
@@ -180,6 +181,56 @@ def get_xy_control_style():
 def get_z_control_style():
     config = common.get_config_dict()
     return config["Positioning"]["z_control_style"]
+
+
+def get_axis_write_fn(axis_ind):
+    """Return the write function for a given axis (0:x, 1:y, 2:z)"""
+    if axis_ind in [0, 1]:
+        server = get_server_pos_xy()
+    elif axis_ind == 2:
+        server = get_server_pos_z()
+    if server is None:
+        return None
+
+    if axis_ind == 0:
+        write_fn = server.write_x
+    if axis_ind == 1:
+        write_fn = server.write_y
+    if axis_ind == 2:
+        write_fn = server.write_z
+
+    return write_fn
+
+
+def get_axis_stream_fn(axis_ind):
+    """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
+    control_style = get_axis_control_style(axis_ind)
+    if control_style != ControlStyle.STREAM:
+        return None
+
+    if axis_ind in [0, 1]:
+        server = get_server_pos_xy()
+    elif axis_ind == 2:
+        server = get_server_pos_z()
+    if server is None:
+        return None
+
+    if axis_ind == 0:
+        stream_fn = server.load_stream_x
+    if axis_ind == 1:
+        stream_fn = server.load_stream_y
+    if axis_ind == 2:
+        stream_fn = server.load_stream_z
+
+    return stream_fn
+
+
+def get_axis_control_style(axis_ind):
+    if axis_ind in [0, 1]:
+        control_style = get_xy_control_style()
+    elif axis_ind == 2:
+        control_style = get_z_control_style()
+    return control_style
 
 
 # endregion

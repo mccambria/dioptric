@@ -22,22 +22,74 @@ from utils import positioning as pos
 from scipy import ndimage
 
 
-def image_single_nv(nv_sig):
+def single_nv(nv_sig):
     nv_list = [nv_sig]
-    return main(nv_list)
+    return nv_list_sub(nv_list, "single_nv")
 
 
-def main(nv_list):
+def nv_list(nv_list):
+    save_dict = {"nv_list": nv_list}
+    return nv_list_sub(nv_list, "nv_list", save_dict)
+
+
+def nv_list_sub(nv_list, caller_fn_name, save_dict=None):
+    nv_sig = nv_list[0]
+    laser_key = LaserKey.IMAGING
+    laser_dict = nv_sig[laser_key]
+    readout_laser = laser_dict["name"]
+    adj_coords_list = [
+        pos.adjust_coords_for_drift(nv_sig=nv, laser_name=readout_laser)
+        for nv in nv_list
+    ]
+    x_coords = [coords[0] for coords in adj_coords_list]
+    y_coords = [coords[1] for coords in adj_coords_list]
+    num_reps = laser_dict["num_reps"]
+    return main(nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict)
+
+
+def widefield(nv_sig):
+    laser_key = LaserKey.IMAGING
+    laser_dict = nv_sig[laser_key]
+    readout_laser = laser_dict["name"]
+    center_coords = pos.adjust_coords_for_drift(
+        nv_sig["coords"], laser_name=readout_laser
+    )
+    x_center, y_center, _ = center_coords
+    x_coords = [x_center]
+    y_coords = [y_center]
+    return main(nv_sig, x_coords, y_coords, "widefield", 1)
+
+
+def scanning(nv_sig, x_range, y_range, num_steps):
+    center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
+    x_center, y_center, _ = center_coords
+    ret_vals = pos.get_scan_grid_2d(
+        x_center, y_center, x_range, y_range, num_steps, num_steps
+    )
+    x_coords, y_coords, x_coords_1d, y_coords_1d, _ = ret_vals[0:2]
+    x_coords = list(x_coords)
+    y_coords = list(y_coords)
+    save_dict = {
+        "range_1": x_coords,
+        "range_2": y_coords,
+        "coords_1_1d": x_coords_1d,
+        "coords_2_1d": y_coords_1d,
+    }
+    return main(nv_sig, x_coords, y_coords, "scanning", 1, save_dict)
+
+
+def main(nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict=None):
     with common.labrad_connect() as cxn:
-        ret_vals = main_with_cxn(cxn, nv_list)
+        ret_vals = main_with_cxn(
+            cxn, nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict
+        )
     return ret_vals
 
 
-def main_with_cxn(cxn, nv_list):
+def main_with_cxn(
+    cxn, nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict=None
+):
     ### Some initial setup
-
-    nv_sig = nv_list[0]  # First NV represents the list
-    num_nvs = len(nv_list)
 
     tb.reset_cfm(cxn)
     center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
@@ -49,17 +101,6 @@ def main_with_cxn(cxn, nv_list):
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
     tb.set_filter(cxn, nv_sig, laser_key)
-    readout_power = tb.set_laser_power(cxn, nv_sig, laser_key)
-    num_reps = laser_dict["num_reps"]
-
-    ### Set up the coordinates
-
-    adj_coords_list = [
-        pos.adjust_coords_for_drift(nv_sig=nv, laser_name=readout_laser)
-        for nv in nv_list
-    ]
-    x_coords = [coords[0] for coords in adj_coords_list]
-    y_coords = [coords[1] for coords in adj_coords_list]
 
     ### Load the pulse generator
 
@@ -67,13 +108,26 @@ def main_with_cxn(cxn, nv_list):
     readout_us = readout / 10**3
     readout_ms = readout / 10**6
     readout_sec = readout / 10**9
-    seq_args = [x_coords, y_coords, readout, readout_laser, readout_power]
+    if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
+        seq_args = [list(x_coords), list(y_coords), readout, readout_laser]
+        seq_file = "widefield-scanning_image_sample.py"
+    elif caller_fn_name in ["widefield"]:
+        seq_args = [readout, readout_laser]
+        seq_file = "widefield-simple_readout.py"
+
     # print(seq_args)
     # return
     seq_args_string = tb.encode_seq_args(seq_args)
-    seq_file = "widefield-scanning_image_sample.py"
-
     pulse_gen.stream_load(seq_file, seq_args_string)
+
+    ### Set up the image display
+
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
+    cbar_label = "Counts"
+    exposure = num_reps * readout_ms
+    title = f"{caller_fn_name}, {readout_laser}, {exposure} ms"
+    imshow_kwargs = {"title": title, "cbar_label": cbar_label}
+    fig, ax = plt.subplots()
 
     ### Collect the data
 
@@ -81,14 +135,6 @@ def main_with_cxn(cxn, nv_list):
     pulse_gen.stream_start(num_reps)
     img_array = camera.read()
     camera.disarm()
-
-    ### Plot the image
-
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
-    cbar_label = "Counts"
-    title = f"NV list, {readout_laser}, {readout_ms} ms"
-    imshow_kwargs = {"title": title, "cbar_label": cbar_label}
-    fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, **imshow_kwargs)
 
     ### Clean up and save the data
@@ -99,13 +145,18 @@ def main_with_cxn(cxn, nv_list):
     timestamp = tb.get_time_stamp()
     rawData = {
         "timestamp": timestamp,
-        "nv_list": nv_list,
+        "caller_fn_name": caller_fn_name,
+        "nv_sig": nv_sig,
+        "center_coords": center_coords,
         "num_reps": num_reps,
-        "readout": readout,
-        "readout-units": "ns",
-        "img_array": img_array.astype(int).tolist(),
+        "readout": readout_ms,
+        "readout-units": "ms",
+        "title": title,
+        "img_array": img_array.astype(int),
         "img_array-units": "counts",
     }
+    if save_dict is not None:
+        raw_data |= save_dict  # Add in the passed info to save
 
     filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, filePath)

@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def qua_program(coords_1, coords_2, readout, readout_laser, readout_power, num_reps):
+def qua_program(readout, readout_laser, coords_1, coords_2, num_reps):
     laser_element = f"do_{readout_laser}_dm"
     camera_element = f"do_camera_trigger"
     x_element = f"ao_{readout_laser}_x"
@@ -55,10 +55,8 @@ def qua_program(coords_1, coords_2, readout, readout_laser, readout_power, num_r
 
 
 def get_seq(opx_config, config, args, num_reps=-1):
-    coords_1, coords_2, readout, readout_laser, readout_power = args
-    seq = qua_program(
-        coords_1, coords_2, readout, readout_laser, readout_power, num_reps
-    )
+    coords_1, coords_2, readout, readout_laser = args
+    seq = qua_program(coords_1, coords_2, readout, readout_laser, num_reps)
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"
@@ -87,7 +85,7 @@ if __name__ == "__main__":
             "laser_INTE_520",
             None,
         ]
-        args = [[110.0], [110.0], 10000.0, "laser_INTE_520", None]
+        args = [[110.0], [110.0], 10000.0, "laser_INTE_520"]
         ret_vals = get_seq(opx_config, config, args, 4)
         seq, final, ret_vals, _, _ = ret_vals
 

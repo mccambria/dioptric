@@ -17,10 +17,8 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import widefield
 from utils import common
-from utils.constants import LaserKey, NVSpinState
-from majorroutines.widefield import widefield_image_sample
-from majorroutines.widefield import scanning_image_sample
-from majorroutines.widefield import image_nv_list
+from utils.constants import LaserKey, NVSpinState, LaserPosStyle
+from majorroutines.widefield import image_sample
 from majorroutines.widefield import resonance
 from majorroutines import optimize
 import matplotlib.pyplot as plt
@@ -31,27 +29,27 @@ import copy
 
 
 def do_widefield_image_sample(nv_sig):
-    widefield_image_sample.main(nv_sig)
+    image_sample.widefield(nv_sig)
 
 
 def do_scanning_image_sample(nv_sig):
     scan_range = 9
     num_steps = 60
-    scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_scanning_image_sample_zoom(nv_sig):
     scan_range = 0.2
     num_steps = 30
-    scanning_image_sample.main(nv_sig, scan_range, scan_range, num_steps)
+    image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_image_nv_list(nv_list):
-    return image_nv_list.main(nv_list)
+    return image_sample.nv_list(nv_list)
 
 
 def do_image_single_nv(nv_sig):
-    return image_nv_list.image_single_nv(nv_sig)
+    return image_sample.single_nv(nv_list)
 
 
 def do_optimize(nv_sig, set_drift=False, plot_data=False):
@@ -192,8 +190,9 @@ if __name__ == "__main__":
     red_laser = "laser_COBO_638"
 
     # Imaging laser dicts
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 100}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 1}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 500}
+    red_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
 
     sample_name = "johnson"
     z_coord = 4.0
