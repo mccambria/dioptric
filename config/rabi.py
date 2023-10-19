@@ -7,8 +7,8 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes, ControlStyle, CountFormat
-from utils.constants import CollectionMode, LaserKey, LaserPosStyle
+from utils.constants import ModMode, ControlMode, CountFormat
+from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
 
 home = Path.home()
@@ -107,35 +107,35 @@ config = {
         },
         "laser_INTE_520": {
             "delay": 250,
-            "mod_type": ModTypes.DIGITAL,
-            "pos_style": LaserPosStyle.SCANNING,
+            "mod_type": ModMode.DIGITAL,
+            "pos_style": LaserPosMode.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
         "laser_OPTO_589": {
             "delay": 2500,
-            "mod_type": ModTypes.DIGITAL,
-            "pos_style": LaserPosStyle.WIDEFIELD,
+            "mod_type": ModMode.DIGITAL,
+            "pos_style": LaserPosMode.WIDEFIELD,
             "filter_server": "filter_slider_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
         },
         "laser_COBO_638": {
             "delay": 250,
-            "mod_type": ModTypes.DIGITAL,
-            "pos_style": LaserPosStyle.SCANNING,
+            "mod_type": ModMode.DIGITAL,
+            "pos_style": LaserPosMode.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
     },
     ###
     "Positioning": {
-        "xy_control_style": ControlStyle.SEQUENCE,
+        "xy_control_mode": ControlMode.SEQUENCE,
         "xy_delay": int(400e3),  # 400 us for galvo
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.02,
         "xy_units": "MHz",
-        "z_control_style": ControlStyle.STREAM,
+        "z_control_mode": ControlMode.STREAM,
         "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
         "z_nm_per_unit": 1000,

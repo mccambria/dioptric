@@ -173,14 +173,14 @@ def get_server_pos_xyz(cxn):
     return common.get_server(cxn, "pos_xyz")
 
 
-def get_xy_control_style():
+def get_xy_control_mode():
     config = common.get_config_dict()
-    return config["Positioning"]["xy_control_style"]
+    return config["Positioning"]["xy_control_mode"]
 
 
-def get_z_control_style():
+def get_z_control_mode():
     config = common.get_config_dict()
-    return config["Positioning"]["z_control_style"]
+    return config["Positioning"]["z_control_mode"]
 
 
 def get_axis_write_fn(axis_ind):
@@ -204,8 +204,8 @@ def get_axis_write_fn(axis_ind):
 
 def get_axis_stream_fn(axis_ind):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
-    control_style = get_axis_control_style(axis_ind)
-    if control_style != ControlStyle.STREAM:
+    control_mode = get_axis_control_mode(axis_ind)
+    if control_mode != ControlStyle.STREAM:
         return None
 
     if axis_ind in [0, 1]:
@@ -225,12 +225,12 @@ def get_axis_stream_fn(axis_ind):
     return stream_fn
 
 
-def get_axis_control_style(axis_ind):
+def get_axis_control_mode(axis_ind):
     if axis_ind in [0, 1]:
-        control_style = get_xy_control_style()
+        control_mode = get_xy_control_mode()
     elif axis_ind == 2:
-        control_style = get_z_control_style()
-    return control_style
+        control_mode = get_z_control_mode()
+    return control_mode
 
 
 # endregion

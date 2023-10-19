@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Scan over the designated area, collecting onto the camera
+Illuminate an area, collecting onto the camera
 
 Created on April 9th, 2019
 
@@ -13,7 +13,6 @@ import numpy as np
 import time
 import labrad
 import majorroutines.optimize as optimize
-from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
 from utils.constants import CollectionMode, CountFormat, LaserKey
