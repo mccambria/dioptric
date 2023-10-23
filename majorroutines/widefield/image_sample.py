@@ -10,12 +10,12 @@ Created on April 9th, 2019
 
 import matplotlib.pyplot as plt
 import numpy as np
-import time
-import labrad
 import majorroutines.optimize as optimize
+from majorroutines.widefield.optimize import prepare_microscope
 from utils import tool_belt as tb
 from utils import common
-from utils.constants import CollectionMode, CountFormat, LaserKey
+from utils import widefield as widefield_utils
+from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from scipy import ndimage
@@ -65,12 +65,12 @@ def scanning(nv_sig, x_range, y_range, num_steps):
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )
-    x_coords, y_coords, x_coords_1d, y_coords_1d, _ = ret_vals[0:2]
+    x_coords, y_coords, x_coords_1d, y_coords_1d, _ = ret_vals
     x_coords = list(x_coords)
     y_coords = list(y_coords)
     save_dict = {
-        "range_1": x_coords,
-        "range_2": y_coords,
+        "range_1": x_range,
+        "range_2": y_range,
         "coords_1_1d": x_coords_1d,
         "coords_2_1d": y_coords_1d,
     }
@@ -108,11 +108,11 @@ def main_with_cxn(
     readout_ms = readout / 10**6
     readout_sec = readout / 10**9
     if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
-        seq_args = [list(x_coords), list(y_coords), readout, readout_laser]
-        seq_file = "widefield-scanning_image_sample.py"
+        seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
+        seq_file = "simple_readout-scanning.py"
     elif caller_fn_name in ["widefield"]:
         seq_args = [readout, readout_laser]
-        seq_file = "widefield-simple_readout.py"
+        seq_file = "simple_readout-widefield.py"
 
     # print(seq_args)
     # return
@@ -142,7 +142,7 @@ def main_with_cxn(
     pos.set_xyz(cxn, center_coords)
 
     timestamp = tb.get_time_stamp()
-    rawData = {
+    raw_data = {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
         "nv_sig": nv_sig,
@@ -157,29 +157,34 @@ def main_with_cxn(
     if save_dict is not None:
         raw_data |= save_dict  # Add in the passed info to save
 
-    filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, filePath)
-    tb.save_raw_data(rawData, filePath)
+    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+    tb.save_figure(fig, file_path)
+    tb.save_raw_data(raw_data, file_path)
 
     return img_array
 
 
 if __name__ == "__main__":
-    file_name = "2023_09_11-13_52_01-johnson-nvref"
+    file_name = "2023_10_20-12_30_44-johnson-nv0_2023_10_18"
+    # file_name = "2023_10_20-12_22_39-johnson-nv0_2023_10_18"
 
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
     readout = data["readout"]
     img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-    extent = data["extent"] if "extent" in data else None
+
+    nv_sig = data["nv_sig"]
+    pixel_coords = nv_sig["pixel_coords"]
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array, cbar_label="ADUs")
+    im = kpl.imshow(ax, img_array, cbar_label="counts")
     ax.set_xticks(range(0, 501, 100))
     # im = kpl.imshow(ax, img_array_kcps, extent=extent)
     # ax.set_xlim([124.5 - 15, 124.5 + 15])
     # ax.set_ylim([196.5 + 15, 196.5 - 15])
+
+    print(widefield_utils.counts_from_img_array(img_array, pixel_coords))
 
     # plot_coords = [
     #     [183.66, 201.62],

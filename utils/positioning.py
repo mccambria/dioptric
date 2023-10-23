@@ -13,7 +13,7 @@ import numpy as np
 import time
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import ControlStyle
+from utils.constants import ControlMode
 
 
 # endregion
@@ -205,7 +205,7 @@ def get_axis_write_fn(axis_ind):
 def get_axis_stream_fn(axis_ind):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
     control_mode = get_axis_control_mode(axis_ind)
-    if control_mode != ControlStyle.STREAM:
+    if control_mode != ControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:

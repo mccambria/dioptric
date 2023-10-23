@@ -44,8 +44,7 @@ def qua_program(readout, readout_laser, num_reps):
 
 
 def get_seq(opx_config, config, args, num_reps=-1):
-    readout, readout_laser = args
-    seq = qua_program(readout, readout_laser, num_reps)
+    seq = qua_program(*args, num_reps)
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"

@@ -181,7 +181,7 @@ def _read_counts_camera_sequence(cxn, axis_ind, scan_vals, nv_sig, laser_key):
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
     num_reps = laser_dict["num_reps"]
-    seq_args = [readout, laser_name, coords[0], coords[1]]
+    seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
     seq_file_name = "simple_readout-scanning.py"
     # For z the sequence is the sam every time and z is moved manually
     if axis_ind == 2:
@@ -196,7 +196,7 @@ def _read_counts_camera_sequence(cxn, axis_ind, scan_vals, nv_sig, laser_key):
         if tb.safe_stop():
             break
         if axis_ind in [0, 1]:
-            seq_args[axis_ind + 2] = val
+            seq_args[axis_ind + 2] = [val]
             seq_args_string = tb.encode_seq_args(seq_args)
             pulse_gen.stream_load(seq_file_name, seq_args_string)
         else:
@@ -310,7 +310,7 @@ def stationary_count_lite(
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
-    num_reps = laser_dict["num_reps"] if num_reps in laser_dict else 1
+    num_reps = laser_dict["num_reps"] if "num_reps" in laser_dict else 1
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
@@ -324,10 +324,9 @@ def stationary_count_lite(
     xy_control_mode = config_positioning["xy_control_mode"]
     xy_sequence_control = xy_control_mode == ControlMode.SEQUENCE
     if xy_sequence_control:
-        laser_dict = nv_sig[laser_key]
-        laser_pos_mode = laser_dict["pos_mode"]
+        laser_pos_mode = config["Optics"][laser_name]["pos_mode"]
         if laser_pos_mode == LaserPosMode.SCANNING:
-            seq_args = [readout, laser_name, coords[0], coords[1]]
+            seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
             seq_file_name = "simple_readout-scanning.py"
         if laser_pos_mode == LaserPosMode.WIDEFIELD:
             seq_args = [readout, laser_name]
@@ -548,7 +547,7 @@ def main_with_cxn(
 
             if opti_succeeded or tb.safe_stop():
                 break
-            print(f"Try index {ind}")
+            print(f"Attempt number {ind+1}")
 
             # Create a figure with a plot for each axis
             fig = _create_figure() if plot_data else None
@@ -642,20 +641,27 @@ def main_with_cxn(
 
     if save_data and opti_necessary:
         timestamp = tb.get_time_stamp()
+        for ind in range(3):
+            scan_vals = scan_vals_by_axis[ind]
+            if scan_vals is not None:
+                scan_vals = scan_vals.tolist()
+            counts = counts_by_axis[ind]
+            if counts is not None:
+                counts = counts.tolist()
         rawData = {
             "timestamp": timestamp,
             "time_elapsed": time_elapsed,
             "nv_sig": nv_sig,
             "opti_coords": opti_coords,
             "axes_to_optimize": axes_to_optimize,
-            "x_scan_vals": scan_vals_by_axis[0].tolist(),
-            "y_scan_vals": scan_vals_by_axis[1].tolist(),
-            "z_scan_vals": scan_vals_by_axis[2].tolist(),
-            "x_counts": counts_by_axis[0].tolist(),
+            "x_scan_vals": scan_vals_by_axis[0],
+            "y_scan_vals": scan_vals_by_axis[1],
+            "z_scan_vals": scan_vals_by_axis[2],
+            "x_counts": counts_by_axis[0],
             "x_counts-units": "number",
-            "y_counts": counts_by_axis[1].tolist(),
+            "y_counts": counts_by_axis[1],
             "y_counts-units": "number",
-            "z_counts": counts_by_axis[2].tolist(),
+            "z_counts": counts_by_axis[2],
             "z_counts-units": "number",
         }
 

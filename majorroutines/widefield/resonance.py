@@ -14,11 +14,10 @@ import time
 import labrad
 import majorroutines.optimize as optimize
 from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
-from utils.constants import ControlStyle
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield
-from utils.constants import LaserKey, NVSpinState, CountFormat
+from utils.constants import ControlMode, LaserKey, NVSpinState, CountFormat
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils.positioning import get_scan_1d as calculate_freqs
@@ -255,7 +254,7 @@ def main_with_cxn(
     config = common.get_config_dict()
     config_positioning = config["Positioning"]
     delay = config_positioning["xy_delay"]
-    control_style = pos.get_xy_control_style()
+    control_mode = pos.get_xy_control_mode()
     count_format = config["count_format"]
 
     # Servers
@@ -283,7 +282,7 @@ def main_with_cxn(
 
     ### Load the pulse generator
 
-    if control_style in [ControlStyle.STEP, ControlStyle.STREAM]:
+    if control_mode in [ControlMode.STEP, ControlMode.STREAM]:
         seq_args = [readout, state.name, laser, readout_power]
         seq_args_string = tb.encode_seq_args(seq_args)
         seq_file = "widefield-resonance.py"
@@ -341,7 +340,7 @@ def main_with_cxn(
             if num_nvs == 1:
                 coords = adj_coords_list[0]
                 pos_server.write_xy(*coords[0:2])
-            elif control_style == ControlStyle.STREAM:
+            elif control_mode == ControlMode.STREAM:
                 x_coords = [coords[0] for coords in adj_coords_list]
                 y_coords = [coords[1] for coords in adj_coords_list]
                 pos_server.load_stream_xy(x_coords, y_coords, True)
@@ -352,9 +351,9 @@ def main_with_cxn(
             sig_gen.uwave_on()
 
             # Record the image
-            if control_style == ControlStyle.STEP:
+            if control_mode == ControlMode.STEP:
                 pass
-            elif control_style == ControlStyle.STREAM:
+            elif control_mode == ControlMode.STREAM:
                 camera.arm()
                 pulse_gen.stream_start(num_nvs * num_reps)
                 img_array = camera.read()

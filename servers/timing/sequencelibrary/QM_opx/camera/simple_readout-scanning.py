@@ -34,7 +34,6 @@ def qua_program(readout, readout_laser, coords_1, coords_2, num_reps):
         x_freq = declare(int)
         y_freq = declare(int)
 
-        # play("on", laser_element, duration=clock_cycles)
         ### Define one rep here
         def one_rep():
             with for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
@@ -55,8 +54,7 @@ def qua_program(readout, readout_laser, coords_1, coords_2, num_reps):
 
 
 def get_seq(opx_config, config, args, num_reps=-1):
-    coords_1, coords_2, readout, readout_laser = args
-    seq = qua_program(coords_1, coords_2, readout, readout_laser, num_reps)
+    seq = qua_program(*args, num_reps)
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"

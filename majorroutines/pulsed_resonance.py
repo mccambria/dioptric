@@ -18,7 +18,7 @@ import time
 from scipy.optimize import curve_fit, brute
 from scipy.signal import find_peaks
 import labrad
-from utils.constants import NVSpinState, NormStyle
+from utils.constants import NVSpinState, NormMode
 from random import shuffle
 import sys
 from utils.positioning import get_scan_1d as calculate_freqs
@@ -381,13 +381,13 @@ def return_res_with_error(data, fit_func=None, guess_params=None):
     nv_sig = data["nv_sig"]
     readout = nv_sig["spin_readout_dur"]
     try:
-        norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
+        norm_mode = NormMode[str.upper(nv_sig["norm_mode"])]
     except Exception as exc:
-        # norm_style = NormStyle.POINT_TO_POINT
-        norm_style = NormStyle.SINGLE_VALUED
+        # norm_mode = NormMode.POINT_TO_POINT
+        norm_mode = NormMode.SINGLE_VALUED
 
     _, _, norm_avg_sig, norm_avg_sig_ste = tool_belt.process_counts(
-        sig_counts, ref_counts, num_reps, readout, norm_style
+        sig_counts, ref_counts, num_reps, readout, norm_mode
     )
 
     fit_func, popt, pcov = fit_resonance(
@@ -848,7 +848,7 @@ def main_with_cxn(
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
-    norm_style = nv_sig["norm_style"]
+    norm_mode = nv_sig["norm_mode"]
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
 
@@ -985,7 +985,7 @@ def main_with_cxn(
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
         ret_vals = tool_belt.process_counts(
-            inc_sig_counts, inc_ref_counts, num_reps, readout, norm_style
+            inc_sig_counts, inc_ref_counts, num_reps, readout, norm_mode
         )
         (
             sig_counts_avg_kcps,
@@ -1045,7 +1045,7 @@ def main_with_cxn(
     ### Process and plot the data
 
     ret_vals = tool_belt.process_counts(
-        sig_counts, ref_counts, num_reps, readout, norm_style
+        sig_counts, ref_counts, num_reps, readout, norm_mode
     )
     (
         sig_counts_avg_kcps,
@@ -1178,13 +1178,13 @@ if __name__ == "__main__":
     readout = nv_sig["spin_readout_dur"]
     uwave_pulse_dur = data["uwave_pulse_dur"]
     try:
-        norm_style = NormStyle[str.upper(nv_sig["norm_style"])]
+        norm_mode = NormMode[str.upper(nv_sig["norm_mode"])]
     except Exception as exc:
-        # norm_style = NormStyle.POINT_TO_POINT
-        norm_style = NormStyle.SINGLE_VALUED
+        # norm_mode = NormMode.POINT_TO_POINT
+        norm_mode = NormMode.SINGLE_VALUED
 
     ret_vals = tool_belt.process_counts(
-        sig_counts, ref_counts, num_reps, readout, norm_style
+        sig_counts, ref_counts, num_reps, readout, norm_mode
     )
     (
         sig_counts_avg_kcps,

@@ -14,7 +14,7 @@ import numpy as np
 import time
 import labrad
 import majorroutines.optimize as optimize
-from utils.constants import ControlStyle
+from utils.constants import ControlMode
 from utils import tool_belt as tb
 from utils import common
 from utils.constants import CollectionMode, CountFormat, LaserKey
@@ -28,20 +28,6 @@ class ScanAxes(Enum):
     XY = auto()
     XZ = auto()
     YZ = auto()
-
-
-def background_subtraction(img_array, radius=None):
-    """
-    Get a lowpass image with a Gaussian filter, then subtract
-    that off the original image
-    """
-    if radius is None:
-        config = common.get_config_dict()
-        radius = 2 * config["camera_spot_radius"]
-    lowpass = ndimage.gaussian_filter(img_array, radius)
-    highpass = img_array - lowpass
-    # highpass = ndimage.gaussian_filter(highpass, 3)
-    return highpass
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -103,12 +89,10 @@ def populate_img_array(valsToAdd, imgArray, writePos):
 def main(
     nv_sig, range_1, range_2, num_steps, nv_minus_init=False, scan_axes=ScanAxes.XY
 ):
-    with labrad.connect(username="", password="") as cxn:
-        img_array, x_voltages, y_voltages = main_with_cxn(
+    with common.labrad_connect() as cxn:
+        return main_with_cxn(
             cxn, nv_sig, range_1, range_2, num_steps, nv_minus_init, scan_axes
         )
-
-    return img_array, x_voltages, y_voltages
 
 
 def main_with_cxn(
@@ -119,17 +103,14 @@ def main_with_cxn(
     config = common.get_config_dict()
     config_positioning = config["Positioning"]
     collection_mode = config["collection_mode"]
-    xy_control_style = pos.get_xy_control_style()
-    z_control_style = pos.get_z_control_style()
+    xy_control_mode = pos.get_xy_control_mode()
+    z_control_mode = pos.get_z_control_mode()
     if scan_axes == ScanAxes.XY:
-        control_style = xy_control_style
-    elif (
-        xy_control_style == ControlStyle.STREAM
-        and z_control_style == ControlStyle.STREAM
-    ):
-        control_style = ControlStyle.STREAM
+        control_mode = xy_control_mode
+    elif xy_control_mode == ControlMode.STREAM and z_control_mode == ControlMode.STREAM:
+        control_mode = ControlMode.STREAM
     else:
-        control_style = ControlStyle.STEP
+        control_mode = ControlMode.STEP
 
     tb.reset_cfm(cxn)
     center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
@@ -222,7 +203,7 @@ def main_with_cxn(
     coords_1, coords_2, coords_1_1d, coords_2_1d, extent = ret_vals
     num_pixels = num_steps_1 * num_steps_2
 
-    if control_style == ControlStyle.STREAM:
+    if control_mode == ControlMode.STREAM:
         if scan_axes == ScanAxes.XY:
             pos_server.load_stream_xy(coords_1, coords_2)
         elif scan_axes == ScanAxes.XZ:
@@ -276,7 +257,7 @@ def main_with_cxn(
         counter.start_tag_stream()
     tb.init_safe_stop()
 
-    if control_style == ControlStyle.STEP:
+    if control_mode == ControlMode.STEP:
         for ind in range(total_num_samples):
             if tb.safe_stop():
                 break
@@ -301,7 +282,7 @@ def main_with_cxn(
                 img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
                 kpl.imshow_update(ax, img_array_kcps)
 
-    elif control_style == ControlStyle.STREAM:
+    elif control_mode == ControlMode.STREAM:
         if collection_mode == CollectionMode.CAMERA:
             camera.arm()
 

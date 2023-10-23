@@ -12,7 +12,8 @@ import numpy as np
 from numpy import inf
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-from majorroutines.optimize import main, main_with_cxn, stationary_count_lite
+from majorroutines.optimize import main, main_with_cxn
+from majorroutines.optimize import stationary_count_lite, prepare_microscope
 import time
 import copy
 from utils import tool_belt as tb
@@ -268,4 +269,3 @@ def optimize_pixel(
     if set_scanning_drift:
         widefield.set_scanning_drift_from_pixel_drift()
     return opti_pixel_coords
-

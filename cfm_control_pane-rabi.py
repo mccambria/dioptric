@@ -12,17 +12,13 @@ Created on June 16th, 2023
 
 
 import numpy as np
-from utils import tool_belt as tb
-from utils import kplotlib as kpl
-from utils import positioning as pos
-from utils import widefield
-from utils import common
-from utils.constants import LaserKey, NVSpinState, LaserPosStyle
-from majorroutines.widefield import image_sample
-from majorroutines.widefield import resonance
-from majorroutines import optimize
 import matplotlib.pyplot as plt
 import copy
+from utils import tool_belt as tb
+from utils import kplotlib as kpl
+from utils import widefield, common
+from majorroutines.widefield import image_sample, resonance, optimize
+from utils.constants import LaserKey, NVSpinState
 
 
 ### Major Routines
@@ -49,7 +45,7 @@ def do_image_nv_list(nv_list):
 
 
 def do_image_single_nv(nv_sig):
-    return image_sample.single_nv(nv_list)
+    return image_sample.single_nv(nv_sig)
 
 
 def do_optimize(nv_sig, set_drift=False, plot_data=False):
@@ -61,12 +57,7 @@ def do_optimize(nv_sig, set_drift=False, plot_data=False):
         set_scanning_drift=set_drift,
         set_pixel_drift=set_drift,
     )
-    r_opti_coords = [
-        round(opti_coords[0], 3),
-        round(opti_coords[1], 3),
-        round(opti_coords[2], 2),
-    ]
-    nv_sig["coords"] = r_opti_coords
+    nv_sig["coords"] = opti_coords
 
 
 def do_optimize_pixel(nv_sig, set_pixel_drift=False, set_scanning_drift=False):
@@ -129,7 +120,7 @@ def do_opx_constant_ac():
         opx.constant_ac(
             [4],  # Digital channels
             [4, 6],  # Analog channels
-            [0.34, 0.34],  # Analog voltages
+            [0.35, 0.35],  # Analog voltages
             [110e6, 110e6],  # Analog frequencies
         )
         input("Press enter to stop...")
@@ -191,13 +182,13 @@ if __name__ == "__main__":
 
     # Imaging laser dicts
     yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 1}
-    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 500}
+    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 100}
     red_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
 
     sample_name = "johnson"
     z_coord = 4.0
-    # ref_coords = [111.0, 113.0, z_coord]
-    ref_coords = [110.0, 110.0, z_coord]
+    ref_coords = [110.900, 108.8, z_coord]
+    # ref_coords = [110.0, 110.0, z_coord]
     ref_coords = np.array(ref_coords)
 
     nv_ref = {
@@ -221,27 +212,28 @@ if __name__ == "__main__":
     # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_09_11"
-    nv0["pixel_coords"] = [181.3, 227.9]
-    nv0["coords"] = [-0.041, 0.115]
+    nv0["name"] = f"{sample_name}-nv0_2023_10_18"
+    nv0["pixel_coords"] = [243.779, 196.87]
+    # nv0["coords"] = [110.900, 109.426]
+    nv0["coords"] = [110.525, 108.955]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_09_11"
+    nv1["name"] = f"{sample_name}-nv1_2023_10_18"
     nv1["pixel_coords"] = [187.28, 196.58]
     nv1["coords"] = [-0.034, 0.164]
 
     nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_09_11"
+    nv2["name"] = f"{sample_name}-nv2_2023_10_18"
     nv2["pixel_coords"] = [204.75, 202.81]
     nv2["coords"] = [-0.009, 0.154]
 
     nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_09_11"
+    nv3["name"] = f"{sample_name}-nv3_2023_10_18"
     nv3["pixel_coords"] = [296.65, 199.84]
     nv3["coords"] = [0.134, 0.165]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_09_12"
+    nv4["name"] = f"{sample_name}-nv4_2023_10_18"
     nv4["pixel_coords"] = [248.11, 302.35]
     nv4["coords"] = [0.064, 0.001]
 
@@ -258,8 +250,8 @@ if __name__ == "__main__":
         else:
             nv["coords"][2] = z_coord
 
-    # nv_sig = nv5
-    nv_sig = nv_ref
+    nv_sig = nv0
+    # nv_sig = nv_ref
 
     ### Functions to run
 
@@ -286,16 +278,16 @@ if __name__ == "__main__":
         # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords)
         # print([round(el, 3) for el in scanning_coords])
 
-        center = [108, 107.92]
-        half_range = 0.01
-        num_steps = 5
-        for x in np.linspace(center[0] - half_range, center[0] + half_range, num_steps):
-            for y in np.linspace(
-                center[1] - half_range, center[1] + half_range, num_steps
-            ):
-                nv_sig["coords"][0] = round(x, 6)
-                nv_sig["coords"][1] = round(y, 6)
-                do_image_single_nv(nv_sig)
+        # center = [110, 110]
+        # half_range = 0.2
+        # num_steps = 5
+        # for x in np.linspace(center[0] - half_range, center[0] + half_range, num_steps):
+        #     for y in np.linspace(
+        #         center[1] - half_range, center[1] + half_range, num_steps
+        #     ):
+        #         nv_ref["coords"][0] = round(x, 6)
+        #         nv_ref["coords"][1] = round(y, 6)
+        #         do_image_single_nv(nv_ref)
 
         # for nv in nv_list:
         #     do_optimize_pixel(nv)
@@ -306,7 +298,7 @@ if __name__ == "__main__":
 
         # with common.labrad_connect() as cxn:
         #     pos.set_xyz(cxn, [0.0, 0.0, 5.0])
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
 
         # for z in np.linspace(3.0, 7.0, 21):
         #     nv_ref["coords"][2] = z
@@ -322,7 +314,7 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
         # do_resonance(nv_list)
-        # do_optimize(nv_sig, set_drift=True, plot_data=True)
+        # do_optimize(nv_sig, set_drift=False, plot_data=True)
         # do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)
         # do_optimize_widefield_calibration()

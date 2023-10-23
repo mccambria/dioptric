@@ -50,7 +50,7 @@ config = {
     "apd_indices": [0],
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "camera_spot_radius": 13,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
+    "camera_spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
     "common_drift": True,  #  Whether lasers/collection paths have shared versus separate positioning controllers
@@ -108,21 +108,21 @@ config = {
         "laser_INTE_520": {
             "delay": 250,
             "mod_type": ModMode.DIGITAL,
-            "pos_style": LaserPosMode.SCANNING,
+            "pos_mode": LaserPosMode.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
         "laser_OPTO_589": {
             "delay": 2500,
             "mod_type": ModMode.DIGITAL,
-            "pos_style": LaserPosMode.WIDEFIELD,
+            "pos_mode": LaserPosMode.WIDEFIELD,
             "filter_server": "filter_slider_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
         },
         "laser_COBO_638": {
             "delay": 250,
             "mod_type": ModMode.DIGITAL,
-            "pos_style": LaserPosMode.SCANNING,
+            "pos_mode": LaserPosMode.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
@@ -133,7 +133,7 @@ config = {
         "xy_delay": int(400e3),  # 400 us for galvo
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
-        "xy_optimize_range": 0.02,
+        "xy_optimize_range": 0.5,
         "xy_units": "MHz",
         "z_control_mode": ControlMode.STREAM,
         "z_delay": int(5e6),  # 5 ms for PIFOC
