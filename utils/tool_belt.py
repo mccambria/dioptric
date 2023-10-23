@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """This file contains functions, classes, and other objects that are useful
-in a variety of contexts. Since they are expected to be used in many
+in a variety of contexts. Since they are expected to be used in manyNormMode
 files, I put them all in one place so that they don't have to be redefined
 in each file.
 
@@ -28,7 +28,7 @@ import keyring
 import math
 import utils.common as common
 import utils.search_index as search_index
-from utils.constants import NormStyle, ModTypes, Digital, Boltzmann
+from utils.constants import NormMode, ModMode, Digital, Boltzmann
 import signal
 import copy
 from decimal import Decimal
@@ -85,10 +85,10 @@ def get_opx_laser_pulse_info(config, laser_name, laser_power):
 
     laser_pulse_name = f"laser_ON_{mod_type.name}"
 
-    if mod_type == ModTypes.ANALOG:
+    if mod_type == ModMode.ANALOG:
         laser_pulse_amplitude = laser_power
 
-    elif mod_type == ModTypes.DIGITAL:
+    elif mod_type == ModMode.DIGITAL:
         if laser_power == 0:
             laser_pulse_name = f"laser_OFF_{mod_type.name}"
             laser_pulse_amplitude = 1
@@ -103,11 +103,11 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     mod_type = config["Optics"][laser_name]["mod_type"]
     pulse_gen = get_server_pulse_gen(cxn)
 
-    if mod_type is ModTypes.DIGITAL:
+    if mod_type is ModMode.DIGITAL:
         if turn_on:
             laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             pulse_gen.constant([laser_chan])
-    elif mod_type is ModTypes.ANALOG:
+    elif mod_type is ModMode.ANALOG:
         if turn_on:
             laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             if laser_chan == 0:
@@ -146,7 +146,7 @@ def set_laser_power(
     # to the pulse streamer
     config = common.get_config_dict()
     mod_type = config["Optics"][laser_name]["mod_type"]
-    if mod_type == ModTypes.ANALOG:
+    if mod_type == ModMode.ANALOG:
         return laser_power
     else:
         laser_server = get_filter_server(cxn, laser_name)
@@ -242,11 +242,11 @@ def process_laser_seq(seq, laser_name, laser_power, train):
     mod_type = config["Optics"][laser_name]["mod_type"]
 
     # Digital: do nothing
-    if mod_type is ModTypes.DIGITAL:
+    if mod_type is ModMode.DIGITAL:
         pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
         seq.setDigital(pulser_laser_mod, train)
     # Analog:convert LOW / HIGH to 0.0 / analog voltage
-    elif mod_type is ModTypes.ANALOG:
+    elif mod_type is ModMode.ANALOG:
         processed_train = []
         power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
         for el in train:
@@ -557,7 +557,7 @@ def bose(energy, temp):
 
 
 def process_counts(
-    sig_counts, ref_counts, num_reps, readout, norm_style=NormStyle.SINGLE_VALUED
+    sig_counts, ref_counts, num_reps, readout, norm_style=NormMode.SINGLE_VALUED
 ):
     """Extract the normalized average signal at each data point.
     Since we sometimes don't do many runs (<10), we often will have an
@@ -574,8 +574,8 @@ def process_counts(
         Number of experiment repetitions summed over for each point in sig or ref counts
     readout : numeric
         Readout duration in ns
-    norm_style : NormStyle(enum), optional
-        By default NormStyle.SINGLE_VALUED
+    norm_style : NormMode(enum), optional
+        By default NormMode.SINGLE_VALUED
 
     Returns
     -------
@@ -603,13 +603,13 @@ def process_counts(
     single_ref_ste = np.sqrt(single_ref_avg) / np.sqrt(num_runs * num_points)
     ref_counts_ste = np.sqrt(ref_counts_avg) / np.sqrt(num_runs)
 
-    if norm_style == NormStyle.SINGLE_VALUED:
+    if norm_style == NormMode.SINGLE_VALUED:
         norm_avg_sig = sig_counts_avg / single_ref_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
             + (single_ref_ste / single_ref_avg) ** 2
         )
-    elif norm_style == NormStyle.POINT_TO_POINT:
+    elif norm_style == NormMode.POINT_TO_POINT:
         norm_avg_sig = sig_counts_avg / ref_counts_avg
         norm_avg_sig_ste = norm_avg_sig * np.sqrt(
             (sig_counts_ste / sig_counts_avg) ** 2
