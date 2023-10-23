@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """This file contains functions, classes, and other objects that are useful
-in a variety of contexts. Since they are expected to be used in many
+in a variety of contexts. Since they are expected to be used in manyNormMode
 files, I put them all in one place so that they don't have to be redefined
 in each file.
 

@@ -3649,23 +3649,23 @@ if __name__ == "__main__":
     # fig(inset_resid=True)  # Main
     fig_bottom_resid()  # Main
     # fig_bottom_resid(y_range=None, zfs_deviation=True)  # Main, deviation
-    fig(  # Comps models (main)
-        temp_range=[0, 1000],
-        y_range=[2.76, 2.88],
-        #
-        plot_data=False,
-        condense_all=False,
-        condense_samples=True,
-        plot_prior_models=True,
-        desaturate_prior=False,
-        plot_new_model=True,
-        plot_prior_data=False,
-        new_model_diff=False,
-        dash_predictions=True,
-        inset_comp=True,
-        inset_resid=False,
-        x1000=True,
-    )
+    # fig(  # Comps models (main)
+    #     temp_range=[0, 1000],
+    #     y_range=[2.76, 2.88],
+    #     #
+    #     plot_data=False,
+    #     condense_all=False,
+    #     condense_samples=True,
+    #     plot_prior_models=True,
+    #     desaturate_prior=False,
+    #     plot_new_model=True,
+    #     plot_prior_data=False,
+    #     new_model_diff=False,
+    #     dash_predictions=True,
+    #     inset_comp=True,
+    #     inset_resid=False,
+    #     x1000=True,
+    # )
     # fig(  # Comps data (supp)
     #     temp_range=[-5, 740],
     #     y_range=[2.81, 2.88],
