@@ -59,13 +59,18 @@ def get_repo_path():
     return _get_os_config_val("repo_path")
 
 
-def get_server(cxn, server_name):
+def get_server(cxn, server_key):
+    server_name = get_server_name(server_key)
+    return cxn[server_name]
+
+
+def get_server_name(server_key):
     config = get_config_dict()
     confg_servers = config["Servers"]
-    if server_name not in confg_servers:
+    if server_key not in confg_servers:
         return None
-    dev_name = confg_servers[server_name]
-    return cxn[dev_name]
+    server_name = confg_servers[server_key]
+    return server_name
 
 
 # region LabRAD registry utilities - mostly deprecated in favor of config file

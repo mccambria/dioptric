@@ -133,6 +133,12 @@ def _scanning_to_pixel_coords():
     return m_x, b_x, m_y, b_y
 
 
+def get_pixel_coords_key():
+    camera_server_name = tb.get_server_name_camera()
+    pixel_coords_key = f"coords-{camera_server_name}"
+    return pixel_coords_key
+
+
 def set_calibration_coords(
     nv1_pixel_coords, nv1_scanning_coords, nv2_pixel_coords, nv2_scanning_coords
 ):

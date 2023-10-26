@@ -665,6 +665,11 @@ def get_server_camera(cxn):
     return common.get_server(cxn, "camera")
 
 
+def get_server_name_camera():
+    """Get the camera server"""
+    return common.get_server_name("camera")
+
+
 def get_server_counter(cxn):
     """Get the photon counter server for this setup, e.g. opx or swabian"""
     return common.get_server(cxn, "counter")

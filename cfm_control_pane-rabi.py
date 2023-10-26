@@ -180,19 +180,26 @@ if __name__ == "__main__":
     yellow_laser = "laser_OPTO_589"
     red_laser = "laser_COBO_638"
 
+    green_coords_key = f"coords-{green_laser}"
+    red_coords_key = f"coords-{red_laser}"
+    camera_server_name = tb.get_server_name_camera()
+    pixel_coords_key = widefield.get_pixel_coords_key()
+
     # Imaging laser dicts
     yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 1}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 100}
     red_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
 
     sample_name = "johnson"
-    z_coord = 4.0
+    z_coord = 5.0
     ref_coords = [110.900, 108.8, z_coord]
     # ref_coords = [110.0, 110.0, z_coord]
     ref_coords = np.array(ref_coords)
 
     nv_ref = {
-        "coords": ref_coords,
+        "coords": [None, None, z_coord],
+        green_coords_key: ref_coords,
+        red_coords_key: ref_coords,
         "name": f"{sample_name}-nvref",
         "disable_opt": False,
         "disable_z_opt": True,
@@ -213,49 +220,25 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_10_18"
-    nv0["pixel_coords"] = [243.779, 196.87]
-    # nv0["coords"] = [110.900, 109.426]
-    nv0["coords"] = [110.525, 108.955]
-
-    nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_10_18"
-    nv1["pixel_coords"] = [187.28, 196.58]
-    nv1["coords"] = [-0.034, 0.164]
-
-    nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_10_18"
-    nv2["pixel_coords"] = [204.75, 202.81]
-    nv2["coords"] = [-0.009, 0.154]
-
-    nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_10_18"
-    nv3["pixel_coords"] = [296.65, 199.84]
-    nv3["coords"] = [0.134, 0.165]
-
-    nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_10_18"
-    nv4["pixel_coords"] = [248.11, 302.35]
-    nv4["coords"] = [0.064, 0.001]
+    nv0[pixel_coords_key] = [243.779, 196.87]
+    nv0[green_coords_key] = [110.525, 108.955]
+    nv0[red_coords_key] = [110.525, 108.955]
 
     # endregion
     # Calibration NVs
 
     nv5, nv6 = widefield.get_widefield_calibration_nvs()
 
-    nv_list = [nv0, nv1, nv2, nv3, nv4]
+    nv_list = [nv0]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
-    for nv in nv_list:
-        if len(nv["coords"]) < 3:
-            nv["coords"].append(z_coord)
-        else:
-            nv["coords"][2] = z_coord
 
     nv_sig = nv0
     # nv_sig = nv_ref
 
     ### Functions to run
 
-    email_recipient = "cambria@wisc.edu"
+    email_recipient = "mccambria@berkeley.edu"
     do_email = False
     try:
         # pass

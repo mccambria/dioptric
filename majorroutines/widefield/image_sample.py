@@ -91,12 +91,12 @@ def main_with_cxn(
     ### Some initial setup
 
     tb.reset_cfm(cxn)
-    center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
+    laser_key = LaserKey.IMAGING
+    center_coords = pos.adjust_coords_for_drift(nv_sig=nv_sig, laser_key=laser_key)
     optimize.prepare_microscope(cxn, nv_sig)
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
-    laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
     tb.set_filter(cxn, nv_sig, laser_key)
