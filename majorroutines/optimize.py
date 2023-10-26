@@ -373,20 +373,16 @@ def stationary_count_lite(
         return count_rate
 
 
-def prepare_microscope(cxn, nv_sig, coords=None):
+def prepare_microscope(cxn, nv_sig):
     """
     Prepares the microscope for a measurement. In particular,
     sets up the optics (positioning, collection filter, etc) and magnet,
-    and sets the coordinates. The laser set up must be handled by each routine
+    and sets the global coordinates. The laser set up must be handled by each routine
 
     If coords are not passed, the nv_sig coords (plus drift) will be used
     """
 
-    if coords is None:
-        coords = nv_sig["coords"]
-        coords = pos.adjust_coords_for_drift(coords)
-
-    pos.set_xyz(cxn, coords)
+    pos.set_xyz_on_nv(cxn, nv_sig)
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
