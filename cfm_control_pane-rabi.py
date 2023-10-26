@@ -182,8 +182,7 @@ if __name__ == "__main__":
 
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
-    camera_server_name = tb.get_server_name_camera()
-    pixel_coords_key = widefield.get_pixel_coords_key()
+    pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
     yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 1}
