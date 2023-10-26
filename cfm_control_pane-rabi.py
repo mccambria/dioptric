@@ -118,6 +118,7 @@ def do_opx_constant_ac():
         opx = cxn.QM_opx
         # opx.constant_ac([])
         opx.constant_ac(
+            # [4, 3],  # Digital channels
             [4],  # Digital channels
             [4, 6],  # Analog channels
             [0.35, 0.35],  # Analog voltages
