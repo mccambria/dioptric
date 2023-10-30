@@ -49,7 +49,7 @@ def widefield(nv_sig):
 def scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = LaserKey.IMAGING
     center_coords = pos.get_nv_coords(nv_sig, laser_key=laser_key, drift_adjust=True)
-    x_center, y_center, _ = center_coords
+    x_center, y_center = center_coords[0:2]
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )

@@ -48,7 +48,11 @@ def _append_laser_to_key(key, nv_sig=None, laser_key=None, laser_name=None):
 def _get_positioning_config_entry(key, nv_sig=None, laser_key=None, laser_name=None):
     key = _append_laser_to_key(key, nv_sig, laser_key, laser_name)
     config = common.get_config_dict()
-    return config["Positioning"][key]
+    config_positioning = config["Positioning"]
+    if key in config_positioning:
+        return config_positioning[key]
+    else:
+        return None
 
 
 # endregion
@@ -76,11 +80,8 @@ def set_xyz(cxn, coords, laser_name=None, drift_adjust=False, ramp=None):
 def _set_xyz(cxn, coords, laser_name):
     config = common.get_config_dict()
 
-    xy_dtype = config["Positioning"]["xy_dtype"]
-    z_dtype = config["Positioning"]["z_dtype"]
     xy_dtype = get_xy_dtype()
     z_dtype = get_z_dtype()
-    z_dtype = config["Positioning"]["z_dtype"]
     pos_xy_server = get_server_pos_xy(cxn)
     pos_z_server = get_server_pos_z(cxn)
     if pos_xy_server is not None:
@@ -209,13 +210,18 @@ def get_nv_coords(nv_sig, laser_key=None, laser_name=None, drift_adjust=True):
     coords_key = get_coords_key(nv_sig, laser_key, laser_name)
     coords = nv_sig[coords_key]
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords, nv_sig, laser_key, laser_name)
+        coords = adjust_coords_for_drift(coords=coords, nv_sig=nv_sig, laser_key=laser_key, laser_name=laser_name)
     return coords
 
 
 # endregion
 # region Server getters
 
+def get_axis_dtype(axis_ind, nv_sig=None, laser_key=None, laser_name=None):
+    if axis_ind in [0,1]:
+        return get_xy_dtype(nv_sig, laser_key, laser_name)
+    elif axis_ind == 2:
+        return get_z_dtype(nv_sig, laser_key, laser_name)
 
 def get_xy_dtype(nv_sig=None, laser_key=None, laser_name=None):
     return _get_positioning_config_entry("xy_dtype", nv_sig, laser_key, laser_name)
@@ -314,10 +320,14 @@ def _get_drift_key(nv_sig=None, laser_key=None, laser_name=None):
 def get_drift(nv_sig=None, laser_key=None, laser_name=None):
     key = _get_drift_key(nv_sig, laser_key, laser_name)
     drift = common.get_registry_entry(["State"], key)
-    xy_dtype = get_xy_dtype(nv_sig, laser_key, laser_name)
-    z_dtype = get_z_dtype(nv_sig, laser_key, laser_name)
-    drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
-    return np.array(drift)
+    drift_dtype = []
+    for ind in range(3):
+        axis_dtype = get_axis_dtype(ind, nv_sig, laser_key, laser_name)
+        if axis_dtype is not None:
+            drift_dtype.append(axis_dtype(drift[ind]))
+        else:
+            drift_dtype.append(None)
+    return np.array(drift_dtype)
 
 
 def set_drift(drift, nv_sig=None, laser_key=None, laser_name=None):
@@ -342,7 +352,15 @@ def adjust_coords_for_drift(
         coords = get_nv_coords(nv_sig, laser_key, laser_name, drift_adjust=False)
     if drift is None:
         drift = get_drift(nv_sig, laser_key, laser_name)
-    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
+    adjusted_coords = []
+    for ind in range(len(coords)):
+        coords_val = coords[ind]
+        drift_val = drift[ind]
+        if coords_val is not None and drift_val is not None:
+            adj_val = coords_val + drift_val
+        else:
+            adj_val = None
+        adjusted_coords.append(adj_val)
     return adjusted_coords
 
 

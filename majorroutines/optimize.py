@@ -314,14 +314,16 @@ def stationary_count_lite(
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
-        coords = nv_sig["coords"]
+        # coords = nv_sig["coords"]
+        coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
+    # print(coords)
+    # print(scanning_drift_adjust)
     if scanning_drift_adjust:
         coords = pos.adjust_coords_for_drift(coords)
-    pos.set_xyz(cxn, coords)
+    pos.set_xyz_on_nv(cxn, nv_sig)
 
     # Load the sequence
-    config_positioning = config["Positioning"]
-    xy_control_mode = config_positioning["xy_control_mode"]
+    xy_control_mode = pos.get_xy_control_mode(laser_name=laser_name)
     xy_sequence_control = xy_control_mode == ControlMode.SEQUENCE
     if xy_sequence_control:
         laser_pos_mode = config["Optics"][laser_name]["pos_mode"]
@@ -476,6 +478,7 @@ def main_with_cxn(
     tb.reset_cfm(cxn)
 
     # Adjust the sig we use for drift
+
     passed_coords = nv_sig["coords"]
     if drift_adjust:
         adjusted_coords = pos.adjust_coords_for_drift(passed_coords)

@@ -18,14 +18,18 @@ import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 import utils.common as common
 import utils.tool_belt as tb
 import utils.kplotlib as kpl
+from utils.constants import ModMode
 import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def qua_program(readout, readout_laser, num_reps):
-    laser_element = f"do_{readout_laser}_dm"
+def qua_program(readout, readout_laser, mod_mode, num_reps):
+    if mod_mode == ModMode.ANALOG:
+        laser_element = f"ao_{readout_laser}_am"
+    elif mod_mode == ModMode.DIGITAL:
+        laser_element = f"do_{readout_laser}_dm"
     camera_element = f"do_camera_trigger"
-    digital_elements = [laser_element, camera_element]
+    elements = [laser_element, camera_element]
     # Limit the readout to 1 us (for OPX technical purposes)
     # Increase the number of reps to account for this
     num_reps = num_reps * readout / 1000  # Num of us cycles
@@ -33,7 +37,7 @@ def qua_program(readout, readout_laser, num_reps):
     with program() as seq:
         ### Define one rep here
         def one_rep():
-            for el in digital_elements:
+            for el in elements:
                 qua.play("on", el, duration=clock_cycles)
 
         ### Handle the reps in the utils code
@@ -44,7 +48,9 @@ def qua_program(readout, readout_laser, num_reps):
 
 
 def get_seq(opx_config, config, args, num_reps=-1):
-    seq = qua_program(*args, num_reps)
+    readout_laser = args[1]
+    mod_mode = config["Optics"][readout_laser]["mod_mode"]
+    seq = qua_program(*args, mod_mode, num_reps)
     final = ""
     # specify what one 'sample' means for  readout
     sample_size = "all_reps"

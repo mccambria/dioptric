@@ -53,7 +53,7 @@ config = {
     "camera_spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
-    "common_scanning": True,  #  Whether scanning lasersand other elements have shared versus separate positioning controllers (default False)
+    "common_scanning": False,  #  Whether scanning lasers and other elements have shared versus separate positioning controllers (default False)
     # Access the OS-specific keys with getters from common
     "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
     "linux_nvdata_path": home / "E/nvdata",
@@ -107,21 +107,28 @@ config = {
         },
         "laser_INTE_520": {
             "delay": 250,
-            "mod_type": ModMode.DIGITAL,
+            "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
         },
+        # "laser_OPTO_589": {
+        #     "delay": 2500,
+        #     "mod_mode": ModMode.DIGITAL,
+        #     "pos_mode": LaserPosMode.WIDEFIELD,
+        #     "filter_server": "filter_slider_ell9k",
+        #     "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
+        # },
         "laser_OPTO_589": {
             "delay": 2500,
-            "mod_type": ModMode.DIGITAL,
+            "mod_mode": ModMode.ANALOG,
             "pos_mode": LaserPosMode.WIDEFIELD,
             "filter_server": "filter_slider_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
         },
         "laser_COBO_638": {
             "delay": 250,
-            "mod_type": ModMode.DIGITAL,
+            "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
             "filter_server": "filter_slider_THOR_ell9k",
             "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
@@ -129,12 +136,12 @@ config = {
     },
     ###
     "Positioning": {
-        "xy_control_mode": ControlMode.SEQUENCE,
-        "xy_delay": int(400e3),  # 400 us for galvo
-        "xy_dtype": float,
-        "xy_nm_per_unit": 1000,
-        "xy_optimize_range": 0.5,
-        "xy_units": "MHz",
+        "xy_control_mode-laser_INTE_520": ControlMode.SEQUENCE,
+        "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
+        "xy_dtype-laser_INTE_520": float,
+        "xy_nm_per_unit-laser_INTE_520": 1000,
+        "xy_optimize_range-laser_INTE_520": 0.5,
+        "xy_units-laser_INTE_520": "MHz",
         "z_control_mode": ControlMode.STREAM,
         "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
@@ -387,9 +394,18 @@ opx_config = {
         },
         # endregion
         # region Actual "elements", or physical things to control
-        "do_laser_OPTO_589_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+        "do_laser_COBO_638_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off"},
+        },
+        # "do_laser_OPTO_589_dm": {
+        #     "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+        #     "operations": {"on": "do_on", "off": "do_off"},
+        # },
+        "ao_laser_OPTO_589_am": {
+            "singleInput": {"port": ("con1", 7)},
+            "intermediate_frequency": 0,
+            "operations": {"on": "ao_cw", "off": "ao_off"},
         },
         "do_laser_INTE_520_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
@@ -401,15 +417,27 @@ opx_config = {
             # "hold_offset": {"duration": 200},
             "operations": {"on": "do_on", "off": "do_off"},
         },
+        "ao_laser_COBO_638_x": {
+            "singleInput": {"port": ("con1", 2)},
+            "intermediate_frequency": 75e6,
+            # "sticky": {"analog": True},
+            "operations": {"aod_cw": "aod_cw"},
+        },
+        "ao_laser_COBO_638_y": {
+            "singleInput": {"port": ("con1", 3)},
+            "intermediate_frequency": 75e6,
+            # "sticky": {"analog": True},
+            "operations": {"aod_cw": "aod_cw"},
+        },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
-            "intermediate_frequency": default_int_freq,
+            "intermediate_frequency": 110e6,
             # "sticky": {"analog": True},
             "operations": {"aod_cw": "aod_cw"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
-            "intermediate_frequency": default_int_freq,
+            "intermediate_frequency": 110e6,
             # "sticky": {"analog": True},
             "operations": {"aod_cw": "aod_cw"},
         },
@@ -427,6 +455,11 @@ opx_config = {
             "operation": "control",
             "length": default_len,
             "waveforms": {"single": "cw"},
+        },
+        "ao_off": {
+            "operation": "control",
+            "length": default_len,
+            "waveforms": {"single": "off"},
         },
         "readout": {
             "operation": "control",
@@ -457,6 +490,7 @@ opx_config = {
     "waveforms": {
         "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},
+        "off": {"type": "constant", "sample": 0.0},
         "cw_0.5": {"type": "constant", "sample": 0.5},
         "cw_0.45": {"type": "constant", "sample": 0.45},
         "cw_0.4": {"type": "constant", "sample": 0.4},

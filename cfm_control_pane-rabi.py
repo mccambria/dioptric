@@ -16,9 +16,11 @@ import matplotlib.pyplot as plt
 import copy
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
+from utils import positioning as pos
 from utils import widefield, common
 from majorroutines.widefield import image_sample, resonance, optimize
 from utils.constants import LaserKey, NVSpinState
+import time
 
 
 ### Major Routines
@@ -116,7 +118,14 @@ def do_camera_test():
 def do_opx_constant_ac():
     with common.labrad_connect() as cxn:
         opx = cxn.QM_opx
-        # opx.constant_ac([])
+        # opx.constant_ac([3])
+        # opx.constant_ac(
+        #     # [4, 3],  # Digital channels
+        #     [],  # Digital channels
+        #     [7],  # Analog channels
+        #     [0.5],  # Analog voltages
+        #     [0],  # Analog frequencies
+        # )
         opx.constant_ac(
             # [4, 3],  # Digital channels
             [4],  # Digital channels
@@ -124,6 +133,20 @@ def do_opx_constant_ac():
             [0.35, 0.35],  # Analog voltages
             [110e6, 110e6],  # Analog frequencies
         )
+        # opx.constant_ac(
+        #     # [4, 3],  # Digital channels
+        #     [1, 4],  # Digital channels
+        #     [2,3,4, 6],  # Analog channels
+        #     [0.32, 0.32, 0.35, 0.35],  # Analog voltages
+        #     [75e6, 75e6, 110e6, 110e6],  # Analog frequencies
+        # )
+        # opx.constant_ac(
+        #     # [4, 3],  # Digital channels
+        #     [1],  # Digital channels
+        #     [2, 3],  # Analog channels
+        #     [0.32, 0.32],  # Analog voltages
+        #     [75e6, 100e6],  # Analog frequencies
+        # )
         input("Press enter to stop...")
         # opx.constant_ac()
 
@@ -186,14 +209,14 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e9, "num_reps": 1}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 500e6, "num_reps": 1}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 100}
     red_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1000}
 
     sample_name = "johnson"
-    z_coord = 5.0
-    ref_coords = [110.900, 108.8, z_coord]
-    # ref_coords = [110.0, 110.0, z_coord]
+    z_coord = 2.9
+    # ref_coords = [110.900, 108.8, z_coord]
+    ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
 
     nv_ref = {
@@ -219,10 +242,10 @@ if __name__ == "__main__":
     # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_10_18"
-    nv0[pixel_coords_key] = [243.779, 196.87]
-    nv0[green_coords_key] = [110.525, 108.955]
-    nv0[red_coords_key] = [110.525, 108.955]
+    nv0["name"] = f"{sample_name}-nv0_2023_10_30"
+    nv0[pixel_coords_key] = [257.698, 268.135]
+    nv0[green_coords_key] = [110, 110]
+    nv0[red_coords_key] = [75, 75]
 
     # endregion
     # Calibration NVs
@@ -233,8 +256,8 @@ if __name__ == "__main__":
     # nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
 
-    nv_sig = nv0
-    # nv_sig = nv_ref
+    # nv_sig = nv0
+    nv_sig = nv_ref
 
     ### Functions to run
 
@@ -243,14 +266,17 @@ if __name__ == "__main__":
     try:
         # pass
 
-        kpl.init_kplotlib()
+        # kpl.init_kplotlib()
         # tb.init_safe_stop()
 
         # pos.reset_xy_drift()
         # pos.reset_drift()
         # widefield.reset_pixel_drift()
-        # z_drift = pos.get_drift()[2]
-        # pos.set_drift([+0.03, +0.03, z_drift])
+        # # z_drift = pos.get_drift()[2]
+        # # pos.set_drift([+0.03, +0.03, z_drift])
+        # time.sleep(1.0)
+        # with common.labrad_connect() as cxn:
+        #     pos.set_xyz(cxn, [None, None, z_coord])
 
         # Convert pixel coords to scanning coords
         # for nv in nv_list:
@@ -279,16 +305,15 @@ if __name__ == "__main__":
         #     print(nv["pixel_coords"])
         #     print(nv["coords"][0:2])
 
-        # with common.labrad_connect() as cxn:
-        #     pos.set_xyz(cxn, [0.0, 0.0, 5.0])
-        do_opx_constant_ac()
-
-        # for z in np.linspace(3.0, 7.0, 21):
-        #     nv_ref["coords"][2] = z
-        #     do_image_sample(nv_ref)
+        # do_opx_constant_ac()
 
         # nv_ref[LaserKey.IMAGING] = yellow_laser_dict
+        # for z in np.linspace(3, 7, 21):
+        # for z in np.linspace(2.0, 3.0, 11):
+        #     nv_ref["coords"][2] = z
+        #     do_widefield_image_sample(nv_ref)
         # do_widefield_image_sample(nv_ref)
+
         # do_scanning_image_sample(nv_ref)
         # do_scanning_image_sample_zoom(nv_ref)
         # do_image_nv_list(nv_list)
@@ -297,7 +322,7 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
         # do_resonance(nv_list)
-        # do_optimize(nv_sig, set_drift=False, plot_data=True)
+        do_optimize(nv_sig, set_drift=False, plot_data=True)
         # do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)
         # do_optimize_widefield_calibration()

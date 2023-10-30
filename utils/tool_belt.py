@@ -143,7 +143,7 @@ def set_laser_power(
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_type"]
+    mod_type = config["Optics"][laser_name]["mod_mode"]
     if mod_type == ModMode.ANALOG:
         return laser_power
     else:
