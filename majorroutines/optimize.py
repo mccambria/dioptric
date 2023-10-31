@@ -314,10 +314,10 @@ def stationary_count_lite(
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
-        coords = nv_sig["coords"]
+        coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
     if scanning_drift_adjust:
-        coords = pos.adjust_coords_for_drift(coords)
-    pos.set_xyz(cxn, coords)
+        coords = pos.adjust_coords_for_drift(coords, laser_name=laser_name)
+    pos.set_xyz(cxn, coords, laser_name=laser_name)
 
     # Load the sequence
     config_positioning = config["Positioning"]
@@ -383,8 +383,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
     """
 
     if coords is None:
-        coords = nv_sig["coords"]
-        coords = pos.adjust_coords_for_drift(coords)
+        coords = pos.get_nv_coords(nv_sig)
 
     pos.set_xyz(cxn, coords)
 
@@ -472,21 +471,18 @@ def main_with_cxn(
 ):
     # If optimize is disabled, just do prep and return
     if nv_sig["disable_opt"]:
-        prepare_microscope(cxn, nv_sig, adjusted_coords)
+        prepare_microscope(cxn, nv_sig)
         return [], None
 
     ### Setup
 
     tb.reset_cfm(cxn)
 
-    # Adjust the sig we use for drift
-    passed_coords = nv_sig["coords"]
-    if drift_adjust:
-        adjusted_coords = pos.adjust_coords_for_drift(passed_coords)
-    else:
-        adjusted_coords = list(passed_coords)
+    # Make a copy of the sig so that we can safely update the coords on it
+    nv_sig_coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
+    initial_coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=drift_adjust)
     adjusted_nv_sig = copy.deepcopy(nv_sig)
-    adjusted_nv_sig["coords"] = adjusted_coords
+    pos.set_nv_coords(nv_sig, initial_coords, laser_key)
 
     # Define a few things
     config = common.get_config_dict()
@@ -506,7 +502,7 @@ def main_with_cxn(
     # Default values for status variables
     opti_succeeded = False
     opti_necessary = True
-    opti_coords = adjusted_coords.copy()
+    opti_coords = initial_coords.copy()
 
     def count_check(coords):
         return stationary_count_lite(
@@ -520,7 +516,7 @@ def main_with_cxn(
         print(f"Expected counts: {expected_counts}")
     elif count_format == CountFormat.KCPS:
         print(f"Expected count rate: {expected_counts} kcps")
-    current_counts = count_check(adjusted_coords)
+    current_counts = count_check(initial_coords)
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
         print("No need to optimize.")
@@ -553,7 +549,7 @@ def main_with_cxn(
             fig = _create_figure() if plot_data else None
 
             # Tracking lists for each axis
-            opti_coords = adjusted_coords.copy()
+            opti_coords = initial_coords.copy()
             scan_vals_by_axis = [None] * 3
             counts_by_axis = [None] * 3
 
@@ -562,8 +558,7 @@ def main_with_cxn(
             for axis_ind in axes_to_optimize:
                 # Check if z optimization is necessary after xy optimization
                 if axis_ind == 2 and axes_to_optimize == [0, 1, 2]:
-                    test_coords = [*opti_coords[0:2], adjusted_coords[2]]
-                    current_counts = count_check(test_coords)
+                    current_counts = count_check(opti_coords)
                     if lower_bound < current_counts < upper_bound:
                         print("Z optimization unnecessary.")
                         scan_vals_by_axis.append(np.array([]))
@@ -601,7 +596,7 @@ def main_with_cxn(
 
     ### Calculate the drift relative to the passed coordinates
 
-    drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
+    drift = (np.array(opti_coords) - np.array(nv_sig_coords)).tolist()
     if opti_succeeded and set_scanning_drift:
         pos.set_drift(drift, nv_sig, laser_key)
     if opti_succeeded and set_pixel_drift:

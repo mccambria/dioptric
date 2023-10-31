@@ -188,6 +188,11 @@ def get_nv_coords(nv_sig, laser_key=None, laser_name=None, drift_adjust=True):
     return coords
 
 
+def set_nv_coords(nv_sig, coords, laser_key=None, laser_name=None):
+    coords_key = get_coords_key(nv_sig, laser_key, laser_name)
+    nv_sig[coords_key] = coords
+
+
 # endregion
 # region Server getters
 
