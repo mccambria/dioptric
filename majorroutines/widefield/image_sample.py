@@ -23,45 +23,33 @@ from scipy import ndimage
 
 def single_nv(nv_sig):
     nv_list = [nv_sig]
-    return nv_list_sub(nv_list, "single_nv")
+    return _nv_list_sub(nv_list, "single_nv")
 
 
 def nv_list(nv_list):
     save_dict = {"nv_list": nv_list}
-    return nv_list_sub(nv_list, "nv_list", save_dict)
+    return _nv_list_sub(nv_list, "nv_list", save_dict)
 
 
-def nv_list_sub(nv_list, caller_fn_name, save_dict=None):
+def _nv_list_sub(nv_list, caller_fn_name, save_dict=None):
     nv_sig = nv_list[0]
     laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
-    readout_laser = laser_dict["name"]
-    adj_coords_list = [
-        pos.adjust_coords_for_drift(nv_sig=nv, laser_name=readout_laser)
-        for nv in nv_list
-    ]
+    adj_coords_list = [pos.get_nv_coords(nv, laser_key=laser_key) for nv in nv_list]
     x_coords = [coords[0] for coords in adj_coords_list]
     y_coords = [coords[1] for coords in adj_coords_list]
     num_reps = laser_dict["num_reps"]
-    return main(nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict)
+    return main(nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict)
 
 
 def widefield(nv_sig):
-    laser_key = LaserKey.IMAGING
-    laser_dict = nv_sig[laser_key]
-    readout_laser = laser_dict["name"]
-    center_coords = pos.adjust_coords_for_drift(
-        nv_sig["coords"], laser_name=readout_laser
-    )
-    x_center, y_center, _ = center_coords
-    x_coords = [x_center]
-    y_coords = [y_center]
-    return main(nv_sig, x_coords, y_coords, "widefield", 1)
+    return main(nv_sig, "widefield")
 
 
 def scanning(nv_sig, x_range, y_range, num_steps):
-    center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
-    x_center, y_center, _ = center_coords
+    laser_key = LaserKey.IMAGING
+    center_coords = pos.get_nv_coords(nv_sig, laser_key=laser_key, drift_adjust=True)
+    x_center, y_center = center_coords[0:2]
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
     )
@@ -69,30 +57,43 @@ def scanning(nv_sig, x_range, y_range, num_steps):
     x_coords = list(x_coords)
     y_coords = list(y_coords)
     save_dict = {
-        "range_1": x_range,
-        "range_2": y_range,
-        "coords_1_1d": x_coords_1d,
-        "coords_2_1d": y_coords_1d,
+        "x_range": x_range,
+        "y_range": y_range,
+        "x_coords_1d": x_coords_1d,
+        "y_coords_1d": y_coords_1d,
     }
-    return main(nv_sig, x_coords, y_coords, "scanning", 1, save_dict)
+    num_reps = 1
+    return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
 
 
-def main(nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict=None):
+def main(
+    nv_sig,
+    caller_fn_name,
+    num_reps=1,
+    x_coords=None,
+    y_coords=None,
+    save_dict=None,
+):
     with common.labrad_connect() as cxn:
         ret_vals = main_with_cxn(
-            cxn, nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict
+            cxn, nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict
         )
     return ret_vals
 
 
 def main_with_cxn(
-    cxn, nv_sig, x_coords, y_coords, caller_fn_name, num_reps, save_dict=None
+    cxn,
+    nv_sig,
+    caller_fn_name,
+    num_reps=1,
+    x_coords=None,
+    y_coords=None,
+    save_dict=None,
 ):
     ### Some initial setup
 
     tb.reset_cfm(cxn)
     laser_key = LaserKey.IMAGING
-    center_coords = pos.adjust_coords_for_drift(nv_sig=nv_sig, laser_key=laser_key)
     optimize.prepare_microscope(cxn, nv_sig)
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
@@ -139,14 +140,12 @@ def main_with_cxn(
     ### Clean up and save the data
 
     tb.reset_cfm(cxn)
-    pos.set_xyz(cxn, center_coords)
 
     timestamp = tb.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
         "nv_sig": nv_sig,
-        "center_coords": center_coords,
         "num_reps": num_reps,
         "readout": readout_ms,
         "readout-units": "ms",

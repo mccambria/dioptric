@@ -17,6 +17,45 @@ from utils.constants import ControlMode
 
 
 # endregion
+# region Module internal functions
+
+
+def _get_laser_name(nv_sig=None, laser_key=None, laser_name=None):
+    if laser_name is not None:
+        return laser_name
+    elif nv_sig is not None and laser_key is not None:
+        laser_name = nv_sig[laser_key]["name"]
+        return laser_name
+    else:
+        return None
+
+
+def _append_laser_to_key(key, nv_sig=None, laser_key=None, laser_name=None):
+    """
+    A given laser can be specified in the functions in this file by name or by passing
+    a laser_key that points to a laser in the nv_sig. Use this function to get
+    the laser_name in either case, or to return None is no laser is specified.
+    """
+    config = common.get_config_dict()
+    common_scanning = config["common_scanning"]
+    laser_name = _get_laser_name(nv_sig, laser_key, laser_name)
+    if common_scanning or laser_name is None:
+        return key
+    else:
+        return f"{key}-{laser_name}"
+
+
+def _get_positioning_config_entry(key, nv_sig=None, laser_key=None, laser_name=None):
+    key = _append_laser_to_key(key, nv_sig, laser_key, laser_name)
+    config = common.get_config_dict()
+    config_positioning = config["Positioning"]
+    if key in config_positioning:
+        return config_positioning[key]
+    else:
+        return None
+
+
+# endregion
 # region Simple sets
 """
 If a specific laser is not passed, then the set will just use the global
@@ -40,8 +79,9 @@ def set_xyz(cxn, coords, laser_name=None, drift_adjust=False, ramp=None):
 
 def _set_xyz(cxn, coords, laser_name):
     config = common.get_config_dict()
-    xy_dtype = config["Positioning"]["xy_dtype"]
-    z_dtype = config["Positioning"]["z_dtype"]
+
+    xy_dtype = get_xy_dtype()
+    z_dtype = get_z_dtype()
     pos_xy_server = get_server_pos_xy(cxn)
     pos_z_server = get_server_pos_z(cxn)
     if pos_xy_server is not None:
@@ -163,28 +203,14 @@ def set_xyz_on_nv(cxn, nv_sig, laser_key=None, laser_name=None, drift_adjust=Tru
 
 
 def get_coords_key(nv_sig=None, laser_key=None, laser_name=None):
-    """
-    A given laser can be specified in the functions in this file by name or by passing
-    a laser_key that points to a laser in the nv_sig. Use this function to get
-    the laser_name in either case, or to return None is no laser is specified.
-    coords_key = get_coords_key(nv_sig, laser_key, laser_name)
-    """
-    if laser_name is not None:
-        return f"coords-{laser_name}"
-    elif laser_key is not None and nv_sig is not None:
-        laser_name = nv_sig[laser_key]["name"]
-        return f"coords-{laser_name}"
-    else:
-        return "coords"
+    return _append_laser_to_key("coords", nv_sig, laser_key, laser_name)
 
 
 def get_nv_coords(nv_sig, laser_key=None, laser_name=None, drift_adjust=True):
     coords_key = get_coords_key(nv_sig, laser_key, laser_name)
     coords = nv_sig[coords_key]
     if drift_adjust:
-        coords = adjust_coords_for_drift(
-            coords, nv_sig=nv_sig, laser_key=None, laser_name=None
-        )
+        coords = adjust_coords_for_drift(coords=coords, nv_sig=nv_sig, laser_key=laser_key, laser_name=laser_name)
     return coords
 
 
@@ -196,35 +222,53 @@ def set_nv_coords(nv_sig, coords, laser_key=None, laser_name=None):
 # endregion
 # region Server getters
 
+def get_axis_dtype(axis_ind, nv_sig=None, laser_key=None, laser_name=None):
+    if axis_ind in [0,1]:
+        return get_xy_dtype(nv_sig, laser_key, laser_name)
+    elif axis_ind == 2:
+        return get_z_dtype(nv_sig, laser_key, laser_name)
 
-def get_server_pos_xy(cxn):
-    return common.get_server(cxn, "pos_xy")
-
-
-def get_server_pos_z(cxn):
-    return common.get_server(cxn, "pos_z")
-
-
-def get_server_pos_xyz(cxn):
-    return common.get_server(cxn, "pos_xyz")
+def get_xy_dtype(nv_sig=None, laser_key=None, laser_name=None):
+    return _get_positioning_config_entry("xy_dtype", nv_sig, laser_key, laser_name)
 
 
-def get_xy_control_mode():
-    config = common.get_config_dict()
-    return config["Positioning"]["xy_control_mode"]
+def get_z_dtype(nv_sig=None, laser_key=None, laser_name=None):
+    return _get_positioning_config_entry("z_dtype", nv_sig, laser_key, laser_name)
 
 
-def get_z_control_mode():
-    config = common.get_config_dict()
-    return config["Positioning"]["z_control_mode"]
+def get_server_pos_xy(cxn, nv_sig=None, laser_key=None, laser_name=None):
+    key = _append_laser_to_key("pos_xy", nv_sig, laser_key, laser_name)
+    return common.get_server(cxn, key)
 
 
-def get_axis_write_fn(axis_ind):
+def get_server_pos_z(cxn, nv_sig=None, laser_key=None, laser_name=None):
+    key = _append_laser_to_key("pos_z", nv_sig, laser_key, laser_name)
+    return common.get_server(cxn, key)
+
+
+def get_server_pos_xyz(cxn, nv_sig=None, laser_key=None, laser_name=None):
+    key = _append_laser_to_key("pos_xyz", nv_sig, laser_key, laser_name)
+    return common.get_server(cxn, key)
+
+
+def get_xy_control_mode(nv_sig=None, laser_key=None, laser_name=None):
+    return _get_positioning_config_entry(
+        "xy_control_mode", nv_sig, laser_key, laser_name
+    )
+
+
+def get_z_control_mode(nv_sig=None, laser_key=None, laser_name=None):
+    return _get_positioning_config_entry(
+        "z_control_mode", nv_sig, laser_key, laser_name
+    )
+
+
+def get_axis_write_fn(cxn, axis_ind, nv_sig=None, laser_key=None, laser_name=None):
     """Return the write function for a given axis (0:x, 1:y, 2:z)"""
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy()
+        server = get_server_pos_xy(cxn, nv_sig, laser_key, laser_name)
     elif axis_ind == 2:
-        server = get_server_pos_z()
+        server = get_server_pos_z(cxn, nv_sig, laser_key, laser_name)
     if server is None:
         return None
 
@@ -238,16 +282,16 @@ def get_axis_write_fn(axis_ind):
     return write_fn
 
 
-def get_axis_stream_fn(axis_ind):
+def get_axis_stream_fn(cxn, axis_ind, nv_sig=None, laser_key=None, laser_name=None):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
     control_mode = get_axis_control_mode(axis_ind)
     if control_mode != ControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy()
+        server = get_server_pos_xy(cxn, nv_sig, laser_key, laser_name)
     elif axis_ind == 2:
-        server = get_server_pos_z()
+        server = get_server_pos_z(cxn, nv_sig, laser_key, laser_name)
     if server is None:
         return None
 
@@ -261,11 +305,11 @@ def get_axis_stream_fn(axis_ind):
     return stream_fn
 
 
-def get_axis_control_mode(axis_ind):
+def get_axis_control_mode(axis_ind, nv_sig=None, laser_key=None, laser_name=None):
     if axis_ind in [0, 1]:
-        control_mode = get_xy_control_mode()
+        control_mode = get_xy_control_mode(nv_sig, laser_key, laser_name)
     elif axis_ind == 2:
-        control_mode = get_z_control_mode()
+        control_mode = get_z_control_mode(nv_sig, laser_key, laser_name)
     return control_mode
 
 
@@ -275,25 +319,20 @@ def get_axis_control_mode(axis_ind):
 
 
 def _get_drift_key(nv_sig=None, laser_key=None, laser_name=None):
-    if laser_name is not None:
-        key = f"DRIFT-{laser_name}"
-    elif nv_sig is not None:
-        laser_name = nv_sig[laser_key]["name"]
-        key = f"DRIFT-{laser_name}"
-    else:
-        key = "DRIFT"
-    return key
+    return _append_laser_to_key("DRIFT", nv_sig, laser_key, laser_name)
 
 
 def get_drift(nv_sig=None, laser_key=None, laser_name=None):
     key = _get_drift_key(nv_sig, laser_key, laser_name)
     drift = common.get_registry_entry(["State"], key)
-    # config = common.get_config_dict()
-    # config_positioning = config["Positioning"]
-    # xy_dtype = config_positioning["xy_dtype"]
-    # z_dtype = config_positioning["z_dtype"]
-    # drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
-    return np.array(drift)
+    drift_dtype = []
+    for ind in range(3):
+        axis_dtype = get_axis_dtype(ind, nv_sig, laser_key, laser_name)
+        if axis_dtype is not None:
+            drift_dtype.append(axis_dtype(drift[ind]))
+        else:
+            drift_dtype.append(None)
+    return np.array(drift_dtype)
 
 
 def set_drift(drift, nv_sig=None, laser_key=None, laser_name=None):
@@ -311,12 +350,22 @@ def reset_xy_drift(nv_sig=None, laser_key=None, laser_name=None):
 
 
 def adjust_coords_for_drift(
-    coords, drift=None, nv_sig=None, laser_key=None, laser_name=None
+    coords=None, drift=None, nv_sig=None, laser_key=None, laser_name=None
 ):
     """Current drift will be retrieved from registry if passed drift is None"""
+    if coords is None:
+        coords = get_nv_coords(nv_sig, laser_key, laser_name, drift_adjust=False)
     if drift is None:
         drift = get_drift(nv_sig, laser_key, laser_name)
-    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
+    adjusted_coords = []
+    for ind in range(len(coords)):
+        coords_val = coords[ind]
+        drift_val = drift[ind]
+        if coords_val is not None and drift_val is not None:
+            adj_val = coords_val + drift_val
+        else:
+            adj_val = None
+        adjusted_coords.append(adj_val)
     return adjusted_coords
 
 

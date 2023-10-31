@@ -47,11 +47,13 @@ def qua_program(
             for chan in digital_channels:
                 element = f"do{chan}"
                 qua.play("on", element, duration=clock_cycles)
+                # qua.play("off", element, duration=clock_cycles)
             for ind in range(len(analog_channels)):
                 chan = analog_channels[ind]
                 element = f"ao{chan}"
                 amp = amps[ind]
                 qua.play("cw" * qua.amp(amp), element, duration=clock_cycles)
+                # qua.play("cw" * qua.amp(0), element, duration=clock_cycles)
 
         ### Handle the reps in the utils code
         seq_utils.handle_reps(one_rep, num_reps)

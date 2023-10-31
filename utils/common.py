@@ -61,7 +61,10 @@ def get_repo_path():
 
 def get_server(cxn, server_key):
     server_name = get_server_name(server_key)
-    return cxn[server_name]
+    if server_name is None:
+        return None
+    else:
+        return cxn[server_name]
 
 
 def get_server_name(server_key):

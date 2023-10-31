@@ -2990,6 +2990,7 @@ def fig_sub(
     #     kpl.Size.SMALL if plot_prior_data or new_model_diff else kpl.Size.NORMAL
     # )
     marker_size = kpl.Size.SMALL if no_axis_labels else kpl.Size.NORMAL
+    marker_size = kpl.Size.SMALL
 
     used_data_label_keys = []
     if plot_data:
