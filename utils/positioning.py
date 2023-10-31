@@ -30,14 +30,20 @@ def _get_laser_name(nv_sig=None, laser_key=None, laser_name=None):
         return None
 
 
-def _append_laser_to_key(key, nv_sig=None, laser_key=None, laser_name=None):
+def _append_laser_to_key(
+    key, nv_sig=None, laser_key=None, laser_name=None, common_scanning=None
+):
     """
     A given laser can be specified in the functions in this file by name or by passing
     a laser_key that points to a laser in the nv_sig. Use this function to get
     the laser_name in either case, or to return None is no laser is specified.
     """
-    config = common.get_config_dict()
-    common_scanning = config["common_scanning"]
+    if common_scanning is None:
+        config = common.get_config_dict()
+        if "common_scanning" in config:
+            common_scanning = config["common_scanning"]
+        else:
+            common_scanning = False
     laser_name = _get_laser_name(nv_sig, laser_key, laser_name)
     if common_scanning or laser_name is None:
         return key
@@ -64,7 +70,17 @@ coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
 """
 
 
-def set_xyz(cxn, coords, laser_name=None, drift_adjust=False, ramp=None):
+def set_xyz(
+    cxn,
+    coords,
+    nv_sig=None,
+    laser_key=None,
+    laser_name=None,
+    drift_adjust=False,
+    ramp=None,
+):
+    if laser_name is None and laser_key is not None:
+        laser_name = nv_sig[laser_key]["name"]
     if drift_adjust:
         coords = adjust_coords_for_drift(coords, laser_name=laser_name)
     if ramp is None:
@@ -78,12 +94,10 @@ def set_xyz(cxn, coords, laser_name=None, drift_adjust=False, ramp=None):
 
 
 def _set_xyz(cxn, coords, laser_name):
-    config = common.get_config_dict()
-
-    xy_dtype = get_xy_dtype()
-    z_dtype = get_z_dtype()
-    pos_xy_server = get_server_pos_xy(cxn)
-    pos_z_server = get_server_pos_z(cxn)
+    xy_dtype = get_xy_dtype(laser_name=laser_name)
+    z_dtype = get_z_dtype(laser_name=laser_name)
+    pos_xy_server = get_server_pos_xy(cxn, laser_name=laser_name)
+    pos_z_server = get_server_pos_z(cxn, laser_name=laser_name)
     if pos_xy_server is not None:
         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
     if pos_z_server is not None:
@@ -202,15 +216,21 @@ def set_xyz_on_nv(cxn, nv_sig, laser_key=None, laser_name=None, drift_adjust=Tru
     return coords
 
 
-def get_coords_key(nv_sig=None, laser_key=None, laser_name=None):
-    return _append_laser_to_key("coords", nv_sig, laser_key, laser_name)
+def get_coords_key(nv_sig=None, laser_key=None, laser_name=None, common_scanning=False):
+    return _append_laser_to_key(
+        "coords", nv_sig, laser_key, laser_name, common_scanning
+    )
 
 
-def get_nv_coords(nv_sig, laser_key=None, laser_name=None, drift_adjust=True):
+def get_nv_coords(
+    nv_sig, laser_key=None, laser_name=None, common_scanning=False, drift_adjust=True
+):
     coords_key = get_coords_key(nv_sig, laser_key, laser_name)
     coords = nv_sig[coords_key]
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords=coords, nv_sig=nv_sig, laser_key=laser_key, laser_name=laser_name)
+        coords = adjust_coords_for_drift(
+            coords=coords, nv_sig=nv_sig, laser_key=laser_key, laser_name=laser_name
+        )
     return coords
 
 
@@ -222,11 +242,13 @@ def set_nv_coords(nv_sig, coords, laser_key=None, laser_name=None):
 # endregion
 # region Server getters
 
+
 def get_axis_dtype(axis_ind, nv_sig=None, laser_key=None, laser_name=None):
-    if axis_ind in [0,1]:
+    if axis_ind in [0, 1]:
         return get_xy_dtype(nv_sig, laser_key, laser_name)
     elif axis_ind == 2:
         return get_z_dtype(nv_sig, laser_key, laser_name)
+
 
 def get_xy_dtype(nv_sig=None, laser_key=None, laser_name=None):
     return _get_positioning_config_entry("xy_dtype", nv_sig, laser_key, laser_name)

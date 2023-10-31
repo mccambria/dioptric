@@ -209,7 +209,7 @@ def _read_counts_camera_sequence(cxn, axis_ind, scan_vals, nv_sig, laser_key):
     return np.array(counts, dtype=int)
 
 
-def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
+def _optimize_on_axis(cxn, nv_sig, coords, axis_ind, laser_key, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     ### Basic setup and definitions
@@ -231,8 +231,6 @@ def _optimize_on_axis(cxn, nv_sig, axis_ind, laser_key, fig=None):
     delay = config_positioning[f"{label}_delay"]
     control_mode = pos.get_axis_control_mode(axis_ind)
 
-    # Get the center coordinates to optimize about
-    coords = nv_sig["coords"]
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
     # optiimizing on the actual target NV. Useful if the real target NV is poorly isolated
     opti_offset = "opti_offset" in nv_sig and nv_sig["opti_offset"] is not None
@@ -314,7 +312,7 @@ def stationary_count_lite(
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
-        coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
+        coords = pos.get_nv_coords(nv_sig, laser_name=laser_name, drift_adjust=False)
     if scanning_drift_adjust:
         coords = pos.adjust_coords_for_drift(coords, laser_name=laser_name)
     pos.set_xyz(cxn, coords, laser_name=laser_name)
@@ -435,6 +433,7 @@ def main(
     set_scanning_drift=True,
     set_pixel_drift=False,
     laser_key=LaserKey.IMAGING,
+    common_coords=False,
     drift_adjust=True,
     only_z_opt=None,
 ):
@@ -448,6 +447,7 @@ def main(
             set_scanning_drift,
             set_pixel_drift,
             laser_key,
+            common_coords,
             drift_adjust,
             only_z_opt,
         )
@@ -462,6 +462,7 @@ def main_with_cxn(
     set_scanning_drift=True,
     set_pixel_drift=True,
     laser_key=LaserKey.IMAGING,
+    common_scanning=None,
     drift_adjust=True,
     only_z_opt=None,
 ):
@@ -473,23 +474,19 @@ def main_with_cxn(
     ### Setup
 
     tb.reset_cfm(cxn)
-
-    # Make a copy of the sig so that we can safely update the coords on it
-    nv_sig_coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
-    initial_coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=drift_adjust)
-    adjusted_nv_sig = copy.deepcopy(nv_sig)
-    pos.set_nv_coords(nv_sig, initial_coords, laser_key)
-
-    # Define a few things
+    tb.init_safe_stop()
     config = common.get_config_dict()
+
+    initial_coords = pos.get_nv_coords(
+        nv_sig, laser_key, common_scanning=common_scanning, drift_adjust=drift_adjust
+    )
     key = "expected_counts"
-    expected_counts = adjusted_nv_sig[key] if key in adjusted_nv_sig else None
+    expected_counts = nv_sig[key] if key in nv_sig else None
     if expected_counts is not None:
         lower_bound = 0.9 * expected_counts
         upper_bound = 1.2 * expected_counts
 
     start_time = time.time()
-    tb.init_safe_stop()
 
     # Filter sets for imaging
     tb.set_filter(cxn, nv_sig, "collection")
@@ -548,6 +545,7 @@ def main_with_cxn(
             opti_coords = initial_coords.copy()
             scan_vals_by_axis = [None] * 3
             counts_by_axis = [None] * 3
+            axis_failed = False
 
             ### Loop through the axes
 
@@ -563,20 +561,20 @@ def main_with_cxn(
 
                 # Perform the optimization
                 ret_vals = _optimize_on_axis(
-                    cxn, adjusted_nv_sig, axis_ind, laser_key, fig
+                    cxn, nv_sig, opti_coords, axis_ind, laser_key, fig
                 )
                 opti_coord = ret_vals[0]
-                opti_coords[axis_ind] = opti_coord
+                if opti_coords is not None:
+                    opti_coords[axis_ind] = opti_coord
+                else:
+                    axis_failed = True
                 scan_vals_by_axis[axis_ind] = ret_vals[1]
                 counts_by_axis[axis_ind] = ret_vals[2]
-                # Update the coords on the nv_sig
-                if opti_coord is not None:
-                    adjusted_nv_sig["coords"][axis_ind] = opti_coord
 
             ### Attempt wrap-up
 
             # Try again if any individual axis failed
-            if None in opti_coords:
+            if axis_failed:
                 continue
 
             # Check the counts - if the threshold is not set, we just do one pass and succeed
@@ -592,7 +590,8 @@ def main_with_cxn(
 
     ### Calculate the drift relative to the passed coordinates
 
-    drift = (np.array(opti_coords) - np.array(nv_sig_coords)).tolist()
+    passed_coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
+    drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
     if opti_succeeded and set_scanning_drift:
         pos.set_drift(drift, nv_sig, laser_key)
     if opti_succeeded and set_pixel_drift:
