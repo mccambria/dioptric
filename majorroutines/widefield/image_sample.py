@@ -19,11 +19,17 @@ from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from scipy import ndimage
+import os
 
 
 def single_nv(nv_sig):
     nv_list = [nv_sig]
     return _nv_list_sub(nv_list, "single_nv")
+
+
+def single_nv_ionization(nv_sig):
+    nv_list = [nv_sig]
+    return _nv_list_sub(nv_list, "single_nv_ionization")
 
 
 def nv_list(nv_list):
@@ -33,12 +39,16 @@ def nv_list(nv_list):
 
 def _nv_list_sub(nv_list, caller_fn_name, save_dict=None):
     nv_sig = nv_list[0]
-    laser_key = LaserKey.IMAGING
+    if caller_fn_name == "single_nv_ionization":
+        laser_key = LaserKey.IONIZATION
+    else:
+        laser_key = LaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
-    adj_coords_list = [pos.get_nv_coords(nv, laser_key=laser_key) for nv in nv_list]
+    laser_name = laser_dict["name"]
+    adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
     x_coords = [coords[0] for coords in adj_coords_list]
     y_coords = [coords[1] for coords in adj_coords_list]
-    num_reps = laser_dict["num_reps"]
+    num_reps = nv_sig[LaserKey.IMAGING]["num_reps"]
     return main(nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict)
 
 
@@ -48,7 +58,9 @@ def widefield(nv_sig):
 
 def scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = LaserKey.IMAGING
-    center_coords = pos.get_nv_coords(nv_sig, laser_key=laser_key, drift_adjust=True)
+    laser_dict = nv_sig[laser_key]
+    laser_name = laser_dict["name"]
+    center_coords = pos.get_nv_coords(nv_sig, laser_name)
     x_center, y_center = center_coords[0:2]
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
@@ -111,7 +123,20 @@ def main_with_cxn(
     if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
         seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
         seq_file = "simple_readout-scanning.py"
-    elif caller_fn_name in ["widefield"]:
+    elif caller_fn_name == "single_nv_ionization":
+        laser_key = LaserKey.IONIZATION
+        laser_dict = nv_sig[laser_key]
+        ionization_laser = laser_dict["name"]
+        seq_args = [
+            readout,
+            readout_laser,
+            ionization_laser,
+            list(x_coords),
+            list(y_coords),
+        ]
+        # print(seq_args)
+        seq_file = "simple_readout-ionization.py"
+    elif caller_fn_name == "widefield":
         seq_args = [readout, readout_laser]
         seq_file = "simple_readout-widefield.py"
 
@@ -164,41 +189,27 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_10_20-12_30_44-johnson-nv0_2023_10_18"
-    # file_name = "2023_10_20-12_22_39-johnson-nv0_2023_10_18"
-
+    file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
     data = tb.get_raw_data(file_name)
     img_array = np.array(data["img_array"])
-    readout = data["readout"]
-    img_array_kcps = (img_array / 1000) / (readout * 1e-9)
-
-    nv_sig = data["nv_sig"]
-    pixel_coords = nv_sig["pixel_coords"]
 
     kpl.init_kplotlib()
-    fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array, cbar_label="counts")
-    ax.set_xticks(range(0, 501, 100))
-    # im = kpl.imshow(ax, img_array_kcps, extent=extent)
-    # ax.set_xlim([124.5 - 15, 124.5 + 15])
-    # ax.set_ylim([196.5 + 15, 196.5 - 15])
+    # fig, ax = plt.subplots()
+    # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    print(widefield_utils.counts_from_img_array(img_array, pixel_coords))
-
-    # plot_coords = [
-    #     [183.66, 201.62],
-    #     [177.28, 233.34],
-    #     [237.42, 314.84],
-    #     [239.56, 262.84],
-    #     [315.58, 203.56],
-    # ]
-    # cal_coords = [
-    #     [139.5840657600651, 257.70994378810946],
-    #     [324.4796398557366, 218.27466265286117],
-    # ]
-    # for coords in plot_coords:
-    #     ax.plot(*coords, color="blue", marker="o", markersize=3)
-    # for coords in cal_coords:
-    #     ax.plot(*coords, color="green", marker="o", markersize=3)
+    nvdata_path = common.get_nvdata_path()
+    path_from_nvdata = "pc_rabi/branch_master/image_sample/2023_11"
+    full_path = nvdata_path / path_from_nvdata
+    diff_file_names = os.listdir(full_path)
+    for diff_file_name in diff_file_names[-50:]:
+        print(diff_file_name)
+        break
+        if diff_file_name[-3:] == "svg":
+            continue
+        # print(diff_file_name)
+        diff_data = tb.get_raw_data(diff_file_name[:-4], path_from_nvdata)
+        diff_img_array = np.array(diff_data["img_array"])
+        fig, ax = plt.subplots()
+        im = kpl.imshow(ax, diff_img_array - img_array, cbar_label="Counts")
 
     plt.show(block=True)

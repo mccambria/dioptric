@@ -21,8 +21,11 @@ class CountFormat(Enum):
 
 
 class LaserKey(Enum):
-    IMAGING = auto()
-    SPIN = auto()
+    IMAGING = auto()  # Basic imaging
+    IONIZATION = auto()
+    POLARIZATION = auto()  # Charge / spin state polarization
+    SPIN_READOUT = auto()  # Standard spin readout
+    CHARGE_READOUT = auto()  # Readout of the charge state
 
 
 class LaserPosMode(Enum):

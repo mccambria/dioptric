@@ -47,7 +47,12 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         # Configure the camera
         self.cam.set_target_detector_temp(-60)
-        self.cam.set_readout_mode(6)
+
+        # self.cam.set_readout_mode(6)
+
+        self.cam.set_readout_mode(1)
+        self.cam.setCalibratedEmGain(100)
+
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
@@ -89,11 +94,11 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         readout_mode options:
             EM amplifier
-                 Mode:  1; vertical frequency: 2000000; horizontal frequency: 10000000
+                *Mode:  1; vertical frequency: 2000000; horizontal frequency: 10000000
                  Mode:  2; vertical frequency: 3333000; horizontal frequency: 10000000
                  Mode:  3; vertical frequency: 1000000; horizontal frequency: 10000000
                  Mode:  4; vertical frequency:  200000; horizontal frequency: 10000000
-                *Mode: 16; vertical frequency: 2000000; horizontal frequency: 20000000
+                 Mode: 16; vertical frequency: 2000000; horizontal frequency: 20000000
                  Mode: 17; vertical frequency: 3333000; horizontal frequency: 20000000
                  Mode: 18; vertical frequency: 1000000; horizontal frequency: 20000000
                  Mode: 19; vertical frequency:  200000; horizontal frequency: 20000000

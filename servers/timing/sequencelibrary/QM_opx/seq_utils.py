@@ -27,7 +27,7 @@ def handle_reps(one_rep, num_reps):
         with infinite_loop_():
             one_rep()
     else:
-        ind = declare(int, value=0)
-        with while_(ind < num_reps):
+        handle_reps_ind = declare(int, value=0)
+        with while_(handle_reps_ind < num_reps):
             one_rep()
-            assign(ind, ind + 1)
+            assign(handle_reps_ind, handle_reps_ind + 1)

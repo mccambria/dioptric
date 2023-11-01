@@ -37,8 +37,7 @@ def _create_figure():
     for ind in range(3):
         ax = axes_pack[ind]
         ax.set_title(axis_titles[ind])
-        xlabel_key = "xy_units" if ind in [0, 1] else "z_units"
-        xlabel = config["Positioning"][xlabel_key]
+        xlabel = pos.get_axis_units(ind)
         ax.set_xlabel(xlabel)
         count_format = config["count_format"]
         if count_format == CountFormat.RAW:
@@ -58,15 +57,15 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
     kpl.flush_update(fig=fig)
 
 
-def _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=None):
+def _fit_gaussian(scan_vals, count_vals, axis_ind, fig=None):
     # Param order: amplitude, center, sd width, offset
     fit_func = tb.gaussian
     bg_guess = 0.0  # Guess 0
     low = np.min(scan_vals)
     high = np.max(scan_vals)
     scan_range = high - low
-    coords = nv_sig["coords"]
-    guess = (max(count_vals) - bg_guess, coords[axis_ind], scan_range / 3, bg_guess)
+    center_guess = (high + low) / 2
+    guess = (max(count_vals) - bg_guess, center_guess, scan_range / 3, bg_guess)
     popt = None
     try:
         low_bounds = [0, low, 0, 0]
@@ -105,15 +104,19 @@ def _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=None):
 # region Private axis optimization functions
 
 
-def _read_counts_counter_stream(cxn, axis_ind, scan_vals):
-    axis_stream_fn = pos.get_axis_stream_fn(axis_ind)
-    axis_stream_fn(scan_vals)
+def _read_counts_counter_stream(cxn, axis_ind=None, scan_vals=None):
+    if axis_ind is not None:
+        axis_stream_fn = pos.get_axis_stream_fn(axis_ind)
+        axis_stream_fn(scan_vals)
     counter = tb.get_server_counter(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
     counts = []
     num_read_so_far = 0
     counter.start_tag_stream()
-    num_steps = len(scan_vals)
+    if axis_ind is not None:
+        num_steps = len(scan_vals)
+    else:
+        num_steps = 1
     pulse_gen.stream_start(num_steps)
     while num_read_so_far < num_steps:
         if tb.safe_stop():
@@ -124,11 +127,12 @@ def _read_counts_counter_stream(cxn, axis_ind, scan_vals):
             counts.extend(new_samples)
             num_read_so_far += num_new_samples
     counter.stop_tag_stream()
-    return np.array(counts, dtype=int)
+    return [np.array(counts, dtype=int)]
 
 
-def _read_counts_counter_step(cxn, axis_ind, scan_vals):
-    axis_write_fn = pos.get_axis_write_fn(axis_ind)
+def _read_counts_counter_step(cxn, axis_ind=None, scan_vals=None):
+    if axis_ind is not None:
+        axis_write_fn = pos.get_axis_write_fn(axis_ind)
     counter = tb.get_server_counter(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
     counter.start_tag_stream()
@@ -136,16 +140,18 @@ def _read_counts_counter_step(cxn, axis_ind, scan_vals):
     for ind in range(len(scan_vals)):
         if tb.safe_stop():
             break
-        axis_write_fn(scan_vals[ind])
+        if axis_ind is not None:
+            axis_write_fn(scan_vals[ind])
         pulse_gen.stream_start(1)
         new_samples = counter.read_counter_simple(1)
         counts.append(np.average(new_samples))
     counter.stop_tag_stream()
-    return np.array(counts, dtype=int)
+    return [np.array(counts, dtype=int)]
 
 
-def _read_counts_camera_step(cxn, axis_ind, scan_vals, nv_sig, laser_key):
-    axis_write_fn = pos.get_axis_write_fn(axis_ind)
+def _read_counts_camera_step(cxn, nv_sig, laser_key, axis_ind=None, scan_vals=None):
+    if axis_ind is not None:
+        axis_write_fn = pos.get_axis_write_fn(axis_ind)
     pixel_coords = nv_sig["pixel_coords"]
     num_reps = nv_sig[laser_key]["num_reps"]
     camera = tb.get_server_camera(cxn)
@@ -155,35 +161,43 @@ def _read_counts_camera_step(cxn, axis_ind, scan_vals, nv_sig, laser_key):
     for ind in range(len(scan_vals)):
         if tb.safe_stop():
             break
-        axis_write_fn(scan_vals[ind])
+        if axis_ind is not None:
+            axis_write_fn(scan_vals[ind])
         pulse_gen.stream_start(num_reps)
         img_array = camera.read()
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
-    return np.array(counts, dtype=int)
+    return [np.array(counts, dtype=int), img_array]
 
 
-def _read_counts_camera_sequence(cxn, axis_ind, scan_vals, nv_sig, laser_key):
+def _read_counts_camera_sequence(
+    cxn, nv_sig, coords, laser_key, axis_ind=None, scan_vals=None
+):
     """
     Specific function for widefield setup - XY control from AODs,
     Z control from objective piezo, imaged onto a camera
     """
     # Basic setup
-    control_mode = pos.get_axis_control_mode(axis_ind)
     pixel_coords = nv_sig["pixel_coords"]
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
+    if axis_ind is not None:
+        num_steps = len(scan_vals)
+    else:
+        num_steps = 1
 
     # Sequence setup
-    coords = nv_sig["coords"]
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
     num_reps = laser_dict["num_reps"]
     seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
     seq_file_name = "simple_readout-scanning.py"
-    # For z the sequence is the sam every time and z is moved manually
+    if axis_ind is None:
+        seq_args_string = tb.encode_seq_args(seq_args)
+        pulse_gen.stream_load(seq_file_name, seq_args_string)
+    # For z the sequence is the same every time and z is moved manually
     if axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string)
@@ -192,44 +206,38 @@ def _read_counts_camera_sequence(cxn, axis_ind, scan_vals, nv_sig, laser_key):
     # Collect the counts
     counts = []
     camera.arm()
-    for val in scan_vals:
+    for ind in range(num_steps):
         if tb.safe_stop():
             break
-        if axis_ind in [0, 1]:
-            seq_args[axis_ind + 2] = [val]
-            seq_args_string = tb.encode_seq_args(seq_args)
-            pulse_gen.stream_load(seq_file_name, seq_args_string)
-        else:
-            axis_write_fn(val)
+        if axis_ind is not None:
+            val = scan_vals[ind]
+            if axis_ind in [0, 1]:
+                seq_args[axis_ind + 2] = [val]
+                seq_args_string = tb.encode_seq_args(seq_args)
+                # print(seq_args)
+                pulse_gen.stream_load(seq_file_name, seq_args_string)
+            elif axis_ind == 2:
+                axis_write_fn(val)
         pulse_gen.stream_start(num_reps)
         img_array = camera.read()
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
-    return np.array(counts, dtype=int)
+    return [np.array(counts, dtype=int), img_array]
 
 
-def _optimize_on_axis(cxn, nv_sig, coords, axis_ind, laser_key, fig=None):
+def _optimize_on_axis(
+    cxn, nv_sig, coords, laser_key, coords_suffix, axis_ind, fig=None
+):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     ### Basic setup and definitions
 
     num_steps = 20
     config = common.get_config_dict()
-    collection_mode = config["collection_mode"]
-    config_positioning = config["Positioning"]
-    pulse_gen = tb.get_server_pulse_gen(cxn)
     laser_dict = nv_sig[laser_key]
-    laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
-    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
-
-    # Axis-specific definitions
-    config_axis_labels = {0: "xy", 1: "xy", 2: "z"}
-    label = config_axis_labels[axis_ind]
-    scan_range = config_positioning[f"{label}_optimize_range"]
-    delay = config_positioning[f"{label}_delay"]
-    control_mode = pos.get_axis_control_mode(axis_ind)
+    scan_range = pos.get_axis_optimize_range(axis_ind, coords_suffix)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
     # optiimizing on the actual target NV. Useful if the real target NV is poorly isolated
@@ -239,40 +247,12 @@ def _optimize_on_axis(cxn, nv_sig, coords, axis_ind, laser_key, fig=None):
     axis_center = coords[axis_ind]
     scan_vals = pos.get_scan_1d(axis_center, scan_range, num_steps)
 
-    # Position us at the starting point
-    start_coords = np.copy(coords)
-    start_coords[axis_ind] = np.min(scan_vals)
-    pos.set_xyz(cxn, start_coords)
-
     ### Record the counts
-    # How we conduct the scan depends on the config
 
-    # Check if the xy positions are controlled by the sequence itself.
-    # If so, then we need a specific sequence even for stepped/streamed z optimization.
-    xy_control_mode = config_positioning["xy_control_mode"]
-    xy_sequence_control = xy_control_mode == ControlMode.SEQUENCE
-    if xy_sequence_control:
-        if collection_mode == CollectionMode.CAMERA:
-            counts = _read_counts_camera_sequence(
-                cxn, axis_ind, scan_vals, nv_sig, laser_key
-            )
-
-    else:
-        seq_file_name = "simple_readout.py"
-        seq_args = [delay, readout, laser_name, laser_power]
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file_name, seq_args_string)
-
-        if collection_mode == CollectionMode.COUNTER:
-            if control_mode == ControlMode.STEP:
-                counts = _read_counts_counter_step(cxn, axis_ind, scan_vals)
-            elif control_mode == ControlMode.STREAM:
-                counts = _read_counts_counter_stream(cxn, axis_ind, scan_vals)
-
-        elif collection_mode == CollectionMode.CAMERA:
-            counts = _read_counts_camera_step(
-                cxn, axis_ind, scan_vals, nv_sig, laser_key
-            )
+    ret_vals = _read_counts(
+        cxn, nv_sig, coords, laser_key, coords_suffix, axis_ind, scan_vals
+    )
+    counts = ret_vals[0]
 
     ### Plot, fit, return
 
@@ -283,9 +263,62 @@ def _optimize_on_axis(cxn, nv_sig, coords, axis_ind, laser_key, fig=None):
         f_counts = (counts / 1000) / (readout / 10**9)
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
-    opti_coord = _fit_gaussian(nv_sig, scan_vals, f_counts, axis_ind, fig)
+    opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, fig)
 
     return opti_coord, scan_vals, f_counts
+
+
+def _read_counts(
+    cxn, nv_sig, coords, laser_key, coords_suffix=None, axis_ind=None, scan_vals=None
+):
+    # How we conduct the scan depends on the config
+    config = common.get_config_dict()
+    collection_mode = config["collection_mode"]
+    pulse_gen = tb.get_server_pulse_gen(cxn)
+
+    laser_dict = nv_sig[laser_key]
+    laser_name = laser_dict["name"]
+    readout = laser_dict["readout_dur"]
+    delay = laser_dict["readout_dur"]
+    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
+    if axis_ind is not None:
+        delay = pos.get_axis_delay(axis_ind, coords_suffix=coords_suffix)
+        control_mode = pos.get_axis_control_mode(axis_ind, coords_suffix)
+
+    # Position us at the starting point
+    start_coords = np.copy(coords)
+    if scan_vals is not None:
+        start_coords[axis_ind] = np.min(scan_vals)
+    pos.set_xyz(cxn, start_coords, coords_suffix)
+
+    # Check if the xy positions are controlled by the sequence itself.
+    # If so, then we need a specific sequence even for stepped/streamed z optimization.
+    xy_control_mode = pos.get_xy_control_mode(coords_suffix)
+    xy_sequence_control = xy_control_mode == ControlMode.SEQUENCE
+    if xy_sequence_control:
+        if collection_mode == CollectionMode.CAMERA:
+            ret_vals = _read_counts_camera_sequence(
+                cxn, nv_sig, coords, laser_key, axis_ind, scan_vals
+            )
+
+    else:
+        seq_file_name = "simple_readout.py"
+        seq_args = [delay, readout, laser_name, laser_power]
+        seq_args_string = tb.encode_seq_args(seq_args)
+        pulse_gen.stream_load(seq_file_name, seq_args_string)
+
+        if collection_mode == CollectionMode.COUNTER:
+            if control_mode == ControlMode.STEP:
+                ret_vals = _read_counts_counter_step(cxn, axis_ind, scan_vals)
+            elif control_mode == ControlMode.STREAM:
+                ret_vals = _read_counts_counter_stream(cxn, axis_ind, scan_vals)
+
+        elif collection_mode == CollectionMode.CAMERA:
+            ret_vals = _read_counts_camera_step(
+                cxn, nv_sig, laser_key, axis_ind, scan_vals
+            )
+
+    return ret_vals
 
 
 # endregion
@@ -297,14 +330,13 @@ def stationary_count_lite(
     nv_sig,
     coords=None,
     laser_key=LaserKey.IMAGING,
+    coords_suffix=None,
     ret_img_array=False,
     scanning_drift_adjust=True,
     pixel_drift_adjust=True,
 ):
     # Set up
     config = common.get_config_dict()
-    collection_mode = config["collection_mode"]
-    pulse_gen = tb.get_server_pulse_gen(cxn)
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
@@ -312,57 +344,20 @@ def stationary_count_lite(
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
-        coords = pos.get_nv_coords(nv_sig, laser_name=laser_name, drift_adjust=False)
+        coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust=False)
     if scanning_drift_adjust:
-        coords = pos.adjust_coords_for_drift(coords, laser_name=laser_name)
-    pos.set_xyz(cxn, coords, laser_name=laser_name)
+        coords = pos.adjust_coords_for_drift(coords, coords_suffix=coords_suffix)
+    pos.set_xyz(cxn, coords, coords_suffix)
 
-    # Load the sequence
-    xy_control_mode = pos.get_xy_control_mode(laser_name=laser_name)
-    xy_sequence_control = xy_control_mode == ControlMode.SEQUENCE
-    if xy_sequence_control:
-        laser_pos_mode = config["Optics"][laser_name]["pos_mode"]
-        if laser_pos_mode == LaserPosMode.SCANNING:
-            seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
-            seq_file_name = "simple_readout-scanning.py"
-        if laser_pos_mode == LaserPosMode.WIDEFIELD:
-            seq_args = [readout, laser_name]
-            seq_file_name = "simple_readout-widefield.py"
-    else:
-        delay = 0
-        seq_args = [delay, readout, laser_name, laser_power]
-        seq_file_name = "simple_readout.py"
-    seq_args_string = tb.encode_seq_args(seq_args)
-    pulse_gen.stream_load(seq_file_name, seq_args_string)
-
-    # Collect the data
-    if collection_mode == CollectionMode.COUNTER:
-        counter_server = tb.get_server_counter(cxn)
-        counter_server.start_tag_stream()
-        pulse_gen.stream_start(num_reps)
-        new_samples = counter_server.read_counter_simple(num_reps)
-        counter_server.stop_tag_stream()
-    elif collection_mode == CollectionMode.CAMERA:
-        pixel_coords = nv_sig["pixel_coords"]
-        if pixel_drift_adjust:
-            pixel_coords = widefield.adjust_pixel_coords_for_drift(pixel_coords)
-        camera = tb.get_server_camera(cxn)
-        camera.arm()
-        new_samples = []
-        pulse_gen.stream_start(num_reps)
-        img_array = camera.read()
-        camera.disarm()
-        sample = widefield.counts_from_img_array(
-            img_array, pixel_coords, drift_adjust=False
-        )
-        new_samples.append(sample)
+    ret_vals = _read_counts(cxn, nv_sig, coords, laser_key, coords_suffix)
+    counts = ret_vals[0]
 
     # Return
-    avg_counts = np.average(new_samples)
+    avg_counts = np.average(counts)
     config = common.get_config_dict()
     count_format = config["count_format"]
     if ret_img_array:
-        return img_array
+        return ret_vals[1]
     if count_format == CountFormat.RAW:
         return avg_counts
     elif count_format == CountFormat.KCPS:
@@ -433,7 +428,7 @@ def main(
     set_scanning_drift=True,
     set_pixel_drift=False,
     laser_key=LaserKey.IMAGING,
-    common_coords=False,
+    coords_suffix=None,
     drift_adjust=True,
     only_z_opt=None,
 ):
@@ -447,7 +442,7 @@ def main(
             set_scanning_drift,
             set_pixel_drift,
             laser_key,
-            common_coords,
+            coords_suffix,
             drift_adjust,
             only_z_opt,
         )
@@ -462,7 +457,7 @@ def main_with_cxn(
     set_scanning_drift=True,
     set_pixel_drift=True,
     laser_key=LaserKey.IMAGING,
-    common_scanning=None,
+    coords_suffix=None,
     drift_adjust=True,
     only_z_opt=None,
 ):
@@ -477,9 +472,7 @@ def main_with_cxn(
     tb.init_safe_stop()
     config = common.get_config_dict()
 
-    initial_coords = pos.get_nv_coords(
-        nv_sig, laser_key, common_scanning=common_scanning, drift_adjust=drift_adjust
-    )
+    initial_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust)
     key = "expected_counts"
     expected_counts = nv_sig[key] if key in nv_sig else None
     if expected_counts is not None:
@@ -499,7 +492,12 @@ def main_with_cxn(
 
     def count_check(coords):
         return stationary_count_lite(
-            cxn, nv_sig, coords, laser_key, scanning_drift_adjust=False
+            cxn,
+            nv_sig,
+            coords,
+            laser_key,
+            coords_suffix,
+            scanning_drift_adjust=False,
         )
 
     ### Check if we even need to optimize by reading counts at current coordinates
@@ -528,6 +526,7 @@ def main_with_cxn(
             axes_to_optimize = [0, 1]
         else:
             axes_to_optimize = [0, 1, 2]
+        # axes_to_optimize = axes_to_optimize[::-1]
 
         # Loop through attempts until we succeed or give up
         num_attempts = 10
@@ -561,10 +560,10 @@ def main_with_cxn(
 
                 # Perform the optimization
                 ret_vals = _optimize_on_axis(
-                    cxn, nv_sig, opti_coords, axis_ind, laser_key, fig
+                    cxn, nv_sig, opti_coords, laser_key, coords_suffix, axis_ind, fig
                 )
                 opti_coord = ret_vals[0]
-                if opti_coords is not None:
+                if opti_coord is not None:
                     opti_coords[axis_ind] = opti_coord
                 else:
                     axis_failed = True
@@ -590,10 +589,10 @@ def main_with_cxn(
 
     ### Calculate the drift relative to the passed coordinates
 
-    passed_coords = pos.get_nv_coords(nv_sig, laser_key, drift_adjust=False)
+    passed_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust)
     drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
     if opti_succeeded and set_scanning_drift:
-        pos.set_drift(drift, nv_sig, laser_key)
+        pos.set_drift(drift, coords_suffix=coords_suffix)
     if opti_succeeded and set_pixel_drift:
         widefield.set_pixel_drift_from_scanning_drift(drift)
 
@@ -605,17 +604,17 @@ def main_with_cxn(
     # Set to the coordinates and move on
     if set_to_opti_coords:
         if not opti_necessary or opti_succeeded:
-            prepare_microscope(cxn, nv_sig, opti_coords)
+            prepare_microscope(cxn, nv_sig)
         # Just crash if we failed and we were supposed to move to the optimized coordinates
         else:
             raise RuntimeError("Optimization failed.")
     # Or just report the results
     else:
         if not opti_necessary or opti_succeeded:
-            print("Optimized coordinates: ")
-            print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
-            print("Drift: ")
-            print("{:.3f}, {:.3f}, {:.2f}".format(*drift))
+            r_opti_coords = [round(el, 3) for el in opti_coords]
+            r_drift = [round(el, 3) for el in drift]
+            print(f"Optimized coordinates: {r_opti_coords}")
+            print(f"Drift: {r_drift}")
             prepare_microscope(cxn, nv_sig)
         else:
             print("Optimization failed.")
@@ -677,6 +676,6 @@ if __name__ == "__main__":
         scan_vals = data[f"{keys[axis_ind]}_scan_vals"]
         count_vals = data[f"{keys[axis_ind]}_counts"]
         _update_figure(fig, axis_ind, scan_vals, count_vals)
-        _fit_gaussian(nv_sig, scan_vals, count_vals, axis_ind, fig=fig)
+        _fit_gaussian(scan_vals, count_vals, axis_ind, fig=fig)
 
     plt.show(block=True)
