@@ -23,96 +23,70 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-# def qua_program(
-#     readout, readout_laser, ionization_laser, coords_1, coords_2, mod_mode, num_reps
-# ):
-#     if mod_mode == ModMode.ANALOG:
-#         readout_laser_element = f"ao_{readout_laser}_am"
-#     elif mod_mode == ModMode.DIGITAL:
-#         readout_laser_element = f"do_{readout_laser}_dm"
-#     ionization_laser_element = f"do_{ionization_laser}_dm"
-#     camera_element = f"do_camera_trigger"
-#     x_element = f"ao_{ionization_laser}_x"
-#     y_element = f"ao_{ionization_laser}_y"
-#     clock_cycles = readout / 4  # * 4 ns / clock_cycle = 1 us
-#     coords_1_hz = [round(el * 10**6) for el in coords_1]
-#     coords_2_hz = [round(el * 10**6) for el in coords_2]
-#     num_reps = num_reps * readout / 1000  # Num of us cycles
-#     clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
-#     with program() as seq:
-#         x_freq = declare(int)
-#         y_freq = declare(int)
-
-#         ### Define one rep here
-#         def one_rep():
-#             with for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
-#                 update_frequency(x_element, x_freq)
-#                 update_frequency(y_element, y_freq)
-#                 play("aod_cw", x_element, duration=clock_cycles)
-#                 play("aod_cw", y_element, duration=clock_cycles)
-#                 play("on", readout_laser_element, duration=clock_cycles)
-#                 play("on", ionization_laser_element, duration=clock_cycles)
-#                 play("on", camera_element, duration=clock_cycles)
-
-#         ### Handle the reps in the utils code
-#         seq_utils.handle_reps(one_rep, num_reps)
-
-#         play("off", camera_element, duration=20)
-#         # play("on", readout_laser_element, duration=clock_cycles)
-
-#     return seq
-
-
 def qua_program(
-    readout, readout_laser, ionization_laser, coords_1, coords_2, mod_mode, num_reps
+    readout,
+    readout_laser,
+    do_ionize,
+    ionization_laser,
+    ionization_coords,
+    polarization_laser,
+    polarization_coords,
+    mod_mode,
+    num_reps,
 ):
     if mod_mode == ModMode.ANALOG:
         readout_laser_element = f"ao_{readout_laser}_am"
     elif mod_mode == ModMode.DIGITAL:
         readout_laser_element = f"do_{readout_laser}_dm"
-    ionization_laser_element = f"do_{ionization_laser}_dm"
+
     camera_element = f"do_camera_trigger"
-    x_element = f"ao_{ionization_laser}_x"
-    y_element = f"ao_{ionization_laser}_y"
-    coords_1_hz = [round(el * 10**6) for el in coords_1]
-    coords_2_hz = [round(el * 10**6) for el in coords_2]
-    # num_reps = num_reps * readout / 1000  # Num of us cycles
-    ionization_duration = int(1000 / 4)
-    pulsed_readout = int(10e6 / 4)
-    one_rep_duration = ionization_duration + pulsed_readout
-    num_reps = num_reps * readout / (one_rep_duration * 4)
-    default_len_clock_cycles = int(1000 / 4)
+
+    # Ionization
+    ionization_laser_element = f"do_{ionization_laser}_dm"
+    ionization_x_element = f"ao_{ionization_laser}_x"
+    ionization_y_element = f"ao_{ionization_laser}_y"
+
+    # Polarization
+    polarization_laser_element = f"do_{polarization_laser}_dm"
+    polarization_x_element = f"ao_{polarization_laser}_x"
+    polarization_y_element = f"ao_{polarization_laser}_y"
+
+    setup_duration = int(10e3 / 4)
+
     with program() as seq:
-        x_freq = declare(int, value=coords_1_hz[0])
-        y_freq = declare(int, value=coords_2_hz[0])
-        update_frequency(x_element, x_freq)
-        update_frequency(y_element, y_freq)
+        # Polarization
+        polarization_x_freq = declare(
+            int, value=round(polarization_coords[0] * 10**6)
+        )
+        polarization_y_freq = declare(
+            int, value=round(polarization_coords[1] * 10**6)
+        )
+        update_frequency(polarization_x_element, polarization_x_freq)
+        update_frequency(ionization_y_element, polarization_y_freq)
+        play("aod_cw", polarization_x_element, duration=setup_duration)
+        play("aod_cw", polarization_y_element, duration=setup_duration)
+        wait(int(1e3 / 4), polarization_laser_element)
+        play("on", polarization_laser_element, duration=int(1e3 / 4))
 
-        # AODs
-        play("aod_cw", x_element)
-        play("aod_cw", y_element)
+        # Ionization
+        ionization_x_freq = declare(int, value=round(ionization_coords[0] * 10**6))
+        ionization_y_freq = declare(int, value=round(ionization_coords[1] * 10**6))
+        update_frequency(ionization_x_element, ionization_x_freq)
+        update_frequency(ionization_y_element, ionization_y_freq)
+        play("aod_cw", ionization_x_element, duration=setup_duration)
+        play("aod_cw", ionization_y_element, duration=setup_duration)
+        if do_ionize:
+            wait(int(3e3 / 4), ionization_laser_element)
+            play("on", ionization_laser_element, duration=int(200 / 4))
 
-        # Camera
-        play("on", camera_element)
+        # Yellow readout
+        wait(setup_duration, readout_laser_element)
+        wait(setup_duration, camera_element)
 
-        ### Define one rep here
-        def one_rep():
-            # Ionization laser
-            wait(int(400 / 4), ionization_laser_element)
-            play("ionize", ionization_laser_element)
+        play("on", readout_laser_element, duration=int(readout / 4))
+        play("on", camera_element, duration=int(readout / 4))
 
-            wait(default_len_clock_cycles, readout_laser_element)
-            play("charge_state_readout", readout_laser_element)
-            # assign(ind, 0)
-            # with while_(ind < round(pulsed_readout / default_len_clock_cycles)):
-            #     play("on", readout_laser_element)
-            #     assign(ind, ind + 1)
-            align()
-
-        ### Handle the reps in the utils code
-        seq_utils.handle_reps(one_rep, num_reps)
-
-        play("off", camera_element)
+        play("off", camera_element, duration=25)
         # play("on", readout_laser_element, duration=clock_cycles)
 
     return seq
@@ -142,11 +116,20 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [100e6, "laser_OPTO_589", "laser_COBO_638", [75.0], [75.0]]
+        # readout, readout_laser, do_ionize, ionization_laser, ionization_coords, polarization_laser, polarization_coords
+        args = [
+            100e3,
+            "laser_OPTO_589",
+            True,
+            "laser_COBO_638",
+            [75.0, 75.0],
+            "laser_INTE_520",
+            [110, 110],
+        ]
         ret_vals = get_seq(opx_config, config, args, 1)
         seq, final, ret_vals, _, _ = ret_vals
 
-        sim_config = SimulationConfig(duration=int(1e6 / 4))
+        sim_config = SimulationConfig(duration=int(110e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

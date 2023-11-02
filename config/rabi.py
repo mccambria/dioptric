@@ -10,10 +10,52 @@ Created July 20th, 2023
 from utils.constants import ModMode, ControlMode, CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
+import numpy as np
 
 home = Path.home()
 
 # region Widefield calibration NVs
+
+green_laser = "laser_INTE_520"
+yellow_laser = "laser_OPTO_589"
+red_laser = "laser_COBO_638"
+
+pixel_coords_key = "pixel_coords"
+green_coords_key = f"coords-{green_laser}"
+red_coords_key = f"coords-{red_laser}"
+
+# Imaging laser dicts
+yellow_laser_dict = {"name": yellow_laser, "readout_dur": 50e6, "num_reps": 1}
+green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 10}
+red_laser_dict = {"name": red_laser, "readout_dur": 1e6, "num_reps": 1}
+
+sample_name = "johnson"
+z_coord = 2.9
+
+widefield_calibration_nv_shell = {
+    "coords": [None, None, z_coord],
+    "name": f"{sample_name}-nvref",
+    "disable_opt": False,
+    "disable_z_opt": True,
+    "expected_count_rate": None,
+    #
+    LaserKey.IMAGING: yellow_laser_dict,
+    # LaserKey.IMAGING: green_laser_dict,
+    # LaserKey.IMAGING: red_laser_dict,
+    #
+    LaserKey.SPIN_READOUT: {
+        "name": green_laser,
+        "pol_dur": 2e3,
+        "readout_dur": 440,
+    },
+    LaserKey.IONIZATION: {
+        "name": red_laser,
+        "ion_dur": 2e3,
+    },  # 50 mW setting for 10 mW on table
+    LaserKey.POLARIZATION: {
+        "name": green_laser,
+    },
+}
 
 widefield_calibration_nv_shell = {
     "name": "widefield_calibration_nv1",
@@ -36,11 +78,10 @@ widefield_calibration_nv1["disable_z_opt"] = False
 widefield_calibration_nv2["disable_z_opt"] = True
 
 # Coords
-z_coord = 5.82
-widefield_calibration_nv1["pixel_coords"] = [191.4, 285.58]
-widefield_calibration_nv1["coords"] = [-0.023, 0.028, z_coord]
-widefield_calibration_nv2["pixel_coords"] = [327.61, 215.15]
-widefield_calibration_nv2["coords"] = [0.181, 0.144, z_coord]
+widefield_calibration_nv1[pixel_coords_key] = [267.929, 290.489]
+widefield_calibration_nv1[green_coords_key] = [110.011, 110.845]
+widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
+widefield_calibration_nv2[green_coords_key] = [108.3, 112.002]
 
 # endregion
 # region Base config
@@ -432,13 +473,13 @@ opx_config = {
         "ao_laser_COBO_638_x": {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
-            "sticky": {"analog": True, "duration": 160},
+            # "sticky": {"analog": True, "duration": 160},
             "operations": {"aod_cw": "red_aod_cw"},
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 75e6,
-            "sticky": {"analog": True, "duration": 160},
+            # "sticky": {"analog": True, "duration": 160},
             "operations": {"aod_cw": "red_aod_cw"},
         },
         "ao_laser_INTE_520_x": {

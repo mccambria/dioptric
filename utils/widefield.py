@@ -46,7 +46,7 @@ def get_widefield_calibration_nvs():
     return nv1, nv2
 
 
-def pixel_to_scanning_coords(pixel_coords):
+def pixel_to_scanning_coords(pixel_coords, coords_suffix=None):
     """Convert camera pixel coordinates to scanning coordinates (e.g. galvo voltages)
     using two calibrated NV coordinate pairs from the config file
 
@@ -60,18 +60,18 @@ def pixel_to_scanning_coords(pixel_coords):
     list(numeric)
         Scanning coordinates
     """
-    m_x, b_x, m_y, b_y = _pixel_to_scanning_coords()
+    m_x, b_x, m_y, b_y = _pixel_to_scanning_coords(coords_suffix)
     scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
     return scanning_coords
 
 
-def _pixel_to_scanning_coords():
+def _pixel_to_scanning_coords(coords_suffix=None):
     """Get the linear parameters for the conversion"""
 
     nv1, nv2 = get_widefield_calibration_nvs()
-    nv1_scanning_coords = nv1["coords"]
+    nv1_scanning_coords = pos.get_nv_coords(nv1, coords_suffix, drift_adjust=False)
     nv1_pixel_coords = nv1["pixel_coords"]
-    nv2_scanning_coords = nv2["coords"]
+    nv2_scanning_coords = pos.get_nv_coords(nv2, coords_suffix, drift_adjust=False)
     nv2_pixel_coords = nv2["pixel_coords"]
 
     # Assume (independent) linear relations for both x and y

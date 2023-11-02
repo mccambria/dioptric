@@ -22,6 +22,7 @@ from utils import positioning as pos
 from utils import common
 from utils import widefield
 from numba import njit
+from utils.constants import LaserKey
 
 
 def optimize_laser_scanning_calibration(cxn):
@@ -154,10 +155,9 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
     return np.array(cost_jac)
 
 
-def optimize_pixel(
+def main(
     nv_sig=None,
     pixel_coords=None,
-    img_array=None,
     radius=None,
     set_scanning_drift=True,
     set_pixel_drift=True,
@@ -166,19 +166,67 @@ def optimize_pixel(
     pixel_drift=None,
     plot_data=False,
 ):
-    if img_array is None:
-        with common.labrad_connect() as cxn:
-            # prepare_microscope(cxn, nv_sig)
-            img_array = stationary_count_lite(
-                cxn,
-                nv_sig,
-                ret_img_array=True,
-                scanning_drift_adjust=scanning_drift_adjust,
-                pixel_drift_adjust=pixel_drift_adjust,
-            )
+    with common.labrad_connect() as cxn:
+        return main_with_cxn(
+            cxn,
+            scanning_drift_adjust,
+            nv_sig,
+            pixel_coords,
+            radius,
+            set_scanning_drift,
+            set_pixel_drift,
+            pixel_drift_adjust,
+            pixel_drift,
+            plot_data,
+        )
+    
+def main_with_cxn(
+    cxn,
+    scanning_drift_adjust=True,
+    nv_sig=None,
+    pixel_coords=None,
+    radius=None,
+    set_scanning_drift=True,
+    set_pixel_drift=True,
+    pixel_drift_adjust=True,
+    pixel_drift=None,
+    plot_data=False,
+):
+    laser_name = nv_sig[LaserKey.IMAGING]["name"]
+    img_array = stationary_count_lite(
+        cxn,
+        nv_sig,
+        ret_img_array=True,
+        scanning_drift_adjust=scanning_drift_adjust,
+        pixel_drift_adjust=pixel_drift_adjust,
+        coords_suffix=laser_name,
+    )
+            
+    return main_with_img_array(
+        img_array,
+        nv_sig,
+        pixel_coords,
+        radius,
+        set_scanning_drift,
+        set_pixel_drift,
+        pixel_drift_adjust,
+        pixel_drift,
+        plot_data)
+            
+def main_with_img_array(
+    img_array=None,
+    nv_sig=None,
+    pixel_coords=None,
+    radius=None,
+    set_scanning_drift=True,
+    set_pixel_drift=True,
+    pixel_drift_adjust=True,
+    pixel_drift=None,
+    plot_data=False,
+):
     if plot_data:
         fig, ax = plt.subplots()
-        kpl.imshow(ax, img_array, x_label="X", y_label="Y", cbar_label="ADUs")
+        kpl.imshow(ax, img_array, x_label="X", y_label="Y", cbar_label="Counts")
 
     # Make copies so we don't mutate the originals
     if pixel_coords is None:

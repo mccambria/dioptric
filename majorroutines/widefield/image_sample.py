@@ -11,7 +11,7 @@ Created on April 9th, 2019
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
-from majorroutines.widefield.optimize import prepare_microscope
+from majorroutines.widefield.optimize_pixel_coords import prepare_microscope
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield as widefield_utils
@@ -29,7 +29,10 @@ def single_nv(nv_sig):
 
 def single_nv_ionization(nv_sig):
     nv_list = [nv_sig]
-    return _nv_list_sub(nv_list, "single_nv_ionization")
+    control_img_array = _nv_list_sub(nv_list, "single_nv_ionization", do_ionize=False)
+    ionize_img_array = _nv_list_sub(nv_list, "single_nv_ionization", do_ionize=True)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, ionize_img_array / control_img_array)
 
 
 def nv_list(nv_list):
@@ -37,7 +40,7 @@ def nv_list(nv_list):
     return _nv_list_sub(nv_list, "nv_list", save_dict)
 
 
-def _nv_list_sub(nv_list, caller_fn_name, save_dict=None):
+def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, do_ionize=False):
     nv_sig = nv_list[0]
     if caller_fn_name == "single_nv_ionization":
         laser_key = LaserKey.IONIZATION
@@ -49,7 +52,9 @@ def _nv_list_sub(nv_list, caller_fn_name, save_dict=None):
     x_coords = [coords[0] for coords in adj_coords_list]
     y_coords = [coords[1] for coords in adj_coords_list]
     num_reps = nv_sig[LaserKey.IMAGING]["num_reps"]
-    return main(nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict)
+    return main(
+        nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict, do_ionize
+    )
 
 
 def widefield(nv_sig):
@@ -85,10 +90,18 @@ def main(
     x_coords=None,
     y_coords=None,
     save_dict=None,
+    do_ionize=False,
 ):
     with common.labrad_connect() as cxn:
         ret_vals = main_with_cxn(
-            cxn, nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict
+            cxn,
+            nv_sig,
+            caller_fn_name,
+            num_reps,
+            x_coords,
+            y_coords,
+            save_dict,
+            do_ionize,
         )
     return ret_vals
 
@@ -101,6 +114,7 @@ def main_with_cxn(
     x_coords=None,
     y_coords=None,
     save_dict=None,
+    do_ionize=False,
 ):
     ### Some initial setup
 
@@ -113,6 +127,8 @@ def main_with_cxn(
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
     tb.set_filter(cxn, nv_sig, laser_key)
+
+    pos.set_xyz_on_nv(cxn, nv_sig)
 
     ### Load the pulse generator
 
@@ -130,9 +146,11 @@ def main_with_cxn(
         seq_args = [
             readout,
             readout_laser,
+            do_ionize,
             ionization_laser,
-            list(x_coords),
-            list(y_coords),
+            [x_coords[0], y_coords[0]],
+            nv_sig[LaserKey.POLARIZATION]["name"],
+            [110, 110],
         ]
         # print(seq_args)
         seq_file = "simple_readout-ionization.py"
@@ -156,10 +174,19 @@ def main_with_cxn(
 
     ### Collect the data
 
-    camera.arm()
-    pulse_gen.stream_start(num_reps)
-    img_array = camera.read()
-    camera.disarm()
+    if caller_fn_name == "single_nv_ionization":
+        num_runs = 10
+    else:
+        num_runs = 1
+    for ind in range(num_runs):
+        camera.arm()
+        pulse_gen.stream_start(num_reps)
+        if ind == 0:
+            img_array = camera.read()
+        else:
+            img_array += camera.read()
+        camera.disarm()
+    img_array = img_array / num_runs
     kpl.imshow(ax, img_array, **imshow_kwargs)
 
     ### Clean up and save the data
