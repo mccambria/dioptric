@@ -29,10 +29,28 @@ def single_nv(nv_sig):
 
 def single_nv_ionization(nv_sig):
     nv_list = [nv_sig]
-    control_img_array = _nv_list_sub(nv_list, "single_nv_ionization", do_ionize=False)
-    ionize_img_array = _nv_list_sub(nv_list, "single_nv_ionization", do_ionize=True)
+    num_runs = 1
+    fn_name = "single_nv_ionization"
+    for ind in range(num_runs):
+        if ind == 0:
+            control_img_array = _nv_list_sub(nv_list, fn_name, do_ionize=False)
+            ionize_img_array = _nv_list_sub(nv_list, fn_name, do_ionize=True)
+        else:
+            control_img_array += _nv_list_sub(nv_list, fn_name, do_ionize=False)
+            ionize_img_array += _nv_list_sub(nv_list, fn_name, do_ionize=True)
+    control_img_array = control_img_array / num_runs
+    ionize_img_array = ionize_img_array / num_runs
     fig, ax = plt.subplots()
-    kpl.imshow(ax, ionize_img_array / control_img_array)
+    kpl.imshow(
+        ax,
+        ionize_img_array - control_img_array,
+        title="Difference",
+        cbar_label="Counts",
+    )
+    fig, ax = plt.subplots()
+    kpl.imshow(
+        ax, ionize_img_array / control_img_array, title="Contrast", cbar_label="Counts"
+    )
 
 
 def nv_list(nv_list):
@@ -136,24 +154,31 @@ def main_with_cxn(
     readout_us = readout / 10**3
     readout_ms = readout / 10**6
     readout_sec = readout / 10**9
+
     if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
         seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
         seq_file = "simple_readout-scanning.py"
+
     elif caller_fn_name == "single_nv_ionization":
-        laser_key = LaserKey.IONIZATION
-        laser_dict = nv_sig[laser_key]
-        ionization_laser = laser_dict["name"]
+        ionization_laser = nv_sig[LaserKey.IONIZATION]["name"]
+        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ionization_laser)
+
+        polarization_laser = nv_sig[LaserKey.POLARIZATION]["name"]
+        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=polarization_laser)
+
         seq_args = [
             readout,
             readout_laser,
             do_ionize,
             ionization_laser,
-            [x_coords[0], y_coords[0]],
-            nv_sig[LaserKey.POLARIZATION]["name"],
-            [110, 110],
+            ion_coords,
+            polarization_laser,
+            pol_coords,
         ]
         # print(seq_args)
+        # return
         seq_file = "simple_readout-ionization.py"
+
     elif caller_fn_name == "widefield":
         seq_args = [readout, readout_laser]
         seq_file = "simple_readout-widefield.py"
@@ -175,7 +200,7 @@ def main_with_cxn(
     ### Collect the data
 
     if caller_fn_name == "single_nv_ionization":
-        num_runs = 10
+        num_runs = 200
     else:
         num_runs = 1
     for ind in range(num_runs):

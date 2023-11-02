@@ -51,7 +51,8 @@ def qua_program(
     polarization_x_element = f"ao_{polarization_laser}_x"
     polarization_y_element = f"ao_{polarization_laser}_y"
 
-    setup_duration = int(10e3 / 4)
+    access_time = int(20e3 / 4)
+    setup_duration = int(access_time + 10e3 / 4)
 
     with program() as seq:
         # Polarization
@@ -62,11 +63,11 @@ def qua_program(
             int, value=round(polarization_coords[1] * 10**6)
         )
         update_frequency(polarization_x_element, polarization_x_freq)
-        update_frequency(ionization_y_element, polarization_y_freq)
+        update_frequency(polarization_y_element, polarization_y_freq)
         play("aod_cw", polarization_x_element, duration=setup_duration)
         play("aod_cw", polarization_y_element, duration=setup_duration)
-        wait(int(1e3 / 4), polarization_laser_element)
-        play("on", polarization_laser_element, duration=int(1e3 / 4))
+        wait(access_time, polarization_laser_element)
+        play("on", polarization_laser_element, duration=int(3e3 / 4))
 
         # Ionization
         ionization_x_freq = declare(int, value=round(ionization_coords[0] * 10**6))
@@ -76,8 +77,8 @@ def qua_program(
         play("aod_cw", ionization_x_element, duration=setup_duration)
         play("aod_cw", ionization_y_element, duration=setup_duration)
         if do_ionize:
-            wait(int(3e3 / 4), ionization_laser_element)
-            play("on", ionization_laser_element, duration=int(200 / 4))
+            wait(access_time + int(5e3 / 4), ionization_laser_element)
+            play("on", ionization_laser_element, duration=int(3e3 / 4))
 
         # Yellow readout
         wait(setup_duration, readout_laser_element)
@@ -118,18 +119,18 @@ if __name__ == "__main__":
     try:
         # readout, readout_laser, do_ionize, ionization_laser, ionization_coords, polarization_laser, polarization_coords
         args = [
-            100e3,
+            10000000.0,
             "laser_OPTO_589",
-            True,
+            False,
             "laser_COBO_638",
-            [75.0, 75.0],
+            [75.52, 74.75],
             "laser_INTE_520",
-            [110, 110],
+            [111.784, 109.55],
         ]
         ret_vals = get_seq(opx_config, config, args, 1)
         seq, final, ret_vals, _, _ = ret_vals
 
-        sim_config = SimulationConfig(duration=int(110e3 / 4))
+        sim_config = SimulationConfig(duration=int(1e6 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -96,6 +96,7 @@ def do_optimize_pixel(nv_sig, set_pixel_drift=False, set_scanning_drift=False):
     pixel_coords = [round(el, 2) for el in pixel_coords]
     print(pixel_coords)
     nv_sig["pixel_coords"] = pixel_coords
+    return pixel_coords
 
 
 def do_optimize_widefield_calibration():
@@ -143,33 +144,33 @@ def do_opx_constant_ac():
     with common.labrad_connect() as cxn:
         opx = cxn.QM_opx
         # opx.constant_ac([3])
-        opx.constant_ac(
-            [],  # Digital channels
-            [7],  # Analog channels
-            [0.5],  # Analog voltages
-            [0],  # Analog frequencies
-        )
+        # Yellow
         # opx.constant_ac(
-        #     # [4, 3],  # Digital channels
-        #     [4],  # Digital channels
-        #     [4, 6],  # Analog channels
-        #     # [0.35, 0.35],  # Analog voltages
-        #     [0.19, 0.19],  # Analog voltages
-        #     [112e6, 110e6],  # Analog frequencies
+        #     [],  # Digital channels
+        #     [7],  # Analog channels
+        #     [0.5],  # Analog voltages
+        #     [0],  # Analog frequencies
         # )
+        # Green
+        opx.constant_ac(
+            [4],  # Digital channels
+            [6, 4],  # Analog channels
+            [0.19, 0.19],  # Analog voltages
+            [111.744, 109.35],  # Analog frequencies
+        )
+        # Red
+        # opx.constant_ac(
+        #     [1],  # Digital channels
+        #     [2, 3],  # Analog channels
+        #     [0.32, 0.32],  # Analog voltages
+        #     [75.6, 74.75],  # Analog frequencies
+        # )
+        # Red + green
         # opx.constant_ac(``
-        #     # [4, 3],  # Digital channels
         #     [1, 4],  # Digital channels
         #     [2,3,4, 6],  # Analog channels
         #     [0.32, 0.32, 0.35, 0.35],  # Analog voltages
-        #     [75e6, 75e6, 110e6, 110e6],  # Analog frequencies
-        # )
-        # opx.constant_ac(
-        #     # [4, 3],  # Digital channels
-        #     [1],  # Digital channels
-        #     [2, 3],  # Analog channels
-        #     [0.30, 0.30],  # Analog voltages
-        #     [75e6, 75e6],  # Analog frequencies
+        #     [75, 75, 110, 110],  # Analog frequencies
         # )
         input("Press enter to stop...")
         # opx.constant_ac()
@@ -233,9 +234,10 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 50e6, "num_reps": 1}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 50e6, "num_reps": 1}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6, "num_reps": 1}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1}
-    red_laser_dict = {"name": red_laser, "readout_dur": 1e6, "num_reps": 1}
+    red_laser_dict = {"name": red_laser, "readout_dur": 10e6, "num_reps": 1}
 
     sample_name = "johnson"
     z_coord = 2.83
@@ -265,9 +267,7 @@ if __name__ == "__main__":
             "name": red_laser,
             "ion_dur": 2e3,
         },  # 50 mW setting for 10 mW on table
-        LaserKey.POLARIZATION: {
-            "name": green_laser,
-        },
+        LaserKey.POLARIZATION: {"name": green_laser},
         #
         "collection": {"filter": "514_notch+630_lp"},
         "magnet_angle": None,
@@ -279,9 +279,9 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_02"
-    nv0[pixel_coords_key] = [325.33, 249.23]
-    nv0[green_coords_key] = [111.776, 109.432]
-    nv0[red_coords_key] = [75.9, 74.7]
+    nv0[pixel_coords_key] = [329.52, 246.979]
+    nv0[green_coords_key] = [111.662, 109.437]
+    nv0[red_coords_key] = [75.7, 74.60]
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -326,27 +326,28 @@ if __name__ == "__main__":
         #     scanning_coords = widefield.pixel_to_scanning_coords(nv["pixel_coords"])
         #     print([round(el, 3) for el in scanning_coords])
         # pixel_coords = nv_sig["pixel_coords"]
+        # pixel_coords = do_optimize_pixel(nv_sig)
         # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, green_laser)
         # print([round(el, 3) for el in scanning_coords])
 
         # center = [110, 110]
-        center = [75.75, 75]
-        half_range = 0.2
-        num_steps = 5
-        for x in np.linspace(center[0] - half_range, center[0] + half_range, num_steps):
-            for y in np.linspace(
-                center[1] - half_range, center[1] + half_range, num_steps
-            ):
-                # print(round(x, 6), round(y, 6))
-                coords_key = red_coords_key
-                # coords_key = green_coords_key
-                nv_sig[coords_key][0] = round(x, 6)
-                nv_sig[coords_key][1] = round(y, 6)
-                # do_image_single_nv(nv_sig)
-                do_image_single_nv_ionization(nv_sig)
+        # center = [75.75, 75]
+        # half_range = 0.3
+        # num_steps = 7
+        # for x in np.linspace(center[0] - half_range, center[0] + half_range, num_steps):
+        #     for y in np.linspace(
+        #         center[1] - half_range, center[1] + half_range, num_steps
+        #     ):
+        #         # print(round(x, 6), round(y, 6))
+        #         coords_key = red_coords_key
+        #         # coords_key = green_coords_key
+        #         nv_sig[coords_key][0] = round(x, 6)
+        #         nv_sig[coords_key][1] = round(y, 6)
+        #         # do_image_single_nv(nv_sig)
+        #         do_image_single_nv_ionization(nv_sig)
 
         # for nv in nv_list:
-        #     do_optimize_pixel(nv)
+        # do_optimize_pixel(nv)
         #     do_optimize_plot(nv)
         # for nv in nv_list:
         #     print(nv["pixel_coords"])
@@ -354,10 +355,10 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
 
-        # nv_ref[LaserKey.IMAGING] = yellow_laser_dict
-        # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(2.0, 3.0, 11):
-        #     nv_ref["coords"][2] = z
+        # nv_sig[LaserKey.IMAGING] = yellow_laser_dict
+        # # for z in np.linspace(3, 7, 21):
+        # # for z in np.linspace(2.0, 3.0, 11):
+        # #     nv_ref["coords"][2] = z
         # do_widefield_image_sample(nv_sig)
 
         # do_scanning_image_sample(nv_ref)
@@ -366,7 +367,7 @@ if __name__ == "__main__":
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
-        # do_image_single_nv_ionization(nv_sig)
+        do_image_single_nv_ionization(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

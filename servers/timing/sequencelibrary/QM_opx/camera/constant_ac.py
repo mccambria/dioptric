@@ -27,6 +27,7 @@ from qm import generate_qua_script
 def qua_program(
     digital_channels, analog_channels, analog_voltages, analog_freqs, num_reps=-1
 ):
+    analog_freqs = [int(el * 10**6) for el in analog_freqs]
     clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
     with program() as seq:
         ### Non-repeated stuff here
