@@ -20,6 +20,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from scipy import ndimage
 import os
+import time
 
 
 def single_nv(nv_sig):
@@ -203,14 +204,15 @@ def main_with_cxn(
         num_runs = 1000
     else:
         num_runs = 1
+    camera.arm()
     for ind in range(num_runs):
-        camera.arm()
-        pulse_gen.stream_start(num_reps)
+        start = time.time()
+        pulse_gen.stream_start()
         if ind == 0:
             img_array = camera.read()
         else:
             img_array += camera.read()
-        camera.disarm()
+    camera.disarm()
     img_array = img_array / num_runs
     kpl.imshow(ax, img_array, **imshow_kwargs)
 
