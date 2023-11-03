@@ -200,7 +200,7 @@ def main_with_cxn(
     ### Collect the data
 
     if caller_fn_name == "single_nv_ionization":
-        num_runs = 200
+        num_runs = 1000
     else:
         num_runs = 1
     for ind in range(num_runs):
