@@ -254,8 +254,8 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        LaserKey.IMAGING: yellow_laser_dict,
-        # LaserKey.IMAGING: green_laser_dict,
+        # LaserKey.IMAGING: yellow_laser_dict,
+        LaserKey.IMAGING: green_laser_dict,
         # LaserKey.IMAGING: red_laser_dict,
         #
         LaserKey.SPIN_READOUT: {
@@ -282,6 +282,7 @@ if __name__ == "__main__":
     nv0[pixel_coords_key] = [327.0, 250.66]
     nv0[green_coords_key] = [111.762, 109.337]
     nv0[red_coords_key] = [75.6, 74.75]
+    # nv0[red_coords_key] = [75.6, 74.75]
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -366,8 +367,8 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
-        # do_image_single_nv(nv_sig)
-        do_image_single_nv_ionization(nv_sig)
+        do_image_single_nv(nv_sig)
+        # do_image_single_nv_ionization(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

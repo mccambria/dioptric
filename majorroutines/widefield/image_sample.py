@@ -206,7 +206,7 @@ def main_with_cxn(
         num_runs = 1
     camera.arm()
     for ind in range(num_runs):
-        start = time.time()
+        # start = time.time()
         pulse_gen.stream_start()
         if ind == 0:
             img_array = camera.read()
