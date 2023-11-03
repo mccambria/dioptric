@@ -161,7 +161,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # print(generate_qua_script(seq, self.opx_config), file=sourceFile)
         # sourceFile.close()
 
-    @setting(14, num_reps="i")
+    @setting(14)
     def stream_start(self, c):
         """See pulse_gen interface"""
 
