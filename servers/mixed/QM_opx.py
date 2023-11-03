@@ -82,6 +82,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         # Sequence tracking variables to prevent redundant compiles of sequences
         self.program_id = None
+        self.seq_file = None
+        self.seq_args_string = None
+        self.num_reps = None
 
         # Tagger setup
         self.apd_indices = config["apd_indices"]
