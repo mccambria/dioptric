@@ -243,27 +243,28 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
-    data = tb.get_raw_data(file_name)
-    img_array = np.array(data["img_array"])
+    # file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
+    # data = tb.get_raw_data(file_name)
+    # img_array = np.array(data["img_array"])
 
     kpl.init_kplotlib()
     # fig, ax = plt.subplots()
     # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    nvdata_path = common.get_nvdata_path()
-    path_from_nvdata = "pc_rabi/branch_master/image_sample/2023_11"
-    full_path = nvdata_path / path_from_nvdata
-    diff_file_names = os.listdir(full_path)
-    for diff_file_name in diff_file_names[-50:]:
-        print(diff_file_name)
-        break
-        if diff_file_name[-3:] == "svg":
-            continue
-        # print(diff_file_name)
-        diff_data = tb.get_raw_data(diff_file_name[:-4], path_from_nvdata)
-        diff_img_array = np.array(diff_data["img_array"])
-        fig, ax = plt.subplots()
-        im = kpl.imshow(ax, diff_img_array - img_array, cbar_label="Counts")
+    file_name = "2023_11_02-22_48_17-johnson-nv0_2023_11_02"
+    data = tb.get_raw_data(file_name)
+    control_img_array = np.array(data["img_array"])
+
+    file_name = "2023_11_02-22_50_58-johnson-nv0_2023_11_02"
+    data = tb.get_raw_data(file_name)
+    ionize_img_array = np.array(data["img_array"])
+
+    fig, ax = plt.subplots()
+    kpl.imshow(
+        ax,
+        ionize_img_array - control_img_array,
+        title="Difference",
+        cbar_label="Counts",
+    )
 
     plt.show(block=True)
