@@ -10,10 +10,52 @@ Created July 20th, 2023
 from utils.constants import ModMode, ControlMode, CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
+import numpy as np
 
 home = Path.home()
 
 # region Widefield calibration NVs
+
+green_laser = "laser_INTE_520"
+yellow_laser = "laser_OPTO_589"
+red_laser = "laser_COBO_638"
+
+pixel_coords_key = "pixel_coords"
+green_coords_key = f"coords-{green_laser}"
+red_coords_key = f"coords-{red_laser}"
+
+# Imaging laser dicts
+yellow_laser_dict = {"name": yellow_laser, "readout_dur": 50e6, "num_reps": 1}
+green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 10}
+red_laser_dict = {"name": red_laser, "readout_dur": 1e6, "num_reps": 1}
+
+sample_name = "johnson"
+z_coord = 2.9
+
+widefield_calibration_nv_shell = {
+    "coords": [None, None, z_coord],
+    "name": f"{sample_name}-nvref",
+    "disable_opt": False,
+    "disable_z_opt": True,
+    "expected_count_rate": None,
+    #
+    LaserKey.IMAGING: yellow_laser_dict,
+    # LaserKey.IMAGING: green_laser_dict,
+    # LaserKey.IMAGING: red_laser_dict,
+    #
+    LaserKey.SPIN_READOUT: {
+        "name": green_laser,
+        "pol_dur": 2e3,
+        "readout_dur": 440,
+    },
+    LaserKey.IONIZATION: {
+        "name": red_laser,
+        "ion_dur": 2e3,
+    },  # 50 mW setting for 10 mW on table
+    LaserKey.POLARIZATION: {
+        "name": green_laser,
+    },
+}
 
 widefield_calibration_nv_shell = {
     "name": "widefield_calibration_nv1",
@@ -36,11 +78,10 @@ widefield_calibration_nv1["disable_z_opt"] = False
 widefield_calibration_nv2["disable_z_opt"] = True
 
 # Coords
-z_coord = 5.82
-widefield_calibration_nv1["pixel_coords"] = [191.4, 285.58]
-widefield_calibration_nv1["coords"] = [-0.023, 0.028, z_coord]
-widefield_calibration_nv2["pixel_coords"] = [327.61, 215.15]
-widefield_calibration_nv2["coords"] = [0.181, 0.144, z_coord]
+widefield_calibration_nv1[pixel_coords_key] = [267.929, 290.489]
+widefield_calibration_nv1[green_coords_key] = [110.011, 110.845]
+widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
+widefield_calibration_nv2[green_coords_key] = [108.3, 112.002]
 
 # endregion
 # region Base config
@@ -53,7 +94,6 @@ config = {
     "camera_spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
-    "common_scanning": False,  #  Whether scanning lasers and other elements have shared versus separate positioning controllers (default False)
     # Access the OS-specific keys with getters from common
     "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
     "linux_nvdata_path": home / "E/nvdata",
@@ -136,12 +176,21 @@ config = {
     },
     ###
     "Positioning": {
+        #
         "xy_control_mode-laser_INTE_520": ControlMode.SEQUENCE,
         "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_INTE_520": float,
         "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.5,
+        "xy_optimize_range-laser_INTE_520": 0.2,
         "xy_units-laser_INTE_520": "MHz",
+        #
+        "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
+        "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
+        "xy_dtype-laser_COBO_638": float,
+        "xy_nm_per_unit-laser_COBO_638": 1000,
+        "xy_optimize_range-laser_COBO_638": 0.2,
+        "xy_units-laser_COBO_638": "MHz",
+        #
         "z_control_mode": ControlMode.STREAM,
         "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
@@ -396,7 +445,7 @@ opx_config = {
         # region Actual "elements", or physical things to control
         "do_laser_COBO_638_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off"},
+            "operations": {"on": "do_on", "off": "do_off", "ionize": "do_ionization"},
         },
         # "do_laser_OPTO_589_dm": {
         #     "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
@@ -405,7 +454,11 @@ opx_config = {
         "ao_laser_OPTO_589_am": {
             "singleInput": {"port": ("con1", 7)},
             "intermediate_frequency": 0,
-            "operations": {"on": "ao_cw", "off": "ao_off"},
+            "operations": {
+                "on": "ao_cw",
+                "off": "ao_off",
+                "charge_state_readout": "charge_state_readout",
+            },
         },
         "do_laser_INTE_520_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
@@ -420,36 +473,41 @@ opx_config = {
         "ao_laser_COBO_638_x": {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
-            # "sticky": {"analog": True},
-            "operations": {"aod_cw": "aod_cw"},
+            # "sticky": {"analog": True, "duration": 160},
+            "operations": {"aod_cw": "red_aod_cw"},
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 75e6,
-            # "sticky": {"analog": True},
-            "operations": {"aod_cw": "aod_cw"},
+            # "sticky": {"analog": True, "duration": 160},
+            "operations": {"aod_cw": "red_aod_cw"},
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 110e6,
             # "sticky": {"analog": True},
-            "operations": {"aod_cw": "aod_cw"},
+            "operations": {"aod_cw": "green_aod_cw"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
             # "sticky": {"analog": True},
-            "operations": {"aod_cw": "aod_cw"},
+            "operations": {"aod_cw": "green_aod_cw"},
         },
         # endregion
     },
     # region Pulses
     "pulses": {
         ### Analog
-        "aod_cw": {
+        "green_aod_cw": {
             "operation": "control",
             "length": default_len,
-            "waveforms": {"single": "aod_cw"},
+            "waveforms": {"single": "green_aod_cw"},
+        },
+        "red_aod_cw": {
+            "operation": "control",
+            "length": default_len,
+            "waveforms": {"single": "red_aod_cw"},
         },
         "ao_cw": {
             "operation": "control",
@@ -461,10 +519,10 @@ opx_config = {
             "length": default_len,
             "waveforms": {"single": "off"},
         },
-        "readout": {
+        "charge_state_readout": {
             "operation": "control",
-            "length": 1e7,
-            "waveforms": {"single": "readout"},
+            "length": 10e6,
+            "waveforms": {"single": "charge_state_readout"},
         },
         ### Digital
         "do_on": {
@@ -482,6 +540,11 @@ opx_config = {
             "length": default_len,
             "digital_marker": "square",
         },
+        "do_ionization": {
+            "operation": "control",
+            "length": 200,
+            "digital_marker": "on",
+        },
         ### Mixed
     },
     # endregion
@@ -489,12 +552,15 @@ opx_config = {
     ### Analog
     "waveforms": {
         "aod_cw": {"type": "constant", "sample": 0.35},
+        "red_aod_cw": {"type": "constant", "sample": 0.32},
+        # "green_aod_cw": {"type": "constant", "sample": 0.35},
+        "green_aod_cw": {"type": "constant", "sample": 0.19},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
         "cw_0.5": {"type": "constant", "sample": 0.5},
         "cw_0.45": {"type": "constant", "sample": 0.45},
         "cw_0.4": {"type": "constant", "sample": 0.4},
-        "readout": {"type": "constant", "sample": 0.45},
+        "charge_state_readout": {"type": "constant", "sample": 0.5},
     },
     ### Digital, format is list of tuples: (on/off, ns)
     "digital_waveforms": {

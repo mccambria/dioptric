@@ -42,6 +42,13 @@ def qua_program(readout, readout_laser, mod_mode, num_reps):
 
         ### Handle the reps in the utils code
         seq_utils.handle_reps(one_rep, num_reps)
+
+        # Test
+        # seq_utils.handle_reps(one_rep, num_reps / 2)
+        # for el in elements:
+        #     qua.play("off", el, duration=clock_cycles)
+        # seq_utils.handle_reps(one_rep, num_reps / 2)
+
         qua.play("off", camera_element, duration=clock_cycles)
 
     return seq
