@@ -45,20 +45,26 @@ def define_sequence(
     readout_element = f"do_{readout_laser}_dm"
     camera_element = "do_camera_trigger"
 
-    x_freqs_pol, y_freqs_pol, x_freqs_ion, y_freqs_ion = coords
-    
-    x_freqs_pol = [el*10**6 for el in x_freqs_pol]
-    y_freqs_pol = [el*10**6 for el in y_freqs_pol]
-    x_freqs_ion = [el*10**6 for el in x_freqs_ion]
-    y_freqs_ion = [el*10**6 for el in y_freqs_ion]
-
     (
         polarization_duration,
         microwave_duration,
+        ionization_duration,
         readout_duration,
         camera_duration,
+        aod_duration,
+        setup_duration,
     ) = durations
 
+    # Extract coordinates
+    x_freqs_pol, y_freqs_pol, x_freqs_ion, y_freqs_ion = coords
+
+    # Convert frequencies from MHz to Hz
+    x_freqs_pol = [int(el * 1e6) for el in x_freqs_pol]
+    y_freqs_pol = [int(el * 1e6) for el in y_freqs_pol]
+    x_freqs_ion = [int(el * 1e6) for el in x_freqs_ion]
+    y_freqs_ion = [int(el * 1e6) for el in y_freqs_ion]
+
+    # Duration of one clock cycle in nanoseconds
     ns_per_clock_cycle = 4
 
     with program() as seq:
@@ -72,28 +78,38 @@ def define_sequence(
             update_frequency(x_element_pol, x_freq_pol)
             update_frequency(y_element_pol, y_freq_pol)
 
-            # Play laser polarization (duration in ns)
-            play("aod_cw", x_element_pol, duration=clock_cycles)
-            play("aod_cw", y_element_pol, duration=clock_cycles)
+            # Play AODs for polarization (duration in ns)
+            play("aod_cw", x_element_pol, duration=aod_duration)
+            play("aod_cw", y_element_pol, duration=aod_duration)
             play("on", polarization_element, duration=polarization_duration)
+
+        # Wait for microwave setup
+        wait(setup_duration, microwave_element)
 
         # Play microwave pulse
         play("on", microwave_element, duration=microwave_duration)
 
+        # Wait for ionization setup
+        wait(setup_duration, ionization_element)
+
         with for_each_((x_freq_ion, y_freq_ion), (x_freqs_ion, y_freqs_ion)):
             update_frequency(x_element_ion, x_freq_ion)
             update_frequency(y_element_ion, y_freq_ion)
-            # Play ionization laser
-            play("aod_cw", x_element_ion, duration=clock_cycles)
-            play("aod_cw", y_element_ion, duration=clock_cycles)
-            play("on", ionization_element, duration=200)
+
+            # Play AODs for ionization (duration in ns)
+            play("aod_cw", x_element_ion, duration=aod_duration)
+            play("aod_cw", y_element_ion, duration=aod_duration)
+            play("on", ionization_element, duration=ionization_duration)
+
+        # Wait for readout setup
+        wait(setup_duration, readout_element)
+        wait(setup_duration, camera_element)
 
         # Readout sequence
         play("on", readout_element, duration=readout_duration)
         play("on", camera_element, duration=camera_duration)
 
     return seq
-
 
 # Function to get the sequence
 def get_sequence(opx_config, config, args, num_reps=-1):
@@ -102,7 +118,6 @@ def get_sequence(opx_config, config, args, num_reps=-1):
     sample_size = "all_reps"
     num_gates = 0
     return seq, final, [], num_gates, sample_size
-
 
 if __name__ == "__main__":
     config_module = common.get_config_module()
@@ -121,11 +136,12 @@ if __name__ == "__main__":
             "ionization",
             "readout",
             [105.0, 110.0, 115.0, 115.0],  # the coordinates for coords
-            4,  # Number of repetitions
         ]
-        durations = (1000, 100, 20, 20, 1000 / 4)  # Durations in ns
+        durations = (1000, 100, 20, 20, 20, 1000 / 4, 1000 / 4)  # Durations in ns
         args.append(durations)
 
+        ret_vals = get_sequence(opx_config, config, args)
+        seq, final, ret_vals, _, _ =
         ret_vals = get_sequence(opx_config, config, args, 4)
         seq, final, ret_vals, _, _ = ret_vals
 
