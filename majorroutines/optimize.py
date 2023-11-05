@@ -218,7 +218,7 @@ def _read_counts_camera_sequence(
                 pulse_gen.stream_load(seq_file_name, seq_args_string)
             elif axis_ind == 2:
                 axis_write_fn(val)
-        pulse_gen.stream_start(num_reps)
+        pulse_gen.stream_start()
         img_array = camera.read()
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         counts.append(sample)

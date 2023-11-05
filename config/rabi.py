@@ -181,7 +181,7 @@ config = {
         "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_INTE_520": float,
         "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.2,
+        "xy_optimize_range-laser_INTE_520": 0.3,
         "xy_units-laser_INTE_520": "MHz",
         #
         "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,

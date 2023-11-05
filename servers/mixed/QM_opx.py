@@ -40,6 +40,8 @@ import socket
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
 from qm import generate_qua_script
+from qm import CompilerOptionArguments
+import time
 
 
 class QmOpx(Tagger, PulseGen, LabradServer):
@@ -59,7 +61,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
 
         # Get config dicts
-        self.refresh_opx_config()
+        config_module = common.get_config_module()
+        self.opx_config = config_module.opx_config
         config = common.get_config_dict()
         self.config = config
 
@@ -67,6 +70,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
+        self.opx = self.qmm.open_qm(self.opx_config)
 
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
@@ -78,6 +82,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
         sys.path.append(str(opx_sequence_library_path))
 
+        # Sequence tracking variables to prevent redundant compiles of sequences
+        self.program_id = None
+        self.seq_file = None
+        self.seq_args_string = None
+        self.num_reps = None
+
         # Tagger setup
         self.apd_indices = config["apd_indices"]
         self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
@@ -87,10 +97,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stopServer(self):
         self.qmm.close_all_quantum_machines()
         self.qmm.close()
-
-    def refresh_opx_config(self):
-        config_module = common.get_config_module()
-        self.opx_config = config_module.opx_config
 
     # endregion
     # region Sequencing
@@ -115,8 +121,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
 
-        self.refresh_opx_config()
-
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
@@ -124,16 +128,14 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             ret_vals = seq_module.get_seq(self.opx_config, self.config, args, num_reps)
             seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
 
-        self.refresh_opx_config()
-
         return seq, final, ret_vals
 
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
     def stream_load(self, c, seq_file, seq_args_string=""):
         """See pulse_gen interface"""
 
-        _, _, ret_vals = self._stream_load(seq_file, seq_args_string, num_reps=1)
-        return ret_vals
+        self._stream_load(seq_file, seq_args_string, num_reps=1)
+        return self.seq_ret_vals
 
     def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):
         """
@@ -141,38 +143,48 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         handled in the sequence build for the OPX
         """
 
-        # Reconcile the stored and passed sequence parameters
-        if seq_file is None:
-            seq_file = self.seq_file
-        else:
-            self.seq_file = seq_file
-        if seq_args_string is None:
-            seq_args_string = self.seq_args_string
-        else:
-            self.seq_args_string = seq_args_string
-        if num_reps is None:
-            num_reps = self.num_reps
-        else:
-            self.num_reps = num_reps
+        # Just do nothing if the sequence has already been compiled previously
+        if (
+            seq_file == self.seq_file
+            and seq_args_string == self.seq_args_string
+            and num_reps == self.num_reps
+        ):
+            return
 
-        # Process the sequence
+        # Store the sequence parameters so we know this has already been compiled
+        self.seq_file = seq_file
+        self.seq_args_string = seq_args_string
+        self.num_reps = num_reps
+
+        # Compile
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-        return seq, final, ret_vals
+        # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
+        # self.program_id = self.opx.compile(seq, compiler_options=opts)
+        self.program_id = self.opx.compile(seq)
+        self.seq_ret_vals = ret_vals
 
-    @setting(14, num_reps="i")
-    def stream_start(self, c, num_reps=1):
-        """See pulse_gen interface"""
-
-        seq, _, _ = self._stream_load(num_reps=num_reps)
-        opx = self.qmm.open_qm(self.opx_config)
-        # Serialize to file
+        # Serialize to file for debugging
         # sourceFile = open('debug3.py', 'w')
         # print(generate_qua_script(seq, self.opx_config), file=sourceFile)
         # sourceFile.close()
-        program_id = opx.compile(seq)
-        pending_job = opx.queue.add_compiled(program_id)
+
+    @setting(14)
+    def stream_start(self, c):
+        """See pulse_gen interface"""
+
+        # start = time.time()
+        pending_job = self.opx.queue.add_compiled(self.program_id)
+        # end = time.time()
+        # logging.info(f"add_compiled: {round(end - start, 3)}")
+        # Only return once the job has started
         job = pending_job.wait_for_execution()
-        logging.info(job)
+        # end = time.time()
+        # logging.info(f"wait_for_execution: {round(end - start, 3)}")
+        # while job.status != "completed":
+        # pass
+        # end = time.time()
+        # logging.info(f"job: {round(end - start, 3)}")
+        # logging.info(job)
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
@@ -464,10 +476,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     @setting(40)
     def reset(self, c):
-        self.refresh_opx_config()
+        pass
         # self.qmm.clear_all_job_results()
         # self.qmm.reset_data_processing()
-        self.qmm.close_all_quantum_machines()
+        # self.qmm.close_all_quantum_machines()
 
 
 __server__ = QmOpx()
