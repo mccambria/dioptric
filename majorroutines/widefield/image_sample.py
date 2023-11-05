@@ -30,17 +30,8 @@ def single_nv(nv_sig):
 
 def single_nv_ionization(nv_sig):
     nv_list = [nv_sig]
-    num_runs = 1
-    fn_name = "single_nv_ionization"
-    for ind in range(num_runs):
-        if ind == 0:
-            control_img_array = _nv_list_sub(nv_list, fn_name, do_ionize=False)
-            ionize_img_array = _nv_list_sub(nv_list, fn_name, do_ionize=True)
-        else:
-            control_img_array += _nv_list_sub(nv_list, fn_name, do_ionize=False)
-            ionize_img_array += _nv_list_sub(nv_list, fn_name, do_ionize=True)
-    control_img_array = control_img_array / num_runs
-    ionize_img_array = ionize_img_array / num_runs
+    control_img_array = _nv_list_sub(nv_list, "single_nv_ionization", do_ionize=False)
+    ionize_img_array = _nv_list_sub(nv_list, "single_nv_ionization", do_ionize=True)
     fig, ax = plt.subplots()
     kpl.imshow(
         ax,
@@ -54,26 +45,63 @@ def single_nv_ionization(nv_sig):
     )
 
 
+def do_image_single_nv_polarization(nv_sig):
+    nv_list = [nv_sig]
+    control_img_array = _nv_list_sub(
+        nv_list, "do_image_single_nv_polarization", do_polarize=False
+    )
+    polarize_img_array = _nv_list_sub(
+        nv_list, "do_image_single_nv_polarization", do_polarize=True
+    )
+    fig, ax = plt.subplots()
+    kpl.imshow(
+        ax,
+        polarize_img_array - control_img_array,
+        title="Difference",
+        cbar_label="Counts",
+    )
+    fig, ax = plt.subplots()
+    kpl.imshow(
+        ax,
+        polarize_img_array / control_img_array,
+        title="Contrast",
+        cbar_label="Counts",
+    )
+
+
 def nv_list(nv_list):
     save_dict = {"nv_list": nv_list}
     return _nv_list_sub(nv_list, "nv_list", save_dict)
 
 
-def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, do_ionize=False):
+def _nv_list_sub(
+    nv_list, caller_fn_name, save_dict=None, do_polarize=False, do_ionize=False
+):
     nv_sig = nv_list[0]
-    if caller_fn_name == "single_nv_ionization":
-        laser_key = LaserKey.IONIZATION
+    if caller_fn_name in ["do_image_single_nv_polarization", "single_nv_ionization"]:
+        return main(
+            nv_sig,
+            caller_fn_name,
+            save_dict=save_dict,
+            do_polarize=do_polarize,
+            do_ionize=do_ionize,
+        )
     else:
         laser_key = LaserKey.IMAGING
-    laser_dict = nv_sig[laser_key]
-    laser_name = laser_dict["name"]
-    adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
-    x_coords = [coords[0] for coords in adj_coords_list]
-    y_coords = [coords[1] for coords in adj_coords_list]
-    num_reps = nv_sig[LaserKey.IMAGING]["num_reps"]
-    return main(
-        nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict, do_ionize
-    )
+        laser_dict = nv_sig[laser_key]
+        laser_name = laser_dict["name"]
+        adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
+        x_coords = [coords[0] for coords in adj_coords_list]
+        y_coords = [coords[1] for coords in adj_coords_list]
+        num_reps = nv_sig[LaserKey.IMAGING]["num_reps"]
+        return main(
+            nv_sig,
+            caller_fn_name,
+            num_reps,
+            x_coords,
+            y_coords,
+            save_dict,
+        )
 
 
 def widefield(nv_sig):
@@ -109,6 +137,7 @@ def main(
     x_coords=None,
     y_coords=None,
     save_dict=None,
+    do_polarize=False,
     do_ionize=False,
 ):
     with common.labrad_connect() as cxn:
@@ -120,6 +149,7 @@ def main(
             x_coords,
             y_coords,
             save_dict,
+            do_polarize,
             do_ionize,
         )
     return ret_vals
@@ -133,6 +163,7 @@ def main_with_cxn(
     x_coords=None,
     y_coords=None,
     save_dict=None,
+    do_polarize=False,
     do_ionize=False,
 ):
     ### Some initial setup
@@ -160,7 +191,7 @@ def main_with_cxn(
         seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
         seq_file = "simple_readout-scanning.py"
 
-    elif caller_fn_name == "single_nv_ionization":
+    elif caller_fn_name in ["single_nv_ionization", "do_image_single_nv_polarization"]:
         ionization_laser = nv_sig[LaserKey.IONIZATION]["name"]
         ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ionization_laser)
 
@@ -170,6 +201,7 @@ def main_with_cxn(
         seq_args = [
             readout,
             readout_laser,
+            do_polarize,
             do_ionize,
             ionization_laser,
             ion_coords,
@@ -200,18 +232,23 @@ def main_with_cxn(
 
     ### Collect the data
 
-    if caller_fn_name == "single_nv_ionization":
-        num_runs = 1000
+    if caller_fn_name in ["single_nv_ionization", "do_image_single_nv_polarization"]:
+        num_runs = 200
     else:
         num_runs = 1
     camera.arm()
     for ind in range(num_runs):
         # start = time.time()
         pulse_gen.stream_start()
+        # end = time.time()
+        # print(f"stream_start: {round(end - start, 3)}")
+        # start = time.time()
         if ind == 0:
             img_array = camera.read()
         else:
             img_array += camera.read()
+        # end = time.time()
+        # print(f"read: {round(end - start, 3)}")
     camera.disarm()
     img_array = img_array / num_runs
     kpl.imshow(ax, img_array, **imshow_kwargs)

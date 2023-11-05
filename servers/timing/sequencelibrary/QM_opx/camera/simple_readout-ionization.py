@@ -26,6 +26,7 @@ from qm import generate_qua_script
 def qua_program(
     readout,
     readout_laser,
+    do_polarize,
     do_ionize,
     ionization_laser,
     ionization_coords,
@@ -52,7 +53,12 @@ def qua_program(
     polarization_y_element = f"ao_{polarization_laser}_y"
 
     access_time = int(20e3 / 4)
-    setup_duration = int(access_time + 10e3 / 4)
+    polarization_duration = int(1e6 / 4)
+    setup_duration = access_time + polarization_duration + int(10e3 / 4)
+    us_clock_cycles = int(1e3 / 4)
+    readout_clock_cycles = int(readout / 4)
+    total_duration = setup_duration + readout_clock_cycles
+    # print(((setup_duration * 4) + readout) * 10**-9)
 
     with program() as seq:
         # Polarization
@@ -64,18 +70,24 @@ def qua_program(
         )
         update_frequency(polarization_x_element, polarization_x_freq)
         update_frequency(polarization_y_element, polarization_y_freq)
-        play("aod_cw", polarization_x_element, duration=setup_duration)
-        play("aod_cw", polarization_y_element, duration=setup_duration)
-        wait(access_time, polarization_laser_element)
-        play("on", polarization_laser_element, duration=int(3e3 / 4))
+        play("aod_cw", polarization_x_element, duration=total_duration)
+        play("aod_cw", polarization_y_element, duration=total_duration)
+        if do_polarize:
+            wait(access_time, polarization_laser_element)
+            play(
+                "on",
+                polarization_laser_element,
+                duration=polarization_duration,
+                # duration=total_duration
+            )
 
         # Ionization
         ionization_x_freq = declare(int, value=round(ionization_coords[0] * 10**6))
         ionization_y_freq = declare(int, value=round(ionization_coords[1] * 10**6))
         update_frequency(ionization_x_element, ionization_x_freq)
         update_frequency(ionization_y_element, ionization_y_freq)
-        play("aod_cw", ionization_x_element, duration=setup_duration)
-        play("aod_cw", ionization_y_element, duration=setup_duration)
+        play("aod_cw", ionization_x_element, duration=total_duration)
+        play("aod_cw", ionization_y_element, duration=total_duration)
         if do_ionize:
             wait(access_time + int(5e3 / 4), ionization_laser_element)
             play("on", ionization_laser_element, duration=int(3e3 / 4))
@@ -83,12 +95,9 @@ def qua_program(
         # Yellow readout
         wait(setup_duration, readout_laser_element)
         wait(setup_duration, camera_element)
-
-        play("on", readout_laser_element, duration=int(readout / 4))
-        play("on", camera_element, duration=int(readout / 4))
-
+        play("on", readout_laser_element, duration=readout_clock_cycles)
+        play("on", camera_element, duration=readout_clock_cycles)
         play("off", camera_element, duration=25)
-        # play("on", readout_laser_element, duration=clock_cycles)
 
     return seq
 
@@ -119,18 +128,18 @@ if __name__ == "__main__":
     try:
         # readout, readout_laser, do_ionize, ionization_laser, ionization_coords, polarization_laser, polarization_coords
         args = [
-            10000000.0,
+            1000000.0,
             "laser_OPTO_589",
             False,
             "laser_COBO_638",
-            [75.52, 74.75],
+            [74.45, 75.25],
             "laser_INTE_520",
-            [111.784, 109.55],
+            [111.695, 108.75],
         ]
         ret_vals = get_seq(opx_config, config, args, 1)
         seq, final, ret_vals, _, _ = ret_vals
 
-        sim_config = SimulationConfig(duration=int(1e6 / 4))
+        sim_config = SimulationConfig(duration=int(2e6 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

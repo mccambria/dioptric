@@ -40,6 +40,8 @@ import socket
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
 from qm import generate_qua_script
+from qm import CompilerOptionArguments
+import time
 
 
 class QmOpx(Tagger, PulseGen, LabradServer):
@@ -156,6 +158,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         # Compile
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+        # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
+        # self.program_id = self.opx.compile(seq, compiler_options=opts)
         self.program_id = self.opx.compile(seq)
         self.seq_ret_vals = ret_vals
 
@@ -168,9 +172,19 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stream_start(self, c):
         """See pulse_gen interface"""
 
+        # start = time.time()
         pending_job = self.opx.queue.add_compiled(self.program_id)
+        # end = time.time()
+        # logging.info(f"add_compiled: {round(end - start, 3)}")
+        # Only return once the job has started
         job = pending_job.wait_for_execution()
-        logging.info(job)
+        # end = time.time()
+        # logging.info(f"wait_for_execution: {round(end - start, 3)}")
+        # while job.status != "completed":
+        # pass
+        # end = time.time()
+        # logging.info(f"job: {round(end - start, 3)}")
+        # logging.info(job)
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")

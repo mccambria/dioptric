@@ -55,6 +55,10 @@ def do_image_single_nv_ionization(nv_sig):
     return image_sample.single_nv_ionization(nv_sig)
 
 
+def do_image_single_nv_polarization(nv_sig):
+    return image_sample.do_image_single_nv_polarization(nv_sig)
+
+
 def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
     opti_coords, _ = optimize.main(
         nv_sig,
@@ -234,13 +238,13 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 50e6, "num_reps": 1}
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6, "num_reps": 1}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 100e6, "num_reps": 1}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6, "num_reps": 1}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1}
     red_laser_dict = {"name": red_laser, "readout_dur": 10e6, "num_reps": 1}
 
     sample_name = "johnson"
-    z_coord = 2.83
+    z_coord = 2.75
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -254,8 +258,8 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        # LaserKey.IMAGING: yellow_laser_dict,
-        LaserKey.IMAGING: green_laser_dict,
+        LaserKey.IMAGING: yellow_laser_dict,
+        # LaserKey.IMAGING: green_laser_dict,
         # LaserKey.IMAGING: red_laser_dict,
         #
         LaserKey.SPIN_READOUT: {
@@ -279,10 +283,11 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_02"
-    nv0[pixel_coords_key] = [327.0, 250.66]
-    nv0[green_coords_key] = [111.762, 109.337]
-    nv0[red_coords_key] = [75.6, 74.75]
-    # nv0[red_coords_key] = [75.6, 74.75]
+    nv0[pixel_coords_key] = [355.951, 307.668]
+    nv0[green_coords_key] = [112.624, 111.18]
+    red_coords = [75.55, 74.75]
+    # nv0[red_coords_key] = red_coords
+    nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -327,7 +332,7 @@ if __name__ == "__main__":
         #     scanning_coords = widefield.pixel_to_scanning_coords(nv["pixel_coords"])
         #     print([round(el, 3) for el in scanning_coords])
         # pixel_coords = nv_sig["pixel_coords"]
-        # pixel_coords = do_optimize_pixel(nv_sig)
+        # # pixel_coords = do_optimize_pixel(nv_sig)
         # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, green_laser)
         # print([round(el, 3) for el in scanning_coords])
 
@@ -367,8 +372,9 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
-        do_image_single_nv(nv_sig)
+        # do_image_single_nv(nv_sig)
         # do_image_single_nv_ionization(nv_sig)
+        do_image_single_nv_polarization(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
