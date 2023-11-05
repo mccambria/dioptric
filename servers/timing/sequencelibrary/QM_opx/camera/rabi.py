@@ -66,9 +66,9 @@ def define_sequence(
         microwave_duration_cc,
         ionization_duration_cc,
         readout_duration_cc,
-        camera_duration_cc
+        camera_duration_cc,
     ) = durations
-    
+
     aod_duration_cc = aod_rise_time_cc + polarization_duration_cc + aod_end_buffer_cc
 
     # Extract coordinates
@@ -79,7 +79,6 @@ def define_sequence(
     y_freqs_pol = [int(el * 1e6) for el in y_freqs_pol]
     x_freqs_ion = [int(el * 1e6) for el in x_freqs_ion]
     y_freqs_ion = [int(el * 1e6) for el in y_freqs_ion]
-    
 
     with program() as seq:
         x_freq_pol = declare(int)
