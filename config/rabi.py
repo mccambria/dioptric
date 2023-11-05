@@ -106,6 +106,8 @@ config = {
         "scc_ion_readout_buffer": 10000,
         "uwave_buffer": 1000,
         "uwave_to_readout_wait_dur": 5000,
+        "aod_rise_time": 12e3,
+        "aod_end_buffer": 2e3,
     },
     ###
     "DeviceIDs": {
@@ -462,6 +464,10 @@ opx_config = {
         },
         "do_laser_INTE_520_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
+            "operations": {"on": "do_on", "off": "do_off"},
+        },
+        "do_sig_gen_STAN_sg394_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 2), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "do_camera_trigger": {

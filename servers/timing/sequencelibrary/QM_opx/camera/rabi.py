@@ -20,7 +20,8 @@ import utils.tool_belt as tb
 import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
 from qm import generate_qua_script
-import seq_utils
+from servers.timing.sequencelibrary.QM_opx import seq_utils
+from utils.constants import ModMode
 
 
 # Function to define the sequence
@@ -31,8 +32,17 @@ def define_sequence(
     readout_laser,
     durations,
     coords,
-    uwave_buffer,
+    config,
 ):
+    uwave_buffer = config["CommonDurations"]["uwave_buffer"]
+    aod_rise_time = config["CommonDurations"]["aod_rise_time"]
+    aod_end_buffer = config["CommonDurations"]["aod_end_buffer"]
+    readout_laser_mod_mode = config["Optics"][readout_laser]["mod_mode"]
+    if readout_laser_mod_mode == ModMode.ANALOG:
+        readout_element = f"ao_{readout_laser}_am"
+    elif readout_laser_mod_mode == ModMode.DIGITAL:
+        readout_element = f"do_{readout_laser}_dm"
+
     # Define the elements for lasers, AODs, and cameras
     polarization_element = f"do_{polarization_laser}_dm"
     x_element_pol = f"ao_{polarization_laser}_x"
@@ -44,20 +54,22 @@ def define_sequence(
     x_element_ion = f"ao_{ionization_laser}_x"
     y_element_ion = f"ao_{ionization_laser}_y"
 
-    readout_element = f"do_{readout_laser}_dm"
     camera_element = "do_camera_trigger"
 
     uwave_buffer_cc = seq_utils.convert_ns_to_clock_cycles(uwave_buffer)
+    aod_rise_time_cc = seq_utils.convert_ns_to_clock_cycles(aod_rise_time)
+    aod_end_buffer_cc = seq_utils.convert_ns_to_clock_cycles(aod_end_buffer)
 
+    durations = [round(el / 4) for el in durations]
     (
-        polarization_duration,
-        microwave_duration,
-        ionization_duration,
-        readout_duration,
-        camera_duration,
-        aod_duration,
-        setup_duration,
+        polarization_duration_cc,
+        microwave_duration_cc,
+        ionization_duration_cc,
+        readout_duration_cc,
+        camera_duration_cc
     ) = durations
+    
+    aod_duration_cc = aod_rise_time_cc + polarization_duration_cc + aod_end_buffer_cc
 
     # Extract coordinates
     x_freqs_pol, y_freqs_pol, x_freqs_ion, y_freqs_ion = coords
@@ -67,6 +79,7 @@ def define_sequence(
     y_freqs_pol = [int(el * 1e6) for el in y_freqs_pol]
     x_freqs_ion = [int(el * 1e6) for el in x_freqs_ion]
     y_freqs_ion = [int(el * 1e6) for el in y_freqs_ion]
+    
 
     with program() as seq:
         x_freq_pol = declare(int)
@@ -80,9 +93,11 @@ def define_sequence(
             update_frequency(y_element_pol, y_freq_pol)
 
             # Play AODs for polarization (duration in ns)
-            play("aod_cw", x_element_pol, duration=aod_duration)
-            play("aod_cw", y_element_pol, duration=aod_duration)
-            play("on", polarization_element, duration=polarization_duration)
+            play("aod_cw", x_element_pol, duration=aod_duration_cc)
+            play("aod_cw", y_element_pol, duration=aod_duration_cc)
+            wait(aod_rise_time, polarization_element)
+            play("on", polarization_element, duration=polarization_duration_cc)
+            wait(aod_end_buffer, polarization_element)
 
         # Wait for microwave setup
         wait(setup_duration + uwave_buffer_cc, microwave_element)
@@ -106,13 +121,23 @@ def define_sequence(
             play("on", ionization_element, duration=ionization_duration)
 
         # Wait for readout setup
-         wait(
-            setup_duration + uwave_buffer_cc + microwave_duration + uwave_buffer_cc + ionization_duration + uwave_buffer_cc,
+        wait(
+            setup_duration
+            + uwave_buffer_cc
+            + microwave_duration
+            + uwave_buffer_cc
+            + ionization_duration
+            + uwave_buffer_cc,
             readout_element,
         )
 
-         wait(
-            setup_duration + uwave_buffer_cc + microwave_duration + uwave_buffer_cc + ionization_duration + uwave_buffer_cc,
+        wait(
+            setup_duration
+            + uwave_buffer_cc
+            + microwave_duration
+            + uwave_buffer_cc
+            + ionization_duration
+            + uwave_buffer_cc,
             camera_element,
         )
 
@@ -122,10 +147,10 @@ def define_sequence(
 
     return seq
 
+
 # Function to get the sequence
 def get_sequence(opx_config, config, args, num_reps=-1):
-    uwave_buffer = config["CommonDurations"]["uwave_buffer"]
-    seq = define_sequence(*args, uwave_buffer)
+    seq = define_sequence(*args, config)
     final = ""
     sample_size = "all_reps"
     num_gates = 0
@@ -143,24 +168,19 @@ if __name__ == "__main__":
 
     try:
         # Define the parameters for polarization, microwave, ionization, readout, and coordinates
+        durations = [1000, 100, 200, 10e6, 10e6, 15e3, 20e3]
         args = [
-            "polarization",
-            "microwave",
-            "ionization",
-            "readout",
-            [105.0, 110.0, 115.0, 115.0],  # the coordinates for coords
+            "laser_INTE_520",  # polarization_laser,
+            "sig_gen_STAN_sg394",  # microwave_sig_gen,
+            "laser_COBO_638",  # ionization_laser,
+            "laser_OPTO_589",  # readout_laser,
+            durations,  # durations,
+            [[75], [75], [110], [110]],  # coords,
         ]
-        durations = (1000, 100, 20, 20, 20, 1000 / 4, 1000 / 4)  
-        # Durations = (polarization_duration, microwave_duration, ionization_duration,
-        # readout_duration, camera_duration, aod_duration,setup_duration)
-        args.append(durations)
 
-        ret_vals = get_sequence(opx_config, config, args)
-        seq, final, ret_vals, _, _ = ret_vals
+        seq = define_sequence(*args, config)
 
-        sim_config = SimulationConfig(
-            duration=int(10e4 / durations[-1])
-        )  # Simulate based on the clock cycle duration
+        sim_config = SimulationConfig(duration=int(1e6 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

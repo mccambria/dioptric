@@ -14,7 +14,7 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 from qm.qua import program, declare, declare_stream, stream_processing
 from qm.qua import measure, wait, save, play, align, fixed, assign
-import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 import utils.common as common
 import utils.tool_belt as tb
 import utils.kplotlib as kpl
