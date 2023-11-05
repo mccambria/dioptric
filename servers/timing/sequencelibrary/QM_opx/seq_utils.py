@@ -31,3 +31,7 @@ def handle_reps(one_rep, num_reps):
         with while_(handle_reps_ind < num_reps):
             one_rep()
             assign(handle_reps_ind, handle_reps_ind + 1)
+
+
+def convert_ns_to_clock_cycles(duration_ns):
+    return round(duration_ns / 4)

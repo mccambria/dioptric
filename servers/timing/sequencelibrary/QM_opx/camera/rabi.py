@@ -20,6 +20,7 @@ import utils.tool_belt as tb
 import utils.kplotlib as kpl
 import matplotlib.pyplot as plt
 from qm import generate_qua_script
+import seq_utils
 
 
 # Function to define the sequence
@@ -30,6 +31,7 @@ def define_sequence(
     readout_laser,
     durations,
     coords,
+    uwave_buffer,
 ):
     # Define the elements for lasers, AODs, and cameras
     polarization_element = f"do_{polarization_laser}_dm"
@@ -44,6 +46,8 @@ def define_sequence(
 
     readout_element = f"do_{readout_laser}_dm"
     camera_element = "do_camera_trigger"
+
+    uwave_buffer_cc = seq_utils.convert_ns_to_clock_cycles(uwave_buffer)
 
     (
         polarization_duration,
@@ -64,9 +68,6 @@ def define_sequence(
     x_freqs_ion = [int(el * 1e6) for el in x_freqs_ion]
     y_freqs_ion = [int(el * 1e6) for el in y_freqs_ion]
 
-    # Duration of one clock cycle in nanoseconds
-    ns_per_clock_cycle = 4
-
     with program() as seq:
         x_freq_pol = declare(int)
         y_freq_pol = declare(int)
@@ -84,13 +85,16 @@ def define_sequence(
             play("on", polarization_element, duration=polarization_duration)
 
         # Wait for microwave setup
-        wait(setup_duration, microwave_element)
+        wait(setup_duration + uwave_buffer_cc, microwave_element)
 
         # Play microwave pulse
         play("on", microwave_element, duration=microwave_duration)
 
         # Wait for ionization setup
-        wait(setup_duration, ionization_element)
+        wait(
+            setup_duration + uwave_buffer_cc + microwave_duration + uwave_buffer_cc,
+            ionization_element,
+        )
 
         with for_each_((x_freq_ion, y_freq_ion), (x_freqs_ion, y_freqs_ion)):
             update_frequency(x_element_ion, x_freq_ion)
@@ -111,13 +115,16 @@ def define_sequence(
 
     return seq
 
+
 # Function to get the sequence
 def get_sequence(opx_config, config, args, num_reps=-1):
-    seq = define_sequence(*args)
+    uwave_buffer = config["CommonDurations"]["uwave_buffer"]
+    seq = define_sequence(*args, uwave_buffer)
     final = ""
     sample_size = "all_reps"
     num_gates = 0
     return seq, final, [], num_gates, sample_size
+
 
 if __name__ == "__main__":
     config_module = common.get_config_module()
@@ -140,8 +147,6 @@ if __name__ == "__main__":
         durations = (1000, 100, 20, 20, 20, 1000 / 4, 1000 / 4)  # Durations in ns
         args.append(durations)
 
-        ret_vals = get_sequence(opx_config, config, args)
-        seq, final, ret_vals, _, _ =
         ret_vals = get_sequence(opx_config, config, args, 4)
         seq, final, ret_vals, _, _ = ret_vals
 
