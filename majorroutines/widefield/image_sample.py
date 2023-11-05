@@ -137,8 +137,6 @@ def main(
     x_coords=None,
     y_coords=None,
     save_dict=None,
-    do_polarize=False,
-    do_ionize=False,
 ):
     with common.labrad_connect() as cxn:
         ret_vals = main_with_cxn(
@@ -149,8 +147,6 @@ def main(
             x_coords,
             y_coords,
             save_dict,
-            do_polarize,
-            do_ionize,
         )
     return ret_vals
 
@@ -163,8 +159,6 @@ def main_with_cxn(
     x_coords=None,
     y_coords=None,
     save_dict=None,
-    do_polarize=False,
-    do_ionize=False,
 ):
     ### Some initial setup
 
@@ -179,6 +173,8 @@ def main_with_cxn(
     tb.set_filter(cxn, nv_sig, laser_key)
 
     pos.set_xyz_on_nv(cxn, nv_sig)
+    
+    img_diff = caller_fn_name in ["single_nv_ionization", "do_image_single_nv_polarization"]
 
     ### Load the pulse generator
 
@@ -186,31 +182,34 @@ def main_with_cxn(
     readout_us = readout / 10**3
     readout_ms = readout / 10**6
     readout_sec = readout / 10**9
-
-    if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
-        seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
-        seq_file = "simple_readout-scanning.py"
-
-    elif caller_fn_name in ["single_nv_ionization", "do_image_single_nv_polarization"]:
+    
+    if img_diff:
         ionization_laser = nv_sig[LaserKey.IONIZATION]["name"]
         ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ionization_laser)
-
         polarization_laser = nv_sig[LaserKey.POLARIZATION]["name"]
         pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=polarization_laser)
-
-        seq_args = [
+        control_seq_args = [
             readout,
             readout_laser,
-            do_polarize,
-            do_ionize,
+            False, # do_polarize
+            False, # do_ionize
             ionization_laser,
             ion_coords,
             polarization_laser,
             pol_coords,
         ]
-        # print(seq_args)
-        # return
         seq_file = "simple_readout-ionization.py"
+
+    if caller_fn_name == "do_image_single_nv_polarization":
+        sig_seq_args = control_seq_args.copy()
+        sig_seq_args[2] = True
+    elif caller_fn_name == "single_nv_ionization":
+        sig_seq_args = control_seq_args.copy()
+        sig_seq_args[3] = True
+
+    if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
+        seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
+        seq_file = "simple_readout-scanning.py"
 
     elif caller_fn_name == "widefield":
         seq_args = [readout, readout_laser]
@@ -218,8 +217,6 @@ def main_with_cxn(
 
     # print(seq_args)
     # return
-    seq_args_string = tb.encode_seq_args(seq_args)
-    pulse_gen.stream_load(seq_file, seq_args_string)
 
     ### Set up the image display
 
@@ -232,23 +229,28 @@ def main_with_cxn(
 
     ### Collect the data
 
-    if caller_fn_name in ["single_nv_ionization", "do_image_single_nv_polarization"]:
-        num_runs = 200
-    else:
-        num_runs = 1
     camera.arm()
-    for ind in range(num_runs):
-        # start = time.time()
-        pulse_gen.stream_start()
-        # end = time.time()
-        # print(f"stream_start: {round(end - start, 3)}")
-        # start = time.time()
-        if ind == 0:
-            img_array = camera.read()
-        else:
-            img_array += camera.read()
-        # end = time.time()
-        # print(f"read: {round(end - start, 3)}")
+    if img_diff:
+        num_runs = 200
+        seq_args_string = tb.encode_seq_args(seq_args)
+        pulse_gen.stream_load(seq_file, seq_args_string)
+        for ind in range(num_runs):
+            for 
+            pulse_gen.stream_start()
+            if ind == 0:
+                img_array = camera.read()
+            else:
+                img_array += camera.read()
+    else:
+        seq_args_string = tb.encode_seq_args(seq_args)
+        pulse_gen.stream_load(seq_file, seq_args_string)
+        for ind in range(num_runs):
+            pulse_gen.stream_start()
+            if ind == 0:
+                img_array = camera.read()
+            else:
+                img_array += camera.read()
+            
     camera.disarm()
     img_array = img_array / num_runs
     kpl.imshow(ax, img_array, **imshow_kwargs)

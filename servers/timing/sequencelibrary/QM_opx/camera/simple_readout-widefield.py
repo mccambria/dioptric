@@ -23,37 +23,6 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-# def qua_program(readout, readout_laser, mod_mode, num_reps):
-#     if mod_mode == ModMode.ANALOG:
-#         laser_element = f"ao_{readout_laser}_am"
-#     elif mod_mode == ModMode.DIGITAL:
-#         laser_element = f"do_{readout_laser}_dm"
-#     camera_element = f"do_camera_trigger"
-#     elements = [laser_element, camera_element]
-#     # Limit the readout to 1 us (for OPX technical purposes)
-#     # Increase the number of reps to account for this
-#     num_reps = num_reps * readout / 1000  # Num of us cycles
-#     clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
-#     with program() as seq:
-#         ### Define one rep here
-#         def one_rep():
-#             for el in elements:
-#                 qua.play("on", el, duration=clock_cycles)
-
-#         ### Handle the reps in the utils code
-#         seq_utils.handle_reps(one_rep, num_reps)
-
-#         # Test
-#         # seq_utils.handle_reps(one_rep, num_reps / 2)
-#         # for el in elements:
-#         #     qua.play("off", el, duration=clock_cycles)
-#         # seq_utils.handle_reps(one_rep, num_reps / 2)
-
-#         qua.play("off", camera_element, duration=clock_cycles)
-
-#     return seq
-
-
 def qua_program(readout, readout_laser, mod_mode, num_reps):
     if mod_mode == ModMode.ANALOG:
         laser_element = f"ao_{readout_laser}_am"
@@ -63,12 +32,24 @@ def qua_program(readout, readout_laser, mod_mode, num_reps):
     elements = [laser_element, camera_element]
     # Limit the readout to 1 us (for OPX technical purposes)
     # Increase the number of reps to account for this
-    readout_cc = readout / 4  # * 4 ns / clock_cycle = 1 us
+    num_reps = num_reps * readout / 1000  # Num of us cycles
+    clock_cycles = 250  # * 4 ns / clock_cycle = 1 us
     with program() as seq:
-        for el in elements:
-            qua.play("on", el, duration=readout_cc)
+        ### Define one rep here
+        def one_rep():
+            for el in elements:
+                qua.play("on", el, duration=clock_cycles)
 
-        qua.play("off", camera_element, duration=25)
+        ### Handle the reps in the utils code
+        seq_utils.handle_reps(one_rep, num_reps)
+
+        # Test
+        # seq_utils.handle_reps(one_rep, num_reps / 2)
+        # for el in elements:
+        #     qua.play("off", el, duration=clock_cycles)
+        # seq_utils.handle_reps(one_rep, num_reps / 2)
+
+        qua.play("off", camera_element, duration=clock_cycles)
 
     return seq
 
