@@ -106,15 +106,21 @@ def define_sequence(
             play("on", ionization_element, duration=ionization_duration)
 
         # Wait for readout setup
-        wait(setup_duration, readout_element)
-        wait(setup_duration, camera_element)
+         wait(
+            setup_duration + uwave_buffer_cc + microwave_duration + uwave_buffer_cc + ionization_duration + uwave_buffer_cc,
+            readout_element,
+        )
+
+         wait(
+            setup_duration + uwave_buffer_cc + microwave_duration + uwave_buffer_cc + ionization_duration + uwave_buffer_cc,
+            camera_element,
+        )
 
         # Readout sequence
         play("on", readout_element, duration=readout_duration)
         play("on", camera_element, duration=camera_duration)
 
     return seq
-
 
 # Function to get the sequence
 def get_sequence(opx_config, config, args, num_reps=-1):
@@ -144,10 +150,12 @@ if __name__ == "__main__":
             "readout",
             [105.0, 110.0, 115.0, 115.0],  # the coordinates for coords
         ]
-        durations = (1000, 100, 20, 20, 20, 1000 / 4, 1000 / 4)  # Durations in ns
+        durations = (1000, 100, 20, 20, 20, 1000 / 4, 1000 / 4)  
+        # Durations = (polarization_duration, microwave_duration, ionization_duration,
+        # readout_duration, camera_duration, aod_duration,setup_duration)
         args.append(durations)
 
-        ret_vals = get_sequence(opx_config, config, args, 4)
+        ret_vals = get_sequence(opx_config, config, args)
         seq, final, ret_vals, _, _ = ret_vals
 
         sim_config = SimulationConfig(
