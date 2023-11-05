@@ -99,14 +99,14 @@ def define_sequence(
             wait(aod_end_buffer, polarization_element)
 
         # Wait for microwave setup
-        wait(setup_duration + uwave_buffer_cc, microwave_element)
+        wait(uwave_buffer_cc, microwave_element)
 
         # Play microwave pulse
-        play("on", microwave_element, duration=microwave_duration)
+        play("on", microwave_element, duration=microwave_duration_cc)
 
         # Wait for ionization setup
         wait(
-            setup_duration + uwave_buffer_cc + microwave_duration + uwave_buffer_cc,
+            uwave_buffer_cc + microwave_duration_cc + uwave_buffer_cc,
             ionization_element,
         )
 
@@ -115,34 +115,32 @@ def define_sequence(
             update_frequency(y_element_ion, y_freq_ion)
 
             # Play AODs for ionization (duration in ns)
-            play("aod_cw", x_element_ion, duration=aod_duration)
-            play("aod_cw", y_element_ion, duration=aod_duration)
-            play("on", ionization_element, duration=ionization_duration)
+            play("aod_cw", x_element_ion, duration=aod_duration_cc)
+            play("aod_cw", y_element_ion, duration=aod_duration_cc)
+            play("on", ionization_element, duration=ionization_duration_cc)
 
         # Wait for readout setup
         wait(
-            setup_duration
+            uwave_buffer_cc
+            + microwave_duration_cc
             + uwave_buffer_cc
-            + microwave_duration
-            + uwave_buffer_cc
-            + ionization_duration
+            + ionization_duration_cc
             + uwave_buffer_cc,
             readout_element,
         )
 
         wait(
-            setup_duration
+             uwave_buffer_cc
+            + microwave_duration_cc
             + uwave_buffer_cc
-            + microwave_duration
-            + uwave_buffer_cc
-            + ionization_duration
+            + ionization_duration_cc
             + uwave_buffer_cc,
             camera_element,
         )
 
         # Readout sequence
-        play("on", readout_element, duration=readout_duration)
-        play("on", camera_element, duration=camera_duration)
+        play("on", readout_element, duration=readout_duration_cc)
+        play("on", camera_element, duration=camera_duration_cc)
 
     return seq
 
@@ -167,7 +165,7 @@ if __name__ == "__main__":
 
     try:
         # Define the parameters for polarization, microwave, ionization, readout, and coordinates
-        durations = [1000, 100, 200, 10e6, 10e6, 15e3, 20e3]
+        durations = [1000, 100, 200, 10e6, 10e6]
         args = [
             "laser_INTE_520",  # polarization_laser,
             "sig_gen_STAN_sg394",  # microwave_sig_gen,
