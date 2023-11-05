@@ -46,6 +46,11 @@ def define_sequence(
     camera_element = "do_camera_trigger"
 
     x_freqs_pol, y_freqs_pol, x_freqs_ion, y_freqs_ion = coords
+    
+    x_freqs_pol = [el*10**6 for el in x_freqs_pol]
+    y_freqs_pol = [el*10**6 for el in y_freqs_pol]
+    x_freqs_ion = [el*10**6 for el in x_freqs_ion]
+    y_freqs_ion = [el*10**6 for el in y_freqs_ion]
 
     (
         polarization_duration,
