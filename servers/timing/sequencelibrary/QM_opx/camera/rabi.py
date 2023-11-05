@@ -23,13 +23,20 @@ from qm import generate_qua_script
 
 
 # Function to define the sequence
-def define_sequence(polarization_laser, microwave, ionization_laser, readout_laser, durations, coords, num_reps):
+def define_sequence(
+    polarization_laser,
+    microwave_sig_gen,
+    ionization_laser,
+    readout_laser,
+    durations,
+    coords,
+):
     # Define the elements for lasers, AODs, and cameras
     polarization_element = f"do_{polarization_laser}_dm"
     x_element_pol = f"ao_{polarization_laser}_x"
     y_element_pol = f"ao_{polarization_laser}_y"
-    
-    microwave_element = f"do_{microwave}_dm"
+
+    microwave_element = f"do_{microwave_sig_gen}_dm"
 
     ionization_element = f"do_{ionization_laser}_dm"
     x_element_ion = f"ao_{ionization_laser}_x"
@@ -38,7 +45,16 @@ def define_sequence(polarization_laser, microwave, ionization_laser, readout_las
     readout_element = f"do_{readout_laser}_dm"
     camera_element = "do_camera_trigger"
 
-    polarization_duration, microwave_duration, readout_duration, camera_duration, clock_cycles = durations
+    x_freqs_pol, y_freqs_pol, x_freqs_ion, y_freqs_ion = coords
+
+    (
+        polarization_duration,
+        microwave_duration,
+        readout_duration,
+        camera_duration,
+    ) = durations
+
+    ns_per_clock_cycle = 4
 
     with program() as seq:
         x_freq_pol = declare(int)
@@ -46,45 +62,42 @@ def define_sequence(polarization_laser, microwave, ionization_laser, readout_las
         x_freq_ion = declare(int)
         y_freq_ion = declare(int)
 
-        # Define one repetition of the experiment
-        def one_rep():
-            with for_(x_freq_pol, y_freq_pol, x_freq_ion, y_freq_ion, coords):
-                # Update frequencies for AODs
-                update_frequency(x_element_pol, x_freq_pol)
-                update_frequency(y_element_pol, y_freq_pol)
-                update_frequency(x_element_ion, x_freq_ion)
-                update_frequency(y_element_ion, y_freq_ion)
+        with for_each_((x_freq_pol, y_freq_pol), (x_freqs_pol, y_freqs_pol)):
+            # Update frequencies for AODs
+            update_frequency(x_element_pol, x_freq_pol)
+            update_frequency(y_element_pol, y_freq_pol)
 
-                # Play laser polarization (duration in ns)
-                play("on", polarization_element, duration=polarization_duration)
-                play("aod_cw", x_element_pol, duration=clock_cycles)
-                play("aod_cw", y_element_pol, duration=clock_cycles)
+            # Play laser polarization (duration in ns)
+            play("aod_cw", x_element_pol, duration=clock_cycles)
+            play("aod_cw", y_element_pol, duration=clock_cycles)
+            play("on", polarization_element, duration=polarization_duration)
 
-                # Play microwave pulse
-                play("on", microwave_element, duration=microwave_duration)
-                
-                # Play ionization laser
-                play("on", ionization_element, duration=200)
-                play("aod_cw", x_element_ion, duration=clock_cycles)
-                play("aod_cw", y_element_ion, duration=clock_cycles)
-                
-                # Readout sequence
-                play("on", readout_element, duration=readout_duration)
-                play("on", camera_element, duration=camera_duration)
+        # Play microwave pulse
+        play("on", microwave_element, duration=microwave_duration)
 
-        # Handle repetitions
-        for _ in range(num_reps):
-            one_rep()
+        with for_each_((x_freq_ion, y_freq_ion), (x_freqs_ion, y_freqs_ion)):
+            update_frequency(x_element_ion, x_freq_ion)
+            update_frequency(y_element_ion, y_freq_ion)
+            # Play ionization laser
+            play("aod_cw", x_element_ion, duration=clock_cycles)
+            play("aod_cw", y_element_ion, duration=clock_cycles)
+            play("on", ionization_element, duration=200)
+
+        # Readout sequence
+        play("on", readout_element, duration=readout_duration)
+        play("on", camera_element, duration=camera_duration)
 
     return seq
 
+
 # Function to get the sequence
 def get_sequence(opx_config, config, args, num_reps=-1):
-    seq = define_sequence(*args, num_reps)
+    seq = define_sequence(*args)
     final = ""
     sample_size = "all_reps"
     num_gates = 0
     return seq, final, [], num_gates, sample_size
+
 
 if __name__ == "__main__":
     config_module = common.get_config_module()
@@ -98,20 +111,22 @@ if __name__ == "__main__":
     try:
         # Define the parameters for polarization, microwave, ionization, readout, and coordinates
         args = [
-            "polarization", 
-            "microwave",    
-            "ionization",   
-            "readout",      
+            "polarization",
+            "microwave",
+            "ionization",
+            "readout",
             [105.0, 110.0, 115.0, 115.0],  # the coordinates for coords
-            4  # Number of repetitions
+            4,  # Number of repetitions
         ]
-        durations = (1000, 100, 20, 20, 1000/4)  # Durations in ns
+        durations = (1000, 100, 20, 20, 1000 / 4)  # Durations in ns
         args.append(durations)
-        
+
         ret_vals = get_sequence(opx_config, config, args, 4)
         seq, final, ret_vals, _, _ = ret_vals
 
-        sim_config = SimulationConfig(duration=int(10e4 / durations[-1]))  # Simulate based on the clock cycle duration
+        sim_config = SimulationConfig(
+            duration=int(10e4 / durations[-1])
+        )  # Simulate based on the clock cycle duration
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
