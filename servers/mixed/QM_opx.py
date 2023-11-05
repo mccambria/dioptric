@@ -44,6 +44,15 @@ from qm import CompilerOptionArguments
 import time
 
 
+def get_compiled_program_key(seq_file, seq_args_string, num_reps):
+    """
+    Take the arguments required to generate a compiled QUA program and turn
+    them into a key that we can use to lookup a pre-compiled version of the
+    program if it exists
+    """
+    return f"{seq_file}-{seq_args_string}-{num_reps}"
+
+
 class QmOpx(Tagger, PulseGen, LabradServer):
     # region Setup and utils
 
@@ -77,9 +86,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         # Sequence tracking variables to prevent redundant compiles of sequences
         self.program_id = None
-        self.seq_file = None
-        self.seq_args_string = None
-        self.num_reps = None
         self.compiled_programs = {}
 
         # Tagger setup
@@ -128,8 +134,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stream_load(self, c, seq_file, seq_args_string=""):
         """See pulse_gen interface"""
 
-        self._stream_load(seq_file, seq_args_string, num_reps=1)
-        return self.seq_ret_vals
+        seq_ret_vals = self._stream_load(seq_file, seq_args_string, num_reps=1)
+        return seq_ret_vals
 
     def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):
         """
@@ -138,33 +144,23 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """
 
         # Just do nothing if the sequence has already been compiled previously
-        if (
-            seq_file == self.seq_file
-            and seq_args_string == self.seq_args_string
-            and num_reps == self.num_reps
-        ):
-            return
+        key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
+        if key in self.compiled_programs:
+            program_id, seq_ret_vals = self.compiled_programs[key]
+        else:  # Compile and store for next time
+            seq, final, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+            # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
+            # self.program_id = self.opx.compile(seq, compiler_options=opts)
+            program_id = self.opx.compile(seq)
+            self.compiled_programs[key] = [program_id, seq_ret_vals]
 
-        # Store the sequence parameters so we know this has already been compiled
-        self.seq_file = seq_file
-        self.seq_args_string = seq_args_string
-        self.num_reps = num_reps
-
-        # Compile
-        seq, final, ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-        # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
-        # self.program_id = self.opx.compile(seq, compiler_options=opts)
-        self.program_id = self.opx.compile(seq)
-        self.seq_ret_vals = ret_vals
+        self.program_id = program_id
+        return seq_ret_vals
 
         # Serialize to file for debugging
         # sourceFile = open('debug3.py', 'w')
         # print(generate_qua_script(seq, self.opx_config), file=sourceFile)
         # sourceFile.close()
-        
-    def get_compiled_programs_key():
-        """"""
-        
 
     @setting(14)
     def stream_start(self, c):
