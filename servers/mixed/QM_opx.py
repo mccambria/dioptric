@@ -51,14 +51,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        nvdata_path = common.get_nvdata_path()
-        filename = nvdata_path / f"pc_{self.pc_name}/labrad_logging/{self.name}.log"
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
 
         # Get config dicts
         config_module = common.get_config_module()
@@ -75,11 +68,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
         collection_mode_str = collection_mode.name.lower()
-        repo_path = common.get_repo_path()
-        opx_sequence_library_path = (
-            repo_path
-            / f"servers/timing/sequencelibrary/{self.name}/{collection_mode_str}"
+        path_from_repo = (
+            f"servers/timing/sequencelibrary/{self.name}/{collection_mode_str}"
         )
+        repo_path = common.get_repo_path()
+        opx_sequence_library_path = repo_path / path_from_repo
         sys.path.append(str(opx_sequence_library_path))
 
         # Sequence tracking variables to prevent redundant compiles of sequences
@@ -87,6 +80,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.seq_file = None
         self.seq_args_string = None
         self.num_reps = None
+        self.compiled_programs = {}
 
         # Tagger setup
         self.apd_indices = config["apd_indices"]
@@ -167,6 +161,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # sourceFile = open('debug3.py', 'w')
         # print(generate_qua_script(seq, self.opx_config), file=sourceFile)
         # sourceFile.close()
+        
+    def get_compiled_programs_key():
+        """"""
+        
 
     @setting(14)
     def stream_start(self, c):

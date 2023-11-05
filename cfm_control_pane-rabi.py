@@ -283,8 +283,8 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_02"
-    nv0[pixel_coords_key] = [355.951, 307.668]
-    nv0[green_coords_key] = [112.624, 111.18]
+    nv0[pixel_coords_key] = [349.587, 293.795]
+    nv0[green_coords_key] = [112.359, 111.012]
     red_coords = [75.55, 74.75]
     # nv0[red_coords_key] = red_coords
     nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]

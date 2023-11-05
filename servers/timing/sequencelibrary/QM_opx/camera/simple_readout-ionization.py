@@ -77,8 +77,8 @@ def qua_program(
             play(
                 "on",
                 polarization_laser_element,
-                duration=polarization_duration,
-                # duration=total_duration
+                # duration=polarization_duration,
+                duration=total_duration - access_time,
             )
 
         # Ionization
