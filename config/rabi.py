@@ -320,13 +320,13 @@ opx_config = {
         "con1": {
             "type": "opx1",
             "analog_outputs": {
-                1: {"offset": 0.0, "delay": NV_total_delay},  # will be I for sig gen
-                2: {"offset": 0.0, "delay": NV_total_delay},  # will be Q for sig gen
-                3: {"offset": 0.0, "delay": AOD_total_delay},  # AOD_1X
-                4: {"offset": 0.0, "delay": AOD_total_delay},  # AOD_1Y
-                5: {"offset": 0.0, "delay": yellow_AOM_total_delay},  # yellow AOM
-                6: {"offset": 0.0, "delay": tsg4104_I_total_delay},  # sig gen tsg4104 I
-                7: {"offset": 0.0, "delay": tsg4104_Q_total_delay},  # sig gen tsg4104 Q
+                1: {"offset": 0.0, "delay": 0},
+                2: {"offset": 0.0, "delay": 0},
+                3: {"offset": 0.0, "delay": 0},
+                4: {"offset": 0.0, "delay": 0},
+                5: {"offset": 0.0, "delay": 0},
+                6: {"offset": 0.0, "delay": 0},
+                7: {"offset": 0.0, "delay": 0},
                 8: {"offset": 0.0, "delay": 0},
                 9: {"offset": 0.0, "delay": 0},
                 10: {"offset": 0.0, "delay": 0},

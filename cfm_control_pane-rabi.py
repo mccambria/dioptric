@@ -239,7 +239,8 @@ if __name__ == "__main__":
 
     # Imaging laser dicts
     # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 100e6, "num_reps": 1}
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6, "num_reps": 1}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6, "num_reps": 1}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6, "num_reps": 1}
     green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1}
     red_laser_dict = {"name": red_laser, "readout_dur": 10e6, "num_reps": 1}
 
@@ -365,7 +366,7 @@ if __name__ == "__main__":
         # # for z in np.linspace(3, 7, 21):
         # # for z in np.linspace(2.0, 3.0, 11):
         # #     nv_ref["coords"][2] = z
-        # do_widefield_image_sample(nv_sig)
+        do_widefield_image_sample(nv_sig)
 
         # do_scanning_image_sample(nv_ref)
         # do_scanning_image_sample_zoom(nv_ref)
@@ -374,7 +375,7 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_ionization(nv_sig)
-        do_image_single_nv_polarization(nv_sig)
+        # do_image_single_nv_polarization(nv_sig)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

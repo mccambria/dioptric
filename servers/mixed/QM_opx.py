@@ -22,9 +22,7 @@ timeout = 5
 ### END NODE INFO
 """
 
-from qm.QuantumMachinesManager import QuantumMachinesManager
-from qm import qua
-from qm import SimulationConfig
+from qm import QuantumMachinesManager
 from qualang_tools.results import fetching_tool, progress_counter
 from labrad.server import LabradServer
 from labrad.server import setting
@@ -39,7 +37,6 @@ import os
 import socket
 from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
-from qm import generate_qua_script
 from qm import CompilerOptionArguments
 import time
 
@@ -166,18 +163,18 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stream_start(self, c):
         """See pulse_gen interface"""
 
-        # start = time.time()
+        start = time.time()
         pending_job = self.opx.queue.add_compiled(self.program_id)
-        # end = time.time()
-        # logging.info(f"add_compiled: {round(end - start, 3)}")
+        end = time.time()
+        logging.info(f"add_compiled: {round(end - start, 3)}")
         # Only return once the job has started
         job = pending_job.wait_for_execution()
-        # end = time.time()
-        # logging.info(f"wait_for_execution: {round(end - start, 3)}")
-        # while job.status != "completed":
-        # pass
-        # end = time.time()
-        # logging.info(f"job: {round(end - start, 3)}")
+        end = time.time()
+        logging.info(f"wait_for_execution: {round(end - start, 3)}")
+        while job.status != "completed":
+            pass
+        end = time.time()
+        logging.info(f"job: {round(end - start, 3)}")
         # logging.info(job)
         self.counter_index = 0
 
