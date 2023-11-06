@@ -61,15 +61,14 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         # Get config dicts
         config_module = common.get_config_module()
-        self.opx_config = config_module.opx_config
+        opx_config = config_module.opx_config
         config = common.get_config_dict()
-        self.config = config
 
         # Get manager and OPX
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
-        self.opx = self.qmm.open_qm(self.opx_config)
+        self.opx = self.qmm.open_qm(opx_config)
 
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
@@ -121,11 +120,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-            # logging.info(f"get_seq {num_reps}")
-            ret_vals = seq_module.get_seq(self.opx_config, self.config, args, num_reps)
-            seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
+            ret_vals = seq_module.get_seq(args, num_reps)
+            # seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
+            seq, seq_ret_vals = ret_vals
 
-        return seq, final, ret_vals
+        return seq, seq_ret_vals
 
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
     def stream_load(self, c, seq_file, seq_args_string=""):
@@ -145,7 +144,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if key in self.compiled_programs:
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
-            seq, final, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+            seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
             # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
             # self.program_id = self.opx.compile(seq, compiler_options=opts)
             program_id = self.opx.compile(seq)
