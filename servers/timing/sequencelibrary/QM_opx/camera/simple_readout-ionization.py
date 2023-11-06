@@ -23,34 +23,30 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def qua_program(
-    readout,
-    readout_laser,
-    do_polarize,
-    do_ionize,
-    ionization_laser,
-    ionization_coords,
-    polarization_laser,
-    polarization_coords,
-    mod_mode,
-    num_reps,
-):
-    if mod_mode == ModMode.ANALOG:
-        readout_laser_element = f"ao_{readout_laser}_am"
-    elif mod_mode == ModMode.DIGITAL:
-        readout_laser_element = f"do_{readout_laser}_dm"
+def get_seq(args, num_reps=1):
+    (
+        readout,
+        readout_laser,
+        do_polarize,
+        do_ionize,
+        ionization_laser,
+        ionization_coords,
+        polarization_laser,
+        polarization_coords,
+    ) = args
 
-    camera_element = f"do_camera_trigger"
+    readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
+    camera_el = f"do_camera_trigger"
 
     # Ionization
-    ionization_laser_element = f"do_{ionization_laser}_dm"
-    ionization_x_element = f"ao_{ionization_laser}_x"
-    ionization_y_element = f"ao_{ionization_laser}_y"
+    ionization_laser_el = f"do_{ionization_laser}_dm"
+    ionization_x_el = f"ao_{ionization_laser}_x"
+    ionization_y_el = f"ao_{ionization_laser}_y"
 
     # Polarization
-    polarization_laser_element = f"do_{polarization_laser}_dm"
-    polarization_x_element = f"ao_{polarization_laser}_x"
-    polarization_y_element = f"ao_{polarization_laser}_y"
+    polarization_laser_el = f"do_{polarization_laser}_dm"
+    polarization_x_el = f"ao_{polarization_laser}_x"
+    polarization_y_el = f"ao_{polarization_laser}_y"
 
     access_time = int(20e3 / 4)
     polarization_duration = int(1e6 / 4)
@@ -61,56 +57,54 @@ def qua_program(
     # print(((setup_duration * 4) + readout) * 10**-9)
 
     with program() as seq:
-        # Polarization
-        polarization_x_freq = declare(
-            int, value=round(polarization_coords[0] * 10**6)
-        )
-        polarization_y_freq = declare(
-            int, value=round(polarization_coords[1] * 10**6)
-        )
-        update_frequency(polarization_x_element, polarization_x_freq)
-        update_frequency(polarization_y_element, polarization_y_freq)
-        play("aod_cw", polarization_x_element, duration=total_duration)
-        play("aod_cw", polarization_y_element, duration=total_duration)
-        if do_polarize:
-            wait(access_time, polarization_laser_element)
-            play(
-                "on",
-                polarization_laser_element,
-                # duration=polarization_duration,
-                duration=total_duration - access_time,
+
+        def one_rep():
+            # Polarization
+            polarization_x_freq = declare(
+                int, value=round(polarization_coords[0] * 10**6)
             )
+            polarization_y_freq = declare(
+                int, value=round(polarization_coords[1] * 10**6)
+            )
+            update_frequency(polarization_x_el, polarization_x_freq)
+            update_frequency(polarization_y_el, polarization_y_freq)
+            play("aod_cw", polarization_x_el, duration=total_duration)
+            play("aod_cw", polarization_y_el, duration=total_duration)
+            if do_polarize:
+                wait(access_time, polarization_laser_el)
+                play(
+                    "on",
+                    polarization_laser_el,
+                    # duration=polarization_duration,
+                    duration=total_duration - access_time,
+                )
 
-        # Ionization
-        ionization_x_freq = declare(int, value=round(ionization_coords[0] * 10**6))
-        ionization_y_freq = declare(int, value=round(ionization_coords[1] * 10**6))
-        update_frequency(ionization_x_element, ionization_x_freq)
-        update_frequency(ionization_y_element, ionization_y_freq)
-        play("aod_cw", ionization_x_element, duration=total_duration)
-        play("aod_cw", ionization_y_element, duration=total_duration)
-        if do_ionize:
-            wait(access_time + int(5e3 / 4), ionization_laser_element)
-            play("on", ionization_laser_element, duration=int(3e3 / 4))
+            # Ionization
+            ionization_x_freq = declare(
+                int, value=round(ionization_coords[0] * 10**6)
+            )
+            ionization_y_freq = declare(
+                int, value=round(ionization_coords[1] * 10**6)
+            )
+            update_frequency(ionization_x_el, ionization_x_freq)
+            update_frequency(ionization_y_el, ionization_y_freq)
+            play("aod_cw", ionization_x_el, duration=total_duration)
+            play("aod_cw", ionization_y_el, duration=total_duration)
+            if do_ionize:
+                wait(access_time + int(5e3 / 4), ionization_laser_el)
+                play("on", ionization_laser_el, duration=int(3e3 / 4))
 
-        # Yellow readout
-        wait(setup_duration, readout_laser_element)
-        wait(setup_duration, camera_element)
-        play("on", readout_laser_element, duration=readout_clock_cycles)
-        play("on", camera_element, duration=readout_clock_cycles)
-        play("off", camera_element, duration=25)
+            # Yellow readout
+            wait(setup_duration, readout_laser_el)
+            wait(setup_duration, camera_el)
+            play("on", readout_laser_el, duration=readout_clock_cycles)
+            play("on", camera_el, duration=readout_clock_cycles)
+            play("off", camera_el, duration=25)
 
-    return seq
+        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=True)
 
-
-def get_seq(opx_config, config, args, num_reps=-1):
-    readout_laser = args[1]
-    mod_mode = config["Optics"][readout_laser]["mod_mode"]
-    seq = qua_program(*args, mod_mode, num_reps)
-    final = ""
-    # specify what one 'sample' means for  readout
-    sample_size = "all_reps"
-    num_gates = 0
-    return seq, final, [], num_gates, sample_size
+    seq_ret_vals = []
+    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
@@ -120,9 +114,6 @@ if __name__ == "__main__":
 
     ip_address = config["DeviceIDs"]["QM_opx_ip"]
     qmm = QuantumMachinesManager(host=ip_address)
-    # qmm = QuantumMachinesManager()
-    # qmm.close_all_quantum_machines()
-    # print(qmm.list_open_quantum_machines())
     opx = qmm.open_qm(opx_config)
 
     try:
@@ -136,8 +127,7 @@ if __name__ == "__main__":
             "laser_INTE_520",
             [111.695, 108.75],
         ]
-        ret_vals = get_seq(opx_config, config, args, 1)
-        seq, final, ret_vals, _, _ = ret_vals
+        seq, seq_ret_vals = get_seq(args, 1)
 
         sim_config = SimulationConfig(duration=int(2e6 / 4))
         sim = opx.simulate(seq, sim_config)
