@@ -269,10 +269,14 @@ if __name__ == "__main__":
     data = tb.get_raw_data(file_name)
     ionize_img_array = np.array(data["img_array"])
 
+    diff = ionize_img_array - control_img_array
+    print(np.std(diff[250:350, 250:350]))
+
     fig, ax = plt.subplots()
     kpl.imshow(
         ax,
-        ionize_img_array - control_img_array,
+        # control_img_array,
+        diff[250:350, 250:350],
         title="Difference",
         cbar_label="Counts",
     )
