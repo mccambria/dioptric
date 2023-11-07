@@ -261,21 +261,37 @@ if __name__ == "__main__":
     # fig, ax = plt.subplots()
     # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    file_name = "2023_11_06-19_23_21-johnson-nv0_2023_11_02"
+    file_name = "2023_11_06-23_31_11-johnson-nv0_2023_11_02"
     data = tb.get_raw_data(file_name)
     control_img_array = np.array(data["img_array"])
+    pixel_coords = [334.879, 297.868]
+    print(
+        widefield_utils.counts_from_img_array(
+            control_img_array, pixel_coords, radius=6, drift_adjust=False
+        )
+    )
 
-    file_name = "2023_11_06-19_24_25-johnson-nv0_2023_11_02"
+    file_name = "2023_11_06-23_29_39-johnson-nv0_2023_11_02"
     data = tb.get_raw_data(file_name)
     signal_img_array = np.array(data["img_array"])
+    pixel_coords = [335.014, 297.607]
+    pixel_coords = [328.975, 286.537]  # Nothing
+    print(
+        widefield_utils.counts_from_img_array(
+            signal_img_array, pixel_coords, radius=6, drift_adjust=False
+        )
+    )
 
     diff = signal_img_array - control_img_array
+    print(np.mean(diff))
     # diff = signal_img_array[6:506, 6:506] - control_img_array[5:505, 6:506]
     # print(np.std(diff[250:350, 250:350]))
 
-    diff = ndimage.gaussian_filter(diff, 2)
+    # diff = ndimage.gaussian_filter(diff, 2)
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
+    # kpl.imshow(ax, signal_img_array, title="Signal", cbar_label="Counts")
+    # kpl.imshow(ax, control_img_array, title="Control", cbar_label="Counts")
 
     plt.show(block=True)
