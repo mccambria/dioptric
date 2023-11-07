@@ -37,7 +37,7 @@ def get_seq(args, num_reps):
             qua.play("on", camera_element)
             qua.align()
             qua.play("off", camera_element)
-            qua.align()
+            # qua.align()
 
         def post_trigger():
             if pad_duration_cc > 0:

@@ -264,5 +264,13 @@ ncCamGetBinningMode.argtypes = [NCCAM, POINTER(c_int), POINTER(c_int)]
 
 # flush read queue
 ncCamFlushReadQueue = nuvuLib.ncCamFlushReadQueues
-ncCamGetBinningMode.restype = c_int
-ncCamGetBinningMode.argtypes = [NCCAM]
+ncCamFlushReadQueue.restype = c_int
+ncCamFlushReadQueue.argtypes = [NCCAM]
+
+ncCamSetHeartbeat = nuvuLib.ncCamSetHeartbeat
+ncCamSetHeartbeat.restype = c_int
+ncCamSetHeartbeat.argtypes = [NCCAM, c_int]
+
+ncCamGetDynamicBufferCount = nuvuLib.ncCamGetDynamicBufferCount
+ncCamGetDynamicBufferCount.restype = c_int
+ncCamGetDynamicBufferCount.argtypes = [NCCAM, POINTER(c_int)]

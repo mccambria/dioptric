@@ -242,11 +242,11 @@ if __name__ == "__main__":
     # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6}
     yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e6}
     # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6}
-    green_laser_dict = {"name": green_laser, "readout_dur": 10e6}
+    green_laser_dict = {"name": green_laser, "readout_dur": 25e6}
     red_laser_dict = {"name": red_laser, "readout_dur": 10e6}
 
     sample_name = "johnson"
-    z_coord = 4.3
+    z_coord = 4.35
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -285,8 +285,8 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_02"
-    nv0[pixel_coords_key] = [333.854, 298.875]
-    nv0[green_coords_key] = [112.146, 111.191]
+    nv0[pixel_coords_key] = [320.318, 253.305]
+    nv0[green_coords_key] = [111.884, 109.641]
     red_coords = [75.55, 74.75]
     # nv0[red_coords_key] = red_coords
     nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
@@ -365,10 +365,10 @@ if __name__ == "__main__":
 
         # nv_sig[LaserKey.IMAGING] = yellow_laser_dict
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(4.0, 6.0, 11):
+        # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        do_widefield_image_sample(nv_sig, 10)
+        # do_widefield_image_sample(nv_sig, 10)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -377,7 +377,7 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_ionization(nv_sig)
-        # do_image_single_nv_polarization(nv_sig, 1000)
+        do_image_single_nv_polarization(nv_sig, 1000)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

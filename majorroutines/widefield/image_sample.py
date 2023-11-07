@@ -43,11 +43,11 @@ def single_nv_ionization(nv_sig, num_reps=1):
 
 def single_nv_polarization(nv_sig, num_reps=1):
     caller_fn_name = "single_nv_polarization"
-    control_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_polarize=False
-    )
     polarize_img_array = _charge_state_prep(
         nv_sig, caller_fn_name, num_reps, do_polarize=True
+    )
+    control_img_array = _charge_state_prep(
+        nv_sig, caller_fn_name, num_reps, do_polarize=False
     )
     fig, ax = plt.subplots()
     diff = polarize_img_array - control_img_array
@@ -213,6 +213,7 @@ def main_with_cxn(
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     pulse_gen.stream_start()
+    time.sleep(0.1)
     for ind in range(num_reps):
         img_str = camera.read()
         sub_img_array = widefield_utils.img_str_to_array(img_str)

@@ -45,6 +45,7 @@ class CameraNuvuHnu512gamma(LabradServer):
         # Instantiate the software camera and connect to the hardware camera
         self.cam = NcCamera()
         self.cam.connect()  # Assumes there's just one camera available
+        # self.cam.set_heartbeat(int(10e3))
 
         # Configure the camera
         self.cam.set_target_detector_temp(-60)
@@ -61,6 +62,7 @@ class CameraNuvuHnu512gamma(LabradServer):
         # self.cam.set_timeout(-1)
         self.cam.set_timeout(1000)
         self.cam.get_size()
+        # logging.info(self.cam.get_dynamic_buffer_count())
 
     def stopServer(self):
         self.reset(None)
@@ -98,7 +100,10 @@ class CameraNuvuHnu512gamma(LabradServer):
         img_str = camera.read()
         img_array = widefield.img_str_to_array(img_str)
         """
+        # start = time.time()
         img_array = self.cam.read()
+        # end = time.time()
+        # print(round(end - start, 3))
         return img_array.tobytes()
 
     @setting(5)

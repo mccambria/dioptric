@@ -330,6 +330,24 @@ class NcCamera:
         )
         return np_img_array_pointer.astype(int)
 
+    def set_heartbeat(self, heartbeat_ms):
+        try:
+            error = ncCamSetHeartbeat(self.ncCam, heartbeat_ms)
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def get_dynamic_buffer_count(self):
+        num_buffer = c_int(-1)
+        try:
+            error = ncCamGetDynamicBufferCount(self.ncCam, byref(num_buffer))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+        return num_buffer.value
+
     # endregion
 
     # region Nuvu functions
