@@ -139,6 +139,7 @@ config = {
     ###
     "Camera": {
         "resolution": (512, 512),
+        "max_frame_rate": 30,  # In Hz - faster than this and the camera may crash
     },
     ###
     "Optics": {

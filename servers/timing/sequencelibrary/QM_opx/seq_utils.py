@@ -13,7 +13,11 @@ from utils import common
 from utils.constants import ModMode, CollectionMode
 
 
-def handle_reps(one_rep, num_reps, wait_for_trigger=None):
+def handle_reps(
+    one_rep,
+    num_reps,
+    wait_for_trigger=None,
+):
     """Handle repetitions of a given sequence - you just have to pass
     a function defining the behavior for a single loop. Optionally
     waits for trigger pulse between loops.
@@ -52,6 +56,25 @@ def handle_reps(one_rep, num_reps, wait_for_trigger=None):
             if wait_for_trigger:
                 qua.wait_for_trigger(dummy_element)
                 qua.align()
+
+
+def pad_for_camera(rep_duration_cc):
+    """The camera can't return images arbitrarily fast and it has no way
+    to limit itself - you have to limit it manually or else it will disconnect.
+    Use this QUA macro to pad your sequence so it respects the camera's
+    maximum frame rate
+
+    rep_duration_cc : int
+        Duration of a sequence rep in clock cycles - doesn't need to be exact
+    """
+    config = common.get_config_dict()
+    max_frame_rate = config["Camera"]["max_frame_rate"]
+    min_sequence_time = 1 / max_frame_rate
+    min_sequence_time_cc = round(min_sequence_time * 1e9 / 4)
+    pad_duration_cc = min_sequence_time_cc - rep_duration_cc
+    if pad_duration_cc > 0:
+        qua.wait(pad_duration_cc)
+        qua.align()
 
 
 def convert_ns_to_clock_cycles(duration_ns):

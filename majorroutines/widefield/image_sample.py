@@ -261,24 +261,21 @@ if __name__ == "__main__":
     # fig, ax = plt.subplots()
     # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    file_name = "2023_11_02-22_48_17-johnson-nv0_2023_11_02"
+    file_name = "2023_11_06-19_23_21-johnson-nv0_2023_11_02"
     data = tb.get_raw_data(file_name)
     control_img_array = np.array(data["img_array"])
 
-    file_name = "2023_11_02-22_50_58-johnson-nv0_2023_11_02"
+    file_name = "2023_11_06-19_24_25-johnson-nv0_2023_11_02"
     data = tb.get_raw_data(file_name)
-    ionize_img_array = np.array(data["img_array"])
+    signal_img_array = np.array(data["img_array"])
 
-    diff = ionize_img_array - control_img_array
-    print(np.std(diff[250:350, 250:350]))
+    diff = signal_img_array - control_img_array
+    # diff = signal_img_array[6:506, 6:506] - control_img_array[5:505, 6:506]
+    # print(np.std(diff[250:350, 250:350]))
+
+    diff = ndimage.gaussian_filter(diff, 2)
 
     fig, ax = plt.subplots()
-    kpl.imshow(
-        ax,
-        # control_img_array,
-        diff[250:350, 250:350],
-        title="Difference",
-        cbar_label="Counts",
-    )
+    kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
 
     plt.show(block=True)
