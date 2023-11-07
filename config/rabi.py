@@ -106,8 +106,8 @@ config = {
         "scc_ion_readout_buffer": 10000,
         "uwave_buffer": 1000,
         "uwave_to_readout_wait_dur": 5000,
-        "aod_rise_time": 12e3,
-        "aod_end_buffer": 2e3,
+        "aod_rise_time": int(12e3),
+        "aod_end_buffer": int(2e3),
     },
     ###
     "DeviceIDs": {
@@ -135,6 +135,10 @@ config = {
         "iq_delay": 630,
         "sig_gen_HIGH": "sig_gen_TEKT_tsg4104a",
         "sig_gen_LOW": "sig_gen_TEKT_tsg4104a",
+    },
+    ###
+    "Camera": {
+        "resolution": (512, 512),
     },
     ###
     "Optics": {

@@ -27,8 +27,8 @@ import time
 ### Major Routines
 
 
-def do_widefield_image_sample(nv_sig):
-    image_sample.widefield(nv_sig)
+def do_widefield_image_sample(nv_sig, num_reps=1):
+    image_sample.widefield(nv_sig, num_reps)
 
 
 def do_scanning_image_sample(nv_sig):
@@ -51,12 +51,12 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig)
 
 
-def do_image_single_nv_ionization(nv_sig):
-    return image_sample.single_nv_ionization(nv_sig)
+def do_image_single_nv_ionization(nv_sig, num_reps):
+    return image_sample.single_nv_ionization(nv_sig, num_reps)
 
 
-def do_image_single_nv_polarization(nv_sig):
-    return image_sample.do_image_single_nv_polarization(nv_sig)
+def do_image_single_nv_polarization(nv_sig, num_reps):
+    return image_sample.single_nv_polarization(nv_sig, num_reps)
 
 
 def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
@@ -160,7 +160,7 @@ def do_opx_constant_ac():
             [4],  # Digital channels
             [6, 4],  # Analog channels
             [0.19, 0.19],  # Analog voltages
-            [111.744, 109.35],  # Analog frequencies
+            [110, 110],  # Analog frequencies
         )
         # Red
         # opx.constant_ac(
@@ -238,14 +238,15 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 100e6, "num_reps": 1}
-    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6, "num_reps": 1}
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6, "num_reps": 1}
-    green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 1}
-    red_laser_dict = {"name": red_laser, "readout_dur": 10e6, "num_reps": 1}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 100e6}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e6}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6}
+    green_laser_dict = {"name": green_laser, "readout_dur": 10e6}
+    red_laser_dict = {"name": red_laser, "readout_dur": 10e6}
 
     sample_name = "johnson"
-    z_coord = 2.75
+    z_coord = 4.3
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -284,8 +285,8 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_02"
-    nv0[pixel_coords_key] = [349.587, 293.795]
-    nv0[green_coords_key] = [112.359, 111.012]
+    nv0[pixel_coords_key] = [333.854, 298.875]
+    nv0[green_coords_key] = [112.146, 111.191]
     red_coords = [75.55, 74.75]
     # nv0[red_coords_key] = red_coords
     nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
@@ -326,7 +327,7 @@ if __name__ == "__main__":
         # # pos.set_drift([+0.03, +0.03, z_drift])
         # time.sleep(1.0)
         # with common.labrad_connect() as cxn:
-        #     pos.set_xyz(cxn, [None, None, z_coord])
+        #     pos.set_xyz_on_nv(cxn, nv_sig)
 
         # Convert pixel coords to scanning coords
         # for nv in nv_list:
@@ -364,18 +365,19 @@ if __name__ == "__main__":
 
         # nv_sig[LaserKey.IMAGING] = yellow_laser_dict
         # # for z in np.linspace(3, 7, 21):
-        # # for z in np.linspace(2.0, 3.0, 11):
-        # #     nv_ref["coords"][2] = z
-        do_widefield_image_sample(nv_sig)
+        # for z in np.linspace(4.0, 6.0, 11):
+        #     nv_sig["coords"][2] = z
+        #     do_widefield_image_sample(nv_sig, 10)
+        # do_widefield_image_sample(nv_sig, 10)
 
-        # do_scanning_image_sample(nv_ref)
-        # do_scanning_image_sample_zoom(nv_ref)
+        # do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_ionization(nv_sig)
-        # do_image_single_nv_polarization(nv_sig)
+        do_image_single_nv_polarization(nv_sig, 1000)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
@@ -394,6 +396,8 @@ if __name__ == "__main__":
         if do_email:
             recipient = email_recipient
             tb.send_exception_email(email_to=recipient)
+        else:
+            print(exc)
         raise exc
 
     finally:

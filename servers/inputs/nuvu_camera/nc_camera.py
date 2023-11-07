@@ -105,7 +105,7 @@ class NcCamera:
         """
         Opens the connection with the camera (assumes there is only one available).
         If the class has been initialized with the camera's MAC address, the method will try to connect directly to that camera.
-        :param nbBuff: Number of buffers initialized in the Nuvu API. (Number of images stored in memory at a time, I think...)
+        :param nbBuff: Number of buffers initialized in the Nuvu API. (Number of images stored in pc memory at a time)
         :return: None
         """
         try:
@@ -211,7 +211,8 @@ class NcCamera:
 
     def set_timeout(self, timeout):
         """
-        Method that allows selecting a timeout period representing the time before the driver declares an error if it waits for a new image to enter a buffer.
+        Method that allows selecting a timeout period representing the time before
+        the driver declares an error if it waits for a new image to enter a buffer.
         :param timeout: (float) waiting time (in ms), -1 to turn off timeout
         :return: None
         """

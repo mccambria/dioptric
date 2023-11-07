@@ -47,6 +47,8 @@ def get_compiled_program_key(seq_file, seq_args_string, num_reps):
     them into a key that we can use to lookup a pre-compiled version of the
     program if it exists
     """
+    if num_reps is not None:
+        num_reps = int(num_reps)
     return f"{seq_file}-{seq_args_string}-{num_reps}"
 
 
@@ -69,6 +71,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
         self.opx = self.qmm.open_qm(opx_config)
+        
+        self.running_job = None
 
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
@@ -127,10 +131,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         return seq, seq_ret_vals
 
     @setting(13, seq_file="s", seq_args_string="s", returns="*?")
-    def stream_load(self, c, seq_file, seq_args_string=""):
+    def stream_load(self, c, seq_file, seq_args_string="", num_reps=None):
         """See pulse_gen interface"""
 
-        seq_ret_vals = self._stream_load(seq_file, seq_args_string, num_reps=1)
+        seq_ret_vals = self._stream_load(seq_file, seq_args_string, num_reps)
         return seq_ret_vals
 
     def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):
@@ -141,9 +145,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         # Just do nothing if the sequence has already been compiled previously
         key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
+        logging.info(key)
         if key in self.compiled_programs:
+            logging.info("precompiled")
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
+            logging.info("compiling")
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
             # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
             # self.program_id = self.opx.compile(seq, compiler_options=opts)
@@ -159,22 +166,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # sourceFile.close()
 
     @setting(14)
-    def stream_start(self, c):
+    def stream_start(self, c, num_reps=None):
         """See pulse_gen interface"""
 
-        start = time.time()
         pending_job = self.opx.queue.add_compiled(self.program_id)
-        end = time.time()
-        logging.info(f"add_compiled: {round(end - start, 3)}")
-        # Only return once the job has started
-        job = pending_job.wait_for_execution()
-        end = time.time()
-        logging.info(f"wait_for_execution: {round(end - start, 3)}")
-        while job.status != "completed":
-            pass
-        end = time.time()
-        logging.info(f"job: {round(end - start, 3)}")
-        # logging.info(job)
+        self.running_job = pending_job.wait_for_execution()  # Only return once the job has started
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
@@ -466,7 +462,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
     @setting(40)
     def reset(self, c):
-        pass
+        """Stop whatever job is currently running"""
+        if self.running_job is not None:
+            self.running_job.halt()
+        self.running_job = None
         # self.qmm.clear_all_job_results()
         # self.qmm.reset_data_processing()
         # self.qmm.close_all_quantum_machines()

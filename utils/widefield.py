@@ -39,6 +39,13 @@ def imshow(ax, img_array, count_format=None, **kwargs):
     kpl.imshow(ax, img_array, **passed_kwargs)
 
 
+def img_str_to_array(img_str):
+    config = common.get_config_dict()
+    resolution = config["Camera"]["resolution"]
+    img_array = np.frombuffer(img_str, dtype=int).reshape(*resolution)
+    return img_array
+
+
 def get_widefield_calibration_nvs():
     module = common.get_config_module()
     nv1 = module.widefield_calibration_nv1.copy()

@@ -8,13 +8,12 @@ Created June 25th, 2023
 """
 
 
-from qm.qua import align, declare, assign, infinite_loop_, while_
 from qm import qua
 from utils import common
-from utils.constants import ModMode
+from utils.constants import ModMode, CollectionMode
 
 
-def handle_reps(one_rep, num_reps, wait_for_trigger=False):
+def handle_reps(one_rep, num_reps, wait_for_trigger=None):
     """Handle repetitions of a given sequence - you just have to pass
     a function defining the behavior for a single loop. Optionally
     waits for trigger pulse between loops.
@@ -27,25 +26,32 @@ def handle_reps(one_rep, num_reps, wait_for_trigger=False):
         Number of times to repeat, -1 for infinite loop
     wait_for_trigger : bool, optional
         Whether or not to pause execution between loops until a trigger
-        pulse is received by the OPX, by default False
+        pulse is received by the OPX, defaults to True for camera, False otherwise
     """
 
-    dummy_element = "do1"  # Just necessary for wait_for_trigger
+    if wait_for_trigger is None:
+        config = common.get_config_dict()
+        collection_mode = config["collection_mode"]
+        wait_for_trigger = collection_mode == CollectionMode.CAMERA
+
+    dummy_element = "do1"  # wait_for_trigger requires us to pass some element
 
     if num_reps == -1:
-        with infinite_loop_():
+        with qua.infinite_loop_():
             one_rep()
             if wait_for_trigger:
                 qua.wait_for_trigger(dummy_element)
-                align()
+                qua.align()
+    elif num_reps == 1:
+        one_rep()
     else:
-        handle_reps_ind = declare(int, value=0)
-        with while_(handle_reps_ind < num_reps):
+        handle_reps_ind = qua.declare(int, value=0)
+        with qua.while_(handle_reps_ind < num_reps):
             one_rep()
-            assign(handle_reps_ind, handle_reps_ind + 1)
+            qua.assign(handle_reps_ind, handle_reps_ind + 1)
             if wait_for_trigger:
                 qua.wait_for_trigger(dummy_element)
-                align()
+                qua.align()
 
 
 def convert_ns_to_clock_cycles(duration_ns):

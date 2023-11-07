@@ -28,6 +28,7 @@ from utils import tool_belt as tb
 import numpy as np
 import socket
 import logging
+import time
 
 # Keep the C stuff in the nuvu_camera folder - for simplicity, don't put any in this file
 from servers.inputs.nuvu_camera.nc_camera import NcCamera
@@ -52,16 +53,25 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         self.cam.set_readout_mode(1)
         self.cam.setCalibratedEmGain(100)
+        # self.cam.setCalibratedEmGain(10)
 
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
-        self.cam.set_timeout(-1)
+        # self.cam.set_timeout(-1)
+        self.cam.set_timeout(1000)
         self.cam.get_size()
 
     def stopServer(self):
         self.reset(None)
         self.cam.disconnect()
+
+    @setting(9)
+    def clear_buffer(self, c):
+        self._clear_buffer()
+
+    def _clear_buffer(self):
+        self.cam.flushReadQueue()
 
     @setting(6)
     def get_detector_temp(self, c):
@@ -69,6 +79,7 @@ class CameraNuvuHnu512gamma(LabradServer):
 
     @setting(0, num_images="i")
     def arm(self, c, num_images=0):
+        self._clear_buffer()
         self.cam.open_shutter()
         self.cam.start(num_images)
 
@@ -77,10 +88,18 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.stop()
         self.cam.close_shutter()
 
-    @setting(2, returns="*2i")
+    # @setting(2, returns="*2i")
+    @setting(2, returns="y")
     def read(self, c):
+        """For efficiency, the int-type numpy array returned by read will be sent over LabRAD
+        as a byte string, which then must be reconstructed on the client. There's a function
+        for this in the widefield library:
+
+        img_str = camera.read()
+        img_array = widefield.img_str_to_array(img_str)
+        """
         img_array = self.cam.read()
-        return img_array
+        return img_array.tobytes()
 
     @setting(5)
     def reset(self, c):

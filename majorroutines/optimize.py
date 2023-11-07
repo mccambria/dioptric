@@ -153,7 +153,6 @@ def _read_counts_camera_step(cxn, nv_sig, laser_key, axis_ind=None, scan_vals=No
     if axis_ind is not None:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
     pixel_coords = nv_sig["pixel_coords"]
-    num_reps = nv_sig[laser_key]["num_reps"]
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
     counts = []
@@ -163,8 +162,9 @@ def _read_counts_camera_step(cxn, nv_sig, laser_key, axis_ind=None, scan_vals=No
             break
         if axis_ind is not None:
             axis_write_fn(scan_vals[ind])
-        pulse_gen.stream_start(num_reps)
-        img_array = camera.read()
+        pulse_gen.stream_start()
+        img_str = camera.read()
+        img_array = widefield.img_str_to_array(img_str)
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
@@ -191,7 +191,6 @@ def _read_counts_camera_sequence(
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
-    num_reps = laser_dict["num_reps"]
     seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
     seq_file_name = "simple_readout-scanning.py"
     if axis_ind is None:
@@ -219,7 +218,8 @@ def _read_counts_camera_sequence(
             elif axis_ind == 2:
                 axis_write_fn(val)
         pulse_gen.stream_start()
-        img_array = camera.read()
+        img_str = camera.read()
+        img_array = widefield.img_str_to_array(img_str)
         sample = widefield.counts_from_img_array(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
@@ -340,7 +340,6 @@ def stationary_count_lite(
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
     readout = laser_dict["readout_dur"]
-    num_reps = laser_dict["num_reps"] if "num_reps" in laser_dict else 1
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:
