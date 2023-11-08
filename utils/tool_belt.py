@@ -805,20 +805,26 @@ def get_files_in_folder(folderDir, filetype=None):
 
 
 def get_file_path(source_file, time_stamp, name, subfolder=None):
-    """Get the file path to save to. This will be in a subdirectory of nvdata.
+    """Get the file path to save to. This will be in a subdirectory of nvdata
 
-    Params:
-        source_file: string
-            Source __file__ of the caller which will be parsed to get the
-            name of the subdirectory we will write to
-        time_stamp: string
-            Formatted timestamp to include in the file name
-        name: string
-            The full file name consists of <timestamp>_<name>.<ext>
-            Ext is supplied by the save functions
-        subfolder: string
-            Subfolder to save to under file name
-    """
+    Parameters
+    ----------
+    source_file : string
+        Source __file__ of the caller which will be parsed to get the
+        name of the subdirectory we will write to
+    time_stamp : string
+        Formatted timestamp to include in the file name
+    name : string
+        The full file name consists of <timestamp>_<name>.<ext>
+        Ext is supplied by the save functions
+    subfolder : string, optional
+        Subfolder to save to under file name, by default None
+
+    Returns
+    -------
+    Path
+        Path to save to
+    """    
 
     nvdata_path = common.get_nvdata_path()
     pc_name = socket.gethostname()

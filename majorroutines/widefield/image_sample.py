@@ -41,10 +41,9 @@ def single_nv_polarization(nv_sig, num_reps=1):
 
 
 def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
-    
     do_polarize = caller_fn_name == "single_nv_polarization"
     do_ionize = caller_fn_name == "single_nv_ionization"
-    
+
     # Do the experiments
     signal_img_array = _charge_state_prep(
         nv_sig, caller_fn_name, num_reps, do_polarize=do_polarize, do_ionize=do_ionize
@@ -280,7 +279,7 @@ def main_with_cxn(
 
     file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, file_path)
-    tb.save_raw_data(raw_data, file_path)
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=img_array)
 
     return img_array
 
