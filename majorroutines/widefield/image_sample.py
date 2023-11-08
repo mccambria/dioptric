@@ -11,7 +11,6 @@ Created on April 9th, 2019
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
-from majorroutines.widefield.optimize_pixel_coords import prepare_microscope
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield as widefield_utils
@@ -21,6 +20,9 @@ from utils import positioning as pos
 from scipy import ndimage
 import os
 import time
+from majorroutines.widefield.optimize_pixel_coords import (
+    main_with_img_array as optimize_pixel_coords,
+)
 
 
 def single_nv(nv_sig, num_reps=1):
@@ -30,28 +32,57 @@ def single_nv(nv_sig, num_reps=1):
 
 def single_nv_ionization(nv_sig, num_reps=1):
     caller_fn_name = "single_nv_ionization"
-    control_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_ionize=False
-    )
-    ionize_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_ionize=True
-    )
-    fig, ax = plt.subplots()
-    diff = ionize_img_array - control_img_array
-    kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
+    return _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps)
 
 
 def single_nv_polarization(nv_sig, num_reps=1):
     caller_fn_name = "single_nv_polarization"
-    polarize_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_polarize=True
+    return _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps)
+
+
+def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
+    
+    do_polarize = caller_fn_name == "single_nv_polarization"
+    do_ionize = caller_fn_name == "single_nv_ionization"
+    
+    # Do the experiments
+    signal_img_array = _charge_state_prep(
+        nv_sig, caller_fn_name, num_reps, do_polarize=do_polarize, do_ionize=do_ionize
     )
     control_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_polarize=False
+        nv_sig, caller_fn_name, num_reps, do_polarize=False, do_ionize=False
     )
+
+    # Calculate the difference and save
     fig, ax = plt.subplots()
-    diff = polarize_img_array - control_img_array
+    diff = signal_img_array - control_img_array
     kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
+    timestamp = tb.get_time_stamp()
+    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+    tb.save_figure(fig, file_path)
+
+    ### Get the pixel values of the NV in both images and a background level
+
+    for img_array in [signal_img_array, control_img_array]:
+        pixel_coords = optimize_pixel_coords(
+            img_array,
+            nv_sig,
+            set_scanning_drift=False,
+            set_pixel_drift=False,
+            pixel_drift_adjust=False,
+        )
+        counts = widefield_utils.counts_from_img_array(
+            img_array, pixel_coords, drift_adjust=False
+        )
+        print(counts)
+
+    # Background
+    pixel_coords = nv_sig["pixel_coords"]
+    bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
+    counts = widefield_utils.counts_from_img_array(
+        img_array, bg_coords, drift_adjust=False
+    )
+    print(counts)
 
 
 def _charge_state_prep(
@@ -209,11 +240,12 @@ def main_with_cxn(
 
     ### Collect the data
 
+    img_str_list = []
+
     camera.arm()
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     pulse_gen.stream_start()
-    time.sleep(0.1)
     for ind in range(num_reps):
         img_str = camera.read()
         sub_img_array = widefield_utils.img_str_to_array(img_str)
@@ -262,33 +294,46 @@ if __name__ == "__main__":
     # fig, ax = plt.subplots()
     # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    file_name = "2023_11_06-23_31_11-johnson-nv0_2023_11_02"
+    file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
     data = tb.get_raw_data(file_name)
-    control_img_array = np.array(data["img_array"])
-    pixel_coords = [334.879, 297.868]
+    signal_img_array = np.array(data["img_array"])
+    pixel_coords = optimize_pixel_coords(
+        signal_img_array,
+        data["nv_sig"],
+        set_scanning_drift=False,
+        set_pixel_drift=False,
+        pixel_drift_adjust=False,
+    )
     print(
         widefield_utils.counts_from_img_array(
-            control_img_array, pixel_coords, radius=6, drift_adjust=False
+            signal_img_array, pixel_coords, drift_adjust=False
         )
     )
 
-    file_name = "2023_11_06-23_29_39-johnson-nv0_2023_11_02"
+    file_name = "2023_11_07-17_14_32-johnson-nv2_2023_11_07"
     data = tb.get_raw_data(file_name)
-    signal_img_array = np.array(data["img_array"])
-    pixel_coords = [335.014, 297.607]
-    pixel_coords = [328.975, 286.537]  # Nothing
+    control_img_array = np.array(data["img_array"])
+    pixel_coords = optimize_pixel_coords(
+        control_img_array,
+        data["nv_sig"],
+        set_scanning_drift=False,
+        set_pixel_drift=False,
+        pixel_drift_adjust=False,
+    )
     print(
         widefield_utils.counts_from_img_array(
-            signal_img_array, pixel_coords, radius=6, drift_adjust=False
+            control_img_array, pixel_coords, drift_adjust=False
+        )
+    )
+
+    bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
+    print(
+        widefield_utils.counts_from_img_array(
+            control_img_array, bg_coords, drift_adjust=False
         )
     )
 
     diff = signal_img_array - control_img_array
-    print(np.mean(diff))
-    # diff = signal_img_array[6:506, 6:506] - control_img_array[5:505, 6:506]
-    # print(np.std(diff[250:350, 250:350]))
-
-    # diff = ndimage.gaussian_filter(diff, 2)
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")

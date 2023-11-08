@@ -238,15 +238,15 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 100e6}
+    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 100e6}
     # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 20e6}
-    yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e6}
+    # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 5e6}
     # yellow_laser_dict = {"name": yellow_laser, "readout_dur": 1e6}
     green_laser_dict = {"name": green_laser, "readout_dur": 25e6}
     red_laser_dict = {"name": red_laser, "readout_dur": 10e6}
 
     sample_name = "johnson"
-    z_coord = 4.35
+    z_coord = 4.25
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -284,9 +284,9 @@ if __name__ == "__main__":
     # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_11_02"
-    nv0[pixel_coords_key] = [320.318, 253.305]
-    nv0[green_coords_key] = [111.884, 109.641]
+    nv0["name"] = f"{sample_name}-nv2_2023_11_07"
+    nv0[pixel_coords_key] = [308.711, 266.978]
+    nv0[green_coords_key] = [111.279, 110.104]
     red_coords = [75.55, 74.75]
     # nv0[red_coords_key] = red_coords
     nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
@@ -377,12 +377,12 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_ionization(nv_sig)
-        do_image_single_nv_polarization(nv_sig, 1000)
+        # do_image_single_nv_polarization(nv_sig, 1000)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)
         # do_resonance(nv_list)
-        # do_optimize(nv_sig, green_laser)
+        do_optimize(nv_sig, green_laser)
         # do_optimize_z(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)

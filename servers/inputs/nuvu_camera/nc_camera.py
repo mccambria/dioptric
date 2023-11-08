@@ -328,7 +328,8 @@ class NcCamera:
             cast(self.ncImage, POINTER(c_uint16)),
             (self.width.value, self.height.value),
         )
-        return np_img_array_pointer.astype(int)
+        # return np_img_array_pointer.astype(int)
+        return np_img_array_pointer.tobytes()
 
     def set_heartbeat(self, heartbeat_ms):
         try:
@@ -347,6 +348,14 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
         return num_buffer.value
+    
+    def set_buffer_count(self, num_buffer):
+        try:
+            error = ncCamSetBufferCount(self.ncCam, num_buffer, 0)
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
 
     # endregion
 

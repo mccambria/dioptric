@@ -62,6 +62,7 @@ class CameraNuvuHnu512gamma(LabradServer):
         # self.cam.set_timeout(-1)
         self.cam.set_timeout(1000)
         self.cam.get_size()
+        # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
 
     def stopServer(self):
@@ -83,6 +84,7 @@ class CameraNuvuHnu512gamma(LabradServer):
     def arm(self, c, num_images=0):
         self._clear_buffer()
         self.cam.open_shutter()
+        logging.info(time.time())
         self.cam.start(num_images)
 
     @setting(1)
@@ -100,11 +102,7 @@ class CameraNuvuHnu512gamma(LabradServer):
         img_str = camera.read()
         img_array = widefield.img_str_to_array(img_str)
         """
-        # start = time.time()
-        img_array = self.cam.read()
-        # end = time.time()
-        # print(round(end - start, 3))
-        return img_array.tobytes()
+        return self.cam.read()
 
     @setting(5)
     def reset(self, c):

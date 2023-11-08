@@ -42,7 +42,8 @@ def imshow(ax, img_array, count_format=None, **kwargs):
 def img_str_to_array(img_str):
     config = common.get_config_dict()
     resolution = config["Camera"]["resolution"]
-    img_array = np.frombuffer(img_str, dtype=int).reshape(*resolution)
+    img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*resolution)
+    img_array = img_array.astype(int)
     return img_array
 
 

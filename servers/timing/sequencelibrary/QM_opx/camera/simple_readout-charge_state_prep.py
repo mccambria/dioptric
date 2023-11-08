@@ -52,7 +52,6 @@ def get_seq(args, num_reps):
     readout_duration_cc = int(readout_duration / 4)
     total_duration_cc = setup_duration_cc + readout_duration_cc
     # print(((setup_duration * 4) + readout) * 10**-9)
-    camera_pad_cc = seq_utils.calc_camera_pad(total_duration_cc)
 
     with qua.program() as seq:
 
@@ -100,8 +99,7 @@ def get_seq(args, num_reps):
             qua.align()
             qua.play("off", camera_el)
 
-        seq_utils.handle_reps(one_rep, num_reps, post_trigger_pad=camera_pad_cc)
-        # seq_utils.handle_reps(one_rep, num_reps)
+        seq_utils.handle_reps(one_rep, num_reps)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

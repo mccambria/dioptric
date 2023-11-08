@@ -17,7 +17,6 @@ def handle_reps(
     one_rep_macro,
     num_reps,
     wait_for_trigger=None,
-    post_trigger_pad=None,
 ):
     """Handle repetitions of a given sequence - you just have to pass
     a function defining the behavior for a single loop. Optionally
@@ -32,8 +31,6 @@ def handle_reps(
     wait_for_trigger : bool, optional
         Whether or not to pause execution between loops until a trigger
         pulse is received by the OPX, defaults to True for camera, False otherwise
-    post_trigger_pad : int
-        Clock cycles to wait after receiving a trigger
     """
 
     if wait_for_trigger is None:
@@ -50,9 +47,6 @@ def handle_reps(
             if wait_for_trigger:
                 qua.wait_for_trigger(dummy_element)
                 qua.align()
-                if post_trigger_pad is not None:
-                    qua.wait(post_trigger_pad)
-                    qua.align()
     elif num_reps == 1:
         one_rep_macro()
     else:
@@ -64,27 +58,6 @@ def handle_reps(
             if wait_for_trigger:
                 qua.wait_for_trigger(dummy_element)
                 qua.align()
-                if post_trigger_pad is not None:
-                    qua.wait(post_trigger_pad)
-                    qua.align()
-
-
-def calc_camera_pad(rep_duration_cc):
-    """The camera can't return images arbitrarily fast and it has no way
-    to limit itself - you have to limit it manually or else it will disconnect.
-    Use this QUA macro to pad your sequence so it respects the camera's
-    maximum frame rate
-
-    rep_duration_cc : int
-        Duration of a sequence rep in clock cycles - doesn't need to be exact
-    """
-    config = common.get_config_dict()
-    max_frame_rate = config["Camera"]["max_frame_rate"]
-    min_sequence_time = 1 / max_frame_rate
-    min_sequence_time_cc = round(min_sequence_time * 1e9 / 4)
-    pad_duration_cc = min_sequence_time_cc - rep_duration_cc
-    camera_pad_cc = min(round(1e6 / 4), pad_duration_cc)
-    return camera_pad_cc
 
 
 def convert_ns_to_clock_cycles(duration_ns):

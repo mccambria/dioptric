@@ -29,7 +29,6 @@ def get_seq(args, num_reps):
     laser_element = seq_utils.get_laser_mod_element(readout_laser)
     camera_element = f"do_camera_trigger"
     readout_duration_cc = round(readout_duration / 4)
-    pad_duration_cc = seq_utils.get_camera_pad_duration(readout_duration_cc)
     with qua.program() as seq:
         ### Define one rep here
         def one_rep():
@@ -39,15 +38,8 @@ def get_seq(args, num_reps):
             qua.play("off", camera_element)
             # qua.align()
 
-        def post_trigger():
-            if pad_duration_cc > 0:
-                qua.wait(pad_duration_cc)
-                qua.align()
-
         ### Handle the reps in the utils code
-        seq_utils.handle_reps(
-            one_rep, num_reps, wait_for_trigger=True, post_trigger_macro=post_trigger
-        )
+        seq_utils.handle_reps(one_rep, num_reps)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

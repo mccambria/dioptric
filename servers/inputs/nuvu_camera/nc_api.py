@@ -274,3 +274,7 @@ ncCamSetHeartbeat.argtypes = [NCCAM, c_int]
 ncCamGetDynamicBufferCount = nuvuLib.ncCamGetDynamicBufferCount
 ncCamGetDynamicBufferCount.restype = c_int
 ncCamGetDynamicBufferCount.argtypes = [NCCAM, POINTER(c_int)]
+
+ncCamSetBufferCount = nuvuLib.ncCamSetBufferCount
+ncCamSetBufferCount.restype = c_int
+ncCamSetBufferCount.argtypes = [NCCAM, c_int, c_int]
