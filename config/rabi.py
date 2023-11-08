@@ -108,6 +108,8 @@ config = {
         "uwave_to_readout_wait_dur": 5000,
         "aod_rise_time": int(12e3),
         "aod_end_buffer": int(2e3),
+        "default_pulse_duration": 1000,
+        "aod_access_time": 20e3,
     },
     ###
     "DeviceIDs": {
@@ -316,7 +318,7 @@ yellow_AOM_total_delay = common_delay - yellow_aom_delay
 tsg4104_I_total_delay = common_delay - tsg4104_I_delay
 tsg4104_Q_total_delay = common_delay - tsg4104_Q_delay
 
-default_len = 1000
+default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 
 # endregion
 # region OPX config
@@ -512,22 +514,22 @@ opx_config = {
         ### Analog
         "green_aod_cw": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "waveforms": {"single": "green_aod_cw"},
         },
         "red_aod_cw": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "waveforms": {"single": "red_aod_cw"},
         },
         "ao_cw": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "waveforms": {"single": "cw"},
         },
         "ao_off": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "waveforms": {"single": "off"},
         },
         "charge_state_readout": {
@@ -538,17 +540,17 @@ opx_config = {
         ### Digital
         "do_on": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "digital_marker": "on",
         },
         "do_off": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "digital_marker": "off",
         },
         "do_short_pulse": {
             "operation": "control",
-            "length": default_len,
+            "length": default_pulse_duration,
             "digital_marker": "square",
         },
         "do_ionization": {

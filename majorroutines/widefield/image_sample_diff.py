@@ -28,16 +28,12 @@ from majorroutines.widefield.optimize_pixel_coords import (
 
 def single_nv_ionization(nv_sig, num_reps=1):
     caller_fn_name = "single_nv_ionization"
-    return _charge_state_prep(nv_sig, caller_fn_name, num_reps)
+    return main(nv_sig, caller_fn_name, num_reps)
 
 
 def single_nv_polarization(nv_sig, num_reps=1):
     caller_fn_name = "single_nv_polarization"
-    return _charge_state_prep(nv_sig, caller_fn_name, num_reps)
-
-
-def _charge_state_prep(nv_sig, caller_fn_name, num_reps=1, save_dict=None):
-    return main(nv_sig, caller_fn_name, num_reps=num_reps, save_dict=save_dict)
+    return main(nv_sig, caller_fn_name, num_reps)
 
 
 def main(nv_sig, caller_fn_name, num_reps=1, save_dict=None):
@@ -63,49 +59,64 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
 
     ### Load the pulse generator
 
-    readout = laser_dict["readout_dur"]
-    readout_us = readout / 10**3
+    readout = laser_dict["duration"]
     readout_ms = readout / 10**6
-    readout_sec = readout / 10**9
 
     if caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
-        ionization_laser = nv_sig[LaserKey.IONIZATION]["name"]
-        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ionization_laser)
-        polarization_laser = nv_sig[LaserKey.POLARIZATION]["name"]
-        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=polarization_laser)
+        do_polarize = caller_fn_name == "single_nv_polarization"
+        do_ionize = caller_fn_name == "single_nv_ionization"
+
+        # Polarization
+        pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
+        pol_laser = pol_laser_dict["name"]
+        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=pol_laser)
+        pol_duration = pol_laser_dict["duration"]
+
+        # Ionization
+        ion_laser_dict = nv_sig[LaserKey.IONIZATION]
+        ion_laser = ion_laser_dict["name"]
+        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ion_laser)
+        ion_duration = ion_laser_dict["duration"]
+
         seq_args = [
             readout,
             readout_laser,
             do_polarize,
-            do_ionize,
-            ionization_laser,
-            ion_coords,
-            polarization_laser,
+            pol_laser,
             pol_coords,
+            pol_duration,
+            do_ionize,
+            ion_laser,
+            ion_coords,
+            ion_duration,
         ]
         seq_file = "simple_readout-charge_state_prep-diff.py"
 
-    # print(seq_args)
-    # print(seq_file)
-    # return
+    print(seq_args)
+    print(seq_file)
+    return
 
     ### Collect the data
 
     camera.arm()
+
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     pulse_gen.stream_start()
+
     for ind in range(num_reps):
         img_str = camera.read()
         sub_img_array = widefield_utils.img_str_to_array(img_str)
         sig_img_array = (
             np.copy(sub_img_array) if ind == 0 else sig_img_array + sub_img_array
         )
+
         img_str = camera.read()
         sub_img_array = widefield_utils.img_str_to_array(img_str)
         ref_img_array = (
             np.copy(sub_img_array) if ind == 0 else ref_img_array + sub_img_array
         )
+
     camera.disarm()
 
     ### Process and plot
@@ -113,17 +124,54 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
     kpl.init_kplotlib(font_size=kpl.Size.SMALL)
 
     diff_img_array = sig_img_array - ref_img_array
+    sig_img_array = sig_img_array / num_reps
+    ref_img_array = ref_img_array / num_reps
+    diff_img_array = diff_img_array / num_reps
 
     img_arrays = [sig_img_array, ref_img_array, diff_img_array]
     title_suffices = ["sig", "ref", "diff"]
     figs = []
     for ind in range(3):
-        img_array = img_arrays[ind] / 3
+        img_array = img_arrays[ind]
         title_suffix = title_suffices[ind]
         fig, ax = plt.subplots()
         title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms, {title_suffix}"
-        kpl.imshow(ax, sig_img_array, title=title, cbar_label="Counts")
+        kpl.imshow(ax, img_array, title=title, cbar_label="Counts")
         figs.append(fig)
+
+    ### Get counts
+
+    bg_offset = [10, 10]
+    img_arrays = [sig_img_array, ref_img_array]
+    titles = ["Signal", "Reference"]
+
+    for ind in range(2):
+        img_array = img_arrays[ind]
+        title = titles[ind]
+
+        nv_pixel_coords = optimize_pixel_coords(
+            img_array,
+            nv_sig,
+            set_scanning_drift=False,
+            set_pixel_drift=False,
+            pixel_drift_adjust=False,
+        )
+        nv_counts = widefield_utils.counts_from_img_array(
+            img_array, nv_pixel_coords, drift_adjust=False
+        )
+        bg_pixel_coords = [
+            nv_pixel_coords[0] + bg_offset[0],
+            nv_pixel_coords[1] + bg_offset[1],
+        ]
+        bg_counts = widefield_utils.counts_from_img_array(
+            img_array, bg_pixel_coords, drift_adjust=False
+        )
+
+        print(title)
+        print(f"nv_counts: {nv_counts}")
+        print(f"bg_counts: {bg_counts}")
+        print(f"diff: {nv_counts - bg_counts}")
+        print()
 
     ### Clean up and save the data
 

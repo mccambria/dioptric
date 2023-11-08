@@ -190,7 +190,7 @@ def _read_counts_camera_sequence(
     # Sequence setup
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
-    readout = laser_dict["readout_dur"]
+    readout = laser_dict["duration"]
     seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
     seq_file_name = "simple_readout-scanning.py"
     if axis_ind is None:
@@ -236,7 +236,7 @@ def _optimize_on_axis(
     num_steps = 20
     config = common.get_config_dict()
     laser_dict = nv_sig[laser_key]
-    readout = laser_dict["readout_dur"]
+    readout = laser_dict["duration"]
     scan_range = pos.get_axis_optimize_range(axis_ind, coords_suffix)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
@@ -278,8 +278,8 @@ def _read_counts(
 
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
-    readout = laser_dict["readout_dur"]
-    delay = laser_dict["readout_dur"]
+    readout = laser_dict["duration"]
+    delay = laser_dict["duration"]
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if axis_ind is not None:
         delay = pos.get_axis_delay(axis_ind, coords_suffix=coords_suffix)
@@ -339,7 +339,7 @@ def stationary_count_lite(
     config = common.get_config_dict()
     laser_dict = nv_sig[laser_key]
     laser_name = laser_dict["name"]
-    readout = laser_dict["readout_dur"]
+    readout = laser_dict["duration"]
     tb.set_filter(cxn, nv_sig, laser_key)
     laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
     if coords is None:

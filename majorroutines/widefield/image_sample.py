@@ -196,10 +196,8 @@ def main_with_cxn(
 
     ### Load the pulse generator
 
-    readout = laser_dict["readout_dur"]
-    readout_us = readout / 10**3
+    readout = laser_dict["duration"]
     readout_ms = readout / 10**6
-    readout_sec = readout / 10**9
 
     if caller_fn_name in ["scanning", "nv_list", "single_nv"]:
         seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
@@ -279,7 +277,7 @@ def main_with_cxn(
 
     file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, file_path)
-    tb.save_raw_data(raw_data, file_path, keys_to_compress=img_array)
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
 
     return img_array
 

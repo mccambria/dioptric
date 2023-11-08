@@ -56,9 +56,9 @@ def define_sequence(
 
     camera_element = "do_camera_trigger"
 
-    uwave_buffer_cc = seq_utils.convert_ns_to_clock_cycles(uwave_buffer)
-    aod_rise_time_cc = seq_utils.convert_ns_to_clock_cycles(aod_rise_time)
-    aod_end_buffer_cc = seq_utils.convert_ns_to_clock_cycles(aod_end_buffer)
+    uwave_buffer_cc = seq_utils.convert_ns_to_cc(uwave_buffer)
+    aod_rise_time_cc = seq_utils.convert_ns_to_cc(aod_rise_time)
+    aod_end_buffer_cc = seq_utils.convert_ns_to_cc(aod_end_buffer)
 
     durations = [round(el / 4) for el in durations]
     (
@@ -69,7 +69,7 @@ def define_sequence(
         camera_duration_cc,
     ) = durations
 
-    aod_duration_cc = aod_rise_time_cc + polarization_duration_cc + aod_end_buffer_cc
+    aod_duration_cc = aod_rise_time_cc + aod_end_buffer_cc
 
     # Extract coordinates
     x_freqs_pol, y_freqs_pol, x_freqs_ion, y_freqs_ion = coords
@@ -103,6 +103,7 @@ def define_sequence(
 
         # Play microwave pulse
         play("on", microwave_element, duration=microwave_duration_cc)
+        wait(aod_end_buffer, microwave_element)
 
         # Wait for ionization setup
         wait(
@@ -117,7 +118,9 @@ def define_sequence(
             # Play AODs for ionization (duration in ns)
             play("aod_cw", x_element_ion, duration=aod_duration_cc)
             play("aod_cw", y_element_ion, duration=aod_duration_cc)
+            wait(aod_rise_time, ionization_element)
             play("on", ionization_element, duration=ionization_duration_cc)
+            wait(aod_end_buffer, ionization_element)
 
         # Wait for readout setup
         wait(
@@ -130,7 +133,7 @@ def define_sequence(
         )
 
         wait(
-             uwave_buffer_cc
+            uwave_buffer_cc
             + microwave_duration_cc
             + uwave_buffer_cc
             + ionization_duration_cc
@@ -177,7 +180,7 @@ if __name__ == "__main__":
 
         seq = define_sequence(*args, config)
 
-        sim_config = SimulationConfig(duration=int(1e6 / 4))
+        sim_config = SimulationConfig(duration=int(6e5 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
