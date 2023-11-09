@@ -524,6 +524,12 @@ def imshow(
 
     img = ax.imshow(img_array, **kwargs)
 
+    def format_cursor_data(data):
+        # print(data)
+        return "[" + str(data) + "]"
+
+    img.format_cursor_data = format_cursor_data
+
     # Colorbar and labels
     clb = fig.colorbar(img)
     if cbar_label is not None:
