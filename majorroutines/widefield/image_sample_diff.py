@@ -217,50 +217,52 @@ if __name__ == "__main__":
     # fig, ax = plt.subplots()
     # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
+    file_name = "2023_11_09-08_30_01-johnson-nv2_2023_11_07"
     data = tb.get_raw_data(file_name)
-    signal_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel_coords(
-        signal_img_array,
-        data["nv_sig"],
-        set_scanning_drift=False,
-        set_pixel_drift=False,
-        pixel_drift_adjust=False,
-    )
-    print(
-        widefield_utils.counts_from_img_array(
-            signal_img_array, pixel_coords, drift_adjust=False
-        )
-    )
+    sig_img_array = np.array(data["sig_img_array"])
+    # pixel_coords = optimize_pixel_coords(
+    #     signal_img_array,
+    #     data["nv_sig"],
+    #     set_scanning_drift=False,
+    #     set_pixel_drift=False,
+    #     pixel_drift_adjust=False,
+    # )
+    # print(
+    #     widefield_utils.counts_from_img_array(
+    #         signal_img_array, pixel_coords, drift_adjust=False
+    #     )
+    # )
 
-    file_name = "2023_11_07-17_14_32-johnson-nv2_2023_11_07"
+    file_name = "2023_11_09-08_34_52-johnson-nv2_2023_11_07"
     data = tb.get_raw_data(file_name)
-    control_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel_coords(
-        control_img_array,
-        data["nv_sig"],
-        set_scanning_drift=False,
-        set_pixel_drift=False,
-        pixel_drift_adjust=False,
-    )
-    print(
-        widefield_utils.counts_from_img_array(
-            control_img_array, pixel_coords, drift_adjust=False
-        )
-    )
+    ref_img_array = np.array(data["ref_img_array"])
+    # pixel_coords = optimize_pixel_coords(
+    #     ref_img_array,
+    #     data["nv_sig"],
+    #     set_scanning_drift=False,
+    #     set_pixel_drift=False,
+    #     pixel_drift_adjust=False,
+    # )
+    # print(
+    #     widefield_utils.counts_from_img_array(
+    #         control_img_array, pixel_coords, drift_adjust=False
+    #     )
+    # )
 
-    bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
-    print(
-        widefield_utils.counts_from_img_array(
-            control_img_array, bg_coords, drift_adjust=False
-        )
-    )
+    # bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
+    # print(
+    #     widefield_utils.counts_from_img_array(
+    #         control_img_array, bg_coords, drift_adjust=False
+    #     )
+    # )
 
-    diff = signal_img_array - control_img_array
+    diff = sig_img_array[150:370, 200:420] - ref_img_array[150 + 1 : 370 + 1, 200:420]
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
-    # kpl.imshow(ax, signal_img_array, title="Signal", cbar_label="Counts")
-    # kpl.imshow(ax, control_img_array, title="Control", cbar_label="Counts")
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, sig_img_array, title="Signal", cbar_label="Counts")
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, ref_img_array, title="Reference", cbar_label="Counts")
 
     plt.show(block=True)
