@@ -61,8 +61,6 @@ def get_seq(args, num_reps):
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
     with qua.program() as seq:
-        yellow_pad_reps_ind = qua.declare(int, value=0)
-
         pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
         pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
         qua.update_frequency(pol_x_el, pol_x_freq)
@@ -93,8 +91,9 @@ def get_seq(args, num_reps):
             # Yellow readout
             qua.wait(setup_duration, readout_laser_el)
             qua.wait(setup_duration, camera_el)
-            pulse = "on" if not do_ionize_sub else "off"
-            qua.play(pulse, readout_laser_el, duration=readout_duration)
+            # pulse = "on" if not do_ionize_sub else "off"
+            qua.play("on", readout_laser_el, duration=readout_duration)
+            # qua.play("off", readout_laser_el, duration=readout_duration)
             qua.play("on", camera_el)
             qua.align()
             qua.play("off", camera_el)
@@ -136,7 +135,7 @@ if __name__ == "__main__":
             1000,
             False,
             "laser_COBO_638",
-            [74.45, 75.25],
+            [75, 75],
             2000.0,
         ]
         seq, seq_ret_vals = get_seq(args, 5)

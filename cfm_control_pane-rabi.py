@@ -158,12 +158,12 @@ def do_opx_constant_ac():
         #     [0],  # Analog frequencies
         # )
         # Green
-        opx.constant_ac(
-            [4],  # Digital channels
-            [6, 4],  # Analog channels
-            [0.19, 0.19],  # Analog voltages
-            [110, 110],  # Analog frequencies
-        )
+        # opx.constant_ac(
+        #     [4],  # Digital channels
+        #     [6, 4],  # Analog channels
+        #     [0.19, 0.19],  # Analog voltages
+        #     [110, 110],  # Analog frequencies
+        # )
         # Red
         # opx.constant_ac(
         #     [1],  # Digital channels
@@ -172,12 +172,14 @@ def do_opx_constant_ac():
         #     [75.6, 74.75],  # Analog frequencies
         # )
         # Red + green
-        # opx.constant_ac(``
-        #     [1, 4],  # Digital channels
-        #     [2,3,4, 6],  # Analog channels
-        #     [0.32, 0.32, 0.35, 0.35],  # Analog voltages
-        #     [75, 75, 110, 110],  # Analog frequencies
-        # )
+        opx.constant_ac(
+            [1, 4],  # Digital channels
+            [2, 3, 6, 4],  # Analog channels
+            [0.32, 0.32, 0.19, 0.19],  # Analog voltages
+            # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
+            [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
+            # [75, 75, 110, 110],  # Analog frequencies
+        )
         input("Press enter to stop...")
         # opx.constant_ac()
 
@@ -248,7 +250,7 @@ if __name__ == "__main__":
     red_laser_dict = {"name": red_laser, "duration": 10e6}
 
     sample_name = "johnson"
-    z_coord = 4.24
+    z_coord = 4.20
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -268,7 +270,7 @@ if __name__ == "__main__":
         #
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         # 50 mW setting for 10 mW on table
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 100e3},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 1e6},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 1e6},
         #
         "collection": {"filter": "514_notch+630_lp"},
@@ -281,8 +283,8 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv2_2023_11_07"
-    nv0[pixel_coords_key] = [312.355, 264.381]
-    nv0[green_coords_key] = [111.222, 109.704]
+    nv0[pixel_coords_key] = [308.701, 256.314]
+    nv0[green_coords_key] = [111.16, 109.57]
     # red_coords = [75.15, 75.1]
     red_coords = [75.0, 75.0]
     nv0[red_coords_key] = red_coords
@@ -372,7 +374,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        # do_widefield_image_sample(nv_sig, 500)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -380,7 +382,7 @@ if __name__ == "__main__":
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
-        do_image_single_nv_ionization(nv_sig, 500)
+        # do_image_single_nv_ionization(nv_sig, 500)
         # do_image_single_nv_polarization(nv_sig, 100)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
