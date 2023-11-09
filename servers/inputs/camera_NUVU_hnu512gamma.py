@@ -84,7 +84,6 @@ class CameraNuvuHnu512gamma(LabradServer):
     def arm(self, c, num_images=0):
         self._clear_buffer()
         self.cam.open_shutter()
-        logging.info(time.time())
         self.cam.start(num_images)
 
     @setting(1)
@@ -107,6 +106,7 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(5)
     def reset(self, c):
         self.disarm(c)
+        self._clear_buffer()
 
     @setting(8, readout_mode="i")
     def set_readout_mode(self, c, readout_mode):

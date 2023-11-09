@@ -380,7 +380,7 @@ class NcCamera:
         else:
             self.stop(no_raise=True)
             self.close_shutter(no_raise=True)
-            self.disconnect(no_raise=True)
+            # self.disconnect(no_raise=True)
             raise NuvuException(error)
 
     def getReadoutTime(self):

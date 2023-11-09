@@ -208,19 +208,32 @@ def main_with_cxn(
         seq_file = "simple_readout-widefield.py"
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
-        ionization_laser = nv_sig[LaserKey.IONIZATION]["name"]
-        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ionization_laser)
-        polarization_laser = nv_sig[LaserKey.POLARIZATION]["name"]
-        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=polarization_laser)
+        # Polarization
+        pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
+        pol_laser = pol_laser_dict["name"]
+        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=pol_laser)
+        pol_duration = pol_laser_dict["duration"]
+
+        # Ionization
+        ion_laser_dict = nv_sig[LaserKey.IONIZATION]
+        ion_laser = ion_laser_dict["name"]
+        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ion_laser)
+        ion_duration = ion_laser_dict["duration"]
+
         seq_args = [
+            #
             readout,
             readout_laser,
+            #
             do_polarize,
-            do_ionize,
-            ionization_laser,
-            ion_coords,
-            polarization_laser,
+            pol_laser,
             pol_coords,
+            pol_duration,
+            #
+            do_ionize,
+            ion_laser,
+            ion_coords,
+            ion_duration,
         ]
         seq_file = "simple_readout-charge_state_prep.py"
 

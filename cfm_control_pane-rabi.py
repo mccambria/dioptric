@@ -23,6 +23,7 @@ from majorroutines.widefield import image_sample_diff
 from majorroutines import optimize
 from utils.constants import LaserKey, NVSpinState
 import time
+from servers.inputs.nuvu_camera.nc_camera import NuvuException
 
 
 ### Major Routines
@@ -57,7 +58,7 @@ def do_image_single_nv_ionization(nv_sig, num_reps):
 
 
 def do_image_single_nv_polarization(nv_sig, num_reps):
-    return image_sample_diff.single_nv_polarization(nv_sig, num_reps)
+    return image_sample.single_nv_polarization(nv_sig, num_reps)
 
 
 def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
@@ -240,14 +241,14 @@ if __name__ == "__main__":
 
     # Imaging laser dicts
     # yellow_laser_dict = {"name": yellow_laser, "duration": 100e6}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 20e6}
-    yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
+    yellow_laser_dict = {"name": yellow_laser, "duration": 20e6}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
-    green_laser_dict = {"name": green_laser, "duration": 25e6}
+    green_laser_dict = {"name": green_laser, "duration": 20e6}
     red_laser_dict = {"name": red_laser, "duration": 10e6}
 
     sample_name = "johnson"
-    z_coord = 4.25
+    z_coord = 4.24
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -267,7 +268,7 @@ if __name__ == "__main__":
         #
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         # 50 mW setting for 10 mW on table
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 2e3},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 100e3},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 1e6},
         #
         "collection": {"filter": "514_notch+630_lp"},
@@ -280,11 +281,12 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv2_2023_11_07"
-    nv0[pixel_coords_key] = [311.953, 266.802]
-    nv0[green_coords_key] = [111.202, 109.801]
-    red_coords = [75.55, 74.75]
-    # nv0[red_coords_key] = red_coords
-    nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
+    nv0[pixel_coords_key] = [312.355, 264.381]
+    nv0[green_coords_key] = [111.222, 109.704]
+    # red_coords = [75.15, 75.1]
+    red_coords = [75.0, 75.0]
+    nv0[red_coords_key] = red_coords
+    # nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -334,20 +336,27 @@ if __name__ == "__main__":
         # print([round(el, 3) for el in scanning_coords])
 
         # center = [110, 110]
-        # center = [75.75, 75]
-        # half_range = 0.3
-        # num_steps = 7
+        # center = [75, 75]
+        # half_range = 0.2
+        # num_steps = 10
+        # crash_counter = 0
         # for x in np.linspace(center[0] - half_range, center[0] + half_range, num_steps):
         #     for y in np.linspace(
         #         center[1] - half_range, center[1] + half_range, num_steps
         #     ):
-        #         # print(round(x, 6), round(y, 6))
         #         coords_key = red_coords_key
         #         # coords_key = green_coords_key
-        #         nv_sig[coords_key][0] = round(x, 6)
-        #         nv_sig[coords_key][1] = round(y, 6)
+        #         nv_sig[coords_key] = [round(x, 3), round(y, 3)]
         #         # do_image_single_nv(nv_sig)
-        #         do_image_single_nv_ionization(nv_sig)
+        #         for ind in range(10):
+        #             try:
+        #                 do_image_single_nv_ionization(nv_sig, 500)
+        #                 break
+        #             except Exception as exc:
+        #                 print(exc)
+        #                 crash_counter += 1
+        #                 tb.reset_cfm()
+        # print(f"Crashes: {crash_counter}")
 
         # for nv in nv_list:
         # do_optimize_pixel(nv)
@@ -363,7 +372,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        # do_widefield_image_sample(nv_sig, 10)
+        # do_widefield_image_sample(nv_sig, 500)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -371,8 +380,8 @@ if __name__ == "__main__":
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
-        # do_image_single_nv_ionization(nv_sig)
-        do_image_single_nv_polarization(nv_sig, 1000)
+        do_image_single_nv_ionization(nv_sig, 500)
+        # do_image_single_nv_polarization(nv_sig, 100)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

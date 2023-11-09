@@ -92,9 +92,9 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
         ]
         seq_file = "simple_readout-charge_state_prep-diff.py"
 
-    print(seq_args)
-    print(seq_file)
-    return
+    # print(seq_args)
+    # print(seq_file)
+    # return
 
     ### Collect the data
 

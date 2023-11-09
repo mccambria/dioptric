@@ -51,23 +51,21 @@ def get_seq(args, num_reps):
     pol_y_el = f"ao_{pol_laser}_y"
 
     access_time = seq_utils.get_aod_access_time()
-    pol_duration = seq_utils.convert_ns_to(pol_duration_ns)
+    pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
     default_pulse_duration = seq_utils.get_default_pulse_duration()
-    setup_duration = access_time + pol_duration
-    readout_duration = seq_utils.convert_ns_to(readout_duration_ns)
-    total_duration = setup_duration + readout_duration + 2 * default_pulse_duration
-    # print(((setup_duration * 4) + readout) * 10**-9)
+    setup_duration = access_time + pol_duration + 2 * default_pulse_duration
+    readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
     with qua.program() as seq:
+        pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
+        pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
 
         def one_rep():
             # Polarization
-            pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
-            pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
             qua.update_frequency(pol_x_el, pol_x_freq)
             qua.update_frequency(pol_y_el, pol_y_freq)
-            qua.play("aod_cw", pol_x_el, duration=total_duration)
-            qua.play("aod_cw", pol_y_el, duration=total_duration)
+            qua.play("aod_cw", pol_x_el, duration=setup_duration)
+            qua.play("aod_cw", pol_y_el, duration=setup_duration)
             if do_polarize:
                 qua.wait(access_time, pol_laser_el)
                 qua.play("on", pol_laser_el, duration=pol_duration)
@@ -81,8 +79,8 @@ def get_seq(args, num_reps):
             # )
             # qua.update_frequency(ion_x_el, ion_x_freq)
             # qua.update_frequency(ion_y_el, ion_y_freq)
-            # qua.play("aod_cw", ion_x_el, duration=total_duration)
-            # qua.play("aod_cw", ion_y_el, duration=total_duration)
+            # qua.play("aod_cw", ion_x_el, duration=setup_duration)
+            # qua.play("aod_cw", ion_y_el, duration=setup_duration)
             # if do_ionize:
             #     qua.wait(access_time + int(5e3 / 4), ion_laser_el)
             #     qua.play("on", ion_laser_el, duration=int(3e3 / 4))

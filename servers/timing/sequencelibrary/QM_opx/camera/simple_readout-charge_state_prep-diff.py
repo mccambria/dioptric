@@ -40,62 +40,61 @@ def get_seq(args, num_reps):
     readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
     camera_el = f"do_camera_trigger"
 
-    # Ionization
-    ion_laser_el = f"do_{ion_laser}_dm"
-    ion_x_el = f"ao_{ion_laser}_x"
-    ion_y_el = f"ao_{ion_laser}_y"
-
     # Polarization
     pol_laser_el = f"do_{pol_laser}_dm"
     pol_x_el = f"ao_{pol_laser}_x"
     pol_y_el = f"ao_{pol_laser}_y"
 
+    # Ionization
+    ion_laser_el = f"do_{ion_laser}_dm"
+    ion_x_el = f"ao_{ion_laser}_x"
+    ion_y_el = f"ao_{ion_laser}_y"
+
     access_time = seq_utils.get_aod_access_time()
     pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
+    ion_duration = seq_utils.convert_ns_to_cc(ion_duration_ns)
     default_pulse_duration = seq_utils.get_default_pulse_duration()
-    setup_readout_gap = seq_utils.convert_ns_to_cc(10e3)
-    setup_duration = access_time + pol_duration + setup_readout_gap
+    operation_gap = seq_utils.convert_ns_to_cc(10e3)
+    setup_duration = (
+        access_time + pol_duration + operation_gap + ion_duration + operation_gap
+    )
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
-    # Pad out the sequence with a yellow pulse after each half rep to ensure the system
-    # starts in the yellow steady state
-    fixed_duration = seq_utils.convert_ns_to_cc(100e6)
-    yellow_pad_duration = max(0, fixed_duration - readout_duration)
-    yellow_pad_reps = round(yellow_pad_duration / default_pulse_duration)
-
     with qua.program() as seq:
+        yellow_pad_reps_ind = qua.declare(int, value=0)
+
+        pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
+        pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
+        qua.update_frequency(pol_x_el, pol_x_freq)
+        qua.update_frequency(pol_y_el, pol_y_freq)
+
+        ion_x_freq = qua.declare(int, value=round(ion_coords[0] * 10**6))
+        ion_y_freq = qua.declare(int, value=round(ion_coords[1] * 10**6))
+        qua.update_frequency(ion_x_el, ion_x_freq)
+        qua.update_frequency(ion_y_el, ion_y_freq)
 
         def half_rep(do_polarize_sub, do_ionize_sub):
             # Polarization
-            pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
-            pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
-            qua.update_frequency(pol_x_el, pol_x_freq)
-            qua.update_frequency(pol_y_el, pol_y_freq)
             qua.play("aod_cw", pol_x_el, duration=setup_duration)
             qua.play("aod_cw", pol_y_el, duration=setup_duration)
-            if do_polarize_sub:
-                qua.wait(access_time, pol_laser_el)
-                qua.play("on", pol_laser_el, duration=pol_duration)
+            # if do_polarize_sub:
+            #     qua.wait(access_time, pol_laser_el)
+            #     qua.play("on", pol_laser_el, duration=pol_duration)
+            qua.wait(access_time, pol_laser_el)
+            qua.play("on", pol_laser_el, duration=pol_duration)
 
             # Ionization
-            # ion_x_freq = qua.declare(
-            #     int, value=round(ion_coords[0] * 10**6)
-            # )
-            # ion_y_freq = qua.declare(
-            #     int, value=round(ion_coords[1] * 10**6)
-            # )
-            # qua.update_frequency(ion_x_el, ion_x_freq)
-            # qua.update_frequency(ion_y_el, ion_y_freq)
-            # qua.play("aod_cw", ion_x_el, duration=setup_duration)
-            # qua.play("aod_cw", ion_y_el, duration=setup_duration)
-            # if do_ionize_sub:
-            #     qua.wait(access_time + int(5e3 / 4), ion_laser_el)
-            #     qua.play("on", ion_laser_el, duration=int(3e3 / 4))
+            qua.play("aod_cw", ion_x_el, duration=setup_duration)
+            qua.play("aod_cw", ion_y_el, duration=setup_duration)
+            if do_ionize_sub:
+                qua.wait(access_time + pol_duration + operation_gap, ion_laser_el)
+                qua.play("on", ion_laser_el, duration=ion_duration)
 
             # Yellow readout
             qua.wait(setup_duration, readout_laser_el)
             qua.wait(setup_duration, camera_el)
-            qua.play("on", readout_laser_el, duration=readout_duration)
+            pulse = "on" if not do_ionize_sub else "off"
+            qua.play(pulse, readout_laser_el, duration=readout_duration)
             qua.play("on", camera_el)
             qua.align()
             qua.play("off", camera_el)
@@ -107,19 +106,9 @@ def get_seq(args, num_reps):
             qua.wait_for_trigger(camera_el)
             qua.align()
 
-            yellow_pad_reps_ind = qua.declare(int, value=0)
-            with qua.while_(yellow_pad_reps_ind < yellow_pad_reps):
-                qua.play("on", readout_laser_el)
-            qua.align()
-
             half_rep(False, False)
 
             qua.wait_for_trigger(camera_el)
-            qua.align()
-
-            yellow_pad_reps_ind = qua.declare(int, value=0)
-            with qua.while_(yellow_pad_reps_ind < yellow_pad_reps):
-                qua.play("on", readout_laser_el)
             qua.align()
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
@@ -139,20 +128,20 @@ if __name__ == "__main__":
 
     try:
         args = [
-            5000000.0,
+            5000.0,
             "laser_OPTO_589",
             True,
             "laser_INTE_520",
             [111.202, 109.801],
-            1e3,
+            1000,
             False,
             "laser_COBO_638",
             [74.45, 75.25],
             2000.0,
         ]
-        seq, seq_ret_vals = get_seq(args, 1)
+        seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(50e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
