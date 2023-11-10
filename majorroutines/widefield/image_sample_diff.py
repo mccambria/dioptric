@@ -104,20 +104,27 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     pulse_gen.stream_start()
 
-    for ind in range(num_reps):
-        img_str = camera.read()
-        sub_img_array = widefield_utils.img_str_to_array(img_str)
-        sig_img_array = (
-            np.copy(sub_img_array) if ind == 0 else sig_img_array + sub_img_array
-        )
+    try:
+        for ind in range(num_reps):
+            img_str = camera.read()
+            sub_img_array = widefield_utils.img_str_to_array(img_str)
+            sig_img_array = (
+                np.copy(sub_img_array) if ind == 0 else sig_img_array + sub_img_array
+            )
 
-        img_str = camera.read()
-        sub_img_array = widefield_utils.img_str_to_array(img_str)
-        ref_img_array = (
-            np.copy(sub_img_array) if ind == 0 else ref_img_array + sub_img_array
-        )
+            img_str = camera.read()
+            sub_img_array = widefield_utils.img_str_to_array(img_str)
+            ref_img_array = (
+                np.copy(sub_img_array) if ind == 0 else ref_img_array + sub_img_array
+            )
 
-    camera.disarm()
+    except Exception as exc:
+        print(exc)
+        num_reps = ind
+        print(num_reps)
+
+    finally:
+        camera.disarm()
 
     ### Process and plot
 

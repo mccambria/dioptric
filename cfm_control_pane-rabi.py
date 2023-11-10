@@ -58,8 +58,8 @@ def do_image_single_nv_ionization(nv_sig, num_reps):
 
 
 def do_image_single_nv_polarization(nv_sig, num_reps):
-    return image_sample.single_nv_polarization(nv_sig, num_reps)
-    # return image_sample_diff.single_nv_polarization(nv_sig, num_reps)
+    # return image_sample.single_nv_polarization(nv_sig, num_reps)
+    return image_sample_diff.single_nv_polarization(nv_sig, num_reps)
 
 
 def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
@@ -259,13 +259,13 @@ if __name__ == "__main__":
     # Imaging laser dicts
     # yellow_laser_dict = {"name": yellow_laser, "duration": 100e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 20e6}
-    yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
-    green_laser_dict = {"name": green_laser, "duration": 20e6}
-    red_laser_dict = {"name": red_laser, "duration": 10e6}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
+    yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
+    green_laser_dict = {"name": green_laser, "duration": 5e6}
+    red_laser_dict = {"name": red_laser, "duration": 5e6}
 
     sample_name = "johnson"
-    z_coord = 4.19
+    z_coord = 4.15
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -298,9 +298,9 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [299.916, 253.915]
-    nv0[green_coords_key] = [110.649, 109.751]
-    red_coords = [74.486, 75.265]
+    nv0[pixel_coords_key] = [305.311, 253.916]
+    nv0[green_coords_key] = [110.805, 109.781]
+    red_coords = [74.636, 74.5]
     # red_coords = [74.81, 75.624]
     nv0[red_coords_key] = red_coords
     # nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
@@ -349,8 +349,8 @@ if __name__ == "__main__":
         #     print([round(el, 3) for el in scanning_coords])
         # pixel_coords = nv_sig["pixel_coords"]
         # # pixel_coords = do_optimize_pixel(nv_sig)
-        # laser = green_laser
-        # # laser = red_laser
+        # # laser = green_laser
+        # laser = red_laser
         # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, laser)
         # print([round(el, 3) for el in scanning_coords])
 
@@ -361,7 +361,7 @@ if __name__ == "__main__":
         # num_steps = 10
         # crash_counter = 0
         # for x in np.linspace(center[0] - 0.2, center[0] + 0.2, 5):
-        #     for y in np.linspace(center[1]-1.0, center[1] + 1.0, 21):
+        #     for y in np.linspace(center[1] - 1.0, center[1] + 1.0, 21):
         #         coords_key = red_coords_key
         #         # coords_key = green_coords_key
         #         nv_sig[coords_key] = [round(x, 3), round(y, 3)]
@@ -370,7 +370,7 @@ if __name__ == "__main__":
         #         for ind in range(10):
         #             try:
         #                 # do_optimize(nv_sig, green_laser)
-        #                 do_image_single_nv_ionization(nv_sig, 500)
+        #                 do_image_single_nv_ionization(nv_sig, 2000)
         #                 break
         #             except Exception as exc:
         #                 print(exc)
@@ -400,15 +400,8 @@ if __name__ == "__main__":
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
+        do_image_single_nv_polarization(nv_sig, 10000)
         # do_image_single_nv_ionization(nv_sig, 2000)
-        # for ind in range(10):
-        #     try:
-        #         do_image_single_nv_polarization(nv_sig, 2000)
-        #         break
-        #     except Exception as exc:
-        #         print(exc)
-        # tb.reset_cfm()
-        do_image_single_nv_polarization(nv_sig, 2000)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

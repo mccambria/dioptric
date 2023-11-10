@@ -51,7 +51,8 @@ def get_seq(args, num_reps):
     access_time = seq_utils.get_aod_access_time()
     pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
     default_pulse_duration = seq_utils.get_default_pulse_duration()
-    buffer = seq_utils.convert_ns_to_cc(10e3)
+    # buffer = seq_utils.convert_ns_to_cc(10e3)
+    buffer = seq_utils.convert_ns_to_cc(1e6)
     setup_duration = access_time + pol_duration + buffer
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 

@@ -109,20 +109,18 @@ def get_seq(args, num_reps):
             qua.align()
 
         def one_rep():
-            half_rep(do_polarize_sig, do_ionize_sig)
-
-            qua.wait_for_trigger(camera_el)
-            qua.align()
-
-            if readout_duration_ns < 30e6:
-                filler = seq_utils.convert_ns_to_cc(30e6 - readout_duration_ns)
-                qua.play("on", readout_laser_el, duration=filler)
+            for half_rep_args in [
+                [do_polarize_sig, do_ionize_sig],
+                [do_polarize_ref, do_ionize_ref],
+            ]:
+                half_rep(*half_rep_args)
+                qua.wait_for_trigger(camera_el)
                 qua.align()
 
-            half_rep(do_polarize_ref, do_ionize_ref)
-
-            qua.wait_for_trigger(camera_el)
-            qua.align()
+                if readout_duration_ns < 30e6:
+                    filler = seq_utils.convert_ns_to_cc(30e6 - readout_duration_ns)
+                    qua.play("on", readout_laser_el, duration=filler)
+                    qua.align()
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
