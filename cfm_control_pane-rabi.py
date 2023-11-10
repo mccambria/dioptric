@@ -59,6 +59,7 @@ def do_image_single_nv_ionization(nv_sig, num_reps):
 
 def do_image_single_nv_polarization(nv_sig, num_reps):
     return image_sample.single_nv_polarization(nv_sig, num_reps)
+    # return image_sample_diff.single_nv_polarization(nv_sig, num_reps)
 
 
 def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
@@ -264,7 +265,7 @@ if __name__ == "__main__":
     red_laser_dict = {"name": red_laser, "duration": 10e6}
 
     sample_name = "johnson"
-    z_coord = 4.17
+    z_coord = 4.19
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -296,9 +297,9 @@ if __name__ == "__main__":
     # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv2_2023_11_07"
-    nv0[pixel_coords_key] = [296.155, 320.087]
-    nv0[green_coords_key] = [110.784, 111.541]
+    nv0["name"] = f"{sample_name}-nv0_2023_11_09"
+    nv0[pixel_coords_key] = [299.916, 253.915]
+    nv0[green_coords_key] = [110.649, 109.751]
     red_coords = [74.486, 75.265]
     # red_coords = [74.81, 75.624]
     nv0[red_coords_key] = red_coords
@@ -348,8 +349,8 @@ if __name__ == "__main__":
         #     print([round(el, 3) for el in scanning_coords])
         # pixel_coords = nv_sig["pixel_coords"]
         # # pixel_coords = do_optimize_pixel(nv_sig)
-        # # laser = green_laser
-        # laser = red_laser
+        # laser = green_laser
+        # # laser = red_laser
         # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, laser)
         # print([round(el, 3) for el in scanning_coords])
 
@@ -391,7 +392,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -400,7 +401,14 @@ if __name__ == "__main__":
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_ionization(nv_sig, 2000)
-        # do_image_single_nv_polarization(nv_sig, 100)
+        # for ind in range(10):
+        #     try:
+        #         do_image_single_nv_polarization(nv_sig, 2000)
+        #         break
+        #     except Exception as exc:
+        #         print(exc)
+        # tb.reset_cfm()
+        do_image_single_nv_polarization(nv_sig, 2000)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

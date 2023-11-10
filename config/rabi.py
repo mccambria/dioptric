@@ -484,31 +484,30 @@ opx_config = {
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
             "sticky": {"analog": True, "digital": True, "duration": 160},
-            # "hold_offset": {"duration": 200},
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_COBO_638_x": {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
-            # "sticky": {"analog": True, "duration": 160},
+            "sticky": {"analog": True, "duration": 160},
             "operations": {"aod_cw": "red_aod_cw"},
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 75e6,
-            # "sticky": {"analog": True, "duration": 160},
+            "sticky": {"analog": True, "duration": 160},
             "operations": {"aod_cw": "red_aod_cw"},
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 110e6,
-            # "sticky": {"analog": True},
+            "sticky": {"analog": True, "duration": 160},
             "operations": {"aod_cw": "green_aod_cw"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
-            # "sticky": {"analog": True},
+            "sticky": {"analog": True, "duration": 160},
             "operations": {"aod_cw": "green_aod_cw"},
         },
         # endregion

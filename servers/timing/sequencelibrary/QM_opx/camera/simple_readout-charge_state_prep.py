@@ -40,32 +40,31 @@ def get_seq(args, num_reps):
     readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
     camera_el = f"do_camera_trigger"
 
-    # ion
-    ion_laser_el = f"do_{ion_laser}_dm"
-    ion_x_el = f"ao_{ion_laser}_x"
-    ion_y_el = f"ao_{ion_laser}_y"
-
-    # pol
     pol_laser_el = f"do_{pol_laser}_dm"
     pol_x_el = f"ao_{pol_laser}_x"
     pol_y_el = f"ao_{pol_laser}_y"
 
+    ion_laser_el = f"do_{ion_laser}_dm"
+    ion_x_el = f"ao_{ion_laser}_x"
+    ion_y_el = f"ao_{ion_laser}_y"
+
     access_time = seq_utils.get_aod_access_time()
     pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
     default_pulse_duration = seq_utils.get_default_pulse_duration()
-    setup_duration = access_time + pol_duration + 2 * default_pulse_duration
+    buffer = seq_utils.convert_ns_to_cc(10e3)
+    setup_duration = access_time + pol_duration + buffer
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
     with qua.program() as seq:
         pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
         pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
+        qua.update_frequency(pol_x_el, pol_x_freq)
+        qua.update_frequency(pol_y_el, pol_y_freq)
+        qua.play("aod_cw", pol_x_el)
+        qua.play("aod_cw", pol_y_el)
 
         def one_rep():
             # Polarization
-            qua.update_frequency(pol_x_el, pol_x_freq)
-            qua.update_frequency(pol_y_el, pol_y_freq)
-            qua.play("aod_cw", pol_x_el, duration=setup_duration)
-            qua.play("aod_cw", pol_y_el, duration=setup_duration)
             if do_polarize:
                 qua.wait(access_time, pol_laser_el)
                 qua.play("on", pol_laser_el, duration=pol_duration)
@@ -111,14 +110,16 @@ if __name__ == "__main__":
     try:
         # readout_duration, readout_laser, do_polarize, do_ionize, ion_laser, ion_coords, pol_laser, pol_coords,
         args = [
-            5e6,
+            5e3,
             "laser_OPTO_589",
             True,
+            "laser_INTE_520",
+            [110.735, 109.668],
+            1e3,
             False,
             "laser_COBO_638",
-            [74.45, 75.25],
-            "laser_INTE_520",
-            [111.695, 108.75],
+            [74.486, 75.265],
+            1e3,
         ]
         seq, seq_ret_vals = get_seq(args, 1)
 

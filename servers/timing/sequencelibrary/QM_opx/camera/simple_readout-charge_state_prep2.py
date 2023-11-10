@@ -24,12 +24,12 @@ def get_seq(args, num_reps):
         readout_duration_ns,
         readout_laser,
         #
-        diff_polarization,
+        do_polarize,
         pol_laser,
         pol_coords,
         pol_duration_ns,
         #
-        diff_ionization,
+        do_ionize,
         ion_laser,
         ion_coords,
         ion_duration_ns,
@@ -40,35 +40,20 @@ def get_seq(args, num_reps):
     readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
     camera_el = f"do_camera_trigger"
 
-    # Polarization
     pol_laser_el = f"do_{pol_laser}_dm"
     pol_x_el = f"ao_{pol_laser}_x"
     pol_y_el = f"ao_{pol_laser}_y"
 
-    # Ionization
     ion_laser_el = f"do_{ion_laser}_dm"
     ion_x_el = f"ao_{ion_laser}_x"
     ion_y_el = f"ao_{ion_laser}_y"
-
-    if diff_polarization and not diff_ionization:
-        do_polarize_sig = True
-        do_polarize_ref = False
-        do_ionize_sig = False
-        do_ionize_ref = False
-    elif not diff_polarization and diff_ionization:
-        do_polarize_sig = True
-        do_polarize_ref = True
-        do_ionize_sig = True
-        do_ionize_ref = False
 
     access_time = seq_utils.get_aod_access_time()
     pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
     ion_duration = seq_utils.convert_ns_to_cc(ion_duration_ns)
     default_pulse_duration = seq_utils.get_default_pulse_duration()
-    operation_gap = seq_utils.convert_ns_to_cc(10e3)
-    setup_duration = (
-        access_time + pol_duration + operation_gap + ion_duration + operation_gap
-    )
+    buffer = seq_utils.convert_ns_to_cc(10e3)
+    setup_duration = access_time + pol_duration + buffer + ion_duration + buffer
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
     with qua.program() as seq:
@@ -86,15 +71,15 @@ def get_seq(args, num_reps):
         qua.play("aod_cw", ion_x_el)
         qua.play("aod_cw", ion_y_el)
 
-        def half_rep(do_polarize_sub, do_ionize_sub):
+        def one_rep():
             # Polarization
-            if do_polarize_sub:
+            if do_polarize:
                 qua.wait(access_time, pol_laser_el)
                 qua.play("on", pol_laser_el, duration=pol_duration)
 
             # Ionization
-            if do_ionize_sub:
-                qua.wait(access_time + pol_duration + operation_gap, ion_laser_el)
+            if do_ionize:
+                qua.wait(access_time + pol_duration + buffer, ion_laser_el)
                 qua.play("on", ion_laser_el, duration=ion_duration)
 
             # Yellow readout
@@ -108,23 +93,7 @@ def get_seq(args, num_reps):
             qua.play("off", camera_el)
             qua.align()
 
-        def one_rep():
-            half_rep(do_polarize_sig, do_ionize_sig)
-
-            qua.wait_for_trigger(camera_el)
-            qua.align()
-
-            if readout_duration_ns < 30e6:
-                filler = seq_utils.convert_ns_to_cc(30e6 - readout_duration_ns)
-                qua.play("on", readout_laser_el, duration=filler)
-                qua.align()
-
-            half_rep(do_polarize_ref, do_ionize_ref)
-
-            qua.wait_for_trigger(camera_el)
-            qua.align()
-
-        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+        seq_utils.handle_reps(one_rep, num_reps)
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -140,21 +109,22 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
+        # readout_duration, readout_laser, do_polarize, do_ionize, ion_laser, ion_coords, pol_laser, pol_coords,
         args = [
-            5000.0,
+            5e3,
             "laser_OPTO_589",
             True,
             "laser_INTE_520",
-            [111.202, 109.801],
-            1000,
+            [110.735, 109.668],
+            1e3,
             False,
             "laser_COBO_638",
-            [75, 75],
-            2000.0,
+            [74.486, 75.265],
+            1e3,
         ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        seq, seq_ret_vals = get_seq(args, 1)
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(50e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

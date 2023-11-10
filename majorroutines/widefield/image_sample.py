@@ -41,20 +41,36 @@ def single_nv_polarization(nv_sig, num_reps=1):
 
 
 def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
-    do_polarize = caller_fn_name == "single_nv_polarization"
-    do_ionize = caller_fn_name == "single_nv_ionization"
+    if caller_fn_name == "single_nv_polarization":
+        do_polarize_sig = True
+        do_polarize_ref = False
+        do_ionize_sig = False
+        do_ionize_ref = False
+    elif caller_fn_name == "single_nv_ionization":
+        do_polarize_sig = True
+        do_polarize_ref = True
+        do_ionize_sig = True
+        do_ionize_ref = False
 
     # Do the experiments
-    signal_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_polarize=do_polarize, do_ionize=do_ionize
+    sig_img_array = _charge_state_prep(
+        nv_sig,
+        caller_fn_name,
+        num_reps,
+        do_polarize=do_polarize_sig,
+        do_ionize=do_ionize_sig,
     )
-    control_img_array = _charge_state_prep(
-        nv_sig, caller_fn_name, num_reps, do_polarize=False, do_ionize=False
+    ref_img_array = _charge_state_prep(
+        nv_sig,
+        caller_fn_name,
+        num_reps,
+        do_polarize=do_polarize_ref,
+        do_ionize=do_ionize_ref,
     )
 
     # Calculate the difference and save
     fig, ax = plt.subplots()
-    diff = signal_img_array - control_img_array
+    diff = sig_img_array - ref_img_array
     kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
     timestamp = tb.get_time_stamp()
     file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
@@ -62,26 +78,37 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
 
     ### Get the pixel values of the NV in both images and a background level
 
-    for img_array in [signal_img_array, control_img_array]:
-        pixel_coords = optimize_pixel_coords(
+    bg_offset = [10, -10]
+    img_arrays = [sig_img_array, ref_img_array]
+    titles = ["Signal", "Reference"]
+
+    for ind in range(2):
+        img_array = img_arrays[ind]
+        title = titles[ind]
+
+        nv_pixel_coords = optimize_pixel_coords(
             img_array,
             nv_sig,
             set_scanning_drift=False,
             set_pixel_drift=False,
             pixel_drift_adjust=False,
         )
-        counts = widefield_utils.counts_from_img_array(
-            img_array, pixel_coords, drift_adjust=False
+        nv_counts = widefield_utils.counts_from_img_array(
+            img_array, nv_pixel_coords, drift_adjust=False
         )
-        print(counts)
+        bg_pixel_coords = [
+            nv_pixel_coords[0] + bg_offset[0],
+            nv_pixel_coords[1] + bg_offset[1],
+        ]
+        bg_counts = widefield_utils.counts_from_img_array(
+            img_array, bg_pixel_coords, drift_adjust=False
+        )
 
-    # Background
-    pixel_coords = nv_sig["pixel_coords"]
-    bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
-    counts = widefield_utils.counts_from_img_array(
-        img_array, bg_coords, drift_adjust=False
-    )
-    print(counts)
+        print(title)
+        print(f"nv_counts: {nv_counts}")
+        print(f"bg_counts: {bg_counts}")
+        print(f"diff: {nv_counts - bg_counts}")
+        print()
 
 
 def _charge_state_prep(
