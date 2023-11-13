@@ -80,12 +80,12 @@ widefield_calibration_nv2["disable_z_opt"] = True
 # Coords
 widefield_calibration_nv1[pixel_coords_key] = [267.929, 290.489]
 widefield_calibration_nv1[green_coords_key] = [110.011, 110.845]
-# widefield_calibration_nv1[red_coords_key] = [73.8, 76.2]
-widefield_calibration_nv1[red_coords_key] = [73.8, 74.6]
+widefield_calibration_nv1[red_coords_key] = [73.8, 76.2]
+# widefield_calibration_nv1[red_coords_key] = [73.8, 74.6]
 widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
 widefield_calibration_nv2[green_coords_key] = [108.3, 112.002]
-# widefield_calibration_nv2[red_coords_key] = [72.6, 77.1]
-widefield_calibration_nv2[red_coords_key] = [72.6, 75.5]
+widefield_calibration_nv2[red_coords_key] = [72.6, 77.1]
+# widefield_calibration_nv2[red_coords_key] = [72.6, 75.5]
 
 # endregion
 # region Base config

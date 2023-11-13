@@ -277,20 +277,28 @@ def main_with_cxn(
 
     ### Collect the data
 
-    img_str_list = []
-
+    
     camera.arm()
-    seq_args_string = tb.encode_seq_args(seq_args)
-    pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-    pulse_gen.stream_start()
-    for ind in range(num_reps):
-        img_str = camera.read()
-        sub_img_array = widefield_utils.img_str_to_array(img_str)
-        if ind == 0:
-            img_array = np.copy(sub_img_array)
-        else:
-            img_array += sub_img_array
-    camera.disarm()
+    
+    try:
+        seq_args_string = tb.encode_seq_args(seq_args)
+        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+        pulse_gen.stream_start()
+        for ind in range(num_reps):
+            img_str = camera.read()
+            sub_img_array = widefield_utils.img_str_to_array(img_str)
+            if ind == 0:
+                img_array = np.copy(sub_img_array)
+            else:
+                img_array += sub_img_array
+
+    except Exception as exc:
+        print(exc)
+        num_reps = ind
+        print(num_reps)
+
+    finally:
+        camera.disarm()
 
     img_array = img_array / num_reps
     fig, ax = plt.subplots()

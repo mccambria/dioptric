@@ -364,9 +364,7 @@ def reset_xy_drift(coords_suffix=None):
     return set_drift([0.0, 0.0, drift[2]], coords_suffix)
 
 
-def adjust_coords_for_drift(
-    coords=None, drift=None, nv_sig=None, coords_suffix=None
-):
+def adjust_coords_for_drift(coords=None, drift=None, nv_sig=None, coords_suffix=None):
     """Current drift will be retrieved from registry if passed drift is None"""
     if coords is None:
         coords = get_nv_coords(nv_sig, coords_suffix, drift_adjust=False)

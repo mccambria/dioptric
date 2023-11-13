@@ -117,11 +117,6 @@ def get_seq(args, num_reps):
                 qua.wait_for_trigger(camera_el)
                 qua.align()
 
-                if readout_duration_ns < 30e6:
-                    filler = seq_utils.convert_ns_to_cc(30e6 - readout_duration_ns)
-                    qua.play("on", readout_laser_el, duration=filler)
-                    qua.align()
-
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
     seq_ret_vals = []

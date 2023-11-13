@@ -62,6 +62,10 @@ def do_image_single_nv_polarization(nv_sig, num_reps):
     return image_sample_diff.single_nv_polarization(nv_sig, num_reps)
 
 
+def do_charge_state_histogram(nv_sig, num_reps):
+    return image_sample_diff.charge_state_histogram(nv_sig, num_reps)
+
+
 def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
     opti_coords, _ = optimize.main(
         nv_sig,
@@ -242,6 +246,10 @@ def do_opx_constant_ac():
 #     nv_sig["rabi_{}".format(state.name)] = period
 
 
+# def make_histogram(nv_sig, num_reps=1):
+#     charge_state_histogram(nv_sig, num_reps)
+
+
 ### Run the file
 
 
@@ -257,10 +265,12 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 100e6}
+    yellow_laser_dict = {"name": yellow_laser, "duration": 1e9}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 500e6}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 200e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 20e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
-    yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
     green_laser_dict = {"name": green_laser, "duration": 5e6}
     red_laser_dict = {"name": red_laser, "duration": 5e6}
 
@@ -298,12 +308,10 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [305.311, 253.916]
-    nv0[green_coords_key] = [110.805, 109.781]
-    red_coords = [74.636, 74.5]
-    # red_coords = [74.81, 75.624]
+    nv0[pixel_coords_key] = [300.033, 253.897]
+    nv0[green_coords_key] = [110.823, 109.768]
+    red_coords = [74.723, 75.449]
     nv0[red_coords_key] = red_coords
-    # nv0[red_coords_key] = [75 - (red_coords[0] - 75), 75 - (red_coords[1] - 75)]
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -323,6 +331,7 @@ if __name__ == "__main__":
     nv_sig = nv0
     # nv_sig = nv1
     # nv_sig = nv_ref
+    ### Clean up and save the data
 
     ### Functions to run
 
@@ -400,8 +409,9 @@ if __name__ == "__main__":
         # for ind in range(5):
         #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
-        do_image_single_nv_polarization(nv_sig, 10000)
-        # do_image_single_nv_ionization(nv_sig, 2000)
+        # do_image_single_nv_polarization(nv_sig, 500)
+        # do_image_single_nv_ionization(nv_sig, 1)
+        do_charge_state_histogram(nv_sig, 100)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

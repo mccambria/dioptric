@@ -53,14 +53,14 @@ class CameraNuvuHnu512gamma(LabradServer):
         # self.cam.set_readout_mode(6)
 
         self.cam.set_readout_mode(1)
-        self.cam.setCalibratedEmGain(100)
+        self.cam.setCalibratedEmGain(1000)
         # self.cam.setCalibratedEmGain(10)
 
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
         # self.cam.set_timeout(-1)
-        self.cam.set_timeout(1000)
+        self.cam.set_timeout(5000)
         self.cam.get_size()
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
