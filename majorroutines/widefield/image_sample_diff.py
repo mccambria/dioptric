@@ -26,21 +26,22 @@ from majorroutines.widefield.optimize_pixel_coords import (
 )
 
 
-def single_nv_ionization(nv_sig, num_reps=1):
-    caller_fn_name = "single_nv_ionization"
-    return main(nv_sig, caller_fn_name, num_reps)
+def charge_state_histogram(nv_sig, num_reps=100):
+    ### Setup
 
-
-def charge_state_histogram(nv_sig, num_reps=1, save_data=True, save_plots=True):
     caller_fn_name = "single_nv_ionization"
-    sig_img_array_list = []
-    ref_img_array_list = []
     pixel_coords = nv_sig["pixel_coords"]
 
-    for ind in range(num_reps):
-        sig_img_array, ref_img_array = main(nv_sig, caller_fn_name, 1)
-        sig_img_array_list.append(sig_img_array)
-        ref_img_array_list.append(ref_img_array)
+    kpl.init_kplotlib()
+
+    ### Collect the data
+
+    with common.labrad_connect() as cxn:
+        sig_img_array_list, ref_img_array_list, file_path = main_with_cxn(
+            cxn, nv_sig, caller_fn_name, num_reps, separate_images=True
+        )
+
+    ### Turn it into counts
 
     sig_counts_list = []
     ref_counts_list = []
@@ -57,93 +58,60 @@ def charge_state_histogram(nv_sig, num_reps=1, save_data=True, save_plots=True):
         sig_counts_list.append(sig_counts)
         ref_counts_list.append(ref_counts)
 
+    ### Histograms
+
+    num_bins = 300
+
+    labels = ["sig", "ref"]
+    counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
-    # kpl.histogram(ax, sig_counts_list)
-    plt.hist(sig_counts_list, bins=300)
-    plt.title("sig_counts_hist (bins:1000)")
-    plt.ylabel("Events")
-    plt.xlabel("Number of Photon")
+    ax.set_title(f"Ionization count histogram, {num_bins} bins, {num_reps} reps")
+    ax.set_xlabel(f"Photons")
+    ax.set_ylabel("Number of events")
+    for ind in range(2):
+        kpl.histogram(ax, counts_lists[ind], nbins=num_bins, label=labels[ind])
 
-    fig, ax = plt.subplots()
-    # kpl.histogram(ax, ref_counts_list)
-    plt.hist(ref_counts_list, bins=300)
-    plt.title("ref_counts_hist (bins:1000)")
-    plt.ylabel("Events")
-    plt.xlabel("Number of Photon")
+    ### Save
 
-    if save_data:
-        timestamp = tb.get_time_stamp()
-        raw_data = {
-            "timestamp": timestamp,
-            "caller_fn_name": caller_fn_name,
-            "nv_sig": nv_sig,
-            "num_reps": num_reps,
-            "readout-units": "ms",
-            "sig_img_array_list": sig_img_array_list,
-            "ref_img_array_list": ref_img_array_list,
-            "img_array-units": "counts",
-        }
+    timestamp = tb.get_time_stamp()
+    raw_data = {
+        "timestamp": timestamp,
+        "caller_fn_name": caller_fn_name,
+        "nv_sig": nv_sig,
+        "num_reps": num_reps,
+        "readout-units": "ms",
+        "sig_img_array_list": sig_img_array_list,
+        "ref_img_array_list": ref_img_array_list,
+        "img_array-units": "counts",
+    }
 
-        nv_name = nv_sig["name"]
-        file_path = tb.get_file_path(__file__, timestamp, nv_name)
-        keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
-        tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
-
-    if save_plots:
-        for ind in range(2):
-            fig = plt.gcf()
-            title_suffix = "sig" if ind == 0 else "ref"
-            name = f"{nv_name}-{title_suffix}"
-            file_path = tb.get_file_path(__file__, timestamp, name)
-            tb.save_figure(fig, file_path)
-
-            if ind == 0:
-                np.savetxt(f"{file_path}_counts.txt", sig_counts_list, fmt="%d")
-            else:
-                np.savetxt(f"{file_path}_counts.txt", ref_counts_list, fmt="%d")
-
-    plt.show()
+    sig_img_array_list = np.array(sig_img_array_list)
+    ref_img_array_list = np.array(ref_img_array_list)
+    keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    tb.save_figure(fig, file_path)
 
 
-# timestamp = tb.get_time_stamp()
-# raw_data = {
-#     "timestamp": timestamp,
-#     "caller_fn_name": caller_fn_name,
-#     "nv_sig": nv_sig,
-#     "num_reps": num_reps,
-#     "readout-units": "ms",
-#     "sig_img_array_list": sig_img_array_list.astype(int),
-#     "ref_img_array_list": ref_img_array_list.astype(int),
-#     "img_array-units": "counts",
-# }
-
-# nv_name = nv_sig["name"]
-# file_path = tb.get_file_path(__file__, timestamp, nv_name)
-# keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
-# tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
-# tb.save_raw_data(raw_data, file_path)
-# for ind in range(3):
-#     fig = figs[ind]
-#     title_suffix = title_suffices[ind]
-#     name = f"{nv_name}-{title_suffix}"
-#     file_path = tb.get_file_path(__file__, timestamp, name)
-#     tb.save_figure(fig, file_path)
-
-# plt.show()
+def single_nv_ionization(nv_sig, num_reps=1):
+    caller_fn_name = "single_nv_ionization"
+    with common.labrad_connect() as cxn:
+        return main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps)
 
 
 def single_nv_polarization(nv_sig, num_reps=1):
     caller_fn_name = "single_nv_polarization"
-    return main(nv_sig, caller_fn_name, num_reps)
-
-
-def main(nv_sig, caller_fn_name, num_reps=1, save_dict=None):
     with common.labrad_connect() as cxn:
-        ret_vals = main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps, save_dict)
-    return ret_vals
+        return main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps)
 
 
-def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
+def main_with_cxn(
+    cxn,
+    nv_sig,
+    caller_fn_name,
+    num_reps=1,
+    save_dict=None,
+    separate_images=False,
+):
     ### Some initial setup
 
     tb.reset_cfm(cxn)
@@ -196,7 +164,12 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
     # print(seq_args)
     # print(seq_file)
     # return
+
     ### Collect the data
+
+    if separate_images:
+        sig_img_array_list = []
+        ref_img_array_list = []
 
     camera.arm()
 
@@ -208,15 +181,21 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
         for ind in range(num_reps):
             img_str = camera.read()
             sub_img_array = widefield_utils.img_str_to_array(img_str)
-            sig_img_array = (
-                np.copy(sub_img_array) if ind == 0 else sig_img_array + sub_img_array
-            )
+            if ind == 0:
+                sig_img_array = np.copy(sub_img_array)
+            else:
+                sig_img_array += sub_img_array
+            if separate_images:
+                sig_img_array_list.append(sub_img_array)
 
             img_str = camera.read()
             sub_img_array = widefield_utils.img_str_to_array(img_str)
-            ref_img_array = (
-                np.copy(sub_img_array) if ind == 0 else ref_img_array + sub_img_array
-            )
+            if ind == 0:
+                ref_img_array = np.copy(sub_img_array)
+            else:
+                ref_img_array += sub_img_array
+            if separate_images:
+                ref_img_array_list.append(sub_img_array)
 
     except Exception as exc:
         print(exc)
@@ -228,88 +207,94 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
 
     ### Process and plot
 
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
-
     diff_img_array = sig_img_array - ref_img_array
     sig_img_array = sig_img_array / num_reps
     ref_img_array = ref_img_array / num_reps
     diff_img_array = diff_img_array / num_reps
 
-    # img_arrays = [sig_img_array, ref_img_array, diff_img_array]
-    # title_suffices = ["sig", "ref", "diff"]
-    # figs = []
-    # for ind in range(3):
-    #     img_array = img_arrays[ind]
-    #     title_suffix = title_suffices[ind]
-    #     fig, ax = plt.subplots()
-    #     title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms, {title_suffix}"
-    #     kpl.imshow(ax, img_array, title=title, cbar_label="Counts")
-    #     figs.append(fig)
+    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
+
+    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    title_suffixes = ["sig", "ref", "diff"]
+    figs = []
+    for ind in range(3):
+        img_array = img_arrays[ind]
+        title_suffix = title_suffixes[ind]
+        fig, ax = plt.subplots()
+        title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms, {title_suffix}"
+        kpl.imshow(ax, img_array, title=title, cbar_label="Counts")
+        figs.append(fig)
 
     ### Get counts
 
-    # bg_offset = [10, 10]
-    # img_arrays = [sig_img_array, ref_img_array]
-    # titles = ["Signal", "Reference"]
+    if False:
+        bg_offset = [10, 10]
+        img_arrays = [sig_img_array, ref_img_array]
+        titles = ["Signal", "Reference"]
 
-    # for ind in range(2):
-    #     img_array = img_arrays[ind]
-    #     title = titles[ind]
+        for ind in range(2):
+            img_array = img_arrays[ind]
+            title = titles[ind]
 
-    #     nv_pixel_coords = optimize_pixel_coords(
-    #         img_array,
-    #         nv_sig,
-    #         set_scanning_drift=False,
-    #         set_pixel_drift=False,
-    #         pixel_drift_adjust=False,
-    #     )
-    #     nv_counts = widefield_utils.counts_from_img_array(
-    #         img_array, nv_pixel_coords, drift_adjust=False
-    #     )
-    #     bg_pixel_coords = [
-    #         nv_pixel_coords[0] + bg_offset[0],
-    #         nv_pixel_coords[1] + bg_offset[1],
-    #     ]
-    #     bg_counts = widefield_utils.counts_from_img_array(
-    #         img_array, bg_pixel_coords, drift_adjust=False
-    #     )
-    #     print(title)
-    #     print(f"nv_counts: {nv_counts}")
-    #     print(f"bg_counts: {bg_counts}")
-    #     print(f"diff: {nv_counts - bg_counts}")
-    #     print()
+            nv_pixel_coords = optimize_pixel_coords(
+                img_array,
+                nv_sig,
+                set_scanning_drift=False,
+                set_pixel_drift=False,
+                pixel_drift_adjust=False,
+            )
+            nv_counts = widefield_utils.counts_from_img_array(
+                img_array, nv_pixel_coords, drift_adjust=False
+            )
+            bg_pixel_coords = [
+                nv_pixel_coords[0] + bg_offset[0],
+                nv_pixel_coords[1] + bg_offset[1],
+            ]
+            bg_counts = widefield_utils.counts_from_img_array(
+                img_array, bg_pixel_coords, drift_adjust=False
+            )
+            print(title)
+            print(f"nv_counts: {nv_counts}")
+            print(f"bg_counts: {bg_counts}")
+            print(f"diff: {nv_counts - bg_counts}")
+            print()
 
-    # tb.reset_cfm(cxn)
+    ### Clean up and return
 
-    # timestamp = tb.get_time_stamp()
-    # raw_data = {
-    #     "timestamp": timestamp,
-    #     "caller_fn_name": caller_fn_name,
-    #     "nv_sig": nv_sig,
-    #     "num_reps": num_reps,
-    #     "readout": readout_ms,
-    #     "readout-units": "ms",
-    #     "title": title,
-    #     "sig_img_array": sig_img_array.astype(int),
-    #     "ref_img_array": ref_img_array.astype(int),
-    #     "diff_img_array": diff_img_array.astype(float),
-    #     "img_array-units": "counts",
-    # }
-    # if save_dict is not None:
-    #     raw_data |= save_dict  # Add in the passed info to save
+    tb.reset_cfm(cxn)
 
-    # nv_name = nv_sig["name"]
-    # file_path = tb.get_file_path(__file__, timestamp, nv_name)
-    # keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
-    # tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
-    # for ind in range(3):
-    #     fig = figs[ind]
-    #     title_suffix = title_suffices[ind]
-    #     name = f"{nv_name}-{title_suffix}"
-    #     file_path = tb.get_file_path(__file__, timestamp, name)
-    #     tb.save_figure(fig, file_path)
+    timestamp = tb.get_time_stamp()
+    raw_data = {
+        "timestamp": timestamp,
+        "caller_fn_name": caller_fn_name,
+        "nv_sig": nv_sig,
+        "num_reps": num_reps,
+        "readout": readout_ms,
+        "readout-units": "ms",
+        "title": title,
+        "sig_img_array": sig_img_array.astype(int),
+        "ref_img_array": ref_img_array.astype(int),
+        "diff_img_array": diff_img_array.astype(float),
+        "img_array-units": "counts",
+    }
+    if save_dict is not None:
+        raw_data |= save_dict  # Add in the passed info to save
 
-    return sig_img_array, ref_img_array
+    nv_name = nv_sig["name"]
+    file_path = tb.get_file_path(__file__, timestamp, nv_name)
+    keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    for ind in range(3):
+        fig = figs[ind]
+        title_suffix = title_suffixes[ind]
+        name = f"{nv_name}-{title_suffix}"
+        file_path = tb.get_file_path(__file__, timestamp, name)
+        tb.save_figure(fig, file_path)
+
+    if separate_images:
+        return sig_img_array_list, ref_img_array_list, file_path
+    else:
+        return sig_img_array, ref_img_array
 
 
 if __name__ == "__main__":

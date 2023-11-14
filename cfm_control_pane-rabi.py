@@ -275,7 +275,7 @@ if __name__ == "__main__":
     red_laser_dict = {"name": red_laser, "duration": 5e6}
 
     sample_name = "johnson"
-    z_coord = 4.15
+    z_coord = 4.10
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -308,9 +308,9 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [339.975, 295.38]
-    nv0[green_coords_key] = [110.823, 109.768]
-    red_coords = [74.723, 75.449]
+    nv0[pixel_coords_key] = [321.058, 252.867]
+    nv0[green_coords_key] = [111.456, 109.772]
+    red_coords = [75.057, 75.377]
     nv0[red_coords_key] = red_coords
 
     nv1 = copy.deepcopy(nv_ref)
@@ -358,10 +358,9 @@ if __name__ == "__main__":
         #     print([round(el, 3) for el in scanning_coords])
         # pixel_coords = nv_sig["pixel_coords"]
         # # pixel_coords = do_optimize_pixel(nv_sig)
-        # # laser = green_laser
-        # laser = red_laser
-        # scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, laser)
-        # print([round(el, 3) for el in scanning_coords])
+        # for laser in [green_laser, red_laser]:
+        #     scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, laser)
+        #     print([round(el, 3) for el in scanning_coords])
 
         # center = [110, 110]
         # center = nv0[red_coords_key]
@@ -401,7 +400,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 10)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)

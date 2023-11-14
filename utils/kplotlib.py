@@ -78,7 +78,7 @@ class Font(Enum):
 # Histogram type, mostly following https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
 class HistType(StrEnum):
     INTEGER = "integer"  # Just plot the frequency of each integer
-    STEP = "step"  # No space between between, unfilled
+    STEP = "step"  # No space between bins, unfilled
     BAR = "bar"  # Space between bins, filled
 
 
