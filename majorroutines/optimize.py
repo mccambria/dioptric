@@ -57,7 +57,7 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
     kpl.flush_update(fig=fig)
 
 
-def _fit_gaussian(scan_vals, count_vals, axis_ind, fig=None):
+def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=None):
     # Param order: amplitude, center, sd width, offset
     fit_func = tb.gaussian
     bg_guess = 0.0  # Guess 0
@@ -65,11 +65,16 @@ def _fit_gaussian(scan_vals, count_vals, axis_ind, fig=None):
     high = np.max(scan_vals)
     scan_range = high - low
     center_guess = (high + low) / 2
-    guess = (max(count_vals) - bg_guess, center_guess, scan_range / 3, bg_guess)
+    amplitude_guess = (
+        max(count_vals) - bg_guess if positive_amplitude else min(count_vals) - bg_guess
+    )
+    guess = (amplitude_guess, center_guess, scan_range / 3, bg_guess)
     popt = None
     try:
-        low_bounds = [0, low, 0, 0]
-        high_bounds = [inf, high, inf, inf]
+        amplitude_lower = 0 if positive_amplitude else -inf
+        amplitude_upper = inf if positive_amplitude else 0
+        low_bounds = [amplitude_lower, low, 0, 0]
+        high_bounds = [amplitude_upper, high, inf, inf]
         bounds = (low_bounds, high_bounds)
         popt, pcov = curve_fit(fit_func, scan_vals, count_vals, p0=guess, bounds=bounds)
         # Consider it a failure if we railed or somehow got out of bounds
@@ -188,18 +193,40 @@ def _read_counts_camera_sequence(
         num_steps = 1
 
     # Sequence setup
-    laser_dict = nv_sig[laser_key]
-    laser_name = laser_dict["name"]
-    readout = laser_dict["duration"]
-    seq_args = [readout, laser_name, [coords[0]], [coords[1]]]
-    seq_file_name = "simple_readout-scanning.py"
-    if axis_ind is None:
+
+    imaging_laser_dict = nv_sig[LaserKey.IMAGING]
+    imaging_laser_name = imaging_laser_dict["name"]
+    imaging_readout = imaging_laser_dict["duration"]
+    if laser_key == LaserKey.IMAGING:
+        seq_args = [imaging_readout, imaging_laser_name, [coords[0]], [coords[1]]]
+        seq_file_name = "simple_readout-scanning.py"
+        num_reps = 1
+    elif laser_key == LaserKey.IONIZATION:
+        imaging_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
+        pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
+        pol_laser_name = pol_laser_dict["name"]
+        pol_duration = pol_laser_dict["duration"]
+        pol_coords = pos.get_nv_coords(nv_sig, pol_laser_name)
+        ion_laser_dict = nv_sig[LaserKey.IONIZATION]
+        ion_laser_name = ion_laser_dict["name"]
+        ion_duration = ion_laser_dict["duration"]
+        seq_args = [
+            imaging_readout,
+            imaging_laser_name,
+            pol_laser_name,
+            pol_coords,
+            pol_duration,
+            ion_laser_name,
+            coords,
+            ion_duration,
+        ]
+        seq_file_name = "optimize_ionization_laser_coords.py"
+        num_reps = 10
+    if axis_ind is None or axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file_name, seq_args_string)
+        pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
     # For z the sequence is the same every time and z is moved manually
     if axis_ind == 2:
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file_name, seq_args_string)
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
 
     # Collect the counts
@@ -211,10 +238,13 @@ def _read_counts_camera_sequence(
         if axis_ind is not None:
             val = scan_vals[ind]
             if axis_ind in [0, 1]:
-                seq_args[axis_ind + 2] = [val]
+                if laser_key == LaserKey.IMAGING:
+                    seq_args[-2 + axis_ind] = [val]
+                elif laser_key == LaserKey.IONIZATION:
+                    seq_args[-2][axis_ind] = val
                 seq_args_string = tb.encode_seq_args(seq_args)
                 # print(seq_args)
-                pulse_gen.stream_load(seq_file_name, seq_args_string)
+                pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
             elif axis_ind == 2:
                 axis_write_fn(val)
         pulse_gen.stream_start()
@@ -263,7 +293,8 @@ def _optimize_on_axis(
         f_counts = (counts / 1000) / (readout / 10**9)
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
-    opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, fig)
+    positive_amplitude = laser_key != LaserKey.IONIZATION
+    opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, positive_amplitude, fig)
 
     return opti_coord, scan_vals, f_counts
 
@@ -302,6 +333,10 @@ def _read_counts(
             )
 
     else:
+        if laser_key != LaserKey.IMAGING:
+            raise NotImplementedError(
+                "Optimization is currently only implemented for imaging lasers."
+            )
         seq_file_name = "simple_readout.py"
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -461,7 +496,7 @@ def main_with_cxn(
     only_z_opt=None,
 ):
     # If optimize is disabled, just do prep and return
-    if nv_sig["disable_opt"]:
+    if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig)
         return [], None
 
@@ -642,6 +677,7 @@ def main_with_cxn(
             "nv_sig": nv_sig,
             "opti_coords": opti_coords,
             "axes_to_optimize": axes_to_optimize,
+            "laser_key": laser_key,
             "x_scan_vals": scan_vals_by_axis[0],
             "y_scan_vals": scan_vals_by_axis[1],
             "z_scan_vals": scan_vals_by_axis[2],
@@ -667,6 +703,8 @@ def main_with_cxn(
 if __name__ == "__main__":
     file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
     data = tb.get_raw_data(file_name)
+    laser_key = data["laser_key"]
+    positive_amplitude = laser_key != LaserKey.IONIZATION
 
     fig = _create_figure()
     nv_sig = data["nv_sig"]
@@ -675,6 +713,6 @@ if __name__ == "__main__":
         scan_vals = data[f"{keys[axis_ind]}_scan_vals"]
         count_vals = data[f"{keys[axis_ind]}_counts"]
         _update_figure(fig, axis_ind, scan_vals, count_vals)
-        _fit_gaussian(scan_vals, count_vals, axis_ind, fig=fig)
+        _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude, fig)
 
     plt.show(block=True)

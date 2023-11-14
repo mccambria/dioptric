@@ -20,16 +20,11 @@ from qm import generate_qua_script
 
 def get_seq(args, num_reps):
     (
-        #
         readout_duration_ns,
         readout_laser,
-        #
-        do_polarize,
         pol_laser,
         pol_coords,
         pol_duration_ns,
-        #
-        do_ionize,
         ion_laser,
         ion_coords,
         ion_duration_ns,
@@ -40,10 +35,12 @@ def get_seq(args, num_reps):
     readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
     camera_el = f"do_camera_trigger"
 
+    # Polarization
     pol_laser_el = f"do_{pol_laser}_dm"
     pol_x_el = f"ao_{pol_laser}_x"
     pol_y_el = f"ao_{pol_laser}_y"
 
+    # Ionization
     ion_laser_el = f"do_{ion_laser}_dm"
     ion_x_el = f"ao_{ion_laser}_x"
     ion_y_el = f"ao_{ion_laser}_y"
@@ -52,8 +49,10 @@ def get_seq(args, num_reps):
     pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
     ion_duration = seq_utils.convert_ns_to_cc(ion_duration_ns)
     default_pulse_duration = seq_utils.get_default_pulse_duration()
-    buffer = seq_utils.convert_ns_to_cc(10e3)
-    setup_duration = access_time + pol_duration + buffer + ion_duration + buffer
+    operation_gap = seq_utils.convert_ns_to_cc(10e3)
+    setup_duration = (
+        access_time + pol_duration + operation_gap + ion_duration + operation_gap
+    )
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
     with qua.program() as seq:
@@ -73,14 +72,12 @@ def get_seq(args, num_reps):
 
         def one_rep():
             # Polarization
-            if do_polarize:
-                qua.wait(access_time, pol_laser_el)
-                qua.play("on", pol_laser_el, duration=pol_duration)
+            qua.wait(access_time, pol_laser_el)
+            qua.play("on", pol_laser_el, duration=pol_duration)
 
             # Ionization
-            if do_ionize:
-                qua.wait(access_time + pol_duration + buffer, ion_laser_el)
-                qua.play("on", ion_laser_el, duration=ion_duration)
+            qua.wait(access_time + pol_duration + operation_gap, ion_laser_el)
+            qua.play("on", ion_laser_el, duration=ion_duration)
 
             # Yellow readout
             qua.wait(setup_duration, readout_laser_el)
@@ -109,22 +106,21 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        # readout_duration, readout_laser, do_polarize, do_ionize, ion_laser, ion_coords, pol_laser, pol_coords,
         args = [
-            5e3,
+            5000.0,
             "laser_OPTO_589",
             True,
             "laser_INTE_520",
-            [110.735, 109.668],
-            1e3,
+            [111.202, 109.801],
+            1000,
             False,
             "laser_COBO_638",
-            [74.486, 75.265],
-            1e3,
+            [75, 75],
+            2000.0,
         ]
-        seq, seq_ret_vals = get_seq(args, 1)
+        seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(50e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
