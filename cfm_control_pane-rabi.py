@@ -308,7 +308,7 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [300.033, 253.897]
+    nv0[pixel_coords_key] = [339.975, 295.38]
     nv0[green_coords_key] = [110.823, 109.768]
     red_coords = [74.723, 75.449]
     nv0[red_coords_key] = red_coords
@@ -411,7 +411,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_polarization(nv_sig, 500)
         # do_image_single_nv_ionization(nv_sig, 1)
-        do_charge_state_histogram(nv_sig, 100)
+        do_charge_state_histogram(nv_sig, 1000)
         # for nv in nv_list:
         #     do_image_single_nv(nv)
         # do_stationary_count(nv_sig)

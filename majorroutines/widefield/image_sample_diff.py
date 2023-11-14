@@ -31,7 +31,7 @@ def single_nv_ionization(nv_sig, num_reps=1):
     return main(nv_sig, caller_fn_name, num_reps)
 
 
-def charge_state_histogram(nv_sig, num_reps=1):
+def charge_state_histogram(nv_sig, num_reps=1, save_data=True, save_plots=True):
     caller_fn_name = "single_nv_ionization"
     sig_img_array_list = []
     ref_img_array_list = []
@@ -60,42 +60,76 @@ def charge_state_histogram(nv_sig, num_reps=1):
     fig, ax = plt.subplots()
     # kpl.histogram(ax, sig_counts_list)
     plt.hist(sig_counts_list, bins=300)
-    plt.title("sig_counts_hist")
+    plt.title("sig_counts_hist (bins:1000)")
     plt.ylabel("Events")
     plt.xlabel("Number of Photon")
 
     fig, ax = plt.subplots()
     # kpl.histogram(ax, ref_counts_list)
     plt.hist(ref_counts_list, bins=300)
-    plt.title("ref_counts_hist")
+    plt.title("ref_counts_hist (bins:1000)")
     plt.ylabel("Events")
     plt.xlabel("Number of Photon")
 
-    # timestamp = tb.get_time_stamp()
-    # raw_data = {
-    #     "timestamp": timestamp,
-    #     "caller_fn_name": caller_fn_name,
-    #     "nv_sig": nv_sig,
-    #     "num_reps": num_reps,
-    #     "readout-units": "ms",
-    #     "sig_img_array_list": sig_img_array_list.astype(int),
-    #     "ref_img_array_list": ref_img_array_list.astype(int),
-    #     "img_array-units": "counts",
-    # }
+    if save_data:
+        timestamp = tb.get_time_stamp()
+        raw_data = {
+            "timestamp": timestamp,
+            "caller_fn_name": caller_fn_name,
+            "nv_sig": nv_sig,
+            "num_reps": num_reps,
+            "readout-units": "ms",
+            "sig_img_array_list": sig_img_array_list,
+            "ref_img_array_list": ref_img_array_list,
+            "img_array-units": "counts",
+        }
 
-    # nv_name = nv_sig["name"]
-    # file_path = tb.get_file_path(__file__, timestamp, nv_name)
-    # keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
-    # tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
-    # tb.save_raw_data(raw_data, file_path)
-    # for ind in range(3):
-    #     fig = figs[ind]
-    #     title_suffix = title_suffices[ind]
-    #     name = f"{nv_name}-{title_suffix}"
-    #     file_path = tb.get_file_path(__file__, timestamp, name)
-    #     tb.save_figure(fig, file_path)
+        nv_name = nv_sig["name"]
+        file_path = tb.get_file_path(__file__, timestamp, nv_name)
+        keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
+        tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
 
-    # plt.show()
+    if save_plots:
+        for ind in range(2):
+            fig = plt.gcf()
+            title_suffix = "sig" if ind == 0 else "ref"
+            name = f"{nv_name}-{title_suffix}"
+            file_path = tb.get_file_path(__file__, timestamp, name)
+            tb.save_figure(fig, file_path)
+
+            if ind == 0:
+                np.savetxt(f"{file_path}_counts.txt", sig_counts_list, fmt="%d")
+            else:
+                np.savetxt(f"{file_path}_counts.txt", ref_counts_list, fmt="%d")
+
+    plt.show()
+
+
+# timestamp = tb.get_time_stamp()
+# raw_data = {
+#     "timestamp": timestamp,
+#     "caller_fn_name": caller_fn_name,
+#     "nv_sig": nv_sig,
+#     "num_reps": num_reps,
+#     "readout-units": "ms",
+#     "sig_img_array_list": sig_img_array_list.astype(int),
+#     "ref_img_array_list": ref_img_array_list.astype(int),
+#     "img_array-units": "counts",
+# }
+
+# nv_name = nv_sig["name"]
+# file_path = tb.get_file_path(__file__, timestamp, nv_name)
+# keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
+# tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+# tb.save_raw_data(raw_data, file_path)
+# for ind in range(3):
+#     fig = figs[ind]
+#     title_suffix = title_suffices[ind]
+#     name = f"{nv_name}-{title_suffix}"
+#     file_path = tb.get_file_path(__file__, timestamp, name)
+#     tb.save_figure(fig, file_path)
+
+# plt.show()
 
 
 def single_nv_polarization(nv_sig, num_reps=1):
@@ -214,36 +248,36 @@ def main_with_cxn(cxn, nv_sig, caller_fn_name, num_reps=1, save_dict=None):
 
     ### Get counts
 
-    bg_offset = [10, 10]
-    img_arrays = [sig_img_array, ref_img_array]
-    titles = ["Signal", "Reference"]
+    # bg_offset = [10, 10]
+    # img_arrays = [sig_img_array, ref_img_array]
+    # titles = ["Signal", "Reference"]
 
-    for ind in range(2):
-        img_array = img_arrays[ind]
-        title = titles[ind]
+    # for ind in range(2):
+    #     img_array = img_arrays[ind]
+    #     title = titles[ind]
 
-        nv_pixel_coords = optimize_pixel_coords(
-            img_array,
-            nv_sig,
-            set_scanning_drift=False,
-            set_pixel_drift=False,
-            pixel_drift_adjust=False,
-        )
-        nv_counts = widefield_utils.counts_from_img_array(
-            img_array, nv_pixel_coords, drift_adjust=False
-        )
-        bg_pixel_coords = [
-            nv_pixel_coords[0] + bg_offset[0],
-            nv_pixel_coords[1] + bg_offset[1],
-        ]
-        bg_counts = widefield_utils.counts_from_img_array(
-            img_array, bg_pixel_coords, drift_adjust=False
-        )
-        print(title)
-        print(f"nv_counts: {nv_counts}")
-        print(f"bg_counts: {bg_counts}")
-        print(f"diff: {nv_counts - bg_counts}")
-        print()
+    #     nv_pixel_coords = optimize_pixel_coords(
+    #         img_array,
+    #         nv_sig,
+    #         set_scanning_drift=False,
+    #         set_pixel_drift=False,
+    #         pixel_drift_adjust=False,
+    #     )
+    #     nv_counts = widefield_utils.counts_from_img_array(
+    #         img_array, nv_pixel_coords, drift_adjust=False
+    #     )
+    #     bg_pixel_coords = [
+    #         nv_pixel_coords[0] + bg_offset[0],
+    #         nv_pixel_coords[1] + bg_offset[1],
+    #     ]
+    #     bg_counts = widefield_utils.counts_from_img_array(
+    #         img_array, bg_pixel_coords, drift_adjust=False
+    #     )
+    #     print(title)
+    #     print(f"nv_counts: {nv_counts}")
+    #     print(f"bg_counts: {bg_counts}")
+    #     print(f"diff: {nv_counts - bg_counts}")
+    #     print()
 
     # tb.reset_cfm(cxn)
 
