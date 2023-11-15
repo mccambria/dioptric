@@ -42,8 +42,7 @@ def get_default_email():
 
 
 def _get_os_config_val(key):
-    os_name = platform.system()  # Windows or Linux
-    os_name_lower = os_name.lower()
+    os_name_lower = platform.system().lower()  # windows or linux
     config = get_config_dict()
     val = config[f"{os_name_lower}_{key}"]
     return val
