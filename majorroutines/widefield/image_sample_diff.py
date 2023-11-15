@@ -60,16 +60,19 @@ def charge_state_histogram(nv_sig, num_reps=100):
 
     ### Histograms
 
-    num_bins = 300
+    num_bins = 50
 
     labels = ["sig", "ref"]
     counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
-    ax.set_title(f"Ionization count histogram, {num_bins} bins, {num_reps} reps")
-    ax.set_xlabel(f"Photons")
-    ax.set_ylabel("Number of events")
+    ax.set_title(f"Ionization histogram, {num_bins} bins, {num_reps} reps")
+    ax.set_xlabel(f"Integrated counts")
+    ax.set_ylabel("Number of occurrences")
     for ind in range(2):
-        kpl.histogram(ax, counts_lists[ind], nbins=num_bins, label=labels[ind])
+        kpl.histogram(
+            ax, counts_lists[ind], kpl.HistType.STEP, nbins=num_bins, label=labels[ind]
+        )
+    ax.legend()
 
     ### Save
 
@@ -79,7 +82,6 @@ def charge_state_histogram(nv_sig, num_reps=100):
         "caller_fn_name": caller_fn_name,
         "nv_sig": nv_sig,
         "num_reps": num_reps,
-        "readout-units": "ms",
         "sig_img_array_list": sig_img_array_list,
         "ref_img_array_list": ref_img_array_list,
         "img_array-units": "counts",

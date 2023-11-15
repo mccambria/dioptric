@@ -39,6 +39,8 @@ def main(file_name):
 
     nv_sig = data["nv_sig"]
     pixel_coords = nv_sig["pixel_coords"]
+    pixel_coords = [318.939, 252.859]
+    pixel_coords2 = [307.308, 234.283]
     # pixel_coords[0] += 15
 
     num_reps = data["num_reps"]
@@ -47,18 +49,36 @@ def main(file_name):
 
     sig_counts_list = []
     ref_counts_list = []
+    sig2_counts_list = []
+    ref2_counts_list = []
 
     for ind in range(num_reps):
         sig_img_array = sig_img_array_list[ind]
+        ref_img_array = ref_img_array_list[ind]
         sig_counts = widefield_utils.counts_from_img_array(
             sig_img_array, pixel_coords, drift_adjust=False
         )
-        ref_img_array = ref_img_array_list[ind]
         ref_counts = widefield_utils.counts_from_img_array(
             ref_img_array, pixel_coords, drift_adjust=False
         )
         sig_counts_list.append(sig_counts)
         ref_counts_list.append(ref_counts)
+
+        sig_counts = widefield_utils.counts_from_img_array(
+            sig_img_array, pixel_coords2, drift_adjust=False
+        )
+        ref_counts = widefield_utils.counts_from_img_array(
+            ref_img_array, pixel_coords2, drift_adjust=False
+        )
+        sig2_counts_list.append(sig_counts)
+        ref2_counts_list.append(ref_counts)
+
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, sig_counts_list, sig2_counts_list, label="sig")
+    # kpl.plot_points(ax, ref_counts_list, ref2_counts_list, label="ref")
+    ax.set_xlabel("Target NV integrated counts")
+    ax.set_ylabel("Nearest NV integrated counts")
+    ax.legend()
 
     ### Plot images
 
