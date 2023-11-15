@@ -76,10 +76,10 @@ class Font(Enum):
 
 
 # Histogram type, mostly following https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html
-class HistType(StrEnum):
-    INTEGER = "integer"  # Just plot the frequency of each integer
-    STEP = "step"  # No space between bins, unfilled
-    BAR = "bar"  # Space between bins, filled
+class HistType(Enum):
+    INTEGER = auto()  # Just plot the frequency of each integer
+    STEP = auto()  # No space between bins, translucent fill
+    BAR = auto()  # Space between bins, filled
 
 
 # Default sizes
@@ -167,6 +167,17 @@ def lighten_color_hex(color_hex, saturation_factor=0.3, value_factor=1.2):
     lightened_Color = Color(hsv=lightened_hsv)
     lightened_hex = lightened_Color.hex
     return lightened_hex
+
+
+def alpha_color_hex(color_hex, alpha=0.3):
+    """Algorithmically drop the alpha on the passed hex color (i.e. make it translucent)"""
+
+    hex_alpha = hex(round(alpha * 255))
+    if len(hex_alpha) == 3:
+        hex_alpha = f"0{hex_alpha[-1]}"
+    else:
+        hex_alpha = hex_alpha[-2:]
+    return f"{color_hex}{hex_alpha}"
 
 
 def zero_to_one_threshold(val):
@@ -524,12 +535,6 @@ def imshow(
 
     img = ax.imshow(img_array, **kwargs)
 
-    def format_cursor_data(data):
-        # print(data)
-        return "[" + str(data) + "]"
-
-    img.format_cursor_data = format_cursor_data
-
     # Colorbar and labels
     clb = fig.colorbar(img)
     if cbar_label is not None:
@@ -585,7 +590,7 @@ def on_click_image(event):
         pass
 
 
-def histogram(ax, data, hist_type=HistType.INTEGER, nbins=10, **kwargs):
+def histogram(ax, data, hist_type=HistType.STEP, nbins=10, **kwargs):
     """Similar to matplotlib's hist, but with our defaults
 
     Parameters
@@ -625,8 +630,13 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=10, **kwargs):
         occur, bin_edges = np.histogram(data, np.linspace(0, max_data, max_data + 1))
         x_vals = bin_edges[:-1]
         plot_line(ax, x_vals, occur, **kwargs)
-    else:
-        occur, bin_edges, _ = ax.hist(data, histtype=hist_type, bins=nbins, **kwargs)
+    elif hist_type == HistType.STEP:
+        facecolor = alpha_color_hex(color)
+        occur, bin_edges, _ = ax.hist(
+            data, histtype="step", bins=nbins, facecolor=facecolor, fill=True, **kwargs
+        )
+    elif hist_type == HistType.BAR:
+        occur, bin_edges, _ = ax.hist(data, histtype="bar", bins=nbins, **kwargs)
 
     return occur, bin_edges
 
