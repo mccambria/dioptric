@@ -17,8 +17,8 @@ home = Path.home()
 config = {
     ###
     "default_email": "kolkowitznvlab@gmail.com",
-    "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
-    "linux_nvdata_path": home / "E/nvdata",
+    "windows_nvdata_path": home / "Box/KolkowitzLab/nvdata",
+    "linux_nvdata_path": home / "E/KolkowitzLab/nvdata",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
     "camera_spot_radius": 6,

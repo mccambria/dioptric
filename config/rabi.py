@@ -99,8 +99,8 @@ config = {
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
     "shared_email": "kolkowitznvlab@gmail.com",
     # Access the OS-specific keys with getters from common
-    "windows_nvdata_path": Path("E:/Shared drives/Kolkowitz Lab Group/nvdata"),
-    "linux_nvdata_path": home / "E/nvdata",
+    "windows_nvdata_path": home / "Box/KolkowitzLab/nvdata",
+    "linux_nvdata_path": home / "E/KolkowitzLab/nvdata",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
     ###
