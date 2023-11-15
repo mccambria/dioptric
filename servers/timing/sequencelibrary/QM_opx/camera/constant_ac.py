@@ -53,7 +53,8 @@ def get_seq(args, num_reps=None):
                 element = f"ao{chan}"
                 amp = amps[ind]
                 qua.play("cw" * qua.amp(amp), element, duration=clock_cycles)
-                # qua.play("cw" * qua.amp(0), element, duration=clock_cycles)
+            # qua.play("on", "ao_laser_OPTO_589_am", duration=clock_cycles)
+            # qua.play("cw" * qua.amp(0), element, duration=clock_cycles)
 
         ### Handle the reps in the utils code
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)

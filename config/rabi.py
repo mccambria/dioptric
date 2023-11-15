@@ -468,7 +468,7 @@ opx_config = {
             "singleInput": {"port": ("con1", 7)},
             "intermediate_frequency": 0,
             "operations": {
-                "on": "ao_cw",
+                "on": "yellow_aom_cw",
                 "off": "ao_off",
                 "charge_state_readout": "charge_state_readout",
             },
@@ -525,6 +525,11 @@ opx_config = {
             "length": default_pulse_duration,
             "waveforms": {"single": "red_aod_cw"},
         },
+        "yellow_aom_cw": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "yellow_aom_cw"},
+        },
         "ao_cw": {
             "operation": "control",
             "length": default_pulse_duration,
@@ -569,13 +574,10 @@ opx_config = {
     "waveforms": {
         "aod_cw": {"type": "constant", "sample": 0.35},
         "red_aod_cw": {"type": "constant", "sample": 0.32},
-        # "green_aod_cw": {"type": "constant", "sample": 0.35},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
+        "yellow_aom_cw": {"type": "constant", "sample": 0.1},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
-        "cw_0.5": {"type": "constant", "sample": 0.5},
-        "cw_0.45": {"type": "constant", "sample": 0.45},
-        "cw_0.4": {"type": "constant", "sample": 0.4},
         "charge_state_readout": {"type": "constant", "sample": 0.5},
     },
     ### Digital, format is list of tuples: (on/off, ns)

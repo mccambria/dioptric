@@ -25,6 +25,11 @@ from utils.constants import LaserKey, NVSpinState
 import time
 from servers.inputs.nuvu_camera.nc_camera import NuvuException
 
+green_laser = "laser_INTE_520"
+yellow_laser = "laser_OPTO_589"
+red_laser = "laser_COBO_638"
+green_laser_dict = {"name": green_laser, "duration": 5e6}
+red_laser_dict = {"name": red_laser, "duration": 5e6}
 
 ### Major Routines
 
@@ -36,12 +41,14 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 def do_scanning_image_sample(nv_sig):
     scan_range = 9
     num_steps = 60
+    nv_sig[LaserKey.IMAGING] = green_laser_dict
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_scanning_image_sample_zoom(nv_sig):
     scan_range = 0.2
     num_steps = 30
+    nv_sig[LaserKey.IMAGING] = green_laser_dict
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -50,6 +57,7 @@ def do_image_nv_list(nv_list):
 
 
 def do_image_single_nv(nv_sig):
+    nv_sig[LaserKey.IMAGING] = green_laser_dict
     return image_sample.single_nv(nv_sig)
 
 
@@ -66,7 +74,9 @@ def do_charge_state_histogram(nv_sig, num_reps):
     return image_sample_diff.charge_state_histogram(nv_sig, num_reps)
 
 
-def do_optimize(nv_sig, coords_suffix=None, set_drift=False, plot_data=True):
+def do_optimize_green(nv_sig, set_drift=False, plot_data=True):
+    nv_sig[LaserKey.IMAGING] = green_laser_dict
+    coords_suffix = green_laser
     opti_coords, _ = optimize.main(
         nv_sig,
         set_to_opti_coords=False,
@@ -156,12 +166,12 @@ def do_opx_constant_ac():
         opx = cxn.QM_opx
         # opx.constant_ac([3])
         # Yellow
-        # opx.constant_ac(
-        #     [],  # Digital channels
-        #     [7],  # Analog channels
-        #     [0.5],  # Analog voltages
-        #     [0],  # Analog frequencies
-        # )
+        opx.constant_ac(
+            [],  # Digital channels
+            [7],  # Analog channels
+            [0.225],  # Analog voltages
+            [0],  # Analog frequencies
+        )
         # Green
         # opx.constant_ac(
         #     [4],  # Digital channels
@@ -170,12 +180,12 @@ def do_opx_constant_ac():
         #     [110, 110],  # Analog frequencies
         # )
         # Red
-        opx.constant_ac(
-            [1],  # Digital channels
-            [2, 3],  # Analog channels
-            [0.32, 0.32],  # Analog voltages
-            [74.705, 74.858],  # Analog frequencies
-        )
+        # opx.constant_ac(
+        #     [1],  # Digital channels
+        #     [2, 3],  # Analog channels
+        #     [0.32, 0.32],  # Analog voltages
+        #     [74.705, 74.858],  # Analog frequencies
+        # )
         # Red + green
         # opx.constant_ac(
         #     [1, 4],  # Digital channels
@@ -256,23 +266,17 @@ def do_opx_constant_ac():
 if __name__ == "__main__":
     ### Shared parameters
 
-    green_laser = "laser_INTE_520"
-    yellow_laser = "laser_OPTO_589"
-    red_laser = "laser_COBO_638"
-
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    yellow_laser_dict = {"name": yellow_laser, "duration": 1e9}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 500e6}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 1e9}
+    yellow_laser_dict = {"name": yellow_laser, "duration": 500e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 200e6}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 20e6}
+    # yellow_laser_dict = {"name": yellow_laser, "duration": 85e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
     # yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
-    green_laser_dict = {"name": green_laser, "duration": 5e6}
-    red_laser_dict = {"name": red_laser, "duration": 5e6}
 
     sample_name = "johnson"
     z_coord = 4.10
@@ -295,7 +299,7 @@ if __name__ == "__main__":
         #
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         # 50 mW setting for 10 mW on table
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 1e6},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 1e3},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 1e6},
         #
         "collection": {"filter": "514_notch+630_lp"},
@@ -308,9 +312,9 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [321.058, 252.867]
-    nv0[green_coords_key] = [111.456, 109.772]
-    red_coords = [75.057, 75.377]
+    nv0[pixel_coords_key] = [320.661, 248.495]
+    nv0[green_coords_key] = [111.416, 109.693]
+    red_coords = [75.047, 75.281]
     nv0[red_coords_key] = red_coords
 
     nv1 = copy.deepcopy(nv_ref)
@@ -346,52 +350,15 @@ if __name__ == "__main__":
         # pos.reset_xy_drift()
         # pos.reset_drift()
         # widefield.reset_pixel_drift()
-        # # z_drift = pos.get_drift()[2]
-        # # pos.set_drift([+0.03, +0.03, z_drift])
-        # time.sleep(1.0)
         # with common.labrad_connect() as cxn:
         #     pos.set_xyz_on_nv(cxn, nv_sig)
 
         # Convert pixel coords to scanning coords
-        # for nv in nv_list:
-        #     scanning_coords = widefield.pixel_to_scanning_coords(nv["pixel_coords"])
-        #     print([round(el, 3) for el in scanning_coords])
         # pixel_coords = nv_sig["pixel_coords"]
         # # pixel_coords = do_optimize_pixel(nv_sig)
         # for laser in [green_laser, red_laser]:
         #     scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, laser)
         #     print([round(el, 3) for el in scanning_coords])
-
-        # center = [110, 110]
-        # center = nv0[red_coords_key]
-        # # half_range = 0.2
-        # # full_range = 1.5
-        # num_steps = 10
-        # crash_counter = 0
-        # for x in np.linspace(center[0] - 0.2, center[0] + 0.2, 5):
-        #     for y in np.linspace(center[1] - 1.0, center[1] + 1.0, 21):
-        #         coords_key = red_coords_key
-        #         # coords_key = green_coords_key
-        #         nv_sig[coords_key] = [round(x, 3), round(y, 3)]
-        #         # nv_sig[coords_key][1] = round(y, 3)
-        #         # do_image_single_nv(nv_sig)
-        #         for ind in range(10):
-        #             try:
-        #                 # do_optimize(nv_sig, green_laser)
-        #                 do_image_single_nv_ionization(nv_sig, 2000)
-        #                 break
-        #             except Exception as exc:
-        #                 print(exc)
-        #                 crash_counter += 1
-        #                 tb.reset_cfm()
-        # print(f"Crashes: {crash_counter}")
-
-        # for nv in nv_list:
-        # do_optimize_pixel(nv)
-        #     do_optimize_plot(nv)
-        # for nv in nv_list:
-        #     print(nv["pixel_coords"])
-        #     print(nv["coords"][0:2])
 
         # do_opx_constant_ac()
 
@@ -400,30 +367,27 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        # do_widefield_image_sample(nv_sig, 10)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
-        # for ind in range(5):
-        #     do_image_single_nv(nv_sig)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_polarization(nv_sig, 500)
         # do_image_single_nv_ionization(nv_sig, 1)
-        do_charge_state_histogram(nv_sig, 1000)
-        # for nv in nv_list:
-        #     do_image_single_nv(nv)
-        # do_stationary_count(nv_sig)
-        # do_resonance(nv_list)
-        # do_optimize(nv_sig, green_laser)
+        # do_charge_state_histogram(nv_sig, 1000)
+
+        # do_optimize_green(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
+
         # do_pulsed_resonance(nv_sig, 2.87, 0.060)
         # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
+        # do_resonance(nv_list)
 
     except Exception as exc:
         if do_email:

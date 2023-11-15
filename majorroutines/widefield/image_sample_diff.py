@@ -37,7 +37,7 @@ def charge_state_histogram(nv_sig, num_reps=100):
     ### Collect the data
 
     with common.labrad_connect() as cxn:
-        sig_img_array_list, ref_img_array_list, file_path = main_with_cxn(
+        sig_img_array_list, ref_img_array_list, file_path, num_reps = main_with_cxn(
             cxn, nv_sig, caller_fn_name, num_reps, separate_images=True
         )
 
@@ -288,11 +288,11 @@ def main_with_cxn(
         fig = figs[ind]
         title_suffix = title_suffixes[ind]
         name = f"{nv_name}-{title_suffix}"
-        file_path = tb.get_file_path(__file__, timestamp, name)
-        tb.save_figure(fig, file_path)
+        fig_file_path = tb.get_file_path(__file__, timestamp, name)
+        tb.save_figure(fig, fig_file_path)
 
     if separate_images:
-        return sig_img_array_list, ref_img_array_list, file_path
+        return sig_img_array_list, ref_img_array_list, file_path, num_reps
     else:
         return sig_img_array, ref_img_array
 

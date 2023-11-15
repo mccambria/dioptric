@@ -32,7 +32,7 @@ def get_seq(args, num_reps):
     with qua.program() as seq:
         ### Define one rep here
         def one_rep():
-            qua.play("on", laser_element, duration=readout_duration_cc)
+            qua.play("off", laser_element, duration=readout_duration_cc)
             qua.play("on", camera_element)
             qua.align()
             qua.play("off", camera_element)

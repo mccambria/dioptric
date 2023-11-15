@@ -136,14 +136,14 @@ if __name__ == "__main__":
         args = [
             5000.0,
             "laser_OPTO_589",
-            True,
-            "laser_INTE_520",
-            [111.202, 109.801],
-            1000,
             False,
+            "laser_INTE_520",
+            [111.326, 109.79],
+            1000.0,
+            True,
             "laser_COBO_638",
-            [75, 75],
-            2000.0,
+            [75.02, 75.425],
+            1000.0,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
