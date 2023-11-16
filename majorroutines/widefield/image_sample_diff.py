@@ -11,7 +11,7 @@ Created on April 9th, 2019
 
 import matplotlib.pyplot as plt
 import numpy as np
-import majorroutines.optimize as optimize
+import majorroutines.widefield.optimize as optimize
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield as widefield_utils
@@ -27,8 +27,6 @@ def charge_state_histogram(nv_sig, num_reps=100):
     ### Setup
 
     caller_fn_name = "single_nv_ionization"
-    pixel_coords = nv_sig["pixel_coords"]
-    readout_s = nv_sig[LaserKey.IMAGING]["duration"] * 1e-9
 
     kpl.init_kplotlib()
 
@@ -39,7 +37,50 @@ def charge_state_histogram(nv_sig, num_reps=100):
             cxn, nv_sig, caller_fn_name, num_reps, separate_images=True
         )
 
-    ### Turn it into counts
+    ### Make the histograms
+
+    fig = _charge_state_histogram(
+        sig_img_array_list, ref_img_array_list, num_reps, nv_sig
+    )
+
+    ### Save
+
+    timestamp = tb.get_time_stamp()
+    raw_data = {
+        "timestamp": timestamp,
+        "caller_fn_name": caller_fn_name,
+        "nv_sig": nv_sig,
+        "num_reps": num_reps,
+        "sig_img_array_list": sig_img_array_list,
+        "ref_img_array_list": ref_img_array_list,
+        "img_array-units": "counts",
+    }
+
+    sig_img_array_list = np.array(sig_img_array_list)
+    ref_img_array_list = np.array(ref_img_array_list)
+    keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
+    tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    tb.save_figure(fig, file_path)
+
+
+def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv_sig):
+    pixel_coords = nv_sig["pixel_coords"]
+    readout = nv_sig["LaserKey.IMAGING"]["duration"]
+    readout_ms = int(readout / 1e6)
+    readout_s = readout / 1e9
+
+    ### Optimize pixel coords
+
+    sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
+    pixel_coords = optimize.optimize_pixel_with_img_array(
+        sig_img_array,
+        pixel_coords,
+        pixel_drift_adjust=False,
+        set_pixel_drift=False,
+        set_scanning_drift=False,
+    )
+
+    ### Turn the lists into counts
 
     sig_counts_list = []
     ref_counts_list = []
@@ -63,7 +104,7 @@ def charge_state_histogram(nv_sig, num_reps=100):
     labels = ["sig", "ref"]
     counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
-    ax.set_title(f"Ionization histogram, {num_bins} bins, {num_reps} reps")
+    ax.set_title(f"Ionization hist, {readout_ms} ms, {num_bins} bins, {num_reps} reps")
     ax.set_xlabel(f"Integrated counts")
     ax.set_ylabel("Number of occurrences")
     for ind in range(2):
@@ -76,29 +117,16 @@ def charge_state_histogram(nv_sig, num_reps=100):
     mean_std = (1 / 2) * np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
     mean_diff = np.mean(ref_counts_list) - np.mean(sig_counts_list)
     norm_sep = mean_diff / mean_std
+    norm_sep_time = norm_sep / np.sqrt(readout_s)
     norm_sep = round(norm_sep, 3)
-    norm_sep_str = f"Normalized separation:\n{norm_sep} / sqrt(shot)\n{norm_sep / np.sqrt(readout_s)} / sqrt(s)"
+    norm_sep_time = round(norm_sep_time, 3)
+    norm_sep_str = (
+        f"Normalized separation:\n{norm_sep} / sqrt(shot)\n{norm_sep_time} / sqrt(s)"
+    )
     print(norm_sep_str)
-    kpl.anchored_text(ax, norm_sep_str, "center right")
+    kpl.anchored_text(ax, norm_sep_str, "center right", size=kpl.Size.SMALL)
 
-    ### Save
-
-    timestamp = tb.get_time_stamp()
-    raw_data = {
-        "timestamp": timestamp,
-        "caller_fn_name": caller_fn_name,
-        "nv_sig": nv_sig,
-        "num_reps": num_reps,
-        "sig_img_array_list": sig_img_array_list,
-        "ref_img_array_list": ref_img_array_list,
-        "img_array-units": "counts",
-    }
-
-    sig_img_array_list = np.array(sig_img_array_list)
-    ref_img_array_list = np.array(ref_img_array_list)
-    keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
-    tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
-    tb.save_figure(fig, file_path)
+    return fig
 
 
 def single_nv_ionization(nv_sig, num_reps=1):
@@ -309,35 +337,48 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_11_07-17_52_33-johnson-nv2_2023_11_07"
-    file_name = "2023_11_09-22_57_44-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_15-16_56_20-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_15-17_04_44-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_15-17_14_09-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_15-17_25_14-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_15-17_37_42-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_15-17_51_32-johnson-nv0_2023_11_09"
+    file_name = "2023_11_15-18_07_48-johnson-nv0_2023_11_09"
 
     data = tb.get_raw_data(file_name)
-    img_array = np.array(data["img_array"])
-    # pixel_coords = optimize_pixel_coords(
-    #     img_array,
-    #     data["nv_sig"],
-    #     set_scanning_drift=False,
-    #     set_pixel_drift=False,
-    #     pixel_drift_adjust=False,
-    # )
-    pixel_coords = [299.867, 253.762]
-    print(
-        widefield_utils.counts_from_img_array(
-            img_array, pixel_coords, drift_adjust=False
-        )
-    )
-    bg_coords = [pixel_coords[0] + 15, pixel_coords[1] + 15]
-    print(
-        widefield_utils.counts_from_img_array(img_array, bg_coords, drift_adjust=False)
+    sig_img_array_list = np.array(data["sig_img_array_list"])
+    ref_img_array_list = np.array(data["ref_img_array_list"])
+    num_reps = data["num_reps"]
+    nv_sig = data["nv_sig"]
+    readout_ms = int(nv_sig["LaserKey.IMAGING"]["duration"] / 1e6)
+    laser_name = nv_sig["LaserKey.IMAGING"]["name"]
+
+    sig_img_array = np.sum(sig_img_array_list, axis=0)
+    ref_img_array = np.sum(ref_img_array_list, axis=0)
+    diff_img_array = sig_img_array - ref_img_array
+    sig_img_array = sig_img_array / num_reps
+    ref_img_array = ref_img_array / num_reps
+    diff_img_array = diff_img_array / num_reps
+
+    pixel_coords = nv_sig["pixel_coords"]
+    nv_sig["pixel_coords"] = optimize.optimize_pixel_with_img_array(
+        sig_img_array,
+        pixel_coords,
+        pixel_drift_adjust=False,
+        set_pixel_drift=False,
+        set_scanning_drift=False,
     )
 
-    fig, ax = plt.subplots()
-    im = widefield_utils.imshow(ax, img_array)
+    _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv_sig)
+
+    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    title_suffixes = ["sig", "ref", "diff"]
+    figs = []
+    for ind in range(3):
+        img_array = img_arrays[ind]
+        title_suffix = title_suffixes[ind]
+        fig, ax = plt.subplots()
+        title = f"{laser_name}, {readout_ms} ms, {title_suffix}"
+        widefield_utils.imshow(ax, img_array, title=title)
 
     plt.show(block=True)
-
-    # # call the function: Charge State Histogram
-    # num_reps = 10
-    # charge_state_histogram(num_reps)
-    # plt.show()

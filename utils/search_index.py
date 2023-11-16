@@ -17,7 +17,8 @@ import os
 from pathlib import PurePath
 import sqlite3
 import time
-from boxsdk import Client
+
+# from boxsdk import Client
 
 search_index_file_name = "search_index.db"
 nvdata_path = common.get_nvdata_path()
