@@ -10,13 +10,15 @@ Created November 15th, 2023
 # region Imports and constants
 
 import datetime
+import webbrowser
+import requests
 import utils.common as common
 import os
 from pathlib import PurePath
 import sqlite3
 import time
 import json
-from boxsdk import Client
+from boxsdk import Client, OAuth2
 from git import Repo
 from pathlib import Path
 from enum import Enum
@@ -24,13 +26,13 @@ import numpy as np
 import socket
 import labrad
 import copy
+from oauthlib.oauth2 import WebApplicationClient
 
-from boxsdk import Client, OAuth2
 
 auth = OAuth2(
-    client_id="17z5qlwkelzcagst6ehct6bh3dz2tv0o",
-    client_secret="0SA0Zpazmo6SStMWcDvZKlHdWaAsTO42",
-    access_token="dfp14h2VY5bpi2KvZ3oaN3JBfUdQuLIP",
+    client_id="2qap31ol79l5u5pewj79xo5zcalpcaw8",
+    client_secret="zIxyvHAATpXIRlN8PkyEsmT1Es0hPyHc",
+    # access_token="dfp14h2VY5bpi2KvZ3oaN3JBfUdQuLIP",
 )
 
 search_index_file_name = "search_index.db"
@@ -461,6 +463,31 @@ def test():
     # config_module = common.get_config_module()
     # auth = config_module.auth
     client = Client(auth)
+
+    auth_url, csrf_token = auth.get_authorization_url("https://berkeley.app.box.com")
+    # webbrowser.open(auth_url)
+    # code = input("Enter code from auth page: ")
+    # r = requests.get(auth_url)
+    # print(r.url)
+
+    client = WebApplicationClient("2qap31ol79l5u5pewj79xo5zcalpcaw8")
+    url = client.prepare_request_uri(
+        auth_url,
+        #   redirect_uri = 'https://your-web-app.com/redirect',
+        #   scope = ['read:user'],
+        #   state = 'D8VAo311AAl_49LAtM51HA'
+    )
+    print(url)
+    # code = r.url
+
+    auth.authenticate(code)
+    client = Client(auth)
+
+    # https://app.box.com
+
+    # https://account.box.com/api/oauth2/authorize?client_id=[CLIENT_ID]&redirect_uri=[REDIRECT_URI]&response_type=code
+
+    # https://berkeley.app.box.com/
 
     file_name = "2023_11_14-14_41_51-johnson-nv0_2023_11_09-diff"
 
