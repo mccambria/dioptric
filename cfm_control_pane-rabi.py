@@ -276,12 +276,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     # Imaging laser dicts
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 1e9}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 500e6}
-    yellow_laser_dict = {"name": yellow_laser, "duration": 200e6}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 85e6}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 5e6}
-    # yellow_laser_dict = {"name": yellow_laser, "duration": 1e6}
+    yellow_laser_dict = {"name": yellow_laser, "duration": 50e6}
 
     sample_name = "johnson"
     z_coord = 4.08
@@ -380,20 +375,20 @@ if __name__ == "__main__":
         # do_image_single_nv_ionization(nv_sig, 1)
         # do_charge_state_histogram(nv_sig, 1000)
 
-        readouts = [25e6, 50e6, 75e6, 100e6, 150e6, 200e6, 250e6]
-        for readout in readouts:
-            do_optimize_pixel(nv_sig)
-            do_optimize_green(nv_sig)
-            widefield.set_nv_scanning_coords_from_pixel_coords(nv_sig, red_laser)
-            # break
+        # readouts = [25e6, 50e6, 75e6, 100e6, 150e6, 200e6, 250e6]
+        # for readout in readouts:
+        #     do_optimize_pixel(nv_sig)
+        #     do_optimize_green(nv_sig)
+        #     widefield.set_nv_scanning_coords_from_pixel_coords(nv_sig, red_laser)
+        #     # break
 
-            nv_sig[LaserKey.IMAGING]["duration"] = readout
-            do_charge_state_histogram(nv_sig, 1000)
+        #     nv_sig[LaserKey.IMAGING]["duration"] = readout
+        #     do_charge_state_histogram(nv_sig, 1000)
 
         # do_optimize_green(nv_sig)
+        do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_pixel(nv_sig)
-        # do_optimize_pixel(nv_sig, set_pixel_drift=True, set_scanning_drift=True)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
