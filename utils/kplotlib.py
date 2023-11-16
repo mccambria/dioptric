@@ -284,7 +284,7 @@ def get_default_color(ax, plot_type):
     return color
 
 
-def anchored_text(ax, text, loc, size=None, **kwargs):
+def anchored_text(ax, text, loc=Loc.UPPER_RIGHT, size=None, **kwargs):
     """Add text in default style to the passed ax. To update text call set_text on the
     returned object's txt property
 

@@ -725,10 +725,6 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
                 if nvdata_dir is None:
                     nvdata_dir = common.get_nvdata_path()
                 full_path = nvdata_dir / generic_path
-                full_path = (
-                    Path.home()
-                    / f"Downloads/{file_name}.npz"
-                )  # MCC
                 npz_file = np.load(full_path)
             data[key] = npz_file[key]
 

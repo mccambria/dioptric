@@ -17,6 +17,7 @@ import os
 from pathlib import PurePath
 import sqlite3
 import time
+from boxsdk import Client
 
 search_index_file_name = "search_index.db"
 nvdata_path = common.get_nvdata_path()
@@ -126,6 +127,27 @@ def gen_search_index():
     from the fresh index.
     """
 
+    # Determine how many files
+    # start = time.time()
+    # counter = 0
+    # for root, _, files in os.walk(nvdata_path):
+    #     path_root = PurePath(root)
+    #     # Before looping through all the files make sure the folder fits the glob
+    #     test_path_root = path_root / "test.txt"
+    #     print(path_root)
+    #     if not test_path_root.match(search_index_glob):
+    #         continue
+    #     for f in files:
+    #         print(f)
+    #         if f.split(".")[-1] == "txt":
+    #             counter += 1
+    #             if counter >= 2000:
+    #                 break
+    # end = time.time()
+    # print(end - start)
+    # print(counter)
+    # return
+
     # Create the table
     temp_name = "new_" + search_index_file_name
     search_index = sqlite3.connect(nvdata_path / temp_name)
@@ -136,8 +158,7 @@ def gen_search_index():
 
     for root, _, files in os.walk(nvdata_path):
         path_root = PurePath(root)
-        # Before looping through all the files make sure the folder fits
-        # the glob
+        # Before looping through all the files make sure the folder fits the glob
         test_path_root = path_root / "test.txt"
         if not test_path_root.match(search_index_glob):
             continue
@@ -150,17 +171,40 @@ def gen_search_index():
     search_index.close()
 
 
+def test():
+    config_module = common.get_config_module()
+    auth = config_module.auth
+    client = Client(auth)
+
+    file_name = "2023_11_14-14_41_51-johnson-nv0_2023_11_09-diff"
+
+    search_results = client.search().query(
+        f"{file_name}.txt",
+        limit=1,
+        offset=0,
+        # ancestor_folders=[client.folder(folder_id="0")],
+        file_extensions=["txt"],
+    )
+    for item in search_results:
+        item_with_name = item.get(fields=["name"])
+        print("matching item: " + item_with_name.id)
+        print("matching item: " + item_with_name.id)
+    else:
+        print("no matching items")
+
+
 # endregion
 
 
 if __name__ == "__main__":
+    test()
     # gen_search_index()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
-    root = nvdata_path / "pc_rabi/branch_master/image_sample/2023_11"
-    file_list = [
-        '2023_11_01-10_07_18-johnson-nv0_2023_10_30.txt',
-    ]
-    paths = [root / el for el in file_list]
-    for el in paths:
-        add_to_search_index(el)
+    # root = nvdata_path / "pc_rabi/branch_master/image_sample/2023_11"
+    # file_list = [
+    #     '2023_11_01-10_07_18-johnson-nv0_2023_10_30.txt',
+    # ]
+    # paths = [root / el for el in file_list]
+    # for el in paths:
+    #     add_to_search_index(el)

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Scan over the designated area, collecting onto the camera
+Widefield extension of the standard optimize in majorroutines 
 
-Created on April 9th, 2019
+Created Fall 2023
 
 @author: mccambria
 """
@@ -24,8 +24,54 @@ from utils import widefield
 from numba import njit
 from utils.constants import LaserKey
 
+# region Internal
 
-def optimize_laser_scanning_calibration(cxn):
+
+@njit(cache=True)
+def _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh):
+    return np.exp(
+        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / (2 * sigma**2)
+    )
+
+
+@njit(cache=True)
+def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    gaussian_array = offset + amp * _2d_gaussian_exp(
+        x0, y0, sigma, x_crop_mesh, y_crop_mesh
+    )
+    diff_array = gaussian_array - img_array_crop
+    return np.sum(diff_array**2)
+
+
+@njit(cache=True)
+def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    inv_twice_var = 1 / (2 * sigma**2)
+    gaussian_exp = _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh)
+    x_diff = x_crop_mesh - x0
+    y_diff = y_crop_mesh - y0
+    spatial_der_coeff = 2 * amp * gaussian_exp * inv_twice_var
+    gaussian_jac_0 = gaussian_exp
+    gaussian_jac_1 = spatial_der_coeff * x_diff
+    gaussian_jac_2 = spatial_der_coeff * y_diff
+    gaussian_jac_3 = amp * gaussian_exp * (x_diff**2 + y_diff**2) / (sigma**3)
+    gaussian_jac_4 = 1
+    coeff = 2 * ((offset + amp * gaussian_exp) - img_array_crop)
+    cost_jac = [
+        np.sum(coeff * gaussian_jac_0),
+        np.sum(coeff * gaussian_jac_1),
+        np.sum(coeff * gaussian_jac_2),
+        np.sum(coeff * gaussian_jac_3),
+        np.sum(coeff * gaussian_jac_4),
+    ]
+    return np.array(cost_jac)
+
+
+# endregion
+
+
+def optimize_pixel_to_scanning_calibration(cxn):
     """
     Update the coordinates for the pair of NVs used to convert between pixel and
     scanning coordinates. Also set the z drift
@@ -114,123 +160,69 @@ def optimize_laser_scanning_calibration(cxn):
     common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
 
 
-@njit(cache=True)
-def _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh):
-    return np.exp(
-        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / (2 * sigma**2)
-    )
-
-
-@njit(cache=True)
-def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
-    amp, x0, y0, sigma, offset = fit_params
-    gaussian_array = offset + amp * _2d_gaussian_exp(
-        x0, y0, sigma, x_crop_mesh, y_crop_mesh
-    )
-    diff_array = gaussian_array - img_array_crop
-    return np.sum(diff_array**2)
-
-
-@njit(cache=True)
-def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
-    amp, x0, y0, sigma, offset = fit_params
-    inv_twice_var = 1 / (2 * sigma**2)
-    gaussian_exp = _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh)
-    x_diff = x_crop_mesh - x0
-    y_diff = y_crop_mesh - y0
-    spatial_der_coeff = 2 * amp * gaussian_exp * inv_twice_var
-    gaussian_jac_0 = gaussian_exp
-    gaussian_jac_1 = spatial_der_coeff * x_diff
-    gaussian_jac_2 = spatial_der_coeff * y_diff
-    gaussian_jac_3 = amp * gaussian_exp * (x_diff**2 + y_diff**2) / (sigma**3)
-    gaussian_jac_4 = 1
-    coeff = 2 * ((offset + amp * gaussian_exp) - img_array_crop)
-    cost_jac = [
-        np.sum(coeff * gaussian_jac_0),
-        np.sum(coeff * gaussian_jac_1),
-        np.sum(coeff * gaussian_jac_2),
-        np.sum(coeff * gaussian_jac_3),
-        np.sum(coeff * gaussian_jac_4),
-    ]
-    return np.array(cost_jac)
-
-
-def main(
-    nv_sig=None,
-    pixel_coords=None,
-    radius=None,
-    set_scanning_drift=True,
+def optimize_pixel(
+    nv_sig,
     set_pixel_drift=True,
-    scanning_drift_adjust=True,
+    set_scanning_drift=True,
     pixel_drift_adjust=True,
     pixel_drift=None,
+    radius=None,
     plot_data=False,
 ):
     with common.labrad_connect() as cxn:
-        return main_with_cxn(
+        return optimize_pixel_with_cxn(
             cxn,
-            scanning_drift_adjust,
             nv_sig,
-            pixel_coords,
-            radius,
-            set_scanning_drift,
             set_pixel_drift,
+            set_scanning_drift,
             pixel_drift_adjust,
             pixel_drift,
+            radius,
             plot_data,
         )
-    
-def main_with_cxn(
+
+
+def optimize_pixel_with_cxn(
     cxn,
-    scanning_drift_adjust=True,
-    nv_sig=None,
-    pixel_coords=None,
-    radius=None,
-    set_scanning_drift=True,
+    nv_sig,
     set_pixel_drift=True,
+    set_scanning_drift=True,
     pixel_drift_adjust=True,
     pixel_drift=None,
+    radius=None,
     plot_data=False,
 ):
-    laser_name = nv_sig[LaserKey.IMAGING]["name"]
-    img_array = stationary_count_lite(
-        cxn,
-        nv_sig,
-        ret_img_array=True,
-        scanning_drift_adjust=scanning_drift_adjust,
-        pixel_drift_adjust=pixel_drift_adjust,
-        coords_suffix=laser_name,
-    )
-            
-    return main_with_img_array(
+    img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
+    pixel_coords = nv_sig["pixel_coords"]
+
+    return optimize_pixel_with_img_array(
         img_array,
-        nv_sig,
         pixel_coords,
-        radius,
-        set_scanning_drift,
         set_pixel_drift,
+        set_scanning_drift,
         pixel_drift_adjust,
         pixel_drift,
-        plot_data)
-            
-def main_with_img_array(
-    img_array=None,
-    nv_sig=None,
-    pixel_coords=None,
-    radius=None,
-    set_scanning_drift=True,
+        radius,
+        plot_data,
+    )
+
+
+def optimize_pixel_with_img_array(
+    img_array,
+    pixel_coords,
     set_pixel_drift=True,
+    set_scanning_drift=True,
     pixel_drift_adjust=True,
     pixel_drift=None,
+    radius=None,
     plot_data=False,
 ):
     if plot_data:
+        kpl.init_kplotlib()
         fig, ax = plt.subplots()
-        kpl.imshow(ax, img_array, x_label="X", y_label="Y", cbar_label="Counts")
+        widefield.imshow(ax, img_array)
 
     # Make copies so we don't mutate the originals
-    if pixel_coords is None:
-        pixel_coords = nv_sig["pixel_coords"]
     original_pixel_coords = pixel_coords.copy()
     pixel_coords = pixel_coords.copy()
     if pixel_drift_adjust:
@@ -316,4 +308,9 @@ def main_with_img_array(
         widefield.set_pixel_drift(drift)
     if set_scanning_drift:
         widefield.set_scanning_drift_from_pixel_drift()
+    opti_pixel_coords = opti_pixel_coords.tolist()
+    r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
+
+    print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
+
     return opti_pixel_coords

@@ -16,6 +16,7 @@ from utils import tool_belt as tb
 from utils import positioning as pos
 from utils import kplotlib as kpl
 from utils.constants import CountFormat
+from utils.constants import CollectionMode, LaserKey, LaserPosMode
 
 # endregion
 # region Plotting
@@ -23,6 +24,9 @@ from utils.constants import CountFormat
 
 def imshow(ax, img_array, count_format=None, **kwargs):
     """Version of kplotlib's imshow with additional defaults for a camera"""
+    
+    prev_font_size = plt.rcParams["font.size"]
+    plt.rcParams.update({'font.size': kpl.FontSize.SMALL})
 
     config = common.get_config_dict()
     if count_format is None:
@@ -32,12 +36,12 @@ def imshow(ax, img_array, count_format=None, **kwargs):
     if count_format == CountFormat.KCPS:
         cbar_label = "Kcps"
     default_kwargs = {
-        "x_label": "X",
-        "y_label": "Y",
         "cbar_label": cbar_label,
     }
     passed_kwargs = {**default_kwargs, **kwargs}
     kpl.imshow(ax, img_array, **passed_kwargs)
+    
+    plt.rcParams.update({'font.size': prev_font_size})
 
 
 # endregion
@@ -137,11 +141,22 @@ def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
 
 
 def get_nv_pixel_coords(nv_sig, drift_adjust=True):
-    coords_key = "pixel_coords"
-    coords = nv_sig[coords_key]
+    pixel_coords = nv_sig["pixel_coords"]
     if drift_adjust:
-        coords = adjust_pixel_coords_for_drift(coords=coords, nv_sig=nv_sig)
-    return coords
+        pixel_coords = adjust_pixel_coords_for_drift(pixel_coords)
+    return pixel_coords
+
+
+def set_all_scanning_drifts_from_pixel_drift(pixel_drift=None):
+    config = common.get_config_dict()
+    config_optics = config["Optics"]
+    scanning_optics = []
+    for optic_name in config_optics:
+        optic_dict = config_optics[optic_name]
+        if "pos_mode" in optic_dict and optic_dict["pos_mode"] == LaserPosMode.SCANNING:
+            scanning_optics.append(optic_name)
+    for coords_suffix in scanning_optics:
+        set_scanning_drift_from_pixel_drift(pixel_drift, coords_suffix)
 
 
 def set_scanning_drift_from_pixel_drift(pixel_drift=None, coords_suffix=None):
@@ -171,6 +186,12 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_suffix=None):
 
 # endregion
 # region Scanning to pixel calibration
+
+
+def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
+    pixel_coords = get_nv_pixel_coords(nv_sig)
+    red_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
+    pos.set_nv_coords(nv_sig, red_coords, coords_suffix)
 
 
 def get_widefield_calibration_nvs():

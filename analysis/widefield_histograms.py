@@ -20,9 +20,7 @@ from utils import positioning as pos
 from scipy import ndimage
 import os
 import time
-from majorroutines.widefield.optimize_pixel_coords import (
-    main_with_img_array as optimize_pixel_coords,
-)
+from majorroutines.widefield.optimize import optimize_pixel_with_img_array
 from pathlib import Path
 from utils.kplotlib import HistType
 
@@ -30,9 +28,7 @@ from utils.kplotlib import HistType
 def main(file_name):
     ### Get the data out
 
-    home = Path.home()
-
-    data = tb.get_raw_data(file_name, "Downloads", home)
+    data = tb.get_raw_data(file_name)
 
     sig_img_array_list = data["sig_img_array_list"]
     ref_img_array_list = data["ref_img_array_list"]

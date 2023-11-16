@@ -177,7 +177,7 @@ def _read_counts_camera_step(cxn, nv_sig, laser_key, axis_ind=None, scan_vals=No
 
 
 def _read_counts_camera_sequence(
-    cxn, nv_sig, coords, laser_key, axis_ind=None, scan_vals=None
+    cxn, nv_sig, laser_key, coords=None, axis_ind=None, scan_vals=None
 ):
     """
     Specific function for widefield setup - XY control from AODs,
@@ -198,11 +198,12 @@ def _read_counts_camera_sequence(
     imaging_laser_name = imaging_laser_dict["name"]
     imaging_readout = imaging_laser_dict["duration"]
     if laser_key == LaserKey.IMAGING:
+        if coords is None:
+            coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         seq_args = [imaging_readout, imaging_laser_name, [coords[0]], [coords[1]]]
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif laser_key == LaserKey.IONIZATION:
-        imaging_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
         pol_laser_name = pol_laser_dict["name"]
         pol_duration = pol_laser_dict["duration"]
@@ -210,6 +211,8 @@ def _read_counts_camera_sequence(
         ion_laser_dict = nv_sig[LaserKey.IONIZATION]
         ion_laser_name = ion_laser_dict["name"]
         ion_duration = ion_laser_dict["duration"]
+        if coords is None:
+            coords = pos.get_nv_coords(nv_sig, ion_laser_name)
         seq_args = [
             imaging_readout,
             imaging_laser_name,
@@ -257,7 +260,7 @@ def _read_counts_camera_sequence(
 
 
 def _optimize_on_axis(
-    cxn, nv_sig, coords, laser_key, coords_suffix, axis_ind, fig=None
+    cxn, nv_sig, laser_key, coords, coords_suffix, axis_ind, fig=None
 ):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
@@ -280,7 +283,7 @@ def _optimize_on_axis(
     ### Record the counts
 
     ret_vals = _read_counts(
-        cxn, nv_sig, coords, laser_key, coords_suffix, axis_ind, scan_vals
+        cxn, nv_sig, laser_key, coords, coords_suffix, axis_ind, scan_vals
     )
     counts = ret_vals[0]
 
@@ -300,7 +303,13 @@ def _optimize_on_axis(
 
 
 def _read_counts(
-    cxn, nv_sig, coords, laser_key, coords_suffix=None, axis_ind=None, scan_vals=None
+    cxn,
+    nv_sig,
+    laser_key=LaserKey.IMAGING,
+    coords=None,
+    coords_suffix=None,
+    axis_ind=None,
+    scan_vals=None,
 ):
     # How we conduct the scan depends on the config
     config = common.get_config_dict()
@@ -317,20 +326,19 @@ def _read_counts(
         control_mode = pos.get_axis_control_mode(axis_ind, coords_suffix)
 
     # Position us at the starting point
-    start_coords = np.copy(coords)
-    if scan_vals is not None:
-        start_coords[axis_ind] = np.min(scan_vals)
-    pos.set_xyz(cxn, start_coords, coords_suffix)
+    if coords is not None:
+        if scan_vals is None:
+            pos.set_xyz(cxn, coords, coords_suffix)
+        else:
+            start_coords = np.copy(coords)
+            start_coords[axis_ind] = np.min(scan_vals)
+            pos.set_xyz(cxn, start_coords, coords_suffix)
 
-    # Check if the xy positions are controlled by the sequence itself.
-    # If so, then we need a specific sequence even for stepped/streamed z optimization.
-    xy_control_mode = pos.get_xy_control_mode(coords_suffix)
-    xy_sequence_control = xy_control_mode == ControlMode.SEQUENCE
-    if xy_sequence_control:
-        if collection_mode == CollectionMode.CAMERA:
-            ret_vals = _read_counts_camera_sequence(
-                cxn, nv_sig, coords, laser_key, axis_ind, scan_vals
-            )
+    # Assume the lasers are sequence controlled if using camera
+    if collection_mode == CollectionMode.CAMERA:
+        ret_vals = _read_counts_camera_sequence(
+            cxn, nv_sig, laser_key, coords, axis_ind, scan_vals
+        )
 
     else:
         if laser_key != LaserKey.IMAGING:
@@ -363,27 +371,17 @@ def _read_counts(
 def stationary_count_lite(
     cxn,
     nv_sig,
-    coords=None,
     laser_key=LaserKey.IMAGING,
+    coords=None,
     coords_suffix=None,
     ret_img_array=False,
-    scanning_drift_adjust=True,
-    pixel_drift_adjust=True,
 ):
     # Set up
     config = common.get_config_dict()
     laser_dict = nv_sig[laser_key]
-    laser_name = laser_dict["name"]
-    readout = laser_dict["duration"]
     tb.set_filter(cxn, nv_sig, laser_key)
-    laser_power = tb.set_laser_power(cxn, nv_sig, laser_key)
-    if coords is None:
-        coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust=False)
-    if scanning_drift_adjust:
-        coords = pos.adjust_coords_for_drift(coords, coords_suffix=coords_suffix)
-    pos.set_xyz(cxn, coords, coords_suffix)
 
-    ret_vals = _read_counts(cxn, nv_sig, coords, laser_key, coords_suffix)
+    ret_vals = _read_counts(cxn, nv_sig, laser_key, coords, coords_suffix)
     counts = ret_vals[0]
 
     # Return
@@ -395,6 +393,7 @@ def stationary_count_lite(
     if count_format == CountFormat.RAW:
         return avg_counts
     elif count_format == CountFormat.KCPS:
+        readout = laser_dict["duration"]
         count_rate = (avg_counts / 1000) / (readout / 10**9)
         return count_rate
 
@@ -456,44 +455,41 @@ def optimize_list_with_cxn(cxn, nv_sig_list):
 
 def main(
     nv_sig,
-    set_to_opti_coords=True,
     save_data=False,
     plot_data=False,
-    set_scanning_drift=True,
-    set_pixel_drift=False,
+    set_drift=True,
     laser_key=LaserKey.IMAGING,
     coords_suffix=None,
     drift_adjust=True,
-    only_z_opt=None,
+    axes_to_optimize=[0, 1, 2],
+    no_crash=False,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
             cxn,
             nv_sig,
-            set_to_opti_coords,
             save_data,
             plot_data,
-            set_scanning_drift,
-            set_pixel_drift,
+            set_drift,
             laser_key,
             coords_suffix,
             drift_adjust,
-            only_z_opt,
+            axes_to_optimize,
+            no_crash,
         )
 
 
 def main_with_cxn(
     cxn,
     nv_sig,
-    set_to_opti_coords=True,
     save_data=False,
     plot_data=False,
-    set_scanning_drift=True,
-    set_pixel_drift=True,
+    set_drift=True,
     laser_key=LaserKey.IMAGING,
     coords_suffix=None,
     drift_adjust=True,
-    only_z_opt=None,
+    axes_to_optimize=[0, 1, 2],
+    no_crash=False,
 ):
     # If optimize is disabled, just do prep and return
     if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
@@ -528,10 +524,9 @@ def main_with_cxn(
         return stationary_count_lite(
             cxn,
             nv_sig,
-            coords,
             laser_key,
+            coords,
             coords_suffix,
-            scanning_drift_adjust=False,
         )
 
     ### Check if we even need to optimize by reading counts at current coordinates
@@ -550,17 +545,10 @@ def main_with_cxn(
     ### Try to optimize.
 
     if opti_necessary:
-        # Get which axes to optimize on
-        if only_z_opt is None:
-            only_z_opt = "only_z_opt" in nv_sig and nv_sig["only_z_opt"]
+        # Check if z optimization is disabled
         disable_z_opt = "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]
-        if only_z_opt:
-            axes_to_optimize = [2]
-        elif disable_z_opt:
-            axes_to_optimize = [0, 1]
-        else:
-            axes_to_optimize = [0, 1, 2]
-        # axes_to_optimize = axes_to_optimize[::-1]
+        if disable_z_opt and 2 in axes_to_optimize:
+            axes_to_optimize.remove(2)
 
         # Loop through attempts until we succeed or give up
         num_attempts = 10
@@ -594,7 +582,7 @@ def main_with_cxn(
 
                 # Perform the optimization
                 ret_vals = _optimize_on_axis(
-                    cxn, nv_sig, opti_coords, laser_key, coords_suffix, axis_ind, fig
+                    cxn, nv_sig, laser_key, opti_coords, coords_suffix, axis_ind, fig
                 )
                 opti_coord = ret_vals[0]
                 if opti_coord is not None:
@@ -625,34 +613,22 @@ def main_with_cxn(
 
     passed_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust)
     drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
-    if opti_succeeded and set_scanning_drift:
+    if opti_succeeded and set_drift:
         pos.set_drift(drift, coords_suffix=coords_suffix)
-    if opti_succeeded and set_pixel_drift:
-        widefield.set_pixel_drift_from_scanning_drift(drift)
 
     ### Report the results and set to the optimized coordinates if requested
 
     if opti_succeeded:
         print("Optimization succeeded!")
-
-    # Set to the coordinates and move on
-    if set_to_opti_coords:
-        if not opti_necessary or opti_succeeded:
-            prepare_microscope(cxn, nv_sig)
-        # Just crash if we failed and we were supposed to move to the optimized coordinates
-        else:
-            raise RuntimeError("Optimization failed.")
-    # Or just report the results
-    else:
-        if not opti_necessary or opti_succeeded:
-            r_opti_coords = [round(el, 3) for el in opti_coords]
-            r_drift = [round(el, 3) for el in drift]
-            print(f"Optimized coordinates: {r_opti_coords}")
-            print(f"Drift: {r_drift}")
-            prepare_microscope(cxn, nv_sig)
-        else:
-            print("Optimization failed.")
-            prepare_microscope(cxn, nv_sig)
+    prepare_microscope(cxn, nv_sig)
+    if not opti_necessary or opti_succeeded:
+        r_opti_coords = [round(el, 3) for el in opti_coords]
+        r_drift = [round(el, 3) for el in drift]
+        print(f"Optimized coordinates: {r_opti_coords}")
+        print(f"Drift: {r_drift}")
+    # Just crash if we failed
+    elif not no_crash:
+        raise RuntimeError("Optimization failed.")
 
     print("\n")
 

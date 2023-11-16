@@ -20,9 +20,7 @@ from utils import positioning as pos
 from scipy import ndimage
 import os
 import time
-from majorroutines.widefield.optimize_pixel_coords import (
-    main_with_img_array as optimize_pixel_coords,
-)
+from majorroutines.widefield.optimize import optimize_pixel
 
 
 def single_nv(nv_sig, num_reps=1):
@@ -71,7 +69,7 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
     # Calculate the difference and save
     fig, ax = plt.subplots()
     diff = sig_img_array - ref_img_array
-    kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
+    widefield_utils.imshow(ax, diff, title="Difference")
     timestamp = tb.get_time_stamp()
     file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
     tb.save_figure(fig, file_path)
@@ -86,7 +84,7 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
         img_array = img_arrays[ind]
         title = titles[ind]
 
-        nv_pixel_coords = optimize_pixel_coords(
+        nv_pixel_coords = optimize_pixel(
             img_array,
             nv_sig,
             set_scanning_drift=False,
@@ -270,14 +268,11 @@ def main_with_cxn(
 
     ### Set up the image display
 
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
-    cbar_label = "Counts"
+    kpl.init_kplotlib()
     title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms"
-    imshow_kwargs = {"title": title, "cbar_label": cbar_label}
 
     ### Collect the data
 
-    
     camera.arm()
     
     try:
@@ -302,7 +297,7 @@ def main_with_cxn(
 
     img_array = img_array / num_reps
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, **imshow_kwargs)
+    widefield_utils.imshow(ax, img_array, title=title)
 
     ### Clean up and save the data
 
@@ -342,7 +337,7 @@ if __name__ == "__main__":
     file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
     data = tb.get_raw_data(file_name)
     signal_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel_coords(
+    pixel_coords = optimize_pixel(
         signal_img_array,
         data["nv_sig"],
         set_scanning_drift=False,
@@ -358,7 +353,7 @@ if __name__ == "__main__":
     file_name = "2023_11_07-17_14_32-johnson-nv2_2023_11_07"
     data = tb.get_raw_data(file_name)
     control_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel_coords(
+    pixel_coords = optimize_pixel(
         control_img_array,
         data["nv_sig"],
         set_scanning_drift=False,
@@ -381,8 +376,8 @@ if __name__ == "__main__":
     diff = signal_img_array - control_img_array
 
     fig, ax = plt.subplots()
-    kpl.imshow(ax, diff, title="Difference", cbar_label="Counts")
-    # kpl.imshow(ax, signal_img_array, title="Signal", cbar_label="Counts")
-    # kpl.imshow(ax, control_img_array, title="Control", cbar_label="Counts")
+    widefield_utils.imshow(ax, diff, title="Difference")
+    # widefield_utils.imshow(ax, signal_img_array, title="Signal")
+    # widefield_utils.imshow(ax, control_img_array, title="Control")
 
     plt.show(block=True)

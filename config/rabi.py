@@ -11,6 +11,7 @@ from utils.constants import ModMode, ControlMode, CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
 import numpy as np
+from boxsdk import OAuth2
 
 home = Path.home()
 
@@ -86,6 +87,17 @@ widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
 widefield_calibration_nv2[green_coords_key] = [108.3, 112.002]
 widefield_calibration_nv2[red_coords_key] = [72.6, 77.1]
 # widefield_calibration_nv2[red_coords_key] = [72.6, 75.5]
+
+# endregion
+# region Box config
+
+# Matt's account via mccambria@berkeley.edu
+auth = OAuth2(
+    client_id="17z5qlwkelzcagst6ehct6bh3dz2tv0o",
+    client_secret="0SA0Zpazmo6SStMWcDvZKlHdWaAsTO42",
+    access_token="dfp14h2VY5bpi2KvZ3oaN3JBfUdQuLIP",
+)
+
 
 # endregion
 # region Base config

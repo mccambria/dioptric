@@ -21,9 +21,6 @@ from utils import positioning as pos
 from scipy import ndimage
 import os
 import time
-from majorroutines.widefield.optimize_pixel_coords import (
-    main_with_img_array as optimize_pixel_coords,
-)
 
 
 def charge_state_histogram(nv_sig, num_reps=100):
@@ -31,6 +28,7 @@ def charge_state_histogram(nv_sig, num_reps=100):
 
     caller_fn_name = "single_nv_ionization"
     pixel_coords = nv_sig["pixel_coords"]
+    readout_s = nv_sig[LaserKey.IMAGING]["duration"] * 1e-9
 
     kpl.init_kplotlib()
 
@@ -73,6 +71,15 @@ def charge_state_histogram(nv_sig, num_reps=100):
             ax, counts_lists[ind], kpl.HistType.STEP, nbins=num_bins, label=labels[ind]
         )
     ax.legend()
+
+    # Calculate the normalized separation
+    mean_std = (1 / 2) * np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
+    mean_diff = np.mean(ref_counts_list) - np.mean(sig_counts_list)
+    norm_sep = mean_diff / mean_std
+    norm_sep = round(norm_sep, 3)
+    norm_sep_str = f"Normalized separation:\n{norm_sep} / sqrt(shot)\n{norm_sep / np.sqrt(readout_s)} / sqrt(s)"
+    print(norm_sep_str)
+    kpl.anchored_text(ax, norm_sep_str, "center right")
 
     ### Save
 
@@ -214,7 +221,7 @@ def main_with_cxn(
     ref_img_array = ref_img_array / num_reps
     diff_img_array = diff_img_array / num_reps
 
-    kpl.init_kplotlib(font_size=kpl.Size.SMALL)
+    kpl.init_kplotlib()
 
     img_arrays = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
@@ -224,7 +231,7 @@ def main_with_cxn(
         title_suffix = title_suffixes[ind]
         fig, ax = plt.subplots()
         title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms, {title_suffix}"
-        kpl.imshow(ax, img_array, title=title, cbar_label="Counts")
+        widefield_utils.imshow(ax, img_array, title=title)
         figs.append(fig)
 
     ### Get counts
@@ -326,7 +333,7 @@ if __name__ == "__main__":
     )
 
     fig, ax = plt.subplots()
-    im = kpl.imshow(ax, img_array, cbar_label="Counts")
+    im = widefield_utils.imshow(ax, img_array)
 
     plt.show(block=True)
 
