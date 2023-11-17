@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.widefield.optimize as optimize
 from utils import tool_belt as tb
+from utils import data_manager as dm
 from utils import common
 from utils import widefield as widefield_utils
 from utils.constants import LaserKey
@@ -39,28 +40,29 @@ def charge_state_histogram(nv_sig, num_reps=100):
 
     ### Make the histograms
 
-    fig = _charge_state_histogram(
+    fig, sig_counts_list, ref_counts_list = _charge_state_histogram(
         sig_img_array_list, ref_img_array_list, num_reps, nv_sig
     )
 
     ### Save
 
-    timestamp = tb.get_time_stamp()
+    timestamp = dm.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
         "nv_sig": nv_sig,
         "num_reps": num_reps,
-        "sig_img_array_list": sig_img_array_list,
-        "ref_img_array_list": ref_img_array_list,
+        "sig_counts_list": sig_counts_list,
+        "ref_counts_list": ref_counts_list,
         "img_array-units": "counts",
     }
 
-    sig_img_array_list = np.array(sig_img_array_list)
-    ref_img_array_list = np.array(ref_img_array_list)
-    keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
-    tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
-    tb.save_figure(fig, file_path)
+    sig_counts_list = np.array(sig_counts_list)
+    ref_counts_list = np.array(ref_counts_list)
+    keys_to_compress = ["sig_counts_list", "ref_counts_list"]
+    dm.save_figure(fig, file_path)
+    # dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
 
 
 def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv_sig):
@@ -75,7 +77,7 @@ def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv
     pixel_coords = optimize.optimize_pixel_with_img_array(
         sig_img_array,
         pixel_coords,
-        pixel_drift_adjust=False,
+        pixel_drift_adjust=True,
         set_pixel_drift=False,
         set_scanning_drift=False,
     )
@@ -126,7 +128,7 @@ def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv
     print(norm_sep_str)
     kpl.anchored_text(ax, norm_sep_str, "center right", size=kpl.Size.SMALL)
 
-    return fig
+    return fig, sig_counts_list, ref_counts_list
 
 
 def single_nv_ionization(nv_sig, num_reps=1):
@@ -300,7 +302,7 @@ def main_with_cxn(
 
     tb.reset_cfm(cxn)
 
-    timestamp = tb.get_time_stamp()
+    timestamp = dm.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
@@ -318,15 +320,15 @@ def main_with_cxn(
         raw_data |= save_dict  # Add in the passed info to save
 
     nv_name = nv_sig["name"]
-    file_path = tb.get_file_path(__file__, timestamp, nv_name)
+    file_path = dm.get_file_path(__file__, timestamp, nv_name)
     keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
-    tb.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
     for ind in range(3):
         fig = figs[ind]
         title_suffix = title_suffixes[ind]
         name = f"{nv_name}-{title_suffix}"
-        fig_file_path = tb.get_file_path(__file__, timestamp, name)
-        tb.save_figure(fig, fig_file_path)
+        fig_file_path = dm.get_file_path(__file__, timestamp, name)
+        dm.save_figure(fig, fig_file_path)
 
     if separate_images:
         return sig_img_array_list, ref_img_array_list, file_path, num_reps
@@ -345,7 +347,7 @@ if __name__ == "__main__":
     # file_name = "2023_11_15-17_51_32-johnson-nv0_2023_11_09"
     file_name = "2023_11_15-18_07_48-johnson-nv0_2023_11_09"
 
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
     sig_img_array_list = np.array(data["sig_img_array_list"])
     ref_img_array_list = np.array(data["ref_img_array_list"])
     num_reps = data["num_reps"]

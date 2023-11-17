@@ -17,6 +17,7 @@ from utils import widefield as widefield_utils
 from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
+from utils import data_manager as dm
 from scipy import ndimage
 import os
 import time
@@ -70,9 +71,9 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
     fig, ax = plt.subplots()
     diff = sig_img_array - ref_img_array
     widefield_utils.imshow(ax, diff, title="Difference")
-    timestamp = tb.get_time_stamp()
-    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, file_path)
+    timestamp = dm.get_time_stamp()
+    file_path = dm.get_file_path(__file__, timestamp, nv_sig["name"])
+    dm.save_figure(fig, file_path)
 
     ### Get the pixel values of the NV in both images and a background level
 
@@ -303,7 +304,7 @@ def main_with_cxn(
 
     tb.reset_cfm(cxn)
 
-    timestamp = tb.get_time_stamp()
+    timestamp = dm.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
@@ -318,16 +319,16 @@ def main_with_cxn(
     if save_dict is not None:
         raw_data |= save_dict  # Add in the passed info to save
 
-    file_path = tb.get_file_path(__file__, timestamp, nv_sig["name"])
-    tb.save_figure(fig, file_path)
-    tb.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
+    file_path = dm.get_file_path(__file__, timestamp, nv_sig["name"])
+    dm.save_figure(fig, file_path)
+    dm.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
 
     return img_array
 
 
 if __name__ == "__main__":
     # file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
-    # data = tb.get_raw_data(file_name)
+    # data = dm.get_raw_data(file_name)
     # img_array = np.array(data["img_array"])
 
     kpl.init_kplotlib()
@@ -335,7 +336,7 @@ if __name__ == "__main__":
     # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
     file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
     signal_img_array = np.array(data["img_array"])
     pixel_coords = optimize_pixel(
         signal_img_array,
@@ -351,7 +352,7 @@ if __name__ == "__main__":
     )
 
     file_name = "2023_11_07-17_14_32-johnson-nv2_2023_11_07"
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
     control_img_array = np.array(data["img_array"])
     pixel_coords = optimize_pixel(
         control_img_array,

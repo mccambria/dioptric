@@ -19,6 +19,7 @@ import time
 import copy
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
+from utils import data_manager as dm
 from utils import positioning as pos
 from utils import common
 from utils import widefield
@@ -231,6 +232,9 @@ def _read_counts_camera_sequence(
     # For z the sequence is the same every time and z is moved manually
     if axis_ind == 2:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
+
+    # print(seq_args)
+    # return
 
     # Collect the counts
     counts = []
@@ -655,7 +659,7 @@ def main_with_cxn(
     time_elapsed = end_time - start_time
 
     if save_data and opti_necessary:
-        timestamp = tb.get_time_stamp()
+        timestamp = dm.get_time_stamp()
         for ind in range(3):
             scan_vals = scan_vals_by_axis[ind]
             if scan_vals is not None:
@@ -681,10 +685,10 @@ def main_with_cxn(
             "z_counts-units": "number",
         }
 
-        filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+        filePath = dm.get_file_path(__file__, timestamp, nv_sig["name"])
         if fig is not None:
-            tb.save_figure(fig, filePath)
-        tb.save_raw_data(rawData, filePath)
+            dm.save_figure(fig, filePath)
+        dm.save_raw_data(rawData, filePath)
 
     # Return the optimized coordinates we found and the final counts
     return opti_coords, current_counts
@@ -694,7 +698,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
     laser_key = data["laser_key"]
     positive_amplitude = laser_key != LaserKey.IONIZATION
 

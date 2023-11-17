@@ -9,7 +9,7 @@ Created November 15th, 2023
 
 # region Imports and constants
 
-import datetime
+from datetime import datetime
 import utils.common as common
 import os
 from pathlib import PurePath, Path
