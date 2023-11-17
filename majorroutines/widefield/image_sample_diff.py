@@ -38,6 +38,21 @@ def charge_state_histogram(nv_sig, num_reps=100):
             cxn, nv_sig, caller_fn_name, num_reps, separate_images=True
         )
 
+    ### Get the counts
+    
+    # Optimize pixel coords
+    pixel_coords = nv_sig["pixel_coords"]
+    sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
+    pixel_coords = optimize.optimize_pixel_with_img_array(
+        sig_img_array,
+        pixel_coords,
+        pixel_drift_adjust=True,
+        set_pixel_drift=False,
+        set_scanning_drift=False,
+    )
+    
+    sig_counts_list, ref_counts_list = img_arrays_to_counts(sig_img_array_list, ref_img_array_list, pixel_coords)
+    
     ### Make the histograms
 
     fig, sig_counts_list, ref_counts_list = _charge_state_histogram(
@@ -64,25 +79,7 @@ def charge_state_histogram(nv_sig, num_reps=100):
     # dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
     dm.save_raw_data(raw_data, file_path)
 
-
-def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv_sig):
-    pixel_coords = nv_sig["pixel_coords"]
-    readout = nv_sig[LaserKey.IMAGING]["duration"]
-    readout_ms = int(readout / 1e6)
-    readout_s = readout / 1e9
-
-    ### Optimize pixel coords
-
-    sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
-    pixel_coords = optimize.optimize_pixel_with_img_array(
-        sig_img_array,
-        pixel_coords,
-        pixel_drift_adjust=True,
-        set_pixel_drift=False,
-        set_scanning_drift=False,
-    )
-
-    ### Turn the lists into counts
+def img_arrays_to_counts(sig_img_array_list, ref_img_array_list, pixel_coords):
 
     sig_counts_list = []
     ref_counts_list = []
@@ -98,6 +95,14 @@ def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv
         )
         sig_counts_list.append(sig_counts)
         ref_counts_list.append(ref_counts)
+        
+    return sig_counts_list, ref_counts_list
+    
+
+def _charge_state_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig):
+    readout = nv_sig[LaserKey.IMAGING]["duration"]
+    readout_ms = int(readout / 1e6)
+    readout_s = readout / 1e9
 
     ### Histograms
 
@@ -106,7 +111,7 @@ def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv
     labels = ["sig", "ref"]
     counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
-    ax.set_title(f"Ionization hist, {readout_ms} ms, {num_bins} bins, {num_reps} reps")
+    ax.set_title(f"Ionization hist, {num_bins} bins, {num_reps} reps")
     ax.set_xlabel(f"Integrated counts")
     ax.set_ylabel("Number of occurrences")
     for ind in range(2):
@@ -128,7 +133,7 @@ def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv
     print(norm_sep_str)
     kpl.anchored_text(ax, norm_sep_str, "center right", size=kpl.Size.SMALL)
 
-    return fig, sig_counts_list, ref_counts_list
+    return fig
 
 
 def single_nv_ionization(nv_sig, num_reps=1):
@@ -338,49 +343,15 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    # file_name = "2023_11_15-16_56_20-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_15-17_04_44-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_15-17_14_09-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_15-17_25_14-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_15-17_37_42-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_15-17_51_32-johnson-nv0_2023_11_09"
-    file_name = "2023_11_15-18_07_48-johnson-nv0_2023_11_09"
+    
+    file_name = "2023_11_17-11_58_13-johnson-nv0_2023_11_09"
 
     data = dm.get_raw_data(file_name)
-    sig_img_array_list = np.array(data["sig_img_array_list"])
-    ref_img_array_list = np.array(data["ref_img_array_list"])
+    sig_counts_list = np.array(data["sig_counts_list"])
+    ref_counts_list = np.array(data["ref_counts_list"])
     num_reps = data["num_reps"]
     nv_sig = data["nv_sig"]
-    readout_ms = int(nv_sig["LaserKey.IMAGING"]["duration"] / 1e6)
-    laser_name = nv_sig["LaserKey.IMAGING"]["name"]
 
-    sig_img_array = np.sum(sig_img_array_list, axis=0)
-    ref_img_array = np.sum(ref_img_array_list, axis=0)
-    diff_img_array = sig_img_array - ref_img_array
-    sig_img_array = sig_img_array / num_reps
-    ref_img_array = ref_img_array / num_reps
-    diff_img_array = diff_img_array / num_reps
-
-    pixel_coords = nv_sig["pixel_coords"]
-    nv_sig["pixel_coords"] = optimize.optimize_pixel_with_img_array(
-        sig_img_array,
-        pixel_coords,
-        pixel_drift_adjust=False,
-        set_pixel_drift=False,
-        set_scanning_drift=False,
-    )
-
-    _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv_sig)
-
-    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
-    title_suffixes = ["sig", "ref", "diff"]
-    figs = []
-    for ind in range(3):
-        img_array = img_arrays[ind]
-        title_suffix = title_suffixes[ind]
-        fig, ax = plt.subplots()
-        title = f"{laser_name}, {readout_ms} ms, {title_suffix}"
-        widefield_utils.imshow(ax, img_array, title=title)
+    _charge_state_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig)
 
     plt.show(block=True)

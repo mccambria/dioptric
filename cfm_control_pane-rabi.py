@@ -282,7 +282,7 @@ if __name__ == "__main__":
     yellow_laser_dict = {"name": yellow_laser, "duration": 50e6}
 
     sample_name = "johnson"
-    z_coord = 4.07
+    z_coord = 4.08
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -315,9 +315,9 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [307.139, 235.805]
-    nv0[green_coords_key] = [110.867, 109.143]
-    nv0[red_coords_key] = [74.981, 74.806]
+    nv0[pixel_coords_key] = [319.497, 237.619]
+    nv0[green_coords_key] = [111.307, 109.158]
+    nv0[red_coords_key] = [75.354, 74.497]
     # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser))
     # sys.exit()
 
@@ -351,7 +351,7 @@ if __name__ == "__main__":
         # kpl.init_kplotlib()
         tb.init_safe_stop()
 
-        widefield.reset_all_drift()
+        # widefield.reset_all_drift()
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
@@ -391,14 +391,15 @@ if __name__ == "__main__":
 
         #     # nv_sig[LaserKey.IMAGING]["duration"] = duration
         #     nv_sig[LaserKey.POLARIZATION]["duration"] = duration
-        do_charge_state_histogram(nv_sig, 1000)
+        # do_charge_state_histogram(nv_sig, 1000)
 
         # do_optimize_pixel(nv_sig, set_drift=True)
         # do_charge_state_histogram(nv_sig, 1000)
 
         # do_optimize_pixel(nv_sig, set_drift=False)
-        # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
+        # do_optimize_pixel(nv_sig, set_drift=False)
+        # do_optimize_green(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:

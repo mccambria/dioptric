@@ -213,6 +213,8 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
                 full_path = nvdata_dir / generic_path
                 npz_file = np.load(full_path)
             data[key] = npz_file[key]
+            
+    json_deescape(data)
 
     return data
 
