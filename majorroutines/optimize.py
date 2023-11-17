@@ -224,7 +224,7 @@ def _read_counts_camera_sequence(
             ion_duration,
         ]
         seq_file_name = "optimize_ionization_laser_coords.py"
-        num_reps = 25
+        num_reps = 100
     if axis_ind is None or axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)

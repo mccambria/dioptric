@@ -115,12 +115,12 @@ def do_optimize_z(nv_sig, coords_suffix=None, set_drift=False, plot_data=False):
     nv_sig["coords"] = opti_coords
 
 
-def do_optimize_pixel(nv_sig):
+def do_optimize_pixel(nv_sig, set_drift=True):
     prev_imaging_dict = nv_sig[LaserKey.IMAGING]
     nv_sig[LaserKey.IMAGING] = green_laser_dict
 
     pixel_coords = optimize.optimize_pixel(
-        nv_sig, set_scanning_drift=False, set_pixel_drift=False, plot_data=True
+        nv_sig, set_scanning_drift=set_drift, set_pixel_drift=set_drift, plot_data=True
     )
     pixel_coords = [round(el, 2) for el in pixel_coords]
 
@@ -383,8 +383,8 @@ if __name__ == "__main__":
         readouts = [50e6, 75e6, 100e6]
         for readout in readouts:
             do_optimize_pixel(nv_sig)
-            do_optimize_green(nv_sig)
-            do_optimize_red(nv_sig)
+            # do_optimize_green(nv_sig)
+            # do_optimize_red(nv_sig)
 
             nv_sig[LaserKey.IMAGING]["duration"] = readout
             do_charge_state_histogram(nv_sig, 1000)
