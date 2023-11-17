@@ -60,7 +60,7 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
 def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=None):
     # Param order: amplitude, center, sd width, offset
     fit_func = tb.gaussian
-    bg_guess = 0.0  # Guess 0
+    bg_guess = np.average(count_vals)
     low = np.min(scan_vals)
     high = np.max(scan_vals)
     scan_range = high - low
@@ -224,7 +224,7 @@ def _read_counts_camera_sequence(
             ion_duration,
         ]
         seq_file_name = "optimize_ionization_laser_coords.py"
-        num_reps = 10
+        num_reps = 25
     if axis_ind is None or axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
@@ -234,28 +234,44 @@ def _read_counts_camera_sequence(
 
     # Collect the counts
     counts = []
-    camera.arm()
-    for ind in range(num_steps):
-        if tb.safe_stop():
-            break
-        if axis_ind is not None:
-            val = scan_vals[ind]
-            if axis_ind in [0, 1]:
-                if laser_key == LaserKey.IMAGING:
-                    seq_args[-2 + axis_ind] = [val]
-                elif laser_key == LaserKey.IONIZATION:
-                    seq_args[-2][axis_ind] = val
-                seq_args_string = tb.encode_seq_args(seq_args)
-                # print(seq_args)
-                pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
-            elif axis_ind == 2:
-                axis_write_fn(val)
-        pulse_gen.stream_start()
-        img_str = camera.read()
-        img_array = widefield.img_str_to_array(img_str)
-        sample = widefield.counts_from_img_array(img_array, pixel_coords)
-        counts.append(sample)
-    camera.disarm()
+    try:
+        camera.arm()
+        for ind in range(num_steps):
+            if tb.safe_stop():
+                break
+
+            # Modify the sequence as necessary and start the pulse generator
+            if axis_ind is not None:
+                val = scan_vals[ind]
+                if axis_ind in [0, 1]:
+                    if laser_key == LaserKey.IMAGING:
+                        seq_args[-2 + axis_ind] = [val]
+                    elif laser_key == LaserKey.IONIZATION:
+                        seq_args[-2][axis_ind] = val
+                    seq_args_string = tb.encode_seq_args(seq_args)
+                    # print(seq_args)
+                    pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
+                elif axis_ind == 2:
+                    axis_write_fn(val)
+            pulse_gen.stream_start()
+
+            # Read the camera images
+            for rep_ind in range(num_reps):
+                img_str = camera.read()
+                sub_img_array = widefield.img_str_to_array(img_str)
+                if rep_ind == 0:
+                    img_array = np.copy(sub_img_array)
+                else:
+                    img_array += sub_img_array
+
+            # Process the result
+            img_array = img_array / num_reps
+            sample = widefield.counts_from_img_array(img_array, pixel_coords)
+            counts.append(sample)
+
+    finally:
+        camera.disarm()
+
     return [np.array(counts, dtype=int), img_array]
 
 

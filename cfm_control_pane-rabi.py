@@ -11,6 +11,7 @@ Created on June 16th, 2023
 ### Imports
 
 
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
@@ -96,6 +97,7 @@ def do_optimize_red(nv_sig, set_drift=False, plot_data=True):
         set_drift=set_drift,
         laser_key=LaserKey.IONIZATION,
         coords_suffix=coords_suffix,
+        no_crash=True,
     )
     pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
 
@@ -108,6 +110,7 @@ def do_optimize_z(nv_sig, coords_suffix=None, set_drift=False, plot_data=False):
         set_drift=set_drift,
         coords_suffix=coords_suffix,
         set_pixel_drift=set_drift,
+        no_crash=True,
     )
     nv_sig["coords"] = opti_coords
 
@@ -312,9 +315,11 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [317.819, 249.867]
-    nv0[green_coords_key] = [111.253, 109.541]
-    widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser)
+    nv0[pixel_coords_key] = [315.846, 241.733]
+    nv0[green_coords_key] = [111.218, 109.258]
+    nv0[red_coords_key] = [75.063, 75.062]
+    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser))
+    # sys.exit()
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -372,23 +377,22 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_polarization(nv_sig, 500)
-        # do_image_single_nv_ionization(nv_sig, 1)
+        # do_image_single_nv_ionization(nv_sig, 500)
         # do_charge_state_histogram(nv_sig, 1000)
 
-        # readouts = [25e6, 50e6, 75e6, 100e6, 150e6, 200e6, 250e6]
-        # for readout in readouts:
-        #     do_optimize_pixel(nv_sig)
-        #     do_optimize_green(nv_sig)
-        #     widefield.set_nv_scanning_coords_from_pixel_coords(nv_sig, red_laser)
-        #     # break
+        readouts = [50e6, 75e6, 100e6]
+        for readout in readouts:
+            do_optimize_pixel(nv_sig)
+            do_optimize_green(nv_sig)
+            do_optimize_red(nv_sig)
 
-        #     nv_sig[LaserKey.IMAGING]["duration"] = readout
-        #     do_charge_state_histogram(nv_sig, 1000)
+            nv_sig[LaserKey.IMAGING]["duration"] = readout
+            do_charge_state_histogram(nv_sig, 1000)
 
-        # do_optimize_green(nv_sig)
-        do_optimize_red(nv_sig)
-        # do_optimize_z(nv_sig)
         # do_optimize_pixel(nv_sig)
+        # do_optimize_green(nv_sig)
+        # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)

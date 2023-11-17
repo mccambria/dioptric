@@ -192,6 +192,7 @@ def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
     pixel_coords = get_nv_pixel_coords(nv_sig)
     red_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
     pos.set_nv_coords(nv_sig, red_coords, coords_suffix)
+    return red_coords
 
 
 def get_widefield_calibration_nvs():

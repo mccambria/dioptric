@@ -65,7 +65,7 @@ def charge_state_histogram(nv_sig, num_reps=100):
 
 def _charge_state_histogram(sig_img_array_list, ref_img_array_list, num_reps, nv_sig):
     pixel_coords = nv_sig["pixel_coords"]
-    readout = nv_sig["LaserKey.IMAGING"]["duration"]
+    readout = nv_sig[LaserKey.IMAGING]["duration"]
     readout_ms = int(readout / 1e6)
     readout_s = readout / 1e9
 

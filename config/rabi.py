@@ -213,7 +213,7 @@ config = {
         "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_COBO_638": float,
         "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 0.2,
+        "xy_optimize_range-laser_COBO_638": 1.5,
         "xy_units-laser_COBO_638": "MHz",
         #
         "z_control_mode": ControlMode.STREAM,
