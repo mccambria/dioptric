@@ -24,9 +24,9 @@ from utils.constants import CollectionMode, LaserKey, LaserPosMode
 
 def imshow(ax, img_array, count_format=None, **kwargs):
     """Version of kplotlib's imshow with additional defaults for a camera"""
-    
+
     prev_font_size = plt.rcParams["font.size"]
-    plt.rcParams.update({'font.size': kpl.FontSize.SMALL})
+    plt.rcParams.update({"font.size": kpl.FontSize.SMALL})
 
     config = common.get_config_dict()
     if count_format is None:
@@ -40,8 +40,8 @@ def imshow(ax, img_array, count_format=None, **kwargs):
     }
     passed_kwargs = {**default_kwargs, **kwargs}
     kpl.imshow(ax, img_array, **passed_kwargs)
-    
-    plt.rcParams.update({'font.size': prev_font_size})
+
+    plt.rcParams.update({"font.size": prev_font_size})
 
 
 # endregion

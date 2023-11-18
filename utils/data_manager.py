@@ -10,6 +10,7 @@ Created November 15th, 2023
 # region Imports and constants
 
 import datetime
+from io import BytesIO
 import utils.common as common
 import os
 from pathlib import PurePath, Path
@@ -25,11 +26,12 @@ import labrad
 import copy
 
 
-auth = OAuth2(
-    client_id="dkp31zlkfbc21qj974iuncf5f2p6yypr",
-    client_secret="Wi8mjAXUF25RapQ2OPs454AIqFcvBttJ",
-    access_token="01bkyd9F4P5ZFG8Jf0PyGZYgkzRwO7xD",
-)
+# auth = OAuth2(
+#     client_id="dkp31zlkfbc21qj974iuncf5f2p6yypr",
+#     client_secret="Wi8mjAXUF25RapQ2OPs454AIqFcvBttJ",
+#     access_token="AaUIaa6409TxqnDsGmuQMlYOpgkLkzFR",
+# )
+auth = JWTAuth.from_settings_file(Path.home() / "Downloads/81479_7yezvcxy_config.json")
 
 search_index_file_name = "search_index.db"
 nvdata_path = common.get_nvdata_path()
@@ -195,9 +197,36 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
     the file based on the known structure of the directories rooted from
     nvdata_dir (ie nvdata_dir / pc_folder / routine / year_month / file.txt)
     """
-    file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
-    with file_path.open() as f:
-        data = json.load(f)
+    # file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
+    # with file_path.open() as f:
+    #     data = json.load(f)
+
+    ###
+
+    client = Client(auth)
+
+    # config = JWTAuth.from_settings_file(Path.home() / "lab/dioptric_box_config.json")
+    # client = Client(config)
+
+    search_results = client.search().query(
+        f'"{file_name}"',
+        type="file",
+        limit=1,
+        content_types=["name"],
+        file_extensions=["txt"],
+    )
+    search_results = list(search_results)
+    if len(search_results) == 0:
+        raise RuntimeError("No file found with the passed file_name.")
+    elif len(search_results) > 1:
+        raise Warning(
+            "Multiple files found with the same file_name. Using first file..."
+        )
+    match = search_results[0]
+    file_content = client.file(match.id).content()
+    data = json.loads(file_content)
+
+    ###
 
     # Find and decompress the linked numpy arrays
     npz_file = None
@@ -207,11 +236,24 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
             if npz_file is None:
                 # The npz_file path is saved without the part up to nvdata so that
                 # it isn't tied to a specific PC
-                generic_path = val
-                if nvdata_dir is None:
-                    nvdata_dir = common.get_nvdata_path()
-                full_path = nvdata_dir / generic_path
-                npz_file = np.load(full_path)
+                # generic_path = val
+                # if nvdata_dir is None:
+                #     nvdata_dir = common.get_nvdata_path()
+                # full_path = nvdata_dir / generic_path
+                # npz_file = np.load(full_path)
+
+                search_results = client.search().query(
+                    f'"{file_name}"',
+                    type="file",
+                    limit=1,
+                    content_types=["name"],
+                    file_extensions=["npz"],
+                )
+                search_results = list(search_results)
+                match = search_results[0]
+                file_content = client.file(match.id).content()
+                npz_file = np.load(BytesIO(file_content))
+
             data[key] = npz_file[key]
 
     return data
@@ -456,35 +498,58 @@ def _json_escape(raw_data):
 
 
 def test():
-    # config_module = common.get_config_module()
-    # auth = config_module.auth
     client = Client(auth)
 
     # config = JWTAuth.from_settings_file(Path.home() / "lab/dioptric_box_config.json")
     # client = Client(config)
 
-    file_name = "2023_11_14-14_41_51-johnson-nv0_2023_11_09-diff"
+    file_name = "2023_11_10-12_16_36-johnson-nv0_2023_11_09"
 
     search_results = client.search().query(
-        f"{file_name}.txt",
+        f'"{file_name}"',
         type="file",
         limit=1,
-        offset=0,
         content_types=["name"],
         file_extensions=["txt"],
     )
-    for item in search_results:
-        item_with_name = item.get(fields=["name"])
-        print("matching item: " + item_with_name.id)
-    else:
-        print("no matching items")
+    search_results = list(search_results)
+    match = search_results[0]
+    print(match.id)
+    file_content = client.file(match.id).content()
+    data = json.loads(file_content)
+    print(data["nv_sig"])
+
+    search_results = client.search().query(
+        f'"{file_name}"',
+        type="file",
+        limit=1,
+        content_types=["name"],
+        file_extensions=["npz"],
+    )
+    search_results = list(search_results)
+    match = search_results[0]
+    print(match.id)
+    file_content = client.file(match.id).content()
+    img_arrays = np.load(file_content)
+    print(len(img_arrays))
 
 
 # endregion
 
 
 if __name__ == "__main__":
-    test()
+    client = Client(auth)
+    print(client.user().get())
+
+    # users = client.users(user_type="all")
+    # for user in users:
+    #     print(f"{user.name} (User ID: {user.id})")
+
+    file_content = client.file("1363392618720").content()
+    data = json.loads(file_content)
+    print(data["nv_sig"])
+
+    # test()
     # gen_search_index()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 

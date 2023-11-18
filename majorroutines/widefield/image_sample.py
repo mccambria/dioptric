@@ -8,6 +8,7 @@ Created on April 9th, 2019
 """
 
 
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
@@ -20,6 +21,7 @@ from utils import positioning as pos
 from scipy import ndimage
 import os
 import time
+from utils import data_manager as dm
 from majorroutines.widefield.optimize import optimize_pixel
 
 
@@ -274,7 +276,7 @@ def main_with_cxn(
     ### Collect the data
 
     camera.arm()
-    
+
     try:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -326,9 +328,15 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    # file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
-    # data = tb.get_raw_data(file_name)
-    # img_array = np.array(data["img_array"])
+    file_name = "2023_11_15-12_42_33-johnson-nv0_2023_11_09"
+    data = dm.get_raw_data(file_name)
+    img_array = np.array(data["img_array"])
+    fig, ax = plt.subplots()
+    kpl.init_kplotlib()
+    widefield_utils.imshow(ax, img_array)
+
+    plt.show(block=True)
+    sys.exit()
 
     kpl.init_kplotlib()
     # fig, ax = plt.subplots()

@@ -18,6 +18,7 @@ from utils import widefield as widefield_utils
 from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
+from utils import data_manager as dm
 from scipy import ndimage
 import os
 import time
@@ -345,7 +346,7 @@ if __name__ == "__main__":
     # file_name = "2023_11_15-17_51_32-johnson-nv0_2023_11_09"
     file_name = "2023_11_15-18_07_48-johnson-nv0_2023_11_09"
 
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
     sig_img_array_list = np.array(data["sig_img_array_list"])
     ref_img_array_list = np.array(data["ref_img_array_list"])
     num_reps = data["num_reps"]
