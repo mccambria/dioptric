@@ -24,33 +24,24 @@ import labrad
 import copy
 from utils.constants import *  # Star import is bad practice, but useful here for json deescape
 
+nvdata_box_id = "235146666549"  # ID for the nvdata folder in Box
+data_manager_folder = common.get_repo_path() / "data_manager"
+
 try:
-    path_to_box_auth = common.get_repo_path()
     box_auth_file_name = "dioptric_box_authorization.json"
-    box_auth = JWTAuth.from_settings_file(path_to_box_auth / box_auth_file_name)
+    box_auth = JWTAuth.from_settings_file(data_manager_folder / box_auth_file_name)
     box_client = Client(box_auth)
 except Exception as exc:
     print(
-        f"Make sure you have the Box authorization file for dioptric in the top "
-        f"level folder of your checkout of the GitHub repo (i.e. here: {path_to_box_auth}). "
-        f"The file, {box_auth_file_name}, can be found in the nvdata folder of the "
-        f"Kolkowitz group Box account."
+        f"Make sure you have the Box authorization file for dioptric in your checkout of the "
+        f"GitHub repo. It should live here: {data_manager_folder}. The file, {box_auth_file_name}, "
+        f"can be found in the nvdata folder of the Kolkowitz group Box account."
     )
     raise exc
 
 
-nvdata_path = common.get_nvdata_path()
-nvdata_path_str = str(nvdata_path)
-
 # endregion
 # region Save functions
-
-
-def get_branch_name():
-    """Return the name of the active branch of dioptric"""
-    repo_path = common.get_repo_path()
-    repo = Repo(repo_path)
-    return repo.active_branch.name
 
 
 def get_time_stamp():
@@ -90,29 +81,19 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
         Path to save to
     """
 
-    nvdata_path = common.get_nvdata_path()
     pc_name = socket.gethostname()
-    branch_name = get_branch_name()
+    branch_name = _get_branch_name()
     source_name = Path(source_file).stem
     date_folder = "_".join(time_stamp.split("_")[0:2])  # yyyy_mm
 
-    folder_dir = (
-        nvdata_path
-        / f"pc_{pc_name}"
-        / f"branch_{branch_name}"
-        / source_name
-        / date_folder
-    )
+    folder_path = Path(f"pc_{pc_name}/branch_{branch_name}/{source_name}/{date_folder}")
 
     if subfolder is not None:
-        folder_dir = folder_dir / subfolder
-
-    # Make the required directories if it doesn't exist already
-    folder_dir.mkdir(parents=True, exist_ok=True)
+        folder_path = folder_path / subfolder
 
     file_name = f"{time_stamp}-{name}"
 
-    return folder_dir / file_name
+    return folder_path / file_name
 
 
 def save_figure(fig, file_path):
@@ -126,7 +107,15 @@ def save_figure(fig, file_path):
             extension
     """
 
-    fig.savefig(str(file_path.with_suffix(".svg")), dpi=300)
+    # Save locally
+    file_path_svg = file_path.with_suffix(".svg")
+    file_name = file_path_svg.name
+    temp_file_path = data_manager_folder / file_name
+    fig.savefig(str(temp_file_path), dpi=300)
+
+    # Upload to Box
+    folder_path = file_path_svg.parent
+    _box_upload(folder_path, temp_file_path)
 
 
 def save_raw_data(raw_data, file_path, keys_to_compress=None):
@@ -144,20 +133,23 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             a separate compressed file. Currently supports numpy arrays
     """
 
-    file_path_ext = file_path.with_suffix(".txt")
+    file_path_txt = file_path.with_suffix(".txt")
+    file_name = file_path_txt.name
+    temp_file_path_txt = data_manager_folder / file_name
 
     # Work with a copy of the raw data to avoid mutation
     raw_data = copy.deepcopy(raw_data)
 
     # Compress numpy arrays to linked file
+    temp_file_path_npz = None
     if keys_to_compress is not None:
-        file_path_npz = file_path.with_suffix(".npz")
+        temp_file_path_npz = file_path.with_suffix(".npz")
         kwargs = {}
         for key in keys_to_compress:
             kwargs[key] = raw_data[key]
             # Replace the value in the data with .npz to indicate that the array has been compressed
             raw_data[key] = ".npz"
-        with open(file_path_npz, "wb") as f:
+        with open(temp_file_path_npz, "wb") as f:
             np.savez_compressed(f, **kwargs)
 
     # Always include the config
@@ -167,8 +159,14 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     _json_escape(raw_data)
 
-    with open(file_path_ext, "w") as file:
-        json.dump(raw_data, file, indent=2)
+    with open(temp_file_path_txt, "w") as f:
+        json.dump(raw_data, f, indent=2)
+
+    # Upload to Box
+    folder_path = file_path_txt.parent
+    _box_upload(folder_path, temp_file_path_txt)
+    if temp_file_path_npz is not None:
+        _box_upload(folder_path, temp_file_path_npz)
 
 
 # endregion
@@ -180,7 +178,7 @@ def get_raw_data(file_name):
     raw data file
     """
 
-    file_content = _box_search_and_download(file_name, "txt")
+    file_content = _box_download(file_name, "txt")
     data = json.loads(file_content)
 
     # Find and decompress the linked numpy arrays
@@ -189,7 +187,7 @@ def get_raw_data(file_name):
         val = data[key]
         if isinstance(val, str) and val.endswith(".npz"):
             if npz_file is None:
-                npz_file_content = _box_search_and_download(file_name, "npz")
+                npz_file_content = _box_download(file_name, "npz")
                 npz_file = np.load(BytesIO(npz_file_content))
             data[key] = npz_file[key]
 
@@ -244,7 +242,14 @@ def get_nv_sig_units():
 # region Private functions
 
 
-def _box_search_and_download(file_name, ext):
+def _box_upload(folder_path, temp_file_path):
+    folder_id = _box_id_folder(folder_path)
+    box_client.folder(folder_id).upload(str(temp_file_path))
+    # Delete the temp file after we're done with it
+    os.remove(temp_file_path)
+
+
+def _box_download(file_name, ext):
     search_results = box_client.search().query(
         f'"{file_name}"',
         type="file",
@@ -252,12 +257,51 @@ def _box_search_and_download(file_name, ext):
         content_types=["name"],
         file_extensions=[ext],
     )
-    search_results = list(search_results)
-    if len(search_results) == 0:
+    try:
+        match = next(search_results)
+    except Exception as exc:
         raise RuntimeError("No file found with the passed file_name.")
-    match = search_results[0]
     file_content = box_client.file(match.id).content()
     return file_content
+
+
+def _box_id_folder(folder_path):
+    """
+    Get the Box ID for the requested folder from its path. The path should be
+    a Path object with form folder1/folder2/... where folder1 is under nvdata
+    """
+    folder_path_parts = list(folder_path.parts)
+    return _box_id_folder_recursion(folder_path_parts)
+
+
+def _box_id_folder_recursion(folder_path_parts, start_id=nvdata_box_id):
+    target_folder_name = folder_path_parts.pop(0)
+
+    # Find the target folder if it already exists
+    target_folder_id = None
+    start_folder = box_client.folder(start_id)
+    items = start_folder.get_items()
+    for item in items:
+        if item.type == "folder" and item.name == target_folder_name:
+            target_folder_id = item.id
+
+    # Otherwise create it
+    if target_folder_id is None:
+        target_folder = start_folder.create_subfolder(target_folder_name)
+        target_folder_id = target_folder.id
+
+    # Return or recurse
+    if len(folder_path_parts) == 0:
+        return target_folder_id
+    else:
+        return _box_id_folder_recursion(folder_path_parts, start_id=target_folder_id)
+
+
+def _get_branch_name():
+    """Return the name of the active branch of dioptric"""
+    repo_path = common.get_repo_path()
+    repo = Repo(repo_path)
+    return repo.active_branch.name
 
 
 def _json_deescape(raw_data):
@@ -337,4 +381,12 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    pass
+    time_stamp = get_time_stamp()
+    file_path = get_file_path(__file__, time_stamp, "MCCTEST")
+    data = {"matt": "Cambria!"}
+    save_raw_data(data, file_path)
+    # folder_id = _box_id_folder(Path("pc_rabi/branch_master/test2/2023_11"))
+    # print(folder_id)
+
+    # test = box_client.folder("test")
+    # print(test.get_items())

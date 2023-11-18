@@ -9,6 +9,7 @@ Created on April 9th, 2019
 """
 
 
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.widefield.optimize as optimize
