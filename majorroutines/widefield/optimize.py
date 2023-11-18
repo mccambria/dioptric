@@ -307,7 +307,8 @@ def optimize_pixel_with_img_array(
         drift = (np.array(opti_pixel_coords) - np.array(original_pixel_coords)).tolist()
         widefield.set_pixel_drift(drift)
     if set_scanning_drift:
-        widefield.set_scanning_drift_from_pixel_drift()
+        # widefield.set_scanning_drift_from_pixel_drift()
+        widefield.set_all_scanning_drift_from_pixel_drift()
     opti_pixel_coords = opti_pixel_coords.tolist()
     r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
 

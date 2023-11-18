@@ -132,6 +132,14 @@ def reset_pixel_drift():
     return set_pixel_drift([0.0, 0.0])
 
 
+def reset_all_drift():
+    reset_pixel_drift()
+    pos.reset_drift()
+    scanning_optics = _get_scanning_optics()
+    for coords_suffix in scanning_optics:
+        pos.reset_drift(coords_suffix)
+
+
 def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
     """Current drift will be retrieved from registry if passed drift is None"""
     if drift is None:
@@ -147,7 +155,13 @@ def get_nv_pixel_coords(nv_sig, drift_adjust=True):
     return pixel_coords
 
 
-def set_all_scanning_drifts_from_pixel_drift(pixel_drift=None):
+def set_all_scanning_drift_from_pixel_drift(pixel_drift=None):
+    scanning_optics = _get_scanning_optics()
+    for coords_suffix in scanning_optics:
+        set_scanning_drift_from_pixel_drift(pixel_drift, coords_suffix)
+
+
+def _get_scanning_optics():
     config = common.get_config_dict()
     config_optics = config["Optics"]
     scanning_optics = []
@@ -155,9 +169,7 @@ def set_all_scanning_drifts_from_pixel_drift(pixel_drift=None):
         optic_dict = config_optics[optic_name]
         if "pos_mode" in optic_dict and optic_dict["pos_mode"] == LaserPosMode.SCANNING:
             scanning_optics.append(optic_name)
-    for coords_suffix in scanning_optics:
-        set_scanning_drift_from_pixel_drift(pixel_drift, coords_suffix)
-
+    return scanning_optics
 
 def set_scanning_drift_from_pixel_drift(pixel_drift=None, coords_suffix=None):
     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_suffix)
@@ -170,11 +182,15 @@ def set_pixel_drift_from_scanning_drift(scanning_drift=None, coords_suffix=None)
 
 
 def pixel_to_scanning_drift(pixel_drift=None, coords_suffix=None):
-    z_scanning_drift = pos.get_drift(coords_suffix)[2]
     if pixel_drift is None:
         pixel_drift = get_pixel_drift()
     m_x, _, m_y, _ = _pixel_to_scanning_calibration(coords_suffix)
-    return [m_x * pixel_drift[0], m_y * pixel_drift[1], z_scanning_drift]
+    scanning_drift = pos.get_drift(coords_suffix)
+    if len(scanning_drift) > 2:
+        z_scanning_drift = scanning_drift[2]
+        return [m_x * pixel_drift[0], m_y * pixel_drift[1], z_scanning_drift]
+    else:
+        return [m_x * pixel_drift[0], m_y * pixel_drift[1]]
 
 
 def scanning_to_pixel_drift(scanning_drift=None, coords_suffix=None):
@@ -192,6 +208,7 @@ def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
     pixel_coords = get_nv_pixel_coords(nv_sig)
     red_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
     pos.set_nv_coords(nv_sig, red_coords, coords_suffix)
+    return red_coords
 
 
 def get_widefield_calibration_nvs():

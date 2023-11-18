@@ -9,8 +9,8 @@ Created November 15th, 2023
 
 # region Imports and constants
 
-import datetime
 from io import BytesIO
+from datetime import datetime
 import utils.common as common
 import os
 from pathlib import PurePath, Path
@@ -255,6 +255,8 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
                 npz_file = np.load(BytesIO(file_content))
 
             data[key] = npz_file[key]
+
+    json_deescape(data)
 
     return data
 

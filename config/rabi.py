@@ -206,14 +206,14 @@ config = {
         "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_INTE_520": float,
         "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.3,
+        "xy_optimize_range-laser_INTE_520": 0.5,
         "xy_units-laser_INTE_520": "MHz",
         #
         "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
         "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_COBO_638": float,
         "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 0.2,
+        "xy_optimize_range-laser_COBO_638": 0.75,
         "xy_units-laser_COBO_638": "MHz",
         #
         "z_control_mode": ControlMode.STREAM,
@@ -585,7 +585,9 @@ opx_config = {
     ### Analog
     "waveforms": {
         "aod_cw": {"type": "constant", "sample": 0.35},
-        "red_aod_cw": {"type": "constant", "sample": 0.32},
+        # "red_aod_cw": {"type": "constant", "sample": 0.32},
+        # "red_aod_cw": {"type": "constant", "sample": 0.41},
+        "red_aod_cw": {"type": "constant", "sample": 0.17},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_aom_cw": {"type": "constant", "sample": 0.1},
         "cw": {"type": "constant", "sample": 0.5},

@@ -341,7 +341,7 @@ def get_drift(coords_suffix=None):
     key = _get_drift_key(coords_suffix)
     drift = common.get_registry_entry(["State"], key)
     drift_dtype = []
-    for ind in range(3):
+    for ind in range(len(drift)):
         axis_dtype = get_axis_dtype(ind, coords_suffix)
         if axis_dtype is not None:
             drift_dtype.append(axis_dtype(drift[ind]))
@@ -356,12 +356,16 @@ def set_drift(drift, coords_suffix=None):
 
 
 def reset_drift(coords_suffix=None):
-    return set_drift([0.0, 0.0, 0.0], coords_suffix)
+    drift = get_drift(coords_suffix)
+    return set_drift([0.0] * len(drift), coords_suffix)
 
 
 def reset_xy_drift(coords_suffix=None):
     drift = get_drift(coords_suffix)
-    return set_drift([0.0, 0.0, drift[2]], coords_suffix)
+    if len(drift) == 2:
+        return set_drift([0.0, 0.0], coords_suffix)
+    else:
+        return set_drift([0.0, 0.0, drift[2]], coords_suffix)
 
 
 def adjust_coords_for_drift(coords=None, drift=None, nv_sig=None, coords_suffix=None):

@@ -11,6 +11,7 @@ Created on June 16th, 2023
 ### Imports
 
 
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
@@ -26,7 +27,7 @@ from servers.inputs.nuvu_camera.nc_camera import NuvuException
 green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
-green_laser_dict = {"name": green_laser, "duration": 5e6}
+green_laser_dict = {"name": green_laser, "duration": 10e6}
 red_laser_dict = {"name": red_laser, "duration": 5e6}
 
 ### Major Routines
@@ -83,7 +84,7 @@ def do_optimize_green(nv_sig, set_drift=False, plot_data=True):
         set_drift=set_drift,
         coords_suffix=coords_suffix,
     )
-    pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
+    # pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
     nv_sig[LaserKey.IMAGING] = prev_imaging_dict
 
 
@@ -96,8 +97,9 @@ def do_optimize_red(nv_sig, set_drift=False, plot_data=True):
         set_drift=set_drift,
         laser_key=LaserKey.IONIZATION,
         coords_suffix=coords_suffix,
+        no_crash=True,
     )
-    pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
+    # pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
 
 
 def do_optimize_z(nv_sig, coords_suffix=None, set_drift=False, plot_data=False):
@@ -108,20 +110,21 @@ def do_optimize_z(nv_sig, coords_suffix=None, set_drift=False, plot_data=False):
         set_drift=set_drift,
         coords_suffix=coords_suffix,
         set_pixel_drift=set_drift,
+        no_crash=True,
     )
     nv_sig["coords"] = opti_coords
 
 
-def do_optimize_pixel(nv_sig):
+def do_optimize_pixel(nv_sig, set_drift=False):
     prev_imaging_dict = nv_sig[LaserKey.IMAGING]
     nv_sig[LaserKey.IMAGING] = green_laser_dict
 
     pixel_coords = optimize.optimize_pixel(
-        nv_sig, set_scanning_drift=False, set_pixel_drift=False, plot_data=True
+        nv_sig, set_scanning_drift=set_drift, set_pixel_drift=set_drift, plot_data=True
     )
     pixel_coords = [round(el, 2) for el in pixel_coords]
 
-    nv_sig["pixel_coords"] = pixel_coords
+    # nv_sig["pixel_coords"] = pixel_coords
     nv_sig[LaserKey.IMAGING] = prev_imaging_dict
 
 
@@ -171,12 +174,12 @@ def do_opx_constant_ac():
         opx = cxn.QM_opx
         # opx.constant_ac([3])
         # Yellow
-        opx.constant_ac(
-            [],  # Digital channels
-            [7],  # Analog channels
-            [0.225],  # Analog voltages
-            [0],  # Analog frequencies
-        )
+        # opx.constant_ac(
+        #     [],  # Digital channels
+        #     [7],  # Analog channels
+        #     [0.225],  # Analog voltages
+        #     [0],  # Analog frequencies
+        # )
         # Green
         # opx.constant_ac(
         #     [4],  # Digital channels
@@ -185,12 +188,12 @@ def do_opx_constant_ac():
         #     [110, 110],  # Analog frequencies
         # )
         # Red
-        # opx.constant_ac(
-        #     [1],  # Digital channels
-        #     [2, 3],  # Analog channels
-        #     [0.32, 0.32],  # Analog voltages
-        #     [74.705, 74.858],  # Analog frequencies
-        # )
+        opx.constant_ac(
+            [1],  # Digital channels
+            [2, 3],  # Analog channels
+            [0.41, 0.41],  # Analog voltages
+            [75, 75],  # Analog frequencies
+        )
         # Red + green
         # opx.constant_ac(
         #     [1, 4],  # Digital channels
@@ -300,7 +303,7 @@ if __name__ == "__main__":
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         # 50 mW setting for 10 mW on table
         LaserKey.IONIZATION: {"name": red_laser, "duration": 1e3},
-        LaserKey.POLARIZATION: {"name": green_laser, "duration": 1e6},
+        LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
         #
         "collection": {"filter": None},
         "magnet_angle": None,
@@ -312,9 +315,11 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [317.819, 249.867]
-    nv0[green_coords_key] = [111.253, 109.541]
-    widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser)
+    nv0[pixel_coords_key] = [319.497, 237.619]
+    nv0[green_coords_key] = [111.307, 109.158]
+    nv0[red_coords_key] = [75.354, 74.497]
+    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser))
+    # sys.exit()
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv1_2023_11_02"
@@ -346,9 +351,11 @@ if __name__ == "__main__":
         # kpl.init_kplotlib()
         tb.init_safe_stop()
 
-        # pos.reset_xy_drift()
-        # pos.reset_drift()
+        # widefield.reset_all_drift()
         # widefield.reset_pixel_drift()
+        # pos.reset_drift(green_laser)
+        # pos.reset_drift(red_laser)
+
         # with common.labrad_connect() as cxn:
         #     pos.set_xyz_on_nv(cxn, nv_sig)
 
@@ -365,30 +372,35 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 1000)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # do_image_single_nv_polarization(nv_sig, 500)
-        # do_image_single_nv_ionization(nv_sig, 1)
+        # do_image_single_nv_ionization(nv_sig, 500)
         # do_charge_state_histogram(nv_sig, 1000)
 
-        # readouts = [25e6, 50e6, 75e6, 100e6, 150e6, 200e6, 250e6]
-        # for readout in readouts:
-        #     do_optimize_pixel(nv_sig)
-        #     do_optimize_green(nv_sig)
-        #     widefield.set_nv_scanning_coords_from_pixel_coords(nv_sig, red_laser)
-        #     # break
+        # readouts = [50e6, 75e6, 100e6]
+        # durations = [2e3, 5e3, 10e3, 25e3, 50e3, 100e3, 1e6]
+        # for duration in durations:
+        #     do_optimize_pixel(nv_sig, set_drift=True)
+        #     # do_optimize_green(nv_sig)
+        #     # do_optimize_red(nv_sig)
 
-        #     nv_sig[LaserKey.IMAGING]["duration"] = readout
-        #     do_charge_state_histogram(nv_sig, 1000)
+        #     # nv_sig[LaserKey.IMAGING]["duration"] = duration
+        #     nv_sig[LaserKey.POLARIZATION]["duration"] = duration
+        # do_charge_state_histogram(nv_sig, 1000)
 
+        # do_optimize_pixel(nv_sig, set_drift=True)
+        # do_charge_state_histogram(nv_sig, 1000)
+
+        # do_optimize_pixel(nv_sig, set_drift=False)
+        # do_optimize_red(nv_sig)
+        # do_optimize_pixel(nv_sig, set_drift=False)
         # do_optimize_green(nv_sig)
-        do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
-        # do_optimize_pixel(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)

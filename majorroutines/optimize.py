@@ -19,6 +19,7 @@ import time
 import copy
 from utils import tool_belt as tb
 from utils import kplotlib as kpl
+from utils import data_manager as dm
 from utils import positioning as pos
 from utils import common
 from utils import widefield
@@ -60,7 +61,7 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
 def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=None):
     # Param order: amplitude, center, sd width, offset
     fit_func = tb.gaussian
-    bg_guess = 0.0  # Guess 0
+    bg_guess = np.average(count_vals)
     low = np.min(scan_vals)
     high = np.max(scan_vals)
     scan_range = high - low
@@ -224,7 +225,7 @@ def _read_counts_camera_sequence(
             ion_duration,
         ]
         seq_file_name = "optimize_ionization_laser_coords.py"
-        num_reps = 10
+        num_reps = 100
     if axis_ind is None or axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
@@ -232,30 +233,49 @@ def _read_counts_camera_sequence(
     if axis_ind == 2:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
 
+    # print(seq_args)
+    # return
+
     # Collect the counts
     counts = []
-    camera.arm()
-    for ind in range(num_steps):
-        if tb.safe_stop():
-            break
-        if axis_ind is not None:
-            val = scan_vals[ind]
-            if axis_ind in [0, 1]:
-                if laser_key == LaserKey.IMAGING:
-                    seq_args[-2 + axis_ind] = [val]
-                elif laser_key == LaserKey.IONIZATION:
-                    seq_args[-2][axis_ind] = val
-                seq_args_string = tb.encode_seq_args(seq_args)
-                # print(seq_args)
-                pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
-            elif axis_ind == 2:
-                axis_write_fn(val)
-        pulse_gen.stream_start()
-        img_str = camera.read()
-        img_array = widefield.img_str_to_array(img_str)
-        sample = widefield.counts_from_img_array(img_array, pixel_coords)
-        counts.append(sample)
-    camera.disarm()
+    try:
+        camera.arm()
+        for ind in range(num_steps):
+            if tb.safe_stop():
+                break
+
+            # Modify the sequence as necessary and start the pulse generator
+            if axis_ind is not None:
+                val = scan_vals[ind]
+                if axis_ind in [0, 1]:
+                    if laser_key == LaserKey.IMAGING:
+                        seq_args[-2 + axis_ind] = [val]
+                    elif laser_key == LaserKey.IONIZATION:
+                        seq_args[-2][axis_ind] = val
+                    seq_args_string = tb.encode_seq_args(seq_args)
+                    # print(seq_args)
+                    pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
+                elif axis_ind == 2:
+                    axis_write_fn(val)
+            pulse_gen.stream_start()
+
+            # Read the camera images
+            for rep_ind in range(num_reps):
+                img_str = camera.read()
+                sub_img_array = widefield.img_str_to_array(img_str)
+                if rep_ind == 0:
+                    img_array = np.copy(sub_img_array)
+                else:
+                    img_array += sub_img_array
+
+            # Process the result
+            img_array = img_array / num_reps
+            sample = widefield.counts_from_img_array(img_array, pixel_coords)
+            counts.append(sample)
+
+    finally:
+        camera.disarm()
+
     return [np.array(counts, dtype=int), img_array]
 
 
@@ -639,7 +659,7 @@ def main_with_cxn(
     time_elapsed = end_time - start_time
 
     if save_data and opti_necessary:
-        timestamp = tb.get_time_stamp()
+        timestamp = dm.get_time_stamp()
         for ind in range(3):
             scan_vals = scan_vals_by_axis[ind]
             if scan_vals is not None:
@@ -665,10 +685,10 @@ def main_with_cxn(
             "z_counts-units": "number",
         }
 
-        filePath = tb.get_file_path(__file__, timestamp, nv_sig["name"])
+        filePath = dm.get_file_path(__file__, timestamp, nv_sig["name"])
         if fig is not None:
-            tb.save_figure(fig, filePath)
-        tb.save_raw_data(rawData, filePath)
+            dm.save_figure(fig, filePath)
+        dm.save_raw_data(rawData, filePath)
 
     # Return the optimized coordinates we found and the final counts
     return opti_coords, current_counts
@@ -678,7 +698,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
     laser_key = data["laser_key"]
     positive_amplitude = laser_key != LaserKey.IONIZATION
 
