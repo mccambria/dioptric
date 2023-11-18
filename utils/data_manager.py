@@ -26,13 +26,19 @@ import labrad
 import copy
 from utils.constants import *  # Star import is bad practice, but useful here for json deescape
 
+try:
+    path_to_box_auth = common.get_repo_path()
+    box_auth_file_name = "dioptric_box_authorization.json"
+    box_auth = JWTAuth.from_settings_file(path_to_box_auth / box_auth_file_name)
+except Exception as exc:
+    print(
+        f"Make sure you have the Box authorization file for dioptric in the top "
+        f"level folder of your checkout of the GitHub repo (i.e. here: {path_to_box_auth}). "
+        f"The file, {box_auth_file_name}, can be found in the nvdata folder of the "
+        f"Kolkowitz group Box account."
+    )
+    raise exc
 
-# auth = OAuth2(
-#     client_id="dkp31zlkfbc21qj974iuncf5f2p6yypr",
-#     client_secret="Wi8mjAXUF25RapQ2OPs454AIqFcvBttJ",
-#     access_token="AaUIaa6409TxqnDsGmuQMlYOpgkLkzFR",
-# )
-auth = JWTAuth.from_settings_file(Path.home() / "Downloads/81479_7yezvcxy_config.json")
 
 search_index_file_name = "search_index.db"
 nvdata_path = common.get_nvdata_path()
@@ -204,10 +210,7 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
 
     ###
 
-    client = Client(auth)
-
-    # config = JWTAuth.from_settings_file(Path.home() / "lab/dioptric_box_config.json")
-    # client = Client(config)
+    client = Client(box_auth)
 
     search_results = client.search().query(
         f'"{file_name}"',
@@ -219,10 +222,6 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
     search_results = list(search_results)
     if len(search_results) == 0:
         raise RuntimeError("No file found with the passed file_name.")
-    elif len(search_results) > 1:
-        raise Warning(
-            "Multiple files found with the same file_name. Using first file..."
-        )
     match = search_results[0]
     file_content = client.file(match.id).content()
     data = json.loads(file_content)
@@ -542,7 +541,7 @@ def _json_escape(raw_data):
 
 
 def test():
-    client = Client(auth)
+    client = Client(box_auth)
 
     # config = JWTAuth.from_settings_file(Path.home() / "lab/dioptric_box_config.json")
     # client = Client(config)
