@@ -8,6 +8,7 @@ Created on April 9th, 2019
 """
 
 
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
@@ -21,6 +22,7 @@ from utils import data_manager as dm
 from scipy import ndimage
 import os
 import time
+from utils import data_manager as dm
 from majorroutines.widefield.optimize import optimize_pixel
 
 
@@ -275,7 +277,7 @@ def main_with_cxn(
     ### Collect the data
 
     camera.arm()
-    
+
     try:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)

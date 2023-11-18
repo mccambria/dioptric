@@ -19,6 +19,7 @@ from utils import widefield as widefield_utils
 from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
+from utils import data_manager as dm
 from scipy import ndimage
 import os
 import time
