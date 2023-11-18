@@ -39,7 +39,7 @@ def charge_state_histogram(nv_sig, num_reps=100):
         )
 
     ### Get the counts
-    
+
     # Optimize pixel coords
     pixel_coords = nv_sig["pixel_coords"]
     sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
@@ -50,9 +50,11 @@ def charge_state_histogram(nv_sig, num_reps=100):
         set_pixel_drift=False,
         set_scanning_drift=False,
     )
-    
-    sig_counts_list, ref_counts_list = img_arrays_to_counts(sig_img_array_list, ref_img_array_list, pixel_coords)
-    
+
+    sig_counts_list, ref_counts_list = img_arrays_to_counts(
+        sig_img_array_list, ref_img_array_list, pixel_coords
+    )
+
     ### Make the histograms
 
     fig, sig_counts_list, ref_counts_list = _charge_state_histogram(
@@ -79,8 +81,8 @@ def charge_state_histogram(nv_sig, num_reps=100):
     # dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
     dm.save_raw_data(raw_data, file_path)
 
-def img_arrays_to_counts(sig_img_array_list, ref_img_array_list, pixel_coords):
 
+def img_arrays_to_counts(sig_img_array_list, ref_img_array_list, pixel_coords):
     sig_counts_list = []
     ref_counts_list = []
 
@@ -95,9 +97,9 @@ def img_arrays_to_counts(sig_img_array_list, ref_img_array_list, pixel_coords):
         )
         sig_counts_list.append(sig_counts)
         ref_counts_list.append(ref_counts)
-        
+
     return sig_counts_list, ref_counts_list
-    
+
 
 def _charge_state_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig):
     readout = nv_sig[LaserKey.IMAGING]["duration"]
@@ -343,7 +345,7 @@ def main_with_cxn(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    
+
     file_name = "2023_11_17-11_58_13-johnson-nv0_2023_11_09"
 
     data = dm.get_raw_data(file_name)
@@ -353,5 +355,11 @@ if __name__ == "__main__":
     nv_sig = data["nv_sig"]
 
     _charge_state_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig)
+
+    thresh = 5050
+    print(f"Red NV0: {(sig_counts_list < thresh).sum()}")
+    print(f"Red NV-: {(sig_counts_list > thresh).sum()}")
+    print(f"Green NV0: {(ref_counts_list < thresh).sum()}")
+    print(f"Green NV-: {(ref_counts_list > thresh).sum()}")
 
     plt.show(block=True)

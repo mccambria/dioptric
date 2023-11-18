@@ -490,7 +490,7 @@ opx_config = {
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "do_sig_gen_STAN_sg394_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 2), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "do_camera_trigger": {

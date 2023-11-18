@@ -10,7 +10,7 @@ Created November 15th, 2023
 # region Imports and constants
 
 from datetime import datetime
-import utils.common as common
+from utils import common
 import os
 from pathlib import PurePath, Path
 import sqlite3
@@ -23,6 +23,7 @@ import numpy as np
 import socket
 import labrad
 import copy
+from utils.constants import *  # Star import is bad practice, but useful here for json deescape
 
 
 auth = OAuth2(
@@ -213,8 +214,8 @@ def get_raw_data(file_name, path_from_nvdata=None, nvdata_dir=None):
                 full_path = nvdata_dir / generic_path
                 npz_file = np.load(full_path)
             data[key] = npz_file[key]
-            
-    json_deescape(data)
+
+    _json_deescape(data)
 
     return data
 
@@ -423,6 +424,47 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     if file_path_ext.match(search_index_glob):
         add_to_search_index(file_path_ext)
+
+
+def _json_deescape(raw_data):
+    """Recursively deescape a raw data object from JSON.
+    Currently just escapes enums that are saved as strings
+    """
+
+    # See what kind of loop we need to do through the object
+    if isinstance(raw_data, dict):
+        # Just get the original keys
+        keys = list(raw_data.keys())
+    elif isinstance(raw_data, list):
+        keys = range(len(raw_data))
+
+    for key in keys:
+        val = raw_data[key]
+
+        # Deescape the key itself if necessary
+        try:
+            if isinstance(key, str):
+                str_key = key
+                eval_key = eval(key)
+                if isinstance(eval_key, Enum):
+                    raw_data[eval_key] = val
+                    del raw_data[str_key]
+                    key = eval_key
+        except:
+            pass
+
+        # Descape the value
+        try:
+            if isinstance(val, str):
+                eval_val = eval(val)
+                if isinstance(eval_val, Enum):
+                    raw_data[key] = eval_val
+        except:
+            pass
+
+        # Recursion for dictionaries and lists
+        if isinstance(val, dict) or isinstance(val, list):
+            _json_deescape(val)
 
 
 def _json_escape(raw_data):
