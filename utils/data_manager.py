@@ -242,13 +242,6 @@ def get_nv_sig_units():
 # region Private functions
 
 
-def _box_upload(folder_path, temp_file_path):
-    folder_id = _box_id_folder(folder_path)
-    box_client.folder(folder_id).upload(str(temp_file_path))
-    # Delete the temp file after we're done with it
-    os.remove(temp_file_path)
-
-
 def _box_download(file_name, ext):
     search_results = box_client.search().query(
         f'"{file_name}"',
@@ -263,6 +256,13 @@ def _box_download(file_name, ext):
         raise RuntimeError("No file found with the passed file_name.")
     file_content = box_client.file(match.id).content()
     return file_content
+
+
+def _box_upload(folder_path, temp_file_path):
+    folder_id = _box_id_folder(folder_path)
+    box_client.folder(folder_id).upload(str(temp_file_path))
+    # Delete the temp file after we're done uploading it
+    os.remove(temp_file_path)
 
 
 def _box_id_folder(folder_path):
