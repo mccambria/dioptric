@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tools for managing our experimental database, which lives on Box
+Tools for managing our experimental database
 
 Created November 15th, 2023
 
@@ -12,10 +12,9 @@ Created November 15th, 2023
 from io import BytesIO
 from datetime import datetime
 from utils import common
-import os
+from utils import _cloud
 from pathlib import Path
 import json
-from boxsdk import Client, JWTAuth
 from git import Repo
 from enum import Enum
 import numpy as np
@@ -24,20 +23,7 @@ import labrad
 import copy
 from utils.constants import *  # Star import is bad practice, but useful here for json deescape
 
-nvdata_box_id = "235146666549"  # ID for the nvdata folder in Box
-data_manager_folder = common.get_repo_path() / "data_manager"
-
-try:
-    box_auth_file_name = "dioptric_box_authorization.json"
-    box_auth = JWTAuth.from_settings_file(data_manager_folder / box_auth_file_name)
-    box_client = Client(box_auth)
-except Exception as exc:
-    print(
-        f"Make sure you have the Box authorization file for dioptric in your checkout of the "
-        f"GitHub repo. It should live here: {data_manager_folder}. The file, {box_auth_file_name}, "
-        f"can be found in the nvdata folder of the Kolkowitz group Box account."
-    )
-    raise exc
+data_manager_folder = common.get_data_manager_folder()
 
 
 # endregion
@@ -113,9 +99,9 @@ def save_figure(fig, file_path):
     temp_file_path = data_manager_folder / file_name
     fig.savefig(str(temp_file_path), dpi=300)
 
-    # Upload to Box
+    # Upload to cloud
     folder_path = file_path_svg.parent
-    _box_upload(folder_path, temp_file_path)
+    _cloud.upload(folder_path, temp_file_path)
 
 
 def save_raw_data(raw_data, file_path, keys_to_compress=None):
@@ -162,11 +148,11 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     with open(temp_file_path_txt, "w") as f:
         json.dump(raw_data, f, indent=2)
 
-    # Upload to Box
+    # Upload to cloud
     folder_path = file_path_txt.parent
-    _box_upload(folder_path, temp_file_path_txt)
+    _cloud.upload(folder_path, temp_file_path_txt)
     if temp_file_path_npz is not None:
-        _box_upload(folder_path, temp_file_path_npz)
+        _cloud.upload(folder_path, temp_file_path_npz)
 
 
 # endregion
@@ -178,7 +164,7 @@ def get_raw_data(file_name):
     raw data file
     """
 
-    file_content = _box_download(file_name, "txt")
+    file_content = _cloud.download(file_name, "txt")
     data = json.loads(file_content)
 
     # Find and decompress the linked numpy arrays
@@ -187,7 +173,7 @@ def get_raw_data(file_name):
         val = data[key]
         if isinstance(val, str) and val.endswith(".npz"):
             if npz_file is None:
-                npz_file_content = _box_download(file_name, "npz")
+                npz_file_content = _cloud.download(file_name, "npz")
                 npz_file = np.load(BytesIO(npz_file_content))
             data[key] = npz_file[key]
 
@@ -240,61 +226,6 @@ def get_nv_sig_units():
 
 # endregion
 # region Private functions
-
-
-def _box_download(file_name, ext):
-    search_results = box_client.search().query(
-        f'"{file_name}"',
-        type="file",
-        limit=1,
-        content_types=["name"],
-        file_extensions=[ext],
-    )
-    try:
-        match = next(search_results)
-    except Exception as exc:
-        raise RuntimeError("No file found with the passed file_name.")
-    file_content = box_client.file(match.id).content()
-    return file_content
-
-
-def _box_upload(folder_path, temp_file_path):
-    folder_id = _box_id_folder(folder_path)
-    box_client.folder(folder_id).upload(str(temp_file_path))
-    # Delete the temp file after we're done uploading it
-    os.remove(temp_file_path)
-
-
-def _box_id_folder(folder_path):
-    """
-    Get the Box ID for the requested folder from its path. The path should be
-    a Path object with form folder1/folder2/... where folder1 is under nvdata
-    """
-    folder_path_parts = list(folder_path.parts)
-    return _box_id_folder_recursion(folder_path_parts)
-
-
-def _box_id_folder_recursion(folder_path_parts, start_id=nvdata_box_id):
-    target_folder_name = folder_path_parts.pop(0)
-
-    # Find the target folder if it already exists
-    target_folder_id = None
-    start_folder = box_client.folder(start_id)
-    items = start_folder.get_items()
-    for item in items:
-        if item.type == "folder" and item.name == target_folder_name:
-            target_folder_id = item.id
-
-    # Otherwise create it
-    if target_folder_id is None:
-        target_folder = start_folder.create_subfolder(target_folder_name)
-        target_folder_id = target_folder.id
-
-    # Return or recurse
-    if len(folder_path_parts) == 0:
-        return target_folder_id
-    else:
-        return _box_id_folder_recursion(folder_path_parts, start_id=target_folder_id)
 
 
 def _get_branch_name():
@@ -385,8 +316,3 @@ if __name__ == "__main__":
     file_path = get_file_path(__file__, time_stamp, "MCCTEST")
     data = {"matt": "Cambria!"}
     save_raw_data(data, file_path)
-    # folder_id = _box_id_folder(Path("pc_rabi/branch_master/test2/2023_11"))
-    # print(folder_id)
-
-    # test = box_client.folder("test")
-    # print(test.get_items())
