@@ -348,9 +348,15 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_17-11_58_13-johnson-nv0_2023_11_09"
+    file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
 
     data = dm.get_raw_data(file_name)
+
+    img_array = data["img_array"]
+    fig, ax = plt.subplots()
+    widefield_utils.imshow(ax, img_array)
+    plt.show(block=True)
+
     sig_counts_list = np.array(data["sig_counts_list"])
     ref_counts_list = np.array(data["ref_counts_list"])
     num_reps = data["num_reps"]

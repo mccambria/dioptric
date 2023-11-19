@@ -25,9 +25,6 @@ from utils.constants import CollectionMode, LaserKey, LaserPosMode
 def imshow(ax, img_array, count_format=None, **kwargs):
     """Version of kplotlib's imshow with additional defaults for a camera"""
 
-    prev_font_size = plt.rcParams["font.size"]
-    plt.rcParams.update({"font.size": kpl.FontSize.SMALL})
-
     config = common.get_config_dict()
     if count_format is None:
         count_format = config["count_format"]
@@ -40,8 +37,6 @@ def imshow(ax, img_array, count_format=None, **kwargs):
     }
     passed_kwargs = {**default_kwargs, **kwargs}
     kpl.imshow(ax, img_array, **passed_kwargs)
-
-    plt.rcParams.update({"font.size": prev_font_size})
 
 
 # endregion
@@ -56,55 +51,28 @@ def img_str_to_array(img_str):
     return img_array
 
 
-def counts_from_img_array(
-    img_array, pixel_coords, radius=None, drift_adjust=True, pixel_drift=None
-):
+def counts_from_img_array(img_array, pixel_coords, drift_adjust=True, pixel_drift=None):
     # Make copies so we don't mutate the originals
     pixel_coords = pixel_coords.copy()
     if drift_adjust:
         pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, pixel_drift)
+    pixel_x = pixel_coords[0]
+    pixel_y = pixel_coords[1]
 
-    if radius is None:
-        config = common.get_config_dict()
-        radius = config["camera_spot_radius"]
-
-    if type(radius) is list:
-        max_radius = np.max(radius)
-    else:
-        max_radius = radius
-
-    def check_dist(dist):
-        if type(radius) is list:
-            radius_pair = radius[0]
-            ret_vals = (radius_pair[0] < dist) * (dist < radius_pair[1])
-            for ind in range(len(radius)):
-                radius_pair = radius[ind]
-                ret_vals += (radius_pair[0] < dist) * (dist < radius_pair[1])
-            return ret_vals
-        else:
-            return dist < radius
-
-    if drift_adjust:
-        if pixel_drift is None:
-            pixel_drift = get_pixel_drift()
-        pixel_x = pixel_coords[0] + pixel_drift[0]
-        pixel_y = pixel_coords[1] + pixel_drift[1]
-    else:
-        pixel_x = pixel_coords[0]
-        pixel_y = pixel_coords[1]
+    config = common.get_config_dict()
+    radius = config["camera_spot_radius"]
 
     # Don't work through all the pixels, just the ones that might be relevant
-    left = int(np.floor(pixel_x - max_radius))
-    right = int(np.ceil(pixel_x + max_radius))
-    top = int(np.floor(pixel_y - max_radius))
-    bottom = int(np.ceil(pixel_y + max_radius))
+    left = int(np.floor(pixel_x - radius))
+    right = int(np.ceil(pixel_x + radius))
+    top = int(np.floor(pixel_y - radius))
+    bottom = int(np.ceil(pixel_y + radius))
     x_crop = np.linspace(left, right, right - left + 1)
     y_crop = np.linspace(top, bottom, bottom - top + 1)
     x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
     dist = np.sqrt((x_crop_mesh - pixel_x) ** 2 + (y_crop_mesh - pixel_y) ** 2)
-    # inner_pixels = np.where(dist < radius, img_array_crop, np.nan)
-    inner_pixels = np.where(check_dist(dist), img_array_crop, np.nan)
+    inner_pixels = np.where(dist < radius, img_array_crop, np.nan)
     inner_pixels = inner_pixels.flatten()
     inner_pixels = inner_pixels[~np.isnan(inner_pixels)]
 
@@ -113,6 +81,54 @@ def counts_from_img_array(
     counts = np.sum(inner_pixels) - total_clamp
 
     return counts
+
+
+def mask_img_array(img_array, nv_list, drift_adjust=True, pixel_drift=None):
+    """Mask an image array such that it only contains information about
+    NVs in the passed nv_list. This is necessary in order to save all the
+    raw data from widefield experiments - otherwise the files are too big
+
+    Parameters
+    ----------
+    img_array : ndarray
+        Image array to mask
+    nv_list : list(nv_sig)
+        List of nv_sigs for NVs to retain in the masked image
+
+    Returns
+    -------
+    ndarray
+        Masked copy of passed img_array
+    """
+
+    # Work with a copy to avoid mutation
+    masked_img_array = np.copy(img_array)
+
+    num_x_pixels = img_array.shape[1]
+    num_y_pixels = img_array.shape[0]
+
+    mask = np.zeros(img_array)
+    config = common.get_config_dict()
+    radius = config["camera_spot_radius"]
+    for ind in len(nv_list):
+        nv_sig = nv_list[ind]
+        pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust, pixel_drift)
+        pixel_x = pixel_coords[0]
+        pixel_y = pixel_coords[1]
+
+        x_inds = np.linspace(0, num_x_pixels - 1, num_x_pixels)
+        y_inds = np.linspace(0, num_y_pixels - 1, num_y_pixels)
+        x_mesh, y_mesh = np.meshgrid(x_inds, y_inds)
+        dist = np.sqrt((x_mesh - pixel_x) ** 2 + (y_mesh - pixel_y) ** 2)
+        sub_mask = dist < radius
+
+        if ind == 0:
+            mask = sub_mask
+        else:
+            mask = np.bitwise_and(mask, sub_mask)
+
+    masked_img_array *= mask
+    return masked_img_array
 
 
 # endregion
@@ -148,10 +164,10 @@ def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
     return adjusted_coords
 
 
-def get_nv_pixel_coords(nv_sig, drift_adjust=True):
-    pixel_coords = nv_sig["pixel_coords"]
+def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
+    pixel_coords = nv_sig["pixel_coords"].copy()
     if drift_adjust:
-        pixel_coords = adjust_pixel_coords_for_drift(pixel_coords)
+        pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
     return pixel_coords
 
 
@@ -170,6 +186,7 @@ def _get_scanning_optics():
         if "pos_mode" in optic_dict and optic_dict["pos_mode"] == LaserPosMode.SCANNING:
             scanning_optics.append(optic_name)
     return scanning_optics
+
 
 def set_scanning_drift_from_pixel_drift(pixel_drift=None, coords_suffix=None):
     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_suffix)
@@ -304,23 +321,6 @@ def _scanning_to_pixel_calibration(coords_suffix=None):
 
     return m_x, b_x, m_y, b_y
 
-
-# def set_calibration_coords(
-#     nv1_pixel_coords, nv1_scanning_coords, nv2_pixel_coords, nv2_scanning_coords
-# ):
-#     calibration_directory = ["State", "WidefieldCalibration"]
-#     pixel_coords_list = [nv1_pixel_coords, nv2_pixel_coords]
-#     scanning_coords_list = [nv1_scanning_coords, nv2_scanning_coords]
-
-#     nv_names = ["NV1", "NV2"]
-#     for ind in range(2):
-#         nv_name = nv_names[ind]
-#         key = f"{nv_name}_PIXEL_COORDS"
-#         pixel_coords = pixel_coords_list[ind]
-#         common.set_registry_entry(calibration_directory, key, pixel_coords)
-#         key = f"{nv_name}_SCANNING_COORDS"
-#         scanning_coords = scanning_coords_list[ind]
-#         common.set_registry_entry(calibration_directory, key, scanning_coords)
 
 # endregion
 

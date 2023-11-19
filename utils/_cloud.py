@@ -16,7 +16,7 @@ nvdata_folder_id = "235146666549"  # ID for the nvdata folder in Box
 data_manager_folder = common.get_data_manager_folder()
 
 try:
-    box_auth_file_name = "dioptric_cloud_authorization.json"
+    box_auth_file_name = "dioptric_box_authorization.json"
     box_auth = JWTAuth.from_settings_file(data_manager_folder / box_auth_file_name)
     box_client = Client(box_auth)
 except Exception as exc:
