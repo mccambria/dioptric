@@ -19,7 +19,7 @@ from utils.constants import ModMode, CollectionMode
 def handle_reps(
     one_rep_macro,
     num_reps,
-    wait_for_trigger=None,
+    wait_for_trigger=True,
 ):
     """Handle repetitions of a given sequence - you just have to pass
     a function defining the behavior for a single loop. Optionally
@@ -33,22 +33,15 @@ def handle_reps(
         Number of times to repeat, -1 for infinite loop
     wait_for_trigger : bool, optional
         Whether or not to pause execution between loops until a trigger
-        pulse is received by the OPX, defaults to True for camera, False otherwise
+        pulse is received by the OPX, defaults to True
     """
 
-    if wait_for_trigger is None:
-        config = common.get_config_dict()
-        collection_mode = config["collection_mode"]
-        wait_for_trigger = collection_mode == CollectionMode.CAMERA
-
-    dummy_element = "do1"  # wait_for_trigger requires us to pass some element
     if num_reps == -1:
         with qua.infinite_loop_():
             one_rep_macro()
             qua.align()
             if wait_for_trigger:
-                qua.wait_for_trigger(dummy_element)
-                qua.align()
+                macro_wait_for_trigger()
     elif num_reps == 1:
         one_rep_macro()
     else:
@@ -58,19 +51,77 @@ def handle_reps(
             qua.align()
             qua.assign(handle_reps_ind, handle_reps_ind + 1)
             if wait_for_trigger:
-                qua.wait_for_trigger(dummy_element)
-                qua.align()
+                macro_wait_for_trigger()
 
 
-def polarize(laser_name, duration_ns, coords_list):
-    _pulse_list(laser_name, duration_ns, coords_list)
+def macro_polarize(pol_laser_name, pol_duration_ns, pol_coords_list):
+    """Apply a polarization pulse to each coordinate pair in the passed coords_list.
+    Pulses are applied in series
+
+    Parameters
+    ----------
+    pol_laser_name : str
+        Name of polarization laser
+    pol_duration_ns : numeric
+        Duration of the pulse in ns
+    pol_coords_list : list(coordinate pairs)
+        List of coordinate pairs to target
+    """
+    _macro_pulse_list(pol_laser_name, pol_duration_ns, pol_coords_list)
 
 
-def ionize(laser_name, duration_ns, coords_list):
-    _pulse_list(laser_name, duration_ns, coords_list)
+def macro_ionize(ion_laser_name, ion_duration_ns, ion_coords_list):
+    """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
+    Pulses are applied in series
+
+    Parameters
+    ----------
+    ion_laser_name : str
+        Name of ionitization laser
+    ion_duration_ns : numeric
+        Duration of the pulse in ns
+    ion_coords_list : list(coordinate pairs)
+        List of coordinate pairs to target
+    """
+    _macro_pulse_list(ion_laser_name, ion_duration_ns, ion_coords_list)
 
 
-def _pulse_list(laser_name, duration_ns, coords_list):
+def macro_charge_state_readout(readout_laser_name, readout_duration_ns):
+    readout_laser_el = get_laser_mod_element(readout_laser_name)
+    camera_el = f"do_camera_trigger"
+
+    readout_duration = convert_ns_to_cc(readout_duration_ns)
+
+    qua.align()
+    qua.play("on", readout_laser_el, duration=readout_duration)
+    qua.play("on", camera_el)
+    qua.align()
+    qua.play("off", camera_el)
+    qua.align()
+
+
+def macro_wait_for_trigger():
+    """Pauses the entire sequence and waits for a trigger pulse from the camera.
+    The wait does not start until all running pulses finish"""
+    dummy_element = "do1"  # wait_for_trigger requires us to pass some element
+    qua.align()
+    qua.wait_for_trigger(dummy_element)
+    qua.align()
+
+
+def _macro_pulse_list(laser_name, duration_ns, coords_list):
+    """Apply a laser pulse to each coordinate pair in the passed coords_list.
+    Pulses are applied in series
+
+    Parameters
+    ----------
+    laser_name : str
+        Name of laser to pulse
+    duration_ns : numeric
+        Duration of the pulse in ns
+    coords_list : list(coordinate pairs)
+        List of coordinate pairs to target
+    """
     # Setup
     laser_el = get_laser_mod_element(laser_name)
     x_el = f"ao_{laser_name}_x"
@@ -96,7 +147,7 @@ def _pulse_list(laser_name, duration_ns, coords_list):
         qua.play("aod_cw", y_el)
 
         # Pulse the laser
-        qua.wait(buffer + access_time, laser_el)
+        qua.wait(access_time + buffer, laser_el)
         qua.play("on", laser_el, duration=duration)
         qua.wait(buffer, laser_el)
 

@@ -21,21 +21,6 @@ from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from importlib import import_module
 
 # endregion
-# region Plotting
-
-
-def imshow(ax, img_array, **kwargs):
-    """Version of kplotlib's imshow with additional defaults for a camera"""
-
-    cbar_label = "ADUs"
-    default_kwargs = {
-        "cbar_label": cbar_label,
-    }
-    passed_kwargs = {**default_kwargs, **kwargs}
-    kpl.imshow(ax, img_array, **passed_kwargs)
-
-
-# endregion
 # region Image processing
 
 

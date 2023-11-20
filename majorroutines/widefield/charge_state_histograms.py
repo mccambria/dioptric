@@ -26,7 +26,7 @@ import os
 import time
 
 
-def create_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig):
+def create_histogram(sig_counts_list, ref_counts_list, nv_sig):
     readout = nv_sig[LaserKey.IMAGING]["duration"]
     readout_ms = int(readout / 1e6)
     readout_s = readout / 1e9
@@ -34,6 +34,7 @@ def create_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig):
     ### Histograms
 
     num_bins = 50
+    num_reps = len(sig_counts_list)
 
     labels = ["sig", "ref"]
     counts_lists = [sig_counts_list, ref_counts_list]
@@ -75,30 +76,10 @@ def main(nv_list, num_reps=100, diff_polarize=True, diff_ionize=True):
             cxn, nv_list, num_reps, diff_polarize, diff_ionize
         )
 
-    # Get the actual num_reps in case something went wrong
-    num_reps = len(sig_img_array_list)
+    ### Process
 
-    ### Get the counts
-
-    # Optimize pixel coords
-    nv_sig = nv_list[0]
-    pixel_coords = nv_sig["pixel_coords"]
-    sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
-    pixel_coords = optimize.optimize_pixel_with_img_array(
-        sig_img_array,
-        pixel_coords,
-        pixel_drift_adjust=True,
-        set_pixel_drift=False,
-        set_scanning_drift=False,
-    )
-
-    sig_counts_list = widefield.process_img_arrays(sig_img_array_list, nv_list)
-    ref_counts_list = widefield.process_img_arrays(ref_img_array_list, nv_list)
-
-    ### Make the histograms
-
-    fig, sig_counts_list, ref_counts_list = create_histogram(
-        sig_img_array_list, ref_img_array_list, num_reps, nv_sig
+    sig_counts_list, ref_counts_list, fig = process_data(
+        nv_list, sig_img_array_list, ref_img_array_list
     )
 
     ### Save
@@ -130,6 +111,32 @@ def main(nv_list, num_reps=100, diff_polarize=True, diff_ionize=True):
     dm.save_figure(fig, file_path)
     keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
     dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+
+
+def process_data(nv_list, sig_img_array_list, ref_img_array_list):
+    # Get the actual num_reps in case something went wrong
+    num_reps = len(sig_img_array_list)
+
+    ### Get the counts
+
+    # Optimize pixel coords
+    nv_sig = nv_list[0]
+    pixel_coords = nv_sig["pixel_coords"]
+    sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
+    pixel_coords = optimize.optimize_pixel_with_img_array(sig_img_array, pixel_coords)
+
+    sig_counts_lists = widefield.process_img_arrays(sig_img_array_list, nv_list)
+    ref_counts_lists = widefield.process_img_arrays(ref_img_array_list, nv_list)
+
+    # Just one NV for now
+    sig_counts_list = sig_counts_lists[0]
+    ref_counts_list = ref_counts_lists[0]
+
+    ### Make the histograms
+
+    fig = create_histogram(sig_counts_list, ref_counts_list, nv_sig)
+
+    return sig_counts_list, ref_counts_list, fig
 
 
 def _collect_data(
@@ -224,7 +231,7 @@ def _collect_data(
         title_suffix = title_suffixes[ind]
         fig, ax = plt.subplots()
         title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms, {title_suffix}"
-        widefield.imshow(ax, img_array, title=title)
+        kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
         figs.append(fig)
 
     ### Clean up and return
@@ -234,6 +241,7 @@ def _collect_data(
     timestamp = dm.get_time_stamp()
     nv_name = nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, nv_name)
+    # Save sub figs
     for ind in range(3):
         fig = figs[ind]
         title_suffix = title_suffixes[ind]
