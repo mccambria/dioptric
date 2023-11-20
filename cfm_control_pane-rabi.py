@@ -377,7 +377,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
-        # do_image_single_nv(nv_sig)
+        do_image_single_nv(nv_sig)
         # do_image_single_nv_polarization(nv_sig, 500)
         # do_image_single_nv_ionization(nv_sig, 500)
         # do_charge_state_histogram(nv_sig, 1000)
