@@ -348,19 +348,36 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
+    file_name = "2023_11_17-12_11_12-johnson-nv0_2023_11_09"
+    # file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
 
     data = dm.get_raw_data(file_name)
+    nv_sig = data["nv_sig"]
 
-    img_array = data["img_array"]
-    fig, ax = plt.subplots()
-    widefield_utils.imshow(ax, img_array)
-    plt.show(block=True)
+    # nv_sig2 = nv_sig.copy()
+    # nv_sig2["pixel_coords"] = [300, 300]
+    # nv_list = [nv_sig, nv_sig2]
+
+    # img_array = data["img_array"]
+    # fig, ax = plt.subplots()
+    # # widefield_utils.mask_img_array(img_array, nv_list, drift_adjust=False)
+    # # data["img_array"] = img_array
+    # img_array = widefield_utils.adus_to_photons(img_array)
+    # widefield_utils.imshow(ax, img_array)
+
+    # timestamp = dm.get_time_stamp()
+    # nv_name = nv_sig["name"]
+    # file_path = dm.get_file_path(__file__, timestamp, nv_name)
+    # keys_to_compress = ["img_array"]
+    # dm.save_raw_data(data, file_path, keys_to_compress=keys_to_compress)
+
+    # plt.show(block=True)
 
     sig_counts_list = np.array(data["sig_counts_list"])
+    sig_counts_list = widefield_utils.adus_to_photons(sig_counts_list)
     ref_counts_list = np.array(data["ref_counts_list"])
+    ref_counts_list = widefield_utils.adus_to_photons(ref_counts_list)
     num_reps = data["num_reps"]
-    nv_sig = data["nv_sig"]
 
     _charge_state_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig)
 

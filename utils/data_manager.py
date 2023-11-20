@@ -129,7 +129,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     # Compress numpy arrays to linked file
     temp_file_path_npz = None
     if keys_to_compress is not None:
-        temp_file_path_npz = file_path.with_suffix(".npz")
+        temp_file_path_npz = temp_file_path_txt.with_suffix(".npz")
         kwargs = {}
         for key in keys_to_compress:
             kwargs[key] = raw_data[key]

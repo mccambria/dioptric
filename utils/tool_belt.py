@@ -70,25 +70,6 @@ def laser_on(cxn, laser_name, laser_power=None):
     laser_switch_sub(cxn, True, laser_name, laser_power)
 
 
-def get_opx_laser_pulse_info(config, laser_name, laser_power):
-    mod_type = config["Optics"][laser_name]["mod_type"]
-    laser_delay = config["Optics"][laser_name]["delay"]
-
-    laser_pulse_name = f"laser_ON_{mod_type.name}"
-
-    if mod_type == ModMode.ANALOG:
-        laser_pulse_amplitude = laser_power
-
-    elif mod_type == ModMode.DIGITAL:
-        if laser_power == 0:
-            laser_pulse_name = f"laser_OFF_{mod_type.name}"
-            laser_pulse_amplitude = 1
-        else:
-            laser_pulse_amplitude = 1
-
-    return laser_pulse_name, laser_delay, laser_pulse_amplitude
-
-
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     config = common.get_config_dict()
     mod_type = config["Optics"][laser_name]["mod_type"]
@@ -144,22 +125,6 @@ def set_laser_power(
         if (laser_power is not None) and (laser_server is not None):
             laser_server.set_laser_power(laser_power)
         return None
-
-
-def get_opx_uwave_pulse_info(config, pulse_time):
-    pulse_time_cc = int(round(pulse_time / 4))
-
-    if pulse_time_cc < 4:
-        uwave_pulse = "uwave_OFF"
-        uwave_amp = 1
-        uwave_time_cc = 4
-
-    elif pulse_time_cc >= 4:
-        uwave_pulse = "uwave_ON"
-        uwave_amp = 1
-        uwave_time_cc = pulse_time_cc
-
-    return uwave_pulse, uwave_amp, uwave_time_cc
 
 
 def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):

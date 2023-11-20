@@ -296,19 +296,19 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        LaserKey.IMAGING: yellow_laser_dict,
-        # LaserKey.IMAGING: green_laser_dict,
+        # LaserKey.IMAGING: yellow_laser_dict,
+        LaserKey.IMAGING: green_laser_dict,
         # LaserKey.IMAGING: red_laser_dict,
         #
+        LaserKey.CHARGE_READOUT: yellow_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
-        # 50 mW setting for 10 mW on table
         LaserKey.IONIZATION: {"name": red_laser, "duration": 1e3},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
         #
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"freq": 2.885, "rabi": 150, "uwave_power": 10.0},
+        NVSpinState.LOW: {"frequency": 2.885, "rabi_period": 150, "uwave_power": 10.0},
     }
 
     # region Experiment NVs

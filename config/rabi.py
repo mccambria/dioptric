@@ -10,8 +10,7 @@ Created July 20th, 2023
 from utils.constants import ModMode, ControlMode, CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
-import numpy as np
-from boxsdk import OAuth2
+from config.default import config
 
 home = Path.home()
 
@@ -89,32 +88,13 @@ widefield_calibration_nv2[red_coords_key] = [72.6, 77.1]
 # widefield_calibration_nv2[red_coords_key] = [72.6, 75.5]
 
 # endregion
-# region Box config
-
-# Matt's account via mccambria@berkeley.edu
-auth = OAuth2(
-    client_id="17z5qlwkelzcagst6ehct6bh3dz2tv0o",
-    client_secret="0SA0Zpazmo6SStMWcDvZKlHdWaAsTO42",
-    access_token="dfp14h2VY5bpi2KvZ3oaN3JBfUdQuLIP",
-)
-
-
-# endregion
 # region Base config
 
-config = {
+# Add on to the default config
+config |= {
     ###
-    "apd_indices": [0],
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "camera_spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
-    "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
-    "shared_email": "kolkowitznvlab@gmail.com",
-    # Access the OS-specific keys with getters from common
-    "windows_nvdata_path": home / "Box/KolkowitzLab/nvdata",
-    "linux_nvdata_path": home / "E/KolkowitzLab/nvdata",
-    "windows_repo_path": home / "Documents/GitHub/dioptric",
-    "linux_repo_path": home / "Documents/GitHub/dioptric",
     ###
     "CommonDurations": {
         "cw_meas_buffer": 5000,
@@ -157,7 +137,14 @@ config = {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "max_frame_rate": 15,  # In Hz - faster than this and the camera may crash
+        "spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
+        "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
+        "em_gain": 1000,
+        "temp": -60,
+        "timeout": 5000,  # ms
+        # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
+        # See camera server file for details
+        "readout_mode": 1,
     },
     ###
     "Optics": {
