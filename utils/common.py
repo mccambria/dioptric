@@ -36,6 +36,10 @@ def get_config_dict(pc_name=None):
     return module.config
 
 
+def get_data_manager_folder():
+    return get_repo_path() / "data_manager"
+
+
 def get_default_email():
     config = get_config_dict()
     return config["default_email"]

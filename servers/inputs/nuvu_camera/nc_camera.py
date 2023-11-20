@@ -348,7 +348,7 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
         return num_buffer.value
-    
+
     def set_buffer_count(self, num_buffer):
         try:
             error = ncCamSetBufferCount(self.ncCam, num_buffer, 0)

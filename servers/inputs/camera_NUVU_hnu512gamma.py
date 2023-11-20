@@ -15,6 +15,7 @@ description = 120
 cmdline = %PYTHON% %FILE%
 timeout = 60
 [shutdown]
+
 message = 987654321
 timeout = 5
 ### END NODE INFO
@@ -28,11 +29,62 @@ from utils import tool_belt as tb
 import numpy as np
 import socket
 import logging
+from utils import widefield
 import time
+from enum import Enum, IntEnum, auto
 
-# Keep the C stuff in the nuvu_camera folder - for simplicity, don't put any in this file
-from servers.inputs.nuvu_camera.nc_camera import NcCamera
-from servers.inputs.nuvu_camera.defines import TriggerMode, ReadoutMode, ProcessingType
+"""
+Readout modes. Readout mode specifies EM vs conventional, as well as vertical and horizontal 
+readout frequencies. Good defaults starred below. Frequencies in Hz
+
+EM amplifier
+    * 1; vertical frequency: 2000000; horizontal frequency: 10000000
+      2; vertical frequency: 3333000; horizontal frequency: 10000000
+      3; vertical frequency: 1000000; horizontal frequency: 10000000
+      4; vertical frequency:  200000; horizontal frequency: 10000000
+     16; vertical frequency: 2000000; horizontal frequency: 20000000
+     17; vertical frequency: 3333000; horizontal frequency: 20000000
+     18; vertical frequency: 1000000; horizontal frequency: 20000000
+     19; vertical frequency:  200000; horizontal frequency: 20000000
+Conventional amplifier
+     13; vertical frequency: 1000000; horizontal frequency:   100000
+     14; vertical frequency: 2000000; horizontal frequency:   100000
+     15; vertical frequency: 3333000; horizontal frequency:   100000
+      9; vertical frequency: 1000000; horizontal frequency:  1000000
+     10; vertical frequency: 3333000; horizontal frequency:  1000000
+     11; vertical frequency: 2000000; horizontal frequency:  1000000
+     12; vertical frequency:  200000; horizontal frequency:  1000000
+      5; vertical frequency: 1000000; horizontal frequency:  3333000
+    * 6; vertical frequency: 3333000; horizontal frequency:  3333000
+      7; vertical frequency: 2000000; horizontal frequency:  3333000
+      8; vertical frequency:  200000; horizontal frequency:  3333000
+"""
+
+# Each readout mode has a specific k gain associated with it. See certificate
+# of conformity for details
+k_gain_dict = {
+    # EM
+    1: 20.761,
+    2: 20.761,
+    3: 20.761,
+    4: 20.761,
+    16: 23.917,
+    17: 23.917,
+    18: 23.917,
+    19: 23.917,
+    # Conventional
+    13: 4.574,
+    14: 4.574,
+    15: 4.574,
+    9: 3.809,
+    10: 3.809,
+    11: 3.809,
+    12: 3.809,
+    5: 4.357,
+    6: 4.357,
+    7: 4.357,
+    8: 4.357,
+}
 
 
 class CameraNuvuHnu512gamma(LabradServer):
@@ -42,25 +94,37 @@ class CameraNuvuHnu512gamma(LabradServer):
     def initServer(self):
         tb.configure_logging(self)
 
+        # For readability keep the C stuff in the nuvu_camera folder. To allow this file
+        # to be easily imported in post-processing contexts, only import the C stuff if
+        # we're actually initializating the server
+        from servers.inputs.nuvu_camera.nc_camera import NcCamera
+        from servers.inputs.nuvu_camera.defines import (
+            TriggerMode,
+            ReadoutMode,
+            ProcessingType,
+        )
+
         # Instantiate the software camera and connect to the hardware camera
         self.cam = NcCamera()
         self.cam.connect()  # Assumes there's just one camera available
         # self.cam.set_heartbeat(int(10e3))
 
         # Configure the camera
-        self.cam.set_target_detector_temp(-60)
+        temp = widefield._get_camera_temp()
+        self.cam.set_target_detector_temp(temp)
 
         # self.cam.set_readout_mode(6)
 
         self.cam.set_readout_mode(1)
-        self.cam.setCalibratedEmGain(1000)
-        # self.cam.setCalibratedEmGain(10)
+        em_gain = widefield._get_camera_em_gain()
+        self.cam.setCalibratedEmGain(em_gain)
 
         self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
         # self.cam.set_timeout(-1)
-        self.cam.set_timeout(5000)
+        timeout = widefield._get_camera_timeout()
+        self.cam.set_timeout(timeout)
         self.cam.get_size()
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
@@ -110,32 +174,9 @@ class CameraNuvuHnu512gamma(LabradServer):
 
     @setting(8, readout_mode="i")
     def set_readout_mode(self, c, readout_mode):
-        """
-        Set the camera's readout mode, including amplifier and vertical/horizontal frequencies.
-        Good defaults starred below
+        """Set the camera's readout mode, including amplifier and vertical/horizontal
+        frequencies.
 
-        readout_mode options:
-            EM amplifier
-                *Mode:  1; vertical frequency: 2000000; horizontal frequency: 10000000
-                 Mode:  2; vertical frequency: 3333000; horizontal frequency: 10000000
-                 Mode:  3; vertical frequency: 1000000; horizontal frequency: 10000000
-                 Mode:  4; vertical frequency:  200000; horizontal frequency: 10000000
-                 Mode: 16; vertical frequency: 2000000; horizontal frequency: 20000000
-                 Mode: 17; vertical frequency: 3333000; horizontal frequency: 20000000
-                 Mode: 18; vertical frequency: 1000000; horizontal frequency: 20000000
-                 Mode: 19; vertical frequency:  200000; horizontal frequency: 20000000
-            Conventional amplifier
-                 Mode:  5; vertical frequency: 1000000; horizontal frequency:  3333000
-                *Mode:  6; vertical frequency: 3333000; horizontal frequency:  3333000
-                 Mode:  7; vertical frequency: 2000000; horizontal frequency:  3333000
-                 Mode:  8; vertical frequency:  200000; horizontal frequency:  3333000
-                 Mode:  9; vertical frequency: 1000000; horizontal frequency:  1000000
-                 Mode: 10; vertical frequency: 3333000; horizontal frequency:  1000000
-                 Mode: 11; vertical frequency: 2000000; horizontal frequency:  1000000
-                 Mode: 12; vertical frequency:  200000; horizontal frequency:  1000000
-                 Mode: 13; vertical frequency: 1000000; horizontal frequency:   100000
-                 Mode: 14; vertical frequency: 2000000; horizontal frequency:   100000
-                 Mode: 15; vertical frequency: 3333000; horizontal frequency:   100000
         """
         self.cam.stop()  # Make sure the camera is stopped or else this won't work
         self.cam.set_readout_mode(readout_mode)

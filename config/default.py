@@ -16,11 +16,8 @@ home = Path.home()
 
 config = {
     ###
-    "default_email": "kolkowitznvlab@gmail.com",
-    "windows_nvdata_path": home / "Box/KolkowitzLab/nvdata",
-    "linux_nvdata_path": home / "E/KolkowitzLab/nvdata",
+    "shared_email": "kolkowitznvlab@gmail.com",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
-    "camera_spot_radius": 6,
-    "count_format": CountFormat.RAW,
+    "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
 }
