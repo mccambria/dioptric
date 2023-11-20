@@ -96,7 +96,8 @@ config |= {
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
     ###
-    "CommonDurations": {
+    # Common durations are in ns
+    "CommonDurations": { 
         "cw_meas_buffer": 5000,
         "pol_to_uwave_wait_dur": 5000,
         "scc_ion_readout_buffer": 10000,
@@ -106,6 +107,7 @@ config |= {
         "aod_end_buffer": int(2e3),
         "default_pulse_duration": 1000,
         "aod_access_time": 20e3,
+        "widefield_operation_buffer": 10e3,
     },
     ###
     "DeviceIDs": {

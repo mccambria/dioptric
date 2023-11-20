@@ -20,42 +20,41 @@ from qm import generate_qua_script
 
 def get_seq(args, num_reps):
     (
-        #
-        readout_duration_ns,
-        readout_laser,
-        #
-        diff_polarization,
         pol_laser,
-        pol_coords,
         pol_duration_ns,
-        #
-        diff_ionization,
+        pol_coords_list,
         ion_laser,
-        ion_coords,
         ion_duration_ns,
+        ion_coords_list,
+        readout_laser,
+        readout_duration_ns,
+        diff_polarize,
+        diff_ionize,
     ) = args
+
     if num_reps == None:
         num_reps = 1
 
-    readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
-    camera_el = f"do_camera_trigger"
-
     # Polarization
-    pol_laser_el = f"do_{pol_laser}_dm"
+    pol_laser_el = seq_utils.get_laser_mod_element(pol_laser)
     pol_x_el = f"ao_{pol_laser}_x"
     pol_y_el = f"ao_{pol_laser}_y"
 
     # Ionization
-    ion_laser_el = f"do_{ion_laser}_dm"
+    ion_laser_el = seq_utils.get_laser_mod_element(ion_laser)
     ion_x_el = f"ao_{ion_laser}_x"
     ion_y_el = f"ao_{ion_laser}_y"
 
-    if diff_polarization and not diff_ionization:
+    # Readout
+    readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
+    camera_el = f"do_camera_trigger"
+
+    if diff_polarize and not diff_ionize:
         do_polarize_sig = True
         do_polarize_ref = False
         do_ionize_sig = False
         do_ionize_ref = False
-    elif not diff_polarization and diff_ionization:
+    elif not diff_polarize and diff_ionize:
         do_polarize_sig = True
         do_polarize_ref = True
         do_ionize_sig = True
@@ -64,11 +63,8 @@ def get_seq(args, num_reps):
     access_time = seq_utils.get_aod_access_time()
     pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
     ion_duration = seq_utils.convert_ns_to_cc(ion_duration_ns)
-    default_pulse_duration = seq_utils.get_default_pulse_duration()
-    operation_gap = seq_utils.convert_ns_to_cc(10e3)
-    setup_duration = (
-        access_time + pol_duration + operation_gap + ion_duration + operation_gap
-    )
+    buffer = seq_utils.get_widefield_operation_buffer()
+    setup_duration = access_time + pol_duration + buffer + ion_duration + buffer
     readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
 
     with qua.program() as seq:
@@ -94,15 +90,13 @@ def get_seq(args, num_reps):
 
             # Ionization
             if do_ionize_sub:
-                qua.wait(access_time + pol_duration + operation_gap, ion_laser_el)
+                qua.wait(access_time + pol_duration + buffer, ion_laser_el)
                 qua.play("on", ion_laser_el, duration=ion_duration)
 
             # Yellow readout
             qua.wait(setup_duration, readout_laser_el)
             qua.wait(setup_duration, camera_el)
-            # pulse = "on" if not do_ionize_sub else "off"
             qua.play("on", readout_laser_el, duration=readout_duration)
-            # qua.play("off", readout_laser_el, duration=readout_duration)
             qua.play("on", camera_el)
             qua.align()
             qua.play("off", camera_el)

@@ -19,7 +19,12 @@ from utils import tool_belt as tb
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import widefield, common
-from majorroutines.widefield import image_sample, optimize, resonance, image_sample_diff
+from majorroutines.widefield import (
+    charge_state_histograms,
+    image_sample,
+    optimize,
+    resonance,
+)
 from utils.constants import LaserKey, NVSpinState
 import time
 from servers.inputs.nuvu_camera.nc_camera import NuvuException
@@ -61,16 +66,16 @@ def do_image_single_nv(nv_sig):
 
 
 def do_image_single_nv_ionization(nv_sig, num_reps):
-    return image_sample_diff.single_nv_ionization(nv_sig, num_reps)
+    return charge_state_histograms.single_nv_ionization(nv_sig, num_reps)
 
 
 def do_image_single_nv_polarization(nv_sig, num_reps):
     # return image_sample.single_nv_polarization(nv_sig, num_reps)
-    return image_sample_diff.single_nv_polarization(nv_sig, num_reps)
+    return charge_state_histograms.single_nv_polarization(nv_sig, num_reps)
 
 
 def do_charge_state_histogram(nv_sig, num_reps):
-    return image_sample_diff.charge_state_histogram(nv_sig, num_reps)
+    return charge_state_histograms.charge_state_histogram(nv_sig, num_reps)
 
 
 def do_optimize_green(nv_sig, set_drift=False, plot_data=True):

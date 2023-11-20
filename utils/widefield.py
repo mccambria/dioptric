@@ -220,20 +220,28 @@ def process_counts(counts_lists):
 # region Miscellaneous public functions
 
 
-def get_base_scc_seq_args(nv_sig):
+def get_base_scc_seq_args(nv_list):
     """Return base seq_args for any SCC routine"""
+
+    nv_sig = nv_list[0]
 
     # Polarization
     pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
     pol_laser = pol_laser_dict["name"]
-    pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=pol_laser)
     pol_duration = pol_laser_dict["duration"]
+    pol_coords_list = []
+    for nv in nv_list:
+        pol_coords = pos.get_nv_coords(nv, coords_suffix=pol_laser)
+        pol_coords_list.append(pol_coords)
 
     # Ionization
     ion_laser_dict = nv_sig[LaserKey.IONIZATION]
     ion_laser = ion_laser_dict["name"]
-    ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ion_laser)
     ion_duration = ion_laser_dict["duration"]
+    ion_coords_list = []
+    for nv in nv_list:
+        ion_coords = pos.get_nv_coords(nv, coords_suffix=ion_laser)
+        ion_coords_list.append(ion_coords)
 
     # Readout
     readout_laser_dict = nv_sig[LaserKey.CHARGE_READOUT]
@@ -242,13 +250,13 @@ def get_base_scc_seq_args(nv_sig):
 
     seq_args = [
         pol_laser,
-        pol_coords,
         pol_duration,
+        pol_coords_list,
         ion_laser,
-        ion_coords,
         ion_duration,
-        readout_duration,
+        ion_coords_list,
         readout_laser,
+        readout_duration,
     ]
 
     return seq_args

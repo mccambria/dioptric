@@ -13,7 +13,7 @@ from random import shuffle
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
-import majorroutines.widefield.optimize as optimize
+from majorroutines.widefield import optimize
 from utils import tool_belt as tb
 from utils import data_manager as dm
 from utils import common
