@@ -199,11 +199,11 @@ def process_counts(counts_lists):
     run_ax = 1
     rep_ax = 3
     run_rep_axes = (run_ax, rep_ax)
-    
+
     counts_lists = np.array(counts_lists)
 
     avg_counts = np.mean(counts_lists, axis=run_rep_axes)
-    num_shots = counts_lists.shape[rep_ax] + counts_lists.shape[run_ax]
+    num_shots = counts_lists.shape[rep_ax] * counts_lists.shape[run_ax]
     avg_counts_std = np.std(counts_lists, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 

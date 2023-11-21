@@ -235,7 +235,6 @@ def main_with_cxn(
     ### Process and plot
 
     pixel_coords_list = widefield.build_pixel_coords_list(nv_list)
-
     counts = widefield.process_img_arrays(sig_img_arrays, pixel_coords_list)
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
@@ -265,7 +264,11 @@ def main_with_cxn(
         "nv_list": nv_list,
         "pixel_coords_list": pixel_coords_list,
         "num_reps": num_reps,
+        "num_steps": num_steps,
+        "num_runs": num_runs,
         "readout-units": "ms",
+        "freqs": freqs,
+        "freq_range": freq_range,
         "counts": counts,
         "counts-units": "photons",
         "sig_img_arrays": sig_img_arrays.astype(int),
@@ -287,9 +290,22 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_20-22_42_48-johnson-nv0_2023_11_09"
+    file_name = "2023_11_20-23_45_03-johnson-nv0_2023_11_09"
 
-    data = dm.get_raw_data(file_name)
-    nv_sig = data["nv_sig"]
+    # data = dm.get_raw_data(file_name)
+    data = dm.get_raw_data(file_id="1367909272526")
+    nv_list = data["nv_list"]
+    sig_img_arrays = data["sig_img_arrays"]
+    # pixel_coords_list = data["pixel_coords_list"]
+    # freqs = data["freqs"]
+    counts = data["counts"]
+
+    # counts = widefield.process_img_arrays(sig_img_arrays, pixel_coords_list)
+    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+
+    kpl.init_kplotlib()
+    freqs = calculate_freqs(2.87, 0.060, 20)
+    raw_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
 
     plt.show(block=True)

@@ -159,23 +159,23 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 # region Load functions
 
 
-def get_raw_data(file_name):
+def get_raw_data(file_name=None, file_id=None):
     """Returns a dictionary containing the json object from the specified
     raw data file
     """
 
-    file_content = _cloud.download(file_name, "txt")
+    file_content = _cloud.download(file_name, "txt", file_id)
     data = json.loads(file_content)
 
     # Find and decompress the linked numpy arrays
-    npz_file = None
-    for key in data:
-        val = data[key]
-        if isinstance(val, str) and val.endswith(".npz"):
-            if npz_file is None:
-                npz_file_content = _cloud.download(file_name, "npz")
-                npz_file = np.load(BytesIO(npz_file_content))
-            data[key] = npz_file[key]
+    # npz_file = None
+    # for key in data:
+    #     val = data[key]
+    #     if isinstance(val, str) and val.endswith(".npz"):
+    #         if npz_file is None:
+    #             npz_file_content = _cloud.download(file_name, "npz")
+    #             npz_file = np.load(BytesIO(npz_file_content))
+    #         data[key] = npz_file[key]
 
     _json_deescape(data)
 
