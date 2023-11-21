@@ -20,6 +20,7 @@ from utils.constants import CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from importlib import import_module
 
+
 # endregion
 # region Image processing
 
@@ -166,7 +167,11 @@ def mask_img_array(img_array, pixel_coords_list):
         else:
             mask = np.bitwise_or(mask, sub_mask)
 
-    img_array *= mask
+    # img_array *= mask
+    # return np.ma.array(img_array, mask=mask)
+    # ma_img_array = np.copy(img_array)
+    ma_img_array = np.where(mask, img_array, np.nan)
+    return ma_img_array
 
 
 def process_img_arrays(img_arrays, pixel_coords_list):

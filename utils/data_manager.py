@@ -121,6 +121,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     file_path_txt = file_path.with_suffix(".txt")
     file_name = file_path_txt.name
+    folder_path = file_path_txt.parent
     temp_file_path_txt = data_manager_folder / file_name
 
     # Work with a copy of the raw data to avoid mutation
@@ -130,13 +131,19 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     temp_file_path_npz = None
     if keys_to_compress is not None:
         temp_file_path_npz = temp_file_path_txt.with_suffix(".npz")
+        # Build the object to compress
         kwargs = {}
         for key in keys_to_compress:
             kwargs[key] = raw_data[key]
-            # Replace the value in the data with .npz to indicate that the array has been compressed
-            raw_data[key] = ".npz"
+        # Save it locally
         with open(temp_file_path_npz, "wb") as f:
             np.savez_compressed(f, **kwargs)
+        # Upload to cloud
+        npz_file_id = _cloud.upload(folder_path, temp_file_path_npz)
+        # Replace the value in the raw data with a string that tells us where
+        # to find the compressed file
+        for key in keys_to_compress:
+            raw_data[key] = f"{npz_file_id}.npz"
 
     # Always include the config
     config = common.get_config_dict()
@@ -149,10 +156,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         json.dump(raw_data, f, indent=2)
 
     # Upload to cloud
-    folder_path = file_path_txt.parent
     _cloud.upload(folder_path, temp_file_path_txt)
-    if temp_file_path_npz is not None:
-        _cloud.upload(folder_path, temp_file_path_npz)
 
 
 # endregion
@@ -162,20 +166,41 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 def get_raw_data(file_name=None, file_id=None):
     """Returns a dictionary containing the json object from the specified
     raw data file
+
+    Parameters
+    ----------
+    file_name : str, optional
+        Name of the raw data file to load, w/o extension. If file_name is passed
+        and file_id is None, then we'll identify the proper file by searching
+        the cloud for it. By default None
+    file_id : str, optional
+        Cloud ID of the file to load. Loaded directly from the cloud, no
+        search necessary. By default None
+
+    Returns
+    -------
+    dict
+        Dictionary containing the json object from the specified raw data file
     """
 
-    file_content = _cloud.download(file_name, "txt", file_id)
+    file_content = _cloud.download(file_name, "txt", str(file_id))
     data = json.loads(file_content)
 
     # Find and decompress the linked numpy arrays
-    # npz_file = None
-    # for key in data:
-    #     val = data[key]
-    #     if isinstance(val, str) and val.endswith(".npz"):
-    #         if npz_file is None:
-    #             npz_file_content = _cloud.download(file_name, "npz")
-    #             npz_file = np.load(BytesIO(npz_file_content))
-    #         data[key] = npz_file[key]
+    npz_file = None
+    for key in data:
+        val = data[key]
+        if not isinstance(val, str):
+            continue
+        val_split = val.split(".")
+        if val_split[-1] != "npz":
+            continue
+        if npz_file is None:
+            first_part = val_split[0]
+            npz_file_id = first_part if first_part else None
+            npz_file_content = _cloud.download(file_name, "npz", npz_file_id)
+            npz_file = np.load(BytesIO(npz_file_content))
+        data[key] = npz_file[key]
 
     _json_deescape(data)
 

@@ -329,58 +329,23 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    # file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
-    # data = dm.get_raw_data(file_name)
-    # img_array = np.array(data["img_array"])
-
     kpl.init_kplotlib()
-    # fig, ax = plt.subplots()
-    # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
+    file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
     data = dm.get_raw_data(file_name)
-    signal_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel(
-        signal_img_array,
-        data["nv_sig"],
-        set_scanning_drift=False,
-        set_pixel_drift=False,
-        pixel_drift_adjust=False,
-    )
-    print(
-        widefield_utils.counts_from_img_array(
-            signal_img_array, pixel_coords, drift_adjust=False
-        )
-    )
+    img_array = np.array(data["img_array"], dtype=np.uint16)
+    nv_sig = data["nv_sig"]
 
-    file_name = "2023_11_07-17_14_32-johnson-nv2_2023_11_07"
-    data = dm.get_raw_data(file_name)
-    control_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel(
-        control_img_array,
-        data["nv_sig"],
-        set_scanning_drift=False,
-        set_pixel_drift=False,
-        pixel_drift_adjust=False,
-    )
-    print(
-        widefield_utils.counts_from_img_array(
-            control_img_array, pixel_coords, drift_adjust=False
-        )
-    )
+    pixel_coords = widefield_utils.get_nv_pixel_coords(nv_sig, drift_adjust=False)
+    pixel_coords_list = [pixel_coords]
+    ma_img_array = widefield_utils.mask_img_array(img_array, pixel_coords_list)
 
-    bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
-    print(
-        widefield_utils.counts_from_img_array(
-            control_img_array, bg_coords, drift_adjust=False
-        )
-    )
-
-    diff = signal_img_array - control_img_array
+    print(img_array.nbytes)
+    print(ma_img_array.nbytes)
 
     fig, ax = plt.subplots()
-    kpl.imshow(ax, diff, title="Difference", cbar_label="ADUs")
-    # kpl.imshow(ax, signal_img_array, title="Signal", cbar_label="ADUs")
-    # kpl.imshow(ax, control_img_array, title="Control", cbar_label="ADUs")
+    kpl.imshow(ax, img_array, cbar_label="ADUs")
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, ma_img_array, cbar_label="ADUs")
 
     plt.show(block=True)
