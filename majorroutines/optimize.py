@@ -447,74 +447,34 @@ def prepare_microscope(cxn, nv_sig):
     time.sleep(0.01)
 
 
-def optimize_list(nv_sig_list):
-    with common.labrad_connect() as cxn:
-        optimize_list_with_cxn(cxn, nv_sig_list)
-
-
-def optimize_list_with_cxn(cxn, nv_sig_list):
-    tb.init_safe_stop()
-
-    opti_coords_list = []
-    current_counts_list = []
-    for ind in range(len(nv_sig_list)):
-        print("Optimizing on NV {}...".format(ind))
-
-        if tb.safe_stop():
-            break
-
-        nv_sig = nv_sig_list[ind]
-        opti_coords, current_counts = main_with_cxn(
-            cxn, nv_sig, set_to_opti_coords=False, set_drift=False
-        )
-
-        if opti_coords is not None:
-            opti_coords_list.append("[{:.3f}, {:.3f}, {:.2f}],".format(*opti_coords))
-            current_counts_list.append("{},".format(current_counts))
-        else:
-            opti_coords_list.append("Optimization failed for NV {}.".format(ind))
-
-    for coords in opti_coords_list:
-        print(coords)
-
-
 def main(
     nv_sig,
-    save_data=False,
-    plot_data=False,
-    set_drift=True,
     laser_key=LaserKey.IMAGING,
     coords_suffix=None,
-    drift_adjust=True,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
+    do_plot=False,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
             cxn,
             nv_sig,
-            save_data,
-            plot_data,
-            set_drift,
             laser_key,
             coords_suffix,
-            drift_adjust,
             axes_to_optimize,
             no_crash,
+            do_plot,
         )
 
 
 def main_with_cxn(
     cxn,
     nv_sig,
-    save_data=False,
-    plot_data=False,
-    set_drift=True,
     laser_key=LaserKey.IMAGING,
     coords_suffix=None,
-    drift_adjust=True,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
+    do_plot=False,
 ):
     # If optimize is disabled, just do prep and return
     if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
@@ -522,6 +482,11 @@ def main_with_cxn(
         return [], None
 
     ### Setup
+
+    # Default routine operations
+    set_drift = True
+    drift_adjust = True
+    do_save = do_plot
 
     tb.reset_cfm(cxn)
     tb.init_safe_stop()
@@ -585,7 +550,7 @@ def main_with_cxn(
             print(f"Attempt number {ind+1}")
 
             # Create a figure with a plot for each axis
-            fig = _create_figure() if plot_data else None
+            fig = _create_figure() if do_plot else None
 
             # Tracking lists for each axis
             opti_coords = initial_coords.copy()
@@ -663,7 +628,7 @@ def main_with_cxn(
     end_time = time.time()
     time_elapsed = end_time - start_time
 
-    if save_data and opti_necessary:
+    if do_save and opti_necessary:
         timestamp = dm.get_time_stamp()
         for ind in range(3):
             scan_vals = scan_vals_by_axis[ind]

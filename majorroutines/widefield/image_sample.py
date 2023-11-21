@@ -236,33 +236,13 @@ def main_with_cxn(
         seq_file = "simple_readout-widefield.py"
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
-        # Polarization
-        pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
-        pol_laser = pol_laser_dict["name"]
-        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=pol_laser)
-        pol_duration = pol_laser_dict["duration"]
-
-        # Ionization
-        ion_laser_dict = nv_sig[LaserKey.IONIZATION]
-        ion_laser = ion_laser_dict["name"]
-        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ion_laser)
-        ion_duration = ion_laser_dict["duration"]
-
-        seq_args = [
-            #
-            readout,
-            readout_laser,
-            #
-            do_polarize,
-            pol_laser,
-            pol_coords,
-            pol_duration,
-            #
-            do_ionize,
-            ion_laser,
-            ion_coords,
-            ion_duration,
-        ]
+        nv_list = [nv_sig]
+        seq_args = widefield_utils.get_base_scc_seq_args(nv_list)
+        raise RuntimeError(
+            "The sequence simple_readout-charge_state_prep needs to be updated "
+            "to match the format of the seq_args returned by get_base_scc_seq_args"
+        )
+        seq_args.extend([do_polarize, do_ionize])
         seq_file = "simple_readout-charge_state_prep.py"
 
     # print(seq_args)
@@ -333,19 +313,9 @@ if __name__ == "__main__":
 
     file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
     data = dm.get_raw_data(file_name)
-    img_array = np.array(data["img_array"], dtype=np.uint16)
-    nv_sig = data["nv_sig"]
-
-    pixel_coords = widefield_utils.get_nv_pixel_coords(nv_sig, drift_adjust=False)
-    pixel_coords_list = [pixel_coords]
-    ma_img_array = widefield_utils.mask_img_array(img_array, pixel_coords_list)
-
-    print(img_array.nbytes)
-    print(ma_img_array.nbytes)
+    img_array = data["img_array"]
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="ADUs")
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, ma_img_array, cbar_label="ADUs")
 
     plt.show(block=True)

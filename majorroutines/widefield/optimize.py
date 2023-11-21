@@ -160,79 +160,43 @@ def optimize_pixel_to_scanning_calibration(cxn):
     common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
 
 
-def optimize_pixel(
-    nv_sig,
-    set_pixel_drift=True,
-    set_scanning_drift=True,
-    pixel_drift_adjust=True,
-    pixel_drift=None,
-    radius=None,
-    plot_data=False,
-):
+def optimize_pixel(cxn, nv_sig, do_plot=True):
     with common.labrad_connect() as cxn:
-        return optimize_pixel_with_cxn(
-            cxn,
-            nv_sig,
-            set_pixel_drift,
-            set_scanning_drift,
-            pixel_drift_adjust,
-            pixel_drift,
-            radius,
-            plot_data,
-        )
+        return optimize_pixel_with_cxn(cxn, nv_sig, do_plot)
 
 
-def optimize_pixel_with_cxn(
-    cxn,
-    nv_sig,
-    set_pixel_drift=True,
-    set_scanning_drift=True,
-    pixel_drift_adjust=True,
-    pixel_drift=None,
-    radius=None,
-    plot_data=False,
-):
+def optimize_pixel_with_cxn(cxn, nv_sig, do_plot=True):
     img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
-    pixel_coords = widefield.get_nv_pixel_coords(
-        nv_sig, pixel_drift_adjust, pixel_drift
-    )
-
-    return optimize_pixel_with_img_array(
-        img_array,
-        pixel_coords,
-        set_pixel_drift,
-        set_scanning_drift,
-        False,
-        None,
-        radius,
-        plot_data,
-    )
+    return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
 
 
 def optimize_pixel_with_img_array(
-    img_array,
-    pixel_coords,
-    set_pixel_drift=True,
-    set_scanning_drift=True,
-    pixel_drift_adjust=False,
-    pixel_drift=None,
-    radius=None,
-    plot_data=False,
+    img_array, nv_sig=None, pixel_coords=None, do_plot=True
 ):
-    if plot_data:
+    if do_plot:
         kpl.init_kplotlib()
         fig, ax = plt.subplots()
         kpl.imshow(ax, img_array, cbar_label="Counts")
 
-    # Make copies so we don't mutate the originals
-    original_pixel_coords = pixel_coords.copy()
-    pixel_coords = pixel_coords.copy()
-    if pixel_drift_adjust:
-        pixel_coords = widefield.adjust_pixel_coords_for_drift(
-            pixel_coords, pixel_drift
+    # Default operations of the routine
+    set_pixel_drift = nv_sig is not None
+    set_scanning_drift = set_pixel_drift
+    pixel_drift_adjust = True
+    pixel_drift = None
+    radius = None
+    do_print = True
+
+    if nv_sig is not None and pixel_coords is not None:
+        raise RuntimeError(
+            "nv_sig and pixel_coords cannot both be passed to optimize_pixel_with_img_array"
         )
 
     # Get coordinates
+    if nv_sig is not None:
+        original_pixel_coords = widefield.get_nv_pixel_coords(nv_sig, False)
+        pixel_coords = widefield.get_nv_pixel_coords(
+            nv_sig, pixel_drift_adjust, pixel_drift
+        )
     if radius is None:
         radius = widefield._get_camera_spot_radius()
     initial_x = pixel_coords[0]
@@ -255,7 +219,7 @@ def optimize_pixel_with_img_array(
     bg_guess = min_img_array_crop
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
     amp_guess = max(10, amp_guess)
-    guess = (amp_guess, *pixel_coords, 2.5, bg_guess)
+    guess = (amp_guess, initial_x, initial_y, 2.5, bg_guess)
     diam = radius * 2
 
     bounds = (
@@ -309,6 +273,7 @@ def optimize_pixel_with_img_array(
     opti_pixel_coords = opti_pixel_coords.tolist()
     r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
 
-    print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
+    if do_print:
+        print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
 
     return opti_pixel_coords

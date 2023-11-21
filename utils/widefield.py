@@ -25,14 +25,12 @@ from importlib import import_module
 # region Image processing
 
 
-def build_pixel_coords_list(nv_list, drift_adjust=True, drift=None):
-    pixel_coords_list = []
-    for nv_sig in nv_list:
-        pixel_coords_list.append(get_nv_pixel_coords(nv_sig, drift_adjust, drift))
-    return pixel_coords_list
+def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
+    img_array_photons = adus_to_photons(img_array)
+    return integrate_counts_from_photons(img_array_photons, pixel_coords, radius)
 
 
-def integrate_counts(img_array, pixel_coords, radius=None):
+def integrate_counts_from_photons(img_array, pixel_coords, radius=None):
     """Add up the counts around a target set of pixel coordinates in the passed image array.
     Use for getting the total number of photons coming from a target NV.
 
@@ -130,77 +128,10 @@ def img_str_to_array(img_str):
     return img_array
 
 
-def mask_img_array(img_array, pixel_coords_list):
-    """Mask an image array such that it only contains information about
-    NVs in the passed nv_list. Greatly reduces the size of compressed numpy
-    array files (npzs). Beware, this works by reference, so the passed
-    img_array will be modified
-
-    Parameters
-    ----------
-    img_array : ndarray
-        Image array to mask
-    nv_list : list(nv_sig)
-        List of nv_sigs for NVs to retain in the masked image
-    """
-
-    # Setup
-    num_x_pixels = img_array.shape[1]
-    num_y_pixels = img_array.shape[0]
-    radius = _get_camera_spot_radius()
-
-    # Construct the mask by looping through the NVs
-    num_nvs = len(pixel_coords_list)
-    for ind in range(num_nvs):
-        pixel_coords = pixel_coords_list[ind]
-        pixel_x = pixel_coords[0]
-        pixel_y = pixel_coords[1]
-
-        x_inds = np.linspace(0, num_x_pixels - 1, num_x_pixels)
-        y_inds = np.linspace(0, num_y_pixels - 1, num_y_pixels)
-        x_mesh, y_mesh = np.meshgrid(x_inds, y_inds)
-        dist = np.sqrt((x_mesh - pixel_x) ** 2 + (y_mesh - pixel_y) ** 2)
-        sub_mask = dist < (3 * radius)
-
-        if ind == 0:
-            mask = sub_mask
-        else:
-            mask = np.bitwise_or(mask, sub_mask)
-
-    # img_array *= mask
-    # return np.ma.array(img_array, mask=mask)
-    # ma_img_array = np.copy(img_array)
-    ma_img_array = np.where(mask, img_array, np.nan)
-    return ma_img_array
-
-
-def process_img_arrays(img_arrays, pixel_coords_list):
-    """Turn a nested list of image arrays into a nested list of counts. The
-    structure of the nested list of counts will match that of the image arrays"""
-    img_arrays = np.array(img_arrays)
-    shape = img_arrays.shape
-    num_dims = len(shape)
-    dims_to_loop = shape[0 : num_dims - 2]  # Last two are the images themselves
-    num_nvs = len(pixel_coords_list)
-
-    counts_lists = [np.empty(dims_to_loop) for ind in range(num_nvs)]
-
-    sub_indices = [range(el) for el in dims_to_loop]
-    indices = itertools.product(*sub_indices)
-
-    for index_tuple in indices:
-        img_array = img_arrays[index_tuple]
-        img_array_photons = adus_to_photons(img_array)
-        for nv_ind in range(num_nvs):
-            pixel_coords = pixel_coords_list[nv_ind]
-            counts_list = counts_lists[nv_ind]
-            counts_list[index_tuple] = integrate_counts(img_array_photons, pixel_coords)
-
-    return counts_lists
-
-
 def process_counts(counts_lists):
-    """Assumes the structure [nv_ind, run_ind, freq_ind, rep_ind]"""
+    """Gets average and standard error for counts data structure.
+    Assumes the structure [nv_ind, run_ind, freq_ind, rep_ind]
+    """
     run_ax = 1
     rep_ax = 3
     run_rep_axes = (run_ax, rep_ax)
