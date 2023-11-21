@@ -142,7 +142,7 @@ def do_optimize_widefield_calibration():
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.040
+    freq_range = 0.060
     num_steps = 20
     num_reps = 50
     num_runs = 4
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
         # LaserKey.IONIZATION: {"name": red_laser, "duration": 1e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 150},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 100},
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},

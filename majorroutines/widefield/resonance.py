@@ -168,6 +168,8 @@ def main_with_cxn(
     uwave_power = uwave_dict["uwave_power"]
     sig_gen.set_amp(uwave_power)
 
+    base_pixel_coords = widefield.get_nv_pixel_coords(nv_sig, drift_adjust=False)
+
     ### Load the pulse generator
 
     seq_args = widefield.get_base_scc_seq_args(nv_list)
@@ -213,10 +215,18 @@ def main_with_cxn(
                     img_str = camera.read()
                     img_array = widefield.img_str_to_array(img_str)
                     sig_img_arrays[run_ind][freq_ind][rep_ind] = img_array
+                    if rep_ind == 0:
+                        avg_img_array = np.copy(img_array)
+                    else:
+                        avg_img_array += img_array
 
                     # img_str = camera.read()
                     # img_array = widefield.img_str_to_array(img_str)
                     # ref_img_arrays[rep_ind][freq_ind][run_ind] = img_array
+
+                avg_img_array = avg_img_array / num_reps
+                pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
+                optimize.optimize_pixel_with_img_array(avg_img_array, pixel_coords)
 
     finally:
         camera.disarm()
