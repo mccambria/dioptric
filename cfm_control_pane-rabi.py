@@ -26,8 +26,6 @@ from majorroutines.widefield import (
     resonance,
 )
 from utils.constants import LaserKey, NVSpinState
-import time
-from servers.inputs.nuvu_camera.nc_camera import NuvuException
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -67,72 +65,46 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig)
 
 
-def do_image_single_nv_ionization(nv_sig, num_reps):
-    return charge_state_histograms.single_nv_ionization(nv_sig, num_reps)
-
-
-def do_image_single_nv_polarization(nv_sig, num_reps):
-    # return image_sample.single_nv_polarization(nv_sig, num_reps)
-    return charge_state_histograms.single_nv_polarization(nv_sig, num_reps)
-
-
 def do_charge_state_histograms(nv_sig, num_reps):
     return charge_state_histograms.main(nv_sig, num_reps)
 
 
-def do_optimize_green(nv_sig, set_drift=False, plot_data=True):
+def do_optimize_green(nv_sig, set_drift=False, do_plot=True):
     prev_imaging_dict = nv_sig[LaserKey.IMAGING]
     nv_sig[LaserKey.IMAGING] = green_laser_dict
     coords_suffix = green_laser
-    opti_coords, _ = optimize.main(
-        nv_sig,
-        save_data=plot_data,
-        plot_data=plot_data,
-        set_drift=set_drift,
-        coords_suffix=coords_suffix,
-    )
-    # pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
+    optimize.main(nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot)
     nv_sig[LaserKey.IMAGING] = prev_imaging_dict
+    if not set_drift:
+        pos.reset_drift(coords_suffix)
 
 
-def do_optimize_red(nv_sig, set_drift=False, plot_data=True):
+def do_optimize_red(nv_sig, set_drift=False, do_plot=True):
     coords_suffix = red_laser
-    opti_coords, _ = optimize.main(
+    optimize.main(
         nv_sig,
-        save_data=plot_data,
-        plot_data=plot_data,
-        set_drift=set_drift,
         laser_key=LaserKey.IONIZATION,
         coords_suffix=coords_suffix,
         no_crash=True,
+        do_plot=do_plot,
     )
-    # pos.set_nv_coords(nv_sig, opti_coords, coords_suffix)
+    if not set_drift:
+        pos.reset_drift(coords_suffix)
 
 
-def do_optimize_z(nv_sig, coords_suffix=None, set_drift=False, plot_data=False):
-    opti_coords, _ = optimize.main(
-        nv_sig,
-        save_data=plot_data,
-        plot_data=plot_data,
-        set_drift=set_drift,
-        coords_suffix=coords_suffix,
-        set_pixel_drift=set_drift,
-        no_crash=True,
-    )
-    nv_sig["coords"] = opti_coords
+def do_optimize_z(nv_sig, set_drift=False, do_plot=False):
+    optimize.main(nv_sig, no_crash=True, do_plot=do_plot)
+    if not set_drift:
+        pos.reset_drift()
 
 
 def do_optimize_pixel(nv_sig, set_drift=False):
     prev_imaging_dict = nv_sig[LaserKey.IMAGING]
     nv_sig[LaserKey.IMAGING] = green_laser_dict
-
-    pixel_coords = optimize.optimize_pixel(
-        nv_sig, set_scanning_drift=set_drift, set_pixel_drift=set_drift, plot_data=True
-    )
-    pixel_coords = [round(el, 2) for el in pixel_coords]
-
-    # nv_sig["pixel_coords"] = pixel_coords
+    optimize.optimize_pixel(nv_sig, do_plot=True)
     nv_sig[LaserKey.IMAGING] = prev_imaging_dict
+    if not set_drift:
+        widefield.reset_pixel_drift()
 
 
 def do_optimize_widefield_calibration():
@@ -142,34 +114,11 @@ def do_optimize_widefield_calibration():
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.060
+    freq_range = 0.040
     num_steps = 20
     num_reps = 50
     num_runs = 4
-    resonance.main(
-        nv_list,
-        freq_center,
-        freq_range,
-        num_steps,
-        num_reps,
-        num_runs,
-    )
-
-
-def do_camera_test():
-    with common.labrad_connect() as cxn:
-        pulse_gen = tb.get_server_pulse_gen(cxn)
-        camera = tb.get_server_camera(cxn)
-
-        seq_file_name = "camera_test.py"
-        pulse_gen.stream_load(seq_file_name, "")
-        camera.arm()
-        pulse_gen.stream_start(1)
-        img_array = camera.read()
-        camera.disarm()
-
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array)
+    resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
 def do_opx_constant_ac():
@@ -222,53 +171,6 @@ def do_opx_constant_ac():
         # )
         input("Press enter to stop...")
         # opx.constant_ac()
-
-
-# def do_stationary_count(nv_sig, disable_opt=True):
-#     nv_sig["imaging_readout_dur"] *= 10
-#     run_time = 3 * 60 * 10**9  # ns
-#     stationary_count.main(nv_sig, run_time, disable_opt=disable_opt)
-
-
-# def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
-#     num_steps = 51
-
-#     # num_reps = 2e4
-#     # num_runs = 16
-
-#     num_reps = 1e2
-#     num_runs = 32
-
-#     uwave_power = 4
-#     uwave_pulse_dur = 100
-
-#     pulsed_resonance.main(
-#         nv_sig,
-#         freq_center,
-#         freq_range,
-#         num_steps,
-#         num_reps,
-#         num_runs,
-#         uwave_power,
-#         uwave_pulse_dur,
-#     )
-
-
-# def do_rabi(nv_sig, state, uwave_time_range=[0, 300]):
-#     num_steps = 51
-
-#     # num_reps = 2e4
-#     # num_runs = 16
-
-#     num_reps = 1e2
-#     num_runs = 16
-
-#     period = rabi.main(nv_sig, uwave_time_range, state, num_steps, num_reps, num_runs)
-#     nv_sig["rabi_{}".format(state.name)] = period
-
-
-# def make_histogram(nv_sig, num_reps=1):
-#     charge_state_histogram(nv_sig, num_reps)
 
 
 ### Run the file
@@ -379,9 +281,8 @@ if __name__ == "__main__":
 
         # do_charge_state_histograms(nv_list, 1000)
 
-        # do_optimize_pixel(nv_sig, set_drift=True)
+        do_optimize_pixel(nv_sig)
         # do_optimize_red(nv_sig)
-        # do_optimize_pixel(nv_sig, set_drift=False)
         # do_optimize_green(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_widefield_calibration()

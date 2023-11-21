@@ -700,16 +700,6 @@ def send_email(content, email_from=None, email_to=None):
 # region Miscellaneous
 
 
-def construct_nested_list(*shape):
-    shape = list(shape)
-    num_els = shape.pop()
-    base_list = [None] * num_els
-    while len(shape) > 0:
-        num_els = shape.pop()
-        base_list = [base_list for ind in range(num_els)]
-    return base_list
-
-
 def single_conversion(single_func, freq, *args):
     if type(freq) in [list, np.ndarray]:
         single_func_lambda = lambda freq: single_func(freq, *args)

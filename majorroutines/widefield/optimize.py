@@ -167,28 +167,36 @@ def optimize_pixel(cxn, nv_sig, do_plot=True):
 
 def optimize_pixel_with_cxn(cxn, nv_sig, do_plot=True):
     img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
-    return optimize_pixel_with_img_array(img_array, nv_sig, do_plot)
+    return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
 
 
-def optimize_pixel_with_img_array(img_array, nv_sig, do_plot=True):
+def optimize_pixel_with_img_array(
+    img_array, nv_sig=None, pixel_coords=None, do_plot=True
+):
     if do_plot:
         kpl.init_kplotlib()
         fig, ax = plt.subplots()
         kpl.imshow(ax, img_array, cbar_label="Counts")
 
     # Default operations of the routine
-    set_pixel_drift = True
-    set_scanning_drift = True
+    set_pixel_drift = nv_sig is not None
+    set_scanning_drift = set_pixel_drift
     pixel_drift_adjust = True
     pixel_drift = None
     radius = None
     do_print = True
 
+    if nv_sig is not None and pixel_coords is not None:
+        raise RuntimeError(
+            "nv_sig and pixel_coords cannot both be passed to optimize_pixel_with_img_array"
+        )
+
     # Get coordinates
-    original_pixel_coords = widefield.get_nv_pixel_coords(nv_sig, False)
-    pixel_coords = widefield.get_nv_pixel_coords(
-        nv_sig, pixel_drift_adjust, pixel_drift
-    )
+    if nv_sig is not None:
+        original_pixel_coords = widefield.get_nv_pixel_coords(nv_sig, False)
+        pixel_coords = widefield.get_nv_pixel_coords(
+            nv_sig, pixel_drift_adjust, pixel_drift
+        )
     if radius is None:
         radius = widefield._get_camera_spot_radius()
     initial_x = pixel_coords[0]

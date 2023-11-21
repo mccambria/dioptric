@@ -236,33 +236,13 @@ def main_with_cxn(
         seq_file = "simple_readout-widefield.py"
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
-        # Polarization
-        pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
-        pol_laser = pol_laser_dict["name"]
-        pol_coords = pos.get_nv_coords(nv_sig, coords_suffix=pol_laser)
-        pol_duration = pol_laser_dict["duration"]
-
-        # Ionization
-        ion_laser_dict = nv_sig[LaserKey.IONIZATION]
-        ion_laser = ion_laser_dict["name"]
-        ion_coords = pos.get_nv_coords(nv_sig, coords_suffix=ion_laser)
-        ion_duration = ion_laser_dict["duration"]
-
-        seq_args = [
-            #
-            readout,
-            readout_laser,
-            #
-            do_polarize,
-            pol_laser,
-            pol_coords,
-            pol_duration,
-            #
-            do_ionize,
-            ion_laser,
-            ion_coords,
-            ion_duration,
-        ]
+        nv_list = [nv_sig]
+        seq_args = widefield_utils.get_base_scc_seq_args(nv_list)
+        raise RuntimeError(
+            "The sequence simple_readout-charge_state_prep needs to be updated "
+            "to match the format of the seq_args returned by get_base_scc_seq_args"
+        )
+        seq_args.extend([do_polarize, do_ionize])
         seq_file = "simple_readout-charge_state_prep.py"
 
     # print(seq_args)
@@ -329,58 +309,13 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    # file_name = "2023_11_01-10_43_50-johnson-nv0_2023_10_30"
-    # data = dm.get_raw_data(file_name)
-    # img_array = np.array(data["img_array"])
-
     kpl.init_kplotlib()
-    # fig, ax = plt.subplots()
-    # im = kpl.imshow(ax, img_array, cbar_label="Counts")
 
     file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
     data = dm.get_raw_data(file_name)
-    signal_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel(
-        signal_img_array,
-        data["nv_sig"],
-        set_scanning_drift=False,
-        set_pixel_drift=False,
-        pixel_drift_adjust=False,
-    )
-    print(
-        widefield_utils.counts_from_img_array(
-            signal_img_array, pixel_coords, drift_adjust=False
-        )
-    )
-
-    file_name = "2023_11_07-17_14_32-johnson-nv2_2023_11_07"
-    data = dm.get_raw_data(file_name)
-    control_img_array = np.array(data["img_array"])
-    pixel_coords = optimize_pixel(
-        control_img_array,
-        data["nv_sig"],
-        set_scanning_drift=False,
-        set_pixel_drift=False,
-        pixel_drift_adjust=False,
-    )
-    print(
-        widefield_utils.counts_from_img_array(
-            control_img_array, pixel_coords, drift_adjust=False
-        )
-    )
-
-    bg_coords = [pixel_coords[0] + 10, pixel_coords[1] + 10]
-    print(
-        widefield_utils.counts_from_img_array(
-            control_img_array, bg_coords, drift_adjust=False
-        )
-    )
-
-    diff = signal_img_array - control_img_array
+    img_array = data["img_array"]
 
     fig, ax = plt.subplots()
-    kpl.imshow(ax, diff, title="Difference", cbar_label="ADUs")
-    # kpl.imshow(ax, signal_img_array, title="Signal", cbar_label="ADUs")
-    # kpl.imshow(ax, control_img_array, title="Control", cbar_label="ADUs")
+    kpl.imshow(ax, img_array, cbar_label="ADUs")
 
     plt.show(block=True)

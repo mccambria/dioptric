@@ -258,21 +258,23 @@ def main_with_cxn(
         "num_runs": num_runs,
         "readout-units": "ms",
         "freqs": freqs,
+        "freq-units": "GHz",
         "freq_range": freq_range,
+        "freq_center": freq_center,
         "counts": counts,
         "counts-units": "photons",
         "img_arrays": img_arrays,
         "img_array-units": "ADUs",
     }
 
-    nv_name = nv_sig["name"]
-    file_path = dm.get_file_path(__file__, timestamp, nv_name)
+    repr_nv_name = repr_nv_sig["name"]
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     # keys_to_compress = ["sig_img_arrays", "ref_img_arrays"]
     keys_to_compress = ["img_arrays"]
     dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, nv_name + "-fit")
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
         dm.save_figure(fit_fig, file_path)
 
 
@@ -281,19 +283,16 @@ if __name__ == "__main__":
 
     file_name = "2023_11_20-23_45_03-johnson-nv0_2023_11_09"
 
-    # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id="1367909272526")
+    data = dm.get_raw_data(file_name)
+    # data = dm.get_raw_data(file_id="1367909272526")
     nv_list = data["nv_list"]
-    sig_img_arrays = data["sig_img_arrays"]
-    # pixel_coords_list = data["pixel_coords_list"]
-    # freqs = data["freqs"]
+    img_arrays = data["img_arrays"]
+    freqs = data["freqs"]
     counts = data["counts"]
 
-    # counts = widefield.process_img_arrays(sig_img_arrays, pixel_coords_list)
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
     kpl.init_kplotlib()
-    freqs = calculate_freqs(2.87, 0.060, 20)
     raw_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
 

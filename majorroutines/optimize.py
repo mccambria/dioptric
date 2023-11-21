@@ -449,23 +449,21 @@ def prepare_microscope(cxn, nv_sig):
 
 def main(
     nv_sig,
-    do_save=False,
-    do_plot=False,
     laser_key=LaserKey.IMAGING,
     coords_suffix=None,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
+    do_plot=False,
 ):
     with common.labrad_connect() as cxn:
         return main_with_cxn(
             cxn,
             nv_sig,
-            do_save,
-            do_plot,
             laser_key,
             coords_suffix,
             axes_to_optimize,
             no_crash,
+            do_plot,
         )
 
 
@@ -476,7 +474,6 @@ def main_with_cxn(
     coords_suffix=None,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
-    do_save=False,
     do_plot=False,
 ):
     # If optimize is disabled, just do prep and return
@@ -489,6 +486,7 @@ def main_with_cxn(
     # Default routine operations
     set_drift = True
     drift_adjust = True
+    do_save = do_plot
 
     tb.reset_cfm(cxn)
     tb.init_safe_stop()
