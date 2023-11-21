@@ -153,8 +153,10 @@ def main_with_cxn(
     tb.reset_cfm(cxn)
 
     # First NV to represent the others
-    nv_sig = nv_list[0]
-    pos.set_xyz_on_nv(cxn, nv_sig)
+    repr_nv_ind = 0
+    repr_nv_sig = nv_list[repr_nv_ind]
+    pos.set_xyz_on_nv(cxn, repr_nv_sig)
+    num_nvs = len(nv_list)
 
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
@@ -163,12 +165,10 @@ def main_with_cxn(
 
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    uwave_dict = nv_sig[state]
+    uwave_dict = repr_nv_sig[state]
     uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     uwave_power = uwave_dict["uwave_power"]
     sig_gen.set_amp(uwave_power)
-
-    base_pixel_coords = widefield.get_nv_pixel_coords(nv_sig, drift_adjust=False)
 
     ### Load the pulse generator
 
@@ -183,15 +183,10 @@ def main_with_cxn(
 
     ### Data tracking
 
-    sig_img_arrays = [
-        [[None] * num_reps for ind in range(num_steps)] for jnd in range(num_runs)
-    ]
-    # ref_img_arrays = [
-    #     [None] * num_reps for ind in range(num_steps) for jnd in range(num_runs)
-    # ]
+    counts = np.empty((num_nvs, num_runs, num_steps, num_reps))
+    img_arrays = np.empty((num_runs, num_steps), dtype=np.uint16)
     freq_ind_master_list = [[] for ind in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
-    # pixel_drifts = [[None] * num_steps for ind in range(num_runs)]
 
     ### Collect the data
 
@@ -205,6 +200,10 @@ def main_with_cxn(
             shuffle(freq_ind_list)
 
             for freq_ind in freq_ind_list:
+                pixel_coords_list = [
+                    widefield.get_nv_pixel_coords(nv) for nv in nv_list
+                ]
+
                 freq_ind_master_list[run_ind].append(freq_ind)
                 freq = freqs[freq_ind]
                 sig_gen.set_freq(freq)
@@ -214,19 +213,21 @@ def main_with_cxn(
                 for rep_ind in range(num_reps):
                     img_str = camera.read()
                     img_array = widefield.img_str_to_array(img_str)
-                    sig_img_arrays[run_ind][freq_ind][rep_ind] = img_array
                     if rep_ind == 0:
                         avg_img_array = np.copy(img_array)
                     else:
                         avg_img_array += img_array
 
-                    # img_str = camera.read()
-                    # img_array = widefield.img_str_to_array(img_str)
-                    # ref_img_arrays[rep_ind][freq_ind][run_ind] = img_array
+                    for nv_ind in range(num_nvs):
+                        pixel_coords = pixel_coords_list[nv_ind]
+                        counts_val = widefield.integrate_counts_from_adus(
+                            img_array, pixel_coords
+                        )
+                        counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
 
                 avg_img_array = avg_img_array / num_reps
-                pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
-                optimize.optimize_pixel_with_img_array(avg_img_array, pixel_coords)
+                img_arrays[run_ind, freq_ind] = avg_img_array
+                optimize.optimize_pixel_with_img_array(avg_img_array, repr_nv_sig)
 
     finally:
         camera.disarm()
@@ -234,8 +235,6 @@ def main_with_cxn(
 
     ### Process and plot
 
-    pixel_coords_list = widefield.build_pixel_coords_list(nv_list)
-    counts = widefield.process_img_arrays(sig_img_arrays, pixel_coords_list)
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
     kpl.init_kplotlib()
@@ -250,19 +249,10 @@ def main_with_cxn(
 
     tb.reset_cfm(cxn)
 
-    # Mask off img_arrays to shrink the file
-    for run_ind in range(num_runs):
-        for freq_ind in range(num_steps):
-            for rep_ind in range(num_reps):
-                img_array = sig_img_arrays[run_ind][freq_ind][rep_ind]
-                widefield.mask_img_array(img_array, pixel_coords_list)
-
     timestamp = dm.get_time_stamp()
-    sig_img_arrays = np.array(sig_img_arrays)
     raw_data = {
         "timestamp": timestamp,
         "nv_list": nv_list,
-        "pixel_coords_list": pixel_coords_list,
         "num_reps": num_reps,
         "num_steps": num_steps,
         "num_runs": num_runs,
@@ -271,15 +261,14 @@ def main_with_cxn(
         "freq_range": freq_range,
         "counts": counts,
         "counts-units": "photons",
-        "sig_img_arrays": sig_img_arrays.astype(int),
-        # "ref_img_arrays": ref_img_arrays.astype(int),
+        "img_arrays": img_arrays,
         "img_array-units": "ADUs",
     }
 
     nv_name = nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, nv_name)
     # keys_to_compress = ["sig_img_arrays", "ref_img_arrays"]
-    keys_to_compress = ["sig_img_arrays"]
+    keys_to_compress = ["img_arrays"]
     dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:

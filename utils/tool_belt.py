@@ -51,8 +51,6 @@ def configure_logging(inst, level=logging.INFO):
 
 
 # endregion
-
-
 # region Laser utils
 
 
@@ -699,20 +697,17 @@ def send_email(content, email_from=None, email_to=None):
 
 
 # endregion
-# region Miscellaneous (probably consider deprecated)
+# region Miscellaneous
 
 
-def get_dd_model_coeff_dict():
-    # fmt: off
-    dd_model_coeff_dict = {
-        "1": [6, -8, 2],
-        "2": [10, -8, -8, 8, -2],
-        "4": [18, -8, -24, 8, 16, -8, -8, 8, -2],
-        "8": [34, -8, -56, 8, 48, -8, -40, 8, 32, -8, -24, 8, 16, -8, -8, 8, -2],
-    }
-    # fmt: on
-
-    return dd_model_coeff_dict
+def construct_nested_list(*shape):
+    shape = list(shape)
+    num_els = shape.pop()
+    base_list = [None] * num_els
+    while len(shape) > 0:
+        num_els = shape.pop()
+        base_list = [base_list for ind in range(num_els)]
+    return base_list
 
 
 def single_conversion(single_func, freq, *args):
