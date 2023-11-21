@@ -193,15 +193,17 @@ def optimize_pixel_with_cxn(
     plot_data=False,
 ):
     img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
-    pixel_coords = nv_sig["pixel_coords"]
+    pixel_coords = widefield.get_nv_pixel_coords(
+        nv_sig, pixel_drift_adjust, pixel_drift
+    )
 
     return optimize_pixel_with_img_array(
         img_array,
         pixel_coords,
         set_pixel_drift,
         set_scanning_drift,
-        pixel_drift_adjust,
-        pixel_drift,
+        False,
+        None,
         radius,
         plot_data,
     )
@@ -212,7 +214,7 @@ def optimize_pixel_with_img_array(
     pixel_coords,
     set_pixel_drift=True,
     set_scanning_drift=True,
-    pixel_drift_adjust=True,
+    pixel_drift_adjust=False,
     pixel_drift=None,
     radius=None,
     plot_data=False,
