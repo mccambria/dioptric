@@ -171,7 +171,8 @@ def _read_counts_camera_step(cxn, nv_sig, laser_key, axis_ind=None, scan_vals=No
         pulse_gen.stream_start()
         img_str = camera.read()
         img_array = widefield.img_str_to_array(img_str)
-        sample = widefield.counts_from_img_array(img_array, pixel_coords)
+        img_array = widefield.adus_to_photons(img_array)
+        sample = widefield.integrate_counts(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
     return [np.array(counts, dtype=int), img_array]
@@ -195,10 +196,10 @@ def _read_counts_camera_sequence(
 
     # Sequence setup
 
-    imaging_laser_dict = nv_sig[LaserKey.IMAGING]
-    imaging_laser_name = imaging_laser_dict["name"]
-    imaging_readout = imaging_laser_dict["duration"]
     if laser_key == LaserKey.IMAGING:
+        imaging_laser_dict = nv_sig[LaserKey.IMAGING]
+        imaging_laser_name = imaging_laser_dict["name"]
+        imaging_readout = imaging_laser_dict["duration"]
         if coords is None:
             coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         seq_args = [imaging_readout, imaging_laser_name, [coords[0]], [coords[1]]]
@@ -212,11 +213,14 @@ def _read_counts_camera_sequence(
         ion_laser_dict = nv_sig[LaserKey.IONIZATION]
         ion_laser_name = ion_laser_dict["name"]
         ion_duration = ion_laser_dict["duration"]
+        readout_laser_dict = nv_sig[LaserKey.CHARGE_READOUT]
+        readout_laser_name = readout_laser_dict["name"]
+        readout_duration = readout_laser_dict["duration"]
         if coords is None:
             coords = pos.get_nv_coords(nv_sig, ion_laser_name)
         seq_args = [
-            imaging_readout,
-            imaging_laser_name,
+            readout_duration,
+            readout_laser_name,
             pol_laser_name,
             pol_coords,
             pol_duration,
@@ -270,7 +274,8 @@ def _read_counts_camera_sequence(
 
             # Process the result
             img_array = img_array / num_reps
-            sample = widefield.counts_from_img_array(img_array, pixel_coords)
+            img_array = widefield.adus_to_photons(img_array)
+            sample = widefield.integrate_counts(img_array, pixel_coords)
             counts.append(sample)
 
     finally:

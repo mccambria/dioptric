@@ -220,7 +220,7 @@ def optimize_pixel_with_img_array(
     if plot_data:
         kpl.init_kplotlib()
         fig, ax = plt.subplots()
-        widefield.imshow(ax, img_array)
+        kpl.imshow(ax, img_array, cbar_label="Counts")
 
     # Make copies so we don't mutate the originals
     original_pixel_coords = pixel_coords.copy()
@@ -232,17 +232,12 @@ def optimize_pixel_with_img_array(
 
     # Get coordinates
     if radius is None:
-        config = common.get_config_dict()
-        radius = config["camera_spot_radius"]
-    if type(radius) is list:
-        single_radius = radius[0][1]
-    else:
-        single_radius = radius
+        radius = widefield._get_camera_spot_radius()
     initial_x = pixel_coords[0]
     initial_y = pixel_coords[1]
 
     # Limit the range to the NV we're looking at
-    half_range = single_radius
+    half_range = radius
     left = round(initial_x - half_range)
     right = round(initial_x + half_range)
     top = round(initial_y - half_range)
@@ -253,20 +248,20 @@ def optimize_pixel_with_img_array(
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
 
     # Bounds and guesses
-    bg_guess = 300
+    min_img_array_crop = np.min(img_array_crop)
+    max_img_array_crop = np.max(img_array_crop)
+    bg_guess = min_img_array_crop
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
     amp_guess = max(10, amp_guess)
     guess = (amp_guess, *pixel_coords, 2.5, bg_guess)
-    diam = single_radius * 2
-    min_img_array_crop = np.min(img_array_crop)
-    max_img_array_crop = np.max(img_array_crop)
+    diam = radius * 2
 
     bounds = (
         (0, max_img_array_crop - min_img_array_crop),
         (left, right),
         (top, bottom),
         (1, diam),
-        (min(250, min_img_array_crop), max(350, max_img_array_crop)),
+        (0, max_img_array_crop),
     )
 
     args = (x_crop_mesh, y_crop_mesh, img_array_crop)

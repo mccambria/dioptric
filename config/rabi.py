@@ -97,7 +97,7 @@ config |= {
     "collection_mode": CollectionMode.CAMERA,
     ###
     # Common durations are in ns
-    "CommonDurations": { 
+    "CommonDurations": {
         "cw_meas_buffer": 5000,
         "pol_to_uwave_wait_dur": 5000,
         "scc_ion_readout_buffer": 10000,
@@ -121,7 +121,7 @@ config |= {
         "pulse_gen_SWAB_82_ip": "192.168.0.111",
         "rotation_stage_ell18k_address": "COM6",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.160.114::inst0::INSTR",
-        "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.112::inst0::INSTR",
+        "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.120::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.160.112::5025::SOCKET",
         "tagger_SWAB_20_serial": "1740000JEH",
         "QM_opx_ip": "192.168.0.117",
@@ -133,8 +133,8 @@ config |= {
         "sig_gen_TEKT_tsg4104a": {"delay": 57},
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
-        "sig_gen_HIGH": "sig_gen_TEKT_tsg4104a",
-        "sig_gen_LOW": "sig_gen_TEKT_tsg4104a",
+        "sig_gen_HIGH": "sig_gen_STAN_sg394",
+        "sig_gen_LOW": "sig_gen_STAN_sg394",
     },
     ###
     "Camera": {

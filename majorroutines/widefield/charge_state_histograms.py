@@ -26,8 +26,8 @@ import os
 import time
 
 
-def create_histogram(sig_counts_list, ref_counts_list, nv_sig):
-    readout = nv_sig[LaserKey.IMAGING]["duration"]
+def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
+    readout = nv_sig[LaserKey.CHARGE_READOUT]["duration"]
     readout_ms = int(readout / 1e6)
     readout_s = readout / 1e9
 
@@ -64,7 +64,7 @@ def create_histogram(sig_counts_list, ref_counts_list, nv_sig):
     return fig
 
 
-def main(nv_list, num_reps=100, diff_polarize=True, diff_ionize=True):
+def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Setup
 
     kpl.init_kplotlib()
@@ -78,23 +78,28 @@ def main(nv_list, num_reps=100, diff_polarize=True, diff_ionize=True):
 
     ### Process
 
-    sig_counts_list, ref_counts_list, fig = process_data(
+    sig_counts_list, ref_counts_list = process_data(
         nv_list, sig_img_array_list, ref_img_array_list
     )
 
+    fig = create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+
     ### Save
+    
+    pixel_coords_list = widefield.build_pixel_coords_list(nv_list)
 
     # Mask image arrays for compression
     for ind in range(num_reps):
         img_array = sig_img_array_list[ind]
-        widefield.mask_img_array(img_array, nv_list)
+        widefield.mask_img_array(img_array, pixel_coords_list)
         img_array = ref_img_array_list[ind]
-        widefield.mask_img_array(img_array, nv_list)
+        widefield.mask_img_array(img_array, pixel_coords_list)
 
     timestamp = dm.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,
         "nv_list": nv_list,
+        "pixel_coords_list": pixel_coords_list,
         "num_reps": num_reps,
         "diff_polarize": diff_polarize,
         "diff_ionize": diff_ionize,
@@ -117,36 +122,31 @@ def process_data(nv_list, sig_img_array_list, ref_img_array_list):
     # Get the actual num_reps in case something went wrong
     num_reps = len(sig_img_array_list)
 
-    ### Get the counts
-
     # Optimize pixel coords
-    nv_sig = nv_list[0]
-    pixel_coords = nv_sig["pixel_coords"]
     sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
-    pixel_coords = optimize.optimize_pixel_with_img_array(sig_img_array, pixel_coords)
+    pixel_coords_list = []
+    for nv_sig in nv_list:
+        pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
+        pixel_coords = optimize.optimize_pixel_with_img_array(
+            sig_img_array, pixel_coords
+        )
+        pixel_coords_list.append(pixel_coords)
 
-    sig_counts_lists = widefield.process_img_arrays(sig_img_array_list, nv_list)
-    ref_counts_lists = widefield.process_img_arrays(ref_img_array_list, nv_list)
+    sig_counts_lists = widefield.process_img_arrays(
+        sig_img_array_list, pixel_coords_list
+    )
+    ref_counts_lists = widefield.process_img_arrays(
+        ref_img_array_list, pixel_coords_list
+    )
 
     # Just one NV for now
     sig_counts_list = sig_counts_lists[0]
     ref_counts_list = ref_counts_lists[0]
 
-    ### Make the histograms
-
-    fig = create_histogram(sig_counts_list, ref_counts_list, nv_sig)
-
-    return sig_counts_list, ref_counts_list, fig
+    return sig_counts_list, ref_counts_list
 
 
-def _collect_data(
-    cxn,
-    nv_list,
-    caller_fn_name,
-    num_reps=1,
-    diff_polarize=True,
-    diff_ionize=True,
-):
+def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Some initial setup
 
     # First NV to represent the others
@@ -230,7 +230,7 @@ def _collect_data(
         img_array = img_arrays[ind]
         title_suffix = title_suffixes[ind]
         fig, ax = plt.subplots()
-        title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms, {title_suffix}"
+        title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
         kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
         figs.append(fig)
 
@@ -255,43 +255,24 @@ def _collect_data(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_17-12_11_12-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
+    file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
 
     data = dm.get_raw_data(file_name)
-    nv_sig = data["nv_sig"]
+    nv_list = data["nv_list"]
+    sig_img_array_list = data["sig_img_array_list"]
+    ref_img_array_list = data["ref_img_array_list"]
 
-    # nv_sig2 = nv_sig.copy()
-    # nv_sig2["pixel_coords"] = [300, 300]
-    # nv_list = [nv_sig, nv_sig2]
+    sig_counts_list, ref_counts_list = process_data(
+        nv_list, sig_img_array_list, ref_img_array_list
+    )
 
-    # img_array = data["img_array"]
-    # fig, ax = plt.subplots()
-    # # widefield.mask_img_array(img_array, nv_list, drift_adjust=False)
-    # # data["img_array"] = img_array
-    # img_array = widefield.adus_to_photons(img_array)
-    # widefield.imshow(ax, img_array)
+    nv_sig = nv_list[0]
+    create_histogram(nv_sig, sig_counts_list, ref_counts_list)
 
-    # timestamp = dm.get_time_stamp()
-    # nv_name = nv_sig["name"]
-    # file_path = dm.get_file_path(__file__, timestamp, nv_name)
-    # keys_to_compress = ["img_array"]
-    # dm.save_raw_data(data, file_path, keys_to_compress=keys_to_compress)
-
-    # plt.show(block=True)
-
-    sig_counts_list = np.array(data["sig_counts_list"])
-    sig_counts_list = widefield.adus_to_photons(sig_counts_list)
-    ref_counts_list = np.array(data["ref_counts_list"])
-    ref_counts_list = widefield.adus_to_photons(ref_counts_list)
-    num_reps = data["num_reps"]
-
-    create_histogram(sig_counts_list, ref_counts_list, num_reps, nv_sig)
-
-    thresh = 5050
-    print(f"Red NV0: {(sig_counts_list < thresh).sum()}")
-    print(f"Red NV-: {(sig_counts_list > thresh).sum()}")
-    print(f"Green NV0: {(ref_counts_list < thresh).sum()}")
-    print(f"Green NV-: {(ref_counts_list > thresh).sum()}")
+    # thresh = 5050
+    # print(f"Red NV0: {(sig_counts_list < thresh).sum()}")
+    # print(f"Red NV-: {(sig_counts_list > thresh).sum()}")
+    # print(f"Green NV0: {(ref_counts_list < thresh).sum()}")
+    # print(f"Green NV-: {(ref_counts_list > thresh).sum()}")
 
     plt.show(block=True)

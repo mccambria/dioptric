@@ -30,15 +30,17 @@ import time
 from servers.inputs.nuvu_camera.nc_camera import NuvuException
 
 green_laser = "laser_INTE_520"
-yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
+yellow_laser = "laser_OPTO_589"
 green_laser_dict = {"name": green_laser, "duration": 10e6}
 red_laser_dict = {"name": red_laser, "duration": 5e6}
+yellow_laser_dict = {"name": yellow_laser, "duration": 50e6}
 
 ### Major Routines
 
 
 def do_widefield_image_sample(nv_sig, num_reps=1):
+    nv_sig[LaserKey.IMAGING] = yellow_laser_dict
     image_sample.widefield(nv_sig, num_reps)
 
 
@@ -74,8 +76,8 @@ def do_image_single_nv_polarization(nv_sig, num_reps):
     return charge_state_histograms.single_nv_polarization(nv_sig, num_reps)
 
 
-def do_charge_state_histogram(nv_sig, num_reps):
-    return charge_state_histograms.charge_state_histogram(nv_sig, num_reps)
+def do_charge_state_histograms(nv_sig, num_reps):
+    return charge_state_histograms.main(nv_sig, num_reps)
 
 
 def do_optimize_green(nv_sig, set_drift=False, plot_data=True):
@@ -141,11 +143,9 @@ def do_optimize_widefield_calibration():
 def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.040
-    num_steps = 30
-    num_reps = 200
-    num_runs = 17
-    uwave_power = -23.0
-    laser_filter = "nd_0.7"
+    num_steps = 20
+    num_reps = 50
+    num_runs = 4
     resonance.main(
         nv_list,
         freq_center,
@@ -153,8 +153,6 @@ def do_resonance(nv_list):
         num_steps,
         num_reps,
         num_runs,
-        uwave_power,
-        laser_filter=laser_filter,
     )
 
 
@@ -283,11 +281,8 @@ if __name__ == "__main__":
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
 
-    # Imaging laser dicts
-    yellow_laser_dict = {"name": yellow_laser, "duration": 50e6}
-
     sample_name = "johnson"
-    z_coord = 4.08
+    z_coord = 4.05
     # ref_coords = [110.900, 108.8, z_coord]
     ref_coords = [110.0, 110.0]
     ref_coords = np.array(ref_coords)
@@ -301,28 +296,27 @@ if __name__ == "__main__":
         "disable_z_opt": True,
         "expected_count_rate": None,
         #
-        # LaserKey.IMAGING: yellow_laser_dict,
         LaserKey.IMAGING: green_laser_dict,
-        # LaserKey.IMAGING: red_laser_dict,
-        #
-        LaserKey.CHARGE_READOUT: yellow_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 1e3},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
+        # LaserKey.IONIZATION: {"name": red_laser, "duration": 1e3},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 150},
+        LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.885, "rabi_period": 150, "uwave_power": 10.0},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 12.0},
     }
 
     # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_09"
-    nv0[pixel_coords_key] = [319.497, 237.619]
-    nv0[green_coords_key] = [111.307, 109.158]
-    nv0[red_coords_key] = [75.354, 74.497]
+    nv0[pixel_coords_key] = [345.354, 260.217]
+    nv0[green_coords_key] = [112.274, 109.94]
+    nv0[red_coords_key] = [76.113, 75.136]
+    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, green_laser))
     # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser))
     # sys.exit()
 
@@ -372,36 +366,20 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
 
-        # nv_sig[LaserKey.IMAGING] = yellow_laser_dict
         # # for z in np.linspace(3, 7, 21):
         # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 10)
-        # do_widefield_image_sample(nv_sig, 1000)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
-        do_image_single_nv(nv_sig)
-        # do_image_single_nv_polarization(nv_sig, 500)
-        # do_image_single_nv_ionization(nv_sig, 500)
-        # do_charge_state_histogram(nv_sig, 1000)
+        # do_image_single_nv(nv_sig)
 
-        # readouts = [50e6, 75e6, 100e6]
-        # durations = [2e3, 5e3, 10e3, 25e3, 50e3, 100e3, 1e6]
-        # for duration in durations:
-        #     do_optimize_pixel(nv_sig, set_drift=True)
-        #     # do_optimize_green(nv_sig)
-        #     # do_optimize_red(nv_sig)
-
-        #     # nv_sig[LaserKey.IMAGING]["duration"] = duration
-        #     nv_sig[LaserKey.POLARIZATION]["duration"] = duration
-        # do_charge_state_histogram(nv_sig, 1000)
+        # do_charge_state_histograms(nv_list, 1000)
 
         # do_optimize_pixel(nv_sig, set_drift=True)
-        # do_charge_state_histogram(nv_sig, 1000)
-
-        # do_optimize_pixel(nv_sig, set_drift=False)
         # do_optimize_red(nv_sig)
         # do_optimize_pixel(nv_sig, set_drift=False)
         # do_optimize_green(nv_sig)
@@ -410,9 +388,7 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_optimize(nv)
 
-        # do_pulsed_resonance(nv_sig, 2.87, 0.060)
-        # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 300])
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
 
     except Exception as exc:
         if do_email:

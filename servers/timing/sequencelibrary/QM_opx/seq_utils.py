@@ -54,7 +54,7 @@ def handle_reps(
                 macro_wait_for_trigger()
 
 
-def macro_polarize(pol_laser_name, pol_duration_ns, pol_coords_list):
+def macro_polarize(pol_laser_name, pol_duration_ns, pol_coords_list, dummy_pulse=False):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -67,10 +67,10 @@ def macro_polarize(pol_laser_name, pol_duration_ns, pol_coords_list):
     pol_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    _macro_pulse_list(pol_laser_name, pol_duration_ns, pol_coords_list)
+    _macro_pulse_list(pol_laser_name, pol_duration_ns, pol_coords_list, dummy_pulse)
 
 
-def macro_ionize(ion_laser_name, ion_duration_ns, ion_coords_list):
+def macro_ionize(ion_laser_name, ion_duration_ns, ion_coords_list, dummy_pulse=False):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -83,7 +83,7 @@ def macro_ionize(ion_laser_name, ion_duration_ns, ion_coords_list):
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    _macro_pulse_list(ion_laser_name, ion_duration_ns, ion_coords_list)
+    _macro_pulse_list(ion_laser_name, ion_duration_ns, ion_coords_list, dummy_pulse)
 
 
 def macro_charge_state_readout(readout_laser_name, readout_duration_ns):
@@ -109,7 +109,25 @@ def macro_wait_for_trigger():
     qua.align()
 
 
-def _macro_pulse_list(laser_name, duration_ns, coords_list):
+# def declare_scc_qua_vars():
+#     pol_x_freq = qua.declare(int)
+#     pol_y_freq = qua.declare(int)
+#     ion_x_freq = qua.declare(int)
+#     ion_y_freq = qua.declare(int)
+
+#     scc_vars = [pol_x_freq, pol_y_freq, ion_x_freq, ion_y_freq]
+#     return scc_vars
+
+
+def turn_on_aods(laser_names):
+    for laser_name in laser_names:
+        x_el = f"ao_{laser_name}_x"
+        y_el = f"ao_{laser_name}_y"
+        qua.play("aod_cw", x_el)
+        qua.play("aod_cw", y_el)
+
+
+def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -127,9 +145,6 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list):
     x_el = f"ao_{laser_name}_x"
     y_el = f"ao_{laser_name}_y"
 
-    x_freq = qua.declare(int)
-    y_freq = qua.declare(int)
-
     duration = convert_ns_to_cc(duration_ns)
     buffer = get_widefield_operation_buffer()
 
@@ -139,16 +154,13 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list):
 
     for coords_pair in coords_list:
         # Update AOD frequencies
-        qua.assign(x_freq, coords_pair[0] * 10**6)
-        qua.assign(y_freq, coords_pair[1] * 10**6)
-        qua.update_frequency(x_el, x_freq)
-        qua.update_frequency(y_el, y_freq)
-        qua.play("aod_cw", x_el)
-        qua.play("aod_cw", y_el)
+        qua.update_frequency(x_el, round(coords_pair[0] * 10**6))
+        qua.update_frequency(y_el, round(coords_pair[1] * 10**6))
 
         # Pulse the laser
         qua.wait(access_time + buffer, laser_el)
-        qua.play("on", laser_el, duration=duration)
+        pulse = "off" if dummy_pulse else "on"
+        qua.play(pulse, laser_el, duration=duration)
         qua.wait(buffer, laser_el)
 
         qua.align()

@@ -28,6 +28,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 from utils import common
 from utils import tool_belt as tb
+from utils.constants import CollectionMode
 import numpy as np
 import importlib
 import numpy
@@ -71,7 +72,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
         self.opx = self.qmm.open_qm(opx_config)
-        
+
         self.running_job = None
 
         # Add sequence directory to path
@@ -89,8 +90,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.compiled_programs = {}
 
         # Tagger setup
-        self.apd_indices = config["apd_indices"]
-        self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
+        if collection_mode == CollectionMode.COUNTER:
+            self.apd_indices = config["apd_indices"]
+            self.tagger_di_clock = int(config["Wiring"]["Tagger"]["di_apd_gate"])
 
         logging.info("Init complete")
 
@@ -170,7 +172,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """See pulse_gen interface"""
 
         pending_job = self.opx.queue.add_compiled(self.program_id)
-        self.running_job = pending_job.wait_for_execution()  # Only return once the job has started
+        self.running_job = (
+            pending_job.wait_for_execution()
+        )  # Only return once the job has started
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")

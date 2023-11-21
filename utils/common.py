@@ -31,13 +31,16 @@ def get_config_module(pc_name=None):
 
 
 def get_config_dict(pc_name=None):
-    # pc_name = "rabi"
     module = get_config_module(pc_name)
     return module.config
 
 
 def get_data_manager_folder():
     return get_repo_path() / "data_manager"
+
+
+def get_labrad_logging_folder():
+    return get_repo_path() / "labrad_logging"
 
 
 def get_default_email():

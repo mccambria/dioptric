@@ -40,8 +40,8 @@ def configure_logging(inst, level=logging.INFO):
     level : logging level, optional
         by default logging.DEBUG
     """
-    nvdata_path = common.get_nvdata_path()
-    filename = nvdata_path / f"pc_{inst.pc_name}/labrad_logging/{inst.name}.log"
+    folder_path = common.get_labrad_logging_folder()
+    filename = folder_path / f"{inst.name}.log"
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)-8s %(message)s",

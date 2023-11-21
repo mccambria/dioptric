@@ -35,7 +35,7 @@ def create_raw_data_figure(freqs, counts, counts_ste):
     for ind in range(num_nvs):
         kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
     ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Counts (photons)")
+    ax.set_ylabel("Counts")
     min_freqs = min(freqs)
     max_freqs = max(freqs)
     excess = 0.08 * (max_freqs - min_freqs)
@@ -151,6 +151,9 @@ def main_with_cxn(
     ### Some initial setup
 
     tb.reset_cfm(cxn)
+
+    # First NV to represent the others
+    nv_sig = nv_list[0]
     pos.set_xyz_on_nv(cxn, nv_sig)
 
     camera = tb.get_server_camera(cxn)
@@ -160,9 +163,6 @@ def main_with_cxn(
 
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    # First NV to represent the others
-    nv_sig = nv_list[0]
-
     uwave_dict = nv_sig[state]
     uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     uwave_power = uwave_dict["uwave_power"]
@@ -170,7 +170,7 @@ def main_with_cxn(
 
     ### Load the pulse generator
 
-    seq_args = widefield.get_base_scc_seq_args(nv_sig)
+    seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.extend([sig_gen_name, uwave_duration])
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "resonance.py"
@@ -182,7 +182,7 @@ def main_with_cxn(
     ### Data tracking
 
     sig_img_arrays = [
-        [None] * num_reps for ind in range(num_steps) for jnd in range(num_runs)
+        [[None] * num_reps for ind in range(num_steps)] for jnd in range(num_runs)
     ]
     # ref_img_arrays = [
     #     [None] * num_reps for ind in range(num_steps) for jnd in range(num_runs)
@@ -224,12 +224,18 @@ def main_with_cxn(
 
     ### Process and plot
 
-    counts = widefield.process_img_arrays(sig_img_arrays, nv_list)
+    pixel_coords_list = widefield.build_pixel_coords_list(nv_list)
+
+    counts = widefield.process_img_arrays(sig_img_arrays, pixel_coords_list)
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
     kpl.init_kplotlib()
     raw_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
+    try:
+        fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
+    except Exception as exc:
+        print(exc)
+        fit_fig = None
 
     ### Clean up and return
 
@@ -237,15 +243,17 @@ def main_with_cxn(
 
     # Mask off img_arrays to shrink the file
     for run_ind in range(num_runs):
-        for freq_ind in freq_ind_list:
+        for freq_ind in range(num_steps):
             for rep_ind in range(num_reps):
-                widefield.mask_img_array(sig_img_arrays[rep_ind][freq_ind][run_ind])
-                # widefield.mask_img_array(ref_img_arrays[rep_ind][freq_ind][run_ind])
+                img_array = sig_img_arrays[run_ind][freq_ind][rep_ind]
+                widefield.mask_img_array(img_array, pixel_coords_list)
 
     timestamp = dm.get_time_stamp()
+    sig_img_arrays = np.array(sig_img_arrays)
     raw_data = {
         "timestamp": timestamp,
-        "nv_sig": nv_sig,
+        "nv_list": nv_list,
+        "pixel_coords_list": pixel_coords_list,
         "num_reps": num_reps,
         "readout-units": "ms",
         "counts": counts,
@@ -261,8 +269,9 @@ def main_with_cxn(
     keys_to_compress = ["sig_img_arrays"]
     dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
     dm.save_figure(raw_fig, file_path)
-    file_path = dm.get_file_path(__file__, timestamp, nv_name + "-fit")
-    dm.save_figure(fit_fig, file_path)
+    if fit_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, nv_name + "-fit")
+        dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":

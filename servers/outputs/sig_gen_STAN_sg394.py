@@ -30,6 +30,7 @@ import logging
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 from servers.outputs.interfaces.sig_gen_vector import SigGenVector
 from utils import common
+from utils import tool_belt as tb
 
 
 class SigGenStanSg394(LabradServer, SigGenVector):
@@ -37,16 +38,7 @@ class SigGenStanSg394(LabradServer, SigGenVector):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
         config = common.get_config_dict()
         device_id = config["DeviceIDs"][f"{self.name}_visa"]
         di_clock = config["Wiring"]["Daq"]["di_clock"]
@@ -61,6 +53,7 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         # self.daq_ao_sig_gen_mod = config[2]
         self.task = None  # Initialize state variable
         self.reset(None)
+        self._set_freq(2.87)
         logging.info("Init complete")
 
     @setting(0)
@@ -87,7 +80,9 @@ class SigGenStanSg394(LabradServer, SigGenVector):
             freq: float
                 The frequency of the signal in GHz
         """
+        self._set_freq(freq)
 
+    def _set_freq(self, freq):
         # Determine how many decimal places we need
         precision = len(str(freq).split(".")[1])
         self.sig_gen.write("FREQ {0:.{1}f} GHZ".format(freq, precision))

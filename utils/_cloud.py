@@ -21,10 +21,12 @@ try:
     box_client = Client(box_auth)
 except Exception as exc:
     print(
+        "\n"
         f"Make sure you have the Box authorization file for dioptric in your "
         f"checkout of the GitHub repo. It should live here: {data_manager_folder}. "
         f"Create the folder if it doesn't exist yet. The file, {box_auth_file_name}, "
         f"can be found in the nvdata folder of the Kolkowitz group Box account."
+        "\n"
     )
     raise exc
 

@@ -24,6 +24,13 @@ from importlib import import_module
 # region Image processing
 
 
+def build_pixel_coords_list(nv_list, drift_adjust=True, drift=None):
+    pixel_coords_list = []
+    for nv_sig in nv_list:
+        pixel_coords_list.append(get_nv_pixel_coords(nv_sig, drift_adjust, drift))
+    return pixel_coords_list
+
+
 def integrate_counts(img_array, pixel_coords, radius=None):
     """Add up the counts around a target set of pixel coordinates in the passed image array.
     Use for getting the total number of photons coming from a target NV.
@@ -122,7 +129,7 @@ def img_str_to_array(img_str):
     return img_array
 
 
-def mask_img_array(img_array, nv_list, drift_adjust=True, pixel_drift=None):
+def mask_img_array(img_array, pixel_coords_list):
     """Mask an image array such that it only contains information about
     NVs in the passed nv_list. Greatly reduces the size of compressed numpy
     array files (npzs). Beware, this works by reference, so the passed
@@ -139,12 +146,12 @@ def mask_img_array(img_array, nv_list, drift_adjust=True, pixel_drift=None):
     # Setup
     num_x_pixels = img_array.shape[1]
     num_y_pixels = img_array.shape[0]
-    radius = _get_camera_spot_radius
+    radius = _get_camera_spot_radius()
 
     # Construct the mask by looping through the NVs
-    for ind in range(len(nv_list)):
-        nv_sig = nv_list[ind]
-        pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust, pixel_drift)
+    num_nvs = len(pixel_coords_list)
+    for ind in range(num_nvs):
+        pixel_coords = pixel_coords_list[ind]
         pixel_x = pixel_coords[0]
         pixel_y = pixel_coords[1]
 
@@ -152,7 +159,7 @@ def mask_img_array(img_array, nv_list, drift_adjust=True, pixel_drift=None):
         y_inds = np.linspace(0, num_y_pixels - 1, num_y_pixels)
         x_mesh, y_mesh = np.meshgrid(x_inds, y_inds)
         dist = np.sqrt((x_mesh - pixel_x) ** 2 + (y_mesh - pixel_y) ** 2)
-        sub_mask = dist < 3 * radius
+        sub_mask = dist < (3 * radius)
 
         if ind == 0:
             mask = sub_mask
@@ -162,13 +169,14 @@ def mask_img_array(img_array, nv_list, drift_adjust=True, pixel_drift=None):
     img_array *= mask
 
 
-def process_img_arrays(img_arrays, nv_list):
+def process_img_arrays(img_arrays, pixel_coords_list):
     """Turn a nested list of image arrays into a nested list of counts. The
     structure of the nested list of counts will match that of the image arrays"""
+    img_arrays = np.array(img_arrays)
     shape = img_arrays.shape
     num_dims = len(shape)
     dims_to_loop = shape[0 : num_dims - 2]  # Last two are the images themselves
-    num_nvs = len(nv_list)
+    num_nvs = len(pixel_coords_list)
 
     counts_lists = [np.empty(dims_to_loop) for ind in range(num_nvs)]
 
@@ -179,8 +187,7 @@ def process_img_arrays(img_arrays, nv_list):
         img_array = img_arrays[index_tuple]
         img_array_photons = adus_to_photons(img_array)
         for nv_ind in range(num_nvs):
-            nv = nv_list[nv_ind]
-            pixel_coords = get_nv_pixel_coords(nv)
+            pixel_coords = pixel_coords_list[nv_ind]
             counts_list = counts_lists[nv_ind]
             counts_list[index_tuple] = integrate_counts(img_array_photons, pixel_coords)
 
@@ -192,6 +199,8 @@ def process_counts(counts_lists):
     run_ax = 1
     rep_ax = 3
     run_rep_axes = (run_ax, rep_ax)
+    
+    counts_lists = np.array(counts_lists)
 
     avg_counts = np.mean(counts_lists, axis=run_rep_axes)
     num_shots = counts_lists.shape[rep_ax] + counts_lists.shape[run_ax]
@@ -339,9 +348,9 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_suffix=None):
 
 def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
     pixel_coords = get_nv_pixel_coords(nv_sig)
-    red_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
-    pos.set_nv_coords(nv_sig, red_coords, coords_suffix)
-    return red_coords
+    scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
+    pos.set_nv_coords(nv_sig, scanning_coords, coords_suffix)
+    return scanning_coords
 
 
 def get_widefield_calibration_nvs():

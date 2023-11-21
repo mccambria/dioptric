@@ -72,7 +72,7 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
     # Calculate the difference and save
     fig, ax = plt.subplots()
     diff = sig_img_array - ref_img_array
-    widefield_utils.imshow(ax, diff, title="Difference")
+    kpl.imshow(ax, diff, title="Difference", cbar_label="ADUs")
     timestamp = dm.get_time_stamp()
     file_path = dm.get_file_path(__file__, timestamp, nv_sig["name"])
     dm.save_figure(fig, file_path)
@@ -300,7 +300,7 @@ def main_with_cxn(
 
     img_array = img_array / num_reps
     fig, ax = plt.subplots()
-    widefield_utils.imshow(ax, img_array, title=title)
+    kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
 
     ### Clean up and save the data
 
@@ -379,8 +379,8 @@ if __name__ == "__main__":
     diff = signal_img_array - control_img_array
 
     fig, ax = plt.subplots()
-    widefield_utils.imshow(ax, diff, title="Difference")
-    # widefield_utils.imshow(ax, signal_img_array, title="Signal")
-    # widefield_utils.imshow(ax, control_img_array, title="Control")
+    kpl.imshow(ax, diff, title="Difference", cbar_label="ADUs")
+    # kpl.imshow(ax, signal_img_array, title="Signal", cbar_label="ADUs")
+    # kpl.imshow(ax, control_img_array, title="Control", cbar_label="ADUs")
 
     plt.show(block=True)
