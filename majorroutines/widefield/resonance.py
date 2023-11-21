@@ -277,8 +277,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_17-12_11_12-johnson-nv0_2023_11_09"
-    # file_name = "2023_11_16-23_54_48-johnson-nv0_2023_11_09"
+    file_name = "2023_11_20-22_42_48-johnson-nv0_2023_11_09"
 
     data = dm.get_raw_data(file_name)
     nv_sig = data["nv_sig"]
