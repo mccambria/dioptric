@@ -184,7 +184,8 @@ def main_with_cxn(
     ### Data tracking
 
     counts = np.empty((num_nvs, num_runs, num_steps, num_reps))
-    img_arrays = np.empty((num_runs, num_steps), dtype=np.uint16)
+    resolution = widefield._get_camera_resolution()
+    img_arrays = np.empty((num_runs, num_steps, *resolution), dtype=np.uint16)
     freq_ind_master_list = [[] for ind in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
 
@@ -226,8 +227,8 @@ def main_with_cxn(
                         counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
 
                 avg_img_array = avg_img_array / num_reps
-                img_arrays[run_ind, freq_ind] = avg_img_array
-                optimize.optimize_pixel_with_img_array(avg_img_array, repr_nv_sig)
+                img_arrays[run_ind, freq_ind, :, :] = avg_img_array
+                # optimize.optimize_pixel_with_img_array(avg_img_array, repr_nv_sig)
 
     finally:
         camera.disarm()

@@ -93,7 +93,7 @@ def macro_charge_state_readout(readout_laser_name, readout_duration_ns):
     readout_duration = convert_ns_to_cc(readout_duration_ns)
 
     qua.align()
-    qua.play("on", readout_laser_el, duration=readout_duration)
+    qua.play("charge_readout", readout_laser_el, duration=readout_duration)
     qua.play("on", camera_el)
     qua.align()
     qua.play("off", camera_el)

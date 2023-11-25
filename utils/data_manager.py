@@ -11,6 +11,7 @@ Created November 15th, 2023
 
 from io import BytesIO
 from datetime import datetime
+import time
 from utils import common
 from utils import _cloud
 from pathlib import Path
@@ -119,6 +120,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             a separate compressed file. Currently supports numpy arrays
     """
 
+    start = time.time()
     file_path_txt = file_path.with_suffix(".txt")
     file_name = file_path_txt.name
     folder_path = file_path_txt.parent
@@ -157,6 +159,8 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     # Upload to cloud
     _cloud.upload(folder_path, temp_file_path_txt)
+    stop = time.time()
+    # print(stop - start)
 
 
 # endregion

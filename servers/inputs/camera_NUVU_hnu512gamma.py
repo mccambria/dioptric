@@ -154,6 +154,7 @@ class CameraNuvuHnu512gamma(LabradServer):
     def disarm(self, c):
         self.cam.stop()
         self.cam.close_shutter()
+        self._clear_buffer()
 
     # @setting(2, returns="*2i")
     @setting(2, returns="y")
