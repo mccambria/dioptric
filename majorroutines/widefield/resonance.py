@@ -194,11 +194,11 @@ def main_with_cxn(
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     try:
-        camera.arm()
-        sig_gen.uwave_on()
-
         for run_ind in range(num_runs):
             shuffle(freq_ind_list)
+
+            camera.arm()
+            sig_gen.uwave_on()
 
             for freq_ind in freq_ind_list:
                 pixel_coords_list = [
@@ -228,7 +228,8 @@ def main_with_cxn(
 
                 avg_img_array = avg_img_array / num_reps
                 img_arrays[run_ind, freq_ind, :, :] = avg_img_array
-                # optimize.optimize_pixel_with_img_array(avg_img_array, repr_nv_sig)
+
+            optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
 
     finally:
         camera.disarm()
