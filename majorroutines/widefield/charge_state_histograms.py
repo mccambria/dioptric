@@ -39,7 +39,7 @@ def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     labels = ["sig", "ref"]
     counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
-    ax.set_title(f"Ionization hist, {num_bins} bins, {num_reps} reps")
+    ax.set_title(f"Charge prep hist, {num_bins} bins, {num_reps} reps")
     ax.set_xlabel(f"Integrated counts")
     ax.set_ylabel("Number of occurrences")
     for ind in range(2):
@@ -72,7 +72,7 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Collect the data
 
     with common.labrad_connect() as cxn:
-        sig_img_array_list, ref_img_array_list, file_path = _collect_data(
+        sig_img_array_list, ref_img_array_list, timestamp = _collect_data(
             cxn, nv_list, num_reps, diff_polarize, diff_ionize
         )
 
@@ -82,17 +82,20 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
         nv_list, sig_img_array_list, ref_img_array_list
     )
 
-    nv_sig = nv_list[0]
-    sig_counts_list = sig_counts_lists[0]
-    ref_counts_list = ref_counts_lists[0]
-    fig = create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+    ### Plot and save
 
-    ### Save
+    num_nvs = len(nv_list)
+    for ind in range(num_nvs):
+        nv_sig = nv_list[ind]
+        nv_name = nv_sig["name"]
+        sig_counts_list = sig_counts_lists[ind]
+        ref_counts_list = ref_counts_lists[ind]
+        fig = create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+        file_path = dm.get_file_path(__file__, timestamp, nv_name)
+        dm.save_figure(fig, file_path)
 
-    sig_counts_lists = np.array(sig_counts_lists)
-    ref_counts_lists = np.array(ref_counts_lists)
-
-    timestamp = dm.get_time_stamp()
+    repr_nv_name = nv_list[0]["name"]
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data = {
         "timestamp": timestamp,
         "nv_list": nv_list,
@@ -103,10 +106,6 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
         "ref_counts_lists": ref_counts_lists,
         "counts-units": "photons",
     }
-
-    sig_counts_list = np.array(sig_counts_list)
-    ref_counts_list = np.array(ref_counts_list)
-    dm.save_figure(fig, file_path)
     dm.save_raw_data(raw_data, file_path)
 
 
@@ -134,6 +133,8 @@ def process_data(nv_list, sig_img_array_list, ref_img_array_list):
             ref_counts = widefield.integrate_counts_from_adus(img_array, pixel_coords)
             ref_counts_list.append(ref_counts)
 
+    sig_counts_lists = np.array(sig_counts_lists)
+    ref_counts_lists = np.array(ref_counts_lists)
     return sig_counts_lists, ref_counts_lists
 
 
@@ -164,9 +165,9 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
     seq_args.extend([diff_polarize, diff_ionize])
     seq_file = "charge_state_histograms.py"
 
-    # print(seq_args)
-    # print(seq_file)
-    # return
+    print(seq_args)
+    print(seq_file)
+    return
 
     ### Collect the data
 
@@ -240,7 +241,7 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
         fig_file_path = dm.get_file_path(__file__, timestamp, name)
         dm.save_figure(fig, fig_file_path)
 
-    return sig_img_array_list, ref_img_array_list, file_path
+    return sig_img_array_list, ref_img_array_list, timestamp
 
 
 if __name__ == "__main__":
