@@ -582,7 +582,7 @@ opx_config = {
         "red_aod_cw": {"type": "constant", "sample": 0.17},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_imaging": {"type": "constant", "sample": 0.25},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.09},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.11},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
         "charge_state_readout": {"type": "constant", "sample": 0.5},

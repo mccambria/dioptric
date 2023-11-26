@@ -184,7 +184,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.97
+    z_coord = 3.54
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -210,19 +210,22 @@ if __name__ == "__main__":
     # region Experiment NVs
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv1_2023_11_24"
-    nv0[pixel_coords_key] = [331.765, 268.168]
-    nv0[green_coords_key] = [111.613, 110.169]
-    nv0[red_coords_key] = [75.754, 75.35]
+    nv0["name"] = f"{sample_name}-nv0_2023_11_25"
+    nv0[pixel_coords_key] = [323.058, 276.548]
+    nv0[green_coords_key] = [111.549, 110.67608416797468]
+    nv0[red_coords_key] = [75.405, 75.640]
     # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, green_laser))
     # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser))
+    # print(widefield.get_nv_pixel_coords(nv0))
+    # print(pos.get_nv_coords(nv0, coords_suffix=green_laser))
+    # print(pos.get_nv_coords(nv0, coords_suffix=red_laser))
     # sys.exit()
 
     nv1 = copy.deepcopy(nv_ref)
     nv1["name"] = f"{sample_name}-nv2_2023_11_24"
-    nv1[pixel_coords_key] = [326.145, 240.956]
-    nv1[green_coords_key] = [110.928, 109.333]
-    nv1[red_coords_key] = [74.835, 74.963]
+    nv1[pixel_coords_key] = [340.074, 246.787]
+    nv1[green_coords_key] = [112.036, 109.493]
+    nv1[red_coords_key] = [75.965, 74.724]
     # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv1, green_laser))
     # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv1, red_laser))
     # sys.exit()
@@ -236,10 +239,11 @@ if __name__ == "__main__":
     # nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
 
-    nv_sig = nv0
-    # nv_sig = nv1
+    # nv_sig = nv0
+    nv_sig = nv1
     # nv_sig = nv_ref
     nv_list = [nv_sig]
+    nv_list = [nv0, nv1]
 
     ### Clean up and save the data
 
@@ -275,7 +279,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 1.5, 51):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -283,7 +287,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         # do_optimize_pixel(nv_sig)
-        # do_charge_state_histograms(nv_list, 1000)
+        do_charge_state_histograms(nv_list, 1000)
 
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
