@@ -171,10 +171,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stream_start(self, c, num_reps=None):
         """See pulse_gen interface"""
 
+        # Stop the currently running job if there is one
+        self.halt()
+
         pending_job = self.opx.queue.add_compiled(self.program_id)
-        self.running_job = (
-            pending_job.wait_for_execution()
-        )  # Only return once the job has started
+        # Only return once the job has started
+        self.running_job = pending_job.wait_for_execution()
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
@@ -467,12 +469,16 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     @setting(40)
     def reset(self, c):
         """Stop whatever job is currently running"""
-        if self.running_job is not None:
-            self.running_job.halt()
-        self.running_job = None
+        self.halt()
         # self.qmm.clear_all_job_results()
         # self.qmm.reset_data_processing()
         # self.qmm.close_all_quantum_machines()
+        
+        
+    def halt(self):
+        if self.running_job is not None:
+            self.running_job.halt()
+        self.running_job = None
 
 
 __server__ = QmOpx()

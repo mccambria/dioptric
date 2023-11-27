@@ -74,9 +74,15 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Collect the data
 
     with common.labrad_connect() as cxn:
-        sig_img_array_list, ref_img_array_list, timestamp = _collect_data(
-            cxn, nv_list, num_reps, diff_polarize, diff_ionize
-        )
+        ret_vals = _collect_data(cxn, nv_list, num_reps, diff_polarize, diff_ionize)
+    (
+        sig_img_array_list,
+        ref_img_array_list,
+        sig_img_array,
+        ref_img_array,
+        diff_img_array,
+        timestamp,
+    ) = ret_vals
 
     ### Process
 
@@ -97,6 +103,13 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
         dm.save_figure(fig, file_path)
 
     repr_nv_name = nv_list[repr_nv_ind]["name"]
+    keys_to_compress = [
+        "sig_counts_lists",
+        "ref_counts_lists",
+        "sig_img_array",
+        "ref_img_array",
+        "diff_img_array",
+    ]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data = {
         "timestamp": timestamp,
@@ -107,8 +120,12 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
         "sig_counts_lists": sig_counts_lists,
         "ref_counts_lists": ref_counts_lists,
         "counts-units": "photons",
+        "sig_img_array": sig_img_array,
+        "ref_img_array": ref_img_array,
+        "diff_img_array": diff_img_array,
+        "img_array-units": "ADUs",
     }
-    dm.save_raw_data(raw_data, file_path)
+    dm.save_raw_data(raw_data, file_path, keys_to_compress)
 
 
 def process_data(nv_list, sig_img_array_list, ref_img_array_list):
@@ -187,18 +204,9 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
         for ind in range(num_reps):
             img_str = camera.read()
             sub_img_array = widefield.img_str_to_array(img_str)
-            if ind == 0:
-                sig_img_array = np.copy(sub_img_array)
-            else:
-                sig_img_array += sub_img_array
             sig_img_array_list.append(sub_img_array)
-
             img_str = camera.read()
             sub_img_array = widefield.img_str_to_array(img_str)
-            if ind == 0:
-                ref_img_array = np.copy(sub_img_array)
-            else:
-                ref_img_array += sub_img_array
             ref_img_array_list.append(sub_img_array)
 
     except Exception as exc:
@@ -211,6 +219,8 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
 
     ### Process and plot
 
+    sig_img_array = np.sum(sig_img_array_list, axis=0)
+    ref_img_array = np.sum(ref_img_array_list, axis=0)
     diff_img_array = sig_img_array - ref_img_array
     sig_img_array = sig_img_array / num_reps
     ref_img_array = ref_img_array / num_reps
@@ -235,7 +245,6 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
 
     timestamp = dm.get_time_stamp()
     nv_name = nv_sig["name"]
-    file_path = dm.get_file_path(__file__, timestamp, nv_name)
     # Save sub figs
     for ind in range(3):
         fig = figs[ind]
@@ -244,7 +253,14 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
         fig_file_path = dm.get_file_path(__file__, timestamp, name)
         dm.save_figure(fig, fig_file_path)
 
-    return sig_img_array_list, ref_img_array_list, timestamp
+    return (
+        sig_img_array_list,
+        ref_img_array_list,
+        sig_img_array,
+        ref_img_array,
+        diff_img_array,
+        timestamp,
+    )
 
 
 if __name__ == "__main__":

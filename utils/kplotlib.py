@@ -641,6 +641,22 @@ def histogram(ax, data, hist_type=HistType.STEP, nbins=10, **kwargs):
     return occur, bin_edges
 
 
+def draw_circle(ax, coords, radius, color=KplColors.BLUE):
+    """Draw a circle on the passed axes
+
+    Parameters
+    ----------
+    ax : matplotlib axes
+        Axes to draw the circle on
+    coords : 2-tuple
+        Center coordinates of the circle
+    radius : numeric
+        Radius of the circle
+    """
+    circle = plt.Circle(coords, radius, color=color)
+    ax.add_artist(circle)
+
+
 # endregion
 
 if __name__ == "__main__":

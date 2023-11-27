@@ -311,15 +311,27 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_24-14_22_35-johnson-nv1_2023_11_24"
-    data = dm.get_raw_data(file_id=1372143481320)
-    img_array = np.array(data["img_array"])
-    # file_name = "2023_11_24-14_23_45-johnson-nv1_2023_11_24"
-    # data = dm.get_raw_data(file_id=1371131240542)
-    # img_array -= np.array(data["img_array"])
-    # print(np.mean(img_array[230:330, 255:355]))
+    pixel_coords_list = [
+        [331.591, 281.997],
+        [347.948, 248.368],
+        [371.143, 242.199],
+        [369.707, 305.252],
+        [345.208, 312.324],
+        [316.119, 299.436],
+        [308.186, 227.034],
+        [334.802, 218.992],
+        [323.756, 304.543],
+        [299.588, 253.558],
+    ]
+
+    data = dm.get_raw_data(file_id=1372321880672)
+    img_array = np.array(data["diff_img_array"])
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="ADUs")
 
-    plt.show(block=True)
+    # for pixel_coords in pixel_coords_list:
+    #     fig, ax = plt.subplots()
+    #     kpl.imshow(ax, img_array, cbar_label="ADUs")
+    #     kpl.draw_circle(ax, pixel_coords, radius=2)
+    #     plt.show(block=True)

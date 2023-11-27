@@ -273,6 +273,7 @@ if __name__ == "__main__":
     # nv_list = [nv_sig]
     # nv_list = [nv8, nv9]
     nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
+    # nv_list = [nv0, nv1, nv4, nv6, nv7, nv9]
     # nv_list = [nv3, nv4, nv5, nv6, nv7]
 
     # for nv in nv_list:

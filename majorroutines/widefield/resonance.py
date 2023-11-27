@@ -51,8 +51,8 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
     # shift_factor = 0.075
     shift_factor = 0.05
     # shuffle(offset_inds)
-    # nv_list = range(num_nvs)
-    nv_list = [0, 1, 4, 6, 7, 9]
+    nv_list = range(num_nvs)
+    # nv_list = [0, 1, 4, 6, 7, 9]
     num_nvs = len(nv_list)
     for ind in range(num_nvs):
         nv_ind = nv_list[ind]
