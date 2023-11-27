@@ -48,12 +48,16 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
     num_nvs = counts.shape[0]
     fig, ax = plt.subplots()
     freq_linspace = np.linspace(min(freqs) - 0.001, max(freqs) + 0.001, 1000)
-    offset_inds = [num_nvs - 1 - ind for ind in list(range(num_nvs))]
-    shift_factor = 0.075
+    # shift_factor = 0.075
+    shift_factor = 0.05
     # shuffle(offset_inds)
+    # nv_list = range(num_nvs)
+    nv_list = [0, 1, 4, 6, 7, 9]
+    num_nvs = len(nv_list)
     for ind in range(num_nvs):
-        nv_counts = counts[ind]
-        nv_counts_ste = counts_ste[ind]
+        nv_ind = nv_list[ind]
+        nv_counts = counts[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind]
         guess_params = [nv_counts[0], 0.15, 2, 2, np.median(freqs)]
         fit_func = lambda freq, norm, contrast, g_width, l_width, center: norm * (
             1 + voigt(freq, contrast, g_width, l_width, center)
@@ -73,22 +77,22 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
                 ax,
                 freqs,
                 ((nv_counts - fit_func(freqs, *popt)) / nv_counts_ste),
-                label=ind,
+                label=nv_ind,
             )
         else:
-            offset_ind = offset_inds[ind]
+            offset = shift_factor * (num_nvs - 1 - ind)
             norm = popt[0]
             kpl.plot_line(
                 ax,
                 freq_linspace,
-                shift_factor * offset_ind + fit_func(freq_linspace, *popt) / norm,
+                offset + fit_func(freq_linspace, *popt) / norm,
             )
             kpl.plot_points(
                 ax,
                 freqs,
-                shift_factor * offset_ind + nv_counts / norm,
+                offset + nv_counts / norm,
                 yerr=nv_counts_ste / norm,
-                label=ind,
+                label=nv_ind,
             )
 
         # Normalized residuals
@@ -297,12 +301,17 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_20-23_45_03-johnson-nv0_2023_11_09"
-
-    data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id="1367909272526")
+    data = dm.get_raw_data(file_id=1372377980720)
     nv_list = data["nv_list"]
     img_arrays = data["img_arrays"]
+    num_steps = data["num_steps"]
+    avg_img_arrays = np.average(img_arrays, axis=0)
+
+    # for ind in range(num_steps):
+    #     fig, ax = plt.subplots()
+    #     kpl.imshow(ax, avg_img_arrays[ind])
+    # plt.show(block=True)
+
     freqs = data["freqs"]
     counts = data["counts"]
 
