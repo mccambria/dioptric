@@ -311,7 +311,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_07-17_13_43-johnson-nv2_2023_11_07"
+    file_name = "2023_11_01-10_17_03-johnson-nv0_2023_10_30"
     data = dm.get_raw_data(file_name)
     img_array = data["img_array"]
 
