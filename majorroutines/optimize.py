@@ -228,7 +228,7 @@ def _read_counts_camera_sequence(
             ion_duration,
         ]
         seq_file_name = "optimize_ionization_laser_coords.py"
-        num_reps = 100
+        num_reps = 50
     if axis_ind is None or axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
@@ -276,6 +276,9 @@ def _read_counts_camera_sequence(
                 print(exc)
                 print(f"Stopped at rep ind {rep_ind}")
                 actual_num_reps = rep_ind
+
+                # Rearm the camera
+                camera.arm()
 
             # Process the result
             img_array = img_array / actual_num_reps

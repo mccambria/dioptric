@@ -116,7 +116,7 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.050
     num_steps = 20
-    num_reps = 50
+    num_reps = 100
     num_runs = 4
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.54
+    z_coord = 3.75
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -207,43 +207,78 @@ if __name__ == "__main__":
         NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 12.0},
     }
 
-    # region Experiment NVs
-
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_11_25"
-    nv0[pixel_coords_key] = [323.058, 276.548]
-    nv0[green_coords_key] = [111.549, 110.67608416797468]
-    nv0[red_coords_key] = [75.405, 75.640]
-    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, green_laser))
-    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv0, red_laser))
-    # print(widefield.get_nv_pixel_coords(nv0))
-    # print(pos.get_nv_coords(nv0, coords_suffix=green_laser))
-    # print(pos.get_nv_coords(nv0, coords_suffix=red_laser))
-    # sys.exit()
+    nv0[pixel_coords_key] = [331.591, 281.997]
+    nv0[green_coords_key] = [111.754, 110.772]
+    nv0[red_coords_key] = [75.671, 75.774]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv2_2023_11_24"
-    nv1[pixel_coords_key] = [340.074, 246.787]
-    nv1[green_coords_key] = [112.036, 109.493]
-    nv1[red_coords_key] = [75.965, 74.724]
-    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv1, green_laser))
-    # print(widefield.set_nv_scanning_coords_from_pixel_coords(nv1, red_laser))
-    # sys.exit()
+    nv1["name"] = f"{sample_name}-nv1_2023_11_25"
+    nv1[pixel_coords_key] = [347.948, 248.368]
+    nv1[green_coords_key] = [112.347, 109.556]
+    nv1[red_coords_key] = [76.059, 74.738]
 
-    # endregion
-    # Calibration NVs
+    nv2 = copy.deepcopy(nv_ref)
+    nv2["name"] = f"{sample_name}-nv2_2023_11_25"
+    nv2[pixel_coords_key] = [371.143, 242.199]
+    nv2[green_coords_key] = [113.14139162658678, 109.19081375337272]
+    nv2[red_coords_key] = [76.73, 74.587]
 
-    nv5, nv6 = widefield.get_widefield_calibration_nvs()
+    nv3 = copy.deepcopy(nv_ref)
+    nv3["name"] = f"{sample_name}-nv3_2023_11_25"
+    nv3[pixel_coords_key] = [369.707, 305.252]
+    nv3[green_coords_key] = [113.18, 109.278]
+    nv3[red_coords_key] = [76.784, 76.326]
 
-    # nv_list = [nv0]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    nv4 = copy.deepcopy(nv_ref)
+    nv4["name"] = f"{sample_name}-nv4_2023_11_25"
+    nv4[pixel_coords_key] = [345.208, 312.324]
+    nv4[green_coords_key] = [112.398, 111.685]
+    nv4[red_coords_key] = [76.036, 76.61]
 
-    # nv_sig = nv0
-    nv_sig = nv1
+    nv5 = copy.deepcopy(nv_ref)
+    nv5["name"] = f"{sample_name}-nv5_2023_11_25"
+    nv5[pixel_coords_key] = [316.119, 299.436]
+    nv5[green_coords_key] = [111.185, 111.135]
+    nv5[red_coords_key] = [75.231, 76.262]
+
+    nv6 = copy.deepcopy(nv_ref)
+    nv6["name"] = f"{sample_name}-nv6_2023_11_25"
+    nv6[pixel_coords_key] = [308.186, 227.034]
+    nv6[green_coords_key] = [110.974, 108.824]
+    nv6[red_coords_key] = [75.018, 74.221]
+
+    nv7 = copy.deepcopy(nv_ref)
+    nv7["name"] = f"{sample_name}-nv7_2023_11_25"
+    nv7[pixel_coords_key] = [334.802, 218.992]
+    nv7[green_coords_key] = [111.95, 108.658]
+    nv7[red_coords_key] = [75.776, 74.076]
+
+    nv8 = copy.deepcopy(nv_ref)
+    nv8["name"] = f"{sample_name}-nv8_2023_11_25"
+    nv8[pixel_coords_key] = [323.756, 304.543]
+    nv8[green_coords_key] = [111.388, 111.469]
+    nv8[red_coords_key] = [75.346, 76.223]
+
+    nv9 = copy.deepcopy(nv_ref)
+    nv9["name"] = f"{sample_name}-nv9_2023_11_25"
+    nv9[pixel_coords_key] = [299.588, 253.558]
+    nv9[green_coords_key] = [110.672, 109.681]
+    nv9[red_coords_key] = [74.77, 74.88]
+
+    nv_sig = nv0
+    # nv_sig = nv5
     # nv_sig = nv_ref
-    nv_list = [nv_sig]
-    nv_list = [nv0, nv1]
+    # nv_list = [nv_sig]
+    # nv_list = [nv8, nv9]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
+    # nv_list = [nv3, nv4, nv5, nv6, nv7]
+
+    # for nv in nv_list:
+    #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+    # sys.exit()
 
     ### Clean up and save the data
 
@@ -261,17 +296,25 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([0, -2])
+        # widefield.set_pixel_drift([-1.8, -4])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
         #     pos.set_xyz_on_nv(cxn, nv_sig)
 
+        # Get updated coords before drift reset
+        # for nv in nv_list:
+        #     print(widefield.get_nv_pixel_coords(nv))
+        #     print(pos.get_nv_coords(nv, green_laser))
+        #     print(pos.get_nv_coords(nv, red_laser))
+        # print()
+
         # Convert pixel coords to scanning coords
-        # pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
-        # for laser in [green_laser, red_laser]:
-        #     scanning_coords = widefield.pixel_to_scanning_coords(pixel_coords, laser)
-        #     print([round(el, 3) for el in scanning_coords])
+        # for nv in nv_list:
+        #     pixel_coords = widefield.get_nv_pixel_coords(nv)
+        #     print(widefield.pixel_to_scanning_coords(pixel_coords, green_laser))
+        #     print(widefield.pixel_to_scanning_coords(pixel_coords, red_laser))
+        #     # print()
 
         # do_opx_constant_ac()
 
@@ -279,7 +322,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 1.5, 51):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -287,11 +330,13 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         # do_optimize_pixel(nv_sig)
-        do_charge_state_histograms(nv_list, 1000)
+        # do_charge_state_histograms(nv_list, 1000)
 
-        # do_optimize_pixel(nv_sig)
-        # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
+        # for nv in nv_list:
+        # #     do_optimize_pixel(nv)
+        #     # do_optimize_green(nv)
+        #     do_optimize_red(nv)
+        #     widefield.reset_all_drift()
         # do_optimize_z(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:

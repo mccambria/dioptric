@@ -25,6 +25,8 @@ from scipy import ndimage
 import os
 import time
 
+repr_nv_ind = 0
+
 
 def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     readout = nv_sig[LaserKey.CHARGE_READOUT]["duration"]
@@ -94,7 +96,7 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
 
-    repr_nv_name = nv_list[0]["name"]
+    repr_nv_name = nv_list[repr_nv_ind]["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data = {
         "timestamp": timestamp,
@@ -116,13 +118,14 @@ def process_data(nv_list, sig_img_array_list, ref_img_array_list):
 
     # Get a nice average image for optimization
     avg_img_array = np.sum(ref_img_array_list, axis=0) / num_reps
+    optimize.optimize_pixel_with_img_array(avg_img_array, nv_list[repr_nv_ind])
 
     sig_counts_lists = [[] for ind in range(num_nvs)]
     ref_counts_lists = [[] for ind in range(num_nvs)]
 
     for nv_ind in range(num_nvs):
         nv_sig = nv_list[nv_ind]
-        pixel_coords = optimize.optimize_pixel_with_img_array(avg_img_array, nv_sig)
+        pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
         sig_counts_list = sig_counts_lists[nv_ind]
         ref_counts_list = ref_counts_lists[nv_ind]
         for rep_ind in range(num_reps):
@@ -142,7 +145,7 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
     ### Some initial setup
 
     # First NV to represent the others
-    nv_sig = nv_list[0]
+    nv_sig = nv_list[repr_nv_ind]
 
     tb.reset_cfm(cxn)
     laser_key = LaserKey.CHARGE_READOUT
@@ -165,9 +168,9 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
     seq_args.extend([diff_polarize, diff_ionize])
     seq_file = "charge_state_histograms.py"
 
-    print(seq_args)
-    print(seq_file)
-    return
+    # print(seq_args)
+    # print(seq_file)
+    # return
 
     ### Collect the data
 

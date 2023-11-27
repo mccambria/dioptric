@@ -69,6 +69,7 @@ def get_seq(args, num_reps):
                 [do_polarize_ref, do_ionize_ref],
             ]:
                 half_rep(*half_rep_args)
+
                 # qua.align()
                 seq_utils.macro_wait_for_trigger()
 
@@ -91,18 +92,24 @@ if __name__ == "__main__":
         args = [
             "laser_INTE_520",
             10000.0,
-            [[112.164, 109.832]],
+            [
+                [110, 109.51847988358679],
+                [0.001, 110.70156405156148],
+            ],
             "laser_COBO_638",
             1000.0,
-            [[75.97, 75.202]],
+            [
+                [75.42725784791932, 75.65982013416432],
+                [75.98725784791932, 74.74382013416432],
+            ],
             "laser_OPTO_589",
-            50000.0,
+            50000000.0,
             False,
             True,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

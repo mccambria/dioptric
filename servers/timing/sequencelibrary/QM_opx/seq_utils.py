@@ -153,7 +153,13 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
     qua.align()
 
     for coords_pair in coords_list:
+        print(coords_pair)
         # Update AOD frequencies
+        # The continue pulse doesn't actually change anything - without a new
+        # pulse the compiler will overwrite the frequency of whatever is playing
+        # retroactively
+        qua.play("continue", x_el)
+        qua.play("continue", y_el)
         qua.update_frequency(x_el, round(coords_pair[0] * 10**6))
         qua.update_frequency(y_el, round(coords_pair[1] * 10**6))
 

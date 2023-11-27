@@ -79,10 +79,10 @@ widefield_calibration_nv2["disable_z_opt"] = True
 
 # Coords
 widefield_calibration_nv1[pixel_coords_key] = [267.929, 290.489]
-widefield_calibration_nv1[green_coords_key] = [110.011, 110.845]
+widefield_calibration_nv1[green_coords_key] = [109.811, 110.845]
 widefield_calibration_nv1[red_coords_key] = [74.1, 75.9]
 widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
-widefield_calibration_nv2[green_coords_key] = [108.3, 112.002]
+widefield_calibration_nv2[green_coords_key] = [108.1, 112.002]
 widefield_calibration_nv2[red_coords_key] = [72.9, 76.8]
 
 # endregion
@@ -200,7 +200,7 @@ config |= {
         "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_COBO_638": float,
         "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 1.0,
+        "xy_optimize_range-laser_COBO_638": 1.2,
         "xy_units-laser_COBO_638": "MHz",
         #
         "z_control_mode": ControlMode.STREAM,
@@ -489,25 +489,25 @@ opx_config = {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "red_aod_cw"},
+            "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "red_aod_cw"},
+            "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "green_aod_cw"},
+            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "green_aod_cw"},
+            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
         },
         # endregion
     },
