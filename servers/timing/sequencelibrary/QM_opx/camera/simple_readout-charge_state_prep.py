@@ -85,7 +85,7 @@ def get_seq(args, num_reps):
             # Yellow readout
             qua.wait(setup_duration, readout_laser_el)
             qua.wait(setup_duration, camera_el)
-            qua.play("on", readout_laser_el, duration=readout_duration)
+            qua.play("charge_readout", readout_laser_el, duration=readout_duration)
             qua.play("on", camera_el)
             qua.align()
             qua.play("off", camera_el)

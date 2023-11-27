@@ -25,6 +25,8 @@ from scipy import ndimage
 import os
 import time
 
+repr_nv_ind = 0
+
 
 def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     readout = nv_sig[LaserKey.CHARGE_READOUT]["duration"]
@@ -34,12 +36,12 @@ def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     ### Histograms
 
     num_bins = 50
-    num_reps = len(sig_counts_list)
+    num_reps = len(ref_counts_list)
 
     labels = ["sig", "ref"]
     counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
-    ax.set_title(f"Ionization hist, {num_bins} bins, {num_reps} reps")
+    ax.set_title(f"Charge prep hist, {num_bins} bins, {num_reps} reps")
     ax.set_xlabel(f"Integrated counts")
     ax.set_ylabel("Number of occurrences")
     for ind in range(2):
@@ -72,88 +74,81 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Collect the data
 
     with common.labrad_connect() as cxn:
-        sig_img_array_list, ref_img_array_list, file_path = _collect_data(
+        sig_img_array_list, ref_img_array_list, timestamp = _collect_data(
             cxn, nv_list, num_reps, diff_polarize, diff_ionize
         )
 
     ### Process
 
-    sig_counts_list, ref_counts_list = process_data(
+    sig_counts_lists, ref_counts_lists = process_data(
         nv_list, sig_img_array_list, ref_img_array_list
     )
 
-    fig = create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+    ### Plot and save
 
-    ### Save
-    
-    pixel_coords_list = widefield.build_pixel_coords_list(nv_list)
+    num_nvs = len(nv_list)
+    for ind in range(num_nvs):
+        nv_sig = nv_list[ind]
+        nv_name = nv_sig["name"]
+        sig_counts_list = sig_counts_lists[ind]
+        ref_counts_list = ref_counts_lists[ind]
+        fig = create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+        file_path = dm.get_file_path(__file__, timestamp, nv_name)
+        dm.save_figure(fig, file_path)
 
-    # Mask image arrays for compression
-    for ind in range(num_reps):
-        img_array = sig_img_array_list[ind]
-        widefield.mask_img_array(img_array, pixel_coords_list)
-        img_array = ref_img_array_list[ind]
-        widefield.mask_img_array(img_array, pixel_coords_list)
-
-    timestamp = dm.get_time_stamp()
+    repr_nv_name = nv_list[repr_nv_ind]["name"]
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data = {
         "timestamp": timestamp,
         "nv_list": nv_list,
-        "pixel_coords_list": pixel_coords_list,
         "num_reps": num_reps,
         "diff_polarize": diff_polarize,
         "diff_ionize": diff_ionize,
-        "sig_counts_list": sig_counts_list,
-        "ref_counts_list": ref_counts_list,
+        "sig_counts_lists": sig_counts_lists,
+        "ref_counts_lists": ref_counts_lists,
         "counts-units": "photons",
-        "sig_img_array_list": sig_img_array_list,
-        "ref_img_array_list": ref_img_array_list,
-        "img_array-units": "counts",
     }
-
-    sig_counts_list = np.array(sig_counts_list)
-    ref_counts_list = np.array(ref_counts_list)
-    dm.save_figure(fig, file_path)
-    keys_to_compress = ["sig_img_array_list", "ref_img_array_list"]
-    dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
 
 
 def process_data(nv_list, sig_img_array_list, ref_img_array_list):
     # Get the actual num_reps in case something went wrong
-    num_reps = len(sig_img_array_list)
+    num_reps = len(ref_img_array_list)
+    num_nvs = len(nv_list)
 
-    # Optimize pixel coords
-    sig_img_array = np.sum(sig_img_array_list, axis=0) / num_reps
-    pixel_coords_list = []
-    for nv_sig in nv_list:
+    # Get a nice average image for optimization
+    avg_img_array = np.sum(ref_img_array_list, axis=0) / num_reps
+    optimize.optimize_pixel_with_img_array(avg_img_array, nv_list[repr_nv_ind])
+
+    sig_counts_lists = [[] for ind in range(num_nvs)]
+    ref_counts_lists = [[] for ind in range(num_nvs)]
+
+    for nv_ind in range(num_nvs):
+        nv_sig = nv_list[nv_ind]
         pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
-        pixel_coords = optimize.optimize_pixel_with_img_array(
-            sig_img_array, pixel_coords
-        )
-        pixel_coords_list.append(pixel_coords)
+        sig_counts_list = sig_counts_lists[nv_ind]
+        ref_counts_list = ref_counts_lists[nv_ind]
+        for rep_ind in range(num_reps):
+            img_array = sig_img_array_list[rep_ind]
+            sig_counts = widefield.integrate_counts_from_adus(img_array, pixel_coords)
+            sig_counts_list.append(sig_counts)
+            img_array = ref_img_array_list[rep_ind]
+            ref_counts = widefield.integrate_counts_from_adus(img_array, pixel_coords)
+            ref_counts_list.append(ref_counts)
 
-    sig_counts_lists = widefield.process_img_arrays(
-        sig_img_array_list, pixel_coords_list
-    )
-    ref_counts_lists = widefield.process_img_arrays(
-        ref_img_array_list, pixel_coords_list
-    )
-
-    # Just one NV for now
-    sig_counts_list = sig_counts_lists[0]
-    ref_counts_list = ref_counts_lists[0]
-
-    return sig_counts_list, ref_counts_list
+    sig_counts_lists = np.array(sig_counts_lists)
+    ref_counts_lists = np.array(ref_counts_lists)
+    return sig_counts_lists, ref_counts_lists
 
 
 def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Some initial setup
 
     # First NV to represent the others
-    nv_sig = nv_list[0]
+    nv_sig = nv_list[repr_nv_ind]
 
     tb.reset_cfm(cxn)
-    laser_key = LaserKey.IMAGING
+    laser_key = LaserKey.CHARGE_READOUT
     optimize.prepare_microscope(cxn, nv_sig)
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
@@ -249,7 +244,7 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
         fig_file_path = dm.get_file_path(__file__, timestamp, name)
         dm.save_figure(fig, fig_file_path)
 
-    return sig_img_array_list, ref_img_array_list, file_path
+    return sig_img_array_list, ref_img_array_list, timestamp
 
 
 if __name__ == "__main__":

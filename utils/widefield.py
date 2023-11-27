@@ -20,6 +20,7 @@ from utils.constants import CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from importlib import import_module
 
+
 # endregion
 # region Image processing
 
@@ -47,8 +48,6 @@ def integrate_counts_from_photons(img_array, pixel_coords, radius=None):
     float
         Integrated counts (just an estimate, as adus_to_photons is also just an estimate)
     """
-    # Make copies so we don't mutate the originals
-    pixel_coords = pixel_coords.copy()
     pixel_x = pixel_coords[0]
     pixel_y = pixel_coords[1]
 

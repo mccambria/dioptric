@@ -76,9 +76,11 @@ def upload(folder_path, temp_file_path):
         Get this by calling dm.get_file_path()
     """
     folder_id = id_folder(folder_path)
-    box_client.folder(folder_id).upload(str(temp_file_path))
+    new_file = box_client.folder(folder_id).upload(str(temp_file_path))
     # Delete the temp file after we're done uploading it
     os.remove(temp_file_path)
+
+    return new_file.id
 
 
 def id_folder(folder_path):

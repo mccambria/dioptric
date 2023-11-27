@@ -311,9 +311,13 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_name = "2023_11_01-10_17_03-johnson-nv0_2023_10_30"
-    data = dm.get_raw_data(file_name)
-    img_array = data["img_array"]
+    file_name = "2023_11_24-14_22_35-johnson-nv1_2023_11_24"
+    data = dm.get_raw_data(file_id=1372143481320)
+    img_array = np.array(data["img_array"])
+    # file_name = "2023_11_24-14_23_45-johnson-nv1_2023_11_24"
+    # data = dm.get_raw_data(file_id=1371131240542)
+    # img_array -= np.array(data["img_array"])
+    # print(np.mean(img_array[230:330, 255:355]))
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="ADUs")

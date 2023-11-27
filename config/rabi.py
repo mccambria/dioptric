@@ -79,13 +79,11 @@ widefield_calibration_nv2["disable_z_opt"] = True
 
 # Coords
 widefield_calibration_nv1[pixel_coords_key] = [267.929, 290.489]
-widefield_calibration_nv1[green_coords_key] = [110.011, 110.845]
-widefield_calibration_nv1[red_coords_key] = [73.8, 76.2]
-# widefield_calibration_nv1[red_coords_key] = [73.8, 74.6]
+widefield_calibration_nv1[green_coords_key] = [109.811, 110.845]
+widefield_calibration_nv1[red_coords_key] = [74.1, 75.9]
 widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
-widefield_calibration_nv2[green_coords_key] = [108.3, 112.002]
-widefield_calibration_nv2[red_coords_key] = [72.6, 77.1]
-# widefield_calibration_nv2[red_coords_key] = [72.6, 75.5]
+widefield_calibration_nv2[green_coords_key] = [108.1, 112.002]
+widefield_calibration_nv2[red_coords_key] = [72.9, 76.8]
 
 # endregion
 # region Base config
@@ -141,7 +139,7 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 1000,
+        "em_gain": 2000,
         "temp": -60,
         "timeout": 5000,  # ms
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
@@ -202,7 +200,7 @@ config |= {
         "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_COBO_638": float,
         "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 0.75,
+        "xy_optimize_range-laser_COBO_638": 1.2,
         "xy_units-laser_COBO_638": "MHz",
         #
         "z_control_mode": ControlMode.STREAM,
@@ -469,9 +467,9 @@ opx_config = {
             "singleInput": {"port": ("con1", 7)},
             "intermediate_frequency": 0,
             "operations": {
-                "on": "yellow_aom_cw",
+                "on": "yellow_imaging",
                 "off": "ao_off",
-                "charge_state_readout": "charge_state_readout",
+                "charge_readout": "yellow_charge_readout",
             },
         },
         "do_laser_INTE_520_dm": {
@@ -491,25 +489,25 @@ opx_config = {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "red_aod_cw"},
+            "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "red_aod_cw"},
+            "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "green_aod_cw"},
+            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": 160},
-            "operations": {"aod_cw": "green_aod_cw"},
+            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
         },
         # endregion
     },
@@ -526,10 +524,15 @@ opx_config = {
             "length": default_pulse_duration,
             "waveforms": {"single": "red_aod_cw"},
         },
-        "yellow_aom_cw": {
+        "yellow_imaging": {
             "operation": "control",
             "length": default_pulse_duration,
-            "waveforms": {"single": "yellow_aom_cw"},
+            "waveforms": {"single": "yellow_imaging"},
+        },
+        "yellow_charge_readout": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "yellow_charge_readout"},
         },
         "ao_cw": {
             "operation": "control",
@@ -578,7 +581,8 @@ opx_config = {
         # "red_aod_cw": {"type": "constant", "sample": 0.41},
         "red_aod_cw": {"type": "constant", "sample": 0.17},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
-        "yellow_aom_cw": {"type": "constant", "sample": 0.1},
+        "yellow_imaging": {"type": "constant", "sample": 0.25},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.11},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
         "charge_state_readout": {"type": "constant", "sample": 0.5},

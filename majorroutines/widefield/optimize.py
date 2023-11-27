@@ -12,8 +12,12 @@ import numpy as np
 from numpy import inf
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-from majorroutines.optimize import main, main_with_cxn
-from majorroutines.optimize import stationary_count_lite, prepare_microscope
+from majorroutines.optimize import (
+    main,
+    main_with_cxn,
+    stationary_count_lite,
+    prepare_microscope,
+)
 import time
 import copy
 from utils import tool_belt as tb
@@ -160,18 +164,18 @@ def optimize_pixel_to_scanning_calibration(cxn):
     common.set_registry_entry(calibration_directory, "PIXEL_DRIFT", current_pixel_drift)
 
 
-def optimize_pixel(cxn, nv_sig, do_plot=True):
+def optimize_pixel(nv_sig, do_plot=False):
     with common.labrad_connect() as cxn:
         return optimize_pixel_with_cxn(cxn, nv_sig, do_plot)
 
 
-def optimize_pixel_with_cxn(cxn, nv_sig, do_plot=True):
+def optimize_pixel_with_cxn(cxn, nv_sig, do_plot=False):
     img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
     return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
 
 
 def optimize_pixel_with_img_array(
-    img_array, nv_sig=None, pixel_coords=None, do_plot=True
+    img_array, nv_sig=None, pixel_coords=None, do_plot=False
 ):
     if do_plot:
         kpl.init_kplotlib()

@@ -83,7 +83,7 @@ def get_seq(args, num_reps):
             qua.wait(setup_duration, readout_laser_el)
             qua.wait(setup_duration, camera_el)
             # pulse = "on" if not do_ionize_sub else "off"
-            qua.play("on", readout_laser_el, duration=readout_duration)
+            qua.play("charge_readout", readout_laser_el, duration=readout_duration)
             # qua.play("off", readout_laser_el, duration=readout_duration)
             qua.play("on", camera_el)
             qua.align()

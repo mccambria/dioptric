@@ -184,20 +184,20 @@ def main_with_cxn(
     ### Data tracking
 
     counts = np.empty((num_nvs, num_runs, num_steps, num_reps))
-    img_arrays = np.empty((num_runs, num_steps), dtype=np.uint16)
+    resolution = widefield._get_camera_resolution()
+    img_arrays = np.empty((num_runs, num_steps, *resolution), dtype=np.uint16)
     freq_ind_master_list = [[] for ind in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
 
     ### Collect the data
 
-    pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-
     try:
-        camera.arm()
-        sig_gen.uwave_on()
-
         for run_ind in range(num_runs):
             shuffle(freq_ind_list)
+
+            pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+            camera.arm()
+            sig_gen.uwave_on()
 
             for freq_ind in freq_ind_list:
                 pixel_coords_list = [
@@ -208,26 +208,42 @@ def main_with_cxn(
                 freq = freqs[freq_ind]
                 sig_gen.set_freq(freq)
 
-                pulse_gen.stream_start()
-
-                for rep_ind in range(num_reps):
-                    img_str = camera.read()
-                    img_array = widefield.img_str_to_array(img_str)
-                    if rep_ind == 0:
-                        avg_img_array = np.copy(img_array)
-                    else:
-                        avg_img_array += img_array
-
-                    for nv_ind in range(num_nvs):
-                        pixel_coords = pixel_coords_list[nv_ind]
-                        counts_val = widefield.integrate_counts_from_adus(
-                            img_array, pixel_coords
-                        )
-                        counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
+                # Try 5 times then give up
+                num_attempts = 5
+                attempt_ind = 0
+                while True:
+                    try:
+                        pulse_gen.stream_start()
+                        for rep_ind in range(num_reps):
+                            img_str = camera.read()
+                            img_array = widefield.img_str_to_array(img_str)
+                            if rep_ind == 0:
+                                avg_img_array = np.copy(img_array)
+                            else:
+                                avg_img_array += img_array
+                            for nv_ind in range(num_nvs):
+                                pixel_coords = pixel_coords_list[nv_ind]
+                                counts_val = widefield.integrate_counts_from_adus(
+                                    img_array, pixel_coords
+                                )
+                                counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
+                        break
+                    except Exception as exc:
+                        print(exc)
+                        camera.arm()
+                        attempt_ind += 1
+                        if attempt_ind == num_attempts:
+                            raise RuntimeError("Maxed out number of attempts")
+                if attempt_ind > 0:
+                    print(f"{attempt_ind} crashes occurred")
 
                 avg_img_array = avg_img_array / num_reps
-                img_arrays[run_ind, freq_ind] = avg_img_array
-                optimize.optimize_pixel_with_img_array(avg_img_array, repr_nv_sig)
+                img_arrays[run_ind, freq_ind, :, :] = avg_img_array
+
+            camera.disarm()
+            sig_gen.uwave_off()
+
+            optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
 
     finally:
         camera.disarm()

@@ -171,8 +171,7 @@ def _read_counts_camera_step(cxn, nv_sig, laser_key, axis_ind=None, scan_vals=No
         pulse_gen.stream_start()
         img_str = camera.read()
         img_array = widefield.img_str_to_array(img_str)
-        img_array = widefield.adus_to_photons(img_array)
-        sample = widefield.integrate_counts(img_array, pixel_coords)
+        sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
     return [np.array(counts, dtype=int), img_array]
@@ -229,7 +228,7 @@ def _read_counts_camera_sequence(
             ion_duration,
         ]
         seq_file_name = "optimize_ionization_laser_coords.py"
-        num_reps = 100
+        num_reps = 50
     if axis_ind is None or axis_ind == 2:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
@@ -264,18 +263,26 @@ def _read_counts_camera_sequence(
             pulse_gen.stream_start()
 
             # Read the camera images
-            for rep_ind in range(num_reps):
-                img_str = camera.read()
-                sub_img_array = widefield.img_str_to_array(img_str)
-                if rep_ind == 0:
-                    img_array = np.copy(sub_img_array)
-                else:
-                    img_array += sub_img_array
+            actual_num_reps = num_reps
+            try:
+                for rep_ind in range(num_reps):
+                    img_str = camera.read()
+                    sub_img_array = widefield.img_str_to_array(img_str)
+                    if rep_ind == 0:
+                        img_array = np.copy(sub_img_array)
+                    else:
+                        img_array += sub_img_array
+            except Exception as exc:
+                print(exc)
+                print(f"Stopped at rep ind {rep_ind}")
+                actual_num_reps = rep_ind
+
+                # Rearm the camera
+                camera.arm()
 
             # Process the result
-            img_array = img_array / num_reps
-            img_array = widefield.adus_to_photons(img_array)
-            sample = widefield.integrate_counts(img_array, pixel_coords)
+            img_array = img_array / actual_num_reps
+            sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
             counts.append(sample)
 
     finally:
