@@ -584,16 +584,7 @@ def fit_resonance(
             sigma=norm_avg_sig_ste,
             absolute_sigma=True,
             bounds=bounds,
-            # full_output=True,
-            # method="trf",
-            # bounds=(0, np.inf),
-            # contrast, center, rabi_freq, splitting, phase
-            # bounds=(
-            #     (0.05, freqs[0], 0.9, 0, -2 * np.pi),
-            #     (0.5, freqs[-1], 8, 10, 2 * np.pi),
-            # ),  # MCC
-            # # max_nfev=100,
-            # ftol=1e-4,  # MCC
+            ftol=1e-4,  # MCC
         )
 
     # If the user gave us a hint, go with that

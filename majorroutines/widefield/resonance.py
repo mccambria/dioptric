@@ -51,7 +51,8 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
     # shift_factor = 0.075
     shift_factor = 0.05
     # shuffle(offset_inds)
-    nv_list = range(num_nvs)
+    # nv_list = list(range(num_nvs))
+    # nv_list.remove(5)
     # nv_list = [0, 1, 4, 6, 7, 9]
     num_nvs = len(nv_list)
     for ind in range(num_nvs):
@@ -59,7 +60,11 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
         nv_label = nv_ind["name"].split("_")[0][2:]  # Just get the number
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
-        guess_params = [nv_counts[0], 0.15, 2, 2, np.median(freqs)]
+        norm_guess = np.median(nv_counts)
+        amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
+        if nv_ind == 5:
+            amp_guess = 0
+        guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
         fit_func = lambda freq, norm, contrast, g_width, l_width, center: norm * (
             1 + voigt(freq, contrast, g_width, l_width, center)
         )
@@ -302,7 +307,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1372377980720)
+    data = dm.get_raw_data(file_id=1373151709522)
     nv_list = data["nv_list"]
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
