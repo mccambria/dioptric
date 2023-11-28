@@ -148,6 +148,10 @@ def process_counts(counts_lists):
 # region Miscellaneous public functions
 
 
+def get_nv_num(nv_sig):
+    return nv_sig["name"].split("-")[1].split("_")[0][2:]
+
+
 def get_base_scc_seq_args(nv_list):
     """Return base seq_args for any SCC routine"""
 

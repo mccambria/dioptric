@@ -32,7 +32,7 @@ red_laser = "laser_COBO_638"
 yellow_laser = "laser_OPTO_589"
 green_laser_dict = {"name": green_laser, "duration": 10e6}
 red_laser_dict = {"name": red_laser, "duration": 10e6}
-yellow_laser_dict = {"name": yellow_laser, "duration": 50e6}
+yellow_laser_dict = {"name": yellow_laser, "duration": 35e6}
 
 ### Major Routines
 
@@ -184,7 +184,8 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.70
+    z_coord = 3.47
+    magnet_angle = 30
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -202,7 +203,7 @@ if __name__ == "__main__":
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
-        "magnet_angle": None,
+        "magnet_angle": magnet_angle,
         #
         NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 80, "uwave_power": 12.0},
     }
@@ -290,6 +291,11 @@ if __name__ == "__main__":
     try:
         # pass
 
+        with common.labrad_connect() as cxn:
+            mag_rot_server = tb.get_server_magnet_rotation(cxn)
+            mag_rot_server.set_angle(magnet_angle)
+            # print(mag_rot_server.get_angle())
+
         # kpl.init_kplotlib()
         tb.init_safe_stop()
 
@@ -320,10 +326,10 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
 
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(4.0, 1.5, 51):
+        # for z in np.linspace(3.25, 3.5, 6):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -343,7 +349,7 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_optimize(nv)
 
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
 
     except Exception as exc:
         if do_email:
@@ -369,3 +375,35 @@ if __name__ == "__main__":
         tb.reset_cfm()
         plt.show(block=True)
         tb.reset_safe_stop()
+
+"""
+
+Normalized separation:
+2.348 / sqrt(shot)
+10.501 / sqrt(s)
+Normalized separation:
+2.196 / sqrt(shot)
+9.82 / sqrt(s)
+Normalized separation:
+2.431 / sqrt(shot)
+10.872 / sqrt(s)
+Normalized separation:
+1.792 / sqrt(shot)
+8.015 / sqrt(s)
+Normalized separation:
+2.651 / sqrt(shot)
+11.858 / sqrt(s)
+Normalized separation:
+2.335 / sqrt(shot)
+10.441 / sqrt(s)
+Normalized separation:
+2.545 / sqrt(shot)
+11.382 / sqrt(s)
+Normalized separation:
+2.8 / sqrt(shot)
+12.523 / sqrt(s)
+Normalized separation:
+2.498 / sqrt(shot)
+11.171 / sqrt(s)
+
+"""

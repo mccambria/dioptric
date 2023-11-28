@@ -29,11 +29,13 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 
 
-def create_raw_data_figure(freqs, counts, counts_ste):
-    num_nvs = counts.shape[0]
+def create_raw_data_figure(nv_list, freqs, counts, counts_ste):
+    num_nvs = len(nv_list)
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=ind)
+        nv_sig = nv_list[ind]
+        label = widefield.get_nv_num(nv_sig)
+        kpl.plot_points(ax, freqs, counts[ind], yerr=counts_ste[ind], label=label)
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Counts")
     min_freqs = min(freqs)
@@ -44,20 +46,19 @@ def create_raw_data_figure(freqs, counts, counts_ste):
     return fig
 
 
-def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
-    num_nvs = counts.shape[0]
+def create_fit_figure(nv_list, freqs, counts, counts_ste, plot_residuals=False):
     fig, ax = plt.subplots()
     freq_linspace = np.linspace(min(freqs) - 0.001, max(freqs) + 0.001, 1000)
     # shift_factor = 0.075
     shift_factor = 0.05
     # shuffle(offset_inds)
-    # nv_list = list(range(num_nvs))
-    # nv_list.remove(5)
-    # nv_list = [0, 1, 4, 6, 7, 9]
     num_nvs = len(nv_list)
-    for ind in range(num_nvs):
-        nv_ind = nv_list[ind]
-        nv_label = nv_ind["name"].split("_")[0][2:]  # Just get the number
+    a0_list = []
+    a1_list = []
+    readout_noise_list = []
+    for nv_ind in range(num_nvs):
+        nv_sig = nv_list[nv_ind]
+        label = widefield.get_nv_num(nv_sig)
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
         norm_guess = np.median(nv_counts)
@@ -77,16 +78,24 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
             guess_params=guess_params,
         )
         pste = np.sqrt(np.diag(pcov))
+        norm = popt[0]
+        contrast = popt[1]
+        a0 = round((1 + contrast) * norm, 2)
+        a1 = round(norm, 2)
+        print(f"ms=+/-1: {a0}\nms=0: {a1}\n")
+        a0_list.append(a0)
+        a1_list.append(a1)
+        readout_noise_list.append(np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2)))
 
         if plot_residuals:
             kpl.plot_points(
                 ax,
                 freqs,
                 ((nv_counts - fit_func(freqs, *popt)) / nv_counts_ste),
-                label=nv_label,
+                label=label,
             )
         else:
-            offset = shift_factor * (num_nvs - 1 - ind)
+            offset = shift_factor * (num_nvs - 1 - nv_ind)
             norm = popt[0]
             kpl.plot_line(
                 ax,
@@ -98,7 +107,7 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
                 freqs,
                 offset + nv_counts / norm,
                 yerr=nv_counts_ste / norm,
-                label=nv_label,
+                label=label,
             )
 
         # Normalized residuals
@@ -112,6 +121,11 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
         # print(popt)
         # print(pste)
         # print()
+
+    print(f"a0 average: {round(np.average(a0_list), 2)}")
+    print(f"a1 average: {round(np.average(a1_list), 2)}")
+    print(f"Average readout noise: {round(np.average(readout_noise_list), 2)}")
+    print(f"Median readout noise: {round(np.median(readout_noise_list), 2)}")
 
     ax.set_xlabel("Frequency (GHz)")
     if plot_residuals:
@@ -264,9 +278,9 @@ def main_with_cxn(
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
     kpl.init_kplotlib()
-    raw_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
+    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     except Exception as exc:
         print(exc)
         fit_fig = None
@@ -307,7 +321,7 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1373151709522)
+    data = dm.get_raw_data(file_id=1373977909488)
     nv_list = data["nv_list"]
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
@@ -324,7 +338,7 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
     kpl.init_kplotlib()
-    raw_fig = create_raw_data_figure(freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(freqs, avg_counts, avg_counts_ste)
+    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
     plt.show(block=True)

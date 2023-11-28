@@ -31,6 +31,7 @@ import time
 import logging
 import socket
 from utils import common
+from utils import tool_belt as tb
 
 
 class RotationStageThorEll18k(LabradServer):
@@ -38,18 +39,9 @@ class RotationStageThorEll18k(LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
         config = common.get_config_dict()
-        device_id = config["DeviceIDs"]["rotation_stage_ell18k_address"]
+        device_id = config["DeviceIDs"][f"{self.name}_com"]
         # Get the slider
         try:
             self.stage = serial.Serial(
@@ -67,7 +59,11 @@ class RotationStageThorEll18k(LabradServer):
         time.sleep(0.1)
         logging.debug("Init complete")
 
-    def get_angle(self):
+    @setting(0, returns="v[]")
+    def get_angle(self, c):
+        return self._get_angle()
+
+    def _get_angle(self):
         self.stage.write("0gp".encode())
         ret = self.stage.readline().decode()
         # First 3 characters are header so skip those
@@ -80,9 +76,9 @@ class RotationStageThorEll18k(LabradServer):
         angle = digi_angle * (360 / 143360)
         return angle
 
-    @setting(0, angle="v[]")
+    @setting(1, angle="v[]")
     def set_angle(self, c, angle):
-        current_angle = self.get_angle()
+        current_angle = self._get_angle()
         # logging.info(current_angle)
         # logging.info(angle)
         # Max speed is 430 deg/s
