@@ -116,8 +116,8 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.050
     num_steps = 20
-    num_reps = 100
-    num_runs = 4
+    num_reps = 50
+    num_runs = 8
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.75
+    z_coord = 3.70
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -198,13 +198,13 @@ if __name__ == "__main__":
         LaserKey.IMAGING: green_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 150},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 200},
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 12.0},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 80, "uwave_power": 12.0},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     # nv_sig = nv_ref
     # nv_list = [nv_sig]
     # nv_list = [nv8, nv9]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv6, nv7, nv8, nv9]
     # nv_list = [nv0, nv1, nv4, nv6, nv7, nv9]
     # nv_list = [nv3, nv4, nv5, nv6, nv7]
 
@@ -323,7 +323,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.0, 1.5, 51):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -343,7 +343,7 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_optimize(nv)
 
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
 
     except Exception as exc:
         if do_email:

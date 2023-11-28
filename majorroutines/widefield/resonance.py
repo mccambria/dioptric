@@ -56,6 +56,7 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
     num_nvs = len(nv_list)
     for ind in range(num_nvs):
         nv_ind = nv_list[ind]
+        nv_label = nv_ind["name"].split("_")[0][2:]  # Just get the number
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
         guess_params = [nv_counts[0], 0.15, 2, 2, np.median(freqs)]
@@ -77,7 +78,7 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
                 ax,
                 freqs,
                 ((nv_counts - fit_func(freqs, *popt)) / nv_counts_ste),
-                label=nv_ind,
+                label=nv_label,
             )
         else:
             offset = shift_factor * (num_nvs - 1 - ind)
@@ -92,7 +93,7 @@ def create_fit_figure(freqs, counts, counts_ste, plot_residuals=False):
                 freqs,
                 offset + nv_counts / norm,
                 yerr=nv_counts_ste / norm,
-                label=nv_ind,
+                label=nv_label,
             )
 
         # Normalized residuals
