@@ -109,11 +109,26 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
 
 def main(
-    nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs, state=NVSpinState.LOW
+    nv_list,
+    uwave_freq,
+    min_tau,
+    max_tau,
+    num_steps,
+    num_reps,
+    num_runs,
+    state=NVSpinState.LOW,
 ):
     with common.labrad_connect() as cxn:
         main_with_cxn(
-            cxn, nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs, state
+            cxn,
+            nv_list,
+            uwave_freq,
+            min_tau,
+            max_tau,
+            num_steps,
+            num_reps,
+            num_runs,
+            state,
         )
 
 
@@ -121,6 +136,7 @@ def main_with_cxn(
     cxn,
     nv_list,
     uwave_freq,
+    min_tau,
     max_tau,
     num_steps,
     num_reps,
@@ -142,7 +158,7 @@ def main_with_cxn(
     sig_gen = tb.get_server_sig_gen(cxn, state)
     sig_gen_name = sig_gen.name
 
-    taus = np.linspace(0, max_tau, num_steps)
+    taus = np.linspace(min_tau, max_tau, num_steps)
     print(taus)
 
     uwave_dict = repr_nv_sig[state]

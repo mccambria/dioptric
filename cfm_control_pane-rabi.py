@@ -137,11 +137,12 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     uwave_freq = 2.793
-    max_tau = 120
-    num_steps = 16
+    min_tau = 16
+    max_tau = 160
+    num_steps = 19
     num_reps = 50
     num_runs = 16
-    rabi.main(nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs)
+    rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
 
 
 def do_opx_constant_ac():
