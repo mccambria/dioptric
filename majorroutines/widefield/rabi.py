@@ -28,13 +28,12 @@ from utils.positioning import get_scan_1d as calculate_freqs
 from scipy.optimize import curve_fit
 
 
-def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
+def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     fig, ax = plt.subplots()
-
-    widefield.plot_raw_data(ax, nv_list, freqs, counts, counts_errs)
-
+    widefield.plot_raw_data(ax, nv_list, taus, counts, counts_ste)
     ax.set_xlabel("Pulse duration (ns)")
     ax.set_ylabel("Counts")
+    return fig
 
 
 def create_fit_figure(nv_list, taus, counts, counts_ste):
@@ -48,6 +47,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     num_nvs = len(nv_list)
     tau_step = taus[1] - taus[0]
+    num_steps = len(taus)
 
     a0_list = []
     a1_list = []
@@ -102,18 +102,33 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Make the figure
 
     fig, ax = plt.subplots()
-    widefield.plot_fit(ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms)
+    widefield.plot_fit(ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms)
     ax.set_xlabel("Pulse duration (ns)")
     ax.set_ylabel("Normalized fluorescence")
     return fig
 
 
 def main(
-    nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs, state=NVSpinState.LOW
+    nv_list,
+    uwave_freq,
+    min_tau,
+    max_tau,
+    num_steps,
+    num_reps,
+    num_runs,
+    state=NVSpinState.LOW,
 ):
     with common.labrad_connect() as cxn:
         main_with_cxn(
-            cxn, nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs, state
+            cxn,
+            nv_list,
+            uwave_freq,
+            min_tau,
+            max_tau,
+            num_steps,
+            num_reps,
+            num_runs,
+            state,
         )
 
 
@@ -121,6 +136,7 @@ def main_with_cxn(
     cxn,
     nv_list,
     uwave_freq,
+    min_tau,
     max_tau,
     num_steps,
     num_reps,
@@ -142,8 +158,7 @@ def main_with_cxn(
     sig_gen = tb.get_server_sig_gen(cxn, state)
     sig_gen_name = sig_gen.name
 
-    taus = np.linspace(0, max_tau, num_steps)
-    print(taus)
+    taus = np.linspace(min_tau, max_tau, num_steps)
 
     uwave_dict = repr_nv_sig[state]
     uwave_power = uwave_dict["uwave_power"]
@@ -235,9 +250,9 @@ def main_with_cxn(
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
     kpl.init_kplotlib()
-    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
     except Exception as exc:
         print(exc)
         fit_fig = None

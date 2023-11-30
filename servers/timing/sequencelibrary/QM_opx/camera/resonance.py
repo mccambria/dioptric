@@ -36,7 +36,7 @@ def get_seq(args, num_reps):
         num_reps = 1
 
     sig_gen_el = f"do_{sig_gen_name}_dm"
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns)
+    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
@@ -86,14 +86,20 @@ if __name__ == "__main__":
         args = [
             "laser_INTE_520",
             10000.0,
-            [[112.164, 109.832]],
+            [
+                [113.61179202255701, 109.21166362113622],
+                [113.74179202255701, 109.98266362113623],
+            ],
             "laser_COBO_638",
-            1000.0,
-            [[75.97, 75.202]],
+            200,
+            [
+                [77.00663496614166, 74.46965882370148],
+                [77.20763496614165, 75.21665882370148],
+            ],
             "laser_OPTO_589",
-            50000.0,
-            False,
-            True,
+            35000000.0,
+            "sig_gen_STAN_sg394",
+            24,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 

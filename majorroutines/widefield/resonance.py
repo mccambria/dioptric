@@ -30,11 +30,10 @@ from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     fig, ax = plt.subplots()
-
     widefield.plot_raw_data(ax, nv_list, freqs, counts, counts_errs)
-
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Counts")
+    return fig
 
 
 def create_fit_figure(nv_list, freqs, counts, counts_ste):
