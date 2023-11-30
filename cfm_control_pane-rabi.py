@@ -24,6 +24,7 @@ from majorroutines.widefield import (
     image_sample,
     optimize,
     resonance,
+    rabi,
 )
 from utils.constants import LaserKey, NVSpinState
 
@@ -131,6 +132,15 @@ def do_resonance_zoom(nv_list):
     num_reps = 50
     num_runs = 16
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
+
+
+def do_rabi(nv_list):
+    uwave_freq = 2.793
+    max_tau = 160
+    num_steps = 21
+    num_reps = 50
+    num_runs = 16
+    rabi.main(nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs)
 
 
 def do_opx_constant_ac():
@@ -307,10 +317,10 @@ if __name__ == "__main__":
     try:
         # pass
 
-        with common.labrad_connect() as cxn:
-            mag_rot_server = tb.get_server_magnet_rotation(cxn)
-            mag_rot_server.set_angle(magnet_angle)
-            # print(mag_rot_server.get_angle())
+        # with common.labrad_connect() as cxn:
+        #     mag_rot_server = tb.get_server_magnet_rotation(cxn)
+        #     mag_rot_server.set_angle(magnet_angle)
+        # print(mag_rot_server.get_angle())
 
         # kpl.init_kplotlib()
         tb.init_safe_stop()
@@ -352,7 +362,7 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []
@@ -379,7 +389,8 @@ if __name__ == "__main__":
         #     do_optimize(nv)
 
         # do_resonance(nv_list)
-        do_resonance_zoom(nv_list)
+        # do_resonance_zoom(nv_list)
+        # do_rabi(nv_list)
 
     except Exception as exc:
         if do_email:

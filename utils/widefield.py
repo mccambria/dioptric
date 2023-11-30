@@ -451,7 +451,8 @@ def offset_plot_points(ax, x, ys, labels=None, offset=0.05, yerrs=None, **kwargs
     offset : numeric
         offset between plotted data sets
     """
-    _offset_plot(kpl.plot_points, ax, x, ys, labels, offset, yerrs, **kwargs)
+    pass
+    # _offset_plot(kpl.plot_points, ax, x, ys, labels, offset, yerrs, **kwargs)
 
 
 def offset_plot_line(ax, x, ys, labels=None, offset=0.05, **kwargs):
@@ -470,21 +471,42 @@ def offset_plot_line(ax, x, ys, labels=None, offset=0.05, **kwargs):
     offset : numeric
         offset between plotted data sets
     """
-    _offset_plot(kpl.plot_line, ax, x, ys, labels, offset, **kwargs)
+    pass
+    # _offset_plot(kpl.plot_line, ax, x, ys, labels, offset, **kwargs)
 
 
-def _offset_plot(fn, ax, x, ys, labels=None, offset=0.05, yerrs=None, **kwargs):
-    ys = np.array(ys)
-    num_nvs = ys.shape[0]
+def plot_raw_data(ax, nv_list, x, ys, yerrs):
+    num_nvs = len(nv_list)
     for ind in range(num_nvs):
-        total_offset = offset * (num_nvs - 1 - ind)
-        if yerrs is not None:
-            yerr = yerrs[ind]
-            kwargs["yerr"] = yerr
-        if labels is not None:
-            label = labels[ind]
-            kwargs["label"] = label
-        fn(ax, x, ys[ind] + total_offset, **kwargs)
+        nv_sig = nv_list[ind]
+        label = get_nv_num(nv_sig)
+        kpl.plot_points(ax, x, ys[ind], yerr=yerrs[ind], label=label)
+    min_x = min(x)
+    max_x = max(x)
+    excess = 0.08 * (max_x - min_x)
+    ax.set_xlim(min_x - excess, max_x + excess)
+    ax.legend(loc=kpl.Loc.LOWER_RIGHT)
+
+
+def plot_fit(ax, nv_list, x, ys, yerrs, fns, popts, norms=None, offset=0.05):
+    min_x = min(x)
+    max_x = max(x)
+    x_linspace = np.linspace(min_x - 0.001, max_x + 0.001, 1000)
+    num_nvs = len(nv_list)
+    for nv_ind in range(num_nvs):
+        nv_sig = nv_list[nv_ind]
+        label = get_nv_num(nv_sig)
+        nv_offset = offset * (num_nvs - 1 - nv_ind)
+        norm = 1 if norms is None else norms[nv_ind]
+        y = ys[nv_ind] / norm + nv_offset
+        yerr = yerrs[nv_ind] / norm
+        kpl.plot_points(ax, x, y, yerr=yerr, label=label)
+        fn = fns[nv_ind]
+        popt = popts[nv_ind]
+        kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm) + nv_offset)
+    excess = 0.08 * (max_x - min_x)
+    ax.set_xlim(min_x - excess, max_x + excess)
+    ax.legend(loc=kpl.Loc.LOWER_RIGHT)
 
 
 # endregion
