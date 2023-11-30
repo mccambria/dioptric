@@ -47,7 +47,8 @@ def get_seq(args, num_reps):
             seq_utils.macro_polarize(pol_laser, pol_duration_ns, pol_coords_list)
 
             # Microwave sequence
-            qua.play("on", sig_gen_el, duration=uwave_duration)
+            if uwave_duration > 0:
+                qua.play("on", sig_gen_el, duration=uwave_duration)
             qua.wait(buffer, sig_gen_el)
             qua.align()
 

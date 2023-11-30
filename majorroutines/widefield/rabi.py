@@ -143,6 +143,7 @@ def main_with_cxn(
     sig_gen_name = sig_gen.name
 
     taus = np.linspace(0, max_tau, num_steps)
+    print(taus)
 
     uwave_dict = repr_nv_sig[state]
     uwave_power = uwave_dict["uwave_power"]
@@ -153,7 +154,6 @@ def main_with_cxn(
 
     seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.extend([sig_gen_name, 0])
-    seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "resonance.py"
 
     # print(seq_args)
