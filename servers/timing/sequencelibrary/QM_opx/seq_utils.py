@@ -175,8 +175,10 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
 # endregion
 
 
-def convert_ns_to_cc(duration_ns):
+def convert_ns_to_cc(duration_ns, raise_error=False):
     """Convert a duration from nanoseconds to clock cycles"""
+    if raise_error and duration_ns % 4 != 0:
+        raise RuntimeError("OPX pulse durations (in ns) must be divisible by 4")
     return round(duration_ns / 4)
 
 
