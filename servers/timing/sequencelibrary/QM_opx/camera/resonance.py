@@ -36,7 +36,7 @@ def get_seq(args, num_reps):
         num_reps = 1
 
     sig_gen_el = f"do_{sig_gen_name}_dm"
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns)
+    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
@@ -47,12 +47,6 @@ def get_seq(args, num_reps):
             seq_utils.macro_polarize(pol_laser, pol_duration_ns, pol_coords_list)
 
             # Microwave sequence
-            # if uwave_duration > 0:
-            #     qua.play("on", sig_gen_el, duration=uwave_duration)
-            if uwave_duration < 4:
-                raise RuntimeError(
-                    "OPX cannot play microwave pulse shorter than 4 cycles"
-                )
             qua.play("on", sig_gen_el, duration=uwave_duration)
             qua.wait(buffer, sig_gen_el)
             qua.align()
