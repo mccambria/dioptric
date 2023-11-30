@@ -359,7 +359,7 @@ if __name__ == "__main__":
         # for ind in range(20):
         #     time.sleep(5)
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -394,7 +394,7 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
 
     except Exception as exc:
         if do_email:

@@ -47,8 +47,13 @@ def get_seq(args, num_reps):
             seq_utils.macro_polarize(pol_laser, pol_duration_ns, pol_coords_list)
 
             # Microwave sequence
-            if uwave_duration > 0:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
+            # if uwave_duration > 0:
+            #     qua.play("on", sig_gen_el, duration=uwave_duration)
+            if uwave_duration < 4:
+                raise RuntimeError(
+                    "OPX cannot play microwave pulse shorter than 4 cycles"
+                )
+            qua.play("on", sig_gen_el, duration=uwave_duration)
             qua.wait(buffer, sig_gen_el)
             qua.align()
 
@@ -87,14 +92,20 @@ if __name__ == "__main__":
         args = [
             "laser_INTE_520",
             10000.0,
-            [[112.164, 109.832]],
+            [
+                [113.61179202255701, 109.21166362113622],
+                [113.74179202255701, 109.98266362113623],
+            ],
             "laser_COBO_638",
-            1000.0,
-            [[75.97, 75.202]],
+            200,
+            [
+                [77.00663496614166, 74.46965882370148],
+                [77.20763496614165, 75.21665882370148],
+            ],
             "laser_OPTO_589",
-            50000.0,
-            False,
-            True,
+            35000000.0,
+            "sig_gen_STAN_sg394",
+            24,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 

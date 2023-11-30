@@ -156,9 +156,9 @@ def main_with_cxn(
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "resonance.py"
 
-    # print(seq_args)
-    # print(seq_file)
-    # return
+    print(seq_args)
+    print(seq_file)
+    return
 
     ### Data tracking
 
