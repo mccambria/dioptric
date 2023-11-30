@@ -12,6 +12,7 @@ Created on June 16th, 2023
 
 
 import sys
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
@@ -136,8 +137,8 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     uwave_freq = 2.793
-    max_tau = 160
-    num_steps = 21
+    max_tau = 120
+    num_steps = 16
     num_reps = 50
     num_runs = 16
     rabi.main(nv_list, uwave_freq, max_tau, num_steps, num_reps, num_runs)
@@ -214,7 +215,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.34
+    z_coord = 3.36
     magnet_angle = 0
 
     nv_ref = {
@@ -233,10 +234,10 @@ if __name__ == "__main__":
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
-        "magnet_angle": magnet_angle,
+        "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 12.0},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 15.5},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 48, "uwave_power": 12.0},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 48, "uwave_power": 15.5},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -317,10 +318,10 @@ if __name__ == "__main__":
     try:
         # pass
 
-        # with common.labrad_connect() as cxn:
-        #     mag_rot_server = tb.get_server_magnet_rotation(cxn)
-        #     mag_rot_server.set_angle(magnet_angle)
-        # print(mag_rot_server.get_angle())
+        with common.labrad_connect() as cxn:
+            mag_rot_server = tb.get_server_magnet_rotation(cxn)
+            #     mag_rot_server.set_angle(magnet_angle)
+            print(mag_rot_server.get_angle())
 
         # kpl.init_kplotlib()
         tb.init_safe_stop()
@@ -329,7 +330,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([-1.8, -4])
+        # widefield.set_pixel_drift([+11, +6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -355,14 +356,17 @@ if __name__ == "__main__":
         # for z in np.linspace(3.25, 3.75, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        # for ind in range(20):
+        #     time.sleep(5)
+        #     do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []
