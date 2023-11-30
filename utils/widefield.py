@@ -432,6 +432,62 @@ def _get_camera_config_val(key):
 
 
 # endregion
+# region Plotting
+
+
+def offset_plot_points(ax, x, ys, labels=None, offset=0.05, yerrs=None, **kwargs):
+    """Plot multiple data sets (with a common set of x vals) with an offset between
+    the sets such that they are easier to interpret. Useful for plotting simultaneous
+    data from multiple NVs.
+
+    Parameters
+    ----------
+    ax : matplotlib axes
+        axes to plot on
+    x : 1D array
+        x values to plot
+    ys : 2D array
+        y values to plot - first dimension divides the data sets up
+    offset : numeric
+        offset between plotted data sets
+    """
+    _offset_plot(kpl.plot_points, ax, x, ys, labels, offset, yerrs, **kwargs)
+
+
+def offset_plot_line(ax, x, ys, labels=None, offset=0.05, **kwargs):
+    """Plot multiple data sets (with a common set of x vals) with an offset between
+    the sets such that they are easier to interpret. Useful for plotting simultaneous
+    data from multiple NVs.
+
+    Parameters
+    ----------
+    ax : matplotlib axes
+        axes to plot on
+    x : 1D array
+        x values to plot
+    ys : 2D array
+        y values to plot - first dimension divides the data sets up
+    offset : numeric
+        offset between plotted data sets
+    """
+    _offset_plot(kpl.plot_line, ax, x, ys, labels, offset, **kwargs)
+
+
+def _offset_plot(fn, ax, x, ys, labels=None, offset=0.05, yerrs=None, **kwargs):
+    ys = np.array(ys)
+    num_nvs = ys.shape[0]
+    for ind in range(num_nvs):
+        total_offset = offset * (num_nvs - 1 - ind)
+        if yerrs is not None:
+            yerr = yerrs[ind]
+            kwargs["yerr"] = yerr
+        if labels is not None:
+            label = labels[ind]
+            kwargs["label"] = label
+        fn(ax, x, ys[ind] + total_offset, **kwargs)
+
+
+# endregion
 
 
 if __name__ == "__main__":

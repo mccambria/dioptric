@@ -84,6 +84,13 @@ widefield_calibration_nv1[red_coords_key] = [74.1, 75.9]
 widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
 widefield_calibration_nv2[green_coords_key] = [108.1, 112.002]
 widefield_calibration_nv2[red_coords_key] = [72.9, 76.8]
+#
+# widefield_calibration_nv1[pixel_coords_key] = [373.578, 282.107]
+# widefield_calibration_nv1[green_coords_key] = [113.148, 110.574]
+# widefield_calibration_nv1[red_coords_key] = [76.874, 75.642]
+# widefield_calibration_nv2[pixel_coords_key] = [299.588, 253.558]
+# widefield_calibration_nv2[green_coords_key] = [110.672, 109.681]
+# widefield_calibration_nv2[red_coords_key] = [74.770, 74.880]
 
 # endregion
 # region Base config
@@ -132,8 +139,6 @@ config |= {
         "sig_gen_TEKT_tsg4104a": {"delay": 57},
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
-        "sig_gen_LOW": "sig_gen_STAN_sg394",
-        "sig_gen_HIGH": "sig_gen_STAN_sg394_2",
     },
     ###
     "Camera": {
@@ -220,7 +225,7 @@ config |= {
         # "pos_xy": "pos_xyz_THOR_gvs212_PI_pifoc",
         "pos_z": "pos_z_PI_pifoc",
         "pulse_gen": "QM_opx",
-        "sig_gen_HIGH": "sig_gen_STAN_sg394",
+        "sig_gen_HIGH": "sig_gen_STAN_sg394_2",
         "sig_gen_LOW": "sig_gen_STAN_sg394",
         "tagger": "QM_opx",
         "camera": "camera_NUVU_hnu512gamma",

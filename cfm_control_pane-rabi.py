@@ -71,29 +71,31 @@ def do_charge_state_histograms(nv_list, num_reps):
     return charge_state_histograms.main(nv_list, num_reps)
 
 
-def do_optimize_green(nv_sig, set_drift=False, do_plot=True):
+def do_optimize_green(nv_sig, do_plot=True):
     prev_imaging_dict = nv_sig[LaserKey.IMAGING]
     nv_sig[LaserKey.IMAGING] = green_laser_dict
     coords_suffix = green_laser
-    optimize.main(nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot)
+    ret_vals = optimize.main(
+        nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
+    )
+    opti_coords = ret_vals[0]
     nv_sig[LaserKey.IMAGING] = prev_imaging_dict
-    if not set_drift:
-        pos.reset_drift(coords_suffix)
+    return opti_coords
 
 
-def do_optimize_red(nv_sig, set_drift=False, do_plot=True):
+def do_optimize_red(nv_sig, do_plot=True):
     laser_key = LaserKey.IONIZATION
     nv_sig[laser_key]["duration"] = 1e3
     coords_suffix = red_laser
-    optimize.main(
+    ret_vals = optimize.main(
         nv_sig,
         laser_key=laser_key,
         coords_suffix=coords_suffix,
         no_crash=True,
         do_plot=do_plot,
     )
-    if not set_drift:
-        pos.reset_drift(coords_suffix)
+    opti_coords = ret_vals[0]
+    return opti_coords
 
 
 def do_optimize_z(nv_sig, do_plot=False):
@@ -103,8 +105,9 @@ def do_optimize_z(nv_sig, do_plot=False):
 def do_optimize_pixel(nv_sig):
     prev_imaging_dict = nv_sig[LaserKey.IMAGING]
     nv_sig[LaserKey.IMAGING] = green_laser_dict
-    optimize.optimize_pixel(nv_sig, do_plot=True)
+    opti_coords = optimize.optimize_pixel(nv_sig, do_plot=True)
     nv_sig[LaserKey.IMAGING] = prev_imaging_dict
+    return opti_coords
 
 
 def do_optimize_widefield_calibration():
@@ -114,31 +117,47 @@ def do_optimize_widefield_calibration():
 
 def do_resonance(nv_list):
     freq_center = 2.87
+    freq_range = 0.200
+    num_steps = 60
+    num_reps = 15
+    num_runs = 32
+    resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
+
+
+def do_resonance_zoom(nv_list):
+    freq_center = 2.80
     freq_range = 0.050
     num_steps = 20
     num_reps = 50
-    num_runs = 8
+    num_runs = 16
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
 def do_opx_constant_ac():
     with common.labrad_connect() as cxn:
         opx = cxn.QM_opx
+
+        # Microwave test
+        # sig_gen = cxn.sig_gen_STAN_sg394_2
+        # sig_gen.set_freq(2.87)
+        # sig_gen.set_amp(15.5) # 12
+        # sig_gen.uwave_on()
         # opx.constant_ac([3])
+
         # Yellow
-        # opx.constant_ac(
-        #     [],  # Digital channels
-        #     [7],  # Analog channels
-        #     [0.25],  # Analog voltages
-        #     [0],  # Analog frequencies
-        # )
-        # Green
         opx.constant_ac(
-            [4],  # Digital channels
-            [6, 4],  # Analog channels
-            [0.19, 0.19],  # Analog voltages
-            [110, 110],  # Analog frequencies
+            [],  # Digital channels
+            [7],  # Analog channels
+            [0.25],  # Analog voltages
+            [0],  # Analog frequencies
         )
+        # Green
+        # opx.constant_ac(
+        #     [4],  # Digital channels
+        #     [6, 4],  # Analog channels
+        #     [0.19, 0.19],  # Analog voltages
+        #     [110, 110],  # Analog frequencies
+        # )
         # Red
         # opx.constant_ac(
         #     [1],  # Digital channels
@@ -171,6 +190,7 @@ def do_opx_constant_ac():
         # )
         input("Press enter to stop...")
         # opx.constant_ac()
+        # sig_gen.uwave_off()
 
 
 ### Run the file
@@ -184,8 +204,8 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.47
-    magnet_angle = 30
+    z_coord = 3.34
+    magnet_angle = 0
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -205,77 +225,73 @@ if __name__ == "__main__":
         "collection": {"filter": None},
         "magnet_angle": magnet_angle,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 80, "uwave_power": 12.0},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 12.0},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 100, "uwave_power": 15.5},
     }
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_11_25"
-    nv0[pixel_coords_key] = [331.591, 281.997]
-    nv0[green_coords_key] = [111.754, 110.772]
-    nv0[red_coords_key] = [75.671, 75.774]
+    nv0["name"] = f"{sample_name}-nv0_2023_11_29"
+    nv0[pixel_coords_key] = [352.467, 253.072]
+    nv0[green_coords_key] = [112.566, 109.654]
+    nv0[red_coords_key] = [76.383, 74.961]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_11_25"
-    nv1[pixel_coords_key] = [347.948, 248.368]
-    nv1[green_coords_key] = [112.347, 109.556]
-    nv1[red_coords_key] = [76.059, 74.738]
+    nv1["name"] = f"{sample_name}-nv1_2023_11_29"
+    nv1[pixel_coords_key] = [350.05, 263.677]
+    nv1[green_coords_key] = [112.388, 110.097]
+    nv1[red_coords_key] = [76.196, 75.127]
 
     nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_11_25"
-    nv2[pixel_coords_key] = [371.143, 242.199]
-    nv2[green_coords_key] = [113.14139162658678, 109.19081375337272]
-    nv2[red_coords_key] = [76.73, 74.587]
+    nv2["name"] = f"{sample_name}-nv2_2023_11_29"
+    nv2[pixel_coords_key] = [366.264, 267.229]
+    nv2[green_coords_key] = [113.059, 110.195]
+    nv2[red_coords_key] = [76.626, 75.258]
 
     nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_11_25"
-    nv3[pixel_coords_key] = [369.707, 305.252]
-    nv3[green_coords_key] = [113.18, 109.278]
-    nv3[red_coords_key] = [76.784, 76.326]
+    nv3["name"] = f"{sample_name}-nv3_2023_11_29"
+    nv3[pixel_coords_key] = [369.989, 279.857]
+    nv3[green_coords_key] = [113.103, 110.668]
+    nv3[red_coords_key] = [76.704, 75.585]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_11_25"
-    nv4[pixel_coords_key] = [345.208, 312.324]
-    nv4[green_coords_key] = [112.398, 111.685]
-    nv4[red_coords_key] = [76.036, 76.61]
+    nv4["name"] = f"{sample_name}-nv4_2023_11_29"
+    nv4[pixel_coords_key] = [366.006, 242.578]
+    nv4[green_coords_key] = [113.135, 109.506]
+    nv4[red_coords_key] = [76.714, 74.622]
 
     nv5 = copy.deepcopy(nv_ref)
-    nv5["name"] = f"{sample_name}-nv5_2023_11_25"
-    nv5[pixel_coords_key] = [316.119, 299.436]
-    nv5[green_coords_key] = [111.185, 111.135]
-    nv5[red_coords_key] = [75.231, 76.262]
+    nv5["name"] = f"{sample_name}-nv5_2023_11_29"
+    nv5[pixel_coords_key] = [366.689, 241.889]
+    nv5[green_coords_key] = [112.977, 109.386]
+    nv5[red_coords_key] = [76.678, 74.595]
 
     nv6 = copy.deepcopy(nv_ref)
-    nv6["name"] = f"{sample_name}-nv6_2023_11_25"
-    nv6[pixel_coords_key] = [308.186, 227.034]
-    nv6[green_coords_key] = [110.974, 108.824]
-    nv6[red_coords_key] = [75.018, 74.221]
+    nv6["name"] = f"{sample_name}-nv6_2023_11_29"
+    nv6[pixel_coords_key] = [372.844, 229.129]
+    nv6[green_coords_key] = [113.201, 108.928]
+    nv6[red_coords_key] = [77.028, 74.372]
 
     nv7 = copy.deepcopy(nv_ref)
-    nv7["name"] = f"{sample_name}-nv7_2023_11_25"
-    nv7[pixel_coords_key] = [334.802, 218.992]
-    nv7[green_coords_key] = [111.95, 108.658]
-    nv7[red_coords_key] = [75.776, 74.076]
+    nv7["name"] = f"{sample_name}-nv7_2023_11_29"
+    nv7[pixel_coords_key] = [363.392, 224.612]
+    nv7[green_coords_key] = [113.151, 108.921]
+    nv7[red_coords_key] = [76.704, 74.184]
 
     nv8 = copy.deepcopy(nv_ref)
-    nv8["name"] = f"{sample_name}-nv8_2023_11_25"
-    nv8[pixel_coords_key] = [323.756, 304.543]
-    nv8[green_coords_key] = [111.388, 111.469]
-    nv8[red_coords_key] = [75.346, 76.223]
+    nv8["name"] = f"{sample_name}-nv8_2023_11_29"
+    nv8[pixel_coords_key] = [346.448, 224.743]
+    nv8[green_coords_key] = [112.436, 108.883]
+    nv8[red_coords_key] = [76.182, 74.214]
 
-    nv9 = copy.deepcopy(nv_ref)
-    nv9["name"] = f"{sample_name}-nv9_2023_11_25"
-    nv9[pixel_coords_key] = [299.588, 253.558]
-    nv9[green_coords_key] = [110.672, 109.681]
-    nv9[red_coords_key] = [74.77, 74.88]
-
-    nv_sig = nv0
+    # nv_sig = nv0
+    # nv_sig = nv1
     # nv_sig = nv5
     # nv_sig = nv_ref
     # nv_list = [nv_sig]
     # nv_list = [nv8, nv9]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv6, nv7, nv8, nv9]
-    # nv_list = [nv0, nv1, nv4, nv6, nv7, nv9]
-    # nv_list = [nv3, nv4, nv5, nv6, nv7]
+    nv_list = [nv8, nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
+    # nv_list = [nv2, nv3, nv4, nv5]
+    nv_sig = nv_list[0]
 
     # for nv in nv_list:
     #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
@@ -326,10 +342,10 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
 
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(3.25, 3.5, 6):
+        # for z in np.linspace(3.25, 3.75, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -339,17 +355,31 @@ if __name__ == "__main__":
         # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
+        # opti_coords_list = []
         # for nv in nv_list:
-        # #     do_optimize_pixel(nv)
-        #     # do_optimize_green(nv)
-        #     do_optimize_red(nv)
+        #     #
+        #     opti_coords = do_optimize_pixel(nv)
+        #     #
+        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
+        #     # opti_coords = do_optimize_green(nv)
+        #     #
+        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+        #     # opti_coords = do_optimize_red(nv)
+        #     #
+        #     opti_coords_list.append(opti_coords)
         #     widefield.reset_all_drift()
+        #     #
+        # for opti_coords in opti_coords_list:
+        #     r_opti_coords = [round(el, 3) for el in opti_coords]
+        #     print(r_opti_coords)
+
         # do_optimize_z(nv_sig)
         # do_optimize_widefield_calibration()
         # for nv in nv_list:
         #     do_optimize(nv)
 
         # do_resonance(nv_list)
+        do_resonance_zoom(nv_list)
 
     except Exception as exc:
         if do_email:
@@ -378,32 +408,6 @@ if __name__ == "__main__":
 
 """
 
-Normalized separation:
-2.348 / sqrt(shot)
-10.501 / sqrt(s)
-Normalized separation:
-2.196 / sqrt(shot)
-9.82 / sqrt(s)
-Normalized separation:
-2.431 / sqrt(shot)
-10.872 / sqrt(s)
-Normalized separation:
-1.792 / sqrt(shot)
-8.015 / sqrt(s)
-Normalized separation:
-2.651 / sqrt(shot)
-11.858 / sqrt(s)
-Normalized separation:
-2.335 / sqrt(shot)
-10.441 / sqrt(s)
-Normalized separation:
-2.545 / sqrt(shot)
-11.382 / sqrt(s)
-Normalized separation:
-2.8 / sqrt(shot)
-12.523 / sqrt(s)
-Normalized separation:
-2.498 / sqrt(shot)
-11.171 / sqrt(s)
+
 
 """
