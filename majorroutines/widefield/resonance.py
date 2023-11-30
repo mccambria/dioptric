@@ -277,7 +277,9 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1373977909488)
+    # file_name = "2023_11_29-20_16_59-johnson-nv8_2023_11_29"
+    # data = dm.get_raw_data(file_name)
+    data = dm.get_raw_data(file_id=1376344266573)
     nv_list = data["nv_list"]
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
@@ -290,6 +292,8 @@ if __name__ == "__main__":
 
     freqs = data["freqs"]
     counts = data["counts"]
+    counts = np.array(counts)
+    counts = counts[:, :16, :, :]
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 

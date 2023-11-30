@@ -187,7 +187,9 @@ def get_raw_data(file_name=None, file_id=None):
         Dictionary containing the json object from the specified raw data file
     """
 
-    file_content = _cloud.download(file_name, "txt", str(file_id))
+    if file_id is not None:
+        file_id = str(file_id)
+    file_content = _cloud.download(file_name, "txt", file_id)
     data = json.loads(file_content)
 
     # Find and decompress the linked numpy arrays
