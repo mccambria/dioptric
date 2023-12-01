@@ -265,6 +265,7 @@ def main_with_cxn(
     raw_data = {
         "timestamp": timestamp,
         "nv_list": nv_list,
+        "state": state,
         "num_reps": num_reps,
         "num_steps": num_steps,
         "num_runs": num_runs,

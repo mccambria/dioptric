@@ -143,7 +143,7 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 6,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
+        "spot_radius": 5,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 2000,
         "temp": -60,
