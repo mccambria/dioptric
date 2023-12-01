@@ -172,7 +172,7 @@ def main_with_cxn(
 
     try:
         for run_ind in range(num_runs):
-            shuffle(freq_ind_list)
+            # shuffle(freq_ind_list)
 
             pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
             camera.arm()
