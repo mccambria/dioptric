@@ -149,15 +149,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
         logging.info(key)
         if key in self.compiled_programs:
-            # logging.info("precompiled")
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
-            # logging.info("compiling")
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-            # opts = CompilerOptionArguments(flags=['skip-loop-unrolling', 'skip-loop-rolling'])
-            # self.program_id = self.opx.compile(seq, compiler_options=opts)
             program_id = self.opx.compile(seq)
-            # self.compiled_programs[key] = [program_id, seq_ret_vals]
+            self.compiled_programs[key] = [program_id, seq_ret_vals]
 
         self.program_id = program_id
         return seq_ret_vals
