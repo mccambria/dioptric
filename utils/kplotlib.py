@@ -590,7 +590,7 @@ def on_click_image(event):
         pass
 
 
-def histogram(ax, data, hist_type=HistType.STEP, nbins=10, **kwargs):
+def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     """Similar to matplotlib's hist, but with our defaults
 
     Parameters
