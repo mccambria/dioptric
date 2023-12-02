@@ -279,37 +279,39 @@ if __name__ == "__main__":
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1377535055998)  # large drift
-    data = dm.get_raw_data(file_id=1377603810907)  # No rf
+    # data = dm.get_raw_data(file_id=1377603810907)  # No rf
     # data = dm.get_raw_data(file_id=1375345528278)
     # data = dm.get_raw_data(file_id=1377621937207)  # 2.5 GHz
+    data = dm.get_raw_data(file_id=1377650545206)  # 8 runs, after drift fix
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
     avg_img_arrays = np.average(img_arrays, axis=1)
 
-    for run_ind in range(num_steps):
-        fig, ax = plt.subplots()
-        kpl.imshow(ax, avg_img_arrays[run_ind])
-        plt.show(block=True)
+    # for run_ind in range(num_steps):
+    #     fig, ax = plt.subplots()
+    #     kpl.imshow(ax, avg_img_arrays[run_ind])
+    #     plt.show(block=True)
 
     freqs = data["freqs"]
     counts = data["counts"]
     counts = np.array(counts)
+    num_runs = counts.shape[1]
     print(counts.shape)
-    fig, ax = plt.subplots()
-    for ind in range(num_nvs):
-        end_to_end = np.mean(counts[ind], (1, 2)).flatten()
-        kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    # fig, ax = plt.subplots()
     # for ind in range(num_nvs):
-    #     fig, ax = plt.subplots()
-    #     end_to_end = counts[ind, 0:16].flatten()
-    #     kpl.histogram(ax, end_to_end, 100)
-    #     ax.set_title(f"{ind} first half")
-    #     fig, ax = plt.subplots()
-    #     end_to_end = counts[ind, 16:].flatten()
-    #     kpl.histogram(ax, end_to_end, 100)
-    #     ax.set_title(f"{ind} second half")
+    #     end_to_end = np.mean(counts[ind], (1, 2)).flatten()
+    #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    for ind in range(num_nvs):
+        fig, ax = plt.subplots()
+        end_to_end = counts[ind, 0 : num_runs // 2].flatten()
+        kpl.histogram(ax, end_to_end, 100)
+        ax.set_title(f"{ind} first half")
+        fig, ax = plt.subplots()
+        end_to_end = counts[ind, num_runs // 2 :].flatten()
+        kpl.histogram(ax, end_to_end, 100)
+        ax.set_title(f"{ind} second half")
 
     # counts = counts[:, :16, :, :]
     # counts = counts[:, 4:12, :, :]
