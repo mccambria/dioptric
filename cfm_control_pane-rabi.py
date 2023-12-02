@@ -127,7 +127,7 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.87
+    freq_center = 2.5
     freq_range = 0.060
     num_steps = 20
     num_reps = 50
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 9},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 3},
         NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 11},
     }
 
@@ -378,7 +378,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         # do_optimize_pixel(nv_sig)
-        do_charge_state_histograms(nv_list, 1000)
+        # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []
         # for nv in nv_list:
@@ -401,7 +401,7 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
 
         # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
 
     except Exception as exc:
