@@ -283,8 +283,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1377603810907)  # No rf
     # data = dm.get_raw_data(file_id=1375345528278)
     # data = dm.get_raw_data(file_id=1377621937207)  # 2.5 GHz
-    # data = dm.get_raw_data(file_id=1377650545206)  # 8 runs, after drift fix
-    data = dm.get_raw_data(file_id=1377675224508)  # 32 runs, after drift fix
+    ### Drift fix
+    # data = dm.get_raw_data(file_id=1377650545206)  # 8 runs
+    # data = dm.get_raw_data(file_id=1377675224508)  # 32 runs
+    data = dm.get_raw_data(file_id=1377983214052)  # 64 runs, 200 MHz range
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -302,16 +304,16 @@ if __name__ == "__main__":
     counts = np.array(counts)
     num_runs = counts.shape[1]
     print(counts.shape)
-    # fig, ax = plt.subplots()
-    # for ind in range(num_nvs):
-    #     nv_counts = counts[ind, :, 10]
-    #     end_to_end = np.mean(nv_counts, (1, 2)).flatten()
-    #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
     fig, ax = plt.subplots()
     for ind in range(num_nvs):
-        nv_counts = counts[ind, :, 10, :]
-        end_to_end = np.mean(nv_counts, axis=1).flatten()
+        nv_counts = counts[ind]
+        end_to_end = np.mean(nv_counts, (1, 2)).flatten()
         kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    # fig, ax = plt.subplots()
+    # for ind in range(num_nvs):
+    #     nv_counts = counts[ind, :, 10, :]
+    #     end_to_end = np.mean(nv_counts, axis=1).flatten()
+    #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
     # for ind in range(num_steps):
     #     fig, ax = plt.subplots()
     #     end_to_end = counts[3, :, ind, :].flatten()
