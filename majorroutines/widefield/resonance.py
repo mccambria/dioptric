@@ -149,16 +149,7 @@ def main_with_cxn(
     uwave_power = uwave_dict["uwave_power"]
     sig_gen.set_amp(uwave_power)
 
-    ### Load the pulse generator
-
-    seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.extend([sig_gen_name, uwave_duration])
-    seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "resonance.py"
-
-    # print(seq_args)
-    # print(seq_file)
-    # return
 
     ### Data tracking
 
@@ -174,7 +165,15 @@ def main_with_cxn(
         for run_ind in range(num_runs):
             shuffle(freq_ind_list)
 
+            # Load the pulse gen
+            seq_args = widefield.get_base_scc_seq_args(nv_list)
+            seq_args.extend([sig_gen_name, uwave_duration])
+            seq_args_string = tb.encode_seq_args(seq_args)
+            # print(seq_args)
+            # print(seq_file)
+            # return
             pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+
             camera.arm()
             sig_gen.uwave_on()
 
@@ -277,28 +276,51 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_11_29-20_16_59-johnson-nv8_2023_11_29"
+    # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1376344266573)
+    # data = dm.get_raw_data(file_id=1377535055998)  # large drift
+    data = dm.get_raw_data(file_id=1377603810907)  # No rf
+    # data = dm.get_raw_data(file_id=1375345528278)
+    # data = dm.get_raw_data(file_id=1377621937207)  # 2.5 GHz
     nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
-    avg_img_arrays = np.average(img_arrays, axis=0)
+    avg_img_arrays = np.average(img_arrays, axis=1)
 
-    # for ind in range(num_steps):
-    #     fig, ax = plt.subplots()
-    #     kpl.imshow(ax, avg_img_arrays[ind])
-    # plt.show(block=True)
+    for run_ind in range(num_steps):
+        fig, ax = plt.subplots()
+        kpl.imshow(ax, avg_img_arrays[run_ind])
+        plt.show(block=True)
 
     freqs = data["freqs"]
     counts = data["counts"]
     counts = np.array(counts)
-    counts = counts[:, :16, :, :]
+    print(counts.shape)
+    fig, ax = plt.subplots()
+    for ind in range(num_nvs):
+        end_to_end = np.mean(counts[ind], (1, 2)).flatten()
+        kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    # for ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[ind, 0:16].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind} first half")
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[ind, 16:].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind} second half")
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    # counts = counts[:, :16, :, :]
+    # counts = counts[:, 4:12, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
-    kpl.init_kplotlib()
-    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # for ind in range(7):
+    #     counts_copy = counts[:, ind : ind + 1, :, :]
+    #     avg_counts, avg_counts_ste = widefield.process_counts(counts_copy)
+    #     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    #     # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
     plt.show(block=True)

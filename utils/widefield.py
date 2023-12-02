@@ -126,7 +126,7 @@ def img_str_to_array(img_str):
     return img_array
 
 
-def process_counts(counts_lists):
+def process_counts(counts_array):
     """Gets average and standard error for counts data structure.
     Assumes the structure [nv_ind, run_ind, freq_ind, rep_ind]
     """
@@ -134,11 +134,11 @@ def process_counts(counts_lists):
     rep_ax = 3
     run_rep_axes = (run_ax, rep_ax)
 
-    counts_lists = np.array(counts_lists)
+    counts_array = np.array(counts_array)
 
-    avg_counts = np.mean(counts_lists, axis=run_rep_axes)
-    num_shots = counts_lists.shape[rep_ax] * counts_lists.shape[run_ax]
-    avg_counts_std = np.std(counts_lists, axis=run_rep_axes, ddof=1)
+    avg_counts = np.mean(counts_array, axis=run_rep_axes)
+    num_shots = counts_array.shape[rep_ax] * counts_array.shape[run_ax]
+    avg_counts_std = np.std(counts_array, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
     return avg_counts, avg_counts_ste
