@@ -122,12 +122,12 @@ def do_resonance(nv_list):
     freq_range = 0.200
     num_steps = 60
     num_reps = 15
-    num_runs = 16
+    num_runs = 64
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.5
+    freq_center = 2.87
     freq_range = 0.060
     num_steps = 20
     num_reps = 50
@@ -146,10 +146,10 @@ def do_resonance_zoom(nv_list):
 def do_rabi(nv_list):
     uwave_freq = 2.87
     min_tau = 16
-    max_tau = 160
-    num_steps = 19
+    max_tau = 8016
+    num_steps = 21
     num_reps = 50
-    num_runs = 12
+    num_runs = 32
     rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
 
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.68
+    z_coord = 4.67
     magnet_angle = 0
 
     nv_ref = {
@@ -245,8 +245,8 @@ if __name__ == "__main__":
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 3},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 11},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 48, "uwave_power": 9},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 48, "uwave_power": 11},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -309,11 +309,11 @@ if __name__ == "__main__":
     # nv9[green_coords_key] = [111.463, 109.414]
     # nv9[red_coords_key] = [75.546, 74.834]
 
-    # nv_sig = nv0
-    # nv_list = [nv_sig]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    nv_sig = nv1
+    nv_list = [nv_sig]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv2, nv3, nv4, nv5, nv6]
-    nv_sig = nv_list[0]
+    # nv_sig = nv_list[0]
 
     # for nv in nv_list:
     #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
@@ -377,7 +377,7 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []

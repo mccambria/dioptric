@@ -165,7 +165,7 @@ def main_with_cxn(
         for run_ind in range(num_runs):
             shuffle(freq_ind_list)
 
-            # Load the pulse gen
+            # Load the pulse gen from scratch so we have up-to-date AOD frequencies
             seq_args = widefield.get_base_scc_seq_args(nv_list)
             seq_args.extend([sig_gen_name, uwave_duration])
             seq_args_string = tb.encode_seq_args(seq_args)
