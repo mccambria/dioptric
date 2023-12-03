@@ -279,6 +279,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
+    data = dm.get_raw_data(file_id=1378188362165)
     # data = dm.get_raw_data(file_id=1377535055998)  # large drift
     # data = dm.get_raw_data(file_id=1377603810907)  # No rf
     # data = dm.get_raw_data(file_id=1375345528278)
@@ -286,7 +287,7 @@ if __name__ == "__main__":
     ### Drift fix
     # data = dm.get_raw_data(file_id=1377650545206)  # 8 runs
     # data = dm.get_raw_data(file_id=1377675224508)  # 32 runs
-    data = dm.get_raw_data(file_id=1377983214052)  # 64 runs, 200 MHz range
+    # data = dm.get_raw_data(file_id=1377983214052)  # 64 runs, 200 MHz range
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -303,18 +304,18 @@ if __name__ == "__main__":
     freqs = data["freqs"]
     counts = np.array(data["counts"])
     print(counts.shape)
-    # fig, ax = plt.subplots()
-    # for ind in range(num_nvs):
-    #     nv_counts = counts[ind]
-    #     end_to_end = np.mean(nv_counts, (1, 2)).flatten()
-    #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
-    # for ind in range(num_steps):
-    #     fig, ax = plt.subplots()
-    #     end_to_end = counts[3, :, ind, :].flatten()
-    #     kpl.histogram(ax, end_to_end, 100)
-    #     ax.set_title(f"{ind}")
-    #     ax.set_xlim(0, 160)
-    #     ax.set_ylim(0, 50)
+    fig, ax = plt.subplots()
+    for ind in range(num_nvs):
+        nv_counts = counts[ind]
+        end_to_end = np.mean(nv_counts, (1, 2)).flatten()
+        kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    for ind in range(num_steps):
+        fig, ax = plt.subplots()
+        end_to_end = counts[4, :, ind, :].flatten()
+        kpl.histogram(ax, end_to_end, 100)
+        ax.set_title(f"{ind}")
+        ax.set_xlim(20, 130)
+        ax.set_ylim(0, 45)
     # for ind in range(num_nvs):
     #     fig, ax = plt.subplots()
     #     end_to_end = counts[ind, 0 : num_runs // 2, :, :].flatten()
