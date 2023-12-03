@@ -155,6 +155,7 @@ def main_with_cxn(
 
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
+    seq_file = "resonance.py"
     sig_gen = tb.get_server_sig_gen(cxn, state)
     sig_gen_name = sig_gen.name
 
@@ -164,16 +165,6 @@ def main_with_cxn(
     uwave_power = uwave_dict["uwave_power"]
     sig_gen.set_amp(uwave_power)
     sig_gen.set_freq(uwave_freq)
-
-    ### Load the pulse generator
-
-    seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.extend([sig_gen_name, 0])
-    seq_file = "resonance.py"
-
-    # print(seq_args)
-    # print(seq_file)
-    # return
 
     ### Data tracking
 
@@ -200,7 +191,8 @@ def main_with_cxn(
                 tau_ind_master_list[run_ind].append(tau_ind)
                 tau = taus[tau_ind]
 
-                seq_args[-1] = tau
+                seq_args = widefield.get_base_scc_seq_args(nv_list)
+                seq_args.extend([sig_gen_name, tau])
                 seq_args_string = tb.encode_seq_args(seq_args)
                 pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

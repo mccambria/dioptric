@@ -135,10 +135,11 @@ def process_counts(counts_array):
     run_rep_axes = (run_ax, rep_ax)
 
     counts_array = np.array(counts_array)
+    meas_array = counts_array > 75
 
-    avg_counts = np.mean(counts_array, axis=run_rep_axes)
-    num_shots = counts_array.shape[rep_ax] * counts_array.shape[run_ax]
-    avg_counts_std = np.std(counts_array, axis=run_rep_axes, ddof=1)
+    avg_counts = np.mean(meas_array, axis=run_rep_axes)
+    num_shots = meas_array.shape[rep_ax] * meas_array.shape[run_ax]
+    avg_counts_std = np.std(meas_array, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
     return avg_counts, avg_counts_ste
