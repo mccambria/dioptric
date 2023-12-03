@@ -182,6 +182,7 @@ def main_with_cxn(
 
             camera.arm()
             sig_gen.uwave_on()
+            # sig_gen.uwave_off()  # MCC
 
             for tau_ind in tau_ind_list:
                 pixel_coords_list = [
@@ -266,6 +267,7 @@ def main_with_cxn(
         "uwave_freq-units": "GHz",
         "taus": taus,
         "tau-units": "ns",
+        "tau_ind_master_list": tau_ind_master_list,
         "max_tau": max_tau,
         "counts": counts,
         "counts-units": "photons",

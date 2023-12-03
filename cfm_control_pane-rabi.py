@@ -131,7 +131,7 @@ def do_resonance_zoom(nv_list):
     freq_range = 0.060
     num_steps = 20
     num_reps = 50
-    num_runs = 32
+    num_runs = 16
     resonance.main(
         nv_list,
         freq_center,
@@ -145,11 +145,11 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     uwave_freq = 2.87
-    min_tau = 16
-    max_tau = 8016
-    num_steps = 21
+    min_tau = 0
+    max_tau = 120
+    num_steps = 16
     num_reps = 50
-    num_runs = 32
+    num_runs = 16
     rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
 
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.67
+    z_coord = 6.50
     magnet_angle = 0
 
     nv_ref = {
@@ -245,8 +245,8 @@ if __name__ == "__main__":
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 48, "uwave_power": 9},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 48, "uwave_power": 11},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 9},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 11},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -309,11 +309,11 @@ if __name__ == "__main__":
     # nv9[green_coords_key] = [111.463, 109.414]
     # nv9[red_coords_key] = [75.546, 74.834]
 
-    nv_sig = nv1
-    nv_list = [nv_sig]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    # nv_sig = nv1
+    # nv_list = [nv_sig]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv2, nv3, nv4, nv5, nv6]
-    # nv_sig = nv_list[0]
+    nv_sig = nv_list[0]
 
     # for nv in nv_list:
     #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
@@ -364,20 +364,20 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
 
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(5.0, 4.6, 11):
+        # for z in np.linspace(6.2, 6.52, 9):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
         # for ind in range(20):
         #     time.sleep(5)
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []
@@ -401,7 +401,14 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
 
         # do_resonance(nv_list)
-        do_resonance_zoom(nv_list)
+        # for rabi in [96, 96 * 2]:
+        # for rabi in [96 * 2]:
+        #     for dur in [50, 100, 150, 200, 250, 300, 350]:
+        #         for nv in nv_list:
+        #             nv[NVSpinState.LOW]["rabi_period"] = rabi
+        #             nv[LaserKey.IONIZATION]["duration"] = dur
+        #         do_resonance_zoom(nv_list)
+        # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
 
     except Exception as exc:
