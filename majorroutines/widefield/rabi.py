@@ -289,38 +289,68 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    def fit_fn(tau, norm, ptp_amp, freq, decay):
-        amp = ptp_amp / 2
-        envelope = np.exp(-tau / abs(decay)) * abs(amp)
-        cos_part = np.cos((2 * np.pi * freq * tau))
-        return norm + amp - (envelope * cos_part)
+    # file_name = ""
+    # data = dm.get_raw_data(file_name)
+    data = dm.get_raw_data(file_id=1378147007452)
+    # data = dm.get_raw_data(file_id=1378108696019)
 
-    x = np.linspace(0, 10, 1000)
-    y = fit_fn(x, 5, 1, 2, 5)
-    fig, ax = plt.subplots()
-    kpl.plot_line(ax, x, y)
-    plt.show(block=True)
-
-    sys.exit()
-
-    data = dm.get_raw_data(file_id=1373977909488)
     nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
-    avg_img_arrays = np.average(img_arrays, axis=0)
+    num_runs = data["num_runs"]
+    avg_img_arrays = np.average(img_arrays, axis=1)
 
-    # for ind in range(num_steps):
+    # for run_ind in range(num_steps):
     #     fig, ax = plt.subplots()
-    #     kpl.imshow(ax, avg_img_arrays[ind])
-    # plt.show(block=True)
+    #     kpl.imshow(ax, avg_img_arrays[run_ind])
+    #     plt.show(block=True)
 
-    freqs = data["freqs"]
-    counts = data["counts"]
+    taus = data["taus"]
+    counts = np.array(data["counts"])
+    print(counts.shape)
+    # fig, ax = plt.subplots()
+    # for ind in range(num_nvs):
+    #     nv_counts = counts[ind]
+    #     end_to_end = np.mean(nv_counts, (1, 2)).flatten()
+    #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    for ind in range(num_steps):
+        fig, ax = plt.subplots()
+        end_to_end = counts[1, :, ind, :].flatten()
+        print(np.mean(end_to_end))
+        kpl.histogram(ax, end_to_end, 100)
+        ax.set_title(f"{ind}")
+    # ax.set_xlim(0, 160)
+    # ax.set_ylim(0, 50)
+    # for ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[ind, 0 : num_runs // 2, :, :].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind} first half")
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[ind, num_runs // 2 :, :, :].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind} second half")
+
+    # counts_partial = counts[:, 0:16, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # counts_partial = counts[:, 16:32, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # counts_partial = counts[:, 32:48, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # counts_partial = counts[:, 48:, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
-
-    kpl.init_kplotlib()
-    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
