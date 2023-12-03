@@ -292,6 +292,7 @@ if __name__ == "__main__":
     num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
     avg_img_arrays = np.average(img_arrays, axis=1)
 
     # for run_ind in range(num_steps):
@@ -300,19 +301,12 @@ if __name__ == "__main__":
     #     plt.show(block=True)
 
     freqs = data["freqs"]
-    counts = data["counts"]
-    counts = np.array(counts)
-    num_runs = counts.shape[1]
+    counts = np.array(data["counts"])
     print(counts.shape)
-    fig, ax = plt.subplots()
-    for ind in range(num_nvs):
-        nv_counts = counts[ind]
-        end_to_end = np.mean(nv_counts, (1, 2)).flatten()
-        kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
     # fig, ax = plt.subplots()
     # for ind in range(num_nvs):
-    #     nv_counts = counts[ind, :, 10, :]
-    #     end_to_end = np.mean(nv_counts, axis=1).flatten()
+    #     nv_counts = counts[ind]
+    #     end_to_end = np.mean(nv_counts, (1, 2)).flatten()
     #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
     # for ind in range(num_steps):
     #     fig, ax = plt.subplots()
@@ -331,11 +325,26 @@ if __name__ == "__main__":
     #     kpl.histogram(ax, end_to_end, 100)
     #     ax.set_title(f"{ind} second half")
 
-    # counts = counts[:, :16, :, :]
-    # counts = counts[:, 4:12, :, :]
-    # avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    # counts_partial = counts[:, 0:16, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # counts_partial = counts[:, 16:32, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # counts_partial = counts[:, 32:48, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # counts_partial = counts[:, 48:, :, :]
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
+    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+
+    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
     # for ind in range(7):
     #     counts_copy = counts[:, ind : ind + 1, :, :]
