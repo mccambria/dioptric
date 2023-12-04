@@ -279,16 +279,36 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1378188362165)
-    # data = dm.get_raw_data(file_id=1377535055998)  # large drift
-    # data = dm.get_raw_data(file_id=1377603810907)  # No rf
-    # data = dm.get_raw_data(file_id=1375345528278)
-    # data = dm.get_raw_data(file_id=1377621937207)  # 2.5 GHz
+    data = dm.get_raw_data(file_id=1373245014743)  # back in the good old days
     ### Drift fix
     # data = dm.get_raw_data(file_id=1377650545206)  # 8 runs
     # data = dm.get_raw_data(file_id=1377675224508)  # 32 runs
     # data = dm.get_raw_data(file_id=1377983214052)  # 64 runs, 200 MHz range
+    # data = dm.get_raw_data(file_id=1378834573827)
 
+    # nv_index = 5
+    # data = dm.get_raw_data(file_id=1378764750920)  # 192
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # data = dm.get_raw_data(file_id=1378722631001)  #  192
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # data = dm.get_raw_data(file_id=1378677294928)  # 192
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # data = dm.get_raw_data(file_id=1378683825392)  # 96
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # data = dm.get_raw_data(file_id=1378644110302)  # 64
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # data = dm.get_raw_data(file_id=1378756047889)  # 48
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # data = dm.get_raw_data(file_id=1378792074748)  # 32
+    # counts = np.array(data["counts"])
+    # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
+    # sys.exit()
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
@@ -304,18 +324,18 @@ if __name__ == "__main__":
     freqs = data["freqs"]
     counts = np.array(data["counts"])
     print(counts.shape)
-    fig, ax = plt.subplots()
-    for ind in range(num_nvs):
-        nv_counts = counts[ind]
-        end_to_end = np.mean(nv_counts, (1, 2)).flatten()
-        kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
-    for ind in range(num_steps):
-        fig, ax = plt.subplots()
-        end_to_end = counts[4, :, ind, :].flatten()
-        kpl.histogram(ax, end_to_end, 100)
-        ax.set_title(f"{ind}")
-        ax.set_xlim(20, 130)
-        ax.set_ylim(0, 45)
+    # fig, ax = plt.subplots()
+    # for ind in range(num_nvs):
+    #     nv_counts = counts[ind]
+    #     end_to_end = np.mean(nv_counts, (1, 2)).flatten()
+    #     kpl.plot_line(ax, range(len(end_to_end)), end_to_end)
+    # for ind in range(num_steps):
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[4, :, ind, :].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind}")
+    #     ax.set_xlim(20, 130)
+    #     ax.set_ylim(0, 45)
     # for ind in range(num_nvs):
     #     fig, ax = plt.subplots()
     #     end_to_end = counts[ind, 0 : num_runs // 2, :, :].flatten()
@@ -325,6 +345,27 @@ if __name__ == "__main__":
     #     end_to_end = counts[ind, num_runs // 2 :, :, :].flatten()
     #     kpl.histogram(ax, end_to_end, 100)
     #     ax.set_title(f"{ind} second half")
+    # for ind in range(num_steps):
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[3, :, ind, :].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind}")
+    #     ax.set_xlim(0, 160)
+    #     ax.set_ylim(0, 50)
+    # for ind in range(num_nvs):
+    #     # fig, ax = plt.subplots()
+    #     # end_to_end = counts[ind, 0 : num_runs // 2, :, :].flatten()
+    #     # kpl.histogram(ax, end_to_end, 100)
+    #     # ax.set_title(f"{ind} first half")
+    #     # fig, ax = plt.subplots()
+    #     # end_to_end = counts[ind, num_runs // 2 :, :, :].flatten()
+    #     # kpl.histogram(ax, end_to_end, 100)
+    #     # ax.set_title(f"{ind} second half")
+    #     #
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[ind].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(ind)
 
     # counts_partial = counts[:, 0:16, :, :]
     # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
