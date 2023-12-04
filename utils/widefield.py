@@ -135,7 +135,7 @@ def process_counts(counts_array):
     run_rep_axes = (run_ax, rep_ax)
 
     counts_array = np.array(counts_array)
-    # meas_array = counts_array > 60
+    # meas_array = counts_array > 75
     meas_array = counts_array
 
     avg_counts = np.mean(meas_array, axis=run_rep_axes)

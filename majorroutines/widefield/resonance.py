@@ -279,17 +279,14 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1378188362165)
-    # data = dm.get_raw_data(file_id=1377535055998)  # large drift
-    # data = dm.get_raw_data(file_id=1377603810907)  # No rf
-    # data = dm.get_raw_data(file_id=1375345528278)
-    # data = dm.get_raw_data(file_id=1377621937207)  # 2.5 GHz
+    data = dm.get_raw_data(file_id=1373245014743)  # back in the good old days
     ### Drift fix
     # data = dm.get_raw_data(file_id=1377650545206)  # 8 runs
     # data = dm.get_raw_data(file_id=1377675224508)  # 32 runs
     # data = dm.get_raw_data(file_id=1377983214052)  # 64 runs, 200 MHz range
+    # data = dm.get_raw_data(file_id=1378834573827)
 
-    nv_index = 5
+    # nv_index = 5
     # data = dm.get_raw_data(file_id=1378764750920)  # 192
     # counts = np.array(data["counts"])
     # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
@@ -299,7 +296,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1378677294928)  # 192
     # counts = np.array(data["counts"])
     # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
-    data = dm.get_raw_data(file_id=1378683825392)  # 96
+    # data = dm.get_raw_data(file_id=1378683825392)  # 96
     # counts = np.array(data["counts"])
     # print(np.mean(counts[nv_index]), np.std(counts[nv_index]) / np.sqrt(16 * 20 * 50))
     # data = dm.get_raw_data(file_id=1378644110302)  # 64
