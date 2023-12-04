@@ -288,6 +288,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1377650545206)  # 8 runs
     # data = dm.get_raw_data(file_id=1377675224508)  # 32 runs
     # data = dm.get_raw_data(file_id=1377983214052)  # 64 runs, 200 MHz range
+    data = dm.get_raw_data(file_id=1378677294928)
+    # data = dm.get_raw_data(file_id=1378630528619)
+    # data = dm.get_raw_data(file_id=1378644110302)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -325,6 +328,27 @@ if __name__ == "__main__":
     #     end_to_end = counts[ind, num_runs // 2 :, :, :].flatten()
     #     kpl.histogram(ax, end_to_end, 100)
     #     ax.set_title(f"{ind} second half")
+    # for ind in range(num_steps):
+    #     fig, ax = plt.subplots()
+    #     end_to_end = counts[3, :, ind, :].flatten()
+    #     kpl.histogram(ax, end_to_end, 100)
+    #     ax.set_title(f"{ind}")
+    #     ax.set_xlim(0, 160)
+    #     ax.set_ylim(0, 50)
+    for ind in range(num_nvs):
+        # fig, ax = plt.subplots()
+        # end_to_end = counts[ind, 0 : num_runs // 2, :, :].flatten()
+        # kpl.histogram(ax, end_to_end, 100)
+        # ax.set_title(f"{ind} first half")
+        # fig, ax = plt.subplots()
+        # end_to_end = counts[ind, num_runs // 2 :, :, :].flatten()
+        # kpl.histogram(ax, end_to_end, 100)
+        # ax.set_title(f"{ind} second half")
+        #
+        fig, ax = plt.subplots()
+        end_to_end = counts[ind].flatten()
+        kpl.histogram(ax, end_to_end, 100)
+        ax.set_title(ind)
 
     # counts_partial = counts[:, 0:16, :, :]
     # avg_counts, avg_counts_ste = widefield.process_counts(counts_partial)
