@@ -146,14 +146,17 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """
 
         # Just do nothing if the sequence has already been compiled previously
-        key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
-        logging.info(key)
-        if key in self.compiled_programs:
-            program_id, seq_ret_vals = self.compiled_programs[key]
-        else:  # Compile and store for next time
-            seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-            program_id = self.opx.compile(seq)
-            self.compiled_programs[key] = [program_id, seq_ret_vals]
+        # key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
+        # if key in self.compiled_programs:
+        #     program_id, seq_ret_vals = self.compiled_programs[key]
+        # else:  # Compile and store for next time
+        #     seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+        #     program_id = self.opx.compile(seq)
+        #     self.compiled_programs[key] = [program_id, seq_ret_vals]
+
+        # MCC
+        seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+        program_id = self.opx.compile(seq)
 
         self.program_id = program_id
         return seq_ret_vals

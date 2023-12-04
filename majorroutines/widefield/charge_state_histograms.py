@@ -45,9 +45,7 @@ def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     ax.set_xlabel(f"Integrated counts")
     ax.set_ylabel("Number of occurrences")
     for ind in range(2):
-        kpl.histogram(
-            ax, counts_lists[ind], kpl.HistType.STEP, nbins=num_bins, label=labels[ind]
-        )
+        kpl.histogram(ax, counts_lists[ind], num_bins, label=labels[ind])
     ax.legend()
 
     # Calculate the normalized separation

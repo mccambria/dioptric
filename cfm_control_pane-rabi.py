@@ -128,10 +128,10 @@ def do_resonance(nv_list):
 
 def do_resonance_zoom(nv_list):
     freq_center = 2.87
-    freq_range = 0.060
+    freq_range = 0.05
     num_steps = 20
     num_reps = 50
-    num_runs = 16
+    num_runs = 64
     resonance.main(
         nv_list,
         freq_center,
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 6.50
+    z_coord = 6.54
     magnet_angle = 0
 
     nv_ref = {
@@ -239,57 +239,57 @@ if __name__ == "__main__":
         LaserKey.IMAGING: green_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 150},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 200},
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 9},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 11},
+        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 80, "uwave_power": 9},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 80, "uwave_power": 11},
     }
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_11_30"
-    nv0[pixel_coords_key] = [385.47, 254.076]
-    nv0[green_coords_key] = [113.595, 109.655]
-    nv0[red_coords_key] = [77.275, 74.882]
+    nv0["name"] = f"{sample_name}-nv0_2023_12_03"
+    nv0[pixel_coords_key] = [361.299, 236.556]
+    nv0[green_coords_key] = [112.798, 109.217]
+    nv0[red_coords_key] = [76.604, 74.488]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_11_30"
-    nv1[pixel_coords_key] = [369.083, 291.132]
-    nv1[green_coords_key] = [112.985, 110.985]
-    nv1[red_coords_key] = [76.652, 75.903]
+    nv1["name"] = f"{sample_name}-nv1_2023_12_03"
+    nv1[pixel_coords_key] = [359.247, 214.867]
+    nv1[green_coords_key] = [112.766, 108.416]
+    nv1[red_coords_key] = [76.532, 73.882]
 
     nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_11_30"
-    nv2[pixel_coords_key] = [332.334, 292.106]
-    nv2[green_coords_key] = [111.913, 110.879]
-    nv2[red_coords_key] = [75.599, 75.959]
+    nv2["name"] = f"{sample_name}-nv2_2023_12_03"
+    nv2[pixel_coords_key] = [316.964, 203.949]
+    nv2[green_coords_key] = [111.352, 108.082]
+    nv2[red_coords_key] = [75.346, 73.584]
 
     nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_11_30"
-    nv3[pixel_coords_key] = [343.768, 268.249]
-    nv3[green_coords_key] = [112.104, 110.265]
-    nv3[red_coords_key] = [75.939, 75.228]
+    nv3["name"] = f"{sample_name}-nv3_2023_12_03"
+    nv3[pixel_coords_key] = [322.262, 274.893]
+    nv3[green_coords_key] = [111.365, 110.501]
+    nv3[red_coords_key] = [75.403, 75.534]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_11_30"
-    nv4[pixel_coords_key] = [343.139, 255.308]
-    nv4[green_coords_key] = [112.121, 109.655]
-    nv4[red_coords_key] = [76.009, 74.904]
+    nv4["name"] = f"{sample_name}-nv4_2023_12_03"
+    nv4[pixel_coords_key] = [328.21, 264.509]
+    nv4[green_coords_key] = [111.595, 110.067]
+    nv4[red_coords_key] = [75.59, 75.272]
 
-    nv5 = copy.deepcopy(nv_ref)
-    nv5["name"] = f"{sample_name}-nv5_2023_11_30"
-    nv5[pixel_coords_key] = [354.707, 252.964]
-    nv5[green_coords_key] = [112.498, 109.691]
-    nv5[red_coords_key] = [76.345, 74.94]
+    # nv5 = copy.deepcopy(nv_ref)
+    # nv5["name"] = f"{sample_name}-nv5_2023_11_30"
+    # nv5[pixel_coords_key] = [354.707, 252.964]
+    # nv5[green_coords_key] = [112.498, 109.691]
+    # nv5[red_coords_key] = [76.345, 74.94]
 
-    nv6 = copy.deepcopy(nv_ref)
-    nv6["name"] = f"{sample_name}-nv6_2023_11_30"
-    nv6[pixel_coords_key] = [330.901, 221.784]
-    nv6[green_coords_key] = [111.7, 108.466]
-    nv6[red_coords_key] = [75.764, 74.071]
+    # nv6 = copy.deepcopy(nv_ref)
+    # nv6["name"] = f"{sample_name}-nv6_2023_11_30"
+    # nv6[pixel_coords_key] = [330.901, 221.784]
+    # nv6[green_coords_key] = [111.7, 108.466]
+    # nv6[red_coords_key] = [75.764, 74.071]
 
     # nv7 = copy.deepcopy(nv_ref)
     # nv7["name"] = f"{sample_name}-nv7_2023_11_30"
@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
     # nv_sig = nv1
     # nv_list = [nv_sig]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv2, nv3, nv4, nv5, nv6]
     nv_sig = nv_list[0]
 
@@ -370,7 +370,7 @@ if __name__ == "__main__":
         # for ind in range(20):
         #     time.sleep(5)
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -382,18 +382,18 @@ if __name__ == "__main__":
 
         # opti_coords_list = []
         # for nv in nv_list:
+        #     widefield.reset_all_drift()
         #     #
-        #     opti_coords = do_optimize_pixel(nv)
+        #     # opti_coords = do_optimize_pixel(nv)
         #     #
         #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
         #     # opti_coords = do_optimize_green(nv)
         #     #
-        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
-        #     # opti_coords = do_optimize_red(nv)
+        #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+        #     opti_coords = do_optimize_red(nv)
         #     #
         #     opti_coords_list.append(opti_coords)
         #     widefield.reset_all_drift()
-        #     #
         # for opti_coords in opti_coords_list:
         #     r_opti_coords = [round(el, 3) for el in opti_coords]
         #     print(r_opti_coords)
@@ -408,7 +408,7 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
 
     except Exception as exc:
