@@ -438,7 +438,7 @@ def _get_camera_config_val(key):
 # region Plotting
 
 
-def plot_raw_data(ax, nv_list, x, ys, yerrs):
+def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are easier to interpret. Useful for plotting simultaneous
     data from multiple NVs.
@@ -460,7 +460,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs):
     for ind in range(num_nvs):
         nv_sig = nv_list[ind]
         label = get_nv_num(nv_sig)
-        kpl.plot_points(ax, x, ys[ind], yerr=yerrs[ind], label=label)
+        yerr = None if yerrs is None else yerrs[ind]
+        kpl.plot_points(ax, x, ys[ind], yerr=yerr, label=label)
     min_x = min(x)
     max_x = max(x)
     excess = 0.08 * (max_x - min_x)
@@ -468,7 +469,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs):
     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
 
 
-def plot_fit(ax, nv_list, x, ys, yerrs, fns, popts, norms=None, offset=0.05):
+def plot_fit(ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.05):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
     plotting simultaneous data from multiple NVs.
@@ -504,7 +505,7 @@ def plot_fit(ax, nv_list, x, ys, yerrs, fns, popts, norms=None, offset=0.05):
         nv_offset = offset * (num_nvs - 1 - nv_ind)
         norm = 1 if norms is None else norms[nv_ind]
         y = ys[nv_ind] / norm + nv_offset
-        yerr = yerrs[nv_ind] / norm
+        yerr = None if yerrs is None else yerrs[nv_ind] / norm
         kpl.plot_points(ax, x, y, yerr=yerr, label=label)
         fn = fns[nv_ind]
         popt = popts[nv_ind]

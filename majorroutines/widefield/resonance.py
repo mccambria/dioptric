@@ -166,71 +166,64 @@ def main_with_cxn(
 
     ### Collect the data
 
-    try:
-        for run_ind in range(num_runs):
-            shuffle(freq_ind_list)
+    for run_ind in range(num_runs):
+        shuffle(freq_ind_list)
 
-            # Load the pulse gen from scratch so we have up-to-date AOD frequencies
-            seq_args = widefield.get_base_scc_seq_args(nv_list)
-            seq_args.extend([sig_gen_name, uwave_duration])
-            seq_args_string = tb.encode_seq_args(seq_args)
-            # print(seq_args)
-            # print(seq_file)
-            # return
-            pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+        # Load the pulse gen from scratch so we have up-to-date AOD frequencies
+        seq_args = widefield.get_base_scc_seq_args(nv_list)
+        seq_args.extend([sig_gen_name, uwave_duration])
+        seq_args_string = tb.encode_seq_args(seq_args)
+        # print(seq_args)
+        # print(seq_file)
+        # return
+        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-            camera.arm()
-            sig_gen.uwave_on()
+        camera.arm()
+        sig_gen.uwave_on()
 
-            for freq_ind in freq_ind_list:
-                pixel_coords_list = [
-                    widefield.get_nv_pixel_coords(nv) for nv in nv_list
-                ]
+        for freq_ind in freq_ind_list:
+            pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
 
-                freq_ind_master_list[run_ind].append(freq_ind)
-                freq = freqs[freq_ind]
-                sig_gen.set_freq(freq)
+            freq_ind_master_list[run_ind].append(freq_ind)
+            freq = freqs[freq_ind]
+            sig_gen.set_freq(freq)
 
-                # Try 5 times then give up
-                num_attempts = 5
-                attempt_ind = 0
-                while True:
-                    try:
-                        pulse_gen.stream_start()
-                        for rep_ind in range(num_reps):
-                            img_str = camera.read()
-                            img_array = widefield.img_str_to_array(img_str)
-                            if rep_ind == 0:
-                                avg_img_array = np.copy(img_array)
-                            else:
-                                avg_img_array += img_array
-                            for nv_ind in range(num_nvs):
-                                pixel_coords = pixel_coords_list[nv_ind]
-                                counts_val = widefield.integrate_counts_from_adus(
-                                    img_array, pixel_coords
-                                )
-                                counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
-                        break
-                    except Exception as exc:
-                        print(exc)
-                        camera.arm()
-                        attempt_ind += 1
-                        if attempt_ind == num_attempts:
-                            raise RuntimeError("Maxed out number of attempts")
-                if attempt_ind > 0:
-                    print(f"{attempt_ind} crashes occurred")
+            # Try 5 times then give up
+            num_attempts = 5
+            attempt_ind = 0
+            while True:
+                try:
+                    pulse_gen.stream_start()
+                    for rep_ind in range(num_reps):
+                        img_str = camera.read()
+                        img_array = widefield.img_str_to_array(img_str)
+                        if rep_ind == 0:
+                            avg_img_array = np.copy(img_array)
+                        else:
+                            avg_img_array += img_array
+                        for nv_ind in range(num_nvs):
+                            pixel_coords = pixel_coords_list[nv_ind]
+                            counts_val = widefield.integrate_counts_from_adus(
+                                img_array, pixel_coords
+                            )
+                            counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
+                    break
+                except Exception as exc:
+                    print(exc)
+                    camera.arm()
+                    attempt_ind += 1
+                    if attempt_ind == num_attempts:
+                        raise RuntimeError("Maxed out number of attempts")
+            if attempt_ind > 0:
+                print(f"{attempt_ind} crashes occurred")
 
-                avg_img_array = avg_img_array / num_reps
-                img_arrays[run_ind, freq_ind, :, :] = avg_img_array
+            avg_img_array = avg_img_array / num_reps
+            img_arrays[run_ind, freq_ind, :, :] = avg_img_array
 
-            camera.disarm()
-            sig_gen.uwave_off()
-
-            optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
-
-    finally:
         camera.disarm()
         sig_gen.uwave_off()
+
+        optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
 
     ### Process and plot
 
@@ -284,35 +277,17 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1379841057470)  # 4
-    data = dm.get_raw_data(file_id=1379809150970)  # 5
-    # data = dm.get_raw_data(file_id=1379815189363)  # 6
+    data = dm.get_raw_data(file_id=1381277197393)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
-    avg_img_arrays = np.average(img_arrays, axis=1)
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-
-    # for ind in range(num_nvs):
-    #     nv = nv_list[ind]
-    #     fig, ax = plt.subplots()
-    #     nv_counts = counts[ind]
-    #     kpl.histogram(ax, nv_counts.flatten(), nbins=100)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
-
-"""
-
-[2.31, 3.04, 2.96, 6.91, 3.62, 3.53, 7.65, 17.41, 5.53, 3.45]
-[2.45, 2.39, 2.82, 5.18, 3.4,  3.86, 5.83, 12.67, 4.47, 3.91]
-[2.61, 3.09, 3.2,  4.77, 2.73, 6.35, 8.57, 8.54, 4.02, 4.78]]
-
-"""

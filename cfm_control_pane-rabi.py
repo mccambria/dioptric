@@ -26,6 +26,7 @@ from majorroutines.widefield import (
     optimize,
     resonance,
     rabi,
+    optimize_scc,
 )
 from utils.constants import LaserKey, NVSpinState
 
@@ -117,11 +118,24 @@ def do_optimize_widefield_calibration():
         optimize.optimize_widefield_calibration(cxn)
 
 
+def do_optimize_scc(nv_list):
+    min_tau = 16
+    max_tau = 400
+    num_steps = 13
+    num_reps = 50
+    num_runs = 16
+    uwave_nv = nv_list[4]
+    state = NVSpinState.LOW
+    optimize_scc.main(
+        nv_list, uwave_nv, state, min_tau, max_tau, num_steps, num_reps, num_runs
+    )
+
+
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.200
-    num_steps = 60
-    num_reps = 20
+    freq_range = 0.250
+    num_steps = 80
+    num_reps = 15
     num_runs = 128
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
@@ -144,7 +158,7 @@ def do_resonance_zoom(nv_list):
 
 
 def do_rabi(nv_list):
-    uwave_freq = 2.829969
+    uwave_freq = 2.81
     min_tau = 16
     max_tau = 200
     num_steps = 24
@@ -231,8 +245,8 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.88
-    magnet_angle = 30
+    z_coord = 4.82
+    magnet_angle = 0
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -252,8 +266,8 @@ if __name__ == "__main__":
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 9},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 11},
+        NVSpinState.LOW: {"frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -416,7 +430,8 @@ if __name__ == "__main__":
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
+        do_optimize_scc(nv_list)
 
     except Exception as exc:
         if do_email:
@@ -442,8 +457,3 @@ if __name__ == "__main__":
         tb.reset_cfm()
         plt.show(block=True)
         tb.reset_safe_stop()
-
-"""
-
-
-"""
