@@ -311,21 +311,10 @@ def main_with_cxn(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    pixel_coords_list = [
-        [331.591, 281.997],
-        [347.948, 248.368],
-        [371.143, 242.199],
-        [369.707, 305.252],
-        [345.208, 312.324],
-        [316.119, 299.436],
-        [308.186, 227.034],
-        [334.802, 218.992],
-        [323.756, 304.543],
-        [299.588, 253.558],
-    ]
-
-    data = dm.get_raw_data(file_id=1372321880672)
-    img_array = np.array(data["diff_img_array"])
+    data = dm.get_raw_data(file_id=1379555776351)  # higher focus
+    img_array = np.array(data["img_array"])
+    data = dm.get_raw_data(file_id=1379561238226)
+    img_array -= np.array(data["img_array"])
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="ADUs")
@@ -335,3 +324,5 @@ if __name__ == "__main__":
     #     kpl.imshow(ax, img_array, cbar_label="ADUs")
     #     kpl.draw_circle(ax, pixel_coords, radius=2)
     #     plt.show(block=True)
+
+    plt.show(block=True)

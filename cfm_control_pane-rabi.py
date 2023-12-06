@@ -128,7 +128,7 @@ def do_resonance(nv_list):
 
 def do_resonance_zoom(nv_list):
     freq_center = 2.87
-    freq_range = 0.060
+    freq_range = 0.05
     num_steps = 20
     num_reps = 50
     num_runs = 16
@@ -145,9 +145,9 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     uwave_freq = 2.87
-    min_tau = 0
-    max_tau = 120
-    num_steps = 16
+    min_tau = 16
+    max_tau = 160
+    num_steps = 19
     num_reps = 50
     num_runs = 16
     rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
@@ -158,19 +158,26 @@ def do_opx_constant_ac():
         opx = cxn.QM_opx
 
         # Microwave test
-        # sig_gen = cxn.sig_gen_STAN_sg394_2
+        # if True:
+        #     sig_gen = cxn.sig_gen_STAN_sg394
+        #     amp = 9
+        #     chan = 10
+        # else:
+        #     sig_gen = cxn.sig_gen_STAN_sg394_2
+        #     amp = 11
+        #     chan = 3
+        # sig_gen.set_amp(amp)  # 12
         # sig_gen.set_freq(2.87)
-        # sig_gen.set_amp(11)  # 12
         # sig_gen.uwave_on()
-        # opx.constant_ac([3])
+        # opx.constant_ac([chan])
 
         # Yellow
-        # opx.constant_ac(
-        #     [],  # Digital channels
-        #     [7],  # Analog channels
-        #     [0.25],  # Analog voltages
-        #     [0],  # Analog frequencies
-        # )
+        opx.constant_ac(
+            [],  # Digital channels
+            [7],  # Analog channels
+            [0.25],  # Analog voltages
+            [0],  # Analog frequencies
+        )
         # Green
         # opx.constant_ac(
         #     [4],  # Digital channels
@@ -179,12 +186,12 @@ def do_opx_constant_ac():
         #     [110, 110],  # Analog frequencies
         # )
         # Red
-        opx.constant_ac(
-            [1],  # Digital channels
-            [2, 3],  # Analog channels
-            [0.31, 0.31],  # Analog voltages
-            [75, 75],  # Analog frequencies
-        )
+        # opx.constant_ac(
+        #     [1],  # Digital channels
+        #     [2, 3],  # Analog channels
+        #     [0.31, 0.31],  # Analog voltages
+        #     [75, 75],  # Analog frequencies
+        # )
         # Red + green
         # opx.constant_ac(
         #     [1, 4],  # Digital channels
@@ -224,7 +231,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 6.50
+    z_coord = 5.01
     magnet_angle = 0
 
     nv_ref = {
@@ -239,7 +246,7 @@ if __name__ == "__main__":
         LaserKey.IMAGING: green_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 150},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 200},
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
@@ -250,69 +257,69 @@ if __name__ == "__main__":
     }
 
     nv0 = copy.deepcopy(nv_ref)
-    nv0["name"] = f"{sample_name}-nv0_2023_11_30"
-    nv0[pixel_coords_key] = [385.47, 254.076]
-    nv0[green_coords_key] = [113.595, 109.655]
-    nv0[red_coords_key] = [77.275, 74.882]
+    nv0["name"] = f"{sample_name}-nv0_2023_12_04"
+    nv0[pixel_coords_key] = [330.395, 272.331]
+    nv0[green_coords_key] = [111.795, 110.475]
+    nv0[red_coords_key] = [75.698, 75.403]
 
     nv1 = copy.deepcopy(nv_ref)
-    nv1["name"] = f"{sample_name}-nv1_2023_11_30"
-    nv1[pixel_coords_key] = [369.083, 291.132]
-    nv1[green_coords_key] = [112.985, 110.985]
-    nv1[red_coords_key] = [76.652, 75.903]
+    nv1["name"] = f"{sample_name}-nv1_2023_12_04"
+    nv1[pixel_coords_key] = [319.971, 298.197]
+    nv1[green_coords_key] = [111.69, 110.983]
+    nv1[red_coords_key] = [75.349, 76.138]
 
     nv2 = copy.deepcopy(nv_ref)
-    nv2["name"] = f"{sample_name}-nv2_2023_11_30"
-    nv2[pixel_coords_key] = [332.334, 292.106]
-    nv2[green_coords_key] = [111.913, 110.879]
-    nv2[red_coords_key] = [75.599, 75.959]
+    nv2["name"] = f"{sample_name}-nv2_2023_12_04"
+    nv2[pixel_coords_key] = [298.198, 321.495]
+    nv2[green_coords_key] = [110.448, 111.963]
+    nv2[red_coords_key] = [74.767, 76.785]
 
     nv3 = copy.deepcopy(nv_ref)
-    nv3["name"] = f"{sample_name}-nv3_2023_11_30"
-    nv3[pixel_coords_key] = [343.768, 268.249]
-    nv3[green_coords_key] = [112.104, 110.265]
-    nv3[red_coords_key] = [75.939, 75.228]
+    nv3["name"] = f"{sample_name}-nv3_2023_12_04"
+    nv3[pixel_coords_key] = [301.955, 249.548]
+    nv3[green_coords_key] = [110.884, 109.518]
+    nv3[red_coords_key] = [74.914, 74.902]
 
     nv4 = copy.deepcopy(nv_ref)
-    nv4["name"] = f"{sample_name}-nv4_2023_11_30"
-    nv4[pixel_coords_key] = [343.139, 255.308]
-    nv4[green_coords_key] = [112.121, 109.655]
-    nv4[red_coords_key] = [76.009, 74.904]
+    nv4["name"] = f"{sample_name}-nv4_2023_12_04"
+    nv4[pixel_coords_key] = [329.721, 248.574]
+    nv4[green_coords_key] = [111.819, 109.628]
+    nv4[red_coords_key] = [75.661, 74.943]
 
     nv5 = copy.deepcopy(nv_ref)
-    nv5["name"] = f"{sample_name}-nv5_2023_11_30"
-    nv5[pixel_coords_key] = [354.707, 252.964]
-    nv5[green_coords_key] = [112.498, 109.691]
-    nv5[red_coords_key] = [76.345, 74.94]
+    nv5["name"] = f"{sample_name}-nv5_2023_12_04"
+    nv5[pixel_coords_key] = [352.77, 278.812]
+    nv5[green_coords_key] = [112.54, 110.535]
+    nv5[red_coords_key] = [76.269, 75.572]
 
     nv6 = copy.deepcopy(nv_ref)
-    nv6["name"] = f"{sample_name}-nv6_2023_11_30"
-    nv6[pixel_coords_key] = [330.901, 221.784]
-    nv6[green_coords_key] = [111.7, 108.466]
-    nv6[red_coords_key] = [75.764, 74.071]
+    nv6["name"] = f"{sample_name}-nv6_2023_12_04"
+    nv6[pixel_coords_key] = [309.991, 200.526]
+    nv6[green_coords_key] = [111.082, 107.778]
+    nv6[red_coords_key] = [75.157, 73.43]
 
-    # nv7 = copy.deepcopy(nv_ref)
-    # nv7["name"] = f"{sample_name}-nv7_2023_11_30"
-    # nv7[pixel_coords_key] = [338.823, 198.974]
-    # nv7[green_coords_key] = [112.03, 107.826]
-    # nv7[red_coords_key] = [75.929, 73.368]
+    nv7 = copy.deepcopy(nv_ref)
+    nv7["name"] = f"{sample_name}-nv7_2023_12_04"
+    nv7[pixel_coords_key] = [306.051, 193.589]
+    nv7[green_coords_key] = [111.171, 107.787]
+    nv7[red_coords_key] = [75.009, 73.345]
 
-    # nv8 = copy.deepcopy(nv_ref)
-    # nv8["name"] = f"{sample_name}-nv8_2023_11_30"
-    # nv8[pixel_coords_key] = [342.549, 190.755]
-    # nv8[green_coords_key] = [112.153, 107.608]
-    # nv8[red_coords_key] = [75.943, 73.159]
+    nv8 = copy.deepcopy(nv_ref)
+    nv8["name"] = f"{sample_name}-nv8_2023_12_04"
+    nv8[pixel_coords_key] = [328.001, 182.152]
+    nv8[green_coords_key] = [111.68, 107.162]
+    nv8[red_coords_key] = [75.534, 72.894]
 
-    # nv9 = copy.deepcopy(nv_ref)
-    # nv9["name"] = f"{sample_name}-nv9_2023_11_30"
-    # nv9[pixel_coords_key] = [324.862, 247.105]
-    # nv9[green_coords_key] = [111.463, 109.414]
-    # nv9[red_coords_key] = [75.546, 74.834]
+    nv9 = copy.deepcopy(nv_ref)
+    nv9["name"] = f"{sample_name}-nv9_2023_12_04"
+    nv9[pixel_coords_key] = [299.488, 271.881]
+    nv9[green_coords_key] = [110.607, 110.38]
+    nv9[red_coords_key] = [74.733, 75.413]
 
-    # nv_sig = nv1
+    # nv_sig = nv8
     # nv_list = [nv_sig]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
-    # nv_list = [nv2, nv3, nv4, nv5, nv6]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
+    # nv_list = [nv6, nv8, nv9]
     nv_sig = nv_list[0]
 
     # for nv in nv_list:
@@ -364,13 +371,13 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
 
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(6.2, 6.52, 9):
+        # for z in np.linspace(5.2, 5.0, 5):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
         # for ind in range(20):
         #     time.sleep(5)
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -382,6 +389,7 @@ if __name__ == "__main__":
 
         # opti_coords_list = []
         # for nv in nv_list:
+        #     widefield.reset_all_drift()
         #     #
         #     opti_coords = do_optimize_pixel(nv)
         #     #
@@ -393,7 +401,6 @@ if __name__ == "__main__":
         #     #
         #     opti_coords_list.append(opti_coords)
         #     widefield.reset_all_drift()
-        #     #
         # for opti_coords in opti_coords_list:
         #     r_opti_coords = [round(el, 3) for el in opti_coords]
         #     print(r_opti_coords)
@@ -409,7 +416,7 @@ if __name__ == "__main__":
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
 
     except Exception as exc:
         if do_email:
