@@ -34,7 +34,7 @@ degrees_120 = 120 * (2 * np.pi / 360)
 
 ### Splittings here
 
-splittings = []  # MHz
+splittings = [60, 0, 70]  # MHz
 
 ### Calculate
 
@@ -56,4 +56,9 @@ nv_orientations = [
     ),
 ]
 nv_field_projections = [el / 5.6 for el in splittings]
-b_z = nv_field_projections[2]
+b_z = nv_field_projections[0]
+orient = nv_orientations[1]
+b_x = (nv_field_projections[1] - (orient[2] * b_z)) / orient[0]
+orient = nv_orientations[2]
+b_y = (nv_field_projections[2] - orient[0] * b_x - orient[2] * b_z) / orient[1]
+print(np.sqrt(b_x**2 + b_y**2 + b_z**2))
