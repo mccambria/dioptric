@@ -438,47 +438,24 @@ def _get_camera_config_val(key):
 # region Plotting
 
 
-def offset_plot_points(ax, x, ys, labels=None, offset=0.05, yerrs=None, **kwargs):
-    """Plot multiple data sets (with a common set of x vals) with an offset between
-    the sets such that they are easier to interpret. Useful for plotting simultaneous
-    data from multiple NVs.
-
-    Parameters
-    ----------
-    ax : matplotlib axes
-        axes to plot on
-    x : 1D array
-        x values to plot
-    ys : 2D array
-        y values to plot - first dimension divides the data sets up
-    offset : numeric
-        offset between plotted data sets
-    """
-    pass
-    # _offset_plot(kpl.plot_points, ax, x, ys, labels, offset, yerrs, **kwargs)
-
-
-def offset_plot_line(ax, x, ys, labels=None, offset=0.05, **kwargs):
-    """Plot multiple data sets (with a common set of x vals) with an offset between
-    the sets such that they are easier to interpret. Useful for plotting simultaneous
-    data from multiple NVs.
-
-    Parameters
-    ----------
-    ax : matplotlib axes
-        axes to plot on
-    x : 1D array
-        x values to plot
-    ys : 2D array
-        y values to plot - first dimension divides the data sets up
-    offset : numeric
-        offset between plotted data sets
-    """
-    pass
-    # _offset_plot(kpl.plot_line, ax, x, ys, labels, offset, **kwargs)
-
-
 def plot_raw_data(ax, nv_list, x, ys, yerrs):
+    """Plot multiple data sets (with a common set of x vals) with an offset between
+    the sets such that they are easier to interpret. Useful for plotting simultaneous
+    data from multiple NVs.
+
+    Parameters
+    ----------
+    ax : matplotlib axes
+        axes to plot on
+    nv_list : list(nv_sig)
+        List of NV sigs to plot
+    x : 1D array
+        x values to plot
+    ys : 2D array
+        y values to plot - first dimension divides the data sets up
+    yerrs : 2D array
+        y errors to plot
+    """
     num_nvs = len(nv_list)
     for ind in range(num_nvs):
         nv_sig = nv_list[ind]
@@ -492,6 +469,31 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs):
 
 
 def plot_fit(ax, nv_list, x, ys, yerrs, fns, popts, norms=None, offset=0.05):
+    """Plot multiple data sets (with a common set of x vals) with an offset between
+    the sets such that they are separated and easier to interpret. Useful for
+    plotting simultaneous data from multiple NVs.
+
+    Parameters
+    ----------
+    ax : matplotlib axes
+        axes to plot on
+    nv_list : list(nv_sig)
+        List of NV sigs to plot
+    x : 1D array
+        x values to plot
+    ys : 2D array
+        y values to plot - first dimension divides the data sets up
+    yerrs : 2D array
+        y errors to plot
+    fns : list(function)
+        The ith fn is the fit function used to fit the data for the ith NV
+    popts : list(list(numeric))
+        The ith popt is the curve fit results for the ith NV
+    norms : list(numeric)
+        The ith factor in the list is used to normalize the ith data set
+    offset : numeric
+        offset between plotted data sets - default 0.05
+    """
     min_x = min(x)
     max_x = max(x)
     x_linspace = np.linspace(min_x - 0.001, max_x + 0.001, 1000)

@@ -121,8 +121,8 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.200
     num_steps = 60
-    num_reps = 15
-    num_runs = 64
+    num_reps = 20
+    num_runs = 128
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
@@ -144,10 +144,10 @@ def do_resonance_zoom(nv_list):
 
 
 def do_rabi(nv_list):
-    uwave_freq = 2.87
+    uwave_freq = 2.829969
     min_tau = 16
-    max_tau = 160
-    num_steps = 19
+    max_tau = 200
+    num_steps = 24
     num_reps = 50
     num_runs = 16
     rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
@@ -231,8 +231,8 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.01
-    magnet_angle = 0
+    z_coord = 4.88
+    magnet_angle = 30
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -336,10 +336,10 @@ if __name__ == "__main__":
     try:
         # pass
 
-        # with common.labrad_connect() as cxn:
-        #     mag_rot_server = tb.get_server_magnet_rotation(cxn)
-        #     #     mag_rot_server.set_angle(magnet_angle)
-        #     print(mag_rot_server.get_angle())
+        with common.labrad_connect() as cxn:
+            mag_rot_server = tb.get_server_magnet_rotation(cxn)
+            # mag_rot_server.set_angle(magnet_angle)
+            print(mag_rot_server.get_angle())
 
         # kpl.init_kplotlib()
         tb.init_safe_stop()
@@ -348,7 +348,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([+7.6, -6.3])
+        # widefield.set_pixel_drift([-15, -10])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -371,7 +371,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
 
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(5.2, 5.0, 5):
+        # for z in np.linspace(4.8, 5.2, 9):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
         # for ind in range(20):
