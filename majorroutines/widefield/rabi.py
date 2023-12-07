@@ -176,67 +176,59 @@ def main_with_cxn(
 
     ### Collect the data
 
-    try:
-        for run_ind in range(num_runs):
-            shuffle(tau_ind_list)
+    for run_ind in range(num_runs):
+        shuffle(tau_ind_list)
 
-            camera.arm()
-            sig_gen.uwave_on()
-            # sig_gen.uwave_off()  # MCC
+        camera.arm()
+        sig_gen.uwave_on()
 
-            for tau_ind in tau_ind_list:
-                pixel_coords_list = [
-                    widefield.get_nv_pixel_coords(nv) for nv in nv_list
-                ]
+        for tau_ind in tau_ind_list:
+            pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
 
-                tau_ind_master_list[run_ind].append(tau_ind)
-                tau = taus[tau_ind]
+            tau_ind_master_list[run_ind].append(tau_ind)
+            tau = taus[tau_ind]
 
-                seq_args = widefield.get_base_scc_seq_args(nv_list)
-                seq_args.extend([sig_gen_name, tau])
-                seq_args_string = tb.encode_seq_args(seq_args)
-                pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+            seq_args = widefield.get_base_scc_seq_args(nv_list)
+            seq_args.extend([sig_gen_name, tau])
+            seq_args_string = tb.encode_seq_args(seq_args)
+            pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-                # Try 5 times then give up
-                num_attempts = 5
-                attempt_ind = 0
-                while True:
-                    try:
-                        pulse_gen.stream_start()
-                        for rep_ind in range(num_reps):
-                            img_str = camera.read()
-                            img_array = widefield.img_str_to_array(img_str)
-                            if rep_ind == 0:
-                                avg_img_array = np.copy(img_array)
-                            else:
-                                avg_img_array += img_array
-                            for nv_ind in range(num_nvs):
-                                pixel_coords = pixel_coords_list[nv_ind]
-                                counts_val = widefield.integrate_counts_from_adus(
-                                    img_array, pixel_coords
-                                )
-                                counts[nv_ind, run_ind, tau_ind, rep_ind] = counts_val
-                        break
-                    except Exception as exc:
-                        print(exc)
-                        camera.arm()
-                        attempt_ind += 1
-                        if attempt_ind == num_attempts:
-                            raise RuntimeError("Maxed out number of attempts")
-                if attempt_ind > 0:
-                    print(f"{attempt_ind} crashes occurred")
+            # Try 5 times then give up
+            num_attempts = 5
+            attempt_ind = 0
+            while True:
+                try:
+                    pulse_gen.stream_start()
+                    for rep_ind in range(num_reps):
+                        img_str = camera.read()
+                        img_array = widefield.img_str_to_array(img_str)
+                        if rep_ind == 0:
+                            avg_img_array = np.copy(img_array)
+                        else:
+                            avg_img_array += img_array
+                        for nv_ind in range(num_nvs):
+                            pixel_coords = pixel_coords_list[nv_ind]
+                            counts_val = widefield.integrate_counts_from_adus(
+                                img_array, pixel_coords
+                            )
+                            counts[nv_ind, run_ind, tau_ind, rep_ind] = counts_val
+                    break
+                except Exception as exc:
+                    print(exc)
+                    camera.arm()
+                    attempt_ind += 1
+                    if attempt_ind == num_attempts:
+                        raise RuntimeError("Maxed out number of attempts")
+            if attempt_ind > 0:
+                print(f"{attempt_ind} crashes occurred")
 
-                avg_img_array = avg_img_array / num_reps
-                img_arrays[run_ind, tau_ind, :, :] = avg_img_array
+            avg_img_array = avg_img_array / num_reps
+            img_arrays[run_ind, tau_ind, :, :] = avg_img_array
 
-            camera.disarm()
-            sig_gen.uwave_off()
-
-            optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
-
-    finally:
         camera.disarm()
         sig_gen.uwave_off()
+
+        optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
 
     ### Process and plot
 

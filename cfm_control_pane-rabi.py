@@ -26,6 +26,7 @@ from majorroutines.widefield import (
     optimize,
     resonance,
     rabi,
+    optimize_scc,
 )
 from utils.constants import LaserKey, NVSpinState
 
@@ -117,12 +118,25 @@ def do_optimize_widefield_calibration():
         optimize.optimize_widefield_calibration(cxn)
 
 
+def do_optimize_scc(nv_list):
+    min_tau = 16
+    max_tau = 400
+    num_steps = 13
+    num_reps = 50
+    num_runs = 16
+    uwave_nv = nv_list[4]
+    state = NVSpinState.LOW
+    optimize_scc.main(
+        nv_list, uwave_nv, state, min_tau, max_tau, num_steps, num_reps, num_runs
+    )
+
+
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.200
-    num_steps = 60
+    freq_range = 0.250
+    num_steps = 80
     num_reps = 15
-    num_runs = 64
+    num_runs = 16
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
@@ -144,10 +158,10 @@ def do_resonance_zoom(nv_list):
 
 
 def do_rabi(nv_list):
-    uwave_freq = 2.87
+    uwave_freq = 2.81
     min_tau = 16
-    max_tau = 160
-    num_steps = 19
+    max_tau = 200
+    num_steps = 24
     num_reps = 50
     num_runs = 16
     rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
@@ -231,7 +245,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.01
+    z_coord = 4.82
     magnet_angle = 0
 
     nv_ref = {
@@ -246,14 +260,14 @@ if __name__ == "__main__":
         LaserKey.IMAGING: green_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 200},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 220},
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
         "magnet_angle": None,
         #
-        NVSpinState.LOW: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 9},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 96, "uwave_power": 11},
+        NVSpinState.LOW: {"frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
+        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
     }
 
     nv0 = copy.deepcopy(nv_ref)
@@ -336,10 +350,10 @@ if __name__ == "__main__":
     try:
         # pass
 
-        # with common.labrad_connect() as cxn:
-        #     mag_rot_server = tb.get_server_magnet_rotation(cxn)
-        #     #     mag_rot_server.set_angle(magnet_angle)
-        #     print(mag_rot_server.get_angle())
+        with common.labrad_connect() as cxn:
+            mag_rot_server = tb.get_server_magnet_rotation(cxn)
+            # mag_rot_server.set_angle(magnet_angle)
+            print(mag_rot_server.get_angle())
 
         # kpl.init_kplotlib()
         tb.init_safe_stop()
@@ -348,7 +362,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([+7.6, -6.3])
+        # widefield.set_pixel_drift([-15, -10])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -371,7 +385,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
 
         # # for z in np.linspace(3, 7, 21):
-        # for z in np.linspace(5.2, 5.0, 5):
+        # for z in np.linspace(4.8, 5.2, 9):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
         # for ind in range(20):
@@ -415,8 +429,9 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        do_resonance_zoom(nv_list)
+        # do_rabi(nv_list)
+        # do_optimize_scc(nv_list)
 
     except Exception as exc:
         if do_email:
@@ -442,8 +457,3 @@ if __name__ == "__main__":
         tb.reset_cfm()
         plt.show(block=True)
         tb.reset_safe_stop()
-
-"""
-
-
-"""

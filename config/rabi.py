@@ -143,7 +143,7 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 4,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
+        "spot_radius": 5,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 2000,
         "temp": -60,
@@ -589,7 +589,9 @@ opx_config = {
         "aod_cw": {"type": "constant", "sample": 0.35},
         # "red_aod_cw": {"type": "constant", "sample": 0.32},
         # "red_aod_cw": {"type": "constant", "sample": 0.41},
-        "red_aod_cw": {"type": "constant", "sample": 0.17},
+        # "red_aod_cw": {"type": "constant", "sample": 0.17},
+        "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
+        # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_imaging": {"type": "constant", "sample": 0.27},
         "yellow_charge_readout": {"type": "constant", "sample": 0.11},
