@@ -49,15 +49,31 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     popts = []
     norms = []
 
+    center_freqs = []
+
     for nv_ind in range(num_nvs):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
-        guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
-        fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
-            1 + voigt(freq, contrast, g_width, l_width, center)
+
+        # Single resonance
+        # guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
+        # fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
+        #     1 + voigt(freq, contrast, g_width, l_width, center)
+        # )
+
+        # Double resonance
+        guess_params = [norm_guess, amp_guess, 5, 5, 2.83, amp_guess, 5, 5, 2.91]
+        fit_fn = (
+            lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
+            * (
+                1
+                + voigt(freq, contrast1, g_width1, l_width1, center1)
+                + voigt(freq, contrast2, g_width2, l_width2, center2)
+            )
         )
+
         _, popt, pcov = fit_resonance(
             freqs,
             nv_counts,
@@ -84,12 +100,16 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         popts.append(popt)
         norms.append(popt[0])
 
+        center_freqs.append((popt[4], popt[8]))
+
     print(f"a0 average: {round(np.average(a0_list), 2)}")
     print(f"a1 average: {round(np.average(a1_list), 2)}")
     print(f"Average readout noise: {round(np.average(readout_noise_list), 2)}")
     print(f"Median readout noise: {round(np.median(readout_noise_list), 2)}")
     r_readout_noise_list = [round(el, 2) for el in readout_noise_list]
     print(f"readout noise list: {r_readout_noise_list}")
+
+    print(center_freqs)
 
     ### Make the figure
 
@@ -284,9 +304,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1379841057470)  # 4
-    data = dm.get_raw_data(file_id=1379809150970)  # 5
-    # data = dm.get_raw_data(file_id=1379815189363)  # 6
+    data = dm.get_raw_data(file_id=1380897522139)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
