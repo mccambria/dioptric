@@ -9,6 +9,7 @@ Created on November 23rd, 2018
 @author: mccambria
 """
 
+from enum import Enum
 import numpy as np
 from numpy import exp
 import json
@@ -643,9 +644,12 @@ def get_server_power_supply(cxn):
     return common.get_server(cxn, "power_supply")
 
 
-def get_server_sig_gen(cxn, state):
+def get_server_sig_gen(cxn, state=None, ind=None):
     """Get the signal generator that controls transitions to the specified NV state"""
-    return common.get_server(cxn, f"sig_gen_{state.name}")
+    if state is not None:
+        return common.get_server(cxn, f"sig_gen_{state.name}")
+    else:
+        return common.get_server(cxn, f"sig_gen_{ind}")
 
 
 def get_server_magnet_rotation(cxn):
