@@ -136,7 +136,7 @@ def do_resonance(nv_list):
     freq_range = 0.250
     num_steps = 80
     num_reps = 15
-    num_runs = 128
+    num_runs = 16
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
 
@@ -260,7 +260,7 @@ if __name__ == "__main__":
         LaserKey.IMAGING: green_laser_dict,
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
         LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 200},
+        LaserKey.IONIZATION: {"name": red_laser, "duration": 220},
         LaserKey.CHARGE_READOUT: yellow_laser_dict,
         #
         "collection": {"filter": None},
@@ -429,9 +429,9 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
 
     except Exception as exc:
         if do_email:
