@@ -8,6 +8,7 @@ Created September 10th, 2021
 @author: mccambria
 """
 
+import copy
 import platform
 from pathlib import Path
 import socket
@@ -32,7 +33,17 @@ def get_config_module(pc_name=None):
 
 def get_config_dict(pc_name=None):
     module = get_config_module(pc_name)
-    return module.config
+    config_copy = copy.deepcopy(module.config)
+    return config_copy
+
+
+def get_opx_config_dict(pc_name=None):
+    module = get_config_module(pc_name)
+    if "opx_config" in module:
+        opx_config_copy = copy.deepcopy(module.opx_config)
+        return opx_config_copy
+    else:
+        return None
 
 
 def get_data_manager_folder():

@@ -126,13 +126,15 @@ def img_str_to_array(img_str):
     return img_array
 
 
+run_ax = 1
+rep_ax = 3
+run_rep_axes = (run_ax, rep_ax)
+
+
 def process_counts(counts_array):
     """Gets average and standard error for counts data structure.
     Assumes the structure [nv_ind, run_ind, freq_ind, rep_ind]
     """
-    run_ax = 1
-    rep_ax = 3
-    run_rep_axes = (run_ax, rep_ax)
 
     counts_array = np.array(counts_array)
     # meas_array = counts_array > 75
@@ -145,6 +147,18 @@ def process_counts(counts_array):
 
     return avg_counts, avg_counts_ste
     # return avg_counts_std, avg_counts_ste  # MCC
+
+
+def calc_snr(sig_counts, ref_counts):
+    avg_sig_counts, avg_sig_counts_ste = process_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste = process_counts(ref_counts)
+    noise = np.sqrt(
+        np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
+        + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
+    )
+    avg_snr = (avg_sig_counts - avg_ref_counts) / noise
+    avg_snr_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2)) / noise
+    return avg_snr, avg_snr_ste
 
 
 # endregion
@@ -463,11 +477,12 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
         y errors to plot
     """
     num_nvs = len(nv_list)
-    for ind in range(num_nvs):
+    # for ind in range(num_nvs):
+    for ind in [3]:
         nv_sig = nv_list[ind]
         label = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[ind]
-        kpl.plot_points(ax, x, ys[ind], yerr=yerr, label=label)
+        kpl.plot_points(ax, x, ys[ind], yerr=yerr, label=label, size=kpl.Size.SMALL)
     min_x = min(x)
     max_x = max(x)
     excess = 0.08 * (max_x - min_x)
@@ -476,7 +491,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
 
 
 def plot_fit(
-    ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.05
+    ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.10
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -514,7 +529,7 @@ def plot_fit(
         norm = 1 if norms is None else norms[nv_ind]
         y = ys[nv_ind] / norm + nv_offset
         yerr = None if yerrs is None else yerrs[nv_ind] / norm
-        kpl.plot_points(ax, x, y, yerr=yerr, label=label)
+        kpl.plot_points(ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL)
         fn = fns[nv_ind]
         popt = popts[nv_ind]
         kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm) + nv_offset)

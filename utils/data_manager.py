@@ -149,8 +149,10 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     # Always include the config
     config = common.get_config_dict()
-    config = copy.deepcopy(config)
     raw_data["config"] = config
+    opx_config = common.get_opx_config_dict()
+    if opx_config is not None:
+        raw_data["opx_config"] = opx_config
 
     _json_escape(raw_data)
 

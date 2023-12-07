@@ -63,8 +63,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         tb.configure_logging(self)
 
         # Get config dicts
-        config_module = common.get_config_module()
-        opx_config = config_module.opx_config
+        opx_config = common.get_opx_config_dict()
         config = common.get_config_dict()
 
         # Get manager and OPX

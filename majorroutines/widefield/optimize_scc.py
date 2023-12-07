@@ -32,18 +32,7 @@ from majorroutines.widefield import base_routine
 def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     avg_sig_counts, avg_sig_counts_ste = widefield.process_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste = widefield.process_counts(ref_counts)
-    avg_snr = (avg_sig_counts - avg_ref_counts) / np.sqrt(
-        avg_sig_counts + avg_ref_counts
-    )
-    sig_coeff = ((avg_sig_counts + 3 * avg_ref_counts) ** 2) / (
-        4 * (avg_sig_counts + avg_ref_counts) ** 3
-    )
-    ref_coeff = ((3 * avg_sig_counts + avg_ref_counts) ** 2) / (
-        4 * (avg_sig_counts + avg_ref_counts) ** 3
-    )
-    avg_snr_ste = np.sqrt(
-        sig_coeff * avg_sig_counts_ste**2 + ref_coeff * avg_ref_counts_ste**2
-    )
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
     kpl.init_kplotlib()
 
@@ -166,7 +155,9 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1381902242339)
+    # data = dm.get_raw_data(file_id=1381739434842)  # 0.19
+    data = dm.get_raw_data(file_id=1381902242339)  # 0.14
+    # data = dm.get_raw_data(file_id=)  # 0.17
 
     nv_list = data["nv_list"]
     taus = data["taus"]
