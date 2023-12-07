@@ -37,7 +37,7 @@ def get_seq(args, num_reps):
 
     sig_gen_el = f"do_{sig_gen_name}_dm"
     no_uwave = uwave_duration_ns == 0
-    if no_uwave:
+    if not no_uwave:
         uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
