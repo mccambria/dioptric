@@ -118,16 +118,22 @@ def do_optimize_widefield_calibration():
         optimize.optimize_widefield_calibration(cxn)
 
 
-def do_optimize_scc(nv_list):
+def do_optimize_scc(nv_list, uwave_list):
     min_tau = 16
     max_tau = 400
     num_steps = 13
     num_reps = 50
     num_runs = 16
-    uwave_nv = nv_list[4]
-    state = NVSpinState.LOW
+    uwave_ind = 0
     optimize_scc.main(
-        nv_list, uwave_nv, state, min_tau, max_tau, num_steps, num_reps, num_runs
+        nv_list,
+        uwave_list,
+        uwave_ind,
+        min_tau,
+        max_tau,
+        num_steps,
+        num_reps,
+        num_runs,
     )
 
 
@@ -265,10 +271,14 @@ if __name__ == "__main__":
         #
         "collection": {"filter": None},
         "magnet_angle": None,
-        #
-        NVSpinState.LOW: {"frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
-        NVSpinState.HIGH: {"frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
     }
+
+    uwave_list = [
+        {"frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
+        {"frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
+    ]
+
+    # region Coords
 
     nv0 = copy.deepcopy(nv_ref)
     nv0["name"] = f"{sample_name}-nv0_2023_12_04"
@@ -330,18 +340,13 @@ if __name__ == "__main__":
     nv9[green_coords_key] = [110.607, 110.38]
     nv9[red_coords_key] = [74.733, 75.413]
 
+    # endregion
+
     # nv_sig = nv8
     # nv_list = [nv_sig]
     nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
     # nv_list = [nv6, nv8, nv9]
     nv_sig = nv_list[0]
-
-    # for nv in nv_list:
-    #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
-    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
-    # sys.exit()
-
-    ### Clean up and save the data
 
     ### Functions to run
 
@@ -375,28 +380,14 @@ if __name__ == "__main__":
         #     print(pos.get_nv_coords(nv, red_laser))
         # print()
 
-        # Convert pixel coords to scanning coords
-        # for nv in nv_list:
-        #     pixel_coords = widefield.get_nv_pixel_coords(nv)
-        #     print(widefield.pixel_to_scanning_coords(pixel_coords, green_laser))
-        #     print(widefield.pixel_to_scanning_coords(pixel_coords, red_laser))
-        #     # print()
-
         # do_opx_constant_ac()
 
-        # # for z in np.linspace(3, 7, 21):
         # for z in np.linspace(4.8, 5.2, 9):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # for ind in range(20):
-        #     time.sleep(5)
-        #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
 
-        # do_scanning_image_sample(nv_sig)
-        # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
-        # do_image_single_nv(nv_sig)
 
         # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
@@ -431,7 +422,7 @@ if __name__ == "__main__":
         #         do_resonance_zoom(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_optimize_scc(nv_list)
+        do_optimize_scc(nv_list, uwave_list)
 
     except Exception as exc:
         if do_email:

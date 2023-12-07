@@ -100,6 +100,7 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
+    "repr_nv_ind": 0,
     ###
     # Common durations are in ns
     "CommonDurations": {
@@ -227,8 +228,9 @@ config |= {
         "pulse_gen": "QM_opx",
         "sig_gen_LOW": "sig_gen_STAN_sg394",
         "sig_gen_HIGH": "sig_gen_STAN_sg394_2",
+        "sig_gen_0": "sig_gen_STAN_sg394",
+        "sig_gen_1": "sig_gen_STAN_sg394_2",
         "tagger": "QM_opx",
-        "camera": "camera_NUVU_hnu512gamma",
     },
     ###
     "Wiring": {

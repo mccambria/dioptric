@@ -151,6 +151,12 @@ def process_counts(counts_array):
 # region Miscellaneous public functions
 
 
+def get_repr_nv_sig(nv_list):
+    config = common.get_config_dict()
+    repr_nv_ind = config["repr_nv_ind"]
+    return nv_list[repr_nv_ind]
+
+
 def get_nv_num(nv_sig):
     return nv_sig["name"].split("-")[1].split("_")[0][2:]
 
@@ -469,7 +475,9 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
 
 
-def plot_fit(ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.05):
+def plot_fit(
+    ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.05
+):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
     plotting simultaneous data from multiple NVs.
