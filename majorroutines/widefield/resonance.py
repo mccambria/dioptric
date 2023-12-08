@@ -169,9 +169,11 @@ def main_with_cxn(
 
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    uwave_dict = repr_nv_sig[state]
-    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
-    uwave_power = uwave_dict["uwave_power"]
+    # uwave_dict = repr_nv_sig[state]  # MCC
+    # uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
+    # uwave_power = uwave_dict["uwave_power"]
+    uwave_duration = 64
+    uwave_power = 9
     sig_gen.set_amp(uwave_power)
 
     seq_file = "resonance.py"

@@ -231,7 +231,8 @@ config |= {
         "sig_gen_0": "sig_gen_STAN_sg394",
         "sig_gen_1": "sig_gen_STAN_sg394_2",
         "tagger": "QM_opx",
-    },
+        "camera": "camera_NUVU_hnu512gamma",
+    },        
     ###
     "Wiring": {
         "Daq": {
@@ -591,8 +592,8 @@ opx_config = {
         "aod_cw": {"type": "constant", "sample": 0.35},
         # "red_aod_cw": {"type": "constant", "sample": 0.32},
         # "red_aod_cw": {"type": "constant", "sample": 0.41},
-        # "red_aod_cw": {"type": "constant", "sample": 0.17},
-        "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
+        "red_aod_cw": {"type": "constant", "sample": 0.17},
+        # "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
         # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_imaging": {"type": "constant", "sample": 0.27},

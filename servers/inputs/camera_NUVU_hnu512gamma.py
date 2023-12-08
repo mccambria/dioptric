@@ -128,6 +128,7 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.get_size()
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
+        logging.info("Init complete")
 
     def stopServer(self):
         self.reset(None)

@@ -147,7 +147,7 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.87
+    freq_center = 2.81
     freq_range = 0.05
     num_steps = 20
     num_reps = 50
@@ -164,12 +164,12 @@ def do_resonance_zoom(nv_list):
 
 
 def do_rabi(nv_list):
-    uwave_freq = 2.81
+    uwave_freq = 2.8130
     min_tau = 16
     max_tau = 200
     num_steps = 24
     num_reps = 50
-    num_runs = 16
+    num_runs = 48
     rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
 
 
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.82
+    z_coord = 4.80
     magnet_angle = 0
 
     nv_ref = {
@@ -412,7 +412,7 @@ if __name__ == "__main__":
 
         # do_optimize_z(nv_sig)
 
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # for rabi in [96, 96 * 2]:
         # for rabi in [96 * 2]:
         #     for dur in [50, 100, 150, 200, 250, 300, 350]:
@@ -421,8 +421,8 @@ if __name__ == "__main__":
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
-        do_optimize_scc(nv_list, uwave_list)
+        do_rabi(nv_list)
+        # do_optimize_scc(nv_list, uwave_list)
 
     except Exception as exc:
         if do_email:

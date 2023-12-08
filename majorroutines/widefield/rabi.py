@@ -161,8 +161,7 @@ def main_with_cxn(
 
     taus = np.linspace(min_tau, max_tau, num_steps)
 
-    uwave_dict = repr_nv_sig[state]
-    uwave_power = uwave_dict["uwave_power"]
+    uwave_power = 9
     sig_gen.set_amp(uwave_power)
     sig_gen.set_freq(uwave_freq)
 
