@@ -139,9 +139,9 @@ def do_optimize_scc(nv_list, uwave_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.250
-    num_steps = 80
-    num_reps = 15
+    freq_range = 0.150
+    num_steps = 40
+    num_reps = 25
     num_runs = 16
     resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
 
@@ -367,7 +367,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([-15, -10])
+        # widefield.set_pixel_drift([+4, -12])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -382,9 +382,9 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
 
-        # for z in np.linspace(4.8, 5.2, 9):
-        #     nv_sig["coords"][2] = z
-        #     do_widefield_image_sample(nv_sig, 100)
+        for z in np.linspace(4.8, 5.1, 7):
+            nv_sig["coords"][2] = z
+            do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -422,7 +422,8 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_optimize_scc(nv_list, uwave_list)
+        # do_optimize_scc(nv_list, uwave_list)
+        # do_scc_snr_check(nv_list, uwave_list)
 
     except Exception as exc:
         if do_email:
@@ -446,5 +447,7 @@ if __name__ == "__main__":
 
         # Make sure everything is reset
         tb.reset_cfm()
+        cxn = common.labrad_connect()
+        cxn.disconnect()
         plt.show(block=True)
         tb.reset_safe_stop()

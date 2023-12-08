@@ -154,8 +154,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         #     self.compiled_programs[key] = [program_id, seq_ret_vals]
 
         # MCC
+        start = time.time()
         seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
         program_id = self.opx.compile(seq)
+        stop = time.time()
+        logging.info(f"Compile time: {round(stop-start, 3)}")
 
         self.program_id = program_id
         return seq_ret_vals

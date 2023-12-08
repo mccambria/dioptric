@@ -16,17 +16,15 @@ from majorroutines.widefield import base_routine
 
 
 def main(nv_list, uwave_list, uwave_ind, num_reps):
-    with common.labrad_connect() as cxn:
-        main_with_cxn(cxn, nv_list, uwave_list, uwave_ind, num_reps)
-
-
-def main_with_cxn(cxn, nv_list, uwave_list, uwave_ind, num_reps):
     ### Some initial setup
+
+    cxn = common.labrad_connect()
 
     seq_file = "resonance_ref.py"
     sig_gen = tb.get_server_sig_gen(cxn, uwave_ind)
     sig_gen_name = sig_gen.name
-    uwave_duration = tb.get_pi_pulse_dur(uwave_list[uwave_ind]["rabi_period"])
+    uwave_dict = uwave_list[uwave_ind]
+    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     pulse_gen = tb.get_server_pulse_gen(cxn)
     seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.extend([sig_gen_name, uwave_duration])
@@ -36,37 +34,23 @@ def main_with_cxn(cxn, nv_list, uwave_list, uwave_ind, num_reps):
     ### Collect the data
 
     ret_vals = base_routine.main(
-        cxn,
-        nv_list,
-        uwave_list,
-        1,
-        num_reps,
-        1,
-        step_fn=None,
-        reference=True,
+        cxn, nv_list, uwave_list, 1, num_reps, 1, step_fn=None, reference=True
     )
     sig_counts, ref_counts = ret_vals
 
     ### Report the results and return
 
     avg_sig_counts, avg_sig_counts_ste = widefield.process_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste = widefield.process_counts(ref_counts)
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+
+    # There's only one point, so only consider that
     avg_sig_counts = avg_sig_counts[:, 0]
     avg_sig_counts_ste = avg_sig_counts_ste[:, 0]
-    avg_ref_counts, avg_ref_counts_ste = widefield.process_counts(ref_counts)
     avg_ref_counts = avg_ref_counts[:, 0]
     avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
-    avg_snr = (avg_sig_counts - avg_ref_counts) / np.sqrt(
-        avg_sig_counts + avg_ref_counts
-    )
-    sig_coeff = ((avg_sig_counts + 3 * avg_ref_counts) ** 2) / (
-        4 * (avg_sig_counts + avg_ref_counts) ** 3
-    )
-    ref_coeff = ((3 * avg_sig_counts + avg_ref_counts) ** 2) / (
-        4 * (avg_sig_counts + avg_ref_counts) ** 3
-    )
-    avg_snr_ste = np.sqrt(
-        sig_coeff * avg_sig_counts_ste**2 + ref_coeff * avg_ref_counts_ste**2
-    )
+    avg_snr = avg_ref_counts[:, 0]
+    avg_snr_ste = avg_ref_counts_ste[:, 0]
 
     # Print
     for ind in range(len(nv_list)):

@@ -122,39 +122,18 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
 def main(
     nv_list,
+    uwave_list,
+    uwave_ind,
     freq_center,
     freq_range,
     num_steps,
     num_reps,
     num_runs,
-    state=NVSpinState.LOW,
-):
-    with common.labrad_connect() as cxn:
-        main_with_cxn(
-            cxn,
-            nv_list,
-            freq_center,
-            freq_range,
-            num_steps,
-            num_reps,
-            num_runs,
-            state,
-        )
-
-
-def main_with_cxn(
-    cxn,
-    nv_list,
-    freq_center,
-    freq_range,
-    num_steps,
-    num_reps,
-    num_runs,
-    state=NVSpinState.LOW,
 ):
     ### Some initial setup
+    
+    cxn = common.labrad_connect()
 
-    tb.reset_cfm(cxn)
 
     # First NV to represent the others
     repr_nv_ind = 0
@@ -307,6 +286,11 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
+
+    fig, ax = plt.subplots()
+    kpl.histogram(ax, counts[0, :, 27, :].flatten(), nbins=100)
+    print(np.count_nonzero(counts[0, :, 27, :] < 80))
+    print(np.count_nonzero(counts[0, :, 27, :] >= 80))
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)

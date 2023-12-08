@@ -972,10 +972,8 @@ def reset_cfm(cxn=None):
     routine where they matter anyway).
     """
     if cxn is None:
-        with labrad.connect(username="", password="") as cxn:
-            reset_cfm_with_cxn(cxn)
-    else:
-        reset_cfm_with_cxn(cxn)
+        cxn = common.labrad_connect()
+    reset_cfm_with_cxn(cxn)
 
 
 def reset_cfm_with_cxn(cxn):

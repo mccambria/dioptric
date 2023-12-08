@@ -17,6 +17,7 @@ from importlib import import_module
 import sys
 import labrad
 import numpy as np
+global_cxn = None
 
 
 def get_config_module(pc_name=None):
@@ -39,10 +40,10 @@ def get_config_dict(pc_name=None):
 
 def get_opx_config_dict(pc_name=None):
     module = get_config_module(pc_name)
-    if "opx_config" in module:
+    try:
         opx_config_copy = copy.deepcopy(module.opx_config)
         return opx_config_copy
-    else:
+    except Exception as exc:
         return None
 
 
@@ -98,7 +99,10 @@ def get_server_name(server_key):
 
 def labrad_connect():
     """Return a labrad connection with default username and password"""
-    return labrad.connect(username="", password="")
+    global global_cxn
+    if global_cxn is None:
+        global_cxn = labrad.connect(username="", password="")
+    return global_cxn
 
 
 def set_registry_entry(directory, key, value):

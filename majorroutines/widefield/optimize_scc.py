@@ -33,7 +33,7 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     avg_sig_counts, avg_sig_counts_ste = widefield.process_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste = widefield.process_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-    avg_snr_ste = None
+    # avg_snr_ste = None
 
     kpl.init_kplotlib()
 
@@ -56,49 +56,23 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
 
 def main(
-    nv_list,
-    uwave_list,
-    uwave_ind,
-    min_tau,
-    max_tau,
-    num_steps,
-    num_reps,
-    num_runs,
-):
-    with common.labrad_connect() as cxn:
-        main_with_cxn(
-            cxn,
-            nv_list,
-            uwave_list,
-            uwave_ind,
-            min_tau,
-            max_tau,
-            num_steps,
-            num_reps,
-            num_runs,
-        )
-
-
-def main_with_cxn(
-    cxn,
-    nv_list,
-    uwave_list,
-    uwave_ind,
-    min_tau,
-    max_tau,
-    num_steps,
-    num_reps,
-    num_runs,
+    nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
 ):
     ### Some initial setup
+
+    cxn = common.labrad_connect()
 
     seq_file = "resonance_ref.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
     nv_list_mod = copy.deepcopy(nv_list)
+    pulse_gen = tb.get_server_pulse_gen(cxn)
+
     sig_gen = tb.get_server_sig_gen(cxn, uwave_ind)
     sig_gen_name = sig_gen.name
-    uwave_duration = tb.get_pi_pulse_dur(uwave_list[uwave_ind]["rabi_period"])
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    uwave_dict = uwave_list[uwave_ind]
+    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
+
+    ### Collect the data
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
@@ -108,8 +82,6 @@ def main_with_cxn(
         seq_args.extend([sig_gen_name, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-
-    ### Collect the data
 
     sig_counts, ref_counts, raw_data = base_routine.main(
         cxn, nv_list, uwave_list, num_steps, num_reps, num_runs, step_fn, reference=True
