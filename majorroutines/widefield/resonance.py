@@ -131,9 +131,8 @@ def main(
     num_runs,
 ):
     ### Some initial setup
-    
-    cxn = common.labrad_connect()
 
+    cxn = common.labrad_connect()
 
     # First NV to represent the others
     repr_nv_ind = 0

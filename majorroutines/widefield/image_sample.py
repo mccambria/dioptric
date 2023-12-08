@@ -182,33 +182,9 @@ def main(
     do_polarize=False,
     do_ionize=False,
 ):
-    with common.labrad_connect() as cxn:
-        ret_vals = main_with_cxn(
-            cxn,
-            nv_sig,
-            caller_fn_name,
-            num_reps,
-            x_coords,
-            y_coords,
-            save_dict,
-            do_polarize,
-            do_ionize,
-        )
-    return ret_vals
-
-
-def main_with_cxn(
-    cxn,
-    nv_sig,
-    caller_fn_name,
-    num_reps=1,
-    x_coords=None,
-    y_coords=None,
-    save_dict=None,
-    do_polarize=False,
-    do_ionize=False,
-):
     ### Some initial setup
+
+    cxn = common.labrad_connect()
 
     tb.reset_cfm(cxn)
     laser_key = LaserKey.IMAGING

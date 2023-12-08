@@ -355,10 +355,10 @@ if __name__ == "__main__":
     try:
         # pass
 
-        with common.labrad_connect() as cxn:
-            mag_rot_server = tb.get_server_magnet_rotation(cxn)
-            # mag_rot_server.set_angle(magnet_angle)
-            print(mag_rot_server.get_angle())
+        cxn = common.labrad_connect()
+        mag_rot_server = tb.get_server_magnet_rotation(cxn)
+        # mag_rot_server.set_angle(magnet_angle)
+        print(mag_rot_server.get_angle())
 
         # kpl.init_kplotlib()
         tb.init_safe_stop()
@@ -382,7 +382,7 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
 
-        for z in np.linspace(4.8, 5.1, 7):
+        for z in np.linspace(4.0, 5.0, 26):
             nv_sig["coords"][2] = z
             do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
