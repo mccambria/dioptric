@@ -412,7 +412,6 @@ if __name__ == "__main__":
 
         # do_optimize_z(nv_sig)
 
-        # do_resonance(nv_list)
         # for rabi in [96, 96 * 2]:
         # for rabi in [96 * 2]:
         #     for dur in [50, 100, 150, 200, 250, 300, 350]:
@@ -420,9 +419,10 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
-        # do_optimize_scc(nv_list, uwave_list)
+        # do_rabi(nv_list)
+        do_optimize_scc(nv_list, uwave_list)
 
     except Exception as exc:
         if do_email:

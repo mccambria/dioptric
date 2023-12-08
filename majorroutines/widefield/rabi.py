@@ -39,11 +39,19 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
 def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Do the fitting
 
-    def fit_fn(tau, norm, ptp_amp, freq, decay):
+    def cos_decay(tau, norm, ptp_amp, freq, decay):
         amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * tau))
         return abs(norm) + amp - (envelope * cos_part)
+
+    def constant(tau, norm):
+        if type(tau) == list:
+            return [norm] * len(tau)
+        elif type(tau) == np.ndarray:
+            return np.array([norm] * len(tau))
+        else:
+            return norm
 
     num_nvs = len(nv_list)
     tau_step = taus[1] - taus[0]
@@ -60,16 +68,21 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        # Estimate fit parameters
-        norm_guess = np.min(nv_counts)
-        ptp_amp_guess = np.max(nv_counts) - norm_guess
-        transform = np.fft.rfft(nv_counts)
-        freqs = np.fft.rfftfreq(num_steps, d=tau_step)
-        transform_mag = np.absolute(transform)
-        max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
-        freq_guess = freqs[max_ind + 1]
+        if nv_ind in [1, 2, 3, 4, 8]:
+            # Estimate fit parameters
+            norm_guess = np.min(nv_counts)
+            ptp_amp_guess = np.max(nv_counts) - norm_guess
+            transform = np.fft.rfft(nv_counts)
+            freqs = np.fft.rfftfreq(num_steps, d=tau_step)
+            transform_mag = np.absolute(transform)
+            max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
+            freq_guess = freqs[max_ind + 1]
+            guess_params = [norm_guess, ptp_amp_guess, freq_guess, 1000]
+            fit_fn = cos_decay
+        else:
+            fit_fn = constant
+            guess_params = [np.average(nv_counts)]
 
-        guess_params = [norm_guess, ptp_amp_guess, freq_guess, 1000]
         popt, pcov = curve_fit(
             fit_fn,
             taus,
@@ -79,20 +92,21 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             absolute_sigma=True,
         )
 
-        # SCC readout noise tracking
         norm = popt[0]
-        contrast = popt[1]
-        a0 = round((1 + contrast) * norm, 2)
-        a1 = round(norm, 2)
-        print(f"ms=+/-1: {a0}\nms=0: {a1}\n")
-        a0_list.append(a0)
-        a1_list.append(a1)
-        readout_noise_list.append(np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2)))
+        if len(popt) > 1:
+            # SCC readout noise tracking
+            contrast = popt[1]
+            a0 = round((1 + contrast) * norm, 2)
+            a1 = round(norm, 2)
+            print(f"ms=+/-1: {a0}\nms=0: {a1}\n")
+            a0_list.append(a0)
+            a1_list.append(a1)
+            readout_noise_list.append(np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2)))
 
         # Tracking for plotting
         fit_fns.append(fit_fn)
         popts.append(popt)
-        norms.append(popt[0])
+        norms.append(norm)
 
     print(f"a0 average: {round(np.average(a0_list), 2)}")
     print(f"a1 average: {round(np.average(a1_list), 2)}")
@@ -282,7 +296,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1381032071121)
+    data = dm.get_raw_data(file_id=1382892086081)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -293,8 +307,18 @@ if __name__ == "__main__":
     taus = data["taus"]
     counts = np.array(data["counts"])
 
+    fig, ax = plt.subplots()
+    kpl.histogram(ax, counts[1, :, 6, :].flatten(), nbins=100)
+    print(np.count_nonzero(counts[1, :, 6, :] < 65))
+    print(np.count_nonzero(counts[1, :, 6, :] >= 65))
+
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
+
+# p  *(a0**2 + a0) - p**2  *a0**2 + (1-p)  *(a1**2 + a1) - (1-p)**2  *a1**2 - 2  *p  *a0  *(1-p) *a1
+# 1669/2400, 56, 98
+# 1765/2400, 48, 80
+# p  *(a0**2 + a0) - p**2  *a0**2 + (1-p)  *(a1**2 + a1) - (1-p)**2  *a1**2 - 2  *p  *a0  *(1-p) *a1
