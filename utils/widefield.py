@@ -477,16 +477,16 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
         y errors to plot
     """
     num_nvs = len(nv_list)
-    # for ind in range(num_nvs):
-    for ind in [3]:
+    for ind in range(num_nvs):
+        # for ind in [3]:
         nv_sig = nv_list[ind]
         label = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[ind]
         kpl.plot_points(ax, x, ys[ind], yerr=yerr, label=label, size=kpl.Size.SMALL)
-    min_x = min(x)
-    max_x = max(x)
-    excess = 0.08 * (max_x - min_x)
-    ax.set_xlim(min_x - excess, max_x + excess)
+    # min_x = min(x)
+    # max_x = max(x)
+    # excess = 0.08 * (max_x - min_x)
+    # ax.set_xlim(min_x - excess, max_x + excess)
     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
 
 
@@ -520,7 +520,7 @@ def plot_fit(
     """
     min_x = min(x)
     max_x = max(x)
-    x_linspace = np.linspace(min_x - 0.001, max_x + 0.001, 1000)
+    x_linspace = np.linspace(min_x, max_x, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
         nv_sig = nv_list[nv_ind]
@@ -533,8 +533,8 @@ def plot_fit(
         fn = fns[nv_ind]
         popt = popts[nv_ind]
         kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm) + nv_offset)
-    excess = 0.08 * (max_x - min_x)
-    ax.set_xlim(min_x - excess, max_x + excess)
+    # excess = 0.08 * (max_x - min_x)
+    # ax.set_xlim(min_x - excess, max_x + excess)
     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
 
 
