@@ -51,13 +51,7 @@ coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
 """
 
 
-def set_xyz(
-    cxn,
-    coords,
-    coords_suffix=None,
-    drift_adjust=False,
-    ramp=None,
-):
+def set_xyz(coords, coords_suffix=None, drift_adjust=False, ramp=None):
     if drift_adjust:
         coords = adjust_coords_for_drift(coords, coords_suffix=coords_suffix)
     if ramp is None:
@@ -65,16 +59,16 @@ def set_xyz(
         key = "set_xyz_ramp"
         ramp = key in config and config[key]
     if ramp:
-        return _set_xyz_ramp(cxn, coords)
+        return _set_xyz_ramp(coords)
     else:
-        return _set_xyz(cxn, coords, coords_suffix)
+        return _set_xyz(coords, coords_suffix)
 
 
-def _set_xyz(cxn, coords, coords_suffix):
+def _set_xyz(coords, coords_suffix):
     xy_dtype = get_xy_dtype(coords_suffix=coords_suffix)
     z_dtype = get_z_dtype(coords_suffix=coords_suffix)
-    pos_xy_server = get_server_pos_xy(cxn, coords_suffix=coords_suffix)
-    pos_z_server = get_server_pos_z(cxn, coords_suffix=coords_suffix)
+    pos_xy_server = get_server_pos_xy(coords_suffix=coords_suffix)
+    pos_z_server = get_server_pos_z(coords_suffix=coords_suffix)
     if pos_xy_server is not None:
         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
     if pos_z_server is not None:
@@ -83,7 +77,7 @@ def _set_xyz(cxn, coords, coords_suffix):
     # time.sleep(0.002)
 
 
-def _set_xyz_ramp(cxn, coords):
+def _set_xyz_ramp(coords):
     """Not up to date: Step incrementally to this position from the current position"""
 
     config = common.get_config_dict()
@@ -104,12 +98,12 @@ def _set_xyz_ramp(cxn, coords):
     else:
         total_movement_delay = z_delay
 
-    xyz_server = get_server_pos_xyz(cxn)
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    xyz_server = get_server_pos_xyz()
+    pulse_gen = tb.get_server_pulse_gen()
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
-        set_xyz(cxn, coords)
+        set_xyz(coords)
         return
 
     # Get current and final position
@@ -128,7 +122,7 @@ def _set_xyz_ramp(cxn, coords):
 
     if abs(dx) <= step_size_xy and abs(dy) <= step_size_xy and abs(dz) <= step_size_z:
         # print('just setting coords without ramp')
-        set_xyz(cxn, coords)
+        set_xyz(coords)
 
     else:
         # Determine num of steps to get to final destination based on step size
@@ -186,10 +180,10 @@ def _set_xyz_ramp(cxn, coords):
     time.sleep(total_movement_delay / 1e9)
 
 
-def set_xyz_on_nv(cxn, nv_sig, coords_suffix=None, drift_adjust=True):
+def set_xyz_on_nv(nv_sig, coords_suffix=None, drift_adjust=True):
     """Returns the coords actually used in the set"""
     coords = get_nv_coords(nv_sig, coords_suffix, drift_adjust)
-    set_xyz(cxn, coords, coords_suffix=coords_suffix, drift_adjust=False)
+    set_xyz(coords, coords_suffix=coords_suffix, drift_adjust=False)
     return coords
 
 
@@ -271,27 +265,27 @@ def get_z_control_mode(coords_suffix=None):
     return get_axis_control_mode(axis_ind, coords_suffix)
 
 
-def get_server_pos_xy(cxn, coords_suffix=None):
+def get_server_pos_xy(coords_suffix=None):
     key = _append_suffix_to_key("pos_xy", coords_suffix)
-    return common.get_server(cxn, key)
+    return common.get_server(key)
 
 
-def get_server_pos_z(cxn, coords_suffix=None):
+def get_server_pos_z(coords_suffix=None):
     key = _append_suffix_to_key("pos_z", coords_suffix)
-    return common.get_server(cxn, key)
+    return common.get_server(key)
 
 
-def get_server_pos_xyz(cxn, coords_suffix=None):
+def get_server_pos_xyz(coords_suffix=None):
     key = _append_suffix_to_key("pos_xyz", coords_suffix)
-    return common.get_server(cxn, key)
+    return common.get_server(key)
 
 
-def get_axis_write_fn(cxn, axis_ind, coords_suffix=None):
+def get_axis_write_fn(axis_ind, coords_suffix=None):
     """Return the write function for a given axis (0:x, 1:y, 2:z)"""
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy(cxn, coords_suffix)
+        server = get_server_pos_xy(coords_suffix)
     elif axis_ind == 2:
-        server = get_server_pos_z(cxn, coords_suffix)
+        server = get_server_pos_z(coords_suffix)
     if server is None:
         return None
 
@@ -305,16 +299,16 @@ def get_axis_write_fn(cxn, axis_ind, coords_suffix=None):
     return write_fn
 
 
-def get_axis_stream_fn(cxn, axis_ind, coords_suffix=None):
+def get_axis_stream_fn(axis_ind, coords_suffix=None):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
     control_mode = get_axis_control_mode(axis_ind)
     if control_mode != ControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy(cxn, coords_suffix)
+        server = get_server_pos_xy(coords_suffix)
     elif axis_ind == 2:
-        server = get_server_pos_z(cxn, coords_suffix)
+        server = get_server_pos_z(coords_suffix)
     if server is None:
         return None
 
