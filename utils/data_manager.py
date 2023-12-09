@@ -166,7 +166,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 # region Load functions
 
 
-def get_raw_data(file_name=None, file_id=None):
+def get_raw_data(file_name=None, file_id=None, use_cache=True):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
@@ -179,6 +179,11 @@ def get_raw_data(file_name=None, file_id=None):
     file_id : str, optional
         Cloud ID of the file to load. Loaded directly from the cloud or cache, no
         search necessary. By default None
+    use_cache : bool, optional
+        Whether or not to use the cache. If True, we'll try to pull the file from
+        the cache - if it's not there already we'll add it to the cache. Otherwise
+        we'll get the file straight from the cloud and skip caching it. By default
+        True
 
     Returns
     -------
@@ -192,27 +197,29 @@ def get_raw_data(file_name=None, file_id=None):
     ### Check the cache first
 
     # Try to open an existing cache manifest
-    try:
-        with open(data_manager_folder / "cache_manifest.txt") as f:
-            cache_manifest = ujson.load(f)
-    except Exception as exc:
-        cache_manifest = None
+    retrieved_from_cache = False
+    if use_cache:
+        try:
+            with open(data_manager_folder / "cache_manifest.txt") as f:
+                cache_manifest = ujson.load(f)
+        except Exception as exc:
+            cache_manifest = None
 
-    # Try to open the cached file
-    try:
-        id_name_table = cache_manifest["id_name_table"]
-        if file_id is not None:
-            file_name = id_name_table[file_id]
-        with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
-            file_content = f.read()
-        data = orjson.loads(file_content)
-        was_cached = True
-    except Exception as exc:
-        was_cached = False
+        # Try to open the cached file
+        try:
+            id_name_table = cache_manifest["id_name_table"]
+            if file_id is not None:
+                file_name = id_name_table[file_id]
+            with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+                file_content = f.read()
+            data = orjson.loads(file_content)
+            retrieved_from_cache = True
+        except Exception as exc:
+            retrieved_from_cache = False
 
     ### If not in cache, download from the cloud
 
-    if not was_cached:
+    if not use_cache or not retrieved_from_cache:
         # Download the base file
         file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
         data = orjson.loads(file_content)
@@ -235,39 +242,40 @@ def get_raw_data(file_name=None, file_id=None):
     ### Add to cache and return the data
 
     # Update the cache manifest
-    cache_manifest_updated = False
-    if cache_manifest is None:
-        cache_manifest = {
-            "id_name_table": {file_id: file_name},
-            "cached_file_ids": [file_id],
-        }
-        cache_manifest_updated = True
-    elif not was_cached:
-        id_name_table = cache_manifest["id_name_table"]
-        cached_file_ids = cache_manifest["cached_file_ids"]
-        # Add the new file to the manifest
-        if not was_cached:
-            id_name_table[file_id] = file_name
-            cached_file_ids.append(file_id)
-        while len(cached_file_ids) > 10:
-            file_id_to_remove = cached_file_ids.pop(0)
-            file_name_to_remove = id_name_table[file_id_to_remove]
-            id_name_table.remove(file_id_to_remove)
-            os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
-        cache_manifest = {
-            "id_name_table": id_name_table,
-            "cached_file_ids": cached_file_ids,
-        }
-        cache_manifest_updated = True
-    if cache_manifest_updated:
-        with open(data_manager_folder / "cache_manifest.txt", "w") as f:
-            ujson.dump(cache_manifest, f, indent=2)
+    if use_cache:
+        cache_manifest_updated = False
+        if cache_manifest is None:
+            cache_manifest = {
+                "id_name_table": {file_id: file_name},
+                "cached_file_ids": [file_id],
+            }
+            cache_manifest_updated = True
+        elif not retrieved_from_cache:
+            id_name_table = cache_manifest["id_name_table"]
+            cached_file_ids = cache_manifest["cached_file_ids"]
+            # Add the new file to the manifest
+            if not retrieved_from_cache:
+                id_name_table[file_id] = file_name
+                cached_file_ids.append(file_id)
+            while len(cached_file_ids) > 10:
+                file_id_to_remove = cached_file_ids.pop(0)
+                file_name_to_remove = id_name_table[file_id_to_remove]
+                id_name_table.remove(file_id_to_remove)
+                os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
+            cache_manifest = {
+                "id_name_table": id_name_table,
+                "cached_file_ids": cached_file_ids,
+            }
+            cache_manifest_updated = True
+        if cache_manifest_updated:
+            with open(data_manager_folder / "cache_manifest.txt", "w") as f:
+                ujson.dump(cache_manifest, f, indent=2)
 
-    # Write the actual data file to the cache
-    if not was_cached:
-        file_content = orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY)
-        with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
-            f.write(file_content)
+        # Write the actual data file to the cache
+        if not retrieved_from_cache:
+            file_content = orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY)
+            with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
+                f.write(file_content)
 
     return data
 
