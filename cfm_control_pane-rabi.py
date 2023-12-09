@@ -391,7 +391,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.60, 4.75, 6):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
 
@@ -425,7 +425,7 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        # do_resonance(nv_list, uwave_list)
+        do_resonance(nv_list, uwave_list)
         # do_resonance_zoom(nv_list, uwave_list)
         # do_rabi(nv_list, uwave_list)
         # do_optimize_scc(nv_list, uwave_list)
