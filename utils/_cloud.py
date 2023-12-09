@@ -65,25 +65,42 @@ def download(file_name, ext, file_id=None):
     return file_content, file_id, file_name
 
 
-def upload(folder_path, temp_file_path):
+# def upload(folder_path, temp_file_path):
+#     """Upload file to the cloud
+
+#     Parameters
+#     ----------
+#     folder_path : Path
+#         Folder path to upload to. Form should be folder1/folder2/... where folder1
+#         is under directly nvdata
+#     temp_file_path : Path
+#         Full file path to write the file to before it can be uploaded to the cloud.
+#         Get this by calling dm.get_file_path()
+#     """
+#     folder_id = get_folder_id(folder_path)
+#     new_file = box_client.folder(folder_id).upload(str(temp_file_path))
+#     return new_file.id
+
+
+def upload(file_path_w_ext, content):
     """Upload file to the cloud
 
     Parameters
     ----------
-    folder_path : Path
-        Folder path to upload to. Form should be folder1/folder2/... where folder1
-        is under directly nvdata
-    temp_file_path : Path
-        Full file path to write the file to before it can be uploaded to the cloud.
-        Get this by calling dm.get_file_path()
+    file_path : Path
+        File path to upload to. Form should be folder1/folder2/... where folder1
+        is under directly nvdata. Should include extension
+    content : Bytes
+        Bytes to write to the file
     """
-    folder_id = id_folder(folder_path)
-    new_file = box_client.folder(folder_id).upload(str(temp_file_path))
-
+    folder_path = file_path_w_ext.parent
+    folder_id = get_folder_id(folder_path)
+    file_name = file_path_w_ext.name
+    new_file = box_client.folder(folder_id).upload_stream(content, file_name)
     return new_file.id
 
 
-def id_folder(folder_path):
+def get_folder_id(folder_path):
     """Gets the Box ID of the specified folder. Creates the folder if it does
     not exist yet
 
@@ -99,10 +116,10 @@ def id_folder(folder_path):
         ID of the folder
     """
     folder_path_parts = list(folder_path.parts)
-    return _id_folder_recursion(folder_path_parts)
+    return _get_folder_id_recursion(folder_path_parts)
 
 
-def _id_folder_recursion(folder_path_parts, start_id=nvdata_folder_id):
+def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_folder_id):
     """
     Starting from nvdata, find each subsequent folder in folder_path_parts, finally
     returning the ID of the last folder. Create the folders that don't exist yet
@@ -126,7 +143,7 @@ def _id_folder_recursion(folder_path_parts, start_id=nvdata_folder_id):
     if len(folder_path_parts) == 0:
         return target_folder_id
     else:
-        return _id_folder_recursion(folder_path_parts, start_id=target_folder_id)
+        return _get_folder_id_recursion(folder_path_parts, start_id=target_folder_id)
 
 
 if __name__ == "__main__":

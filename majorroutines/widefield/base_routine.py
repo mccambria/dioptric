@@ -141,7 +141,7 @@ def main(
         return sig_counts, ref_counts, raw_data
     else:
         counts = sig_counts
-        raw_data = {"counts": counts}
+        raw_data |= {"counts": counts}
         return counts, raw_data
 
 
