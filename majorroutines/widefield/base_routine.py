@@ -93,6 +93,7 @@ def main(
             # Try 5 times then give up
             num_attempts = 5
             attempt_ind = 0
+            start = time.time()
             while True:
                 try:
                     pulse_gen.stream_start()
@@ -116,6 +117,8 @@ def main(
                         raise RuntimeError("Maxed out number of attempts")
             if attempt_ind > 0:
                 print(f"{attempt_ind} crashes occurred")
+            stop = time.time()
+            print(f"rep_time: {start - stop}")
 
         camera.disarm()
         for ind in uwave_ind_list:

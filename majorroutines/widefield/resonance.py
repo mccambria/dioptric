@@ -145,12 +145,15 @@ def main(
     ### Collect the data
 
     def step_fn(freq_ind):
+        start = time.time()
         freq = freqs[freq_ind]
         sig_gen.set_freq(freq)
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.extend([sig_gen_name, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+        stop = time.time()
+        print(f"step_fn: {stop-start}")
 
     counts, raw_data = base_routine.main(
         nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, step_fn
