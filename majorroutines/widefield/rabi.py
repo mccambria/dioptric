@@ -154,6 +154,8 @@ def main(
 
     tb.reset_cfm()
 
+    kpl.show()
+
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
@@ -178,10 +180,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    start = time.time()
     data = dm.get_raw_data(file_id=1382892086081)
-    stop = time.time()
-    print(stop - start)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

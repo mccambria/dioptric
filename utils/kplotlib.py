@@ -256,10 +256,10 @@ def init_kplotlib(
     plt.rcParams["font.size"] = FontSize[default_font_size.value]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
-    plt.rcParams["image.cmap"] = "inferno"
-    plt.rcParams["figure.constrained_layout.use"] = constrained_layout
     plt.rcParams["savefig.format"] = "svg"
     plt.rcParams["figure.max_open_warning"] = 100
+    plt.rcParams["image.cmap"] = "inferno"
+    plt.rcParams["figure.constrained_layout.use"] = constrained_layout
 
 
 def get_default_color(ax, plot_type):
@@ -361,14 +361,13 @@ def tex_escape(text):
     return regex.sub(lambda match: conv[match.group()], text)
 
 
-def flush_update(ax=None, fig=None):
-    """Call this after making some change to an existing figure to have the figure
-    actually update in the window
+def show(block=False):
     """
-    if fig is None:
-        fig = ax.get_figure()
-    fig.canvas.draw()
+    Show the current figures. Also processes any pending updates to the figures
+    """
+    fig = plt.gcf()
     fig.canvas.flush_events()
+    plt.show(block=block)
 
 
 # endregion
@@ -464,9 +463,7 @@ def plot_line(ax, x, y, size=None, **kwargs):
     ax.plot(x, y, **params)
 
 
-def plot_line_update(
-    ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True, flush=True
-):
+def plot_line_update(ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True):
     """Updates a plot created by plot_line
 
     Parameters
@@ -483,9 +480,6 @@ def plot_line_update(
         Update the x limits of the plot? By default True
     relim_y : bool, optional
         Update the y limits of the plot? By default True
-    flush : bool, optional
-        Flush the updates (i.e. render them)? If False, call flush_update
-        yoursel. By default True
     """
 
     lines = ax.get_lines()
@@ -500,8 +494,8 @@ def plot_line_update(
         ax.relim()
         ax.autoscale_view(scalex=relim_x, scaley=relim_y)
 
-    if flush:
-        flush_update(ax)
+    # Call show to update the actual display
+    show()
 
 
 def imshow(
@@ -574,7 +568,7 @@ def imshow_update(ax, img_array, cmin=None, cmax=None):
     else:
         img.autoscale()
     img.autoscale()
-    flush_update(ax)
+    show()
 
 
 def on_click_image(event):
