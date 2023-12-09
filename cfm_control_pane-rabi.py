@@ -258,8 +258,8 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.66
-    magnet_angle = 0
+    z_coord = 4.64
+    magnet_angle = 60
 
     nv_ref = {
         "coords": [None, None, z_coord],
@@ -391,11 +391,11 @@ if __name__ == "__main__":
         # for z in np.linspace(4.60, 4.75, 6):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []

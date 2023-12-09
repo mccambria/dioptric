@@ -79,7 +79,7 @@ def main(
         shuffle(step_ind_list)
 
         camera.arm()
-        for ind in range(uwave_ind_list):
+        for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_on()
 
@@ -118,7 +118,7 @@ def main(
                 print(f"{attempt_ind} crashes occurred")
 
         camera.disarm()
-        for ind in range(uwave_ind_list):
+        for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_off()
         optimize.optimize_pixel(repr_nv_sig)
