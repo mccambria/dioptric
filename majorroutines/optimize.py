@@ -445,8 +445,6 @@ def prepare_microscope(nv_sig):
         rotation_stage_server = tb.get_server_magnet_rotation()
         rotation_stage_server.set_angle(magnet_angle)
 
-    time.sleep(0.01)
-
 
 def main(
     nv_sig,
