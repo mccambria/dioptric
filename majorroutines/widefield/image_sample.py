@@ -262,6 +262,8 @@ def main(
     
     plt.show()
 
+    kpl.show()
+
     timestamp = dm.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,

@@ -240,6 +240,8 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
 
     tb.reset_cfm()
 
+    kpl.show()
+
     timestamp = dm.get_time_stamp()
     nv_name = nv_sig["name"]
     # Save sub figs
