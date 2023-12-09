@@ -362,8 +362,7 @@ if __name__ == "__main__":
     try:
         # pass
 
-        cxn = common.labrad_connect()
-        mag_rot_server = tb.get_server_magnet_rotation(cxn)
+        mag_rot_server = tb.get_server_magnet_rotation()
         # mag_rot_server.set_angle(magnet_angle)
         print(mag_rot_server.get_angle())
 
@@ -392,7 +391,7 @@ if __name__ == "__main__":
         # for z in np.linspace(4.60, 4.75, 6):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
 
@@ -426,7 +425,7 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        do_resonance(nv_list, uwave_list)
+        # do_resonance(nv_list, uwave_list)
         # do_resonance_zoom(nv_list, uwave_list)
         # do_rabi(nv_list, uwave_list)
         # do_optimize_scc(nv_list, uwave_list)
