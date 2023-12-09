@@ -24,7 +24,6 @@ import numpy as np
 import socket
 import labrad
 import copy
-from utils.constants import *  # Star import is bad practice, but useful here for json deescape
 
 data_manager_folder = common.get_data_manager_folder()
 
@@ -154,12 +153,12 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         raw_data["opx_config"] = opx_config_copy
 
     # Upload raw data to the cloud
-    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY
+    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
     content = orjson.dumps(raw_data, option=option)
-    _cloud.upload(file_path_txt, content)
+    _cloud.upload(file_path_txt, BytesIO(content))
 
-    stop = time.time()
-    print(stop - start)
+    # stop = time.time()
+    # print(stop - start)
 
 
 # endregion

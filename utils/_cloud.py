@@ -8,6 +8,7 @@ Created November 18th, 2023
 @author: mccambria
 """
 
+import time
 from utils import common
 from boxsdk import Client, JWTAuth
 
@@ -90,11 +91,14 @@ def upload(file_path_w_ext, content):
     file_path : Path
         File path to upload to. Form should be folder1/folder2/... where folder1
         is under directly nvdata. Should include extension
-    content : Bytes
-        Bytes to write to the file
+    content : BytesIO
+        Byte stream to write to the file
     """
     folder_path = file_path_w_ext.parent
+    start = time.time()
     folder_id = get_folder_id(folder_path)
+    stop = time.time()
+    print(stop - start)
     file_name = file_path_w_ext.name
     new_file = box_client.folder(folder_id).upload_stream(content, file_name)
     return new_file.id
