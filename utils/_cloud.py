@@ -8,12 +8,14 @@ Created November 18th, 2023
 @author: mccambria
 """
 
+from pathlib import Path
 import time
 from utils import common
 from boxsdk import Client, JWTAuth
 
 nvdata_folder_id = "235146666549"  # ID for the nvdata folder in Box
 data_manager_folder = common.get_data_manager_folder()
+folder_path_cache = {}
 
 try:
     box_auth_file_name = "dioptric_box_authorization.json"
@@ -119,8 +121,17 @@ def get_folder_id(folder_path):
     str
         ID of the folder
     """
+
+    # See if the ID is stored in the cache
+    global folder_path_cache
+    if folder_path in folder_path_cache:
+        return folder_path_cache[folder_path]
+
+    # If it's not in the cache, look it up from the cloud
     folder_path_parts = list(folder_path.parts)
-    return _get_folder_id_recursion(folder_path_parts)
+    folder_id = _get_folder_id_recursion(folder_path_parts)
+    folder_path_cache[folder_path] = folder_id
+    return folder_id
 
 
 def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_folder_id):
@@ -151,4 +162,8 @@ def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_folder_id):
 
 
 if __name__ == "__main__":
-    pass
+    for ind in range(3):
+        start = time.time()
+        folder_id = get_folder_id(Path("pc_rabi/branch_master/rabi/2023_12"))
+        stop = time.time()
+        print(stop - start)
