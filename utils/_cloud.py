@@ -97,10 +97,7 @@ def upload(file_path_w_ext, content):
         Byte stream to write to the file
     """
     folder_path = file_path_w_ext.parent
-    start = time.time()
     folder_id = get_folder_id(folder_path)
-    stop = time.time()
-    print(stop - start)
     file_name = file_path_w_ext.name
     new_file = box_client.folder(folder_id).upload_stream(content, file_name)
     return new_file.id

@@ -259,6 +259,8 @@ def main(
     ### Clean up and save the data
 
     tb.reset_cfm()
+    
+    plt.show()
 
     timestamp = dm.get_time_stamp()
     raw_data = {
