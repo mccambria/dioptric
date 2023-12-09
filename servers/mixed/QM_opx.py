@@ -144,19 +144,20 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         handled in the sequence build for the OPX
         """
 
+        start = time.time()
+
         # Just do nothing if the sequence has already been compiled previously
         key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
         if key in self.compiled_programs:
             program_id, seq_ret_vals = self.compiled_programs[key]
+            logging.info("Precompiled")
         else:  # Compile and store for next time
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
             program_id = self.opx.compile(seq)
             self.compiled_programs.clear()  # MCC just store one program for now, the most recent
             self.compiled_programs[key] = [program_id, seq_ret_vals]
+            logging.info("New compile")
 
-        start = time.time()
-        seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-        program_id = self.opx.compile(seq)
         stop = time.time()
         logging.info(f"Compile time: {round(stop-start, 3)}")
 
