@@ -61,18 +61,18 @@ def get_mod_type(laser_name):
     return mod_type.name
 
 
-def laser_off(cxn, laser_name):
-    laser_switch_sub(cxn, False, laser_name)
+def laser_off(laser_name):
+    laser_switch_sub(False, laser_name)
 
 
-def laser_on(cxn, laser_name, laser_power=None):
-    laser_switch_sub(cxn, True, laser_name, laser_power)
+def laser_on(laser_name, laser_power=None):
+    laser_switch_sub(True, laser_name, laser_power)
 
 
-def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
+def laser_switch_sub(turn_on, laser_name, laser_power=None):
     config = common.get_config_dict()
     mod_type = config["Optics"][laser_name]["mod_type"]
-    pulse_gen = get_server_pulse_gen(cxn)
+    pulse_gen = get_server_pulse_gen()
 
     if mod_type is ModMode.DIGITAL:
         if turn_on:
@@ -93,9 +93,7 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
         pulse_gen.constant([])
 
 
-def set_laser_power(
-    cxn, nv_sig=None, laser_key=None, laser_name=None, laser_power=None
-):
+def set_laser_power(nv_sig=None, laser_key=None, laser_name=None, laser_power=None):
     """Set a laser power, or return it for analog modulation.
     Specify either a laser_key/nv_sig or a laser_name/laser_power.
     """
@@ -120,13 +118,13 @@ def set_laser_power(
     if mod_type == ModMode.ANALOG:
         return laser_power
     else:
-        laser_server = get_filter_server(cxn, laser_name)
+        laser_server = get_filter_server(laser_name)
         if (laser_power is not None) and (laser_server is not None):
             laser_server.set_laser_power(laser_power)
         return None
 
 
-def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
+def set_filter(nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
     """optics_key should be either 'collection' or a laser key.
     Specify either an optics_key/nv_sig or an optics_name/filter_name.
     """
@@ -149,7 +147,7 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
     if (optics_name is None) or (filter_name is None):
         return
 
-    filter_server = get_filter_server(cxn, optics_name)
+    filter_server = get_filter_server(optics_name)
     if filter_server is None:
         return
     config = common.get_config_dict()
@@ -157,25 +155,27 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
     filter_server.set_filter(pos)
 
 
-def get_filter_server(cxn, optics_name):
+def get_filter_server(optics_name):
     """Try to get a filter server. If there isn't one listed in the config,
     just return None.
     """
     try:
         config = common.get_config_dict()
         server_name = config["Optics"][optics_name]["filter_server"]
+        cxn = common.labrad_connect()
         return getattr(cxn, server_name)
     except Exception:
         return None
 
 
-def get_laser_server(cxn, laser_name):
+def get_laser_server(laser_name):
     """Try to get a laser server. If there isn't one listed in the config,
     just return None.
     """
     try:
         config = common.get_config_dict()
         server_name = config["Optics"][laser_name]["laser_server"]
+        cxn = common.labrad_connect()
         return getattr(cxn, server_name)
     except Exception:
         return None
@@ -270,14 +270,14 @@ def decode_seq_args(seq_args_string):
         return json.loads(seq_args_string)
 
 
-def get_pulse_streamer_wiring(cxn):
-    config = common.get_config_dict(cxn)
+def get_pulse_streamer_wiring():
+    config = common.get_config_dict()
     wiring = config["Wiring"]["PulseGen"]
     return wiring
 
 
-def get_tagger_wiring(cxn):
-    config = common.get_config_dict(cxn)
+def get_tagger_wiring():
+    config = common.get_config_dict()
     wiring = config["Wiring"]["Tagger"]
     return wiring
 
@@ -602,59 +602,59 @@ def get_apd_gate_channel():
 # returns a usable reference to the requested server (i.e. cxn.<server>)
 
 
-def get_server_pulse_gen(cxn):
+def get_server_pulse_gen():
     """Get the pulse gen server for this setup, e.g. opx or swabian"""
-    return common.get_server(cxn, "pulse_gen")
+    return common.get_server("pulse_gen")
 
 
-def get_server_charge_readout_laser(cxn):
+def get_server_charge_readout_laser():
     """Get the laser for charge readout"""
-    return common.get_server(cxn, "charge_readout_laser")
+    return common.get_server("charge_readout_laser")
 
 
-def get_server_arb_wave_gen(cxn):
+def get_server_arb_wave_gen():
     """Get the arbitrary waveform generator server for this setup, e.g. opx or keysight"""
-    return common.get_server(cxn, "arb_wave_gen")
+    return common.get_server("arb_wave_gen")
 
 
-def get_server_camera(cxn):
+def get_server_camera():
     """Get the camera server"""
-    return common.get_server(cxn, "camera")
+    return common.get_server("camera")
 
 
-def get_server_counter(cxn):
+def get_server_counter():
     """Get the photon counter server for this setup, e.g. opx or swabian"""
-    return common.get_server(cxn, "counter")
+    return common.get_server("counter")
 
 
-def get_server_tagger(cxn):
+def get_server_tagger():
     """Get the photon time tagger server for this setup, e.g. opx or swabian"""
-    return common.get_server(cxn, "tagger")
+    return common.get_server("tagger")
 
 
-def get_server_temp_controller(cxn):
-    return common.get_server(cxn, "temp_controller")
+def get_server_temp_controller():
+    return common.get_server("temp_controller")
 
 
-def get_server_temp_monitor(cxn):
-    return common.get_server(cxn, "temp_monitor")
+def get_server_temp_monitor():
+    return common.get_server("temp_monitor")
 
 
-def get_server_power_supply(cxn):
-    return common.get_server(cxn, "power_supply")
+def get_server_power_supply():
+    return common.get_server("power_supply")
 
 
-def get_server_sig_gen(cxn, state=None, ind=None):
+def get_server_sig_gen(state=None, ind=None):
     """Get the signal generator that controls transitions to the specified NV state"""
     if state is not None:
-        return common.get_server(cxn, f"sig_gen_{state.name}")
+        return common.get_server(f"sig_gen_{state.name}")
     else:
-        return common.get_server(cxn, f"sig_gen_{ind}")
+        return common.get_server(f"sig_gen_{ind}")
 
 
-def get_server_magnet_rotation(cxn):
+def get_server_magnet_rotation():
     """Get the signal generator that controls magnet rotation angle"""
-    return common.get_server(cxn, "magnet_rotation")
+    return common.get_server("magnet_rotation")
 
 
 # endregion
@@ -965,18 +965,13 @@ def poll_safe_stop():
 # region Reset hardware
 
 
-def reset_cfm(cxn=None):
+def reset_cfm():
     """Reset our cfm so that it's ready to go for a new experiment. Avoids
     unnecessarily resetting components that may suffer hysteresis (ie the
     components that control xyz since these need to be reset in any
     routine where they matter anyway).
     """
-    if cxn is None:
-        cxn = common.labrad_connect()
-    reset_cfm_with_cxn(cxn)
-
-
-def reset_cfm_with_cxn(cxn):
+    cxn = common.labrad_connect()
     cxn_server_names = cxn.servers
     for name in cxn_server_names:
         server = cxn[name]

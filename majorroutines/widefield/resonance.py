@@ -125,18 +125,16 @@ def main(
     nv_list,
     uwave_list,
     uwave_ind,
-    freq_center,
-    freq_range,
     num_steps,
     num_reps,
     num_runs,
+    freq_center,
+    freq_range,
 ):
     ### Some initial setup
 
-    cxn = common.labrad_connect()
-
-    pulse_gen = tb.get_server_pulse_gen(cxn)
-    sig_gen = tb.get_server_sig_gen(cxn, ind=uwave_ind)
+    pulse_gen = tb.get_server_pulse_gen()
+    sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
     uwave_dict = uwave_list[uwave_ind]
@@ -155,7 +153,7 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        cxn, nv_list, uwave_list, num_steps, num_reps, num_runs, step_fn
+        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, step_fn
     )
 
     ### Process and plot
@@ -172,20 +170,15 @@ def main(
 
     ### Clean up and return
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
 
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
-        "nv_list": nv_list,
-        "num_reps": num_reps,
-        "num_steps": num_steps,
-        "num_runs": num_runs,
+        "freqs": freqs,
         "freq-units": "GHz",
         "freq_range": freq_range,
         "freq_center": freq_center,
-        "counts": counts,
-        "counts-units": "photons",
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

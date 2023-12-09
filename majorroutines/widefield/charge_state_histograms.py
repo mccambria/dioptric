@@ -25,8 +25,6 @@ from scipy import ndimage
 import os
 import time
 
-repr_nv_ind = 0
-
 
 def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     readout = nv_sig[LaserKey.CHARGE_READOUT]["duration"]
@@ -71,8 +69,7 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
 
     ### Collect the data
 
-    with common.labrad_connect() as cxn:
-        ret_vals = _collect_data(cxn, nv_list, num_reps, diff_polarize, diff_ionize)
+    ret_vals = _collect_data(nv_list, num_reps, diff_polarize, diff_ionize)
     (
         sig_img_array_list,
         ref_img_array_list,
@@ -100,7 +97,8 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
 
-    repr_nv_name = nv_list[repr_nv_ind]["name"]
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig["name"]
     keys_to_compress = [
         "sig_counts_lists",
         "ref_counts_lists",
@@ -133,7 +131,8 @@ def process_data(nv_list, sig_img_array_list, ref_img_array_list):
 
     # Get a nice average image for optimization
     avg_img_array = np.sum(ref_img_array_list, axis=0) / num_reps
-    optimize.optimize_pixel_with_img_array(avg_img_array, nv_list[repr_nv_ind])
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    optimize.optimize_pixel_with_img_array(avg_img_array, repr_nv_sig)
 
     sig_counts_lists = [[] for ind in range(num_nvs)]
     ref_counts_lists = [[] for ind in range(num_nvs)]
@@ -156,23 +155,23 @@ def process_data(nv_list, sig_img_array_list, ref_img_array_list):
     return sig_counts_lists, ref_counts_lists
 
 
-def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
+def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Some initial setup
 
     # First NV to represent the others
-    nv_sig = nv_list[repr_nv_ind]
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
     laser_key = LaserKey.CHARGE_READOUT
-    optimize.prepare_microscope(cxn, nv_sig)
-    camera = tb.get_server_camera(cxn)
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    optimize.prepare_microscope(nv_sig)
+    camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
 
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
-    tb.set_filter(cxn, nv_sig, laser_key)
+    tb.set_filter(nv_sig, laser_key)
 
-    pos.set_xyz_on_nv(cxn, nv_sig)
+    pos.set_xyz_on_nv(nv_sig)
 
     ### Load the pulse generator
 
@@ -239,7 +238,7 @@ def _collect_data(cxn, nv_list, num_reps=100, diff_polarize=False, diff_ionize=T
 
     ### Clean up and return
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
 
     timestamp = dm.get_time_stamp()
     nv_name = nv_sig["name"]

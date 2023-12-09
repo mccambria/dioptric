@@ -29,7 +29,6 @@ from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 
 
 def main(
-    cxn,
     nv_list,
     uwave_list,
     uwave_ind,
@@ -41,20 +40,23 @@ def main(
 ):
     ### Some initial setup
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    pos.set_xyz_on_nv(cxn, repr_nv_sig)
+    pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
 
-    camera = tb.get_server_camera(cxn)
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
 
-    num_uwave = len(uwave_list)
-
-    for ind in range(num_uwave):
+    # Sig gen setup
+    if type(uwave_ind) == int:
+        uwave_ind_list = [uwave_ind]
+    else:
+        uwave_ind_list = uwave_ind
+    for ind in uwave_ind_list:
         uwave_dict = uwave_list[ind]
-        sig_gen = tb.get_server_sig_gen(cxn, ind=ind)
+        sig_gen = tb.get_server_sig_gen(ind=ind)
         uwave_power = uwave_dict["uwave_power"]
         freq = uwave_dict["frequency"]
         sig_gen.set_amp(uwave_power)
@@ -77,8 +79,8 @@ def main(
         shuffle(step_ind_list)
 
         camera.arm()
-        for ind in range(num_uwave):
-            sig_gen = tb.get_server_sig_gen(cxn, ind=ind)
+        for ind in range(uwave_ind_list):
+            sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_on()
 
         for step_ind in step_ind_list:
@@ -116,19 +118,31 @@ def main(
                 print(f"{attempt_ind} crashes occurred")
 
         camera.disarm()
-        sig_gen.uwave_off()
+        for ind in range(uwave_ind_list):
+            sig_gen = tb.get_server_sig_gen(ind=ind)
+            sig_gen.uwave_off()
         optimize.optimize_pixel(repr_nv_sig)
 
     ### Return
 
     raw_data = {
         "step_ind_master_list": step_ind_master_list,
+        "nv_list": nv_list,
+        "uwave_list": uwave_list,
+        "uwave_ind": uwave_ind,
+        "num_reps": num_reps,
+        "num_steps": num_steps,
+        "num_runs": num_runs,
+        "counts-units": "photons",
     }
 
     if reference:
+        raw_data |= {"sig_counts": sig_counts, "ref_counts": ref_counts}
         return sig_counts, ref_counts, raw_data
     else:
-        return sig_counts, raw_data
+        counts = sig_counts
+        raw_data = {"counts": counts}
+        return counts, raw_data
 
 
 if __name__ == "__main__":

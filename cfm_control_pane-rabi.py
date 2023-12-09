@@ -126,7 +126,7 @@ def do_optimize_scc(nv_list, uwave_list):
     num_runs = 16
     uwave_ind = 0
     optimize_scc.main(
-        nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
+        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
     )
 
 
@@ -141,11 +141,11 @@ def do_resonance(nv_list, uwave_list):
         nv_list,
         uwave_list,
         uwave_ind,
-        freq_center,
-        freq_range,
         num_steps,
         num_reps,
         num_runs,
+        freq_center,
+        freq_range,
     )
 
 
@@ -160,11 +160,11 @@ def do_resonance_zoom(nv_list, uwave_list):
         nv_list,
         uwave_list,
         uwave_ind,
-        freq_center,
-        freq_range,
         num_steps,
         num_reps,
         num_runs,
+        freq_center,
+        freq_range,
     )
 
 
@@ -176,7 +176,7 @@ def do_rabi(nv_list, uwave_list):
     num_runs = 48
     uwave_ind = 0
     rabi.main(
-        nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
+        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
     )
 
 

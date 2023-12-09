@@ -56,18 +56,16 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
 
 def main(
-    nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
+    nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
 ):
     ### Some initial setup
-
-    cxn = common.labrad_connect()
 
     seq_file = "resonance_ref.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
     nv_list_mod = copy.deepcopy(nv_list)
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    pulse_gen = tb.get_server_pulse_gen()
 
-    sig_gen = tb.get_server_sig_gen(cxn, uwave_ind)
+    sig_gen = tb.get_server_sig_gen(uwave_ind)
     sig_gen_name = sig_gen.name
     uwave_dict = uwave_list[uwave_ind]
     uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
@@ -84,7 +82,14 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     sig_counts, ref_counts, raw_data = base_routine.main(
-        cxn, nv_list, uwave_list, num_steps, num_reps, num_runs, step_fn, reference=True
+        nv_list,
+        uwave_list,
+        uwave_ind,
+        num_steps,
+        num_reps,
+        num_runs,
+        step_fn,
+        reference=True,
     )
 
     ### Process and plot
@@ -93,22 +98,15 @@ def main(
 
     ### Clean up and return
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
 
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
-        "nv_list": nv_list,
-        "num_reps": num_reps,
-        "num_steps": num_steps,
-        "num_runs": num_runs,
         "taus": taus,
         "tau-units": "ns",
         "min_tau": min_tau,
         "max_tau": max_tau,
-        "sig_counts": sig_counts,
-        "ref_counts": ref_counts,
-        "counts-units": "photons",
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

@@ -124,16 +124,14 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
 
 def main(
-    nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
+    nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
 ):
     ### Some initial setup
 
-    cxn = common.labrad_connect()
-
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    pulse_gen = tb.get_server_pulse_gen()
     seq_file = "resonance.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
-    sig_gen = tb.get_server_sig_gen(cxn, uwave_ind)
+    sig_gen = tb.get_server_sig_gen(uwave_ind)
     sig_gen_name = sig_gen.name
 
     ### Collect the data
@@ -146,7 +144,7 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        cxn, nv_list, uwave_list, num_steps, num_reps, num_runs, step_fn
+        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, step_fn
     )
 
     ### Process and plot
@@ -163,26 +161,15 @@ def main(
 
     ### Clean up and return
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
 
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
-        "nv_list": nv_list,
-        "uwave_list": uwave_list,
-        "uwave_ind": uwave_ind,
-        "num_reps": num_reps,
-        "num_steps": num_steps,
-        "num_runs": num_runs,
-        "readout-units": "ms",
         "taus": taus,
         "tau-units": "ns",
         "min_tau": max_tau,
         "max_tau": max_tau,
-        "counts": counts,
-        "counts-units": "photons",
-        "img_arrays": img_arrays,
-        "img_array-units": "ADUs",
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

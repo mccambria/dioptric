@@ -78,11 +78,12 @@ def get_repo_path():
     return _get_os_config_val("repo_path")
 
 
-def get_server(cxn, server_key):
+def get_server(server_key):
     server_name = get_server_name(server_key)
     if server_name is None:
         return None
     else:
+        cxn = labrad_connect()
         return cxn[server_name]
 
 

@@ -184,19 +184,17 @@ def main(
 ):
     ### Some initial setup
 
-    cxn = common.labrad_connect()
-
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
     laser_key = LaserKey.IMAGING
-    optimize.prepare_microscope(cxn, nv_sig)
-    camera = tb.get_server_camera(cxn)
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    optimize.prepare_microscope(nv_sig)
+    camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
 
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
-    tb.set_filter(cxn, nv_sig, laser_key)
+    tb.set_filter(nv_sig, laser_key)
 
-    pos.set_xyz_on_nv(cxn, nv_sig)
+    pos.set_xyz_on_nv(nv_sig)
 
     ### Load the pulse generator
 
@@ -260,7 +258,7 @@ def main(
 
     ### Clean up and save the data
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()
 
     timestamp = dm.get_time_stamp()
     raw_data = {
