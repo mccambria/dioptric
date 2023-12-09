@@ -8,23 +8,14 @@ Created on November 29th, 2023
 """
 
 
-from random import shuffle
-import sys
+import time
 import matplotlib.pyplot as plt
 import numpy as np
-from majorroutines.widefield import optimize
 from utils import tool_belt as tb
 from utils import data_manager as dm
-from utils import common
 from utils import widefield as widefield
-from utils.constants import LaserKey
 from utils import kplotlib as kpl
-from utils import positioning as pos
 from utils import data_manager as dm
-from utils.constants import NVSpinState
-import os
-import time
-from utils.positioning import get_scan_1d as calculate_freqs
 from scipy.optimize import curve_fit
 from majorroutines.widefield import base_routine
 
@@ -175,9 +166,7 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    # keys_to_compress = ["sig_img_arrays", "ref_img_arrays"]
-    keys_to_compress = ["img_arrays"]
-    dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
@@ -189,7 +178,10 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
+    start = time.time()
     data = dm.get_raw_data(file_id=1382892086081)
+    stop = time.time()
+    print(stop - start)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -199,11 +191,6 @@ if __name__ == "__main__":
     avg_img_arrays = np.average(img_arrays, axis=1)
     taus = data["taus"]
     counts = np.array(data["counts"])
-
-    fig, ax = plt.subplots()
-    kpl.histogram(ax, counts[1, :, 6, :].flatten(), nbins=100)
-    print(np.count_nonzero(counts[1, :, 6, :] < 65))
-    print(np.count_nonzero(counts[1, :, 6, :] >= 65))
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)

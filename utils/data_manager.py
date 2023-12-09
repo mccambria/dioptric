@@ -11,11 +11,13 @@ Created November 15th, 2023
 
 from io import BytesIO
 from datetime import datetime
+import os
 import time
 from utils import common
 from utils import _cloud
 from pathlib import Path
-import json
+import ujson  # usjson is faster than standard json library
+import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
 from git import Repo
 from enum import Enum
 import numpy as np
@@ -94,15 +96,11 @@ def save_figure(fig, file_path):
             extension
     """
 
-    # Save locally
+    # Write to bytes then upload that to the cloud
     file_path_svg = file_path.with_suffix(".svg")
-    file_name = file_path_svg.name
-    temp_file_path = data_manager_folder / file_name
-    fig.savefig(str(temp_file_path), dpi=300)
-
-    # Upload to cloud
-    folder_path = file_path_svg.parent
-    _cloud.upload(folder_path, temp_file_path)
+    content = BytesIO()
+    fig.savefig(content, format="svg")
+    _cloud.upload(file_path_svg, content)
 
 
 def save_raw_data(raw_data, file_path, keys_to_compress=None):
@@ -122,66 +120,70 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     start = time.time()
     file_path_txt = file_path.with_suffix(".txt")
-    file_name = file_path_txt.name
-    folder_path = file_path_txt.parent
-    temp_file_path_txt = data_manager_folder / file_name
 
     # Work with a copy of the raw data to avoid mutation
     raw_data = copy.deepcopy(raw_data)
 
     # Compress numpy arrays to linked file
-    temp_file_path_npz = None
     if keys_to_compress is not None:
-        temp_file_path_npz = temp_file_path_txt.with_suffix(".npz")
         # Build the object to compress
         kwargs = {}
         for key in keys_to_compress:
             kwargs[key] = raw_data[key]
-        # Save it locally
-        with open(temp_file_path_npz, "wb") as f:
-            np.savez_compressed(f, **kwargs)
         # Upload to cloud
-        npz_file_id = _cloud.upload(folder_path, temp_file_path_npz)
+        content = BytesIO()
+        np.savez_compressed(content, **kwargs)
+        file_path_npz = file_path.with_suffix(".npz")
+        npz_file_id = _cloud.upload(file_path_npz, content)
         # Replace the value in the raw data with a string that tells us where
         # to find the compressed file
         for key in keys_to_compress:
             raw_data[key] = f"{npz_file_id}.npz"
 
-    # Always include the config
+    # Always include the config dict
     config = common.get_config_dict()
-    raw_data["config"] = config
+    config_copy = copy.deepcopy(config)
+    _json_escape(config_copy)
+    raw_data["config"] = config_copy
+
+    # And the OPX config dict if there is one
     opx_config = common.get_opx_config_dict()
     if opx_config is not None:
-        raw_data["opx_config"] = opx_config
+        opx_config_copy = copy.deepcopy(opx_config)
+        _json_escape(opx_config_copy)
+        raw_data["opx_config"] = opx_config_copy
 
-    _json_escape(raw_data)
+    # Upload raw data to the cloud
+    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY
+    content = orjson.dumps(raw_data, option=option)
+    _cloud.upload(file_path_txt, content)
 
-    with open(temp_file_path_txt, "w") as f:
-        json.dump(raw_data, f, indent=2)
-
-    # Upload to cloud
-    _cloud.upload(folder_path, temp_file_path_txt)
     stop = time.time()
-    # print(stop - start)
+    print(stop - start)
 
 
 # endregion
 # region Load functions
 
 
-def get_raw_data(file_name=None, file_id=None):
+def get_raw_data(file_name=None, file_id=None, use_cache=True):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
     Parameters
     ----------
     file_name : str, optional
-        Name of the raw data file to load, w/o extension. If file_name is passed
-        and file_id is None, then we'll identify the proper file by searching
-        the cloud for it. By default None
+        Name of the raw data file to load, w/o extension. If file_name is passed,
+        file_id is None, and the file is not in the cache, then we'll identify
+        the proper file by searching the cloud for it. By default None
     file_id : str, optional
-        Cloud ID of the file to load. Loaded directly from the cloud, no
+        Cloud ID of the file to load. Loaded directly from the cloud or cache, no
         search necessary. By default None
+    use_cache : bool, optional
+        Whether or not to use the cache. If True, we'll try to pull the file from
+        the cache - if it's not there already we'll add it to the cache. Otherwise
+        we'll get the file straight from the cloud and skip caching it. By default
+        True
 
     Returns
     -------
@@ -191,26 +193,90 @@ def get_raw_data(file_name=None, file_id=None):
 
     if file_id is not None:
         file_id = str(file_id)
-    file_content = _cloud.download(file_name, "txt", file_id)
-    data = json.loads(file_content)
 
-    # Find and decompress the linked numpy arrays
-    npz_file = None
-    for key in data:
-        val = data[key]
-        if not isinstance(val, str):
-            continue
-        val_split = val.split(".")
-        if val_split[-1] != "npz":
-            continue
-        if npz_file is None:
+    ### Check the cache first
+
+    # Try to open an existing cache manifest
+    if use_cache:
+        try:
+            with open(data_manager_folder / "cache_manifest.txt") as f:
+                cache_manifest = ujson.load(f)
+        except Exception as exc:
+            cache_manifest = None
+
+        # Try to open the cached file
+        try:
+            id_name_table = cache_manifest["id_name_table"]
+            if file_id is not None:
+                file_name = id_name_table[file_id]
+            with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+                file_content = f.read()
+            data = orjson.loads(file_content)
+            retrieved_from_cache = True
+        except Exception as exc:
+            retrieved_from_cache = False
+    else:
+        retrieved_from_cache = False
+
+    ### If not in cache, download from the cloud
+
+    if not retrieved_from_cache:
+        # Download the base file
+        file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
+        data = orjson.loads(file_content)
+
+        # Find and decompress the linked numpy arrays
+        for key in data:
+            val = data[key]
+            if not isinstance(val, str):
+                continue
+            val_split = val.split(".")
+            if val_split[-1] != "npz":
+                continue
             first_part = val_split[0]
             npz_file_id = first_part if first_part else None
-            npz_file_content = _cloud.download(file_name, "npz", npz_file_id)
-            npz_file = np.load(BytesIO(npz_file_content))
-        data[key] = npz_file[key]
+            npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
+            npz_data = np.load(BytesIO(npz_file_content))
+            data |= npz_data
+            break
 
-    _json_deescape(data)
+    ### Add to cache and return the data
+
+    # Update the cache manifest
+    if use_cache:
+        cache_manifest_updated = False
+        if cache_manifest is None:
+            cache_manifest = {
+                "id_name_table": {file_id: file_name},
+                "cached_file_ids": [file_id],
+            }
+            cache_manifest_updated = True
+        elif not retrieved_from_cache:
+            id_name_table = cache_manifest["id_name_table"]
+            cached_file_ids = cache_manifest["cached_file_ids"]
+            # Add the new file to the manifest
+            if not retrieved_from_cache:
+                id_name_table[file_id] = file_name
+                cached_file_ids.append(file_id)
+            while len(cached_file_ids) > 10:
+                file_id_to_remove = cached_file_ids.pop(0)
+                file_name_to_remove = id_name_table[file_id_to_remove]
+                id_name_table.remove(file_id_to_remove)
+                os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
+            cache_manifest = {
+                "id_name_table": id_name_table,
+                "cached_file_ids": cached_file_ids,
+            }
+            cache_manifest_updated = True
+        if cache_manifest_updated:
+            with open(data_manager_folder / "cache_manifest.txt", "w") as f:
+                ujson.dump(cache_manifest, f, indent=2)
+
+        # Write the actual data file to the cache
+        if not retrieved_from_cache:
+            file_content = orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY)
+            with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
+                f.write(file_content)
 
     return data
 
@@ -268,49 +334,8 @@ def _get_branch_name():
     return repo.active_branch.name
 
 
-def _json_deescape(raw_data):
-    """Recursively deescape a raw data object from JSON.
-    Currently just escapes enums that are saved as strings
-    """
-
-    # See what kind of loop we need to do through the object
-    if isinstance(raw_data, dict):
-        # Just get the original keys
-        keys = list(raw_data.keys())
-    elif isinstance(raw_data, list):
-        keys = range(len(raw_data))
-
-    for key in keys:
-        val = raw_data[key]
-
-        # Deescape the key itself if necessary
-        try:
-            if isinstance(key, str):
-                str_key = key
-                eval_key = eval(key)
-                if isinstance(eval_key, Enum):
-                    raw_data[eval_key] = val
-                    del raw_data[str_key]
-                    key = eval_key
-        except:
-            pass
-
-        # Descape the value
-        try:
-            if isinstance(val, str):
-                eval_val = eval(val)
-                if isinstance(eval_val, Enum):
-                    raw_data[key] = eval_val
-        except:
-            pass
-
-        # Recursion for dictionaries and lists
-        if isinstance(val, dict) or isinstance(val, list):
-            _json_deescape(val)
-
-
 def _json_escape(raw_data):
-    """Recursively escape a raw data object for JSON"""
+    """Recursively escape a raw data object for JSON. Slow, so use sparingly"""
 
     # See what kind of loop we need to do through the object
     if isinstance(raw_data, dict):
@@ -321,21 +346,13 @@ def _json_escape(raw_data):
 
     for key in keys:
         val = raw_data[key]
-
-        # Escape the key itself if necessary
-        if isinstance(key, Enum):
-            raw_data[str(key)] = val
-            del raw_data[key]
 
         # Escape the value
-        if type(val) == np.ndarray:
-            raw_data[key] = val.tolist()
-        elif isinstance(val, Enum):
-            raw_data[key] = str(val)
-        elif isinstance(val, Path):
+        if isinstance(val, Path):
             raw_data[key] = str(val)
         elif isinstance(val, type):
             raw_data[key] = str(val)
+
         # Recursion for dictionaries and lists
         elif isinstance(val, dict) or isinstance(val, list):
             _json_escape(val)
