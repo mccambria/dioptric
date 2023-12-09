@@ -12,12 +12,7 @@ import numpy as np
 from numpy import inf
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-from majorroutines.optimize import (
-    main,
-    main_with_cxn,
-    stationary_count_lite,
-    prepare_microscope,
-)
+from majorroutines.optimize import main, stationary_count_lite, prepare_microscope
 import time
 import copy
 from utils import tool_belt as tb
@@ -123,7 +118,7 @@ def optimize_pixel_to_scanning_calibration(cxn):
         # Optimize scanning coordinates
         if ind > 0:
             nv["coords"][2] = z_final
-        ret_vals = main_with_cxn(cxn, nv, drift_adjust=False, set_drift=False)
+        ret_vals = main(nv, drift_adjust=False, set_drift=False)
         scanning_coords = ret_vals[0]
         if ind == 0:
             z_final = scanning_coords[2]

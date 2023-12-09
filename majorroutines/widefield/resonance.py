@@ -26,6 +26,7 @@ import os
 import time
 from utils.positioning import get_scan_1d as calculate_freqs
 from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
+from majorroutines.widefield import base_routine
 
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
@@ -134,96 +135,28 @@ def main(
 
     cxn = common.labrad_connect()
 
-    # First NV to represent the others
-    repr_nv_ind = 0
-    repr_nv_sig = nv_list[repr_nv_ind]
-    pos.set_xyz_on_nv(cxn, repr_nv_sig)
-    num_nvs = len(nv_list)
-
-    camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
-    sig_gen = tb.get_server_sig_gen(cxn, state)
-    sig_gen_name = sig_gen.name
-
+    sig_gen = tb.get_server_sig_gen(cxn, ind=uwave_ind)
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    # uwave_dict = repr_nv_sig[state]  # MCC
-    # uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
-    # uwave_power = uwave_dict["uwave_power"]
-    uwave_duration = 64
-    uwave_power = 9
-    sig_gen.set_amp(uwave_power)
-
+    uwave_dict = uwave_list[uwave_ind]
+    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     seq_file = "resonance.py"
-
-    ### Data tracking
-
-    counts = np.empty((num_nvs, num_runs, num_steps, num_reps))
-    resolution = widefield._get_camera_resolution()
-    img_arrays = np.empty((num_runs, num_steps, *resolution), dtype=np.uint16)
-    freq_ind_master_list = [[] for ind in range(num_runs)]
-    freq_ind_list = list(range(0, num_steps))
+    sig_gen_name = sig_gen.name
 
     ### Collect the data
 
-    for run_ind in range(num_runs):
-        shuffle(freq_ind_list)
-
-        # Load the pulse gen from scratch so we have up-to-date AOD frequencies
+    def step_fn(freq_ind):
+        freq = freqs[freq_ind]
+        sig_gen.set_freq(freq)
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.extend([sig_gen_name, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
-        # print(seq_args)
-        # print(seq_file)
-        # return
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-        camera.arm()
-        sig_gen.uwave_on()
-
-        for freq_ind in freq_ind_list:
-            pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
-
-            freq_ind_master_list[run_ind].append(freq_ind)
-            freq = freqs[freq_ind]
-            sig_gen.set_freq(freq)
-
-            # Try 5 times then give up
-            num_attempts = 5
-            attempt_ind = 0
-            while True:
-                try:
-                    pulse_gen.stream_start()
-                    for rep_ind in range(num_reps):
-                        img_str = camera.read()
-                        img_array = widefield.img_str_to_array(img_str)
-                        if rep_ind == 0:
-                            avg_img_array = np.copy(img_array)
-                        else:
-                            avg_img_array += img_array
-                        for nv_ind in range(num_nvs):
-                            pixel_coords = pixel_coords_list[nv_ind]
-                            counts_val = widefield.integrate_counts_from_adus(
-                                img_array, pixel_coords
-                            )
-                            counts[nv_ind, run_ind, freq_ind, rep_ind] = counts_val
-                    break
-                except Exception as exc:
-                    print(exc)
-                    camera.arm()
-                    attempt_ind += 1
-                    if attempt_ind == num_attempts:
-                        raise RuntimeError("Maxed out number of attempts")
-            if attempt_ind > 0:
-                print(f"{attempt_ind} crashes occurred")
-
-            avg_img_array = avg_img_array / num_reps
-            img_arrays[run_ind, freq_ind, :, :] = avg_img_array
-
-        camera.disarm()
-        sig_gen.uwave_off()
-
-        optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
+    counts, raw_data = base_routine.main(
+        cxn, nv_list, uwave_list, num_steps, num_reps, num_runs, step_fn
+    )
 
     ### Process and plot
 
@@ -242,30 +175,23 @@ def main(
     tb.reset_cfm(cxn)
 
     timestamp = dm.get_time_stamp()
-    raw_data = {
+    raw_data |= {
         "timestamp": timestamp,
         "nv_list": nv_list,
-        "state": state,
         "num_reps": num_reps,
         "num_steps": num_steps,
         "num_runs": num_runs,
-        "readout-units": "ms",
-        "freqs": freqs,
         "freq-units": "GHz",
         "freq_range": freq_range,
         "freq_center": freq_center,
-        "freq_ind_master_list": freq_ind_master_list,
         "counts": counts,
         "counts-units": "photons",
-        "img_arrays": img_arrays,
-        "img_array-units": "ADUs",
     }
 
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    # keys_to_compress = ["sig_img_arrays", "ref_img_arrays"]
-    keys_to_compress = ["img_arrays"]
-    dm.save_raw_data(raw_data, file_path, keys_to_compress=keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")

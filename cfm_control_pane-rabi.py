@@ -130,40 +130,54 @@ def do_optimize_scc(nv_list, uwave_list):
     )
 
 
-def do_resonance(nv_list):
+def do_resonance(nv_list, uwave_list):
     freq_center = 2.87
     freq_range = 0.150
     num_steps = 40
     num_reps = 25
     num_runs = 16
-    resonance.main(nv_list, freq_center, freq_range, num_steps, num_reps, num_runs)
-
-
-def do_resonance_zoom(nv_list):
-    freq_center = 2.81
-    freq_range = 0.05
-    num_steps = 20
-    num_reps = 50
-    num_runs = 16
+    uwave_ind = 0
     resonance.main(
         nv_list,
+        uwave_list,
+        uwave_ind,
         freq_center,
         freq_range,
         num_steps,
         num_reps,
         num_runs,
-        # NVSpinState.HIGH,
     )
 
 
-def do_rabi(nv_list):
-    uwave_freq = 2.8130
+def do_resonance_zoom(nv_list, uwave_list):
+    freq_center = 2.81
+    freq_range = 0.05
+    num_steps = 20
+    num_reps = 50
+    num_runs = 16
+    uwave_ind = 0
+    resonance.main(
+        nv_list,
+        uwave_list,
+        uwave_ind,
+        freq_center,
+        freq_range,
+        num_steps,
+        num_reps,
+        num_runs,
+    )
+
+
+def do_rabi(nv_list, uwave_list):
     min_tau = 16
     max_tau = 200
     num_steps = 24
     num_reps = 50
     num_runs = 48
-    rabi.main(nv_list, uwave_freq, min_tau, max_tau, num_steps, num_reps, num_runs)
+    uwave_ind = 0
+    rabi.main(
+        nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
+    )
 
 
 def do_opx_constant_ac():
@@ -382,7 +396,7 @@ if __name__ == "__main__":
 
         # do_image_nv_list(nv_list)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []
@@ -412,9 +426,9 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_resonance(nv_list, uwave_list)
+        # do_resonance_zoom(nv_list, uwave_list)
+        # do_rabi(nv_list, uwave_list)
         # do_optimize_scc(nv_list, uwave_list)
         # do_scc_snr_check(nv_list, uwave_list)
 

@@ -32,6 +32,7 @@ def main(
     cxn,
     nv_list,
     uwave_list,
+    uwave_ind,
     num_steps,
     num_reps,
     num_runs,
@@ -49,7 +50,9 @@ def main(
     camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
-    for ind in range(len(uwave_list)):
+    num_uwave = len(uwave_list)
+
+    for ind in range(num_uwave):
         uwave_dict = uwave_list[ind]
         sig_gen = tb.get_server_sig_gen(cxn, ind=ind)
         uwave_power = uwave_dict["uwave_power"]
@@ -74,7 +77,9 @@ def main(
         shuffle(step_ind_list)
 
         camera.arm()
-        sig_gen.uwave_on()
+        for ind in range(num_uwave):
+            sig_gen = tb.get_server_sig_gen(cxn, ind=ind)
+            sig_gen.uwave_on()
 
         for step_ind in step_ind_list:
             pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
@@ -112,7 +117,7 @@ def main(
 
         camera.disarm()
         sig_gen.uwave_off()
-        optimize.optimize_pixel_with_cxn(cxn, repr_nv_sig)
+        optimize.optimize_pixel(repr_nv_sig)
 
     ### Return
 
