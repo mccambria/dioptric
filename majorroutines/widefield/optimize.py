@@ -165,11 +165,7 @@ def optimize_pixel_to_scanning_calibration(cxn):
 
 
 def optimize_pixel(nv_sig, do_plot=False):
-    with common.labrad_connect() as cxn:
-        return optimize_pixel_with_cxn(cxn, nv_sig, do_plot)
-
-
-def optimize_pixel_with_cxn(cxn, nv_sig, do_plot=False):
+    cxn = common.labrad_connect()
     img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
     return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
 

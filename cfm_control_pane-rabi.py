@@ -126,14 +126,7 @@ def do_optimize_scc(nv_list, uwave_list):
     num_runs = 16
     uwave_ind = 0
     optimize_scc.main(
-        nv_list,
-        uwave_list,
-        uwave_ind,
-        min_tau,
-        max_tau,
-        num_steps,
-        num_reps,
-        num_runs,
+        nv_list, uwave_list, uwave_ind, min_tau, max_tau, num_steps, num_reps, num_runs
     )
 
 
@@ -174,70 +167,70 @@ def do_rabi(nv_list):
 
 
 def do_opx_constant_ac():
-    with common.labrad_connect() as cxn:
-        opx = cxn.QM_opx
+    cxn = common.labrad_connect()
+    opx = cxn.QM_opx
 
-        # Microwave test
-        # if True:
-        #     sig_gen = cxn.sig_gen_STAN_sg394
-        #     amp = 9
-        #     chan = 10
-        # else:
-        #     sig_gen = cxn.sig_gen_STAN_sg394_2
-        #     amp = 11
-        #     chan = 3
-        # sig_gen.set_amp(amp)  # 12
-        # sig_gen.set_freq(2.87)
-        # sig_gen.uwave_on()
-        # opx.constant_ac([chan])
+    # Microwave test
+    # if True:
+    #     sig_gen = cxn.sig_gen_STAN_sg394
+    #     amp = 9
+    #     chan = 10
+    # else:
+    #     sig_gen = cxn.sig_gen_STAN_sg394_2
+    #     amp = 11
+    #     chan = 3
+    # sig_gen.set_amp(amp)  # 12
+    # sig_gen.set_freq(2.87)
+    # sig_gen.uwave_on()
+    # opx.constant_ac([chan])
 
-        # Yellow
-        opx.constant_ac(
-            [],  # Digital channels
-            [7],  # Analog channels
-            [0.25],  # Analog voltages
-            [0],  # Analog frequencies
-        )
-        # Green
-        # opx.constant_ac(
-        #     [4],  # Digital channels
-        #     [6, 4],  # Analog channels
-        #     [0.19, 0.19],  # Analog voltages
-        #     [110, 110],  # Analog frequencies
-        # )
-        # Red
-        # opx.constant_ac(
-        #     [1],  # Digital channels
-        #     [2, 3],  # Analog channels
-        #     [0.31, 0.31],  # Analog voltages
-        #     [75, 75],  # Analog frequencies
-        # )
-        # Red + green
-        # opx.constant_ac(
-        #     [1, 4],  # Digital channels
-        #     [2, 3, 6, 4],  # Analog channels
-        #     [0.32, 0.32, 0.19, 0.19],  # Analog voltages
-        #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
-        #     [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
-        #     # [75, 75, 110, 110],  # Analog frequencies
-        # )
-        # Red + green
-        # opx.constant_ac(
-        #     [1, 4],  # Digital channels
-        #     [2, 3, 6, 4],  # Analog channels
-        #     [0.32, 0.32, 0.19, 0.19],  # Analog voltages
-        #     #
-        #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
-        #     # [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
-        #     #
-        #     [73.8, 74.6, 110.011, 110.845],  # Analog frequencies
-        #     # [72.6, 75.5, 108.3, 112.002],  # Analog frequencies
-        #     #
-        #     # [75, 75, 110, 110],  # Analog frequencies
-        # )
-        input("Press enter to stop...")
-        # opx.constant_ac()
-        # sig_gen.uwave_off()
+    # Yellow
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.25],  # Analog voltages
+        [0],  # Analog frequencies
+    )
+    # Green
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [6, 4],  # Analog channels
+    #     [0.19, 0.19],  # Analog voltages
+    #     [110, 110],  # Analog frequencies
+    # )
+    # Red
+    # opx.constant_ac(
+    #     [1],  # Digital channels
+    #     [2, 3],  # Analog channels
+    #     [0.31, 0.31],  # Analog voltages
+    #     [75, 75],  # Analog frequencies
+    # )
+    # Red + green
+    # opx.constant_ac(
+    #     [1, 4],  # Digital channels
+    #     [2, 3, 6, 4],  # Analog channels
+    #     [0.32, 0.32, 0.19, 0.19],  # Analog voltages
+    #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
+    #     [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
+    #     # [75, 75, 110, 110],  # Analog frequencies
+    # )
+    # Red + green
+    # opx.constant_ac(
+    #     [1, 4],  # Digital channels
+    #     [2, 3, 6, 4],  # Analog channels
+    #     [0.32, 0.32, 0.19, 0.19],  # Analog voltages
+    #     #
+    #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
+    #     # [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
+    #     #
+    #     [73.8, 74.6, 110.011, 110.845],  # Analog frequencies
+    #     # [72.6, 75.5, 108.3, 112.002],  # Analog frequencies
+    #     #
+    #     # [75, 75, 110, 110],  # Analog frequencies
+    # )
+    input("Press enter to stop...")
+    # opx.constant_ac()
+    # sig_gen.uwave_off()
 
 
 ### Run the file

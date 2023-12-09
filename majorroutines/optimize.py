@@ -462,27 +462,8 @@ def main(
     no_crash=False,
     do_plot=False,
 ):
-    with common.labrad_connect() as cxn:
-        return main_with_cxn(
-            cxn,
-            nv_sig,
-            laser_key,
-            coords_suffix,
-            axes_to_optimize,
-            no_crash,
-            do_plot,
-        )
-
-
-def main_with_cxn(
-    cxn,
-    nv_sig,
-    laser_key=LaserKey.IMAGING,
-    coords_suffix=None,
-    axes_to_optimize=[0, 1, 2],
-    no_crash=False,
-    do_plot=False,
-):
+    cxn = common.labrad_connect()
+       
     # If optimize is disabled, just do prep and return
     if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig)
