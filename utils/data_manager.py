@@ -197,7 +197,6 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True):
     ### Check the cache first
 
     # Try to open an existing cache manifest
-    retrieved_from_cache = False
     if use_cache:
         try:
             with open(data_manager_folder / "cache_manifest.txt") as f:
@@ -216,10 +215,12 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True):
             retrieved_from_cache = True
         except Exception as exc:
             retrieved_from_cache = False
+    else:
+        retrieved_from_cache = False
 
     ### If not in cache, download from the cloud
 
-    if not use_cache or not retrieved_from_cache:
+    if not retrieved_from_cache:
         # Download the base file
         file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
         data = orjson.loads(file_content)

@@ -197,7 +197,7 @@ if __name__ == "__main__":
     start = time.time()
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1381277197393)
+    data = dm.get_raw_data(file_id=1381277197393, use_cache=False)
     # data = dm.get_raw_data(file_id=1384142466770)
     stop = time.time()
     print(stop - start)
