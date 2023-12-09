@@ -251,7 +251,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.80
+    z_coord = 4.66
     magnet_angle = 0
 
     nv_ref = {
@@ -367,7 +367,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([+4, -12])
+        # widefield.set_pixel_drift([+4, -14])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -382,14 +382,14 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
 
-        for z in np.linspace(4.0, 5.0, 26):
-            nv_sig["coords"][2] = z
-            do_widefield_image_sample(nv_sig, 100)
+        # for z in np.linspace(4.60, 4.75, 6):
+        #     nv_sig["coords"][2] = z
+        #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
 
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []

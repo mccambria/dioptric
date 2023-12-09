@@ -223,8 +223,3 @@ if __name__ == "__main__":
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
-
-# p  *(a0**2 + a0) - p**2  *a0**2 + (1-p)  *(a1**2 + a1) - (1-p)**2  *a1**2 - 2  *p  *a0  *(1-p) *a1
-# 1669/2400, 56, 98
-# 1765/2400, 48, 80
-# p  *(a0**2 + a0) - p**2  *a0**2 + (1-p)  *(a1**2 + a1) - (1-p)**2  *a1**2 - 2  *p  *a0  *(1-p) *a1
