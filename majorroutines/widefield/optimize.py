@@ -70,7 +70,7 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 # endregion
 
 
-def optimize_pixel_to_scanning_calibration(cxn):
+def optimize_pixel_to_scanning_calibration():
     """
     Update the coordinates for the pair of NVs used to convert between pixel and
     scanning coordinates. Also set the z drift
@@ -126,7 +126,7 @@ def optimize_pixel_to_scanning_calibration(cxn):
 
         # Optimize pixel coordinates
         img_array = stationary_count_lite(
-            cxn, nv, scanning_coords, ret_img_array=True, scanning_drift_adjust=False
+            nv, scanning_coords, ret_img_array=True, scanning_drift_adjust=False
         )
         pixel_coords = optimize_pixel(
             img_array,
@@ -160,8 +160,7 @@ def optimize_pixel_to_scanning_calibration(cxn):
 
 
 def optimize_pixel(nv_sig, do_plot=False):
-    cxn = common.labrad_connect()
-    img_array = stationary_count_lite(cxn, nv_sig, ret_img_array=True)
+    img_array = stationary_count_lite(nv_sig, ret_img_array=True)
     return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
 
 

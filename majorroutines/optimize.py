@@ -401,7 +401,6 @@ def _read_counts(
 
 
 def stationary_count_lite(
-    cxn,
     nv_sig,
     laser_key=LaserKey.IMAGING,
     coords=None,
@@ -411,9 +410,9 @@ def stationary_count_lite(
     # Set up
     config = common.get_config_dict()
     laser_dict = nv_sig[laser_key]
-    tb.set_filter(cxn, nv_sig, laser_key)
+    tb.set_filter(nv_sig, laser_key)
 
-    ret_vals = _read_counts(cxn, nv_sig, laser_key, coords, coords_suffix)
+    ret_vals = _read_counts(nv_sig, laser_key, coords, coords_suffix)
     counts = ret_vals[0]
 
     # Return
@@ -430,7 +429,7 @@ def stationary_count_lite(
         return count_rate
 
 
-def prepare_microscope(cxn, nv_sig):
+def prepare_microscope(nv_sig):
     """
     Prepares the microscope for a measurement. In particular,
     sets up the optics (positioning, collection filter, etc) and magnet,
@@ -439,16 +438,16 @@ def prepare_microscope(cxn, nv_sig):
     If coords are not passed, the nv_sig coords (plus drift) will be used
     """
 
-    pos.set_xyz_on_nv(cxn, nv_sig)
+    pos.set_xyz_on_nv(nv_sig)
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
         if filter_name is not None:
-            tb.set_filter(cxn, optics_name="collection", filter_name=filter_name)
+            tb.set_filter(optics_name="collection", filter_name=filter_name)
 
     magnet_angle = None if "magnet_angle" not in nv_sig else nv_sig["magnet_angle"]
     if magnet_angle is not None:
-        rotation_stage_server = tb.get_server_magnet_rotation(cxn)
+        rotation_stage_server = tb.get_server_magnet_rotation()
         rotation_stage_server.set_angle(magnet_angle)
 
     time.sleep(0.01)
@@ -463,7 +462,7 @@ def main(
     do_plot=False,
 ):
     cxn = common.labrad_connect()
-       
+
     # If optimize is disabled, just do prep and return
     if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
         prepare_microscope(cxn, nv_sig)
