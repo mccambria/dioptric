@@ -11,11 +11,12 @@ Created November 15th, 2023
 
 from io import BytesIO
 from datetime import datetime
+import os
 import time
 from utils import common
 from utils import _cloud
 from pathlib import Path
-import json
+import ujson as json
 from git import Repo
 from enum import Enum
 import numpy as np
@@ -161,6 +162,10 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     # Upload to cloud
     _cloud.upload(folder_path, temp_file_path_txt)
+
+    # Delete the temp file after we're done uploading it
+    os.remove(temp_file_path_txt)
+
     stop = time.time()
     # print(stop - start)
 
@@ -180,7 +185,7 @@ def get_raw_data(file_name=None, file_id=None):
         and file_id is None, then we'll identify the proper file by searching
         the cloud for it. By default None
     file_id : str, optional
-        Cloud ID of the file to load. Loaded directly from the cloud, no
+        Cloud ID of the file to load. Loaded directly from the cloud or cache, no
         search necessary. By default None
 
     Returns
@@ -191,27 +196,86 @@ def get_raw_data(file_name=None, file_id=None):
 
     if file_id is not None:
         file_id = str(file_id)
-    file_content = _cloud.download(file_name, "txt", file_id)
-    data = json.loads(file_content)
 
-    # Find and decompress the linked numpy arrays
-    npz_file = None
-    for key in data:
-        val = data[key]
-        if not isinstance(val, str):
-            continue
-        val_split = val.split(".")
-        if val_split[-1] != "npz":
-            continue
-        if npz_file is None:
-            first_part = val_split[0]
-            npz_file_id = first_part if first_part else None
-            npz_file_content = _cloud.download(file_name, "npz", npz_file_id)
-            npz_file = np.load(BytesIO(npz_file_content))
-        data[key] = npz_file[key]
+    ### Check the cache first
+
+    # Try to open an existing cache manifest
+    try:
+        with open(data_manager_folder / "cache_manifest.txt") as f:
+            cache_manifest = json.load(f)
+    except Exception as exc:
+        cache_manifest = None
+
+    # Try to open the cached file
+    try:
+        id_name_table = cache_manifest["id_name_table"]
+        if file_id is not None:
+            file_name = id_name_table[file_id]
+        with open(data_manager_folder / f"{file_name}.txt") as f:
+            data = json.load(f)
+        was_cached = True
+    except Exception as exc:
+        was_cached = False
+
+    ### If not in cache, download from the cloud
+
+    if not was_cached:
+        # Download the base file
+        file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
+        data = json.loads(file_content)
+
+        # Find and decompress the linked numpy arrays
+        npz_file = None
+        for key in data:
+            val = data[key]
+            if not isinstance(val, str):
+                continue
+            val_split = val.split(".")
+            if val_split[-1] != "npz":
+                continue
+            if npz_file is None:
+                first_part = val_split[0]
+                npz_file_id = first_part if first_part else None
+                ret_vals = _cloud.download(file_name, "npz", npz_file_id)
+                npz_file_content = ret_vals[0]
+                npz_file = np.load(BytesIO(npz_file_content))
+            data[key] = npz_file[key]
+
+    ### Add to cache and return the data
+
+    # Update the cache manifest
+    if cache_manifest is None:
+        cache_manifest = {
+            "id_name_table": {file_id: file_name},
+            "cached_file_ids": [file_id],
+        }
+    else:
+        id_name_table = cache_manifest["id_name_table"]
+        cached_file_ids = cache_manifest["cached_file_ids"]
+        # Add the new file to the manifest
+        if not was_cached:
+            id_name_table[file_id] = file_name
+            cached_file_ids.append(file_id)
+        if len(cached_file_ids) > 10:
+            file_id_to_remove = cached_file_ids.pop(0)
+            file_name_to_remove = id_name_table[file_id_to_remove]
+            id_name_table.remove(file_id_to_remove)
+            os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
+        cache_manifest = {
+            "id_name_table": id_name_table,
+            "cached_file_ids": cached_file_ids,
+        }
+    with open(data_manager_folder / "cache_manifest.txt", "w") as f:
+        json.dump(cache_manifest, f, indent=2)
+
+    # Write the actual data file to the cache
+    if not was_cached:
+        with open(data_manager_folder / f"{file_name}.txt", "w") as f:
+            data_copy = copy.deepcopy(data)
+            _json_escape(data_copy)
+            json.dump(data_copy, f, indent=2)
 
     _json_deescape(data)
-
     return data
 
 

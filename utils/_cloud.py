@@ -9,7 +9,6 @@ Created November 18th, 2023
 """
 
 from utils import common
-import os
 from boxsdk import Client, JWTAuth
 
 nvdata_folder_id = "235146666549"  # ID for the nvdata folder in Box
@@ -59,8 +58,11 @@ def download(file_name, ext, file_id=None):
             file_id = match.id
         except Exception as exc:
             raise RuntimeError("No file found with the passed file_name.")
-    file_content = box_client.file(file_id).content()
-    return file_content
+    box_file = box_client.file(file_id)
+    file_content = box_file.content()
+    file_info = box_file.get()
+    file_name = file_info.name.split(".")[0]
+    return file_content, file_id, file_name
 
 
 def upload(folder_path, temp_file_path):
@@ -77,8 +79,6 @@ def upload(folder_path, temp_file_path):
     """
     folder_id = id_folder(folder_path)
     new_file = box_client.folder(folder_id).upload(str(temp_file_path))
-    # Delete the temp file after we're done uploading it
-    os.remove(temp_file_path)
 
     return new_file.id
 
