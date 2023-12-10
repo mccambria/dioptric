@@ -62,15 +62,13 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def initServer(self):
         tb.configure_logging(self)
 
-        # Get config dicts
-        opx_config = common.get_opx_config_dict()
         config = common.get_config_dict()
 
         # Get manager and OPX
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
-        logging.info(ip_address)
         self.qmm = QuantumMachinesManager(ip_address)
-        self.opx = self.qmm.open_qm(opx_config)
+
+        self.update_config(None)
 
         self.running_job = None
 
@@ -84,10 +82,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         opx_sequence_library_path = repo_path / path_from_repo
         sys.path.append(str(opx_sequence_library_path))
 
-        # Sequence tracking variables to prevent redundant compiles of sequences
-        self.program_id = None
-        self.compiled_programs = {}
-
         # Tagger setup
         if collection_mode == CollectionMode.COUNTER:
             self.apd_indices = config["apd_indices"]
@@ -98,6 +92,17 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stopServer(self):
         self.qmm.close_all_quantum_machines()
         self.qmm.close()
+
+    @setting(41)
+    def update_config(self, c):
+        self.reset(None)
+
+        opx_config = common.get_opx_config_dict(reload=True)
+        self.opx = self.qmm.open_qm(opx_config)
+
+        # Sequence tracking variables to prevent redundant compiles of sequences
+        self.program_id = None
+        self.compiled_programs = {}
 
     # endregion
     # region Sequencing
