@@ -98,28 +98,22 @@ class CameraNuvuHnu512gamma(LabradServer):
         # to be easily imported in post-processing contexts, only import the C stuff if
         # we're actually initializating the server
         from servers.inputs.nuvu_camera.nc_camera import NcCamera
-        from servers.inputs.nuvu_camera.defines import (
-            TriggerMode,
-            ReadoutMode,
-            ProcessingType,
-        )
+        from servers.inputs.nuvu_camera.defines import TriggerMode, ProcessingType
 
         # Instantiate the software camera and connect to the hardware camera
         self.cam = NcCamera()
         self.cam.connect()  # Assumes there's just one camera available
         # self.cam.set_heartbeat(int(10e3))
 
-        # Configure the camera
         temp = widefield._get_camera_temp()
         self.cam.set_target_detector_temp(temp)
 
-        # self.cam.set_readout_mode(6)
-
+        # See readout modes block comment above
         self.cam.set_readout_mode(1)
         em_gain = widefield._get_camera_em_gain()
         self.cam.setCalibratedEmGain(em_gain)
 
-        self.cam.set_processing_type(ProcessingType.BACKGROUND_SUBTRACTION)
+        self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
         # self.cam.set_timeout(-1)
@@ -128,8 +122,10 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.get_size()
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
-        waiting_time = self.get_waiting_time()
-        logging.info(f"Waiting time: {waiting_time}")
+        # waiting_time = self.get_waiting_time()
+        # logging.info(f"Waiting time: {waiting_time}")
+        exposure_time = self.get_exposure_time()
+        logging.info(f"Exposure time: {exposure_time}")
         logging.info("Init complete")
 
     def stopServer(self):

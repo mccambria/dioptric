@@ -42,5 +42,5 @@ class TriggerMode(Enum):
 
 class ProcessingType(Enum):
     NO_PROCESSING = 0x00
-    BACKGROUND_SUBTRACTION = 0x01
+    BIAS_SUBTRACTION = 0x01
     PHOTON_COUNTING = 0x02

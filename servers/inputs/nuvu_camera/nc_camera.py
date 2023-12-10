@@ -416,6 +416,7 @@ class NcCamera:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
+        return self.exposureTime.value
 
     def setWaitingTime(self, waitTime):
         """
