@@ -444,6 +444,7 @@ class NcCamera:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
+        return self.waitingTime.value
 
     def getShutterMode(self, cameraCall=1):
         """
