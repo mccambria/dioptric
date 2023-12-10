@@ -93,7 +93,6 @@ def main(
             # Try 5 times then give up
             num_attempts = 5
             attempt_ind = 0
-            start = time.time()
             while True:
                 try:
                     pulse_gen.stream_start()
@@ -103,9 +102,12 @@ def main(
                             img_array = widefield.img_str_to_array(img_str)
                             for nv_ind in range(num_nvs):
                                 pixel_coords = pixel_coords_list[nv_ind]
+                                start = time.time()
                                 counts_val = widefield.integrate_counts_from_adus(
                                     img_array, pixel_coords
                                 )
+                                stop = time.time()
+                                print(f"process: {stop - start}")
                                 counts = sig_counts if sig_ref_ind == 0 else ref_counts
                                 counts[nv_ind, run_ind, step_ind, rep_ind] = counts_val
                     break
@@ -117,8 +119,6 @@ def main(
                         raise RuntimeError("Maxed out number of attempts")
             if attempt_ind > 0:
                 print(f"{attempt_ind} crashes occurred")
-            stop = time.time()
-            print(f"rep_time: {start - stop}")
 
         camera.disarm()
         for ind in uwave_ind_list:
