@@ -232,7 +232,7 @@ config |= {
         "sig_gen_1": "sig_gen_STAN_sg394_2",
         "tagger": "QM_opx",
         "camera": "camera_NUVU_hnu512gamma",
-    },        
+    },
     ###
     "Wiring": {
         "Daq": {

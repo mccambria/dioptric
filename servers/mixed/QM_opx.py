@@ -135,10 +135,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def stream_load(self, c, seq_file, seq_args_string="", num_reps=None):
         """See pulse_gen interface"""
 
-        start = time.time()
         seq_ret_vals = self._stream_load(seq_file, seq_args_string, num_reps)
-        stop = time.time()
-        logging.info(f"stream_load time: {round(stop-start, 3)}")
         return seq_ret_vals
 
     def _stream_load(self, seq_file=None, seq_args_string=None, num_reps=None):
@@ -151,13 +148,14 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
         if key in self.compiled_programs:
             program_id, seq_ret_vals = self.compiled_programs[key]
-            logging.info("Precompiled")
         else:  # Compile and store for next time
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+            start = time.time()
             program_id = self.opx.compile(seq)
             self.compiled_programs.clear()  # MCC just store one program for now, the most recent
+            stop = time.time()
+            logging.info(f"compile time: {round(stop-start, 3)}")
             self.compiled_programs[key] = [program_id, seq_ret_vals]
-            logging.info("New compile")
 
         self.program_id = program_id
         return seq_ret_vals
