@@ -103,6 +103,7 @@ def main(
                             img_str = camera.read()
                             stop = time.time()
                             print(f"read time: {stop-start}")
+                            time.sleep(0.1)
                             img_array = widefield.img_str_to_array(img_str)
                             img_array_photons = widefield.adus_to_photons(img_array)
 
