@@ -91,6 +91,7 @@ def main(
             if step_fn is not None:
                 step_fn(step_ind)
 
+            start = time.time()
             # Try 5 times then give up
             num_attempts = 5
             attempt_ind = 0
@@ -99,10 +100,7 @@ def main(
                     pulse_gen.stream_start()
                     for rep_ind in range(num_reps):
                         for sig_ref_ind in range(num_sig_ref):
-                            # start = time.time()
                             img_str = camera.read()
-                            # stop = time.time()
-                            # print(f"loop time: {stop-start}")
                             img_array = widefield.img_str_to_array(img_str)
                             img_array_photons = widefield.adus_to_photons(img_array)
 
@@ -125,6 +123,8 @@ def main(
                         raise RuntimeError("Maxed out number of attempts")
             if attempt_ind > 0:
                 print(f"{attempt_ind} crashes occurred")
+            stop = time.time()
+            print(f"loop time: {stop-start}")
 
         camera.disarm()
         for ind in uwave_ind_list:
