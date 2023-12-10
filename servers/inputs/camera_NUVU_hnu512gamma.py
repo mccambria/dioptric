@@ -157,7 +157,6 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.close_shutter()
         self._clear_buffer()
 
-    # @setting(2, returns="*2i")
     @setting(2, returns="y")
     def read(self, c):
         """For efficiency, the int-type numpy array returned by read will be sent over LabRAD
@@ -167,7 +166,12 @@ class CameraNuvuHnu512gamma(LabradServer):
         img_str = camera.read()
         img_array = widefield.img_str_to_array(img_str)
         """
-        return self.cam.read()
+        start = time.time()
+        img_str = self.cam.read()
+        stop = time.time()
+        logging.info(f"self.cam.read(): {stop-start}")
+        return img_str
+        # return self.cam.read()
 
     @setting(5)
     def reset(self, c):
