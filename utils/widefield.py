@@ -413,6 +413,7 @@ _camera_spot_radius = None
 _camera_bias_clamp = None
 _camera_resolution = None
 _camera_em_gain = None
+_camera_k_gain = None
 
 
 def _get_camera_spot_radius():
@@ -443,17 +444,19 @@ def _get_camera_em_gain():
     return _camera_em_gain
 
 
+def _get_camera_k_gain():
+    global _camera_k_gain
+    if _camera_k_gain is None:
+        readout_mode = _get_camera_readout_mode()
+        camera_server_name = common.get_server_name("camera")
+        camera_module = import_module(f"servers.inputs.{camera_server_name}")
+        k_gain_dict = camera_module.k_gain_dict
+        _camera_k_gain = k_gain_dict[readout_mode]
+    return _camera_k_gain
+
+
 def _get_camera_readout_mode():
     return _get_camera_config_val("readout_mode")
-
-
-def _get_camera_k_gain():
-    readout_mode = _get_camera_readout_mode()
-    camera_server_name = common.get_server_name("camera")
-    camera_module = import_module(f"servers.inputs.{camera_server_name}")
-    k_gain_dict = camera_module.k_gain_dict
-    k_gain = k_gain_dict[readout_mode]
-    return k_gain
 
 
 def _get_camera_timeout():
