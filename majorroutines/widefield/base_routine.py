@@ -78,10 +78,11 @@ def main(
     for run_ind in range(num_runs):
         shuffle(step_ind_list)
 
-        camera.arm()
         for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_on()
+
+        camera.arm(num_steps * num_reps)
 
         for step_ind in step_ind_list:
             pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]

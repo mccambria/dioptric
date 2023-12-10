@@ -102,7 +102,7 @@ class NcCamera:
     # region Dioptric functions
     # These functions are either ours or have been modified from the original file
 
-    def connect(self, num_buffer=1):
+    def connect(self, num_buffer=-1):
         """
         Opens the connection with the camera (assumes there is only one available).
         If the class has been initialized with the camera's MAC address, the method will try to connect directly to that camera.
@@ -111,7 +111,9 @@ class NcCamera:
         """
         try:
             if self.macAdress is None:
-                error = ncCamOpen(NC_AUTO_UNIT, NC_AUTO_CHANNEL, -1, byref(self.ncCam))
+                error = ncCamOpen(
+                    NC_AUTO_UNIT, NC_AUTO_CHANNEL, num_buffer, byref(self.ncCam)
+                )
                 if error:
                     raise NuvuException(error)
                 self.nbBuff = num_buffer
@@ -364,24 +366,14 @@ class NcCamera:
 
     def errorHandling(self, error):
         """
-        Method that ensures an appropriate reaction to errors. So far, the function crashes the program,
-        closes the driver, and exits the software.
+        Method that ensures an appropriate reaction to errors
         :param error: error number returned by the SDK.
         :return: None
         """
-        if error == 107:
-            pass
-            # print(error)
-        # if error == 131:
-        # Camera is started when it shouldn't be
-        #     pass
-        if error == 27:
-            raise NuvuException("Error 27: Could not find camera")
-        else:
-            self.stop(no_raise=True)
-            self.close_shutter(no_raise=True)
-            # self.disconnect(no_raise=True)
-            raise NuvuException(error)
+        self.stop(no_raise=True)
+        self.close_shutter(no_raise=True)
+        # self.disconnect(no_raise=True)
+        raise NuvuException(error)
 
     def getReadoutTime(self):
         """
