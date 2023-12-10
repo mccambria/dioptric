@@ -99,10 +99,10 @@ def main(
                     pulse_gen.stream_start()
                     for rep_ind in range(num_reps):
                         for sig_ref_ind in range(num_sig_ref):
-                            start = time.time()
+                            # start = time.time()
                             img_str = camera.read()
-                            stop = time.time()
-                            print(f"read time: {stop-start}")
+                            # stop = time.time()
+                            # print(f"read time: {stop-start}")
                             # time.sleep(0.1)
                             img_array = widefield.img_str_to_array(img_str)
                             img_array_photons = widefield.adus_to_photons(img_array)

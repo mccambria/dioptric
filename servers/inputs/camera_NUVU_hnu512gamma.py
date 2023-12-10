@@ -115,17 +115,18 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
         self.cam.update_bias()
-        self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
+        # self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
+        self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH)
         # self.cam.set_timeout(-1)
         timeout = widefield._get_camera_timeout()
         self.cam.set_timeout(timeout)
         self.cam.get_size()
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
-        # waiting_time = self.get_waiting_time()
+        # waiting_time = self.cam.getWaitingTime()
         # logging.info(f"Waiting time: {waiting_time}")
-        exposure_time = self.get_exposure_time()
-        logging.info(f"Exposure time: {exposure_time}")
+        # exposure_time = self.cam.getExposureTime()
+        # logging.info(f"Exposure time: {exposure_time}")
         logging.info("Init complete")
 
     def stopServer(self):
@@ -199,9 +200,6 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(10, returns="i")
     def get_num_readout_modes(self, c):
         return self.cam.get_num_readout_modes()
-
-    def get_waiting_time(self):
-        return self.cam.getWaitingTime()
 
 
 __server__ = CameraNuvuHnu512gamma()
