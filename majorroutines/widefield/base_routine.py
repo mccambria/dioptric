@@ -70,7 +70,6 @@ def main(
         num_sig_ref = 2
     else:
         num_sig_ref = 1
-    print(num_sig_ref)
     step_ind_master_list = [[] for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 

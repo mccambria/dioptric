@@ -151,6 +151,7 @@ def main(
         seq_args.extend([sig_gen_name, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+        print(seq_args)
 
     counts, raw_data = base_routine.main(
         nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, step_fn
