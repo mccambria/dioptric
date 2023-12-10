@@ -31,7 +31,7 @@ def get_config_module(pc_name=None, reload=False):
         module_name = "config.default"
         module = importlib.import_module(module_name)
     if reload:
-        module = importlib.reload(module_name)
+        module = importlib.reload(module)
     return module
 
 

@@ -67,10 +67,10 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # Get manager and OPX
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         self.qmm = QuantumMachinesManager(ip_address)
-
-        self.update_config(None)
-
+        
         self.running_job = None
+        self.opx_config = None
+        self.update_config(None)
 
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
@@ -97,12 +97,16 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def update_config(self, c):
         self.reset(None)
 
-        opx_config = common.get_opx_config_dict(reload=True)
-        self.opx = self.qmm.open_qm(opx_config)
+        new_config = common.get_opx_config_dict(reload=True)
+        
+        # Only go through with the update if it's necessary
+        if new_config != self.opx_config:
+            self.opx_config = new_config
+            self.opx = self.qmm.open_qm(self.opx_config)
 
-        # Sequence tracking variables to prevent redundant compiles of sequences
-        self.program_id = None
-        self.compiled_programs = {}
+            # Sequence tracking variables to prevent redundant compiles of sequences
+            self.program_id = None
+            self.compiled_programs = {}
 
     # endregion
     # region Sequencing
