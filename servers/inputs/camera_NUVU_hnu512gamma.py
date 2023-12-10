@@ -128,6 +128,8 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.get_size()
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
+        waiting_time = self.get_waiting_time()
+        logging.info(f"Waiting time: {waiting_time}")
         logging.info("Init complete")
 
     def stopServer(self):
@@ -201,6 +203,9 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(10, returns="i")
     def get_num_readout_modes(self, c):
         return self.cam.get_num_readout_modes()
+
+    def get_waiting_time(self):
+        return self.cam.getWaitingTime()
 
 
 __server__ = CameraNuvuHnu512gamma()
