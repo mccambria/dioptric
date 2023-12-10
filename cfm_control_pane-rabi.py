@@ -370,74 +370,74 @@ if __name__ == "__main__":
         stop = time.time()
         print(f"Update OPX config: {stop - start}")
 
-        mag_rot_server = tb.get_server_magnet_rotation()
-        # mag_rot_server.set_angle(magnet_angle)
-        print(mag_rot_server.get_angle())
+        # mag_rot_server = tb.get_server_magnet_rotation()
+        # # mag_rot_server.set_angle(magnet_angle)
+        # print(mag_rot_server.get_angle())
 
-        # kpl.init_kplotlib()
-        tb.init_safe_stop()
+        # # kpl.init_kplotlib()
+        # tb.init_safe_stop()
 
-        # widefield.reset_all_drift()
-        # widefield.reset_pixel_drift()
-        # pos.reset_drift(green_laser)
-        # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([+4, -14])
-        # widefield.set_all_scanning_drift_from_pixel_drift()
+        # # widefield.reset_all_drift()
+        # # widefield.reset_pixel_drift()
+        # # pos.reset_drift(green_laser)
+        # # pos.reset_drift(red_laser)
+        # # widefield.set_pixel_drift([+4, -14])
+        # # widefield.set_all_scanning_drift_from_pixel_drift()
 
-        # with common.labrad_connect() as cxn:
-        #     pos.set_xyz_on_nv(cxn, nv_sig)
+        # # with common.labrad_connect() as cxn:
+        # #     pos.set_xyz_on_nv(cxn, nv_sig)
 
-        # Get updated coords before drift reset
-        # for nv in nv_list:
-        #     print(widefield.get_nv_pixel_coords(nv))
-        #     print(pos.get_nv_coords(nv, green_laser))
-        #     print(pos.get_nv_coords(nv, red_laser))
-        # print()
+        # # Get updated coords before drift reset
+        # # for nv in nv_list:
+        # #     print(widefield.get_nv_pixel_coords(nv))
+        # #     print(pos.get_nv_coords(nv, green_laser))
+        # #     print(pos.get_nv_coords(nv, red_laser))
+        # # print()
 
-        # do_opx_constant_ac()
+        # # do_opx_constant_ac()
 
-        # for z in np.linspace(4.60, 4.75, 6):
-        #     nv_sig["coords"][2] = z
-        #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        # # for z in np.linspace(4.60, 4.75, 6):
+        # #     nv_sig["coords"][2] = z
+        # #     do_widefield_image_sample(nv_sig, 100)
+        # # do_widefield_image_sample(nv_sig, 100)
 
-        # do_image_nv_list(nv_list)
+        # # do_image_nv_list(nv_list)
 
-        # do_optimize_pixel(nv_sig)
-        # do_charge_state_histograms(nv_list, 1000)
+        # # do_optimize_pixel(nv_sig)
+        # # do_charge_state_histograms(nv_list, 1000)
 
-        # opti_coords_list = []
-        # for nv in nv_list:
-        #     widefield.reset_all_drift()
-        #     #
-        #     opti_coords = do_optimize_pixel(nv)
-        #     #
-        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
-        #     # opti_coords = do_optimize_green(nv)
-        #     #
-        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
-        #     # opti_coords = do_optimize_red(nv)
-        #     #
-        #     opti_coords_list.append(opti_coords)
-        #     widefield.reset_all_drift()
-        # for opti_coords in opti_coords_list:
-        #     r_opti_coords = [round(el, 3) for el in opti_coords]
-        #     print(r_opti_coords)
+        # # opti_coords_list = []
+        # # for nv in nv_list:
+        # #     widefield.reset_all_drift()
+        # #     #
+        # #     opti_coords = do_optimize_pixel(nv)
+        # #     #
+        # #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
+        # #     # opti_coords = do_optimize_green(nv)
+        # #     #
+        # #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+        # #     # opti_coords = do_optimize_red(nv)
+        # #     #
+        # #     opti_coords_list.append(opti_coords)
+        # #     widefield.reset_all_drift()
+        # # for opti_coords in opti_coords_list:
+        # #     r_opti_coords = [round(el, 3) for el in opti_coords]
+        # #     print(r_opti_coords)
 
-        # do_optimize_z(nv_sig)
+        # # do_optimize_z(nv_sig)
 
-        # for rabi in [96, 96 * 2]:
-        # for rabi in [96 * 2]:
-        #     for dur in [50, 100, 150, 200, 250, 300, 350]:
-        #         for nv in nv_list:
-        #             nv[NVSpinState.LOW]["rabi_period"] = rabi
-        #             nv[LaserKey.IONIZATION]["duration"] = dur
-        #         do_resonance_zoom(nv_list)
-        do_resonance(nv_list, uwave_list)
-        # do_resonance_zoom(nv_list, uwave_list)
-        # do_rabi(nv_list, uwave_list)
-        # do_optimize_scc(nv_list, uwave_list)
-        # do_scc_snr_check(nv_list, uwave_list)
+        # # for rabi in [96, 96 * 2]:
+        # # for rabi in [96 * 2]:
+        # #     for dur in [50, 100, 150, 200, 250, 300, 350]:
+        # #         for nv in nv_list:
+        # #             nv[NVSpinState.LOW]["rabi_period"] = rabi
+        # #             nv[LaserKey.IONIZATION]["duration"] = dur
+        # #         do_resonance_zoom(nv_list)
+        # do_resonance(nv_list, uwave_list)
+        # # do_resonance_zoom(nv_list, uwave_list)
+        # # do_rabi(nv_list, uwave_list)
+        # # do_optimize_scc(nv_list, uwave_list)
+        # # do_scc_snr_check(nv_list, uwave_list)
 
     except Exception as exc:
         if do_email:
