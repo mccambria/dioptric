@@ -166,12 +166,12 @@ class CameraNuvuHnu512gamma(LabradServer):
         img_str = camera.read()
         img_array = widefield.img_str_to_array(img_str)
         """
-        start = time.time()
-        img_str = self.cam.read()
-        stop = time.time()
-        logging.info(f"self.cam.read(): {stop-start}")
-        return img_str
-        # return self.cam.read()
+        # start = time.time()
+        # img_str = self.cam.read()
+        # stop = time.time()
+        # logging.info(f"self.cam.read(): {stop-start}")
+        # return img_str
+        return self.cam.read()
 
     @setting(5)
     def reset(self, c):
