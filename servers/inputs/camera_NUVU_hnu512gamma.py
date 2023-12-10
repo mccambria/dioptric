@@ -171,6 +171,12 @@ class CameraNuvuHnu512gamma(LabradServer):
         # stop = time.time()
         # logging.info(f"self.cam.read(): {stop-start}")
         # return img_str
+
+        # img_str, read_time, proc_time = self.cam.read()
+        # logging.info(f"_read: {read_time}")
+        # logging.info(f"processing: {proc_time}")
+        # return img_str
+
         return self.cam.read()
 
     @setting(5)
