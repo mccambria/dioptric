@@ -8,6 +8,7 @@ Created on April 9th, 2019
 """
 
 
+from multiprocessing import Pool
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
@@ -259,7 +260,7 @@ def main(
     ### Clean up and save the data
 
     tb.reset_cfm()
-    
+
     plt.show()
 
     kpl.show()
@@ -289,18 +290,15 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1379555776351)  # higher focus
+    data = dm.get_raw_data(file_id=1379555776351)
     img_array = np.array(data["img_array"])
-    data = dm.get_raw_data(file_id=1379561238226)
-    img_array -= np.array(data["img_array"])
 
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, cbar_label="ADUs")
-
-    # for pixel_coords in pixel_coords_list:
-    #     fig, ax = plt.subplots()
-    #     kpl.imshow(ax, img_array, cbar_label="ADUs")
-    #     kpl.draw_circle(ax, pixel_coords, radius=2)
-    #     plt.show(block=True)
+    start = time.time()
+    img_array_photons = widefield_utils.adus_to_photons(img_array)
+    for ind in range(100):
+        counts = widefield_utils.integrate_counts(img_array_photons, (256.4, 256.6))
+    stop = time.time()
+    print(stop - start)
+    print(counts)
 
     plt.show(block=True)

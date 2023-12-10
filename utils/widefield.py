@@ -27,10 +27,10 @@ from importlib import import_module
 
 def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
     img_array_photons = adus_to_photons(img_array)
-    return integrate_counts_from_photons(img_array_photons, pixel_coords, radius)
+    return integrate_counts(img_array_photons, pixel_coords, radius)
 
 
-def integrate_counts_from_photons(img_array, pixel_coords, radius=None):
+def integrate_counts(img_array, pixel_coords, radius=None):
     """Add up the counts around a target set of pixel coordinates in the passed image array.
     Use for getting the total number of photons coming from a target NV.
 
@@ -59,17 +59,13 @@ def integrate_counts_from_photons(img_array, pixel_coords, radius=None):
     right = int(np.ceil(pixel_x + radius))
     top = int(np.floor(pixel_y - radius))
     bottom = int(np.ceil(pixel_y + radius))
-    x_crop = np.linspace(left, right, right - left + 1)
-    y_crop = np.linspace(top, bottom, bottom - top + 1)
+    x_crop = list(range(left, right + 1))
+    y_crop = list(range(top, bottom + 1))
     x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
-    img_array_crop = img_array[top : bottom + 1, left : right + 1]
     dist = np.sqrt((x_crop_mesh - pixel_x) ** 2 + (y_crop_mesh - pixel_y) ** 2)
-    inner_pixels = np.where(dist < radius, img_array_crop, np.nan)
-    inner_pixels = inner_pixels.flatten()
-    inner_pixels = inner_pixels[~np.isnan(inner_pixels)]
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
 
-    counts = np.sum(inner_pixels)
-
+    counts = np.sum(img_array_crop, where=dist < radius)
     return counts
 
 
@@ -411,21 +407,39 @@ def _scanning_to_pixel_calibration(coords_suffix=None):
 # endregion
 # region Camera getters - probably only needed internally
 
+# Cache these values to allow fast image processing
+_camera_spot_radius = None
+_camera_bias_clamp = None
+_camera_resolution = None
+_camera_em_gain = None
+
 
 def _get_camera_spot_radius():
-    return _get_camera_config_val("spot_radius")
+    global _camera_spot_radius
+    if _camera_spot_radius is None:
+        _camera_spot_radius = _get_camera_config_val("spot_radius")
+    return _camera_spot_radius
 
 
 def _get_camera_bias_clamp():
-    return _get_camera_config_val("bias_clamp")
+    global _camera_bias_clamp
+    if _camera_bias_clamp is None:
+        _camera_bias_clamp = _get_camera_config_val("bias_clamp")
+    return _camera_bias_clamp
 
 
 def _get_camera_resolution():
-    return _get_camera_config_val("resolution")
+    global _camera_resolution
+    if _camera_resolution is None:
+        _camera_resolution = _get_camera_config_val("resolution")
+    return _camera_resolution
 
 
 def _get_camera_em_gain():
-    return _get_camera_config_val("em_gain")
+    global _camera_em_gain
+    if _camera_em_gain is None:
+        _camera_em_gain = _get_camera_config_val("em_gain")
+    return _camera_em_gain
 
 
 def _get_camera_readout_mode():
