@@ -99,12 +99,12 @@ def main(
                     pulse_gen.stream_start()
                     for rep_ind in range(num_reps):
                         for sig_ref_ind in range(num_sig_ref):
+                            # start = time.time()
                             img_str = camera.read()
+                            # stop = time.time()
+                            # print(f"loop time: {stop-start}")
                             img_array = widefield.img_str_to_array(img_str)
-                            start = time.time()
                             img_array_photons = widefield.adus_to_photons(img_array)
-                            stop = time.time()
-                            print(f"loop time: {stop-start}")
 
                             def get_counts(pixel_coords):
                                 widefield.integrate_counts(
