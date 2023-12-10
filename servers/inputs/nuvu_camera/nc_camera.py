@@ -8,10 +8,12 @@ Obtained on August 1st, 2023
 @author: Nuvu/mccambria
 """
 
+import time
 from .nc_api import *
 import numpy as np
 import sys
 import logging
+from utils import tool_belt as tb
 
 
 class NuvuException(Exception):
@@ -97,6 +99,7 @@ class NcCamera:
         self.calibratedEmGainTempMax = c_double(100.0)
         self.binx = c_int(0)
         self.biny = c_int(0)
+        tb.configure_logging(self)
 
     # region Dioptric functions
     # These functions are either ours or have been modified from the original file
@@ -323,13 +326,20 @@ class NcCamera:
         which is copied to another part of memory.
         :return: None
         """
+        start = time.time()
         self._read()
+        stop = time.time()
+        logging.info(f"_read: {stop - start}")
+        start = time.time()
         np_img_array_pointer = np.ctypeslib.as_array(
             cast(self.ncImage, POINTER(c_uint16)),
             (self.width.value, self.height.value),
         )
-        # return np_img_array_pointer.astype(int)
-        return np_img_array_pointer.tobytes()
+        # return np_img_array_pointer.tobytes()
+        img_str = np_img_array_pointer.tobytes()
+        stop = time.time()
+        logging.info(f"processing: {stop - start}")
+        return img_str
 
     def set_heartbeat(self, heartbeat_ms):
         try:
