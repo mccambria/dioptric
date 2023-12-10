@@ -98,7 +98,8 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
     if bias_clamp is None:
         bias_clamp = _get_camera_bias_clamp()
 
-    photons = (adus - bias_clamp) * k_gain / em_gain
+    total_gain = k_gain / em_gain
+    photons = (adus - bias_clamp) * total_gain
     return photons
 
 
