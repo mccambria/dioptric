@@ -13,7 +13,7 @@ import platform
 from pathlib import Path
 import socket
 import json
-from importlib import import_module
+import importlib
 import sys
 import labrad
 import numpy as np
@@ -21,26 +21,28 @@ import numpy as np
 global_cxn = None
 
 
-def get_config_module(pc_name=None):
+def get_config_module(pc_name=None, reload=False):
     if pc_name is None:
         pc_name = socket.gethostname()
     try:
         module_name = f"config.{pc_name}"
-        module = import_module(module_name)
+        module = importlib.import_module(module_name)
     except Exception as exc:  # Fallback to the default
         module_name = "config.default"
-        module = import_module(module_name)
+        module = importlib.import_module(module_name)
+    if reload:
+        module = importlib.reload(module_name)
     return module
 
 
-def get_config_dict(pc_name=None):
-    module = get_config_module(pc_name)
+def get_config_dict(pc_name=None, reload=False):
+    module = get_config_module(pc_name, reload)
     config_copy = copy.deepcopy(module.config)
     return config_copy
 
 
-def get_opx_config_dict(pc_name=None):
-    module = get_config_module(pc_name)
+def get_opx_config_dict(pc_name=None, reload=False):
+    module = get_config_module(pc_name, reload)
     try:
         opx_config_copy = copy.deepcopy(module.opx_config)
         return opx_config_copy

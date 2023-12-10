@@ -483,7 +483,11 @@ opx_config = {
         },
         "do_laser_INTE_520_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off"},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "polarize": "do_polarization",
+            },
         },
         "do_sig_gen_STAN_sg394_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
@@ -495,7 +499,7 @@ opx_config = {
         },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
-            "sticky": {"analog": True, "digital": True, "duration": 160},
+            # "sticky": {"analog": True, "digital": True, "duration": 160},
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_COBO_638_x": {
@@ -580,7 +584,12 @@ opx_config = {
         },
         "do_ionization": {
             "operation": "control",
-            "length": 200,
+            "length": 220,
+            "digital_marker": "on",
+        },
+        "do_polarization": {
+            "operation": "control",
+            "length": 10e3,
             "digital_marker": "on",
         },
         ### Mixed

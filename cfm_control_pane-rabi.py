@@ -362,6 +362,14 @@ if __name__ == "__main__":
     try:
         # pass
 
+        # Make sure the OPX config is up to date
+        start = time.time()
+        cxn = common.labrad_connect()
+        opx = cxn.QM_opx
+        opx.update_config()
+        stop = time.time()
+        print(f"Update OPX config: {stop - start}")
+
         mag_rot_server = tb.get_server_magnet_rotation()
         # mag_rot_server.set_angle(magnet_angle)
         print(mag_rot_server.get_angle())

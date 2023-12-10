@@ -108,25 +108,30 @@ class CameraNuvuHnu512gamma(LabradServer):
         temp = widefield._get_camera_temp()
         self.cam.set_target_detector_temp(temp)
 
-        # See readout modes block comment above
+        # See description of readout modes in block comment above
         self.cam.set_readout_mode(1)
+
         em_gain = widefield._get_camera_em_gain()
         self.cam.setCalibratedEmGain(em_gain)
 
         self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
         self.cam.update_bias()
-        # self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH)
-        # self.cam.set_timeout(-1)
         timeout = widefield._get_camera_timeout()
         self.cam.set_timeout(timeout)
         self.cam.get_size()
+
         # self.cam.set_buffer_count(1000)
         # logging.info(self.cam.get_dynamic_buffer_count())
         # waiting_time = self.cam.getWaitingTime()
         # logging.info(f"Waiting time: {waiting_time}")
         # exposure_time = self.cam.getExposureTime()
         # logging.info(f"Exposure time: {exposure_time}")
+
+        # Defaults to be updated by client
+        self.set_exposure_time(None, 35)
+        self.set_waiting_time(None, 0)
+
         logging.info("Init complete")
 
     def stopServer(self):
@@ -200,6 +205,14 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(10, returns="i")
     def get_num_readout_modes(self, c):
         return self.cam.get_num_readout_modes()
+
+    @setting(11, exposure_time="v[]")
+    def set_exposure_time(self, c, exposure_time):
+        self.cam.setExposureTime(exposure_time)
+
+    @setting(12, waiting_time="v[]")
+    def set_waiting_time(self, c, waiting_time):
+        self.cam.setWaitingTime(waiting_time)
 
 
 __server__ = CameraNuvuHnu512gamma()
