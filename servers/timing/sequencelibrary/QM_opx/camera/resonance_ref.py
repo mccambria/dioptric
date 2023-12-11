@@ -45,7 +45,10 @@ def get_seq(args, num_reps, reference=True):
 
             # Microwave sequence
             if not no_uwave:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
+                if uwave_duration is None:
+                    qua.play("pi_pulse", sig_gen_el)
+                else:
+                    qua.play("on", sig_gen_el, duration=uwave_duration)
             qua.wait(buffer, sig_gen_el)
             qua.align()
 

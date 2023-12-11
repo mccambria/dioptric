@@ -114,9 +114,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def main(
-    nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
-):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -127,13 +125,12 @@ def main(
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([uwave_ind, tau])
+        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_duration=tau)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, step_fn
+        nv_list, num_steps, num_reps, num_runs, step_fn
     )
 
     ### Process and plot

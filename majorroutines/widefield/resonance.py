@@ -121,24 +121,13 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     return fig
 
 
-def main(
-    nv_list,
-    uwave_list,
-    uwave_ind,
-    num_steps,
-    num_reps,
-    num_runs,
-    freq_center,
-    freq_range,
-):
+def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+    sig_gen = tb.get_server_sig_gen()
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    uwave_dict = uwave_list[uwave_ind]
-    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     seq_file = "resonance.py"
 
     ### Collect the data
@@ -147,12 +136,11 @@ def main(
         freq = freqs[freq_ind]
         sig_gen.set_freq(freq)
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([uwave_ind, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, step_fn
+        nv_list, num_steps, num_reps, num_runs, step_fn
     )
 
     ### Process and plot

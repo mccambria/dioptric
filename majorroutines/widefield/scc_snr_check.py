@@ -15,24 +15,21 @@ from utils import widefield as widefield
 from majorroutines.widefield import base_routine
 
 
-def main(nv_list, uwave_list, uwave_ind, num_reps):
+def main(nv_list, num_reps):
     ### Some initial setup
 
     cxn = common.labrad_connect()
 
     seq_file = "resonance_ref.py"
-    uwave_dict = uwave_list[uwave_ind]
-    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     pulse_gen = tb.get_server_pulse_gen(cxn)
     seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.extend([uwave_ind, uwave_duration])
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
 
     ret_vals = base_routine.main(
-        cxn, nv_list, uwave_list, 1, num_reps, 1, step_fn=None, reference=True
+        cxn, nv_list, 1, num_reps, 1, step_fn=None, reference=True
     )
     sig_counts, ref_counts = ret_vals
 

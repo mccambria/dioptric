@@ -30,12 +30,11 @@ from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 
 def main(
     nv_list,
-    uwave_list,
-    uwave_ind,
     num_steps,
     num_reps,
     num_runs,
     step_fn=None,
+    uwave_ind=0,
     reference=False,
 ):
     ### Some initial setup
@@ -55,10 +54,10 @@ def main(
     else:
         uwave_ind_list = uwave_ind
     for ind in uwave_ind_list:
-        uwave_dict = uwave_list[ind]
-        sig_gen = tb.get_server_sig_gen(ind=ind)
+        uwave_dict = tb.get_uwave_dict(ind)
         uwave_power = uwave_dict["uwave_power"]
         freq = uwave_dict["frequency"]
+        sig_gen = tb.get_server_sig_gen(ind=ind)
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
 
@@ -136,13 +135,12 @@ def main(
     ### Return
 
     raw_data = {
-        "step_ind_master_list": step_ind_master_list,
         "nv_list": nv_list,
-        "uwave_list": uwave_list,
-        "uwave_ind": uwave_ind,
         "num_reps": num_reps,
         "num_steps": num_steps,
         "num_runs": num_runs,
+        "uwave_ind": uwave_ind,
+        "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
     }
 

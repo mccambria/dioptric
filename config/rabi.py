@@ -134,6 +134,8 @@ config |= {
         "sig_gen_TEKT_tsg4104a": {"delay": 57},
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
+        "sig_gen_0": {"name": "sig_gen_STAN_sg394", "frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
+        "sig_gen_1": {"name": "sig_gen_STAN_sg394_2", "frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
     },
     ###
     "Camera": {
@@ -479,11 +481,11 @@ opx_config = {
         },
         "do_sig_gen_STAN_sg394_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off"},
+            "operations": {"on": "do_on", "off": "do_off", "pi_pulse": "do_pi_pulse_0"},
         },
         "do_sig_gen_STAN_sg394_2_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off"},
+            "operations": {"on": "do_on", "off": "do_off", "pi_pulse": "do_pi_pulse_1"},
         },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
@@ -578,6 +580,16 @@ opx_config = {
         "do_polarization": {
             "operation": "control",
             "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
+            "digital_marker": "on",
+        },
+        "do_pi_pulse_0": {
+            "operation": "control",
+            "length": int(config["Microwaves"]["sig_gen_0"]["rabi_period"] // 2),
+            "digital_marker": "on",
+        },
+        "do_pi_pulse_1": {
+            "operation": "control",
+            "length": int(config["Microwaves"]["sig_gen_1"]["rabi_period"] // 2),
             "digital_marker": "on",
         },
         ### Mixed

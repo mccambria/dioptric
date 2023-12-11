@@ -119,72 +119,45 @@ def do_optimize_widefield_calibration():
         optimize.optimize_widefield_calibration(cxn)
 
 
-def do_optimize_scc(nv_list, uwave_list):
+def do_optimize_scc(nv_list):
     min_tau = 16
     max_tau = 400
     num_steps = 13
     num_reps = 50
     num_runs = 16
-    uwave_ind = 0
-    optimize_scc.main(
-        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
-    )
+    optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
-def do_scc_snr_check(nv_list, uwave_list):
-    uwave_ind = 0
+def do_scc_snr_check(nv_list):
     num_reps = 100
-    scc_snr_check.main(nv_list, uwave_list, uwave_ind, num_reps)
+    scc_snr_check.main(nv_list, num_reps)
 
 
-def do_resonance(nv_list, uwave_list):
+def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.150
     num_steps = 40
     num_reps = 25
     num_runs = 16
-    uwave_ind = 0
-    resonance.main(
-        nv_list,
-        uwave_list,
-        uwave_ind,
-        num_steps,
-        num_reps,
-        num_runs,
-        freq_center,
-        freq_range,
-    )
+    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
-def do_resonance_zoom(nv_list, uwave_list):
+def do_resonance_zoom(nv_list):
     freq_center = 2.81
     freq_range = 0.05
     num_steps = 20
     num_reps = 50
     num_runs = 16
-    uwave_ind = 0
-    resonance.main(
-        nv_list,
-        uwave_list,
-        uwave_ind,
-        num_steps,
-        num_reps,
-        num_runs,
-        freq_center,
-        freq_range,
-    )
+    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
-def do_rabi(nv_list, uwave_list):
+def do_rabi(nv_list):
     min_tau = 16
     max_tau = 200
     num_steps = 24
     num_reps = 50
     num_runs = 48
-    uwave_ind = 0
-    rabi.main(
-        nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
-    )
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_opx_constant_ac():
@@ -276,21 +249,9 @@ if __name__ == "__main__":
         "disable_opt": False,
         "disable_z_opt": True,
         "expected_count_rate": None,
-        #
-        LaserKey.IMAGING: green_laser_dict,
-        LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 440},
-        LaserKey.POLARIZATION: {"name": green_laser, "duration": 10e3},
-        LaserKey.IONIZATION: {"name": red_laser, "duration": 220},
-        LaserKey.CHARGE_READOUT: yellow_laser_dict,
-        #
         "collection": {"filter": None},
         "magnet_angle": None,
     }
-
-    uwave_list = [
-        {"frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
-        {"frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
-    ]
 
     # region Coords
 
@@ -437,11 +398,11 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        do_resonance(nv_list, uwave_list)
-        # do_resonance_zoom(nv_list, uwave_list)
-        # do_rabi(nv_list, uwave_list)
-        # do_optimize_scc(nv_list, uwave_list)
-        # do_scc_snr_check(nv_list, uwave_list)
+        do_resonance(nv_list)
+        # do_resonance_zoom(nv_list)
+        # do_rabi(nv_list)
+        # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
 
     except Exception as exc:
         if do_email:

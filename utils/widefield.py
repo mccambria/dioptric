@@ -173,7 +173,12 @@ def get_nv_num(nv_sig):
 
 
 def get_base_scc_seq_args(
-    nv_list, pol_duration=None, ion_duration=None, readout_duration=None
+    nv_list,
+    pol_duration=None,
+    ion_duration=None,
+    readout_duration=None,
+    uwave_ind=0,
+    uwave_duration=None,
 ):
     """Return base seq_args for any SCC routine
 
@@ -181,12 +186,16 @@ def get_base_scc_seq_args(
     ----------
     nv_list : list(nv_sig)
         List of nv signatures to target
-    pol_duration : _type_, optional
+    pol_duration : int, optional
         Override polarization duration in ns. If None, we use the default specified in config["Optics"]
-    ion_duration : _type_, optional
+    ion_duration : int, optional
         Override ionization duration in ns. If None, we use the default specified in config["Optics"]
-    readout_duration : _type_, optional
+    readout_duration : int, optional
         Override readout duration in ns. If None, we use the default specified in config["Optics"]
+    uwave_ind : int, optional
+        Index of microwave signal generator to use, 0 by default
+    uwave_duration : int, optional
+        Override readout duration in ns. If None, we use the default specified in config["Microwaves"]
 
     Returns
     -------
@@ -217,6 +226,8 @@ def get_base_scc_seq_args(
         ion_duration,
         ion_coords_list,
         readout_duration,
+        uwave_ind,
+        uwave_duration,
     ]
 
     return seq_args

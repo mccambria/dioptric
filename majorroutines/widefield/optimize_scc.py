@@ -55,36 +55,23 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     return sig_fig, ref_fig, snr_fig
 
 
-def main(
-    nv_list, uwave_list, uwave_ind, num_steps, num_reps, num_runs, min_tau, max_tau
-):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
     seq_file = "resonance_ref.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
     pulse_gen = tb.get_server_pulse_gen()
 
-    uwave_dict = uwave_list[uwave_ind]
-    uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
-
     ### Collect the data
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list, pol_duration=tau)
-        seq_args.extend([uwave_ind, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     sig_counts, ref_counts, raw_data = base_routine.main(
-        nv_list,
-        uwave_list,
-        uwave_ind,
-        num_steps,
-        num_reps,
-        num_runs,
-        step_fn,
-        reference=True,
+        nv_list, num_steps, num_reps, num_runs, step_fn, reference=True
     )
 
     ### Process and plot

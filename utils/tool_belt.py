@@ -612,6 +612,11 @@ def get_laser_name(laser_key):
     return get_laser_dict(laser_key)["name"]
 
 
+def get_uwave_dict(uwave_ind):
+    config = common.get_config_dict()
+    return config["Microwave"][uwave_ind]
+
+
 # Server getters
 # Each getter looks up the requested server from the config and
 # returns a usable reference to the requested server (i.e. cxn.<server>)
@@ -659,7 +664,7 @@ def get_server_power_supply():
     return common.get_server("power_supply")
 
 
-def get_server_sig_gen(state=None, ind=None):
+def get_server_sig_gen(state=None, ind=0):
     """Get the signal generator that controls transitions to the specified NV state"""
     if state is not None:
         return common.get_server(f"sig_gen_{state.name}")
