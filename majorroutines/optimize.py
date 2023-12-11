@@ -196,7 +196,7 @@ def _read_counts_camera_sequence(
     # Sequence setup
 
     if laser_key == LaserKey.IMAGING:
-        imaging_laser_dict = nv_sig[LaserKey.IMAGING]
+        imaging_laser_dict = tb.get_laser_dict(LaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
         if coords is None:
@@ -205,14 +205,14 @@ def _read_counts_camera_sequence(
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif laser_key == LaserKey.IONIZATION:
-        pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
+        pol_laser_dict = tb.get_laser_dict(LaserKey.POLARIZATION)
         pol_laser_name = pol_laser_dict["name"]
         pol_duration = pol_laser_dict["duration"]
         pol_coords = pos.get_nv_coords(nv_sig, pol_laser_name)
-        ion_laser_dict = nv_sig[LaserKey.IONIZATION]
+        ion_laser_dict = tb.get_laser_dict(LaserKey.IONIZATION)
         ion_laser_name = ion_laser_dict["name"]
         ion_duration = ion_laser_dict["duration"]
-        readout_laser_dict = nv_sig[LaserKey.CHARGE_READOUT]
+        readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
         readout_laser_name = readout_laser_dict["name"]
         readout_duration = readout_laser_dict["duration"]
         if coords is None:
@@ -298,7 +298,7 @@ def _optimize_on_axis(nv_sig, laser_key, coords, coords_suffix, axis_ind, fig=No
 
     num_steps = 20
     config = common.get_config_dict()
-    laser_dict = nv_sig[laser_key]
+    laser_dict = tb.get_laser_dict(laser_key)
     readout = laser_dict["duration"]
     scan_range = pos.get_axis_optimize_range(axis_ind, coords_suffix)
 
@@ -345,10 +345,9 @@ def _read_counts(
     collection_mode = config["collection_mode"]
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = nv_sig[laser_key]
+    laser_dict = tb.get_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     readout = laser_dict["duration"]
-    delay = laser_dict["duration"]
     laser_power = tb.set_laser_power(nv_sig, laser_key)
     if axis_ind is not None:
         delay = pos.get_axis_delay(axis_ind, coords_suffix=coords_suffix)
@@ -404,7 +403,6 @@ def stationary_count_lite(
 ):
     # Set up
     config = common.get_config_dict()
-    laser_dict = nv_sig[laser_key]
     tb.set_filter(nv_sig, laser_key)
 
     ret_vals = _read_counts(nv_sig, laser_key, coords, coords_suffix)
@@ -418,8 +416,8 @@ def stationary_count_lite(
         return ret_vals[1]
     if count_format == CountFormat.RAW:
         return avg_counts
-    elif count_format == CountFormat.KCPS:
-        readout = laser_dict["duration"]
+    elif count_format == CountFormat.KCPS and laser_key == LaserKey.IMAGING:
+        readout = tb.get_common_duration("imaging_readout")
         count_rate = (avg_counts / 1000) / (readout / 10**9)
         return count_rate
 

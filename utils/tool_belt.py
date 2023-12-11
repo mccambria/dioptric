@@ -597,6 +597,21 @@ def get_apd_gate_channel():
     return config_dict["Wiring"]["Tagger"]["di_apd_gate"]
 
 
+def get_common_duration(key):
+    config = common.get_config_dict()
+    common_duration = config["CommonDurations"][key]
+    return common_duration
+
+
+def get_laser_dict(laser_key):
+    config = common.get_config_dict()
+    return config["Optics"][laser_key]
+
+
+def get_laser_name(laser_key):
+    return get_laser_dict(laser_key)["name"]
+
+
 # Server getters
 # Each getter looks up the requested server from the config and
 # returns a usable reference to the requested server (i.e. cxn.<server>)

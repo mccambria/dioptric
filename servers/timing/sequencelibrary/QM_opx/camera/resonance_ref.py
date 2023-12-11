@@ -18,33 +18,30 @@ import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
-def get_seq(args, num_reps):
+def get_seq(args, num_reps, reference=True):
     (
-        pol_laser,
         pol_duration_ns,
         pol_coords_list,
-        ion_laser,
         ion_duration_ns,
         ion_coords_list,
-        readout_laser,
         readout_duration_ns,
-        sig_gen_name,
+        uwave_ind,
         uwave_duration_ns,
     ) = args
 
     if num_reps == None:
         num_reps = 1
 
-    sig_gen_el = f"do_{sig_gen_name}_dm"
+    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
-        seq_utils.turn_on_aods([pol_laser, ion_laser])
+        seq_utils.turn_on_aods()
 
-        def half_rep(no_uwave):
+        def half_rep(no_uwave=False):
             # Polarization
-            seq_utils.macro_polarize(pol_laser, pol_duration_ns, pol_coords_list)
+            seq_utils.macro_polarize(pol_duration_ns, pol_coords_list)
 
             # Microwave sequence
             if not no_uwave:
@@ -53,14 +50,19 @@ def get_seq(args, num_reps):
             qua.align()
 
             # Ionization
-            seq_utils.macro_ionize(ion_laser, ion_duration_ns, ion_coords_list)
+            seq_utils.macro_ionize(ion_duration_ns, ion_coords_list)
 
             # Readout
-            seq_utils.macro_charge_state_readout(readout_laser, readout_duration_ns)
+            seq_utils.macro_charge_state_readout(readout_duration_ns)
 
         def one_rep():
-            for no_uwave in (False, True):
-                half_rep(no_uwave)
+            if reference:
+                for no_uwave in (False, True):
+                    half_rep(no_uwave)
+                    qua.align()
+                    seq_utils.macro_wait_for_trigger()
+            else:
+                half_rep(False)
                 qua.align()
                 seq_utils.macro_wait_for_trigger()
 

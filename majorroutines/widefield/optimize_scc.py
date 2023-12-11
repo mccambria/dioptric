@@ -62,11 +62,8 @@ def main(
 
     seq_file = "resonance_ref.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
-    nv_list_mod = copy.deepcopy(nv_list)
     pulse_gen = tb.get_server_pulse_gen()
 
-    sig_gen = tb.get_server_sig_gen(uwave_ind)
-    sig_gen_name = sig_gen.name
     uwave_dict = uwave_list[uwave_ind]
     uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
 
@@ -74,10 +71,8 @@ def main(
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
-        for nv in nv_list_mod:
-            nv[LaserKey.IONIZATION]["duration"] = tau
-        seq_args = widefield.get_base_scc_seq_args(nv_list_mod)
-        seq_args.extend([sig_gen_name, uwave_duration])
+        seq_args = widefield.get_base_scc_seq_args(nv_list, pol_duration=tau)
+        seq_args.extend([uwave_ind, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

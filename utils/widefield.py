@@ -172,42 +172,50 @@ def get_nv_num(nv_sig):
     return nv_sig["name"].split("-")[1].split("_")[0][2:]
 
 
-def get_base_scc_seq_args(nv_list):
-    """Return base seq_args for any SCC routine"""
+def get_base_scc_seq_args(
+    nv_list, pol_duration=None, ion_duration=None, readout_duration=None
+):
+    """Return base seq_args for any SCC routine
 
-    nv_sig = nv_list[0]
+    Parameters
+    ----------
+    nv_list : list(nv_sig)
+        List of nv signatures to target
+    pol_duration : _type_, optional
+        Override polarization duration in ns. If None, we use the default specified in config["Optics"]
+    ion_duration : _type_, optional
+        Override ionization duration in ns. If None, we use the default specified in config["Optics"]
+    readout_duration : _type_, optional
+        Override readout duration in ns. If None, we use the default specified in config["Optics"]
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+
+    config = common.get_config_dict()
+    optics_config = config["Optics"]
 
     # Polarization
-    pol_laser_dict = nv_sig[LaserKey.POLARIZATION]
-    pol_laser = pol_laser_dict["name"]
-    pol_duration = pol_laser_dict["duration"]
+    pol_laser = optics_config[LaserKey.POLARIZATION]
     pol_coords_list = []
     for nv in nv_list:
         pol_coords = pos.get_nv_coords(nv, coords_suffix=pol_laser)
         pol_coords_list.append(pol_coords)
 
     # Ionization
-    ion_laser_dict = nv_sig[LaserKey.IONIZATION]
-    ion_laser = ion_laser_dict["name"]
-    ion_duration = ion_laser_dict["duration"]
+    ion_laser = optics_config[LaserKey.IONIZATION]
     ion_coords_list = []
     for nv in nv_list:
         ion_coords = pos.get_nv_coords(nv, coords_suffix=ion_laser)
         ion_coords_list.append(ion_coords)
 
-    # Readout
-    readout_laser_dict = nv_sig[LaserKey.CHARGE_READOUT]
-    readout_laser = readout_laser_dict["name"]
-    readout_duration = readout_laser_dict["duration"]
-
     seq_args = [
-        pol_laser,
         pol_duration,
         pol_coords_list,
-        ion_laser,
         ion_duration,
         ion_coords_list,
-        readout_laser,
         readout_duration,
     ]
 

@@ -67,7 +67,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # Get manager and OPX
         ip_address = config["DeviceIDs"]["QM_opx_ip"]
         self.qmm = QuantumMachinesManager(ip_address)
-        
+
         self.running_job = None
         self.opx_config = None
         self.update_config(None)
@@ -98,7 +98,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.reset(None)
 
         new_config = common.get_opx_config_dict(reload=True)
-        
+
         # Only go through with the update if it's necessary
         if new_config != self.opx_config:
             self.opx_config = new_config
@@ -161,9 +161,9 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
             start = time.time()
             program_id = self.opx.compile(seq)
-            self.compiled_programs.clear()  # MCC just store one program for now, the most recent
             stop = time.time()
             logging.info(f"compile time: {round(stop-start, 3)}")
+            self.compiled_programs.clear()  # MCC just store one program for now, the most recent
             self.compiled_programs[key] = [program_id, seq_ret_vals]
 
         self.program_id = program_id

@@ -122,15 +122,13 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "resonance.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
-    sig_gen = tb.get_server_sig_gen(uwave_ind)
-    sig_gen_name = sig_gen.name
 
     ### Collect the data
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([sig_gen_name, tau])
+        seq_args.extend([uwave_ind, tau])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

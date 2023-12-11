@@ -21,13 +21,11 @@ def main(nv_list, uwave_list, uwave_ind, num_reps):
     cxn = common.labrad_connect()
 
     seq_file = "resonance_ref.py"
-    sig_gen = tb.get_server_sig_gen(cxn, uwave_ind)
-    sig_gen_name = sig_gen.name
     uwave_dict = uwave_list[uwave_ind]
     uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     pulse_gen = tb.get_server_pulse_gen(cxn)
     seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.extend([sig_gen_name, uwave_duration])
+    seq_args.extend([uwave_ind, uwave_duration])
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

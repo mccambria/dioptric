@@ -104,13 +104,7 @@ config |= {
     ###
     # Common durations are in ns
     "CommonDurations": {
-        "cw_meas_buffer": 5000,
-        "pol_to_uwave_wait_dur": 5000,
-        "scc_ion_readout_buffer": 10000,
         "uwave_buffer": 1000,
-        "uwave_to_readout_wait_dur": 5000,
-        "aod_rise_time": int(12e3),
-        "aod_end_buffer": int(2e3),
         "default_pulse_duration": 1000,
         "aod_access_time": 20e3,
         "widefield_operation_buffer": 10e3,
@@ -155,43 +149,28 @@ config |= {
     },
     ###
     "Optics": {
-        "collection": {
-            "filter_server": "filter_slider_ell9k_3",
-            "filter_mapping": {
-                "514_notch+630_lp": 0,
-                "740_bp": 1,
-                "715_lp": 2,
-                "no_filter": 3,
-            },
-        },
         "laser_INTE_520": {
-            "delay": 250,
+            "delay": 0,
             "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
-            "filter_server": "filter_slider_THOR_ell9k",
-            "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
+            "aod": True,
         },
-        # "laser_OPTO_589": {
-        #     "delay": 2500,
-        #     "mod_mode": ModMode.DIGITAL,
-        #     "pos_mode": LaserPosMode.WIDEFIELD,
-        #     "filter_server": "filter_slider_ell9k",
-        #     "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
-        # },
         "laser_OPTO_589": {
-            "delay": 2500,
+            "delay": 0,
             "mod_mode": ModMode.ANALOG,
             "pos_mode": LaserPosMode.WIDEFIELD,
-            "filter_server": "filter_slider_ell9k",
-            "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
         },
         "laser_COBO_638": {
-            "delay": 250,
+            "delay": 0,
             "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
-            "filter_server": "filter_slider_THOR_ell9k",
-            "filter_mapping": {"nd_0": 0, "nd_0.3": 1, "nd_0.7": 2, "nd_1.0": 3},
+            "aod": True,
         },
+        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 5e6},
+        LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
+        LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 220},
+        LaserKey.CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 35e6},
     },
     ###
     "Positioning": {
@@ -223,7 +202,6 @@ config |= {
     "Servers": {
         "counter": "QM_opx",
         "magnet_rotation": "rotation_stage_thor_ell18k",
-        # "pos_xy": "pos_xyz_THOR_gvs212_PI_pifoc",
         "pos_z": "pos_z_PI_pifoc",
         "pulse_gen": "QM_opx",
         "sig_gen_LOW": "sig_gen_STAN_sg394",
@@ -481,6 +459,16 @@ opx_config = {
                 "charge_readout": "yellow_charge_readout",
             },
         },
+        "ao_laser_OPTO_589_am_sticky": {
+            "singleInput": {"port": ("con1", 7)},
+            "intermediate_frequency": 0,
+            "sticky": {"analog": True, "duration": 160},
+            "operations": {
+                "on": "yellow_imaging",
+                "off": "ao_off",
+                "charge_readout": "yellow_charge_readout",
+            },
+        },
         "do_laser_INTE_520_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 4), "delay": 0, "buffer": 0}},
             "operations": {
@@ -563,7 +551,7 @@ opx_config = {
         },
         "charge_state_readout": {
             "operation": "control",
-            "length": 10e6,
+            "length": default_pulse_duration,
             "waveforms": {"single": "charge_state_readout"},
         },
         ### Digital
@@ -584,12 +572,12 @@ opx_config = {
         },
         "do_ionization": {
             "operation": "control",
-            "length": 220,
+            "length": config["Optics"][LaserKey.IONIZATION]["duration"],
             "digital_marker": "on",
         },
         "do_polarization": {
             "operation": "control",
-            "length": 10e3,
+            "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
             "digital_marker": "on",
         },
         ### Mixed

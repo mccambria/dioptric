@@ -8,9 +8,11 @@ Created June 25th, 2023
 """
 
 
+import time
 from qm import qua
 from utils import common
-from utils.constants import ModMode, CollectionMode
+from utils.constants import LaserKey, ModMode, CollectionMode
+from utils import tool_belt as tb
 
 
 # region QUA macros
@@ -54,7 +56,7 @@ def handle_reps(
                 macro_wait_for_trigger()
 
 
-def macro_polarize(pol_laser_name, pol_duration_ns, pol_coords_list, dummy_pulse=False):
+def macro_polarize(pol_coords_list, pol_duration_ns=None):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -67,10 +69,11 @@ def macro_polarize(pol_laser_name, pol_duration_ns, pol_coords_list, dummy_pulse
     pol_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    _macro_pulse_list(pol_laser_name, pol_duration_ns, pol_coords_list, dummy_pulse)
+    pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
+    _macro_pulse_list(pol_laser_name, pol_coords_list, "polarize", pol_duration_ns)
 
 
-def macro_ionize(ion_laser_name, ion_duration_ns, ion_coords_list, dummy_pulse=False):
+def macro_ionize(ion_coords_list, ion_duration_ns=None):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -83,20 +86,28 @@ def macro_ionize(ion_laser_name, ion_duration_ns, ion_coords_list, dummy_pulse=F
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    _macro_pulse_list(ion_laser_name, ion_duration_ns, ion_coords_list, dummy_pulse)
+    ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
+    _macro_pulse_list(ion_laser_name, ion_coords_list, "ionize", ion_duration_ns)
 
 
-def macro_charge_state_readout(readout_laser_name, readout_duration_ns):
-    readout_laser_el = get_laser_mod_element(readout_laser_name)
+def macro_charge_state_readout(readout_duration_ns=None):
+    readout_laser_name = tb.get_laser_name(LaserKey.CHARGE_READOUT)
+    readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
     camera_el = f"do_camera_trigger"
 
+    default_duration = get_default_pulse_duration()
+    if readout_duration_ns is None:
+        readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
+        readout_duration_ns = readout_laser_dict["duration"]
     readout_duration = convert_ns_to_cc(readout_duration_ns)
 
     qua.align()
-    # qua.play("charge_readout", readout_laser_el, duration=readout_duration)
     qua.play("charge_readout", readout_laser_el)
     qua.play("on", camera_el)
     qua.align()
+    qua.wait(readout_duration - default_duration)
+    qua.align()
+    qua.play("off", readout_laser_el)
     qua.play("off", camera_el)
     qua.align()
 
@@ -110,17 +121,16 @@ def macro_wait_for_trigger():
     qua.align()
 
 
-# def declare_scc_qua_vars():
-#     pol_x_freq = qua.declare(int)
-#     pol_y_freq = qua.declare(int)
-#     ion_x_freq = qua.declare(int)
-#     ion_y_freq = qua.declare(int)
-
-#     scc_vars = [pol_x_freq, pol_y_freq, ion_x_freq, ion_y_freq]
-#     return scc_vars
-
-
-def turn_on_aods(laser_names):
+def turn_on_aods(laser_names=None):
+    # By default search the config for the lasers with AOD
+    if laser_names is None:
+        config = common.get_config_dict()
+        config_optics = config["Optics"]
+        optics_keys = config_optics.keys()
+        laser_names = []
+        for key in optics_keys:
+            if "aod" in config_optics[key] and config_optics[key]["aod"]:
+                laser_names.append(key)
     for laser_name in laser_names:
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
@@ -128,7 +138,7 @@ def turn_on_aods(laser_names):
         qua.play("aod_cw", y_el)
 
 
-def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
+def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -136,10 +146,12 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
     ----------
     laser_name : str
         Name of laser to pulse
-    duration_ns : numeric
-        Duration of the pulse in ns
     coords_list : list(coordinate pairs)
         List of coordinate pairs to target
+    pulse_name : str
+        Name of the pulse to play - "on" by default
+    duration_ns : numeric
+        Duration of the pulse in ns - if None, uses the default duration of the passed pulse
     """
     # Setup
     laser_el = get_laser_mod_element(laser_name)
@@ -155,9 +167,8 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
 
     for coords_pair in coords_list:
         # Update AOD frequencies
-        # The continue pulse doesn't actually change anything - without a new
-        # pulse the compiler will overwrite the frequency of whatever is playing
-        # retroactively
+        # The continue pulse doesn't actually change anything - without a new pulse the
+        # compiler will overwrite the frequency of whatever is playing retroactively
         qua.play("continue", x_el)
         qua.play("continue", y_el)
         qua.update_frequency(x_el, round(coords_pair[0] * 10**6))
@@ -165,8 +176,10 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
 
         # Pulse the laser
         qua.wait(access_time + buffer, laser_el)
-        pulse = "off" if dummy_pulse else "on"
-        qua.play(pulse, laser_el, duration=duration)
+        if duration is None:
+            qua.play(pulse_name, laser_el)
+        elif duration > 0:
+            qua.play(pulse_name, laser_el)
         qua.wait(buffer, laser_el)
 
         qua.align()
@@ -177,6 +190,8 @@ def _macro_pulse_list(laser_name, duration_ns, coords_list, dummy_pulse=False):
 
 def convert_ns_to_cc(duration_ns, raise_error=False):
     """Convert a duration from nanoseconds to clock cycles"""
+    if duration_ns is None:
+        return None
     if raise_error:
         if duration_ns % 4 != 0:
             raise RuntimeError("OPX pulse durations (in ns) must be divisible by 4")
@@ -188,29 +203,44 @@ def convert_ns_to_cc(duration_ns, raise_error=False):
 
 def get_default_pulse_duration():
     """Get the default OPX pulse duration in units of clock cycles"""
-    return get_common_duration("default_pulse_duration")
+    return get_common_duration_cc("default_pulse_duration")
 
 
 def get_aod_access_time():
-    return get_common_duration("aod_access_time")
+    return get_common_duration_cc("aod_access_time")
 
 
 def get_widefield_operation_buffer():
-    return get_common_duration("widefield_operation_buffer")
+    return get_common_duration_cc("widefield_operation_buffer")
 
 
-def get_common_duration(key):
-    config = common.get_config_dict()
-    common_duration_ns = config["CommonDurations"][key]
+def get_common_duration_cc(key):
+    common_duration_ns = tb.get_common_duration(key)
     common_duration_cc = convert_ns_to_cc(common_duration_ns)
     return common_duration_cc
 
 
-def get_laser_mod_element(laser_name):
+def get_laser_mod_element(laser_name, sticky=False):
     config = common.get_config_dict()
     mod_mode = config["Optics"][laser_name]["mod_mode"]
-    if mod_mode == ModMode.ANALOG:
-        laser_mod_element = f"ao_{laser_name}_am"
-    elif mod_mode == ModMode.DIGITAL:
-        laser_mod_element = f"do_{laser_name}_dm"
+    if sticky:
+        if mod_mode == ModMode.ANALOG:
+            laser_mod_element = f"ao_{laser_name}_am_sticky"
+        elif mod_mode == ModMode.DIGITAL:
+            laser_mod_element = f"do_{laser_name}_dm_sticky"
+    else:
+        if mod_mode == ModMode.ANALOG:
+            laser_mod_element = f"ao_{laser_name}_am"
+        elif mod_mode == ModMode.DIGITAL:
+            laser_mod_element = f"do_{laser_name}_dm"
     return laser_mod_element
+
+
+def get_sig_gen_element(uwave_ind):
+    config = common.get_config_dict()
+    sig_gen_name = config["servers"][f"sig_gen_{uwave_ind}"]
+    return f"do_{sig_gen_name}_dm"
+
+
+if __name__ == "__main__":
+    turn_on_aods()

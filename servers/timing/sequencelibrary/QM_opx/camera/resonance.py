@@ -12,68 +12,15 @@ import numpy
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
+from servers.timing.sequencelibrary.QM_opx import seq_utils as seq_utils
+from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
 import utils.common as common
 import matplotlib.pyplot as plt
 from qm import generate_qua_script
 
 
 def get_seq(args, num_reps):
-    (
-        pol_laser,
-        pol_duration_ns,
-        pol_coords_list,
-        ion_laser,
-        ion_duration_ns,
-        ion_coords_list,
-        readout_laser,
-        readout_duration_ns,
-        sig_gen_name,
-        uwave_duration_ns,
-    ) = args
-
-    if num_reps == None:
-        num_reps = 1
-
-    sig_gen_el = f"do_{sig_gen_name}_dm"
-    no_uwave = uwave_duration_ns == 0
-    if not no_uwave:
-        uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
-    buffer = seq_utils.get_widefield_operation_buffer()
-
-    with qua.program() as seq:
-        seq_utils.turn_on_aods([pol_laser, ion_laser])
-
-        def one_rep():
-            # Polarization
-            seq_utils.macro_polarize(pol_laser, pol_duration_ns, pol_coords_list)
-
-            # Microwave sequence
-            if not no_uwave:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
-            qua.wait(buffer, sig_gen_el)
-            qua.align()
-
-            # Ionization
-            seq_utils.macro_ionize(ion_laser, ion_duration_ns, ion_coords_list)
-
-            # Readout
-            seq_utils.macro_charge_state_readout(readout_laser, readout_duration_ns)
-
-        # def one_rep():
-        #     for half_rep_args in [
-        #         [do_polarize_sig, do_ionize_sig],
-        #         [do_polarize_ref, do_ionize_ref],
-        #     ]:
-        #         half_rep(*half_rep_args)
-        #         # qua.align()
-        #         seq_utils.macro_wait_for_trigger()
-
-        seq_utils.handle_reps(one_rep, num_reps)
-        # seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-
-    seq_ret_vals = []
-    return seq, seq_ret_vals
+    return resonance_ref.get_seq(args, num_reps, reference=False)
 
 
 if __name__ == "__main__":

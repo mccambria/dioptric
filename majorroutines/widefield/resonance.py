@@ -140,7 +140,6 @@ def main(
     uwave_dict = uwave_list[uwave_ind]
     uwave_duration = tb.get_pi_pulse_dur(uwave_dict["rabi_period"])
     seq_file = "resonance.py"
-    sig_gen_name = sig_gen.name
 
     ### Collect the data
 
@@ -148,7 +147,7 @@ def main(
         freq = freqs[freq_ind]
         sig_gen.set_freq(freq)
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([sig_gen_name, uwave_duration])
+        seq_args.extend([uwave_ind, uwave_duration])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

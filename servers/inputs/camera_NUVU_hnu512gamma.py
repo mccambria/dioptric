@@ -116,7 +116,8 @@ class CameraNuvuHnu512gamma(LabradServer):
 
         self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
         self.cam.update_bias()
-        self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH)
+        self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
+        # self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH)
         timeout = widefield._get_camera_timeout()
         self.cam.set_timeout(timeout)
         self.cam.get_size()
@@ -129,8 +130,8 @@ class CameraNuvuHnu512gamma(LabradServer):
         # logging.info(f"Exposure time: {exposure_time}")
 
         # Defaults to be updated by client
-        self.set_exposure_time(None, 35)
-        self.set_waiting_time(None, 0)
+        # self.set_exposure_time(None, 35)
+        # self.set_waiting_time(None, 0)
 
         logging.info("Init complete")
 
