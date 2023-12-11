@@ -9,11 +9,11 @@ Created on December 6th, 2023
 
 
 from random import shuffle
+from matplotlib import pyplot as plt
 import numpy as np
 from majorroutines.widefield import optimize
-from utils import tool_belt as tb
-from utils import widefield as widefield
-from utils import positioning as pos
+from utils import kplotlib as kpl, tool_belt as tb
+from utils import widefield, positioning as pos
 
 
 def main(
@@ -95,7 +95,7 @@ def main(
                             img_array_photons = widefield.adus_to_photons(img_array)
 
                             def get_counts(pixel_coords):
-                                widefield.integrate_counts(
+                                return widefield.integrate_counts(
                                     img_array_photons, pixel_coords
                                 )
 

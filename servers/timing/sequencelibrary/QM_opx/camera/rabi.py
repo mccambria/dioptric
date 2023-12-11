@@ -17,7 +17,11 @@ import matplotlib.pyplot as plt
 
 
 def get_seq(args, num_reps):
-    return resonance_ref.get_seq(args, num_reps, reference=False)
+    uwave_duration_ns = args.pop()
+    uwave_ind = args.pop()
+    return resonance_ref.get_seq(
+        args, num_reps, uwave_duration_ns=uwave_duration_ns, reference=False
+    )
 
 
 if __name__ == "__main__":

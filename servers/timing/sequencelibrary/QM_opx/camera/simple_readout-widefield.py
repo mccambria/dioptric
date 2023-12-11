@@ -55,10 +55,10 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [100e3, "laser_OPTO_589"]
+        args = [3500.0, "laser_OPTO_589"]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=round(1e6 / 4))
+        sim_config = SimulationConfig(duration=round(10e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

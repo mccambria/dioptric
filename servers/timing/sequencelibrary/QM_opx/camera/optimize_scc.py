@@ -17,7 +17,10 @@ import matplotlib.pyplot as plt
 
 
 def get_seq(args, num_reps):
-    return resonance_ref.get_seq(args, num_reps, reference=False)
+    ion_duration_ns = args.pop()
+    return resonance_ref.get_seq(
+        args, num_reps, reference=False, ion_duration_ns=ion_duration_ns
+    )
 
 
 if __name__ == "__main__":

@@ -28,6 +28,8 @@ from majorroutines.widefield import (
     rabi,
     optimize_scc,
     scc_snr_check,
+    spin_echo,
+    sq_relaxation,
 )
 from utils.constants import LaserKey, NVSpinState
 
@@ -76,20 +78,16 @@ def do_charge_state_histograms(nv_list, num_reps):
 
 
 def do_optimize_green(nv_sig, do_plot=True):
-    prev_imaging_dict = nv_sig[LaserKey.IMAGING]
-    nv_sig[LaserKey.IMAGING] = green_laser_dict
-    coords_suffix = green_laser
+    coords_suffix = tb.get_laser_name(LaserKey.IMAGING)
     ret_vals = optimize.main(
         nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
     )
     opti_coords = ret_vals[0]
-    nv_sig[LaserKey.IMAGING] = prev_imaging_dict
     return opti_coords
 
 
 def do_optimize_red(nv_sig, do_plot=True):
     laser_key = LaserKey.IONIZATION
-    nv_sig[laser_key]["duration"] = 1e3
     coords_suffix = red_laser
     ret_vals = optimize.main(
         nv_sig,
@@ -107,10 +105,7 @@ def do_optimize_z(nv_sig, do_plot=False):
 
 
 def do_optimize_pixel(nv_sig):
-    prev_imaging_dict = nv_sig[LaserKey.IMAGING]
-    nv_sig[LaserKey.IMAGING] = green_laser_dict
     opti_coords = optimize.optimize_pixel(nv_sig, do_plot=True)
-    nv_sig[LaserKey.IMAGING] = prev_imaging_dict
     return opti_coords
 
 
@@ -124,7 +119,7 @@ def do_optimize_scc(nv_list):
     max_tau = 400
     num_steps = 13
     num_reps = 50
-    num_runs = 16
+    num_runs = 8
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -138,16 +133,18 @@ def do_resonance(nv_list):
     freq_range = 0.150
     num_steps = 40
     num_reps = 25
-    num_runs = 16
+    num_runs = 8
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.81
+    freq_center = 2.84
     freq_range = 0.05
     num_steps = 20
-    num_reps = 50
-    num_runs = 16
+    num_reps = 100
+    num_runs = 8
+    # num_reps = 20
+    # num_runs = 2
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -155,9 +152,27 @@ def do_rabi(nv_list):
     min_tau = 16
     max_tau = 200
     num_steps = 24
-    num_reps = 50
-    num_runs = 48
+    num_reps = 100
+    num_runs = 8
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_spin_echo(nv_list):
+    min_tau = 1e3
+    max_tau = 200e3
+    num_steps = 20
+    num_reps = 100
+    num_runs = 8
+    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_sq_relaxation(nv_list):
+    min_tau = 1e3
+    max_tau = 20e6
+    num_steps = 20
+    num_reps = 100
+    num_runs = 8
+    sq_relaxation.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_opx_constant_ac():
@@ -238,7 +253,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.64
+    z_coord = 4.57
     magnet_angle = 60
 
     nv_sig_shell = {
@@ -328,9 +343,9 @@ if __name__ == "__main__":
         # pass
 
         # Make sure the OPX config is up to date
-        cxn = common.labrad_connect()
-        opx = cxn.QM_opx
-        opx.update_config()
+        # cxn = common.labrad_connect()
+        # opx = cxn.QM_opx
+        # opx.update_config()
 
         mag_rot_server = tb.get_server_magnet_rotation()
         # mag_rot_server.set_angle(magnet_angle)
@@ -343,7 +358,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([+4, -14])
+        # widefield.set_pixel_drift([+13, -3])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -358,14 +373,14 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
 
-        # for z in np.linspace(4.60, 4.75, 6):
+        # for z in np.linspace(4.80, 4.50, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_charge_state_histograms(nv_list, 1000)
 
         # opti_coords_list = []
@@ -395,9 +410,11 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
+        # do_resonance(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
+        # do_spin_echo(nv_list)
+        # do_sq_relaxation(nv_list)
         # do_optimize_scc(nv_list)
         # do_scc_snr_check(nv_list)
 

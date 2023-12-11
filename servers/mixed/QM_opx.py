@@ -40,6 +40,7 @@ from servers.inputs.interfaces.tagger import Tagger
 from servers.timing.interfaces.pulse_gen import PulseGen
 from qm import CompilerOptionArguments
 import time
+import importlib
 
 
 def get_compiled_program_key(seq_file, seq_args_string, num_reps):
@@ -97,6 +98,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     def update_config(self, c):
         self.reset(None)
 
+        # Get the latest config
         new_config = common.get_opx_config_dict(reload=True)
 
         # Only go through with the update if it's necessary
@@ -132,6 +134,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         file_name, file_ext = os.path.splitext(seq_file)
 
         if file_ext == ".py":  # py: import as a module
+            # Get it fresh
+            # if file_name not in sys.modules:
+            #     seq_module = importlib.import_module(file_name)
+            # else:
+            #     seq_module = importlib.reload(file_name)
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
             ret_vals = seq_module.get_seq(args, num_reps)

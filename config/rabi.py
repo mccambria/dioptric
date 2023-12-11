@@ -97,7 +97,7 @@ config |= {
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 2000,
         "temp": -60,
-        "timeout": 5000,  # ms
+        "timeout": 1000,  # ms
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
         "readout_mode": 1,
@@ -193,6 +193,8 @@ config |= {
 
 default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
+rabi_period_0 = config["Microwaves"]["sig_gen_0"]["rabi_period"]
+rabi_period_1 = config["Microwaves"]["sig_gen_1"]["rabi_period"]
 
 opx_config = {
     "version": 1,
@@ -325,7 +327,7 @@ opx_config = {
         # region Actual "elements", or physical things to control
         "do_laser_COBO_638_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off", "ionize": "do_ionization"},
+            "operations": {"on": "do_on", "off": "do_off", "ionize": "do_ionization", "long_ionize": "do_long_ionization"},
         },
         "ao_laser_OPTO_589_am": {
             "singleInput": {"port": ("con1", 7)},
@@ -356,15 +358,25 @@ opx_config = {
         },
         "do_sig_gen_STAN_sg394_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off", "pi_pulse": "do_pi_pulse_0"},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "pi_pulse": "do_pi_pulse_0",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+            },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off", "pi_pulse": "do_pi_pulse_1"},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "pi_pulse": "do_pi_pulse_1",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+            },
         },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
-            # "sticky": {"analog": True, "digital": True, "duration": 160},
+            "sticky": {"analog": True, "digital": True, "duration": 160},
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_COBO_638_x": {
@@ -452,6 +464,11 @@ opx_config = {
             "length": config["Optics"][LaserKey.IONIZATION]["duration"],
             "digital_marker": "on",
         },
+        "do_long_ionization": {
+            "operation": "control",
+            "length": 1000,
+            "digital_marker": "on",
+        },
         "do_polarization": {
             "operation": "control",
             "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
@@ -459,12 +476,22 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(config["Microwaves"]["sig_gen_0"]["rabi_period"] // 2),
+            "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(config["Microwaves"]["sig_gen_1"]["rabi_period"] // 2),
+            "length": int(rabi_period_1 / 2),
+            "digital_marker": "on",
+        },
+        "do_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4),
+            "digital_marker": "on",
+        },
+        "do_pi_on_2_pulse_1": {
+            "operation": "control",
+            "length": int(rabi_period_1 / 4),
             "digital_marker": "on",
         },
         ### Mixed

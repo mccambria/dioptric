@@ -96,6 +96,8 @@ def set_laser_power(nv_sig=None, laser_key=None, laser_name=None, laser_power=No
     Specify either a laser_key/nv_sig or a laser_name/laser_power.
     """
 
+    return None  # MCC consider deprecated
+
     if (nv_sig is not None) and (laser_key is not None):
         laser_dict = nv_sig[laser_key]
         laser_name = laser_dict["name"]
@@ -612,7 +614,7 @@ def get_laser_name(laser_key):
 
 def get_uwave_dict(uwave_ind):
     config = common.get_config_dict()
-    return config["Microwave"][uwave_ind]
+    return config["Microwaves"][f"sig_gen_{uwave_ind}"]
 
 
 # Server getters

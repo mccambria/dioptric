@@ -186,12 +186,14 @@ def main(
     ### Some initial setup
 
     tb.reset_cfm()
-    laser_key = LaserKey.IMAGING
+    laser_key = (
+        LaserKey.CHARGE_READOUT if caller_fn_name == "widefield" else LaserKey.IMAGING
+    )
     optimize.prepare_microscope(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = nv_sig[laser_key]
+    laser_dict = tb.get_laser_dict(laser_key)
     readout_laser = laser_dict["name"]
     tb.set_filter(nv_sig, laser_key)
 
@@ -290,15 +292,12 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1379555776351)
+    data = dm.get_raw_data(file_id=1383720650105)
     img_array = np.array(data["img_array"])
 
     start = time.time()
     img_array_photons = widefield_utils.adus_to_photons(img_array)
-    for ind in range(100):
-        counts = widefield_utils.integrate_counts(img_array_photons, (256.4, 256.6))
-    stop = time.time()
-    print(stop - start)
+    counts = widefield_utils.integrate_counts(img_array_photons, (256.4, 256.6))
     print(counts)
 
     plt.show(block=True)

@@ -107,8 +107,8 @@ def macro_charge_state_readout(readout_duration_ns=None):
     qua.align()
     qua.wait(readout_duration - default_duration)
     qua.align()
-    qua.play("off", readout_laser_el)
-    qua.play("off", camera_el)
+    qua.ramp_to_zero(readout_laser_el)
+    qua.ramp_to_zero(camera_el)
     qua.align()
 
 
@@ -236,9 +236,9 @@ def get_laser_mod_element(laser_name, sticky=False):
     return laser_mod_element
 
 
-def get_sig_gen_element(uwave_ind):
+def get_sig_gen_element(uwave_ind=0):
     config = common.get_config_dict()
-    sig_gen_name = config["servers"][f"sig_gen_{uwave_ind}"]
+    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
     return f"do_{sig_gen_name}_dm"
 
 

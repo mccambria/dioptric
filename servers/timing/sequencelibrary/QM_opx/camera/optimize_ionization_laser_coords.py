@@ -77,7 +77,7 @@ def get_seq(args, num_reps):
 
             # Ionization
             qua.wait(access_time + pol_duration + operation_gap, ion_laser_el)
-            qua.play("on", ion_laser_el, duration=ion_duration)
+            qua.play("long_ionize", ion_laser_el)
 
             # Yellow readout
             qua.wait(setup_duration, readout_laser_el)

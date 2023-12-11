@@ -11,41 +11,30 @@ Created on October 13th, 2023
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx.seq_utils import seq_utils
+import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 import utils.common as common
 import matplotlib.pyplot as plt
 
 
-def get_seq(
-    args,
-    num_reps,
-    uwave_duration_ns=None,
-    reference=True,
-    pol_duration_ns=None,
-    ion_duration_ns=None,
-    readout_duration_ns=None,
-):
-    (pol_coords_list, ion_coords_list, uwave_ind) = args
+def get_seq(args, num_reps):
+    (pol_coords_list, ion_coords_list, tau_ns) = args
 
     def uwave_macro():
-        sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-        uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
-        if uwave_duration is None:
-            qua.play("pi_pulse", sig_gen_el)
-        else:
-            qua.play("on", sig_gen_el, duration=uwave_duration)
+        half_tau = seq_utils.convert_ns_to_cc(tau_ns / 2)
+        buffer = seq_utils.get_widefield_operation_buffer()
+        sig_gen_el = seq_utils.get_sig_gen_element()
 
-    seq = base_sequence.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        num_reps,
-        uwave_macro,
-        reference,
-        pol_duration_ns,
-        ion_duration_ns,
-        readout_duration_ns,
-    )
+        qua.play("pi_pulse_on_2", sig_gen_el)
+        qua.wait(half_tau, sig_gen_el)
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(half_tau, sig_gen_el)
+        qua.play("pi_pulse_on_2", sig_gen_el)
+
+        qua.wait(buffer, sig_gen_el)
+        qua.align()
+
+    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

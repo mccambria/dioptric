@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Widefield ESR
+Base spin sequence for multi-NV experiments
 
-Created on October 13th, 2023
+Created on December 11th, 2023
 
 @author: mccambria
 """
@@ -11,41 +11,52 @@ Created on October 13th, 2023
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx.seq_utils import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 import utils.common as common
 import matplotlib.pyplot as plt
 
 
 def get_seq(
-    args,
+    pol_coords_list,
+    ion_coords_list,
     num_reps,
-    uwave_duration_ns=None,
+    uwave_macro=None,
     reference=True,
     pol_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
 ):
-    (pol_coords_list, ion_coords_list, uwave_ind) = args
 
-    def uwave_macro():
-        sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-        uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
-        if uwave_duration is None:
-            qua.play("pi_pulse", sig_gen_el)
-        else:
-            qua.play("on", sig_gen_el, duration=uwave_duration)
+    if num_reps == None:
+        num_reps = 1
 
-    seq = base_sequence.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        num_reps,
-        uwave_macro,
-        reference,
-        pol_duration_ns,
-        ion_duration_ns,
-        readout_duration_ns,
-    )
+    with qua.program() as seq:
+        seq_utils.turn_on_aods()
+
+        def half_rep(skip_uwave=False):
+            # Polarization
+            seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
+
+            # Custom macro for the microwave sequence here
+            if skip_uwave:
+                uwave_macro()
+
+            # Ionization
+            seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
+
+            # Readout
+            seq_utils.macro_charge_state_readout(readout_duration_ns)
+
+            qua.align()
+            seq_utils.macro_wait_for_trigger()
+
+        def one_rep():
+            half_rep()
+            # Second rep skips the microwave for a reference
+            if reference:
+                half_rep(True)
+
+        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
     seq_ret_vals = []
     return seq, seq_ret_vals
