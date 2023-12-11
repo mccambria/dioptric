@@ -58,22 +58,23 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        # Single resonance
-        # guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
-        # fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
-        #     1 + voigt(freq, contrast, g_width, l_width, center)
-        # )
+        single_resonance = True  # vs double resonance
 
-        # Double resonance
-        guess_params = [norm_guess, amp_guess, 5, 5, 2.83, amp_guess, 5, 5, 2.91]
-        fit_fn = (
-            lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
-            * (
-                1
-                + voigt(freq, contrast1, g_width1, l_width1, center1)
-                + voigt(freq, contrast2, g_width2, l_width2, center2)
+        if single_resonance:
+            guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
+            fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
+                1 + voigt(freq, contrast, g_width, l_width, center)
             )
-        )
+        else:  # Double
+            guess_params = [norm_guess, amp_guess, 5, 5, 2.83, amp_guess, 5, 5, 2.91]
+            fit_fn = (
+                lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
+                * (
+                    1
+                    + voigt(freq, contrast1, g_width1, l_width1, center1)
+                    + voigt(freq, contrast2, g_width2, l_width2, center2)
+                )
+            )
 
         _, popt, pcov = fit_resonance(
             freqs,
@@ -101,7 +102,10 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         popts.append(popt)
         norms.append(popt[0])
 
-        center_freqs.append((popt[4], popt[8]))
+        if single_resonance:
+            center_freqs.append(popt[4])
+        else:
+            center_freqs.append((popt[4], popt[8]))
 
     print(f"a0 average: {round(np.average(a0_list), 2)}")
     print(f"a1 average: {round(np.average(a1_list), 2)}")
@@ -185,7 +189,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1380581836379)
+    data = dm.get_raw_data(file_id=1386029806823)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
