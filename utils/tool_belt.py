@@ -9,12 +9,10 @@ Created on November 23rd, 2018
 @author: mccambria
 """
 
-from enum import Enum
 import numpy as np
 from numpy import exp
 import json
 import time
-import labrad
 import socket
 import smtplib
 from email.mime.text import MIMEText

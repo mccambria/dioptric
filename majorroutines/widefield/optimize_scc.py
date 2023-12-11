@@ -8,24 +8,13 @@ Created on December 6th, 2023
 """
 
 
-import copy
-from random import shuffle
-import sys
 import matplotlib.pyplot as plt
 import numpy as np
-from majorroutines.widefield import optimize
 from utils import tool_belt as tb
 from utils import data_manager as dm
-from utils import common
 from utils import widefield as widefield
 from utils import kplotlib as kpl
-from utils import positioning as pos
 from utils import data_manager as dm
-from utils.constants import LaserKey, NVSpinState
-import os
-import time
-from utils.positioning import get_scan_1d as calculate_freqs
-from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 from majorroutines.widefield import base_routine
 
 

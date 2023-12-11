@@ -14,7 +14,7 @@ from config.default import config
 
 home = Path.home()
 
-# region Widefield calibration NVs
+# region Widefield calibration coords
 
 green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
@@ -24,73 +24,16 @@ pixel_coords_key = "pixel_coords"
 green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
-# Imaging laser dicts
-yellow_laser_dict = {"name": yellow_laser, "readout_dur": 50e6, "num_reps": 1}
-green_laser_dict = {"name": green_laser, "readout_dur": 10e6, "num_reps": 10}
-red_laser_dict = {"name": red_laser, "readout_dur": 1e6, "num_reps": 1}
-
-sample_name = "johnson"
-z_coord = 2.9
-
-widefield_calibration_nv_shell = {
-    "coords": [None, None, z_coord],
-    "name": f"{sample_name}-nvref",
-    "disable_opt": False,
-    "disable_z_opt": True,
-    "expected_count_rate": None,
-    #
-    LaserKey.IMAGING: yellow_laser_dict,
-    # LaserKey.IMAGING: green_laser_dict,
-    # LaserKey.IMAGING: red_laser_dict,
-    #
-    LaserKey.SPIN_READOUT: {
-        "name": green_laser,
-        "pol_dur": 2e3,
-        "readout_dur": 440,
-    },
-    LaserKey.IONIZATION: {
-        "name": red_laser,
-        "ion_dur": 2e3,
-    },  # 50 mW setting for 10 mW on table
-    LaserKey.POLARIZATION: {
-        "name": green_laser,
-    },
+widefield_calibration_nv1 = {
+    pixel_coords_key: [267.929, 290.489],
+    green_coords_key: [109.811, 110.845],
+    red_coords_key: [74.1, 75.9],
 }
-
-widefield_calibration_nv_shell = {
-    "name": "widefield_calibration_nv1",
-    "disable_opt": False,
-    "disable_z_opt": True,
-    "expected_count_rate": 20500,
-    LaserKey.IMAGING: {
-        "name": "laser_INTE_520",
-        "readout_dur": 1e7,
-        "num_reps": 100,
-        "filter": "nd_0",
-    },
-    "collection_filter": None,
-    "magnet_angle": None,
+widefield_calibration_nv2 = {
+    pixel_coords_key: [217.197, 331.628],
+    green_coords_key: [108.1, 112.002],
+    red_coords_key: [72.9, 76.8],
 }
-widefield_calibration_nv1 = widefield_calibration_nv_shell.copy()
-widefield_calibration_nv2 = widefield_calibration_nv_shell.copy()
-widefield_calibration_nv2["name"] = "widefield_calibration_nv2"
-widefield_calibration_nv1["disable_z_opt"] = False
-widefield_calibration_nv2["disable_z_opt"] = True
-
-# Coords
-widefield_calibration_nv1[pixel_coords_key] = [267.929, 290.489]
-widefield_calibration_nv1[green_coords_key] = [109.811, 110.845]
-widefield_calibration_nv1[red_coords_key] = [74.1, 75.9]
-widefield_calibration_nv2[pixel_coords_key] = [217.197, 331.628]
-widefield_calibration_nv2[green_coords_key] = [108.1, 112.002]
-widefield_calibration_nv2[red_coords_key] = [72.9, 76.8]
-#
-# widefield_calibration_nv1[pixel_coords_key] = [373.578, 282.107]
-# widefield_calibration_nv1[green_coords_key] = [113.148, 110.574]
-# widefield_calibration_nv1[red_coords_key] = [76.874, 75.642]
-# widefield_calibration_nv2[pixel_coords_key] = [299.588, 253.558]
-# widefield_calibration_nv2[green_coords_key] = [110.672, 109.681]
-# widefield_calibration_nv2[red_coords_key] = [74.770, 74.880]
 
 # endregion
 # region Base config
@@ -134,8 +77,18 @@ config |= {
         "sig_gen_TEKT_tsg4104a": {"delay": 57},
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
-        "sig_gen_0": {"name": "sig_gen_STAN_sg394", "frequency": 2.8135, "rabi_period": 128, "uwave_power": 9},
-        "sig_gen_1": {"name": "sig_gen_STAN_sg394_2", "frequency": 2.87, "rabi_period": 128, "uwave_power": 11},
+        "sig_gen_0": {
+            "name": "sig_gen_STAN_sg394",
+            "frequency": 2.8135,
+            "rabi_period": 128,
+            "uwave_power": 9,
+        },
+        "sig_gen_1": {
+            "name": "sig_gen_STAN_sg394_2",
+            "frequency": 2.87,
+            "rabi_period": 128,
+            "uwave_power": 11,
+        },
     },
     ###
     "Camera": {
@@ -236,84 +189,10 @@ config |= {
 }
 
 # endregion
-# region OPX variables
-
-analog_output_delay = 136  # ns
-
-# "Intermediate" frequencies
-default_int_freq = 100e6  #
-NV_IF_freq = 40e6  # in units of Hz
-NV2_IF_freq = 45e6
-NV_LO_freq = 2.83e9  # in units of Hz
-
-# Pulses lengths
-initialization_len = 200  # in ns
-meas_len = 100  # in ns
-long_meas_len = 100  # in ns
-
-# MW parameters
-mw_amp_NV = 0.5  # in units of volts
-mw_len_NV = 200  # in units of ns
-
-aom_amp = 0.5
-
-pi_amp_NV = 0.1  # in units of volts
-pi_len_NV = 100  # in units of ns
-
-pi_half_amp_NV = pi_amp_NV / 2  # in units of volts
-pi_half_len_NV = pi_len_NV  # in units of ns
-
-# Readout parameters
-signal_threshold = -200
-
-# Delays
-detection_delay = 36  # keep at 36ns minimum
-mw_delay = 0
-
-# uwave length. doesn't really matter
-uwave_len = 100
-
-green_laser_delay = 0
-red_laser_delay = 0
-apd_0_delay = 0
-apd_1_delay = 0
-uwave_delay = 0
-aod_delay = 0
-yellow_aom_delay = 0
-tsg4104_I_delay = 0
-tsg4104_Q_delay = 0
-delays = [
-    green_laser_delay,
-    red_laser_delay,
-    apd_0_delay,
-    apd_1_delay,
-    uwave_delay,
-    aod_delay,
-    yellow_aom_delay,
-    tsg4104_I_delay,
-    tsg4104_Q_delay,
-]
-
-min_delay = 150  # we use 100 with the pulse streamer. doesn't matter. just wanted it higher than 136 analog delay
-
-common_delay = max(delays) + min_delay
-
-green_laser_total_delay = common_delay - green_laser_delay
-red_laser_total_delay = common_delay - red_laser_delay
-apd_0_total_delay = common_delay - apd_0_delay
-apd_1_total_delay = common_delay - apd_0_delay
-uwave_total_delay = common_delay - uwave_delay
-NV_total_delay = common_delay - mw_delay
-NV2_total_delay = common_delay - mw_delay
-AOD_total_delay = common_delay - aod_delay
-yellow_AOM_total_delay = common_delay - yellow_aom_delay
-tsg4104_I_total_delay = common_delay - tsg4104_I_delay
-tsg4104_Q_total_delay = common_delay - tsg4104_Q_delay
+# region OPX config
 
 default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
-
-# endregion
-# region OPX config
+default_int_freq = 75e6
 
 opx_config = {
     "version": 1,
@@ -448,10 +327,6 @@ opx_config = {
             "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
             "operations": {"on": "do_on", "off": "do_off", "ionize": "do_ionization"},
         },
-        # "do_laser_OPTO_589_dm": {
-        #     "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
-        #     "operations": {"on": "do_on", "off": "do_off"},
-        # },
         "ao_laser_OPTO_589_am": {
             "singleInput": {"port": ("con1", 7)},
             "intermediate_frequency": 0,

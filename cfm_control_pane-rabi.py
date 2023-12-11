@@ -241,11 +241,8 @@ if __name__ == "__main__":
     z_coord = 4.64
     magnet_angle = 60
 
-    nv_ref = {
+    nv_sig_shell = {
         "coords": [None, None, z_coord],
-        green_coords_key: np.array([110, 110]),
-        red_coords_key: np.array([75, 75]),
-        "name": f"{sample_name}-nvref",
         "disable_opt": False,
         "disable_z_opt": True,
         "expected_count_rate": None,
@@ -255,61 +252,61 @@ if __name__ == "__main__":
 
     # region Coords
 
-    nv0 = copy.deepcopy(nv_ref)
+    nv0 = copy.deepcopy(nv_sig_shell)
     nv0["name"] = f"{sample_name}-nv0_2023_12_04"
     nv0[pixel_coords_key] = [330.395, 272.331]
     nv0[green_coords_key] = [111.795, 110.475]
     nv0[red_coords_key] = [75.698, 75.403]
 
-    nv1 = copy.deepcopy(nv_ref)
+    nv1 = copy.deepcopy(nv_sig_shell)
     nv1["name"] = f"{sample_name}-nv1_2023_12_04"
     nv1[pixel_coords_key] = [319.971, 298.197]
     nv1[green_coords_key] = [111.69, 110.983]
     nv1[red_coords_key] = [75.349, 76.138]
 
-    nv2 = copy.deepcopy(nv_ref)
+    nv2 = copy.deepcopy(nv_sig_shell)
     nv2["name"] = f"{sample_name}-nv2_2023_12_04"
     nv2[pixel_coords_key] = [298.198, 321.495]
     nv2[green_coords_key] = [110.448, 111.963]
     nv2[red_coords_key] = [74.767, 76.785]
 
-    nv3 = copy.deepcopy(nv_ref)
+    nv3 = copy.deepcopy(nv_sig_shell)
     nv3["name"] = f"{sample_name}-nv3_2023_12_04"
     nv3[pixel_coords_key] = [301.955, 249.548]
     nv3[green_coords_key] = [110.884, 109.518]
     nv3[red_coords_key] = [74.914, 74.902]
 
-    nv4 = copy.deepcopy(nv_ref)
+    nv4 = copy.deepcopy(nv_sig_shell)
     nv4["name"] = f"{sample_name}-nv4_2023_12_04"
     nv4[pixel_coords_key] = [329.721, 248.574]
     nv4[green_coords_key] = [111.819, 109.628]
     nv4[red_coords_key] = [75.661, 74.943]
 
-    nv5 = copy.deepcopy(nv_ref)
+    nv5 = copy.deepcopy(nv_sig_shell)
     nv5["name"] = f"{sample_name}-nv5_2023_12_04"
     nv5[pixel_coords_key] = [352.77, 278.812]
     nv5[green_coords_key] = [112.54, 110.535]
     nv5[red_coords_key] = [76.269, 75.572]
 
-    nv6 = copy.deepcopy(nv_ref)
+    nv6 = copy.deepcopy(nv_sig_shell)
     nv6["name"] = f"{sample_name}-nv6_2023_12_04"
     nv6[pixel_coords_key] = [309.991, 200.526]
     nv6[green_coords_key] = [111.082, 107.778]
     nv6[red_coords_key] = [75.157, 73.43]
 
-    nv7 = copy.deepcopy(nv_ref)
+    nv7 = copy.deepcopy(nv_sig_shell)
     nv7["name"] = f"{sample_name}-nv7_2023_12_04"
     nv7[pixel_coords_key] = [306.051, 193.589]
     nv7[green_coords_key] = [111.171, 107.787]
     nv7[red_coords_key] = [75.009, 73.345]
 
-    nv8 = copy.deepcopy(nv_ref)
+    nv8 = copy.deepcopy(nv_sig_shell)
     nv8["name"] = f"{sample_name}-nv8_2023_12_04"
     nv8[pixel_coords_key] = [328.001, 182.152]
     nv8[green_coords_key] = [111.68, 107.162]
     nv8[red_coords_key] = [75.534, 72.894]
 
-    nv9 = copy.deepcopy(nv_ref)
+    nv9 = copy.deepcopy(nv_sig_shell)
     nv9["name"] = f"{sample_name}-nv9_2023_12_04"
     nv9[pixel_coords_key] = [299.488, 271.881]
     nv9[green_coords_key] = [110.607, 110.38]

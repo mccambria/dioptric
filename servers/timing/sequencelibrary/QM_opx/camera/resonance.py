@@ -8,15 +8,12 @@ Created on October 13th, 2023
 """
 
 
-import numpy
-from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 from servers.timing.sequencelibrary.QM_opx import seq_utils as seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
 import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
 
 
 def get_seq(args, num_reps):
