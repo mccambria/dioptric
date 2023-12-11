@@ -207,14 +207,14 @@ def get_base_scc_seq_args(
     optics_config = config["Optics"]
 
     # Polarization
-    pol_laser = optics_config[LaserKey.POLARIZATION]
+    pol_laser = optics_config[LaserKey.POLARIZATION]["name"]
     pol_coords_list = []
     for nv in nv_list:
         pol_coords = pos.get_nv_coords(nv, coords_suffix=pol_laser)
         pol_coords_list.append(pol_coords)
 
     # Ionization
-    ion_laser = optics_config[LaserKey.IONIZATION]
+    ion_laser = optics_config[LaserKey.IONIZATION]["name"]
     ion_coords_list = []
     for nv in nv_list:
         ion_coords = pos.get_nv_coords(nv, coords_suffix=ion_laser)
