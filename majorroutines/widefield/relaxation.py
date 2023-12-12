@@ -37,7 +37,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "sq_relaxation.py"
+    seq_file = "relaxation.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     ### Collect the data

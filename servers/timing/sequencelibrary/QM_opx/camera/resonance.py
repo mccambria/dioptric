@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 
 
 def get_seq(args, num_reps):
+    # (pol_coords_list, ion_coords_list, uwave_ind) = args
     return resonance_ref.get_seq(args, num_reps, reference=False)
 
 

@@ -17,7 +17,9 @@ import matplotlib.pyplot as plt
 
 
 def get_seq(args, num_reps):
+    # (pol_coords_list, ion_coords_list, ion_duration_ns) = args
     ion_duration_ns = args.pop()
+    args.append(0)  # Tack on the microwave index - resonance_ref expects it
     return resonance_ref.get_seq(
         args, num_reps, reference=False, ion_duration_ns=ion_duration_ns
     )

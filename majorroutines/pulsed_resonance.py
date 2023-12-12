@@ -524,6 +524,7 @@ def fit_resonance(
     line_func=None,
     num_resonances=None,
     guess_params=None,
+    bounds=None, 
 ):
     """Fit the ESR spectrum
 
@@ -599,7 +600,7 @@ def fit_resonance(
             guess_params = get_guess_params_lambda(num_resonances)
         if fit_func is None:
             fit_func = lambda freq, *args: dip_sum(freq, line_func, *args)
-        popt, pcov = curve_fit_sub(fit_func, guess_params)
+        popt, pcov = curve_fit_sub(fit_func, guess_params, bounds)
 
         # # Brute
         # def cost(cost_args):

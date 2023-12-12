@@ -24,12 +24,12 @@ from majorroutines.widefield import (
     charge_state_histograms,
     image_sample,
     optimize,
+    relaxation,
     resonance,
     rabi,
     optimize_scc,
     scc_snr_check,
     spin_echo,
-    sq_relaxation,
 )
 from utils.constants import LaserKey, NVSpinState
 
@@ -172,7 +172,7 @@ def do_sq_relaxation(nv_list):
     num_steps = 20
     num_reps = 100
     num_runs = 8
-    sq_relaxation.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    relaxation.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_opx_constant_ac():

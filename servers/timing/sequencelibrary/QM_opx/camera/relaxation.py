@@ -16,67 +16,39 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 import utils.common as common
 import matplotlib.pyplot as plt
 
+from utils.constants import NVSpinState
+
 
 def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list, tau_ns) = args
+    (pol_coords_list, ion_coords_list, tau_ns, init_state, readout_state) = args
+
+    init_state = NVSpinState(init_state)
+    readout_state = NVSpinState(readout_state)
+
+    buffer = seq_utils.get_widefield_operation_buffer()
+    tau = seq_utils.convert_ns_to_cc(tau_ns)
+
+    init_sig_gen_el = None
+    if init_state == NVSpinState.LOW:
+        init_sig_gen_el = seq_utils.get_sig_gen_element(0)
+    elif init_state == NVSpinState.HIGH:
+        init_sig_gen_el = seq_utils.get_sig_gen_element(1)
+    readout_sig_gen_el = None
+    if readout_state == NVSpinState.LOW:
+        readout_sig_gen_el = seq_utils.get_sig_gen_element(0)
+    elif readout_state == NVSpinState.HIGH:
+        readout_sig_gen_el = seq_utils.get_sig_gen_element(1)
 
     def uwave_macro():
-        tau = seq_utils.convert_ns_to_cc(tau_ns)
-        buffer = seq_utils.get_widefield_operation_buffer()
-        sig_gen_el = seq_utils.get_sig_gen_element()
-
-        qua.wait(tau, sig_gen_el)
-
-        qua.wait(buffer, sig_gen_el)
+        if init_sig_gen_el is not None:
+            qua.play("pi_pulse", init_sig_gen_el)
+        qua.wait(tau)
+        if readout_sig_gen_el is not None:
+            qua.play("pi_pulse", readout_sig_gen_el)
+        qua.wait(buffer)
         qua.align()
 
     seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
-
-    seq_ret_vals = []
-    return seq, seq_ret_vals
-
-
-def get_seq(args, num_reps, reference=False):
-    (pol_coords_list, ion_coords_list, uwave_ind, tau) = args
-
-    if num_reps == None:
-        num_reps = 1
-
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    buffer = seq_utils.get_widefield_operation_buffer()
-    half_tau = seq_utils.convert_ns_to_cc(tau / 2)
-
-    with qua.program() as seq:
-        seq_utils.turn_on_aods()
-
-        def half_rep(no_uwait=False):
-            # Polarization
-            seq_utils.macro_polarize(pol_coords_list)
-
-            # Microwave sequence
-            if not no_uwait:
-                qua.wait(tau, sig_gen_el)
-            qua.wait(buffer, sig_gen_el)
-            qua.align()
-
-            # Ionization
-            seq_utils.macro_ionize(ion_coords_list)
-
-            # Readout
-            seq_utils.macro_charge_state_readout()
-
-        def one_rep():
-            if reference:
-                for no_uwait in (False, True):
-                    half_rep(no_uwait)
-                    qua.align()
-                    seq_utils.macro_wait_for_trigger()
-            else:
-                half_rep(False)
-                qua.align()
-                seq_utils.macro_wait_for_trigger()
-
-        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

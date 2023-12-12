@@ -180,13 +180,11 @@ def get_base_scc_seq_args(nv_list):
     ----------
     nv_list : list(nv_sig)
         List of nv signatures to target
-    uwave_ind : int or list(int), optional
-        Index of microwave signal generator to use, 0 by default
 
     Returns
     -------
-    _type_
-        _description_
+    list
+        Sequence arguments
     """
 
     config = common.get_config_dict()

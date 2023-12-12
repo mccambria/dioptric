@@ -62,11 +62,19 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
         if single_resonance:
             guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
+            bounds = [[0] * 5, [np.inf] * 5]
+            # Limit linewidths
+            for ind in [2, 3]:
+                bounds[1][ind] = 10
             fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
                 1 + voigt(freq, contrast, g_width, l_width, center)
             )
         else:  # Double
-            guess_params = [norm_guess, amp_guess, 5, 5, 2.83, amp_guess, 5, 5, 2.91]
+            guess_params = [norm_guess, amp_guess, 5, 5, 2.85, amp_guess, 5, 5, 2.89]
+            bounds = [[0] * 9, [np.inf] * 9]
+            # Limit linewidths
+            for ind in [2, 3, 6, 7]:
+                bounds[1][ind] = 10
             fit_fn = (
                 lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
                 * (
@@ -82,6 +90,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
             nv_counts_ste,
             fit_func=fit_fn,
             guess_params=guess_params,
+            bounds=bounds,
         )
 
         # SCC readout noise tracking

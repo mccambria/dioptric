@@ -28,13 +28,17 @@ def get_seq(
 ):
     (pol_coords_list, ion_coords_list, uwave_ind) = args
 
+    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
+    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
+    buffer = seq_utils.get_widefield_operation_buffer()
+
     def uwave_macro():
-        sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-        uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
         if uwave_duration is None:
             qua.play("pi_pulse", sig_gen_el)
         else:
             qua.play("on", sig_gen_el, duration=uwave_duration)
+        qua.wait(buffer, sig_gen_el)
+        qua.align()
 
     seq = base_sequence.get_seq(
         pol_coords_list,

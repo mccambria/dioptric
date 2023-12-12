@@ -20,17 +20,16 @@ import matplotlib.pyplot as plt
 def get_seq(args, num_reps):
     (pol_coords_list, ion_coords_list, tau_ns) = args
 
-    def uwave_macro():
-        half_tau = seq_utils.convert_ns_to_cc(tau_ns / 2)
-        buffer = seq_utils.get_widefield_operation_buffer()
-        sig_gen_el = seq_utils.get_sig_gen_element()
+    half_tau = seq_utils.convert_ns_to_cc(tau_ns / 2)
+    buffer = seq_utils.get_widefield_operation_buffer()
+    sig_gen_el = seq_utils.get_sig_gen_element()
 
+    def uwave_macro():
         qua.play("pi_pulse_on_2", sig_gen_el)
         qua.wait(half_tau, sig_gen_el)
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(half_tau, sig_gen_el)
         qua.play("pi_pulse_on_2", sig_gen_el)
-
         qua.wait(buffer, sig_gen_el)
         qua.align()
 
