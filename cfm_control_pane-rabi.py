@@ -118,8 +118,8 @@ def do_optimize_scc(nv_list):
     min_tau = 16
     max_tau = 400
     num_steps = 13
-    num_reps = 50
-    num_runs = 8
+    num_reps = 150
+    num_runs = 6
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -132,37 +132,37 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.150
     num_steps = 40
-    num_reps = 25
-    num_runs = 8
+    num_reps = 150
+    num_runs = 6
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.84
+    freq_center = 2.85
     freq_range = 0.05
     num_steps = 20
-    num_reps = 100
-    num_runs = 8
-    # num_reps = 20
-    # num_runs = 2
+    num_reps = 150
+    num_runs = 6
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_rabi(nv_list):
     min_tau = 16
-    max_tau = 200
-    num_steps = 24
-    num_reps = 100
-    num_runs = 8
+    max_tau = 168
+    num_steps = 20
+    num_reps = 150
+    num_runs = 6
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_spin_echo(nv_list):
     min_tau = 1e3
-    max_tau = 200e3
-    num_steps = 20
-    num_reps = 100
-    num_runs = 8
+    max_tau = 51e3
+    num_steps = 21
+    num_reps = 150
+    num_runs = 12
+    # num_reps = 20
+    # num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -170,8 +170,8 @@ def do_sq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 20e6
     num_steps = 20
-    num_reps = 100
-    num_runs = 8
+    num_reps = 150
+    num_runs = 12
     relaxation.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -358,7 +358,7 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # pos.reset_drift(green_laser)
         # pos.reset_drift(red_laser)
-        # widefield.set_pixel_drift([+13, -3])
+        # widefield.set_pixel_drift([+16, +1])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # with common.labrad_connect() as cxn:
@@ -411,9 +411,9 @@ if __name__ == "__main__":
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
         # do_resonance(nv_list)
-        do_resonance_zoom(nv_list)
+        # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_sq_relaxation(nv_list)
         # do_optimize_scc(nv_list)
         # do_scc_snr_check(nv_list)

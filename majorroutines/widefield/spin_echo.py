@@ -22,8 +22,8 @@ from majorroutines.widefield import base_routine
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     fig, ax = plt.subplots()
-    taus_us = np.array(taus) / 1e3
-    widefield.plot_raw_data(ax, nv_list, taus_us, counts, counts_ste)
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    widefield.plot_raw_data(ax, nv_list, total_evolution_times, counts, counts_ste)
     ax.set_xlabel("Total evolution time (us)")
     ax.set_ylabel("Counts")
     return fig

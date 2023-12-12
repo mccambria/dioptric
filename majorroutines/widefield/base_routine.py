@@ -129,6 +129,7 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
+        
     }
     return counts, raw_data
 
