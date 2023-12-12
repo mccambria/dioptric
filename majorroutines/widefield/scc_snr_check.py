@@ -28,10 +28,11 @@ def main(nv_list, num_reps):
 
     ### Collect the data
 
-    ret_vals = base_routine.main(
-        cxn, nv_list, 1, num_reps, 1, step_fn=None, reference=True
+    counts, _ = base_routine.main(
+        cxn, nv_list, 1, num_reps, 1, step_fn=None, num_images_per_rep=2
     )
-    sig_counts, ref_counts = ret_vals
+    sig_counts = counts[0]
+    ref_counts = counts[1]
 
     ### Report the results and return
 

@@ -28,16 +28,14 @@ def get_seq(args, num_reps):
     buffer = seq_utils.get_widefield_operation_buffer()
     tau = seq_utils.convert_ns_to_cc(tau_ns)
 
-    init_sig_gen_el = None
-    if init_state == NVSpinState.LOW:
-        init_sig_gen_el = seq_utils.get_sig_gen_element(0)
-    elif init_state == NVSpinState.HIGH:
-        init_sig_gen_el = seq_utils.get_sig_gen_element(1)
-    readout_sig_gen_el = None
-    if readout_state == NVSpinState.LOW:
-        readout_sig_gen_el = seq_utils.get_sig_gen_element(0)
-    elif readout_state == NVSpinState.HIGH:
-        readout_sig_gen_el = seq_utils.get_sig_gen_element(1)
+    sig_gen_el_dict = {
+        NVSpinState.ZERO: None,
+        NVSpinState.LOW: seq_utils.get_sig_gen_element(0),
+        NVSpinState.HIGH: seq_utils.get_sig_gen_element(1),
+    }
+
+    init_sig_gen_el = sig_gen_el_dict[init_state]
+    readout_sig_gen_el = sig_gen_el_dict[readout_state]
 
     def uwave_macro():
         if init_sig_gen_el is not None:

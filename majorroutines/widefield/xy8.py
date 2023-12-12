@@ -8,7 +8,6 @@ Created on November 29th, 2023
 """
 
 
-import sys
 import time
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,14 +18,13 @@ from utils import kplotlib as kpl
 from utils import data_manager as dm
 from scipy.optimize import curve_fit
 from majorroutines.widefield import base_routine
-from utils.constants import NVSpinState
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     fig, ax = plt.subplots()
-    taus_ms = np.array(taus) / 1e6
-    widefield.plot_raw_data(ax, nv_list, taus_ms, counts, counts_ste)
-    ax.set_xlabel("Relaxation time (ms)")
+    taus_us = np.array(taus) / 1e3
+    widefield.plot_raw_data(ax, nv_list, taus_us, counts, counts_ste)
+    ax.set_xlabel("Total evolution time (us)")
     ax.set_ylabel("Counts")
     return fig
 
@@ -35,20 +33,11 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     pass
 
 
-def main(
-    nv_list,
-    num_steps,
-    num_reps,
-    num_runs,
-    min_tau,
-    max_tau,
-    init_state=NVSpinState.ZERO,
-    readout_state=NVSpinState.ZERO,
-):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "relaxation.py"
+    seq_file = "xy8.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     ### Collect the data
@@ -56,12 +45,12 @@ def main(
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(tau, init_state, readout_state)
+        seq_args.append(tau)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn
+        nv_list, num_steps, num_reps, num_runs, step_fn, load_iq=True
     )
 
     ### Process and plot
@@ -89,8 +78,6 @@ def main(
         "tau-units": "ns",
         "min_tau": max_tau,
         "max_tau": max_tau,
-        "init_state": init_state,
-        "readout_state": readout_state,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

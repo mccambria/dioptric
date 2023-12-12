@@ -20,26 +20,33 @@ def get_seq(
     pol_coords_list,
     ion_coords_list,
     num_reps,
-    uwave_macro=None,
-    reference=True,
+    uwave_macro,
     pol_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
 ):
-
     if num_reps == None:
         num_reps = 1
+
+    # Determine how many experiments to run based on len of uwave_macro
+    try:
+        num_exps_per_rep = len(uwave_macro)
+    except Exception as exc:
+        num_exps_per_rep = 1
 
     with qua.program() as seq:
         seq_utils.turn_on_aods()
 
-        def half_rep(skip_uwave=False):
+        def one_exp(exp_ind=None):
             # Polarization
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
             # Custom macro for the microwave sequence here
-            if skip_uwave:
+            if exp_ind is None:
                 uwave_macro()
+            else:
+                exp_uwave_macro = uwave_macro[exp_ind]
+                exp_uwave_macro()
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
@@ -51,10 +58,11 @@ def get_seq(
             seq_utils.macro_wait_for_trigger()
 
         def one_rep():
-            half_rep()
-            # Second rep skips the microwave for a reference
-            if reference:
-                half_rep(True)
+            if num_exps_per_rep == 1:
+                one_exp()
+            else:
+                for exp_ind in range(num_exps_per_rep):
+                    one_exp(exp_ind)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 

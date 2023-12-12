@@ -11,52 +11,69 @@ Created on October 13th, 2023
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx.seq_utils import seq_utils
+import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 import utils.common as common
 import matplotlib.pyplot as plt
 
 
-def get_seq(
-    args,
-    num_reps,
-    reference=True,
-    pol_duration_ns=None,
-    uwave_duration_ns=None,
-    ion_duration_ns=None,
-    readout_duration_ns=None,
-):
-    (pol_coords_list, ion_coords_list, uwave_ind) = args
+def get_seq(args, num_reps):
+    (pol_coords_list, ion_coords_list, tau_ns) = args
 
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
+    tau = seq_utils.convert_ns_to_cc(tau_ns)
+    half_tau = seq_utils.convert_ns_to_cc(tau_ns / 2)
     buffer = seq_utils.get_widefield_operation_buffer()
+    sig_gen_el = seq_utils.get_sig_gen_element()
+    i_el, q_el = seq_utils.get_iq_mod_elements()
+    rabi_period = seq_utils.get_rabi_period()
+    pi_pulse_duration = int(rabi_period / 2)
+    pi_on_2_pulse_duration = int(rabi_period / 4)
+    adj_tau = tau - pi_on_2_pulse_duration
+    adj_2_tau = 2 * adj_tau
 
-    def uwave_macro_sig():
-        if uwave_duration is None:
-            qua.play("pi_pulse", sig_gen_el)
-        else:
-            qua.play("on", sig_gen_el, duration=uwave_duration)
-        qua.wait(buffer, sig_gen_el)
+    def y_pi_on_2_pulse():
+        qua.play("off", i_el)
+        qua.play("on", q_el)
+        qua.play("pi_pulse", sig_gen_el)
+
+    def x_pi_pulse():
+        qua.play("on", i_el)
+        qua.play("off", q_el)
+        qua.play("pi_pulse", sig_gen_el)
+
+    def y_pi_pulse():
+        qua.play("off", i_el)
+        qua.play("on", q_el)
+        qua.play("pi_pulse", sig_gen_el)
+
+    def uwave_macro():
+        y_pi_on_2_pulse()
+        qua.wait(adj_tau)
+
+        x_pi_pulse()
+        qua.wait(adj_2_tau)
+        y_pi_pulse()
+        qua.wait(adj_2_tau)
+        x_pi_pulse()
+        qua.wait(adj_2_tau)
+        y_pi_pulse()
+
+        qua.wait(adj_2_tau)
+
+        y_pi_pulse()
+        qua.wait(adj_2_tau)
+        x_pi_pulse()
+        qua.wait(adj_2_tau)
+        y_pi_pulse()
+        qua.wait(adj_2_tau)
+        x_pi_pulse()
+
+        qua.wait(adj_tau)
+        y_pi_on_2_pulse()
+
         qua.align()
 
-    def uwave_macro_ref():
-        pass
-
-    if reference:
-        uwave_macro = [uwave_macro_sig, uwave_macro_ref]
-    else:
-        uwave_macro = uwave_macro_sig
-
-    seq = base_sequence.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        num_reps,
-        uwave_macro,
-        pol_duration_ns,
-        ion_duration_ns,
-        readout_duration_ns,
-    )
+    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

@@ -23,7 +23,8 @@ def main(
     num_runs,
     step_fn=None,
     uwave_ind=0,
-    reference=False,
+    num_exps_per_rep=1,
+    load_iq=False,
 ):
     ### Some initial setup
 
@@ -48,15 +49,12 @@ def main(
         sig_gen = tb.get_server_sig_gen(ind=ind)
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
+        if load_iq:
+            sig_gen.load_iq()
 
     ### Data tracking
 
-    sig_counts = np.empty((num_nvs, num_runs, num_steps, num_reps))
-    if reference:
-        ref_counts = np.empty((num_nvs, num_runs, num_steps, num_reps))
-        num_sig_ref = 2
-    else:
-        num_sig_ref = 1
+    counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     step_ind_master_list = [[] for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -85,7 +83,7 @@ def main(
                 try:
                     pulse_gen.stream_start()
                     for rep_ind in range(num_reps):
-                        for sig_ref_ind in range(num_sig_ref):
+                        for exp_ind in range(num_exps_per_rep):
                             # start = time.time()
                             img_str = camera.read()
                             # stop = time.time()
@@ -100,10 +98,7 @@ def main(
                                 )
 
                             counts_list = [get_counts(el) for el in pixel_coords_list]
-                            if sig_ref_ind == 0:
-                                sig_counts[:, run_ind, step_ind, rep_ind] = counts_list
-                            else:
-                                ref_counts[:, run_ind, step_ind, rep_ind] = counts_list
+                            counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                     break
                 except Exception as exc:
                     print(exc)
@@ -122,6 +117,9 @@ def main(
 
     ### Return
 
+    if num_exps_per_rep == 1:
+        counts = counts[0]
+
     raw_data = {
         "nv_list": nv_list,
         "num_reps": num_reps,
@@ -130,15 +128,9 @@ def main(
         "uwave_ind": uwave_ind,
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
+        "counts": counts,
     }
-
-    if reference:
-        raw_data |= {"sig_counts": sig_counts, "ref_counts": ref_counts}
-        return sig_counts, ref_counts, raw_data
-    else:
-        counts = sig_counts
-        raw_data |= {"counts": counts}
-        return counts, raw_data
+    return counts, raw_data
 
 
 if __name__ == "__main__":

@@ -55,13 +55,16 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
-        seq_args = widefield.get_base_scc_seq_args(nv_list, pol_duration=tau)
+        seq_args = widefield.get_base_scc_seq_args(nv_list)
+        seq_args.append(tau)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    sig_counts, ref_counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, reference=True
+    counts, raw_data = base_routine.main(
+        nv_list, num_steps, num_reps, num_runs, step_fn, num_images_per_rep=2
     )
+    sig_counts = counts[0]
+    ref_counts = counts[1]
 
     ### Process and plot
 

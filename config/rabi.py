@@ -327,7 +327,12 @@ opx_config = {
         # region Actual "elements", or physical things to control
         "do_laser_COBO_638_dm": {
             "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
-            "operations": {"on": "do_on", "off": "do_off", "ionize": "do_ionization", "long_ionize": "do_long_ionization"},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "ionize": "do_ionization",
+                "long_ionize": "do_long_ionization",
+            },
         },
         "ao_laser_OPTO_589_am": {
             "singleInput": {"port": ("con1", 7)},
@@ -363,6 +368,28 @@ opx_config = {
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
                 "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+            },
+        },
+        "ao_sig_gen_STAN_sg394_i": {
+            "singleInput": {"port": ("con1", 9)},
+            "intermediate_frequency": 0,
+            # "sticky": {"analog": True, "duration": 160},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "pi_pulse": "ao_pi_pulse_0",
+                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+            },
+        },
+        "ao_sig_gen_STAN_sg394_q": {
+            "singleInput": {"port": ("con1", 10)},
+            "intermediate_frequency": 0,
+            # "sticky": {"analog": True, "duration": 160},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "pi_pulse": "ao_pi_pulse_0",
+                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
@@ -442,6 +469,16 @@ opx_config = {
             "operation": "control",
             "length": default_pulse_duration,
             "waveforms": {"single": "charge_state_readout"},
+        },
+        "ao_pi_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 2),
+            "waveforms": {"single": "cw"},
+        },
+        "ao_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4),
+            "waveforms": {"single": "cw"},
         },
         ### Digital
         "do_on": {

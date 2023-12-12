@@ -242,5 +242,22 @@ def get_sig_gen_element(uwave_ind=0):
     return f"do_{sig_gen_name}_dm"
 
 
+def get_iq_mod_elements(uwave_ind=0):
+    config = common.get_config_dict()
+    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    i_el = f"ao_{sig_gen_name}_i"
+    q_el = f"ao_{sig_gen_name}_q"
+    return i_el, q_el
+
+
+def get_rabi_period(uwave_ind=0):
+    config = common.get_config_dict()
+    rabi_period_ns = config["Microwaves"][f"sig_gen_{uwave_ind}"]["rabi_period"]
+    return convert_ns_to_cc(rabi_period_ns)
+
+    i_el, q_el = seq_utils.get_iq_mod_elements()
+    rabi_period = seq_utils.get_rabi_period()
+
+
 if __name__ == "__main__":
     turn_on_aods()
