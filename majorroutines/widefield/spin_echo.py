@@ -21,10 +21,10 @@ from majorroutines.widefield import base_routine
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
+    total_evolution_times = 2 * np.array(taus) / 1e3
     for ind in range(len(nv_list)):
         subset_inds = [ind]
         fig, ax = plt.subplots()
-        total_evolution_times = 2 * np.array(taus) / 1e3
         widefield.plot_raw_data(
             ax,
             nv_list,
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1387026830178)
+    data = dm.get_raw_data(file_id=1387061507543)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

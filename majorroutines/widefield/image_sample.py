@@ -294,10 +294,12 @@ if __name__ == "__main__":
 
     data = dm.get_raw_data(file_id=1383720650105)
     img_array = np.array(data["img_array"])
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array)
 
-    start = time.time()
-    img_array_photons = widefield_utils.adus_to_photons(img_array)
-    counts = widefield_utils.integrate_counts(img_array_photons, (256.4, 256.6))
-    print(counts)
+    # start = time.time()
+    # img_array_photons = widefield_utils.adus_to_photons(img_array)
+    # counts = widefield_utils.integrate_counts(img_array_photons, (256.4, 256.6))
+    # print(counts)
 
     plt.show(block=True)

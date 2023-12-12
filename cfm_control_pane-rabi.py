@@ -193,13 +193,19 @@ def do_opx_constant_ac():
     # sig_gen.uwave_on()
     # opx.constant_ac([chan])
 
+    # Camera frame rate test
+    seq_args = [500]
+    seq_args_string = tb.encode_seq_args(seq_args)
+    opx.stream_load("camera_test.py", seq_args_string)
+    opx.stream_start()
+
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.25],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.25],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -238,7 +244,6 @@ def do_opx_constant_ac():
     #     # [75, 75, 110, 110],  # Analog frequencies
     # )
     input("Press enter to stop...")
-    # opx.constant_ac()
     # sig_gen.uwave_off()
 
 
@@ -413,7 +418,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_sq_relaxation(nv_list)
         # do_optimize_scc(nv_list)
         # do_scc_snr_check(nv_list)

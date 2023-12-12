@@ -100,7 +100,8 @@ config |= {
         "timeout": 1000,  # ms
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
-        "readout_mode": 1,
+        "readout_mode": 16,
+        "roi": (220, 150, 200, 200),  # offsetX, offsetY, width, height
     },
     ###
     "Optics": {

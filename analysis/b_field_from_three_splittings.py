@@ -34,7 +34,7 @@ degrees_120 = 120 * (2 * np.pi / 360)
 
 ### Splittings here
 
-splittings = [59, 53, 63]  # MHz
+splittings = [59, 0, 63]  # MHz
 
 ### Calculate
 

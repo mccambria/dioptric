@@ -9,6 +9,7 @@ Created on December 6th, 2023
 
 
 from random import shuffle
+import time
 from matplotlib import pyplot as plt
 import numpy as np
 from majorroutines.widefield import optimize
@@ -84,11 +85,7 @@ def main(
                     pulse_gen.stream_start()
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
-                            # start = time.time()
                             img_str = camera.read()
-                            # stop = time.time()
-                            # print(f"read time: {stop-start}")
-                            # time.sleep(0.1)
                             img_array = widefield.img_str_to_array(img_str)
                             img_array_photons = widefield.adus_to_photons(img_array)
 
@@ -129,7 +126,6 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
-        
     }
     return counts, raw_data
 

@@ -109,7 +109,11 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.set_target_detector_temp(temp)
 
         # See description of readout modes in block comment above
-        self.cam.set_readout_mode(1)
+        readout_mode = widefield._get_camera_readout_mode()
+        self.cam.set_readout_mode(readout_mode)
+
+        roi = widefield._get_camera_roi()
+        self.set_roi(220, 150, 200, 200)
 
         em_gain = widefield._get_camera_em_gain()
         self.cam.setCalibratedEmGain(em_gain)
@@ -133,10 +137,14 @@ class CameraNuvuHnu512gamma(LabradServer):
         # self.set_exposure_time(None, 35)
         # self.set_waiting_time(None, 0)
 
-        frame_latency = self.cam.get_frame_latency()
-        frame_transfer_duration = self.cam.get_frame_transfer_duration()
-        logging.info(f"frame_latency: {frame_latency}")
-        logging.info(f"frame_transfer_duration: {frame_transfer_duration}")
+        # frame_latency = self.cam.get_frame_latency()
+        # frame_transfer_duration = self.cam.get_frame_transfer_duration()
+        # readout_time = self.cam.getReadoutTime()
+        # frame_rate_maximum = self.cam.get_frame_rate_maximum()
+        # logging.info(f"frame_latency: {frame_latency}")
+        # logging.info(f"frame_transfer_duration: {frame_transfer_duration}")
+        # logging.info(f"readout_time: {readout_time}")
+        # logging.info(f"frame_rate_maximum: {frame_rate_maximum}")
 
         logging.info("Init complete")
 
@@ -222,6 +230,20 @@ class CameraNuvuHnu512gamma(LabradServer):
 
     def get_frame_latency(self):
         return self.cam.get_
+
+    def set_roi(self, offsetX, offsetY, width, height):
+        # Only support one ROI right now, so make sure there are no ROIs currently set up
+        max_num_rois = self.cam.get_max_roi_count()
+        num_rois = self.cam.get_roi_count()
+        logging.info(f"max: {max_num_rois}")
+        logging.info(num_rois)
+        if num_rois > 0:
+            for ind in range(num_rois):
+                self.cam.delete_roi(ind)
+
+        # Define the ROI and apply it
+        self.cam.add_roi(offsetX, offsetY, width, height)
+        self.cam.apply_roi()
 
 
 __server__ = CameraNuvuHnu512gamma()

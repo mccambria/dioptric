@@ -359,6 +359,50 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
 
+    def add_roi(self, offsetX, offsetY, width, height):
+        try:
+            error = ncCamAddMRoi(self.ncCam, offsetX, offsetY, width, height)
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def apply_roi(self):
+        try:
+            error = ncCamMRoiApply(self.ncCam)
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
+    def get_roi_count(self):
+        num_rois = c_int(-1)
+        try:
+            error = ncCamGetMRoiCount(self.ncCam, byref(num_rois))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+        return num_rois.value
+
+    def get_max_roi_count(self):
+        max_num_rois = c_int(-1)
+        try:
+            error = ncCamGetMRoiCountMax(self.ncCam, byref(max_num_rois))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+        return max_num_rois.value
+
+    def delete_roi(self, roi_ind):
+        try:
+            error = ncCamDeleteMRoi(self.ncCam, roi_ind)
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+
     # endregion
 
     # region Nuvu functions
@@ -387,7 +431,7 @@ class NcCamera:
 
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
-        return self.readoutTime
+        return self.readoutTime.value
 
     def get_frame_latency(self):
         frame_latency = c_int(0)
@@ -397,7 +441,7 @@ class NcCamera:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
-        return frame_latency
+        return frame_latency.value
 
     def get_frame_transfer_duration(self):
         frame_transfer_duration = c_double(-1.0)
@@ -409,7 +453,7 @@ class NcCamera:
                 raise NuvuException(error)
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
-        return frame_transfer_duration
+        return frame_transfer_duration.value
 
     def setExposureTime(self, exposureTime):
         """
@@ -440,6 +484,23 @@ class NcCamera:
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
         return self.exposureTime.value
+
+    def get_frame_rate_maximum(self, cameraCall=1):
+        """
+        Method that retrieves the exposure time from the camera.
+        :param cameraCall: Selects whether to check the value in the driver (0) or in the camera (1). Note: calling the camera takes time.
+        :return: None
+        """
+        frame_rate_maximum = c_double(-1.0)
+        try:
+            error = ncCamGetFramerateMaximum(
+                self.ncCam, cameraCall, byref(frame_rate_maximum)
+            )
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+        return frame_rate_maximum.value
 
     def setWaitingTime(self, waitTime):
         """
