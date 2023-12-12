@@ -38,6 +38,14 @@ ncCamSetReadoutMode = nuvuLib.ncCamSetReadoutMode
 ncCamSetReadoutMode.restype = c_int
 ncCamSetReadoutMode.argtypes = [NCCAM, c_int]
 
+ncCamGetFrameLatency = nuvuLib.ncCamGetFrameLatency
+ncCamGetFrameLatency.restype = c_int
+ncCamGetFrameLatency.argtypes = [NCCAM, POINTER(c_int)]
+
+ncCamGetFrameTransferDuration = nuvuLib.ncCamGetFrameTransferDuration
+ncCamGetFrameTransferDuration.restype = c_int
+ncCamGetFrameTransferDuration.argtypes = [NCCAM, POINTER(c_double)]
+
 # Get Readout Time
 ncCamGetReadoutTime = nuvuLib.ncCamGetReadoutTime
 ncCamGetReadoutTime.restype = c_int
