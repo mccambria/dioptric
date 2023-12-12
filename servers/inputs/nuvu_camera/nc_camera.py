@@ -387,6 +387,29 @@ class NcCamera:
 
         except NuvuException as nuvuException:
             self.errorHandling(nuvuException.value())
+        return self.readoutTime
+
+    def get_frame_latency(self):
+        frame_latency = c_int(0)
+        try:
+            error = ncCamGetFrameLatency(self.ncCam, byref(frame_latency))
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+        return frame_latency
+
+    def get_frame_transfer_duration(self):
+        frame_transfer_duration = c_double(-1.0)
+        try:
+            error = ncCamGetFrameTransferDuration(
+                self.ncCam, byref(frame_transfer_duration)
+            )
+            if error:
+                raise NuvuException(error)
+        except NuvuException as nuvuException:
+            self.errorHandling(nuvuException.value())
+        return frame_transfer_duration
 
     def setExposureTime(self, exposureTime):
         """

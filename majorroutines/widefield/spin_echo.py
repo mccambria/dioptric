@@ -21,11 +21,15 @@ from majorroutines.widefield import base_routine
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
-    fig, ax = plt.subplots()
-    taus_us = np.array(taus) / 1e3
-    widefield.plot_raw_data(ax, nv_list, taus_us, counts, counts_ste)
-    ax.set_xlabel("Total evolution time (us)")
-    ax.set_ylabel("Counts")
+    for ind in range(len(nv_list)):
+        subset_inds = [ind]
+        fig, ax = plt.subplots()
+        taus_us = np.array(taus) / 1e3
+        widefield.plot_raw_data(
+            ax, nv_list, taus_us, counts, counts_ste, subset_inds=subset_inds
+        )
+        ax.set_xlabel("Total evolution time (us)")
+        ax.set_ylabel("Counts")
     return fig
 
 
@@ -95,19 +99,17 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1382892086081)
+    data = dm.get_raw_data(file_id=1387026830178)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
-    avg_img_arrays = np.average(img_arrays, axis=1)
     taus = data["taus"]
     counts = np.array(data["counts"])
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)

@@ -471,7 +471,7 @@ def _get_camera_config_val(key):
 # region Plotting
 
 
-def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
+def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are easier to interpret. Useful for plotting simultaneous
     data from multiple NVs.
@@ -488,10 +488,15 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None):
         y values to plot - first dimension divides the data sets up
     yerrs : 2D array
         y errors to plot
+    subset_inds : list
+        Specify subset_inds if we want to plot just a specific subset of the NVs in nv_list
     """
     num_nvs = len(nv_list)
-    for ind in range(num_nvs):
-        # for ind in [3]:
+    if subset_inds is None:
+        nv_inds = range(num_nvs)
+    else:
+        nv_inds = subset_inds
+    for ind in nv_inds:
         nv_sig = nv_list[ind]
         label = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[ind]

@@ -133,6 +133,11 @@ class CameraNuvuHnu512gamma(LabradServer):
         # self.set_exposure_time(None, 35)
         # self.set_waiting_time(None, 0)
 
+        frame_latency = self.cam.get_frame_latency()
+        frame_transfer_duration = self.cam.get_frame_transfer_duration()
+        logging.info(f"frame_latency: {frame_latency}")
+        logging.info(f"frame_transfer_duration: {frame_transfer_duration}")
+
         logging.info("Init complete")
 
     def stopServer(self):
@@ -214,6 +219,9 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(12, waiting_time="v[]")
     def set_waiting_time(self, c, waiting_time):
         self.cam.setWaitingTime(waiting_time)
+
+    def get_frame_latency(self):
+        return self.cam.get_
 
 
 __server__ = CameraNuvuHnu512gamma()
