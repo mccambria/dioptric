@@ -142,9 +142,11 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
-    num_steps = 40
-    num_reps = 80
-    num_runs = 6
+    num_steps = 40 
+    # num_reps = 80
+    # num_runs = 6
+    num_reps = 16
+    num_runs = 30
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -401,7 +403,7 @@ if __name__ == "__main__":
         # opx.update_config()
 
         mag_rot_server = tb.get_server_magnet_rotation()
-        # mag_rot_server.set_angle(magnet_angle)
+        mag_rot_server.set_angle(magnet_angle)
         print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
