@@ -143,8 +143,8 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 100
-    num_runs = 8
+    num_reps = 80
+    num_runs = 6
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 
     sample_name = "johnson"
     z_coord = 4.57
-    magnet_angle = 30
+    magnet_angle = 90
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
