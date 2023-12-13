@@ -112,8 +112,10 @@ class CameraNuvuHnu512gamma(LabradServer):
         readout_mode = widefield._get_camera_readout_mode()
         self.cam.set_readout_mode(readout_mode)
 
+        self.clear_roi()
         roi = widefield._get_camera_roi()
-        self.set_roi(220, 150, 200, 200)
+        if roi is not None:
+            self.set_roi(*roi)
 
         em_gain = widefield._get_camera_em_gain()
         self.cam.setCalibratedEmGain(em_gain)
@@ -229,19 +231,15 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.setWaitingTime(waiting_time)
 
     def get_frame_latency(self):
-        return self.cam.get_
+        return self.cam.get_frame_latency()
 
-    def set_roi(self, offsetX, offsetY, width, height):
-        # Only support one ROI right now, so make sure there are no ROIs currently set up
-        max_num_rois = self.cam.get_max_roi_count()
+    def clear_roi(self):
         num_rois = self.cam.get_roi_count()
-        logging.info(f"max: {max_num_rois}")
-        logging.info(num_rois)
         if num_rois > 0:
             for ind in range(num_rois):
                 self.cam.delete_roi(ind)
 
-        # Define the ROI and apply it
+    def set_roi(self, offsetX, offsetY, width, height):
         self.cam.add_roi(offsetX, offsetY, width, height)
         self.cam.apply_roi()
 
