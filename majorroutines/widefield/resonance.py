@@ -49,6 +49,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     fit_fns = []
     popts = []
     norms = []
+    num_steps = len(freqs)
 
     center_freqs = []
 
@@ -58,7 +59,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        single_resonance = True  # vs double resonance
+        single_resonance = False  # vs double resonance
 
         if single_resonance:
             guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
@@ -70,7 +71,19 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 1 + voigt(freq, contrast, g_width, l_width, center)
             )
         else:  # Double
-            guess_params = [norm_guess, amp_guess, 5, 5, 2.85, amp_guess, 5, 5, 2.89]
+            low_freq_guess = freqs[num_steps * 1 // 3]
+            high_freq_guess = freqs[num_steps * 2 // 3]
+            guess_params = [
+                norm_guess,
+                amp_guess,
+                5,
+                5,
+                low_freq_guess,
+                amp_guess,
+                5,
+                5,
+                high_freq_guess,
+            ]
             bounds = [[0] * 9, [np.inf] * 9]
             # Limit linewidths
             for ind in [2, 3, 6, 7]:
@@ -196,7 +209,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1386029806823)
+    data = dm.get_raw_data(file_id=1387536786736)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
