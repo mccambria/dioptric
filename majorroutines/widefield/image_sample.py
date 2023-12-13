@@ -228,7 +228,6 @@ def main(
 
     ### Set up the image display
 
-    kpl.init_kplotlib()
     title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms"
 
     ### Collect the data

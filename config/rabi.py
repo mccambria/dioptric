@@ -25,12 +25,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [267.929, 290.489],
+    # pixel_coords_key: [267.929-220, 290.489-150],
+    pixel_coords_key: [47.929, 140.489],
     green_coords_key: [109.811, 110.845],
     red_coords_key: [74.1, 75.9],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [217.197, 331.628],
+    # pixel_coords_key: [217.197 - 220, 331.628 - 150],
+    pixel_coords_key: [-2.803, 181.628],
     green_coords_key: [108.1, 112.002],
     red_coords_key: [72.9, 76.8],
 }

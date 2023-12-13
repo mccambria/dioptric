@@ -223,8 +223,6 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ref_img_array = ref_img_array / num_reps
     diff_img_array = diff_img_array / num_reps
 
-    kpl.init_kplotlib()
-
     img_arrays = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
     figs = []
@@ -239,7 +237,6 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Clean up and return
 
     tb.reset_cfm()
-
     kpl.show()
 
     timestamp = dm.get_time_stamp()

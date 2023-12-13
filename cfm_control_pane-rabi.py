@@ -24,12 +24,14 @@ from majorroutines.widefield import (
     charge_state_histograms,
     image_sample,
     optimize,
-    relaxation,
+    relaxation_interleave,
     resonance,
     rabi,
     optimize_scc,
     scc_snr_check,
     spin_echo,
+    xy8,
+    calibrate_iq_delay,
 )
 from utils.constants import LaserKey, NVSpinState
 
@@ -128,6 +130,15 @@ def do_scc_snr_check(nv_list):
     scc_snr_check.main(nv_list, num_reps)
 
 
+def do_calibrate_iq_delay(nv_list):
+    min_tau = -200
+    max_tau = +200
+    num_steps = 26
+    num_reps = 150
+    num_runs = 6
+    calibrate_iq_delay.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
 def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.150
@@ -157,7 +168,7 @@ def do_rabi(nv_list):
 
 def do_spin_echo(nv_list):
     min_tau = 1e3
-    max_tau = 51e3
+    max_tau = 50e3 + min_tau
     num_steps = 21
     num_reps = 150
     num_runs = 12
@@ -166,13 +177,37 @@ def do_spin_echo(nv_list):
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
-def do_sq_relaxation(nv_list):
+def do_xy8(nv_list):
     min_tau = 1e3
-    max_tau = 20e6
-    num_steps = 20
+    max_tau = 1e6 + min_tau
+    num_steps = 21
     num_reps = 150
     num_runs = 12
-    relaxation.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    # num_reps = 20
+    # num_runs = 2
+    xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_sq_relaxation(nv_list):
+    min_tau = 1e3
+    max_tau = 30e6 + min_tau
+    num_steps = 21
+    num_reps = 150
+    num_runs = 12
+    relaxation_interleave.sq_relaxation(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
+
+
+def do_dq_relaxation(nv_list):
+    min_tau = 1e3
+    max_tau = 18e6 + min_tau
+    num_steps = 19
+    num_reps = 150
+    num_runs = 12
+    relaxation_interleave.dq_relaxation(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
 
 
 def do_opx_constant_ac():
@@ -274,61 +309,71 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_sig_shell)
     nv0["name"] = f"{sample_name}-nv0_2023_12_04"
-    nv0[pixel_coords_key] = [330.395, 272.331]
+    # nv0[pixel_coords_key] = [330.395-220, 272.331-150]
+    nv0[pixel_coords_key] = [110.395, 122.331]
     nv0[green_coords_key] = [111.795, 110.475]
     nv0[red_coords_key] = [75.698, 75.403]
 
     nv1 = copy.deepcopy(nv_sig_shell)
     nv1["name"] = f"{sample_name}-nv1_2023_12_04"
-    nv1[pixel_coords_key] = [319.971, 298.197]
+    # nv1[pixel_coords_key] = [319.971-220, 298.197-150]
+    nv1[pixel_coords_key] = [99.971, 148.197]
     nv1[green_coords_key] = [111.69, 110.983]
     nv1[red_coords_key] = [75.349, 76.138]
 
     nv2 = copy.deepcopy(nv_sig_shell)
     nv2["name"] = f"{sample_name}-nv2_2023_12_04"
-    nv2[pixel_coords_key] = [298.198, 321.495]
+    # nv2[pixel_coords_key] = [298.198-220, 321.495-150]
+    nv2[pixel_coords_key] = [78.198, 171.495]
     nv2[green_coords_key] = [110.448, 111.963]
     nv2[red_coords_key] = [74.767, 76.785]
 
     nv3 = copy.deepcopy(nv_sig_shell)
     nv3["name"] = f"{sample_name}-nv3_2023_12_04"
-    nv3[pixel_coords_key] = [301.955, 249.548]
+    # nv3[pixel_coords_key] = [301.955-220, 249.548-150]
+    nv3[pixel_coords_key] = [81.955, 99.548]
     nv3[green_coords_key] = [110.884, 109.518]
     nv3[red_coords_key] = [74.914, 74.902]
 
     nv4 = copy.deepcopy(nv_sig_shell)
     nv4["name"] = f"{sample_name}-nv4_2023_12_04"
-    nv4[pixel_coords_key] = [329.721, 248.574]
+    # nv4[pixel_coords_key] = [329.721-220, 248.574-150]
+    nv4[pixel_coords_key] = [109.721, 98.574]
     nv4[green_coords_key] = [111.819, 109.628]
     nv4[red_coords_key] = [75.661, 74.943]
 
     nv5 = copy.deepcopy(nv_sig_shell)
     nv5["name"] = f"{sample_name}-nv5_2023_12_04"
-    nv5[pixel_coords_key] = [352.77, 278.812]
+    # nv5[pixel_coords_key] = [352.77-220, 278.812-150]
+    nv5[pixel_coords_key] = [132.77, 128.812]
     nv5[green_coords_key] = [112.54, 110.535]
     nv5[red_coords_key] = [76.269, 75.572]
 
     nv6 = copy.deepcopy(nv_sig_shell)
     nv6["name"] = f"{sample_name}-nv6_2023_12_04"
-    nv6[pixel_coords_key] = [309.991, 200.526]
+    # nv6[pixel_coords_key] = [309.991-220, 200.526-150]
+    nv6[pixel_coords_key] = [89.991, 50.526]
     nv6[green_coords_key] = [111.082, 107.778]
     nv6[red_coords_key] = [75.157, 73.43]
 
     nv7 = copy.deepcopy(nv_sig_shell)
     nv7["name"] = f"{sample_name}-nv7_2023_12_04"
-    nv7[pixel_coords_key] = [306.051, 193.589]
+    # nv7[pixel_coords_key] = [306.051-220, 193.589-150]
+    nv7[pixel_coords_key] = [86.051, 43.589]
     nv7[green_coords_key] = [111.171, 107.787]
     nv7[red_coords_key] = [75.009, 73.345]
 
     nv8 = copy.deepcopy(nv_sig_shell)
     nv8["name"] = f"{sample_name}-nv8_2023_12_04"
-    nv8[pixel_coords_key] = [328.001, 182.152]
+    # nv8[pixel_coords_key] = [328.001-220, 182.152-150]
+    nv8[pixel_coords_key] = [108.001, 32.152]
     nv8[green_coords_key] = [111.68, 107.162]
     nv8[red_coords_key] = [75.534, 72.894]
 
     nv9 = copy.deepcopy(nv_sig_shell)
     nv9["name"] = f"{sample_name}-nv9_2023_12_04"
-    nv9[pixel_coords_key] = [299.488, 271.881]
+    # nv9[pixel_coords_key] = [299.488-220, 271.881-150]
+    nv9[pixel_coords_key] = [79.488, 121.881]
     nv9[green_coords_key] = [110.607, 110.38]
     nv9[red_coords_key] = [74.733, 75.413]
 
@@ -353,10 +398,10 @@ if __name__ == "__main__":
         # opx.update_config()
 
         mag_rot_server = tb.get_server_magnet_rotation()
-        # mag_rot_server.set_angle(magnet_angle)
+        mag_rot_server.set_angle(magnet_angle)
         print(mag_rot_server.get_angle())
 
-        # kpl.init_kplotlib()
+        kpl.init_kplotlib()
         tb.init_safe_stop()
 
         # widefield.reset_all_drift()
@@ -377,6 +422,7 @@ if __name__ == "__main__":
         # print()
 
         # do_opx_constant_ac()
+        # do_calibrate_iq_delay(nv_list)
 
         # for z in np.linspace(4.80, 4.50, 11):
         #     nv_sig["coords"][2] = z
@@ -415,11 +461,13 @@ if __name__ == "__main__":
         #             nv[NVSpinState.LOW]["rabi_period"] = rabi
         #             nv[LaserKey.IONIZATION]["duration"] = dur
         #         do_resonance_zoom(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_spin_echo(nv_list)
         # do_sq_relaxation(nv_list)
+        # do_dq_relaxation(nv_list)
+        # do_spin_echo(nv_list)
+        # do_xy8(nv_list)
         # do_optimize_scc(nv_list)
         # do_scc_snr_check(nv_list)
 

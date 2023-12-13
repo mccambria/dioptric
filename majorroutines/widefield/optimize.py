@@ -168,7 +168,6 @@ def optimize_pixel_with_img_array(
     img_array, nv_sig=None, pixel_coords=None, do_plot=False
 ):
     if do_plot:
-        kpl.init_kplotlib()
         fig, ax = plt.subplots()
         kpl.imshow(ax, img_array, cbar_label="Counts")
 
