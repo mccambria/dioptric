@@ -10,7 +10,6 @@ Created on October 13th, 2023
 
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils as seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
 import utils.common as common
 import matplotlib.pyplot as plt
@@ -32,7 +31,6 @@ if __name__ == "__main__":
 
     try:
         args = [
-            None,
             [
                 [112.21219579120823, 110.40003798562638],
                 [112.10719579120823, 110.9080379856264],
@@ -45,7 +43,6 @@ if __name__ == "__main__":
                 [112.09719579120824, 107.0870379856264],
                 [111.02419579120823, 110.30503798562638],
             ],
-            None,
             [
                 [75.99059786642306, 75.34468901215536],
                 [75.64159786642307, 76.07968901215536],
@@ -58,9 +55,7 @@ if __name__ == "__main__":
                 [75.82659786642307, 72.83568901215536],
                 [75.02559786642307, 75.35468901215535],
             ],
-            None,
             0,
-            None,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 

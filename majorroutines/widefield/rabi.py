@@ -60,7 +60,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        if nv_ind in [1, 2, 3, 4, 8]:
+        # if nv_ind in [1, 2, 3, 4, 8]:
+        if nv_ind in range(num_nvs):
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -104,6 +105,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     print(f"a1 average: {round(np.average(a1_list), 2)}")
     print(f"Average readout noise: {round(np.average(readout_noise_list), 2)}")
     print(f"Median readout noise: {round(np.median(readout_noise_list), 2)}")
+    rabi_periods = [round(1 / el[2], 2) for el in popts]
+    print(f"rabi_periods: {rabi_periods}")
 
     ### Make the figure
 
@@ -114,11 +117,11 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "resonance.py"
+    seq_file = "rabi.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     ### Collect the data
@@ -126,12 +129,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(tau)
+        seq_args.extend([uwave_ind, tau])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn
+        nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
     )
 
     ### Process and plot
@@ -176,14 +179,12 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1382892086081)
+    data = dm.get_raw_data(file_id=1386933040254)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
-    avg_img_arrays = np.average(img_arrays, axis=1)
     taus = data["taus"]
     counts = np.array(data["counts"])
 

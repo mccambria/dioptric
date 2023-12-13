@@ -11,7 +11,7 @@ Created on December 11th, 2023
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-import servers.timing.sequencelibrary.QM_opx.seq_utils as seq_utils
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 import utils.common as common
 import matplotlib.pyplot as plt
 
@@ -66,8 +66,7 @@ def get_seq(
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
-    seq_ret_vals = []
-    return seq, seq_ret_vals
+    return seq
 
 
 if __name__ == "__main__":

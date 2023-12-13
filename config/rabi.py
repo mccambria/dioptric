@@ -79,8 +79,8 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.846398387691916,
-            "rabi_period": 128,
+            "frequency": 2.8464269574748924,
+            "rabi_period": 144,
             "uwave_power": 9,
         },
         "sig_gen_1": {
@@ -100,7 +100,8 @@ config |= {
         "timeout": 1000,  # ms
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
-        "readout_mode": 1,
+        "readout_mode": 16,
+        "roi": (220, 150, 200, 200),  # offsetX, offsetY, width, height
     },
     ###
     "Optics": {
@@ -375,8 +376,8 @@ opx_config = {
             "intermediate_frequency": 0,
             # "sticky": {"analog": True, "duration": 160},
             "operations": {
-                "on": "do_on",
-                "off": "do_off",
+                "on": "ao_cw",
+                "off": "ao_off",
                 "pi_pulse": "ao_pi_pulse_0",
                 "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
@@ -386,8 +387,8 @@ opx_config = {
             "intermediate_frequency": 0,
             # "sticky": {"analog": True, "duration": 160},
             "operations": {
-                "on": "do_on",
-                "off": "do_off",
+                "on": "ao_cw",
+                "off": "ao_off",
                 "pi_pulse": "ao_pi_pulse_0",
                 "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
@@ -465,11 +466,6 @@ opx_config = {
             "length": default_pulse_duration,
             "waveforms": {"single": "off"},
         },
-        "charge_state_readout": {
-            "operation": "control",
-            "length": default_pulse_duration,
-            "waveforms": {"single": "charge_state_readout"},
-        },
         "ao_pi_pulse_0": {
             "operation": "control",
             "length": int(rabi_period_0 / 2),
@@ -516,14 +512,14 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
-        "do_pi_pulse_1": {
-            "operation": "control",
-            "length": int(rabi_period_1 / 2),
-            "digital_marker": "on",
-        },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
             "length": int(rabi_period_0 / 4),
+            "digital_marker": "on",
+        },
+        "do_pi_pulse_1": {
+            "operation": "control",
+            "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
@@ -548,7 +544,6 @@ opx_config = {
         "yellow_charge_readout": {"type": "constant", "sample": 0.11},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
-        "charge_state_readout": {"type": "constant", "sample": 0.5},
     },
     ### Digital, format is list of tuples: (on/off, ns)
     "digital_waveforms": {

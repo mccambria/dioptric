@@ -12,7 +12,7 @@ import numpy as np
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx.seq_utils import seq_utils
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 import utils.common as common
 import matplotlib.pyplot as plt
@@ -32,9 +32,10 @@ def get_seq(
 
     if phase is not None:
         i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
-        phase_rad = phase * (np.pi / 180)
-        i_comp = 0.5 * np.cos(phase_rad)
-        q_comp = 0.5 * np.sin(phase_rad)
+        # phase_rad = phase * (np.pi / 180)
+        # i_comp = 0.5 * np.cos(phase_rad)
+        # q_comp = 0.5 * np.sin(phase_rad)
+        iq_pulse_dict = {0: , 90:}
 
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
@@ -43,11 +44,11 @@ def get_seq(
     def uwave_macro_sig():
         if uwave_duration is None:
             qua.play("pi_pulse", sig_gen_el)
+            if phase is not None:
+                qua.play("pi_pulse", i_el)
+                qua.play("pi_pulse", q_el)
         else:
             qua.play("on", sig_gen_el, duration=uwave_duration)
-        # if phase is not None:
-        #     qua.play("off", i_el)
-        #     qua.play("on", q_el)
         qua.wait(buffer, sig_gen_el)
         qua.align()
 

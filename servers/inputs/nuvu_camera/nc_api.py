@@ -38,6 +38,28 @@ ncCamSetReadoutMode = nuvuLib.ncCamSetReadoutMode
 ncCamSetReadoutMode.restype = c_int
 ncCamSetReadoutMode.argtypes = [NCCAM, c_int]
 
+ncCamAddMRoi = nuvuLib.ncCamAddMRoi
+ncCamAddMRoi.restype = c_int
+ncCamAddMRoi.argtypes = [NCCAM, c_int, c_int, c_int, c_int]
+
+ncCamMRoiApply = nuvuLib.ncCamMRoiApply
+ncCamMRoiApply.restype = c_int
+ncCamMRoiApply.argtypes = [NCCAM]
+
+ncCamDeleteMRoi = nuvuLib.ncCamDeleteMRoi
+ncCamDeleteMRoi.restype = c_int
+ncCamDeleteMRoi.argtypes = [NCCAM, c_int]
+
+ncCamGetMRoiCount = nuvuLib.ncCamGetMRoiCount
+ncCamGetMRoiCount.restype = c_int
+ncCamGetMRoiCount.argtypes = [NCCAM, POINTER(c_int)]
+
+ncCamGetMRoiCountMax = nuvuLib.ncCamGetMRoiCountMax
+ncCamGetMRoiCountMax.restype = c_int
+ncCamGetMRoiCountMax.argtypes = [NCCAM, POINTER(c_int)]
+
+
+
 ncCamGetFrameLatency = nuvuLib.ncCamGetFrameLatency
 ncCamGetFrameLatency.restype = c_int
 ncCamGetFrameLatency.argtypes = [NCCAM, POINTER(c_int)]
@@ -60,6 +82,11 @@ ncCamSetExposureTime.argtypes = [NCCAM, c_double]
 ncCamGetExposureTime = nuvuLib.ncCamGetExposureTime
 ncCamGetExposureTime.restype = c_int
 ncCamGetExposureTime.argtypes = [NCCAM, c_int, POINTER(c_double)]
+
+# Get Exposure TIme
+ncCamGetFramerateMaximum = nuvuLib.ncCamGetFramerateMaximum
+ncCamGetFramerateMaximum.restype = c_int
+ncCamGetFramerateMaximum.argtypes = [NCCAM, c_int, POINTER(c_double)]
 
 # Set Waiting Time
 ncCamSetWaitingTime = nuvuLib.ncCamSetWaitingTime

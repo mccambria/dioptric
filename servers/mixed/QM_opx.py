@@ -141,9 +141,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             #     seq_module = importlib.reload(file_name)
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-            ret_vals = seq_module.get_seq(args, num_reps)
-            # seq, final, ret_vals, self.num_gates_per_rep, self.sample_size = ret_vals
-            seq, seq_ret_vals = ret_vals
+            seq, seq_ret_vals = seq_module.get_seq(args, num_reps)
 
         return seq, seq_ret_vals
 
@@ -166,8 +164,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+            # These options allow for faster compiles at the expense of some extra memory usage
+            compiler_options = CompilerOptionArguments(
+                flags=["skip-loop-unrolling", "skip-loop-rolling"]
+            )
             start = time.time()
-            program_id = self.opx.compile(seq)
+            program_id = self.opx.compile(seq, compiler_options=compiler_options)
             stop = time.time()
             logging.info(f"compile time: {round(stop-start, 3)}")
             self.compiled_programs.clear()  # MCC just store one program for now, the most recent
