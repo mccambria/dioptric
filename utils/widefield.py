@@ -496,11 +496,19 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         nv_inds = range(num_nvs)
     else:
         nv_inds = subset_inds
-    for ind in nv_inds:
-        nv_sig = nv_list[ind]
+    for nv_ind in nv_inds:
+        nv_sig = nv_list[nv_ind]
         label = get_nv_num(nv_sig)
-        yerr = None if yerrs is None else yerrs[ind]
-        kpl.plot_points(ax, x, ys[ind], yerr=yerr, label=label, size=kpl.Size.SMALL)
+        yerr = None if yerrs is None else yerrs[nv_ind]
+        kpl.plot_points(
+            ax,
+            x,
+            ys[nv_ind],
+            yerr=yerr,
+            label=label,
+            size=kpl.Size.SMALL,
+            color=kpl.data_color_cycler[nv_ind],
+        )
     # min_x = min(x)
     # max_x = max(x)
     # excess = 0.08 * (max_x - min_x)
@@ -550,7 +558,12 @@ def plot_fit(
         kpl.plot_points(ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL)
         fn = fns[nv_ind]
         popt = popts[nv_ind]
-        kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm) + nv_offset)
+        kpl.plot_line(
+            ax,
+            x_linspace,
+            (fn(x_linspace, *popt) / norm) + nv_offset,
+            color=kpl.data_color_cycler[nv_ind],
+        )
     # excess = 0.08 * (max_x - min_x)
     # ax.set_xlim(min_x - excess, max_x + excess)
     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
