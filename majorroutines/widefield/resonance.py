@@ -160,7 +160,6 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     ### Process and plot
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
-
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)

@@ -141,10 +141,10 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.150
+    freq_range = 0.180
     num_steps = 40
-    num_reps = 150
-    num_runs = 6
+    num_reps = 100
+    num_runs = 8
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 
     sample_name = "johnson"
     z_coord = 4.57
-    magnet_angle = 60
+    magnet_angle = 30
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -392,48 +392,43 @@ if __name__ == "__main__":
     try:
         # pass
 
+        kpl.init_kplotlib()
+        tb.init_safe_stop()
+
         # Make sure the OPX config is up to date
         # cxn = common.labrad_connect()
         # opx = cxn.QM_opx
         # opx.update_config()
 
         mag_rot_server = tb.get_server_magnet_rotation()
-        mag_rot_server.set_angle(magnet_angle)
+        # mag_rot_server.set_angle(magnet_angle)
         print(mag_rot_server.get_angle())
 
-        kpl.init_kplotlib()
-        tb.init_safe_stop()
-
         # widefield.reset_all_drift()
-        # widefield.reset_pixel_drift()
-        # pos.reset_drift(green_laser)
-        # pos.reset_drift(red_laser)
         # widefield.set_pixel_drift([+16, +1])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
-        # with common.labrad_connect() as cxn:
-        #     pos.set_xyz_on_nv(cxn, nv_sig)
-
-        # Get updated coords before drift reset
-        # for nv in nv_list:
-        #     print(widefield.get_nv_pixel_coords(nv))
-        #     print(pos.get_nv_coords(nv, green_laser))
-        #     print(pos.get_nv_coords(nv, red_laser))
-        # print()
-
-        # do_opx_constant_ac()
-        # do_calibrate_iq_delay(nv_list)
+        # pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.linspace(4.80, 4.50, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
-
-        # do_image_nv_list(nv_list)
-
         # do_optimize_pixel(nv_sig)
-        # do_charge_state_histograms(nv_list, 1000)
 
+        # do_scc_snr_check(nv_list)
+
+        do_resonance(nv_list)
+        # do_resonance_zoom(nv_list)
+        # do_rabi(nv_list)
+        # do_sq_relaxation(nv_list)
+        # do_dq_relaxation(nv_list)
+        # do_spin_echo(nv_list)
+        # do_xy8(nv_list)
+
+        ### Infrequent stuff down here
+
+        # Full optimize
         # opti_coords_list = []
         # for nv in nv_list:
         #     widefield.reset_all_drift()
@@ -452,24 +447,12 @@ if __name__ == "__main__":
         #     r_opti_coords = [round(el, 3) for el in opti_coords]
         #     print(r_opti_coords)
 
+        # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
-
-        # for rabi in [96, 96 * 2]:
-        # for rabi in [96 * 2]:
-        #     for dur in [50, 100, 150, 200, 250, 300, 350]:
-        #         for nv in nv_list:
-        #             nv[NVSpinState.LOW]["rabi_period"] = rabi
-        #             nv[LaserKey.IONIZATION]["duration"] = dur
-        #         do_resonance_zoom(nv_list)
-        do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
-        # do_sq_relaxation(nv_list)
-        # do_dq_relaxation(nv_list)
-        # do_spin_echo(nv_list)
-        # do_xy8(nv_list)
+        # do_opx_constant_ac()
+        # do_calibrate_iq_delay(nv_list)
+        # do_image_nv_list(nv_list)
         # do_optimize_scc(nv_list)
-        # do_scc_snr_check(nv_list)
 
     except Exception as exc:
         if do_email:
