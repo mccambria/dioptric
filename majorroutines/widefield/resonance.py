@@ -209,7 +209,8 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1387536786736)
+    data = dm.get_raw_data(file_id=1387567031114)  # few runs
+    data = dm.get_raw_data(file_id=1387592867293)  # many runs
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
