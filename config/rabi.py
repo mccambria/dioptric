@@ -128,6 +128,7 @@ config |= {
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
         LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 220},
+        # LaserKey.CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 35e6},
         LaserKey.CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 35e6},
     },
     ###

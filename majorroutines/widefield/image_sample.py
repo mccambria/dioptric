@@ -13,6 +13,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
+from servers.inputs.nuvu_camera.nc_camera import NuvuException
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield as widefield_utils
@@ -247,9 +248,12 @@ def main(
                 img_array += sub_img_array
 
     except Exception as exc:
-        print(exc)
         num_reps = ind
-        print(num_reps)
+        nuvu_237 = "NuvuException: 237"
+        if "NuvuException: 237" in str(exc):
+            print(f"{nuvu_237} at {num_reps} reps")
+        else:
+            raise exc
 
     finally:
         camera.disarm()

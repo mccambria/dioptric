@@ -8,6 +8,7 @@ Created on October 13th, 2023
 """
 
 
+import time
 import numpy as np
 from qm import qua
 from qm import QuantumMachinesManager
@@ -114,3 +115,8 @@ if __name__ == "__main__":
         raise exc
     finally:
         qmm.close_all_quantum_machines()
+
+
+
+
+

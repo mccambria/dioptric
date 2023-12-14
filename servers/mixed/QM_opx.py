@@ -134,11 +134,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         file_name, file_ext = os.path.splitext(seq_file)
 
         if file_ext == ".py":  # py: import as a module
-            # Get it fresh
-            # if file_name not in sys.modules:
-            #     seq_module = importlib.import_module(file_name)
-            # else:
-            #     seq_module = importlib.reload(file_name)
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
             seq, seq_ret_vals = seq_module.get_seq(args, num_reps)
@@ -163,15 +158,18 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if key in self.compiled_programs:
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
+            # start = time.time()
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
+            # stop = time.time()
+            # logging.info(f"get_seq time: {round(stop-start, 3)}")
             # These options allow for faster compiles at the expense of some extra memory usage
             compiler_options = CompilerOptionArguments(
                 flags=["skip-loop-unrolling", "skip-loop-rolling"]
             )
-            start = time.time()
+            # start = time.time()
             program_id = self.opx.compile(seq, compiler_options=compiler_options)
-            stop = time.time()
-            logging.info(f"compile time: {round(stop-start, 3)}")
+            # stop = time.time()
+            # logging.info(f"compile time: {round(stop-start, 3)}")
             self.compiled_programs.clear()  # MCC just store one program for now, the most recent
             self.compiled_programs[key] = [program_id, seq_ret_vals]
 

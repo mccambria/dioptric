@@ -13,6 +13,7 @@ from random import shuffle
 import numpy as np
 from majorroutines.widefield import optimize
 from utils import tool_belt as tb, widefield, positioning as pos
+from servers.inputs.nuvu_camera.nc_camera import NuvuException
 
 
 def main(
@@ -97,7 +98,11 @@ def main(
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                     break
                 except Exception as exc:
-                    print(exc)
+                    nuvu_237 = "NuvuException: 237"
+                    if "NuvuException: 237" in str(exc):
+                        print(nuvu_237)
+                    else:
+                        raise exc
                     camera.arm()
                     attempt_ind += 1
                     if attempt_ind == num_attempts:
