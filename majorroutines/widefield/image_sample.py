@@ -13,7 +13,6 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import majorroutines.optimize as optimize
-from servers.inputs.nuvu_camera.nc_camera import NuvuException
 from utils import tool_belt as tb
 from utils import common
 from utils import widefield as widefield_utils
@@ -21,8 +20,6 @@ from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import data_manager as dm
-from scipy import ndimage
-import os
 import time
 from utils import data_manager as dm
 from majorroutines.widefield.optimize import optimize_pixel
@@ -188,7 +185,9 @@ def main(
 
     tb.reset_cfm()
     laser_key = (
-        LaserKey.WIDEFIELD_IMAGING if caller_fn_name == "widefield" else LaserKey.IMAGING
+        LaserKey.WIDEFIELD_IMAGING
+        if caller_fn_name == "widefield"
+        else LaserKey.IMAGING
     )
     optimize.prepare_microscope(nv_sig)
     camera = tb.get_server_camera()
@@ -295,7 +294,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1383720650105)
+    data = dm.get_raw_data(file_id=1389314711129)
     img_array = np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)

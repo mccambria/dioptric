@@ -13,7 +13,6 @@ from random import shuffle
 import numpy as np
 from majorroutines.widefield import optimize
 from utils import tool_belt as tb, widefield, positioning as pos
-from servers.inputs.nuvu_camera.nc_camera import NuvuException
 
 
 def main(

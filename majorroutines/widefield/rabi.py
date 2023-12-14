@@ -31,6 +31,8 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
 def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Do the fitting
 
+    taus = np.array(taus)
+
     def cos_decay(tau, norm, ptp_amp, freq, decay):
         amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
@@ -60,8 +62,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        # if nv_ind in [1, 2, 3, 4, 8]:
-        if nv_ind in range(num_nvs):
+        if nv_ind in [8]:
+            # if nv_ind in [1, 2, 3, 4, 8]:
+            # if nv_ind in range(num_nvs):
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -101,11 +104,16 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         popts.append(popt)
         norms.append(norm)
 
+        residuals = fit_fn(taus, *popt) - nv_counts
+        chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+        red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+        print(red_chi_sq)
+
     print(f"a0 average: {round(np.average(a0_list), 2)}")
     print(f"a1 average: {round(np.average(a1_list), 2)}")
     print(f"Average readout noise: {round(np.average(readout_noise_list), 2)}")
     print(f"Median readout noise: {round(np.median(readout_noise_list), 2)}")
-    rabi_periods = [round(1 / el[2], 2) for el in popts]
+    rabi_periods = [round(1 / el[2], 2) for el in popts if len(el) > 1]
     print(f"rabi_periods: {rabi_periods}")
 
     ### Make the figure
@@ -177,7 +185,8 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1386933040254)
+    data = dm.get_raw_data(file_id=1389296547989)  # now
+    # data = dm.get_raw_data(file_id=1382892086081)  # week ago
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -185,6 +194,7 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
     counts = np.array(data["counts"])
+    step_ind_master_list = np.array(data["step_ind_master_list"])
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
