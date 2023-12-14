@@ -214,8 +214,10 @@ if __name__ == "__main__":
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1388701699044)  # 90
-    data = dm.get_raw_data(file_id=1388679268107)  # 30
+    # data = dm.get_raw_data(file_id=1388679268107)  # 30
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
+    # data = dm.get_raw_data(file_id=1387567031114)  # large correlation
+    data = dm.get_raw_data(file_id=1389286042809)  # small correlation
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -223,6 +225,21 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
+
+    step_ind_master_list = np.array(data["step_ind_master_list"])
+    mean_inds = []
+    mean_corrs = []
+    for step_ind in range(num_steps):
+        step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
+        mean_inds.append(np.mean(step_inds))
+
+        step_counts = [counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(2)]
+        step_counts = np.transpose(step_counts)
+        corr = np.corrcoef(step_counts)
+        mean_corrs.append(np.mean(corr, where=corr != 1))
+        # print(corr)
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, mean_inds, mean_corrs)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)

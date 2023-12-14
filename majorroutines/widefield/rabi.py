@@ -195,6 +195,12 @@ if __name__ == "__main__":
     taus = data["taus"]
     counts = np.array(data["counts"])
     step_ind_master_list = np.array(data["step_ind_master_list"])
+    for step_ind in range(num_steps):
+        step_counts = [
+            counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(num_nvs)
+        ]
+        corr = np.corrcoef(step_counts)
+        print(corr)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)

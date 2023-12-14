@@ -60,11 +60,11 @@ if __name__ == "__main__":
                 [76.56091979499166, 75.8487161634141],
                 [76.30891979499165, 75.96071616341409],
             ],
-            50e3,
+            1e3,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(1200e3 / 4))
+        sim_config = SimulationConfig(duration=int(1000e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
