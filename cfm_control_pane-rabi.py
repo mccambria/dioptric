@@ -150,11 +150,11 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.85
+    freq_center = 2.815
     freq_range = 0.05
     num_steps = 20
-    num_reps = 150
-    num_runs = 6
+    num_reps = 10
+    num_runs = 100
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -163,7 +163,7 @@ def do_rabi(nv_list):
     max_tau = 160
     num_steps = 19
     num_reps = 15
-    num_runs = 35
+    num_runs = 50
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.17
+    z_coord = 5.15
     magnet_angle = 90
 
     nv_sig_shell = {
