@@ -32,7 +32,7 @@ def get_seq(args, num_reps):
     if num_reps == None:
         num_reps = 1
 
-    readout_laser_el = seq_utils.get_laser_mod_element(readout_laser)
+    readout_laser_el = seq_utils.get_laser_mod_element(readout_laser, sticky=True)
     camera_el = f"do_camera_trigger"
 
     # Polarization
@@ -80,14 +80,15 @@ def get_seq(args, num_reps):
             qua.play("long_ionize", ion_laser_el)
 
             # Yellow readout
-            qua.wait(setup_duration, readout_laser_el)
-            qua.wait(setup_duration, camera_el)
-            # pulse = "on" if not do_ionize_sub else "off"
-            qua.play("charge_readout", readout_laser_el, duration=readout_duration)
-            # qua.play("off", readout_laser_el, duration=readout_duration)
+            qua.wait(setup_duration, (readout_laser_el, camera_el))
+            qua.play("charge_readout", readout_laser_el)
             qua.play("on", camera_el)
+            qua.wait(
+                readout_duration - default_pulse_duration, (readout_laser_el, camera_el)
+            )
             qua.align()
-            qua.play("off", camera_el)
+            qua.ramp_to_zero(readout_laser_el)
+            qua.ramp_to_zero(camera_el)
             qua.align()
 
         seq_utils.handle_reps(one_rep, num_reps)

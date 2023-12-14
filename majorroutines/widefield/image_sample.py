@@ -188,7 +188,7 @@ def main(
 
     tb.reset_cfm()
     laser_key = (
-        LaserKey.CHARGE_READOUT if caller_fn_name == "widefield" else LaserKey.IMAGING
+        LaserKey.WIDEFIELD_IMAGING if caller_fn_name == "widefield" else LaserKey.IMAGING
     )
     optimize.prepare_microscope(nv_sig)
     camera = tb.get_server_camera()

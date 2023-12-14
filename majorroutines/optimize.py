@@ -55,7 +55,7 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
     ax.plot(scan_vals, count_vals)
     if text is not None:
         kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT)
-    kpl.flush_update(fig=fig)
+    kpl.show()
 
 
 def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=None):
@@ -273,8 +273,11 @@ def _read_counts_camera_sequence(
                     else:
                         img_array += sub_img_array
             except Exception as exc:
-                print(exc)
-                print(f"Stopped at rep ind {rep_ind}")
+                nuvu_237 = "NuvuException: 237"
+                if "NuvuException: 237" in str(exc):
+                    print(f"{nuvu_237} at {rep_ind} reps")
+                else:
+                    raise exc
                 actual_num_reps = rep_ind
 
                 # Rearm the camera
