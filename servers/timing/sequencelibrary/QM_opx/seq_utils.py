@@ -55,7 +55,6 @@ def handle_reps(
     if num_reps == -1:
         with qua.infinite_loop_():
             one_rep_macro()
-            qua.align()
             if wait_for_trigger:
                 macro_wait_for_trigger()
     elif num_reps == 1:
@@ -64,7 +63,6 @@ def handle_reps(
         handle_reps_ind = qua.declare(int, value=0)
         with qua.while_(handle_reps_ind < num_reps):
             one_rep_macro()
-            qua.align()
             qua.assign(handle_reps_ind, handle_reps_ind + 1)
             if wait_for_trigger:
                 macro_wait_for_trigger()
@@ -126,25 +124,25 @@ def macro_charge_state_readout(readout_duration_ns=None):
         readout_duration = convert_ns_to_cc(readout_duration_ns)
     else:
         readout_duration = get_default_charge_readout_duration()
+    wait_duration = readout_duration - default_duration
 
     qua.align()
     qua.play("charge_readout", readout_laser_el)
     qua.play("on", camera_el)
-    qua.align()
-    qua.wait(readout_duration - default_duration)
-    qua.align()
+    qua.wait(wait_duration, readout_laser_el)
+    qua.wait(wait_duration, camera_el)
     qua.ramp_to_zero(readout_laser_el)
     qua.ramp_to_zero(camera_el)
-    qua.align()
 
 
 def macro_wait_for_trigger():
     """Pauses the entire sequence and waits for a trigger pulse from the camera.
     The wait does not start until all running pulses finish"""
-    dummy_element = "do1"  # wait_for_trigger requires us to pass some element
+    dummy_element = (
+        "do_camera_trigger"  # wait_for_trigger requires us to pass some element
+    )
     qua.align()
     qua.wait_for_trigger(dummy_element)
-    qua.align()
 
 
 def turn_on_aods(laser_names=None):
@@ -161,6 +159,13 @@ def turn_on_aods(laser_names=None):
                     _cache_aod_laser_names.append(key)
         laser_names = _cache_aod_laser_names
 
+    # Declare the frequency variables we'll need now so we don't do it repetitively
+    global _cache_x_freq
+    global _cache_y_freq
+    _cache_x_freq = qua.declare(int)
+    _cache_y_freq = qua.declare(int)
+
+    qua.align()
     for laser_name in laser_names:
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
@@ -192,22 +197,23 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
     buffer = get_widefield_operation_buffer()
     access_time = get_aod_access_time()
 
+    # Unpack the coords and convert to Hz
+    x_coords_list = [int(el[0] * 10**6) for el in coords_list]
+    y_coords_list = [int(el[1] * 10**6) for el in coords_list]
+
+    # These are declared in turn_on_aods
+    global _cache_x_freq
+    global _cache_y_freq
+
     qua.align()
-
-    million = 10**6
-    coords_list_hz = [
-        (round(coords_pair[0] * million), round(coords_pair[1] * million))
-        for coords_pair in coords_list
-    ]
-
-    for coords_pair in coords_list_hz:
+    with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
         # Update AOD frequencies
         # The continue pulse doesn't actually change anything - without a new pulse the
         # compiler will overwrite the frequency of whatever is playing retroactively
         qua.play("continue", x_el)
         qua.play("continue", y_el)
-        qua.update_frequency(x_el, coords_pair[0])
-        qua.update_frequency(y_el, coords_pair[1])
+        qua.update_frequency(x_el, _cache_x_freq)
+        qua.update_frequency(y_el, _cache_y_freq)
 
         # Pulse the laser
         qua.wait(access_time + buffer, laser_el)
@@ -294,9 +300,8 @@ def get_sig_gen_element(uwave_ind=0):
     global _cache_sig_gen_elements
     if _cache_sig_gen_elements[uwave_ind] is None:
         config = common.get_config_dict()
-        _cache_sig_gen_elements[uwave_ind] = config["Microwaves"][
-            f"sig_gen_{uwave_ind}"
-        ]["name"]
+        sig_gen_element = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+        _cache_sig_gen_elements[uwave_ind] = sig_gen_element
     sig_gen_name = _cache_sig_gen_elements[uwave_ind]
     return f"do_{sig_gen_name}_dm"
 
@@ -322,9 +327,10 @@ def get_rabi_period(uwave_ind=0):
     rabi_period = _cache_rabi_periods[uwave_ind]
     return rabi_period
 
-    i_el, q_el = seq_utils.get_iq_mod_elements()
-    rabi_period = seq_utils.get_rabi_period()
-
 
 if __name__ == "__main__":
-    turn_on_aods()
+    readout_laser_name = "laser_OPTO_589"
+    readout_laser_el = _cache_charge_readout_laser_el_sticky = get_laser_mod_element(
+        readout_laser_name, sticky=True
+    )
+    print(readout_laser_el)

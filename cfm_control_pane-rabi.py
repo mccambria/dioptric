@@ -160,21 +160,21 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    max_tau = 168
-    num_steps = 20
-    num_reps = 150
-    num_runs = 6
+    max_tau = 160
+    num_steps = 19
+    num_reps = 15
+    num_runs = 35
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_spin_echo(nv_list):
     min_tau = 1e3
-    max_tau = 50e3 + min_tau
-    num_steps = 21
-    num_reps = 150
-    num_runs = 12
-    # num_reps = 20
-    # num_runs = 2
+    max_tau = 75e3 + min_tau
+    num_steps = 26
+    # num_reps = 150
+    # num_runs = 12
+    num_reps = 15
+    num_runs = 100
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -289,11 +289,16 @@ def compile_speed_test(nv_list):
 
     seq_file = "resonance.py"
     num_reps = 20
-    uwave_index = 0
+    uwave_index = 1
 
     seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.append(uwave_index)
     seq_args_string = tb.encode_seq_args(seq_args)
+
+    start = time.time()
+    pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+    stop = time.time()
+    print(stop - start)
 
     start = time.time()
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -312,7 +317,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.16
+    z_coord = 5.17
     magnet_angle = 90
 
     nv_sig_shell = {
@@ -428,12 +433,12 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
 
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_xy8(nv_list)
 
         ### Infrequent stuff down here

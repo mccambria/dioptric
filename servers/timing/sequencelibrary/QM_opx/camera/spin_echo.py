@@ -34,7 +34,6 @@ def get_seq(args, num_reps):
         qua.wait(adj_tau, sig_gen_el)
         qua.play("pi_on_2_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
-        qua.align()
 
     seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
 
@@ -65,7 +64,7 @@ if __name__ == "__main__":
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(1200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

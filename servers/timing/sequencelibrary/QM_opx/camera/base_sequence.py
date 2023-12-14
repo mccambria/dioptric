@@ -35,6 +35,8 @@ def get_seq(
         num_exps_per_rep = 1
 
     with qua.program() as seq:
+        exp_ind = qua.declare(int, value=0)
+
         seq_utils.turn_on_aods()
 
         def one_exp(exp_ind=None):
@@ -42,6 +44,7 @@ def get_seq(
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
             # Custom macro for the microwave sequence here
+            qua.align()
             if exp_ind is None:
                 uwave_macro()
             else:
@@ -54,15 +57,16 @@ def get_seq(
             # Readout
             seq_utils.macro_charge_state_readout(readout_duration_ns)
 
-            qua.align()
             seq_utils.macro_wait_for_trigger()
 
         def one_rep():
             if num_exps_per_rep == 1:
                 one_exp()
             else:
-                for exp_ind in range(num_exps_per_rep):
+                qua.assign(exp_ind, 0)
+                with qua.while_(exp_ind < num_exps_per_rep):
                     one_exp(exp_ind)
+                    qua.assign(exp_ind, exp_ind + 1)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 

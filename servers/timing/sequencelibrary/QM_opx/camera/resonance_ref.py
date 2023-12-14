@@ -51,7 +51,6 @@ def get_seq(
         else:
             qua.play("on", sig_gen_el, duration=uwave_duration)
         qua.wait(buffer, sig_gen_el)
-        qua.align()
 
     def uwave_macro_ref():
         pass
@@ -115,8 +114,3 @@ if __name__ == "__main__":
         raise exc
     finally:
         qmm.close_all_quantum_machines()
-
-
-
-
-

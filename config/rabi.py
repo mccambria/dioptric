@@ -81,8 +81,8 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.8464269574748924,
-            "rabi_period": 144,
+            "frequency": 2.815443,
+            "rabi_period": 128,
             "uwave_power": 9,
         },
         "sig_gen_1": {
@@ -408,7 +408,11 @@ opx_config = {
         },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
-            "sticky": {"analog": True, "digital": True, "duration": ramp_to_zero_duration_ns},
+            "sticky": {
+                "analog": True,
+                "digital": True,
+                "duration": ramp_to_zero_duration_ns,
+            },
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_COBO_638_x": {
