@@ -224,23 +224,37 @@ if __name__ == "__main__":
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
+    num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
 
     step_ind_master_list = np.array(data["step_ind_master_list"])
     mean_inds = []
     mean_corrs = []
+    mean_diffs = []
+    rand_1000 = np.random.choice(10, num_reps * num_runs)
     for step_ind in range(num_steps):
         step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
         mean_inds.append(np.mean(step_inds))
 
-        step_counts = [counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(2)]
-        step_counts = np.transpose(step_counts)
+        step_counts = [
+            counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(num_nvs)
+        ]
         corr = np.corrcoef(step_counts)
         mean_corrs.append(np.mean(corr, where=corr != 1))
-        # print(corr)
+
+        val = np.mean(
+            [
+                counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind])
+                for nv_ind in range(num_nvs)
+            ]
+        )
+        mean_diffs.append(val)
+    print(mean_inds)
+    print([round(el, 3) for el in mean_corrs])
     fig, ax = plt.subplots()
-    kpl.plot_points(ax, mean_inds, mean_corrs)
+    # kpl.plot_points(ax, mean_inds, mean_corrs)
+    kpl.plot_points(ax, mean_inds, mean_diffs)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
