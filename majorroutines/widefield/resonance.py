@@ -217,8 +217,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388679268107)  # 30
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1387567031114)  # large correlation
-    # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1389551913471)  # small correlation
+    data = dm.get_raw_data(file_id=1389286042809)  # small correlation
+    # data = dm.get_raw_data(file_id=1389769400939)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
