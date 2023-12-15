@@ -257,6 +257,7 @@ def _read_counts_camera_sequence(
                         seq_args[-2][axis_ind] = val
                     seq_args_string = tb.encode_seq_args(seq_args)
                     # print(seq_args)
+                    
                     pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
                 elif axis_ind == 2:
                     axis_write_fn(val)
@@ -379,6 +380,7 @@ def _read_counts(
         seq_file_name = "simple_readout.py"
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tb.encode_seq_args(seq_args)
+        
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
         if collection_mode == CollectionMode.COUNTER:

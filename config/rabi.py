@@ -45,7 +45,6 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "repr_nv_ind": 0,
     ###
     # Common durations are in ns
     "CommonDurations": {
@@ -95,9 +94,9 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 5,  # Distance to first Airy zero in units of camera pixels for diffraction-limited spot
+        "spot_radius": 5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 2000,
+        "em_gain": 1000,
         "temp": -60,
         "timeout": 1000,  # ms
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
@@ -124,7 +123,7 @@ config |= {
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
         },
-        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 10e6},
+        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
         LaserKey.WIDEFIELD_IMAGING: {"name": "laser_OPTO_589", "duration": 35e6},
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},

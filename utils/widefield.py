@@ -175,9 +175,12 @@ def calc_snr(sig_counts, ref_counts):
 
 
 def get_repr_nv_sig(nv_list):
-    config = common.get_config_dict()
-    repr_nv_ind = config["repr_nv_ind"]
-    return nv_list[repr_nv_ind]
+    for nv in nv_list:
+        try:
+            if nv["repr"]:
+                return nv
+        except:
+            pass
 
 
 def get_nv_num(nv_sig):

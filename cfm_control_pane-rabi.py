@@ -160,8 +160,8 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    max_tau = 160
-    num_steps = 19
+    max_tau = 400 + min_tau
+    num_steps = 26
     num_reps = 15
     num_runs = 50
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.15
+    z_coord = 5.16
     magnet_angle = 90
 
     nv_sig_shell = {
@@ -360,6 +360,7 @@ if __name__ == "__main__":
     nv4[pixel_coords_key] = [117.814, 64.7]
     nv4[green_coords_key] = [112.058, 108.434]
     nv4[red_coords_key] = [75.877, 73.699]
+    nv4["repr"] = True
 
     nv5 = copy.deepcopy(nv_sig_shell)
     nv5["name"] = f"{sample_name}-nv5_2023_12_13"
@@ -397,7 +398,7 @@ if __name__ == "__main__":
     # nv_list = [nv_sig]
     nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
     # nv_list = [nv6, nv7, nv8, nv9]
-    nv_sig = nv_list[0]
+    nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     ### Functions to run
 
@@ -433,12 +434,12 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
 
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_xy8(nv_list)
 
         ### Infrequent stuff down here
