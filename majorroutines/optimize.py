@@ -205,28 +205,7 @@ def _read_counts_camera_sequence(
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif laser_key == LaserKey.IONIZATION:
-        pol_laser_dict = tb.get_laser_dict(LaserKey.POLARIZATION)
-        pol_laser_name = pol_laser_dict["name"]
-        pol_duration = pol_laser_dict["duration"]
-        pol_coords = pos.get_nv_coords(nv_sig, pol_laser_name)
-        ion_laser_dict = tb.get_laser_dict(LaserKey.IONIZATION)
-        ion_laser_name = ion_laser_dict["name"]
-        ion_duration = ion_laser_dict["duration"]
-        readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
-        readout_laser_name = readout_laser_dict["name"]
-        readout_duration = readout_laser_dict["duration"]
-        if coords is None:
-            coords = pos.get_nv_coords(nv_sig, ion_laser_name)
-        seq_args = [
-            readout_duration,
-            readout_laser_name,
-            pol_laser_name,
-            pol_coords,
-            pol_duration,
-            ion_laser_name,
-            coords,
-            ion_duration,
-        ]
+        seq_args = widefield.get_base_scc_seq_args([nv_sig])
         seq_file_name = "optimize_ionization_laser_coords.py"
         num_reps = 50
     if axis_ind is None or axis_ind == 2:
@@ -254,7 +233,7 @@ def _read_counts_camera_sequence(
                     if laser_key == LaserKey.IMAGING:
                         seq_args[-2 + axis_ind] = [val]
                     elif laser_key == LaserKey.IONIZATION:
-                        seq_args[-2][axis_ind] = val
+                        seq_args[1][0][axis_ind] = val
                     seq_args_string = tb.encode_seq_args(seq_args)
                     # print(seq_args)
                     

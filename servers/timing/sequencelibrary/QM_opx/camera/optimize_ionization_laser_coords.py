@@ -16,82 +16,16 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 import utils.common as common
 import matplotlib.pyplot as plt
 from qm import generate_qua_script
+from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 
 def get_seq(args, num_reps):
-    (
-        readout_duration_ns,
-        readout_laser,
-        pol_laser,
-        pol_coords,
-        pol_duration_ns,
-        ion_laser,
-        ion_coords,
-        ion_duration_ns,
-    ) = args
-    if num_reps == None:
-        num_reps = 1
+    (pol_coords_list, ion_coords_list) = args
 
-    readout_laser_el = seq_utils.get_laser_mod_element(readout_laser, sticky=True)
-    camera_el = f"do_camera_trigger"
+    def uwave_macro():
+        pass
 
-    # Polarization
-    pol_laser_el = f"do_{pol_laser}_dm"
-    pol_x_el = f"ao_{pol_laser}_x"
-    pol_y_el = f"ao_{pol_laser}_y"
-
-    # Ionization
-    ion_laser_el = f"do_{ion_laser}_dm"
-    ion_x_el = f"ao_{ion_laser}_x"
-    ion_y_el = f"ao_{ion_laser}_y"
-
-    access_time = seq_utils.get_aod_access_time()
-    pol_duration = seq_utils.convert_ns_to_cc(pol_duration_ns)
-    ion_duration = seq_utils.convert_ns_to_cc(ion_duration_ns)
-    default_pulse_duration = seq_utils.get_default_pulse_duration()
-    operation_gap = seq_utils.convert_ns_to_cc(10e3)
-    setup_duration = (
-        access_time + pol_duration + operation_gap + ion_duration + operation_gap
-    )
-    readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
-
-    with qua.program() as seq:
-        pol_x_freq = qua.declare(int, value=round(pol_coords[0] * 10**6))
-        pol_y_freq = qua.declare(int, value=round(pol_coords[1] * 10**6))
-        qua.update_frequency(pol_x_el, pol_x_freq)
-        qua.update_frequency(pol_y_el, pol_y_freq)
-        qua.play("aod_cw", pol_x_el)
-        qua.play("aod_cw", pol_y_el)
-
-        ion_x_freq = qua.declare(int, value=round(ion_coords[0] * 10**6))
-        ion_y_freq = qua.declare(int, value=round(ion_coords[1] * 10**6))
-        qua.update_frequency(ion_x_el, ion_x_freq)
-        qua.update_frequency(ion_y_el, ion_y_freq)
-        qua.play("aod_cw", ion_x_el)
-        qua.play("aod_cw", ion_y_el)
-
-        def one_rep():
-            # Polarization
-            qua.wait(access_time, pol_laser_el)
-            qua.play("on", pol_laser_el, duration=pol_duration)
-
-            # Ionization
-            qua.wait(access_time + pol_duration + operation_gap, ion_laser_el)
-            qua.play("long_ionize", ion_laser_el)
-
-            # Yellow readout
-            qua.wait(setup_duration, (readout_laser_el, camera_el))
-            qua.play("charge_readout", readout_laser_el)
-            qua.play("on", camera_el)
-            qua.wait(
-                readout_duration - default_pulse_duration, (readout_laser_el, camera_el)
-            )
-            qua.align()
-            qua.ramp_to_zero(readout_laser_el)
-            qua.ramp_to_zero(camera_el)
-            qua.align()
-
-        seq_utils.handle_reps(one_rep, num_reps)
+    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
 
     seq_ret_vals = []
     return seq, seq_ret_vals
