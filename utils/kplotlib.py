@@ -642,7 +642,7 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     return occur, bin_edges
 
 
-def draw_circle(ax, coords, radius, color=KplColors.BLUE):
+def draw_circle(ax, coords, radius=1, color=KplColors.BLUE):
     """Draw a circle on the passed axes
 
     Parameters
