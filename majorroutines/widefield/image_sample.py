@@ -294,13 +294,15 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1390216086949)
+    data = dm.get_raw_data(file_id=1390357986975)
     img_array = np.array(data["img_array"])
+    # data = dm.get_raw_data(file_id=1390352053327)
+    # img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
-    pixel_coords_list = [[90.032, 77.662], [80.414, 89.784], [102.377, 147.08], [110.053,115.463], [131.656, 126.417]]
+    # pixel_coords_list = [[90.032, 77.662], [80.414, 89.784], [102.377, 147.08], [110.053,115.463], [131.656, 126.417]]
 
-    for pixel_coords in pixel_coords_list:
-        kpl.draw_circle(ax, pixel_coords)
+    # for pixel_coords in pixel_coords_list:
+    #     kpl.draw_circle(ax, pixel_coords)
 
     plt.show(block=True)

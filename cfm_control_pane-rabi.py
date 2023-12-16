@@ -110,22 +110,24 @@ def do_optimize_pixel(nv_sig):
     return opti_coords
 
 
-def do_optimize_loop(nv_list, coords_suffix):
+def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
     opti_coords_list = []
     for nv in nv_list:
         if coords_suffix is None:
             opti_coords = do_optimize_pixel(nv)
         else:
-            widefield.set_nv_scanning_coords_from_pixel_coords(nv, coords_suffix)
+            if scanning_from_pixel:
+                widefield.set_nv_scanning_coords_from_pixel_coords(nv, coords_suffix)
             if coords_suffix == green_laser:
                 opti_coords = do_optimize_green(nv)
             elif coords_suffix == red_laser:
                 opti_coords = do_optimize_red(nv)
-        # Adjust for the drift that may have occurred since beginning the loop
-        if coords_suffix is not None:
+            # Adjust for the drift that may have occurred since beginning the loop
             do_optimize_pixel(nv_sig)
+            drift = pos.get_drift(coords_suffix)
+            drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(
-                opti_coords, coords_suffix=coords_suffix
+                opti_coords, coords_suffix=coords_suffix, drift=drift
             )
         opti_coords_list.append(opti_coords)
     for opti_coords in opti_coords_list:
@@ -488,7 +490,7 @@ if __name__ == "__main__":
         # coords_suffix = None  # Pixel coords
         # # coords_suffix = green_laser
         # # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix)
+        do_optimize_loop(nv_list, coords_suffix)
 
         do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
