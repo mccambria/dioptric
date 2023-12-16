@@ -25,13 +25,11 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    # pixel_coords_key: [267.929-220, 290.489-150],
     pixel_coords_key: [47.929, 140.489],
     green_coords_key: [109.811, 110.845],
     red_coords_key: [74.1, 75.9],
 }
 widefield_calibration_nv2 = {
-    # pixel_coords_key: [217.197 - 220, 331.628 - 150],
     pixel_coords_key: [-2.803, 181.628],
     green_coords_key: [108.1, 112.002],
     red_coords_key: [72.9, 76.8],
@@ -130,8 +128,12 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 220},
-        LaserKey.CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 30e6},  # 35e6
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 152},
+        LaserKey.CHARGE_READOUT: {
+            "name": "laser_OPTO_589",
+            "duration": 30e6,
+            # "duration": 50e6,
+        },  # 35e6, 0.09
     },
     ###
     "Positioning": {
@@ -553,7 +555,7 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.35},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.11},
         "yellow_charge_readout": {"type": "constant", "sample": 0.09},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.105},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },
