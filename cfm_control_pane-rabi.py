@@ -110,6 +110,29 @@ def do_optimize_pixel(nv_sig):
     return opti_coords
 
 
+def do_optimize_loop(nv_list, coords_suffix):
+    opti_coords_list = []
+    for nv in nv_list:
+        if coords_suffix is None:
+            opti_coords = do_optimize_pixel(nv)
+        else:
+            widefield.set_nv_scanning_coords_from_pixel_coords(nv, coords_suffix)
+            if coords_suffix == green_laser:
+                opti_coords = do_optimize_green(nv)
+            elif coords_suffix == red_laser:
+                opti_coords = do_optimize_red(nv)
+        # Adjust for the drift that may have occurred since beginning the loop
+        if coords_suffix is not None:
+            do_optimize_pixel(nv_sig)
+            opti_coords = pos.adjust_coords_for_drift(
+                opti_coords, coords_suffix=coords_suffix
+            )
+        opti_coords_list.append(opti_coords)
+    for opti_coords in opti_coords_list:
+        r_opti_coords = [round(el, 3) for el in opti_coords]
+        print(r_opti_coords)
+
+
 def do_optimize_widefield_calibration():
     with common.labrad_connect() as cxn:
         optimize.optimize_widefield_calibration(cxn)
@@ -462,26 +485,10 @@ if __name__ == "__main__":
 
         ### Infrequent stuff down here
 
-        # Full optimize
-        # opti_coords_list = []
-        # for nv in nv_list:
-        #     widefield.reset_all_drift()
-        #     #
-        #     # opti_coords = do_optimize_pixel(nv)
-        #     #
-        #     # do_optimize_pixel(nv_sig)
-        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
-        #     opti_coords = do_optimize_green(nv)
-        #     #
-        #     # do_optimize_pixel(nv_sig)
-        #     # widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
-        #     # opti_coords = do_optimize_red(nv)
-        #     #
-        #     opti_coords_list.append(opti_coords)
-        #     widefield.reset_all_drift()
-        # for opti_coords in opti_coords_list:
-        #     r_opti_coords = [round(el, 3) for el in opti_coords]
-        #     print(r_opti_coords)
+        # coords_suffix = None  # Pixel coords
+        # # coords_suffix = green_laser
+        # # coords_suffix = red_laser
+        # do_optimize_loop(nv_list, coords_suffix)
 
         do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)

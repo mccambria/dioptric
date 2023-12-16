@@ -237,7 +237,9 @@ if __name__ == "__main__":
         mean_inds.append(np.mean(step_inds))
 
         step_counts = [
-            counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(num_nvs)
+            counts[nv_ind, :, step_ind, :].flatten()
+            # for nv_ind in [1, 5]  # range(num_nvs)
+            for nv_ind in range(num_nvs)
         ]
         corr = np.corrcoef(step_counts)
         mean_corrs.append(np.mean(corr, where=corr != 1))
@@ -256,6 +258,7 @@ if __name__ == "__main__":
     kpl.plot_points(ax, freqs, mean_corrs)
     # kpl.plot_points(ax, mean_inds, mean_diffs)
 
+    # counts = counts[:, :, :, :5]
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
