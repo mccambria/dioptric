@@ -124,11 +124,14 @@ config |= {
             "aod": True,
         },
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
-        LaserKey.WIDEFIELD_IMAGING: {"name": "laser_OPTO_589", "duration": 35e6},
+        LaserKey.WIDEFIELD_IMAGING: {
+            "name": "laser_OPTO_589",
+            "duration": 30e6,
+        },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
         LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 220},
-        LaserKey.CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 35e6},
+        LaserKey.CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 30e6},  # 35e6
     },
     ###
     "Positioning": {
@@ -547,8 +550,10 @@ opx_config = {
         # "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
         # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
         "green_aod_cw": {"type": "constant", "sample": 0.19},
-        "yellow_imaging": {"type": "constant", "sample": 0.27},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.11},
+        "yellow_imaging": {"type": "constant", "sample": 0.35},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.11},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.09},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.105},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },

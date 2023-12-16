@@ -54,7 +54,7 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
     ax = axes[axis_ind]
     ax.plot(scan_vals, count_vals)
     if text is not None:
-        kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT)
+        kpl.anchored_text(ax, text, kpl.Loc.LOWER_RIGHT)
     kpl.show()
 
 
