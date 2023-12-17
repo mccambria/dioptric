@@ -128,11 +128,11 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 300},
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
             # "duration": 30e6,
-            "duration": 30e6,
+            "duration": 40e6,
         },  # 35e6, 0.09
     },
     ###
@@ -556,7 +556,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.11},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.095},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.085},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.085}, # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.080},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },
