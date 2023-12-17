@@ -62,9 +62,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        if nv_ind in [8]:
-            # if nv_ind in [1, 2, 3, 4, 8]:
-            # if nv_ind in range(num_nvs):
+        if nv_ind not in [6]:
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -119,7 +117,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Make the figure
 
     fig, ax = plt.subplots()
-    widefield.plot_fit(ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms)
+    widefield.plot_fit(
+        ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms, offset=0.6
+    )
     ax.set_xlabel("Pulse duration (ns)")
     ax.set_ylabel("Normalized fluorescence")
     return fig
@@ -185,8 +185,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1389296547989)  # now
-    # data = dm.get_raw_data(file_id=1382892086081)  # week ago
+    data = dm.get_raw_data(file_id=1391042634086)  # now
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -194,13 +193,16 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
     counts = np.array(data["counts"])
-    step_ind_master_list = np.array(data["step_ind_master_list"])
-    for step_ind in range(num_steps):
-        step_counts = [
-            counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(num_nvs)
-        ]
-        corr = np.corrcoef(step_counts)
-        print(corr)
+    counts = counts > 50
+
+    # Spurious correlation testing
+    # step_ind_master_list = np.array(data["step_ind_master_list"])
+    # for step_ind in range(num_steps):
+    #     step_counts = [
+    #         counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(num_nvs)
+    #     ]
+    #     corr = np.corrcoef(step_counts)
+    #     print(corr)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
