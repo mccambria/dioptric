@@ -34,6 +34,9 @@ def main(nv_list, num_reps):
     sig_counts = counts[0]
     ref_counts = counts[1]
 
+    sig_counts = sig_counts > 50
+    ref_counts = ref_counts > 50
+
     ### Report the results and return
 
     avg_sig_counts, avg_sig_counts_ste = widefield.process_counts(sig_counts)
