@@ -117,20 +117,20 @@ def img_str_to_array(img_str):
     ndarray
         Image array contructed from the byte string
     """
-    resolution = _get_camera_resolution()
     roi = _get_camera_roi()
     if roi is None:
-        img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*resolution)
+        resolution = _get_camera_resolution()
     else:
-        offset_x, offset_y, width, height = roi
-        bias_clamp = _get_camera_bias_clamp()
-        img_array = np.full(resolution, bias_clamp, dtype=np.uint16)
-        roi_resolution = roi[2:]
-        roi_img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*roi_resolution)
-        img_array[
-            offset_y : offset_y + height, offset_x : offset_x + width
-        ] = roi_img_array
-
+        resolution = roi[2:]
+        # offset_x, offset_y, width, height = roi
+        # bias_clamp = _get_camera_bias_clamp()
+        # img_array = np.full(resolution, bias_clamp, dtype=np.uint16)
+        # roi_resolution = roi[2:]
+        # roi_img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*roi_resolution)
+        # img_array[
+        #     offset_y : offset_y + height, offset_x : offset_x + width
+        # ] = roi_img_array
+    img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*resolution)
     img_array = img_array.astype(int)
     return img_array
 
@@ -159,6 +159,7 @@ def process_counts(counts_array):
 
 
 def calc_snr(sig_counts, ref_counts):
+    """Calculate SNR for a single shot"""
     avg_sig_counts, avg_sig_counts_ste = process_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste = process_counts(ref_counts)
     noise = np.sqrt(
@@ -175,9 +176,12 @@ def calc_snr(sig_counts, ref_counts):
 
 
 def get_repr_nv_sig(nv_list):
-    config = common.get_config_dict()
-    repr_nv_ind = config["repr_nv_ind"]
-    return nv_list[repr_nv_ind]
+    for nv in nv_list:
+        try:
+            if nv["repr"]:
+                return nv
+        except:
+            pass
 
 
 def get_nv_num(nv_sig):
@@ -204,20 +208,19 @@ def get_base_scc_seq_args(nv_list):
 
     # Polarization
     pol_laser = optics_config[LaserKey.POLARIZATION]["name"]
-    pol_coords_list = []
-    for nv in nv_list:
-        pol_coords = pos.get_nv_coords(nv, coords_suffix=pol_laser)
-        pol_coords_list.append(pol_coords)
+    drift = pos.get_drift(pol_laser)
+    pol_coords_list = [
+        pos.get_nv_coords(nv, coords_suffix=pol_laser, drift=drift) for nv in nv_list
+    ]
 
     # Ionization
     ion_laser = optics_config[LaserKey.IONIZATION]["name"]
-    ion_coords_list = []
-    for nv in nv_list:
-        ion_coords = pos.get_nv_coords(nv, coords_suffix=ion_laser)
-        ion_coords_list.append(ion_coords)
+    drift = pos.get_drift(ion_laser)
+    ion_coords_list = [
+        pos.get_nv_coords(nv, coords_suffix=ion_laser, drift=drift) for nv in nv_list
+    ]
 
     seq_args = [pol_coords_list, ion_coords_list]
-
     return seq_args
 
 

@@ -191,13 +191,11 @@ def get_coords_key(coords_suffix=None):
     return _append_suffix_to_key("coords", coords_suffix)
 
 
-def get_nv_coords(nv_sig, coords_suffix=None, drift_adjust=True):
+def get_nv_coords(nv_sig, coords_suffix=None, drift_adjust=True, drift=None):
     coords_key = get_coords_key(coords_suffix)
     coords = nv_sig[coords_key]
     if drift_adjust:
-        coords = adjust_coords_for_drift(
-            coords=coords, nv_sig=nv_sig, coords_suffix=coords_suffix
-        )
+        coords = adjust_coords_for_drift(coords=coords, drift=drift, coords_suffix=coords_suffix)
     return coords
 
 

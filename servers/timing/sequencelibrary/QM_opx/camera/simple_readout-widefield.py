@@ -22,21 +22,23 @@ from qm import generate_qua_script
 
 
 def get_seq(args, num_reps):
-    readout_duration, readout_laser = args
+    readout_duration_ns, readout_laser = args
     if num_reps == None:
         num_reps = 1
 
-    laser_element = seq_utils.get_laser_mod_element(readout_laser)
+    laser_element = seq_utils.get_laser_mod_element(readout_laser, sticky=True)
     camera_element = f"do_camera_trigger"
-    readout_duration_cc = round(readout_duration / 4)
+    readout_duration = round(readout_duration_ns / 4)
+    default_duration = seq_utils.get_default_pulse_duration()
     with qua.program() as seq:
         ### Define one rep here
         def one_rep():
-            qua.play("on", laser_element, duration=readout_duration_cc)
+            qua.play("on", laser_element)
             qua.play("on", camera_element)
+            qua.wait(readout_duration - default_duration)
             qua.align()
-            qua.play("off", camera_element)
-            # qua.align()
+            qua.ramp_to_zero(laser_element)
+            qua.ramp_to_zero(camera_element)
 
         ### Handle the reps in the utils code
         seq_utils.handle_reps(one_rep, num_reps)

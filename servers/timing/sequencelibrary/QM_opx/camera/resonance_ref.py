@@ -8,6 +8,7 @@ Created on October 13th, 2023
 """
 
 
+import time
 import numpy as np
 from qm import qua
 from qm import QuantumMachinesManager
@@ -30,12 +31,12 @@ def get_seq(
 ):
     (pol_coords_list, ion_coords_list, uwave_ind) = args
 
-    if phase is not None:
-        i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
-        # phase_rad = phase * (np.pi / 180)
-        # i_comp = 0.5 * np.cos(phase_rad)
-        # q_comp = 0.5 * np.sin(phase_rad)
-        iq_pulse_dict = {0: , 90:}
+    # if phase is not None:
+    #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
+    # phase_rad = phase * (np.pi / 180)
+    # i_comp = 0.5 * np.cos(phase_rad)
+    # q_comp = 0.5 * np.sin(phase_rad)
+    # iq_pulse_dict = {0: , 90:}
 
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
@@ -44,13 +45,12 @@ def get_seq(
     def uwave_macro_sig():
         if uwave_duration is None:
             qua.play("pi_pulse", sig_gen_el)
-            if phase is not None:
-                qua.play("pi_pulse", i_el)
-                qua.play("pi_pulse", q_el)
+            # if phase is not None:
+            #     qua.play("pi_pulse", i_el)
+            #     qua.play("pi_pulse", q_el)
         else:
             qua.play("on", sig_gen_el, duration=uwave_duration)
         qua.wait(buffer, sig_gen_el)
-        qua.align()
 
     def uwave_macro_ref():
         pass
@@ -85,26 +85,19 @@ if __name__ == "__main__":
 
     try:
         args = [
-            "laser_INTE_520",
-            1000.0,
             [
                 [112.8143831410256, 110.75435400118901],
                 [112.79838314102561, 110.77035400118902],
             ],
-            "laser_COBO_638",
-            200,
             [
                 [76.56091979499166, 75.8487161634141],
                 [76.30891979499165, 75.96071616341409],
             ],
-            "laser_OPTO_589",
-            3500.0,
-            "sig_gen_STAN_sg394",
-            96 / 2,
+            0,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

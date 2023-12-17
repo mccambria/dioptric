@@ -20,8 +20,6 @@ from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import data_manager as dm
-from scipy import ndimage
-import os
 import time
 from utils import data_manager as dm
 from majorroutines.widefield.optimize import optimize_pixel
@@ -187,7 +185,9 @@ def main(
 
     tb.reset_cfm()
     laser_key = (
-        LaserKey.CHARGE_READOUT if caller_fn_name == "widefield" else LaserKey.IMAGING
+        LaserKey.WIDEFIELD_IMAGING
+        if caller_fn_name == "widefield"
+        else LaserKey.IMAGING
     )
     optimize.prepare_microscope(nv_sig)
     camera = tb.get_server_camera()
@@ -228,7 +228,6 @@ def main(
 
     ### Set up the image display
 
-    kpl.init_kplotlib()
     title = f"{caller_fn_name}, {readout_laser}, {readout_ms} ms"
 
     ### Collect the data
@@ -248,9 +247,12 @@ def main(
                 img_array += sub_img_array
 
     except Exception as exc:
-        print(exc)
         num_reps = ind
-        print(num_reps)
+        nuvu_237 = "NuvuException: 237"
+        if "NuvuException: 237" in str(exc):
+            print(f"{nuvu_237} at {num_reps} reps")
+        else:
+            raise exc
 
     finally:
         camera.disarm()
@@ -292,14 +294,15 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1383720650105)
+    data = dm.get_raw_data(file_id=1390856732543)
     img_array = np.array(data["img_array"])
+    data = dm.get_raw_data(file_id=1390855487585)
+    img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
+    # pixel_coords_list = [[90.032, 77.662], [80.414, 89.784], [102.377, 147.08], [110.053,115.463], [131.656, 126.417]]
 
-    # start = time.time()
-    # img_array_photons = widefield_utils.adus_to_photons(img_array)
-    # counts = widefield_utils.integrate_counts(img_array_photons, (256.4, 256.6))
-    # print(counts)
+    # for pixel_coords in pixel_coords_list:
+    #     kpl.draw_circle(ax, pixel_coords)
 
     plt.show(block=True)

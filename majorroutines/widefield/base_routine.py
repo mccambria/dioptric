@@ -8,13 +8,11 @@ Created on December 6th, 2023
 """
 
 
-from random import shuffle
 import time
-from matplotlib import pyplot as plt
+from random import shuffle
 import numpy as np
 from majorroutines.widefield import optimize
-from utils import kplotlib as kpl, tool_belt as tb
-from utils import widefield, positioning as pos
+from utils import tool_belt as tb, widefield, positioning as pos
 
 
 def main(
@@ -64,6 +62,8 @@ def main(
     for run_ind in range(num_runs):
         shuffle(step_ind_list)
 
+        pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
+
         for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_on()
@@ -71,7 +71,6 @@ def main(
         camera.arm()
 
         for step_ind in step_ind_list:
-            pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
             step_ind_master_list[run_ind].append(step_ind)
 
             if step_fn is not None:
@@ -98,7 +97,11 @@ def main(
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                     break
                 except Exception as exc:
-                    print(exc)
+                    nuvu_237 = "NuvuException: 237"
+                    if "NuvuException: 237" in str(exc):
+                        print(nuvu_237)
+                    else:
+                        raise exc
                     camera.arm()
                     attempt_ind += 1
                     if attempt_ind == num_attempts:

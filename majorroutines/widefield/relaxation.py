@@ -68,7 +68,6 @@ def main(
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
-    kpl.init_kplotlib()
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
@@ -79,7 +78,6 @@ def main(
     ### Clean up and return
 
     tb.reset_cfm()
-
     kpl.show()
 
     timestamp = dm.get_time_stamp()

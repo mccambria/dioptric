@@ -38,15 +38,16 @@ def get_seq(args, num_reps):
 
         ### Define one rep here
         def one_rep():
+            seq_utils.turn_on_aods([readout_laser])
             with qua.for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
                 qua.update_frequency(x_element, x_freq)
                 qua.update_frequency(y_element, y_freq)
-                qua.play("aod_cw", x_element, duration=readout_duration_cc)
-                qua.play("aod_cw", y_element, duration=readout_duration_cc)
+                qua.play("continue", x_element)
+                qua.play("continue", y_element)
                 qua.play("on", laser_element, duration=readout_duration_cc)
-                qua.play("on", camera_element, duration=readout_duration_cc)
+                qua.play("on", camera_element)
             qua.align()
-            qua.play("off", camera_element)
+            qua.ramp_to_zero(camera_element)
 
         ### Handle the reps in the utils code
         seq_utils.handle_reps(one_rep, num_reps)
@@ -68,19 +69,16 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        # coords_1, coords_2, readout, readout_laser, readout_power
+        # readout, readout_laser, coords_1, coords_2
         args = [
-            [105.0, 110.0, 115.0, 115.0],
-            [105.0, 105.0, 105.0, 110.0],
             10000.0,
             "laser_INTE_520",
-            None,
+            [105.0, 110.0, 115.0, 115.0],
+            [105.0, 105.0, 105.0, 110.0],
         ]
-        args = [[110.0], [110.0], 10000.0, "laser_INTE_520"]
-        ret_vals = get_seq(opx_config, config, args, 4)
-        seq, final, ret_vals, _, _ = ret_vals
+        seq, seq_ret_vals = get_seq(args, 4)
 
-        sim_config = SimulationConfig(duration=round(10e4 / 4))
+        sim_config = SimulationConfig(duration=round(1000 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

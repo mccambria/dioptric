@@ -8,6 +8,8 @@ Created on October 13th, 2023
 """
 
 
+import cProfile
+import time
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
@@ -57,9 +59,10 @@ if __name__ == "__main__":
             ],
             0,
         ]
+
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(2000e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
@@ -67,5 +70,5 @@ if __name__ == "__main__":
 
     except Exception as exc:
         raise exc
-    finally:
-        qmm.close_all_quantum_machines()
+    # finally:
+    #     qmm.close_all_quantum_machines()

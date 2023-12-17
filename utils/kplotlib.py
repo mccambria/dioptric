@@ -193,6 +193,8 @@ def zero_to_one_threshold(val):
 # endregion
 # region Miscellaneous
 
+kplotlib_initialized = False
+
 
 def init_kplotlib(
     font_size=Size.NORMAL,
@@ -207,6 +209,11 @@ def init_kplotlib(
     """
 
     ### Misc setup
+
+    global kplotlib_initialized
+    if kplotlib_initialized:
+        return
+    kplotlib_initialized = True
 
     # Reset to the default
     mpl.rcParams.update(mpl.rcParamsDefault)
@@ -635,7 +642,7 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     return occur, bin_edges
 
 
-def draw_circle(ax, coords, radius, color=KplColors.BLUE):
+def draw_circle(ax, coords, radius=1, color=KplColors.BLUE):
     """Draw a circle on the passed axes
 
     Parameters

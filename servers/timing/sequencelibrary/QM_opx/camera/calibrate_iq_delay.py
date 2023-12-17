@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Scanning illumination and widefield collection
+Widefield ESR
 
 Created on October 13th, 2023
 
@@ -8,22 +8,35 @@ Created on October 13th, 2023
 """
 
 
-import numpy
 from qm import qua
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 from servers.timing.sequencelibrary.QM_opx import seq_utils
+from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 
 def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list) = args
+    (pol_coords_list, ion_coords_list, uwave_ind, i_or_q, tau_ns) = args
+
+    tau = seq_utils.convert_ns_to_cc(tau_ns)
+    buffer = seq_utils.get_widefield_operation_buffer()
+    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
+    i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
+    iq_el = i_el if i_or_q else q_el
 
     def uwave_macro():
-        pass
+        # IQ
+        qua.wait(buffer - tau, iq_el)
+        qua.play("pi_pulse", iq_el)
+        qua.wait(buffer + tau, iq_el)
+        # Pi pulse
+        qua.wait(buffer, sig_gen_el)
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(buffer, sig_gen_el)
+        #
+        qua.align()
 
     seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
 
@@ -42,20 +55,19 @@ if __name__ == "__main__":
 
     try:
         args = [
-            5000.0,
-            "laser_OPTO_589",
-            True,
-            "laser_INTE_520",
-            [111.202, 109.801],
-            1000,
-            False,
-            "laser_COBO_638",
-            [75, 75],
-            2000.0,
+            [
+                [112.8143831410256, 110.75435400118901],
+                [112.79838314102561, 110.77035400118902],
+            ],
+            [
+                [76.56091979499166, 75.8487161634141],
+                [76.30891979499165, 75.96071616341409],
+            ],
+            50e3,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(500e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

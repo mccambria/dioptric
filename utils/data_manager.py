@@ -260,7 +260,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True):
             while len(cached_file_ids) > 10:
                 file_id_to_remove = cached_file_ids.pop(0)
                 file_name_to_remove = id_name_table[file_id_to_remove]
-                id_name_table.remove(file_id_to_remove)
+                del id_name_table[file_id_to_remove]
                 os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
             cache_manifest = {
                 "id_name_table": id_name_table,

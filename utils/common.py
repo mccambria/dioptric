@@ -19,6 +19,7 @@ import labrad
 import numpy as np
 
 global_cxn = None
+_cache_config_copy = None
 
 
 def get_config_module(pc_name=None, reload=False):
@@ -37,15 +38,13 @@ def get_config_module(pc_name=None, reload=False):
 
 def get_config_dict(pc_name=None, reload=False):
     module = get_config_module(pc_name, reload)
-    config_copy = copy.deepcopy(module.config)
-    return config_copy
+    return module.config
 
 
 def get_opx_config_dict(pc_name=None, reload=False):
     module = get_config_module(pc_name, reload)
     try:
-        opx_config_copy = copy.deepcopy(module.opx_config)
-        return opx_config_copy
+        return module.opx_config
     except Exception as exc:
         return None
 

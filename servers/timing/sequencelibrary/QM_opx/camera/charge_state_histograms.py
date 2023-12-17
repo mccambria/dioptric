@@ -20,14 +20,10 @@ from qm import generate_qua_script
 
 def get_seq(args, num_reps):
     (
-        pol_laser,
-        pol_duration_ns,
         pol_coords_list,
-        ion_laser,
-        ion_duration_ns,
         ion_coords_list,
-        readout_laser,
-        readout_duration_ns,
+        pol_duration_ns,
+        ion_duration_ns,
         diff_polarize,
         diff_ionize,
     ) = args
@@ -47,21 +43,16 @@ def get_seq(args, num_reps):
         do_ionize_ref = False
 
     with qua.program() as seq:
-        seq_utils.turn_on_aods([pol_laser, ion_laser])
+        seq_utils.turn_on_aods()
 
         def half_rep(do_polarize_sub, do_ionize_sub):
-            # Polarization
-            seq_utils.macro_polarize(
-                pol_laser, pol_duration_ns, pol_coords_list, not do_polarize_sub
-            )
+            if do_polarize_sub:
+                seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
-            # Ionization
-            seq_utils.macro_ionize(
-                ion_laser, ion_duration_ns, ion_coords_list, not do_ionize_sub
-            )
+            if do_ionize_sub:
+                seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
 
-            # Readout
-            seq_utils.macro_charge_state_readout(readout_laser, readout_duration_ns)
+            seq_utils.macro_charge_state_readout()
 
         def one_rep():
             for half_rep_args in [

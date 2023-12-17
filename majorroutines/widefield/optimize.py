@@ -168,7 +168,6 @@ def optimize_pixel_with_img_array(
     img_array, nv_sig=None, pixel_coords=None, do_plot=False
 ):
     if do_plot:
-        kpl.init_kplotlib()
         fig, ax = plt.subplots()
         kpl.imshow(ax, img_array, cbar_label="Counts")
 
@@ -212,8 +211,8 @@ def optimize_pixel_with_img_array(
     max_img_array_crop = np.max(img_array_crop)
     bg_guess = min_img_array_crop
     amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
-    amp_guess = max(10, amp_guess)
-    guess = (amp_guess, initial_x, initial_y, 2.5, bg_guess)
+    radius_guess = radius / 2
+    guess = (amp_guess, initial_x, initial_y, radius_guess, bg_guess)
     diam = radius * 2
 
     bounds = (

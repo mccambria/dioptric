@@ -51,10 +51,18 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Collect the data
 
+    # MCC testing
+    # tau = taus[0]
+    # seq_args = widefield.get_base_scc_seq_args(nv_list)
+    # seq_args.append(tau)
+    # print(seq_args)
+    # return
+
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(tau)
+        print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -66,7 +74,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
 
-    kpl.init_kplotlib()
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
@@ -77,7 +84,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Clean up and return
 
     tb.reset_cfm()
-
     kpl.show()
 
     timestamp = dm.get_time_stamp()
@@ -104,7 +110,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1387061507543)
+    data = dm.get_raw_data(file_id=1389346693219)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

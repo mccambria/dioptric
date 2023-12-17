@@ -3,7 +3,7 @@
 Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
 and plot the difference
 
-Created on April 9th, 2019
+Created on Fall 2023
 
 @author: mccambria
 """
@@ -26,8 +26,9 @@ import os
 import time
 
 
-def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
-    readout = nv_sig[LaserKey.CHARGE_READOUT]["duration"]
+def create_histogram(sig_counts_list, ref_counts_list):
+    laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
+    readout = laser_dict["duration"]
     readout_ms = int(readout / 1e6)
     readout_s = readout / 1e9
 
@@ -47,29 +48,36 @@ def create_histogram(nv_sig, sig_counts_list, ref_counts_list):
     ax.legend()
 
     # Calculate the normalized separation
-    mean_std = (1 / 2) * np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
-    mean_diff = np.mean(ref_counts_list) - np.mean(sig_counts_list)
-    norm_sep = mean_diff / mean_std
-    norm_sep_time = norm_sep / np.sqrt(readout_s)
-    norm_sep = round(norm_sep, 3)
-    norm_sep_time = round(norm_sep_time, 3)
-    norm_sep_str = (
-        f"Normalized separation:\n{norm_sep} / sqrt(shot)\n{norm_sep_time} / sqrt(s)"
-    )
-    print(norm_sep_str)
-    kpl.anchored_text(ax, norm_sep_str, "center right", size=kpl.Size.SMALL)
+    noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
+    signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
+    snr = signal / noise
+    snr_time = snr / np.sqrt(readout_s)
+    snr = round(snr, 3)
+    snr_time = round(snr_time, 3)
+    snr_str = f"SNR:\n{snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
+    print(snr_str)
+    kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
     return fig
 
 
-def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
+def main(
+    nv_list,
+    num_reps=100,
+    pol_duration=None,
+    ion_duration=None,
+    diff_polarize=False,
+    diff_ionize=True,
+):
     ### Setup
 
     kpl.init_kplotlib()
 
     ### Collect the data
 
-    ret_vals = _collect_data(nv_list, num_reps, diff_polarize, diff_ionize)
+    ret_vals = _collect_data(
+        nv_list, num_reps, pol_duration, ion_duration, diff_polarize, diff_ionize
+    )
     (
         sig_img_array_list,
         ref_img_array_list,
@@ -89,11 +97,11 @@ def main(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
 
     num_nvs = len(nv_list)
     for ind in range(num_nvs):
-        nv_sig = nv_list[ind]
-        nv_name = nv_sig["name"]
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
-        fig = create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+        fig = create_histogram(sig_counts_list, ref_counts_list)
+        nv_sig = nv_list[ind]
+        nv_name = nv_sig["name"]
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
 
@@ -155,7 +163,14 @@ def process_data(nv_list, sig_img_array_list, ref_img_array_list):
     return sig_counts_lists, ref_counts_lists
 
 
-def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
+def _collect_data(
+    nv_list,
+    num_reps=100,
+    pol_duration=None,
+    ion_duration=None,
+    diff_polarize=False,
+    diff_ionize=True,
+):
     ### Some initial setup
 
     # First NV to represent the others
@@ -163,15 +178,15 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
 
     tb.reset_cfm()
     laser_key = LaserKey.CHARGE_READOUT
-    optimize.prepare_microscope(nv_sig)
+    optimize.prepare_microscope(repr_nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = nv_sig[laser_key]
+    laser_dict = tb.get_laser_dict(laser_key)
     readout_laser = laser_dict["name"]
-    tb.set_filter(nv_sig, laser_key)
+    tb.set_filter(repr_nv_sig, laser_key)
 
-    pos.set_xyz_on_nv(nv_sig)
+    pos.set_xyz_on_nv(repr_nv_sig)
 
     ### Load the pulse generator
 
@@ -179,7 +194,7 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     readout_ms = readout / 10**6
 
     seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.extend([diff_polarize, diff_ionize])
+    seq_args.extend([pol_duration, ion_duration, diff_polarize, diff_ionize])
     seq_file = "charge_state_histograms.py"
 
     # print(seq_args)
@@ -207,9 +222,12 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
             ref_img_array_list.append(sub_img_array)
 
     except Exception as exc:
-        print(exc)
         num_reps = ind
-        print(num_reps)
+        nuvu_237 = "NuvuException: 237"
+        if "NuvuException: 237" in str(exc):
+            print(f"{nuvu_237} at {num_reps} reps")
+        else:
+            raise exc
 
     finally:
         camera.disarm()
@@ -222,8 +240,6 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     sig_img_array = sig_img_array / num_reps
     ref_img_array = ref_img_array / num_reps
     diff_img_array = diff_img_array / num_reps
-
-    kpl.init_kplotlib()
 
     img_arrays = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
@@ -239,11 +255,10 @@ def _collect_data(nv_list, num_reps=100, diff_polarize=False, diff_ionize=True):
     ### Clean up and return
 
     tb.reset_cfm()
-
     kpl.show()
 
     timestamp = dm.get_time_stamp()
-    nv_name = nv_sig["name"]
+    nv_name = repr_nv_sig["name"]
     # Save sub figs
     for ind in range(3):
         fig = figs[ind]
@@ -276,8 +291,7 @@ if __name__ == "__main__":
         nv_list, sig_img_array_list, ref_img_array_list
     )
 
-    nv_sig = nv_list[0]
-    create_histogram(nv_sig, sig_counts_list, ref_counts_list)
+    create_histogram(sig_counts_list, ref_counts_list)
 
     # thresh = 5050
     # print(f"Red NV0: {(sig_counts_list < thresh).sum()}")

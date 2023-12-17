@@ -18,21 +18,24 @@ from majorroutines.widefield import base_routine
 def main(nv_list, num_reps):
     ### Some initial setup
 
-    cxn = common.labrad_connect()
-
+    uwave_ind = 0
     seq_file = "resonance_ref.py"
-    pulse_gen = tb.get_server_pulse_gen(cxn)
+    pulse_gen = tb.get_server_pulse_gen()
     seq_args = widefield.get_base_scc_seq_args(nv_list)
+    seq_args.append(uwave_ind)
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
 
     counts, _ = base_routine.main(
-        cxn, nv_list, 1, num_reps, 1, step_fn=None, num_images_per_rep=2
+        nv_list, 1, num_reps, 1, step_fn=None, num_exps_per_rep=2
     )
     sig_counts = counts[0]
     ref_counts = counts[1]
+
+    sig_counts = sig_counts > 50
+    ref_counts = ref_counts > 50
 
     ### Report the results and return
 
@@ -45,8 +48,8 @@ def main(nv_list, num_reps):
     avg_sig_counts_ste = avg_sig_counts_ste[:, 0]
     avg_ref_counts = avg_ref_counts[:, 0]
     avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
-    avg_snr = avg_ref_counts[:, 0]
-    avg_snr_ste = avg_ref_counts_ste[:, 0]
+    avg_snr = avg_snr[:, 0]
+    avg_snr_ste = avg_snr_ste[:, 0]
 
     # Print
     for ind in range(len(nv_list)):
@@ -57,4 +60,4 @@ def main(nv_list, num_reps):
         nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
         print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
 
-    tb.reset_cfm(cxn)
+    tb.reset_cfm()

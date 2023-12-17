@@ -24,8 +24,6 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     # avg_snr_ste = None
 
-    kpl.init_kplotlib()
-
     sig_fig, sig_ax = plt.subplots()
     widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
     sig_ax.set_xlabel("Ionization pulse duration (ns)")
@@ -47,7 +45,7 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
-    seq_file = "resonance_ref.py"
+    seq_file = "optimize_scc.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -61,7 +59,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, num_images_per_rep=2
+        nv_list, num_steps, num_reps, num_runs, step_fn, num_exps_per_rep=2
     )
     sig_counts = counts[0]
     ref_counts = counts[1]

@@ -46,9 +46,18 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     a1_list = []
     readout_noise_list = []
 
+    def constant(freq, norm):
+        if type(freq) == list:
+            return [norm] * len(freq)
+        elif type(freq) == np.ndarray:
+            return np.array([norm] * len(freq))
+        else:
+            return norm
+
     fit_fns = []
     popts = []
     norms = []
+    num_steps = len(freqs)
 
     center_freqs = []
 
@@ -58,9 +67,18 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        single_resonance = True  # vs double resonance
+        if nv_ind in [3]:
+            num_resonances = 0
+        elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
+            num_resonances = 1
+        else:
+            num_resonances = 2
 
-        if single_resonance:
+        if num_resonances == 0:
+            guess_params = [norm_guess]
+            bounds = [[0], [np.inf]]
+            fit_fn = constant
+        elif num_resonances == 1:
             guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
             bounds = [[0] * 5, [np.inf] * 5]
             # Limit linewidths
@@ -69,12 +87,25 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
             fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
                 1 + voigt(freq, contrast, g_width, l_width, center)
             )
-        else:  # Double
-            guess_params = [norm_guess, amp_guess, 5, 5, 2.85, amp_guess, 5, 5, 2.89]
+        elif num_resonances == 2:
+            low_freq_guess = freqs[num_steps * 1 // 3]
+            high_freq_guess = freqs[num_steps * 2 // 3]
+            if nv_ind == 8:
+                low_freq_guess = 2.8506
+                high_freq_guess = 2.8928
+            guess_params = [
+                norm_guess,
+                amp_guess,
+                5,
+                5,
+                low_freq_guess,
+                amp_guess,
+                5,
+                5,
+                high_freq_guess,
+            ]
             bounds = [[0] * 9, [np.inf] * 9]
-            # Limit linewidths
-            for ind in [2, 3, 6, 7]:
-                bounds[1][ind] = 10
+            bounds[1][ind] = 10
             fit_fn = (
                 lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
                 * (
@@ -94,26 +125,27 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         )
 
         # SCC readout noise tracking
-        norm = popt[0]
-        contrast = popt[1]
-        a0 = round((1 + contrast) * norm, 2)
-        a1 = round(norm, 2)
-        print(f"ms=+/-1: {a0}\nms=0: {a1}")
-        a0_list.append(a0)
-        a1_list.append(a1)
-        readout_noise = np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2))
-        readout_noise_list.append(readout_noise)
-        print(f"readout noise: {readout_noise}")
-        print()
+        if len(popt) > 1:
+            norm = popt[0]
+            contrast = popt[1]
+            a0 = round((1 + contrast) * norm, 2)
+            a1 = round(norm, 2)
+            print(f"ms=+/-1: {a0}\nms=0: {a1}")
+            a0_list.append(a0)
+            a1_list.append(a1)
+            readout_noise = np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2))
+            readout_noise_list.append(readout_noise)
+            print(f"readout noise: {readout_noise}")
+            print()
 
         # Tracking for plotting
         fit_fns.append(fit_fn)
         popts.append(popt)
         norms.append(popt[0])
 
-        if single_resonance:
+        if num_resonances == 1:
             center_freqs.append(popt[4])
-        else:
+        elif num_resonances == 1:
             center_freqs.append((popt[4], popt[8]))
 
     print(f"a0 average: {round(np.average(a0_list), 2)}")
@@ -131,6 +163,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     widefield.plot_fit(ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms)
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
+    # ax.set_xlim(None, 3.01)
     return fig
 
 
@@ -160,8 +193,6 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     ### Process and plot
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
-
-    kpl.init_kplotlib()
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
@@ -172,7 +203,6 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     ### Clean up and return
 
     tb.reset_cfm()
-
     kpl.show()
 
     timestamp = dm.get_time_stamp()
@@ -199,15 +229,69 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1386029806823)
+    # data = dm.get_raw_data(file_id=1388701699044)  # 90
+    # data = dm.get_raw_data(file_id=1388679268107)  # 30
+    # data = dm.get_raw_data(file_id=1388633807820)  # 0
+    # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
+    # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
+    data = dm.get_raw_data(file_id=1391090857910)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
+    num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
+    counts = counts > 40
 
+    # Spurious correlation testing
+    step_ind_master_list = np.array(data["step_ind_master_list"])
+    mean_inds = []
+    mean_corrs = []
+    mean_diffs = []
+    for step_ind in range(num_steps):
+        step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
+        mean_inds.append(np.mean(step_inds))
+
+        step_counts = [
+            counts[nv_ind, :, step_ind, :].flatten()
+            # for nv_ind in [1, 5]
+            for nv_ind in range(num_nvs)
+        ]
+        corr = np.corrcoef(step_counts)
+        mean_corrs.append(np.mean(corr, where=corr < 0.999))
+
+        val = np.mean(
+            [
+                counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind, :, step_ind, :])
+                for nv_ind in range(num_nvs)
+            ]
+        )
+        mean_diffs.append(val)
+    mean_corrs_runs = []
+    for run_ind in range(num_runs):
+        run_counts = [
+            counts[nv_ind, run_ind, :, :].flatten()
+            # for nv_ind in [1, 5]
+            for nv_ind in range(num_nvs)
+        ]
+        corr = np.corrcoef(run_counts)
+        mean_corrs_runs.append(np.mean(corr, where=corr < 0.999))
+    print(mean_inds)
+    print([round(el, 3) for el in mean_corrs])
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, mean_inds, mean_corrs)
+    ax.set_xlabel("Mean step order")
+    # kpl.plot_points(ax, freqs, mean_corrs)
+    # kpl.plot_points(ax, range(num_steps), mean_corrs)
+    # ax.set_xlabel("Step index")
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, range(num_runs), mean_corrs_runs)
+    ax.set_xlabel("Run index")
+    # kpl.plot_points(ax, mean_inds, mean_diffs)
+
+    # counts = counts[:, :, :, :5]
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)

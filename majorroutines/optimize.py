@@ -54,8 +54,8 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
     ax = axes[axis_ind]
     ax.plot(scan_vals, count_vals)
     if text is not None:
-        kpl.anchored_text(ax, text, kpl.Loc.UPPER_RIGHT)
-    kpl.flush_update(fig=fig)
+        kpl.anchored_text(ax, text, kpl.Loc.LOWER_RIGHT)
+    kpl.show()
 
 
 def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=None):
@@ -205,28 +205,7 @@ def _read_counts_camera_sequence(
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif laser_key == LaserKey.IONIZATION:
-        pol_laser_dict = tb.get_laser_dict(LaserKey.POLARIZATION)
-        pol_laser_name = pol_laser_dict["name"]
-        pol_duration = pol_laser_dict["duration"]
-        pol_coords = pos.get_nv_coords(nv_sig, pol_laser_name)
-        ion_laser_dict = tb.get_laser_dict(LaserKey.IONIZATION)
-        ion_laser_name = ion_laser_dict["name"]
-        ion_duration = ion_laser_dict["duration"]
-        readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
-        readout_laser_name = readout_laser_dict["name"]
-        readout_duration = readout_laser_dict["duration"]
-        if coords is None:
-            coords = pos.get_nv_coords(nv_sig, ion_laser_name)
-        seq_args = [
-            readout_duration,
-            readout_laser_name,
-            pol_laser_name,
-            pol_coords,
-            pol_duration,
-            ion_laser_name,
-            coords,
-            ion_duration,
-        ]
+        seq_args = widefield.get_base_scc_seq_args([nv_sig])
         seq_file_name = "optimize_ionization_laser_coords.py"
         num_reps = 50
     if axis_ind is None or axis_ind == 2:
@@ -254,9 +233,10 @@ def _read_counts_camera_sequence(
                     if laser_key == LaserKey.IMAGING:
                         seq_args[-2 + axis_ind] = [val]
                     elif laser_key == LaserKey.IONIZATION:
-                        seq_args[-2][axis_ind] = val
+                        seq_args[1][0][axis_ind] = val
                     seq_args_string = tb.encode_seq_args(seq_args)
                     # print(seq_args)
+                    
                     pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
                 elif axis_ind == 2:
                     axis_write_fn(val)
@@ -273,8 +253,11 @@ def _read_counts_camera_sequence(
                     else:
                         img_array += sub_img_array
             except Exception as exc:
-                print(exc)
-                print(f"Stopped at rep ind {rep_ind}")
+                nuvu_237 = "NuvuException: 237"
+                if "NuvuException: 237" in str(exc):
+                    print(f"{nuvu_237} at {rep_ind} reps")
+                else:
+                    raise exc
                 actual_num_reps = rep_ind
 
                 # Rearm the camera
@@ -376,6 +359,7 @@ def _read_counts(
         seq_file_name = "simple_readout.py"
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tb.encode_seq_args(seq_args)
+        
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
         if collection_mode == CollectionMode.COUNTER:

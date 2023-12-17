@@ -109,7 +109,6 @@ def main(
     avg_counts_0, avg_counts_0_ste = widefield.process_counts(counts_0)
     avg_counts_1, avg_counts_1_ste = widefield.process_counts(counts_1)
 
-    kpl.init_kplotlib()
     raw_fig_0 = create_raw_data_figure(
         nv_list, taus, avg_counts_0, avg_counts_0_ste, init_state_0, readout_state_0
     )
@@ -120,7 +119,6 @@ def main(
     ### Clean up and return
 
     tb.reset_cfm()
-
     kpl.show()
 
     timestamp = dm.get_time_stamp()
