@@ -809,12 +809,14 @@ def round_for_print_sci(val, err):
         err_sig_figs = 1
 
     power_of_10 = math.floor(math.log10(abs(val)))
+    if power_of_10 < err_mag:
+        power_of_10 = err_mag + err_sig_figs
     mag = Decimal(10) ** power_of_10
     rounded_err = round_sig_figs(err / mag, err_sig_figs)
     rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
 
     # Check for corner case where the value is e.g. 0.999 and rounds up to another decimal place
-    if rounded_val >= 10:
+    if rounded_val >= 10 and err < val:
         power_of_10 += 1
         # Just shift the decimal over and recast to Decimal to ensure proper rounding
         rounded_err = Decimal(_shift_decimal_left(str(rounded_err)))
@@ -896,8 +898,13 @@ def _shift_decimal_left(val_str):
     """Finds the . character in a string and moves it one place to the left"""
 
     decimal_pos = val_str.find(".")
-    left_char = val_str[decimal_pos - 1]
-    val_str = val_str.replace(f"{left_char}.", f".{left_char}")
+    # No decimal
+    if decimal_pos == -1:
+        last_char = val_str[-1]
+        val_str = val_str.replace(last_char, f".{last_char}")
+    else:
+        left_char = val_str[decimal_pos - 1]
+        val_str = val_str.replace(f"{left_char}.", f".{left_char}")
     return val_str
 
 
@@ -914,7 +921,6 @@ def _strip_err(err):
     str
         Trailing non-zero digits of err
     """
-
     stripped_err = ""
     trailing = False
     for char in str(err):
@@ -1007,28 +1013,4 @@ def reset_cfm():
 
 # Testing
 if __name__ == "__main__":
-    file_name = "2023_08_23-14_47_33-johnson-nv0_2023_08_23"
-    data = get_raw_data(file_name)
-
-    img_arrays = np.array(data["img_arrays"], dtype=np.uint16)
-    # data["img_arrays"] = img_arrays
-
-    # timestamp = get_time_stamp()
-    # new_file_path = get_file_path(__file__, timestamp, "test")
-    # save_raw_data(data, new_file_path, keys_to_compress=["img_arrays"])
-
-    new_file_name = "2023_08_24-13_59_27-test"
-    # new_file_name = new_file_path.stem
-    new_data = get_raw_data(new_file_name)
-
-    # file_path = Path.home() / "test/test.npz"
-    # # with open(file_path, "wb") as f:
-    # #     np.savez_compressed(f, img_arrays=img_arrays)
-
-    # # file_path = Path.home() / "test/test.txt"
-    # # with open(file_path, "w") as f:
-    # #     json.dump(data, f, indent=2)
-
-    # npz_file = np.load(file_path)
-    img_arrays_test = new_data["img_arrays"]
-    print(np.array_equal(img_arrays_test, img_arrays))
+    print(round_for_print(0.07, 0.5))

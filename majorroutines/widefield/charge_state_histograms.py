@@ -3,7 +3,7 @@
 Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
 and plot the difference
 
-Created on April 9th, 2019
+Created on Fall 2023
 
 @author: mccambria
 """

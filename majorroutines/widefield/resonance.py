@@ -228,54 +228,55 @@ if __name__ == "__main__":
     freqs = data["freqs"]
     counts = np.array(data["counts"])
 
-    step_ind_master_list = np.array(data["step_ind_master_list"])
-    mean_inds = []
-    mean_corrs = []
-    mean_diffs = []
-    for step_ind in range(num_steps):
-        step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
-        mean_inds.append(np.mean(step_inds))
+    # Spurious correlation testing
+    # step_ind_master_list = np.array(data["step_ind_master_list"])
+    # mean_inds = []
+    # mean_corrs = []
+    # mean_diffs = []
+    # for step_ind in range(num_steps):
+    #     step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
+    #     mean_inds.append(np.mean(step_inds))
 
-        step_counts = [
-            counts[nv_ind, :, step_ind, :].flatten()
-            # for nv_ind in [1, 5]
-            for nv_ind in range(num_nvs)
-        ]
-        corr = np.corrcoef(step_counts)
-        mean_corrs.append(np.mean(corr, where=corr < 0.999))
+    #     step_counts = [
+    #         counts[nv_ind, :, step_ind, :].flatten()
+    #         # for nv_ind in [1, 5]
+    #         for nv_ind in range(num_nvs)
+    #     ]
+    #     corr = np.corrcoef(step_counts)
+    #     mean_corrs.append(np.mean(corr, where=corr < 0.999))
 
-        val = np.mean(
-            [
-                counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind, :, step_ind, :])
-                for nv_ind in range(num_nvs)
-            ]
-        )
-        mean_diffs.append(val)
-    mean_corrs_runs = []
-    for run_ind in range(num_runs):
-        run_counts = [
-            counts[nv_ind, run_ind, :, :].flatten()
-            # for nv_ind in [1, 5]
-            for nv_ind in range(num_nvs)
-        ]
-        corr = np.corrcoef(run_counts)
-        mean_corrs_runs.append(np.mean(corr, where=corr < 0.999))
-    print(mean_inds)
-    print([round(el, 3) for el in mean_corrs])
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, mean_inds, mean_corrs)
-    ax.set_xlabel("Mean step order")
-    # kpl.plot_points(ax, freqs, mean_corrs)
-    # kpl.plot_points(ax, range(num_steps), mean_corrs)
-    # ax.set_xlabel("Step index")
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, range(num_runs), mean_corrs_runs)
-    ax.set_xlabel("Run index")
-    # kpl.plot_points(ax, mean_inds, mean_diffs)
+    #     val = np.mean(
+    #         [
+    #             counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind, :, step_ind, :])
+    #             for nv_ind in range(num_nvs)
+    #         ]
+    #     )
+    #     mean_diffs.append(val)
+    # mean_corrs_runs = []
+    # for run_ind in range(num_runs):
+    #     run_counts = [
+    #         counts[nv_ind, run_ind, :, :].flatten()
+    #         # for nv_ind in [1, 5]
+    #         for nv_ind in range(num_nvs)
+    #     ]
+    #     corr = np.corrcoef(run_counts)
+    #     mean_corrs_runs.append(np.mean(corr, where=corr < 0.999))
+    # print(mean_inds)
+    # print([round(el, 3) for el in mean_corrs])
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, mean_inds, mean_corrs)
+    # ax.set_xlabel("Mean step order")
+    # # kpl.plot_points(ax, freqs, mean_corrs)
+    # # kpl.plot_points(ax, range(num_steps), mean_corrs)
+    # # ax.set_xlabel("Step index")
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, range(num_runs), mean_corrs_runs)
+    # ax.set_xlabel("Run index")
+    # # kpl.plot_points(ax, mean_inds, mean_diffs)
 
     # counts = counts[:, :, :, :5]
-    # avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
     kpl.show(block=True)

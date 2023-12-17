@@ -63,10 +63,8 @@ def get_seq(
             if num_exps_per_rep == 1:
                 one_exp()
             else:
-                qua.assign(exp_ind, 0)
-                with qua.while_(exp_ind < num_exps_per_rep):
+                for exp_ind in range(num_exps_per_rep):
                     one_exp(exp_ind)
-                    qua.assign(exp_ind, exp_ind + 1)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 

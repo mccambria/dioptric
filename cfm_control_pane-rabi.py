@@ -74,7 +74,7 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list, num_reps):
-    ion_duration = 220
+    ion_duration = 1000
     return charge_state_histograms.main(nv_list, num_reps, ion_duration=ion_duration)
 
 
@@ -111,25 +111,38 @@ def do_optimize_pixel(nv_sig):
 
 
 def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
+    # Start fresh
+    widefield.reset_all_drift()
+
     opti_coords_list = []
     for nv in nv_list:
+        # Pixel coords
         if coords_suffix is None:
+            imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
+            if scanning_from_pixel:
+                widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
             opti_coords = do_optimize_pixel(nv)
+            widefield.reset_all_drift()
+
+        # Scanning coords
         else:
             if scanning_from_pixel:
                 widefield.set_nv_scanning_coords_from_pixel_coords(nv, coords_suffix)
+
             if coords_suffix == green_laser:
                 opti_coords = do_optimize_green(nv)
             elif coords_suffix == red_laser:
                 opti_coords = do_optimize_red(nv)
+
             # Adjust for the drift that may have occurred since beginning the loop
             do_optimize_pixel(nv_sig)
             drift = pos.get_drift(coords_suffix)
             drift = [-1 * el for el in drift]
-            opti_coords = pos.adjust_coords_for_drift(
-                opti_coords, coords_suffix=coords_suffix, drift=drift
-            )
+            opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
+
         opti_coords_list.append(opti_coords)
+
+    # Report back
     for opti_coords in opti_coords_list:
         r_opti_coords = [round(el, 3) for el in opti_coords]
         print(r_opti_coords)
@@ -150,7 +163,7 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 100
+    num_reps = 400
     scc_snr_check.main(nv_list, num_reps)
 
 
@@ -175,11 +188,11 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.815
+    freq_center = 2.873
     freq_range = 0.05
     num_steps = 20
-    num_reps = 10
-    num_runs = 100
+    num_reps = 15
+    num_runs = 50
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -342,7 +355,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.91
+    z_coord = 5.87
     magnet_angle = 90
     date_str = "2023_12_15"
 
@@ -359,73 +372,73 @@ if __name__ == "__main__":
 
     nv0 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv0_{date_str}",
-        pixel_coords_key: [89.556, 103.238],
-        green_coords_key: [110.944, 109.912],
-        red_coords_key: [75.051, 75.132],
+        pixel_coords_key: [105.5, 82.15],
+        green_coords_key: [111.544, 109.145],
+        red_coords_key: [75.583, 74.529],
         "repr": True,
     }
 
     nv1 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv1_{date_str}",
-        pixel_coords_key: [98.766, 134.008],
-        green_coords_key: [111.476, 110.703],
-        red_coords_key: [75.378, 75.964],
+        pixel_coords_key: [85.593, 90.356],
+        green_coords_key: [110.822, 109.412],
+        red_coords_key: [75.006, 74.777],
     }
 
     nv2 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv2_{date_str}",
-        pixel_coords_key: [99.977, 144.237],
-        green_coords_key: [111.534, 111.104],
-        red_coords_key: [75.326, 76.223],
+        pixel_coords_key: [76.522, 78.097],
+        green_coords_key: [110.582, 108.914],
+        red_coords_key: [74.798, 74.486],
     }
 
     nv3 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv3_{date_str}",
-        pixel_coords_key: [80.906, 139.629],
-        green_coords_key: [110.82, 110.775],
-        red_coords_key: [74.831, 76.242],
+        pixel_coords_key: [87.906, 60.763],
+        green_coords_key: [110.908, 108.384],
+        red_coords_key: [75.203, 73.955],
     }
 
     nv4 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv4_{date_str}",
-        pixel_coords_key: [71.881, 81.712],
-        green_coords_key: [110.351, 109.07],
-        red_coords_key: [74.577, 74.627],
+        pixel_coords_key: [114.443, 112.792],
+        green_coords_key: [111.811, 110.193],
+        red_coords_key: [75.765, 75.348],
     }
 
     nv5 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv5_{date_str}",
-        pixel_coords_key: [85.481, 71.272],
-        green_coords_key: [110.84, 108.738],
-        red_coords_key: [75.016, 74.212],
+        pixel_coords_key: [116.021, 123.245],
+        green_coords_key: [112.123, 110.319],
+        red_coords_key: [75.836, 75.701],
     }
 
     nv6 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv6_{date_str}",
-        pixel_coords_key: [102.014, 67.528],
-        green_coords_key: [111.414, 108.682],
-        red_coords_key: [75.432, 74.142],
+        pixel_coords_key: [100.692, 138.559],
+        green_coords_key: [111.582, 110.696],
+        red_coords_key: [75.289, 76.133],
     }
 
     nv7 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv7_{date_str}",
-        pixel_coords_key: [119.591, 76.191],
-        green_coords_key: [112.012, 109.033],
-        red_coords_key: [75.953, 74.352],
+        pixel_coords_key: [96.649, 119.011],
+        green_coords_key: [111.544, 110.061],
+        red_coords_key: [75.287, 75.564],
     }
 
     nv8 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv8_{date_str}",
-        pixel_coords_key: [69.585, 110.91],
-        green_coords_key: [110.462, 109.937],
-        red_coords_key: [74.526, 75.379],
+        pixel_coords_key: [61.108, 147.895],
+        green_coords_key: [110.185, 111.003],
+        red_coords_key: [74.412, 76.304],
     }
 
     nv9 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv9_{date_str}",
-        pixel_coords_key: [60.131, 98.961],
-        green_coords_key: [109.915, 109.682],
-        red_coords_key: [74.276, 75.069],
+        pixel_coords_key: [69.967, 97.639],
+        green_coords_key: [110.318, 109.666],
+        red_coords_key: [74.600, 75.053],
     }
 
     # endregion
@@ -437,6 +450,7 @@ if __name__ == "__main__":
     # nv_list = [nv5, nv6, nv7, nv8, nv9]
     # nv_list = [nv9]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
+    # nv_sig = nv8
 
     # pixel_coords_list = [widefield.get_nv_pixel_coords(nv, False) for nv in nv_list]
     # print(pixel_coords_list)
@@ -463,7 +477,7 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+14, -5])
+        # widefield.set_pixel_drift([+17, -15])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
@@ -473,12 +487,12 @@ if __name__ == "__main__":
         #     # for ind in range(20):
         #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
 
         # do_scc_snr_check(nv_list)
 
         # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -488,17 +502,19 @@ if __name__ == "__main__":
         ### Infrequent stuff down here
 
         # coords_suffix = None  # Pixel coords
-        # # coords_suffix = green_laser
-        # # coords_suffix = red_laser
-        do_optimize_loop(nv_list, coords_suffix)
+        # coords_suffix = green_laser
+        # coords_suffix = red_laser
+        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
-        do_charge_state_histograms(nv_list, 1000)
+        # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
         # do_opx_constant_ac()
         # do_calibrate_iq_delay(nv_list)
         # do_image_nv_list(nv_list)
         # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
         # compile_speed_test(nv_list)
+        # do_optimize_red(nv_sig)
 
     except Exception as exc:
         if do_email:

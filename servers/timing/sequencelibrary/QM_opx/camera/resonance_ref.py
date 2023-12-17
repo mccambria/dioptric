@@ -85,26 +85,19 @@ if __name__ == "__main__":
 
     try:
         args = [
-            "laser_INTE_520",
-            1000.0,
             [
                 [112.8143831410256, 110.75435400118901],
                 [112.79838314102561, 110.77035400118902],
             ],
-            "laser_COBO_638",
-            200,
             [
                 [76.56091979499166, 75.8487161634141],
                 [76.30891979499165, 75.96071616341409],
             ],
-            "laser_OPTO_589",
-            3500.0,
-            "sig_gen_STAN_sg394",
-            96 / 2,
+            0,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

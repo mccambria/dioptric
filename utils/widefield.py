@@ -159,6 +159,7 @@ def process_counts(counts_array):
 
 
 def calc_snr(sig_counts, ref_counts):
+    """Calculate SNR for a single shot"""
     avg_sig_counts, avg_sig_counts_ste = process_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste = process_counts(ref_counts)
     noise = np.sqrt(
