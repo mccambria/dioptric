@@ -182,13 +182,13 @@ def do_resonance(nv_list):
     num_steps = 40
     # num_reps = 80
     # num_runs = 6
-    num_reps = 15
-    num_runs = 35
+    num_reps = 10
+    num_runs = 70
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.873
+    freq_center = 2.895
     freq_range = 0.05
     num_steps = 20
     num_reps = 15
@@ -198,8 +198,8 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    max_tau = 400 + min_tau
-    num_steps = 26
+    max_tau = 240 + min_tau
+    num_steps = 21
     num_reps = 15
     num_runs = 50
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.86
+    z_coord = 5.84
     magnet_angle = 90
     date_str = "2023_12_15"
 
@@ -487,13 +487,13 @@ if __name__ == "__main__":
         #     # for ind in range(20):
         #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
 
         # do_scc_snr_check(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_spin_echo(nv_list)
@@ -512,7 +512,6 @@ if __name__ == "__main__":
         # do_calibrate_iq_delay(nv_list)
         # do_image_nv_list(nv_list)
         # do_optimize_scc(nv_list)
-        do_scc_snr_check(nv_list)
         # compile_speed_test(nv_list)
         # do_optimize_red(nv_sig)
 

@@ -247,10 +247,10 @@ def main(
                 img_array += sub_img_array
 
     except Exception as exc:
-        num_reps = ind
         nuvu_237 = "NuvuException: 237"
         if "NuvuException: 237" in str(exc):
             print(f"{nuvu_237} at {num_reps} reps")
+            num_reps = ind
         else:
             raise exc
 
