@@ -34,6 +34,7 @@ def main(nv_list, num_reps):
     sig_counts = counts[0]
     ref_counts = counts[1]
 
+    # MCC
     # sig_counts = sig_counts > 50
     # ref_counts = ref_counts > 50
 
