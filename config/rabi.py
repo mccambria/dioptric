@@ -25,12 +25,12 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [47.929, 140.489],
+    pixel_coords_key: [41.929, 110.489],
     green_coords_key: [109.811, 110.845],
     red_coords_key: [74.1, 75.9],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [-2.803, 181.628],
+    pixel_coords_key: [-8.803, 151.628],
     green_coords_key: [108.1, 112.002],
     red_coords_key: [72.9, 76.8],
 }
@@ -78,10 +78,10 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            # "frequency": 2.87,
-            # "rabi_period": 80,
-            "frequency": 2.89,
-            "rabi_period": 128,
+            "frequency": 2.87,
+            "rabi_period": 96,
+            # "frequency": 2.89,
+            # "rabi_period": 96,
             "uwave_power": 9,
         },
         "sig_gen_1": {
@@ -102,7 +102,7 @@ config |= {
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
-        "roi": (220, 155, 200, 200),  # offsetX, offsetY, width, height
+        "roi": (226, 185, 150, 150),  # offsetX, offsetY, width, height
     },
     ###
     "Optics": {

@@ -294,9 +294,11 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1390856732543)
+    # data = dm.get_raw_data(file_id=1392298372656)
+    data = dm.get_raw_data(file_id=1392300819875)
     img_array = np.array(data["img_array"])
-    data = dm.get_raw_data(file_id=1390855487585)
+    # data = dm.get_raw_data(file_id=1392300819875)
+    data = dm.get_raw_data(file_id=1392312729219)
     img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
