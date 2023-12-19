@@ -175,6 +175,45 @@ def calc_snr(sig_counts, ref_counts):
 # region Miscellaneous public functions
 
 
+def rep_loop(num_reps, rep_fn):
+    pulse_gen = tb.get_server_pulse_gen()
+    camera = tb.get_server_camera()
+
+    # Try 5 times then give up
+    num_attempts = 5
+    attempt_ind = 0
+    start_rep = 0
+    while True:
+        try:
+            pulse_gen.stream_start()
+
+            for rep_ind in range(start_rep, num_reps):
+                rep_fn(rep_ind)
+
+            break
+
+        except Exception as exc:
+            pulse_gen.halt()
+
+            nuvu_237 = "NuvuException: 237"
+            if "NuvuException: 237" in str(exc):
+                print(nuvu_237)
+            else:
+                raise exc
+
+            attempt_ind += 1
+            if attempt_ind == num_attempts:
+                raise RuntimeError("Maxed out number of attempts")
+
+            camera.arm()
+            start_rep = rep_ind
+
+    pulse_gen.halt()
+
+    if attempt_ind > 0:
+        print(f"{attempt_ind} crashes occurred")
+
+
 def get_repr_nv_sig(nv_list):
     for nv in nv_list:
         try:

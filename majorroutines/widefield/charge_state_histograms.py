@@ -206,31 +206,21 @@ def _collect_data(
     sig_img_array_list = []
     ref_img_array_list = []
 
-    camera.arm()
+    def rep_fn(rep_ind):
+        sig_img_str = camera.read()
+        ref_img_str = camera.read()
+
+        sig_img_array = widefield.img_str_to_array(sig_img_str)
+        ref_img_array = widefield.img_str_to_array(ref_img_str)
+
+        sig_img_array_list.append(sig_img_array)
+        ref_img_array_list.append(ref_img_array)
 
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-    pulse_gen.stream_start()
-
-    try:
-        for ind in range(num_reps):
-            img_str = camera.read()
-            sub_img_array = widefield.img_str_to_array(img_str)
-            sig_img_array_list.append(sub_img_array)
-            img_str = camera.read()
-            sub_img_array = widefield.img_str_to_array(img_str)
-            ref_img_array_list.append(sub_img_array)
-
-    except Exception as exc:
-        num_reps = ind
-        nuvu_237 = "NuvuException: 237"
-        if "NuvuException: 237" in str(exc):
-            print(f"{nuvu_237} at {num_reps} reps")
-        else:
-            raise exc
-
-    finally:
-        camera.disarm()
+    camera.arm()
+    widefield.rep_loop(num_reps, rep_fn)
+    camera.disarm()
 
     ### Process and plot
 

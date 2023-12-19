@@ -76,46 +76,23 @@ def main(
             if step_fn is not None:
                 step_fn(step_ind)
 
-            # Try 5 times then give up
-            num_attempts = 5
-            attempt_ind = 0
-            start_rep = 0  # Use this variable to pick up where we left off
-            while True:
-                try:
-                    pulse_gen.stream_start()
-                    for rep_ind in range(start_rep, num_reps):
-                        for exp_ind in range(num_exps_per_rep):
-                            img_str = camera.read()
-                            img_array = widefield.img_str_to_array(img_str)
-                            img_array_photons = widefield.adus_to_photons(img_array)
+            # Loop through the reps
+            def rep_fn(rep_ind):
+                for exp_ind in range(num_exps_per_rep):
+                    img_str = camera.read()
+                    img_array = widefield.img_str_to_array(img_str)
+                    img_array_photons = widefield.adus_to_photons(img_array)
 
-                            def get_counts(pixel_coords):
-                                return widefield.integrate_counts(
-                                    img_array_photons, pixel_coords
-                                )
+                    def get_counts(pixel_coords):
+                        return widefield.integrate_counts(
+                            img_array_photons, pixel_coords
+                        )
 
-                            counts_list = [get_counts(el) for el in pixel_coords_list]
-                            counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
-                    break
-                except Exception as exc:
-                    pulse_gen.halt()
+                    counts_list = [get_counts(el) for el in pixel_coords_list]
+                    counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
 
-                    # Check if we can just continue
-                    nuvu_237 = "NuvuException: 237"
-                    if "NuvuException: 237" in str(exc):
-                        print(nuvu_237)
-                    else:
-                        raise exc
-                    attempt_ind += 1
-                    if attempt_ind == num_attempts:
-                        raise RuntimeError("Maxed out number of attempts")
+            widefield.rep_loop(num_reps, rep_fn)
 
-                    start_rep = rep_ind
-                    camera.arm()
-            if attempt_ind > 0:
-                print(f"{attempt_ind} crashes occurred")
-
-        pulse_gen.halt()
         camera.disarm()
         for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
