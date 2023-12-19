@@ -253,12 +253,16 @@ def _read_counts_camera_sequence(
                     else:
                         img_array += sub_img_array
             except Exception as exc:
+                pulse_gen.halt()
                 nuvu_237 = "NuvuException: 237"
                 if "NuvuException: 237" in str(exc):
                     print(f"{nuvu_237} at {rep_ind} reps")
                 else:
                     raise exc
                 actual_num_reps = rep_ind
+
+                # Re-arm and move on to the next step
+                camera.arm()
 
             # Process the result
             img_array = img_array / actual_num_reps

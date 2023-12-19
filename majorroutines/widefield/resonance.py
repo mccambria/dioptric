@@ -163,7 +163,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     fig, ax = plt.subplots()
     offset = 0.1
-    # offset = 0.5
+    # offset = 0.8
     widefield.plot_fit(
         ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms, offset=offset
     )
@@ -249,11 +249,13 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-    # counts = counts > 60
 
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots()
-        kpl.histogram(ax, counts[nv_ind, :, 17].flatten(), nbins=100)
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     kpl.histogram(ax, counts[nv_ind, :, :].flatten(), nbins=100)
+    #     ax.set_title(nv_ind)
+
+    # counts = counts > 105
 
     # Spurious correlation testing
     # step_ind_master_list = np.array(data["step_ind_master_list"])
