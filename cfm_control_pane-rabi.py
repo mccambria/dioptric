@@ -355,7 +355,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.88
+    z_coord = 5.65
     magnet_angle = 90
     date_str = "2023_12_18"
 
@@ -371,28 +371,28 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [102.944, 87.3],
-        [65.746, 44.422],
-        [82.086, 62.07],
-        [92.26, 35.357],
-        [79.469, 40.559],
-        [66.007, 44.451],
-        [53.88, 45.692],
-        [62.112, 35.049],
-        [83.018, 89.054],
-        [40.2, 123.495],
+        [65.868, 93.42],
+        [66.683, 108.921],
+        [45.639, 124.686],
+        [32.561, 94.788],
+        [59.807, 63.417],
+        [60.195, 46.913],
+        [71.404, 45.155],
+        [83.811, 26.3],
+        [88.5, 63.275],
+        [108.785, 87.134],
     ]
     green_coords_list = [
-        [111.817, 110.283],
-        [110.444, 108.843],
-        [110.932, 109.583],
-        [111.44, 108.65],
-        [110.907, 108.878],
-        [110.417, 108.797],
-        [109.981, 108.83],
-        [110.336, 108.697],
-        [110.972, 110.515],
-        [109.629, 111.133],
+        [110.379, 110.459],
+        [110.459, 111.092],
+        [109.72, 111.537],
+        [109.301, 110.474],
+        [110.142, 109.579],
+        [110.165, 109.119],
+        [110.677, 108.93],
+        [111.066, 108.356],
+        [111.264, 109.659],
+        [111.96, 110.486],
     ]
     red_coords_list = [
         [75.675, 75.51],
@@ -489,7 +489,7 @@ if __name__ == "__main__":
     nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
     # nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv5, nv6, nv7, nv8, nv9]
-    # nv_list = [nv9]
+    # nv_list = [nv0, nv2]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # pixel_coords_list = [widefield.get_nv_pixel_coords(nv, False) for nv in nv_list]
@@ -525,10 +525,10 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.linspace(6.1, 5.8, 11):
-        for z in np.linspace(6.1, 3.1, 101):
-            nv_sig["coords"][2] = z
-            # for ind in range(20):
-            do_widefield_image_sample(nv_sig, 100)
+        # for z in np.linspace(5.5, 7.5, 41):
+        #     nv_sig["coords"][2] = z
+        #     # for ind in range(20):
+        #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
@@ -544,8 +544,8 @@ if __name__ == "__main__":
 
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
-        # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
+        coords_suffix = red_laser
+        do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
 
         # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
