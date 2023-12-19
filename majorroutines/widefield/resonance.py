@@ -234,7 +234,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1391090857910)
+    data = dm.get_raw_data(file_id=1393369873344)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -243,53 +243,53 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-    counts = counts > 40
+    # counts = counts > 40
 
     # Spurious correlation testing
-    step_ind_master_list = np.array(data["step_ind_master_list"])
-    mean_inds = []
-    mean_corrs = []
-    mean_diffs = []
-    for step_ind in range(num_steps):
-        step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
-        mean_inds.append(np.mean(step_inds))
+    # step_ind_master_list = np.array(data["step_ind_master_list"])
+    # mean_inds = []
+    # mean_corrs = []
+    # mean_diffs = []
+    # for step_ind in range(num_steps):
+    #     step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
+    #     mean_inds.append(np.mean(step_inds))
 
-        step_counts = [
-            counts[nv_ind, :, step_ind, :].flatten()
-            # for nv_ind in [1, 5]
-            for nv_ind in range(num_nvs)
-        ]
-        corr = np.corrcoef(step_counts)
-        mean_corrs.append(np.mean(corr, where=corr < 0.999))
+    #     step_counts = [
+    #         counts[nv_ind, :, step_ind, :].flatten()
+    #         # for nv_ind in [1, 5]
+    #         for nv_ind in range(num_nvs)
+    #     ]
+    #     corr = np.corrcoef(step_counts)
+    #     mean_corrs.append(np.mean(corr, where=corr < 0.999))
 
-        val = np.mean(
-            [
-                counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind, :, step_ind, :])
-                for nv_ind in range(num_nvs)
-            ]
-        )
-        mean_diffs.append(val)
-    mean_corrs_runs = []
-    for run_ind in range(num_runs):
-        run_counts = [
-            counts[nv_ind, run_ind, :, :].flatten()
-            # for nv_ind in [1, 5]
-            for nv_ind in range(num_nvs)
-        ]
-        corr = np.corrcoef(run_counts)
-        mean_corrs_runs.append(np.mean(corr, where=corr < 0.999))
-    print(mean_inds)
-    print([round(el, 3) for el in mean_corrs])
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, mean_inds, mean_corrs)
-    ax.set_xlabel("Mean step order")
-    # kpl.plot_points(ax, freqs, mean_corrs)
-    # kpl.plot_points(ax, range(num_steps), mean_corrs)
-    # ax.set_xlabel("Step index")
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, range(num_runs), mean_corrs_runs)
-    ax.set_xlabel("Run index")
-    # kpl.plot_points(ax, mean_inds, mean_diffs)
+    #     val = np.mean(
+    #         [
+    #             counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind, :, step_ind, :])
+    #             for nv_ind in range(num_nvs)
+    #         ]
+    #     )
+    #     mean_diffs.append(val)
+    # mean_corrs_runs = []
+    # for run_ind in range(num_runs):
+    #     run_counts = [
+    #         counts[nv_ind, run_ind, :, :].flatten()
+    #         # for nv_ind in [1, 5]
+    #         for nv_ind in range(num_nvs)
+    #     ]
+    #     corr = np.corrcoef(run_counts)
+    #     mean_corrs_runs.append(np.mean(corr, where=corr < 0.999))
+    # print(mean_inds)
+    # print([round(el, 3) for el in mean_corrs])
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, mean_inds, mean_corrs)
+    # ax.set_xlabel("Mean step order")
+    # # kpl.plot_points(ax, freqs, mean_corrs)
+    # # kpl.plot_points(ax, range(num_steps), mean_corrs)
+    # # ax.set_xlabel("Step index")
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, range(num_runs), mean_corrs_runs)
+    # ax.set_xlabel("Run index")
+    # # kpl.plot_points(ax, mean_inds, mean_diffs)
 
     # counts = counts[:, :, :, :5]
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
