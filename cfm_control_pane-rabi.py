@@ -395,16 +395,16 @@ if __name__ == "__main__":
         [111.96, 110.486],
     ]
     red_coords_list = [
-        [75.675, 75.51],
-        [74.723, 74.338],
-        [75.144, 74.857],
-        [75.441, 74.038],
-        [75.098, 74.313],
-        [74.713, 74.25],
-        [74.366, 74.364],
-        [74.612, 74.116],
-        [75.101, 75.665],
-        [73.854, 76.667],
+        [74.688, 75.743],
+        [74.673, 76.194],
+        [73.934, 76.762],
+        [73.747, 75.895],
+        [74.53, 74.936],
+        [74.697, 74.483],
+        [74.824, 74.554],
+        [75.25, 73.933],
+        [75.526, 75.411],
+        [76.049, 75.94],
     ]
 
     # endregion
@@ -544,8 +544,8 @@ if __name__ == "__main__":
 
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
-        coords_suffix = red_laser
-        do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
+        # coords_suffix = red_laser
+        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
         # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
