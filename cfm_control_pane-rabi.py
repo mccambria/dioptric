@@ -165,7 +165,7 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 500
+    num_reps = 1000
     scc_snr_check.main(nv_list, num_reps)
 
 
@@ -396,15 +396,15 @@ if __name__ == "__main__":
     ]
     red_coords_list = [
         [74.719, 75.75],
-[74.681, 76.189],
-[74.11, 76.707],
-[73.745, 75.88],
-[74.54, 74.978],
-[74.583, 74.482],
-[74.865, 74.542],
-[75.234, 73.995],
-[75.288, 74.827],
-[76.083, 75.741],
+        [74.681, 76.189],
+        [74.11, 76.707],
+        [73.745, 75.88],
+        [74.54, 74.978],
+        [74.583, 74.482],
+        [74.865, 74.542],
+        [75.234, 73.995],
+        [75.288, 74.827],
+        [76.083, 75.741],
     ]
 
     # endregion
@@ -547,12 +547,12 @@ if __name__ == "__main__":
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
-        do_charge_state_histograms(nv_list, 1000)
+        # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
         # do_opx_constant_ac()
         # do_calibrate_iq_delay(nv_list)
         # do_image_nv_list(nv_list)
-        # do_optimize_scc(nv_list)
+        do_optimize_scc(nv_list)
         # compile_speed_test(nv_list)
         # do_optimize_red(nv_sig)
         # do_scc_snr_check(nv_list)
