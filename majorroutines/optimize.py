@@ -240,14 +240,14 @@ def _read_counts_camera_sequence(
             elif axis_ind == 2:
                 axis_write_fn(val)
 
+        img_array = widefield.get_zeros_img_array()
+
         # Read the camera images
+
         def rep_fn(rep_ind):
             img_str = camera.read()
             sub_img_array = widefield.img_str_to_array(img_str)
-            if rep_ind == 0:
-                img_array = np.copy(sub_img_array)
-            else:
-                img_array += sub_img_array
+            img_array += sub_img_array
 
         widefield.rep_loop(num_reps, rep_fn)
 
