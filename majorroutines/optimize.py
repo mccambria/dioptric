@@ -243,29 +243,29 @@ def _read_counts_camera_sequence(
             pulse_gen.stream_start()
 
             # Read the camera images
-            actual_num_reps = num_reps
-            try:
-                for rep_ind in range(num_reps):
-                    img_str = camera.read()
-                    sub_img_array = widefield.img_str_to_array(img_str)
-                    if rep_ind == 0:
-                        img_array = np.copy(sub_img_array)
+            start_rep = 0
+            while True:
+                try:
+                    for rep_ind in range(start_rep, num_reps):
+                        img_str = camera.read()
+                        sub_img_array = widefield.img_str_to_array(img_str)
+                        if rep_ind == 0:
+                            img_array = np.copy(sub_img_array)
+                        else:
+                            img_array += sub_img_array
+                    break
+                except Exception as exc:
+                    pulse_gen.halt()
+                    nuvu_237 = "NuvuException: 237"
+                    if "NuvuException: 237" in str(exc):
+                        print(f"{nuvu_237} at {rep_ind} reps")
                     else:
-                        img_array += sub_img_array
-            except Exception as exc:
-                pulse_gen.halt()
-                nuvu_237 = "NuvuException: 237"
-                if "NuvuException: 237" in str(exc):
-                    print(f"{nuvu_237} at {rep_ind} reps")
-                else:
-                    raise exc
-                actual_num_reps = rep_ind
-
-                # Re-arm and move on to the next step
-                camera.arm()
+                        raise exc
+                    start_rep = rep_ind
+                    camera.arm()
 
             # Process the result
-            img_array = img_array / actual_num_reps
+            img_array = img_array / num_reps
             sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
             counts.append(sample)
 
