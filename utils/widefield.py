@@ -103,6 +103,12 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
     return photons
 
 
+def get_zeros_img_array():
+    resolution = _get_camera_resolution()
+    return np.zeros(resolution, dtype=np.uint16)
+    
+
+
 def img_str_to_array(img_str):
     """Convert an img_array from a uint16-valued byte string (returned by the camera
     labrad server for speed) into a usable int-valued 2D array
