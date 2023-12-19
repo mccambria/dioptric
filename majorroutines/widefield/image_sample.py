@@ -232,13 +232,12 @@ def main(
 
     ### Collect the data
 
+    img_array_list = []
+
     def rep_fn(rep_ind):
         img_str = camera.read()
         sub_img_array = widefield_utils.img_str_to_array(img_str)
-        if rep_ind == 0:
-            img_array = np.copy(sub_img_array)
-        else:
-            img_array += sub_img_array
+        img_array_list.append(sub_img_array)
 
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -246,7 +245,7 @@ def main(
     widefield.rep_loop(num_reps, rep_fn)
     camera.disarm()
 
-    img_array = img_array / num_reps
+    img_array = np.mean(img_array_list)
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
 
