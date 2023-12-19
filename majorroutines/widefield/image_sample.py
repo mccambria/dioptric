@@ -15,7 +15,7 @@ import numpy as np
 import majorroutines.optimize as optimize
 from utils import tool_belt as tb
 from utils import common
-from utils import widefield as widefield_utils
+from utils import widefield
 from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
@@ -93,14 +93,14 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
             set_pixel_drift=False,
             pixel_drift_adjust=False,
         )
-        nv_counts = widefield_utils.counts_from_img_array(
+        nv_counts = widefield.counts_from_img_array(
             img_array, nv_pixel_coords, drift_adjust=False
         )
         bg_pixel_coords = [
             nv_pixel_coords[0] + bg_offset[0],
             nv_pixel_coords[1] + bg_offset[1],
         ]
-        bg_counts = widefield_utils.counts_from_img_array(
+        bg_counts = widefield.counts_from_img_array(
             img_array, bg_pixel_coords, drift_adjust=False
         )
 
@@ -145,7 +145,7 @@ def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, num_reps=1):
     return main(nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict)
 
 
-def widefield(nv_sig, num_reps=1):
+def widefield_image(nv_sig, num_reps=1):
     return main(nv_sig, "widefield", num_reps)
 
 
@@ -214,7 +214,7 @@ def main(
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
         nv_list = [nv_sig]
-        seq_args = widefield_utils.get_base_scc_seq_args(nv_list)
+        seq_args = widefield.get_base_scc_seq_args(nv_list)
         raise RuntimeError(
             "The sequence simple_readout-charge_state_prep needs to be updated "
             "to match the format of the seq_args returned by get_base_scc_seq_args"
@@ -236,7 +236,7 @@ def main(
 
     def rep_fn(rep_ind):
         img_str = camera.read()
-        sub_img_array = widefield_utils.img_str_to_array(img_str)
+        sub_img_array = widefield.img_str_to_array(img_str)
         img_array_list.append(sub_img_array)
 
     seq_args_string = tb.encode_seq_args(seq_args)
