@@ -103,12 +103,6 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
     return photons
 
 
-def get_zeros_img_array():
-    resolution = _get_camera_resolution()
-    return np.zeros(resolution, dtype=np.uint16)
-    
-
-
 def img_str_to_array(img_str):
     """Convert an img_array from a uint16-valued byte string (returned by the camera
     labrad server for speed) into a usable int-valued 2D array
@@ -182,6 +176,17 @@ def calc_snr(sig_counts, ref_counts):
 
 
 def rep_loop(num_reps, rep_fn):
+    """Loop through the reps for a routine. Handles errors from the camera,
+    as well as starting and stopping the pulse generator. Does not handle
+    loading the sequence or arming and disarming the camera.
+
+    Parameters
+    ----------
+    num_reps : int
+        Number of reps
+    rep_fn : function
+        Function to run for each rep
+    """
     pulse_gen = tb.get_server_pulse_gen()
     camera = tb.get_server_camera()
 

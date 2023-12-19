@@ -47,7 +47,7 @@ yellow_laser_dict = {"name": yellow_laser, "duration": 35e6}
 
 def do_widefield_image_sample(nv_sig, num_reps=1):
     nv_sig[LaserKey.IMAGING] = yellow_laser_dict
-    image_sample.widefield(nv_sig, num_reps)
+    image_sample.widefield_image(nv_sig, num_reps)
 
 
 def do_scanning_image_sample(nv_sig):
