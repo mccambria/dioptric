@@ -165,7 +165,7 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 400
+    num_reps = 500
     scc_snr_check.main(nv_list, num_reps)
 
 
@@ -182,7 +182,7 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 10
+    num_reps = 5
     num_runs = 70
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.9
+    z_coord = 5.88
     magnet_angle = 90
     date_str = "2023_12_18"
 
@@ -525,16 +525,14 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.linspace(6.1, 5.8, 11):
-        # for z in np.linspace(5.8, 6.1, 11):
-        #     nv_sig["coords"][2] = z
-        #     # for ind in range(20):
-        #     do_widefield_image_sample(nv_sig, 100)
+        for z in np.linspace(6.1, 3.1, 101):
+            nv_sig["coords"][2] = z
+            # for ind in range(20):
+            do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
 
-        # do_scc_snr_check(nv_list)
-
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
@@ -557,6 +555,7 @@ if __name__ == "__main__":
         # do_optimize_scc(nv_list)
         # compile_speed_test(nv_list)
         # do_optimize_red(nv_sig)
+        # do_scc_snr_check(nv_list)
 
     except Exception as exc:
         if do_email:
@@ -584,3 +583,32 @@ if __name__ == "__main__":
         cxn.disconnect()
         plt.show(block=True)
         tb.reset_safe_stop()
+
+
+"""                             
+0.090, 30       0.095, 20          0.09, 20         0.085, 50
+0  SNR=0.16        0.19               0.13             0.18
+1  SNR=0.06        0.03               0.09             0.04
+2  SNR=0.11        0.07               0.06             0.16
+3  SNR=0.16        0.11               0.12             0.05
+4  SNR=0.06        0.07               0.08             0.08
+5  SNR=0.06        0.03               0.09             0.03
+6  SNR=0.07        0.06               0.08             0.11
+7  SNR=-0.03        0.02               0.06             0.03 
+8  SNR=0.10        0.04               0.14             0.08
+9  SNR=0.13        0.11               0.12             0.12
+"""
+
+"""                             
+0.090, 30       0.095, 20          0.09, 20         0.085, 50
+SNR=0.16,        0.19               0.13             0.18            0.18,
+SNR=0.11,        0.07               0.06             0.16            0.17,
+SNR=0.16,        0.11               0.12             0.05            0.10,
+SNR=0.07,        0.06               0.08             0.11            0.12,
+SNR=0.13,        0.11               0.12             0.12            0.14,
+SNR=0.06 ,       0.03               0.09             0.04            0.05,
+SNR=0.06 ,       0.07               0.08             0.08            0.07,
+SNR=0.06 ,       0.03               0.09             0.03            0.04,
+SNR=-0.03,        0.02               0.06             0.03           0.03, 
+SNR=0.10 ,       0.04               0.14             0.08            0.04,
+"""

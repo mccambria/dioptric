@@ -416,6 +416,7 @@ class NcCamera:
         """
         self.stop(no_raise=True)
         self.close_shutter(no_raise=True)
+        self.flushReadQueue()
         # self.disconnect(no_raise=True)
         raise NuvuException(error)
 

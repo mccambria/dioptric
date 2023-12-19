@@ -163,7 +163,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     fig, ax = plt.subplots()
     offset = 0.1
-    offset = 0.5
+    # offset = 0.5
     widefield.plot_fit(
         ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms, offset=offset
     )
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1392399047701)
+    data = dm.get_raw_data(file_id=1392752085278)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -249,11 +249,15 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-    counts = counts > 60
+
+    # thresholds = [87, 87, 100, 90, 87, 87, 86, 84, 110, 77]
+    # for nv_ind in range(num_nvs):
+    #     counts[nv_ind] = counts[nv_ind] > thresholds[nv_ind]
 
     # for nv_ind in range(num_nvs):
     #     fig, ax = plt.subplots()
-    #     kpl.histogram(ax, counts[nv_ind, :, 17].flatten(), nbins=100)
+    #     kpl.histogram(ax, counts[nv_ind, :, :].flatten(), nbins=100)
+    #     ax.set_title(nv_ind)
 
     # Spurious correlation testing
     # step_ind_master_list = np.array(data["step_ind_master_list"])

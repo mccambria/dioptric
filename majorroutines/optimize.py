@@ -236,7 +236,7 @@ def _read_counts_camera_sequence(
                         seq_args[1][0][axis_ind] = val
                     seq_args_string = tb.encode_seq_args(seq_args)
                     # print(seq_args)
-                    
+
                     pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
                 elif axis_ind == 2:
                     axis_write_fn(val)
@@ -260,15 +260,13 @@ def _read_counts_camera_sequence(
                     raise exc
                 actual_num_reps = rep_ind
 
-                # Rearm the camera
-                camera.arm()
-
             # Process the result
             img_array = img_array / actual_num_reps
             sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
             counts.append(sample)
 
     finally:
+        pulse_gen.halt()
         camera.disarm()
 
     return [np.array(counts, dtype=int), img_array]
@@ -359,7 +357,7 @@ def _read_counts(
         seq_file_name = "simple_readout.py"
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tb.encode_seq_args(seq_args)
-        
+
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
         if collection_mode == CollectionMode.COUNTER:

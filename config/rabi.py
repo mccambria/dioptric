@@ -78,10 +78,10 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.87,
-            "rabi_period": 96,
-            # "frequency": 2.89,
+            # "frequency": 2.87,
             # "rabi_period": 96,
+            "frequency": 2.8959,
+            "rabi_period": 128,
             "uwave_power": 9,
         },
         "sig_gen_1": {
@@ -130,11 +130,14 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 160},
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 144},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
+            # "duration": 20e6,
             # "duration": 30e6,
-            "duration": 50e6,
+            # "duration": 50e6,
+            # "duration": 60e6,
+            "duration": 100e6,
         },  # 35e6, 0.09
     },
     ###
@@ -559,7 +562,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.095},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.085},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },

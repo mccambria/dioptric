@@ -202,7 +202,6 @@ class CameraNuvuHnu512gamma(LabradServer):
     @setting(5)
     def reset(self, c):
         self.disarm(c)
-        self._clear_buffer()
 
     @setting(8, readout_mode="i")
     def set_readout_mode(self, c, readout_mode):

@@ -153,6 +153,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         handled in the sequence build for the OPX
         """
 
+        self._halt()
+
         # Just do nothing if the sequence has already been compiled previously
         key = get_compiled_program_key(seq_file, seq_args_string, num_reps)
         if key in self.compiled_programs:
@@ -186,7 +188,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """See pulse_gen interface"""
 
         # Stop the currently running job if there is one
-        self.halt()
+        self._halt()
 
         pending_job = self.opx.queue.add_compiled(self.program_id)
         # Only return once the job has started
@@ -483,13 +485,18 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     @setting(40)
     def reset(self, c):
         """Stop whatever job is currently running"""
-        self.halt()
+        self._halt()
         # self.qmm.clear_all_job_results()
         # self.qmm.reset_data_processing()
         # self.qmm.close_all_quantum_machines()
         
         
-    def halt(self):
+    @setting(42)
+    def halt(self, c):
+        self._halt()
+        
+        
+    def _halt(self):
         if self.running_job is not None:
             self.running_job.halt()
         self.running_job = None

@@ -39,6 +39,13 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     snr_ax.set_xlabel("Ionization pulse duration (ns)")
     snr_ax.set_ylabel("SNR")
 
+    # snr_fig, snr_ax = plt.subplots()
+    # avg_avg_snr = np.median(avg_snr, axis=0)
+    # avg_avg_snr_ste = np.median(avg_snr_ste, axis=0)
+    # kpl.plot_points(snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
+    # snr_ax.set_xlabel("Ionization pulse duration (ns)")
+    # snr_ax.set_ylabel("Average SNR")
+
     return sig_fig, ref_fig, snr_fig
 
 
@@ -100,7 +107,8 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1391575828297)
+    # data = dm.get_raw_data(file_id=1391059948009)
+    data = dm.get_raw_data(file_id=1391083698094)
 
     nv_list = data["nv_list"]
     taus = data["taus"]

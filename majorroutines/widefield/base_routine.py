@@ -79,10 +79,11 @@ def main(
             # Try 5 times then give up
             num_attempts = 5
             attempt_ind = 0
+            start_rep = 0  # Use this variable to pick up where we left off
             while True:
                 try:
                     pulse_gen.stream_start()
-                    for rep_ind in range(num_reps):
+                    for rep_ind in range(start_rep, num_reps):
                         for exp_ind in range(num_exps_per_rep):
                             img_str = camera.read()
                             img_array = widefield.img_str_to_array(img_str)
@@ -97,18 +98,24 @@ def main(
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                     break
                 except Exception as exc:
+                    pulse_gen.halt()
+
+                    # Check if we can just continue
                     nuvu_237 = "NuvuException: 237"
                     if "NuvuException: 237" in str(exc):
                         print(nuvu_237)
                     else:
                         raise exc
-                    camera.arm()
                     attempt_ind += 1
                     if attempt_ind == num_attempts:
                         raise RuntimeError("Maxed out number of attempts")
+
+                    start_rep = rep_ind
+                    camera.arm()
             if attempt_ind > 0:
                 print(f"{attempt_ind} crashes occurred")
 
+        pulse_gen.halt()
         camera.disarm()
         for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
