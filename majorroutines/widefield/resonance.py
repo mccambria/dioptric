@@ -67,12 +67,13 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        if nv_ind in [3]:
-            num_resonances = 0
-        elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
-            num_resonances = 1
-        else:
-            num_resonances = 2
+        # if nv_ind in [3]:
+        #     num_resonances = 0
+        # elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
+        #     num_resonances = 1
+        # else:
+        #     num_resonances = 2
+        num_resonances = 2
 
         if num_resonances == 0:
             guess_params = [norm_guess]
@@ -105,7 +106,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 high_freq_guess,
             ]
             bounds = [[0] * 9, [np.inf] * 9]
-            bounds[1][ind] = 10
+            for ind in [2, 3, 6, 7]:
+                bounds[1][ind] = 10
             fit_fn = (
                 lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
                 * (
@@ -160,7 +162,11 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     ### Make the figure
 
     fig, ax = plt.subplots()
-    widefield.plot_fit(ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms)
+    offset = 0.1
+    # offset = 0.8
+    widefield.plot_fit(
+        ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms, offset=offset
+    )
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
     # ax.set_xlim(None, 3.01)
@@ -234,7 +240,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1393369873344)
+    data = dm.get_raw_data(file_id=1392824022114)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -243,7 +249,13 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-    # counts = counts > 40
+
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     kpl.histogram(ax, counts[nv_ind, :, :].flatten(), nbins=100)
+    #     ax.set_title(nv_ind)
+
+    # counts = counts > 105
 
     # Spurious correlation testing
     # step_ind_master_list = np.array(data["step_ind_master_list"])

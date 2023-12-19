@@ -25,7 +25,16 @@ def get_seq(args, num_reps):
     def uwave_macro():
         pass
 
-    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
+    # ion_duration_ns = 1000
+    ion_duration_ns = None
+
+    seq = base_sequence.get_seq(
+        pol_coords_list,
+        ion_coords_list,
+        num_reps,
+        uwave_macro,
+        ion_duration_ns=ion_duration_ns,
+    )
 
     seq_ret_vals = []
     return seq, seq_ret_vals

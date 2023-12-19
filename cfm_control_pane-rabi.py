@@ -47,7 +47,7 @@ yellow_laser_dict = {"name": yellow_laser, "duration": 35e6}
 
 def do_widefield_image_sample(nv_sig, num_reps=1):
     nv_sig[LaserKey.IMAGING] = yellow_laser_dict
-    image_sample.widefield(nv_sig, num_reps)
+    image_sample.widefield_image(nv_sig, num_reps)
 
 
 def do_scanning_image_sample(nv_sig):
@@ -114,6 +114,8 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
     # Start fresh
     widefield.reset_all_drift()
 
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+
     opti_coords_list = []
     for nv in nv_list:
         # Pixel coords
@@ -135,7 +137,7 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
                 opti_coords = do_optimize_red(nv)
 
             # Adjust for the drift that may have occurred since beginning the loop
-            do_optimize_pixel(nv_sig)
+            do_optimize_pixel(repr_nv_sig)
             drift = pos.get_drift(coords_suffix)
             drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
@@ -145,7 +147,7 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
     # Report back
     for opti_coords in opti_coords_list:
         r_opti_coords = [round(el, 3) for el in opti_coords]
-        print(r_opti_coords)
+        print(f"{r_opti_coords},")
 
 
 def do_optimize_widefield_calibration():
@@ -163,7 +165,7 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 400
+    num_reps = 1000
     scc_snr_check.main(nv_list, num_reps)
 
 
@@ -180,8 +182,6 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    # num_reps = 80
-    # num_runs = 6
     num_reps = 10
     num_runs = 70
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
@@ -355,9 +355,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.84
+    z_coord = 5.65
     magnet_angle = 90
-    date_str = "2023_12_15"
+    date_str = "2023_12_18"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -370,75 +370,116 @@ if __name__ == "__main__":
 
     # region Coords
 
+    pixel_coords_list = [
+        [65.868, 93.42],
+        [66.683, 108.921],
+        [45.639, 124.686],
+        [32.561, 94.788],
+        [59.807, 63.417],
+        [60.195, 46.913],
+        [71.404, 45.155],
+        [83.811, 26.3],
+        [88.5, 63.275],
+        [108.785, 87.134],
+    ]
+    green_coords_list = [
+        [110.379, 110.459],
+        [110.459, 111.092],
+        [109.72, 111.537],
+        [109.301, 110.474],
+        [110.142, 109.579],
+        [110.165, 109.119],
+        [110.677, 108.93],
+        [111.066, 108.356],
+        [111.264, 109.659],
+        [111.96, 110.486],
+    ]
+    red_coords_list = [
+        [74.719, 75.75],
+        [74.681, 76.189],
+        [74.11, 76.707],
+        [73.745, 75.88],
+        [74.54, 74.978],
+        [74.583, 74.482],
+        [74.865, 74.542],
+        [75.234, 73.995],
+        [75.288, 74.827],
+        [76.083, 75.741],
+    ]
+
+    # endregion
+
+    # region NV sigs
+
     nv0 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv0_{date_str}",
-        pixel_coords_key: [105.5, 82.15],
-        green_coords_key: [111.544, 109.145],
-        red_coords_key: [75.583, 74.529],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
         "repr": True,
     }
 
     nv1 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv1_{date_str}",
-        pixel_coords_key: [85.593, 90.356],
-        green_coords_key: [110.822, 109.412],
-        red_coords_key: [75.006, 74.777],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv2 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv2_{date_str}",
-        pixel_coords_key: [76.522, 78.097],
-        green_coords_key: [110.582, 108.914],
-        red_coords_key: [74.798, 74.486],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv3 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv3_{date_str}",
-        pixel_coords_key: [87.906, 60.763],
-        green_coords_key: [110.908, 108.384],
-        red_coords_key: [75.203, 73.955],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv4 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv4_{date_str}",
-        pixel_coords_key: [114.443, 112.792],
-        green_coords_key: [111.811, 110.193],
-        red_coords_key: [75.765, 75.348],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv5 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv5_{date_str}",
-        pixel_coords_key: [116.021, 123.245],
-        green_coords_key: [112.123, 110.319],
-        red_coords_key: [75.836, 75.701],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv6 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv6_{date_str}",
-        pixel_coords_key: [100.692, 138.559],
-        green_coords_key: [111.582, 110.696],
-        red_coords_key: [75.289, 76.133],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv7 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv7_{date_str}",
-        pixel_coords_key: [96.649, 119.011],
-        green_coords_key: [111.544, 110.061],
-        red_coords_key: [75.287, 75.564],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv8 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv8_{date_str}",
-        pixel_coords_key: [61.108, 147.895],
-        green_coords_key: [110.185, 111.003],
-        red_coords_key: [74.412, 76.304],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     nv9 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv9_{date_str}",
-        pixel_coords_key: [69.967, 97.639],
-        green_coords_key: [110.318, 109.666],
-        red_coords_key: [74.600, 75.053],
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
     }
 
     # endregion
@@ -448,12 +489,13 @@ if __name__ == "__main__":
     nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
     # nv_list = [nv0, nv1, nv2, nv3, nv4]
     # nv_list = [nv5, nv6, nv7, nv8, nv9]
-    # nv_list = [nv9]
+    # nv_list = [nv0, nv2]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # nv_sig = nv8
 
     # pixel_coords_list = [widefield.get_nv_pixel_coords(nv, False) for nv in nv_list]
     # print(pixel_coords_list)
+    # widefield.set_nv_scanning_coords_from_pixel_coords(nv5, green_laser)
+    # print(nv5[pixel_coords_key])
     # sys.exit()
 
     ### Functions to run
@@ -482,18 +524,17 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(6.3, 5.7, 21):
+        # for z in np.linspace(6.1, 5.8, 11):
+        # for z in np.linspace(5.5, 7.5, 41):
         #     nv_sig["coords"][2] = z
         #     # for ind in range(20):
         #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
-        # do_optimize_pixel(nv_sig)
-
-        # do_scc_snr_check(nv_list)
+        do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_spin_echo(nv_list)
@@ -511,9 +552,10 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_calibrate_iq_delay(nv_list)
         # do_image_nv_list(nv_list)
-        # do_optimize_scc(nv_list)
+        do_optimize_scc(nv_list)
         # compile_speed_test(nv_list)
         # do_optimize_red(nv_sig)
+        # do_scc_snr_check(nv_list)
 
     except Exception as exc:
         if do_email:
@@ -541,3 +583,32 @@ if __name__ == "__main__":
         cxn.disconnect()
         plt.show(block=True)
         tb.reset_safe_stop()
+
+
+"""                             
+0.090, 30       0.095, 20          0.09, 20         0.085, 50
+0  SNR=0.16        0.19               0.13             0.18
+1  SNR=0.06        0.03               0.09             0.04
+2  SNR=0.11        0.07               0.06             0.16
+3  SNR=0.16        0.11               0.12             0.05
+4  SNR=0.06        0.07               0.08             0.08
+5  SNR=0.06        0.03               0.09             0.03
+6  SNR=0.07        0.06               0.08             0.11
+7  SNR=-0.03        0.02               0.06             0.03 
+8  SNR=0.10        0.04               0.14             0.08
+9  SNR=0.13        0.11               0.12             0.12
+"""
+
+"""                             
+0.090, 30       0.095, 20          0.09, 20         0.085, 50
+SNR=0.16,        0.19               0.13             0.18            0.18,
+SNR=0.11,        0.07               0.06             0.16            0.17,
+SNR=0.16,        0.11               0.12             0.05            0.10,
+SNR=0.07,        0.06               0.08             0.11            0.12,
+SNR=0.13,        0.11               0.12             0.12            0.14,
+SNR=0.06 ,       0.03               0.09             0.04            0.05,
+SNR=0.06 ,       0.07               0.08             0.08            0.07,
+SNR=0.06 ,       0.03               0.09             0.03            0.04,
+SNR=-0.03,        0.02               0.06             0.03           0.03, 
+SNR=0.10 ,       0.04               0.14             0.08            0.04,
+"""

@@ -15,7 +15,7 @@ import numpy as np
 import majorroutines.optimize as optimize
 from utils import tool_belt as tb
 from utils import common
-from utils import widefield as widefield_utils
+from utils import widefield
 from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
@@ -93,14 +93,14 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
             set_pixel_drift=False,
             pixel_drift_adjust=False,
         )
-        nv_counts = widefield_utils.counts_from_img_array(
+        nv_counts = widefield.counts_from_img_array(
             img_array, nv_pixel_coords, drift_adjust=False
         )
         bg_pixel_coords = [
             nv_pixel_coords[0] + bg_offset[0],
             nv_pixel_coords[1] + bg_offset[1],
         ]
-        bg_counts = widefield_utils.counts_from_img_array(
+        bg_counts = widefield.counts_from_img_array(
             img_array, bg_pixel_coords, drift_adjust=False
         )
 
@@ -145,7 +145,7 @@ def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, num_reps=1):
     return main(nv_sig, caller_fn_name, num_reps, x_coords, y_coords, save_dict)
 
 
-def widefield(nv_sig, num_reps=1):
+def widefield_image(nv_sig, num_reps=1):
     return main(nv_sig, "widefield", num_reps)
 
 
@@ -214,7 +214,7 @@ def main(
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
         nv_list = [nv_sig]
-        seq_args = widefield_utils.get_base_scc_seq_args(nv_list)
+        seq_args = widefield.get_base_scc_seq_args(nv_list)
         raise RuntimeError(
             "The sequence simple_readout-charge_state_prep needs to be updated "
             "to match the format of the seq_args returned by get_base_scc_seq_args"
@@ -232,32 +232,20 @@ def main(
 
     ### Collect the data
 
+    img_array_list = []
+
+    def rep_fn(rep_ind):
+        img_str = camera.read()
+        sub_img_array = widefield.img_str_to_array(img_str)
+        img_array_list.append(sub_img_array)
+
+    seq_args_string = tb.encode_seq_args(seq_args)
+    pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     camera.arm()
+    widefield.rep_loop(num_reps, rep_fn)
+    camera.disarm()
 
-    try:
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-        pulse_gen.stream_start()
-        for ind in range(num_reps):
-            img_str = camera.read()
-            sub_img_array = widefield_utils.img_str_to_array(img_str)
-            if ind == 0:
-                img_array = np.copy(sub_img_array)
-            else:
-                img_array += sub_img_array
-
-    except Exception as exc:
-        nuvu_237 = "NuvuException: 237"
-        if "NuvuException: 237" in str(exc):
-            print(f"{nuvu_237} at {num_reps} reps")
-            num_reps = ind
-        else:
-            raise exc
-
-    finally:
-        camera.disarm()
-
-    img_array = img_array / num_reps
+    img_array = np.mean(img_array_list)
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
 
@@ -294,9 +282,11 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1390856732543)
+    # data = dm.get_raw_data(file_id=1392298372656)
+    data = dm.get_raw_data(file_id=1392300819875)
     img_array = np.array(data["img_array"])
-    data = dm.get_raw_data(file_id=1390855487585)
+    # data = dm.get_raw_data(file_id=1392300819875)
+    data = dm.get_raw_data(file_id=1392312729219)
     img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
