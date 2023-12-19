@@ -530,7 +530,7 @@ if __name__ == "__main__":
         #     # for ind in range(20):
         #     do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -547,7 +547,7 @@ if __name__ == "__main__":
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
-        # do_charge_state_histograms(nv_list, 1000)
+        do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
         # do_opx_constant_ac()
         # do_calibrate_iq_delay(nv_list)
