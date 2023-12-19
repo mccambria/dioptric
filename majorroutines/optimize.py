@@ -220,58 +220,43 @@ def _read_counts_camera_sequence(
 
     # Collect the counts
     counts = []
-    try:
-        camera.arm()
-        for ind in range(num_steps):
-            if tb.safe_stop():
-                break
+    camera.arm()
+    for ind in range(num_steps):
+        if tb.safe_stop():
+            break
 
-            # Modify the sequence as necessary and start the pulse generator
-            if axis_ind is not None:
-                val = scan_vals[ind]
-                if axis_ind in [0, 1]:
-                    if laser_key == LaserKey.IMAGING:
-                        seq_args[-2 + axis_ind] = [val]
-                    elif laser_key == LaserKey.IONIZATION:
-                        seq_args[1][0][axis_ind] = val
-                    seq_args_string = tb.encode_seq_args(seq_args)
-                    # print(seq_args)
+        # Modify the sequence as necessary and start the pulse generator
+        if axis_ind is not None:
+            val = scan_vals[ind]
+            if axis_ind in [0, 1]:
+                if laser_key == LaserKey.IMAGING:
+                    seq_args[-2 + axis_ind] = [val]
+                elif laser_key == LaserKey.IONIZATION:
+                    seq_args[1][0][axis_ind] = val
+                seq_args_string = tb.encode_seq_args(seq_args)
+                # print(seq_args)
 
-                    pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
-                elif axis_ind == 2:
-                    axis_write_fn(val)
+                pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
+            elif axis_ind == 2:
+                axis_write_fn(val)
 
-            # Read the camera images
-            start_rep = 0
-            while True:
-                try:
-                    pulse_gen.stream_start()
-                    for rep_ind in range(start_rep, num_reps):
-                        img_str = camera.read()
-                        sub_img_array = widefield.img_str_to_array(img_str)
-                        if rep_ind == 0:
-                            img_array = np.copy(sub_img_array)
-                        else:
-                            img_array += sub_img_array
-                    break
-                except Exception as exc:
-                    pulse_gen.halt()
-                    nuvu_237 = "NuvuException: 237"
-                    if "NuvuException: 237" in str(exc):
-                        print(f"{nuvu_237} at {rep_ind} reps")
-                    else:
-                        raise exc
-                    start_rep = rep_ind
-                    camera.arm()
+        # Read the camera images
+        def rep_fn(rep_ind):
+            img_str = camera.read()
+            sub_img_array = widefield.img_str_to_array(img_str)
+            if rep_ind == 0:
+                img_array = np.copy(sub_img_array)
+            else:
+                img_array += sub_img_array
 
-            # Process the result
-            img_array = img_array / num_reps
-            sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
-            counts.append(sample)
+        widefield.rep_loop(num_reps, rep_fn)
 
-    finally:
-        pulse_gen.halt()
-        camera.disarm()
+        # Process the result
+        img_array = img_array / num_reps
+        sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
+        counts.append(sample)
+
+    camera.disarm()
 
     return [np.array(counts, dtype=int), img_array]
 

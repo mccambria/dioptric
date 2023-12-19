@@ -232,30 +232,19 @@ def main(
 
     ### Collect the data
 
-    camera.arm()
-
-    try:
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-        pulse_gen.stream_start()
-        for ind in range(num_reps):
-            img_str = camera.read()
-            sub_img_array = widefield_utils.img_str_to_array(img_str)
-            if ind == 0:
-                img_array = np.copy(sub_img_array)
-            else:
-                img_array += sub_img_array
-
-    except Exception as exc:
-        nuvu_237 = "NuvuException: 237"
-        if "NuvuException: 237" in str(exc):
-            print(f"{nuvu_237} at {num_reps} reps")
-            num_reps = ind
+    def rep_fn(rep_ind):
+        img_str = camera.read()
+        sub_img_array = widefield_utils.img_str_to_array(img_str)
+        if rep_ind == 0:
+            img_array = np.copy(sub_img_array)
         else:
-            raise exc
+            img_array += sub_img_array
 
-    finally:
-        camera.disarm()
+    seq_args_string = tb.encode_seq_args(seq_args)
+    pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+    camera.arm()
+    widefield.rep_loop(num_reps, rep_fn)
+    camera.disarm()
 
     img_array = img_array / num_reps
     fig, ax = plt.subplots()
