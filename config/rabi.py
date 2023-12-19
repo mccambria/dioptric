@@ -133,8 +133,8 @@ config |= {
         LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 160},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
-            "duration": 30e6,
-            # "duration": 40e6,
+            # "duration": 30e6,
+            "duration": 50e6,
         },  # 35e6, 0.09
     },
     ###
@@ -558,8 +558,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.11},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.095},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.080},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.085},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },
