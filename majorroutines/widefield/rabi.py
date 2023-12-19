@@ -62,7 +62,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        if nv_ind in [6]:
+        # if nv_ind in [6]:
+        if True:
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -77,48 +78,40 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             fit_fn = constant
             guess_params = [np.average(nv_counts)]
 
-        popt, pcov = curve_fit(
-            fit_fn,
-            taus,
-            nv_counts,
-            p0=guess_params,
-            sigma=nv_counts_ste,
-            absolute_sigma=True,
-        )
-
-        norm = popt[0]
-        if len(popt) > 1:
-            # SCC readout noise tracking
-            contrast = popt[1]
-            a0 = round((1 + contrast) * norm, 2)
-            a1 = round(norm, 2)
-            print(f"ms=+/-1: {a0}\nms=0: {a1}\n")
-            a0_list.append(a0)
-            a1_list.append(a1)
-            readout_noise_list.append(np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2)))
-
-        # Tracking for plotting
-        fit_fns.append(fit_fn)
-        popts.append(popt)
-        norms.append(norm)
+        try:
+            popt, pcov = curve_fit(
+                fit_fn,
+                taus,
+                nv_counts,
+                p0=guess_params,
+                sigma=nv_counts_ste,
+                absolute_sigma=True,
+            )
+            fit_fns.append(fit_fn)
+            popts.append(popt)
+            norms.append(popt[0])
+        except Exception as exc:
+            fit_fns.append(None)
+            popts.append(None)
+            norms.append(None)
 
         residuals = fit_fn(taus, *popt) - nv_counts
         chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
         red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-        print(red_chi_sq)
+        print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
-    print(f"a0 average: {round(np.average(a0_list), 2)}")
-    print(f"a1 average: {round(np.average(a1_list), 2)}")
-    print(f"Average readout noise: {round(np.average(readout_noise_list), 2)}")
-    print(f"Median readout noise: {round(np.median(readout_noise_list), 2)}")
-    rabi_periods = [round(1 / el[2], 2) for el in popts if len(el) > 1]
+    rabi_periods = [
+        round(1 / el[2], 2) for el in popts if el is not None and len(el) > 1
+    ]
     print(f"rabi_periods: {rabi_periods}")
 
     ### Make the figure
 
     fig, ax = plt.subplots()
+    offset = 0.1
+    offset = 0.05
     widefield.plot_fit(
-        ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms  # , offset=0.6
+        ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms, offset=offset
     )
     ax.set_xlabel("Pulse duration (ns)")
     ax.set_ylabel("Normalized fluorescence")
@@ -185,7 +178,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1391366407107)  # now
+    data = dm.get_raw_data(file_id=1393435638132)  # now
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

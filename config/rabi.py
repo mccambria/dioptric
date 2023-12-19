@@ -80,8 +80,9 @@ config |= {
             "name": "sig_gen_STAN_sg394",
             # "frequency": 2.87,
             # "rabi_period": 96,
-            "frequency": 2.81,
-            "rabi_period": 128,
+            "frequency": 2.804,
+            # "rabi_period": 128,
+            "rabi_period": 32,
             "uwave_power": 9,
         },
         "sig_gen_1": {

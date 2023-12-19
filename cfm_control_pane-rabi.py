@@ -188,7 +188,7 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.895
+    freq_center = 2.81
     freq_range = 0.05
     num_steps = 20
     num_reps = 15
@@ -533,7 +533,7 @@ if __name__ == "__main__":
         do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -552,7 +552,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_calibrate_iq_delay(nv_list)
         # do_image_nv_list(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # compile_speed_test(nv_list)
         # do_optimize_red(nv_sig)
         # do_scc_snr_check(nv_list)
