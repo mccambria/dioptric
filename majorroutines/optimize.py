@@ -240,12 +240,12 @@ def _read_counts_camera_sequence(
                     pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
                 elif axis_ind == 2:
                     axis_write_fn(val)
-            pulse_gen.stream_start()
 
             # Read the camera images
             start_rep = 0
             while True:
                 try:
+                    pulse_gen.stream_start()
                     for rep_ind in range(start_rep, num_reps):
                         img_str = camera.read()
                         sub_img_array = widefield.img_str_to_array(img_str)
