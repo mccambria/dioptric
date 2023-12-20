@@ -81,8 +81,8 @@ config |= {
             # "frequency": 2.87,
             # "rabi_period": 96,
             "frequency": 2.804,
-            # "rabi_period": 128,
-            "rabi_period": 32,
+            "rabi_period": 128,
+            # "rabi_period": 32,
             "uwave_power": 9,
         },
         "sig_gen_1": {
@@ -379,7 +379,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
-                "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+                # "pi_on_2_pulse": "do_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_i": {
@@ -390,7 +390,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "ao_pi_pulse_0",
-                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+                # "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_q": {
@@ -401,7 +401,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "ao_pi_pulse_0",
-                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+                # "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
@@ -410,7 +410,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
-                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+                # "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
         "do_camera_trigger": {
@@ -486,11 +486,11 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "waveforms": {"single": "cw"},
         },
-        "ao_pi_on_2_pulse_0": {
-            "operation": "control",
-            "length": int(rabi_period_0 / 4),
-            "waveforms": {"single": "cw"},
-        },
+        # "ao_pi_on_2_pulse_0": {
+        #     "operation": "control",
+        #     "length": int(rabi_period_0 / 4),
+        #     "waveforms": {"single": "cw"},
+        # },
         ### Digital
         "do_on": {
             "operation": "control",
@@ -527,21 +527,21 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
-        "do_pi_on_2_pulse_0": {
-            "operation": "control",
-            "length": int(rabi_period_0 / 4),
-            "digital_marker": "on",
-        },
+        # "do_pi_on_2_pulse_0": {
+        #     "operation": "control",
+        #     "length": int(rabi_period_0 / 4),
+        #     "digital_marker": "on",
+        # },
         "do_pi_pulse_1": {
             "operation": "control",
             "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
-        "do_pi_on_2_pulse_1": {
-            "operation": "control",
-            "length": int(rabi_period_1 / 4),
-            "digital_marker": "on",
-        },
+        # "do_pi_on_2_pulse_1": {
+        #     "operation": "control",
+        #     "length": int(rabi_period_1 / 4),
+        #     "digital_marker": "on",
+        # },
         ### Mixed
     },
     # endregion
@@ -556,10 +556,8 @@ opx_config = {
         # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.11},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.095},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.075},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.08},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},

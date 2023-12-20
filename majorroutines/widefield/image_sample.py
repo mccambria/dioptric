@@ -245,7 +245,7 @@ def main(
     widefield.rep_loop(num_reps, rep_fn)
     camera.disarm()
 
-    img_array = np.mean(img_array_list)
+    img_array = np.mean(img_array_list, axis=0)
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
 
@@ -283,10 +283,10 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1392298372656)
-    data = dm.get_raw_data(file_id=1392300819875)
+    data = dm.get_raw_data("2023_12_19-17_54_55-johnson-nv0_2023_12_18")
     img_array = np.array(data["img_array"])
     # data = dm.get_raw_data(file_id=1392300819875)
-    data = dm.get_raw_data(file_id=1392312729219)
+    data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
     img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
