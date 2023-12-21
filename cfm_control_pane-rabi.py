@@ -185,11 +185,11 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.81
+    freq_center = 2.848
     freq_range = 0.05
     num_steps = 20
     num_reps = 15
-    num_runs = 50
+    num_runs = 30
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -368,34 +368,34 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [67.075, 111.233],
-        [79.885, 118.649],
-        [92.407, 102.958],
-        [69.904, 87.118],
-        [56.484, 77.011],
-        [57.928, 43.255],
-        [84.04, 57.899],
-        [50, 60.0],
+        [93.706, 90.687],
+        [60.549, 123.373],
+        [77.984, 35.691],
+        [71.468, 74.895],
+        [57.955, 65.639],
+        [59.024, 31.045],
+        [85.592, 45.897],
+        [49.2, 46.131],
     ]
     green_coords_list = [
-        [110.41, 110.867],
-        [111.024, 110.966],
-        [111.229, 110.664],
-        [110.566, 109.986],
-        [110.099, 109.782],
-        [110.234, 108.628],
-        [110.926, 109.05],
-        [110.176, 109.472],
+        [111.348, 110.327],
+        [110.447, 111.073],
+        [110.933, 108.246],
+        [110.561, 109.606],
+        [110.168, 109.434],
+        [110.302, 108.272],
+        [111.15, 108.596],
+        [110.06, 108.901],
     ]
     red_coords_list = [
-        [74.816, 76.219],
-        [75.158, 76.481],
-        [75.521, 76.056],
-        [74.843, 75.537],
-        [74.476, 75.316],
-        [74.478, 74.336],
-        [75.213, 74.726],
-        [74.297, 74.87],
+        [75.543, 75.782],
+        [74.602, 76.634],
+        [75.079, 74.109],
+        [74.866, 75.23],
+        [74.646, 75.021],
+        [74.492, 74.025],
+        [75.234, 74.394],
+        [74.184, 74.287],
     ]
 
     # endregion
@@ -478,10 +478,15 @@ if __name__ == "__main__":
     # nv_sig = nv8
     # nv_list = [nv_sig]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
+    nv_list = [nv0, nv1, nv3, nv4, nv5]
     # nv_list = [nv0, nv2]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
+    # for nv in nv_list:
+    #     coords = widefield.get_nv_pixel_coords(nv)
+    #     r_coords = [round(el, 3) for el in coords]
+    #     print(f"{r_coords},")
     # for nv in nv_list:
     #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
     #     coords = nv[green_coords_key]
@@ -515,7 +520,7 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([-21, +14])
+        # widefield.set_pixel_drift([0, -13])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
@@ -523,11 +528,11 @@ if __name__ == "__main__":
         # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -537,8 +542,8 @@ if __name__ == "__main__":
         ## Infrequent stuff down here
 
         # widefield.reset_all_drift()
-        # coords_suffix = None  # Pixel coords
-        # coords_suffix = green_laser
+        # # coords_suffix = None  # Pixel coords
+        # # coords_suffix = green_laser
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
