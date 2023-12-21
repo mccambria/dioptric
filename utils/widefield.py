@@ -365,7 +365,7 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_suffix=None):
 
 
 def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
-    pixel_coords = get_nv_pixel_coords(nv_sig)
+    pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=True)
     scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
     pos.set_nv_coords(nv_sig, scanning_coords, coords_suffix)
     return scanning_coords
@@ -635,8 +635,10 @@ def plot_fit(
         norm = 1 if norms is None else norms[nv_ind]
         y = ys[nv_ind] / norm + nv_offset
         yerr = None if yerrs is None else yerrs[nv_ind] / norm
-        color=kpl.data_color_cycler[nv_ind]
-        kpl.plot_points(ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL,color=color)
+        color = kpl.data_color_cycler[nv_ind]
+        kpl.plot_points(
+            ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
+        )
         kpl.plot_line(
             ax,
             x_linspace,

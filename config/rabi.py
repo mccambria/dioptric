@@ -25,15 +25,16 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [41.929, 110.489],
-    green_coords_key: [109.811, 110.845],
-    red_coords_key: [74.1, 75.9],
+    pixel_coords_key: [66.37, 131.182],
+    green_coords_key: [110.574, 111.472],
+    red_coords_key: [74.683, 76.918],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [-8.803, 151.628],
-    green_coords_key: [108.1, 112.002],
-    red_coords_key: [72.9, 76.8],
+    pixel_coords_key: [107.108, 91.942],
+    green_coords_key: [111.793, 110.286],
+    red_coords_key: [75.866, 75.704],
 }
+
 
 # endregion
 # region Base config
@@ -80,7 +81,7 @@ config |= {
             "name": "sig_gen_STAN_sg394",
             # "frequency": 2.87,
             # "rabi_period": 96,
-            "frequency": 2.804,
+            "frequency": 2.848,
             "rabi_period": 128,
             # "rabi_period": 32,
             "uwave_power": 9,
@@ -131,7 +132,7 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 144},
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
             "duration": 30e6,
@@ -557,7 +558,7 @@ opx_config = {
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.08},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},

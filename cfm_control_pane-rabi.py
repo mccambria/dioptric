@@ -111,9 +111,6 @@ def do_optimize_pixel(nv_sig):
 
 
 def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
-    # Start fresh
-    widefield.reset_all_drift()
-
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     opti_coords_list = []
@@ -180,10 +177,10 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.180
+    freq_range = 0.140
     num_steps = 40
     num_reps = 10
-    num_runs = 70
+    num_runs = 30
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -201,7 +198,7 @@ def do_rabi(nv_list):
     max_tau = 240 + min_tau
     num_steps = 21
     num_reps = 15
-    num_runs = 50
+    num_runs = 30
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -355,9 +352,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.71
+    z_coord = 5.63
     magnet_angle = 90
-    date_str = "2023_12_19"
+    date_str = "2023_12_20"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -371,31 +368,34 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [75.457, 112.986],
-        [64.388, 127.579],
-        [88.641, 124.873],
-        [46.498, 97.381],
-        [105.325, 88.078],
-        [90.523, 49.729],
-        [102.866, 32.349],
+        [67.075, 111.233],
+        [79.885, 118.649],
+        [92.407, 102.958],
+        [69.904, 87.118],
+        [56.484, 77.011],
+        [57.928, 43.255],
+        [84.04, 57.899],
+        [50, 60.0],
     ]
     green_coords_list = [
-        [110.913, 110.876],
-        [110.443, 111.489],
-        [111.333, 111.329],
-        [109.774, 110.687],
-        [112.026, 110.137],
-        [111.327, 109.048],
-        [111.795, 108.535],
+        [110.41, 110.867],
+        [111.024, 110.966],
+        [111.229, 110.664],
+        [110.566, 109.986],
+        [110.099, 109.782],
+        [110.234, 108.628],
+        [110.926, 109.05],
+        [110.176, 109.472],
     ]
     red_coords_list = [
-        [74.962, 76.266],
-        [74.696, 76.836],
-        [75.332, 76.586],
-        [74.176, 75.85],
-        [75.807, 75.623],
-        [75.374, 74.538],
-        [75.769, 74.027],
+        [74.816, 76.219],
+        [75.158, 76.481],
+        [75.521, 76.056],
+        [74.843, 75.537],
+        [74.476, 75.316],
+        [74.478, 74.336],
+        [75.213, 74.726],
+        [74.297, 74.87],
     ]
 
     # endregion
@@ -452,12 +452,12 @@ if __name__ == "__main__":
         red_coords_key: red_coords_list.pop(0),
     }
 
-    # nv7 = copy.deepcopy(nv_sig_shell) | {
-    #     "name": f"{sample_name}-nv7_{date_str}",
-    #     pixel_coords_key: pixel_coords_list.pop(0),
-    #     green_coords_key: green_coords_list.pop(0),
-    #     red_coords_key: red_coords_list.pop(0),
-    # }
+    nv7 = copy.deepcopy(nv_sig_shell) | {
+        "name": f"{sample_name}-nv7_{date_str}",
+        pixel_coords_key: pixel_coords_list.pop(0),
+        green_coords_key: green_coords_list.pop(0),
+        red_coords_key: red_coords_list.pop(0),
+    }
 
     # nv8 = copy.deepcopy(nv_sig_shell) | {
     #     "name": f"{sample_name}-nv8_{date_str}",
@@ -477,16 +477,21 @@ if __name__ == "__main__":
 
     # nv_sig = nv8
     # nv_list = [nv_sig]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
-    # nv_list = [nv5, nv6, nv7, nv8, nv9]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
     # nv_list = [nv0, nv2]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    # pixel_coords_list = [widefield.get_nv_pixel_coords(nv, False) for nv in nv_list]
-    # print(pixel_coords_list)
-    # widefield.set_nv_scanning_coords_from_pixel_coords(nv5, green_laser)
-    # print(nv5[pixel_coords_key])
+    # for nv in nv_list:
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
+    #     coords = nv[green_coords_key]
+    #     r_coords = [round(el, 3) for el in coords]
+    #     print(f"{r_coords},")
+    # for nv in nv_list:
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+    #     coords = nv[red_coords_key]
+    #     r_coords = [round(el, 3) for el in coords]
+    #     print(f"{r_coords},")
     # sys.exit()
 
     ### Functions to run
@@ -502,7 +507,7 @@ if __name__ == "__main__":
         # Make sure the OPX config is up to date
         # cxn = common.labrad_connect()
         # opx = cxn.QM_opx
-        # opx.update_config()
+        # opx.update_config()Yeah
 
         # time.sleep(3)
         # mag_rot_server = tb.get_server_magnet_rotation()
@@ -510,17 +515,15 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+17, -15])
+        # widefield.set_pixel_drift([-21, +14])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(6.1, 5.8, 11):
-        # for z in np.linspace(6.0, 5.7, 11):
+        # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
-        #     # for ind in range(20):
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
@@ -531,14 +534,15 @@ if __name__ == "__main__":
         # do_spin_echo(nv_list)
         # do_xy8(nv_list)
 
-        ### Infrequent stuff down here
+        ## Infrequent stuff down here
 
+        # widefield.reset_all_drift()
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
-        # # coords_suffix = red_laser
+        # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
 
         # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)

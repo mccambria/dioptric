@@ -51,10 +51,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     tau_step = taus[1] - taus[0]
     num_steps = len(taus)
 
-    a0_list = []
-    a1_list = []
-    readout_noise_list = []
-
     fit_fns = []
     popts = []
     norms = []
@@ -62,8 +58,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        # if nv_ind in [6]:
-        if True:
+        if nv_ind not in [7]:
+            # if True:
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -71,7 +67,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             freqs = np.fft.rfftfreq(num_steps, d=tau_step)
             transform_mag = np.absolute(transform)
             max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
-            freq_guess = freqs[max_ind + 1]
+            # freq_guess = freqs[max_ind + 1]
+            freq_guess = 0.01
             guess_params = [norm_guess, ptp_amp_guess, freq_guess, 1000]
             fit_fn = cos_decay
         else:
@@ -108,8 +105,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Make the figure
 
     fig, ax = plt.subplots()
-    offset = 0.1
-    offset = 0.05
+    offset = 0.12
+    # offset = 0.05
     widefield.plot_fit(
         ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms, offset=offset
     )
@@ -178,7 +175,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1393435638132)  # now
+    data = dm.get_raw_data(file_id=1394550064441)  # now
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
