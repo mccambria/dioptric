@@ -73,7 +73,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         #     num_resonances = 1
         # else:
         #     num_resonances = 2
-        num_resonances = 2
+        num_resonances = 1
 
         if num_resonances == 0:
             guess_params = [norm_guess]
@@ -163,6 +163,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     fig, ax = plt.subplots()
     offset = 0.1
+    # offset = 0.05
     # offset = 0.8
     widefield.plot_fit(
         ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms, offset=offset
@@ -240,7 +241,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1392824022114)
+    data = dm.get_raw_data(file_id=1394866569027)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
