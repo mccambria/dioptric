@@ -283,20 +283,23 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1392298372656)
-    data = dm.get_raw_data("2023_12_19-17_54_55-johnson-nv0_2023_12_18")
+    data = dm.get_raw_data(file_id=1394523765288)
     img_array = np.array(data["img_array"])
     # data = dm.get_raw_data(file_id=1392300819875)
-    data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
-    img_array -= np.array(data["img_array"])
+    # data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
+    # img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
 
     pixel_coords_list = [
-        [90.032, 77.662],
-        [80.414, 89.784],
-        [102.377, 147.08],
-        [110.053, 115.463],
-        [131.656, 126.417],
+        [67.075, 111.233],
+        [79.885, 118.649],
+        [92.407, 102.958],
+        [69.904, 87.118],
+        [56.484, 77.011],
+        [57.928, 43.255],
+        [84.04, 57.899],
+        [50, 60.0],
     ]
     for pixel_coords in pixel_coords_list:
         kpl.draw_circle(ax, pixel_coords)
