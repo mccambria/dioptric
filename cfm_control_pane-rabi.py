@@ -525,14 +525,14 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(5.5, 5.7, 11):
-        #     nv_sig["coords"][2] = z
-        #     do_widefield_image_sample(nv_sig, 100)
+        for z in np.linspace(5.5, 5.7, 11):
+            nv_sig["coords"][2] = z
+            do_widefield_image_sample(nv_sig, 100)
         # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
-        do_resonance_zoom(nv_list)
+        # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
