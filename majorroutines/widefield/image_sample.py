@@ -290,9 +290,15 @@ if __name__ == "__main__":
     img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
-    # pixel_coords_list = [[90.032, 77.662], [80.414, 89.784], [102.377, 147.08], [110.053,115.463], [131.656, 126.417]]
 
-    # for pixel_coords in pixel_coords_list:
-    #     kpl.draw_circle(ax, pixel_coords)
+    pixel_coords_list = [
+        [90.032, 77.662],
+        [80.414, 89.784],
+        [102.377, 147.08],
+        [110.053, 115.463],
+        [131.656, 126.417],
+    ]
+    for pixel_coords in pixel_coords_list:
+        kpl.draw_circle(ax, pixel_coords)
 
     plt.show(block=True)
