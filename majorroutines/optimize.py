@@ -61,7 +61,7 @@ def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
 def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=None):
     # Param order: amplitude, center, sd width, offset
     fit_func = tb.gaussian
-    bg_guess = np.average(count_vals)
+    bg_guess = min(count_vals) if positive_amplitude else max(count_vals)
     low = np.min(scan_vals)
     high = np.max(scan_vals)
     scan_range = high - low

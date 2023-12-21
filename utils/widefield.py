@@ -365,7 +365,7 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_suffix=None):
 
 
 def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
-    pixel_coords = get_nv_pixel_coords(nv_sig)
+    pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=True)
     scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
     pos.set_nv_coords(nv_sig, scanning_coords, coords_suffix)
     return scanning_coords
@@ -625,20 +625,25 @@ def plot_fit(
     x_linspace = np.linspace(min_x, max_x, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
+        fn = fns[nv_ind]
+        if fn is None:
+            continue
         nv_sig = nv_list[nv_ind]
+        popt = popts[nv_ind]
         label = get_nv_num(nv_sig)
         nv_offset = offset * (num_nvs - 1 - nv_ind)
         norm = 1 if norms is None else norms[nv_ind]
         y = ys[nv_ind] / norm + nv_offset
         yerr = None if yerrs is None else yerrs[nv_ind] / norm
-        kpl.plot_points(ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL)
-        fn = fns[nv_ind]
-        popt = popts[nv_ind]
+        color = kpl.data_color_cycler[nv_ind]
+        kpl.plot_points(
+            ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
+        )
         kpl.plot_line(
             ax,
             x_linspace,
             (fn(x_linspace, *popt) / norm) + nv_offset,
-            color=kpl.data_color_cycler[nv_ind],
+            color=color,
         )
     # excess = 0.08 * (max_x - min_x)
     # ax.set_xlim(min_x - excess, max_x + excess)

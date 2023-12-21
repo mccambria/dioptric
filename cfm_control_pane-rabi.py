@@ -111,9 +111,6 @@ def do_optimize_pixel(nv_sig):
 
 
 def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
-    # Start fresh
-    widefield.reset_all_drift()
-
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     opti_coords_list = []
@@ -180,15 +177,15 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.180
+    freq_range = 0.140
     num_steps = 40
     num_reps = 10
-    num_runs = 70
+    num_runs = 30
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.895
+    freq_center = 2.81
     freq_range = 0.05
     num_steps = 20
     num_reps = 15
@@ -201,7 +198,7 @@ def do_rabi(nv_list):
     max_tau = 240 + min_tau
     num_steps = 21
     num_reps = 15
-    num_runs = 50
+    num_runs = 30
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -274,12 +271,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.35],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.35],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -295,14 +292,14 @@ def do_opx_constant_ac():
     #     [75, 75],  # Analog frequencies
     # )
     # Red + green
-    # opx.constant_ac(
-    #     [1, 4],  # Digital channels
-    #     [2, 3, 6, 4],  # Analog channels
-    #     [0.32, 0.32, 0.19, 0.19],  # Analog voltages
-    #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
-    #     [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
-    #     # [75, 75, 110, 110],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [1, 4],  # Digital channels
+        [2, 3, 6, 4],  # Analog channels
+        [0.17, 0.17, 0.19, 0.19],  # Analog voltages
+        # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
+        [74.1, 75.9, 109.811, 110.845],  # Analog frequencies
+        # [75, 75, 110, 110],  # Analog frequencies
+    )
     # Red + green
     # opx.constant_ac(
     #     [1, 4],  # Digital channels
@@ -355,9 +352,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.65
+    z_coord = 5.63
     magnet_angle = 90
-    date_str = "2023_12_18"
+    date_str = "2023_12_20"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -371,40 +368,34 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [65.868, 93.42],
-        [66.683, 108.921],
-        [45.639, 124.686],
-        [32.561, 94.788],
-        [59.807, 63.417],
-        [60.195, 46.913],
-        [71.404, 45.155],
-        [83.811, 26.3],
-        [88.5, 63.275],
-        [108.785, 87.134],
+        [67.075, 111.233],
+        [79.885, 118.649],
+        [92.407, 102.958],
+        [69.904, 87.118],
+        [56.484, 77.011],
+        [57.928, 43.255],
+        [84.04, 57.899],
+        [50, 60.0],
     ]
     green_coords_list = [
-        [110.379, 110.459],
-        [110.459, 111.092],
-        [109.72, 111.537],
-        [109.301, 110.474],
-        [110.142, 109.579],
-        [110.165, 109.119],
-        [110.677, 108.93],
-        [111.066, 108.356],
-        [111.264, 109.659],
-        [111.96, 110.486],
+        [110.41, 110.867],
+        [111.024, 110.966],
+        [111.229, 110.664],
+        [110.566, 109.986],
+        [110.099, 109.782],
+        [110.234, 108.628],
+        [110.926, 109.05],
+        [110.176, 109.472],
     ]
     red_coords_list = [
-        [74.719, 75.75],
-        [74.681, 76.189],
-        [74.11, 76.707],
-        [73.745, 75.88],
-        [74.54, 74.978],
-        [74.583, 74.482],
-        [74.865, 74.542],
-        [75.234, 73.995],
-        [75.288, 74.827],
-        [76.083, 75.741],
+        [74.816, 76.219],
+        [75.158, 76.481],
+        [75.521, 76.056],
+        [74.843, 75.537],
+        [74.476, 75.316],
+        [74.478, 74.336],
+        [75.213, 74.726],
+        [74.297, 74.87],
     ]
 
     # endregion
@@ -468,34 +459,39 @@ if __name__ == "__main__":
         red_coords_key: red_coords_list.pop(0),
     }
 
-    nv8 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv8_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-    }
+    # nv8 = copy.deepcopy(nv_sig_shell) | {
+    #     "name": f"{sample_name}-nv8_{date_str}",
+    #     pixel_coords_key: pixel_coords_list.pop(0),
+    #     green_coords_key: green_coords_list.pop(0),
+    #     red_coords_key: red_coords_list.pop(0),
+    # }
 
-    nv9 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv9_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-    }
+    # nv9 = copy.deepcopy(nv_sig_shell) | {
+    #     "name": f"{sample_name}-nv9_{date_str}",
+    #     pixel_coords_key: pixel_coords_list.pop(0),
+    #     green_coords_key: green_coords_list.pop(0),
+    #     red_coords_key: red_coords_list.pop(0),
+    # }
 
     # endregion
 
     # nv_sig = nv8
     # nv_list = [nv_sig]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4]
-    # nv_list = [nv5, nv6, nv7, nv8, nv9]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
     # nv_list = [nv0, nv2]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    # pixel_coords_list = [widefield.get_nv_pixel_coords(nv, False) for nv in nv_list]
-    # print(pixel_coords_list)
-    # widefield.set_nv_scanning_coords_from_pixel_coords(nv5, green_laser)
-    # print(nv5[pixel_coords_key])
+    # for nv in nv_list:
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
+    #     coords = nv[green_coords_key]
+    #     r_coords = [round(el, 3) for el in coords]
+    #     print(f"{r_coords},")
+    # for nv in nv_list:
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+    #     coords = nv[red_coords_key]
+    #     r_coords = [round(el, 3) for el in coords]
+    #     print(f"{r_coords},")
     # sys.exit()
 
     ### Functions to run
@@ -511,7 +507,7 @@ if __name__ == "__main__":
         # Make sure the OPX config is up to date
         # cxn = common.labrad_connect()
         # opx = cxn.QM_opx
-        # opx.update_config()
+        # opx.update_config()Yeah
 
         # time.sleep(3)
         # mag_rot_server = tb.get_server_magnet_rotation()
@@ -519,18 +515,16 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+17, -15])
+        # widefield.set_pixel_drift([-21, +14])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(6.1, 5.8, 11):
-        # for z in np.linspace(5.5, 7.5, 41):
+        # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
-        #     # for ind in range(20):
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
-        do_optimize_pixel(nv_sig)
+        do_widefield_image_sample(nv_sig, 100)
+        # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -540,19 +534,21 @@ if __name__ == "__main__":
         # do_spin_echo(nv_list)
         # do_xy8(nv_list)
 
-        ### Infrequent stuff down here
+        ## Infrequent stuff down here
 
+        # widefield.reset_all_drift()
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
+        # do_opx_constant_ac()
+
         # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
-        # do_opx_constant_ac()
         # do_calibrate_iq_delay(nv_list)
         # do_image_nv_list(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # compile_speed_test(nv_list)
         # do_optimize_red(nv_sig)
         # do_scc_snr_check(nv_list)
@@ -583,32 +579,3 @@ if __name__ == "__main__":
         cxn.disconnect()
         plt.show(block=True)
         tb.reset_safe_stop()
-
-
-"""                             
-0.090, 30       0.095, 20          0.09, 20         0.085, 50
-0  SNR=0.16        0.19               0.13             0.18
-1  SNR=0.06        0.03               0.09             0.04
-2  SNR=0.11        0.07               0.06             0.16
-3  SNR=0.16        0.11               0.12             0.05
-4  SNR=0.06        0.07               0.08             0.08
-5  SNR=0.06        0.03               0.09             0.03
-6  SNR=0.07        0.06               0.08             0.11
-7  SNR=-0.03        0.02               0.06             0.03 
-8  SNR=0.10        0.04               0.14             0.08
-9  SNR=0.13        0.11               0.12             0.12
-"""
-
-"""                             
-0.090, 30       0.095, 20          0.09, 20         0.085, 50
-SNR=0.16,        0.19               0.13             0.18            0.18,
-SNR=0.11,        0.07               0.06             0.16            0.17,
-SNR=0.16,        0.11               0.12             0.05            0.10,
-SNR=0.07,        0.06               0.08             0.11            0.12,
-SNR=0.13,        0.11               0.12             0.12            0.14,
-SNR=0.06 ,       0.03               0.09             0.04            0.05,
-SNR=0.06 ,       0.07               0.08             0.08            0.07,
-SNR=0.06 ,       0.03               0.09             0.03            0.04,
-SNR=-0.03,        0.02               0.06             0.03           0.03, 
-SNR=0.10 ,       0.04               0.14             0.08            0.04,
-"""
