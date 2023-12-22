@@ -260,7 +260,7 @@ if __name__ == "__main__":
     #     kpl.histogram(ax, counts[nv_ind, :, :].flatten(), nbins=100)
     #     ax.set_title(nv_ind)
 
-    # counts = counts > 105
+    # counts = counts > 50
 
     # Spurious correlation testing
     # step_ind_master_list = np.array(data["step_ind_master_list"])
@@ -312,5 +312,9 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+
+    img_arrays = data["img_arrays"]
+    img_arrays = np.mean(img_arrays[0], axis=0)
+    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, 305, 345)
 
     kpl.show(block=True)

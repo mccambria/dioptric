@@ -537,7 +537,7 @@ def imshow(
     img = ax.imshow(img_array, **kwargs)
 
     # Colorbar and labels
-    clb = fig.colorbar(img)
+    clb = fig.colorbar(img, ax=ax)
     if cbar_label is not None:
         clb.set_label(cbar_label)
     if x_label is not None:
@@ -574,7 +574,6 @@ def imshow_update(ax, img_array, cmin=None, cmax=None):
         img.set_clim(cmin, cmax)
     else:
         img.autoscale()
-    img.autoscale()
     show()
 
 
