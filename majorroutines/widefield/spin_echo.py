@@ -49,21 +49,30 @@ def constant(tau, norm):
         return norm
 
 
+# def create_raw_data_figure(nv_list, taus, counts, counts_ste):
+#     total_evolution_times = 2 * np.array(taus) / 1e3
+#     for ind in range(len(nv_list)):
+#         subset_inds = [ind]
+#         fig, ax = plt.subplots()
+#         widefield.plot_raw_data(
+#             ax,
+#             nv_list,
+#             total_evolution_times,
+#             counts,
+#             counts_ste,
+#             subset_inds=subset_inds,
+#         )
+#         ax.set_xlabel("Total evolution time (us)")
+#         ax.set_ylabel("Counts")
+#     return fig
+
+
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
+    fig, ax = plt.subplots()
     total_evolution_times = 2 * np.array(taus) / 1e3
-    for ind in range(len(nv_list)):
-        subset_inds = [ind]
-        fig, ax = plt.subplots()
-        widefield.plot_raw_data(
-            ax,
-            nv_list,
-            total_evolution_times,
-            counts,
-            counts_ste,
-            subset_inds=subset_inds,
-        )
-        ax.set_xlabel("Total evolution time (us)")
-        ax.set_ylabel("Counts")
+    widefield.plot_raw_data(ax, nv_list, total_evolution_times, counts, counts_ste)
+    ax.set_xlabel("Total evolution time (us)")
+    ax.set_ylabel("Counts")
     return fig
 
 

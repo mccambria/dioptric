@@ -67,13 +67,13 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        # if nv_ind in [3]:
-        #     num_resonances = 0
+        if nv_ind in [1]:
+            num_resonances = 0
         # elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
         #     num_resonances = 1
-        # else:
-        #     num_resonances = 2
-        num_resonances = 2
+        else:
+            num_resonances = 2
+        # num_resonances = 2
 
         if num_resonances == 0:
             guess_params = [norm_guess]
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1395583069682)
+    data = dm.get_raw_data(file_id=1395803779134)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
