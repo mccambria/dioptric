@@ -105,7 +105,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Make the figure
 
     fig, ax = plt.subplots()
-    offset = 0.12
+    offset = 0.10
     # offset = 0.05
     widefield.plot_fit(
         ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms, offset=offset

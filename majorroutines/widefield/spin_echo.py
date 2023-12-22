@@ -39,7 +39,19 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
 
 
 def create_fit_figure(nv_list, taus, counts, counts_ste):
-    pass
+    taus = np.array(taus)
+
+    ### Make the figure
+
+    fig, ax = plt.subplots()
+    offset = 0.10
+    # offset = 0.05
+    widefield.plot_fit(
+        ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms, offset=offset
+    )
+    ax.set_xlabel("Pulse duration (ns)")
+    ax.set_ylabel("Normalized fluorescence")
+    return fig
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
@@ -114,7 +126,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1389346693219)
+    data = dm.get_raw_data(file_id=1395732527176)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -125,6 +137,6 @@ if __name__ == "__main__":
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)

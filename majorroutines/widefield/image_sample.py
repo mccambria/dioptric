@@ -283,7 +283,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1392298372656)
-    data = dm.get_raw_data("2023_12_20-17_16_45-johnson-nv0_2023_12_20")
+    data = dm.get_raw_data(file_id=1394944288588)
     img_array = np.array(data["img_array"])
     # data = dm.get_raw_data(file_id=1392300819875)
     # data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
