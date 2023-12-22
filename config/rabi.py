@@ -25,14 +25,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [66.37, 131.182],
-    green_coords_key: [110.574, 111.472],
-    red_coords_key: [74.683, 76.918],
+    pixel_coords_key: [107.64, 76.7],
+    green_coords_key:         [111.85, 109.792],
+    red_coords_key:         [75.946, 75.332],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [107.108, 91.942],
-    green_coords_key: [111.793, 110.286],
-    red_coords_key: [75.866, 75.704],
+    pixel_coords_key: [74.828, 109.09],
+    green_coords_key:         [110.7, 110.817],
+    red_coords_key:         [75.007, 76.233],
 }
 
 
@@ -81,14 +81,15 @@ config |= {
             "name": "sig_gen_STAN_sg394",
             # "frequency": 2.87,
             # "rabi_period": 96,
-            "frequency": 2.8486893207631647,
-            "rabi_period": 128,
+            "frequency": 2.8483285621036685,
+            "rabi_period": 144,
             # "rabi_period": 32,
-            "uwave_power": 9,
+            # "uwave_power": 9,
+            "uwave_power": 8.3,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
-            "frequency": 2.87,
+            "frequency": 2.8924815710559706,
             "rabi_period": 128,
             "uwave_power": 11,
         },
@@ -380,7 +381,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
-                # "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_i": {
@@ -391,7 +392,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "ao_pi_pulse_0",
-                # "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_q": {
@@ -402,7 +403,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "ao_pi_pulse_0",
-                # "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
@@ -411,7 +412,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
-                # "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
         "do_camera_trigger": {
@@ -487,11 +488,11 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "waveforms": {"single": "cw"},
         },
-        # "ao_pi_on_2_pulse_0": {
-        #     "operation": "control",
-        #     "length": int(rabi_period_0 / 4),
-        #     "waveforms": {"single": "cw"},
-        # },
+        "ao_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4),
+            "waveforms": {"single": "cw"},
+        },
         ### Digital
         "do_on": {
             "operation": "control",
@@ -528,21 +529,21 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
-        # "do_pi_on_2_pulse_0": {
-        #     "operation": "control",
-        #     "length": int(rabi_period_0 / 4),
-        #     "digital_marker": "on",
-        # },
+        "do_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4),
+            "digital_marker": "on",
+        },
         "do_pi_pulse_1": {
             "operation": "control",
             "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
-        # "do_pi_on_2_pulse_1": {
-        #     "operation": "control",
-        #     "length": int(rabi_period_1 / 4),
-        #     "digital_marker": "on",
-        # },
+        "do_pi_on_2_pulse_1": {
+            "operation": "control",
+            "length": int(rabi_period_1 / 4),
+            "digital_marker": "on",
+        },
         ### Mixed
     },
     # endregion

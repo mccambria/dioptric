@@ -117,20 +117,8 @@ def img_str_to_array(img_str):
     ndarray
         Image array contructed from the byte string
     """
-    roi = _get_camera_roi()
-    if roi is None:
-        resolution = _get_camera_resolution()
-    else:
-        resolution = roi[2:]
-        # offset_x, offset_y, width, height = roi
-        # bias_clamp = _get_camera_bias_clamp()
-        # img_array = np.full(resolution, bias_clamp, dtype=np.uint16)
-        # roi_resolution = roi[2:]
-        # roi_img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*roi_resolution)
-        # img_array[
-        #     offset_y : offset_y + height, offset_x : offset_x + width
-        # ] = roi_img_array
-    img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*resolution)
+    shape = get_img_array_shape()
+    img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*shape)
     img_array = img_array.astype(int)
     return img_array
 
@@ -541,6 +529,15 @@ def _get_camera_roi():
 def _get_camera_config_val(key):
     config = common.get_config_dict()
     return config["Camera"][key]
+
+
+def get_img_array_shape():
+    roi = _get_camera_roi()
+    if roi is None:
+        shape = _get_camera_resolution()
+    else:
+        shape = roi[2:]
+    return shape
 
 
 # endregion

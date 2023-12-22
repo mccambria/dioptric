@@ -81,7 +81,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    if "img_arrays" in raw_data:
+        keys_to_compress = ["img_arrays"]
+    else:
+        keys_to_compress = None
+    dm.save_raw_data(raw_data, file_path, keys_to_compress)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")

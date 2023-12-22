@@ -58,8 +58,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        if nv_ind not in [7]:
-            # if True:
+        # if nv_ind not in [7]:
+        if True:
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -67,8 +67,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             freqs = np.fft.rfftfreq(num_steps, d=tau_step)
             transform_mag = np.absolute(transform)
             max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
-            # freq_guess = freqs[max_ind + 1]
-            freq_guess = 0.01
+            freq_guess = freqs[max_ind + 1]
+            # freq_guess = 0.01
             guess_params = [norm_guess, ptp_amp_guess, freq_guess, 1000]
             fit_fn = cos_decay
         else:
@@ -163,7 +163,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    if "img_arrays" in raw_data:
+        keys_to_compress = ["img_arrays"]
+    else:
+        keys_to_compress = None
+    dm.save_raw_data(raw_data, file_path, keys_to_compress)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
@@ -175,7 +179,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1394550064441)  # now
+    data = dm.get_raw_data(file_id=1395510268339)  # now
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

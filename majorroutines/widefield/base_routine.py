@@ -24,6 +24,7 @@ def main(
     uwave_ind=0,
     num_exps_per_rep=1,
     load_iq=False,
+    save_images=True,
 ):
     ### Some initial setup
 
@@ -54,6 +55,9 @@ def main(
     ### Data tracking
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    if save_images:
+        shape = widefield.get_img_array_shape()
+        img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
     step_ind_master_list = [[] for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -76,11 +80,16 @@ def main(
             if step_fn is not None:
                 step_fn(step_ind)
 
+            if save_images:
+                img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
+
             # Loop through the reps
             def rep_fn(rep_ind):
                 for exp_ind in range(num_exps_per_rep):
                     img_str = camera.read()
                     img_array = widefield.img_str_to_array(img_str)
+                    if save_images:
+                        img_array_list[exp_ind].append(img_array)
                     img_array_photons = widefield.adus_to_photons(img_array)
 
                     def get_counts(pixel_coords):
@@ -92,6 +101,12 @@ def main(
                     counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
 
             widefield.rep_loop(num_reps, rep_fn)
+
+            if save_images:
+                for exp_ind in range(num_exps_per_rep):
+                    img_arrays[exp_ind, run_ind, step_ind, :, :] = np.mean(
+                        img_array_list[exp_ind], axis=0
+                    )
 
         camera.disarm()
         for ind in uwave_ind_list:
@@ -114,6 +129,11 @@ def main(
         "counts-units": "photons",
         "counts": counts,
     }
+    if save_images:
+        raw_data |= {
+            "img_arrays-units": "ADUs",
+            "img_arrays": img_arrays,
+        }
     return counts, raw_data
 
 

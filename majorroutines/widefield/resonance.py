@@ -73,7 +73,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         #     num_resonances = 1
         # else:
         #     num_resonances = 2
-        num_resonances = 1
+        num_resonances = 2
 
         if num_resonances == 0:
             guess_params = [norm_guess]
@@ -92,8 +92,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
             low_freq_guess = freqs[num_steps * 1 // 3]
             high_freq_guess = freqs[num_steps * 2 // 3]
             if nv_ind == 8:
-                low_freq_guess = 2.8506
-                high_freq_guess = 2.8928
+                low_freq_guess = 2.85
+                high_freq_guess = 2.89
             guess_params = [
                 norm_guess,
                 amp_guess,
@@ -147,7 +147,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
         if num_resonances == 1:
             center_freqs.append(popt[4])
-        elif num_resonances == 1:
+        elif num_resonances == 2:
             center_freqs.append((popt[4], popt[8]))
 
     print(f"a0 average: {round(np.average(a0_list), 2)}")
@@ -224,7 +224,11 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    if "img_arrays" in raw_data:
+        keys_to_compress = ["img_arrays"]
+    else:
+        keys_to_compress = None
+    dm.save_raw_data(raw_data, file_path, keys_to_compress)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
@@ -241,7 +245,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1394866569027)
+    data = dm.get_raw_data(file_id=1395583069682)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
