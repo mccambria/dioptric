@@ -26,13 +26,13 @@ red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
     pixel_coords_key: [107.64, 76.7],
-    green_coords_key:         [111.85, 109.792],
-    red_coords_key:         [75.946, 75.332],
+    green_coords_key: [111.85, 109.792],
+    red_coords_key: [75.946, 75.332],
 }
 widefield_calibration_nv2 = {
     pixel_coords_key: [74.828, 109.09],
-    green_coords_key:         [110.7, 110.817],
-    red_coords_key:         [75.007, 76.233],
+    green_coords_key: [110.7, 110.817],
+    red_coords_key: [75.007, 76.233],
 }
 
 
@@ -91,7 +91,7 @@ config |= {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.8924815710559706,
             "rabi_period": 128,
-            "uwave_power": 11,
+            "uwave_power": 9,
         },
     },
     ###

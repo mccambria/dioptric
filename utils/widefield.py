@@ -20,6 +20,7 @@ from utils import positioning as pos
 from utils import kplotlib as kpl
 from utils.constants import CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
+from utils import data_manager as dm
 from importlib import import_module
 
 
@@ -657,7 +658,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin, cmax):
     im_ax, data_ax = axes_pack
 
     # Set up the actual image
-    kpl.imshow(im_ax, np.zeros(img_arrays[0].shape))
+    kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
 
     # Set up the data axis
     plot_raw_data(data_ax, nv_list, x, counts, counts_errs)
@@ -689,7 +690,8 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin, cmax):
     anim = animation.FuncAnimation(
         fig, animate_sub, frames=num_steps, interval=200, blit=False
     )
-    anim.save(Path.home() / "lab/animation_tests/test.gif")
+    timestamp = dm.get_time_stamp()
+    anim.save(Path.home() / f"lab/movies/{timestamp}.gif")
 
 
 # endregion

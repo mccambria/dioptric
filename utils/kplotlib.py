@@ -506,7 +506,14 @@ def plot_line_update(ax, line_ind=0, x=None, y=None, relim_x=True, relim_y=True)
 
 
 def imshow(
-    ax, img_array, title=None, x_label=None, y_label=None, cbar_label=None, **kwargs
+    ax,
+    img_array,
+    title=None,
+    x_label=None,
+    y_label=None,
+    cbar_label=None,
+    no_cbar=False,
+    **kwargs,
 ):
     """Same as matplotlib's imshow, but with our defaults
 
@@ -537,9 +544,10 @@ def imshow(
     img = ax.imshow(img_array, **kwargs)
 
     # Colorbar and labels
-    clb = fig.colorbar(img, ax=ax)
-    if cbar_label is not None:
-        clb.set_label(cbar_label)
+    if not no_cbar:
+        clb = fig.colorbar(img, ax=ax)
+        if cbar_label is not None:
+            clb.set_label(cbar_label)
     if x_label is not None:
         plt.xlabel(x_label)
     if y_label is not None:

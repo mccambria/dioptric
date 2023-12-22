@@ -27,6 +27,7 @@ import time
 from utils.positioning import get_scan_1d as calculate_freqs
 from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 from majorroutines.widefield import base_routine
+from scipy.ndimage import gaussian_filter
 
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
@@ -315,6 +316,11 @@ if __name__ == "__main__":
 
     img_arrays = data["img_arrays"]
     img_arrays = np.mean(img_arrays[0], axis=0)
-    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, 305, 345)
+    # img_arrays = img_arrays - img_arrays[0]
+    img_arrays = img_arrays - gaussian_filter(np.median(img_arrays, axis=0), sigma=1)
+    # img_arrays = [gaussian_filter(el, sigma=1) for el in img_arrays]
+    # img_arrays = np.array(img_arrays)
+
+    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -3, 6)
 
     kpl.show(block=True)
