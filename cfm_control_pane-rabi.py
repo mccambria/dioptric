@@ -356,7 +356,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.62
+    z_coord = 5.60
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -373,7 +373,8 @@ if __name__ == "__main__":
 
     pixel_coords_list = [
         [107.64, 76.7],
-        [74.828, 109.09],
+        # [74.828, 109.09],
+        [110, 50],
         [85.41, 60.905],
         [72.062, 51.179],
         [72.573, 16.985],
@@ -381,7 +382,8 @@ if __name__ == "__main__":
     ]
     green_coords_list = [
         [111.85, 109.792],
-        [110.7, 110.817],
+        # [110.7, 110.817],
+        [112.041, 109.005],
         [110.867, 109.187],
         [110.671, 108.92],
         [110.867, 107.816],
@@ -389,7 +391,8 @@ if __name__ == "__main__":
     ]
     red_coords_list = [
         [75.946, 75.332],
-        [75.007, 76.233],
+        # [75.007, 76.233],
+        [76.102, 74.64],
         [75.252, 74.807],
         [74.921, 74.602],
         [74.903, 73.591],
@@ -526,13 +529,13 @@ if __name__ == "__main__":
         # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
