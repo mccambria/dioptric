@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395732527176)
+    data = dm.get_raw_data(file_id=1396164244162, skip_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -230,6 +230,7 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
     counts = np.array(data["counts"])
+    # counts = counts[:, : num_runs // 2, :, :]
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
