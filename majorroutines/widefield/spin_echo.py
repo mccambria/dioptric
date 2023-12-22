@@ -20,6 +20,35 @@ from scipy.optimize import curve_fit
 from majorroutines.widefield import base_routine
 
 
+def quartic_decay(
+    tau,
+    norm,
+    amplitude,
+    revival_time,
+    quartic_decay_time,
+    envelope_decay_time,
+    envelope_exponent,
+):
+    baseline = norm
+    val = baseline
+    # print(len(amplitudes))
+    envelope = np.exp(-((tau / envelope_decay_time) ** envelope_exponent))
+    num_revivals = 3
+    for ind in range(num_revivals):
+        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
+        val -= amplitude * envelope * exp_part
+    return val
+
+
+def constant(tau, norm):
+    if type(tau) == list:
+        return [norm] * len(tau)
+    elif type(tau) == np.ndarray:
+        return np.array([norm] * len(tau))
+    else:
+        return norm
+
+
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     total_evolution_times = 2 * np.array(taus) / 1e3
     for ind in range(len(nv_list)):
@@ -39,17 +68,75 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
 
 
 def create_fit_figure(nv_list, taus, counts, counts_ste):
-    taus = np.array(taus)
+    total_evolution_times = 2 * np.array(taus) / 1e3
+
+    fit_fns = []
+    popts = []
+    norms = []
+
+    for nv_ind in range(len(nv_list)):
+        nv_counts = counts[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind]
+
+        try:
+            if nv_ind != 1:
+                fit_fn = quartic_decay
+                norm_guess = np.min(nv_counts)
+                amplitude_guess = np.quantile(nv_counts, 0.7) - norm_guess
+                T2_guess = 10 if nv_ind == 1 else 200
+                guess_params = [norm_guess, amplitude_guess, 175, 15, T2_guess, 1.5]
+                popt, pcov = curve_fit(
+                    fit_fn,
+                    total_evolution_times,
+                    nv_counts,
+                    p0=guess_params,
+                    sigma=nv_counts_ste,
+                    absolute_sigma=True,
+                    maxfev=10000,
+                    bounds=((10, 0, 100, 5, 10, 1), (100, 100, 500, 30, 500, 2.5)),
+                )
+            else:
+                fit_fn = constant
+                popt, pcov = curve_fit(
+                    fit_fn,
+                    total_evolution_times,
+                    nv_counts,
+                    p0=[np.mean(nv_counts)],
+                    sigma=nv_counts_ste,
+                    absolute_sigma=True,
+                )
+            # popt = guess_params
+            fit_fns.append(fit_fn)
+            popts.append(popt)
+            norms.append(popt[0])
+        except Exception as exc:
+            print(exc)
+            fit_fns.append(None)
+            popts.append(None)
+            norms.append(None)
+
+        residuals = fit_fn(total_evolution_times, *popt) - nv_counts
+        chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+        red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+        print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     ### Make the figure
 
     fig, ax = plt.subplots()
-    offset = 0.10
-    # offset = 0.05
+    # offset = 0.10
+    offset = 0.07
     widefield.plot_fit(
-        ax, nv_list, taus, counts, counts_ste, fit_fns, popts, norms, offset=offset
+        ax,
+        nv_list,
+        total_evolution_times,
+        counts,
+        counts_ste,
+        fit_fns,
+        popts,
+        norms,
+        offset=offset,
     )
-    ax.set_xlabel("Pulse duration (ns)")
+    ax.set_xlabel("Total evolution time (us)")
     ax.set_ylabel("Normalized fluorescence")
     return fig
 
