@@ -212,8 +212,8 @@ def do_spin_echo(nv_list):
     num_steps = 51
     # num_reps = 150
     # num_runs = 12
-    num_reps = 20
-    num_runs = 100
+    num_reps = 10
+    num_runs = 400
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
