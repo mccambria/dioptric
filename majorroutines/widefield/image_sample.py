@@ -283,7 +283,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1392298372656)
-    data = dm.get_raw_data(file_id=1394944288588)
+    data = dm.get_raw_data(file_id=1395590073539)
     img_array = np.array(data["img_array"])
     # data = dm.get_raw_data(file_id=1392300819875)
     # data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
@@ -292,16 +292,23 @@ if __name__ == "__main__":
     kpl.imshow(ax, img_array)
 
     pixel_coords_list = [
-        [93.706, 90.687],
-        [60.549, 123.373],
-        # [77.984, 35.691],
-        [71.468, 74.895],
-        [57.955, 65.639],
-        [59.024, 31.045],
-        # [85.592, 45.897],
-        # [49.2, 46.131],
+        [107.64, 76.7],
+        # [74.828, 109.09],
+        [110, 50],
+        [85.41, 60.905],
+        [72.062, 51.179],
+        [72.573, 16.985],
+        [52.824, 95.547],
     ]
-    for pixel_coords in pixel_coords_list:
-        kpl.draw_circle(ax, pixel_coords)
+    for ind in range(len(pixel_coords_list)):
+        pixel_coords = pixel_coords_list[ind]
+        kpl.draw_circle(
+            ax,
+            pixel_coords,
+            color=kpl.data_color_cycler[ind],
+            outline=True,
+            label=ind
+        )
+    ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     plt.show(block=True)

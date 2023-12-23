@@ -45,7 +45,7 @@ def sq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     init_state_1 = NVSpinState.ZERO
     readout_state_1 = NVSpinState.ZERO
     init_state_2 = NVSpinState.ZERO
-    readout_state_2 = NVSpinState.HIGH
+    readout_state_2 = NVSpinState.LOW
     base_args = [nv_list, num_steps, num_reps, num_runs, min_tau, max_tau]
     return main(
         *base_args, init_state_1, readout_state_1, init_state_2, readout_state_2
@@ -53,10 +53,10 @@ def sq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
 
 def dq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
-    init_state_1 = NVSpinState.HIGH
-    readout_state_1 = NVSpinState.HIGH
-    init_state_2 = NVSpinState.HIGH
-    readout_state_2 = NVSpinState.LOW
+    init_state_1 = NVSpinState.LOW
+    readout_state_1 = NVSpinState.LOW
+    init_state_2 = NVSpinState.LOW
+    readout_state_2 = NVSpinState.HIGH
     base_args = [nv_list, num_steps, num_reps, num_runs, min_tau, max_tau]
     return main(
         *base_args, init_state_1, readout_state_1, init_state_2, readout_state_2
@@ -73,7 +73,7 @@ def main(
     init_state_0=NVSpinState.ZERO,
     readout_state_0=NVSpinState.ZERO,
     init_state_1=NVSpinState.ZERO,
-    readout_state_1=NVSpinState.HIGH,
+    readout_state_1=NVSpinState.LOW,
 ):
     ### Some initial setup
 
@@ -81,13 +81,23 @@ def main(
     seq_file = "relaxation_interleave.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
+    # tau = taus[10]
+    # seq_args = widefield.get_base_scc_seq_args(nv_list)
+    # seq_args.extend(
+    #     [tau, init_state_0, readout_state_0, init_state_1, readout_state_1]
+    # )
+    # seq_args_string = tb.encode_seq_args(seq_args)
+    # print(seq_args)
+    # print(seq_args_string)
+    # return
+
     ### Collect the data
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(
-            tau, init_state_0, readout_state_0, init_state_1, readout_state_1
+        seq_args.extend(
+            [tau, init_state_0, readout_state_0, init_state_1, readout_state_1]
         )
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -99,7 +109,7 @@ def main(
         num_runs,
         step_fn,
         uwave_ind=[0, 1],
-        num_images_per_rep=2,
+        num_exps_per_rep=2,
     )
     counts_0 = counts[0]
     counts_1 = counts[1]
@@ -142,8 +152,10 @@ def main(
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    dm.save_figure(raw_fig_0, file_path + "-0")
-    dm.save_figure(raw_fig_1, file_path + "-1")
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-0")
+    dm.save_figure(raw_fig_0, file_path)
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-1")
+    dm.save_figure(raw_fig_1, file_path)
 
 
 if __name__ == "__main__":

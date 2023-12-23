@@ -202,8 +202,11 @@ def do_rabi(nv_list):
     # num_runs = 30
     num_steps = 31
     num_reps = 20
-    num_runs = 50
-    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    num_runs = 25
+    uwave_ind = 1
+    rabi.main(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind
+    )
 
 
 def do_spin_echo(nv_list):
@@ -230,10 +233,10 @@ def do_xy8(nv_list):
 
 def do_sq_relaxation(nv_list):
     min_tau = 1e3
-    max_tau = 30e6 + min_tau
+    max_tau = 20e6 + min_tau
     num_steps = 21
-    num_reps = 150
-    num_runs = 12
+    num_reps = 10
+    num_runs = 400
     relaxation_interleave.sq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -241,10 +244,10 @@ def do_sq_relaxation(nv_list):
 
 def do_dq_relaxation(nv_list):
     min_tau = 1e3
-    max_tau = 18e6 + min_tau
-    num_steps = 19
-    num_reps = 150
-    num_runs = 12
+    max_tau = 15e6 + min_tau
+    num_steps = 21
+    num_reps = 10
+    num_runs = 400
     relaxation_interleave.dq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -356,7 +359,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.60
+    z_coord = 5.63
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -513,7 +516,7 @@ if __name__ == "__main__":
         # Make sure the OPX config is up to date
         # cxn = common.labrad_connect()
         # opx = cxn.QM_opx
-        # opx.update_config()Yeah
+        # opx.update_config()
 
         # time.sleep(3)
         # mag_rot_server = tb.get_server_magnet_rotation()
@@ -521,7 +524,7 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+15, -13])
+        # widefield.set_pixel_drift([+6, +6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
@@ -529,14 +532,14 @@ if __name__ == "__main__":
         # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_spin_echo(nv_list)
-        # do_sq_relaxation(nv_list)
+        do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
 

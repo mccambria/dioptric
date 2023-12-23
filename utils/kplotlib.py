@@ -120,7 +120,8 @@ class KplColors(StrEnum):
     # If marking an interesting point with a confidence interval, use dark_gray for the main line and light_gray for the interval
     DARK_GRAY = "#909090"
     LIGHT_GRAY = "#DCDCDC"
-    BLACK = "000000"
+    BLACK = "#000000"
+    WHITE = "#FFFFFF"
 
 
 data_color_cycler = [
@@ -642,7 +643,9 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     return occur, bin_edges
 
 
-def draw_circle(ax, coords, radius=1, color=KplColors.BLUE):
+def draw_circle(
+    ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None
+):
     """Draw a circle on the passed axes
 
     Parameters
@@ -654,7 +657,10 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE):
     radius : numeric
         Radius of the circle
     """
-    circle = plt.Circle(coords, radius, color=color)
+    if outline:
+        circle = plt.Circle(coords, 1.5 * radius, color=KplColors.WHITE)
+        ax.add_artist(circle)
+    circle = plt.Circle(coords, radius, color=color, label=label)
     ax.add_artist(circle)
 
 

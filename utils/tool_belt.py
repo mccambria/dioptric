@@ -9,6 +9,7 @@ Created on November 23rd, 2018
 @author: mccambria
 """
 
+from enum import Enum
 import numpy as np
 from numpy import exp
 import json
@@ -260,6 +261,8 @@ def encode_seq_args(seq_args):
         el = seq_args[ind]
         if type(el) is np.int32:
             seq_args[ind] = int(el)
+        if isinstance(el, Enum):
+            seq_args[ind] = str(el)
     return json.dumps(seq_args)
 
 
