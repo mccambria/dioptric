@@ -58,8 +58,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         nv_counts = counts[nv_ind]
         nv_counts_ste = counts_ste[nv_ind]
 
-        # if nv_ind not in [7]:
-        if True:
+        if nv_ind not in [1]:
+            # if True:
             # Estimate fit parameters
             norm_guess = np.min(nv_counts)
             ptp_amp_guess = np.max(nv_counts) - norm_guess
@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395630594278)  # now
+    data = dm.get_raw_data(file_id=1395828354868)  # now
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

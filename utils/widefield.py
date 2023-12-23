@@ -9,6 +9,8 @@ Created on August 15th, 2023
 # region Imports and constants
 
 import itertools
+from pathlib import Path
+from matplotlib import animation
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import inf
@@ -18,6 +20,7 @@ from utils import positioning as pos
 from utils import kplotlib as kpl
 from utils.constants import CountFormat
 from utils.constants import CollectionMode, LaserKey, LaserPosMode
+from utils import data_manager as dm
 from importlib import import_module
 
 
@@ -645,6 +648,50 @@ def plot_fit(
     # excess = 0.08 * (max_x - min_x)
     # ax.set_xlim(min_x - excess, max_x + excess)
     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
+
+
+def animate(x, nv_list, counts, counts_errs, img_arrays, cmin, cmax):
+    num_steps = img_arrays.shape[0]
+
+    figsize = [6.5, 10.0]
+    fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
+    im_ax, data_ax = axes_pack
+
+    # Set up the actual image
+    kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
+
+    # Set up the data axis
+    plot_raw_data(data_ax, nv_list, x, counts, counts_errs)
+
+    def data_ax_relim():
+        x_buffer = 0.05 * (np.max(x) - np.min(x))
+        data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
+        y_buffer = 0.05 * (np.max(counts) - np.min(counts))
+        data_ax.set_ylim(np.min(counts) - y_buffer, np.max(counts) + y_buffer)
+        data_ax.set_xlabel("Frequency (GHz)")
+        data_ax.set_ylabel("Counts")
+
+    data_ax_relim()
+
+    def animate_sub(step_ind):
+        # print(step_ind)
+        kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
+        data_ax.clear()
+        plot_raw_data(
+            data_ax,
+            nv_list,
+            x[0 : step_ind + 1],
+            counts[:, 0 : step_ind + 1],
+            counts_errs[:, 0 : step_ind + 1],
+        )
+        data_ax_relim()
+        return [im_ax, data_ax]
+
+    anim = animation.FuncAnimation(
+        fig, animate_sub, frames=num_steps, interval=200, blit=False
+    )
+    timestamp = dm.get_time_stamp()
+    anim.save(Path.home() / f"lab/movies/{timestamp}.gif")
 
 
 # endregion

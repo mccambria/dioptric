@@ -165,7 +165,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 # region Load functions
 
 
-def get_raw_data(file_name=None, file_id=None, use_cache=True):
+def get_raw_data(file_name=None, file_id=None, use_cache=True, skip_npz=False):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
@@ -183,6 +183,10 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True):
         the cache - if it's not there already we'll add it to the cache. Otherwise
         we'll get the file straight from the cloud and skip caching it. By default
         True
+    skip_npz: bool, optional
+        Whether or not to skip downloading and decompressing any linked compressed
+        numpy files (.npz files). Retrieving these can be slow if the file is very
+        large so it's better to skip it if you don't need it.
 
     Returns
     -------
@@ -225,19 +229,20 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True):
         data = orjson.loads(file_content)
 
         # Find and decompress the linked numpy arrays
-        for key in data:
-            val = data[key]
-            if not isinstance(val, str):
-                continue
-            val_split = val.split(".")
-            if val_split[-1] != "npz":
-                continue
-            first_part = val_split[0]
-            npz_file_id = first_part if first_part else None
-            npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
-            npz_data = np.load(BytesIO(npz_file_content))
-            data |= npz_data
-            break
+        if not skip_npz:
+            for key in data:
+                val = data[key]
+                if not isinstance(val, str):
+                    continue
+                val_split = val.split(".")
+                if val_split[-1] != "npz":
+                    continue
+                first_part = val_split[0]
+                npz_file_id = first_part if first_part else None
+                npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
+                npz_data = np.load(BytesIO(npz_file_content))
+                data |= npz_data
+                break
 
     ### Add to cache and return the data
 

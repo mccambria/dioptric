@@ -27,6 +27,7 @@ import time
 from utils.positioning import get_scan_1d as calculate_freqs
 from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 from majorroutines.widefield import base_routine
+from scipy.ndimage import gaussian_filter
 
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
@@ -67,13 +68,13 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        # if nv_ind in [3]:
-        #     num_resonances = 0
+        if nv_ind in [1]:
+            num_resonances = 0
         # elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
         #     num_resonances = 1
-        # else:
-        #     num_resonances = 2
-        num_resonances = 2
+        else:
+            num_resonances = 2
+        # num_resonances = 2
 
         if num_resonances == 0:
             guess_params = [norm_guess]
@@ -245,7 +246,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1388633807820)  # 0
     # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
     # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1395583069682)
+    data = dm.get_raw_data(file_id=1395803779134)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -260,7 +261,7 @@ if __name__ == "__main__":
     #     kpl.histogram(ax, counts[nv_ind, :, :].flatten(), nbins=100)
     #     ax.set_title(nv_ind)
 
-    # counts = counts > 105
+    # counts = counts > 50
 
     # Spurious correlation testing
     # step_ind_master_list = np.array(data["step_ind_master_list"])
@@ -312,5 +313,14 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+
+    img_arrays = data["img_arrays"]
+    img_arrays = np.mean(img_arrays[0], axis=0)
+    # img_arrays = img_arrays - img_arrays[0]
+    img_arrays = img_arrays - gaussian_filter(np.median(img_arrays, axis=0), sigma=1)
+    # img_arrays = [gaussian_filter(el, sigma=1) for el in img_arrays]
+    # img_arrays = np.array(img_arrays)
+
+    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -3, 6)
 
     kpl.show(block=True)
