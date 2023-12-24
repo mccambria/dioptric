@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 def get_seq(args, num_reps):
     (pol_coords_list, ion_coords_list, uwave_ind, i_or_q, tau_ns) = args
 
-    tau = seq_utils.convert_ns_to_cc(tau_ns)
+    tau = seq_utils.convert_ns_to_cc(tau_ns, raise_error=False)
     buffer = seq_utils.get_widefield_operation_buffer()
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
@@ -28,9 +28,12 @@ def get_seq(args, num_reps):
 
     def uwave_macro():
         # IQ
+        # qua.ramp_to_zero(iq_el)
+        # qua.play("on", iq_el)
         qua.wait(buffer - tau, iq_el)
-        qua.play("pi_pulse", iq_el)
-        qua.wait(buffer + tau, iq_el)
+        qua.play("on", iq_el)
+        # qua.play("pi_pulse", iq_el)
+        # qua.wait(buffer + tau, iq_el)
         # Pi pulse
         qua.wait(buffer, sig_gen_el)
         qua.play("pi_pulse", sig_gen_el)
@@ -63,7 +66,9 @@ if __name__ == "__main__":
                 [76.56091979499166, 75.8487161634141],
                 [76.30891979499165, 75.96071616341409],
             ],
-            50e3,
+            0,
+            False,
+            10,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 

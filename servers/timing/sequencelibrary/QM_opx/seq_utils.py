@@ -236,9 +236,8 @@ def convert_ns_to_cc(duration_ns, raise_error=False):
     if raise_error:
         if duration_ns % 4 != 0:
             raise RuntimeError("OPX pulse durations (in ns) must be divisible by 4")
-    # Raise this error regardless of raise_error because this will lead to unexpected behavior
-    if duration_ns < 16:
-        raise RuntimeError("Minimum OPX pulse duration is 16 ns")
+        if duration_ns < 16:
+            raise RuntimeError("Minimum OPX pulse duration is 16 ns")
     return round(duration_ns / 4)
 
 

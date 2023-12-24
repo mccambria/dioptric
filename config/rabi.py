@@ -86,6 +86,7 @@ config |= {
             # "rabi_period": 32,
             # "uwave_power": 9,
             "uwave_power": 8.1,
+            "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
@@ -229,15 +230,15 @@ opx_config = {
             },
             "digital_outputs": {
                 1: {},  #
-                2: {},  # apd 1 virtual gate
-                3: {},  # apd 2 virtual gate
-                4: {},  # apd 2 virtual gate
-                5: {},  # clock
-                6: {},  # clock
-                7: {},  # tsg4104 sig gen switch
-                8: {},  # cobolt 638
-                9: {},  # cobolt 515
-                10: {},  # cobolt 515
+                2: {},  #
+                3: {},  #
+                4: {},  #
+                5: {},  #
+                6: {},  #
+                7: {},  #
+                8: {},  #
+                9: {},  #
+                10: {},  #
             },
             "analog_inputs": {
                 1: {"offset": 0},  # APD0
