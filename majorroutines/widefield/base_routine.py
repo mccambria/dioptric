@@ -35,7 +35,6 @@ def main(
     num_nvs = len(nv_list)
 
     camera = tb.get_server_camera()
-    pulse_gen = tb.get_server_pulse_gen()
 
     # Sig gen setup
     if type(uwave_ind) == int:
@@ -49,8 +48,6 @@ def main(
         sig_gen = tb.get_server_sig_gen(ind=ind)
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
-        if load_iq:
-            sig_gen.load_iq()
 
     ### Data tracking
 
@@ -71,6 +68,8 @@ def main(
         for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_on()
+            if load_iq:
+                sig_gen.load_iq()
 
         camera.arm()
 

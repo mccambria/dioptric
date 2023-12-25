@@ -47,7 +47,14 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        step_fn,
+        uwave_ind=uwave_ind,
+        load_iq=True,
+        save_images=False,
     )
 
     ### Process and plot

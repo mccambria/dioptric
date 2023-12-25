@@ -167,12 +167,14 @@ def do_scc_snr_check(nv_list):
 
 
 def do_calibrate_iq_delay(nv_list):
-    min_tau = -200
-    max_tau = +200
-    num_steps = 26
-    num_reps = 150
-    num_runs = 6
-    calibrate_iq_delay.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    min_tau = -100
+    max_tau = +100
+    num_steps = 21
+    num_reps = 10
+    num_runs = 25
+    calibrate_iq_delay.main(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, i_or_q=False
+    )
 
 
 def do_resonance(nv_list):
@@ -210,13 +212,18 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    min_tau = 1e3
-    max_tau = 200e3 + min_tau
+    # min_tau = 1e3
+    # max_tau = 200e3 + min_tau
+    # num_steps = 51
+    min_tau = 150e3
+    max_tau = 175e3
     num_steps = 51
+
     # num_reps = 150
     # num_runs = 12
     num_reps = 10
     num_runs = 400
+
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -359,7 +366,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.63
+    z_coord = 5.58
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -503,6 +510,10 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
+    # sig_gen = tb.get_server_sig_gen(ind=1)
+    # sig_gen.load_iq()
+    # input("STOP")
+
     ### Functions to run
 
     email_recipient = "mccambria@berkeley.edu"
@@ -524,7 +535,7 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+6, +6])
+        # widefield.set_pixel_drift([+7, +6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
@@ -538,8 +549,8 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_spin_echo(nv_list)
-        do_sq_relaxation(nv_list)
+        do_spin_echo(nv_list)
+        # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
 
