@@ -162,15 +162,12 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     ### Make the figure
 
-    fig, ax = plt.subplots()
-    offset = 0.1
-    # offset = 0.05
-    # offset = 0.8
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
     widefield.plot_fit(
-        ax, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms, offset=offset
+        axes_pack, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms
     )
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Normalized fluorescence")
+    axes_pack[-1].set_xlabel("Frequency (GHz)")
+    axes_pack[2].set_ylabel("Normalized fluorescence")
     # ax.set_xlim(None, 3.01)
     return fig
 
@@ -316,11 +313,9 @@ if __name__ == "__main__":
 
     img_arrays = data["img_arrays"]
     img_arrays = np.mean(img_arrays[0], axis=0)
-    # img_arrays = img_arrays - img_arrays[0]
-    img_arrays = img_arrays - gaussian_filter(np.median(img_arrays, axis=0), sigma=1)
-    # img_arrays = [gaussian_filter(el, sigma=1) for el in img_arrays]
-    # img_arrays = np.array(img_arrays)
+    img_arrays = img_arrays - np.quantile(img_arrays, 0.4, axis=0)
 
-    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -3, 6)
+    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
+    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays)
 
     kpl.show(block=True)
