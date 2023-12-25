@@ -215,8 +215,8 @@ def do_spin_echo(nv_list):
     # min_tau = 1e3
     # max_tau = 200e3 + min_tau
     # num_steps = 51
-    min_tau = 150e3
-    max_tau = 175e3
+    min_tau = 167.5e3
+    max_tau = 169.5e3
     num_steps = 51
 
     # num_reps = 150
@@ -366,7 +366,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.58
+    z_coord = 5.55
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -543,13 +543,13 @@ if __name__ == "__main__":
         # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
         #     do_widefield_image_sample(nv_sig, 100)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
