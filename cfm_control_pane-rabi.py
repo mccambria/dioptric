@@ -30,6 +30,7 @@ from majorroutines.widefield import (
     optimize_scc,
     scc_snr_check,
     spin_echo,
+    ramsey,
     xy8,
     calibrate_iq_delay,
 )
@@ -205,7 +206,7 @@ def do_rabi(nv_list):
     num_steps = 31
     num_reps = 20
     num_runs = 25
-    uwave_ind = 1
+    uwave_ind = 0
     rabi.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind
     )
@@ -225,6 +226,29 @@ def do_spin_echo(nv_list):
     num_runs = 400
 
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_ramsey(nv_list):
+    min_tau = 16
+    max_tau = 2e3 + min_tau
+    detuning = 5
+    # num_steps = 21
+    # num_reps = 15
+    # num_runs = 30
+    num_steps = 201
+    num_reps = 10
+    num_runs = 100
+    uwave_ind = 0
+    ramsey.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        detuning,
+        uwave_ind=uwave_ind,
+    )
 
 
 def do_xy8(nv_list):
@@ -548,8 +572,9 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        do_rabi(nv_list)
+        # do_spin_echo(nv_list)
+        do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)

@@ -22,6 +22,7 @@ def main(
     num_runs,
     step_fn=None,
     uwave_ind=0,
+    uwave_freq=None,
     num_exps_per_rep=1,
     load_iq=False,
     save_images=True,
@@ -44,7 +45,12 @@ def main(
     for ind in uwave_ind_list:
         uwave_dict = tb.get_uwave_dict(ind)
         uwave_power = uwave_dict["uwave_power"]
-        freq = uwave_dict["frequency"]
+        if uwave_freq is None:
+            freq = uwave_dict["frequency"]
+        elif type(uwave_freq) == list:
+            freq = uwave_freq[ind]
+        else:
+            freq = uwave_freq
         sig_gen = tb.get_server_sig_gen(ind=ind)
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
