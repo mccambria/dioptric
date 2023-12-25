@@ -133,9 +133,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     # fig, ax = plt.subplots()
     fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
-    # offset = 0.10
-    offset = 0.07
-    offset = 0.03
     widefield.plot_fit(
         axes_pack,
         nv_list,

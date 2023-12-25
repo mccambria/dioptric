@@ -753,7 +753,7 @@ def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=
         offset between plotted data sets - default 0.05
     """
     min_x = min(x)
-    min_x = 0
+    # min_x = 0
     max_x = max(x)
     x_linspace = np.linspace(min_x, max_x, 1000)
     num_nvs = len(nv_list)
@@ -789,7 +789,7 @@ def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=
     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
 
 
-def animate(x, nv_list, counts, counts_errs, img_arrays, cmin, cmax):
+def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
     num_steps = img_arrays.shape[0]
 
     figsize = [6.5, 10.0]
