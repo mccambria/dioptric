@@ -29,7 +29,7 @@ def quartic_decay(
     envelope_decay_time,
     envelope_exponent,
 ):
-    baseline = norm
+    baseline = norm + amplitude
     val = baseline
     # print(len(amplitudes))
     envelope = np.exp(-((tau / envelope_decay_time) ** envelope_exponent))
@@ -131,11 +131,13 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     ### Make the figure
 
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
     # offset = 0.10
     offset = 0.07
+    offset = 0.03
     widefield.plot_fit(
-        ax,
+        axes_pack,
         nv_list,
         total_evolution_times,
         counts,
@@ -143,10 +145,23 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         fit_fns,
         popts,
         norms,
-        offset=offset,
+        # offset=offset,
     )
-    ax.set_xlabel("Total evolution time (us)")
-    ax.set_ylabel("Normalized fluorescence")
+    axes_pack[-1].set_xlabel("Total evolution time (us)")
+    axes_pack[3].set_ylabel("Normalized fluorescence")
+
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        if ind == 5:
+            ax.set_ylim((0.982, 1.018))
+            ax.set_yticks([0.99, 1.0, 1.01])
+        elif ind in (0, 1, 2):
+            ax.set_ylim([0.98, 1.12])
+            ax.set_yticks([1.0, 1.1])
+        else:
+            ax.set_ylim([0.992, 1.072])
+            ax.set_yticks([1.0, 1.05])
+    fig.get_layout_engine().set(h_pad=0, hspace=0)
     return fig
 
 
@@ -222,7 +237,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1396164244162, skip_npz=True)
+    data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

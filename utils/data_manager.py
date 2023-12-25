@@ -165,7 +165,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 # region Load functions
 
 
-def get_raw_data(file_name=None, file_id=None, use_cache=True, skip_npz=False):
+def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
@@ -229,7 +229,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, skip_npz=False):
         data = orjson.loads(file_content)
 
         # Find and decompress the linked numpy arrays
-        if not skip_npz:
+        if not no_npz:
             for key in data:
                 val = data[key]
                 if not isinstance(val, str):
