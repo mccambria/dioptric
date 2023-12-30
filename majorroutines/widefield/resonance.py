@@ -27,7 +27,7 @@ import time
 from utils.positioning import get_scan_1d as calculate_freqs
 from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
 from majorroutines.widefield import base_routine
-from scipy.ndimage import gaussian_filter
+import cv2
 
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395803779134, no_npz=True)
+    data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -315,11 +315,14 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
-    # img_arrays = data["img_arrays"]
-    # img_arrays = np.mean(img_arrays[0], axis=0)
-    # img_arrays = img_arrays - np.quantile(img_arrays, 0.4, axis=0)
+    img_arrays = np.array(data["img_arrays"])
+    img_arrays = np.mean(img_arrays[0], axis=0)
+    img_arrays = img_arrays - np.median(img_arrays, axis=0)
+    # res = img_arrays[0].shape
+    # img_arrays = [cv2.resize(arr, (res[0] // 2, res[1] // 2)) for arr in img_arrays]
+    # img_arrays = np.array(img_arrays)
 
-    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
+    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
     # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays)
 
     kpl.show(block=True)

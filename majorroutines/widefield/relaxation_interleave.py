@@ -32,8 +32,8 @@ def create_raw_data_figure(
     ax.set_ylabel("Counts")
     state_str_dict = {
         NVSpinState.ZERO: "$\ket{0}$",
-        NVSpinState.LOW: "\ket{-1}",
-        NVSpinState.HIGH: "\ket{+1}",
+        NVSpinState.LOW: "$\ket{-1}$",
+        NVSpinState.HIGH: "$\ket{+1}$",
     }
     init_state_str = state_str_dict[init_state]
     readout_state_str = state_str_dict[readout_state]
@@ -44,8 +44,95 @@ def create_raw_data_figure(
     return fig
 
 
-def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste):
-    
+def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma):
+    # Do the fits
+
+    taus_ms = np.array(taus) / 1e6
+
+    def exp_decay(tau_ms, norm, decay):
+        return norm * np.exp(-tau_ms / decay)
+
+    def constant(tau_ms, norm):
+        if type(tau_ms) == list:
+            return [norm] * len(tau_ms)
+        elif type(tau_ms) == np.ndarray:
+            return np.array([norm] * len(tau_ms))
+        else:
+            return norm
+
+    num_nvs = len(nv_list)
+
+    fit_fns = []
+    popts = []
+    norms = []
+    for nv_ind in range(num_nvs):
+        nv_counts = diff_counts[nv_ind]
+        nv_counts_ste = diff_counts_ste[nv_ind]
+
+        if nv_ind in [1]:
+            fit_fn = constant
+            guess_params = [np.average(nv_counts)]
+        else:
+            fit_fn = exp_decay
+            guess_params = [nv_counts[0], 10]
+
+        try:
+            popt, pcov = curve_fit(
+                fit_fn,
+                taus_ms,
+                nv_counts,
+                p0=guess_params,
+                sigma=nv_counts_ste,
+                absolute_sigma=True,
+            )
+            fit_fns.append(fit_fn)
+            popts.append(popt)
+            if nv_ind == 1:
+                norms.append(None)
+            else:
+                norms.append(popt[0])
+        except Exception as exc:
+            fit_fns.append(None)
+            popts.append(None)
+            norms.append(None)
+
+        residuals = fit_fn(taus_ms, *popt) - nv_counts
+        chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+        red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+        print(f"Red chi sq: {round(red_chi_sq, 3)}")
+
+    # Make the figure
+    # fig, axes_pack = plt.subplots(nrows=5, sharex=True, figsize=[6.5, 5.0])
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    widefield.plot_fit(
+        axes_pack,
+        nv_list,
+        taus_ms,
+        diff_counts,
+        diff_counts_ste,
+        fit_fns,
+        popts,
+        norms,
+        # skip_inds=[1],
+    )
+    axes_pack[-1].set_xlabel("Relaxation time (ms)")
+    ylabel = (
+        "$F_{\Omega}$ (arb. units)" if Omega_or_gamma else "$F_{\gamma}$ (arb. units)"
+    )
+    ylabel = "Normalized fluorescence"
+    axes_pack[2].set_ylabel(ylabel)
+    axes_pack[-1].set_ylabel("Counts")
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        if ind == 5:
+            # ax.set_ylim([-1.2, +1.2])
+            # ax.set_yticks([-1, 0, +1])
+            ax.set_ylim([-0.8, +0.8])
+            ax.set_yticks([-0.5, 0, +0.5])
+        else:
+            ax.set_ylim([-0.3, 1.35])
+            ax.set_yticks([0, 1])
+    return fig
 
 
 def sq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
@@ -182,9 +269,9 @@ if __name__ == "__main__":
     taus = data["taus"]
     counts = np.array(data["counts"])
     init_state_0 = NVSpinState(data["init_state_0"])
-    readout_state_0 = NVSpinState(data["init_state_0"])
+    readout_state_0 = NVSpinState(data["readout_state_0"])
     init_state_1 = NVSpinState(data["init_state_1"])
-    readout_state_1 = NVSpinState(data["init_state_1"])
+    readout_state_1 = NVSpinState(data["readout_state_1"])
 
     avg_counts_0, avg_counts_ste_0 = widefield.process_counts(counts[0])
     raw_fig = create_raw_data_figure(
@@ -194,10 +281,18 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(
         nv_list, taus, avg_counts_1, avg_counts_ste_1, init_state_1, readout_state_1
     )
-    
+
     # Calculate the differences and make the fit plot
-    diff_counts = avg_counts_0 - avg_counts_1
+    diff_counts = avg_counts_1 - avg_counts_0
     diff_counts_ste = np.sqrt(avg_counts_ste_0**2 + avg_counts_ste_1**2)
-    fit_fig = create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste)
+    Omega_or_gamma = (
+        init_state_0 == NVSpinState.ZERO
+        and readout_state_0 == NVSpinState.ZERO
+        or init_state_1 == NVSpinState.ZERO
+        and readout_state_1 == NVSpinState.ZERO
+    )
+    fit_fig = create_fit_figure(
+        nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma
+    )
 
     plt.show(block=True)

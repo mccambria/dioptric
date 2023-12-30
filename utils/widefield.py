@@ -736,6 +736,7 @@ def plot_fit(
     popts=None,
     norms=None,
     xlim=[None, None],
+    skip_inds=[],
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -769,13 +770,15 @@ def plot_fit(
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
+        if nv_ind in skip_inds:
+            continue
         fn = fns[nv_ind]
         if fn is None:
             continue
         nv_sig = nv_list[nv_ind]
         popt = popts[nv_ind]
         label = get_nv_num(nv_sig)
-        norm = 1 if norms is None else norms[nv_ind]
+        norm = None if norms is None else norms[nv_ind]
         color = kpl.data_color_cycler[nv_ind]
         # MCC
         if nv_ind == 1:
@@ -785,13 +788,20 @@ def plot_fit(
             ax = axes_pack[nv_ind - 1]
         else:
             ax = axes_pack[nv_ind]
-        y = ys[nv_ind] / norm
-        yerr = None if yerrs is None else yerrs[nv_ind] / norm
+        if norm is None:
+            y = ys[nv_ind]
+            yerr = None if yerrs is None else yerrs[nv_ind]
+        else:
+            y = ys[nv_ind] / norm
+            yerr = None if yerrs is None else yerrs[nv_ind] / norm
         # yerr = None  # MCC
         kpl.plot_points(
             ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
         )
-        kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm), color=color)
+        if norm is None:
+            kpl.plot_line(ax, x_linspace, fn(x_linspace, *popt), color=color)
+        else:
+            kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm), color=color)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)
