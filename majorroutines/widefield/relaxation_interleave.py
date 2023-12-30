@@ -22,6 +22,24 @@ from majorroutines.widefield import base_routine
 from utils.constants import NVSpinState
 
 
+def process_rates(
+    omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+):
+    num_nvs = len(omega_exp_rates)
+    for ind in range(num_nvs):
+        omega = omega_exp_rates[ind] / 3
+        omega_err = omega_exp_rate_errs[ind] / 3
+        print(
+            f"Omega (x 10^3 s^-1): {tb.round_for_print(omega / 1000, omega_err / 1000)}"
+        )
+
+        gamma = (gamma_exp_rates[ind] - omega) / 2
+        gamma_err = np.sqrt(gamma_exp_rate_errs[ind] ** 2 + omega_err**2) / 2
+        print(
+            f"gamma (x 10^3 s^-1): {tb.round_for_print(gamma / 1000, gamma_err / 1000)}"
+        )
+
+
 def create_raw_data_figure(
     nv_list, taus, counts, counts_ste, init_state, readout_state
 ):
@@ -49,8 +67,8 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
 
     taus_ms = np.array(taus) / 1e6
 
-    def exp_decay(tau_ms, norm, decay):
-        return norm * np.exp(-tau_ms / decay)
+    def exp_decay(tau_ms, norm, rate):
+        return norm * np.exp(-rate * tau_ms / 1000)
 
     def constant(tau_ms, norm):
         if type(tau_ms) == list:
@@ -65,6 +83,8 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
     fit_fns = []
     popts = []
     norms = []
+    rates = []
+    rate_errs = []
     for nv_ind in range(num_nvs):
         nv_counts = diff_counts[nv_ind]
         nv_counts_ste = diff_counts_ste[nv_ind]
@@ -74,7 +94,7 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
             guess_params = [np.average(nv_counts)]
         else:
             fit_fn = exp_decay
-            guess_params = [nv_counts[0], 10]
+            guess_params = [nv_counts[0], 1]
 
         try:
             popt, pcov = curve_fit(
@@ -87,10 +107,13 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
             )
             fit_fns.append(fit_fn)
             popts.append(popt)
+            pste = np.sqrt(np.diag(pcov))
             if nv_ind == 1:
                 norms.append(None)
             else:
                 norms.append(popt[0])
+                rates.append(popt[1])
+                rate_errs.append(pste[1])
         except Exception as exc:
             fit_fns.append(None)
             popts.append(None)
@@ -100,6 +123,10 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
         chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
         red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
         print(f"Red chi sq: {round(red_chi_sq, 3)}")
+
+    # Print the rates out
+    print(rates)
+    print(rate_errs)
 
     # Make the figure
     # fig, axes_pack = plt.subplots(nrows=5, sharex=True, figsize=[6.5, 5.0])
@@ -253,12 +280,46 @@ def main(
 
 
 if __name__ == "__main__":
+    # Rate calculation
+    omega_exp_rates = [
+        149.52876293233442,
+        149.9076496706543,
+        163.90784727283057,
+        171.12691936163787,
+        140.68822177145015,
+    ]
+    omega_exp_rate_errs = [
+        13.071035712207378,
+        11.193227235059075,
+        13.205640033491687,
+        19.12327121476871,
+        13.316228407825507,
+    ]
+    gamma_exp_rates = [
+        288.9371794219599,
+        256.4689961920107,
+        260.8659957292199,
+        232.74941634806152,
+        208.3639073269649,
+    ]
+    gamma_exp_rate_errs = [
+        32.133818940701744,
+        22.25996376863929,
+        27.76090260093859,
+        39.0883152024931,
+        28.414155668518752,
+    ]
+    process_rates(
+        omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+    )
+    sys.exit()
+
     kpl.init_kplotlib()
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
-    # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
+    # data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
+    data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
