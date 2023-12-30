@@ -726,7 +726,17 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
 
 
 # Separate plots, shared axes
-def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None):
+def plot_fit(
+    axes_pack,
+    nv_list,
+    x,
+    ys,
+    yerrs=None,
+    fns=None,
+    popts=None,
+    norms=None,
+    xlim=[None, None],
+):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
     plotting simultaneous data from multiple NVs.
@@ -752,10 +762,11 @@ def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=
     offset : numeric
         offset between plotted data sets - default 0.05
     """
-    min_x = min(x)
-    # min_x = 0
-    max_x = max(x)
-    x_linspace = np.linspace(min_x, max_x, 1000)
+    if xlim[0] is None:
+        xlim[0] = min(x)
+    if xlim[1] is None:
+        xlim[1] = max(x)
+    x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
         fn = fns[nv_ind]
@@ -784,6 +795,9 @@ def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)
+
+    fig = axes_pack[0].get_figure()
+    fig.get_layout_engine().set(h_pad=0, hspace=0)
 
     # ncols = 3  # MCC
     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)

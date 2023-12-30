@@ -106,8 +106,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
 
-    offset = 0.10
-    offset = 0.0
     widefield.plot_fit(
         axes_pack,
         nv_list,
@@ -117,13 +115,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         fit_fns,
         popts,
         norms,
-        offset=offset,
+        xlim=[0, None],
     )
     axes_pack[-1].set_xlabel("Pulse duration (ns)")
     axes_pack[2].set_ylabel("Normalized fluorescence")
-    # fig.tight_layout()
-    # fig.tight_layout()
-    # fig.subplots_adjust(hspace=0)
     for ind in range(len(axes_pack)):
         ax = axes_pack[ind]
         if ind == 5:
@@ -135,7 +130,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         else:
             ax.set_ylim([0.96, 1.16])
             ax.set_yticks([1.0, 1.1])
-    fig.get_layout_engine().set(h_pad=0, hspace=0)
     return fig
 
 

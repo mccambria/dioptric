@@ -90,11 +90,10 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 1 + voigt(freq, contrast, g_width, l_width, center)
             )
         elif num_resonances == 2:
-            low_freq_guess = freqs[num_steps * 1 // 3]
-            high_freq_guess = freqs[num_steps * 2 // 3]
-            if nv_ind == 8:
-                low_freq_guess = 2.85
-                high_freq_guess = 2.89
+            # low_freq_guess = freqs[num_steps * 1 // 3]
+            # high_freq_guess = freqs[num_steps * 2 // 3]
+            low_freq_guess = 2.85
+            high_freq_guess = 2.89
             guess_params = [
                 norm_guess,
                 amp_guess,
@@ -168,7 +167,17 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     )
     axes_pack[-1].set_xlabel("Frequency (GHz)")
     axes_pack[2].set_ylabel("Normalized fluorescence")
-    # ax.set_xlim(None, 3.01)
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        if ind == 5:
+            ax.set_ylim((0.97, 1.03))
+            ax.set_yticks([0.98, 1.0, 1.02])
+        elif ind in (0, 1, 2):
+            ax.set_ylim([0.95, 1.19])
+            ax.set_yticks([1.0, 1.1])
+        else:
+            ax.set_ylim([0.96, 1.14])
+            ax.set_yticks([1.0, 1.1])
     return fig
 
 
@@ -238,12 +247,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1388701699044)  # 90
-    # data = dm.get_raw_data(file_id=1388679268107)  # 30
-    # data = dm.get_raw_data(file_id=1388633807820)  # 0
-    # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
-    # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1395803779134)
+    data = dm.get_raw_data(file_id=1395803779134, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -311,11 +315,11 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
-    img_arrays = data["img_arrays"]
-    img_arrays = np.mean(img_arrays[0], axis=0)
-    img_arrays = img_arrays - np.quantile(img_arrays, 0.4, axis=0)
+    # img_arrays = data["img_arrays"]
+    # img_arrays = np.mean(img_arrays[0], axis=0)
+    # img_arrays = img_arrays - np.quantile(img_arrays, 0.4, axis=0)
 
-    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
+    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
     # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays)
 
     kpl.show(block=True)

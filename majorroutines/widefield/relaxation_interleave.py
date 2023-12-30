@@ -31,14 +31,21 @@ def create_raw_data_figure(
     ax.set_xlabel("Relaxation time (ms)")
     ax.set_ylabel("Counts")
     state_str_dict = {
-        NVSpinState.ZERO: "0",
-        NVSpinState.LOW: "-1",
-        NVSpinState.HIGH: "+1",
+        NVSpinState.ZERO: "$\ket{0}$",
+        NVSpinState.LOW: "\ket{-1}",
+        NVSpinState.HIGH: "\ket{+1}",
     }
     init_state_str = state_str_dict[init_state]
     readout_state_str = state_str_dict[readout_state]
-    ax.set_title(f"Init state: {init_state_str}; readout state: {readout_state_str}")
+    ax.set_title(
+        f"Initial state: {init_state_str}; readout state: {readout_state_str}",
+        usetex=True,
+    )
     return fig
+
+
+def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste):
+    
 
 
 def sq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
@@ -163,19 +170,34 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1382892086081)
+    data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
+    # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
-    avg_img_arrays = np.average(img_arrays, axis=1)
+    # avg_img_arrays = np.average(img_arrays, axis=1)
     taus = data["taus"]
     counts = np.array(data["counts"])
+    init_state_0 = NVSpinState(data["init_state_0"])
+    readout_state_0 = NVSpinState(data["init_state_0"])
+    init_state_1 = NVSpinState(data["init_state_1"])
+    readout_state_1 = NVSpinState(data["init_state_1"])
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    avg_counts_0, avg_counts_ste_0 = widefield.process_counts(counts[0])
+    raw_fig = create_raw_data_figure(
+        nv_list, taus, avg_counts_0, avg_counts_ste_0, init_state_0, readout_state_0
+    )
+    avg_counts_1, avg_counts_ste_1 = widefield.process_counts(counts[1])
+    raw_fig = create_raw_data_figure(
+        nv_list, taus, avg_counts_1, avg_counts_ste_1, init_state_1, readout_state_1
+    )
+    
+    # Calculate the differences and make the fit plot
+    diff_counts = avg_counts_0 - avg_counts_1
+    diff_counts_ste = np.sqrt(avg_counts_ste_0**2 + avg_counts_ste_1**2)
+    fit_fig = create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste)
 
     plt.show(block=True)
