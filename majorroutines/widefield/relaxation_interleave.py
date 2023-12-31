@@ -67,8 +67,11 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
 
     taus_ms = np.array(taus) / 1e6
 
-    def exp_decay(tau_ms, norm, rate):
-        return norm * np.exp(-rate * tau_ms / 1000)
+    def exp_decay(tau_ms, norm, rate, offset):
+        return norm * ((1 - offset) * np.exp(-rate * tau_ms / 1000) + offset)
+
+    # def exp_decay(tau_ms, norm, decay, offset):
+    #     return norm * ((1 - offset) * np.exp(-tau_ms / (1000 * decay)) + offset)
 
     def constant(tau_ms, norm):
         if type(tau_ms) == list:
@@ -85,6 +88,8 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
     norms = []
     rates = []
     rate_errs = []
+    offsets = []
+    offset_errs = []
     for nv_ind in range(num_nvs):
         nv_counts = diff_counts[nv_ind]
         nv_counts_ste = diff_counts_ste[nv_ind]
@@ -94,7 +99,8 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
             guess_params = [np.average(nv_counts)]
         else:
             fit_fn = exp_decay
-            guess_params = [nv_counts[0], 1]
+            guess_params = [nv_counts[0], 70, 0]
+            # guess_params = [nv_counts[0], 0.01, 0]
 
         try:
             popt, pcov = curve_fit(
@@ -114,6 +120,11 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
                 norms.append(popt[0])
                 rates.append(popt[1])
                 rate_errs.append(pste[1])
+                offsets.append(popt[2])
+                offset_errs.append(pste[2])
+                # rate = 1 / popt[1]
+                # rates.append(rate)
+                # rate_errs.append(rate**2 * pste[1])
         except Exception as exc:
             fit_fns.append(None)
             popts.append(None)
@@ -125,8 +136,12 @@ def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamm
         print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     # Print the rates out
+    print("rates")
     print(rates)
     print(rate_errs)
+    print("offsets")
+    print(offsets)
+    print(offset_errs)
 
     # Make the figure
     # fig, axes_pack = plt.subplots(nrows=5, sharex=True, figsize=[6.5, 5.0])
@@ -280,39 +295,69 @@ def main(
 
 
 if __name__ == "__main__":
-    # Rate calculation
-    omega_exp_rates = [
-        149.52876293233442,
-        149.9076496706543,
-        163.90784727283057,
-        171.12691936163787,
-        140.68822177145015,
-    ]
-    omega_exp_rate_errs = [
-        13.071035712207378,
-        11.193227235059075,
-        13.205640033491687,
-        19.12327121476871,
-        13.316228407825507,
-    ]
-    gamma_exp_rates = [
-        288.9371794219599,
-        256.4689961920107,
-        260.8659957292199,
-        232.74941634806152,
-        208.3639073269649,
-    ]
-    gamma_exp_rate_errs = [
-        32.133818940701744,
-        22.25996376863929,
-        27.76090260093859,
-        39.0883152024931,
-        28.414155668518752,
-    ]
-    process_rates(
-        omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
-    )
-    sys.exit()
+    ### Rate calculation
+    # No offset
+    # omega_exp_rates = [
+    #     149.52876293233442,
+    #     149.9076496706543,
+    #     163.90784727283057,
+    #     171.12691936163787,
+    #     140.68822177145015,
+    # ]
+    # omega_exp_rate_errs = [
+    #     13.071035712207378,
+    #     11.193227235059075,
+    #     13.205640033491687,
+    #     19.12327121476871,
+    #     13.316228407825507,
+    # ]
+    # gamma_exp_rates = [
+    #     288.9371794219599,
+    #     256.4689961920107,
+    #     260.8659957292199,
+    #     232.74941634806152,
+    #     208.3639073269649,
+    # ]
+    # gamma_exp_rate_errs = [
+    #     32.133818940701744,
+    #     22.25996376863929,
+    #     27.76090260093859,
+    #     39.0883152024931,
+    #     28.414155668518752,
+    # ]
+    # Offset
+    # omega_exp_rates = [
+    #     178.65927076759806,
+    #     150.55961333102456,
+    #     182.7383790247447,
+    #     221.49601578708612,
+    #     195.70649129132005,
+    # ]
+    # omega_exp_rate_errs = [
+    #     32.42518984990736,
+    #     25.278672433548234,
+    #     29.12756202583012,
+    #     45.32073245075222,
+    #     38.16464756629071,
+    # ]
+    # gamma_exp_rates = [
+    #     322.2588560877828,
+    #     274.8856110109759,
+    #     242.36811328021352,
+    #     307.08797888419207,
+    #     328.985126558155,
+    # ]
+    # gamma_exp_rate_errs = [
+    #     57.36359787667976,
+    #     41.97828859002894,
+    #     46.743780796640415,
+    #     91.47514044528685,
+    #     82.42819543109252,
+    # ]
+    # process_rates(
+    #     omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+    # )
+    # sys.exit()
 
     kpl.init_kplotlib()
 

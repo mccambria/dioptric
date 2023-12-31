@@ -772,14 +772,15 @@ def plot_fit(
     for nv_ind in range(num_nvs):
         if nv_ind in skip_inds:
             continue
-        fn = fns[nv_ind]
-        if fn is None:
-            continue
-        nv_sig = nv_list[nv_ind]
-        popt = popts[nv_ind]
-        label = get_nv_num(nv_sig)
+
+        fn = None if fns is None else fns[nv_ind]
+        popt = None if popts is None else popts[nv_ind]
         norm = None if norms is None else norms[nv_ind]
+
+        nv_sig = nv_list[nv_ind]
+        label = get_nv_num(nv_sig)
         color = kpl.data_color_cycler[nv_ind]
+
         # MCC
         if nv_ind == 1:
             color = kpl.KplColors.GRAY
@@ -788,20 +789,29 @@ def plot_fit(
             ax = axes_pack[nv_ind - 1]
         else:
             ax = axes_pack[nv_ind]
-        if norm is None:
-            y = ys[nv_ind]
-            yerr = None if yerrs is None else yerrs[nv_ind]
-        else:
-            y = ys[nv_ind] / norm
-            yerr = None if yerrs is None else yerrs[nv_ind] / norm
+
+        # Include the norm if there is one
+        y = ys[nv_ind]
+        yerr = yerrs[nv_ind] if yerrs is not None else None
+        if norm is not None:
+            y /= norm
+            yerr /= norm
         # yerr = None  # MCC
+
+        # Plot the points
+        ls = "none" if fn is not None else "solid"
+        size = kpl.Size.SMALL
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
+            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
         )
-        if norm is None:
-            kpl.plot_line(ax, x_linspace, fn(x_linspace, *popt), color=color)
-        else:
-            kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm), color=color)
+
+        # Plot the fit
+        if fn is not None:
+            # Include the norm if there is one
+            fit_vals = fn(x_linspace, *popt)
+            if norm is not None:
+                fit_vals /= norm
+            kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)

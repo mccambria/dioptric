@@ -162,6 +162,36 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
+def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
+    total_evolution_times = 2 * np.array(taus) / 1e3
+
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    norms = [el[0] for el in counts]
+    norms[1] = np.mean(counts[1])
+    norms = [40.155, 32.768, 45.128, 42.323, 35.337, 36.486]
+    widefield.plot_fit(
+        axes_pack, nv_list, total_evolution_times, counts, counts_ste, norms=norms
+    )
+    axes_pack[-1].set_xlabel("Total evolution time (us)")
+    axes_pack[3].set_ylabel("Normalized fluorescence")
+
+    # print(norms)
+
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        if ind == 5:
+            ax.set_ylim((0.983, 1.017))
+            ax.set_yticks([0.99, 1.0, 1.01])
+        elif ind in (0, 1, 2):
+            ax.set_ylim([0.99, 1.115])
+            ax.set_yticks([1.0, 1.1])
+        else:
+            ax.set_ylim([0.99, 1.07])
+            ax.set_yticks([1.0, 1.05])
+    return fig
+
+
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
@@ -235,6 +265,8 @@ if __name__ == "__main__":
     # file_name = ""
     # data = dm.get_raw_data(file_name)
     data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
+    data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
+    data = dm.get_raw_data(file_id=1397700913905, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -246,6 +278,7 @@ if __name__ == "__main__":
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
