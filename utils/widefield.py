@@ -9,20 +9,20 @@ Created on August 15th, 2023
 # region Imports and constants
 
 import itertools
+from importlib import import_module
 from pathlib import Path
-from matplotlib import animation
+
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 from numpy import inf
-from utils import common
-from utils import tool_belt as tb
-from utils import positioning as pos
-from utils import kplotlib as kpl
-from utils.constants import CountFormat
-from utils.constants import CollectionMode, LaserKey, LaserPosMode
-from utils import data_manager as dm
-from importlib import import_module
 
+from utils import common
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import positioning as pos
+from utils import tool_belt as tb
+from utils.constants import CollectionMode, CountFormat, LaserKey, LaserPosMode
 
 # endregion
 # region Image processing
@@ -791,8 +791,8 @@ def plot_fit(
             ax = axes_pack[nv_ind]
 
         # Include the norm if there is one
-        y = ys[nv_ind]
-        yerr = yerrs[nv_ind] if yerrs is not None else None
+        y = np.copy(ys[nv_ind])
+        yerr = np.copy(yerrs[nv_ind]) if yerrs is not None else None
         if norm is not None:
             y /= norm
             yerr /= norm
@@ -817,7 +817,7 @@ def plot_fit(
         ax.spines[["right", "top"]].set_visible(False)
 
     fig = axes_pack[0].get_figure()
-    fig.get_layout_engine().set(h_pad=0, hspace=0)
+    fig.get_layout_engine().set(h_pad=0, hspace=0, w_pad=0, wspace=0)
 
     # ncols = 3  # MCC
     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)

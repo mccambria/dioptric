@@ -9,15 +9,16 @@ Created on November 29th, 2023
 
 
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
 from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
@@ -40,7 +41,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         return abs(norm) + amp - (envelope * cos_part)
 
     def constant(tau, norm):
-        if type(tau) == list:
+        if isinstance(tau, list):
             return [norm] * len(tau)
         elif type(tau) == np.ndarray:
             return np.array([norm] * len(tau))
@@ -104,7 +105,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     ### Make the figure
 
-    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    fig, axes_pack = plt.subplots(
+        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    )
+    axes_pack = axes_pack.flatten()
 
     widefield.plot_fit(
         axes_pack,
@@ -117,19 +121,13 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         norms,
         xlim=[0, None],
     )
-    axes_pack[-1].set_xlabel("Pulse duration (ns)")
-    axes_pack[2].set_ylabel("Normalized fluorescence")
-    for ind in range(len(axes_pack)):
-        ax = axes_pack[ind]
-        if ind == 5:
-            ax.set_ylim((0.97, 1.03))
-            ax.set_yticks([0.98, 1.0, 1.02])
-        elif ind in (0, 1, 2):
-            ax.set_ylim([0.96, 1.24])
-            ax.set_yticks([1.0, 1.2])
-        else:
-            ax.set_ylim([0.96, 1.16])
-            ax.set_yticks([1.0, 1.1])
+    ax = axes_pack[0]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    ax.set_ylim([0.966, 1.24])
+    ax.set_yticks([1.0, 1.2])
     return fig
 
 
@@ -220,4 +218,5 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
+    plt.show(block=True)
     plt.show(block=True)

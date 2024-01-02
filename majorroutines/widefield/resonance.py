@@ -9,25 +9,25 @@ Created on November 19th, 2023
 """
 
 
-from random import shuffle
+import os
 import sys
+import time
+from random import shuffle
+
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from majorroutines.widefield import optimize
-from utils import tool_belt as tb
-from utils import data_manager as dm
+
+from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
+from majorroutines.widefield import base_routine, optimize
 from utils import common
-from utils import widefield as widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import data_manager as dm
+from utils import tool_belt as tb
+from utils import widefield as widefield
 from utils.constants import NVSpinState
-import os
-import time
 from utils.positioning import get_scan_1d as calculate_freqs
-from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
-from majorroutines.widefield import base_routine
-import cv2
 
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
@@ -48,7 +48,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     readout_noise_list = []
 
     def constant(freq, norm):
-        if type(freq) == list:
+        if isinstance(freq, list):
             return [norm] * len(freq)
         elif type(freq) == np.ndarray:
             return np.array([norm] * len(freq))
@@ -109,7 +109,16 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
             for ind in [2, 3, 6, 7]:
                 bounds[1][ind] = 10
             fit_fn = (
-                lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
+                lambda freq,
+                norm,
+                contrast1,
+                g_width1,
+                l_width1,
+                center1,
+                contrast2,
+                g_width2,
+                l_width2,
+                center2: norm
                 * (
                     1
                     + voigt(freq, contrast1, g_width1, l_width1, center1)
@@ -161,23 +170,23 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     ### Make the figure
 
-    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    fig, axes_pack = plt.subplots(
+        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    )
+    axes_pack = axes_pack.flatten()
+
     widefield.plot_fit(
         axes_pack, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms
     )
-    axes_pack[-1].set_xlabel("Frequency (GHz)")
-    axes_pack[2].set_ylabel("Normalized fluorescence")
-    for ind in range(len(axes_pack)):
-        ax = axes_pack[ind]
-        if ind == 5:
-            ax.set_ylim((0.97, 1.03))
-            ax.set_yticks([0.98, 1.0, 1.02])
-        elif ind in (0, 1, 2):
-            ax.set_ylim([0.95, 1.19])
-            ax.set_yticks([1.0, 1.1])
-        else:
-            ax.set_ylim([0.96, 1.14])
-            ax.set_yticks([1.0, 1.1])
+
+    ax = axes_pack[0]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    ax.set_ylim([0.96, 1.19])
+    ax.set_yticks([1.0, 1.1])
+    ax.set_xticks([2.83, 2.87, 2.91])
     return fig
 
 
@@ -310,7 +319,6 @@ if __name__ == "__main__":
     # ax.set_xlabel("Run index")
     # # kpl.plot_points(ax, mean_inds, mean_diffs)
 
-    # counts = counts[:, :, :, :5]
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
@@ -318,11 +326,7 @@ if __name__ == "__main__":
     img_arrays = np.array(data["img_arrays"])
     img_arrays = np.mean(img_arrays[0], axis=0)
     img_arrays = img_arrays - np.median(img_arrays, axis=0)
-    # res = img_arrays[0].shape
-    # img_arrays = [cv2.resize(arr, (res[0] // 2, res[1] // 2)) for arr in img_arrays]
-    # img_arrays = np.array(img_arrays)
 
-    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
-    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays)
+    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
 
     kpl.show(block=True)

@@ -10,17 +10,18 @@ Created on June 22nd, 2022
 
 # region Imports and constants
 
-import utils.common as common
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from strenum import StrEnum
-from colorutils import Color
 import re
 from enum import Enum, auto
-from strenum import StrEnum
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from colorutils import Color
 from matplotlib.offsetbox import AnchoredText
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-import numpy as np
+from strenum import StrEnum
+
+import utils.common as common
 
 
 # matplotlib semantic locations for legends and text boxes
@@ -650,9 +651,7 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     return occur, bin_edges
 
 
-def draw_circle(
-    ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None
-):
+def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None):
     """Draw a circle on the passed axes
 
     Parameters
@@ -687,3 +686,43 @@ if __name__ == "__main__":
     histogram(ax, x, hist_type=HistType.BAR)
 
     plt.show(block=True)
+
+
+"""
+Omega (x 10^3 s^-1): 0.060(11)
+gamma (x 10^3 s^-1): 0.13(3)
+
+Omega (x 10^3 s^-1): 0.050(8)
+gamma (x 10^3 s^-1): 0.11(2)
+
+Omega (x 10^3 s^-1): 0.061(10)
+gamma (x 10^3 s^-1): 0.09(2)
+
+Omega (x 10^3 s^-1): 0.074(15)
+gamma (x 10^3 s^-1): 0.12(5)
+
+Omega (x 10^3 s^-1): 0.065(13)
+gamma (x 10^3 s^-1): 0.13(4)
+
+Relaxation rates (s^-1)
+Blue: Omega = 60 +/- 11, gamma = 131 +/- 29
+Green: Omega = 50 +/- 8, gamma = 112 +/- 21
+Orange: Omega = 61 +/- 10, gamma = 91 +/- 24
+Purple: Omega = 74 +/- 15, gamma = 117 +/- 46
+Brown: Omega = 65 +/- 13, gamma = 132 +/- 42
+
+T2 times (us)
+Blue: +/- 
+Green: +/- 
+Orange: +/- 
+Purple: +/- 
+Brown: +/- 
+
+Averaging times
+ESR and Rabi are 1000 shots per point. Relaxation, spin echo, and Ramsey are 
+4000 shots per point. The exposure is 30 ms per shot, so total averaging times 
+per point are 30 s for ESR and Rabi and 120 s for spin echo and 
+Ramsey. For relaxation the total averaging times are That's not including optimization and FPGA compile times. Optimization 
+adds a negligible amount of time, but the compile times 
+
+"""

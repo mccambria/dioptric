@@ -9,15 +9,16 @@ Created on November 29th, 2023
 
 
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
 from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 
 def quartic_decay(
@@ -41,7 +42,7 @@ def quartic_decay(
 
 
 def constant(tau, norm):
-    if type(tau) == list:
+    if isinstance(tau, list):
         return [norm] * len(tau)
     elif type(tau) == np.ndarray:
         return np.array([norm] * len(tau))
@@ -166,29 +167,61 @@ def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
     total_evolution_times = 2 * np.array(taus) / 1e3
 
     # fig, ax = plt.subplots()
-    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
-    norms = [el[0] for el in counts]
+    fig, axes_pack = plt.subplots(
+        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    )
+    axes_pack = axes_pack.flatten()
+    # Renormalize
+    # Medium time
+    if total_evolution_times[-1] == 339:
+        norm_contrasts = [1.061974, 1.00529, 1.042434, 1.05157, 1.062454, 1.032091]
+        norm_counts = [46.287630, 38.121374, 39.26234, 39.079940, 39.58938, 32.76880]
+        norms = [norm_counts[ind] / norm_contrasts[ind] for ind in range(num_nvs)]
+        print(
+            [(counts[ind, -13] + counts[ind, -14]) / 2 for ind in range(num_nvs)]
+        )  # 338
+        time_ind = np.argwhere(total_evolution_times == 335.48)[0, 0]
+        print([counts[ind, time_ind] / norms[ind] for ind in range(num_nvs)])
+    # Short time
+    elif total_evolution_times[-1] == 336:
+        norm_contrasts = [1.010826, 0.993529, 1.036109, 1.038874, 1.03807, 1.029182]
+        norm_counts = [39.667554, 35.79620, 42.98384, 43.063846, 41.05029, 37.22291]
+        norm_contrasts += [1.041073, 1.002787, 1.038300, 1.053581, 1.045255, 1.024655]
+        norm_counts += [40.65415, 35.740056, 43.01212, 43.146034, 42.38714, 37.53749]
+        norm_contrasts = [el / 2 for el in norm_contrasts]
+        norm_counts = [el / 2 for el in norm_counts]
+        norms = [norm_counts[ind] / norm_contrasts[ind] for ind in range(num_nvs)]
+        time_ind = np.argwhere(total_evolution_times == 335.48)[0, 0]
+        print([counts[ind, time_ind] for ind in range(num_nvs)])
+    else:
+        norms = [el[0] for el in counts]
+        time_ind = np.argwhere(total_evolution_times == 338)[0, 0]
+        print([counts[ind, time_ind] / norms[ind] for ind in range(num_nvs)])  # 338
     norms[1] = np.mean(counts[1])
-    norms = [40.155, 32.768, 45.128, 42.323, 35.337, 36.486]
+    # norms = None
+
+    # print(total_evolution_times.tolist())
+
     widefield.plot_fit(
         axes_pack, nv_list, total_evolution_times, counts, counts_ste, norms=norms
     )
-    axes_pack[-1].set_xlabel("Total evolution time (us)")
-    axes_pack[3].set_ylabel("Normalized fluorescence")
+    axes_pack[-1].set_xlabel(" ")
+    fig.text(0.55, 0.01, "Total evolution time (μs)", ha="center")
+    axes_pack[0].set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    # fig.text(0.01, 0.55, "Counts", va="center", rotation="vertical")
 
     # print(norms)
 
+    # yticks = [[40, 43], [45, 50], [42, 46], [35, 37], [36, 38], [32, 33]]
+    yticks = [[44, 47], [39, 40], [38, 40], [38, 40], [32, 33], [37, 38]]
+    # yticks = [[40, 42], [42, 43], [43, 44], [40, 43], [37, 38], [35, 36]]
     for ind in range(len(axes_pack)):
         ax = axes_pack[ind]
-        if ind == 5:
-            ax.set_ylim((0.983, 1.017))
-            ax.set_yticks([0.99, 1.0, 1.01])
-        elif ind in (0, 1, 2):
-            ax.set_ylim([0.99, 1.115])
-            ax.set_yticks([1.0, 1.1])
-        else:
-            ax.set_ylim([0.99, 1.07])
-            ax.set_yticks([1.0, 1.05])
+        # ax.set_yticks(yticks[ind])
+    ax = axes_pack[0]
+    ax.set_ylim([0.983, 1.115])
+    ax.set_yticks([1.0, 1.1])
     return fig
 
 
@@ -264,9 +297,9 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
+    # data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
     data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
-    data = dm.get_raw_data(file_id=1397700913905, no_npz=True)
+    # data = dm.get_raw_data(file_id=1397700913905, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

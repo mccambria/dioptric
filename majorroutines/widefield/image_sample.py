@@ -289,7 +289,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
     # img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array)
+    kpl.imshow(ax, img_array, no_cbar=True)
 
     pixel_coords_list = [
         [107.64, 76.7],
@@ -302,13 +302,13 @@ if __name__ == "__main__":
     ]
     for ind in range(len(pixel_coords_list)):
         pixel_coords = pixel_coords_list[ind]
+        pixel_coords = [el + 1 for el in pixel_coords]
+        color = kpl.data_color_cycler[ind]
+        if ind == 1:
+            color = kpl.KplColors.GRAY
         kpl.draw_circle(
-            ax,
-            pixel_coords,
-            color=kpl.data_color_cycler[ind],
-            outline=True,
-            label=ind
+            ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
         )
-    ax.legend(loc=kpl.Loc.LOWER_LEFT)
+    # ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     plt.show(block=True)

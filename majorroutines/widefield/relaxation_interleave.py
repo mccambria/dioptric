@@ -10,15 +10,16 @@ Created on November 29th, 2023
 
 import sys
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
 from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 from utils.constants import NVSpinState
 
 
@@ -38,6 +39,8 @@ def process_rates(
         print(
             f"gamma (x 10^3 s^-1): {tb.round_for_print(gamma / 1000, gamma_err / 1000)}"
         )
+        print(round(gamma))
+        print(round(gamma_err))
 
 
 def create_raw_data_figure(
@@ -326,38 +329,38 @@ if __name__ == "__main__":
     #     28.414155668518752,
     # ]
     # Offset
-    # omega_exp_rates = [
-    #     178.65927076759806,
-    #     150.55961333102456,
-    #     182.7383790247447,
-    #     221.49601578708612,
-    #     195.70649129132005,
-    # ]
-    # omega_exp_rate_errs = [
-    #     32.42518984990736,
-    #     25.278672433548234,
-    #     29.12756202583012,
-    #     45.32073245075222,
-    #     38.16464756629071,
-    # ]
-    # gamma_exp_rates = [
-    #     322.2588560877828,
-    #     274.8856110109759,
-    #     242.36811328021352,
-    #     307.08797888419207,
-    #     328.985126558155,
-    # ]
-    # gamma_exp_rate_errs = [
-    #     57.36359787667976,
-    #     41.97828859002894,
-    #     46.743780796640415,
-    #     91.47514044528685,
-    #     82.42819543109252,
-    # ]
-    # process_rates(
-    #     omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
-    # )
-    # sys.exit()
+    omega_exp_rates = [
+        178.65927076759806,
+        150.55961333102456,
+        182.7383790247447,
+        221.49601578708612,
+        195.70649129132005,
+    ]
+    omega_exp_rate_errs = [
+        32.42518984990736,
+        25.278672433548234,
+        29.12756202583012,
+        45.32073245075222,
+        38.16464756629071,
+    ]
+    gamma_exp_rates = [
+        322.2588560877828,
+        274.8856110109759,
+        242.36811328021352,
+        307.08797888419207,
+        328.985126558155,
+    ]
+    gamma_exp_rate_errs = [
+        57.36359787667976,
+        41.97828859002894,
+        46.743780796640415,
+        91.47514044528685,
+        82.42819543109252,
+    ]
+    process_rates(
+        omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+    )
+    sys.exit()
 
     kpl.init_kplotlib()
 
@@ -401,4 +404,5 @@ if __name__ == "__main__":
         nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma
     )
 
+    plt.show(block=True)
     plt.show(block=True)

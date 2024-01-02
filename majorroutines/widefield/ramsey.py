@@ -28,8 +28,70 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
+def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    widefield.plot_fit(axes_pack, nv_list, taus, counts, counts_ste)
+    axes_pack[-1].set_xlabel("Tau (ns)")
+    axes_pack[3].set_ylabel("Counts")
+
+    yticks = [
+        [34, 36],
+        [40, 42],
+        [37, 40],
+        [30, 32],
+        [34, 36],
+        [28.5, 29],
+    ]
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        ax.set_yticks(yticks[ind])
+
+    return fig
+
+
 def create_fit_figure(nv_list, taus, counts, counts_ste):
-    pass
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+
+    tau_step = taus[1] - taus[0]
+    freqs = np.fft.rfftfreq(len(taus), d=tau_step)
+    freqs = [1000 * el for el in freqs[1:]]  # Convert to MHz
+
+    nv_mags = []
+    for nv_ind in range(len(nv_list)):
+        nv_counts = counts[nv_ind]
+        transform = np.fft.rfft(nv_counts)
+        transform_mag = np.absolute(transform)
+        nv_mags.append(transform_mag[1:])
+
+    widefield.plot_fit(axes_pack, nv_list, freqs, nv_mags)
+
+    axes_pack[-1].set_xlabel("Frequency (MHz)")
+    axes_pack[3].set_ylabel("FFT magnitude")
+
+    yticks = [
+        [0, 5],
+        [0, 10],
+        [0, 10],
+        [0, 5],
+        [0, 10],
+        [0, 3],
+    ]
+    ylims = [
+        [0, 9],
+        [0, 14],
+        [0, 14],
+        [0, 9],
+        [0, 17],
+        [0, 4],
+    ]
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        ax.set_yticks(yticks[ind])
+        ax.set_ylim(ylims[ind])
+
+    return fig
 
 
 def main(
@@ -107,7 +169,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395828354868, no_npz=True)
+    # data = dm.get_raw_data(file_id=1398480205550, no_npz=True)
+    data = dm.get_raw_data(file_id=1399222081277, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -119,6 +182,7 @@ if __name__ == "__main__":
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     plt.show(block=True)
