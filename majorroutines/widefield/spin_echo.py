@@ -165,6 +165,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
 def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
     total_evolution_times = 2 * np.array(taus) / 1e3
+    num_nvs = len(nv_list)
 
     # fig, ax = plt.subplots()
     fig, axes_pack = plt.subplots(
@@ -200,6 +201,19 @@ def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
     norms[1] = np.mean(counts[1])
     # norms = None
 
+    # print(norms)
+    # print(taus[0] * 2 / 1000)
+    # time_ind = np.argwhere(total_evolution_times == 162)[0, 0]
+    # time_ind += 1
+    # print(total_evolution_times[time_ind])
+    # time_ind = 0
+    # print([counts[ind, time_ind] / norms[ind] for ind in range(num_nvs)])
+    # print([counts_ste[ind, time_ind] / norms[ind] for ind in range(num_nvs)])
+    time_inds = [np.argmin(counts[el]) for el in range(num_nvs)]
+    print([total_evolution_times[el] for el in time_inds])
+    print([counts[ind, time_inds[ind]] / norms[ind] for ind in range(num_nvs)])
+    print([counts_ste[ind, time_inds[ind]] / norms[ind] for ind in range(num_nvs)])
+    print([np.mean(counts[ind, 4:19]) / norms[ind] for ind in range(num_nvs)])
     # print(total_evolution_times.tolist())
 
     widefield.plot_fit(
@@ -210,8 +224,6 @@ def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
     axes_pack[0].set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
     # fig.text(0.01, 0.55, "Counts", va="center", rotation="vertical")
-
-    # print(norms)
 
     # yticks = [[40, 43], [45, 50], [42, 46], [35, 37], [36, 38], [32, 33]]
     yticks = [[44, 47], [39, 40], [38, 40], [38, 40], [32, 33], [37, 38]]
@@ -225,22 +237,28 @@ def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def calc_T2_times(peak_total_evolution_times, peak_contrasts, peak_contrast_errs):
-    def envelope(total_evolution_time, T2):
-        return np.exp(-((total_evolution_time / T2) ** 3))
-
+def calc_T2_times(
+    peak_total_evolution_times, peak_contrasts, peak_contrast_errs, baselines
+):
     for nv_ind in range(len(peak_contrasts)):
-        guess_params = (200,)
+        baseline = baselines[nv_ind]
+
+        def envelope(total_evolution_time, T2):
+            return (
+                -(baseline - 1) * np.exp(-((total_evolution_time / T2) ** 3)) + baseline
+            )
+
+        guess_params = (400,)
         popt, pcov = curve_fit(
             envelope,
-            peak_total_evolution_times,
-            peak_contrasts,
+            peak_total_evolution_times[nv_ind],
+            peak_contrasts[nv_ind],
             p0=guess_params,
-            sigma=peak_contrast_errs,
+            sigma=peak_contrast_errs[nv_ind],
             absolute_sigma=True,
         )
         pste = np.sqrt(np.diag(pcov))
-        print(f"{round(popt[0])} +/- {round(pste[0])}}")
+        print(f"{round(popt[0])} +/- {round(pste[0])}")
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
@@ -332,27 +350,30 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
     # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
-    # peak_total_evolution_times = [
-    #     [],
-    #     [],
-    #     [],
-    #     [],
-    #     [],
-    # ]
-    # peak_contrasts = [
-    #     [],
-    #     [],
-    #     [],
-    #     [],
-    #     [],
-    # ]
-    # peak_contrast_errs = [
-    #     [],
-    #     [],
-    #     [],
-    #     [],
-    #     [],
-    # ]
-    # calc_t2_times(peak_total_evolution_times, peak_contrasts, peak_contrast_errs)
+    peak_total_evolution_times = [
+        [2, 162, 335.0],
+        [2, 162, 338.12],
+        [2, 170, 335.24],
+        [2, 162, 338.76],
+        [2, 162, 335.8],
+    ]
+    peak_contrasts = [
+        [1.0, 1.01101875, 1.010826],
+        [1.0, 1.03949457, 1.024653],
+        [1.0, 1.03255067, 1.031515],
+        [1.0, 1.00638179, 1.011792],
+        [1.0, 1.01289830, 1.020581],
+    ]
+    peak_contrast_errs = [
+        [0.00606988, 0.006136653, 0.0066262],
+        [0.00701808, 0.007445652, 0.0050701],
+        [0.00695533, 0.007280518, 0.0062269],
+        [0.00636465, 0.006256734, 0.0059204],
+        [0.00516468, 0.005303820, 0.0046309],
+    ]
+    baselines = [1.0594120, 1.0891454, 1.0631568, 1.0335516, 1.0499098]
+    calc_T2_times(
+        peak_total_evolution_times, peak_contrasts, peak_contrast_errs, baselines
+    )
 
     plt.show(block=True)
