@@ -225,6 +225,24 @@ def create_raw_data_figure_sep(nv_list, taus, counts, counts_ste):
     return fig
 
 
+def calc_T2_times(peak_total_evolution_times, peak_contrasts, peak_contrast_errs):
+    def envelope(total_evolution_time, T2):
+        return np.exp(-((total_evolution_time / T2) ** 3))
+
+    for nv_ind in range(len(peak_contrasts)):
+        guess_params = (200,)
+        popt, pcov = curve_fit(
+            envelope,
+            peak_total_evolution_times,
+            peak_contrasts,
+            p0=guess_params,
+            sigma=peak_contrast_errs,
+            absolute_sigma=True,
+        )
+        pste = np.sqrt(np.diag(pcov))
+        print(f"{round(popt[0])} +/- {round(pste[0])}}")
+
+
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
@@ -313,5 +331,28 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
     # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+
+    # peak_total_evolution_times = [
+    #     [],
+    #     [],
+    #     [],
+    #     [],
+    #     [],
+    # ]
+    # peak_contrasts = [
+    #     [],
+    #     [],
+    #     [],
+    #     [],
+    #     [],
+    # ]
+    # peak_contrast_errs = [
+    #     [],
+    #     [],
+    #     [],
+    #     [],
+    #     [],
+    # ]
+    # calc_t2_times(peak_total_evolution_times, peak_contrasts, peak_contrast_errs)
 
     plt.show(block=True)
