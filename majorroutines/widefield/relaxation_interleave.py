@@ -329,45 +329,45 @@ if __name__ == "__main__":
     #     28.414155668518752,
     # ]
     # Offset
-    omega_exp_rates = [
-        178.65927076759806,
-        150.55961333102456,
-        182.7383790247447,
-        221.49601578708612,
-        195.70649129132005,
-    ]
-    omega_exp_rate_errs = [
-        32.42518984990736,
-        25.278672433548234,
-        29.12756202583012,
-        45.32073245075222,
-        38.16464756629071,
-    ]
-    gamma_exp_rates = [
-        322.2588560877828,
-        274.8856110109759,
-        242.36811328021352,
-        307.08797888419207,
-        328.985126558155,
-    ]
-    gamma_exp_rate_errs = [
-        57.36359787667976,
-        41.97828859002894,
-        46.743780796640415,
-        91.47514044528685,
-        82.42819543109252,
-    ]
-    process_rates(
-        omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
-    )
-    sys.exit()
+    # omega_exp_rates = [
+    #     178.65927076759806,
+    #     150.55961333102456,
+    #     182.7383790247447,
+    #     221.49601578708612,
+    #     195.70649129132005,
+    # ]
+    # omega_exp_rate_errs = [
+    #     32.42518984990736,
+    #     25.278672433548234,
+    #     29.12756202583012,
+    #     45.32073245075222,
+    #     38.16464756629071,
+    # ]
+    # gamma_exp_rates = [
+    #     322.2588560877828,
+    #     274.8856110109759,
+    #     242.36811328021352,
+    #     307.08797888419207,
+    #     328.985126558155,
+    # ]
+    # gamma_exp_rate_errs = [
+    #     57.36359787667976,
+    #     41.97828859002894,
+    #     46.743780796640415,
+    #     91.47514044528685,
+    #     82.42819543109252,
+    # ]
+    # process_rates(
+    #     omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+    # )
+    # sys.exit()
 
     kpl.init_kplotlib()
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
-    data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
+    data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
+    # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

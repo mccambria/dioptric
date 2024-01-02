@@ -297,8 +297,8 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
-    data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
+    data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
+    # data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
     # data = dm.get_raw_data(file_id=1397700913905, no_npz=True)
 
     nv_list = data["nv_list"]

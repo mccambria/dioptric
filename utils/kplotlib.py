@@ -705,6 +705,7 @@ Omega (x 10^3 s^-1): 0.065(13)
 gamma (x 10^3 s^-1): 0.13(4)
 
 Relaxation rates (s^-1)
+----------
 Blue: Omega = 60 +/- 11, gamma = 131 +/- 29
 Green: Omega = 50 +/- 8, gamma = 112 +/- 21
 Orange: Omega = 61 +/- 10, gamma = 91 +/- 24
@@ -712,17 +713,35 @@ Purple: Omega = 74 +/- 15, gamma = 117 +/- 46
 Brown: Omega = 65 +/- 13, gamma = 132 +/- 42
 
 T2 times (us)
+----------
 Blue: +/- 
 Green: +/- 
 Orange: +/- 
 Purple: +/- 
 Brown: +/- 
 
-Averaging times
-ESR and Rabi are 1000 shots per point. Relaxation, spin echo, and Ramsey are 
-4000 shots per point. The exposure is 30 ms per shot, so total averaging times 
-per point are 30 s for ESR and Rabi and 120 s for spin echo and 
-Ramsey. For relaxation the total averaging times are That's not including optimization and FPGA compile times. Optimization 
-adds a negligible amount of time, but the compile times 
+Averaging times (30 ms exposure)
+----------
+Shots per point
+ESR: 1000
+Rabi: 1000
+Relaxation: 4000
+Spin echo: 4000
+Ramsey: 4000
 
+Averaging time per point (s), excluding OPX compile times
+ESR: 30
+Rabi: 30
+Relaxation: depends on experiment, but 190 mean
+Spin echo: 120
+Ramsey: 120
+
+Number of points
+ESR: 41
+Rabi: 31
+Relaxation: 21 per experiment, 84 total to measure both Omega and gamma
+Spin echo: 51
+Ramsey: 81
+
+Total averaging time (s), excluding OPX compile times
 """
