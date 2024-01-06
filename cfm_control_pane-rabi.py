@@ -11,29 +11,32 @@ Created on June 16th, 2023
 ### Imports
 
 
+import copy
 import sys
 import time
-import numpy as np
+
 import matplotlib.pyplot as plt
-import copy
-from utils import tool_belt as tb
-from utils import kplotlib as kpl
-from utils import positioning as pos
-from utils import widefield, common
+import numpy as np
+
 from majorroutines.widefield import (
+    calibrate_iq_delay,
     charge_state_histograms,
     image_sample,
     optimize,
+    optimize_scc,
+    rabi,
+    ramsey,
     relaxation_interleave,
     resonance,
-    rabi,
-    optimize_scc,
     scc_snr_check,
     spin_echo,
-    ramsey,
     xy8,
-    calibrate_iq_delay,
 )
+from utils import common
+from utils import kplotlib as kpl
+from utils import positioning as pos
+from utils import tool_belt as tb
+from utils import widefield
 from utils.constants import LaserKey, NVSpinState
 
 green_laser = "laser_INTE_520"
@@ -230,14 +233,15 @@ def do_spin_echo(nv_list):
 
 def do_ramsey(nv_list):
     min_tau = 16
-    max_tau = 2e3 + min_tau
-    detuning = 5
+    # max_tau = 2000 + min_tau
+    max_tau = 3000 + min_tau
+    detuning = 3
     # num_steps = 21
     # num_reps = 15
     # num_runs = 30
-    num_steps = 201
+    num_steps = 101
     num_reps = 10
-    num_runs = 100
+    num_runs = 400
     uwave_ind = 0
     ramsey.main(
         nv_list,
@@ -247,7 +251,6 @@ def do_ramsey(nv_list):
         min_tau,
         max_tau,
         detuning,
-        uwave_ind=uwave_ind,
     )
 
 
@@ -390,7 +393,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.55
+    z_coord = 5.48
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -559,14 +562,16 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+7, +6])
+        # widefield.set_pixel_drift([-15, 0])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
+        # for ind in range(100):
         #     do_widefield_image_sample(nv_sig, 100)
+        #     time.sleep(5)
         do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
@@ -622,5 +627,7 @@ if __name__ == "__main__":
         tb.reset_cfm()
         cxn = common.labrad_connect()
         cxn.disconnect()
+        plt.show(block=True)
+        tb.reset_safe_stop()
         plt.show(block=True)
         tb.reset_safe_stop()

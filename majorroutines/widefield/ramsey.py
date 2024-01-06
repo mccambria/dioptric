@@ -32,15 +32,14 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     pass
 
 
-def main(
-    nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning, uwave_ind=0
-):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "ramsey.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
+    uwave_ind = 0
     uwave_dict = tb.get_uwave_dict(uwave_ind)
     uwave_freq = uwave_dict["frequency"]
     uwave_freq += detuning / 1000
@@ -50,7 +49,7 @@ def main(
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([uwave_ind, tau])
+        seq_args.extend([tau])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
