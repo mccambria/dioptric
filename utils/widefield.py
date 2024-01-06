@@ -9,20 +9,20 @@ Created on August 15th, 2023
 # region Imports and constants
 
 import itertools
+from importlib import import_module
 from pathlib import Path
-from matplotlib import animation
+
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 from numpy import inf
-from utils import common
-from utils import tool_belt as tb
-from utils import positioning as pos
-from utils import kplotlib as kpl
-from utils.constants import CountFormat
-from utils.constants import CollectionMode, LaserKey, LaserPosMode
-from utils import data_manager as dm
-from importlib import import_module
 
+from utils import common
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import positioning as pos
+from utils import tool_belt as tb
+from utils.constants import CollectionMode, CountFormat, LaserKey, LaserPosMode
 
 # endregion
 # region Image processing
@@ -726,7 +726,18 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
 
 
 # Separate plots, shared axes
-def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None):
+def plot_fit(
+    axes_pack,
+    nv_list,
+    x,
+    ys,
+    yerrs=None,
+    fns=None,
+    popts=None,
+    norms=None,
+    xlim=[None, None],
+    skip_inds=[],
+):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
     plotting simultaneous data from multiple NVs.
@@ -752,20 +763,24 @@ def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=
     offset : numeric
         offset between plotted data sets - default 0.05
     """
-    min_x = min(x)
-    # min_x = 0
-    max_x = max(x)
-    x_linspace = np.linspace(min_x, max_x, 1000)
+    if xlim[0] is None:
+        xlim[0] = min(x)
+    if xlim[1] is None:
+        xlim[1] = max(x)
+    x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
-        fn = fns[nv_ind]
-        if fn is None:
+        if nv_ind in skip_inds:
             continue
+
+        fn = None if fns is None else fns[nv_ind]
+        popt = None if popts is None else popts[nv_ind]
+        norm = None if norms is None else norms[nv_ind]
+
         nv_sig = nv_list[nv_ind]
-        popt = popts[nv_ind]
         label = get_nv_num(nv_sig)
-        norm = 1 if norms is None else norms[nv_ind]
         color = kpl.data_color_cycler[nv_ind]
+
         # MCC
         if nv_ind == 1:
             color = kpl.KplColors.GRAY
@@ -774,16 +789,35 @@ def plot_fit(axes_pack, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=
             ax = axes_pack[nv_ind - 1]
         else:
             ax = axes_pack[nv_ind]
-        y = ys[nv_ind] / norm
-        yerr = None if yerrs is None else yerrs[nv_ind] / norm
+
+        # Include the norm if there is one
+        y = np.copy(ys[nv_ind])
+        yerr = np.copy(yerrs[nv_ind]) if yerrs is not None else None
+        if norm is not None:
+            y /= norm
+            yerr /= norm
         # yerr = None  # MCC
+
+        # Plot the points
+        ls = "none" if fn is not None else "solid"
+        size = kpl.Size.SMALL
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
+            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
         )
-        kpl.plot_line(ax, x_linspace, (fn(x_linspace, *popt) / norm), color=color)
+
+        # Plot the fit
+        if fn is not None:
+            # Include the norm if there is one
+            fit_vals = fn(x_linspace, *popt)
+            if norm is not None:
+                fit_vals /= norm
+            kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)
+
+    fig = axes_pack[0].get_figure()
+    fig.get_layout_engine().set(h_pad=0, hspace=0, w_pad=0, wspace=0)
 
     # ncols = 3  # MCC
     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)

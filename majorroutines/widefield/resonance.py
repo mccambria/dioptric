@@ -9,25 +9,25 @@ Created on November 19th, 2023
 """
 
 
-from random import shuffle
+import os
 import sys
+import time
+from random import shuffle
+
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from majorroutines.widefield import optimize
-from utils import tool_belt as tb
-from utils import data_manager as dm
+
+from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
+from majorroutines.widefield import base_routine, optimize
 from utils import common
-from utils import widefield as widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import data_manager as dm
+from utils import tool_belt as tb
+from utils import widefield as widefield
 from utils.constants import NVSpinState
-import os
-import time
 from utils.positioning import get_scan_1d as calculate_freqs
-from majorroutines.pulsed_resonance import fit_resonance, voigt_split, voigt
-from majorroutines.widefield import base_routine
-from scipy.ndimage import gaussian_filter
 
 
 def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
@@ -48,7 +48,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     readout_noise_list = []
 
     def constant(freq, norm):
-        if type(freq) == list:
+        if isinstance(freq, list):
             return [norm] * len(freq)
         elif type(freq) == np.ndarray:
             return np.array([norm] * len(freq))
@@ -90,11 +90,10 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 1 + voigt(freq, contrast, g_width, l_width, center)
             )
         elif num_resonances == 2:
-            low_freq_guess = freqs[num_steps * 1 // 3]
-            high_freq_guess = freqs[num_steps * 2 // 3]
-            if nv_ind == 8:
-                low_freq_guess = 2.85
-                high_freq_guess = 2.89
+            # low_freq_guess = freqs[num_steps * 1 // 3]
+            # high_freq_guess = freqs[num_steps * 2 // 3]
+            low_freq_guess = 2.85
+            high_freq_guess = 2.89
             guess_params = [
                 norm_guess,
                 amp_guess,
@@ -110,7 +109,16 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
             for ind in [2, 3, 6, 7]:
                 bounds[1][ind] = 10
             fit_fn = (
-                lambda freq, norm, contrast1, g_width1, l_width1, center1, contrast2, g_width2, l_width2, center2: norm
+                lambda freq,
+                norm,
+                contrast1,
+                g_width1,
+                l_width1,
+                center1,
+                contrast2,
+                g_width2,
+                l_width2,
+                center2: norm
                 * (
                     1
                     + voigt(freq, contrast1, g_width1, l_width1, center1)
@@ -162,13 +170,23 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     ### Make the figure
 
-    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    fig, axes_pack = plt.subplots(
+        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    )
+    axes_pack = axes_pack.flatten()
+
     widefield.plot_fit(
         axes_pack, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms
     )
-    axes_pack[-1].set_xlabel("Frequency (GHz)")
-    axes_pack[2].set_ylabel("Normalized fluorescence")
-    # ax.set_xlim(None, 3.01)
+
+    ax = axes_pack[0]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    ax.set_ylim([0.96, 1.19])
+    ax.set_yticks([1.0, 1.1])
+    ax.set_xticks([2.83, 2.87, 2.91])
     return fig
 
 
@@ -238,12 +256,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1388701699044)  # 90
-    # data = dm.get_raw_data(file_id=1388679268107)  # 30
-    # data = dm.get_raw_data(file_id=1388633807820)  # 0
-    # data = dm.get_raw_data(file_id=1388633807820)  # large correlation
-    # data = dm.get_raw_data(file_id=1389286042809)  # small correlation
-    data = dm.get_raw_data(file_id=1395803779134)
+    data = dm.get_raw_data(file_id=1395803779134, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -306,16 +319,14 @@ if __name__ == "__main__":
     # ax.set_xlabel("Run index")
     # # kpl.plot_points(ax, mean_inds, mean_diffs)
 
-    # counts = counts[:, :, :, :5]
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
-    img_arrays = data["img_arrays"]
+    img_arrays = np.array(data["img_arrays"])
     img_arrays = np.mean(img_arrays[0], axis=0)
-    img_arrays = img_arrays - np.quantile(img_arrays, 0.4, axis=0)
+    img_arrays = img_arrays - np.median(img_arrays, axis=0)
 
-    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
-    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays)
+    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
 
     kpl.show(block=True)

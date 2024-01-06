@@ -10,17 +10,18 @@ Created on June 22nd, 2022
 
 # region Imports and constants
 
-import utils.common as common
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from strenum import StrEnum
-from colorutils import Color
 import re
 from enum import Enum, auto
-from strenum import StrEnum
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from colorutils import Color
 from matplotlib.offsetbox import AnchoredText
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-import numpy as np
+from strenum import StrEnum
+
+import utils.common as common
 
 
 # matplotlib semantic locations for legends and text boxes
@@ -650,9 +651,7 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     return occur, bin_edges
 
 
-def draw_circle(
-    ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None
-):
+def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None):
     """Draw a circle on the passed axes
 
     Parameters

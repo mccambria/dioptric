@@ -209,9 +209,8 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
 
         # Try to open the cached file
         try:
-            id_name_table = cache_manifest["id_name_table"]
             if file_id is not None:
-                file_name = id_name_table[file_id]
+                file_name = cache_manifest[file_id]
             with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
                 file_content = f.read()
             data = orjson.loads(file_content)
@@ -250,27 +249,19 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
     if use_cache:
         cache_manifest_updated = False
         if cache_manifest is None:
-            cache_manifest = {
-                "id_name_table": {file_id: file_name},
-                "cached_file_ids": [file_id],
-            }
+            cache_manifest = {file_id: file_name}
             cache_manifest_updated = True
         elif not retrieved_from_cache:
-            id_name_table = cache_manifest["id_name_table"]
-            cached_file_ids = cache_manifest["cached_file_ids"]
+            cached_file_ids = list(cache_manifest.keys())
             # Add the new file to the manifest
             if not retrieved_from_cache:
-                id_name_table[file_id] = file_name
+                cache_manifest[file_id] = file_name
                 cached_file_ids.append(file_id)
             while len(cached_file_ids) > 10:
                 file_id_to_remove = cached_file_ids.pop(0)
-                file_name_to_remove = id_name_table[file_id_to_remove]
-                del id_name_table[file_id_to_remove]
+                file_name_to_remove = cache_manifest[file_id_to_remove]
+                del cache_manifest[file_id_to_remove]
                 os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
-            cache_manifest = {
-                "id_name_table": id_name_table,
-                "cached_file_ids": cached_file_ids,
-            }
             cache_manifest_updated = True
         if cache_manifest_updated:
             with open(data_manager_folder / "cache_manifest.txt", "w") as f:

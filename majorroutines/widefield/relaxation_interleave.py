@@ -10,16 +10,37 @@ Created on November 29th, 2023
 
 import sys
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
 from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 from utils.constants import NVSpinState
+
+
+def process_rates(
+    omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+):
+    num_nvs = len(omega_exp_rates)
+    for ind in range(num_nvs):
+        omega = omega_exp_rates[ind] / 3
+        omega_err = omega_exp_rate_errs[ind] / 3
+        print(
+            f"Omega (x 10^3 s^-1): {tb.round_for_print(omega / 1000, omega_err / 1000)}"
+        )
+
+        gamma = (gamma_exp_rates[ind] - omega) / 2
+        gamma_err = np.sqrt(gamma_exp_rate_errs[ind] ** 2 + omega_err**2) / 2
+        print(
+            f"gamma (x 10^3 s^-1): {tb.round_for_print(gamma / 1000, gamma_err / 1000)}"
+        )
+        print(round(gamma))
+        print(round(gamma_err))
 
 
 def create_raw_data_figure(
@@ -31,13 +52,131 @@ def create_raw_data_figure(
     ax.set_xlabel("Relaxation time (ms)")
     ax.set_ylabel("Counts")
     state_str_dict = {
-        NVSpinState.ZERO: "0",
-        NVSpinState.LOW: "-1",
-        NVSpinState.HIGH: "+1",
+        NVSpinState.ZERO: "$\ket{0}$",
+        NVSpinState.LOW: "$\ket{-1}$",
+        NVSpinState.HIGH: "$\ket{+1}$",
     }
     init_state_str = state_str_dict[init_state]
     readout_state_str = state_str_dict[readout_state]
-    ax.set_title(f"Init state: {init_state_str}; readout state: {readout_state_str}")
+    ax.set_title(
+        f"Initial state: {init_state_str}; readout state: {readout_state_str}",
+        usetex=True,
+    )
+    return fig
+
+
+def create_fit_figure(nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma):
+    # Do the fits
+
+    taus_ms = np.array(taus) / 1e6
+
+    def exp_decay(tau_ms, norm, rate, offset):
+        return norm * ((1 - offset) * np.exp(-rate * tau_ms / 1000) + offset)
+
+    # def exp_decay(tau_ms, norm, decay, offset):
+    #     return norm * ((1 - offset) * np.exp(-tau_ms / (1000 * decay)) + offset)
+
+    def constant(tau_ms, norm):
+        if type(tau_ms) == list:
+            return [norm] * len(tau_ms)
+        elif type(tau_ms) == np.ndarray:
+            return np.array([norm] * len(tau_ms))
+        else:
+            return norm
+
+    num_nvs = len(nv_list)
+
+    fit_fns = []
+    popts = []
+    norms = []
+    rates = []
+    rate_errs = []
+    offsets = []
+    offset_errs = []
+    for nv_ind in range(num_nvs):
+        nv_counts = diff_counts[nv_ind]
+        nv_counts_ste = diff_counts_ste[nv_ind]
+
+        if nv_ind in [1]:
+            fit_fn = constant
+            guess_params = [np.average(nv_counts)]
+        else:
+            fit_fn = exp_decay
+            guess_params = [nv_counts[0], 70, 0]
+            # guess_params = [nv_counts[0], 0.01, 0]
+
+        try:
+            popt, pcov = curve_fit(
+                fit_fn,
+                taus_ms,
+                nv_counts,
+                p0=guess_params,
+                sigma=nv_counts_ste,
+                absolute_sigma=True,
+            )
+            fit_fns.append(fit_fn)
+            popts.append(popt)
+            pste = np.sqrt(np.diag(pcov))
+            if nv_ind == 1:
+                norms.append(None)
+            else:
+                norms.append(popt[0])
+                rates.append(popt[1])
+                rate_errs.append(pste[1])
+                offsets.append(popt[2])
+                offset_errs.append(pste[2])
+                # rate = 1 / popt[1]
+                # rates.append(rate)
+                # rate_errs.append(rate**2 * pste[1])
+        except Exception as exc:
+            fit_fns.append(None)
+            popts.append(None)
+            norms.append(None)
+
+        residuals = fit_fn(taus_ms, *popt) - nv_counts
+        chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+        red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+        print(f"Red chi sq: {round(red_chi_sq, 3)}")
+
+    # Print the rates out
+    print("rates")
+    print(rates)
+    print(rate_errs)
+    print("offsets")
+    print(offsets)
+    print(offset_errs)
+
+    # Make the figure
+    # fig, axes_pack = plt.subplots(nrows=5, sharex=True, figsize=[6.5, 5.0])
+    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    widefield.plot_fit(
+        axes_pack,
+        nv_list,
+        taus_ms,
+        diff_counts,
+        diff_counts_ste,
+        fit_fns,
+        popts,
+        norms,
+        # skip_inds=[1],
+    )
+    axes_pack[-1].set_xlabel("Relaxation time (ms)")
+    ylabel = (
+        "$F_{\Omega}$ (arb. units)" if Omega_or_gamma else "$F_{\gamma}$ (arb. units)"
+    )
+    ylabel = "Normalized fluorescence"
+    axes_pack[2].set_ylabel(ylabel)
+    axes_pack[-1].set_ylabel("Counts")
+    for ind in range(len(axes_pack)):
+        ax = axes_pack[ind]
+        if ind == 5:
+            # ax.set_ylim([-1.2, +1.2])
+            # ax.set_yticks([-1, 0, +1])
+            ax.set_ylim([-0.8, +0.8])
+            ax.set_yticks([-0.5, 0, +0.5])
+        else:
+            ax.set_ylim([-0.3, 1.35])
+            ax.set_yticks([0, 1])
     return fig
 
 
@@ -159,23 +298,111 @@ def main(
 
 
 if __name__ == "__main__":
+    ### Rate calculation
+    # No offset
+    # omega_exp_rates = [
+    #     149.52876293233442,
+    #     149.9076496706543,
+    #     163.90784727283057,
+    #     171.12691936163787,
+    #     140.68822177145015,
+    # ]
+    # omega_exp_rate_errs = [
+    #     13.071035712207378,
+    #     11.193227235059075,
+    #     13.205640033491687,
+    #     19.12327121476871,
+    #     13.316228407825507,
+    # ]
+    # gamma_exp_rates = [
+    #     288.9371794219599,
+    #     256.4689961920107,
+    #     260.8659957292199,
+    #     232.74941634806152,
+    #     208.3639073269649,
+    # ]
+    # gamma_exp_rate_errs = [
+    #     32.133818940701744,
+    #     22.25996376863929,
+    #     27.76090260093859,
+    #     39.0883152024931,
+    #     28.414155668518752,
+    # ]
+    # Offset
+    # omega_exp_rates = [
+    #     178.65927076759806,
+    #     150.55961333102456,
+    #     182.7383790247447,
+    #     221.49601578708612,
+    #     195.70649129132005,
+    # ]
+    # omega_exp_rate_errs = [
+    #     32.42518984990736,
+    #     25.278672433548234,
+    #     29.12756202583012,
+    #     45.32073245075222,
+    #     38.16464756629071,
+    # ]
+    # gamma_exp_rates = [
+    #     322.2588560877828,
+    #     274.8856110109759,
+    #     242.36811328021352,
+    #     307.08797888419207,
+    #     328.985126558155,
+    # ]
+    # gamma_exp_rate_errs = [
+    #     57.36359787667976,
+    #     41.97828859002894,
+    #     46.743780796640415,
+    #     91.47514044528685,
+    #     82.42819543109252,
+    # ]
+    # process_rates(
+    #     omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
+    # )
+    # sys.exit()
+
     kpl.init_kplotlib()
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1382892086081)
+    data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
+    # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     img_arrays = data["img_arrays"]
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
-    avg_img_arrays = np.average(img_arrays, axis=1)
+    # avg_img_arrays = np.average(img_arrays, axis=1)
     taus = data["taus"]
     counts = np.array(data["counts"])
+    init_state_0 = NVSpinState(data["init_state_0"])
+    readout_state_0 = NVSpinState(data["readout_state_0"])
+    init_state_1 = NVSpinState(data["init_state_1"])
+    readout_state_1 = NVSpinState(data["readout_state_1"])
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    avg_counts_0, avg_counts_ste_0 = widefield.process_counts(counts[0])
+    raw_fig = create_raw_data_figure(
+        nv_list, taus, avg_counts_0, avg_counts_ste_0, init_state_0, readout_state_0
+    )
+    avg_counts_1, avg_counts_ste_1 = widefield.process_counts(counts[1])
+    raw_fig = create_raw_data_figure(
+        nv_list, taus, avg_counts_1, avg_counts_ste_1, init_state_1, readout_state_1
+    )
 
+    # Calculate the differences and make the fit plot
+    diff_counts = avg_counts_1 - avg_counts_0
+    diff_counts_ste = np.sqrt(avg_counts_ste_0**2 + avg_counts_ste_1**2)
+    Omega_or_gamma = (
+        init_state_0 == NVSpinState.ZERO
+        and readout_state_0 == NVSpinState.ZERO
+        or init_state_1 == NVSpinState.ZERO
+        and readout_state_1 == NVSpinState.ZERO
+    )
+    fit_fig = create_fit_figure(
+        nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma
+    )
+
+    plt.show(block=True)
     plt.show(block=True)

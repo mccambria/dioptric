@@ -123,6 +123,7 @@ def main(
 
     if num_exps_per_rep == 1:
         counts = counts[0]
+        img_arrays = img_arrays[0]
 
     raw_data = {
         "nv_list": nv_list,
