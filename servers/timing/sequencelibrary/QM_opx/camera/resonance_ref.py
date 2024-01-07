@@ -9,14 +9,15 @@ Created on October 13th, 2023
 
 
 import time
+
+import matplotlib.pyplot as plt
 import numpy as np
-from qm import qua
-from qm import QuantumMachinesManager
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
+
+import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
-import utils.common as common
-import matplotlib.pyplot as plt
 
 
 def get_seq(
@@ -39,7 +40,7 @@ def get_seq(
     # iq_pulse_dict = {0: , 90:}
 
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, raise_error=True)
+    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, allow_zero=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
     def uwave_macro_sig():
@@ -49,7 +50,8 @@ def get_seq(
             #     qua.play("pi_pulse", i_el)
             #     qua.play("pi_pulse", q_el)
         else:
-            qua.play("on", sig_gen_el, duration=uwave_duration)
+            if uwave_duration != 0:
+                qua.play("on", sig_gen_el, duration=uwave_duration)
         qua.wait(buffer, sig_gen_el)
 
     def uwave_macro_ref():
