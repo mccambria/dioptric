@@ -32,10 +32,11 @@ from majorroutines.widefield import (
     spin_echo,
     xy8,
 )
-from utils import common, widefield
+from utils import common
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
+from utils import widefield
 from utils.constants import LaserKey, NVSpinState
 
 green_laser = "laser_INTE_520"
@@ -182,7 +183,7 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.120
+    freq_range = 0.100
     num_steps = 40
     num_reps = 10
     # num_runs = 30
@@ -215,9 +216,8 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    # min_tau = 1e3
+    # min_tau = 100
     # max_tau = 200e3 + min_tau
-    # num_steps = 51
     min_tau = 167.5e3
     max_tau = 169.5e3
     num_steps = 51
