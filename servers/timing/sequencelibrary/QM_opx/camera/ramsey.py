@@ -8,26 +8,30 @@ Created on October 13th, 2023
 """
 
 
-from qm import qua
-from qm import QuantumMachinesManager
+import matplotlib.pyplot as plt
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
+
+import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
-import utils.common as common
-import matplotlib.pyplot as plt
 
 
 def get_seq(args, num_reps):
     (pol_coords_list, ion_coords_list, tau_ns) = args
 
-    tau = seq_utils.convert_ns_to_cc(tau_ns)
+    tau = seq_utils.convert_ns_to_cc(tau_ns, allow_zero=True)
+
     buffer = seq_utils.get_widefield_operation_buffer()
     sig_gen_el = seq_utils.get_sig_gen_element()
 
     def uwave_macro():
-        qua.play("pi_on_2_pulse", sig_gen_el)
-        qua.wait(tau, sig_gen_el)
-        qua.play("pi_on_2_pulse", sig_gen_el)
+        if tau == 0:
+            qua.play("pi_pulse", sig_gen_el)
+        else:
+            qua.play("pi_on_2_pulse", sig_gen_el)
+            qua.wait(tau, sig_gen_el)
+            qua.play("pi_on_2_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
 
     seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)

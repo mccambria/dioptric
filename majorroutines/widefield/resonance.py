@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395803779134, no_npz=True)
+    data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -324,8 +324,9 @@ if __name__ == "__main__":
 
     img_arrays = np.array(data["img_arrays"])
     img_arrays = np.mean(img_arrays[0], axis=0)
-    img_arrays = img_arrays - np.median(img_arrays, axis=0)
+    # img_arrays = img_arrays - np.median(img_arrays, axis=0)
+    img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
 
-    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 5)
+    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
 
     kpl.show(block=True)

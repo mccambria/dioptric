@@ -183,7 +183,7 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.120
+    freq_range = 0.100
     num_steps = 40
     num_reps = 10
     # num_runs = 30
@@ -216,11 +216,18 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    # min_tau = 1e3
+    # min_tau = 100
     # max_tau = 200e3 + min_tau
-    # num_steps = 51
-    min_tau = 167.5e3
-    max_tau = 169.5e3
+
+    # Zooms
+    # min_tau = 100
+    # min_tau = 83.7e3
+    min_tau = 167.4e3
+    # max_tau = 2e3 + min_tau
+
+    min_tau = 100
+    max_tau = 15e3 + min_tau
+
     num_steps = 51
 
     # num_reps = 150
@@ -232,9 +239,9 @@ def do_spin_echo(nv_list):
 
 
 def do_ramsey(nv_list):
-    min_tau = 16
+    min_tau = 0
     # max_tau = 2000 + min_tau
-    max_tau = 3000 + min_tau
+    max_tau = 3200 + min_tau
     detuning = 3
     # num_steps = 21
     # num_reps = 15
@@ -243,15 +250,7 @@ def do_ramsey(nv_list):
     num_reps = 10
     num_runs = 400
     uwave_ind = 0
-    ramsey.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        min_tau,
-        max_tau,
-        detuning,
-    )
+    ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
 def do_xy8(nv_list):

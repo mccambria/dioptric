@@ -841,7 +841,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
         data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
         y_buffer = 0.05 * (np.max(counts) - np.min(counts))
         data_ax.set_ylim(np.min(counts) - y_buffer, np.max(counts) + y_buffer)
-        data_ax.set_xlabel("Frequency (GHz)")
+        data_ax.set_xlabel("Pulse duration (ns)")
         data_ax.set_ylabel("Counts")
 
     data_ax_relim()

@@ -9,10 +9,12 @@ Created June 25th, 2023
 
 
 import time
+
 from qm import qua
+
 from utils import common
-from utils.constants import LaserKey, ModMode, CollectionMode
 from utils import tool_belt as tb
+from utils.constants import CollectionMode, LaserKey, ModMode
 
 ### Cached values
 _cache_pol_laser_name = None
@@ -229,15 +231,16 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
 # endregion
 
 
-def convert_ns_to_cc(duration_ns, raise_error=False):
+def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
     """Convert a duration from nanoseconds to clock cycles"""
     if duration_ns is None:
         return None
-    if raise_error:
-        if duration_ns % 4 != 0:
-            raise RuntimeError("OPX pulse durations (in ns) must be divisible by 4")
-        if duration_ns < 16:
-            raise RuntimeError("Minimum OPX pulse duration is 16 ns")
+    if not allow_rounding and duration_ns % 4 != 0:
+        raise RuntimeError("OPX pulse durations (in ns) must be divisible by 4")
+    if not allow_zero and duration_ns == 0:
+        raise RuntimeError("OPX pulse duration 0 not supported here")
+    if 0 < duration_ns < 16:
+        raise RuntimeError("Minimum OPX pulse duration is 16 ns")
     return round(duration_ns / 4)
 
 
