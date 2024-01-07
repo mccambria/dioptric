@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395828354868, no_npz=True)
+    data = dm.get_raw_data(file_id=1395828354868, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -218,5 +218,10 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
-    plt.show(block=True)
+    img_arrays = np.array(data["img_arrays"])
+    img_arrays = np.mean(img_arrays[0], axis=0)
+    img_arrays = img_arrays - np.mean(img_arrays[13:17], axis=0)
+
+    widefield.animate(taus, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
+
     plt.show(block=True)
