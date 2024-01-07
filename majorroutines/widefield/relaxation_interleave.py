@@ -218,7 +218,13 @@ def main(
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "relaxation_interleave.py"
-    taus = np.linspace(min_tau, max_tau, num_steps)
+
+    # Get taus with a roughly even spacing on the y axis
+    taus = np.geomspace(1 / num_steps, 1, num_steps)
+    taus = (taus - taus[0]) / (taus[-1] - taus[0])  # Normalize to 0 to 1
+    taus = (taus * (max_tau - min_tau)) + min_tau  # Normalize to mix/max tau
+    taus = (taus // 4) * 4
+    # taus = np.linspace(min_tau, max_tau, num_steps)
 
     # tau = taus[10]
     # seq_args = widefield.get_base_scc_seq_args(nv_list)

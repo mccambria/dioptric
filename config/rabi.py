@@ -7,10 +7,17 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModMode, ControlMode, CountFormat
-from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
+
 from config.default import config
+from utils.constants import (
+    CollectionMode,
+    ControlMode,
+    CountFormat,
+    LaserKey,
+    LaserPosMode,
+    ModMode,
+)
 
 home = Path.home()
 
@@ -81,7 +88,7 @@ config |= {
             "name": "sig_gen_STAN_sg394",
             # "frequency": 2.87,
             # "rabi_period": 96,
-            "frequency": 2.8483285621036685,
+            "frequency": 2.8476285621036683,
             "rabi_period": 144,
             # "rabi_period": 32,
             # "uwave_power": 9,
@@ -560,7 +567,8 @@ opx_config = {
         "green_aod_cw": {"type": "constant", "sample": 0.19},
         "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.080},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
