@@ -32,11 +32,10 @@ from majorroutines.widefield import (
     spin_echo,
     xy8,
 )
-from utils import common
+from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import widefield
 from utils.constants import LaserKey, NVSpinState
 
 green_laser = "laser_INTE_520"
@@ -208,7 +207,7 @@ def do_rabi(nv_list):
     # num_runs = 30
     num_steps = 31
     num_reps = 20
-    num_runs = 25
+    num_runs = 50
     uwave_ind = 0
     rabi.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind
@@ -393,7 +392,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.48
+    z_coord = 5.46
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -562,7 +561,7 @@ if __name__ == "__main__":
         # print(mag_rot_server.get_angle())
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([-15, 0])
+        # widefield.set_pixel_drift([-22, +20])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
@@ -572,7 +571,7 @@ if __name__ == "__main__":
         # for ind in range(100):
         #     do_widefield_image_sample(nv_sig, 100)
         #     time.sleep(5)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
@@ -581,7 +580,7 @@ if __name__ == "__main__":
         # do_spin_echo(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
-        # do_dq_relaxation(nv_list)
+        do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
 
         ## Infrequent stuff down here
