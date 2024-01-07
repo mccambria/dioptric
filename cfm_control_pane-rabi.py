@@ -32,11 +32,10 @@ from majorroutines.widefield import (
     spin_echo,
     xy8,
 )
-from utils import common
+from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import widefield
 from utils.constants import LaserKey, NVSpinState
 
 green_laser = "laser_INTE_520"
