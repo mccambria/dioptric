@@ -53,9 +53,9 @@ def main(
         if uwave_freq is None:
             freq = uwave_dict["frequency"]
         elif isinstance(uwave_ind, int):
-            freq = uwave_freq[ind]
-        else:
             freq = uwave_freq
+        else:
+            freq = uwave_freq[ind]
         sig_gen = tb.get_server_sig_gen(ind=ind)
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
