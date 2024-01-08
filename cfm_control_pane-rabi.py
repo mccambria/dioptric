@@ -32,10 +32,11 @@ from majorroutines.widefield import (
     spin_echo,
     xy8,
 )
-from utils import common, widefield
+from utils import common
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
+from utils import widefield
 from utils.constants import LaserKey, NVSpinState
 
 green_laser = "laser_INTE_520"
@@ -215,17 +216,17 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    # min_tau = 100
-    # max_tau = 200e3 + min_tau
+    min_tau = 100
+    max_tau = 200e3 + min_tau
 
     # Zooms
     # min_tau = 100
     # min_tau = 83.7e3
-    min_tau = 167.4e3
+    # min_tau = 167.4e3
     # max_tau = 2e3 + min_tau
 
-    min_tau = 100
-    max_tau = 15e3 + min_tau
+    # min_tau = 100
+    # max_tau = 15e3 + min_tau
 
     num_steps = 51
 
