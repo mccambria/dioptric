@@ -398,7 +398,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
     # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
-    data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
+    # data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
+    data = dm.get_raw_data(file_id=1408418654265, no_npz=True)  # Omega
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
