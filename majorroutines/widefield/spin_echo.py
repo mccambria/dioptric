@@ -21,19 +21,11 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def quartic_decay(
-    tau,
-    norm,
-    amplitude,
-    revival_time,
-    quartic_decay_time,
-    envelope_decay_time,
-    envelope_exponent,
-):
+def quartic_decay(tau, norm, amplitude, revival_time, quartic_decay_time, T2):
     baseline = norm + amplitude
     val = baseline
     # print(len(amplitudes))
-    envelope = np.exp(-((tau / envelope_decay_time) ** envelope_exponent))
+    envelope = np.exp(-((tau / T2) ** 3))
     num_revivals = 3
     for ind in range(num_revivals):
         exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
@@ -83,6 +75,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     fit_fns = []
     popts = []
     norms = []
+    T2s = [544, None, 474, 351, 437, 403]
 
     for nv_ind in range(len(nv_list)):
         nv_counts = counts[nv_ind]
@@ -93,8 +86,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
                 fit_fn = quartic_decay
                 norm_guess = np.min(nv_counts)
                 amplitude_guess = np.quantile(nv_counts, 0.7) - norm_guess
-                T2_guess = 10 if nv_ind == 1 else 200
-                guess_params = [norm_guess, amplitude_guess, 175, 15, T2_guess, 1.5]
+                guess_params = [norm_guess, amplitude_guess, 175, 15, 500]
                 popt, pcov = curve_fit(
                     fit_fn,
                     total_evolution_times,
@@ -103,7 +95,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
                     sigma=nv_counts_ste,
                     absolute_sigma=True,
                     maxfev=10000,
-                    bounds=((10, 0, 100, 5, 10, 1), (100, 100, 500, 30, 500, 2.5)),
+                    bounds=(
+                        (10, 0, 100, 5, 100),
+                        (100, 100, 500, 30, 1000),
+                    ),
                 )
             else:
                 fit_fn = constant
@@ -133,7 +128,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     ### Make the figure
 
     # fig, ax = plt.subplots()
-    fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
+    fig, axes_pack = plt.subplots(
+        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    )
+    axes_pack = axes_pack.flatten()
     widefield.plot_fit(
         axes_pack,
         nv_list,
@@ -145,21 +143,22 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         norms,
         # offset=offset,
     )
-    axes_pack[-1].set_xlabel("Total evolution time (us)")
-    axes_pack[3].set_ylabel("Normalized fluorescence")
-
-    for ind in range(len(axes_pack)):
-        ax = axes_pack[ind]
-        if ind == 5:
-            ax.set_ylim((0.982, 1.018))
-            ax.set_yticks([0.99, 1.0, 1.01])
-        elif ind in (0, 1, 2):
-            ax.set_ylim([0.98, 1.12])
-            ax.set_yticks([1.0, 1.1])
-        else:
-            ax.set_ylim([0.992, 1.072])
-            ax.set_yticks([1.0, 1.05])
-    fig.get_layout_engine().set(h_pad=0, hspace=0)
+    # axes_pack[-1].set_xlabel("Total evolution time (us)")
+    # axes_pack[3].set_ylabel("Normalized fluorescence")
+    axes_pack[-1].set_xlabel(" ")
+    fig.text(0.55, 0.01, "Total evolution time (us)", ha="center")
+    axes_pack[0].set_ylabel(" ")
+    fig.text(
+        0.01,
+        0.55,
+        "Normalized fluorescence",
+        va="center",
+        rotation="vertical",
+    )
+    ax = axes_pack[0]
+    ax.set_ylim([0.9705, 1.1])
+    ax.set_yticks([1.0, 1.1])
+    # ax.set_yticks([1.0, 1.05])
     return fig
 
 
@@ -342,13 +341,15 @@ if __name__ == "__main__":
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     taus = data["taus"]
-    counts = np.array(data["counts"])
+    counts = data["counts"]
     # counts = counts[:, : num_runs // 2, :, :]
+
+    # data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
 
     avg_counts, avg_counts_ste = widefield.process_counts(counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
-    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
 
     peak_total_evolution_times = [
         [2, 162, 335.0],

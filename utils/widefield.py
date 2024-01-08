@@ -133,7 +133,8 @@ run_rep_axes = (run_ax, rep_ax)
 
 def process_counts(counts_array):
     """Gets average and standard error for counts data structure.
-    Assumes the structure [nv_ind, run_ind, freq_ind, rep_ind]
+    Assumes counts_array has the structure [nv_ind, run_ind, freq_ind, rep_ind].
+    Returns the structure [nv_ind, freq_ind]
     """
 
     counts_array = np.array(counts_array)

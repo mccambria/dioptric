@@ -265,7 +265,7 @@ def do_xy8(nv_list):
 
 def do_sq_relaxation(nv_list):
     min_tau = 1e3
-    max_tau = 20e6 + min_tau
+    max_tau = 25e6 + min_tau
     num_steps = 21
     num_reps = 10
     num_runs = 400
@@ -276,7 +276,7 @@ def do_sq_relaxation(nv_list):
 
 def do_dq_relaxation(nv_list):
     min_tau = 1e3
-    max_tau = 15e6 + min_tau
+    max_tau = 20e6 + min_tau
     num_steps = 21
     num_reps = 10
     num_runs = 400
