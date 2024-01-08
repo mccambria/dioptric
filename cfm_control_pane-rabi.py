@@ -21,6 +21,7 @@ import numpy as np
 from majorroutines.widefield import (
     calibrate_iq_delay,
     charge_state_histograms,
+    correlation_test,
     image_sample,
     optimize,
     optimize_scc,
@@ -262,6 +263,17 @@ def do_xy8(nv_list):
     # num_reps = 20
     # num_runs = 2
     xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_correlation_test(nv_list):
+    min_tau = 16
+    max_tau = 72 + min_tau
+    num_steps = 14
+
+    num_reps = 10
+    num_runs = 400
+
+    correlation_test.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_sq_relaxation(nv_list):

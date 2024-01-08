@@ -8,12 +8,12 @@ Created on December 11th, 2023
 """
 
 
-from qm import qua
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
 import matplotlib.pyplot as plt
+from qm import QuantumMachinesManager, qua
+from qm.simulate import SimulationConfig
+
+import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
 def get_seq(
