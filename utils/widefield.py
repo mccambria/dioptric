@@ -131,9 +131,10 @@ rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
 
-def process_counts(counts_array):
+def process_counts(counts_array, ref_counts_array):
     """Gets average and standard error for counts data structure.
     Assumes counts_array has the structure [nv_ind, run_ind, freq_ind, rep_ind].
+    Assumes ref_counts_array has the structure [nv_ind, run_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind]
     """
 
@@ -146,8 +147,14 @@ def process_counts(counts_array):
     avg_counts_std = np.std(meas_array, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
-    return avg_counts, avg_counts_ste
-    # return avg_counts_std, avg_counts_ste  # MCC
+    norms = np.mean(ref_counts_array, axis=(1, 2))
+    # Account for heating by adjusting the norm using the counts from
+    # a background spot
+    background_nv_ind = 1
+    norms *= np.mean(avg_counts[background_nv_ind]) / norms[background_nv_ind]
+    norms = norms[:, np.newaxis]
+
+    return avg_counts, avg_counts_ste, norms
 
 
 def calc_snr(sig_counts, ref_counts):

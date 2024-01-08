@@ -37,8 +37,11 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-def create_fit_figure(nv_list, freqs, counts, counts_ste):
+def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     ### Do the fitting
+
+    counts /= norms
+    counts_ste /= norms
 
     num_nvs = len(nv_list)
 
@@ -57,7 +60,6 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     fit_fns = []
     popts = []
     norms = []
-    num_steps = len(freqs)
 
     center_freqs = []
 
@@ -73,28 +75,27 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         #     num_resonances = 1
         else:
             num_resonances = 2
-        # num_resonances = 2
 
         if num_resonances == 0:
             guess_params = [norm_guess]
             bounds = [[0], [np.inf]]
             fit_fn = constant
         elif num_resonances == 1:
-            guess_params = [norm_guess, amp_guess, 5, 5, np.median(freqs)]
-            bounds = [[0] * 5, [np.inf] * 5]
+            guess_params = [amp_guess, 5, 5, np.median(freqs)]
+            bounds = [[0] * 4, [np.inf] * 4]
             # Limit linewidths
-            for ind in [2, 3]:
+            for ind in [1, 2]:
                 bounds[1][ind] = 10
-            fit_fn = lambda freq, norm, contrast, g_width, l_width, center: norm * (
-                1 + voigt(freq, contrast, g_width, l_width, center)
-            )
+
+            def fit_fn(freq, norm, contrast, g_width, l_width, center):
+                return norm * (1 + voigt(freq, contrast, g_width, l_width, center))
         elif num_resonances == 2:
             # low_freq_guess = freqs[num_steps * 1 // 3]
             # high_freq_guess = freqs[num_steps * 2 // 3]
             low_freq_guess = 2.85
             high_freq_guess = 2.89
             guess_params = [
-                norm_guess,
+                # norm_guess,
                 amp_guess,
                 5,
                 5,
@@ -104,12 +105,13 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 5,
                 high_freq_guess,
             ]
-            bounds = [[0] * 9, [np.inf] * 9]
-            for ind in [2, 3, 6, 7]:
+            bounds = [[0] * 8, [np.inf] * 8]
+            # Limit linewidths
+            for ind in [1, 2, 5, 6]:
                 bounds[1][ind] = 10
-            fit_fn = (
-                lambda freq,
-                norm,
+
+            def fit_fn(
+                freq,
                 contrast1,
                 g_width1,
                 l_width1,
@@ -117,13 +119,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 contrast2,
                 g_width2,
                 l_width2,
-                center2: norm
-                * (
+                center2,
+            ):
+                norm = 1
+                return norm * (
                     1
                     + voigt(freq, contrast1, g_width1, l_width1, center1)
                     + voigt(freq, contrast2, g_width2, l_width2, center2)
                 )
-            )
 
         _, popt, pcov = fit_resonance(
             freqs,
@@ -156,7 +159,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         if num_resonances == 1:
             center_freqs.append(popt[4])
         elif num_resonances == 2:
-            center_freqs.append((popt[4], popt[8]))
+            center_freqs.append((popt[3], popt[7]))
 
     print(f"a0 average: {round(np.average(a0_list), 2)}")
     print(f"a1 average: {round(np.average(a1_list), 2)}")
@@ -174,17 +177,18 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     )
     axes_pack = axes_pack.flatten()
 
+    norms = None
     widefield.plot_fit(
         axes_pack, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms
     )
 
-    ax = axes_pack[0]
+    ax = axes_pack[-2]
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    ax.set_ylim([0.96, 1.19])
-    ax.set_yticks([1.0, 1.1])
+    # ax.set_ylim([0.96, 1.19])
+    ax.set_yticks([1.0, 1.1, 1.2])
     ax.set_xticks([2.83, 2.87, 2.91])
     return fig
 
@@ -255,7 +259,8 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
+    # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
+    data = dm.get_raw_data(file_id=1407750868408, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -264,6 +269,7 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
+    ref_counts = np.array(data["ref_counts"])
 
     # for nv_ind in range(num_nvs):
     #     fig, ax = plt.subplots()
@@ -318,15 +324,16 @@ if __name__ == "__main__":
     # ax.set_xlabel("Run index")
     # # kpl.plot_points(ax, mean_inds, mean_diffs)
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    img_arrays = np.array(data["img_arrays"])
-    img_arrays = np.mean(img_arrays[0], axis=0)
-    # img_arrays = img_arrays - np.median(img_arrays, axis=0)
-    img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
+    # img_arrays = np.array(data["img_arrays"])
+    # img_arrays = np.mean(img_arrays[0], axis=0)
+    # # img_arrays = img_arrays - np.median(img_arrays, axis=0)
+    # img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
 
-    widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
+    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
 
     kpl.show(block=True)

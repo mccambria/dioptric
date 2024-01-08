@@ -72,7 +72,9 @@ def create_fit_figure(
 
     taus_ms = np.array(taus) / 1e6
 
-    def exp_decay(tau_ms, norm, rate, offset):
+    def exp_decay(tau_ms, norm, rate):
+        # def exp_decay(tau_ms, norm, rate, offset):
+        offset = 0
         return norm * ((1 - offset) * np.exp(-rate * tau_ms / 1000) + offset)
 
     # def exp_decay(tau_ms, norm, decay, offset):
@@ -104,7 +106,8 @@ def create_fit_figure(
             guess_params = [np.average(nv_counts)]
         else:
             fit_fn = exp_decay
-            guess_params = [nv_counts[0], 70, 0]
+            # guess_params = [nv_counts[0], 70, 0]
+            guess_params = [nv_counts[0], 70]
             # guess_params = [nv_counts[0], 0.01, 0]
 
         try:
@@ -125,8 +128,8 @@ def create_fit_figure(
                 norms.append(popt[0])
                 rates.append(popt[1])
                 rate_errs.append(pste[1])
-                offsets.append(popt[2])
-                offset_errs.append(pste[2])
+                # offsets.append(popt[2])
+                # offset_errs.append(pste[2])
                 # rate = 1 / popt[1]
                 # rates.append(rate)
                 # rate_errs.append(rate**2 * pste[1])
@@ -144,9 +147,9 @@ def create_fit_figure(
     print("rates")
     print(rates)
     print(rate_errs)
-    print("offsets")
-    print(offsets)
-    print(offset_errs)
+    # print("offsets")
+    # print(offsets)
+    # print(offset_errs)
 
     # Make the figure
     # fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
@@ -154,6 +157,7 @@ def create_fit_figure(
         nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
     )
     axes_pack = axes_pack.flatten()
+    norms = None
     widefield.plot_fit(
         axes_pack,
         nv_list,
@@ -195,8 +199,8 @@ def create_fit_figure(
     #         ax.set_ylim([-0.3, 1.35])
     #         ax.set_yticks([0, 1])
     ax = axes_pack[0]
-    ax.set_ylim([-0.253, 1.276])
-    ax.set_yticks([0, 1])
+    # ax.set_ylim([-0.253, 1.276])
+    # ax.set_yticks([0, 1])
     return fig
 
 
@@ -392,9 +396,9 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
+    # data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
     # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
-    # data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
+    data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -404,23 +408,30 @@ if __name__ == "__main__":
     # avg_img_arrays = np.average(img_arrays, axis=1)
     taus = data["taus"]
     counts = np.array(data["counts"])
+    ref_counts = np.array(data["ref_counts"])
     init_state_0 = NVSpinState(data["init_state_0"])
     readout_state_0 = NVSpinState(data["readout_state_0"])
     init_state_1 = NVSpinState(data["init_state_1"])
     readout_state_1 = NVSpinState(data["readout_state_1"])
 
-    avg_counts_0, avg_counts_ste_0 = widefield.process_counts(counts[0])
+    avg_counts_0, avg_counts_ste_0, norms_0 = widefield.process_counts(
+        counts[0], ref_counts
+    )
     raw_fig = create_raw_data_figure(
         nv_list, taus, avg_counts_0, avg_counts_ste_0, init_state_0, readout_state_0
     )
-    avg_counts_1, avg_counts_ste_1 = widefield.process_counts(counts[1])
+    avg_counts_1, avg_counts_ste_1, norms_1 = widefield.process_counts(
+        counts[1], ref_counts
+    )
     raw_fig = create_raw_data_figure(
         nv_list, taus, avg_counts_1, avg_counts_ste_1, init_state_1, readout_state_1
     )
 
     # Calculate the differences and make the fit plot
-    diff_counts = avg_counts_1 - avg_counts_0
-    diff_counts_ste = np.sqrt(avg_counts_ste_0**2 + avg_counts_ste_1**2)
+    diff_counts = avg_counts_1 / norms_1 - avg_counts_0 / norms_0
+    diff_counts_ste = np.sqrt(
+        (avg_counts_ste_0 / norms_0) ** 2 + (avg_counts_ste_1 / norms_1) ** 2
+    )
     Omega_or_gamma = (
         init_state_0 == NVSpinState.ZERO
         and readout_state_0 == NVSpinState.ZERO
