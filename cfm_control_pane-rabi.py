@@ -21,6 +21,7 @@ import numpy as np
 from majorroutines.widefield import (
     calibrate_iq_delay,
     charge_state_histograms,
+    correlation_test,
     image_sample,
     optimize,
     optimize_scc,
@@ -216,17 +217,17 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    # min_tau = 100
-    # max_tau = 200e3 + min_tau
+    min_tau = 100
+    max_tau = 200e3 + min_tau
 
     # Zooms
     # min_tau = 100
     # min_tau = 83.7e3
-    min_tau = 167.4e3
+    # min_tau = 167.4e3
     # max_tau = 2e3 + min_tau
 
-    min_tau = 100
-    max_tau = 15e3 + min_tau
+    # min_tau = 100
+    # max_tau = 15e3 + min_tau
 
     num_steps = 51
 
@@ -262,6 +263,17 @@ def do_xy8(nv_list):
     # num_reps = 20
     # num_runs = 2
     xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_correlation_test(nv_list):
+    min_tau = 16
+    max_tau = 72 + min_tau
+    num_steps = 14
+
+    num_reps = 10
+    num_runs = 400
+
+    correlation_test.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_sq_relaxation(nv_list):
