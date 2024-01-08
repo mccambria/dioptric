@@ -29,16 +29,16 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def create_fit_figure(nv_list, taus, counts, counts_ste):
+def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     ### Do the fitting
 
     taus = np.array(taus)
 
-    def cos_decay(tau, norm, ptp_amp, freq, decay):
+    def cos_decay(tau, ptp_amp, freq, decay):
         amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * tau))
-        return abs(norm) + amp - (envelope * cos_part)
+        return 1 + amp - (envelope * cos_part)
 
     def constant(tau, norm):
         if isinstance(tau, list):
@@ -54,10 +54,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     fit_fns = []
     popts = []
-    norms = []
     for nv_ind in range(num_nvs):
-        nv_counts = counts[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind]
+        nv_counts = counts[nv_ind] / norms[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
 
         if nv_ind not in [1]:
             # if True:
@@ -87,11 +86,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             )
             fit_fns.append(fit_fn)
             popts.append(popt)
-            norms.append(popt[0])
         except Exception as exc:
             fit_fns.append(None)
             popts.append(None)
-            norms.append(None)
 
         residuals = fit_fn(taus, *popt) - nv_counts
         chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
@@ -121,13 +118,13 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
         norms,
         xlim=[0, None],
     )
-    ax = axes_pack[0]
+    ax = axes_pack[-2]
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    ax.set_ylim([0.966, 1.24])
-    ax.set_yticks([1.0, 1.2])
+    # ax.set_ylim([0.966, 1.24])
+    # ax.set_yticks([1.0, 1.2])
     return fig
 
 
@@ -147,17 +144,17 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    counts, ref_counts, raw_data = base_routine.main(
         nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
     )
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
         fit_fig = None

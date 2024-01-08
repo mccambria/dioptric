@@ -171,7 +171,7 @@ def main(
             "img_arrays-units": "ADUs",
             "img_arrays": img_arrays,
         }
-    return counts, raw_data
+    return counts, ref_counts, raw_data
 
 
 if __name__ == "__main__":

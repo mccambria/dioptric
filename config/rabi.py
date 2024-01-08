@@ -61,7 +61,7 @@ config |= {
     },
     ###
     "DeviceIDs": {
-        "arb_wave_gen_visa_address": "TCPIP0::128.104.ramp_to_zero_duration_ns.119::5025::SOCKET",
+        "arb_wave_gen_visa_address": "TCPIP0::128.104.ramp_to_zero_duration.119::5025::SOCKET",
         "daq0_name": "Dev1",
         "filter_slider_THOR_ell9k_com": "COM13",
         "gcs_dll_path": home
@@ -70,10 +70,10 @@ config |= {
         "objective_piezo_serial": "0119008970",
         "pulse_gen_SWAB_82_ip": "192.168.0.111",
         "rotation_stage_THOR_ell18k_com": "COM8",
-        "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.ramp_to_zero_duration_ns.114::inst0::INSTR",
+        "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.ramp_to_zero_duration.114::inst0::INSTR",
         "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.120::inst0::INSTR",
         "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.121::inst0::INSTR",
-        "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration_ns.112::5025::SOCKET",
+        "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration.112::5025::SOCKET",
         "tagger_SWAB_20_serial": "1740000JEH",
         "QM_opx_ip": "192.168.0.117",
     },
@@ -216,8 +216,8 @@ default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
 rabi_period_0 = config["Microwaves"]["sig_gen_0"]["rabi_period"]
 rabi_period_1 = config["Microwaves"]["sig_gen_1"]["rabi_period"]
-ramp_to_zero_duration_ns = 64
-iq_broadening = 64
+ramp_to_zero_duration = 64
+iq_buffer = 0
 
 opx_config = {
     "version": 1,
@@ -369,7 +369,7 @@ opx_config = {
         "ao_laser_OPTO_589_am_sticky": {
             "singleInput": {"port": ("con1", 7)},
             "intermediate_frequency": 0,
-            "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
                 "on": "yellow_imaging",
                 "off": "ao_off",
@@ -385,7 +385,14 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
+            "digitalInputs": {
+                "chan": {
+                    "port": ("con1", 10),
+                    "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
+                    + iq_buffer // 2,
+                    "buffer": 0,
+                }
+            },
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -396,7 +403,7 @@ opx_config = {
         "ao_sig_gen_STAN_sg394_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
-            # "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
                 "on": "ao_cw",
                 "off": "ao_off",
@@ -407,7 +414,7 @@ opx_config = {
         "ao_sig_gen_STAN_sg394_q": {
             "singleInput": {"port": ("con1", 10)},
             "intermediate_frequency": 0,
-            # "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
                 "on": "ao_cw",
                 "off": "ao_off",
@@ -429,32 +436,32 @@ opx_config = {
             "sticky": {
                 "analog": True,
                 "digital": True,
-                "duration": ramp_to_zero_duration_ns,
+                "duration": ramp_to_zero_duration,
             },
             "operations": {"on": "do_on", "off": "do_off"},
         },
         "ao_laser_COBO_638_x": {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
-            "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 75e6,
-            "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 110e6,
-            "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
-            "sticky": {"analog": True, "duration": ramp_to_zero_duration_ns},
+            "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
         },
         # endregion
@@ -494,12 +501,12 @@ opx_config = {
         },
         "iq_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2) + iq_broadening,
+            "length": int(rabi_period_0 / 2) + iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "iq_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4) + iq_broadening,
+            "length": int(rabi_period_0 / 4) + iq_buffer,
             "waveforms": {"single": "cw"},
         },
         ### Digital
