@@ -216,7 +216,8 @@ default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
 rabi_period_0 = config["Microwaves"]["sig_gen_0"]["rabi_period"]
 rabi_period_1 = config["Microwaves"]["sig_gen_1"]["rabi_period"]
-ramp_to_zero_duration_ns = 80
+ramp_to_zero_duration_ns = 64
+iq_broadening = 64
 
 opx_config = {
     "version": 1,
@@ -399,8 +400,8 @@ opx_config = {
             "operations": {
                 "on": "ao_cw",
                 "off": "ao_off",
-                "pi_pulse": "ao_pi_pulse_0",
-                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+                "pi_pulse": "iq_pi_pulse_0",
+                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_q": {
@@ -410,8 +411,8 @@ opx_config = {
             "operations": {
                 "on": "ao_cw",
                 "off": "ao_off",
-                "pi_pulse": "ao_pi_pulse_0",
-                "pi_on_2_pulse": "ao_pi_on_2_pulse_0",
+                "pi_pulse": "iq_pi_pulse_0",
+                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
@@ -491,14 +492,14 @@ opx_config = {
             "length": default_pulse_duration,
             "waveforms": {"single": "off"},
         },
-        "ao_pi_pulse_0": {
+        "iq_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2),
+            "length": int(rabi_period_0 / 2) + iq_broadening,
             "waveforms": {"single": "cw"},
         },
-        "ao_pi_on_2_pulse_0": {
+        "iq_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4),
+            "length": int(rabi_period_0 / 4) + iq_broadening,
             "waveforms": {"single": "cw"},
         },
         ### Digital

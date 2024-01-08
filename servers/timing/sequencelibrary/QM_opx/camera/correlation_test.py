@@ -30,9 +30,10 @@ def get_seq(args, num_reps):
     rand_phase = qua.declare(qua.fixed)
 
     def uwave_macro():
+        qua.play("pi_pulse", i_el)
         qua.play("pi_on_2_pulse", sig_gen_el)
 
-        qua.wait(short_wait, sig_gen_el)
+        qua.wait(short_wait)
 
         if tau != 0:
             qua.assign(rand_phase, random.rand_fixed())
@@ -40,9 +41,11 @@ def get_seq(args, num_reps):
             qua.play("pi_pulse" * qua.amp(qua.Math.sin2pi(rand_phase)), q_el)
             qua.play("pi_pulse", sig_gen_el, duration=tau)
 
-        qua.wait(short_wait, sig_gen_el)
+        qua.wait(short_wait)
 
+        qua.play("pi_pulse", i_el)
         qua.play("pi_on_2_pulse", sig_gen_el)
+
         qua.wait(buffer, sig_gen_el)
 
     seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
