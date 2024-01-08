@@ -33,11 +33,10 @@ from majorroutines.widefield import (
     spin_echo,
     xy8,
 )
-from utils import common
+from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import widefield
 from utils.constants import LaserKey, NVSpinState
 
 green_laser = "laser_INTE_520"
@@ -404,7 +403,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.44
+    z_coord = 5.45
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -583,13 +582,13 @@ if __name__ == "__main__":
         # for ind in range(100):
         #     do_widefield_image_sample(nv_sig, 100)
         #     time.sleep(5)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
