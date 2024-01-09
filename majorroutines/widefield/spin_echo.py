@@ -21,8 +21,8 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def quartic_decay(tau, norm, amplitude, revival_time, quartic_decay_time, T2):
-    baseline = norm + amplitude
+def quartic_decay(tau, amplitude, revival_time, quartic_decay_time, T2):
+    baseline = 1 + amplitude
     val = baseline
     # print(len(amplitudes))
     envelope = np.exp(-((tau / T2) ** 3))
@@ -33,7 +33,8 @@ def quartic_decay(tau, norm, amplitude, revival_time, quartic_decay_time, T2):
     return val
 
 
-def constant(tau, norm):
+def constant(tau):
+    norm = 1
     if isinstance(tau, list):
         return [norm] * len(tau)
     elif type(tau) == np.ndarray:
@@ -55,7 +56,7 @@ def constant(tau, norm):
 #             counts_ste,
 #             subset_inds=subset_inds,
 #         )
-#         ax.set_xlabel("Total evolution time (us)")
+#         ax.set_xlabel("Total evolution time (µs)")
 #         ax.set_ylabel("Counts")
 #     return fig
 
@@ -64,7 +65,7 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     fig, ax = plt.subplots()
     total_evolution_times = 2 * np.array(taus) / 1e3
     widefield.plot_raw_data(ax, nv_list, total_evolution_times, counts, counts_ste)
-    ax.set_xlabel("Total evolution time (us)")
+    ax.set_xlabel("Total evolution time (µs)")
     ax.set_ylabel("Counts")
     return fig
 
@@ -93,21 +94,13 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
                     absolute_sigma=True,
                     maxfev=10000,
                     bounds=(
-                        (10, 0, 100, 5, 100),
-                        (100, 100, 500, 30, 1000),
+                        (0, 100, 5, 100),
+                        (100, 500, 30, 1000),
                     ),
                 )
             else:
                 fit_fn = constant
-                popt, pcov = curve_fit(
-                    fit_fn,
-                    total_evolution_times,
-                    nv_counts,
-                    p0=[np.mean(nv_counts)],
-                    sigma=nv_counts_ste,
-                    absolute_sigma=True,
-                )
-            # popt = guess_params
+                popt = []
             fit_fns.append(fit_fn)
             popts.append(popt)
         except Exception as exc:
@@ -127,21 +120,22 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
     )
     axes_pack = axes_pack.flatten()
+    norm_counts = np.array([counts[ind] / norms[ind] for ind in range(num_nvs)])
+    norm_counts_ste = np.array([counts_ste[ind] / norms[ind] for ind in range(num_nvs)])
     widefield.plot_fit(
         axes_pack,
         nv_list,
         total_evolution_times,
-        counts,
-        counts_ste,
+        norm_counts,
+        norm_counts_ste,
         fit_fns,
         popts,
-        norms,
     )
     ax = axes_pack[-2]
-    # ax.set_xlabel("Total evolution time (us)")
+    # ax.set_xlabel("Total evolution time (µs)")
     # ax.set_ylabel("Normalized fluorescence")
     ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Total evolution time (us)", ha="center")
+    fig.text(0.55, 0.01, "Total evolution time (µs)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
     # ax.set_ylim([0.9705, 1.1])

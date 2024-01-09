@@ -233,8 +233,36 @@ def do_spin_echo(nv_list):
     # num_reps = 150
     # num_runs = 12
     num_reps = 10
-    num_runs = 400
+    # num_runs = 400
+    num_runs = 2
 
+    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_spin_echo_short(nv_list):
+    min_tau = 100
+    max_tau = 2e3 + min_tau
+    num_steps = 51
+    num_reps = 10
+    num_runs = 400
+    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_spin_echo_medium(nv_list):
+    min_tau = 100
+    max_tau = 15e3 + min_tau
+    num_steps = 51
+    num_reps = 10
+    num_runs = 400
+    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_spin_echo_long(nv_list):
+    min_tau = 100
+    max_tau = 200e3 + min_tau
+    num_steps = 51
+    num_reps = 10
+    num_runs = 400
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -582,13 +610,16 @@ if __name__ == "__main__":
         # for ind in range(100):
         #     do_widefield_image_sample(nv_sig, 100)
         #     time.sleep(5)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
+        # do_spin_echo_long(nv_list)
+        # do_spin_echo_medium(nv_list)
+        # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)

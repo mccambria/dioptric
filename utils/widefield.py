@@ -765,8 +765,6 @@ def plot_fit(
         The ith fn is the fit function used to fit the data for the ith NV
     popts : list(list(numeric))
         The ith popt is the curve fit results for the ith NV
-    norms : list(numeric)
-        The ith factor in the list is used to normalize the ith data set
     """
     if xlim[0] is None:
         xlim[0] = min(x)
@@ -777,7 +775,6 @@ def plot_fit(
     for nv_ind in range(num_nvs):
         fn = None if fns is None else fns[nv_ind]
         popt = None if popts is None else popts[nv_ind]
-        norm = None if norms is None else norms[nv_ind]
 
         nv_sig = nv_list[nv_ind]
         label = get_nv_num(nv_sig)
@@ -795,9 +792,6 @@ def plot_fit(
         # Include the norm if there is one
         y = np.copy(ys[nv_ind])
         yerr = np.copy(yerrs[nv_ind]) if yerrs is not None else None
-        if norm is not None:
-            y /= norm
-            yerr /= norm
         # yerr = None  # MCC
 
         # Plot the points
@@ -811,8 +805,6 @@ def plot_fit(
         if fn is not None:
             # Include the norm if there is one
             fit_vals = fn(x_linspace, *popt)
-            if norm is not None:
-                fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
     for ax in axes_pack:

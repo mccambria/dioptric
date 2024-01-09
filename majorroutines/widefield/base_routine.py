@@ -74,6 +74,7 @@ def main(
 
     # Runs loops
     for run_ind in range(num_runs):
+        print(f"Run index: {run_ind}")
         shuffle(step_ind_list)
 
         pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]

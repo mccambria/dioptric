@@ -18,7 +18,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 
 def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list, tau_ns) = args
+    (pol_coords_list, ion_coords_list, tau_ns, anticorrelation) = args
 
     tau = seq_utils.convert_ns_to_cc(tau_ns, allow_zero=True)
     short_wait = seq_utils.convert_ns_to_cc(100)
@@ -30,6 +30,12 @@ def get_seq(args, num_reps):
     rand_phase = qua.declare(qua.fixed)
 
     def uwave_macro():
+        if anticorrelation:
+            qua.play("pi_pulse", i_el)
+            qua.play("pi_pulse", sig_gen_el)
+            qua.align()
+            seq_utils.macro_polarize(pol_coords_list[1:3])
+
         qua.play("pi_on_2_pulse", i_el)
         qua.play("pi_on_2_pulse", sig_gen_el)
 
