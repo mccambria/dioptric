@@ -431,7 +431,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.44
+    z_coord = 5.47
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -617,8 +617,8 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         do_correlation_test(nv_list)
-        # do_spin_echo(nv_list)
-        do_spin_echo_long(nv_list)
+        do_spin_echo(nv_list)
+        # do_spin_echo_long(nv_list)
         # do_spin_echo_medium(nv_list)
         # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
