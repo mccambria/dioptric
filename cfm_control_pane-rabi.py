@@ -295,15 +295,22 @@ def do_xy8(nv_list):
 
 
 def do_correlation_test(nv_list):
+    # min_tau = 16
+    # max_tau = 72
+    # num_steps = 15
+
+    # num_reps = 10
+    # num_runs = 400
+
+    # MCC
     min_tau = 16
-    max_tau = 72
-    num_steps = 15
+    max_tau = 240 + min_tau
+    num_steps = 31
+    num_reps = 20
+    num_runs = 30
 
-    num_reps = 10
-    num_runs = 400
-
-    # anticorrelation_inds = None
-    anticorrelation_inds = [2, 3]
+    anticorrelation_inds = None
+    # anticorrelation_inds = [2, 3]
 
     correlation_test.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation_inds
