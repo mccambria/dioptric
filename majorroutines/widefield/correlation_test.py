@@ -23,44 +23,100 @@ from utils import widefield as widefield
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     fig, ax = plt.subplots()
-    total_evolution_times = 2 * np.array(taus) / 1e3
-    widefield.plot_raw_data(ax, nv_list, total_evolution_times, counts, counts_ste)
-    ax.set_xlabel("Total evolution time (us)")
+    widefield.plot_raw_data(ax, nv_list, taus, counts, counts_ste)
+    ax.set_xlabel("Random phase pulse duration (ns)")
     ax.set_ylabel("Counts")
     return fig
 
 
-def create_fit_figure(nv_list, taus, counts, counts_ste):
-    pass
+def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
+    ### Make the figure
+
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(
+        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    )
+    axes_pack = axes_pack.flatten()
+    widefield.plot_fit(axes_pack, nv_list, taus, counts, counts_ste, norms=norms)
+    ax = axes_pack[-2]
+    # ax.set_xlabel("Total evolution time (us)")
+    # ax.set_ylabel("Normalized fluorescence")
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Random phase pulse duration (ns)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    # ax.set_ylim([0.9705, 1.1])
+    # ax.set_yticks([1.0, 1.1])
+    return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+def create_correlation_figure(nv_list, taus, counts):
+    ### Make the figure
+
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(
+        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
+    )
+
+    for nv_ind_1 in nv_list:
+        if nv_ind_1 == 1:
+            continue
+        for nv_ind_2 in nv_list:
+            if nv_ind_2 == 1:
+                continue
+            nv_counts_1 = counts[nv_ind_1]
+            nv_counts_2 = counts[nv_ind_2]
+
+            corrs = []
+            for step_ind in range(len(taus)):
+                step_counts_1 = nv_counts_1[:, step_ind, :].flatten()
+                step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
+                corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
+
+            ax = axes_pack[nv_ind_1, nv_ind_2]
+            size = kpl.Size.SMALL
+            kpl.plot_points(ax, taus, corrs, size=size)
+
+    ax = axes_pack[0, -1]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Random phase microwave pulse duration (ns)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    return fig
+
+
+def main(
+    nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation=False
+):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "correlation_test.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
+    # Add 0 to the list of taus
+    taus = np.array([0].extend(taus))
+    num_steps += 1
 
     ### Collect the data
 
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(tau)
+        seq_args.extend([tau, anticorrelation])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn
+    counts, ref_counts, raw_data = base_routine.main(
+        nv_list, num_steps, num_reps, num_runs, step_fn, load_iq=True
     )
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
         fit_fig = None
@@ -75,8 +131,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         "timestamp": timestamp,
         "taus": taus,
         "tau-units": "ns",
-        "min_tau": max_tau,
+        "min_tau": 0,
+        # "min_tau": min_tau,
         "max_tau": max_tau,
+        "anticorrelation": anticorrelation,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

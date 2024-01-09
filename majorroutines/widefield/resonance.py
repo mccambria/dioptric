@@ -40,14 +40,7 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
 def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     ### Do the fitting
 
-    counts /= norms
-    counts_ste /= norms
-
     num_nvs = len(nv_list)
-
-    a0_list = []
-    a1_list = []
-    readout_noise_list = []
 
     def constant(freq, norm):
         if isinstance(freq, list):
@@ -59,13 +52,12 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     fit_fns = []
     popts = []
-    norms = []
 
     center_freqs = []
 
     for nv_ind in range(num_nvs):
-        nv_counts = counts[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind]
+        nv_counts = counts[nv_ind] / norms[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
@@ -87,15 +79,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
             for ind in [1, 2]:
                 bounds[1][ind] = 10
 
-            def fit_fn(freq, norm, contrast, g_width, l_width, center):
-                return norm * (1 + voigt(freq, contrast, g_width, l_width, center))
+            def fit_fn(freq, contrast, g_width, l_width, center):
+                return 1 + voigt(freq, contrast, g_width, l_width, center)
         elif num_resonances == 2:
             # low_freq_guess = freqs[num_steps * 1 // 3]
             # high_freq_guess = freqs[num_steps * 2 // 3]
             low_freq_guess = 2.85
             high_freq_guess = 2.89
             guess_params = [
-                # norm_guess,
                 amp_guess,
                 5,
                 5,
@@ -137,36 +128,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
             bounds=bounds,
         )
 
-        # SCC readout noise tracking
-        if len(popt) > 1:
-            norm = popt[0]
-            contrast = popt[1]
-            a0 = round((1 + contrast) * norm, 2)
-            a1 = round(norm, 2)
-            print(f"ms=+/-1: {a0}\nms=0: {a1}")
-            a0_list.append(a0)
-            a1_list.append(a1)
-            readout_noise = np.sqrt(1 + 2 * (a0 + a1) / ((a0 - a1) ** 2))
-            readout_noise_list.append(readout_noise)
-            print(f"readout noise: {readout_noise}")
-            print()
-
         # Tracking for plotting
         fit_fns.append(fit_fn)
         popts.append(popt)
-        norms.append(popt[0])
 
         if num_resonances == 1:
             center_freqs.append(popt[4])
         elif num_resonances == 2:
             center_freqs.append((popt[3], popt[7]))
-
-    print(f"a0 average: {round(np.average(a0_list), 2)}")
-    print(f"a1 average: {round(np.average(a1_list), 2)}")
-    print(f"Average readout noise: {round(np.average(readout_noise_list), 2)}")
-    print(f"Median readout noise: {round(np.median(readout_noise_list), 2)}")
-    r_readout_noise_list = [round(el, 2) for el in readout_noise_list]
-    print(f"readout noise list: {r_readout_noise_list}")
 
     print(center_freqs)
 
@@ -177,7 +146,6 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     )
     axes_pack = axes_pack.flatten()
 
-    norms = None
     widefield.plot_fit(
         axes_pack, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms
     )
@@ -188,8 +156,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
     # ax.set_ylim([0.96, 1.19])
-    ax.set_yticks([1.0, 1.1, 1.2])
-    ax.set_xticks([2.83, 2.87, 2.91])
+    # ax.set_yticks([1.0, 1.1, 1.2])
+    # ax.set_xticks([2.83, 2.87, 2.91])
     return fig
 
 
@@ -212,16 +180,16 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    counts, ref_counts, raw_data = base_routine.main(
         nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
     )
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
         fit_fig = None

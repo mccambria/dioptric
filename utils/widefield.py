@@ -135,7 +135,8 @@ def process_counts(counts_array, ref_counts_array):
     """Gets average and standard error for counts data structure.
     Assumes counts_array has the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Assumes ref_counts_array has the structure [nv_ind, run_ind, rep_ind].
-    Returns the structure [nv_ind, freq_ind]
+    Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
+    Returns the [nv_ind] for norms.
     """
 
     counts_array = np.array(counts_array)
@@ -152,7 +153,6 @@ def process_counts(counts_array, ref_counts_array):
     # a background spot
     background_nv_ind = 1
     norms *= np.mean(avg_counts[background_nv_ind]) / norms[background_nv_ind]
-    norms = norms[:, np.newaxis]
 
     return avg_counts, avg_counts_ste, norms
 
@@ -744,7 +744,6 @@ def plot_fit(
     popts=None,
     norms=None,
     xlim=[None, None],
-    skip_inds=[],
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -766,10 +765,6 @@ def plot_fit(
         The ith fn is the fit function used to fit the data for the ith NV
     popts : list(list(numeric))
         The ith popt is the curve fit results for the ith NV
-    norms : list(numeric)
-        The ith factor in the list is used to normalize the ith data set
-    offset : numeric
-        offset between plotted data sets - default 0.05
     """
     if xlim[0] is None:
         xlim[0] = min(x)
@@ -778,12 +773,8 @@ def plot_fit(
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
-        if nv_ind in skip_inds:
-            continue
-
         fn = None if fns is None else fns[nv_ind]
         popt = None if popts is None else popts[nv_ind]
-        norm = None if norms is None else norms[nv_ind]
 
         nv_sig = nv_list[nv_ind]
         label = get_nv_num(nv_sig)
@@ -801,9 +792,6 @@ def plot_fit(
         # Include the norm if there is one
         y = np.copy(ys[nv_ind])
         yerr = np.copy(yerrs[nv_ind]) if yerrs is not None else None
-        if norm is not None:
-            y /= norm
-            yerr /= norm
         # yerr = None  # MCC
 
         # Plot the points
@@ -817,8 +805,6 @@ def plot_fit(
         if fn is not None:
             # Include the norm if there is one
             fit_vals = fn(x_linspace, *popt)
-            if norm is not None:
-                fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
     for ax in axes_pack:
@@ -826,9 +812,6 @@ def plot_fit(
 
     fig = axes_pack[0].get_figure()
     fig.get_layout_engine().set(h_pad=0, hspace=0, w_pad=0, wspace=0)
-
-    # ncols = 3  # MCC
-    # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
 
 
 def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):

@@ -29,16 +29,16 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def create_fit_figure(nv_list, taus, counts, counts_ste):
+def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     ### Do the fitting
 
     taus = np.array(taus)
 
-    def cos_decay(tau, norm, ptp_amp, freq, decay):
+    def cos_decay(tau, ptp_amp, freq, decay):
         amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * tau))
-        return abs(norm) + amp - (envelope * cos_part)
+        return 1 + amp - (envelope * cos_part)
 
     def constant(tau, norm):
         if isinstance(tau, list):
@@ -54,10 +54,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
 
     fit_fns = []
     popts = []
-    norms = []
     for nv_ind in range(num_nvs):
-        nv_counts = counts[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind]
+        nv_counts = counts[nv_ind] / norms[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
 
         if nv_ind not in [1]:
             # if True:
@@ -70,7 +69,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
             freq_guess = freqs[max_ind + 1]
             # freq_guess = 0.01
-            guess_params = [norm_guess, ptp_amp_guess, freq_guess, 1000]
+            guess_params = [ptp_amp_guess, freq_guess, 1000]
             fit_fn = cos_decay
         else:
             fit_fn = constant
@@ -87,11 +86,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
             )
             fit_fns.append(fit_fn)
             popts.append(popt)
-            norms.append(popt[0])
         except Exception as exc:
             fit_fns.append(None)
             popts.append(None)
-            norms.append(None)
 
         residuals = fit_fn(taus, *popt) - nv_counts
         chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
@@ -110,24 +107,67 @@ def create_fit_figure(nv_list, taus, counts, counts_ste):
     )
     axes_pack = axes_pack.flatten()
 
+    norm_counts = np.array([counts[ind] / norms[ind] for ind in range(num_nvs)])
+    norm_counts_ste = np.array([counts_ste[ind] / norms[ind] for ind in range(num_nvs)])
     widefield.plot_fit(
         axes_pack,
         nv_list,
         taus,
-        counts,
-        counts_ste,
+        norm_counts,
+        norm_counts_ste,
         fit_fns,
         popts,
-        norms,
         xlim=[0, None],
     )
-    ax = axes_pack[0]
+    ax = axes_pack[-2]
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    ax.set_ylim([0.966, 1.24])
-    ax.set_yticks([1.0, 1.2])
+    # ax.set_ylim([0.966, 1.24])
+    # ax.set_yticks([1.0, 1.2])
+    return fig
+
+
+def create_correlation_figure(nv_list, taus, counts):
+    ### Make the figure
+
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(
+        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
+    )
+
+    num_nvs = len(nv_list)
+
+    for nv_ind_1 in range(num_nvs):
+        if nv_ind_1 == 1:
+            continue
+        for nv_ind_2 in range(num_nvs):
+            if nv_ind_2 == 1:
+                continue
+            if nv_ind_1 == nv_ind_2:
+                continue
+            nv_counts_1 = counts[nv_ind_1]
+            nv_counts_2 = counts[nv_ind_2]
+
+            corrs = []
+            for step_ind in range(len(taus)):
+                step_counts_1 = nv_counts_1[:, step_ind, :].flatten()
+                step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
+                corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
+
+            ax = axes_pack[
+                nv_ind_1 if nv_ind_1 < 1 else nv_ind_1 - 1,
+                nv_ind_2 if nv_ind_2 < 1 else nv_ind_2 - 1,
+            ]
+            size = kpl.Size.SMALL
+            kpl.plot_points(ax, taus, corrs, size=size)
+
+    ax = axes_pack[-1, 0]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Random phase microwave pulse duration (ns)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
     return fig
 
 
@@ -147,17 +187,17 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    counts, ref_counts, raw_data = base_routine.main(
         nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
     )
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
         fit_fig = None
@@ -195,7 +235,8 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1395828354868, no_npz=False)
+    # data = dm.get_raw_data(file_id=1395828354868, no_npz=True)
+    data = dm.get_raw_data(file_id=1407329898078, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -203,6 +244,7 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
     counts = np.array(data["counts"])
+    ref_counts = np.array(data["ref_counts"])
     # counts = counts > 50
 
     # Spurious correlation testing
@@ -214,14 +256,15 @@ if __name__ == "__main__":
     #     corr = np.corrcoef(step_counts)
     #     print(corr)
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    correlation_fig = create_correlation_figure(nv_list, taus, counts)
 
-    img_arrays = np.array(data["img_arrays"])
-    img_arrays = np.mean(img_arrays[0], axis=0)
-    img_arrays = img_arrays - np.mean(img_arrays[13:17], axis=0)
+    # img_arrays = np.array(data["img_arrays"])
+    # img_arrays = np.mean(img_arrays[0], axis=0)
+    # img_arrays = img_arrays - np.mean(img_arrays[13:17], axis=0)
 
-    widefield.animate(taus, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
+    # widefield.animate(taus, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
 
     plt.show(block=True)

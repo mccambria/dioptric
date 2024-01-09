@@ -9,15 +9,16 @@ Created on November 29th, 2023
 
 
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
 from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
@@ -115,7 +116,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    counts, ref_counts, raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -127,11 +128,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
         fit_fig = None
@@ -146,7 +147,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
         "timestamp": timestamp,
         "taus": taus,
         "tau-units": "ns",
-        "min_tau": max_tau,
+        "min_tau": min_tau,
         "max_tau": max_tau,
     }
 

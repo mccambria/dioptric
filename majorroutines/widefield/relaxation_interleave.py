@@ -271,7 +271,7 @@ def main(
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    counts, ref_counts, raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -285,8 +285,12 @@ def main(
 
     ### Process and plot
 
-    avg_counts_0, avg_counts_0_ste = widefield.process_counts(counts_0)
-    avg_counts_1, avg_counts_1_ste = widefield.process_counts(counts_1)
+    avg_counts_0, avg_counts_0_ste, norms_0 = widefield.process_counts(
+        counts_0, ref_counts
+    )
+    avg_counts_1, avg_counts_1_ste, norms_1 = widefield.process_counts(
+        counts_1, ref_counts
+    )
 
     raw_fig_0 = create_raw_data_figure(
         nv_list, taus, avg_counts_0, avg_counts_0_ste, init_state_0, readout_state_0
@@ -305,7 +309,7 @@ def main(
         "timestamp": timestamp,
         "taus": taus,
         "tau-units": "ns",
-        "min_tau": max_tau,
+        "min_tau": min_tau,
         "max_tau": max_tau,
         "init_state_0": init_state_0,
         "readout_state_0": readout_state_0,
@@ -398,7 +402,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
     # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
-    data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
+    # data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
+    data = dm.get_raw_data(file_id=1408418654265, no_npz=True)  # Omega
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
