@@ -37,7 +37,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
     )
     axes_pack = axes_pack.flatten()
-    widefield.plot_fit(axes_pack, nv_list, taus, counts, counts_ste, norms=norms)
+    norm_counts = counts / norms[:, np.newaxis]
+    norm_counts_ste = counts_ste / norms[:, np.newaxis]
+    widefield.plot_fit(axes_pack, nv_list, taus, norm_counts, norm_counts_ste)
     ax = axes_pack[-2]
     # ax.set_xlabel("Total evolution time (us)")
     # ax.set_ylabel("Normalized fluorescence")
@@ -86,15 +88,16 @@ def create_correlation_figure(nv_list, taus, counts):
 
 
 def main(
-    nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation=False
+    nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation_inds=None
 ):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "correlation_test.py"
-    taus = np.linspace(min_tau, max_tau, num_steps)
     # Add 0 to the list of taus
-    taus = np.array([0].extend(taus))
+    taus = [0]
+    taus.extend(np.linspace(min_tau, max_tau, num_steps).tolist())
+    taus = np.array(taus)
     num_steps += 1
 
     ### Collect the data
@@ -102,12 +105,12 @@ def main(
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([tau, anticorrelation])
+        seq_args.extend([tau, anticorrelation_inds])
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, ref_counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, load_iq=True
+        nv_list, num_steps, num_reps, num_runs, step_fn, save_images=False, load_iq=True
     )
 
     ### Process and plot
@@ -134,7 +137,7 @@ def main(
         "min_tau": 0,
         # "min_tau": min_tau,
         "max_tau": max_tau,
-        "anticorrelation": anticorrelation,
+        "anticorrelation_inds": anticorrelation_inds,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

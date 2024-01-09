@@ -18,7 +18,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 
 def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list, tau_ns, anticorrelation) = args
+    (pol_coords_list, ion_coords_list, tau_ns, anticorrelation_inds) = args
 
     tau = seq_utils.convert_ns_to_cc(tau_ns, allow_zero=True)
     short_wait = seq_utils.convert_ns_to_cc(100)
@@ -26,15 +26,21 @@ def get_seq(args, num_reps):
     sig_gen_el = seq_utils.get_sig_gen_element()
     i_el, q_el = seq_utils.get_iq_mod_elements()
 
-    random = qua.Random()
-    rand_phase = qua.declare(qua.fixed)
+    anticorrelation = isinstance(anticorrelation_inds, list)
+    if anticorrelation:
+        anti_pol_coords_list = [pol_coords_list[ind] for ind in anticorrelation_inds]
 
-    def uwave_macro():
+    def setup_macro():
+        random = qua.Random()
+        rand_phase = qua.declare(qua.fixed)
+        return random, rand_phase
+
+    def uwave_macro(random, rand_phase):
         if anticorrelation:
             qua.play("pi_pulse", i_el)
             qua.play("pi_pulse", sig_gen_el)
             qua.align()
-            seq_utils.macro_polarize(pol_coords_list[1:3])
+            seq_utils.macro_polarize(anti_pol_coords_list)
 
         qua.play("pi_on_2_pulse", i_el)
         qua.play("pi_on_2_pulse", sig_gen_el)
@@ -44,6 +50,7 @@ def get_seq(args, num_reps):
 
         if tau != 0:
             qua.assign(rand_phase, random.rand_fixed())
+            # qua.assign(rand_phase, 0)  # MCC
             qua.play("pi_pulse" * qua.amp(qua.Math.cos2pi(rand_phase)), i_el)
             qua.play("pi_pulse" * qua.amp(qua.Math.sin2pi(rand_phase)), q_el)
             qua.play("pi_pulse", sig_gen_el, duration=tau)
@@ -56,7 +63,9 @@ def get_seq(args, num_reps):
 
         qua.wait(buffer, sig_gen_el)
 
-    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
+    seq = base_sequence.get_seq(
+        pol_coords_list, ion_coords_list, num_reps, uwave_macro, setup_macro=setup_macro
+    )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -82,6 +91,7 @@ if __name__ == "__main__":
                 [74.88417320911249, 74.52458456443814],
             ],
             64.0,
+            None,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 

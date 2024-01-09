@@ -24,8 +24,9 @@ def get_seq(
     pol_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
+    setup_macro=None,
 ):
-    if num_reps == None:
+    if num_reps is None:
         num_reps = 1
 
     # Determine how many experiments to run based on len of uwave_macro
@@ -35,6 +36,11 @@ def get_seq(
         num_exps_per_rep = 1
 
     with qua.program() as seq:
+        if setup_macro is not None:
+            uwave_macro_args = setup_macro()
+        else:
+            uwave_macro_args = []
+
         exp_ind = qua.declare(int, value=0)
 
         seq_utils.turn_on_aods()
@@ -46,10 +52,10 @@ def get_seq(
             # Custom macro for the microwave sequence here
             qua.align()
             if exp_ind is None:
-                uwave_macro()
+                uwave_macro(*uwave_macro_args)
             else:
                 exp_uwave_macro = uwave_macro[exp_ind]
-                exp_uwave_macro()
+                exp_uwave_macro(*uwave_macro_args)
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
@@ -63,8 +69,10 @@ def get_seq(
             if num_exps_per_rep == 1:
                 one_exp()
             else:
-                for exp_ind in range(num_exps_per_rep):
+                qua.assign(exp_ind, 0)
+                with qua.while_(exp_ind < num_exps_per_rep):
                     one_exp(exp_ind)
+                    qua.assign(exp_ind, exp_ind + 1)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 

@@ -233,8 +233,8 @@ def do_spin_echo(nv_list):
     # num_reps = 150
     # num_runs = 12
     num_reps = 10
-    # num_runs = 400
-    num_runs = 2
+    num_runs = 400
+    # num_runs = 2
 
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
@@ -294,8 +294,8 @@ def do_xy8(nv_list):
 
 def do_correlation_test(nv_list):
     min_tau = 16
-    max_tau = 72 + min_tau
-    num_steps = 14
+    max_tau = 72
+    num_steps = 15
 
     num_reps = 10
     num_runs = 400
@@ -431,7 +431,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.45
+    z_coord = 5.44
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -610,14 +610,15 @@ if __name__ == "__main__":
         # for ind in range(100):
         #     do_widefield_image_sample(nv_sig, 100)
         #     time.sleep(5)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 100)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
+        do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
-        # do_spin_echo_long(nv_list)
+        do_spin_echo_long(nv_list)
         # do_spin_echo_medium(nv_list)
         # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)

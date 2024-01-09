@@ -742,7 +742,6 @@ def plot_fit(
     yerrs=None,
     fns=None,
     popts=None,
-    norms=None,
     xlim=[None, None],
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between

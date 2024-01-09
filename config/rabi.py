@@ -388,9 +388,9 @@ opx_config = {
             "digitalInputs": {
                 "chan": {
                     "port": ("con1", 10),
-                    "delay": 0,
-                    # "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
-                    # + iq_buffer // 2,
+                    # "delay": 0,
+                    "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
+                    + iq_buffer // 2,
                     "buffer": 0,
                 }
             },

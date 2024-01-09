@@ -76,7 +76,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     fit_fns = []
     popts = []
 
-    for nv_ind in range(len(nv_list)):
+    num_nvs = len(nv_list)
+
+    for nv_ind in range(num_nvs):
         nv_counts = counts[nv_ind] / norms[nv_ind]
         nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
 
@@ -120,8 +122,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
     )
     axes_pack = axes_pack.flatten()
-    norm_counts = np.array([counts[ind] / norms[ind] for ind in range(num_nvs)])
-    norm_counts_ste = np.array([counts_ste[ind] / norms[ind] for ind in range(num_nvs)])
+    norm_counts = counts / norms[:, np.newaxis]
+    norm_counts_ste = counts_ste / norms[:, np.newaxis]
     widefield.plot_fit(
         axes_pack,
         nv_list,
