@@ -60,28 +60,11 @@ def create_correlation_figure(nv_list, taus, counts):
         nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
     )
 
-    for nv_ind_1 in nv_list:
-        if nv_ind_1 == 1:
-            continue
-        for nv_ind_2 in nv_list:
-            if nv_ind_2 == 1:
-                continue
-            nv_counts_1 = counts[nv_ind_1]
-            nv_counts_2 = counts[nv_ind_2]
+    widefield.plot_correlations(axes_pack, nv_list, taus, counts)
 
-            corrs = []
-            for step_ind in range(len(taus)):
-                step_counts_1 = nv_counts_1[:, step_ind, :].flatten()
-                step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
-                corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
-
-            ax = axes_pack[nv_ind_1, nv_ind_2]
-            size = kpl.Size.SMALL
-            kpl.plot_points(ax, taus, corrs, size=size)
-
-    ax = axes_pack[0, -1]
+    ax = axes_pack[-1, 0]
     ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Random phase microwave pulse duration (ns)", ha="center")
+    fig.text(0.55, 0.01, "Random phase pulse duration (ns)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
     return fig
@@ -159,17 +142,20 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
+    data = dm.get_raw_data(file_id=1409688614133, no_npz=True)
+    # data = dm.get_raw_data(file_id=1409707132421, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     taus = data["taus"]
-    counts = data["counts"]
+    counts = np.array(data["counts"])
+    ref_counts = np.array(data["ref_counts"])
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    correlation_fig = create_correlation_figure(nv_list, taus, counts)
 
     plt.show(block=True)

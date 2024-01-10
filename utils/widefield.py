@@ -605,134 +605,6 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
 
 
-# Original
-# def plot_fit(
-#     ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.10
-# ):
-#     """Plot multiple data sets (with a common set of x vals) with an offset between
-#     the sets such that they are separated and easier to interpret. Useful for
-#     plotting simultaneous data from multiple NVs.
-
-#     Parameters
-#     ----------
-#     ax : matplotlib axes
-#         axes to plot on
-#     nv_list : list(nv_sig)
-#         List of NV sigs to plot
-#     x : 1D array
-#         x values to plot
-#     ys : 2D array
-#         y values to plot - first dimension divides the data sets up
-#     yerrs : 2D array
-#         y errors to plot
-#     fns : list(function)
-#         The ith fn is the fit function used to fit the data for the ith NV
-#     popts : list(list(numeric))
-#         The ith popt is the curve fit results for the ith NV
-#     norms : list(numeric)
-#         The ith factor in the list is used to normalize the ith data set
-#     offset : numeric
-#         offset between plotted data sets - default 0.05
-#     """
-#     min_x = min(x)
-#     max_x = max(x)
-#     x_linspace = np.linspace(min_x, max_x, 1000)
-#     num_nvs = len(nv_list)
-#     for nv_ind in range(num_nvs):
-#         fn = fns[nv_ind]
-#         if fn is None:
-#             continue
-#         nv_sig = nv_list[nv_ind]
-#         popt = popts[nv_ind]
-#         label = get_nv_num(nv_sig)
-#         nv_offset = offset * (num_nvs - 1 - nv_ind)
-#         norm = 1 if norms is None else norms[nv_ind]
-#         y = ys[nv_ind] / norm + nv_offset
-#         yerr = None if yerrs is None else yerrs[nv_ind] / norm
-#         color = kpl.data_color_cycler[nv_ind]
-#         kpl.plot_points(
-#             ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
-#         )
-#         kpl.plot_line(
-#             ax,
-#             x_linspace,
-#             (fn(x_linspace, *popt) / norm) + nv_offset,
-#             color=color,
-#         )
-#     # excess = 0.08 * (max_x - min_x)
-#     # ax.set_xlim(min_x - excess, max_x + excess)
-#     ax.legend(loc=kpl.Loc.LOWER_RIGHT)
-
-# Original with tweaks
-# def plot_fit(
-#     ax, nv_list, x, ys, yerrs=None, fns=None, popts=None, norms=None, offset=0.10
-# ):
-#     """Plot multiple data sets (with a common set of x vals) with an offset between
-#     the sets such that they are separated and easier to interpret. Useful for
-#     plotting simultaneous data from multiple NVs.
-
-#     Parameters
-#     ----------
-#     ax : matplotlib axes
-#         axes to plot on
-#     nv_list : list(nv_sig)
-#         List of NV sigs to plot
-#     x : 1D array
-#         x values to plot
-#     ys : 2D array
-#         y values to plot - first dimension divides the data sets up
-#     yerrs : 2D array
-#         y errors to plot
-#     fns : list(function)
-#         The ith fn is the fit function used to fit the data for the ith NV
-#     popts : list(list(numeric))
-#         The ith popt is the curve fit results for the ith NV
-#     norms : list(numeric)
-#         The ith factor in the list is used to normalize the ith data set
-#     offset : numeric
-#         offset between plotted data sets - default 0.05
-#     """
-#     min_x = min(x)
-#     min_x = 0
-#     max_x = max(x)
-#     x_linspace = np.linspace(min_x, max_x, 1000)
-#     num_nvs = len(nv_list)
-#     for nv_ind in range(num_nvs):
-#         fn = fns[nv_ind]
-#         if fn is None:
-#             continue
-#         nv_sig = nv_list[nv_ind]
-#         popt = popts[nv_ind]
-#         label = get_nv_num(nv_sig)
-#         nv_offset = offset * (num_nvs - 1 - nv_ind)
-#         norm = 1 if norms is None else norms[nv_ind]
-#         color = kpl.data_color_cycler[nv_ind]
-#         # MCC
-#         if nv_ind == 1:
-#             color = kpl.KplColors.GRAY
-#             nv_offset = 0
-#             label = 5
-#         elif nv_ind > 1:
-#             nv_offset = nv_offset = offset * (num_nvs - nv_ind)
-#             label = int(label) - 1
-#         y = ys[nv_ind] / norm + nv_offset
-#         yerr = None if yerrs is None else yerrs[nv_ind] / norm
-#         yerr = None  # MCC
-#         kpl.plot_points(
-#             ax, x, y, yerr=yerr, label=label, size=kpl.Size.SMALL, color=color
-#         )
-#         kpl.plot_line(
-#             ax,
-#             x_linspace,
-#             (fn(x_linspace, *popt) / norm) + nv_offset,
-#             color=color,
-#         )
-#     # excess = 0.08 * (max_x - min_x)
-#     # ax.set_xlim(min_x - excess, max_x + excess)
-#     # ncols = 3  # MCC
-#     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
-
-
 # Separate plots, shared axes
 def plot_fit(
     axes_pack,
@@ -751,7 +623,7 @@ def plot_fit(
     Parameters
     ----------
     ax : matplotlib axes
-        axes to plot on
+        axes to plot on, flattened
     nv_list : list(nv_sig)
         List of NV sigs to plot
     x : 1D array
@@ -855,6 +727,36 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
     )
     timestamp = dm.get_time_stamp()
     anim.save(Path.home() / f"lab/movies/{timestamp}.gif")
+
+
+def plot_correlations(axes_pack, nv_list, x, counts):
+    num_nvs = len(nv_list)
+
+    background_nv_ind = 1
+
+    for nv_ind_1 in range(num_nvs):
+        if nv_ind_1 == background_nv_ind:
+            continue
+        for nv_ind_2 in range(num_nvs):
+            if nv_ind_2 == background_nv_ind:
+                continue
+            if nv_ind_1 == nv_ind_2:
+                continue
+            nv_counts_1 = counts[nv_ind_1]
+            nv_counts_2 = counts[nv_ind_2]
+
+            corrs = []
+            for step_ind in range(len(x)):
+                step_counts_1 = nv_counts_1[:, step_ind, :].flatten()
+                step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
+                corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
+
+            ax = axes_pack[
+                nv_ind_1 if nv_ind_1 < 1 else nv_ind_1 - 1,
+                nv_ind_2 if nv_ind_2 < 1 else nv_ind_2 - 1,
+            ]
+            size = kpl.Size.SMALL
+            kpl.plot_points(ax, x, corrs, size=size)
 
 
 # endregion
