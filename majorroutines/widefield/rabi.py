@@ -129,48 +129,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     return fig
 
 
-def create_correlation_figure(nv_list, taus, counts):
-    ### Make the figure
-
-    # fig, ax = plt.subplots()
-    fig, axes_pack = plt.subplots(
-        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
-    )
-
-    num_nvs = len(nv_list)
-
-    for nv_ind_1 in range(num_nvs):
-        if nv_ind_1 == 1:
-            continue
-        for nv_ind_2 in range(num_nvs):
-            if nv_ind_2 == 1:
-                continue
-            if nv_ind_1 == nv_ind_2:
-                continue
-            nv_counts_1 = counts[nv_ind_1]
-            nv_counts_2 = counts[nv_ind_2]
-
-            corrs = []
-            for step_ind in range(len(taus)):
-                step_counts_1 = nv_counts_1[:, step_ind, :].flatten()
-                step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
-                corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
-
-            ax = axes_pack[
-                nv_ind_1 if nv_ind_1 < 1 else nv_ind_1 - 1,
-                nv_ind_2 if nv_ind_2 < 1 else nv_ind_2 - 1,
-            ]
-            size = kpl.Size.SMALL
-            kpl.plot_points(ax, taus, corrs, size=size)
-
-    ax = axes_pack[-1, 0]
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Random phase microwave pulse duration (ns)", ha="center")
-    ax.set_ylabel(" ")
-    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    return fig
-
-
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     ### Some initial setup
 
@@ -259,7 +217,6 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    correlation_fig = create_correlation_figure(nv_list, taus, counts)
 
     # img_arrays = np.array(data["img_arrays"])
     # img_arrays = np.mean(img_arrays[0], axis=0)
