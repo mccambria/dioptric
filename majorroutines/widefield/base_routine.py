@@ -57,6 +57,8 @@ def main(
         else:
             freq = uwave_freq[ind]
         sig_gen = tb.get_server_sig_gen(ind=ind)
+        if load_iq:  # MCC
+            uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
 
