@@ -740,7 +740,7 @@ def plot_correlations(axes_pack, nv_list, x, counts):
         for nv_ind_2 in range(num_nvs):
             if nv_ind_2 == background_nv_ind:
                 continue
-            if nv_ind_1 == nv_ind_2:
+            if nv_ind_1 >= nv_ind_2:
                 continue
             nv_counts_1 = counts[nv_ind_1]
             nv_counts_2 = counts[nv_ind_2]

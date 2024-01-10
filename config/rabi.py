@@ -92,8 +92,7 @@ config |= {
             "rabi_period": 144,
             # "rabi_period": 32,
             # "uwave_power": 9,
-            # "uwave_power": 8.1,
-            "uwave_power": 8.5,  # IQ
+            "uwave_power": 8.1,
             "iq_delay": 140,
         },
         "sig_gen_1": {
