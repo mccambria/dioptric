@@ -255,7 +255,7 @@ def do_spin_echo_medium(nv_list):
     max_tau = 15e3 + min_tau
     num_steps = 51
     num_reps = 10
-    num_runs = 2
+    num_runs = 400
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -300,7 +300,7 @@ def do_correlation_test(nv_list):
     num_steps = 15
 
     num_reps = 10
-    num_runs = 2
+    num_runs = 400
 
     # MCC
     # min_tau = 16
@@ -445,7 +445,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.47
+    z_coord = 5.45
     magnet_angle = 90
     date_str = "2023_12_21"
 
@@ -630,11 +630,11 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_correlation_test(nv_list)
+        # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
         # do_spin_echo_medium(nv_list)
-        # do_spin_echo_short(nv_list)
+        do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
