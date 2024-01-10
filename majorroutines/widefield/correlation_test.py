@@ -159,17 +159,19 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
+    data = dm.get_raw_data(file_id=1409688614133, no_npz=True)
+    # data = dm.get_raw_data(file_id=1409707132421, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     taus = data["taus"]
-    counts = data["counts"]
+    counts = np.array(data["counts"])
+    ref_counts = np.array(data["ref_counts"])
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
     plt.show(block=True)
