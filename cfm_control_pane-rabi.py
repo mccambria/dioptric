@@ -255,7 +255,7 @@ def do_spin_echo_medium(nv_list):
     max_tau = 15e3 + min_tau
     num_steps = 51
     num_reps = 10
-    num_runs = 400
+    num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -300,7 +300,7 @@ def do_correlation_test(nv_list):
     num_steps = 15
 
     num_reps = 10
-    num_runs = 400
+    num_runs = 2
 
     # MCC
     # min_tau = 16
@@ -309,8 +309,8 @@ def do_correlation_test(nv_list):
     # num_reps = 20
     # num_runs = 30
 
-    anticorrelation_inds = None
-    # anticorrelation_inds = [2, 3]
+    # anticorrelation_inds = None
+    anticorrelation_inds = [2, 3]
 
     correlation_test.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation_inds
