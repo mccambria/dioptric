@@ -145,6 +145,24 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     return fig
 
 
+def create_correlation_figure(nv_list, taus, counts):
+    total_evolution_times = 2 * np.array(taus) / 1e3
+
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(
+        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
+    )
+
+    widefield.plot_correlations(axes_pack, nv_list, total_evolution_times, counts)
+
+    ax = axes_pack[-1, 0]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Total evolution time (µs)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Correlation coefficient", va="center", rotation="vertical")
+    return fig
+
+
 def calc_T2_times(
     peak_total_evolution_times, peak_contrasts, peak_contrast_errs, baselines
 ):
@@ -259,8 +277,8 @@ if __name__ == "__main__":
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    # raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    correlation_fig = create_correlation_figure(nv_list, taus, counts)
 
     peak_total_evolution_times = [
         [2, 162, 335.0],

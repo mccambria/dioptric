@@ -129,6 +129,24 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     return fig
 
 
+def create_correlation_figure(nv_list, taus, counts):
+    ### Make the figure
+
+    # fig, ax = plt.subplots()
+    fig, axes_pack = plt.subplots(
+        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
+    )
+
+    widefield.plot_correlations(axes_pack, nv_list, taus, counts)
+
+    ax = axes_pack[-1, 0]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
+    ax.set_ylabel(" ")
+    fig.text(0.01, 0.55, "Correlation coefficient", va="center", rotation="vertical")
+    return fig
+
+
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     ### Some initial setup
 
@@ -217,6 +235,7 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    correlation_fig = create_correlation_figure(nv_list, taus, counts)
 
     # img_arrays = np.array(data["img_arrays"])
     # img_arrays = np.mean(img_arrays[0], axis=0)

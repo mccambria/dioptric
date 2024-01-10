@@ -70,6 +70,17 @@ def create_correlation_figure(nv_list, taus, counts):
     return fig
 
 
+def charge_state_threshold(counts, norms):
+    nvn_counts = norms
+    nv0_counts = np.mean(counts[:, :, 0, :], axis=(1, 2))
+
+    thresholds = (nvn_counts + nv0_counts) / 2
+
+    states = np.greater(counts, thresholds[:, np.newaxis, np.newaxis, np.newaxis])
+
+    return states
+
+
 def main(
     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation_inds=None
 ):
@@ -156,5 +167,8 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     correlation_fig = create_correlation_figure(nv_list, taus, counts)
+
+    states = charge_state_threshold(counts, norms)
+    correlation_fig = create_correlation_figure(nv_list, taus, states)
 
     plt.show(block=True)
