@@ -36,21 +36,20 @@ def get_seq(args, num_reps):
         return random, rand_phase
 
     def uwave_macro(random, rand_phase):
-        # if anticorrelation:
-        #     qua.play("pi_pulse", i_el)
-        #     qua.play("pi_pulse", sig_gen_el)
-        #     qua.align()
-        #     seq_utils.macro_polarize(anti_pol_coords_list)
+        if anticorrelation:
+            qua.play("pi_pulse", i_el)
+            qua.play("pi_pulse", sig_gen_el)
+            qua.align()
+            seq_utils.macro_polarize(anti_pol_coords_list)
 
-        # qua.play("pi_on_2_pulse", i_el)
-        # qua.play("pi_on_2_pulse", sig_gen_el)
+        qua.play("pi_on_2_pulse", i_el)
+        qua.play("pi_on_2_pulse", sig_gen_el)
 
-        qua.wait(short_wait, sig_gen_el)
         qua.align()
 
         if tau != 0:
-            # qua.assign(rand_phase, random.rand_fixed())
-            qua.assign(rand_phase, 0)  # MCC
+            qua.assign(rand_phase, random.rand_fixed())
+            # qua.assign(rand_phase, 0.5)  # MCC
             qua.play(
                 "pi_pulse" * qua.amp(qua.Math.cos2pi(rand_phase)), i_el, duration=tau
             )
@@ -58,12 +57,10 @@ def get_seq(args, num_reps):
                 "pi_pulse" * qua.amp(qua.Math.sin2pi(rand_phase)), q_el, duration=tau
             )
             qua.play("pi_pulse", sig_gen_el, duration=tau)
+            qua.align()
 
-        qua.wait(short_wait, sig_gen_el)
-        qua.align()
-
-        # qua.play("pi_on_2_pulse", i_el)
-        # qua.play("pi_on_2_pulse", sig_gen_el)
+        qua.play("pi_on_2_pulse", i_el)
+        qua.play("pi_on_2_pulse", sig_gen_el)
 
         qua.wait(buffer, sig_gen_el)
 

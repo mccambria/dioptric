@@ -295,19 +295,19 @@ def do_xy8(nv_list):
 
 
 def do_correlation_test(nv_list):
-    # min_tau = 16
-    # max_tau = 72
-    # num_steps = 15
+    min_tau = 16
+    max_tau = 72
+    num_steps = 15
 
-    # num_reps = 10
-    # num_runs = 400
+    num_reps = 10
+    num_runs = 400
 
     # MCC
-    min_tau = 16
-    max_tau = 240 + min_tau
-    num_steps = 31
-    num_reps = 20
-    num_runs = 30
+    # min_tau = 16
+    # max_tau = 240 + min_tau
+    # num_steps = 31
+    # num_reps = 20
+    # num_runs = 30
 
     anticorrelation_inds = None
     # anticorrelation_inds = [2, 3]
@@ -631,8 +631,8 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         do_correlation_test(nv_list)
-        do_spin_echo(nv_list)
-        do_spin_echo_long(nv_list)
+        # do_spin_echo(nv_list)
+        # do_spin_echo_long(nv_list)
         # do_spin_echo_medium(nv_list)
         # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
@@ -683,7 +683,5 @@ if __name__ == "__main__":
         tb.reset_cfm()
         cxn = common.labrad_connect()
         cxn.disconnect()
-        plt.show(block=True)
-        tb.reset_safe_stop()
         plt.show(block=True)
         tb.reset_safe_stop()
