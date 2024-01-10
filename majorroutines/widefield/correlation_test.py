@@ -57,7 +57,7 @@ def create_correlation_figure(nv_list, taus, counts):
 
     # fig, ax = plt.subplots()
     fig, axes_pack = plt.subplots(
-        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
+        nrows=4, ncols=4, sharex=True, sharey=True, figsize=[10, 10]
     )
 
     widefield.plot_correlations(axes_pack, nv_list, taus, counts)
@@ -142,8 +142,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1409688614133, no_npz=True)
-    data = dm.get_raw_data(file_id=1409764725428, no_npz=True)
+    data = dm.get_raw_data(file_id=1409886887927, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
