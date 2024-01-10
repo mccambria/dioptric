@@ -57,7 +57,7 @@ def create_correlation_figure(nv_list, taus, counts):
 
     # fig, ax = plt.subplots()
     fig, axes_pack = plt.subplots(
-        nrows=4, ncols=4, sharex=True, sharey=True, figsize=[10, 10]
+        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
     )
 
     widefield.plot_correlations(axes_pack, nv_list, taus, counts)
@@ -66,7 +66,7 @@ def create_correlation_figure(nv_list, taus, counts):
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Random phase pulse duration (ns)", ha="center")
     ax.set_ylabel(" ")
-    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    fig.text(0.01, 0.55, "Correlation coefficient", va="center", rotation="vertical")
     return fig
 
 

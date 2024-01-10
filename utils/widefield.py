@@ -740,21 +740,25 @@ def plot_correlations(axes_pack, nv_list, x, counts):
         for nv_ind_2 in range(num_nvs):
             if nv_ind_2 == background_nv_ind:
                 continue
-            if nv_ind_1 >= nv_ind_2:
+
+            ax = axes_pack[
+                nv_ind_1 if nv_ind_1 < 1 else nv_ind_1 - 1,
+                nv_ind_2 if nv_ind_2 < 1 else nv_ind_2 - 1,
+            ]
+
+            if nv_ind_1 == nv_ind_2:
+                color = kpl.data_color_cycler[nv_ind_1]
+                ax.set_facecolor(color)
                 continue
+
             nv_counts_1 = counts[nv_ind_1]
             nv_counts_2 = counts[nv_ind_2]
-
             corrs = []
             for step_ind in range(len(x)):
                 step_counts_1 = nv_counts_1[:, step_ind, :].flatten()
                 step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
                 corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
 
-            ax = axes_pack[
-                nv_ind_1 if nv_ind_1 < 1 else nv_ind_1 - 1,
-                nv_ind_2 if nv_ind_2 < 1 else nv_ind_2 - 1,
-            ]
             size = kpl.Size.SMALL
             kpl.plot_points(ax, x, corrs, size=size)
 
