@@ -22,25 +22,24 @@ timeout = 5
 ### END NODE INFO
 """
 
-from qm import QuantumMachinesManager
+import importlib
+import logging
+import os
+import socket
+import sys
+import time
+
+import numpy
+import numpy as np
+from labrad.server import LabradServer, setting
+from qm import CompilerOptionArguments, QuantumMachinesManager
 from qualang_tools.results import fetching_tool, progress_counter
-from labrad.server import LabradServer
-from labrad.server import setting
+
+from servers.inputs.interfaces.tagger import Tagger
+from servers.timing.interfaces.pulse_gen import PulseGen
 from utils import common
 from utils import tool_belt as tb
 from utils.constants import CollectionMode
-import numpy as np
-import importlib
-import numpy
-import logging
-import sys
-import os
-import socket
-from servers.inputs.interfaces.tagger import Tagger
-from servers.timing.interfaces.pulse_gen import PulseGen
-from qm import CompilerOptionArguments
-import time
-import importlib
 
 
 def get_compiled_program_key(seq_file, seq_args_string, num_reps):
@@ -223,6 +222,23 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         self.stream_immediate(
             c, seq_file="constant_ac.py", seq_args_string=seq_args_string, num_reps=-1
+        )
+
+    # fmt: off
+    @setting(17, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", period="v[]")
+    def square_wave(self, c, digital_channels=[], analog_channels=[], analog_voltages=[], period=1000):
+    # fmt: on
+
+        digital_channels = [int(el) for el in digital_channels]
+        analog_channels = [int(el) for el in analog_channels]
+        analog_voltages = [float(el) for el in analog_voltages]
+        period = float(period)
+
+        args = [digital_channels, analog_channels, analog_voltages, period]
+        seq_args_string = tb.encode_seq_args(args)
+
+        self.stream_immediate(
+            c, seq_file="square_wave.py", seq_args_string=seq_args_string, num_reps=-1
         )
 
     # endregion

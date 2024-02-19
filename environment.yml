@@ -24,6 +24,7 @@ dependencies:
       - pylabrad
       - strenum
       - twisted
+      - pywin32
       - mpmath
       - qualang-tools
       - qm-qua
@@ -31,3 +32,8 @@ dependencies:
       - PIPython
       - pyvisa
       - pulsestreamer
+      - boxsdk
+      - PyJWT
+      - ujson
+      - orjson
+

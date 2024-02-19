@@ -7,8 +7,9 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes, ControlStyle
 from pathlib import Path
+
+from utils.constants import ControlStyle, ModTypes
 
 home = Path.home()
 

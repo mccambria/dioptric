@@ -9,12 +9,13 @@ Created September 10th, 2021
 """
 
 import copy
-import platform
-from pathlib import Path
-import socket
-import json
 import importlib
+import json
+import platform
+import socket
 import sys
+from pathlib import Path
+
 import labrad
 import numpy as np
 
@@ -25,6 +26,7 @@ _cache_config_copy = None
 def get_config_module(pc_name=None, reload=False):
     if pc_name is None:
         pc_name = socket.gethostname()
+    pc_name = pc_name.lower()
     try:
         module_name = f"config.{pc_name}"
         module = importlib.import_module(module_name)

@@ -339,6 +339,21 @@ def do_dq_relaxation(nv_list):
     )
 
 
+def do_opx_square_wave():
+    cxn = common.labrad_connect()
+    opx = cxn.QM_opx
+
+    # Yellow
+    opx.square_wave(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [1.0],  # Analog voltages
+        1000,  # Period (ns)
+    )
+    input("Press enter to stop...")
+    # sig_gen.uwave_off()
+
+
 def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
@@ -364,12 +379,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.35],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [1.0],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -385,14 +400,14 @@ def do_opx_constant_ac():
     #     [75, 75],  # Analog frequencies
     # )
     # Red + green
-    opx.constant_ac(
-        [1, 4],  # Digital channels
-        [2, 3, 6, 4],  # Analog channels
-        [0.17, 0.17, 0.19, 0.19],  # Analog voltages
-        # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
-        [74.1, 75.9, 109.811, 110.845],  # Analog frequencies
-        # [75, 75, 110, 110],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [1, 4],  # Digital channels
+    #     [2, 3, 6, 4],  # Analog channels
+    #     [0.17, 0.17, 0.19, 0.19],  # Analog voltages
+    #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
+    #     [74.1, 75.9, 109.811, 110.845],  # Analog frequencies
+    #     # [75, 75, 110, 110],  # Analog frequencies
+    # )
     # Red + green
     # opx.constant_ac(
     #     [1, 4],  # Digital channels
@@ -601,7 +616,7 @@ if __name__ == "__main__":
         # pass
 
         kpl.init_kplotlib()
-        tb.init_safe_stop()
+        # tb.init_safe_stop()
 
         # Make sure the OPX config is up to date
         # cxn = common.labrad_connect()
@@ -634,7 +649,7 @@ if __name__ == "__main__":
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
         # do_spin_echo_medium(nv_list)
-        do_spin_echo_short(nv_list)
+        # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -649,6 +664,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
         # do_opx_constant_ac()
+        do_opx_square_wave()
 
         # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)
