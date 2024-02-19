@@ -344,11 +344,18 @@ def do_opx_square_wave():
     opx = cxn.QM_opx
 
     # Yellow
+    # opx.square_wave(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [1.0],  # Analog voltages
+    #     1000,  # Period (ns)
+    # )
+    # Camera trigger
     opx.square_wave(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [1.0],  # Analog voltages
-        1000,  # Period (ns)
+        [5],  # Digital channels
+        [],  # Analog channels
+        [],  # Analog voltages
+        10000,  # Period (ns)
     )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
@@ -379,35 +386,41 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [1.0],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [1.0],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
-    #     [6, 4],  # Analog channels
+    #     [3, 4],  # Analog channels
     #     [0.19, 0.19],  # Analog voltages
     #     [110, 110],  # Analog frequencies
     # )
     # Red
     # opx.constant_ac(
     #     [1],  # Digital channels
-    #     [2, 3],  # Analog channels
-    #     [0.31, 0.31],  # Analog voltages
+    #     [2, 6],  # Analog channels
+    #     [0.17, 0.17],  # Analog voltages
     #     [75, 75],  # Analog frequencies
     # )
     # Red + green
     # opx.constant_ac(
-    #     [1, 4],  # Digital channels
-    #     [2, 3, 6, 4],  # Analog channels
-    #     [0.17, 0.17, 0.19, 0.19],  # Analog voltages
-    #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
-    #     [74.1, 75.9, 109.811, 110.845],  # Analog frequencies
-    #     # [75, 75, 110, 110],  # Analog frequencies
+    #     [4, 1],  # Digital channels
+    #     [3, 4, 2, 6],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
+    #     [110, 110, 75, 75],  # Analog frequencies
     # )
+
+    # Red + green +  Yellow
+    opx.constant_ac(
+        [4, 1],  # Digital channels
+        [3, 4, 2, 6, 7],  # Analog channels
+        [0.19, 0.19, 0.17, 0.17, 1.0],  # Analog voltages
+        [110, 110, 75, 75, 0],  # Analog frequencies
+    )
     # Red + green
     # opx.constant_ac(
     #     [1, 4],  # Digital channels
@@ -663,8 +676,8 @@ if __name__ == "__main__":
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
-        # do_opx_constant_ac()
-        do_opx_square_wave()
+        do_opx_constant_ac()
+        # do_opx_square_wave()
 
         # do_charge_state_histograms(nv_list, 1000)
         # do_optimize_z(nv_sig)

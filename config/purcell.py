@@ -388,7 +388,7 @@ opx_config = {
         "do_sig_gen_STAN_sg394_dm": {
             "digitalInputs": {
                 "chan": {
-                    "port": ("con1", 10),
+                    "port": ("con1", 9),
                     # "delay": 0,
                     "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
                     + iq_buffer // 2,
@@ -425,7 +425,7 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -449,13 +449,13 @@ opx_config = {
             "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_COBO_638_y": {
-            "singleInput": {"port": ("con1", 3)},
+            "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
         },
         "ao_laser_INTE_520_x": {
-            "singleInput": {"port": ("con1", 6)},
+            "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},

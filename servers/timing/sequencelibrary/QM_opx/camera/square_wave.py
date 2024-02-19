@@ -12,8 +12,7 @@ Created on June 21st, 2023
 import matplotlib.pyplot as plt
 import numpy
 import qm
-from qm import generate_qua_script, qua
-from qm.QuantumMachinesManager import QuantumMachinesManager
+from qm import QuantumMachinesManager, generate_qua_script, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
@@ -69,7 +68,11 @@ if __name__ == "__main__":
     opx_config = config_module.opx_config
 
     ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(ip_address)
+    # qmm = QuantumMachinesManager(ip_address)
+    cluster_name = "kolkowitz_nv_lab"
+    qmm = QuantumMachinesManager(
+        host=ip_address, port=9510, cluster_name=cluster_name, log_level="DEBUG"
+    )
     opx = qmm.open_qm(opx_config)
 
     try:
@@ -92,4 +95,3 @@ if __name__ == "__main__":
         print(exc)
     finally:
         qmm.close_all_quantum_machines()
-        qmm.close()
