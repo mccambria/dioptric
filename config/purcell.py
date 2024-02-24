@@ -76,7 +76,11 @@ config |= {
         "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.121::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration.112::5025::SOCKET",
         "tagger_SWAB_20_serial": "1740000JEH",
-        "QM_opx_ip": "192.168.0.117",
+        "QM_opx_args": {
+            "host": "192.168.0.117",
+            "port": 9510,
+            "cluster_name": "kolkowitz_nv_lab",
+        },
     },
     ###
     "Microwaves": {
@@ -108,13 +112,16 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 1000,
+        # "em_gain": 1000,
+        "em_gain": None,
         "temp": -60,
-        "timeout": 1000,  # ms
+        "timeout": 60000,  # ms
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
-        "roi": (226, 185, 150, 150),  # offsetX, offsetY, width, height
+        # "readout_mode": 6,  # Fast conventional
+        # "roi": (226, 185, 150, 150),  # offsetX, offsetY, width, height
+        "roi": None,  # offsetX, offsetY, width, height
     },
     ###
     "Optics": {
@@ -138,7 +145,7 @@ config |= {
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
         LaserKey.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
-            "duration": 30e6,
+            "duration": 500e6,
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
@@ -180,6 +187,7 @@ config |= {
         "counter": "QM_opx",
         "magnet_rotation": "rotation_stage_thor_ell18k",
         "pos_z": "pos_z_PI_pifoc",
+        # "pos_z": None,
         "pulse_gen": "QM_opx",
         "sig_gen_LOW": "sig_gen_STAN_sg394",
         "sig_gen_HIGH": "sig_gen_STAN_sg394_2",
@@ -193,7 +201,7 @@ config |= {
         "Daq": {
             "ao_galvo_x": "dev1/AO0",
             "ao_galvo_y": "dev1/AO1",
-            "ao_objective_piezo": "dev1/AO2",
+            "ao_objective_piezo": "dev1/AO21",
             "di_clock": "PFI12",
         },
         "PulseGen": {
@@ -204,7 +212,7 @@ config |= {
             "do_sample_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,
             "do_sig_gen_STAN_sg394_gate": 10,
-            "do_camera_trigger": 7,
+            "do_camera_trigger": 5,
         },
         "Tagger": {"di_apd_0": 2, "di_apd_1": 4, "di_apd_gate": 3, "di_clock": 1},
     },
@@ -575,7 +583,8 @@ opx_config = {
         # "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
         # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
         "green_aod_cw": {"type": "constant", "sample": 0.19},
-        "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
+        # "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
+        "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         "yellow_charge_readout": {"type": "constant", "sample": 0.080},  # 30e6

@@ -9,12 +9,13 @@ Created on Decemeber 1st, 2022
 
 # region Imports and constants
 
-import numpy as np
 import time
+
+import numpy as np
+
 from utils import common
 from utils import tool_belt as tb
 from utils.constants import ControlMode
-
 
 # endregion
 # region Module internal functions
@@ -195,7 +196,9 @@ def get_nv_coords(nv_sig, coords_suffix=None, drift_adjust=True, drift=None):
     coords_key = get_coords_key(coords_suffix)
     coords = nv_sig[coords_key]
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords=coords, drift=drift, coords_suffix=coords_suffix)
+        coords = adjust_coords_for_drift(
+            coords=coords, drift=drift, coords_suffix=coords_suffix
+        )
     return coords
 
 
@@ -348,8 +351,12 @@ def set_drift(drift, coords_suffix=None):
 
 
 def reset_drift(coords_suffix=None):
-    drift = get_drift(coords_suffix)
-    return set_drift([0.0] * len(drift), coords_suffix)
+    try:
+        drift = get_drift(coords_suffix)
+        len_drift = len(drift)
+    except Exception:
+        len_drift = 3
+    return set_drift([0.0] * len_drift, coords_suffix)
 
 
 def reset_xy_drift(coords_suffix=None):

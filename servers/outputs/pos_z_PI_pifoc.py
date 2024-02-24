@@ -22,16 +22,17 @@ timeout =
 ### END NODE INFO
 """
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-from pipython import GCSDevice
-import nidaqmx
 import logging
-import numpy
-import nidaqmx.stream_writers as stream_writers
 import socket
 from pathlib import Path
+
+import nidaqmx
+import nidaqmx.stream_writers as stream_writers
+import numpy
+from labrad.server import LabradServer, setting
+from pipython import GCSDevice
+from twisted.internet.defer import ensureDeferred
+
 from utils import common
 from utils import tool_belt as tb
 
@@ -54,15 +55,22 @@ class PosZPiPifoc(LabradServer):
 
         config = common.get_config_dict()
 
-        gcs_dll_path = config["DeviceIDs"]["gcs_dll_path"]
-        model = config["DeviceIDs"]["objective_piezo_model"]
-        self.piezo = GCSDevice(devname=model, gcsdll=gcs_dll_path)
-        # Connect the specific device with the serial number
-        serial = config["DeviceIDs"]["objective_piezo_serial"]
-        self.piezo.ConnectUSB(serial)
-        # Just one axis for this device
-        self.axis = self.piezo.axes[0]
-        self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
+        try:
+            gcs_dll_path = config["DeviceIDs"]["gcs_dll_path"]
+            model = config["DeviceIDs"]["objective_piezo_model"]
+            self.piezo = GCSDevice(devname=model, gcsdll=gcs_dll_path)
+            # Connect the specific device with the serial number
+            serial = config["DeviceIDs"]["objective_piezo_serial"]
+            self.piezo.ConnectUSB(serial)
+            # Just one axis for this device
+            self.axis = self.piezo.axes[0]
+            self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
+        except Exception as exc:
+            self.piezo = None
+            self.axis = None
+            logging.info("Failed to connect to piezo")
+            logging.info(exc)
+
         daq_ao = config["Wiring"]["Daq"]["ao_objective_piezo"]
         self.daq_ao_objective_piezo = daq_ao
         daq_clock = config["Wiring"]["Daq"]["di_clock"]
@@ -81,7 +89,8 @@ class PosZPiPifoc(LabradServer):
         logging.info("Init complete")
 
     def stopServer(self):
-        self.piezo.CloseConnection()
+        if self.piezo is not None:
+            self.piezo.CloseConnection()
 
     def compensate_hysteresis_z(self, position):
         """
@@ -251,6 +260,21 @@ class PosZPiPifoc(LabradServer):
 __server__ = PosZPiPifoc()
 
 if __name__ == "__main__":
-    from labrad import util
+    # from labrad import util
 
-    util.runServer(__server__)
+    # util.runServer(__server__)
+
+    config = common.get_config_dict()
+    gcs_dll_path = config["DeviceIDs"]["gcs_dll_path"]
+    model = config["DeviceIDs"]["objective_piezo_model"]
+    with GCSDevice(devname=model, gcsdll=gcs_dll_path) as piezo:
+        serial = config["DeviceIDs"]["objective_piezo_serial"]
+        print(piezo.EnumerateUSB())
+        piezo.ConnectUSB(serial)
+        # Just one axis for this device
+        axis = piezo.axes[0]
+        piezo.SPA(axis, 0x06000500, 2)  # External control mode
+        daq_ao = config["Wiring"]["Daq"]["ao_objective_piezo"]
+        daq_ao_objective_piezo = daq_ao
+        daq_clock = config["Wiring"]["Daq"]["di_clock"]
+        daq_di_clock = daq_clock

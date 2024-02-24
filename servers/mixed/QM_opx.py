@@ -65,8 +65,8 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         config = common.get_config_dict()
 
         # Get manager and OPX
-        ip_address = config["DeviceIDs"]["QM_opx_ip"]
-        self.qmm = QuantumMachinesManager(ip_address)
+        qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+        self.qmm = QuantumMachinesManager(**qm_opx_args)
 
         self.running_job = None
         self.opx_config = None

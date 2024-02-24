@@ -22,16 +22,16 @@ timeout = 5
 """
 
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from utils import common
-from utils import tool_belt as tb
-import numpy as np
-import socket
 import logging
-from utils import widefield
+import socket
 import time
 from enum import Enum, IntEnum, auto
+
+import numpy as np
+from labrad.server import LabradServer, setting
+
+from utils import common, widefield
+from utils import tool_belt as tb
 
 """
 Readout modes. Readout mode specifies EM vs conventional, as well as vertical and horizontal 
@@ -97,8 +97,8 @@ class CameraNuvuHnu512gamma(LabradServer):
         # For readability keep the C stuff in the nuvu_camera folder. To allow this file
         # to be easily imported in post-processing contexts, only import the C stuff if
         # we're actually initializating the server
+        from servers.inputs.nuvu_camera.defines import ProcessingType, TriggerMode
         from servers.inputs.nuvu_camera.nc_camera import NcCamera
-        from servers.inputs.nuvu_camera.defines import TriggerMode, ProcessingType
 
         # Instantiate the software camera and connect to the hardware camera
         self.cam = NcCamera()
@@ -118,7 +118,10 @@ class CameraNuvuHnu512gamma(LabradServer):
             self.set_roi(*roi)
 
         em_gain = widefield._get_camera_em_gain()
-        self.cam.setCalibratedEmGain(em_gain)
+        if em_gain is None:
+            self.cam.setCalibratedEmGain(1)
+        else:
+            self.cam.setCalibratedEmGain(em_gain)
 
         self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
         self.cam.update_bias()

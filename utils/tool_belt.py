@@ -9,22 +9,25 @@ Created on November 23rd, 2018
 @author: mccambria
 """
 
+import json
+import logging
+import math
+import signal
+import smtplib
+import socket
+import time
+import traceback
+from decimal import Decimal
+from email.mime.text import MIMEText
 from enum import Enum
+
+import keyboard
+import keyring
 import numpy as np
 from numpy import exp
-import json
-import time
-import socket
-import smtplib
-from email.mime.text import MIMEText
-import traceback
-import keyring
-import math
+
 from utils import common
-from utils.constants import NormMode, ModMode, Digital, Boltzmann
-import signal
-from decimal import Decimal
-import logging
+from utils.constants import Boltzmann, Digital, ModMode, NormMode
 
 # region Server utils
 # Utility functions to be used by LabRAD servers
@@ -373,9 +376,7 @@ def gaussian(x, *params):
 def sinexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
     half_pi = np.pi / 2
-    return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(
-        -(decay**2) * t
-    )
+    return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(-(decay**2) * t)
 
 
 def cosexp(t, offset, amp, freq, decay):
@@ -419,8 +420,7 @@ def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
     two_pi = 2 * np.pi
 
     return offset + np.exp(-t / abs(decay)) * (
-        amp_1 * np.cos(two_pi * freq_1 * t)
-        + amp_2 * np.cos(two_pi * freq_2 * t)
+        amp_1 * np.cos(two_pi * freq_1 * t) + amp_2 * np.cos(two_pi * freq_2 * t)
         # + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
@@ -956,7 +956,7 @@ def init_safe_stop():
         if SAFESTOPFLAG:
             print("\nPress CTRL + C to stop...\n")
     except Exception as exc:
-        print("\nPress CTRL + C to stop...\n")
+        print("\nPress CTRL + C to  stop...\n")
     SAFESTOPFLAG = False
     signal.signal(signal.SIGINT, _safe_stop_handler)
     return

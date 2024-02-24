@@ -12,9 +12,11 @@ Created on June 16th, 2023
 
 
 import copy
+import os
 import sys
 import time
 
+import keyboard
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -55,8 +57,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 9
-    num_steps = 60
+    scan_range = 8
+    num_steps = 20
     nv_sig[LaserKey.IMAGING] = green_laser_dict
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
@@ -355,7 +357,7 @@ def do_opx_square_wave():
         [5],  # Digital channels
         [],  # Analog channels
         [],  # Analog voltages
-        10000,  # Period (ns)
+        1000,  # Period (ns)
     )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
@@ -389,38 +391,55 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [],  # Digital channels
     #     [7],  # Analog channels
-    #     [1.0],  # Analog voltages
+    #     [1.1],  # Analog voltages
     #     [0],  # Analog frequencies
     # )
     # Green
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.19, 0.19],  # Analog voltages
-    #     [110, 110],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4],  # Analog channels
+        [0.19, 0.19],  # Anal og voltages
+        [110, 110],  # Analog frequencies
+    )
     # Red
+    # freqs = [65, 75, 85]
+    # # freqs = [73, 75, 77]
+    # while not keyboard.is_pressed("q"):
+    #     for freq in freqs:
+    #         opx.constant_ac(
+    #             [1],  # Digital channels
+    #             [2, 6],  # Analog channels
+    #             [0.17, 0.17],  # Analog voltages
+    #             [
+    #                 75,
+    #                 freq,
+    #             ],  # Analog frequencies                                                                                                                                                                              uencies
+    #         )
+    #         time.sleep(0.5)
+    #     opx.halt()
     # opx.constant_ac(
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
     #     [0.17, 0.17],  # Analog voltages
-    #     [75, 75],  # Analog frequencies
+    #     [
+    #         75,
+    #         75,
+    #     ],  # Analog frequencies                                                                                                                                                                              uencies
     # )
-    # Red + green
+    # green + Red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
     #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
     #     [110, 110, 75, 75],  # Analog frequencies
     # )
-
     # Red + green +  Yellow
-    opx.constant_ac(
-        [4, 1],  # Digital channels
-        [3, 4, 2, 6, 7],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17, 1.0],  # Analog voltages
-        [110, 110, 75, 75, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels
+    #     [3, 4, 2, 6, 7],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17, 1.0],  # Analog voltages
+    #     [110, 110, 75, 75, 0],  # Analog frequencies
+    # )
     # Red + green
     # opx.constant_ac(
     #     [1, 4],  # Digital channels
@@ -473,9 +492,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.45
+    z_coord = 5.0
     magnet_angle = 90
-    date_str = "2023_12_21"
+    date_str = "2024_02_23"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -489,7 +508,7 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [107.64, 76.7],
+        [110, 75],
         # [74.828, 109.09],
         [110, 50],
         [85.41, 60.905],
@@ -631,6 +650,13 @@ if __name__ == "__main__":
         kpl.init_kplotlib()
         # tb.init_safe_stop()
 
+        # safe stop test
+        # ind = 0
+        # while not tb.safe_stop() and ind < 10:
+        #     time.sleep(1)
+        #     ind += 1
+        #     print(ind)
+
         # Make sure the OPX config is up to date
         # cxn = common.labrad_connect()
         # opx = cxn.QM_opx
@@ -645,7 +671,7 @@ if __name__ == "__main__":
         # widefield.set_pixel_drift([-22, +20])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
-        # pos.set_xyz_on_nv(nv_sig)
+        pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.linspace(5.5, 5.7, 11):
         #     nv_sig["coords"][2] = z
@@ -653,6 +679,7 @@ if __name__ == "__main__":
         #     do_widefield_image_sample(nv_sig, 100)
         #     time.sleep(5)
         # do_widefield_image_sample(nv_sig, 100)
+        # do_scanning_image_sample(nv_sig)
         # do_optimize_pixel(nv_sig)
 
         # do_resonance(nv_list)
