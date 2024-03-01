@@ -57,8 +57,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 4
-    num_steps = 60
+    scan_range = 6
+    num_steps = 30
     nv_sig[LaserKey.IMAGING] = green_laser_dict
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
@@ -194,7 +194,7 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.848
+    freq_center = 2.87
     freq_range = 0.05
     num_steps = 20
     num_reps = 15
@@ -391,16 +391,16 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [],  # Digital channels
     #     [7],  # Analog channels
-    #     [1.1],  # Analog voltages
+    #     [1.0],  # Analog voltages
     #     [0],  # Analog frequencies
     # )
     # Green
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4],  # Analog channels
-        [0.19, 0.19],  # Anal og voltages
-        [110, 110],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4],  # Analog channels
+    #     [0.19, 0.19],  # Anal og voltages
+    #     [110, 110],  # Analog frequencies
+    # )
     # Red
     # freqs = [65, 75, 85]
     # # freqs = [73, 75, 77]
@@ -426,33 +426,33 @@ def do_opx_constant_ac():
     #         75,
     #     ],  # Analog frequencies                                                                                                                                                                              uencies
     # )
-    # green + Red
+    # # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
     #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
-    #     [110, 110, 75, 75],  # Analog frequencies
+    #     [112.64, 112.89, 75, 73.0],  # Analog frequencies
     # )
-    # Red + green +  Yellow
+    # red
+    # opx.constant_ac(
+    #     [1],  # Digital channels
+    #     [2, 6],  # Analog channels
+    #     [0.17, 0.17],  # Analog voltages
+    #     [76.9, 77.4],  # Analog frequencies
+    # )
+    # Green + yellow
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 1.0],  # Analog voltages
+    #     [110, 110, 0],  # Analog frequencies
+    # )
+    # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6, 7],  # Analog channels
     #     [0.19, 0.19, 0.17, 0.17, 1.0],  # Analog voltages
     #     [110, 110, 75, 75, 0],  # Analog frequencies
-    # )
-    # Red + green
-    # opx.constant_ac(
-    #     [1, 4],  # Digital channels
-    #     [2, 3, 6, 4],  # Analog channels
-    #     [0.32, 0.32, 0.19, 0.19],  # Analog voltages
-    #     #
-    #     # [73.8, 76.2, 110.011, 110.845],  # Analog frequencies
-    #     # [72.6, 77.1, 108.3, 112.002],  # Analog frequencies
-    #     #
-    #     [73.8, 74.6, 110.011, 110.845],  # Analog frequencies
-    #     # [72.6, 75.5, 108.3, 112.002],  # Analog frequencies
-    #     #
-    #     # [75, 75, 110, 110],  # Analog frequencies
     # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
@@ -492,9 +492,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 5.0
+    z_coord = 4.0
     magnet_angle = 90
-    date_str = "2024_02_23"
+    date_str = "2024_02_28"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -507,36 +507,32 @@ if __name__ == "__main__":
 
     # region Coords
 
+    # pixel_coords_list = [
+    #     [110, 75],
+    #     [74.828, 109.09],
+    # ]
+    # green_coords_list = [
+    #     [110, 110],
+    #     [110.7, 110.817],
+    # ]
+    # red_coords_list = [
+    #     [75, 75],
+    #     [75.007, 76.233],
+    # ]
+
+    # endregion
     pixel_coords_list = [
-        [110, 75],
-        # [74.828, 109.09],
-        [110, 50],
-        [85.41, 60.905],
-        [72.062, 51.179],
-        [72.573, 16.985],
-        [52.824, 95.547],
+        [172.839, 229.285],
+        [74.828, 109.09],
     ]
     green_coords_list = [
         [110, 110],
-        # [110.7, 110.817],
-        [112.041, 109.005],
-        [110.867, 109.187],
-        [110.671, 108.92],
-        [110.867, 107.816],
-        [109.872, 110.341],
+        [110.7, 110.817],
     ]
     red_coords_list = [
         [75, 75],
-        # [75.007, 76.233],
-        [76.102, 74.64],
-        [75.252, 74.807],
-        [74.921, 74.602],
-        [74.903, 73.591],
-        [74.391, 75.83],
+        [75.007, 76.233],
     ]
-
-    # endregion
-
     # region NV sigs
 
     nv0 = copy.deepcopy(nv_sig_shell) | {
@@ -554,33 +550,33 @@ if __name__ == "__main__":
         red_coords_key: red_coords_list.pop(0),
     }
 
-    nv2 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv2_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-    }
+    # nv2 = copy.deepcopy(nv_sig_shell) | {
+    #     "name": f"{sample_name}-nv2_{date_str}",
+    #     pixel_coords_key: pixel_coords_list.pop(0),
+    #     green_coords_key: green_coords_list.pop(0),
+    #     red_coords_key: red_coords_list.pop(0),
+    # }
 
-    nv3 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv3_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-    }
+    # nv3 = copy.deepcopy(nv_sig_shell) | {
+    #     "name": f"{sample_name}-nv3_{date_str}",
+    #     pixel_coords_key: pixel_coords_list.pop(0),
+    #     green_coords_key: green_coords_list.pop(0),
+    #     red_coords_key: red_coords_list.pop(0),
+    # }
 
-    nv4 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv4_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-    }
+    # nv4 = copy.deepcopy(nv_sig_shell) | {
+    #     "name": f"{sample_name}-nv4_{date_str}",
+    #     pixel_coords_key: pixel_coords_list.pop(0),
+    #     green_coords_key: green_coords_list.pop(0),
+    #     red_coords_key: red_coords_list.pop(0),
+    # }
 
-    nv5 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv5_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-    }
+    # nv5 = copy.deepcopy(nv_sig_shell) | {
+    #     "name": f"{sample_name}-nv5_{date_str}",
+    #     pixel_coords_key: pixel_coords_list.pop(0),
+    #     green_coords_key: green_coords_list.pop(0),
+    #     red_coords_key: red_coords_list.pop(0),
+    # }
 
     # nv6 = copy.deepcopy(nv_sig_shell) | {
     #     "name": f"{sample_name}-nv6_{date_str}",
@@ -616,8 +612,8 @@ if __name__ == "__main__":
     # nv_list = [nv_sig]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
-    # nv_list = [nv0, nv2]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
+    nv_list = [nv0, nv1]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # for nv in nv_list:
@@ -650,72 +646,39 @@ if __name__ == "__main__":
         kpl.init_kplotlib()
         # tb.init_safe_stop()
 
-        # safe stop test
-        # ind = 0
-        # while not tb.safe_stop() and ind < 10:
-        #     time.sleep(1)
-        #     ind += 1
-        #     print(ind)
-
-        # Make sure the OPX config is up to date
-        # cxn = common.labrad_connect()
-        # opx = cxn.QM_opx
-        # opx.update_config()
-
-        # time.sleep(3)
-        # mag_rot_server = tb.get_server_magnet_rotation()
-        # mag_rot_server.set_angle(magnet_angle)
-        # print(mag_rot_server.get_angle())
-
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([-22, +20])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(3.0, 7.0, 21):
-        #     # for z in np.linspace(7.0, 3.0, 21):
+        # for z in np.linspace(3.0, 5.0, 21):
         #     nv_sig["coords"][2] = z
-        #     # do_scanning_image_sample(nv_sig)
-        #     # for ind in range(100):
-        #     do_widefield_image_sample(nv_sig, 1)
-        #     time.sleep(5)
+        #     do_scanning_image_sample(nv_sig)
+        # for ind in range(100):
         # do_widefield_image_sample(nv_sig, 100)
+        #     time.sleep(5)
+
         # do_scanning_image_sample(nv_sig)
+        # do_widefield_image_sample(nv_sig, 100)
+
+        # do_image_nv_list(nv_list)
+
+        # widefield.reset_all_drift()
         # do_optimize_pixel(nv_sig)
+        # do_optimize_green(nv_sig)
+        # do_optimize_red(nv_sig)
 
-        # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
-        # do_correlation_test(nv_list)
-        # do_spin_echo(nv_list)
-        # do_spin_echo_long(nv_list)
-        # do_spin_echo_medium(nv_list)
-        # do_spin_echo_short(nv_list)
-        # do_ramsey(nv_list)
-        # do_sq_relaxation(nv_list)
-        # do_dq_relaxation(nv_list)
-        # do_xy8(nv_list)
-
-        ## Infrequent stuff down here
-
-        # # widefield.reset_all_drift()
+        # widefield.reset_all_drift()
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
-        # do_opx_constant_ac()
-        # do_opx_square_wave()
+        do_charge_state_histograms(nv_list, 1000)
 
-        # do_charge_state_histograms(nv_list, 1000)
-        # do_optimize_z(nv_sig)
-        # do_calibrate_iq_delay(nv_list)
-        # do_image_nv_list(nv_list)
-        # do_optimize_scc(nv_list)
-        # compile_speed_test(nv_list)
-        # do_optimize_red(nv_sig)
-        # do_scc_snr_check(nv_list)
+        # do_resonance_zoom(nv_list)
+
+        # do_opx_constant_ac()
 
     except Exception as exc:
         if do_email:

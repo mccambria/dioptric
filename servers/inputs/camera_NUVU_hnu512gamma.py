@@ -117,10 +117,9 @@ class CameraNuvuHnu512gamma(LabradServer):
         if roi is not None:
             self.set_roi(*roi)
 
-        em_gain = widefield._get_camera_em_gain()
-        if em_gain is None:
-            self.cam.setCalibratedEmGain(1)
-        else:
+        # Check if we're in EM mode
+        if readout_mode in [1, 2, 3, 4, 16, 17, 18, 19]:
+            em_gain = widefield._get_camera_em_gain()
             self.cam.setCalibratedEmGain(em_gain)
 
         self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
@@ -128,7 +127,8 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
         # self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH)
         timeout = widefield._get_camera_timeout()
-        self.cam.set_timeout(timeout)
+        if timeout is not None:
+            self.cam.set_timeout(timeout)
         self.cam.get_size()
 
         # self.cam.set_buffer_count(1000)

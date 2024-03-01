@@ -74,7 +74,7 @@ if __name__ == "__main__":
         ]
         seq, seq_ret_vals = get_seq(args, 4)
 
-        sim_config = SimulationConfig(duration=round(8000 / 4))
+        sim_config = SimulationConfig(duration=round(10e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -8,26 +8,25 @@ Created on October 5th, 2023
 """
 
 
-import numpy
-from qm import qua
-from qm.QuantumMachinesManager import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
-import utils.tool_belt as tb
-import utils.kplotlib as kpl
-from utils.constants import ModMode
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
+import numpy
+from qm import QuantumMachinesManager, generate_qua_script, qua
+from qm.simulate import SimulationConfig
+
+import utils.common as common
+import utils.kplotlib as kpl
+import utils.tool_belt as tb
+from servers.timing.sequencelibrary.QM_opx import seq_utils
+from utils.constants import ModMode
 
 
 def get_seq(args, num_reps):
     readout_duration_ns, readout_laser = args
-    if num_reps == None:
+    if num_reps is None:
         num_reps = 1
 
     laser_element = seq_utils.get_laser_mod_element(readout_laser, sticky=True)
-    camera_element = f"do_camera_trigger"
+    camera_element = "do_camera_trigger"
     readout_duration = round(readout_duration_ns / 4)
     default_duration = seq_utils.get_default_pulse_duration()
     with qua.program() as seq:
@@ -52,12 +51,12 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [3500.0, "laser_OPTO_589"]
+        args = [3000.0, "laser_OPTO_589"]
         seq, seq_ret_vals = get_seq(args, 5)
 
         sim_config = SimulationConfig(duration=round(10e3 / 4))

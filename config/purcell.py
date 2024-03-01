@@ -32,14 +32,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [107.64, 76.7],
-    green_coords_key: [111.85, 109.792],
-    red_coords_key: [75.946, 75.332],
+    pixel_coords_key: [220.265, 152.251],
+    green_coords_key: [110.12, 108.63],
+    red_coords_key: [74.85, 74.0],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [74.828, 109.09],
-    green_coords_key: [110.7, 110.817],
-    red_coords_key: [75.007, 76.233],
+    pixel_coords_key: [332.013, 338.937],
+    green_coords_key: [112.64, 112.89],
+    red_coords_key: [76.9, 77.4],
 }
 
 
@@ -113,9 +113,10 @@ config |= {
         "spot_radius": 5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         # "em_gain": 1000,
-        "em_gain": None,
+        "em_gain": 100,
         "temp": -60,
-        "timeout": 60000,  # ms
+        # "timeout": 1000,  # ms
+        "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
@@ -142,17 +143,19 @@ config |= {
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
         },
-        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
+        # LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
+        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
         LaserKey.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
-            "duration": 500e6,
+            # "duration": 500e6,
+            "duration": 1e9,
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
         LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
-            "duration": 30e6,
+            "duration": 1e9,
             # "duration": 100e6,
         },  # 35e6, 0.09
     },
