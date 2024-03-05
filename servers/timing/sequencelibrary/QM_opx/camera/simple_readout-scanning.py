@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 import numpy
 from qm import QuantumMachinesManager, generate_qua_script, qua
@@ -35,9 +34,10 @@ def get_seq(args, num_reps):
         x_freq = qua.declare(int)
         y_freq = qua.declare(int)
 
+        seq_utils.turn_on_aods([readout_laser])
+
         ### Define one rep here
         def one_rep():
-            seq_utils.turn_on_aods([readout_laser])
             qua.play("on", camera_element)
             with qua.for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
                 qua.update_frequency(x_element, x_freq)
@@ -67,14 +67,22 @@ if __name__ == "__main__":
     try:
         # readout, readout_laser, coords_1, coords_2
         args = [
-            3000.0,
+            2000.0,
             "laser_INTE_520",
-            [105.0, 110.0, 115.0, 115.0],
-            [105.0, 105.0, 105.0, 110.0],
+            [
+                108.21143419610962,
+                109.68543419610963,
+                110.06143419610963,
+            ],
+            [
+                108.60157559559875,
+                109.96457559559875,
+                108.84157559559875,
+            ],
         ]
         seq, seq_ret_vals = get_seq(args, 4)
 
-        sim_config = SimulationConfig(duration=round(10e3 / 4))
+        sim_config = SimulationConfig(duration=round(40e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

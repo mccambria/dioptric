@@ -8,22 +8,21 @@ Created on Fall 2023
 @author: mccambria
 """
 
-
+import os
 import sys
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
+from scipy import ndimage
+
+from majorroutines.widefield import optimize
+from utils import common, widefield
 from utils import data_manager as dm
-from utils import common
-from utils import widefield
-from utils.constants import LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import data_manager as dm
-from majorroutines.widefield import optimize
-from scipy import ndimage
-import os
-import time
+from utils import tool_belt as tb
+from utils.constants import LaserKey
 
 
 def create_histogram(sig_counts_list, ref_counts_list):

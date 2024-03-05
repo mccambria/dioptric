@@ -7,15 +7,13 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
-import numpy
-from qm import qua
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
+import numpy
+from qm import QuantumMachinesManager, generate_qua_script, qua
+from qm.simulate import SimulationConfig
+
+import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
 def get_seq(args, num_reps):
@@ -75,32 +73,28 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
         args = [
-            "laser_INTE_520",
-            10000.0,
             [
                 [110, 109.51847988358679],
                 [0.001, 110.70156405156148],
             ],
-            "laser_COBO_638",
-            1000.0,
             [
                 [75.42725784791932, 75.65982013416432],
                 [75.98725784791932, 74.74382013416432],
             ],
-            "laser_OPTO_589",
-            50000000.0,
+            1000.0,
+            1000.0,
             False,
             True,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(1e6 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -8,7 +8,6 @@ Created on June 21st, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 import numpy
 import qm
@@ -23,8 +22,13 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 def get_seq(args, num_reps=None):
     digital_channels, analog_channels, analog_voltages, period = args
-    if num_reps == None:
+    if num_reps is None:
         num_reps = -1
+
+    # Validate analog_voltages
+    for val in analog_voltages:
+        if val > 0.5:
+            raise RuntimeError("Analog voltages must be <= 0.5 V.")
 
     half_period_cc = seq_utils.convert_ns_to_cc(period / 2, allow_rounding=True)
     with qua.program() as seq:
@@ -35,8 +39,10 @@ def get_seq(args, num_reps=None):
             chan = analog_channels[ind]
             element = f"ao{chan}"
             qua.update_frequency(element, 0)
-            # Declare amplitudes
-            amp = analog_voltages[ind]
+            # Declare amplitudes. These just scale the voltage of the pulse we're running
+            # ("cw"), which has an amplitude of 0.5 V, so double the passed value to
+            # get a true voltage amplitude
+            amp = 2 * analog_voltages[ind]
             amps[ind] = qua.declare(qua.fixed, value=amp)
 
         ### Define one rep here

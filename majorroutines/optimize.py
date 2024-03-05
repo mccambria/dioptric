@@ -10,21 +10,26 @@ Largely rewritten August 16th, 2023
 
 # region Imports and constant
 
+import copy
+import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy import inf
-import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import time
-import copy
-from utils import tool_belt as tb
-from utils import kplotlib as kpl
+
+from utils import common, widefield
 from utils import data_manager as dm
+from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import common
-from utils import widefield
-from utils.constants import ControlMode, CountFormat, CollectionMode
-from utils.constants import LaserKey, LaserPosMode
+from utils import tool_belt as tb
+from utils.constants import (
+    CollectionMode,
+    ControlMode,
+    CountFormat,
+    LaserKey,
+    LaserPosMode,
+)
 
 # endregion
 # region Plotting functions
@@ -240,9 +245,9 @@ def _read_counts_camera_sequence(
             elif axis_ind == 2:
                 axis_write_fn(val)
 
-
         # Read the camera images
         img_array_list = []
+
         def rep_fn(rep_ind):
             img_str = camera.read()
             sub_img_array = widefield.img_str_to_array(img_str)

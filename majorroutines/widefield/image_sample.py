@@ -7,22 +7,21 @@ Created on April 9th, 2019
 @author: mccambria
 """
 
-
-from multiprocessing import Pool
 import sys
+import time
+from multiprocessing import Pool
+
 import matplotlib.pyplot as plt
 import numpy as np
+
 import majorroutines.optimize as optimize
-from utils import tool_belt as tb
-from utils import common
-from utils import widefield
-from utils.constants import LaserKey
+from majorroutines.widefield.optimize import optimize_pixel
+from utils import common, widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import data_manager as dm
-import time
-from utils import data_manager as dm
-from majorroutines.widefield.optimize import optimize_pixel
+from utils import tool_belt as tb
+from utils.constants import LaserKey
 
 
 def single_nv(nv_sig, num_reps=1):
@@ -137,7 +136,7 @@ def nv_list(nv_list, num_reps=1):
 def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, num_reps=1):
     nv_sig = nv_list[0]
     laser_key = LaserKey.IMAGING
-    laser_dict = nv_sig[laser_key]
+    laser_dict = tb.get_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
     x_coords = [coords[0] for coords in adj_coords_list]
@@ -151,7 +150,7 @@ def widefield_image(nv_sig, num_reps=1):
 
 def scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = LaserKey.IMAGING
-    laser_dict = nv_sig[laser_key]
+    laser_dict = tb.get_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     center_coords = pos.get_nv_coords(nv_sig, laser_name)
     x_center, y_center = center_coords[0:2]

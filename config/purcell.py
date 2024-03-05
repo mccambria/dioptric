@@ -32,14 +32,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [220.265, 152.251],
-    green_coords_key: [110.12, 108.63],
-    red_coords_key: [74.85, 74.0],
+    pixel_coords_key: [52.386, 128.953],
+    green_coords_key: [109.291, 111.509],
+    red_coords_key: [73.756, 76.25],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [332.013, 338.937],
-    green_coords_key: [112.64, 112.89],
-    red_coords_key: [76.9, 77.4],
+    pixel_coords_key: [117.078, 66.748],
+    green_coords_key: [110.78, 110.173],
+    red_coords_key: [74.9, 75.07],
 }
 
 
@@ -110,19 +110,19 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 5,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 6,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 1000,
-        "em_gain": 100,
+        "em_gain": 1000,
+        # "em_gain": 100,
         "temp": -60,
-        # "timeout": 1000,  # ms
-        "timeout": -1,  # No timeout
+        "timeout": 2000,  # ms
+        # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
         # "readout_mode": 6,  # Fast conventional
-        # "roi": (226, 185, 150, 150),  # offsetX, offsetY, width, height
-        "roi": None,  # offsetX, offsetY, width, height
+        "roi": (95, 165, 225, 225),  # offsetX, offsetY, width, height
+        # "roi": None,  # offsetX, offsetY, width, height
     },
     ###
     "Optics": {
@@ -147,16 +147,21 @@ config |= {
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
         LaserKey.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
-            # "duration": 500e6,
             "duration": 1e9,
+            # "duration": 500e6,
+            # "duration": 1e9,
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
+        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 1e3},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
-            "duration": 1e9,
+            # "duration": 30e6,
+            "duration": 50e6,
             # "duration": 100e6,
+            # "duration": 200e6,
+            # "duration": 1e9,
         },  # 35e6, 0.09
     },
     ###
@@ -174,6 +179,7 @@ config |= {
         "xy_dtype-laser_COBO_638": float,
         "xy_nm_per_unit-laser_COBO_638": 1000,
         "xy_optimize_range-laser_COBO_638": 1.2,
+        # "xy_optimize_range-laser_COBO_638": 2.0,
         "xy_units-laser_COBO_638": "MHz",
         #
         "z_control_mode": ControlMode.STREAM,
@@ -590,7 +596,7 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.080},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},

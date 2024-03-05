@@ -206,8 +206,11 @@ def rep_loop(num_reps, rep_fn):
             pulse_gen.halt()
 
             nuvu_237 = "NuvuException: 237"
+            nuvu_214 = "NuvuException: 214"
             if "NuvuException: 237" in str(exc):
                 print(nuvu_237)
+            elif "NuvuException: 214" in str(exc):
+                print(nuvu_214)
             else:
                 raise exc
 

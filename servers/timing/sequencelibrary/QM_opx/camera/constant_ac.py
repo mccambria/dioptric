@@ -8,23 +8,27 @@ Created on June 21st, 2023
 @author: mccambria
 """
 
-
+import matplotlib.pyplot as plt
 import numpy
 import qm
-from qm import qua
-from qm.QuantumMachinesManager import QuantumMachinesManager
+from qm import QuantumMachinesManager, generate_qua_script, qua
 from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
+
 import utils.common as common
-import utils.tool_belt as tb
 import utils.kplotlib as kpl
-import matplotlib.pyplot as plt
-from qm import generate_qua_script
+import utils.tool_belt as tb
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
 def get_seq(args, num_reps=None):
     digital_channels, analog_channels, analog_voltages, analog_freqs = args
-    if num_reps == None:
+
+    # Validate analog_voltages
+    for val in analog_voltages:
+        if val > 0.5:
+            raise RuntimeError("Analog voltages must be <= 0.5 V.")
+
+    if num_reps is None:
         num_reps = -1
 
     analog_freqs = [int(el * 10**6) for el in analog_freqs]
@@ -39,8 +43,10 @@ def get_seq(args, num_reps=None):
             element = f"ao{chan}"
             freq = analog_freqs[ind]
             qua.update_frequency(element, freq)
-            # Declare amplitudes
-            amp = analog_voltages[ind]
+            # Declare amplitudes. These just scale the voltage of the pulse we're running
+            # ("cw"), which has an amplitude of 0.5 V, so double the passed value to
+            # get a true voltage amplitude
+            amp = 2 * analog_voltages[ind]
             amps[ind] = qua.declare(qua.fixed, value=amp)
 
         ### Define one rep here
@@ -69,12 +75,12 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [[4], [6, 4], [0.19, 0.19], [110, 110]]
+        args = [[4], [6, 4], [2 * 0.19, 2 * 0.19], [110, 110]]
         ret_vals = get_seq(args)
         seq, seq_ret_vals = ret_vals
 
