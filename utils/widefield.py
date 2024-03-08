@@ -366,8 +366,11 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_suffix=None):
 # region Scanning to pixel calibration
 
 
-def set_nv_scanning_coords_from_pixel_coords(nv_sig, coords_suffix=None):
-    pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=True)
+def set_nv_scanning_coords_from_pixel_coords(
+    nv_sig, coords_suffix=None, drift_adjust=True
+):
+    pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=drift_adjust)
+    # pixel_coords = pos.get_nv_coords(nv_sig, "laser_INTE_520", drift_adjust=True)
     scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_suffix)
     pos.set_nv_coords(nv_sig, scanning_coords, coords_suffix)
     return scanning_coords
@@ -402,11 +405,14 @@ def pixel_to_scanning_coords(pixel_coords, coords_suffix=None):
 def _pixel_to_scanning_calibration(coords_suffix=None):
     """Get the linear parameters for the conversion"""
 
+    pixel_coords_key = "pixel_coords"
+    # pixel_coords_key = "coords-laser_INTE_520"
+
     nv1, nv2 = get_widefield_calibration_nvs()
     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_suffix, drift_adjust=False)
-    nv1_pixel_coords = nv1["pixel_coords"]
+    nv1_pixel_coords = nv1[pixel_coords_key]
     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_suffix, drift_adjust=False)
-    nv2_pixel_coords = nv2["pixel_coords"]
+    nv2_pixel_coords = nv2[pixel_coords_key]
 
     # Assume (independent) linear relations for both x and y
 

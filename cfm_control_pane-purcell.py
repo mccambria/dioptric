@@ -56,7 +56,7 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 def do_scanning_image_sample(nv_sig):
     scan_range = 6
-    num_steps = 10
+    num_steps = 5
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -391,12 +391,12 @@ def do_opx_constant_ac():
     #     [0],  # Analog frequencies
     # )
     # Green
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.19, 0.19],  # Anal og voltages
-    #     [108.632, 108.583],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4],  # Analog channels
+        [0.19, 0.19],  # Analog voltages
+        [110, 110],  # Analog frequencies
+    )
     # Red
     # freqs = [65, 75, 85]
     # # freqs = [73, 75, 77]
@@ -423,13 +423,13 @@ def do_opx_constant_ac():
     #     ],  # Analog frequencies                                                                                                                                                                              uencies
     # )
     # # Green + red
-    opx.constant_ac(
-        [4, 1],  # Digital channels
-        [3, 4, 2, 6],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17],  # Analog voltages
-        # [108.249, 108.582, 72.85, 73.55],  # Analog frequencies
-        [113.229, 112.796, 76.6, 76.6],
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels
+    #     [3, 4, 2, 6],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
+    #     # [108.249, 108.582, 72.85, 73.55],  # Analog frequencies
+    #     [113.229, 112.796, 76.6, 76.6],
+    # )
     # red
     # opx.constant_ac(
     #     [1],  # Digital channels
@@ -489,9 +489,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.45
+    z_coord = 3.99
     magnet_angle = 90
-    date_str = "2024_03_04"
+    date_str = "2024_03_07"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -505,34 +505,43 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [52.386, 128.953],
-        [117.078, 66.748],
-        [64.859, 95.757],
-        [33.511, 91.747],
-        [64.298, 13.227],
-        [124.5, 126.189],
-        [133.793, 158.078],
-        [153.968, 116.817],
+        [64.516, 132.482],
+        [78.797, 163.908],
+        [84.911, 177.533],
+        [108.072, 168.772],
+        [122.815, 149.642],
+        [126.155, 121.5],
+        [137.981, 131.571],
+        [162.061, 143.883],
+        [194.975, 137.154],
+        [141.038, 195.666],
+        [85.689, 121.709],
     ]
     green_coords_list = [
-        [109.291, 111.509],
-        [110.78, 110.173],
-        [109.579, 110.724],
-        [108.808, 110.636],
-        [109.614, 108.876],
-        [110.824, 111.447],
-        [110.992, 112.176],
-        [111.49, 111.224],
+        [107.096, 110.579],
+        [107.404, 109.82],
+        [107.536, 109.491],
+        [108.036, 109.703],
+        [108.354, 110.165],
+        [108.426, 110.844],
+        [108.682, 110.601],
+        [109.201, 110.304],
+        [109.912, 110.466],
+        [108.748, 109.054],
+        [107.553, 110.839],
     ]
     red_coords_list = [
-        [73.756, 76.25],
-        [74.9, 75.07],
-        [74.145, 75.439],
-        [73.678, 75.354],
-        [74.136, 73.692],
-        [75.032, 76.083],
-        [75.17, 76.759],
-        [75.471, 75.885],
+        [72.279, 75.509],
+        [72.517, 74.983],
+        [72.619, 74.754],
+        [73.006, 74.901],
+        [73.252, 75.222],
+        [73.308, 75.693],
+        [73.506, 75.524],
+        [73.908, 75.318],
+        [74.457, 75.431],
+        [73.557, 74.45],
+        [72.632, 75.69],
     ]
 
     # endregion
@@ -662,12 +671,12 @@ if __name__ == "__main__":
     # nv_list = [nv_sig]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv0, nv1]
-    nv_list = [nv1, nv0]
+    # nv_list = [nv1, nv0]
     # nv_list = [nv0, nv2]
 
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv0, nv1]
     nv_sig = widefield.get_repr_nv_sig(nv_list)
@@ -677,15 +686,21 @@ if __name__ == "__main__":
     # Coordinate printing
     # for nv in nv_list:
     #     coords = widefield.get_nv_pixel_coords(nv)
+    #     # coords[0] -= 130
+    #     # coords[1] -= 65
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
     # for nv in nv_list:
-    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, green_laser)
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(
+    #         nv, green_laser, drift_adjust=False
+    #     )
     #     coords = nv[green_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
     # for nv in nv_list:
-    #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, red_laser)
+    #     widefield.set_nv_scanning_coords_from_pixel_coords(
+    #         nv, red_laser, drift_adjust=False
+    #     )
     #     coords = nv[red_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
@@ -702,27 +717,30 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
+        # widefield.set_pixel_drift([+3, +20])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.48, 4.56, 5):
-        #     nv_sig["coords"][2] = z
-        #     # do_scanning_image_sample(nv_sig)
-        #     do_widefield_image_sample(nv_sig, 100)
+        for z in np.linspace(3.7, 4.7, 11):
+            nv_sig["coords"][2] = z
+            # do_scanning_image_sample(nv_sig)
+            do_widefield_image_sample(nv_sig, 20)
         # for ind in range(100):
-        #     do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 20)
         #     time.sleep(5)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
         # for nv_sig in nv_list:
-        # do_optimize_pixel(nv_sig)
+        #     widefield.reset_all_drift()
+        #     do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
@@ -734,7 +752,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
-        # coords_suffix = red_laser
+        # # # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
 
         # do_charge_state_histograms(nv_list, 100)

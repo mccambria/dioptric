@@ -32,14 +32,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [52.386, 128.953],
-    green_coords_key: [109.291, 111.509],
-    red_coords_key: [73.756, 76.25],
+    pixel_coords_key: [104.596, 189.479],
+    green_coords_key: [107.961, 109.203],
+    red_coords_key: [72.948, 74.554],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [117.078, 66.748],
-    green_coords_key: [110.78, 110.173],
-    red_coords_key: [74.9, 75.07],
+    pixel_coords_key: [187.053, 101.22],
+    green_coords_key: [109.741, 111.334],
+    red_coords_key: [74.325, 76.033],
 }
 
 
@@ -121,7 +121,7 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
         # "readout_mode": 6,  # Fast conventional
-        "roi": (95, 165, 225, 225),  # offsetX, offsetY, width, height
+        "roi": (125, 95, 260, 260),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
     },
     ###
@@ -147,9 +147,9 @@ config |= {
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
         LaserKey.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
-            "duration": 1e9,
+            # "duration": 100e6,
             # "duration": 500e6,
-            # "duration": 1e9,
+            "duration": 1e9,
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
