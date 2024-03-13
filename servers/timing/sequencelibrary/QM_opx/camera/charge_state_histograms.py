@@ -8,8 +8,8 @@ Created on October 13th, 2023
 """
 
 import matplotlib.pyplot as plt
-import numpy
-from qm import QuantumMachinesManager, generate_qua_script, qua
+import numpy as np
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
@@ -26,7 +26,7 @@ def get_seq(args, num_reps):
         diff_ionize,
     ) = args
 
-    if num_reps == None:
+    if num_reps is None:
         num_reps = 1
 
     if diff_polarize and not diff_ionize:
@@ -42,6 +42,8 @@ def get_seq(args, num_reps):
 
     with qua.program() as seq:
         seq_utils.turn_on_aods()
+        # qua.wait(25000)
+        # qua.align()
 
         def half_rep(do_polarize_sub, do_ionize_sub):
             if do_polarize_sub:
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         args = [
             [
                 [110, 109.51847988358679],
-                [0.001, 110.70156405156148],
+                [112, 110.70156405156148],
             ],
             [
                 [75.42725784791932, 75.65982013416432],

@@ -7,7 +7,6 @@ Created June 25th, 2023
 @author: mccambria
 """
 
-
 import time
 
 from qm import qua
@@ -255,25 +254,25 @@ def get_default_charge_readout_duration():
 
 def get_default_pulse_duration():
     """Get the default OPX pulse duration in units of clock cycles"""
+    global _cache_default_pulse_duration
     if _cache_default_pulse_duration is None:
-        return get_common_duration_cc("default_pulse_duration")
-    default_pulse_duration = _cache_default_pulse_duration
-    return default_pulse_duration
+        _cache_default_pulse_duration = get_common_duration_cc("default_pulse_duration")
+    return _cache_default_pulse_duration
 
 
 def get_aod_access_time():
+    global _cache_aod_access_time
     if _cache_aod_access_time is None:
-        return get_common_duration_cc("aod_access_time")
-    aod_access_time = _cache_aod_access_time
-    return aod_access_time
+        _cache_aod_access_time = get_common_duration_cc("aod_access_time")
+    return _cache_aod_access_time
 
 
 def get_widefield_operation_buffer():
     global _cache_widefield_operation_buffer
     if _cache_widefield_operation_buffer is None:
-        return get_common_duration_cc("widefield_operation_buffer")
-    widefield_operation_buffer = _cache_widefield_operation_buffer
-    return widefield_operation_buffer
+        val = get_common_duration_cc("widefield_operation_buffer")
+        _cache_widefield_operation_buffer = val
+    return _cache_widefield_operation_buffer
 
 
 def get_common_duration_cc(key):
@@ -331,8 +330,5 @@ def get_rabi_period(uwave_ind=0):
 
 
 if __name__ == "__main__":
-    readout_laser_name = "laser_OPTO_589"
-    readout_laser_el = _cache_charge_readout_laser_el_sticky = get_laser_mod_element(
-        readout_laser_name, sticky=True
-    )
-    print(readout_laser_el)
+    print(get_widefield_operation_buffer())
+    print(get_widefield_operation_buffer())

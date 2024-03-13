@@ -281,33 +281,31 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1392298372656)
-    data = dm.get_raw_data(file_id=1395590073539)
+    data = dm.get_raw_data(file_id=1467280890363)
     img_array = np.array(data["img_array"])
-    # data = dm.get_raw_data(file_id=1392300819875)
-    # data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
-    # img_array -= np.array(data["img_array"])
+    data = dm.get_raw_data(file_id=1467208168382)
+    img_array -= np.array(data["img_array"])
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, no_cbar=True)
+    kpl.imshow(ax, img_array)
 
-    pixel_coords_list = [
-        [107.64, 76.7],
-        # [74.828, 109.09],
-        [110, 50],
-        [85.41, 60.905],
-        [72.062, 51.179],
-        [72.573, 16.985],
-        [52.824, 95.547],
-    ]
-    for ind in range(len(pixel_coords_list)):
-        pixel_coords = pixel_coords_list[ind]
-        pixel_coords = [el + 1 for el in pixel_coords]
-        color = kpl.data_color_cycler[ind]
-        if ind == 1:
-            color = kpl.KplColors.GRAY
-        kpl.draw_circle(
-            ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
-        )
+    # pixel_coords_list = [
+    #     [107.64, 76.7],
+    #     # [74.828, 109.09],
+    #     [110, 50],
+    #     [85.41, 60.905],
+    #     [72.062, 51.179],
+    #     [72.573, 16.985],
+    #     [52.824, 95.547],
+    # ]
+    # for ind in range(len(pixel_coords_list)):
+    #     pixel_coords = pixel_coords_list[ind]
+    #     pixel_coords = [el + 1 for el in pixel_coords]
+    #     color = kpl.data_color_cycler[ind]
+    #     if ind == 1:
+    #         color = kpl.KplColors.GRAY
+    #     kpl.draw_circle(
+    #         ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
+    #     )
     # ax.legend(loc=kpl.Loc.LOWER_LEFT)
 
     plt.show(block=True)

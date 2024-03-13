@@ -191,7 +191,7 @@ def do_resonance(nv_list):
 
 def do_resonance_zoom(nv_list):
     freq_center = 2.87
-    freq_range = 0.05
+    freq_range = 0.08
     num_steps = 20
     num_reps = 15
     num_runs = 30
@@ -350,10 +350,10 @@ def do_opx_square_wave():
     # )
     # Camera trigger
     opx.square_wave(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.38],  # Analog voltages
-        10000,  # Period (ns)
+        [4],  # Digital channels
+        [],  # Analog channels
+        [],  # Analog voltages
+        100000,  # Period (ns)
     )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
@@ -364,18 +364,18 @@ def do_opx_constant_ac():
     opx = cxn.QM_opx
 
     # Microwave test
-    # if True:
-    #     sig_gen = cxn.sig_gen_STAN_sg394
-    #     amp = 9
-    #     chan = 10
-    # else:
-    #     sig_gen = cxn.sig_gen_STAN_sg394_2
-    #     amp = 11
-    #     chan = 3
-    # sig_gen.set_amp(amp)  # 12
-    # sig_gen.set_freq(2.87)
-    # sig_gen.uwave_on()
-    # opx.constant_ac([chan])
+    if True:
+        sig_gen = cxn.sig_gen_STAN_sg394
+        amp = 10
+        chan = 10
+    else:
+        sig_gen = cxn.sig_gen_STAN_sg394_2
+        amp = 10
+        chan = 9
+    sig_gen.set_amp(amp)  # 12
+    sig_gen.set_freq(0.1)
+    sig_gen.uwave_on()
+    opx.constant_ac([chan])
 
     # Camera frame rate test
     # seq_args = [500]
@@ -387,16 +387,16 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [],  # Digital channels
     #     [7],  # Analog channels
-    #     [1.0],  # Analog voltages
+    #     [0.5],  # Analog voltages
     #     [0],  # Analog frequencies
     # )
     # Green
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4],  # Analog channels
-        [0.19, 0.19],  # Analog voltages
-        [110, 110],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4],  # Analog channels
+    #     [0.19, 0.19],  # Analog voltages
+    #     [111, 111],  # Analog frequencies
+    # )
     # Red
     # freqs = [65, 75, 85]
     # # freqs = [73, 75, 77]
@@ -489,9 +489,9 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.99
+    z_coord = 3.84
     magnet_angle = 90
-    date_str = "2024_03_07"
+    date_str = "2024_03_12"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
@@ -505,43 +505,52 @@ if __name__ == "__main__":
     # region Coords
 
     pixel_coords_list = [
-        [64.516, 132.482],
-        [78.797, 163.908],
-        [84.911, 177.533],
-        [108.072, 168.772],
-        [122.815, 149.642],
-        [126.155, 121.5],
-        [137.981, 131.571],
-        [162.061, 143.883],
-        [194.975, 137.154],
-        [141.038, 195.666],
-        [85.689, 121.709],
+        [126.905, 114.634],
+        [163.243, 117.933],
+        [83.205, 115.313],
+        [72.362, 125.984],
+        [94.422, 164.308],
+        [101.672, 142.676],
+        [99.67, 126.488],
+        [115.954, 128.468],
+        [124.404, 142.99],
+        [120.505, 169.064],
+        [138.882, 160.072],
+        [151.59, 144.97],
+        [160.774, 88.405],
+        [147.589, 73.976],
     ]
     green_coords_list = [
-        [107.096, 110.579],
-        [107.404, 109.82],
-        [107.536, 109.491],
-        [108.036, 109.703],
-        [108.354, 110.165],
-        [108.426, 110.844],
-        [108.682, 110.601],
-        [109.201, 110.304],
-        [109.912, 110.466],
-        [108.748, 109.054],
-        [107.553, 110.839],
+        [108.159, 110.957],
+        [108.957, 110.869],
+        [107.323, 110.874],
+        [107.027, 110.625],
+        [107.502, 109.668],
+        [107.541, 110.194],
+        [107.708, 110.64],
+        [107.792, 110.494],
+        [108.437, 110.347],
+        [108.017, 109.649],
+        [108.455, 109.992],
+        [108.701, 110.211],
+        [108.943, 111.582],
+        [108.776, 111.979],
     ]
     red_coords_list = [
-        [72.279, 75.509],
-        [72.517, 74.983],
-        [72.619, 74.754],
-        [73.006, 74.901],
-        [73.252, 75.222],
-        [73.308, 75.693],
-        [73.506, 75.524],
-        [73.908, 75.318],
-        [74.457, 75.431],
-        [73.557, 74.45],
-        [72.632, 75.69],
+        [73.226, 75.736],
+        [73.881, 75.68],
+        [72.427, 75.715],
+        [72.185, 75.526],
+        [72.549, 74.866],
+        [72.742, 75.307],
+        [72.721, 75.547],
+        [73.004, 75.583],
+        [73.194, 75.288],
+        [73.169, 74.814],
+        [73.484, 75.007],
+        [73.688, 75.275],
+        [73.762, 76.351],
+        [73.552, 76.608],
     ]
 
     # endregion
@@ -674,13 +683,14 @@ if __name__ == "__main__":
     # nv_list = [nv1, nv0]
     # nv_list = [nv0, nv2]
 
+    # nv_list = [nv0, nv1, nv2]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv0, nv1]
-    nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # nv_sig = nv0
+    # nv_sig = widefield.get_repr_nv_sig(nv_list)
+    nv_sig = nv0
     # nv_sig = nv1
 
     # Coordinate printing
@@ -692,7 +702,7 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # for nv in nv_list:
     #     widefield.set_nv_scanning_coords_from_pixel_coords(
-    #         nv, green_laser, drift_adjust=False
+    #         nv, green_laser, drift_adjust=True
     #     )
     #     coords = nv[green_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
@@ -717,15 +727,15 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([+3, +20])
+        # widefield.set_pixel_drift([-1, +10])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        for z in np.linspace(3.7, 4.7, 11):
-            nv_sig["coords"][2] = z
-            # do_scanning_image_sample(nv_sig)
-            do_widefield_image_sample(nv_sig, 20)
+        # for z in np.linspace(3.3, 4.7, 16):
+        #     nv_sig["coords"][2] = z
+        #     # do_scanning_image_sample(nv_sig)
+        #     do_widefield_image_sample(nv_sig, 20)
         # for ind in range(100):
         # do_widefield_image_sample(nv_sig, 20)
         #     time.sleep(5)
@@ -752,13 +762,24 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
-        # # # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
+        # coords_suffix = red_laser
+        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
 
         # do_charge_state_histograms(nv_list, 100)
         # do_charge_state_histograms(nv_list, 1000)
 
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
+        # do_rabi(nv_list)
+        # do_correlation_test(nv_list)
+        # do_spin_echo(nv_list)
+        # do_spin_echo_long(nv_list)
+        # do_spin_echo_medium(nv_list)
+        # do_spin_echo_short(nv_list)
+        # do_ramsey(nv_list)
+        # do_sq_relaxation(nv_list)
+        # do_dq_relaxation(nv_list)
+        # do_xy8(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()

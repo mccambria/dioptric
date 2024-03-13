@@ -32,14 +32,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [104.596, 189.479],
-    green_coords_key: [107.961, 109.203],
-    red_coords_key: [72.948, 74.554],
+    pixel_coords_key: [94.422, 164.308],
+    green_coords_key: [107.502, 109.668],
+    red_coords_key: [72.549, 74.866],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [187.053, 101.22],
-    green_coords_key: [109.741, 111.334],
-    red_coords_key: [74.325, 76.033],
+    pixel_coords_key: [160.774, 88.405],
+    green_coords_key: [108.943, 111.582],
+    red_coords_key: [73.762, 76.351],
 }
 
 
@@ -58,6 +58,7 @@ config |= {
         "uwave_buffer": 1000,
         "default_pulse_duration": 1000,
         "aod_access_time": 20e3,
+        # "aod_access_time": 100e3,
         "widefield_operation_buffer": 10e3,
     },
     ###
@@ -121,7 +122,7 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
         # "readout_mode": 6,  # Fast conventional
-        "roi": (125, 95, 260, 260),  # offsetX, offsetY, width, height
+        "roi": (125, 95, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
     },
     ###
@@ -153,7 +154,7 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
+        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 120},
         LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 1e3},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
@@ -405,10 +406,10 @@ opx_config = {
         "do_sig_gen_STAN_sg394_dm": {
             "digitalInputs": {
                 "chan": {
-                    "port": ("con1", 9),
-                    # "delay": 0,
-                    "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
-                    + iq_buffer // 2,
+                    "port": ("con1", 10),
+                    "delay": 0,
+                    # "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
+                    # + iq_buffer // 2,
                     "buffer": 0,
                 }
             },
@@ -442,7 +443,7 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -596,7 +597,7 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.46},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
