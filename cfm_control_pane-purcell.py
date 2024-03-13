@@ -181,17 +181,17 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.100
+    freq_range = 0.150
     num_steps = 40
     num_reps = 10
     # num_runs = 30
-    num_runs = 100
+    num_runs = 120
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
     freq_center = 2.87
-    freq_range = 0.08
+    freq_range = 0.06
     num_steps = 20
     num_reps = 15
     num_runs = 30
@@ -205,8 +205,8 @@ def do_rabi(nv_list):
     # num_reps = 15
     # num_runs = 30
     num_steps = 31
-    num_reps = 20
-    num_runs = 50
+    num_reps = 10
+    num_runs = 20
     uwave_ind = 0
     rabi.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind
@@ -489,7 +489,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.84
+    z_coord = 3.92
     magnet_angle = 90
     date_str = "2024_03_12"
 
@@ -521,20 +521,20 @@ if __name__ == "__main__":
         [147.589, 73.976],
     ]
     green_coords_list = [
-        [108.159, 110.957],
-        [108.957, 110.869],
-        [107.323, 110.874],
-        [107.027, 110.625],
-        [107.502, 109.668],
-        [107.541, 110.194],
-        [107.708, 110.64],
-        [107.792, 110.494],
-        [108.437, 110.347],
-        [108.017, 109.649],
-        [108.455, 109.992],
-        [108.701, 110.211],
-        [108.943, 111.582],
-        [108.776, 111.979],
+        [108.333, 110.935],
+        [109.127, 110.828],
+        [107.44, 110.812],
+        [107.167, 110.596],
+        [107.624, 109.545],
+        [107.708, 110.114],
+        [107.792, 110.606],
+        [107.964, 110.409],
+        [108.561, 110.278],
+        [108.182, 109.55],
+        [108.657, 109.894],
+        [108.856, 110.129],
+        [109.084, 111.507],
+        [108.889, 111.896],
     ]
     red_coords_list = [
         [73.226, 75.736],
@@ -686,7 +686,8 @@ if __name__ == "__main__":
     # nv_list = [nv0, nv1, nv2]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv8, nv9, nv10, nv11, nv12, nv13]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv0, nv1]
     # nv_sig = widefield.get_repr_nv_sig(nv_list)
@@ -727,7 +728,7 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([-1, +10])
+        # widefield.set_pixel_drift([-6, -16])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
@@ -742,7 +743,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -763,7 +764,7 @@ if __name__ == "__main__":
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
         # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
+        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
 
         # do_charge_state_histograms(nv_list, 100)
         # do_charge_state_histograms(nv_list, 1000)
@@ -783,6 +784,8 @@ if __name__ == "__main__":
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
+
+        # do_scc_snr_check(nv_list)
 
     except Exception as exc:
         if do_email:

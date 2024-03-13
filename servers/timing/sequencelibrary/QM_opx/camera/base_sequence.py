@@ -7,7 +7,6 @@ Created on December 11th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
@@ -32,7 +31,7 @@ def get_seq(
     # Determine how many experiments to run based on len of uwave_macro
     try:
         num_exps_per_rep = len(uwave_macro)
-    except Exception as exc:
+    except Exception:
         num_exps_per_rep = 1
 
     with qua.program() as seq:
@@ -40,8 +39,6 @@ def get_seq(
             uwave_macro_args = setup_macro()
         else:
             uwave_macro_args = []
-
-        exp_ind = qua.declare(int, value=0)
 
         seq_utils.turn_on_aods()
 
@@ -69,10 +66,8 @@ def get_seq(
             if num_exps_per_rep == 1:
                 one_exp()
             else:
-                qua.assign(exp_ind, 0)
-                with qua.while_(exp_ind < num_exps_per_rep):
+                for exp_ind in range(num_exps_per_rep):
                     one_exp(exp_ind)
-                    qua.assign(exp_ind, exp_ind + 1)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 

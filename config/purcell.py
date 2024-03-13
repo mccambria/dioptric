@@ -33,12 +33,12 @@ red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
     pixel_coords_key: [94.422, 164.308],
-    green_coords_key: [107.502, 109.668],
+    green_coords_key: [107.624, 109.545],
     red_coords_key: [72.549, 74.866],
 }
 widefield_calibration_nv2 = {
     pixel_coords_key: [160.774, 88.405],
-    green_coords_key: [108.943, 111.582],
+    green_coords_key: [109.084, 111.507],
     red_coords_key: [73.762, 76.351],
 }
 
@@ -94,18 +94,18 @@ config |= {
             "name": "sig_gen_STAN_sg394",
             # "frequency": 2.87,
             # "rabi_period": 96,
-            "frequency": 2.8476285621036683,
-            "rabi_period": 144,
+            "frequency": 2.812,
+            "rabi_period": 112,
             # "rabi_period": 32,
             # "uwave_power": 9,
-            "uwave_power": 8.1,
+            "uwave_power": 10,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
-            "frequency": 2.8924815710559706,
-            "rabi_period": 144,
-            "uwave_power": 7.5,
+            "frequency": 2.87,
+            "rabi_period": 112,
+            "uwave_power": 10,
         },
     },
     ###
@@ -154,8 +154,9 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 120},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 1e3},
+        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 120},
+        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 200},
+        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 1e3},
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
             # "duration": 30e6,
@@ -172,14 +173,14 @@ config |= {
         "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_INTE_520": float,
         "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.5,
+        "xy_optimize_range-laser_INTE_520": 0.8,
         "xy_units-laser_INTE_520": "MHz",
         #
         "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
         "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_COBO_638": float,
         "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 1.2,
+        "xy_optimize_range-laser_COBO_638": 1.0,
         # "xy_optimize_range-laser_COBO_638": 2.0,
         "xy_units-laser_COBO_638": "MHz",
         #
@@ -597,7 +598,7 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.46},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},

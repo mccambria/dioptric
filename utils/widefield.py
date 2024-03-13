@@ -131,7 +131,7 @@ rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
 
-def process_counts(counts_array, ref_counts_array):
+def process_counts(counts_array, ref_counts_array=None):
     """Gets average and standard error for counts data structure.
     Assumes counts_array has the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Assumes ref_counts_array has the structure [nv_ind, run_ind, rep_ind].
@@ -148,13 +148,17 @@ def process_counts(counts_array, ref_counts_array):
     avg_counts_std = np.std(meas_array, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
-    norms = np.mean(ref_counts_array, axis=(1, 2))
-    # Account for heating by adjusting the norm using the counts from
-    # a background spot
-    background_nv_ind = 1
-    norms *= np.mean(avg_counts[background_nv_ind]) / norms[background_nv_ind]
+    if ref_counts_array is None:
+        return avg_counts, avg_counts_ste
 
-    return avg_counts, avg_counts_ste, norms
+    else:
+        norms = np.mean(ref_counts_array, axis=(1, 2))
+        # Account for heating by adjusting the norm using the counts from
+        # a background spot
+        background_nv_ind = 1
+        norms *= np.mean(avg_counts[background_nv_ind]) / norms[background_nv_ind]
+
+        return avg_counts, avg_counts_ste, norms
 
 
 def calc_snr(sig_counts, ref_counts):
@@ -592,13 +596,17 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
+        # if nv_ind != 7:
+        #     continue
         nv_sig = nv_list[nv_ind]
         label = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
-        if nv_ind == 1:
-            color = kpl.KplColors.GRAY
-        else:
-            color = kpl.data_color_cycler[nv_ind]
+        # if nv_ind == 1:
+        #     color = kpl.KplColors.GRAY
+        num_colors = len(kpl.data_color_cycler)
+        color = kpl.data_color_cycler[nv_ind % num_colors]
+        if num_colors <= nv_ind < 2 * num_colors:
+            color = kpl.lighten_color_hex(color)
         kpl.plot_points(
             ax,
             x,
@@ -608,6 +616,11 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
             size=kpl.Size.SMALL,
             color=color,
         )
+
+        # MCC
+        # kpl.show(block=True)
+        # fig, ax = plt.subplots()
+
     # min_x = min(x)
     # max_x = max(x)
     # excess = 0.08 * (max_x - min_x)
@@ -770,8 +783,8 @@ def plot_correlations(axes_pack, nv_list, x, counts):
                 step_counts_2 = nv_counts_2[:, step_ind, :].flatten()
                 corrs.append(np.corrcoef(step_counts_1, step_counts_2)[0, 1])
 
-            size = kpl.Size.SMALL
-            kpl.plot_points(ax, x, corrs, size=size)
+            # size = kpl.Size.SMALL
+            # kpl.plot_points(ax, x, corrs, size=size)
 
 
 # endregion

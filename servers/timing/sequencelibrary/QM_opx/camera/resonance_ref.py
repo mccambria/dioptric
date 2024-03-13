@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import time
 
 import matplotlib.pyplot as plt
@@ -81,8 +80,8 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:

@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Pulsed electron spin resonance on multiple NVs with spin-to-charge 
+Pulsed electron spin resonance on multiple NVs with spin-to-charge
 conversion readout imaged onto a camera
 
 Created on November 19th, 2023
 
 @author: mccambria
 """
-
 
 import os
 import sys
@@ -228,7 +227,7 @@ if __name__ == "__main__":
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
-    data = dm.get_raw_data(file_id=1407750868408, no_npz=True)
+    data = dm.get_raw_data(file_id=1469896355543, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -295,7 +294,7 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
     # img_arrays = np.array(data["img_arrays"])
     # img_arrays = np.mean(img_arrays[0], axis=0)

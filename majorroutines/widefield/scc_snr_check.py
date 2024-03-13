@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Lighweight check of the SCC SNR 
+Lighweight check of the SCC SNR
 
 Created on December 6th, 2023
 
 @author: mccambria
 """
 
-
-from utils import tool_belt as tb
 import numpy as np
-from utils import common
-from utils import widefield as widefield
+
 from majorroutines.widefield import base_routine
+from utils import common
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 
 def main(nv_list, num_reps):
@@ -28,7 +28,7 @@ def main(nv_list, num_reps):
 
     ### Collect the data
 
-    counts, _ = base_routine.main(
+    counts, _, _ = base_routine.main(
         nv_list, 1, num_reps, 1, step_fn=None, num_exps_per_rep=2
     )
     sig_counts = counts[0]

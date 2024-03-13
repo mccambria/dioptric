@@ -7,7 +7,6 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
 import time
 
 import matplotlib.pyplot as plt
@@ -212,7 +211,7 @@ if __name__ == "__main__":
     # file_name = ""
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1395828354868, no_npz=True)
-    data = dm.get_raw_data(file_id=1407329898078, no_npz=True)
+    data = dm.get_raw_data(file_id=1469826191142, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -234,8 +233,8 @@ if __name__ == "__main__":
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    correlation_fig = create_correlation_figure(nv_list, taus, counts)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    # correlation_fig = create_correlation_figure(nv_list, taus, counts)
 
     # img_arrays = np.array(data["img_arrays"])
     # img_arrays = np.mean(img_arrays[0], axis=0)
