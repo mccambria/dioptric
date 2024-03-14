@@ -618,8 +618,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         )
 
         # MCC
-        kpl.show(block=True)
-        fig, ax = plt.subplots()
+        # kpl.show(block=True)
+        # fig, ax = plt.subplots()
 
     # min_x = min(x)
     # max_x = max(x)
@@ -676,13 +676,14 @@ def plot_fit(
         color = kpl.data_color_cycler[nv_ind]
 
         # MCC
-        if nv_ind == 1:
-            color = kpl.KplColors.GRAY
-            ax = axes_pack[-1]
-        elif nv_ind > 1:
-            ax = axes_pack[nv_ind - 1]
-        else:
-            ax = axes_pack[nv_ind]
+        # if nv_ind == 1:
+        #     color = kpl.KplColors.GRAY
+        #     ax = axes_pack[-1]
+        # elif nv_ind > 1:
+        #     ax = axes_pack[nv_ind - 1]
+        # else:
+        #     ax = axes_pack[nv_ind]
+        ax = axes_pack[nv_ind]
 
         # Include the norm if there is one
         y = np.copy(ys[nv_ind])
