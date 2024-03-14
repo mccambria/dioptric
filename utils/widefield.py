@@ -639,6 +639,7 @@ def plot_fit(
     fns=None,
     popts=None,
     xlim=[None, None],
+    norms=None,
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -688,10 +689,15 @@ def plot_fit(
         # Include the norm if there is one
         y = np.copy(ys[nv_ind])
         yerr = np.copy(yerrs[nv_ind]) if yerrs is not None else None
+        if norms is not None:
+            norm = norms[nv_ind]
+            y /= norm
+            yerr /= norm
         # yerr = None  # MCC
 
         # Plot the points
-        ls = "none" if fn is not None else "solid"
+        # ls = "none" if fn is not None else "solid"
+        ls = "none"
         size = kpl.Size.SMALL
         kpl.plot_points(
             ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
@@ -701,6 +707,8 @@ def plot_fit(
         if fn is not None:
             # Include the norm if there is one
             fit_vals = fn(x_linspace, *popt)
+            if norms is not None:
+                fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
     for ax in axes_pack:
@@ -713,39 +721,73 @@ def plot_fit(
 def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
     num_steps = img_arrays.shape[0]
 
-    figsize = [6.5, 10.0]
-    fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
-    im_ax, data_ax = axes_pack
+    figsize = [6.5, 12.0]
+    # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
+    fig = plt.figure(figsize=figsize)
+    im_fig, data_fig = fig.subfigures(2, 1)
+    im_ax = im_fig.add_subplot()
+    layout = np.array(
+        [
+            ["a", "b", "c", ".", "."],
+            ["f", "g", "h", "d", "e"],
+            ["k", "l", "m", "i", "j"],
+        ]
+    )
+    data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
+    data_axes_flat = list(data_axes.values())
+    rep_data_ax = data_axes[layout[-1, 0]]
+
+    all_axes = [im_ax]
+    all_axes.extend(data_axes_flat)
 
     # Set up the actual image
     kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
 
     # Set up the data axis
-    plot_raw_data(data_ax, nv_list, x, counts, counts_errs)
+    # plot_raw_data(data_ax, nv_list, x, counts, counts_errs)
+    # plot_fit(data_axes_flat, nv_list, x, counts, counts_errs)
 
     def data_ax_relim():
+        # pass
         x_buffer = 0.05 * (np.max(x) - np.min(x))
-        data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
+        rep_data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
         y_buffer = 0.05 * (np.max(counts) - np.min(counts))
-        data_ax.set_ylim(np.min(counts) - y_buffer, np.max(counts) + y_buffer)
-        data_ax.set_xlabel("Pulse duration (ns)")
-        data_ax.set_ylabel("Counts")
+        rep_data_ax.set_ylim(np.min(counts) - y_buffer, np.max(counts) + y_buffer)
+        # data_ax.set_xlabel("Pulse duration (ns)")
+        # data_ax.set_ylabel("Counts")
+        data_axes["m"].set_xlabel("Frequency (GHz)")
+        data_axes["f"].set_ylabel("Normalized fluorescence")
 
     data_ax_relim()
 
     def animate_sub(step_ind):
         # print(step_ind)
         kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
-        data_ax.clear()
-        plot_raw_data(
-            data_ax,
+
+        # data_ax.clear()
+        # plot_raw_data(
+        #     data_ax,
+        #     nv_list,
+        #     x[0 : step_ind + 1],
+        #     counts[:, 0 : step_ind + 1],
+        #     counts_errs[:, 0 : step_ind + 1],
+        # )
+        # data_ax_relim()
+        # return [im_ax, data_ax]
+
+        for ax in data_axes_flat:
+            ax.clear()
+        plot_fit(
+            data_axes_flat,
             nv_list,
-            x[0 : step_ind + 1],
-            counts[:, 0 : step_ind + 1],
-            counts_errs[:, 0 : step_ind + 1],
+            x[: step_ind + 1],
+            counts[:, : step_ind + 1],
+            counts_errs[:, : step_ind + 1],
         )
         data_ax_relim()
-        return [im_ax, data_ax]
+        return all_axes
+
+    # animate_sub(10)
 
     anim = animation.FuncAnimation(
         fig, animate_sub, frames=num_steps, interval=200, blit=False
