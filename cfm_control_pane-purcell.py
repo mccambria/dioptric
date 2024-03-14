@@ -67,12 +67,13 @@ def do_scanning_image_sample_zoom(nv_sig):
 
 
 def do_image_nv_list(nv_list):
-    num_reps = 10
+    num_reps = 100
     return image_sample.nv_list(nv_list, num_reps)
 
 
 def do_image_single_nv(nv_sig):
-    return image_sample.single_nv(nv_sig)
+    num_reps = 1000
+    return image_sample.single_nv(nv_sig, num_reps)
 
 
 def do_charge_state_histograms(nv_list, num_reps):
@@ -492,7 +493,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.97
+    z_coord = 3.95
     magnet_angle = 90
     date_str = "2024_03_12"
 
@@ -693,9 +694,10 @@ if __name__ == "__main__":
     nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv8, nv9, nv10, nv11, nv12, nv13]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv0, nv1]
-    # nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig = nv0
+    nv_sig = widefield.get_repr_nv_sig(nv_list)
+    # nv_sig = nv0
     # nv_sig = nv1
+    nv_sig = nv13
 
     # Coordinate printing
     # for nv in nv_list:
@@ -746,11 +748,12 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
+        # do_optimize_pixel(nv_sig)
         # do_image_nv_list(nv_list)
-        # do_image_single_nv(nv_sig)
+        do_image_single_nv(nv_sig)
 
         # for nv_sig in nv_list:
         #     widefield.reset_all_drift()

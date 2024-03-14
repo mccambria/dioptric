@@ -145,6 +145,7 @@ config |= {
         },
         # LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
+        # LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 10e6},
         LaserKey.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
             # "duration": 100e6,
