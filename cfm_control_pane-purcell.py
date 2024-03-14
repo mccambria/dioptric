@@ -186,7 +186,10 @@ def do_resonance(nv_list):
     num_reps = 10
     # num_runs = 30
     num_runs = 120
+    start = time.time()
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    stop = time.time()
+    print(stop - start)
 
 
 def do_resonance_zoom(nv_list):
@@ -489,7 +492,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.92
+    z_coord = 3.97
     magnet_angle = 90
     date_str = "2024_03_12"
 
