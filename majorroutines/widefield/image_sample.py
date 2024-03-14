@@ -281,12 +281,17 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1467280890363)
+    # data = dm.get_raw_data(file_id=1470397379017)  # Widefield
+    # img_array = np.array(data["img_array"])
+    # data = dm.get_raw_data(file_id=)  # Just green
+    data = dm.get_raw_data(file_id=1470499014796)  # Single NV
     img_array = np.array(data["img_array"])
-    data = dm.get_raw_data(file_id=1467208168382)
-    img_array -= np.array(data["img_array"])
+    img_array = widefield.adus_to_photons(img_array)
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array)
+    kpl.imshow(ax, img_array, cbar_label="Counts")
+    # 8 px = 0.61 * l / NA = 0.33 um
+    # kpl.scale_bar(ax, 8 * 3, r"1 $\si{\micro\meter}$)", kpl.Loc.UPPER_LEFT)
+    kpl.scale_bar(ax, 8 * 3, "1 µm", kpl.Loc.UPPER_RIGHT)
 
     # pixel_coords_list = [
     #     [107.64, 76.7],

@@ -136,6 +136,10 @@ data_color_cycler = [
     KplColors.GRAY,
     KplColors.YELLOW,
     KplColors.CYAN,
+    mpl.colors.cnames["darkgoldenrod"],
+    mpl.colors.cnames["springgreen"],
+    mpl.colors.cnames["indianred"],
+    mpl.colors.cnames["darkslateblue"],
 ]
 line_color_cycler = data_color_cycler.copy()
 hist_color_cycler = data_color_cycler.copy()
@@ -651,7 +655,26 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     return occur, bin_edges
 
 
-def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None):
+# def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, outline=False, label=None):
+#     """Draw a circle on the passed axes
+
+#     Parameters
+#     ----------
+#     ax : matplotlib axes
+#         Axes to draw the circle on
+#     coords : 2-tuple
+#         Center coordinates of the circle
+#     radius : numeric
+#         Radius of the circle
+#     """
+#     if outline:
+#         circle = plt.Circle(coords, 1.5 * radius, color=KplColors.WHITE)
+#         ax.add_artist(circle)
+#     circle = plt.Circle(coords, radius, color=color, label=label)
+#     ax.add_artist(circle)
+
+
+def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None):
     """Draw a circle on the passed axes
 
     Parameters
@@ -663,11 +686,14 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, outline=False, label
     radius : numeric
         Radius of the circle
     """
-    if outline:
-        circle = plt.Circle(coords, 1.5 * radius, color=KplColors.WHITE)
-        ax.add_artist(circle)
-    circle = plt.Circle(coords, radius, color=color, label=label)
-    ax.add_artist(circle)
+    ax.scatter(
+        *coords,
+        s=(2 * radius) ** 2,
+        facecolors="none",
+        edgecolors=color,
+        label=label,
+        linewidths=radius / 4,
+    )
 
 
 # endregion
