@@ -618,8 +618,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         )
 
         # MCC
-        # kpl.show(block=True)
-        # fig, ax = plt.subplots()
+        kpl.show(block=True)
+        fig, ax = plt.subplots()
 
     # min_x = min(x)
     # max_x = max(x)
