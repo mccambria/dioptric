@@ -275,6 +275,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
     data = dm.get_raw_data(file_id=1470392816628, no_npz=False)
+    # data = dm.get_raw_data(file_id=1470756289396, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -345,8 +346,12 @@ if __name__ == "__main__":
 
     img_arrays = np.array(data["img_arrays"])
     img_arrays = np.mean(img_arrays, axis=0)
-    img_arrays = img_arrays / np.median(img_arrays, axis=0)
+    # img_arrays = img_arrays / np.median(img_arrays, axis=0)
     # img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
+    # top = np.percentile(img_arrays, 90, axis=0)
+    bottom = np.percentile(img_arrays, 30, axis=0)
+    img_arrays -= bottom
+    # img_arrays /= top - bottom
 
     # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 4)
     norms = norms[:, np.newaxis]
@@ -357,10 +362,8 @@ if __name__ == "__main__":
         avg_counts / norms,
         avg_counts_ste / norms,
         img_arrays,
-        # -1,
-        # 4,
-        0.99,
-        1.015,
+        0,
+        3,
     )
 
     kpl.show(block=True)
