@@ -284,7 +284,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1470397379017)  # Widefield
     # img_array = np.array(data["img_array"])
     # data = dm.get_raw_data(file_id=)  # Just green
-    data = dm.get_raw_data(file_id=1470499014796)  # Single NV
+    data = dm.get_raw_data(file_id=1471456249642)  # Just green
+    # data = dm.get_raw_data(file_id=1470499014796)  # Single NV
     img_array = np.array(data["img_array"])
     img_array = widefield.adus_to_photons(img_array)
     fig, ax = plt.subplots()
