@@ -36,10 +36,13 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
+# def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
+def create_fit_figure(nv_list, freqs, counts, counts_ste):
     ### Do the fitting
 
     num_nvs = len(nv_list)
+    num_freqs = len(freqs)
+    half_num_freqs = num_freqs // 2
 
     def constant(freq, norm):
         if isinstance(freq, list):
@@ -51,21 +54,24 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     fit_fns = []
     popts = []
-
+    norms = []
     center_freqs = []
 
     for nv_ind in range(num_nvs):
-        nv_counts = counts[nv_ind] / norms[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
+        # nv_counts = counts[nv_ind] / norms[nv_ind]
+        # nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
+        nv_counts = counts[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind]
         norm_guess = np.median(nv_counts)
         amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
 
-        if nv_ind in [1]:
-            num_resonances = 0
-        # elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
-        #     num_resonances = 1
-        else:
-            num_resonances = 2
+        # if nv_ind in [1]:
+        #     num_resonances = 0
+        # # elif nv_ind in [0, 1, 2, 4, 5, 7, 8, 9]:
+        # #     num_resonances = 1
+        # else:
+        #     num_resonances = 2
+        num_resonances = 2
 
         if num_resonances == 0:
             guess_params = [norm_guess]
@@ -83,8 +89,16 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
         elif num_resonances == 2:
             # low_freq_guess = freqs[num_steps * 1 // 3]
             # high_freq_guess = freqs[num_steps * 2 // 3]
-            low_freq_guess = 2.85
-            high_freq_guess = 2.89
+
+            # Find peaks in left and right halves
+            low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
+            high_freq_guess = freqs[
+                np.argmax(nv_counts[half_num_freqs:]) + half_num_freqs
+            ]
+
+            # low_freq_guess = 2.85
+            # high_freq_guess = 2.89
+
             guess_params = [
                 amp_guess,
                 5,
@@ -94,8 +108,10 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
                 5,
                 5,
                 high_freq_guess,
+                norm_guess,
             ]
-            bounds = [[0] * 8, [np.inf] * 8]
+            num_params = len(guess_params)
+            bounds = [[0] * num_params, [np.inf] * num_params]
             # Limit linewidths
             for ind in [1, 2, 5, 6]:
                 bounds[1][ind] = 10
@@ -110,8 +126,9 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
                 g_width2,
                 l_width2,
                 center2,
+                norm,
             ):
-                norm = 1
+                # norm = 1
                 return norm * (
                     1
                     + voigt(freq, contrast1, g_width1, l_width1, center1)
@@ -130,6 +147,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
         # Tracking for plotting
         fit_fns.append(fit_fn)
         popts.append(popt)
+        norms.append(popt[-1])
 
         if num_resonances == 1:
             center_freqs.append(popt[4])
@@ -138,26 +156,49 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     print(center_freqs)
 
-    ### Make the figure
+    ### Make the figured
 
-    fig, axes_pack = plt.subplots(
-        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    # nrows = 3
+    # ncols = 5
+    # fig, axes_pack = plt.subplots(
+    #     nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    # )
+
+    layout = np.array(
+        [
+            ["a", "b", "c", ".", "."],
+            ["f", "g", "h", "d", "e"],
+            ["k", "l", "m", "i", "j"],
+        ]
     )
-    axes_pack = axes_pack.flatten()
+    fig, axes_pack = plt.subplot_mosaic(
+        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
+    )
+
+    # axes_pack_flat = axes_pack.flatten()
+    axes_pack_flat = list(axes_pack.values())
+    norms = np.array(norms)
 
     widefield.plot_fit(
-        axes_pack, nv_list, freqs, counts, counts_ste, fit_fns, popts, norms
+        axes_pack_flat,
+        nv_list,
+        freqs,
+        counts,
+        counts_ste,
+        fit_fns,
+        popts,
+        norms=norms,
     )
 
-    ax = axes_pack[-2]
+    ax = axes_pack[layout[-1, 0]]
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    # ax.set_ylim([0.96, 1.19])
+    ax.set_ylim([0.945, 1.19])
     # ax.set_yticks([1.0, 1.1, 1.2])
     # ax.set_xticks([2.83, 2.87, 2.91])
-    return fig
+    return fig, norms
 
 
 def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_ind=0):
@@ -232,7 +273,9 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1470392816628, no_npz=True)
+    # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
+    data = dm.get_raw_data(file_id=1470392816628, no_npz=False)
+    # data = dm.get_raw_data(file_id=1470756289396, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -299,13 +342,28 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+    fit_fig, norms = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
-    # img_arrays = np.array(data["img_arrays"])
-    # img_arrays = np.mean(img_arrays[0], axis=0)
-    # # img_arrays = img_arrays - np.median(img_arrays, axis=0)
+    img_arrays = np.array(data["img_arrays"])
+    img_arrays = np.mean(img_arrays, axis=0)
+    # img_arrays = img_arrays / np.median(img_arrays, axis=0)
     # img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
+    # top = np.percentile(img_arrays, 90, axis=0)
+    bottom = np.percentile(img_arrays, 30, axis=0)
+    img_arrays -= bottom
+    # img_arrays /= top - bottom
 
-    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
+    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 4)
+    norms = norms[:, np.newaxis]
+    widefield.animate(
+        # freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, -1, 4
+        freqs,
+        nv_list,
+        avg_counts / norms,
+        avg_counts_ste / norms,
+        img_arrays,
+        0,
+        3,
+    )
 
     kpl.show(block=True)
