@@ -7,7 +7,6 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
 import time
 
 import matplotlib.pyplot as plt

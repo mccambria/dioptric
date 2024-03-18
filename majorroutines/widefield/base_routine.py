@@ -28,7 +28,7 @@ def main(
     uwave_freq=None,
     num_exps_per_rep=1,
     load_iq=False,
-    save_images=True,
+    save_images=False,
 ):
     ### Some initial setup
 
@@ -64,7 +64,6 @@ def main(
     ### Data tracking
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    ref_counts = np.empty((num_nvs, num_runs, num_reps))
     if save_images:
         shape = widefield.get_img_array_shape()
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
@@ -125,30 +124,13 @@ def main(
 
         ### Move on to the next run
 
-        # Get a reference
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load("scc_reference.py", seq_args_string, num_reps)
-
-        def rep_fn(rep_ind):
-            img_str = camera.read()
-            img_array = widefield.img_str_to_array(img_str)
-            img_array_photons = widefield.adus_to_photons(img_array)
-
-            def get_counts(pixel_coords):
-                return widefield.integrate_counts(img_array_photons, pixel_coords)
-
-            counts_list = [get_counts(el) for el in pixel_coords_list]
-            ref_counts[:, run_ind, rep_ind] = counts_list
-
-        widefield.rep_loop(num_reps, rep_fn)
-
         # Turn stuff off
         camera.disarm()
         for ind in uwave_ind_list:
             sig_gen = tb.get_server_sig_gen(ind=ind)
             sig_gen.uwave_off()
 
+        # Update coordinates
         optimize.optimize_pixel(repr_nv_sig)
 
     ### Return
@@ -167,14 +149,13 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
-        "ref_counts": ref_counts,
     }
     if save_images:
         raw_data |= {
             "img_arrays-units": "ADUs",
             "img_arrays": img_arrays,
         }
-    return counts, ref_counts, raw_data
+    return counts, raw_data
 
 
 if __name__ == "__main__":
