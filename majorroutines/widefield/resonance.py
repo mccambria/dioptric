@@ -36,8 +36,8 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-# def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
-def create_fit_figure(nv_list, freqs, counts, counts_ste):
+def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
+    # def create_fit_figure(nv_list, freqs, counts, counts_ste):
     ### Do the fitting
 
     num_nvs = len(nv_list)
@@ -54,16 +54,17 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
 
     fit_fns = []
     popts = []
-    norms = []
+    # norms = []
     center_freqs = []
 
     for nv_ind in range(num_nvs):
-        # nv_counts = counts[nv_ind] / norms[nv_ind]
-        # nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
-        nv_counts = counts[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind]
-        norm_guess = np.median(nv_counts)
-        amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
+        nv_counts = counts[nv_ind] / norms[nv_ind]
+        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
+        # nv_counts = counts[nv_ind]
+        # nv_counts_ste = counts_ste[nv_ind]
+        # norm_guess = np.median(nv_counts)
+        # amp_guess = (np.max(nv_counts) - norm_guess) / norm_guess
+        amp_guess = np.max(nv_counts) - 1
 
         # if nv_ind in [1]:
         #     num_resonances = 0
@@ -74,7 +75,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         num_resonances = 2
 
         if num_resonances == 0:
-            guess_params = [norm_guess]
+            guess_params = []
             bounds = [[0], [np.inf]]
             fit_fn = constant
         elif num_resonances == 1:
@@ -108,7 +109,6 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 5,
                 5,
                 high_freq_guess,
-                norm_guess,
             ]
             num_params = len(guess_params)
             bounds = [[0] * num_params, [np.inf] * num_params]
@@ -126,10 +126,9 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
                 g_width2,
                 l_width2,
                 center2,
-                norm,
             ):
                 # norm = 1
-                return norm * (
+                return (
                     1
                     + voigt(freq, contrast1, g_width1, l_width1, center1)
                     + voigt(freq, contrast2, g_width2, l_width2, center2)
@@ -147,7 +146,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
         # Tracking for plotting
         fit_fns.append(fit_fn)
         popts.append(popt)
-        norms.append(popt[-1])
+        # norms.append(popt[-1])
 
         if num_resonances == 1:
             center_freqs.append(popt[4])
@@ -180,14 +179,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste):
     norms = np.array(norms)
 
     widefield.plot_fit(
-        axes_pack_flat,
-        nv_list,
-        freqs,
-        counts,
-        counts_ste,
-        fit_fns,
-        popts,
-        norms=norms,
+        axes_pack_flat, nv_list, freqs, counts, counts_ste, fit_fns, popts
     )
 
     ax = axes_pack[layout[-1, 0]]
@@ -208,7 +200,7 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     sig_gen = tb.get_server_sig_gen()
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
-    seq_file = "resonance.py"
+    seq_file = "resonance_ref.py"
 
     ### Collect the data
 
@@ -226,7 +218,7 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, ref_counts, raw_data = base_routine.main(
+    counts, raw_data = base_routine.main(
         nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
     )
 

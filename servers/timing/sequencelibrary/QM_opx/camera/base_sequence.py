@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Base spin sequence for multi-NV experiments
+Base spin sequence for widefield experiments with many spatially resolved NV centers.
+Accompanies base routine
 
 Created on December 11th, 2023
 
@@ -24,15 +25,56 @@ def get_seq(
     ion_duration_ns=None,
     readout_duration_ns=None,
     setup_macro=None,
+    reference=True,
 ):
+    """Base spin sequence for widefield experiments with many spatially resolved NV
+    centers. Accompanies base routine
+
+    Parameters
+    ----------
+    pol_coords_list : list(float)
+        List of polarization coordinates to target -
+        returned by widefield.get_base_scc_seq_args(nv_list)
+    ion_coords_list : list(float)
+        List of ionization coordinates to target -
+        returned by widefield.get_base_scc_seq_args(nv_list)
+    num_reps : int
+        Number of repetitions to do
+    uwave_macro : function or list(function)
+        QUA macro describing the microwave pulse sequence. If a list, then
+        run multiple experiments per rep - the first macro will be run for
+        the first experiment, the second macro for the second experiment, etc.
+    pol_duration_ns : int, optional
+        Duration of polarization pulse in ns, by default pulls from config
+    ion_duration_ns : int, optional
+        Duration of ionization pulse in ns, by default pulls from config
+    readout_duration_ns : int, optional
+        Duration of readout pulse in ns, by default pulls from config
+    setup_macro : function, optional
+        QUA macro describing any setup sequence we may want to run. Called
+        at the very beginning even before turning on AODs. By default None
+    reference : bool, optional
+        Whether to include a reference experiment in which no microwaves
+        are applied, by default True
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     if num_reps is None:
         num_reps = 1
 
-    # Determine how many experiments to run based on len of uwave_macro
-    try:
-        num_exps_per_rep = len(uwave_macro)
-    except Exception:
-        num_exps_per_rep = 1
+    # Construct the list of experiments to run
+    if not isinstance(uwave_macro, list):
+        uwave_macro = [uwave_macro]
+    if reference:
+
+        def ref_exp():
+            pass
+
+        uwave_macro.append(ref_exp)
+    num_exps_per_rep = len(uwave_macro)
 
     with qua.program() as seq:
         if setup_macro is not None:
