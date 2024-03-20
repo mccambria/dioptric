@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-Widefield extension of the standard optimize in majorroutines 
+Widefield extension of the standard optimize in majorroutines
 
 Created Fall 2023
 
 @author: mccambria
 """
 
-
-import numpy as np
-from numpy import inf
-import matplotlib.pyplot as plt
-from scipy.optimize import minimize
-from majorroutines.optimize import main, stationary_count_lite, prepare_microscope
-import time
 import copy
-from utils import tool_belt as tb
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from numba import njit
+from numpy import inf
+from scipy.optimize import minimize
+
+from majorroutines.optimize import main, prepare_microscope, stationary_count_lite
+from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import common
-from utils import widefield
-from numba import njit
+from utils import tool_belt as tb
 from utils.constants import LaserKey
 
 # region Internal
