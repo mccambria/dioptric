@@ -72,7 +72,7 @@ def do_image_nv_list(nv_list):
 
 
 def do_image_single_nv(nv_sig):
-    num_reps = 1000
+    num_reps = 100
     return image_sample.single_nv(nv_sig, num_reps)
 
 
@@ -85,7 +85,11 @@ def do_charge_state_histograms(nv_list, num_reps):
 def do_optimize_green(nv_sig, do_plot=True):
     coords_suffix = tb.get_laser_name(LaserKey.IMAGING)
     ret_vals = optimize.main(
-        nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
+        nv_sig,
+        coords_suffix=coords_suffix,
+        no_crash=True,
+        do_plot=do_plot,
+        axes_to_optimize=[0, 1],
     )
     opti_coords = ret_vals[0]
     return opti_coords
@@ -100,13 +104,14 @@ def do_optimize_red(nv_sig, do_plot=True):
         coords_suffix=coords_suffix,
         no_crash=True,
         do_plot=do_plot,
+        axes_to_optimize=[0, 1],
     )
     opti_coords = ret_vals[0]
     return opti_coords
 
 
-def do_optimize_z(nv_sig, do_plot=False):
-    optimize.main(nv_sig, no_crash=True, do_plot=do_plot)
+def do_optimize_z(nv_sig, do_plot=True):
+    optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
 
 
 def do_optimize_pixel(nv_sig):
@@ -494,14 +499,14 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.07
+    z_coord = 4.02
     magnet_angle = 90
     date_str = "2024_03_12"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
         "disable_opt": False,
-        "disable_z_opt": True,
+        "disable_z_opt": False,
         "expected_count_rate": None,
         "collection": {"filter": None},
         "magnet_angle": None,
@@ -559,29 +564,42 @@ if __name__ == "__main__":
     # ]
 
     pixel_coords_list = [
-        [84.743, 139.408],
-        [110.747, 143.938],
-        [129.454, 134.997],
-        [141.706, 120.231],
-        [154.029, 92.963],
-        [151.137, 63.507],
+        [116.619, 145.137],
+        [134.843, 136.356],
+        # [147.457, 121.416],
+        # [159.648, 94.489],
+        # [157.359, 65.326],
+        # [143.814, 50.464],
     ]
     green_coords_list = [
-        [107.447, 110.003],
-        [107.938, 109.98],
-        [108.226, 110.222],
-        [108.506, 110.589],
-        [108.874, 111.346],
-        [108.875, 112.01],
+        [108.109, 109.871],
+        [108.496, 110.143],
+        # [108.752, 110.5],
+        # [108.99, 111.198],
+        # [108.958, 111.825],
+        # [108.675, 112.23],
     ]
     red_coords_list = [
-        [72.452, 75.292],
-        [72.919, 75.269],
-        [73.274, 75.438],
-        [73.51, 75.703],
-        [73.741, 76.189],
-        [73.6, 76.766],
+        [72.84, 75.201],
+        [73.195, 75.412],
+        # [73.544, 75.678],
+        # [73.767, 76.157],
+        # [73.856, 76.742],
+        # [73.468, 76.939],
     ]
+
+    # pixel_coords_list = [
+    #     [142.936, 50.232],
+    #     [43.324, 155.192],
+    # ]
+    # green_coords_list = [
+    #     [108.551, 112.313],
+    #     [106.426, 109.707],
+    # ]
+    # red_coords_list = [
+    #     [73.482, 76.874],
+    #     [71.892, 74.805],
+    # ]
 
     # endregion
     # region NV sigs
@@ -709,8 +727,8 @@ if __name__ == "__main__":
 
     # nv_sig = nv8
     # nv_list = [nv_sig]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
-    # nv_list = [nv0, nv1]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
+    nv_list = [nv0, nv1]
     # nv_list = [nv1, nv0]
     # nv_list = [nv0, nv2]
 
@@ -742,7 +760,7 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # for nv in nv_list:
     #     widefield.set_nv_scanning_coords_from_pixel_coords(
-    #         nv, red_laser, drift_adjust=True
+    #         nv, red_laser, drift_adjust=False
     #     )
     #     coords = nv[red_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
@@ -759,14 +777,15 @@ if __name__ == "__main__":
         kpl.init_kplotlib()
         # tb.init_safe_stop()
 
-        widefield.reset_all_drift()
-        # widefield.set_pixel_drift([12.564, 7.199])
+        # widefield.reset_all_drift()
+        # pos.reset_drift()  # Reset z drift
+        # widefield.set_pixel_drift([+33, +3])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.linspace(3.9, 4.1, 7):
-        #     nv_sig["coords"][2] = z
+        # nv_sig["coords"][2] = z
         #     # do_scanning_image_sample(nv_sig)
         #     do_widefield_image_sample(nv_sig, 20)
         # for ind in range(100):
@@ -775,25 +794,26 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
         # for nv_sig in nv_list:
-        #     # widefield.reset_all_drift()
-        #     do_optimize_pixel(nv_sig)
-        # # do_optimize_green(nv_sig)
+        #     widefield.reset_all_drift()
+        #     # do_optimize_pixel(nv_sig)
+        #     do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
-        # # coords_suffix = None  # Pixel coords
+        # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
         # coords_suffix = red_laser
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
@@ -818,7 +838,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        do_optimize_scc(nv_list)
 
     except Exception as exc:
         if do_email:

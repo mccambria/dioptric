@@ -183,7 +183,7 @@ def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
 
 
 def _read_counts_camera_sequence(
-    nv_sig, laser_key, coords=None, axis_ind=None, scan_vals=None
+    nv_sig, laser_key, coords=None, coords_suffix=None, axis_ind=None, scan_vals=None
 ):
     """
     Specific function for widefield setup - XY control from AODs,
@@ -204,9 +204,16 @@ def _read_counts_camera_sequence(
         imaging_laser_dict = tb.get_laser_dict(LaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
-        if coords is None:
-            coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
-        seq_args = [imaging_readout, imaging_laser_name, [coords[0]], [coords[1]]]
+        if coords is None or coords_suffix != laser_key:
+            laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
+        else:
+            laser_coords = coords
+        seq_args = [
+            imaging_readout,
+            imaging_laser_name,
+            [laser_coords[0]],
+            [laser_coords[1]],
+        ]
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif laser_key == LaserKey.IONIZATION:
@@ -244,6 +251,7 @@ def _read_counts_camera_sequence(
                 pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
             elif axis_ind == 2:
                 axis_write_fn(val)
+                # print(val)
 
         # Read the camera images
         img_array_list = []
@@ -339,7 +347,7 @@ def _read_counts(
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
         ret_vals = _read_counts_camera_sequence(
-            nv_sig, laser_key, coords, axis_ind, scan_vals
+            nv_sig, laser_key, coords, coords_suffix, axis_ind, scan_vals
         )
 
     else:
@@ -379,6 +387,7 @@ def stationary_count_lite(
     # Set up
     config = common.get_config_dict()
     tb.set_filter(nv_sig, laser_key)
+    prepare_microscope(nv_sig)
 
     ret_vals = _read_counts(nv_sig, laser_key, coords, coords_suffix)
     counts = ret_vals[0]
@@ -399,14 +408,12 @@ def stationary_count_lite(
 
 def prepare_microscope(nv_sig):
     """
-    Prepares the microscope for a measurement. In particular,
-    sets up the optics (positioning, collection filter, etc) and magnet,
-    and sets the global coordinates. The laser set up must be handled by each routine
-
-    If coords are not passed, the nv_sig coords (plus drift) will be used
+    Prepares the microscope for a measurement. In particular, sets up the
+    optics (filters, etc) and magnet, and sets the global coordinates. The
+    laser set up must be handled by each routine
     """
 
-    pos.set_xyz_on_nv(nv_sig)
+    pos.set_xyz_on_nv(nv_sig)  # Set the global positioners on this NV
 
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
@@ -546,8 +553,16 @@ def main(
 
     ### Calculate the drift relative to the passed coordinates
 
-    passed_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust)
-    drift = (np.array(opti_coords) - np.array(passed_coords)).tolist()
+    passed_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust=False)
+    drift = []
+    for ind in range(len(passed_coords)):
+        opti_coord = opti_coords[ind]
+        passed_coord = passed_coords[ind]
+        if opti_coord is None or passed_coord is None:
+            drift_coord = 0.0
+        else:
+            drift_coord = opti_coords[ind] - passed_coords[ind]
+        drift.append(drift_coord)
     if opti_succeeded and set_drift:
         pos.set_drift(drift, coords_suffix=coords_suffix)
 
@@ -557,8 +572,19 @@ def main(
         print("Optimization succeeded!")
     prepare_microscope(nv_sig)
     if not opti_necessary or opti_succeeded:
-        r_opti_coords = [round(el, 3) for el in opti_coords]
-        r_drift = [round(el, 3) for el in drift]
+        r_opti_coords = []
+        r_drift = []
+        for ind in range(len(drift)):
+            opti_coord = opti_coords[ind]
+            drift_coord = drift[ind]
+            if opti_coord is None:
+                r_opti_coords.append(None)
+            else:
+                r_opti_coords.append(round(opti_coord, 3))
+            if drift_coord is None:
+                r_drift.append(None)
+            else:
+                r_drift.append(round(drift_coord, 3))
         print(f"Optimized coordinates: {r_opti_coords}")
         print(f"Drift: {r_drift}")
     # Just crash if we failed

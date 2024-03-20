@@ -50,7 +50,7 @@ def get_seq(
             #     qua.play("pi_pulse", q_el)
         else:
             if uwave_duration != 0:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
+                qua.play("on", sig_gen_el, duration=uwave_ duration)
         qua.wait(buffer, sig_gen_el)
 
     seq = base_sequence.get_seq(

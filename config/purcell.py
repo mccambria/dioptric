@@ -32,14 +32,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [94.422, 164.308],
-    green_coords_key: [107.624, 109.545],
-    red_coords_key: [72.549, 74.866],
+    pixel_coords_key: [142.936, 50.232],
+    green_coords_key: [108.551, 112.313],
+    red_coords_key: [73.482, 76.874],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [160.774, 88.405],
-    green_coords_key: [109.084, 111.507],
-    red_coords_key: [73.762, 76.351],
+    pixel_coords_key: [43.324, 155.192],
+    green_coords_key: [106.426, 109.707],
+    red_coords_key: [71.892, 74.805],
 }
 
 
@@ -188,7 +188,7 @@ config |= {
         "z_delay": int(5e6),  # 5 ms for PIFOC
         "z_dtype": float,
         "z_nm_per_unit": 1000,
-        "z_optimize_range": 0.3,
+        "z_optimize_range": 0.1,
         "z_units": "Voltage (V)",
         "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
         "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
