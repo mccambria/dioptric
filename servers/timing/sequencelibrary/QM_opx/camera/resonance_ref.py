@@ -53,22 +53,15 @@ def get_seq(
                 qua.play("on", sig_gen_el, duration=uwave_duration)
         qua.wait(buffer, sig_gen_el)
 
-    def uwave_macro_ref():
-        pass
-
-    if reference:
-        uwave_macro = [uwave_macro_sig, uwave_macro_ref]
-    else:
-        uwave_macro = uwave_macro_sig
-
     seq = base_sequence.get_seq(
         pol_coords_list,
         ion_coords_list,
         num_reps,
-        uwave_macro,
+        uwave_macro_sig,
         pol_duration_ns,
         ion_duration_ns,
         readout_duration_ns,
+        reference=reference,
     )
 
     seq_ret_vals = []

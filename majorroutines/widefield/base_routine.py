@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Optimize SCC parameters
+Base routine for widefield experiments with many spatially resolved NV centers.
 
 Created on December 6th, 2023
 
@@ -26,10 +26,56 @@ def main(
     step_fn=None,
     uwave_ind=0,
     uwave_freq=None,
-    num_exps_per_rep=1,
+    num_exps_per_rep=2,
     load_iq=False,
     save_images=False,
 ):
+    """Base routine for widefield experiments with many spatially resolved NV centers.
+
+    The routine is broken down into a sequence of identical "runs". In between runs
+    we update the sample drift so that all our targeting remains accurate. Each run
+    consists of a sequence of "steps" where each step represents a specific value of
+    the dependent variable (e.g. a specific frequency in an ESR experiment). In turn
+    each step consists of some number of identical "repetitions", where in each
+    repetition we may perform one or several distinct experiments (e.g. a signal and a
+    reference experiment).
+
+    Parameters
+    ----------
+    nv_list : list(nv_sig)
+        List of NV sig objects to interrogate
+    num_steps : int
+        Number of steps
+    num_reps : int
+        Number of repetitions, or "reps"
+    num_runs : int
+        Number of runs
+    step_fn : function, optional
+        Function to run when moving to a new step. Most likely we want to load a new
+        sequence onto the pulse streamer here, but we may also want to just update a
+        microwave frequency or something similar. If None, do nothing. By default None
+    uwave_ind : int, optional
+        Index of microwave signal chain to use, by default 0
+    uwave_freq : float, optional
+        Microwave frequency to set in GHz, by default retrieved from config
+    num_exps_per_rep : int, optional
+        Number of experiments to perform in a single rep, by default 2
+    load_iq : bool, optional
+        Whether to load IQ modulation for the microwave signal chain, by default False
+    save_images : bool, optional
+        Whether to return the images from the experiments to the caller routine.
+        To save space, reps are averaged over. Results in large files, roughly 1 gb
+        per hour of runtime after compression. By default False
+
+    Returns
+    -------
+    ndarray
+        Array of photon counts. Indexing is experiment, nv, run, step, rep
+    dict
+        Raw data object to save. Populated with basic data, such as the counts array,
+        nv_list, and images if save_images is True. Add whatever routine-specific
+        data we should also save onto this dict before writing it to the cloud
+    """
     ### Some initial setup
 
     tb.reset_cfm()
@@ -38,7 +84,6 @@ def main(
     pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
 
-    pulse_gen = tb.get_server_pulse_gen()
     camera = tb.get_server_camera()
 
     # Sig gen setup
@@ -134,11 +179,6 @@ def main(
         optimize.optimize_pixel(repr_nv_sig)
 
     ### Return
-
-    if num_exps_per_rep == 1:
-        counts = counts[0]
-        if save_images:
-            img_arrays = img_arrays[0]
 
     raw_data = {
         "nv_list": nv_list,
