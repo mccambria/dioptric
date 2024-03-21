@@ -499,7 +499,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.016
+    z_coord = 4.05
     magnet_angle = 90
     date_str = "2024_03_12"
 
@@ -589,29 +589,42 @@ if __name__ == "__main__":
     # ]
 
     pixel_coords_list = [
-        [116.619, 145.137],
-        # [134.843, 136.356],
-        # [147.457, 121.416],
-        [159.648, 94.489],
-        # [157.359, 65.326],
-        # [143.814, 50.464],
+        [129.419, 152.248],
+        [147.87, 143.823],
+        [159.789, 128.509],
+        [171.936, 101.285],
+        [169.559, 72.268],
+        [156.29, 57.519],
     ]
     green_coords_list = [
-        [108.097, 109.877],
-        # [108.488, 110.263],
-        # [108.757, 110.514],
-        [109.0, 111.214],
-        # [108.961, 111.858],
-        # [108.716, 112.236],
+        [108.411, 109.857],
+        [108.781, 110.121],
+        [109.032, 110.458],
+        [109.268, 111.091],
+        [109.154, 111.794],
+        [108.851, 112.138],
     ]
     red_coords_list = [
-        [72.84, 75.201],
-        # [73.195, 75.412],
-        # [73.544, 75.678],
-        [73.767, 76.157],
-        # [73.856, 76.742],
-        # [73.468, 76.939],
+        [73.19, 74.962],
+        [73.489, 75.132],
+        [73.733, 75.439],
+        [73.988, 75.934],
+        [73.833, 76.549],
+        [73.764, 76.662],
     ]
+
+    # pixel_coords_list = [
+    #     [34.67, 195.792],
+    #     [165.329, 67.355],
+    # ]
+    # green_coords_list = [
+    #     [106.398, 108.749],
+    #     [109.2, 111.765],
+    # ]
+    # red_coords_list = [
+    #     [71.483, 73.988],
+    #     [73.735, 76.621],
+    # ]
 
     # endregion
     # region NV sigs
@@ -739,8 +752,8 @@ if __name__ == "__main__":
 
     # nv_sig = nv8
     # nv_list = [nv_sig]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
-    nv_list = [nv0, nv1]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
+    # nv_list = [nv0, nv1]
     # nv_list = [nv1, nv0]
     # nv_list = [nv0, nv2]
 
@@ -791,8 +804,10 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+33, +3])
+        # widefield.set_pixel_drift([+8, 0])
         # widefield.set_all_scanning_drift_from_pixel_drift()
+
+        # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
@@ -819,16 +834,16 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # do_optimize_pixel(nv_sig)
-        # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
+        do_optimize_pixel(nv_sig)
+        do_optimize_green(nv_sig)
+        # # do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # coords_suffix = None  # Pixel coords
         # coords_suffix = green_laser
         # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
+        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
 
         # do_charge_state_histograms(nv_list, 100)
         # do_charge_state_histograms(nv_list, 1000)
@@ -850,7 +865,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
 
     except Exception as exc:
         if do_email:

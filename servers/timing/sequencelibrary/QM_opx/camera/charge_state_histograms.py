@@ -14,6 +14,7 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
+from utils.constants import IonPulseType
 
 
 def get_seq(args, num_reps):
@@ -50,7 +51,9 @@ def get_seq(args, num_reps):
                 seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
             if do_ionize_sub:
-                seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
+                seq_utils.macro_ionize(
+                    ion_coords_list, ion_duration_ns, ion_pulse_type=IonPulseType.ION
+                )
 
             seq_utils.macro_charge_state_readout()
 

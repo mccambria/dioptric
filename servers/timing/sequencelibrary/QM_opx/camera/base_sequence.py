@@ -14,6 +14,7 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
+from utils.constants import IonPulseType
 
 
 def get_seq(
@@ -26,6 +27,7 @@ def get_seq(
     readout_duration_ns=None,
     setup_macro=None,
     reference=True,
+    ion_pulse_type=IonPulseType.SCC,
 ):
     """Base spin sequence for widefield experiments with many spatially resolved NV
     centers. Accompanies base routine
@@ -97,7 +99,7 @@ def get_seq(
                 exp_uwave_macro(*uwave_macro_args)
 
             # Ionization
-            seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
+            seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
 
             # Readout
             seq_utils.macro_charge_state_readout(readout_duration_ns)

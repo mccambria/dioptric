@@ -69,4 +69,10 @@ class Digital(IntEnum):
     HIGH = 1
 
 
+# Ionization pulse type
+class IonPulseType(IntEnum):
+    SCC = 0
+    ION = 1
+
+
 Boltzmann = 8.617e-2  # meV / K

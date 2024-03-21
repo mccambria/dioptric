@@ -32,14 +32,14 @@ green_coords_key = f"coords-{green_laser}"
 red_coords_key = f"coords-{red_laser}"
 
 widefield_calibration_nv1 = {
-    pixel_coords_key: [142.936, 50.232],
-    green_coords_key: [108.551, 112.313],
-    red_coords_key: [73.482, 76.874],
+    pixel_coords_key: [34.67, 195.792],
+    green_coords_key: [106.398, 108.749],
+    red_coords_key: [71.483, 73.988],
 }
 widefield_calibration_nv2 = {
-    pixel_coords_key: [43.324, 155.192],
-    green_coords_key: [106.426, 109.707],
-    red_coords_key: [71.892, 74.805],
+    pixel_coords_key: [165.329, 67.355],
+    green_coords_key: [109.2, 111.765],
+    red_coords_key: [73.735, 76.621],
 }
 
 
@@ -154,9 +154,12 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 300},
-        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 200},
-        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 1e3},
+        # Duration here is for SCC
+        LaserKey.IONIZATION: {
+            "name": "laser_COBO_638",
+            "scc_duration": 120,
+            "ion_duration": 1000,
+        },
         LaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
             # "duration": 30e6,
@@ -173,7 +176,7 @@ config |= {
         "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
         "xy_dtype-laser_INTE_520": float,
         "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.8,
+        "xy_optimize_range-laser_INTE_520": 1.2,
         "xy_units-laser_INTE_520": "MHz",
         #
         "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
@@ -373,8 +376,8 @@ opx_config = {
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
+                "scc": "do_scc",
                 "ionize": "do_ionization",
-                "long_ionize": "do_long_ionization",
             },
         },
         "ao_laser_OPTO_589_am": {
@@ -546,14 +549,14 @@ opx_config = {
             "length": default_pulse_duration,
             "digital_marker": "square",
         },
-        "do_ionization": {
+        "do_scc": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.IONIZATION]["duration"],
+            "length": config["Optics"][LaserKey.IONIZATION]["scc_duration"],
             "digital_marker": "on",
         },
         "do_long_ionization": {
             "operation": "control",
-            "length": 1000,
+            "length": config["Optics"][LaserKey.IONIZATION]["ion_duration"],
             "digital_marker": "on",
         },
         "do_polarization": {
