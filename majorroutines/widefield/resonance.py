@@ -187,9 +187,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    ax.set_ylim([0.945, 1.19])
+    # ax.set_ylim([0.945, 1.19])
     # ax.set_yticks([1.0, 1.1, 1.2])
     # ax.set_xticks([2.83, 2.87, 2.91])
+    x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
+    ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
+    norm_counts = counts / norms[:, np.newaxis]
+    y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
+    ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
     return fig, norms
 
 
@@ -266,8 +271,9 @@ if __name__ == "__main__":
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
-    data = dm.get_raw_data(file_id=1470392816628, no_npz=False)
+    # data = dm.get_raw_data(file_id=1470392816628, no_npz=False)
     # data = dm.get_raw_data(file_id=1470756289396, no_npz=False)
+    data = dm.get_raw_data(file_id=1471019478891, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -338,24 +344,28 @@ if __name__ == "__main__":
 
     img_arrays = np.array(data["img_arrays"])
     img_arrays = np.mean(img_arrays, axis=0)
+    background = np.median(img_arrays, axis=0)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, background, no_cbar=False)
+    img_arrays = img_arrays - background
     # img_arrays = img_arrays / np.median(img_arrays, axis=0)
     # img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
     # top = np.percentile(img_arrays, 90, axis=0)
-    bottom = np.percentile(img_arrays, 30, axis=0)
-    img_arrays -= bottom
+    # bottom = np.percentile(img_arrays, 30, axis=0)
+    # img_arrays -= bottom
     # img_arrays /= top - bottom
 
     # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 4)
-    norms = norms[:, np.newaxis]
-    widefield.animate(
-        # freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, -1, 4
-        freqs,
-        nv_list,
-        avg_counts / norms,
-        avg_counts_ste / norms,
-        img_arrays,
-        0,
-        3,
-    )
+    # norms = norms[:, np.newaxis]
+    # widefield.animate(
+    #     # freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, -1, 4
+    #     freqs,
+    #     nv_list,
+    #     avg_counts / norms,
+    #     avg_counts_ste / norms,
+    #     img_arrays,
+    #     0.2,
+    #     2.5,
+    # )
 
     kpl.show(block=True)

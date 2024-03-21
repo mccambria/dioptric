@@ -15,6 +15,8 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
+from scipy.optimize import curve_fit
+from scipy.special import factorial
 
 from majorroutines.widefield import optimize
 from utils import common, widefield
@@ -37,19 +39,22 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
 
     ### Histograms
 
-    num_bins = 50
     num_reps = len(ref_counts_list)
 
-    labels = ["sig", "ref"]
     labels = ["With ionization pulse", "Without ionization pulse"]
+    colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
     counts_lists = [sig_counts_list, ref_counts_list]
     fig, ax = plt.subplots()
     if not no_title:
-        ax.set_title(f"Charge prep hist, {num_bins} bins, {num_reps} reps")
+        ax.set_title(f"Charge prep hist, {num_reps} reps")
     ax.set_xlabel("Integrated counts")
     ax.set_ylabel("Number of occurrences")
     for ind in range(2):
-        kpl.histogram(ax, counts_lists[ind], num_bins, label=labels[ind])
+        counts_list = counts_lists[ind]
+        label = labels[ind]
+        color = colors[ind]
+        # kpl.histogram(ax, counts_list, num_bins, label=labels[ind])
+        kpl.histogram(ax, counts_list, label=label, color=color)
     ax.legend()
 
     # Calculate the normalized separation
@@ -67,6 +72,39 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
         kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
     return fig
+
+
+def poisson_dist(x, rate):
+    return (rate**x) * np.exp(-rate) / factorial(x)
+
+
+def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
+    prob_nvn = 1 - prob_nv0
+    val_nv0 = poisson_dist(x, mean_counts_nv0)
+    val_nvn = poisson_dist(x, mean_counts_nvn)
+    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
+
+
+def determine_threshold(counts_list):
+    # Use the ref and assume there's some population in both NV- and NV0
+
+    # Histogram the counts
+    counts_list = [round(el) for el in counts_list]
+    max_count = max(counts_list)
+    x_vals = np.linspace(0, max_count, max_count + 1)
+    hist, _ = np.histogram(
+        counts_list, bins=max_count + 1, range=(0, max_count), density=True
+    )
+
+    # Fit the histogram
+    prob_nv0_guess = 0.3
+    mean_counts_nv0_guess = np.quantile(counts_list, 0.2)
+    mean_counts_nvn_guess = np.quantile(counts_list, 0.8)
+    guess_params = (prob_nv0_guess, mean_counts_nv0_guess, mean_counts_nvn_guess)
+    popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
+    print(popt)
+
+    return popt
 
 
 def main(
@@ -280,70 +318,82 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1470407238122)
+    data = dm.get_raw_data(file_id=1470407238122, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    pixel_coords_list = []
-    for nv in nv_list:
-        coords = nv["pixel_coords"]
-        adj_coords = [coords[0] - 7, coords[1] - 26]
-        pixel_coords_list.append(adj_coords)
-    # pixel_coords_list = [[116 - 7, 128 - 26]]
-
-    sig_img_array = np.array(data["sig_img_array"])
-    ref_img_array = np.array(data["ref_img_array"])
-    diff_img_array = np.array(data["diff_img_array"])
-    # sig_counts_list, ref_counts_list = process_data(
-    #     nv_list, sig_img_array, ref_img_array
-    # )
-    sig_img_array_cts = widefield.adus_to_photons(sig_img_array)
-    ref_img_array_cts = widefield.adus_to_photons(ref_img_array)
-    img_arrays = [
-        sig_img_array_cts,
-        ref_img_array_cts,
-        sig_img_array_cts - ref_img_array_cts,
-    ]
-
     sig_counts_lists = data["sig_counts_lists"]
     ref_counts_lists = data["ref_counts_lists"]
+    num_shots = len(sig_counts_lists[0])
 
-    for ind in range(num_nvs):
-        sig_counts_list = sig_counts_lists[ind]
-        ref_counts_list = ref_counts_lists[ind]
-        create_histogram(sig_counts_list, ref_counts_list)
+    # determine_thresholds(nv_list, sig_counts_lists)
 
-    # thresh = 5050
-    # print(f"Red NV0: {(sig_counts_list < thresh).sum()}")
-    # print(f"Red NV-: {(sig_counts_list > thresh).sum()}")
-    # print(f"Green NV0: {(ref_counts_list < thresh).sum()}")
-    # print(f"Green NV-: {(ref_counts_list > thresh).sum()}")
+    # x = np.linspace(0, 50, 51)
+    # print(bimodal_dist(x, 0.3, 20, 50))
 
-    titles = ["With ionization pulse", "Without ionization pulse", "Difference"]
-    for ind in range(3):
-        img_array = img_arrays[ind]
-        fig, ax = plt.subplots()
-        title = titles[ind]
-        if ind in [0, 1]:
-            vmin = 0
-            vmax = 0.7
-        else:
-            vmin = -0.45
-            vmax = 0.1
-        kpl.imshow(
-            ax, img_array, title=title, cbar_label="Counts", vmin=vmin, vmax=vmax
-        )
+    ### Histograms
 
-        for ind in range(len(pixel_coords_list)):
-            # if ind != 8:
-            #     continue
-            # print(nv_list[ind]["name"])
-            pixel_coords = pixel_coords_list[ind]
-            pixel_coords = [el + 1 for el in pixel_coords]
-            color = kpl.data_color_cycler[ind]
-            # kpl.draw_circle(
-            #     ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
-            # )
-            kpl.draw_circle(ax, pixel_coords, color=color, radius=9, label=ind)
+    if True:
+        for ind in range(num_nvs):
+            nv_sig = nv_list[ind]
+            sig_counts_list = sig_counts_lists[ind]
+            ref_counts_list = ref_counts_lists[ind]
+            fig = create_histogram(sig_counts_list, ref_counts_list)
+
+            ax = fig.gca()
+            popt = determine_threshold(ref_counts_list)
+            x_vals = np.linspace(0, max(ref_counts_list), 1000)
+            kpl.plot_line(ax, x_vals, num_shots * bimodal_dist(x_vals, *popt))
+
+    ### Labeled images
+
+    if False:
+        num_nvs = len(nv_list)
+        pixel_coords_list = []
+        for nv in nv_list:
+            coords = nv["pixel_coords"]
+            adj_coords = [coords[0] - 7, coords[1] - 26]
+            pixel_coords_list.append(adj_coords)
+
+        sig_img_array = np.array(data["sig_img_array"])
+        ref_img_array = np.array(data["ref_img_array"])
+        diff_img_array = np.array(data["diff_img_array"])
+        # sig_counts_list, ref_counts_list = process_data(
+        #     nv_list, sig_img_array, ref_img_array
+        # )
+        sig_img_array_cts = widefield.adus_to_photons(sig_img_array)
+        ref_img_array_cts = widefield.adus_to_photons(ref_img_array)
+        img_arrays = [
+            sig_img_array_cts,
+            ref_img_array_cts,
+            sig_img_array_cts - ref_img_array_cts,
+        ]
+
+        titles = ["With ionization pulse", "Without ionization pulse", "Difference"]
+        for ind in range(3):
+            img_array = img_arrays[ind]
+            fig, ax = plt.subplots()
+            title = titles[ind]
+            if ind in [0, 1]:
+                vmin = 0
+                vmax = 0.7
+            else:
+                vmin = -0.45
+                vmax = 0.1
+            kpl.imshow(
+                ax, img_array, title=title, cbar_label="Counts", vmin=vmin, vmax=vmax
+            )
+
+            for ind in range(len(pixel_coords_list)):
+                # if ind != 8:
+                #     continue
+                # print(nv_list[ind]["name"])
+                pixel_coords = pixel_coords_list[ind]
+                pixel_coords = [el + 1 for el in pixel_coords]
+                color = kpl.data_color_cycler[ind]
+                # kpl.draw_circle(
+                #     ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
+                # )
+                kpl.draw_circle(ax, pixel_coords, color=color, radius=9, label=ind)
 
     plt.show(block=True)
