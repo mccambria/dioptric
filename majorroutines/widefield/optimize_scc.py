@@ -7,15 +7,14 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 
 def process_and_plot(nv_list, taus, sig_counts, ref_counts):
@@ -39,14 +38,14 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     snr_ax.set_xlabel("Ionization pulse duration (ns)")
     snr_ax.set_ylabel("SNR")
 
-    snr_fig, snr_ax = plt.subplots()
+    avg_snr_fig, snr_ax = plt.subplots()
     avg_avg_snr = np.quantile(avg_snr, 0.75, axis=0)
     avg_avg_snr_ste = np.quantile(avg_snr_ste, 0.75, axis=0)
     kpl.plot_points(snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
     snr_ax.set_xlabel("Ionization pulse duration (ns)")
     snr_ax.set_ylabel("Average SNR")
 
-    return sig_fig, ref_fig, snr_fig
+    return sig_fig, ref_fig, snr_fig, avg_snr_fig
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
@@ -73,7 +72,9 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Process and plot
 
-    sig_fig, ref_fig, snr_fig = process_and_plot(nv_list, taus, sig_counts, ref_counts)
+    sig_fig, ref_fig, snr_fig, avg_snr_fig = process_and_plot(
+        nv_list, taus, sig_counts, ref_counts
+    )
 
     ### Clean up and return
 
@@ -104,6 +105,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     dm.save_figure(ref_fig, file_path)
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-snr")
     dm.save_figure(snr_fig, file_path)
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-avg_snr")
+    dm.save_figure(avg_snr_fig, file_path)
 
 
 if __name__ == "__main__":
