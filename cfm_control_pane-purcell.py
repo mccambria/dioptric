@@ -374,18 +374,18 @@ def do_opx_constant_ac():
     opx = cxn.QM_opx
 
     # Microwave test
-    if True:
-        sig_gen = cxn.sig_gen_STAN_sg394
-        amp = 10
-        chan = 10
-    else:
-        sig_gen = cxn.sig_gen_STAN_sg394_2
-        amp = 10
-        chan = 9
-    sig_gen.set_amp(amp)  # 12
-    sig_gen.set_freq(0.1)
-    sig_gen.uwave_on()
-    opx.constant_ac([chan])
+    # if True:
+    #     sig_gen = cxn.sig_gen_STAN_sg394
+    #     amp = 10
+    #     chan = 10
+    # else:
+    #     sig_gen = cxn.sig_gen_STAN_sg394_2
+    #     amp = 10
+    #     chan = 9
+    # sig_gen.set_amp(amp)  # 12
+    # sig_gen.set_freq(0.1)
+    # sig_gen.uwave_on()
+    # opx.constant_ac([chan])
 
     # Camera frame rate test
     # seq_args = [500]
@@ -394,12 +394,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.5],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.5],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -407,6 +407,7 @@ def do_opx_constant_ac():
     #     [0.19, 0.19],  # Analog voltages
     #     [111, 111],  # Analog frequencies
     # )
+    # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
     # # freqs = [73, 75, 77]
@@ -432,6 +433,7 @@ def do_opx_constant_ac():
     #         75,
     #     ],  # Analog frequencies                                                                                                                                                                              uencies
     # )
+    # opx.constant_ac([1])  # Just laser
     # # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
@@ -499,7 +501,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.05
+    z_coord = 3.99
     magnet_angle = 90
     date_str = "2024_03_12"
 
@@ -804,15 +806,17 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+8, 0])
+        # widefield.set_pixel_drift([+1, -6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(3.9, 4.1, 7):
-        # nv_sig["coords"][2] = z
+        # for z in np.linspace(3.9, 4.1, 11):
+        #     nv_sig["coords"][2] = z
+        #     do_optimize_pixel(nv_sig)
+        #     do_optimize_green(nv_sig)
         #     # do_scanning_image_sample(nv_sig)
         #     do_widefield_image_sample(nv_sig, 20)
         # for ind in range(100):
@@ -834,8 +838,8 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
-        do_optimize_green(nv_sig)
+        # do_optimize_pixel(nv_sig)
+        # do_optimize_green(nv_sig)
         # # do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
 
@@ -846,7 +850,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
 
         # do_charge_state_histograms(nv_list, 100)
-        # do_charge_state_histograms(nv_list, 1000)
+        do_charge_state_histograms(nv_list, 1000)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
