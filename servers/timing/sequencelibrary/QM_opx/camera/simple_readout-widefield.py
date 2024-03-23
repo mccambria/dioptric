@@ -20,8 +20,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from utils.constants import ModMode
 
 
-def get_seq(args, num_reps):
-    readout_duration_ns, readout_laser = args
+def get_seq(readout_duration_ns, readout_laser, num_reps):
     if num_reps is None:
         num_reps = 1
 

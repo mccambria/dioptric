@@ -26,6 +26,7 @@ from utils import tool_belt as tb
 from utils.constants import (
     CollectionMode,
     ControlMode,
+    CoordsKey,
     CountFormat,
     LaserKey,
     LaserPosMode,
@@ -164,7 +165,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
 def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
-    pixel_coords = nv_sig["pixel_coords"]
+    widefield.get_nv_pixel_coords(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
     counts = []
@@ -285,11 +286,11 @@ def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fi
     scan_range = pos.get_axis_optimize_range(axis_ind, coords_key)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
-    # optiimizing on the actual target NV. Useful if the real target NV is poorly isolated
+    # optimizing on the actual target NV. Useful if the real target NV is poorly isolated.
+    # Only works with global coordinates
     opti_offset = nv_sig.opti_offset
-    opti_offset = "opti_offset" in nv_sig and nv_sig["opti_offset"] is not None
-    if opti_offset:
-        coords += np.array(nv_sig["opti_offset"])
+    if opti_offset is not None and coords_key == CoordsKey.GLOBAL:
+        coords += np.array(opti_offset)
     axis_center = coords[axis_ind]
     scan_vals = pos.get_scan_1d(axis_center, scan_range, num_steps)
 
@@ -416,12 +417,7 @@ def prepare_microscope(nv_sig: NVSig):
 
     pos.set_xyz_on_nv(nv_sig)  # Set the global positioners on this NV
 
-    if "collection_filter" in nv_sig:
-        filter_name = nv_sig["collection_filter"]
-        if filter_name is not None:
-            tb.set_filter(optics_name="collection", filter_name=filter_name)
-
-    magnet_angle = None if "magnet_angle" not in nv_sig else nv_sig["magnet_angle"]
+    magnet_angle = nv_sig.magnet_angle
     if magnet_angle is not None:
         rotation_stage_server = tb.get_server_magnet_rotation()
         rotation_stage_server.set_angle(magnet_angle)
@@ -452,8 +448,7 @@ def main(
     config = common.get_config_dict()
 
     initial_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust)
-    key = "expected_counts"
-    expected_counts = nv_sig[key] if key in nv_sig else None
+    expected_counts = nv_sig.expected_counts
     if expected_counts is not None:
         lower_bound = 0.9 * expected_counts
         upper_bound = 1.2 * expected_counts
@@ -489,8 +484,7 @@ def main(
 
     if opti_necessary:
         # Check if z optimization is disabled
-        disable_z_opt = "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]
-        if disable_z_opt and 2 in axes_to_optimize:
+        if nv_sig.disable_z_opt and 2 in axes_to_optimize:
             axes_to_optimize.remove(2)
 
         # Loop through attempts until we succeed or give up
@@ -627,7 +621,8 @@ def main(
             "z_counts-units": "number",
         }
 
-        filePath = dm.get_file_path(__file__, timestamp, nv_sig["name"])
+        nv_name = nv_sig.name
+        filePath = dm.get_file_path(__file__, timestamp, nv_name)
         if fig is not None:
             dm.save_figure(fig, filePath)
         dm.save_raw_data(rawData, filePath)

@@ -247,7 +247,7 @@ def rep_loop(num_reps, rep_fn):
         print(f"{attempt_ind} crashes occurred")
 
 
-def get_repr_nv_sig(nv_list: list[NVSig]):
+def get_repr_nv_sig(nv_list: list[NVSig]) -> NVSig:
     for nv in nv_list:
         try:
             if nv.representative:

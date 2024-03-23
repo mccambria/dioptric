@@ -135,7 +135,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-            seq, seq_ret_vals = seq_module.get_seq(args, num_reps)
+            seq, seq_ret_vals = seq_module.get_seq(*args, num_reps)
 
         return seq, seq_ret_vals
 

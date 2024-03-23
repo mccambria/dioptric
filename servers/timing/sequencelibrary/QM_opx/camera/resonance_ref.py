@@ -20,7 +20,9 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 
 def get_seq(
-    args,
+    pol_coords_list,
+    ion_coords_list,
+    uwave_ind,
     num_reps,
     reference=True,
     pol_duration_ns=None,
@@ -29,8 +31,6 @@ def get_seq(
     readout_duration_ns=None,
     phase=None,
 ):
-    (pol_coords_list, ion_coords_list, uwave_ind) = args
-
     # if phase is not None:
     #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
     # phase_rad = phase * (np.pi / 180)
@@ -89,7 +89,7 @@ if __name__ == "__main__":
             ],
             0,
         ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        seq, seq_ret_vals = get_seq(*args, 5)
 
         sim_config = SimulationConfig(duration=int(400e3 / 4))
         sim = opx.simulate(seq, sim_config)

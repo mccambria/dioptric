@@ -24,7 +24,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield as widefield
-from utils.constants import NVSpinState
+from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
@@ -198,7 +198,15 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_ind=0):
+def main(
+    nv_list: list[NVSig],
+    num_steps,
+    num_reps,
+    num_runs,
+    freq_center,
+    freq_range,
+    uwave_ind=0,
+):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -255,7 +263,7 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     if "img_arrays" in raw_data:
         keys_to_compress = ["img_arrays"]
