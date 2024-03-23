@@ -274,7 +274,7 @@ def _read_counts_camera_sequence(
     return [np.array(counts, dtype=int), img_array]
 
 
-def _optimize_on_axis(nv_sig, laser_key, coords, coords_key, axis_ind, fig=None):
+def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     ### Basic setup and definitions
@@ -286,6 +286,7 @@ def _optimize_on_axis(nv_sig, laser_key, coords, coords_key, axis_ind, fig=None)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
     # optiimizing on the actual target NV. Useful if the real target NV is poorly isolated
+    opti_offset = nv_sig.opti_offset
     opti_offset = "opti_offset" in nv_sig and nv_sig["opti_offset"] is not None
     if opti_offset:
         coords += np.array(nv_sig["opti_offset"])

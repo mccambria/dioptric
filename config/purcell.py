@@ -13,6 +13,7 @@ from config.default import config
 from utils.constants import (
     CollectionMode,
     ControlMode,
+    CoordsKey,
     CountFormat,
     LaserKey,
     LaserPosMode,
@@ -170,28 +171,30 @@ config |= {
     },
     ###
     "Positioning": {
-        #
-        "xy_control_mode-laser_INTE_520": ControlMode.SEQUENCE,
-        "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_INTE_520": float,
-        "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 1.2,
-        "xy_units-laser_INTE_520": "MHz",
-        #
-        "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
-        "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_COBO_638": float,
-        "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 1.0,
-        # "xy_optimize_range-laser_COBO_638": 2.0,
-        "xy_units-laser_COBO_638": "MHz",
-        #
-        "z_control_mode": ControlMode.STREAM,
-        "z_delay": int(5e6),  # 5 ms for PIFOC
-        "z_dtype": float,
-        "z_nm_per_unit": 1000,
-        "z_optimize_range": 0.1,
-        "z_units": "Voltage (V)",
+        green_laser: {
+            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 1.2,
+            "xy_units": "MHz",
+        },
+        red_laser: {
+            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 1.0,
+            "xy_units": "MHz",
+        },
+        CoordsKey.GLOBAL: {
+            "z_control_mode": ControlMode.STREAM,
+            "z_delay": int(5e6),  # 5 ms for PIFOC
+            "z_dtype": float,
+            "z_nm_per_unit": 1000,
+            "z_optimize_range": 0.1,
+            "z_units": "Voltage (V)",
+        },
         "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
         "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
     },
