@@ -177,7 +177,7 @@ def threshold_counts(nv_list, counts_array, ref_counts_array=None):
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
     states_array = counts_array > thresholds
-    if ref_counts_array is None:
+    if ref_counts_array is not None:
         ref_states_array = ref_counts_array > thresholds
     else:
         ref_states_array = None
