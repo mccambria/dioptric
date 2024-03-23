@@ -15,46 +15,20 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import ControlMode
-
-# endregion
-# region Module internal functions
-
-
-def _append_suffix_to_key(key, coords_suffix=None):
-    """
-    A given laser can be specified in the functions in this file by name or by passing
-    a laser_key that points to a laser in the nv_sig. Use this function to get
-    the coords_suffix in either case, or to return None is no laser is specified.
-    """
-    if coords_suffix is None:
-        return key
-    else:
-        return f"{key}-{coords_suffix}"
-
-
-def _get_positioning_config_entry(key, coords_suffix=None):
-    key = _append_suffix_to_key(key, coords_suffix)
-    config = common.get_config_dict()
-    config_positioning = config["Positioning"]
-    if key in config_positioning:
-        return config_positioning[key]
-    else:
-        return None
-
+from utils.constants import ControlMode, CoordsKey, NVSig
 
 # endregion
 # region Simple sets
 """
 If a specific laser is not passed, then the set will just use the global
 coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
-(nv_sig key f"coords-{coords_suffix}")
+(nv_sig key f"coords-{coords_key}")
 """
 
 
-def set_xyz(coords, coords_suffix=None, drift_adjust=False, ramp=None):
+def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords, coords_suffix=coords_suffix)
+        coords = adjust_coords_for_drift(coords, coords_key=coords_key)
     if ramp is None:
         config = common.get_config_dict()
         key = "set_xyz_ramp"
@@ -62,14 +36,14 @@ def set_xyz(coords, coords_suffix=None, drift_adjust=False, ramp=None):
     if ramp:
         return _set_xyz_ramp(coords)
     else:
-        return _set_xyz(coords, coords_suffix)
+        return _set_xyz(coords, coords_key)
 
 
-def _set_xyz(coords, coords_suffix):
-    xy_dtype = get_xy_dtype(coords_suffix=coords_suffix)
-    z_dtype = get_z_dtype(coords_suffix=coords_suffix)
-    pos_xy_server = get_server_pos_xy(coords_suffix=coords_suffix)
-    pos_z_server = get_server_pos_z(coords_suffix=coords_suffix)
+def _set_xyz(coords, coords_key):
+    xy_dtype = get_xy_dtype(coords_key=coords_key)
+    z_dtype = get_z_dtype(coords_key=coords_key)
+    pos_xy_server = get_server_pos_xy(coords_key=coords_key)
+    pos_z_server = get_server_pos_z(coords_key=coords_key)
     if pos_xy_server is not None:
         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
     if pos_z_server is not None:
@@ -181,30 +155,32 @@ def _set_xyz_ramp(coords):
     time.sleep(total_movement_delay / 1e9)
 
 
-def set_xyz_on_nv(nv_sig, coords_suffix=None, drift_adjust=True):
+def set_xyz_on_nv(nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True):
     """Returns the coords actually used in the set"""
-    coords = get_nv_coords(nv_sig, coords_suffix, drift_adjust)
-    set_xyz(coords, coords_suffix=coords_suffix, drift_adjust=False)
+    coords = get_nv_coords(nv_sig, coords_key, drift_adjust)
+    set_xyz(coords, coords_key=coords_key, drift_adjust=False)
     return coords
 
 
-def get_coords_key(coords_suffix=None):
-    return _append_suffix_to_key("coords", coords_suffix)
-
-
-def get_nv_coords(nv_sig, coords_suffix=None, drift_adjust=True, drift=None):
-    coords_key = get_coords_key(coords_suffix)
-    coords = nv_sig[coords_key]
+def get_nv_coords(
+    nv_sig: NVSig, coords_key=CoordsKey.GLOBAL, drift_adjust=True, drift=None
+):
+    coords = nv_sig.coords
+    if isinstance(coords, dict):
+        coords = coords[coords_key]
     if drift_adjust:
         coords = adjust_coords_for_drift(
-            coords=coords, drift=drift, coords_suffix=coords_suffix
+            coords=coords, drift=drift, coords_key=coords_key
         )
     return coords
 
 
-def set_nv_coords(nv_sig, coords, coords_suffix=None):
-    coords_key = get_coords_key(coords_suffix)
-    nv_sig[coords_key] = coords
+def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.GLOBAL):
+    coords = nv_sig.coords
+    if isinstance(coords, list):
+        nv_sig.coords = coords
+    if isinstance(coords, dict):
+        nv_sig.coords[coords_key] = coords
 
 
 # endregion
@@ -220,73 +196,83 @@ def get_laser_pos_mode(laser_name):
         return None
 
 
-def _get_axis_value_sub(base_key, axis_ind, coords_suffix=None):
+def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
     label_dict = {0: "xy", 1: "xy", 2: "z"}
     label = label_dict[axis_ind]
-    return _get_positioning_config_entry(f"{label}_{base_key}", coords_suffix)
+    key = f"{label}_{base_key}"
+    config = common.get_config_dict()
+    config_pos = config["Positioning"]
+    if coords_key in config_pos:
+        return config_pos[coords_key][key]
+    else:
+        return config_pos[key]
 
 
-def get_axis_delay(axis_ind, coords_suffix=None):
-    return _get_axis_value_sub("delay", axis_ind, coords_suffix)
+def get_axis_delay(axis_ind, coords_key=CoordsKey.GLOBAL):
+    return _get_axis_value_sub("delay", axis_ind, coords_key)
 
 
-def get_axis_units(axis_ind, coords_suffix=None):
-    return _get_axis_value_sub("units", axis_ind, coords_suffix)
+def get_axis_units(axis_ind, coords_key=CoordsKey.GLOBAL):
+    return _get_axis_value_sub("units", axis_ind, coords_key)
 
 
-def get_axis_control_mode(axis_ind, coords_suffix=None):
-    return _get_axis_value_sub("control_mode", axis_ind, coords_suffix)
+def get_axis_control_mode(axis_ind, coords_key=CoordsKey.GLOBAL):
+    return _get_axis_value_sub("control_mode", axis_ind, coords_key)
 
 
-def get_axis_optimize_range(axis_ind, coords_suffix=None):
-    return _get_axis_value_sub("optimize_range", axis_ind, coords_suffix)
+def get_axis_optimize_range(axis_ind, coords_key=CoordsKey.GLOBAL):
+    return _get_axis_value_sub("optimize_range", axis_ind, coords_key)
 
 
-def get_axis_dtype(axis_ind, coords_suffix=None):
-    return _get_axis_value_sub("dtype", axis_ind, coords_suffix)
+def get_axis_dtype(axis_ind, coords_key=CoordsKey.GLOBAL):
+    return _get_axis_value_sub("dtype", axis_ind, coords_key)
 
 
-def get_xy_dtype(coords_suffix=None):
+def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
     axis_ind = 0
-    return get_axis_dtype(axis_ind, coords_suffix)
+    return get_axis_dtype(axis_ind, coords_key)
 
 
-def get_z_dtype(coords_suffix=None):
+def get_z_dtype(coords_key=CoordsKey.GLOBAL):
     axis_ind = 2
-    return get_axis_dtype(axis_ind, coords_suffix)
+    return get_axis_dtype(axis_ind, coords_key)
 
 
-def get_xy_control_mode(coords_suffix=None):
+def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):
     axis_ind = 0
-    return get_axis_control_mode(axis_ind, coords_suffix)
+    return get_axis_control_mode(axis_ind, coords_key)
 
 
-def get_z_control_mode(coords_suffix=None):
+def get_z_control_mode(coords_key=CoordsKey.GLOBAL):
     axis_ind = 2
-    return get_axis_control_mode(axis_ind, coords_suffix)
+    return get_axis_control_mode(axis_ind, coords_key)
 
 
-def get_server_pos_xy(coords_suffix=None):
-    key = _append_suffix_to_key("pos_xy", coords_suffix)
-    return common.get_server(key)
+def _get_positioning_server(base_key, coords_key):
+    try:
+        return common.get_server(f"{base_key}-{coords_key}")
+    except Exception:
+        return common.get_server(base_key)
 
 
-def get_server_pos_z(coords_suffix=None):
-    key = _append_suffix_to_key("pos_z", coords_suffix)
-    return common.get_server(key)
+def get_server_pos_xy(coords_key=CoordsKey.GLOBAL):
+    return _get_positioning_server("pos_xy", coords_key)
 
 
-def get_server_pos_xyz(coords_suffix=None):
-    key = _append_suffix_to_key("pos_xyz", coords_suffix)
-    return common.get_server(key)
+def get_server_pos_z(coords_key=CoordsKey.GLOBAL):
+    return _get_positioning_server("pos_z", coords_key)
 
 
-def get_axis_write_fn(axis_ind, coords_suffix=None):
+def get_server_pos_xyz(coords_key=CoordsKey.GLOBAL):
+    return _get_positioning_server("pos_xyz", coords_key)
+
+
+def get_axis_write_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
     """Return the write function for a given axis (0:x, 1:y, 2:z)"""
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy(coords_suffix)
+        server = get_server_pos_xy(coords_key)
     elif axis_ind == 2:
-        server = get_server_pos_z(coords_suffix)
+        server = get_server_pos_z(coords_key)
     if server is None:
         return None
 
@@ -300,16 +286,16 @@ def get_axis_write_fn(axis_ind, coords_suffix=None):
     return write_fn
 
 
-def get_axis_stream_fn(axis_ind, coords_suffix=None):
+def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
     control_mode = get_axis_control_mode(axis_ind)
     if control_mode != ControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy(coords_suffix)
+        server = get_server_pos_xy(coords_key)
     elif axis_ind == 2:
-        server = get_server_pos_z(coords_suffix)
+        server = get_server_pos_z(coords_key)
     if server is None:
         return None
 
@@ -328,16 +314,19 @@ def get_axis_stream_fn(axis_ind, coords_suffix=None):
 """Implemented with a drift tracking global stored on the registry"""
 
 
-def _get_drift_key(coords_suffix=None):
-    return _append_suffix_to_key("DRIFT", coords_suffix)
+def _get_drift_key(coords_key=CoordsKey.GLOBAL):
+    try:
+        return common.get_server(f"drift-{coords_key}")
+    except Exception:
+        return common.get_server("drift")
 
 
-def get_drift(coords_suffix=None):
-    key = _get_drift_key(coords_suffix)
+def get_drift(coords_key=CoordsKey.GLOBAL):
+    key = _get_drift_key(coords_key)
     drift = common.get_registry_entry(["State"], key)
     drift_dtype = []
     for ind in range(len(drift)):
-        axis_dtype = get_axis_dtype(ind, coords_suffix)
+        axis_dtype = get_axis_dtype(ind, coords_key)
         if axis_dtype is not None:
             drift_dtype.append(axis_dtype(drift[ind]))
         else:
@@ -345,34 +334,36 @@ def get_drift(coords_suffix=None):
     return np.array(drift_dtype)
 
 
-def set_drift(drift, coords_suffix=None):
-    key = _get_drift_key(coords_suffix)
+def set_drift(drift, coords_key=CoordsKey.GLOBAL):
+    key = _get_drift_key(coords_key)
     return common.set_registry_entry(["State"], key, drift)
 
 
-def reset_drift(coords_suffix=None):
+def reset_drift(coords_key=CoordsKey.GLOBAL):
     try:
-        drift = get_drift(coords_suffix)
+        drift = get_drift(coords_key)
         len_drift = len(drift)
     except Exception:
         len_drift = 3
-    return set_drift([0.0] * len_drift, coords_suffix)
+    return set_drift([0.0] * len_drift, coords_key)
 
 
-def reset_xy_drift(coords_suffix=None):
-    drift = get_drift(coords_suffix)
+def reset_xy_drift(coords_key=CoordsKey.GLOBAL):
+    drift = get_drift(coords_key)
     if len(drift) == 2:
-        return set_drift([0.0, 0.0], coords_suffix)
+        return set_drift([0.0, 0.0], coords_key)
     else:
-        return set_drift([0.0, 0.0, drift[2]], coords_suffix)
+        return set_drift([0.0, 0.0, drift[2]], coords_key)
 
 
-def adjust_coords_for_drift(coords=None, drift=None, nv_sig=None, coords_suffix=None):
+def adjust_coords_for_drift(
+    coords=None, drift=None, nv_sig=None, coords_key=CoordsKey.GLOBAL
+):
     """Current drift will be retrieved from registry if passed drift is None"""
     if coords is None:
-        coords = get_nv_coords(nv_sig, coords_suffix, drift_adjust=False)
+        coords = get_nv_coords(nv_sig, coords_key, drift_adjust=False)
     if drift is None:
-        drift = get_drift(coords_suffix)
+        drift = get_drift(coords_key)
     adjusted_coords = []
     for ind in range(len(coords)):
         coords_val = coords[ind]

@@ -39,7 +39,7 @@ from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSpinState
+from utils.constants import LaserKey, NVSig, NVSpinState
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -493,17 +493,9 @@ if __name__ == "__main__":
 
     sample_name = "johnson"
     z_coord = 5.0
+    global_coords = [None, None, z_coord]
     magnet_angle = 90
     date_str = "2024_02_23"
-
-    nv_sig_shell = {
-        "coords": [None, None, z_coord],
-        "disable_opt": False,
-        "disable_z_opt": True,
-        "expected_count_rate": None,
-        "collection": {"filter": None},
-        "magnet_angle": None,
-    }
 
     # region Coords
 
@@ -539,13 +531,18 @@ if __name__ == "__main__":
 
     # region NV sigs
 
-    nv0 = copy.deepcopy(nv_sig_shell) | {
-        "name": f"{sample_name}-nv0_{date_str}",
-        pixel_coords_key: pixel_coords_list.pop(0),
-        green_coords_key: green_coords_list.pop(0),
-        red_coords_key: red_coords_list.pop(0),
-        "repr": True,
+    coords = {
+        "global": global_coords,
+        "pixel": pixel_coords_list.pop(0),
+        green_laser: green_coords_list.pop(0),
+        red_laser: red_coords_list.pop(0),
     }
+    nv0 = NVSig(
+        name=f"{sample_name}-nv0_{date_str}",
+        coords=coords,
+        representative=True,
+        expected_count_rate=5000,
+    )
 
     nv1 = copy.deepcopy(nv_sig_shell) | {
         "name": f"{sample_name}-nv1_{date_str}",

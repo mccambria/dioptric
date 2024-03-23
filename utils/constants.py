@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Enums and other constants. Should not import anything other user modules
+"""Enums, dataclasses other constants. Should not import anything other user modules
 or else we will probably get a circular import
 
 Created on June 26th, 2023
@@ -7,7 +7,26 @@ Created on June 26th, 2023
 @author: mccambria
 """
 
-from enum import Enum, IntEnum, auto
+from dataclasses import dataclass
+from enum import Enum, IntEnum, StrEnum, auto
+from numbers import Number
+
+
+@dataclass
+class NVSig:
+    name: str = None
+    coords: dict | list = None
+    representative: bool = False
+    disable_opt: bool = False
+    disable_z_opt: bool = False
+    expected_count_rate: Number = None
+    collection: dict = None
+    magnet_angle: Number = None
+
+
+class CoordsKey(StrEnum):
+    GLOBAL = "global"
+    PIXEL = "pixel"
 
 
 class CollectionMode(Enum):
