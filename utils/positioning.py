@@ -202,10 +202,13 @@ def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
     key = f"{label}_{base_key}"
     config = common.get_config_dict()
     config_pos = config["Positioning"]
-    if coords_key in config_pos:
-        return config_pos[coords_key][key]
-    else:
-        return config_pos[key]
+    try:
+        if coords_key in config_pos:
+            return config_pos[coords_key][key]
+        else:
+            return config_pos[key]
+    except Exception:
+        return None
 
 
 def get_axis_delay(axis_ind, coords_key=CoordsKey.GLOBAL):
@@ -314,15 +317,8 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 """Implemented with a drift tracking global stored on the registry"""
 
 
-def _get_drift_key(coords_key=CoordsKey.GLOBAL):
-    try:
-        return common.get_server(f"drift-{coords_key}")
-    except Exception:
-        return common.get_server("drift")
-
-
 def get_drift(coords_key=CoordsKey.GLOBAL):
-    key = _get_drift_key(coords_key)
+    key = f"DRIFT-{coords_key}"
     drift = common.get_registry_entry(["State"], key)
     drift_dtype = []
     for ind in range(len(drift)):
@@ -335,7 +331,7 @@ def get_drift(coords_key=CoordsKey.GLOBAL):
 
 
 def set_drift(drift, coords_key=CoordsKey.GLOBAL):
-    key = _get_drift_key(coords_key)
+    key = f"DRIFT-{coords_key}"
     return common.set_registry_entry(["State"], key, drift)
 
 

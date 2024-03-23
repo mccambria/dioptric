@@ -658,7 +658,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -671,7 +671,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # # do_optimize_green(nv_sig)
         # # do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
@@ -709,7 +709,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
 
     # region Cleanup

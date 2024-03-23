@@ -22,7 +22,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, CountFormat, LaserKey, LaserPosMode
+from utils.constants import CollectionMode, CountFormat, LaserKey, LaserPosMode, NVSig
 
 # endregion
 # region Image processing
@@ -247,12 +247,12 @@ def rep_loop(num_reps, rep_fn):
         print(f"{attempt_ind} crashes occurred")
 
 
-def get_repr_nv_sig(nv_list):
+def get_repr_nv_sig(nv_list: list[NVSig]):
     for nv in nv_list:
         try:
-            if nv["repr"]:
+            if nv.representative:
                 return nv
-        except:
+        except Exception:
             pass
 
 

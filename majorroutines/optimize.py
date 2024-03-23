@@ -29,6 +29,7 @@ from utils.constants import (
     CountFormat,
     LaserKey,
     LaserPosMode,
+    NVSig,
 )
 
 # endregion
@@ -405,7 +406,7 @@ def stationary_count_lite(
         return count_rate
 
 
-def prepare_microscope(nv_sig):
+def prepare_microscope(nv_sig: NVSig):
     """
     Prepares the microscope for a measurement. In particular, sets up the
     optics (filters, etc) and magnet, and sets the global coordinates. The
@@ -426,7 +427,7 @@ def prepare_microscope(nv_sig):
 
 
 def main(
-    nv_sig,
+    nv_sig: NVSig,
     laser_key=LaserKey.IMAGING,
     coords_key=None,
     axes_to_optimize=[0, 1, 2],
@@ -434,7 +435,7 @@ def main(
     do_plot=False,
 ):
     # If optimize is disabled, just do prep and return
-    if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
+    if nv_sig.disable_opt:
         prepare_microscope(nv_sig)
         return [], None
 

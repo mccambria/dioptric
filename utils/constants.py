@@ -8,8 +8,10 @@ Created on June 26th, 2023
 """
 
 from dataclasses import dataclass
-from enum import Enum, IntEnum, StrEnum, auto
+from enum import Enum, IntEnum, auto
 from numbers import Number
+
+from strenum import StrEnum
 
 
 @dataclass
