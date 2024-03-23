@@ -92,20 +92,20 @@ if __name__ == "__main__":
                 [75.42725784791932, 75.65982013416432],
                 [75.98725784791932, 74.74382013416432],
             ],
-            1000.0,
-            1000.0,
+            None,
+            None,
             False,
             True,
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(1e6 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
-        plt.show(block=True)
 
     except Exception as exc:
         raise exc
     finally:
         qmm.close_all_quantum_machines()
+        plt.show(block=True)

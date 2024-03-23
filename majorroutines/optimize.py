@@ -190,7 +190,7 @@ def _read_counts_camera_sequence(
     Z control from objective piezo, imaged onto a camera
     """
     # Basic setup
-    pixel_coords = nv_sig["pixel_coords"]
+    pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
     if axis_ind is not None:
@@ -279,9 +279,8 @@ def _optimize_on_axis(nv_sig, laser_key, coords, coords_suffix, axis_ind, fig=No
     ### Basic setup and definitions
 
     num_steps = 20
-    config = common.get_config_dict()
-    laser_dict = tb.get_laser_dict(laser_key)
-    readout = laser_dict["duration"]
+    # config = common.get_config_dict()
+    # laser_dict = tb.get_laser_dict(laser_key)
     scan_range = pos.get_axis_optimize_range(axis_ind, coords_suffix)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
@@ -301,11 +300,13 @@ def _optimize_on_axis(nv_sig, laser_key, coords, coords_suffix, axis_ind, fig=No
 
     ### Plot, fit, return
 
-    count_format = config["count_format"]
-    if count_format == CountFormat.RAW:
-        f_counts = counts
-    elif count_format == CountFormat.KCPS:
-        f_counts = (counts / 1000) / (readout / 10**9)
+    f_counts = counts
+    # count_format = config["count_format"]
+    # if count_format == CountFormat.RAW:
+    #     f_counts = counts
+    # elif count_format == CountFormat.KCPS:
+    #     readout = laser_dict["duration"]
+    #     f_counts = (counts / 1000) / (readout / 10**9)
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
     positive_amplitude = laser_key != LaserKey.IONIZATION
@@ -329,7 +330,6 @@ def _read_counts(
 
     laser_dict = tb.get_laser_dict(laser_key)
     laser_name = laser_dict["name"]
-    readout = laser_dict["duration"]
     laser_power = tb.set_laser_power(nv_sig, laser_key)
     if axis_ind is not None:
         delay = pos.get_axis_delay(axis_ind, coords_suffix=coords_suffix)
@@ -356,6 +356,7 @@ def _read_counts(
                 "Optimization is currently only implemented for imaging lasers."
             )
         seq_file_name = "simple_readout.py"
+        readout = laser_dict["duration"]
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tb.encode_seq_args(seq_args)
 

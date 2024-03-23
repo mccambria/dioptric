@@ -264,9 +264,12 @@ def optimize_pixel_with_img_array(
         # widefield.set_scanning_drift_from_pixel_drift()
         widefield.set_all_scanning_drift_from_pixel_drift()
     opti_pixel_coords = opti_pixel_coords.tolist()
-    r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
 
     if do_print:
+        r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
         print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
+        counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
+        r_counts = round(counts, 3)
+        print(f"Counts at optimized coordinates: {r_counts}")
 
     return opti_pixel_coords

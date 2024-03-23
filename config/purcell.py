@@ -154,7 +154,6 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        # Duration here is for SCC
         LaserKey.IONIZATION: {
             "name": "laser_COBO_638",
             "scc_duration": 120,
@@ -554,7 +553,7 @@ opx_config = {
             "length": config["Optics"][LaserKey.IONIZATION]["scc_duration"],
             "digital_marker": "on",
         },
-        "do_long_ionization": {
+        "do_ionization": {
             "operation": "control",
             "length": config["Optics"][LaserKey.IONIZATION]["ion_duration"],
             "digital_marker": "on",
@@ -562,6 +561,7 @@ opx_config = {
         "do_polarization": {
             "operation": "control",
             "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
+            # "length": 32,
             "digital_marker": "on",
         },
         "do_pi_pulse_0": {
@@ -591,18 +591,11 @@ opx_config = {
     ### Analog
     "waveforms": {
         "aod_cw": {"type": "constant", "sample": 0.35},
-        # "red_aod_cw": {"type": "constant", "sample": 0.32},
-        # "red_aod_cw": {"type": "constant", "sample": 0.41},
         "red_aod_cw": {"type": "constant", "sample": 0.17},
-        # "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
-        # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
         "green_aod_cw": {"type": "constant", "sample": 0.19},
-        # "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
+        # "green_aod_cw": {"type": "constant", "sample": 0.25},
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },
