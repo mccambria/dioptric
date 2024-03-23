@@ -841,7 +841,7 @@ if __name__ == "__main__":
         do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords

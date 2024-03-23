@@ -28,7 +28,7 @@ def main(nv_list, num_reps):
 
     ### Collect the data
 
-    counts, _, _ = base_routine.main(
+    counts, _ = base_routine.main(
         nv_list, 1, num_reps, 1, step_fn=None, num_exps_per_rep=2
     )
     sig_counts = counts[0]
