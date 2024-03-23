@@ -265,9 +265,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
-    data = dm.get_raw_data(file_id=1470392816628, no_npz=False)
-    # data = dm.get_raw_data(file_id=1470756289396, no_npz=False)
+    data = dm.get_raw_data(file_id=1471019478891, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -278,84 +276,22 @@ if __name__ == "__main__":
     counts = np.array(data["counts"])
     ref_counts = np.array(data["ref_counts"])
 
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots()
-    #     kpl.histogram(ax, counts[nv_ind, :, :].flatten(), nbins=100)
-    #     ax.set_title(nv_ind)
-
-    # counts = counts > 50
-
-    # Spurious correlation testing
-    # step_ind_master_list = np.array(data["step_ind_master_list"])
-    # mean_inds = []
-    # mean_corrs = []
-    # mean_diffs = []
-    # for step_ind in range(num_steps):
-    #     step_inds = [el.tolist().index(step_ind) for el in step_ind_master_list]
-    #     mean_inds.append(np.mean(step_inds))
-
-    #     step_counts = [
-    #         counts[nv_ind, :, step_ind, :].flatten()
-    #         # for nv_ind in [1, 5]
-    #         for nv_ind in range(num_nvs)
-    #     ]
-    #     corr = np.corrcoef(step_counts)
-    #     mean_corrs.append(np.mean(corr, where=corr < 0.999))
-
-    #     val = np.mean(
-    #         [
-    #             counts[nv_ind, :, step_ind, :] - np.mean(counts[nv_ind, :, step_ind, :])
-    #             for nv_ind in range(num_nvs)
-    #         ]
-    #     )
-    #     mean_diffs.append(val)
-    # mean_corrs_runs = []
-    # for run_ind in range(num_runs):
-    #     run_counts = [
-    #         counts[nv_ind, run_ind, :, :].flatten()
-    #         # for nv_ind in [1, 5]
-    #         for nv_ind in range(num_nvs)
-    #     ]
-    #     corr = np.corrcoef(run_counts)
-    #     mean_corrs_runs.append(np.mean(corr, where=corr < 0.999))
-    # print(mean_inds)
-    # print([round(el, 3) for el in mean_corrs])
-    # fig, ax = plt.subplots()
-    # kpl.plot_points(ax, mean_inds, mean_corrs)
-    # ax.set_xlabel("Mean step order")
-    # # kpl.plot_points(ax, freqs, mean_corrs)
-    # # kpl.plot_points(ax, range(num_steps), mean_corrs)
-    # # ax.set_xlabel("Step index")
-    # fig, ax = plt.subplots()
-    # kpl.plot_points(ax, range(num_runs), mean_corrs_runs)
-    # ax.set_xlabel("Run index")
-    # # kpl.plot_points(ax, mean_inds, mean_diffs)
-
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+    # avg_counts, avg_counts_ste, norms = widefield.average_counts(counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = widefield.threshold_counts(
+        nv_list, counts, ref_counts
+    )
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig, norms = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    img_arrays = np.array(data["img_arrays"])
-    img_arrays = np.mean(img_arrays, axis=0)
-    # img_arrays = img_arrays / np.median(img_arrays, axis=0)
-    # img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
-    # top = np.percentile(img_arrays, 90, axis=0)
-    bottom = np.percentile(img_arrays, 30, axis=0)
-    img_arrays -= bottom
-    # img_arrays /= top - bottom
+    # img_arrays = np.array(data["img_arrays"])
+    # img_arrays = np.mean(img_arrays, axis=0)
+    # bottom = np.percentile(img_arrays, 30, axis=0)
+    # img_arrays -= bottom
 
-    # widefield.animate(freqs, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 4)
-    norms = norms[:, np.newaxis]
-    widefield.animate(
-        # freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, -1, 4
-        freqs,
-        nv_list,
-        avg_counts / norms,
-        avg_counts_ste / norms,
-        img_arrays,
-        0,
-        3,
-    )
+    # norms = norms[:, np.newaxis]
+    # widefield.animate(
+    #     freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, 0, 3
+    # )
 
     kpl.show(block=True)

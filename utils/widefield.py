@@ -131,7 +131,7 @@ rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
 
-def process_counts(counts_array, ref_counts_array=None):
+def average_counts(counts_array, ref_counts_array=None):
     """Gets average and standard error for counts data structure.
     Assumes the counts arrays have the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
@@ -160,10 +160,27 @@ def process_counts(counts_array, ref_counts_array=None):
         return avg_counts, avg_counts_ste, norms
 
 
+def threshold_counts(nv_list, counts_array, ref_counts_array=None):
+    counts_array = np.array(counts_array)
+
+    # thresholds = [nv["threshold"] for nv in nv_list]
+    thresholds = [30 for nv in nv_list]  # MCC
+    thresholds = np.array(thresholds)
+    thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
+
+    states_array = counts_array > thresholds
+    if ref_counts_array is None:
+        ref_states_array = ref_counts_array > thresholds
+    else:
+        ref_states_array = None
+
+    return average_counts(states_array, ref_states_array)
+
+
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
-    avg_sig_counts, avg_sig_counts_ste = process_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = process_counts(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste = average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste = average_counts(ref_counts)
     noise = np.sqrt(
         np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
         + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2

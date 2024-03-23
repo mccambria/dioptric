@@ -108,7 +108,7 @@ def do_optimize_red(nv_sig, do_plot=True):
 
 
 def do_optimize_z(nv_sig, do_plot=False):
-    optimize.main(nv_sig, no_crash=True, do_plot=do_plot)
+    optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
 
 
 def do_optimize_pixel(nv_sig):
