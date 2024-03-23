@@ -151,7 +151,8 @@ def process_counts(counts_array, ref_counts_array=None):
         return avg_counts, avg_counts_ste
 
     else:
-        norms = np.mean(ref_counts_array, axis=(1, 2, 3))
+        # norms = np.mean(ref_counts_array, axis=(1, 2, 3))
+        norms = np.mean(ref_counts_array, axis=(1, 2))  # MCC
         # Account for heating by adjusting the norm using the counts from
         # a background spot
         # background_nv_ind = 1

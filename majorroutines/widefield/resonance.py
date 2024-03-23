@@ -273,7 +273,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1395803779134, no_npz=False)
     # data = dm.get_raw_data(file_id=1470392816628, no_npz=False)
     # data = dm.get_raw_data(file_id=1470756289396, no_npz=False)
-    data = dm.get_raw_data(file_id=1471019478891, no_npz=False)
+    data = dm.get_raw_data(file_id=1471019478891, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -342,12 +342,12 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig, norms = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste)
 
-    img_arrays = np.array(data["img_arrays"])
-    img_arrays = np.mean(img_arrays, axis=0)
-    background = np.median(img_arrays, axis=0)
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, background, no_cbar=False)
-    img_arrays = img_arrays - background
+    # img_arrays = np.array(data["img_arrays"])
+    # img_arrays = np.mean(img_arrays, axis=0)
+    # background = np.median(img_arrays, axis=0)
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, background, no_cbar=False)
+    # img_arrays = img_arrays - background
     # img_arrays = img_arrays / np.median(img_arrays, axis=0)
     # img_arrays = img_arrays - np.mean(img_arrays[0:5], axis=0)
     # top = np.percentile(img_arrays, 90, axis=0)
