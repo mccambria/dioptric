@@ -187,9 +187,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
     ax.set_ylabel(" ")
     fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    ax.set_ylim([0.945, 1.19])
+    # ax.set_ylim([0.945, 1.19])
     # ax.set_yticks([1.0, 1.1, 1.2])
     # ax.set_xticks([2.83, 2.87, 2.91])
+    x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
+    ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
+    norm_counts = counts / norms[:, np.newaxis]
+    y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
+    ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
     return fig, norms
 
 

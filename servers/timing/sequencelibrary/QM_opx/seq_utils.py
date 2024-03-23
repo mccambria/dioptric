@@ -13,7 +13,7 @@ from qm import qua
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, LaserKey, ModMode
+from utils.constants import CollectionMode, IonPulseType, LaserKey, ModMode
 
 ### Cached values
 _cache_pol_laser_name = None
@@ -89,7 +89,9 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     _macro_pulse_list(pol_laser_name, pol_coords_list, "polarize", pol_duration_ns)
 
 
-def macro_ionize(ion_coords_list, ion_duration_ns=None):
+def macro_ionize(
+    ion_coords_list, ion_duration_ns=None, ion_pulse_type=IonPulseType.SCC
+):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -106,7 +108,11 @@ def macro_ionize(ion_coords_list, ion_duration_ns=None):
     if _cache_ion_laser_name is None:
         _cache_ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
     ion_laser_name = _cache_ion_laser_name
-    _macro_pulse_list(ion_laser_name, ion_coords_list, "ionize", ion_duration_ns)
+    if ion_pulse_type is IonPulseType.ION:
+        pulse_name = "ionize"
+    elif ion_pulse_type is IonPulseType.SCC:
+        pulse_name = "scc"
+    _macro_pulse_list(ion_laser_name, ion_coords_list, pulse_name, ion_duration_ns)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -206,6 +212,9 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
     global _cache_x_freq
     global _cache_y_freq
 
+    # MCC
+    # pol_ind = qua.declare(int, value=0)
+
     qua.align()
     with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
         # Update AOD frequencies
@@ -218,6 +227,15 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
 
         # Pulse the laser
         qua.wait(access_time + buffer, laser_el)
+        # MCC
+        # if False:
+        # if pulse_name == "polarize":
+        #     qua.assign(pol_ind, 0)
+        #     with qua.while_(pol_ind < 500):
+        #         qua.play("polarize", laser_el)
+        #         qua.wait(50, laser_el)
+        #         qua.assign(pol_ind, pol_ind + 1)
+        # else:
         if duration is None:
             qua.play(pulse_name, laser_el)
         elif duration > 0:

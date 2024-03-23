@@ -604,7 +604,7 @@ def on_click_image(event):
         pass
 
 
-def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
+def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, **kwargs):
     """Similar to matplotlib's hist, but with our defaults
 
     Parameters
@@ -616,7 +616,7 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     hist_type : HistType(enum), optional
         Histogram type, by default HistType.INTEGER
     nbins : int, optional
-        Number of bins, by default 10
+        Number of bins, by default calculated automatically
     kwargs
         Passed on to matplotlib's plot function
 
@@ -638,16 +638,25 @@ def histogram(ax, data, nbins=10, hist_type=HistType.STEP, **kwargs):
     params = {**kwargs}
     params["color"] = color
 
-    # Just make a line plot of the frequencies of each integer
+    # For an integer histogram make a step histogram with the frequency of each integer
+    # nbins does nothing here
     if hist_type == HistType.INTEGER:
-        max_data = int(max(data))
-        occur, bin_edges = np.histogram(data, np.linspace(0, max_data, max_data + 1))
-        x_vals = bin_edges[:-1]
-        plot_line(ax, x_vals, occur, **kwargs)
-    elif hist_type == HistType.STEP:
+        data = [round(el) for el in data]
+        max_data = max(data)
+        rng = (-0.5, max_data + 0.5)
+        nbins = max_data + 1
+    else:
+        rng = None
+    if hist_type == HistType.INTEGER or hist_type == HistType.STEP:
         facecolor = alpha_color_hex(color)
         occur, bin_edges, _ = ax.hist(
-            data, histtype="step", bins=nbins, facecolor=facecolor, fill=True, **kwargs
+            data,
+            histtype="step",
+            bins=nbins,
+            facecolor=facecolor,
+            fill=True,
+            range=rng,
+            **kwargs,
         )
     elif hist_type == HistType.BAR:
         occur, bin_edges, _ = ax.hist(data, histtype="bar", bins=nbins, **kwargs)

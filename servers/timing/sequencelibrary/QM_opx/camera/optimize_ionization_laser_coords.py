@@ -7,16 +7,15 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
-import numpy
-from qm import qua
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
+import numpy
+from qm import QuantumMachinesManager, generate_qua_script, qua
+from qm.simulate import SimulationConfig
+
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from utils import common
+from utils.constants import IonPulseType
 
 
 def get_seq(args, num_reps):
@@ -25,15 +24,12 @@ def get_seq(args, num_reps):
     def uwave_macro():
         pass
 
-    # ion_duration_ns = 1000
-    ion_duration_ns = None
-
     seq = base_sequence.get_seq(
         pol_coords_list,
         ion_coords_list,
         num_reps,
         uwave_macro,
-        ion_duration_ns=ion_duration_ns,
+        ion_pulse_type=IonPulseType.ION,
     )
 
     seq_ret_vals = []

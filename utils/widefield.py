@@ -151,7 +151,8 @@ def average_counts(counts_array, ref_counts_array=None):
         return avg_counts, avg_counts_ste
 
     else:
-        norms = np.mean(ref_counts_array, axis=(1, 2, 3))
+        # norms = np.mean(ref_counts_array, axis=(1, 2, 3))
+        norms = np.mean(ref_counts_array, axis=(1, 2))  # MCC
         # Account for heating by adjusting the norm using the counts from
         # a background spot
         # background_nv_ind = 1
@@ -737,10 +738,10 @@ def plot_fit(
 def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
     num_steps = img_arrays.shape[0]
 
-    figsize = [6.5, 12.0]
+    figsize = [12.8, 6.0]
     # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
     fig = plt.figure(figsize=figsize)
-    im_fig, data_fig = fig.subfigures(2, 1)
+    im_fig, data_fig = fig.subfigures(1, 2, width_ratios=(6, 6.5))
     im_ax = im_fig.add_subplot()
     layout = np.array(
         [
@@ -753,6 +754,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
     data_axes_flat = list(data_axes.values())
     rep_data_ax = data_axes[layout[-1, 0]]
 
+    # all_axes = [fig, im_fig, data_fig, im_ax]
     all_axes = [im_ax]
     all_axes.extend(data_axes_flat)
 

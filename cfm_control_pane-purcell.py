@@ -72,19 +72,24 @@ def do_image_nv_list(nv_list):
 
 
 def do_image_single_nv(nv_sig):
-    num_reps = 1000
+    num_reps = 100
     return image_sample.single_nv(nv_sig, num_reps)
 
 
 def do_charge_state_histograms(nv_list, num_reps):
-    ion_duration = 10e3
+    # ion_duration = 10e3
+    ion_duration = 1e3
     return charge_state_histograms.main(nv_list, num_reps, ion_duration=ion_duration)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
     coords_suffix = tb.get_laser_name(LaserKey.IMAGING)
     ret_vals = optimize.main(
-        nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
+        nv_sig,
+        coords_suffix=coords_suffix,
+        no_crash=True,
+        do_plot=do_plot,
+        axes_to_optimize=[0, 1],
     )
     opti_coords = ret_vals[0]
     return opti_coords
@@ -99,13 +104,14 @@ def do_optimize_red(nv_sig, do_plot=True):
         coords_suffix=coords_suffix,
         no_crash=True,
         do_plot=do_plot,
+        axes_to_optimize=[0, 1],
     )
     opti_coords = ret_vals[0]
     return opti_coords
 
 
-def do_optimize_z(nv_sig, do_plot=False):
-    optimize.main(nv_sig, no_crash=True, do_plot=do_plot)
+def do_optimize_z(nv_sig, do_plot=True):
+    optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
 
 
 def do_optimize_pixel(nv_sig):
@@ -368,18 +374,18 @@ def do_opx_constant_ac():
     opx = cxn.QM_opx
 
     # Microwave test
-    if True:
-        sig_gen = cxn.sig_gen_STAN_sg394
-        amp = 10
-        chan = 10
-    else:
-        sig_gen = cxn.sig_gen_STAN_sg394_2
-        amp = 10
-        chan = 9
-    sig_gen.set_amp(amp)  # 12
-    sig_gen.set_freq(0.1)
-    sig_gen.uwave_on()
-    opx.constant_ac([chan])
+    # if True:
+    #     sig_gen = cxn.sig_gen_STAN_sg394
+    #     amp = 10
+    #     chan = 10
+    # else:
+    #     sig_gen = cxn.sig_gen_STAN_sg394_2
+    #     amp = 10
+    #     chan = 9
+    # sig_gen.set_amp(amp)  # 12
+    # sig_gen.set_freq(0.1)
+    # sig_gen.uwave_on()
+    # opx.constant_ac([chan])
 
     # Camera frame rate test
     # seq_args = [500]
@@ -388,12 +394,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.5],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.5],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -401,6 +407,7 @@ def do_opx_constant_ac():
     #     [0.19, 0.19],  # Analog voltages
     #     [111, 111],  # Analog frequencies
     # )
+    # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
     # # freqs = [73, 75, 77]
@@ -426,6 +433,7 @@ def do_opx_constant_ac():
     #         75,
     #     ],  # Analog frequencies                                                                                                                                                                              uencies
     # )
+    # opx.constant_ac([1])  # Just laser
     # # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
@@ -463,9 +471,9 @@ def compile_speed_test(nv_list):
     cxn = common.labrad_connect()
     pulse_gen = cxn.QM_opx
 
-    seq_file = "resonance.py"
+    seq_file = "resonance_ref.py"
     num_reps = 20
-    uwave_index = 1
+    uwave_index = 0
 
     seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.append(uwave_index)
@@ -493,14 +501,14 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.82
+    z_coord = 4.21
     magnet_angle = 90
     date_str = "2024_03_12"
 
     nv_sig_shell = {
         "coords": [None, None, z_coord],
         "disable_opt": False,
-        "disable_z_opt": True,
+        "disable_z_opt": False,
         "expected_count_rate": None,
         "collection": {"filter": None},
         "magnet_angle": None,
@@ -557,33 +565,68 @@ if __name__ == "__main__":
     #     [73.552, 76.608],
     # ]
 
+    # pixel_coords_list = [
+    #     [116.619, 145.137],
+    #     # [134.843, 136.356],
+    #     # [147.457, 121.416],
+    #     [159.648, 94.489],
+    #     # [157.359, 65.326],
+    #     # [143.814, 50.464],
+    # ]
+    # green_coords_list = [
+    #     [108.109, 109.871],
+    #     # [108.496, 110.143],
+    #     # [108.752, 110.5],
+    #     [108.99, 111.198],
+    #     # [108.958, 111.825],
+    #     # [108.675, 112.23],
+    # ]
+    # red_coords_list = [
+    #     [72.84, 75.201],
+    #     # [73.195, 75.412],
+    #     # [73.544, 75.678],
+    #     [73.767, 76.157],
+    #     # [73.856, 76.742],
+    #     # [73.468, 76.939],
+    # ]
+
     pixel_coords_list = [
-        [62.345, 104.212],
-        [37.494, 146.216],
-        [109.105, 198.406],
-        [127.838, 189.673],
-        [139.453, 174.977],
-        [152.624, 147.702],
-        [149.26, 118.562],
+        [134.395, 145.486],
+        [152.557, 136.398],
+        [165.503, 121.443],
+        [177.514, 94.414],
+        [174.805, 65.13],
+        [161.244, 50.454],
     ]
     green_coords_list = [
-        [106.927, 111.111],
-        [106.412, 110.009],
-        [107.989, 108.66],
-        [108.386, 108.9],
-        [108.648, 109.272],
-        [108.911, 109.984],
-        [108.874, 110.702],
+        [108.492, 110.038],
+        [108.889, 110.291],
+        [109.126, 110.648],
+        [109.356, 111.328],
+        [109.253, 111.974],
+        [108.944, 112.355],
     ]
     red_coords_list = [
-        [71.927, 76.061],
-        [71.472, 75.239],
-        [72.782, 74.218],
-        [73.124, 74.389],
-        [73.336, 74.677],
-        [73.577, 75.21],
-        [73.516, 75.78],
+        [73.278, 75.07],
+        [73.591, 75.244],
+        [73.841, 75.566],
+        [74.083, 75.969],
+        [73.922, 76.603],
+        [73.748, 76.776],
     ]
+
+    # pixel_coords_list = [
+    #     [34.67, 195.792],
+    #     [165.329, 67.355],
+    # ]
+    # green_coords_list = [
+    #     [106.398, 108.749],
+    #     [109.2, 111.765],
+    # ]
+    # red_coords_list = [
+    #     [71.483, 73.988],
+    #     [73.735, 76.621],
+    # ]
 
     # endregion
     # region NV sigs
@@ -602,6 +645,7 @@ if __name__ == "__main__":
             pixel_coords_key: pixel_coords_list.pop(0),
             green_coords_key: green_coords_list.pop(0),
             red_coords_key: red_coords_list.pop(0),
+            # "threshold": 25,
         }
 
         nv2 = copy.deepcopy(nv_sig_shell) | {
@@ -710,13 +754,13 @@ if __name__ == "__main__":
 
     # nv_sig = nv8
     # nv_list = [nv_sig]
-    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5]
     # nv_list = [nv0, nv1]
     # nv_list = [nv1, nv0]
     # nv_list = [nv0, nv2]
 
     # nv_list = [nv0, nv1, nv2]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
+    # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8, nv9, nv10, nv11, nv12, nv13]
     # nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv8, nv9, nv10, nv11, nv12, nv13]
@@ -743,7 +787,7 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # for nv in nv_list:
     #     widefield.set_nv_scanning_coords_from_pixel_coords(
-    #         nv, red_laser, drift_adjust=True
+    #         nv, red_laser, drift_adjust=False
     #     )
     #     coords = nv[red_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
@@ -761,15 +805,20 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-        # widefield.set_pixel_drift([-12, -4])
+        # pos.reset_drift()  # Reset z drift
+        # widefield.set_pixel_drift([+7, -8])
         # widefield.set_all_scanning_drift_from_pixel_drift()
+
+        # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        for z in np.linspace(3.6, 4.0, 11):
-            nv_sig["coords"][2] = z
-            # do_scanning_image_sample(nv_sig)
-            do_widefield_image_sample(nv_sig, 20)
+        # for z in np.linspace(3.5, 4.5, 21):
+        #     nv_sig["coords"][2] = z
+        #     #     do_optimize_pixel(nv_sig)
+        #     #     do_optimize_green(nv_sig)
+        #     #     # do_scanning_image_sample(nv_sig)
+        #     do_widefield_image_sample(nv_sig, 20)
         # for ind in range(100):
         # do_widefield_image_sample(nv_sig, 20)
         #     time.sleep(5)
@@ -784,20 +833,29 @@ if __name__ == "__main__":
 
         # for nv_sig in nv_list:
         #     widefield.reset_all_drift()
-        #     do_optimize_pixel(nv_sig)
-        # # do_optimize_green(nv_sig)
+        #     # do_optimize_pixel(nv_sig)
+        #     do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
-        # coords_suffix = None  # Pixel coords
-        # coords_suffix = green_laser
+        # # coords_suffix = None  # Pixel coords
+        # # coords_suffix = green_laser
         # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False)
+        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
+
+        # num_nvs = len(nv_list)
+        # for ind in range(num_nvs):
+        #     if ind == 0:
+        #         continue
+        #     nv = nv_list[ind]
+        #     green_coords = nv[green_coords_key]
+        #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list, 100)
         # do_charge_state_histograms(nv_list, 1000)
@@ -818,8 +876,8 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)zx
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc(nv_list)
 
     except Exception as exc:
         if do_email:

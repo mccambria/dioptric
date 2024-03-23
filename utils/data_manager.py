@@ -9,21 +9,22 @@ Created November 15th, 2023
 
 # region Imports and constants
 
-from io import BytesIO
-from datetime import datetime
-import os
-import time
-from utils import common
-from utils import _cloud
-from pathlib import Path
-import ujson  # usjson is faster than standard json library
-import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
-from git import Repo
-from enum import Enum
-import numpy as np
-import socket
-import labrad
 import copy
+import os
+import socket
+import time
+from datetime import datetime
+from enum import Enum
+from io import BytesIO
+from pathlib import Path
+
+import labrad
+import numpy as np
+import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
+import ujson  # usjson is faster than standard json library
+from git import Repo
+
+from utils import _cloud, common
 
 data_manager_folder = common.get_data_manager_folder()
 
@@ -357,7 +358,5 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    time_stamp = get_time_stamp()
-    file_path = get_file_path(__file__, time_stamp, "MCCTEST")
-    data = {"matt": "Cambria!"}
-    save_raw_data(data, file_path)
+    data = get_raw_data(file_id=1475961484392)
+    print(data["nv_list"])
