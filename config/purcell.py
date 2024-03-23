@@ -92,8 +92,8 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.8126,
-            # "frequency": 2.8585,
+            # "frequency": 2.8126,
+            "frequency": 2.8579,
             # "rabi_period": 112,
             "rabi_period": 96,
             # "uwave_power": 9,
@@ -593,7 +593,6 @@ opx_config = {
         "aod_cw": {"type": "constant", "sample": 0.35},
         "red_aod_cw": {"type": "constant", "sample": 0.17},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
-        # "green_aod_cw": {"type": "constant", "sample": 0.25},
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
         "cw": {"type": "constant", "sample": 0.5},

@@ -77,6 +77,7 @@ def get_seq(
 
         uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
+    # uwave_macro = uwave_macro[::-1]  # MCC
 
     with qua.program() as seq:
         if setup_macro is not None:

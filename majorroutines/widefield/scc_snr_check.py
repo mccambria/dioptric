@@ -7,6 +7,8 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
+import time
+
 import numpy as np
 
 from majorroutines.widefield import base_routine
@@ -15,7 +17,7 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def main(nv_list, num_reps):
+def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
     uwave_ind = 0
@@ -24,24 +26,22 @@ def main(nv_list, num_reps):
     seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.append(uwave_ind)
     seq_args_string = tb.encode_seq_args(seq_args)
-    pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+
+    def step_fn(step_ind):
+        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
 
     counts, _ = base_routine.main(
-        nv_list, 1, num_reps, 1, step_fn=None, num_exps_per_rep=2
+        nv_list, 1, num_reps, num_runs, step_fn=step_fn, save_images=False
     )
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    # MCC
-    # sig_counts = sig_counts > 50
-    # ref_counts = ref_counts > 50
-
     ### Report the results and return
 
-    avg_sig_counts, avg_sig_counts_ste = widefield.process_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = widefield.process_counts(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
     # There's only one point, so only consider that

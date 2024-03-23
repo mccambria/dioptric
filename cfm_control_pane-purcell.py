@@ -171,8 +171,9 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 1000
-    scc_snr_check.main(nv_list, num_reps)
+    num_reps = 200
+    num_runs = 5
+    scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
 def do_calibrate_iq_delay(nv_list):
@@ -191,12 +192,9 @@ def do_resonance(nv_list):
     freq_range = 0.180
     num_steps = 40
     num_reps = 10
-    # num_runs = 30
+    # num_runs = 100
     num_runs = 240
-    start = time.time()
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
-    stop = time.time()
-    print(stop - start)
 
 
 def do_resonance_zoom(nv_list):
@@ -638,6 +636,7 @@ if __name__ == "__main__":
             green_coords_key: green_coords_list.pop(0),
             red_coords_key: red_coords_list.pop(0),
             "repr": True,
+            "expected_count_rate": 5000,
         }
 
         nv1 = copy.deepcopy(nv_sig_shell) | {
@@ -839,9 +838,9 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         do_optimize_pixel(nv_sig)
-        # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
-        do_optimize_z(nv_sig)
+        # # do_optimize_green(nv_sig)
+        # # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords

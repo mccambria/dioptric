@@ -195,7 +195,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     norm_counts = counts / norms[:, np.newaxis]
     y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
     ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
-    return fig, norms
+    return fig
 
 
 def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_ind=0):
@@ -215,11 +215,11 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
         # MCC
-        if 2.835 < freq < 2.905:
-            uwave_duration = 96 // 2
-        else:
-            uwave_duration = 112 // 2
-        seq_args.append(uwave_duration)
+        # if 2.835 < freq < 2.905:
+        #     uwave_duration = 96 // 2
+        # else:
+        #     uwave_duration = 112 // 2
+        # seq_args.append(uwave_duration)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -229,7 +229,10 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)

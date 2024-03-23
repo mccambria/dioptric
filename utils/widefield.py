@@ -131,16 +131,16 @@ rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
 
-def average_counts(counts_array, ref_counts_array=None):
+def average_counts(sig_counts_array, ref_counts_array=None):
     """Gets average and standard error for counts data structure.
     Assumes the counts arrays have the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
     Returns the [nv_ind] for norms.
     """
 
-    counts_array = np.array(counts_array)
+    sig_counts_array = np.array(sig_counts_array)
     # meas_array = counts_array > 75
-    meas_array = counts_array
+    meas_array = sig_counts_array
 
     avg_counts = np.mean(meas_array, axis=run_rep_axes)
     num_shots = meas_array.shape[rep_ax] * meas_array.shape[run_ax]
@@ -151,8 +151,7 @@ def average_counts(counts_array, ref_counts_array=None):
         return avg_counts, avg_counts_ste
 
     else:
-        # norms = np.mean(ref_counts_array, axis=(1, 2, 3))
-        norms = np.mean(ref_counts_array, axis=(1, 2))  # MCC
+        norms = np.mean(ref_counts_array, axis=(1, 2, 3))
         # Account for heating by adjusting the norm using the counts from
         # a background spot
         # background_nv_ind = 1
