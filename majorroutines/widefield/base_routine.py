@@ -176,7 +176,8 @@ def main(
             sig_gen.uwave_off()
 
         # Update coordinates
-        optimize.optimize_pixel(repr_nv_sig)
+        optimize.optimize_pixel(repr_nv_sig)  # xy
+        optimize.main(repr_nv_sig, axes_to_optimize=[2])  # z
 
     ### Return
 

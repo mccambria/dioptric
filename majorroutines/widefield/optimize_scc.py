@@ -38,14 +38,17 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     snr_ax.set_xlabel("Ionization pulse duration (ns)")
     snr_ax.set_ylabel("SNR")
 
-    avg_snr_fig, snr_ax = plt.subplots()
-    avg_avg_snr = np.quantile(avg_snr, 0.75, axis=0)
-    avg_avg_snr_ste = np.quantile(avg_snr_ste, 0.75, axis=0)
-    kpl.plot_points(snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
-    snr_ax.set_xlabel("Ionization pulse duration (ns)")
-    snr_ax.set_ylabel("Average SNR")
+    return sig_fig, ref_fig, snr_fig
 
-    return sig_fig, ref_fig, snr_fig, avg_snr_fig
+    # Average across NVs
+    # snr_fig, snr_ax = plt.subplots()
+    # avg_avg_snr = np.quantile(avg_snr, 0.75, axis=0)
+    # avg_avg_snr_ste = np.quantile(avg_snr_ste, 0.75, axis=0)
+    # kpl.plot_points(snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
+    # snr_ax.set_xlabel("Ionization pulse duration (ns)")
+    # snr_ax.set_ylabel("Average SNR")
+
+    # return sig_fig, ref_fig, snr_fig, avg_snr_fig
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
