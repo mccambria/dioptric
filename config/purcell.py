@@ -18,6 +18,7 @@ from utils.constants import (
     LaserKey,
     LaserPosMode,
     ModMode,
+    NVSig,
 )
 
 home = Path.home()
@@ -28,20 +29,20 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
-pixel_coords_key = "pixel_coords"
-green_coords_key = f"coords-{green_laser}"
-red_coords_key = f"coords-{red_laser}"
-
-widefield_calibration_nv1 = {
-    pixel_coords_key: [34.67, 195.792],
-    green_coords_key: [106.398, 108.749],
-    red_coords_key: [71.483, 73.988],
-}
-widefield_calibration_nv2 = {
-    pixel_coords_key: [165.329, 67.355],
-    green_coords_key: [109.2, 111.765],
-    red_coords_key: [73.735, 76.621],
-}
+widefield_calibration_nv1 = NVSig(
+    coords={
+        CoordsKey.PIXEL: [34.67, 195.792],
+        green_laser: [106.398, 108.749],
+        red_laser: [71.483, 73.988],
+    }
+)
+widefield_calibration_nv2 = NVSig(
+    coords={
+        CoordsKey.PIXEL: [165.329, 67.355],
+        green_laser: [109.2, 111.765],
+        red_laser: [73.735, 76.621],
+    }
+)
 
 
 # endregion
@@ -195,8 +196,8 @@ config |= {
             "z_optimize_range": 0.1,
             "z_units": "Voltage (V)",
         },
-        "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
-        "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
+        "widefield_calibration_nv1": widefield_calibration_nv1,
+        "widefield_calibration_nv2": widefield_calibration_nv2,
     },
     ###
     "Servers": {

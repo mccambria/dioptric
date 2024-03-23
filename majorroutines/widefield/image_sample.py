@@ -21,7 +21,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey
+from utils.constants import LaserKey, NVSig
 
 
 def single_nv(nv_sig, num_reps=1):
@@ -171,7 +171,7 @@ def scanning(nv_sig, x_range, y_range, num_steps):
 
 
 def main(
-    nv_sig,
+    nv_sig: NVSig,
     caller_fn_name,
     num_reps=1,
     x_coords=None,
@@ -194,7 +194,6 @@ def main(
 
     laser_dict = tb.get_laser_dict(laser_key)
     readout_laser = laser_dict["name"]
-    tb.set_filter(nv_sig, laser_key)
 
     pos.set_xyz_on_nv(nv_sig)
 
@@ -271,7 +270,8 @@ def main(
     if save_dict is not None:
         raw_data |= save_dict  # Add in the passed info to save
 
-    file_path = dm.get_file_path(__file__, timestamp, nv_sig["name"])
+    nv_name = nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, nv_name)
     dm.save_figure(fig, file_path)
     dm.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
 

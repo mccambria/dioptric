@@ -185,7 +185,12 @@ def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
 
 
 def _read_counts_camera_sequence(
-    nv_sig, laser_key, coords=None, coords_key=None, axis_ind=None, scan_vals=None
+    nv_sig,
+    laser_key,
+    coords=None,
+    coords_key=CoordsKey.GLOBAL,
+    axis_ind=None,
+    scan_vals=None,
 ):
     """
     Specific function for widefield setup - XY control from AODs,
@@ -320,7 +325,7 @@ def _read_counts(
     nv_sig,
     laser_key=LaserKey.IMAGING,
     coords=None,
-    coords_key=None,
+    coords_key=CoordsKey.GLOBAL,
     axis_ind=None,
     scan_vals=None,
 ):
@@ -383,7 +388,7 @@ def stationary_count_lite(
     nv_sig,
     laser_key=LaserKey.IMAGING,
     coords=None,
-    coords_key=None,
+    coords_key=CoordsKey.GLOBAL,
     ret_img_array=False,
 ):
     # Set up
@@ -415,8 +420,13 @@ def prepare_microscope(nv_sig: NVSig):
     laser set up must be handled by each routine
     """
 
-    pos.set_xyz_on_nv(nv_sig)  # Set the global positioners on this NV
+    # MCC to do
+    # Set filters according to config
 
+    # Set the global positioners on this NV
+    pos.set_xyz_on_nv(nv_sig)
+
+    # Set the magnet rotation mount to the correct angle
     magnet_angle = nv_sig.magnet_angle
     if magnet_angle is not None:
         rotation_stage_server = tb.get_server_magnet_rotation()
@@ -426,7 +436,7 @@ def prepare_microscope(nv_sig: NVSig):
 def main(
     nv_sig: NVSig,
     laser_key=LaserKey.IMAGING,
-    coords_key=None,
+    coords_key=CoordsKey.GLOBAL,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
     do_plot=False,

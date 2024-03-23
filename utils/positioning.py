@@ -252,10 +252,10 @@ def get_z_control_mode(coords_key=CoordsKey.GLOBAL):
 
 
 def _get_positioning_server(base_key, coords_key):
-    try:
-        return common.get_server(f"{base_key}-{coords_key}")
-    except Exception:
-        return common.get_server(base_key)
+    server = common.get_server(f"{base_key}-{coords_key}")
+    if server is None:
+        server = common.get_server(base_key)
+    return server
 
 
 def get_server_pos_xy(coords_key=CoordsKey.GLOBAL):

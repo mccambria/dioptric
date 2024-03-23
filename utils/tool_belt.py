@@ -128,29 +128,7 @@ def set_laser_power(nv_sig=None, laser_key=None, laser_name=None, laser_power=No
         return None
 
 
-def set_filter(nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
-    """optics_key should be either 'collection' or a laser key.
-    Specify either an optics_key/nv_sig or an optics_name/filter_name.
-    """
-
-    if (nv_sig is not None) and (optics_key is not None):
-        # Quit out if there's not enough info in the sig
-        if optics_key not in nv_sig:
-            return
-        optics_dict = nv_sig[optics_key]
-        if "filter" not in optics_dict:
-            return
-
-        if "name" in optics_dict:
-            optics_name = optics_dict["name"]
-        else:
-            optics_name = optics_key
-        filter_name = optics_dict["filter"]
-
-    # Quit out if we don't have what we need to go forward
-    if (optics_name is None) or (filter_name is None):
-        return
-
+def set_filter(optics_name, filter_name):
     filter_server = get_filter_server(optics_name)
     if filter_server is None:
         return
