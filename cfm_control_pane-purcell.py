@@ -598,7 +598,7 @@ if __name__ == "__main__":
 
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_count_rate = 5000
+    nv_list[0].expected_counts = 5000
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # endregion
