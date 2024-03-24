@@ -281,7 +281,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1471019478891, no_npz=True)
+    data = dm.get_raw_data(file_id=1479600513484, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -290,11 +290,12 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-    ref_counts = np.array(data["ref_counts"])
+    sig_counts = counts[0]
+    ref_counts = counts[1]
 
-    # avg_counts, avg_counts_ste, norms = widefield.average_counts(counts, ref_counts)
+    # avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     avg_counts, avg_counts_ste, norms = widefield.threshold_counts(
-        nv_list, counts, ref_counts
+        nv_list, sig_counts, ref_counts
     )
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
