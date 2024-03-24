@@ -18,8 +18,7 @@ import utils.tool_belt as tb
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(args, num_reps):
-    readout_duration, readout_laser, coords_1, coords_2 = args
+def get_seq(readout_duration, readout_laser, coords_1, coords_2, num_reps):
     if num_reps is None:
         num_reps = 1
 

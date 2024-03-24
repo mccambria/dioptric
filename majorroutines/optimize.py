@@ -26,9 +26,11 @@ from utils import tool_belt as tb
 from utils.constants import (
     CollectionMode,
     ControlMode,
+    CoordsKey,
     CountFormat,
     LaserKey,
     LaserPosMode,
+    NVSig,
 )
 
 # endregion
@@ -163,7 +165,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
 def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
-    pixel_coords = nv_sig["pixel_coords"]
+    widefield.get_nv_pixel_coords(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
     counts = []
@@ -183,7 +185,12 @@ def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
 
 
 def _read_counts_camera_sequence(
-    nv_sig, laser_key, coords=None, coords_suffix=None, axis_ind=None, scan_vals=None
+    nv_sig,
+    laser_key,
+    coords=None,
+    coords_key=CoordsKey.GLOBAL,
+    axis_ind=None,
+    scan_vals=None,
 ):
     """
     Specific function for widefield setup - XY control from AODs,
@@ -204,7 +211,7 @@ def _read_counts_camera_sequence(
         imaging_laser_dict = tb.get_laser_dict(LaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
-        if coords is None or coords_suffix != laser_key:
+        if coords is None or coords_key != laser_key:
             laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         else:
             laser_coords = coords
@@ -273,7 +280,7 @@ def _read_counts_camera_sequence(
     return [np.array(counts, dtype=int), img_array]
 
 
-def _optimize_on_axis(nv_sig, laser_key, coords, coords_suffix, axis_ind, fig=None):
+def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     ### Basic setup and definitions
@@ -281,21 +288,20 @@ def _optimize_on_axis(nv_sig, laser_key, coords, coords_suffix, axis_ind, fig=No
     num_steps = 20
     # config = common.get_config_dict()
     # laser_dict = tb.get_laser_dict(laser_key)
-    scan_range = pos.get_axis_optimize_range(axis_ind, coords_suffix)
+    scan_range = pos.get_axis_optimize_range(axis_ind, coords_key)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
-    # optiimizing on the actual target NV. Useful if the real target NV is poorly isolated
-    opti_offset = "opti_offset" in nv_sig and nv_sig["opti_offset"] is not None
-    if opti_offset:
-        coords += np.array(nv_sig["opti_offset"])
+    # optimizing on the actual target NV. Useful if the real target NV is poorly isolated.
+    # Only works with global coordinates
+    opti_offset = nv_sig.opti_offset
+    if opti_offset is not None and coords_key == CoordsKey.GLOBAL:
+        coords += np.array(opti_offset)
     axis_center = coords[axis_ind]
     scan_vals = pos.get_scan_1d(axis_center, scan_range, num_steps)
 
     ### Record the counts
 
-    ret_vals = _read_counts(
-        nv_sig, laser_key, coords, coords_suffix, axis_ind, scan_vals
-    )
+    ret_vals = _read_counts(nv_sig, laser_key, coords, coords_key, axis_ind, scan_vals)
     counts = ret_vals[0]
 
     ### Plot, fit, return
@@ -319,7 +325,7 @@ def _read_counts(
     nv_sig,
     laser_key=LaserKey.IMAGING,
     coords=None,
-    coords_suffix=None,
+    coords_key=CoordsKey.GLOBAL,
     axis_ind=None,
     scan_vals=None,
 ):
@@ -332,22 +338,22 @@ def _read_counts(
     laser_name = laser_dict["name"]
     laser_power = tb.set_laser_power(nv_sig, laser_key)
     if axis_ind is not None:
-        delay = pos.get_axis_delay(axis_ind, coords_suffix=coords_suffix)
-        control_mode = pos.get_axis_control_mode(axis_ind, coords_suffix)
+        delay = pos.get_axis_delay(axis_ind, coords_key=coords_key)
+        control_mode = pos.get_axis_control_mode(axis_ind, coords_key)
 
     # Position us at the starting point
     if coords is not None:
         if scan_vals is None:
-            pos.set_xyz(coords, coords_suffix)
+            pos.set_xyz(coords, coords_key)
         else:
             start_coords = np.copy(coords)
             start_coords[axis_ind] = np.min(scan_vals)
-            pos.set_xyz(start_coords, coords_suffix)
+            pos.set_xyz(start_coords, coords_key)
 
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
         ret_vals = _read_counts_camera_sequence(
-            nv_sig, laser_key, coords, coords_suffix, axis_ind, scan_vals
+            nv_sig, laser_key, coords, coords_key, axis_ind, scan_vals
         )
 
     else:
@@ -382,7 +388,7 @@ def stationary_count_lite(
     nv_sig,
     laser_key=LaserKey.IMAGING,
     coords=None,
-    coords_suffix=None,
+    coords_key=CoordsKey.GLOBAL,
     ret_img_array=False,
 ):
     # Set up
@@ -390,7 +396,7 @@ def stationary_count_lite(
     tb.set_filter(nv_sig, laser_key)
     prepare_microscope(nv_sig)
 
-    ret_vals = _read_counts(nv_sig, laser_key, coords, coords_suffix)
+    ret_vals = _read_counts(nv_sig, laser_key, coords, coords_key)
     counts = ret_vals[0]
 
     # Return
@@ -407,36 +413,36 @@ def stationary_count_lite(
         return count_rate
 
 
-def prepare_microscope(nv_sig):
+def prepare_microscope(nv_sig: NVSig):
     """
     Prepares the microscope for a measurement. In particular, sets up the
     optics (filters, etc) and magnet, and sets the global coordinates. The
     laser set up must be handled by each routine
     """
 
-    pos.set_xyz_on_nv(nv_sig)  # Set the global positioners on this NV
+    # MCC to do
+    # Set filters according to config
 
-    if "collection_filter" in nv_sig:
-        filter_name = nv_sig["collection_filter"]
-        if filter_name is not None:
-            tb.set_filter(optics_name="collection", filter_name=filter_name)
+    # Set the global positioners on this NV
+    pos.set_xyz_on_nv(nv_sig)
 
-    magnet_angle = None if "magnet_angle" not in nv_sig else nv_sig["magnet_angle"]
+    # Set the magnet rotation mount to the correct angle
+    magnet_angle = nv_sig.magnet_angle
     if magnet_angle is not None:
         rotation_stage_server = tb.get_server_magnet_rotation()
         rotation_stage_server.set_angle(magnet_angle)
 
 
 def main(
-    nv_sig,
+    nv_sig: NVSig,
     laser_key=LaserKey.IMAGING,
-    coords_suffix=None,
+    coords_key=CoordsKey.GLOBAL,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
     do_plot=False,
 ):
     # If optimize is disabled, just do prep and return
-    if "disable_opt" in nv_sig and nv_sig["disable_opt"]:
+    if nv_sig.disable_opt:
         prepare_microscope(nv_sig)
         return [], None
 
@@ -451,9 +457,8 @@ def main(
     tb.init_safe_stop()
     config = common.get_config_dict()
 
-    initial_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust)
-    key = "expected_counts"
-    expected_counts = nv_sig[key] if key in nv_sig else None
+    initial_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust)
+    expected_counts = nv_sig.expected_counts
     if expected_counts is not None:
         lower_bound = 0.9 * expected_counts
         upper_bound = 1.2 * expected_counts
@@ -470,7 +475,7 @@ def main(
     opti_coords = initial_coords.copy()
 
     def count_check(coords):
-        return stationary_count_lite(nv_sig, laser_key, coords, coords_suffix)
+        return stationary_count_lite(nv_sig, laser_key, coords, coords_key)
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
@@ -489,8 +494,7 @@ def main(
 
     if opti_necessary:
         # Check if z optimization is disabled
-        disable_z_opt = "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]
-        if disable_z_opt and 2 in axes_to_optimize:
+        if nv_sig.disable_z_opt and 2 in axes_to_optimize:
             axes_to_optimize.remove(2)
 
         # Loop through attempts until we succeed or give up
@@ -525,7 +529,7 @@ def main(
 
                 # Perform the optimization
                 ret_vals = _optimize_on_axis(
-                    nv_sig, laser_key, opti_coords, coords_suffix, axis_ind, fig
+                    nv_sig, laser_key, opti_coords, coords_key, axis_ind, fig
                 )
                 opti_coord = ret_vals[0]
                 if opti_coord is not None:
@@ -554,7 +558,7 @@ def main(
 
     ### Calculate the drift relative to the passed coordinates
 
-    passed_coords = pos.get_nv_coords(nv_sig, coords_suffix, drift_adjust=False)
+    passed_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust=False)
     drift = []
     for ind in range(len(passed_coords)):
         opti_coord = opti_coords[ind]
@@ -565,7 +569,7 @@ def main(
             drift_coord = opti_coords[ind] - passed_coords[ind]
         drift.append(drift_coord)
     if opti_succeeded and set_drift:
-        pos.set_drift(drift, coords_suffix=coords_suffix)
+        pos.set_drift(drift, coords_key=coords_key)
 
     ### Report the results and set to the optimized coordinates if requested
 
@@ -627,7 +631,8 @@ def main(
             "z_counts-units": "number",
         }
 
-        filePath = dm.get_file_path(__file__, timestamp, nv_sig["name"])
+        nv_name = nv_sig.name
+        filePath = dm.get_file_path(__file__, timestamp, nv_name)
         if fig is not None:
             dm.save_figure(fig, filePath)
         dm.save_raw_data(rawData, filePath)

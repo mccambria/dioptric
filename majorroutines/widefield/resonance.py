@@ -24,7 +24,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield as widefield
-from utils.constants import NVSpinState
+from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
@@ -195,10 +195,18 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     norm_counts = counts / norms[:, np.newaxis]
     y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
     ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
-    return fig, norms
+    return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_ind=0):
+def main(
+    nv_list: list[NVSig],
+    num_steps,
+    num_reps,
+    num_runs,
+    freq_center,
+    freq_range,
+    uwave_ind=0,
+):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -215,11 +223,11 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
         # MCC
-        if 2.835 < freq < 2.905:
-            uwave_duration = 96 // 2
-        else:
-            uwave_duration = 112 // 2
-        seq_args.append(uwave_duration)
+        # if 2.835 < freq < 2.905:
+        #     uwave_duration = 96 // 2
+        # else:
+        #     uwave_duration = 112 // 2
+        # seq_args.append(uwave_duration)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -229,7 +237,10 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
@@ -252,7 +263,7 @@ def main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range, uwave_
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     if "img_arrays" in raw_data:
         keys_to_compress = ["img_arrays"]
@@ -270,7 +281,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1471019478891, no_npz=True)
+    data = dm.get_raw_data(file_id=1479600513484, no_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -279,11 +290,12 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
     counts = np.array(data["counts"])
-    ref_counts = np.array(data["ref_counts"])
+    sig_counts = counts[0]
+    ref_counts = counts[1]
 
-    # avg_counts, avg_counts_ste, norms = widefield.average_counts(counts, ref_counts)
+    # avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     avg_counts, avg_counts_ste, norms = widefield.threshold_counts(
-        nv_list, counts, ref_counts
+        nv_list, sig_counts, ref_counts
     )
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)

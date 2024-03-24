@@ -13,10 +13,12 @@ from config.default import config
 from utils.constants import (
     CollectionMode,
     ControlMode,
+    CoordsKey,
     CountFormat,
     LaserKey,
     LaserPosMode,
     ModMode,
+    NVSig,
 )
 
 home = Path.home()
@@ -27,20 +29,20 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
-pixel_coords_key = "pixel_coords"
-green_coords_key = f"coords-{green_laser}"
-red_coords_key = f"coords-{red_laser}"
-
-widefield_calibration_nv1 = {
-    pixel_coords_key: [34.67, 195.792],
-    green_coords_key: [106.398, 108.749],
-    red_coords_key: [71.483, 73.988],
-}
-widefield_calibration_nv2 = {
-    pixel_coords_key: [165.329, 67.355],
-    green_coords_key: [109.2, 111.765],
-    red_coords_key: [73.735, 76.621],
-}
+widefield_calibration_nv1 = NVSig(
+    coords={
+        CoordsKey.PIXEL: [34.67, 195.792],
+        green_laser: [106.398, 108.749],
+        red_laser: [71.483, 73.988],
+    }
+)
+widefield_calibration_nv2 = NVSig(
+    coords={
+        CoordsKey.PIXEL: [165.329, 67.355],
+        green_laser: [109.2, 111.765],
+        red_laser: [73.735, 76.621],
+    }
+)
 
 
 # endregion
@@ -92,8 +94,8 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.8126,
-            # "frequency": 2.8585,
+            # "frequency": 2.8126,
+            "frequency": 2.8579,
             # "rabi_period": 112,
             "rabi_period": 96,
             # "uwave_power": 9,
@@ -170,30 +172,32 @@ config |= {
     },
     ###
     "Positioning": {
-        #
-        "xy_control_mode-laser_INTE_520": ControlMode.SEQUENCE,
-        "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_INTE_520": float,
-        "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 1.2,
-        "xy_units-laser_INTE_520": "MHz",
-        #
-        "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
-        "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_COBO_638": float,
-        "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 1.0,
-        # "xy_optimize_range-laser_COBO_638": 2.0,
-        "xy_units-laser_COBO_638": "MHz",
-        #
-        "z_control_mode": ControlMode.STREAM,
-        "z_delay": int(5e6),  # 5 ms for PIFOC
-        "z_dtype": float,
-        "z_nm_per_unit": 1000,
-        "z_optimize_range": 0.1,
-        "z_units": "Voltage (V)",
-        "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
-        "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
+        green_laser: {
+            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 1.2,
+            "xy_units": "MHz",
+        },
+        red_laser: {
+            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 1.0,
+            "xy_units": "MHz",
+        },
+        CoordsKey.GLOBAL: {
+            "z_control_mode": ControlMode.STREAM,
+            "z_delay": int(5e6),  # 5 ms for PIFOC
+            "z_dtype": float,
+            "z_nm_per_unit": 1000,
+            "z_optimize_range": 0.1,
+            "z_units": "Voltage (V)",
+        },
+        "widefield_calibration_nv1": widefield_calibration_nv1,
+        "widefield_calibration_nv2": widefield_calibration_nv2,
     },
     ###
     "Servers": {
@@ -593,7 +597,6 @@ opx_config = {
         "aod_cw": {"type": "constant", "sample": 0.35},
         "red_aod_cw": {"type": "constant", "sample": 0.17},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
-        # "green_aod_cw": {"type": "constant", "sample": 0.25},
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
         "cw": {"type": "constant", "sample": 0.5},

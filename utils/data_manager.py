@@ -118,7 +118,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             a separate compressed file. Currently supports numpy arrays
     """
 
-    start = time.time()
+    # start = time.time()
     file_path_txt = file_path.with_suffix(".txt")
 
     # Work with a copy of the raw data to avoid mutation

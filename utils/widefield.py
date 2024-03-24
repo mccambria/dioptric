@@ -8,6 +8,7 @@ Created on August 15th, 2023
 
 # region Imports and constants
 
+import dataclasses
 import itertools
 from importlib import import_module
 from pathlib import Path
@@ -22,7 +23,14 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, CountFormat, LaserKey, LaserPosMode
+from utils.constants import (
+    CollectionMode,
+    CoordsKey,
+    CountFormat,
+    LaserKey,
+    LaserPosMode,
+    NVSig,
+)
 
 # endregion
 # region Image processing
@@ -131,16 +139,16 @@ rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
 
-def average_counts(counts_array, ref_counts_array=None):
+def average_counts(sig_counts_array, ref_counts_array=None):
     """Gets average and standard error for counts data structure.
     Assumes the counts arrays have the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
     Returns the [nv_ind] for norms.
     """
 
-    counts_array = np.array(counts_array)
+    sig_counts_array = np.array(sig_counts_array)
     # meas_array = counts_array > 75
-    meas_array = counts_array
+    meas_array = sig_counts_array
 
     avg_counts = np.mean(meas_array, axis=run_rep_axes)
     num_shots = meas_array.shape[rep_ax] * meas_array.shape[run_ax]
@@ -151,8 +159,7 @@ def average_counts(counts_array, ref_counts_array=None):
         return avg_counts, avg_counts_ste
 
     else:
-        # norms = np.mean(ref_counts_array, axis=(1, 2, 3))
-        norms = np.mean(ref_counts_array, axis=(1, 2))  # MCC
+        norms = np.mean(ref_counts_array, axis=(1, 2, 3))
         # Account for heating by adjusting the norm using the counts from
         # a background spot
         # background_nv_ind = 1
@@ -170,7 +177,7 @@ def threshold_counts(nv_list, counts_array, ref_counts_array=None):
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
     states_array = counts_array > thresholds
-    if ref_counts_array is None:
+    if ref_counts_array is not None:
         ref_states_array = ref_counts_array > thresholds
     else:
         ref_states_array = None
@@ -248,12 +255,12 @@ def rep_loop(num_reps, rep_fn):
         print(f"{attempt_ind} crashes occurred")
 
 
-def get_repr_nv_sig(nv_list):
+def get_repr_nv_sig(nv_list: list[NVSig]) -> NVSig:
     for nv in nv_list:
         try:
-            if nv["repr"]:
+            if nv.representative:
                 return nv
-        except:
+        except Exception:
             pass
 
 
@@ -330,8 +337,8 @@ def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
     return adjusted_coords
 
 
-def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
-    pixel_coords = nv_sig["pixel_coords"].copy()
+def get_nv_pixel_coords(nv_sig: NVSig, drift_adjust=True, drift=None):
+    pixel_coords = nv_sig.coords[CoordsKey.PIXEL]
     if drift_adjust:
         pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
     return pixel_coords
@@ -401,8 +408,9 @@ def set_nv_scanning_coords_from_pixel_coords(
 
 def get_widefield_calibration_nvs():
     module = common.get_config_module()
-    nv1 = module.widefield_calibration_nv1.copy()
-    nv2 = module.widefield_calibration_nv2.copy()
+    # Work with copies to avoid mutation
+    nv1 = dataclasses.replace(module.widefield_calibration_nv1)
+    nv2 = dataclasses.replace(module.widefield_calibration_nv2)
     return nv1, nv2
 
 
@@ -428,14 +436,11 @@ def pixel_to_scanning_coords(pixel_coords, coords_suffix=None):
 def _pixel_to_scanning_calibration(coords_suffix=None):
     """Get the linear parameters for the conversion"""
 
-    pixel_coords_key = "pixel_coords"
-    # pixel_coords_key = "coords-laser_INTE_520"  # MCC
-
     nv1, nv2 = get_widefield_calibration_nvs()
     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_suffix, drift_adjust=False)
-    nv1_pixel_coords = nv1[pixel_coords_key]
+    nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_suffix, drift_adjust=False)
-    nv2_pixel_coords = nv2[pixel_coords_key]
+    nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
 
     # Assume (independent) linear relations for both x and y
 

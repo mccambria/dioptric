@@ -17,16 +17,15 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from utils.constants import IonPulseType
 
 
-def get_seq(args, num_reps):
-    (
-        pol_coords_list,
-        ion_coords_list,
-        pol_duration_ns,
-        ion_duration_ns,
-        diff_polarize,
-        diff_ionize,
-    ) = args
-
+def get_seq(
+    pol_coords_list,
+    ion_coords_list,
+    pol_duration_ns,
+    ion_duration_ns,
+    diff_polarize,
+    diff_ionize,
+    num_reps,
+):
     if num_reps is None:
         num_reps = 1
 
@@ -97,7 +96,7 @@ if __name__ == "__main__":
             False,
             True,
         ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        seq, seq_ret_vals = get_seq(*args, 5)
 
         sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)

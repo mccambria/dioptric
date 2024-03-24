@@ -18,9 +18,7 @@ from utils import common
 from utils.constants import IonPulseType
 
 
-def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list) = args
-
+def get_seq(pol_coords_list, ion_coords_list, num_reps):
     def uwave_macro():
         pass
 
@@ -58,7 +56,7 @@ if __name__ == "__main__":
             [75, 75],
             2000.0,
         ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        seq, seq_ret_vals = get_seq(*args, 5)
 
         sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)

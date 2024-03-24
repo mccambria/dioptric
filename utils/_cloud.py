@@ -8,10 +8,12 @@ Created November 18th, 2023
 @author: mccambria
 """
 
-from pathlib import Path
 import time
-from utils import common
+from pathlib import Path
+
 from boxsdk import Client, JWTAuth
+
+from utils import common
 
 nvdata_folder_id = "235146666549"  # ID for the nvdata folder in Box
 data_manager_folder = common.get_data_manager_folder()
