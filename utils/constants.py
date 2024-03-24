@@ -21,6 +21,7 @@ class NVSig:
     representative: bool = False
     disable_opt: bool = False
     disable_z_opt: bool = False
+    threshold: Number = None
     expected_counts: Number = None
     magnet_angle: Number = None
     opti_offset: list[Number] = None  # Only works for global coordinates
