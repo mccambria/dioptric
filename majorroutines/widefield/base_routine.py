@@ -23,6 +23,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
+    run_fn=None,
     step_fn=None,
     uwave_ind=0,
     uwave_freq=None,
@@ -44,12 +45,12 @@ def main(
     ----------
     nv_list : list(nv_sig)
         List of NV sig objects to interrogate
+    num_runs : int
+        Number of runs
     num_steps : int
         Number of steps
     num_reps : int
         Number of repetitions, or "reps"
-    num_runs : int
-        Number of runs
     step_fn : function, optional
         Function to run when moving to a new step. Most likely we want to load a new
         sequence onto the pulse streamer here, but we may also want to just update a
@@ -85,6 +86,7 @@ def main(
     num_nvs = len(nv_list)
 
     camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
 
     # Sig gen setup
     if isinstance(uwave_ind, int):
@@ -112,72 +114,109 @@ def main(
     if save_images:
         shape = widefield.get_img_array_shape()
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
-    step_ind_master_list = [[] for ind in range(num_runs)]
+    step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
     ### Collect the data
 
-    # Runs loops
+    # Runs loop
     for run_ind in range(num_runs):
-        print(f"\nRun index: {run_ind}")
-        shuffle(step_ind_list)
+        num_attempts = 5
+        attempt_ind = 0
 
-        pixel_coords_list = [widefield.get_nv_pixel_coords(nv) for nv in nv_list]
+        while True:
+            try:
+                print(f"\nRun index: {run_ind}")
 
-        for ind in uwave_ind_list:
-            sig_gen = tb.get_server_sig_gen(ind=ind)
-            sig_gen.uwave_on()
-            if load_iq:
-                sig_gen.load_iq()
+                pixel_coords_list = [
+                    widefield.get_nv_pixel_coords(nv) for nv in nv_list
+                ]
 
-        camera.arm()
+                for ind in uwave_ind_list:
+                    sig_gen = tb.get_server_sig_gen(ind=ind)
+                    sig_gen.uwave_on()
+                    if load_iq:
+                        sig_gen.load_iq()
 
-        # Steps loops
-        for step_ind in step_ind_list:
-            step_ind_master_list[run_ind].append(step_ind)
+                shuffle(step_ind_list)
+                if run_fn is not None:
+                    run_fn(step_ind_list)
 
-            if step_fn is not None:
-                step_fn(step_ind)
+                camera.arm()
 
-            if save_images:
-                img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
+                # Steps loop
+                for step_ind_no_shuffle in range(num_steps):
+                    step_ind = step_ind_list[step_ind_no_shuffle]
 
-            # Reps loops
-            def rep_fn(rep_ind):
-                for exp_ind in range(num_exps_per_rep):
-                    img_str = camera.read()
-                    img_array = widefield.img_str_to_array(img_str)
+                    if step_fn is not None:
+                        step_fn(step_ind)
+
                     if save_images:
-                        img_array_list[exp_ind].append(img_array)
-                    img_array_photons = widefield.adus_to_photons(img_array)
+                        img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
 
-                    def get_counts(pixel_coords):
-                        return widefield.integrate_counts(
-                            img_array_photons, pixel_coords
-                        )
+                    if step_ind_no_shuffle == 0:
+                        pulse_gen.stream_start()
+                    else:
+                        print("resume")
+                        pulse_gen.resume()
 
-                    counts_list = [get_counts(el) for el in pixel_coords_list]
-                    counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
+                    # Reps loop
+                    for rep_ind in range(num_reps):
+                        for exp_ind in range(num_exps_per_rep):
+                            img_str = camera.read()
+                            img_array = widefield.img_str_to_array(img_str)
+                            if save_images:
+                                img_array_list[exp_ind].append(img_array)
+                            img_array_photons = widefield.adus_to_photons(img_array)
 
-            widefield.rep_loop(num_reps, rep_fn)
+                            def get_counts(pixel_coords):
+                                return widefield.integrate_counts(
+                                    img_array_photons, pixel_coords
+                                )
 
-            if save_images:
-                for exp_ind in range(num_exps_per_rep):
-                    img_arrays[exp_ind, run_ind, step_ind, :, :] = np.mean(
-                        img_array_list[exp_ind], axis=0
-                    )
+                            counts_list = [get_counts(el) for el in pixel_coords_list]
+                            counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
 
-        ### Move on to the next run
+                    if save_images:
+                        for exp_ind in range(num_exps_per_rep):
+                            img_arrays[exp_ind, run_ind, step_ind, :, :] = np.mean(
+                                img_array_list[exp_ind], axis=0
+                            )
 
-        # Turn stuff off
-        camera.disarm()
-        for ind in uwave_ind_list:
-            sig_gen = tb.get_server_sig_gen(ind=ind)
-            sig_gen.uwave_off()
+                ### Move on to the next run
 
-        # Update coordinates
-        optimize.optimize_pixel(repr_nv_sig)  # xy
-        optimize.main(repr_nv_sig, axes_to_optimize=[2])  # z
+                step_ind_master_list[run_ind] = step_ind_list.copy()
+
+                # Turn stuff off
+                pulse_gen.halt()
+                camera.disarm()
+                for ind in uwave_ind_list:
+                    sig_gen = tb.get_server_sig_gen(ind=ind)
+                    sig_gen.uwave_off()
+
+                # Update coordinates
+                optimize.optimize_pixel(repr_nv_sig)  # xy
+                optimize.main(repr_nv_sig, axes_to_optimize=[2])  # z
+
+                break
+
+            except Exception as exc:
+                pulse_gen.halt()
+
+                nuvu_237 = "NuvuException: 237"
+                nuvu_214 = "NuvuException: 214"
+                if "NuvuException: 237" in str(exc):
+                    print(nuvu_237)
+                elif "NuvuException: 214" in str(exc):
+                    print(nuvu_214)
+                else:
+                    raise exc
+
+                attempt_ind += 1
+                if attempt_ind == num_attempts:
+                    raise RuntimeError("Maxed out number of attempts")
+
+                camera.arm()
 
     ### Return
 

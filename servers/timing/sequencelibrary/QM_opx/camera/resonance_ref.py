@@ -23,6 +23,7 @@ def get_seq(
     pol_coords_list,
     ion_coords_list,
     uwave_ind,
+    step_vals,
     num_reps,
     reference=True,
     pol_duration_ns=None,
@@ -42,7 +43,7 @@ def get_seq(
     uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, allow_zero=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
-    def uwave_macro_sig():
+    def uwave_macro_sig(step_val):
         if uwave_duration is None:
             qua.play("pi_pulse", sig_gen_el)
             # if phase is not None:
@@ -56,8 +57,9 @@ def get_seq(
     seq = base_sequence.get_seq(
         pol_coords_list,
         ion_coords_list,
-        num_reps,
         uwave_macro_sig,
+        step_vals,
+        num_reps,
         pol_duration_ns,
         ion_duration_ns,
         readout_duration_ns,
@@ -88,10 +90,11 @@ if __name__ == "__main__":
                 [76.30891979499165, 75.96071616341409],
             ],
             0,
+            [2.1, 2.3, 2.5, 2.7, 2.9],
         ]
         seq, seq_ret_vals = get_seq(*args, 5)
 
-        sim_config = SimulationConfig(duration=int(400e3 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

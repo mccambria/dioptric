@@ -217,11 +217,11 @@ def main(
 
     ### Collect the data
 
-    def step_fn(freq_ind):
-        freq = freqs[freq_ind]
-        sig_gen.set_freq(freq)
+    def run_fn(step_inds):
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
+        shuffled_freqs = [freqs[step_ind] for step_ind in step_inds]
+        seq_args.append(shuffled_freqs)
         # MCC
         # if 2.835 < freq < 2.905:
         #     uwave_duration = 96 // 2
@@ -231,8 +231,12 @@ def main(
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
+    def step_fn(step_ind):
+        freq = freqs[step_ind]
+        sig_gen.set_freq(freq)
+
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, uwave_ind=uwave_ind
+        nv_list, num_steps, num_reps, num_runs, run_fn, step_fn, uwave_ind=uwave_ind
     )
 
     ### Process and plot

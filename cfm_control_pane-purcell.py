@@ -187,8 +187,8 @@ def do_resonance(nv_list):
     freq_range = 0.180
     num_steps = 40
     num_reps = 10
-    # num_runs = 100
-    num_runs = 240
+    num_runs = 3
+    # num_runs = 240
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -470,6 +470,7 @@ def compile_speed_test(nv_list):
 
     seq_args = widefield.get_base_scc_seq_args(nv_list)
     seq_args.append(uwave_index)
+    seq_args.append([2.1, 2.3, 2.5, 2.7, 2.9])
     seq_args_string = tb.encode_seq_args(seq_args)
 
     start = time.time()
@@ -477,7 +478,7 @@ def compile_speed_test(nv_list):
     stop = time.time()
     print(stop - start)
 
-    seq_args[-1] = 1
+    seq_args[-2] = 1
     seq_args_string = tb.encode_seq_args(seq_args)
 
     start = time.time()
@@ -666,7 +667,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # # # do_optimize_green(nv_sig)
         # # # do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
@@ -707,7 +708,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
 
-        compile_speed_test(nv_list)
+        # compile_speed_test(nv_list)
 
     # region Cleanup
 

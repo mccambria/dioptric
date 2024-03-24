@@ -240,6 +240,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.stream_immediate(
             c, seq_file="square_wave.py", seq_args_string=seq_args_string, num_reps=-1
         )
+        
+    @setting(18)
+    def resume(self, c):
+        while not self.running_job.is_paused():
+            time.sleep(0.001)
+        self.running_job.resume()
 
     # endregion
     # region Time tagging
