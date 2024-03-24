@@ -164,8 +164,8 @@ def average_counts(counts_array, ref_counts_array=None):
 def threshold_counts(nv_list, counts_array, ref_counts_array=None):
     counts_array = np.array(counts_array)
 
-    # thresholds = [nv["threshold"] for nv in nv_list]
-    thresholds = [30 for nv in nv_list]  # MCC
+    thresholds = [nv.threshold for nv in nv_list]
+    # thresholds = [30 for nv in nv_list]  # MCC
     thresholds = np.array(thresholds)
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
