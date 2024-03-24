@@ -271,5 +271,6 @@ def optimize_pixel_with_img_array(
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
         r_counts = round(counts, 3)
         print(f"Counts at optimized coordinates: {r_counts}")
+        print()
 
     return opti_pixel_coords

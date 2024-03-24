@@ -147,12 +147,12 @@ def main(
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list)
         nv_sig = nv_list[ind]
-        nv_name = nv_sig["name"]
+        nv_name = nv_sig.name
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     keys_to_compress = [
         "sig_counts_lists",
         "ref_counts_lists",
@@ -294,7 +294,7 @@ def _collect_data(
     kpl.show()
 
     timestamp = dm.get_time_stamp()
-    nv_name = repr_nv_sig["name"]
+    nv_name = repr_nv_sig.name
     # Save sub figs
     for ind in range(3):
         fig = figs[ind]

@@ -14,13 +14,15 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from utils.constants import IonPulseType
+from utils import tool_belt as tb
+from utils.constants import IonPulseType, LaserKey
 
 
 def get_seq(
     pol_coords_list,
     ion_coords_list,
     num_reps,
+    step_list,
     uwave_macro,
     pol_duration_ns=None,
     ion_duration_ns=None,
@@ -79,25 +81,38 @@ def get_seq(
     num_exps_per_rep = len(uwave_macro)
     # uwave_macro = uwave_macro[::-1]  # MCC
 
+    readout_laser_el = "ao_laser_OPTO_589_am"
+    green_laser = tb.get_laser_name(LaserKey.POLARIZATION)
+    buffer = seq_utils.get_widefield_operation_buffer()
+
     with qua.program() as seq:
+        # with qua._for_each(step, step_list):
+
         if setup_macro is not None:
             uwave_macro_args = setup_macro()
         else:
             uwave_macro_args = []
 
-        seq_utils.turn_on_aods()
+        # seq_utils.turn_on_aods()
 
-        def one_exp(exp_ind=None):
-            # Polarization
+        def one_exp(exp_ind):
+            seq_utils.turn_on_aods()
+
+            # Charge polarization with green
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
+
+            # MCC
+            # Spin polarization with widefield yellow
+            qua.align()
+            qua.play("spin_polarize", readout_laser_el)
+            qua.wait(buffer, readout_laser_el)
 
             # Custom macro for the microwave sequence here
             qua.align()
-            if exp_ind is None:
-                uwave_macro(*uwave_macro_args)
-            else:
-                exp_uwave_macro = uwave_macro[exp_ind]
-                exp_uwave_macro(*uwave_macro_args)
+            exp_uwave_macro = uwave_macro[exp_ind]
+            exp_uwave_macro(*uwave_macro_args)
+
+            # seq_utils.turn_on_aods([green_laser], pulse_suffix="low")
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
@@ -108,11 +123,8 @@ def get_seq(
             seq_utils.macro_wait_for_trigger()
 
         def one_rep():
-            if num_exps_per_rep == 1:
-                one_exp()
-            else:
-                for exp_ind in range(num_exps_per_rep):
-                    one_exp(exp_ind)
+            for exp_ind in range(num_exps_per_rep):
+                one_exp(exp_ind)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 

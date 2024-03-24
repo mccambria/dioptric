@@ -460,8 +460,8 @@ def main(
     initial_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust)
     expected_counts = nv_sig.expected_counts
     if expected_counts is not None:
-        lower_bound = 0.9 * expected_counts
-        upper_bound = 1.2 * expected_counts
+        lower_bound = 0.95 * expected_counts
+        upper_bound = 1.1 * expected_counts
 
     start_time = time.time()
 
@@ -596,7 +596,7 @@ def main(
     elif not no_crash:
         raise RuntimeError("Optimization failed.")
 
-    print("\n")
+    print()
 
     ### Clean up and save the data
 

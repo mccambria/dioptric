@@ -74,9 +74,7 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list, num_reps):
-    # ion_duration = 10e3
-    ion_duration = 1e3
-    return charge_state_histograms.main(nv_list, num_reps, ion_duration=ion_duration)
+    return charge_state_histograms.main(nv_list, num_reps)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -169,7 +167,7 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 200
-    num_runs = 5
+    num_runs = 20
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
@@ -479,6 +477,9 @@ def compile_speed_test(nv_list):
     stop = time.time()
     print(stop - start)
 
+    seq_args[-1] = 1
+    seq_args_string = tb.encode_seq_args(seq_args)
+
     start = time.time()
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     stop = time.time()
@@ -665,10 +666,10 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
-        # # do_optimize_green(nv_sig)
-        # # do_optimize_red(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_pixel(nv_sig)
+        # # # do_optimize_green(nv_sig)
+        # # # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords
@@ -705,6 +706,8 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
+
+        compile_speed_test(nv_list)
 
     # region Cleanup
 

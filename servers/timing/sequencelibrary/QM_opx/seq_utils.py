@@ -152,7 +152,9 @@ def macro_wait_for_trigger():
     qua.wait_for_trigger(dummy_element)
 
 
-def turn_on_aods(laser_names=None):
+def turn_on_aods(laser_names=None, pulse_suffix=None):
+    """Turn on the AODs. They'll run indefinitely. Use pulse_suffix to run a pulse
+    with a different power, etc"""
     global _cache_aod_laser_names
     # By default search the config for the lasers with AOD
     if laser_names is None:
@@ -172,12 +174,18 @@ def turn_on_aods(laser_names=None):
     _cache_x_freq = qua.declare(int)
     _cache_y_freq = qua.declare(int)
 
+    pulse_name = "aod_cw"
+    if pulse_suffix is not None:
+        pulse_name = f"{pulse_name}-{pulse_suffix}"
+
     qua.align()
     for laser_name in laser_names:
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
-        qua.play("aod_cw", x_el)
-        qua.play("aod_cw", y_el)
+        qua.ramp_to_zero(x_el)
+        qua.ramp_to_zero(y_el)
+        qua.play(pulse_name, x_el)
+        qua.play(pulse_name, y_el)
 
 
 def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None):
@@ -242,7 +250,7 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
             qua.play(pulse_name, laser_el, duration=duration)
         qua.wait(buffer, laser_el)
 
-        qua.align()
+        qua.align([x_el, y_el, laser_el])
 
 
 # endregion

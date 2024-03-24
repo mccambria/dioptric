@@ -390,6 +390,7 @@ opx_config = {
                 "on": "yellow_imaging",
                 "off": "ao_off",
                 "charge_readout": "yellow_charge_readout",
+                "spin_polarize": "yellow_spin_polarization",
             },
         },
         "ao_laser_OPTO_589_am_sticky": {
@@ -483,13 +484,21 @@ opx_config = {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
+            "operations": {
+                "aod_cw": "green_aod_cw",
+                "aod_cw-low": "green_aod_cw-low",
+                "continue": "ao_off",
+            },
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
+            "operations": {
+                "aod_cw": "green_aod_cw",
+                "aod_cw-low": "green_aod_cw-low",
+                "continue": "ao_off",
+            },
         },
         # endregion
     },
@@ -500,6 +509,11 @@ opx_config = {
             "operation": "control",
             "length": default_pulse_duration,
             "waveforms": {"single": "green_aod_cw"},
+        },
+        "green_aod_cw-low": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "green_aod_cw-low"},
         },
         "red_aod_cw": {
             "operation": "control",
@@ -515,6 +529,12 @@ opx_config = {
             "operation": "control",
             "length": default_pulse_duration,
             "waveforms": {"single": "yellow_charge_readout"},
+        },
+        "yellow_spin_polarization": {
+            "operation": "control",
+            "length": 100e3,
+            # "length": 1e6,
+            "waveforms": {"single": "yellow_spin_polarization"},
         },
         "ao_cw": {
             "operation": "control",
@@ -597,8 +617,10 @@ opx_config = {
         "aod_cw": {"type": "constant", "sample": 0.35},
         "red_aod_cw": {"type": "constant", "sample": 0.17},
         "green_aod_cw": {"type": "constant", "sample": 0.19},
+        "green_aod_cw-low": {"type": "constant", "sample": 0.16},
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
+        "yellow_spin_polarization": {"type": "constant", "sample": 0.5},  # 30e6
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },
