@@ -165,7 +165,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
 def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
-    widefield.get_nv_pixel_coords(nv_sig)
+    pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
     counts = []
@@ -510,7 +510,6 @@ def main(
             fig = _create_figure() if do_plot else None
 
             # Tracking lists for each axis
-            opti_coords = initial_coords.copy()
             scan_vals_by_axis = [None] * 3
             counts_by_axis = [None] * 3
             axis_failed = False

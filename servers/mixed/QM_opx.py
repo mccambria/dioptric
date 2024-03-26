@@ -159,18 +159,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if key in self.compiled_programs:
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
-            # start = time.time()
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-            # stop = time.time()
-            # logging.info(f"get_seq time: {round(stop-start, 3)}")
             # These options allow for faster compiles at the expense of some extra memory usage
             compiler_options = CompilerOptionArguments(
                 flags=["skip-loop-unrolling", "skip-loop-rolling"]
             )
-            # start = time.time()
             program_id = self.opx.compile(seq, compiler_options=compiler_options)
-            # stop = time.time()
-            # logging.info(f"compile time: {round(stop-start, 3)}")
             self.compiled_programs.clear()  # MCC just store one program for now, the most recent
             self.compiled_programs[key] = [program_id, seq_ret_vals]
 
@@ -192,6 +186,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         pending_job = self.opx.queue.add_compiled(self.program_id)
         # Only return once the job has started
         self.running_job = pending_job.wait_for_execution()
+        logging.info(f"after wait_for_execution: {self.running_job.is_paused()}")
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")
@@ -243,8 +238,16 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         
     @setting(18)
     def resume(self, c):
-        while not self.running_job.is_paused():
-            time.sleep(0.001)
+        
+        # Make sure we've gottent to the paused
+        timeout = 1
+        time_step = 0.001
+        start = time.time()
+        while time.time() - start < timeout:
+            if self.running_job.is_paused():
+                break
+            time.sleep(time_step)
+            
         self.running_job.resume()
 
     # endregion
@@ -278,15 +281,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             )
 
         elif self.sample_size == "all_reps":
-            # logging.info('waiting for all')
             num_gates_per_sample = self.num_reps * self.num_gates_per_rep
             results = fetching_tool(
                 self.experiment_job,
                 data_list=["counts_apd0", "counts_apd1"],
                 mode="wait_for_all",
             )
-            # logging.info('got them')
-            # logging.info(time.time()-st)
 
         (
             counts_apd0,
@@ -294,10 +294,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         ) = (
             results.fetch_all()
         )  # just not sure if its gonna put it into the list structure we want
-        # logging.info('fetched them')
-        # logging.info(time.time()-st)
-        # logging.info('checkpoint')
-        # logging.info(counts_apd0)
         # now we need to combine into our data structure. they have different lengths because the fpga may
         # save one faster than the other. So just go as far as we have samples on both
         num_new_samples_both = min(
@@ -309,7 +305,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # get only the number of samples that both have
         counts_apd0 = counts_apd0[self.counter_index : max_length]
         counts_apd1 = counts_apd1[self.counter_index : max_length]
-        # logging.info(counts_apd0)
         # now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
         counts_apd0 = np.sum(counts_apd0, 1).tolist()
         counts_apd1 = np.sum(counts_apd1, 1).tolist()
@@ -336,11 +331,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i]])
 
-        # logging.info('checkpoint1')
-        # logging.info(return_counts)
         self.counter_index = max_length  # make the counter indix the new max length (-1) so the samples start there
-        # logging.info('done processing counts')
-        # logging.info(time.time()-st)
         return return_counts
 
     def read_raw_stream(self):
@@ -348,7 +339,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         Read the raw stream. currently it waits for all data in the job to
         come in and reports it all. Ideally it would do it live
         """
-        # logging.info('at read raw stream')
         results = fetching_tool(
             self.experiment_job,
             data_list=["counts_apd0", "counts_apd1", "times_apd0", "times_apd1"],
@@ -356,7 +346,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
 
         counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all()
-        # logging.info(np.shape(counts_apd0))
         c1 = counts_apd0.tolist()
         c2 = counts_apd1.tolist()
 
@@ -372,7 +361,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         all_time_tags = []
         all_channels = []
-        # logging.info('made it to loops')
         running_sum_c1 = 0
         running_sum_c2 = 0
 
@@ -458,7 +446,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """
 
         data_list = ["num_ops_{}".format(1 + i) for i in range(num_streams)]
-        logging.info("at cond logic")
         results = fetching_tool(self.experiment_job, data_list, mode="wait_for_all")
         return_streams = results.fetch_all()
         return return_streams

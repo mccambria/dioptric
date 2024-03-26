@@ -88,7 +88,7 @@ def main(
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    # Sig gen setup
+    # Sig gen setup - all but turning on the output
     if isinstance(uwave_ind, int):
         uwave_ind_list = [uwave_ind]
     else:
@@ -143,22 +143,15 @@ def main(
                     run_fn(step_ind_list)
 
                 camera.arm()
+                pulse_gen.stream_start()
 
                 # Steps loop
-                for step_ind_no_shuffle in range(num_steps):
-                    step_ind = step_ind_list[step_ind_no_shuffle]
-
+                for step_ind in step_ind_list:
                     if step_fn is not None:
                         step_fn(step_ind)
 
                     if save_images:
                         img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
-
-                    if step_ind_no_shuffle == 0:
-                        pulse_gen.stream_start()
-                    else:
-                        print("resume")
-                        pulse_gen.resume()
 
                     # Reps loop
                     for rep_ind in range(num_reps):
@@ -183,6 +176,8 @@ def main(
                                 img_array_list[exp_ind], axis=0
                             )
 
+                    pulse_gen.resume()
+
                 ### Move on to the next run
 
                 step_ind_master_list[run_ind] = step_ind_list.copy()
@@ -202,6 +197,7 @@ def main(
 
             except Exception as exc:
                 pulse_gen.halt()
+                # Camera disarmed automatically
 
                 nuvu_237 = "NuvuException: 237"
                 nuvu_214 = "NuvuException: 214"
@@ -215,8 +211,6 @@ def main(
                 attempt_ind += 1
                 if attempt_ind == num_attempts:
                     raise RuntimeError("Maxed out number of attempts")
-
-                camera.arm()
 
     ### Return
 

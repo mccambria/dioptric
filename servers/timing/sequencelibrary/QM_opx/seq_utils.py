@@ -61,10 +61,11 @@ def handle_reps(
     elif num_reps == 1:
         one_rep_macro()
     else:
-        handle_reps_ind = qua.declare(int, value=0)
-        with qua.while_(handle_reps_ind < num_reps):
+        handle_reps_ind = qua.declare(int)
+        with qua.for_(
+            handle_reps_ind, 0, handle_reps_ind < num_reps, handle_reps_ind + 1
+        ):
             one_rep_macro()
-            qua.assign(handle_reps_ind, handle_reps_ind + 1)
             if wait_for_trigger:
                 macro_wait_for_trigger()
 

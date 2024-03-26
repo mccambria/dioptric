@@ -21,19 +21,30 @@ def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
     uwave_ind = 0
+    uwave_dict = tb.get_uwave_dict(uwave_ind)
+    uwave_freq = uwave_dict["frequency"]
+
     seq_file = "resonance_ref.py"
     pulse_gen = tb.get_server_pulse_gen()
-    seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.append(uwave_ind)
-    seq_args_string = tb.encode_seq_args(seq_args)
 
-    def step_fn(step_ind):
+    def run_fn(step_inds):
+        seq_args = widefield.get_base_scc_seq_args(nv_list)
+        seq_args.append(uwave_ind)
+        shuffled_freqs = [uwave_freq]  # Just one frequency, not used by sequence anyway
+        seq_args.append(shuffled_freqs)
+        seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
 
     counts, _ = base_routine.main(
-        nv_list, 1, num_reps, num_runs, step_fn=step_fn, save_images=False
+        nv_list,
+        1,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind=uwave_ind,
+        save_images=False,
     )
     sig_counts = counts[0]
     ref_counts = counts[1]

@@ -498,7 +498,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.2
+    z_coord = 4.3
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -600,7 +600,11 @@ if __name__ == "__main__":
 
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 5000
+    # nv_list[0].expected_counts = None
+    # nv_list[0].expected_counts = 3900
+    # nv_list[0].expected_counts = 5000
+    nv_list[0].expected_counts = 6500
+    # nv_list[0].expected_counts = 7400
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # endregion
@@ -641,7 +645,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+1, -3])
+        # widefield.set_pixel_drift([-10, -6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -670,7 +674,7 @@ if __name__ == "__main__":
         do_optimize_pixel(nv_sig)
         # # # do_optimize_green(nv_sig)
         # # # do_optimize_red(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords
@@ -687,7 +691,7 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list, 100)
-        # do_charge_state_histograms(nv_list, 1000)
+        do_charge_state_histograms(nv_list, 1000)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -707,8 +711,6 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
-
-        # compile_speed_test(nv_list)
 
     # region Cleanup
 

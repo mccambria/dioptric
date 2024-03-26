@@ -86,49 +86,46 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
+
+        def one_exp(exp_ind):
+            seq_utils.turn_on_aods()
+
+            # Charge polarization with green
+            seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
+
+            # MCC
+            # Spin polarization with widefield yellow
+            qua.align()
+            qua.play("spin_polarize", readout_laser_el)
+            qua.wait(buffer, readout_laser_el)
+
+            # Custom macro for the microwave sequence here
+            qua.align()
+            exp_uwave_macro = uwave_macro[exp_ind]
+            # exp_uwave_macro(*uwave_macro_args)
+            exp_uwave_macro(step_val)
+
+            # seq_utils.turn_on_aods([green_laser], pulse_suffix="low")
+
+            # Ionization
+            seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
+
+            # Readout
+            seq_utils.macro_charge_state_readout(readout_duration_ns)
+
+            seq_utils.macro_wait_for_trigger()
+
+        def one_rep():
+            for exp_ind in range(num_exps_per_rep):
+                one_exp(exp_ind)
+
         step_val = qua.declare(qua.fixed)
         with qua.for_each_(step_val, step_vals):
-            # if setup_macro is not None:
-            #     uwave_macro_args = setup_macro()
-            # else:
-            #     uwave_macro_args = []
-
-            # seq_utils.turn_on_aods()
-
-            def one_exp(exp_ind):
-                seq_utils.turn_on_aods()
-
-                # Charge polarization with green
-                seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
-
-                # MCC
-                # Spin polarization with widefield yellow
-                qua.align()
-                qua.play("spin_polarize", readout_laser_el)
-                qua.wait(buffer, readout_laser_el)
-
-                # Custom macro for the microwave sequence here
-                qua.align()
-                exp_uwave_macro = uwave_macro[exp_ind]
-                # exp_uwave_macro(*uwave_macro_args)
-                exp_uwave_macro(step_val)
-
-                # seq_utils.turn_on_aods([green_laser], pulse_suffix="low")
-
-                # Ionization
-                seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
-
-                # Readout
-                seq_utils.macro_charge_state_readout(readout_duration_ns)
-
-                seq_utils.macro_wait_for_trigger()
-
-            def one_rep():
-                for exp_ind in range(num_exps_per_rep):
-                    one_exp(exp_ind)
-
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
+            # Make sure everything is off before pausing for the next step
+            qua.align()
+            qua.wait(buffer)
             qua.pause()
 
     return seq
@@ -162,7 +159,7 @@ if __name__ == "__main__":
             "sig_gen_STAN_sg394",
             96 / 2,
         ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        seq, seq_ret_vals = get_seq(args, 5, readout_duration_ns=1000)
 
         sim_config = SimulationConfig(duration=int(500e3 / 4))
         sim = opx.simulate(seq, sim_config)

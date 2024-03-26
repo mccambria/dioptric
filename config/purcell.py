@@ -112,7 +112,7 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 6,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 7,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 1000,
         # "em_gain": 100,
@@ -532,7 +532,7 @@ opx_config = {
         },
         "yellow_spin_polarization": {
             "operation": "control",
-            "length": 100e3,
+            "length": 10e3,
             # "length": 1e6,
             "waveforms": {"single": "yellow_spin_polarization"},
         },
