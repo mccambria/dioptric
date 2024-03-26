@@ -104,6 +104,9 @@ def determine_threshold(counts_list):
     popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
     print(popt)
 
+    # Find the optimum threshold
+    # Maximize fidelity of getting answer correct for a 50/50 distribution
+
     return popt
 
 
@@ -318,7 +321,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1470407238122, no_npz=True)
+    data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
