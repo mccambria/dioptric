@@ -187,8 +187,7 @@ def do_resonance(nv_list):
     freq_range = 0.180
     num_steps = 40
     num_reps = 10
-    num_runs = 3
-    # num_runs = 240
+    num_runs = 240
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -498,7 +497,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.3
+    z_coord = 4.252
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -603,7 +602,7 @@ if __name__ == "__main__":
     # nv_list[0].expected_counts = None
     # nv_list[0].expected_counts = 3900
     # nv_list[0].expected_counts = 5000
-    nv_list[0].expected_counts = 6500
+    nv_list[0].expected_counts = 6000
     # nv_list[0].expected_counts = 7400
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
@@ -645,7 +644,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-10, -6])
+        # widefield.set_pixel_drift([-1, -12])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -658,7 +657,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -671,10 +670,10 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
-        # # # do_optimize_green(nv_sig)
-        # # # do_optimize_red(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_pixel(nv_sig)
+        # # # # do_optimize_green(nv_sig)
+        # # # # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords
@@ -691,7 +690,7 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list, 100)
-        do_charge_state_histograms(nv_list, 1000)
+        # do_charge_state_histograms(nv_list, 1000)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)

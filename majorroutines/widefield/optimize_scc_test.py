@@ -7,8 +7,6 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
-import json
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -20,10 +18,9 @@ from utils import widefield as widefield
 
 
 def process_and_plot(nv_list, taus, sig_counts, ref_counts):
-    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste = widefield.process_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste = widefield.process_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-
     # avg_snr_ste = None
 
     sig_fig, sig_ax = plt.subplots()
@@ -56,39 +53,31 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
-    uwave_ind = 0
-    uwave_dict = tb.get_uwave_dict(uwave_ind)
-    uwave_freq = uwave_dict["frequency"]
 
     seq_file = "optimize_scc.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
-
     pulse_gen = tb.get_server_pulse_gen()
 
     ### Collect the data
 
-    def run_fn(tau_ind):
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(uwave_ind)
-        shuffled_freqs = [uwave_freq]  # Just one frequency, not used by sequence anyway
-        seq_args.append(shuffled_freqs)
+    def step_fn(tau_ind):
         tau = taus[tau_ind]
+        seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(tau)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn, uwave_ind=uwave_ind
+        nv_list, num_steps, num_reps, num_runs, step_fn, num_exps_per_rep=2
     )
-
-    ### Process and plot
-
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     ### Process and plot
 
-    sig_fig, ref_fig, snr_fig = process_and_plot(nv_list, taus, sig_counts, ref_counts)
+    sig_fig, ref_fig, snr_fig, avg_snr_fig = process_and_plot(
+        nv_list, taus, sig_counts, ref_counts
+    )
 
     ### Clean up and return
 
