@@ -54,6 +54,8 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
 
+    uwave_ind = 0
+
     seq_file = "optimize_scc.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
     pulse_gen = tb.get_server_pulse_gen()
@@ -63,6 +65,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     def step_fn(tau_ind):
         tau = taus[tau_ind]
         seq_args = widefield.get_base_scc_seq_args(nv_list)
+        seq_args.append(uwave_ind)
         seq_args.append(tau)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
