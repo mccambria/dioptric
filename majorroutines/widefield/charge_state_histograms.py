@@ -78,6 +78,16 @@ def poisson_dist(x, rate):
     return (rate**x) * np.exp(-rate) / factorial(x)
 
 
+def poisson_cdf(x, rate):
+    """Cumulative distribution function for poisson pdf. Integrates
+    up to and including x"""
+    x_floor = int(np.floor(x))
+    val = 0
+    for ind in range(x_floor):
+        val += poisson_dist(ind, rate)
+    return val
+
+
 def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
     prob_nvn = 1 - prob_nv0
     val_nv0 = poisson_dist(x, mean_counts_nv0)
@@ -104,8 +114,26 @@ def determine_threshold(counts_list):
     popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
     print(popt)
 
-    # Find the optimum threshold
-    # Maximize fidelity of getting answer correct for a 50/50 distribution
+    # Find the optimum threshold by maximizing readout fidelity
+    # I.e. find threshold that maximizes:
+    # F = (1/2)P(call NV- | actually NV-) + (1/2)P(call NV0 | actually NV0)
+    _, mean_counts_nv0, mean_counts_nvn = popt
+    mean_counts_nv0 = round(mean_counts_nv0)
+    mean_counts_nvn = round(mean_counts_nvn)
+    num_steps = mean_counts_nvn - mean_counts_nv0
+    thresh_options = np.linspace(
+        mean_counts_nv0 + 0.5, mean_counts_nvn - 0.5, num_steps
+    )
+    fidelities = []
+    for val in thresh_options:
+        nv0_fid = poisson_cdf(val, mean_counts_nv0)
+        nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
+        fidelities.append((1 / 2) * (nv0_fid + nvn_fid))
+
+    best_fidelity = max(fidelities)
+    best_threshold = thresh_options[np.argmax(fidelities)]
+    print(f"Optimum threshold: {best_threshold}")
+    print(f"Fidelity: {best_fidelity}")
 
     return popt
 
@@ -338,6 +366,7 @@ if __name__ == "__main__":
 
     if True:
         for ind in range(num_nvs):
+            print()
             nv_sig = nv_list[ind]
             sig_counts_list = sig_counts_lists[ind]
             ref_counts_list = ref_counts_lists[ind]
