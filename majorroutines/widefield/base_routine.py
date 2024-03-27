@@ -30,6 +30,7 @@ def main(
     num_exps_per_rep=2,
     load_iq=False,
     save_images=False,
+    stream_load_in_run_fn=True,
 ) -> tuple[np.ndarray, dict]:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 
@@ -143,12 +144,18 @@ def main(
                     run_fn(step_ind_list)
 
                 camera.arm()
-                pulse_gen.stream_start()
+                if stream_load_in_run_fn:
+                    pulse_gen.stream_start()
 
                 # Steps loop
                 for step_ind in step_ind_list:
                     if step_fn is not None:
                         step_fn(step_ind)
+
+                    # If the sequence wasn't loaded in the run_fn, it must be loaded in
+                    # the step_fn - this will be slower due to compile times
+                    if not stream_load_in_run_fn:
+                        pulse_gen.stream_start()
 
                     if save_images:
                         img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
@@ -180,14 +187,15 @@ def main(
 
                 ### Move on to the next run
 
-                step_ind_master_list[run_ind] = step_ind_list.copy()
-
                 # Turn stuff off
                 pulse_gen.halt()
                 camera.disarm()
                 for ind in uwave_ind_list:
                     sig_gen = tb.get_server_sig_gen(ind=ind)
                     sig_gen.uwave_off()
+
+                # Record step order
+                step_ind_master_list[run_ind] = step_ind_list.copy()
 
                 # Update coordinates
                 optimize.optimize_pixel(repr_nv_sig)  # xy

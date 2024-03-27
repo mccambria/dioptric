@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
@@ -22,7 +21,8 @@ def get_seq(pol_coords_list, ion_coords_list, uwave_ind, ion_duration_ns, num_re
         pol_coords_list,
         ion_coords_list,
         uwave_ind,
-        num_reps,
+        step_vals=None,
+        num_reps=num_reps,
         ion_duration_ns=ion_duration_ns,
     )
 
@@ -32,45 +32,26 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
-            None,
+        seq, seq_ret_vals = get_seq(
             [
                 [112.21219579120823, 110.40003798562638],
                 [112.10719579120823, 110.9080379856264],
-                [110.86519579120822, 111.88803798562638],
-                [111.30119579120823, 109.44303798562639],
-                [112.23619579120823, 109.55303798562639],
-                [112.95719579120824, 110.46003798562639],
-                [111.49919579120822, 107.7030379856264],
-                [111.58819579120824, 107.7120379856264],
-                [112.09719579120824, 107.0870379856264],
-                [111.02419579120823, 110.30503798562638],
             ],
-            None,
             [
                 [75.99059786642306, 75.34468901215536],
                 [75.64159786642307, 76.07968901215536],
-                [75.05959786642306, 76.72668901215535],
-                [75.20659786642307, 74.84368901215535],
-                [75.95359786642307, 74.88468901215535],
-                [76.56159786642307, 75.51368901215535],
-                [75.44959786642306, 73.37168901215536],
-                [75.30159786642307, 73.28668901215535],
-                [75.82659786642307, 72.83568901215536],
-                [75.02559786642307, 75.35468901215535],
             ],
-            None,
             0,
-            None,
-        ]
-        seq, seq_ret_vals = get_seq(args, 5)
+            1000,
+            5,
+        )
 
-        sim_config = SimulationConfig(duration=int(2000e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -57,10 +57,6 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
     uwave_ind = 0
-    uwave_dict = tb.get_uwave_dict(uwave_ind)
-    uwave_freq = uwave_dict["frequency"]
-
-    uwave_ind = 0
 
     seq_file = "optimize_scc.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
@@ -69,7 +65,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Collect the data
 
-    def run_fn(tau_ind):
+    def step_fn(tau_ind):
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
         tau = taus[tau_ind]
@@ -78,7 +74,13 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn, uwave_ind=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        step_fn=step_fn,
+        uwave_ind=uwave_ind,
+        stream_load_in_run_fn=False,
     )
 
     ### Process and plot
@@ -106,7 +108,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     if "img_arrays" in raw_data:
         keys_to_compress = ["img_arrays"]

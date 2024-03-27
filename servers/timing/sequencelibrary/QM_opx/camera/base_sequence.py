@@ -22,8 +22,8 @@ def get_seq(
     pol_coords_list,
     ion_coords_list,
     uwave_macro,
-    step_vals,
-    num_reps,
+    step_vals=None,
+    num_reps=1,
     pol_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
@@ -119,14 +119,20 @@ def get_seq(
             for exp_ind in range(num_exps_per_rep):
                 one_exp(exp_ind)
 
-        step_val = qua.declare(qua.fixed)
-        with qua.for_each_(step_val, step_vals):
+        def one_step():
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
             # Make sure everything is off before pausing for the next step
             qua.align()
             qua.wait(buffer)
             qua.pause()
+
+        step_val = qua.declare(qua.fixed)
+        if step_vals is None:
+            one_step()
+        else:
+            with qua.for_each_(step_val, step_vals):
+                one_step()
 
     return seq
 
