@@ -351,7 +351,8 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
+    # data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
+    data = dm.get_raw_data(file_id=1470407238122, no_npz=False)  # Movie data
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

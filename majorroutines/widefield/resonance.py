@@ -285,7 +285,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1470392816628, no_npz=True)
+    data = dm.get_raw_data(file_id=1470392816628, no_npz=True)  # Movie data
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -293,17 +293,53 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
     freqs = data["freqs"]
-    counts = np.array(data["counts"])
-    sig_counts = counts[0]
-    ref_counts = counts[1]
 
-    # avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
-    avg_counts, avg_counts_ste, norms = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts
+    # New style counts
+    # counts = np.array(data["counts"])
+    # sig_counts = counts[0]
+    # ref_counts = counts[1]
+
+    # Old style counts
+    sig_counts = np.array(data["counts"])
+
+    thresholds = [
+        41.5,
+        37.5,
+        55.5,
+        44.5,
+        37.5,
+        40.5,
+        41.5,
+        40.5,
+        40.5,
+        42.5,
+        38.5,
+        36.5,
+        37.5,
+    ]
+    temp_list = []
+    for ind in range(num_nvs):
+        nv_temp = nv_list[ind]
+        threshold = thresholds[ind]
+        # threshold = None
+        nv = NVSig(name=nv_temp["name"], threshold=threshold)
+        temp_list.append(nv)
+    nv_list = temp_list
+
+    ind = 9
+    sig_counts = sig_counts[[ind]]
+    nv_list = [nv_list[ind]]
+
+    avg_counts, avg_counts_ste = widefield.process_counts(nv_list, sig_counts)
+    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    #     nv_list, sig_counts, ref_counts
+    # )
+    print(
+        (max(avg_counts[0]) - np.median(avg_counts[0])) / np.median(avg_counts_ste[0])
     )
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+    # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
     # img_arrays = np.array(data["img_arrays"])
     # img_arrays = np.mean(img_arrays, axis=0)

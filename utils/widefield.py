@@ -279,7 +279,11 @@ def get_repr_nv_sig(nv_list: list[NVSig]) -> NVSig:
 
 
 def get_nv_num(nv_sig):
-    return nv_sig.name.split("-")[1].split("_")[0][2:]
+    nv_name = nv_sig.name  # of the form <sample_name>-nv<num>_<date_str>
+    nv_name_part = nv_name.split("-")[1]  # nv<num>_<date_str>
+    nv_num = nv_name_part.split("_")[0][2:]
+    nv_num = int(nv_num)
+    return nv_num
 
 
 def get_base_scc_seq_args(nv_list):
@@ -639,12 +643,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         nv_sig = nv_list[nv_ind]
         label = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
-        # if nv_ind == 1:
-        #     color = kpl.KplColors.GRAY
-        num_colors = len(kpl.data_color_cycler)
-        color = kpl.data_color_cycler[nv_ind % num_colors]
-        if num_colors <= nv_ind < 2 * num_colors:
-            color = kpl.lighten_color_hex(color)
+        nv_num = get_nv_num(nv_sig)
+        color = kpl.data_color_cycler[nv_num]
         kpl.plot_points(
             ax,
             x,
