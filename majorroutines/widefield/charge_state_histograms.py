@@ -96,7 +96,8 @@ def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
 
 
 def determine_threshold(counts_list):
-    # Use the ref and assume there's some population in both NV- and NV0
+    """counts_list should probably be the ref since we need some population
+    in both NV- and NV0"""
 
     # Histogram the counts
     counts_list = [round(el) for el in counts_list]
@@ -177,6 +178,7 @@ def main(
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list)
+        determine_threshold(ref_counts_list)
         nv_sig = nv_list[ind]
         nv_name = nv_sig.name
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
