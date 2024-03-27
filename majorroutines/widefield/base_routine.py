@@ -30,7 +30,7 @@ def main(
     num_exps_per_rep=2,
     load_iq=False,
     save_images=False,
-):
+) -> tuple[np.ndarray, dict]:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 
     The routine is broken down into a sequence of identical "runs". In between runs

@@ -78,6 +78,16 @@ def poisson_dist(x, rate):
     return (rate**x) * np.exp(-rate) / factorial(x)
 
 
+def poisson_cdf(x, rate):
+    """Cumulative distribution function for poisson pdf. Integrates
+    up to and including x"""
+    x_floor = int(np.floor(x))
+    val = 0
+    for ind in range(x_floor):
+        val += poisson_dist(ind, rate)
+    return val
+
+
 def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
     prob_nvn = 1 - prob_nv0
     val_nv0 = poisson_dist(x, mean_counts_nv0)
@@ -86,7 +96,8 @@ def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
 
 
 def determine_threshold(counts_list):
-    # Use the ref and assume there's some population in both NV- and NV0
+    """counts_list should probably be the ref since we need some population
+    in both NV- and NV0"""
 
     # Histogram the counts
     counts_list = [round(el) for el in counts_list]
@@ -103,6 +114,27 @@ def determine_threshold(counts_list):
     guess_params = (prob_nv0_guess, mean_counts_nv0_guess, mean_counts_nvn_guess)
     popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
     print(popt)
+
+    # Find the optimum threshold by maximizing readout fidelity
+    # I.e. find threshold that maximizes:
+    # F = (1/2)P(call NV- | actually NV-) + (1/2)P(call NV0 | actually NV0)
+    _, mean_counts_nv0, mean_counts_nvn = popt
+    mean_counts_nv0 = round(mean_counts_nv0)
+    mean_counts_nvn = round(mean_counts_nvn)
+    num_steps = mean_counts_nvn - mean_counts_nv0
+    thresh_options = np.linspace(
+        mean_counts_nv0 + 0.5, mean_counts_nvn - 0.5, num_steps
+    )
+    fidelities = []
+    for val in thresh_options:
+        nv0_fid = poisson_cdf(val, mean_counts_nv0)
+        nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
+        fidelities.append((1 / 2) * (nv0_fid + nvn_fid))
+
+    best_fidelity = max(fidelities)
+    best_threshold = thresh_options[np.argmax(fidelities)]
+    print(f"Optimum threshold: {best_threshold}")
+    print(f"Fidelity: {best_fidelity}")
 
     return popt
 
@@ -146,6 +178,7 @@ def main(
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list)
+        determine_threshold(ref_counts_list)
         nv_sig = nv_list[ind]
         nv_name = nv_sig.name
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
@@ -318,7 +351,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1470407238122, no_npz=True)
+    data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -335,6 +368,7 @@ if __name__ == "__main__":
 
     if True:
         for ind in range(num_nvs):
+            print()
             nv_sig = nv_list[ind]
             sig_counts_list = sig_counts_lists[ind]
             ref_counts_list = ref_counts_lists[ind]

@@ -60,6 +60,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     uwave_dict = tb.get_uwave_dict(uwave_ind)
     uwave_freq = uwave_dict["frequency"]
 
+    uwave_ind = 0
+
     seq_file = "optimize_scc.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
@@ -70,8 +72,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     def run_fn(tau_ind):
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
-        shuffled_freqs = [uwave_freq]  # Just one frequency, not used by sequence anyway
-        seq_args.append(shuffled_freqs)
         tau = taus[tau_ind]
         seq_args.append(tau)
         seq_args_string = tb.encode_seq_args(seq_args)

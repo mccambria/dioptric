@@ -8,20 +8,22 @@ Created on October 13th, 2023
 """
 
 
+import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
+
+import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
-import utils.common as common
-import matplotlib.pyplot as plt
 
 
-def get_seq(args, num_reps):
-    # (pol_coords_list, ion_coords_list, ion_duration_ns) = args
-    ion_duration_ns = args.pop()
-    args.append(0)  # Tack on the microwave index - resonance_ref expects it
+def get_seq(pol_coords_list, ion_coords_list, uwave_ind, ion_duration_ns, num_reps):
     return resonance_ref.get_seq(
-        args, num_reps, reference=True, ion_duration_ns=ion_duration_ns
+        pol_coords_list,
+        ion_coords_list,
+        uwave_ind,
+        num_reps,
+        ion_duration_ns=ion_duration_ns,
     )
 
 
