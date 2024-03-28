@@ -305,7 +305,7 @@ if __name__ == "__main__":
     thresholds = [
         41.5,
         37.5,
-        55.5,
+        40.5,  # manual, 55.5 from bad fit
         44.5,
         37.5,
         40.5,
@@ -321,22 +321,30 @@ if __name__ == "__main__":
     for ind in range(num_nvs):
         nv_temp = nv_list[ind]
         threshold = thresholds[ind]
-        # threshold = None
+        threshold = None
         nv = NVSig(name=nv_temp["name"], threshold=threshold)
         temp_list.append(nv)
     nv_list = temp_list
 
-    ind = 9
-    sig_counts = sig_counts[[ind]]
-    nv_list = [nv_list[ind]]
+    # ind = 12
+    # sig_counts = sig_counts[[ind]]
+    # nv_list = [nv_list[ind]]
 
     avg_counts, avg_counts_ste = widefield.process_counts(nv_list, sig_counts)
     # avg_counts, avg_counts_ste, norms = widefield.process_counts(
     #     nv_list, sig_counts, ref_counts
     # )
-    print(
-        (max(avg_counts[0]) - np.median(avg_counts[0])) / np.median(avg_counts_ste[0])
-    )
+    # print(
+    #     (max(avg_counts[0]) - np.median(avg_counts[0])) / np.median(avg_counts_ste[0])
+    # )
+
+    snrs = []
+    for ind in range(num_nvs):
+        snrs.append(
+            (max(avg_counts[ind]) - np.median(avg_counts[ind]))
+            / np.median(avg_counts_ste[ind])
+        )
+    print(np.mean(snrs))
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     # fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
