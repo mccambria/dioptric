@@ -117,7 +117,7 @@ def determine_threshold(counts_list):
 
     # Find the optimum threshold by maximizing readout fidelity
     # I.e. find threshold that maximizes:
-    # F = (1/2)P(call NV- | actually NV-) + (1/2)P(call NV0 | actually NV0)
+    # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
     _, mean_counts_nv0, mean_counts_nvn = popt
     mean_counts_nv0 = round(mean_counts_nv0)
     mean_counts_nvn = round(mean_counts_nvn)
@@ -136,7 +136,7 @@ def determine_threshold(counts_list):
     print(f"Optimum threshold: {best_threshold}")
     print(f"Fidelity: {best_fidelity}")
 
-    return popt
+    return popt, best_threshold
 
 
 def main(
@@ -351,7 +351,8 @@ if __name__ == "__main__":
 
     # file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
+    # data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
+    data = dm.get_raw_data(file_id=1470407238122, no_npz=False)  # Movie data
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -368,16 +369,17 @@ if __name__ == "__main__":
 
     if True:
         for ind in range(num_nvs):
-            print()
             nv_sig = nv_list[ind]
+            print(nv_sig["name"])
             sig_counts_list = sig_counts_lists[ind]
             ref_counts_list = ref_counts_lists[ind]
             fig = create_histogram(sig_counts_list, ref_counts_list)
 
             ax = fig.gca()
-            popt = determine_threshold(ref_counts_list)
+            popt, threshold = determine_threshold(ref_counts_list)
             x_vals = np.linspace(0, max(ref_counts_list), 1000)
             kpl.plot_line(ax, x_vals, num_shots * bimodal_dist(x_vals, *popt))
+            ax.axvline(threshold, color=kpl.KplColors.GRAY)
 
     ### Labeled images
 
