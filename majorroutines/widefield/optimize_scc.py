@@ -7,8 +7,6 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
-import json
-
 import matplotlib.pyplot as plt
 import numpy as np
 

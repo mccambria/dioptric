@@ -497,7 +497,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.252
+    z_coord = 4.26
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -597,16 +597,21 @@ if __name__ == "__main__":
         nv_sig = NVSig(name=f"{sample_name}-nv{ind}_{date_str}", coords=coords)
         nv_list.append(nv_sig)
 
+    # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
     # nv_list[0].expected_counts = None
     # nv_list[0].expected_counts = 3900
-    # nv_list[0].expected_counts = 5000
+    # nv_list[0].expected_counts = 4700
     nv_list[0].expected_counts = 6000
     # nv_list[0].expected_counts = 7400
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # endregion
+
+    # 2D red and green pulse for scc
+    coords_list = []
+
     # region Coordinate printing
 
     # for nv in nv_list:
@@ -670,10 +675,10 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # # # # do_optimize_green(nv_sig)
         # # # # do_optimize_red(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords
@@ -708,8 +713,8 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc(nv_list)
 
     # region Cleanup
 
