@@ -497,7 +497,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.26
+    z_coord = 4.184
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -609,9 +609,6 @@ if __name__ == "__main__":
 
     # endregion
 
-    # 2D red and green pulse for scc
-    coords_list = []
-
     # region Coordinate printing
 
     # for nv in nv_list:
@@ -656,7 +653,7 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.0, 4.3, 11):
+        # for z in np.linspace(4.0, 5.0, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
@@ -713,7 +710,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
 
     # region Cleanup

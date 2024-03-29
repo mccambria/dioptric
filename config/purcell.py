@@ -154,6 +154,7 @@ config |= {
             # "duration": 500e6,
             "duration": 1e9,
         },  # 35e6
+        LaserKey.SCC_SNR: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
         LaserKey.IONIZATION: {

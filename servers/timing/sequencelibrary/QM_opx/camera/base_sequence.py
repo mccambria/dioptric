@@ -107,6 +107,9 @@ def get_seq(
 
             # seq_utils.turn_on_aods([green_laser], pulse_suffix="low")
 
+            # short red or green pulse around nv_sig
+            # seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
+
             # Ionization
             seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
 
