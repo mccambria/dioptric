@@ -27,14 +27,18 @@ from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
-def create_raw_data_figure(nv_sig, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste):
+def create_raw_data_figure(
+    nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
+):
     fig, ax = plt.subplots()
-    kpl.plot_points(relative_aod_freqs, avg_snr, yerr=avg_snr_ste)
+    kpl.plot_points(ax, relative_aod_freqs, avg_snr, yerr=avg_snr_ste)
 
     ax.set_xlabel("AOD frequency deviation from target NV (MHz)")
     ax.set_ylabel("SNR")
     axis_ind_labels = ["x", "y", "z"]
-    ax.set_title(f"{axis_ind_labels[axis_ind]}, {nv_sig.name}")
+    ax.set_title(f"{laser_name}, {axis_ind_labels[axis_ind]} axis, {nv_sig.name}")
+
+    return fig
 
 
 def main(
@@ -85,13 +89,14 @@ def main(
         num_steps,
         num_reps,
         num_runs,
-        step_fn,
+        step_fn=step_fn,
         uwave_ind=uwave_ind,
         stream_load_in_run_fn=False,
     )
 
     ### Process and plot
 
+    # experiment, nv, run, step, rep
     sig_counts = counts[0]
     ref_counts = counts[1]
 
@@ -99,8 +104,11 @@ def main(
     # avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
+    avg_snr = avg_snr[0]
+    avg_snr_ste = avg_snr_ste[0]
+
     raw_fig = create_raw_data_figure(
-        nv_sig, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
+        nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
     )
 
     ### Clean up and return
