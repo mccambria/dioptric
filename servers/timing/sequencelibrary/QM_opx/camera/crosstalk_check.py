@@ -101,7 +101,8 @@ def get_seq(
             with qua.for_each_(step_val, step_vals):
                 one_step()
 
-    return seq
+    seq_ret_vals = []
+    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
+        seq, seq_ret_vals = get_seq(
             [
                 [109.05560372660722, 110.77022466032236],
             ],
@@ -124,13 +125,10 @@ if __name__ == "__main__":
             0,
             "laser_COBO_638",
             [73.5, 75.67270342527479],
-        ]
-        seq, seq_ret_vals = get_seq(
-            *args,
             1,
         )
 
-        sim_config = SimulationConfig(duration=int(100e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

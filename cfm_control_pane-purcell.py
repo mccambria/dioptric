@@ -23,6 +23,7 @@ from majorroutines.widefield import (
     calibrate_iq_delay,
     charge_state_histograms,
     correlation_test,
+    crosstalk_check,
     image_sample,
     optimize,
     optimize_scc,
@@ -361,6 +362,27 @@ def do_opx_square_wave():
     # sig_gen.uwave_off()
 
 
+def do_crosstalk_check(nv_sig):
+    num_steps = 21
+    num_reps = 10
+    num_runs = 2
+    aod_freq_range = 0.2
+    laser_name = red_laser
+    axis_ind = 0  # 0: x, 1: y, 2: z
+    uwave_ind = 0
+
+    crosstalk_check.main(
+        nv_sig,
+        num_steps,
+        num_reps,
+        num_runs,
+        aod_freq_range,
+        laser_name,
+        axis_ind,  # 0: x, 1: y, 2: z
+        uwave_ind,
+    )
+
+
 def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
@@ -659,7 +681,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -712,6 +734,7 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
+        # do_crosstalk_check(nv_sig)
 
     # region Cleanup
 
