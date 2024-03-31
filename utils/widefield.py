@@ -428,9 +428,8 @@ def set_nv_scanning_coords_from_pixel_coords(
 
 def get_widefield_calibration_nvs():
     module = common.get_config_module()
-    # Work with copies to avoid mutation
-    nv1 = dataclasses.replace(module.widefield_calibration_nv1)
-    nv2 = dataclasses.replace(module.widefield_calibration_nv2)
+    nv1 = NVSig(coords=module.widefield_calibration_coords1)
+    nv2 = NVSig(coords=module.widefield_calibration_coords2)
     return nv1, nv2
 
 

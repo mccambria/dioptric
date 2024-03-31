@@ -264,7 +264,7 @@ def main(
         "readout": readout_ms,
         "readout-units": "ms",
         "title": title,
-        "img_array": img_array.astype(int),
+        "img_array": img_array,
         "img_array-units": "counts",
     }
     if save_dict is not None:
