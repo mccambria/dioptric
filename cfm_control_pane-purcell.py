@@ -754,6 +754,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         do_crosstalk_check(nv_sig)
+        do_spin_pol_check(nv_sig)
 
     # region Cleanup
 
