@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Check for crosstalk in SCC from green and red lasers
+Find the minimum green AOD voltage to polarize the spin after 1 us
 
-Created on March 29th, 2024
+Created on March 31st, 2024
 
-@author: sbchand
+@author: mccambria
 """
 
 import matplotlib.pyplot as plt
@@ -20,16 +20,12 @@ from utils.constants import NVSig
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
-def create_raw_data_figure(
-    nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
-):
+def create_raw_data_figure(aod_voltages, avg_snr, avg_snr_ste):
     fig, ax = plt.subplots()
-    kpl.plot_points(ax, relative_aod_freqs, avg_snr, yerr=avg_snr_ste)
+    kpl.plot_points(ax, aod_voltages, avg_snr, yerr=avg_snr_ste)
 
-    ax.set_xlabel("AOD frequency deviation from target NV (MHz)")
+    ax.set_xlabel("AOD voltage (V)")
     ax.set_ylabel("SNR")
-    axis_ind_labels = ["x", "y", "z"]
-    ax.set_title(f"{laser_name}, {axis_ind_labels[axis_ind]} axis, {nv_sig.name}")
 
     return fig
 
@@ -39,23 +35,15 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    aod_freq_range,
-    laser_name,
-    axis_ind,  # 0: x, 1: y, 2: z
+    aod_min_voltage,
+    aod_max_voltage,
     uwave_ind=0,
 ):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    laser_coords = pos.get_nv_coords(nv_sig, coords_key=laser_name, drift_adjust=False)
-    aod_freq_center = laser_coords[axis_ind]
-    crosstalk_coords = laser_coords.copy()
-    aod_freqs = calculate_freqs(aod_freq_center, aod_freq_range, num_steps)
-    crosstalk_coords_list = [crosstalk_coords.copy() for ind in range(num_steps)]
-    for ind in range(num_steps):
-        crosstalk_coords_list[ind][axis_ind] = aod_freqs[ind]
-
-    seq_file = "crosstalk_check.py"
+    aod_voltages = np.linspace(aod_min_voltage, aod_max_voltage, num_steps)
+    seq_file = "spin_pol_check.py"
 
     ### Collect the data
 
@@ -65,15 +53,10 @@ def main(
         # Base seq args
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
-        seq_args.append(laser_name)
 
-        # Add on the coordinates for the crosstalk pulse
-        crosstalk_coords_list_shuffle = []
-        for ind in step_ind_list:
-            coords = crosstalk_coords_list[ind]
-            adj_coords = pos.adjust_coords_for_drift(coords, coords_key=laser_name)
-            crosstalk_coords_list_shuffle.append(adj_coords)
-        seq_args.append(crosstalk_coords_list_shuffle)
+        # Shuffled voltages
+        aod_voltages_shuffle = [aod_voltages[ind] for ind in step_ind_list]
+        seq_args.append(aod_voltages_shuffle)
 
         # Pass it over to the OPX
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -96,10 +79,7 @@ def main(
     avg_snr = avg_snr[0]
     avg_snr_ste = avg_snr_ste[0]
 
-    relative_aod_freqs = aod_freqs - aod_freq_center
-    raw_fig = create_raw_data_figure(
-        nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
-    )
+    raw_fig = create_raw_data_figure(aod_voltages, avg_snr, avg_snr_ste)
 
     ### Clean up and return
 
@@ -110,13 +90,8 @@ def main(
     raw_data |= {
         "nv_sig": nv_sig,
         "timestamp": timestamp,
-        "aod_freq_range": aod_freq_range,
-        "laser_name": laser_name,
-        "axis_ind": axis_ind,
-        "nv_sig": nv_sig,
-        "aod_freq_range": aod_freq_range,
-        "laser_name": laser_name,
-        "axis_ind": axis_ind,
+        "aod_min_voltage": aod_min_voltage,
+        "aod_max_voltage": aod_max_voltage,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
