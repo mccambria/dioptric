@@ -69,7 +69,9 @@ def get_seq(
             seq_utils.turn_on_aods(laser_names=[laser_name], amps=[aod_amp])
 
             # Repolarization pulse
-            seq_utils.macro_pulse(laser_name, pol_coords_list[0], pulse_name="polarize")
+            seq_utils.macro_pulse(
+                laser_name, pol_coords_list[0], pulse_name="polarize", duration_ns=1000
+            )
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list)
