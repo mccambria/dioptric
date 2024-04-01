@@ -26,13 +26,16 @@ def get_seq(
     ion_coords_list,
     uwave_ind,
     laser_name,
-    crosstalk_coords,
+    crosstalk_coords_list,
     num_reps=1,
 ):
     step_vals = None
 
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
+
+    crosstalk_x_coords_list = (el[0] for el in crosstalk_coords_list)
+    crosstalk_y_coords_list = (el[1] for el in crosstalk_coords_list)
 
     if num_reps is None:
         num_reps = 1
@@ -51,6 +54,9 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
+        crosstalk_x_coord = qua.declare(qua.fixed)
+        crosstalk_y_coord = qua.declare(qua.fixed)
+        crosstalk_coords = (crosstalk_x_coord, crosstalk_y_coord)
 
         def one_exp(exp_ind):
             seq_utils.turn_on_aods()
@@ -98,7 +104,10 @@ def get_seq(
         if step_vals is None:
             one_step()
         else:
-            with qua.for_each_(step_val, step_vals):
+            with qua.for_each_(
+                (crosstalk_x_coord, crosstalk_y_coord),
+                (crosstalk_x_coords_list, crosstalk_y_coords_list),
+            ):
                 one_step()
 
     seq_ret_vals = []
@@ -124,7 +133,7 @@ if __name__ == "__main__":
             ],
             0,
             "laser_COBO_638",
-            [73.5, 75.67270342527479],
+            [[73.5, 75.5], [73.5, 75.6], [73.5, 75.7], [73.5, 75.8]],
             1,
         )
 

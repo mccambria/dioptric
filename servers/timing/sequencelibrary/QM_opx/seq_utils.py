@@ -172,8 +172,8 @@ def turn_on_aods(laser_names=None, pulse_suffix=None):
     # Declare the frequency variables we'll need now so we don't do it repetitively
     global _cache_x_freq
     global _cache_y_freq
-    _cache_x_freq = qua.declare(int)
-    _cache_y_freq = qua.declare(int)
+    _cache_x_freq = qua.declare(qua.fixed)
+    _cache_y_freq = qua.declare(qua.fixed)
 
     pulse_name = "aod_cw"
     if pulse_suffix is not None:

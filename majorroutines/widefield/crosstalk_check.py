@@ -7,23 +7,16 @@ Created on March 29th, 2024
 @author: sbchand
 """
 
-import os
-import sys
-import time
-from random import shuffle
-
 import matplotlib.pyplot as plt
 import numpy as np
 
-from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
-from majorroutines.widefield import base_routine, optimize
-from utils import common
+from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield as widefield
-from utils.constants import NVSig, NVSpinState
+from utils.constants import NVSig
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
@@ -59,6 +52,9 @@ def main(
     crosstalk_coords = laser_coords.copy()
     aod_freqs = calculate_freqs(aod_freq_center, aod_freq_range, num_steps)
     relative_aod_freqs = aod_freqs - aod_freq_center
+    crosstalk_coords_list = [crosstalk_coords.copy() for ind in range(num_steps)]
+    for ind in range(num_steps):
+        crosstalk_coords_list[ind][axis_ind] = aod_freqs[ind]
 
     seq_file = "crosstalk_check.py"
 
@@ -66,19 +62,19 @@ def main(
 
     nv_list = [nv_sig]
 
-    def step_fn(step_ind):
+    def run_fn(step_ind_list):
         # Base seq args
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
         seq_args.append(laser_name)
 
         # Add on the coordinates for the crosstalk pulse
-        aod_freq = aod_freqs[step_ind]
-        crosstalk_coords[axis_ind] = aod_freq
-        crosstalk_coords_adj = pos.adjust_coords_for_drift(
-            crosstalk_coords, coords_key=laser_name
-        )
-        seq_args.append(crosstalk_coords_adj)
+        crosstalk_coords_list_shuffle = []
+        for ind in step_ind_list:
+            coords = crosstalk_coords_list[ind]
+            adj_coords = pos.adjust_coords_for_drift(coords, coords_key=laser_name)
+            crosstalk_coords_list_shuffle.append(adj_coords)
+        seq_args.append(crosstalk_coords_list_shuffle)
 
         # Pass it over to the OPX
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -89,9 +85,8 @@ def main(
         num_steps,
         num_reps,
         num_runs,
-        step_fn=step_fn,
+        run_fn=run_fn,
         uwave_ind=uwave_ind,
-        stream_load_in_run_fn=False,
     )
 
     ### Process and plot
