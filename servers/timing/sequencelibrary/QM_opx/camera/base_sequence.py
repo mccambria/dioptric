@@ -81,11 +81,10 @@ def get_seq(
     num_exps_per_rep = len(uwave_macro)
     # uwave_macro = uwave_macro[::-1]  # MCC
 
-    readout_laser_el = "ao_laser_OPTO_589_am"
-    green_laser = tb.get_laser_name(LaserKey.POLARIZATION)
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
+        seq_utils.init_cache()
         seq_utils.turn_on_aods()
 
         def one_exp(exp_ind):
@@ -99,9 +98,6 @@ def get_seq(
             exp_uwave_macro(step_val)
 
             # seq_utils.turn_on_aods([green_laser], pulse_suffix="low")
-
-            # short red or green pulse around nv_sig
-            # seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
