@@ -49,9 +49,8 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
     laser_coords = pos.get_nv_coords(nv_sig, coords_key=laser_name, drift_adjust=False)
     aod_freq_center = laser_coords[axis_ind]
-    crosstalk_coords = laser_coords.copy()
     aod_freqs = calculate_freqs(aod_freq_center, aod_freq_range, num_steps)
-    crosstalk_coords_list = [crosstalk_coords.copy() for ind in range(num_steps)]
+    crosstalk_coords_list = [laser_coords.copy() for ind in range(num_steps)]
     for ind in range(num_steps):
         crosstalk_coords_list[ind][axis_ind] = aod_freqs[ind]
 
@@ -73,6 +72,7 @@ def main(
             coords = crosstalk_coords_list[ind]
             adj_coords = pos.adjust_coords_for_drift(coords, coords_key=laser_name)
             crosstalk_coords_list_shuffle.append(adj_coords)
+
         seq_args.append(crosstalk_coords_list_shuffle)
 
         # Pass it over to the OPX

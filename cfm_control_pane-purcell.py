@@ -364,24 +364,25 @@ def do_opx_square_wave():
 
 
 def do_crosstalk_check(nv_sig):
-    num_steps = 31
+    num_steps = 21
     num_reps = 10
-    num_runs = 2
+    num_runs = 160
     aod_freq_range = 1.0
     laser_name = red_laser
-    axis_ind = 1  # 0: x, 1: y, 2: z
+    axis_ind = 0  # 0: x, 1: y, 2: z
     uwave_ind = 0
 
-    crosstalk_check.main(
-        nv_sig,
-        num_steps,
-        num_reps,
-        num_runs,
-        aod_freq_range,
-        laser_name,
-        axis_ind,  # 0: x, 1: y, 2: z
-        uwave_ind,
-    )
+    for axis_ind in [0, 1]:
+        crosstalk_check.main(
+            nv_sig,
+            num_steps,
+            num_reps,
+            num_runs,
+            aod_freq_range,
+            laser_name,
+            axis_ind,  # 0: x, 1: y, 2: z
+            uwave_ind,
+        )
 
 
 def do_spin_pol_check(nv_sig):
