@@ -51,7 +51,6 @@ def main(
     aod_freq_center = laser_coords[axis_ind]
     crosstalk_coords = laser_coords.copy()
     aod_freqs = calculate_freqs(aod_freq_center, aod_freq_range, num_steps)
-    relative_aod_freqs = aod_freqs - aod_freq_center
     crosstalk_coords_list = [crosstalk_coords.copy() for ind in range(num_steps)]
     for ind in range(num_steps):
         crosstalk_coords_list[ind][axis_ind] = aod_freqs[ind]
@@ -102,6 +101,7 @@ def main(
     avg_snr = avg_snr[0]
     avg_snr_ste = avg_snr_ste[0]
 
+    relative_aod_freqs = aod_freqs - aod_freq_center
     raw_fig = create_raw_data_figure(
         nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
     )
@@ -114,6 +114,10 @@ def main(
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
+        "aod_freq_range": aod_freq_range,
+        "laser_name": laser_name,
+        "axis_ind": axis_ind,
+        "nv_sig": nv_sig,
         "aod_freq_range": aod_freq_range,
         "laser_name": laser_name,
         "axis_ind": axis_ind,

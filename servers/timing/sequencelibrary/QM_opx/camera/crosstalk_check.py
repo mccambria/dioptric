@@ -29,22 +29,20 @@ def get_seq(
     crosstalk_coords_list,
     num_reps=1,
 ):
-    step_vals = None
-
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
 
-    crosstalk_x_coords_list = (el[0] for el in crosstalk_coords_list)
-    crosstalk_y_coords_list = (el[1] for el in crosstalk_coords_list)
+    crosstalk_x_coords_list = [int(el[0] * 10**6) for el in crosstalk_coords_list]
+    crosstalk_y_coords_list = [int(el[1] * 10**6) for el in crosstalk_coords_list]
 
     if num_reps is None:
         num_reps = 1
 
-    def uwave_macro_sig(step_val):
+    def uwave_macro_sig():
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
 
-    def uwave_macro_ref(step_val):
+    def uwave_macro_ref():
         pass
 
     uwave_macro = [uwave_macro_sig, uwave_macro_ref]
@@ -54,9 +52,8 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
-        crosstalk_x_coord = qua.declare(qua.fixed)
-        crosstalk_y_coord = qua.declare(qua.fixed)
-        crosstalk_coords = (crosstalk_x_coord, crosstalk_y_coord)
+        crosstalk_x_coord = qua.declare(int)
+        crosstalk_y_coord = qua.declare(int)
 
         def one_exp(exp_ind):
             seq_utils.turn_on_aods()
@@ -64,21 +61,18 @@ def get_seq(
             # Charge polarization with green
             seq_utils.macro_polarize(pol_coords_list)
 
-            # MCC
-            # Spin polarization with widefield yellow
-            qua.align()
-            qua.play("spin_polarize", readout_laser_el)
-            qua.wait(buffer, readout_laser_el)
-
             # Custom macro for the microwave sequence here
             qua.align()
             exp_uwave_macro = uwave_macro[exp_ind]
-            exp_uwave_macro(step_val)
+            exp_uwave_macro()
 
             if laser_name == tb.get_laser_name(LaserKey.POLARIZATION):
-                seq_utils.macro_polarize([crosstalk_coords])
+                pulse_name = "polarize"
             elif laser_name == tb.get_laser_name(LaserKey.IONIZATION):
-                seq_utils.macro_ionize([crosstalk_coords])
+                pulse_name = "scc"
+            seq_utils.macro_pulse(
+                laser_name, (crosstalk_x_coord, crosstalk_y_coord), pulse_name
+            )
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list)
@@ -100,15 +94,11 @@ def get_seq(
             qua.wait(buffer)
             qua.pause()
 
-        step_val = qua.declare(qua.fixed)
-        if step_vals is None:
+        with qua.for_each_(
+            (crosstalk_x_coord, crosstalk_y_coord),
+            (crosstalk_x_coords_list, crosstalk_y_coords_list),
+        ):
             one_step()
-        else:
-            with qua.for_each_(
-                (crosstalk_x_coord, crosstalk_y_coord),
-                (crosstalk_x_coords_list, crosstalk_y_coords_list),
-            ):
-                one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -134,7 +124,7 @@ if __name__ == "__main__":
             0,
             "laser_COBO_638",
             [[73.5, 75.5], [73.5, 75.6], [73.5, 75.7], [73.5, 75.8]],
-            1,
+            10,
         )
 
         sim_config = SimulationConfig(duration=int(200e3 / 4))

@@ -89,6 +89,12 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     pol_laser_name = _cache_pol_laser_name
     _macro_pulse_list(pol_laser_name, pol_coords_list, "polarize", pol_duration_ns)
 
+    # MCC
+    # Spin polarization with widefield yellow
+    qua.align()
+    qua.play("spin_polarize", readout_laser_el)
+    qua.wait(buffer, readout_laser_el)
+
 
 def macro_ionize(
     ion_coords_list, ion_duration_ns=None, ion_pulse_type=IonPulseType.SCC
@@ -172,8 +178,8 @@ def turn_on_aods(laser_names=None, pulse_suffix=None):
     # Declare the frequency variables we'll need now so we don't do it repetitively
     global _cache_x_freq
     global _cache_y_freq
-    _cache_x_freq = qua.declare(qua.fixed)
-    _cache_y_freq = qua.declare(qua.fixed)
+    _cache_x_freq = qua.declare(int)
+    _cache_y_freq = qua.declare(int)
 
     pulse_name = "aod_cw"
     if pulse_suffix is not None:
@@ -204,14 +210,6 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
     duration_ns : numeric
         Duration of the pulse in ns - if None, uses the default duration of the passed pulse
     """
-    # Setup
-    laser_el = get_laser_mod_element(laser_name)
-    x_el = f"ao_{laser_name}_x"
-    y_el = f"ao_{laser_name}_y"
-
-    duration = convert_ns_to_cc(duration_ns)
-    buffer = get_widefield_operation_buffer()
-    access_time = get_aod_access_time()
 
     # Unpack the coords and convert to Hz
     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
@@ -221,37 +219,42 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
     global _cache_x_freq
     global _cache_y_freq
 
-    # MCC
-    # pol_ind = qua.declare(int, value=0)
-
     qua.align()
     with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
-        # Update AOD frequencies
-        # The continue pulse doesn't actually change anything - without a new pulse the
-        # compiler will overwrite the frequency of whatever is playing retroactively
-        qua.play("continue", x_el)
-        qua.play("continue", y_el)
-        qua.update_frequency(x_el, _cache_x_freq)
-        qua.update_frequency(y_el, _cache_y_freq)
+        macro_pulse(
+            laser_name,
+            (_cache_x_freq, _cache_y_freq),
+            pulse_name=pulse_name,
+            duration_ns=duration_ns,
+        )
 
-        # Pulse the laser
-        qua.wait(access_time + buffer, laser_el)
-        # MCC
-        # if False:
-        # if pulse_name == "polarize":
-        #     qua.assign(pol_ind, 0)
-        #     with qua.while_(pol_ind < 500):
-        #         qua.play("polarize", laser_el)
-        #         qua.wait(50, laser_el)
-        #         qua.assign(pol_ind, pol_ind + 1)
-        # else:
-        if duration is None:
-            qua.play(pulse_name, laser_el)
-        elif duration > 0:
-            qua.play(pulse_name, laser_el, duration=duration)
-        qua.wait(buffer, laser_el)
 
-        qua.align([x_el, y_el, laser_el])
+def macro_pulse(laser_name, coords_MHz, pulse_name="on", duration_ns=None):
+    # Setup
+    laser_el = get_laser_mod_element(laser_name)
+    x_el = f"ao_{laser_name}_x"
+    y_el = f"ao_{laser_name}_y"
+
+    duration = convert_ns_to_cc(duration_ns)
+    buffer = get_widefield_operation_buffer()
+    access_time = get_aod_access_time()
+
+    qua.align()
+
+    qua.play("continue", x_el)
+    qua.play("continue", y_el)
+    qua.update_frequency(x_el, coords_MHz[0])
+    qua.update_frequency(y_el, coords_MHz[1])
+
+    # Pulse the laser
+    qua.wait(access_time + buffer, laser_el)
+    if duration is None:
+        qua.play(pulse_name, laser_el)
+    elif duration > 0:
+        qua.play(pulse_name, laser_el, duration=duration)
+    qua.wait(buffer, laser_el)
+
+    qua.align([x_el, y_el, laser_el])
 
 
 # endregion

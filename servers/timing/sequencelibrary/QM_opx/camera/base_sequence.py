@@ -93,12 +93,6 @@ def get_seq(
             # Charge polarization with green
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
-            # MCC
-            # Spin polarization with widefield yellow
-            qua.align()
-            qua.play("spin_polarize", readout_laser_el)
-            qua.wait(buffer, readout_laser_el)
-
             # Custom macro for the microwave sequence here
             qua.align()
             exp_uwave_macro = uwave_macro[exp_ind]

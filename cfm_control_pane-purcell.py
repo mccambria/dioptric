@@ -368,7 +368,7 @@ def do_crosstalk_check(nv_sig):
     num_runs = 40
     aod_freq_range = 1.0
     laser_name = red_laser
-    axis_ind = 0  # 0: x, 1: y, 2: z
+    axis_ind = 1  # 0: x, 1: y, 2: z
     uwave_ind = 0
 
     crosstalk_check.main(
@@ -519,7 +519,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.188
+    z_coord = 4.12
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -668,7 +668,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-2, -8])
+        # widefield.set_pixel_drift([+7, -3])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
