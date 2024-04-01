@@ -28,53 +28,47 @@ def get_seq(
     aod_voltages,
     num_reps=1,
 ):
-    step_vals = None
-
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
+    laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
 
     if num_reps is None:
         num_reps = 1
 
-    def uwave_macro_sig(step_val):
+    def uwave_macro_sig():
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
 
-    def uwave_macro_ref(step_val):
+    def uwave_macro_ref():
         pass
+
+    opx_config = common.get_opx_config_dict()
+    base_voltage = opx_config["waveforms"]["green_aod_cw"]
+    num_steps = len(aod_voltages)
+    aod_amps = [aod_voltages[ind] / base_voltage for ind in range(num_steps)]
 
     uwave_macro = [uwave_macro_sig, uwave_macro_ref]
     num_exps_per_rep = len(uwave_macro)
 
-    readout_laser_el = "ao_laser_OPTO_589_am"
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
-        crosstalk_x_coord = qua.declare(qua.fixed)
-        crosstalk_y_coord = qua.declare(qua.fixed)
-        crosstalk_coords = (crosstalk_x_coord, crosstalk_y_coord)
+        aod_amp = qua.declare(qua.fixed)
 
         def one_exp(exp_ind):
             seq_utils.turn_on_aods()
-
             # Charge polarization with green
             seq_utils.macro_polarize(pol_coords_list)
-
-            # MCC
-            # Spin polarization with widefield yellow
-            qua.align()
-            qua.play("spin_polarize", readout_laser_el)
-            qua.wait(buffer, readout_laser_el)
 
             # Custom macro for the microwave sequence here
             qua.align()
             exp_uwave_macro = uwave_macro[exp_ind]
-            exp_uwave_macro(step_val)
+            exp_uwave_macro()
 
-            if laser_name == tb.get_laser_name(LaserKey.POLARIZATION):
-                seq_utils.macro_polarize([crosstalk_coords])
-            elif laser_name == tb.get_laser_name(LaserKey.IONIZATION):
-                seq_utils.macro_ionize([crosstalk_coords])
+            seq_utils.turn_on_aods(laser_names=[laser_name], amps=[aod_amp])
+
+            # Repolarization pulse
+            seq_utils.macro_pulse(laser_name, pol_coords_list[0], pulse_name="polarize")
 
             # Ionization
             seq_utils.macro_ionize(ion_coords_list)
@@ -96,15 +90,8 @@ def get_seq(
             qua.wait(buffer)
             qua.pause()
 
-        step_val = qua.declare(qua.fixed)
-        if step_vals is None:
+        with qua.for_each_(aod_amp, aod_amps):
             one_step()
-        else:
-            with qua.for_each_(
-                (crosstalk_x_coord, crosstalk_y_coord),
-                (crosstalk_x_coords_list, crosstalk_y_coords_list),
-            ):
-                one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

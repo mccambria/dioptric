@@ -33,6 +33,7 @@ from majorroutines.widefield import (
     resonance,
     scc_snr_check,
     spin_echo,
+    spin_pol_check,
     xy8,
 )
 from utils import common, widefield
@@ -379,6 +380,24 @@ def do_crosstalk_check(nv_sig):
         aod_freq_range,
         laser_name,
         axis_ind,  # 0: x, 1: y, 2: z
+        uwave_ind,
+    )
+
+
+def do_spin_pol_check(nv_sig):
+    num_steps = 31
+    num_reps = 10
+    num_runs = 2
+    aod_min_voltage = 0.01
+    aod_min_voltage = 0.15
+
+    spin_pol_check.main(
+        nv_sig,
+        num_steps,
+        num_reps,
+        num_runs,
+        aod_min_voltage,
+        aod_max_voltage,
         uwave_ind,
     )
 

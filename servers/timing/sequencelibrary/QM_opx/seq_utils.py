@@ -28,6 +28,8 @@ _cache_num_sig_gens = 2
 _cache_sig_gen_elements = [None] * _cache_num_sig_gens
 _cache_iq_mod_elements = [None] * _cache_num_sig_gens
 _cache_rabi_periods = [None] * _cache_num_sig_gens
+_cache_x_freq = qua.declare(int)
+_cache_y_freq = qua.declare(int)
 
 
 # region QUA macros
@@ -159,7 +161,7 @@ def macro_wait_for_trigger():
     qua.wait_for_trigger(dummy_element)
 
 
-def turn_on_aods(laser_names=None, pulse_suffix=None):
+def turn_on_aods(laser_names=None, pulse_suffix=None, amps=None):
     """Turn on the AODs. They'll run indefinitely. Use pulse_suffix to run a pulse
     with a different power, etc"""
     global _cache_aod_laser_names
@@ -175,24 +177,31 @@ def turn_on_aods(laser_names=None, pulse_suffix=None):
                     _cache_aod_laser_names.append(key)
         laser_names = _cache_aod_laser_names
 
-    # Declare the frequency variables we'll need now so we don't do it repetitively
-    global _cache_x_freq
-    global _cache_y_freq
-    _cache_x_freq = qua.declare(int)
-    _cache_y_freq = qua.declare(int)
+    num_lasers = len(laser_names)
 
     pulse_name = "aod_cw"
     if pulse_suffix is not None:
         pulse_name = f"{pulse_name}-{pulse_suffix}"
 
+    ### Actual commands here
+
     qua.align()
-    for laser_name in laser_names:
+
+    for ind in range(num_lasers):
+        laser_name = laser_names
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
+
         qua.ramp_to_zero(x_el)
         qua.ramp_to_zero(y_el)
-        qua.play(pulse_name, x_el)
-        qua.play(pulse_name, y_el)
+
+        if amps is not None:
+            amp = amps[ind]
+            qua.play(pulse_name * qua.amp(amp), x_el)
+            qua.play(pulse_name * qua.amp(amp), y_el)
+        else:
+            qua.play(pulse_name, x_el)
+            qua.play(pulse_name, y_el)
 
 
 def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None):
@@ -226,10 +235,13 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
             (_cache_x_freq, _cache_y_freq),
             pulse_name=pulse_name,
             duration_ns=duration_ns,
+            convert_to_Hz=False,
         )
 
 
-def macro_pulse(laser_name, coords_MHz, pulse_name="on", duration_ns=None):
+def macro_pulse(
+    laser_name, coords, pulse_name="on", duration_ns=None, convert_to_Hz=True
+):
     # Setup
     laser_el = get_laser_mod_element(laser_name)
     x_el = f"ao_{laser_name}_x"
@@ -239,12 +251,15 @@ def macro_pulse(laser_name, coords_MHz, pulse_name="on", duration_ns=None):
     buffer = get_widefield_operation_buffer()
     access_time = get_aod_access_time()
 
+    if convert_to_Hz:
+        coords = [int(el[1] * 10**6) for el in coords]
+
     qua.align()
 
     qua.play("continue", x_el)
     qua.play("continue", y_el)
-    qua.update_frequency(x_el, coords_MHz[0])
-    qua.update_frequency(y_el, coords_MHz[1])
+    qua.update_frequency(x_el, coords[0])
+    qua.update_frequency(y_el, coords[1])
 
     # Pulse the laser
     qua.wait(access_time + buffer, laser_el)

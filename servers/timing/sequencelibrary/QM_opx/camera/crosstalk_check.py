@@ -71,7 +71,10 @@ def get_seq(
             elif laser_name == tb.get_laser_name(LaserKey.IONIZATION):
                 pulse_name = "scc"
             seq_utils.macro_pulse(
-                laser_name, (crosstalk_x_coord, crosstalk_y_coord), pulse_name
+                laser_name,
+                (crosstalk_x_coord, crosstalk_y_coord),
+                pulse_name,
+                convert_to_Hz=False,
             )
 
             # Ionization

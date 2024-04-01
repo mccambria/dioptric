@@ -86,10 +86,9 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
+        seq_utils.turn_on_aods()
 
         def one_exp(exp_ind):
-            seq_utils.turn_on_aods()
-
             # Charge polarization with green
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
