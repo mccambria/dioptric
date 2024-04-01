@@ -186,7 +186,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         pending_job = self.opx.queue.add_compiled(self.program_id)
         # Only return once the job has started
         self.running_job = pending_job.wait_for_execution()
-        logging.info(f"after wait_for_execution: {self.running_job.is_paused()}")
         self.counter_index = 0
 
     @setting(15, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]")

@@ -7,6 +7,7 @@ Created June 25th, 2023
 @author: mccambria
 """
 
+import logging
 import time
 
 from qm import qua
@@ -28,11 +29,22 @@ _cache_num_sig_gens = 2
 _cache_sig_gen_elements = [None] * _cache_num_sig_gens
 _cache_iq_mod_elements = [None] * _cache_num_sig_gens
 _cache_rabi_periods = [None] * _cache_num_sig_gens
-_cache_x_freq = qua.declare(int)
-_cache_y_freq = qua.declare(int)
+_cache_x_freq = None
+_cache_y_freq = None
 
 
 # region QUA macros
+
+
+def init_cache():
+    """
+    Call this as the first command in a program to declare cached qua variables.
+    Helps with compile times by avoiding unnecessary repetitive declare calls
+    """
+    global _cache_x_freq
+    global _cache_y_freq
+    _cache_x_freq = qua.declare(int)
+    _cache_y_freq = qua.declare(int)
 
 
 def handle_reps(
@@ -93,6 +105,9 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
 
     # MCC
     # Spin polarization with widefield yellow
+    readout_laser_name = tb.get_laser_name(LaserKey.CHARGE_READOUT)
+    readout_laser_el = get_laser_mod_element(readout_laser_name)
+    buffer = get_widefield_operation_buffer()
     qua.align()
     qua.play("spin_polarize", readout_laser_el)
     qua.wait(buffer, readout_laser_el)
@@ -188,7 +203,7 @@ def turn_on_aods(laser_names=None, pulse_suffix=None, amps=None):
     qua.align()
 
     for ind in range(num_lasers):
-        laser_name = laser_names
+        laser_name = laser_names[ind]
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
 
@@ -252,7 +267,7 @@ def macro_pulse(
     access_time = get_aod_access_time()
 
     if convert_to_Hz:
-        coords = [int(el[1] * 10**6) for el in coords]
+        coords = [int(el * 10**6) for el in coords]
 
     qua.align()
 

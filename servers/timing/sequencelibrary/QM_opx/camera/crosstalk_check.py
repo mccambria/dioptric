@@ -52,6 +52,7 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
+        seq_utils.init_cache()
         crosstalk_x_coord = qua.declare(int)
         crosstalk_y_coord = qua.declare(int)
 

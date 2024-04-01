@@ -366,7 +366,7 @@ def do_opx_square_wave():
 def do_crosstalk_check(nv_sig):
     num_steps = 31
     num_reps = 10
-    num_runs = 40
+    num_runs = 2
     aod_freq_range = 1.0
     laser_name = red_laser
     axis_ind = 1  # 0: x, 1: y, 2: z
@@ -385,11 +385,12 @@ def do_crosstalk_check(nv_sig):
 
 
 def do_spin_pol_check(nv_sig):
-    num_steps = 31
+    num_steps = 16
     num_reps = 10
-    num_runs = 2
+    num_runs = 40
     aod_min_voltage = 0.01
-    aod_min_voltage = 0.15
+    aod_max_voltage = 0.15
+    uwave_ind = 0
 
     spin_pol_check.main(
         nv_sig,
@@ -712,11 +713,11 @@ if __name__ == "__main__":
         #     do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
-        #
-        # do_optimize_pixel(nv_sig)
+
+        do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
         # # coords_suffix = None  # Pixel coords
@@ -753,7 +754,7 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
-        do_crosstalk_check(nv_sig)
+        # do_crosstalk_check(nv_sig)
         do_spin_pol_check(nv_sig)
 
     # region Cleanup
