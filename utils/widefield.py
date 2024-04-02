@@ -327,12 +327,12 @@ def get_base_scc_seq_args(nv_list):
 
 
 def get_pixel_drift():
-    pixel_drift = common.get_registry_entry(["State"], "PIXEL_DRIFT")
+    pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
     return np.array(pixel_drift)
 
 
 def set_pixel_drift(drift):
-    return common.set_registry_entry(["State"], "PIXEL_DRIFT", drift)
+    return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
 
 
 def reset_pixel_drift():

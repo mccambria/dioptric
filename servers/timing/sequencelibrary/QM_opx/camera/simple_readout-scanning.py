@@ -8,13 +8,10 @@ Created on October 13th, 2023
 """
 
 import matplotlib.pyplot as plt
-import numpy
-from qm import QuantumMachinesManager, generate_qua_script, qua
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
-import utils.kplotlib as kpl
-import utils.tool_belt as tb
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
@@ -33,7 +30,7 @@ def get_seq(readout_duration, readout_laser, coords_1, coords_2, num_reps):
         x_freq = qua.declare(int)
         y_freq = qua.declare(int)
 
-        seq_utils.turn_on_aods([readout_laser])
+        seq_utils.turn_on_aods([readout_laser], aod_suffices=["opti"])
 
         ### Define one rep here
         def one_rep():
@@ -65,7 +62,7 @@ if __name__ == "__main__":
 
     try:
         # readout, readout_laser, coords_1, coords_2
-        args = [
+        seq, seq_ret_vals = get_seq(
             2000.0,
             "laser_INTE_520",
             [
@@ -78,8 +75,8 @@ if __name__ == "__main__":
                 109.96457559559875,
                 108.84157559559875,
             ],
-        ]
-        seq, seq_ret_vals = get_seq(args, 4)
+            4,
+        )
 
         sim_config = SimulationConfig(duration=round(40e3 / 4))
         sim = opx.simulate(seq, sim_config)

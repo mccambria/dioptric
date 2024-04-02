@@ -101,7 +101,7 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     if _cache_pol_laser_name is None:
         _cache_pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
     pol_laser_name = _cache_pol_laser_name
-    _macro_pulse_list(pol_laser_name, pol_coords_list, "polarize", pol_duration_ns)
+    _macro_pulse_list(pol_laser_name, pol_coords_list, "charge_pol", pol_duration_ns)
 
     # MCC
     # Spin polarization with widefield yellow
@@ -109,7 +109,7 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     readout_laser_el = get_laser_mod_element(readout_laser_name)
     buffer = get_widefield_operation_buffer()
     qua.align()
-    qua.play("spin_polarize", readout_laser_el)
+    qua.play("spin_pol", readout_laser_el)
     qua.wait(buffer, readout_laser_el)
 
 
@@ -133,7 +133,7 @@ def macro_ionize(
         _cache_ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
     ion_laser_name = _cache_ion_laser_name
     if ion_pulse_type is IonPulseType.ION:
-        pulse_name = "ionize"
+        pulse_name = "ion"
     elif ion_pulse_type is IonPulseType.SCC:
         pulse_name = "scc"
     _macro_pulse_list(ion_laser_name, ion_coords_list, pulse_name, ion_duration_ns)
@@ -148,7 +148,7 @@ def macro_charge_state_readout(readout_duration_ns=None):
         )
     readout_laser_el = _cache_charge_readout_laser_el_sticky
 
-    camera_el = f"do_camera_trigger"
+    camera_el = "do_camera_trigger"
 
     default_duration = get_default_pulse_duration()
     if readout_duration_ns is not None:
@@ -176,7 +176,12 @@ def macro_wait_for_trigger():
     qua.wait_for_trigger(dummy_element)
 
 
-def turn_on_aods(laser_names=None, pulse_suffix=None, amps=None):
+def _get_default_aod_suffix(laser_name):
+    config = common.get_config_dict()
+    return config["Optics"][laser_name]["default_aod_suffix"]
+
+
+def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
     """Turn on the AODs. They'll run indefinitely. Use pulse_suffix to run a pulse
     with a different power, etc"""
     global _cache_aod_laser_names
@@ -194,9 +199,19 @@ def turn_on_aods(laser_names=None, pulse_suffix=None, amps=None):
 
     num_lasers = len(laser_names)
 
-    pulse_name = "aod_cw"
-    if pulse_suffix is not None:
-        pulse_name = f"{pulse_name}-{pulse_suffix}"
+    # Adjust the pulse names for the passed suffices - defaults in the config
+    base_pulse_name = "aod_cw"
+    pulse_names = []
+    if aod_suffices is None:
+        aod_suffices = [_get_default_aod_suffix(el) for el in laser_names]
+    pulse_names = []
+    for ind in range(num_lasers):
+        suffix = aod_suffices[ind]
+        if not suffix:
+            laser_name = laser_names[ind]
+            suffix = _get_default_aod_suffix(laser_name)
+        pulse_name = f"{base_pulse_name}-{suffix}"
+        pulse_names.append(pulse_name)
 
     ### Actual commands here
 
@@ -206,6 +221,7 @@ def turn_on_aods(laser_names=None, pulse_suffix=None, amps=None):
         laser_name = laser_names[ind]
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
+        pulse_name = pulse_names[ind]
 
         qua.ramp_to_zero(x_el)
         qua.ramp_to_zero(y_el)

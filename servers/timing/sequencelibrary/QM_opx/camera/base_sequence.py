@@ -88,7 +88,7 @@ def get_seq(
         seq_utils.turn_on_aods()
 
         def one_exp(exp_ind):
-            # Charge polarization with green
+            # Charge polarization with green, spin polarization with yellow
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
             # Custom macro for the microwave sequence here
