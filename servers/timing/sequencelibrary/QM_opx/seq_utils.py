@@ -9,6 +9,7 @@ Created June 25th, 2023
 
 import logging
 import time
+from functools import lru_cache
 
 from qm import qua
 
@@ -16,19 +17,7 @@ from utils import common
 from utils import tool_belt as tb
 from utils.constants import CollectionMode, IonPulseType, LaserKey, ModMode
 
-### Cached values
-_cache_pol_laser_name = None
-_cache_ion_laser_name = None
-_cache_charge_readout_laser_el_sticky = None
-_cache_aod_laser_names = None
-_cache_default_charge_readout_duration = None
-_cache_default_pulse_duration = None
-_cache_aod_access_time = None
-_cache_widefield_operation_buffer = None
-_cache_num_sig_gens = 2
-_cache_sig_gen_elements = [None] * _cache_num_sig_gens
-_cache_iq_mod_elements = [None] * _cache_num_sig_gens
-_cache_rabi_periods = [None] * _cache_num_sig_gens
+# Cached QUA variables to save on declaring variables more than we have to
 _cache_x_freq = None
 _cache_y_freq = None
 
@@ -97,10 +86,7 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     pol_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    global _cache_pol_laser_name
-    if _cache_pol_laser_name is None:
-        _cache_pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
-    pol_laser_name = _cache_pol_laser_name
+    pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
     _macro_pulse_list(pol_laser_name, pol_coords_list, "charge_pol", pol_duration_ns)
 
     # MCC
@@ -128,10 +114,7 @@ def macro_ionize(
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    global _cache_ion_laser_name
-    if _cache_ion_laser_name is None:
-        _cache_ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
-    ion_laser_name = _cache_ion_laser_name
+    ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
     if ion_pulse_type is IonPulseType.ION:
         pulse_name = "ion"
     elif ion_pulse_type is IonPulseType.SCC:
@@ -139,14 +122,53 @@ def macro_ionize(
     _macro_pulse_list(ion_laser_name, ion_coords_list, pulse_name, ion_duration_ns)
 
 
-def macro_charge_state_readout(readout_duration_ns=None):
-    global _cache_charge_readout_laser_el_sticky
-    if _cache_charge_readout_laser_el_sticky is None:
-        readout_laser_name = tb.get_laser_name(LaserKey.CHARGE_READOUT)
-        _cache_charge_readout_laser_el_sticky = get_laser_mod_element(
-            readout_laser_name, sticky=True
+def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
+    """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
+    Pulses are applied in series
+
+    Parameters
+    ----------
+    ion_laser_name : str
+        Name of ionitization laser
+    ion_duration_ns : numeric
+        Duration of the pulse in ns
+    ion_coords_list : list(coordinate pairs)
+        List of coordinate pairs to target
+    """
+    ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
+    shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
+    macro_multi_pulse(
+        laser_name_list,
+        coords_list,
+        pulse_name_list,
+        duration_ns_list=None,
+        convert_to_Hz=True,
+    )
+
+    ##############
+
+    # Unpack the coords and convert to Hz
+    x_coords_list = [int(el[0] * 10**6) for el in coords_list]
+    y_coords_list = [int(el[1] * 10**6) for el in coords_list]
+
+    # These are declared in turn_on_aods
+    global _cache_x_freq
+    global _cache_y_freq
+
+    qua.align()
+    with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
+        macro_multi_pulse(
+            laser_name,
+            (_cache_x_freq, _cache_y_freq),
+            pulse_name=pulse_name,
+            duration_ns=duration_ns,
+            convert_to_Hz=False,
         )
-    readout_laser_el = _cache_charge_readout_laser_el_sticky
+
+
+def macro_charge_state_readout(readout_duration_ns=None):
+    readout_laser_name = tb.get_laser_name(LaserKey.CHARGE_READOUT)
+    readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
 
     camera_el = "do_camera_trigger"
 
@@ -184,18 +206,15 @@ def _get_default_aod_suffix(laser_name):
 def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
     """Turn on the AODs. They'll run indefinitely. Use pulse_suffix to run a pulse
     with a different power, etc"""
-    global _cache_aod_laser_names
     # By default search the config for the lasers with AOD
     if laser_names is None:
-        if _cache_aod_laser_names is None:
-            config = common.get_config_dict()
-            config_optics = config["Optics"]
-            optics_keys = config_optics.keys()
-            _cache_aod_laser_names = []
-            for key in optics_keys:
-                if "aod" in config_optics[key] and config_optics[key]["aod"]:
-                    _cache_aod_laser_names.append(key)
-        laser_names = _cache_aod_laser_names
+        config = common.get_config_dict()
+        config_optics = config["Optics"]
+        optics_keys = config_optics.keys()
+        laser_names = []
+        for key in optics_keys:
+            if "aod" in config_optics[key] and config_optics[key]["aod"]:
+                laser_names.append(key)
 
     num_lasers = len(laser_names)
 
@@ -273,6 +292,32 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
 def macro_pulse(
     laser_name, coords, pulse_name="on", duration_ns=None, convert_to_Hz=True
 ):
+    qua.align()
+    _macro_single_pulse(laser_name, coords, pulse_name, duration_ns, convert_to_Hz)
+
+
+def macro_multi_pulse(
+    laser_name_list,
+    coords_list,
+    pulse_name_list,
+    duration_ns_list=None,
+    convert_to_Hz=True,
+):
+    num_pulses = len(laser_name_list)
+
+    qua.align()
+
+    for ind in range(num_pulses):
+        laser_name = laser_name_list[ind]
+        coords = coords_list[ind]
+        pulse_name = pulse_name_list[ind]
+        duration_ns = duration_ns_list[ind]
+        _macro_single_pulse(laser_name, coords, pulse_name, duration_ns, convert_to_Hz)
+
+
+def _macro_single_pulse(
+    laser_name, coords, pulse_name="on", duration_ns=None, convert_to_Hz=True
+):
     # Setup
     laser_el = get_laser_mod_element(laser_name)
     x_el = f"ao_{laser_name}_x"
@@ -284,8 +329,6 @@ def macro_pulse(
 
     if convert_to_Hz:
         coords = [int(el * 10**6) for el in coords]
-
-    qua.align()
 
     qua.play("continue", x_el)
     qua.play("continue", y_el)
@@ -299,8 +342,6 @@ def macro_pulse(
     elif duration > 0:
         qua.play(pulse_name, laser_el, duration=duration)
     qua.wait(buffer, laser_el)
-
-    qua.align([x_el, y_el, laser_el])
 
 
 # endregion
@@ -320,35 +361,22 @@ def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
 
 
 def get_default_charge_readout_duration():
-    global _cache_default_charge_readout_duration
-    if _cache_default_charge_readout_duration is None:
-        readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
-        readout_duration_ns = readout_laser_dict["duration"]
-        _cache_default_charge_readout_duration = convert_ns_to_cc(readout_duration_ns)
-    return _cache_default_charge_readout_duration
+    readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
+    readout_duration_ns = readout_laser_dict["duration"]
+    return convert_ns_to_cc(readout_duration_ns)
 
 
 def get_default_pulse_duration():
     """Get the default OPX pulse duration in units of clock cycles"""
-    global _cache_default_pulse_duration
-    if _cache_default_pulse_duration is None:
-        _cache_default_pulse_duration = get_common_duration_cc("default_pulse_duration")
-    return _cache_default_pulse_duration
+    return get_common_duration_cc("default_pulse_duration")
 
 
 def get_aod_access_time():
-    global _cache_aod_access_time
-    if _cache_aod_access_time is None:
-        _cache_aod_access_time = get_common_duration_cc("aod_access_time")
-    return _cache_aod_access_time
+    return get_common_duration_cc("aod_access_time")
 
 
 def get_widefield_operation_buffer():
-    global _cache_widefield_operation_buffer
-    if _cache_widefield_operation_buffer is None:
-        val = get_common_duration_cc("widefield_operation_buffer")
-        _cache_widefield_operation_buffer = val
-    return _cache_widefield_operation_buffer
+    return get_common_duration_cc("widefield_operation_buffer")
 
 
 def get_common_duration_cc(key):
@@ -374,37 +402,31 @@ def get_laser_mod_element(laser_name, sticky=False):
 
 
 def get_sig_gen_element(uwave_ind=0):
-    global _cache_sig_gen_elements
-    if _cache_sig_gen_elements[uwave_ind] is None:
-        config = common.get_config_dict()
-        sig_gen_element = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
-        _cache_sig_gen_elements[uwave_ind] = sig_gen_element
-    sig_gen_name = _cache_sig_gen_elements[uwave_ind]
-    return f"do_{sig_gen_name}_dm"
+    config = common.get_config_dict()
+    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    sig_gen_element = f"do_{sig_gen_name}_dm"
+    return sig_gen_element
 
 
 def get_iq_mod_elements(uwave_ind=0):
-    global _cache_iq_mod_elements
-    if _cache_iq_mod_elements[uwave_ind] is None:
-        config = common.get_config_dict()
-        sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
-        i_el = f"ao_{sig_gen_name}_i"
-        q_el = f"ao_{sig_gen_name}_q"
-        _cache_iq_mod_elements[uwave_ind] = (i_el, q_el)
-    i_el, q_el = _cache_iq_mod_elements[uwave_ind]
+    config = common.get_config_dict()
+    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    i_el = f"ao_{sig_gen_name}_i"
+    q_el = f"ao_{sig_gen_name}_q"
     return i_el, q_el
 
 
+@lru_cache
 def get_rabi_period(uwave_ind=0):
-    global _cache_rabi_periods
-    if _cache_rabi_periods[uwave_ind] is None:
-        config = common.get_config_dict()
-        rabi_period_ns = config["Microwaves"][f"sig_gen_{uwave_ind}"]["rabi_period"]
-        _cache_rabi_periods[uwave_ind] = convert_ns_to_cc(rabi_period_ns)
-    rabi_period = _cache_rabi_periods[uwave_ind]
+    config = common.get_config_dict()
+    rabi_period_ns = config["Microwaves"][f"sig_gen_{uwave_ind}"]["rabi_period"]
+    rabi_period = convert_ns_to_cc(rabi_period_ns)
     return rabi_period
 
 
 if __name__ == "__main__":
-    print(get_widefield_operation_buffer())
-    print(get_widefield_operation_buffer())
+    start = time.time()
+    for ind in range(1000):
+        get_rabi_period()
+    stop = time.time()
+    print(stop - start)

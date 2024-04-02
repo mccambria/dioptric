@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from majorroutines.widefield import (
+    calibrate_green_red_delay,
     calibrate_iq_delay,
     charge_state_histograms,
     correlation_test,
@@ -156,9 +157,20 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
         print(f"{r_opti_coords},")
 
 
-def do_optimize_widefield_calibration():
-    with common.labrad_connect() as cxn:
-        optimize.optimize_widefield_calibration(cxn)
+def do_calibrate_green_red_delay():
+    cxn = common.labrad_connect()
+    pulse_gen = cxn.QM_opx
+
+    seq_file = "calibrate_green_red_delay.py"
+
+    seq_args = [2000]
+    seq_args_string = tb.encode_seq_args(seq_args)
+    num_reps = -1
+
+    pulse_gen.stream_immediate(seq_file, seq_args_string, num_reps)
+
+    input("Press enter to stop...")
+    pulse_gen.halt()
 
 
 def do_optimize_scc(nv_list):
@@ -549,7 +561,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.182
+    z_coord = 4.03
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -693,21 +705,21 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-        # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+7, -3])
+        pos.reset_drift()  # Reset z drift
+        # widefield.set_pixel_drift([+7, -2])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.0, 5.0, 11):
+        # for z in np.linspace(4.0, 4.3, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -764,8 +776,9 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
-        do_crosstalk_check(nv_sig)
+        # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
+        # do_calibrate_green_red_delay()
 
     # region Cleanup
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Functions, etc to be used mainly by other utils. If you're running into
-a circular reference in utils, put the problem code here. 
+a circular reference in utils, put the problem code here.
 
 Created September 10th, 2021
 
@@ -14,16 +14,22 @@ import json
 import platform
 import socket
 import sys
+import time
 from pathlib import Path
 
 import labrad
 import numpy as np
 
 global_cxn = None
-_cache_config_copy = None
+_cache_config = None
 
 
 def get_config_module(pc_name=None, reload=False):
+    # If this is the default call (no args), just return the cached value
+    global _cache_config
+    if pc_name is None and not reload and _cache_config is not None:
+        return _cache_config
+
     if pc_name is None:
         pc_name = socket.gethostname()
     pc_name = pc_name.lower()
@@ -35,10 +41,16 @@ def get_config_module(pc_name=None, reload=False):
         module = importlib.import_module(module_name)
     if reload:
         module = importlib.reload(module)
+
+    # Cache the result of the default call for next time
+    if pc_name is None:
+        _cache_config = module
+
     return module
 
 
 def get_config_dict(pc_name=None, reload=False):
+    global _cache_
     module = get_config_module(pc_name, reload)
     return module.config
 
@@ -183,4 +195,8 @@ def _labrad_populate_config_dict(cxn, reg_path, dict_to_populate):
 # endregion
 
 if __name__ == "__main__":
-    print(_labrad_get_config_dict())
+    start = time.time()
+    for ind in range(1000):
+        get_config_dict()
+    stop = time.time()
+    print(stop - start)

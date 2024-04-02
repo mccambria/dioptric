@@ -47,6 +47,7 @@ class LaserKey(Enum):
     WIDEFIELD_IMAGING = auto()
     IONIZATION = auto()
     POLARIZATION = auto()  # Charge / spin state polarization
+    SHELVING = auto()  # Charge / spin state polarization
     SPIN_READOUT = auto()  # Standard spin readout
     CHARGE_READOUT = auto()  # Readout of the charge state
 
