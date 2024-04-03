@@ -18,9 +18,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 def get_seq(
     pol_coords_list,
-    repol_coords_list,
     ion_coords_list,
-    uwave_ind,
     uwave_macro,
     step_vals=None,
     num_reps=1,
@@ -84,7 +82,6 @@ def get_seq(
 
         def one_exp(exp_ind):
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
-            seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
             uwave_macro[exp_ind](step_val)
             seq_utils.macro_scc(ion_coords_list, ion_duration_ns, pol_coords_list)
             seq_utils.macro_charge_state_readout(readout_duration_ns)

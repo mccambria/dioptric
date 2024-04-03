@@ -98,8 +98,9 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     """
 
     pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
-    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=["charge_pol"])
-    _macro_pulse_list(pol_laser_name, pol_coords_list, "charge_pol", pol_duration_ns)
+    pulse_name = "charge_pol"
+    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
+    _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration_ns)
 
     # MCC
     # Spin polarization with widefield yellow
@@ -109,6 +110,20 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     qua.align()
     qua.play("spin_pol", readout_laser_el)
     qua.wait(buffer, readout_laser_el)
+
+
+def macro_anticorrelate(repol_coords_list, uwave_ind):
+    sig_gen_el = get_sig_gen_element(uwave_ind)
+    buffer = get_widefield_operation_buffer()
+    pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
+    pulse_name = "spin_pol"
+
+    qua.align()
+    qua.play("pi_pulse", sig_gen_el)
+    qua.wait(buffer, sig_gen_el)
+
+    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
+    _macro_pulse_list(pol_laser_name, repol_coords_list, pulse_name)
 
 
 def macro_ionize(ion_coords_list, ion_duration_ns=None):

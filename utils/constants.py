@@ -47,14 +47,21 @@ class CountFormat(Enum):
     RAW = auto()  # Just the raw number of counts
 
 
+# Laser keys describe virtual lasers, which accomplish one and only one function and
+# must be associated with a physical laser in config
 class LaserKey(Enum):
-    IMAGING = auto()  # Basic imaging
-    WIDEFIELD_IMAGING = auto()
-    IONIZATION = auto()
-    POLARIZATION = auto()  # Charge / spin state polarization
-    SHELVING = auto()  # Charge / spin state polarization
+    # Scanning mode functions
+    IMAGING = auto()
+    ION = auto()
+    SCC = auto()
+    CHARGE_POL = auto()
+    SPIN_POL = auto()
+    SHELVING = auto()
     SPIN_READOUT = auto()  # Standard spin readout
-    CHARGE_READOUT = auto()  # Readout of the charge state
+    # Widefield mode functions
+    WIDEFIELD_IMAGING = auto()
+    WIDEFIELD_CHARGE_READOUT = auto()
+    WIDEFIELD_SPIN_POL = auto()
 
 
 class LaserPosMode(Enum):

@@ -21,6 +21,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 def get_seq(
     pol_coords_list,
+    repol_coords_list,
     ion_coords_list,
     uwave_ind,
     step_vals=None,
@@ -43,15 +44,18 @@ def get_seq(
     uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, allow_zero=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
+    no_uwave = isinstance(uwave_duration, int) and uwave_duration == 0
+
     def uwave_macro_sig(step_val):
+        seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
+        qua.align()
         if uwave_duration is None:
             qua.play("pi_pulse", sig_gen_el)
             # if phase is not None:
             #     qua.play("pi_pulse", i_el)
             #     qua.play("pi_pulse", q_el)
-        else:
-            if uwave_duration != 0:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
+        elif no_uwave:
+            qua.play("on", sig_gen_el, duration=uwave_duration)
         qua.wait(buffer, sig_gen_el)
 
     seq = base_sequence.get_seq(
