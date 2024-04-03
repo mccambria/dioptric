@@ -308,6 +308,13 @@ def get_base_scc_seq_args(nv_list):
         pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift) for nv in nv_list
     ]
 
+    # Re-polarization for anticorrelation experiments
+    repol_coords_list = [
+        pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift)
+        for nv in nv_list
+        if not nv.init_spin_flipped
+    ]
+
     # Ionization
     ion_laser = tb.get_laser_name(LaserKey.IONIZATION)
     drift = pos.get_drift(ion_laser)
@@ -315,7 +322,7 @@ def get_base_scc_seq_args(nv_list):
         pos.get_nv_coords(nv, coords_key=ion_laser, drift=drift) for nv in nv_list
     ]
 
-    seq_args = [pol_coords_list, ion_coords_list]
+    seq_args = [pol_coords_list, repol_coords_list, ion_coords_list]
     return seq_args
 
 
