@@ -17,7 +17,7 @@ from utils import tool_belt as tb
 from utils.constants import IonPulseType, LaserKey
 
 
-def get_seq(pol_coords_list, ion_coords_list, num_reps):
+def get_seq(pol_coords, ion_coords, num_reps):
     if num_reps is None:
         num_reps = 1
 
@@ -33,10 +33,10 @@ def get_seq(pol_coords_list, ion_coords_list, num_reps):
 
         def one_rep():
             # Charge polarization with green, spin polarization with yellow
-            seq_utils.macro_polarize(pol_coords_list)
+            seq_utils.macro_polarize([pol_coords])
 
             # Ionization
-            seq_utils.macro_ionize(ion_coords_list, ion_pulse_type=ion_pulse_type)
+            seq_utils.macro_ionize([ion_coords], ion_pulse_type=ion_pulse_type)
 
             # Readout
             seq_utils.macro_charge_state_readout()

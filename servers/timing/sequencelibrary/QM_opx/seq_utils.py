@@ -7,19 +7,20 @@ Created June 25th, 2023
 @author: mccambria
 """
 
-import logging
 import time
-from functools import lru_cache
+from functools import cache
 
 from qm import qua
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, IonPulseType, LaserKey, ModMode
+from utils.constants import IonPulseType, LaserKey, ModMode
 
 # Cached QUA variables to save on declaring variables more than we have to
 _cache_x_freq = None
 _cache_y_freq = None
+_cache_x_freq_2 = None
+_cache_y_freq_2 = None
 
 
 # region QUA macros
@@ -32,8 +33,12 @@ def init_cache():
     """
     global _cache_x_freq
     global _cache_y_freq
+    global _cache_x_freq_2
+    global _cache_y_freq_2
     _cache_x_freq = qua.declare(int)
     _cache_y_freq = qua.declare(int)
+    _cache_x_freq_2 = qua.declare(int)
+    _cache_y_freq_2 = qua.declare(int)
 
 
 def handle_reps(
@@ -135,33 +140,40 @@ def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
     shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
-    macro_multi_pulse(
-        laser_name_list,
-        coords_list,
-        pulse_name_list,
-        duration_ns_list=None,
-        convert_to_Hz=True,
-    )
-
-    ##############
+    ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
+    laser_name_list = [shelving_laser_name, ion_laser_name]
+    pulse_name_list = ["shelving", "scc"]
+    shelving_laser_dict = tb.get_laser_dict(LaserKey.SHELVING)
+    shelving_pulse_duration = shelving_laser_dict["duration"]
+    delays = [0, shelving_pulse_duration + 8]
 
     # Unpack the coords and convert to Hz
-    x_coords_list = [int(el[0] * 10**6) for el in coords_list]
-    y_coords_list = [int(el[1] * 10**6) for el in coords_list]
+    x_shelving_coords_list = [int(el[0] * 10**6) for el in shelving_coords_list]
+    y_shelving_coords_list = [int(el[1] * 10**6) for el in shelving_coords_list]
+    x_ion_coords_list = [int(el[0] * 10**6) for el in ion_coords_list]
+    y_ion_coords_list = [int(el[1] * 10**6) for el in ion_coords_list]
 
     # These are declared in turn_on_aods
     global _cache_x_freq
     global _cache_y_freq
+    global _cache_x_freq_2
+    global _cache_y_freq_2
+    freq_vars = (_cache_x_freq, _cache_y_freq, _cache_x_freq_2, _cache_y_freq_2)
+    freq_lists = (
+        x_shelving_coords_list,
+        y_shelving_coords_list,
+        x_ion_coords_list,
+        y_ion_coords_list,
+    )
 
     qua.align()
-    with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
+    with qua.for_each_(freq_vars, freq_lists):
         macro_multi_pulse(
-            laser_name,
-            (_cache_x_freq, _cache_y_freq),
-            pulse_name=pulse_name,
-            duration_ns=duration_ns,
+            laser_name_list,
+            ((_cache_x_freq, _cache_y_freq), (_cache_x_freq_2, _cache_y_freq_2)),
+            pulse_name_list,
+            delays=delays,
             convert_to_Hz=False,
         )
 
@@ -293,7 +305,9 @@ def macro_pulse(
     laser_name, coords, pulse_name="on", duration_ns=None, convert_to_Hz=True
 ):
     qua.align()
-    _macro_single_pulse(laser_name, coords, pulse_name, duration_ns, convert_to_Hz)
+    _macro_single_pulse(
+        laser_name, coords, pulse_name, duration_ns, convert_to_Hz=convert_to_Hz
+    )
 
 
 def macro_multi_pulse(
@@ -301,22 +315,30 @@ def macro_multi_pulse(
     coords_list,
     pulse_name_list,
     duration_ns_list=None,
+    delays=None,
     convert_to_Hz=True,
 ):
     num_pulses = len(laser_name_list)
+    if delays is None:
+        delays = [0 for ind in range(num_pulses)]
+    if duration_ns_list is None:
+        duration_ns_list = [None for ind in range(num_pulses)]
 
     qua.align()
-
     for ind in range(num_pulses):
+        # for ind in [1]:
         laser_name = laser_name_list[ind]
         coords = coords_list[ind]
         pulse_name = pulse_name_list[ind]
         duration_ns = duration_ns_list[ind]
-        _macro_single_pulse(laser_name, coords, pulse_name, duration_ns, convert_to_Hz)
+        delay = delays[ind]
+        _macro_single_pulse(
+            laser_name, coords, pulse_name, duration_ns, delay, convert_to_Hz
+        )
 
 
 def _macro_single_pulse(
-    laser_name, coords, pulse_name="on", duration_ns=None, convert_to_Hz=True
+    laser_name, coords, pulse_name="on", duration_ns=None, delay=0, convert_to_Hz=True
 ):
     # Setup
     laser_el = get_laser_mod_element(laser_name)
@@ -336,7 +358,7 @@ def _macro_single_pulse(
     qua.update_frequency(y_el, coords[1])
 
     # Pulse the laser
-    qua.wait(access_time + buffer, laser_el)
+    qua.wait(access_time + buffer + delay, laser_el)
     if duration is None:
         qua.play(pulse_name, laser_el)
     elif duration > 0:
@@ -360,6 +382,7 @@ def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
     return round(duration_ns / 4)
 
 
+@cache
 def get_default_charge_readout_duration():
     readout_laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
     readout_duration_ns = readout_laser_dict["duration"]
@@ -379,12 +402,14 @@ def get_widefield_operation_buffer():
     return get_common_duration_cc("widefield_operation_buffer")
 
 
+@cache
 def get_common_duration_cc(key):
     common_duration_ns = tb.get_common_duration(key)
     common_duration_cc = convert_ns_to_cc(common_duration_ns)
     return common_duration_cc
 
 
+@cache
 def get_laser_mod_element(laser_name, sticky=False):
     config = common.get_config_dict()
     mod_mode = config["Optics"][laser_name]["mod_mode"]
@@ -401,6 +426,7 @@ def get_laser_mod_element(laser_name, sticky=False):
     return laser_mod_element
 
 
+@cache
 def get_sig_gen_element(uwave_ind=0):
     config = common.get_config_dict()
     sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
@@ -408,6 +434,7 @@ def get_sig_gen_element(uwave_ind=0):
     return sig_gen_element
 
 
+@cache
 def get_iq_mod_elements(uwave_ind=0):
     config = common.get_config_dict()
     sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
@@ -416,7 +443,7 @@ def get_iq_mod_elements(uwave_ind=0):
     return i_el, q_el
 
 
-@lru_cache
+@cache
 def get_rabi_period(uwave_ind=0):
     config = common.get_config_dict()
     rabi_period_ns = config["Microwaves"][f"sig_gen_{uwave_ind}"]["rabi_period"]

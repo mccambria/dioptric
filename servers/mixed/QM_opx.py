@@ -69,8 +69,13 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.qmm = QuantumMachinesManager(**qm_opx_args)
 
         self.running_job = None
-        self.opx_config = None
-        self.update_config(None)
+
+        self.opx_config = common.get_opx_config_dict()
+        self.opx = self.qmm.open_qm(self.opx_config)
+
+        # Sequence tracking variables to prevent redundant compiles of sequences
+        self.program_id = None
+        self.compiled_programs = {}
 
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
@@ -93,21 +98,21 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.qmm.close_all_quantum_machines()
         self.qmm.close()
 
-    @setting(41)
-    def update_config(self, c):
-        self.reset(None)
+    # @setting(41)
+    # def update_config(self, c):
+    #     self.reset(None)
 
-        # Get the latest config
-        new_config = common.get_opx_config_dict(reload=True)
+    #     # Get the latest config
+    #     new_config = common.get_opx_config_dict(reload=True)
 
-        # Only go through with the update if it's necessary
-        if new_config != self.opx_config:
-            self.opx_config = new_config
-            self.opx = self.qmm.open_qm(self.opx_config)
+    #     # Only go through with the update if it's necessary
+    #     if new_config != self.opx_config:
+    #         self.opx_config = new_config
+    #         self.opx = self.qmm.open_qm(self.opx_config)
 
-            # Sequence tracking variables to prevent redundant compiles of sequences
-            self.program_id = None
-            self.compiled_programs = {}
+    #         # Sequence tracking variables to prevent redundant compiles of sequences
+    #         self.program_id = None
+    #         self.compiled_programs = {}
 
     # endregion
     # region Sequencing

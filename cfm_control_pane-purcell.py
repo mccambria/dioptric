@@ -561,7 +561,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.03
+    z_coord = 4.046
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -621,28 +621,28 @@ if __name__ == "__main__":
     # region Coords (smiley)
 
     pixel_coords_list = [
-        [125.148, 126.223],
-        [143.115, 117.306],
-        [155.622, 102.253],
-        [167.745, 75.297],
-        [165.326, 46.065],
-        [151.964, 31.064],
+        [142.851, 193.093],
+        [161.181, 184.12],
+        [173.95, 169.448],
+        [186.133, 142.627],
+        [183.492, 113.143],
+        [170.196, 98.414],
     ]
     green_coords_list = [
-        [108.297, 110.366],
-        [108.639, 110.657],
-        [108.886, 111.015],
-        [109.108, 111.702],
-        [109.035, 112.349],
-        [108.739, 112.709],
+        [108.712, 108.84],
+        [109.137, 109.074],
+        [109.363, 109.421],
+        [109.587, 110.096],
+        [109.532, 110.746],
+        [109.22, 111.088],
     ]
     red_coords_list = [
-        [73.176, 75.359],
-        [73.491, 75.519],
-        [73.768, 75.817],
-        [74.056, 76.212],
-        [73.875, 76.892],
-        [73.695, 77.129],
+        [73.62, 74.141],
+        [73.813, 74.268],
+        [74.074, 74.529],
+        [74.37, 75.109],
+        [74.26, 75.662],
+        [74.009, 75.891],
     ]
 
     # endregion
@@ -667,7 +667,8 @@ if __name__ == "__main__":
     nv_list[0].expected_counts = 4800
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    # nv_list = [nv_list[0]]
+    # nv_inds = [0, 2, 3]
+    # nv_list = [nv_list[ind] for ind in nv_inds]
 
     # endregion
 
@@ -705,8 +706,8 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-        pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+7, -2])
+        # pos.reset_drift()  # Reset z drift
+        # widefield.set_pixel_drift([+16, +66])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -719,7 +720,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -736,8 +737,8 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_pixel(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -745,7 +746,7 @@ if __name__ == "__main__":
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
         # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=True)
+        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # num_nvs = len(nv_list)
         # for ind in range(num_nvs):
@@ -774,7 +775,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
