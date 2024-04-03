@@ -79,36 +79,15 @@ def get_seq(
 
         uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
-    # uwave_macro = uwave_macro[::-1]  # MCC
-
-    buffer = seq_utils.get_widefield_operation_buffer()
-
-    green_laser = tb.get_laser_name(LaserKey.POLARIZATION)
-    red_laser = tb.get_laser_name(LaserKey.IONIZATION)
 
     with qua.program() as seq:
-        seq_utils.init_cache()
+        seq_utils.init()
 
         def one_exp(exp_ind):
-            seq_utils.turn_on_aods()
-
-            # Charge polarization with green, spin polarization with yellow
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
-
-            # Custom macro for the microwave sequence here
-            qua.align()
-            exp_uwave_macro = uwave_macro[exp_ind]
-            # exp_uwave_macro(*uwave_macro_args)
-            exp_uwave_macro(step_val)
-
-            seq_utils.turn_on_aods([green_laser], aod_suffices=["shelving"])
-
-            # Ionization
-            seq_utils.macro_scc(pol_coords_list, ion_coords_list)
-
-            # Readout
+            uwave_macro[exp_ind](step_val)
+            seq_utils.macro_scc(pol_coords_list, ion_coords_list, ion_duration_ns)
             seq_utils.macro_charge_state_readout(readout_duration_ns)
-
             seq_utils.macro_wait_for_trigger()
 
         def one_rep():
@@ -117,11 +96,7 @@ def get_seq(
 
         def one_step():
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-
-            # Make sure everything is off before pausing for the next step
-            qua.align()
-            qua.wait(buffer)
-            qua.pause()
+            seq_utils.pause()
 
         step_val = qua.declare(qua.fixed)
         if step_vals is None:

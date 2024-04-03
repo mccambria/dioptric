@@ -21,16 +21,17 @@ _cache_x_freq = None
 _cache_y_freq = None
 _cache_x_freq_2 = None
 _cache_y_freq_2 = None
+_cache_turn_on_aods = None
 
 
 # region QUA macros
 
 
-def init_cache():
+def init():
     """
-    Call this as the first command in a program to declare cached qua variables.
-    Helps with compile times by avoiding unnecessary repetitive declare calls
+    This should be the first command we call in any sequence
     """
+    # Declare cached QUA variables (helps reduce compile times)
     global _cache_x_freq
     global _cache_y_freq
     global _cache_x_freq_2
@@ -39,6 +40,10 @@ def init_cache():
     _cache_y_freq = qua.declare(int)
     _cache_x_freq_2 = qua.declare(int)
     _cache_y_freq_2 = qua.declare(int)
+
+    global _cache_turn_on_aods
+    _cache_turn_on_aods = None
+    turn_on_aods()
 
 
 def handle_reps(
@@ -91,7 +96,9 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     pol_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
+
     pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
+    turn_on_aods(laser_names=[pol_laser_name], aod_suffices=["charge_pol"])
     _macro_pulse_list(pol_laser_name, pol_coords_list, "charge_pol", pol_duration_ns)
 
     # MCC
@@ -120,6 +127,7 @@ def macro_ionize(
         List of coordinate pairs to target
     """
     ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
+    turn_on_aods([ion_laser_name], aod_suffices=["ionize"])
     if ion_pulse_type is IonPulseType.ION:
         pulse_name = "ion"
     elif ion_pulse_type is IonPulseType.SCC:
@@ -147,6 +155,9 @@ def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
     shelving_laser_dict = tb.get_laser_dict(LaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
     delays = [0, shelving_pulse_duration + 8]
+    duration_ns_list = [None, ion_duration_ns]
+
+    turn_on_aods(laser_name_list, aod_suffices=pulse_name_list)
 
     # Unpack the coords and convert to Hz
     x_shelving_coords_list = [int(el[0] * 10**6) for el in shelving_coords_list]
@@ -173,6 +184,7 @@ def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
             laser_name_list,
             ((_cache_x_freq, _cache_y_freq), (_cache_x_freq_2, _cache_y_freq_2)),
             pulse_name_list,
+            duration_ns_list=duration_ns_list,
             delays=delays,
             convert_to_Hz=False,
         )
@@ -210,6 +222,14 @@ def macro_wait_for_trigger():
     qua.wait_for_trigger(dummy_element)
 
 
+def macro_pause():
+    buffer = get_widefield_operation_buffer()
+    # Make sure everything is off before pausing for the next step
+    qua.align()
+    qua.wait(buffer)
+    qua.pause()
+
+
 def _get_default_aod_suffix(laser_name):
     config = common.get_config_dict()
     return config["Optics"][laser_name]["default_aod_suffix"]
@@ -244,11 +264,38 @@ def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
         pulse_name = f"{base_pulse_name}-{suffix}"
         pulse_names.append(pulse_name)
 
+    if amps is None:
+        amps = [None for el in laser_names]
+
+    ### Check if the requested pulse is already running using the cache
+
+    global _cache_turn_on_aods
+    skip_inds = []
+    for ind in range(num_lasers):
+        laser_name = laser_names[ind]
+        aod_suffix = aod_suffices[ind]
+        amp = amps[ind]
+        # Don't cache commands with amps since those may be QUA variables and so
+        # could behave unexpectedly
+        if amp is not None:
+            continue
+        if laser_name in _cache_turn_on_aods:
+            cache_dict = _cache_turn_on_aods[laser_name]
+            if cache_dict["aod_suffix"] == aod_suffix:
+                skip_inds.append(ind)
+                continue
+        # If we get here then the pulse is not already running, so cache it
+        _cache_turn_on_aods[laser_name] = {}
+        cache_dict = _cache_turn_on_aods[laser_name]
+        cache_dict["aod_suffix"] = aod_suffix
+
     ### Actual commands here
 
     qua.align()
 
     for ind in range(num_lasers):
+        if ind in skip_inds:
+            continue
         laser_name = laser_names[ind]
         x_el = f"ao_{laser_name}_x"
         y_el = f"ao_{laser_name}_y"
@@ -257,8 +304,8 @@ def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
         qua.ramp_to_zero(x_el)
         qua.ramp_to_zero(y_el)
 
-        if amps is not None:
-            amp = amps[ind]
+        amp = amps[ind]
+        if amp is not None:
             qua.play(pulse_name * qua.amp(amp), x_el)
             qua.play(pulse_name * qua.amp(amp), y_el)
         else:
@@ -389,15 +436,18 @@ def get_default_charge_readout_duration():
     return convert_ns_to_cc(readout_duration_ns)
 
 
+@cache
 def get_default_pulse_duration():
     """Get the default OPX pulse duration in units of clock cycles"""
     return get_common_duration_cc("default_pulse_duration")
 
 
+@cache
 def get_aod_access_time():
     return get_common_duration_cc("aod_access_time")
 
 
+@cache
 def get_widefield_operation_buffer():
     return get_common_duration_cc("widefield_operation_buffer")
 

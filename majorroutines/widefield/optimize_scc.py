@@ -63,11 +63,13 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Collect the data
 
-    def step_fn(tau_ind):
+    def run_fn(shuffled_step_inds):
         seq_args = widefield.get_base_scc_seq_args(nv_list)
         seq_args.append(uwave_ind)
-        tau = taus[tau_ind]
-        seq_args.append(tau)
+
+        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        seq_args.append(shuffled_taus)
+
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -76,9 +78,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         num_steps,
         num_reps,
         num_runs,
-        step_fn=step_fn,
+        run_fn=run_fn,
         uwave_ind=uwave_ind,
-        stream_load_in_run_fn=False,
     )
 
     ### Process and plot

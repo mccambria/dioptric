@@ -281,10 +281,10 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1470397379017)  # Widefield
+    data = dm.get_raw_data(file_id=1470397379017)  # Widefield
     # img_array = np.array(data["img_array"])
     # data = dm.get_raw_data(file_id=)  # Just green
-    data = dm.get_raw_data(file_id=1471456249642)  # Just green
+    # data = dm.get_raw_data(file_id=1471456249642)  # Just green
     # data = dm.get_raw_data(file_id=1470499014796)  # Single NV
     img_array = np.array(data["img_array"])
     img_array = widefield.adus_to_photons(img_array)
@@ -313,5 +313,7 @@ if __name__ == "__main__":
     #         ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
     #     )
     # ax.legend(loc=kpl.Loc.LOWER_LEFT)
+
+    kpl.draw_circle(ax, [115.365, 144.671], radius=48, linewidth=2)
 
     plt.show(block=True)

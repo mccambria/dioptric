@@ -8,23 +8,54 @@ Created on October 13th, 2023
 """
 
 import matplotlib.pyplot as plt
-from qm import QuantumMachinesManager
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
 
 
-def get_seq(pol_coords_list, ion_coords_list, uwave_ind, ion_duration_ns, num_reps):
-    return resonance_ref.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        uwave_ind,
-        step_vals=None,
-        num_reps=num_reps,
-        ion_duration_ns=ion_duration_ns,
-    )
+def get_seq(
+    pol_coords_list, ion_coords_list, uwave_ind, ion_duration_ns_list, num_reps
+):
+    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
+    buffer = seq_utils.get_widefield_operation_buffer()
+
+    def sig_exp():
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(buffer, sig_gen_el)
+
+    def ref_exp():
+        pass
+
+    uwave_macro_list = [sig_exp, ref_exp]
+    num_exps_per_rep = len(uwave_macro_list)
+
+    ion_duration_list = [seq_utils.convert_ns_to_cc(el) for el in ion_duration_ns_list]
+
+    with qua.program() as seq:
+        seq_utils.init()
+        ion_duration = qua.declare(int)
+
+        def one_exp(exp_ind):
+            seq_utils.macro_polarize(pol_coords_list)
+            uwave_macro_list[exp_ind]()
+            seq_utils.macro_scc(pol_coords_list, ion_coords_list, ion_duration)
+            seq_utils.macro_charge_state_readout()
+            seq_utils.macro_wait_for_trigger()
+
+        def one_rep():
+            for exp_ind in range(num_exps_per_rep):
+                one_exp(exp_ind)
+
+        def one_step():
+            seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+            seq_utils.pause()
+
+        with qua.for_each_(ion_duration, ion_duration_list):
+            one_step()
+
+    return seq
 
 
 if __name__ == "__main__":

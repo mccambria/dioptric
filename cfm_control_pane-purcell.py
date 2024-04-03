@@ -175,9 +175,9 @@ def do_calibrate_green_red_delay():
 
 def do_optimize_scc(nv_list):
     min_tau = 16
-    max_tau = 400
+    max_tau = 208
     num_steps = 13
-    num_reps = 15
+    num_reps = 10
     num_runs = 50
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
@@ -775,8 +775,8 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
+        do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

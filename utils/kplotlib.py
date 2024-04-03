@@ -683,7 +683,7 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, **kwargs):
 #     ax.add_artist(circle)
 
 
-def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None):
+def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidth=None):
     """Draw a circle on the passed axes
 
     Parameters
@@ -695,13 +695,15 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None):
     radius : numeric
         Radius of the circle
     """
+    if linewidth is None:
+        linewidth == radius / 4
     ax.scatter(
         *coords,
         s=(2 * radius) ** 2,
         facecolors="none",
         edgecolors=color,
         label=label,
-        linewidths=radius / 4,
+        linewidths=linewidth,
     )
 
 
