@@ -96,7 +96,7 @@ def get_seq(
 
         def one_step():
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-            seq_utils.pause()
+            seq_utils.macro_pause()
 
         step_val = qua.declare(qua.fixed)
         if step_vals is None:

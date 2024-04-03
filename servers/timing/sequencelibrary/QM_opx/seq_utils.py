@@ -198,11 +198,11 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
         )
 
 
-def _macro_scc_no_shelving(ion_coords_list, ion_duration_ns=None):
+def _macro_scc_no_shelving(ion_coords_list, ion_duration=None):
     ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
     macro_run_aods([ion_laser_name], aod_suffices=["scc"])
     ion_pulse_name = "scc"
-    _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration_ns)
+    _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -260,7 +260,8 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
         optics_keys = config_optics.keys()
         laser_names = []
         for key in optics_keys:
-            if "aod" in config_optics[key] and config_optics[key]["aod"]:
+            val = config_optics[key]
+            if isinstance(val, dict) and "aod" in val and val["aod"]:
                 laser_names.append(key)
 
     num_lasers = len(laser_names)
@@ -328,7 +329,7 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
             qua.play(pulse_name, y_el)
 
 
-def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None):
+def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration=None):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -340,8 +341,9 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
         List of coordinate pairs to target
     pulse_name : str
         Name of the pulse to play - "on" by default
-    duration_ns : numeric
-        Duration of the pulse in ns - if None, uses the default duration of the passed pulse
+    duration : numeric
+        Duration of the pulse in clock cycles (4 ns) - if None, uses the default
+        duration of the passed pulse
     """
 
     # Unpack the coords and convert to Hz
@@ -358,17 +360,15 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
             laser_name,
             (_cache_x_freq, _cache_y_freq),
             pulse_name=pulse_name,
-            duration_ns=duration_ns,
+            duration=duration,
             convert_to_Hz=False,
         )
 
 
-def macro_pulse(
-    laser_name, coords, pulse_name="on", duration_ns=None, convert_to_Hz=True
-):
+def macro_pulse(laser_name, coords, pulse_name="on", duration=None, convert_to_Hz=True):
     qua.align()
     _macro_single_pulse(
-        laser_name, coords, pulse_name, duration_ns, convert_to_Hz=convert_to_Hz
+        laser_name, coords, pulse_name, duration, convert_to_Hz=convert_to_Hz
     )
 
 

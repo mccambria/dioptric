@@ -156,8 +156,9 @@ config |= {
         LaserKey.SHELVING: {"name": "laser_INTE_520", "duration": 48},
         LaserKey.IONIZATION: {
             "name": "laser_COBO_638",
-            # "scc_duration": 120,  # 100 mW, no shelving
-            "scc_duration": 200,
+            # "scc_duration": 120,  # 100 mW, 0.19 V, no shelving
+            "scc_duration": 144,  # 180 mW, 0.13 V, no shelving
+            # "scc_duration": 200,
             "ion_duration": 1000,
         },
         LaserKey.CHARGE_READOUT: {
@@ -669,8 +670,8 @@ opx_config = {
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
         # Red AOD
         "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.17},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.17},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6

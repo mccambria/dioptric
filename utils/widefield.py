@@ -370,8 +370,12 @@ def _get_scanning_optics():
     config_optics = config["Optics"]
     scanning_optics = []
     for optic_name in config_optics:
-        optic_dict = config_optics[optic_name]
-        if "pos_mode" in optic_dict and optic_dict["pos_mode"] == LaserPosMode.SCANNING:
+        val = config_optics[optic_name]
+        if (
+            isinstance(val, dict)
+            and "pos_mode" in val
+            and val["pos_mode"] == LaserPosMode.SCANNING
+        ):
             scanning_optics.append(optic_name)
     return scanning_optics
 
