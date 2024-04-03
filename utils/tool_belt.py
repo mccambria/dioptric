@@ -20,8 +20,8 @@ import traceback
 from decimal import Decimal
 from email.mime.text import MIMEText
 from enum import Enum
+from functools import cache
 
-import keyboard
 import keyring
 import numpy as np
 from numpy import exp
@@ -206,7 +206,7 @@ def set_delays_to_zero(config):
             return
         # Check if we're at a sublevel - if so, recursively set its delay to 0
         val = config[key]
-        if type(val) is dict:
+        if isinstance(val, dict):
             set_delays_to_zero(val)
 
 
@@ -222,7 +222,7 @@ def set_delays_to_sixteen(config):
             return
         # Check if we're at a sublevel - if so, recursively set its delay to 0
         val = config[key]
-        if type(val) is dict:
+        if isinstance(val, dict):
             set_delays_to_sixteen(val)
 
 
@@ -282,7 +282,7 @@ def iq_comps(phase, amp):
     """Given the phase and amplitude of the IQ vector, calculate the I (real) and
     Q (imaginary) components
     """
-    if type(phase) is list:
+    if isinstance(phase, list):
         ret_vals = []
         for val in phase:
             ret_vals.append(np.round(amp * np.exp((0 + 1j) * val), 5))
@@ -375,8 +375,6 @@ def cosexp_1_at_0(t, offset, freq, decay):
 
 
 def sin_1_at_0_phase(t, amp, offset, freq, phase):
-    two_pi = 2 * np.pi
-    # amp = 1 - offset
     return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
 
 
@@ -567,32 +565,38 @@ def process_counts(
 # region Config getters
 
 
+@cache
 def get_apd_indices():
     "Get a list of the APD indices in use from the config"
     config_dict = common.get_config_dict()
     return config_dict["apd_indices"]
 
 
+@cache
 def get_apd_gate_channel():
     config_dict = common.get_config_dict()
     return config_dict["Wiring"]["Tagger"]["di_apd_gate"]
 
 
+@cache
 def get_common_duration(key):
     config = common.get_config_dict()
     common_duration = config["CommonDurations"][key]
     return common_duration
 
 
+@cache
 def get_laser_dict(laser_key):
     config = common.get_config_dict()
     return config["Optics"][laser_key]
 
 
+@cache
 def get_laser_name(laser_key):
     return get_laser_dict(laser_key)["name"]
 
 
+@cache
 def get_uwave_dict(uwave_ind):
     config = common.get_config_dict()
     return config["Microwaves"][f"sig_gen_{uwave_ind}"]
@@ -707,10 +711,7 @@ def send_email(content, email_from=None, email_to=None):
 
 def single_conversion(single_func, freq, *args):
     if type(freq) in [list, np.ndarray]:
-        single_func_lambda = lambda freq: single_func(freq, *args)
-        # with ProcessingPool() as p:
-        #     line = p.map(single_func_lambda, freq)
-        line = np.array([single_func_lambda(f) for f in freq])
+        line = np.array([single_func(f, *args) for f in freq])
         return line
     else:
         return single_func(freq, *args)
@@ -741,18 +742,17 @@ def round_sig_figs(val, num_sig_figs):
     """
 
     # All the work is done here
-    func = lambda val, num_sig_figs: round(
-        val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
-    )
+    def sub_fn(val, num_sig_figs):
+        return round(val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1))
 
     # Check for list/array/single value
-    if type(val) is list:
-        return [func(el, num_sig_figs) for el in val]
+    if isinstance(val, list):
+        return [sub_fn(el, num_sig_figs) for el in val]
     elif type(val) is np.ndarray:
-        rounded_val_list = [func(el, num_sig_figs) for el in val.tolist()]
+        rounded_val_list = [sub_fn(el, num_sig_figs) for el in val.tolist()]
         return np.array(rounded_val_list)
     else:
-        return func(val, num_sig_figs)
+        return sub_fn(val, num_sig_figs)
 
 
 def round_for_print_sci(val, err):
@@ -933,7 +933,7 @@ def init_safe_stop():
     try:
         if SAFESTOPFLAG:
             print("\nPress CTRL + C to stop...\n")
-    except Exception as exc:
+    except Exception:
         print("\nPress CTRL + C to  stop...\n")
     SAFESTOPFLAG = False
     signal.signal(signal.SIGINT, _safe_stop_handler)

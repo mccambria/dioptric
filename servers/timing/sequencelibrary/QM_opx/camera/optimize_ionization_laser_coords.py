@@ -8,27 +8,42 @@ Created on October 13th, 2023
 """
 
 import matplotlib.pyplot as plt
-import numpy
-from qm import QuantumMachinesManager, generate_qua_script, qua
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 from utils import common
-from utils.constants import IonPulseType
+from utils import tool_belt as tb
+from utils.constants import IonPulseType, LaserKey
 
 
-def get_seq(pol_coords_list, ion_coords_list, num_reps):
-    def uwave_macro():
-        pass
+def get_seq(pol_coords, ion_coords, num_reps):
+    if num_reps is None:
+        num_reps = 1
 
-    seq = base_sequence.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        num_reps,
-        uwave_macro,
-        ion_pulse_type=IonPulseType.ION,
-    )
+    ion_pulse_type = IonPulseType.ION
+    green_laser = tb.get_laser_name(LaserKey.POLARIZATION)
+    red_laser = tb.get_laser_name(LaserKey.IONIZATION)
+
+    with qua.program() as seq:
+        seq_utils.init_cache()
+        seq_utils.turn_on_aods(
+            [green_laser, red_laser], aod_suffices=["charge_pol", "opti"]
+        )
+
+        def one_rep():
+            # Charge polarization with green, spin polarization with yellow
+            seq_utils.macro_polarize([pol_coords])
+
+            # Ionization
+            seq_utils.macro_ionize([ion_coords], ion_pulse_type=ion_pulse_type)
+
+            # Readout
+            seq_utils.macro_charge_state_readout()
+
+            seq_utils.macro_wait_for_trigger()
+
+        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

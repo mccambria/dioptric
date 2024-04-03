@@ -301,18 +301,15 @@ def get_base_scc_seq_args(nv_list):
         Sequence arguments
     """
 
-    config = common.get_config_dict()
-    optics_config = config["Optics"]
-
     # Polarization
-    pol_laser = optics_config[LaserKey.POLARIZATION]["name"]
+    pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
     drift = pos.get_drift(pol_laser)
     pol_coords_list = [
         pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift) for nv in nv_list
     ]
 
     # Ionization
-    ion_laser = optics_config[LaserKey.IONIZATION]["name"]
+    ion_laser = tb.get_laser_name(LaserKey.IONIZATION)
     drift = pos.get_drift(ion_laser)
     ion_coords_list = [
         pos.get_nv_coords(nv, coords_key=ion_laser, drift=drift) for nv in nv_list
@@ -327,12 +324,12 @@ def get_base_scc_seq_args(nv_list):
 
 
 def get_pixel_drift():
-    pixel_drift = common.get_registry_entry(["State"], "PIXEL_DRIFT")
+    pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
     return np.array(pixel_drift)
 
 
 def set_pixel_drift(drift):
-    return common.set_registry_entry(["State"], "PIXEL_DRIFT", drift)
+    return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
 
 
 def reset_pixel_drift():
@@ -589,7 +586,7 @@ def _get_camera_readout_mode():
 def _get_camera_roi():
     try:
         return _get_camera_config_val("roi")
-    except Exception as exc:
+    except Exception:
         return None
 
 

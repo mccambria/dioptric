@@ -11,6 +11,7 @@ Largely rewritten August 16th, 2023
 # region Imports and constant
 
 import copy
+import dataclasses
 import time
 
 import matplotlib.pyplot as plt
@@ -185,7 +186,7 @@ def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
 
 
 def _read_counts_camera_sequence(
-    nv_sig,
+    nv_sig: NVSig,
     laser_key,
     coords=None,
     coords_key=CoordsKey.GLOBAL,
@@ -224,7 +225,14 @@ def _read_counts_camera_sequence(
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif laser_key == LaserKey.IONIZATION:
-        seq_args = widefield.get_base_scc_seq_args([nv_sig])
+        pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
+        pol_coords = pos.get_nv_coords(nv_sig, coords_key=pol_laser)
+        if coords is None:
+            ion_laser = tb.get_laser_name(LaserKey.IONIZATION)
+            ion_coords = pos.get_nv_coords(nv_sig, coords_key=ion_laser)
+        else:
+            ion_coords = coords
+        seq_args = [pol_coords, ion_coords]
         seq_file_name = "optimize_ionization_laser_coords.py"
         num_reps = 50
     if axis_ind is None or axis_ind == 2:
@@ -251,14 +259,12 @@ def _read_counts_camera_sequence(
                 if laser_key == LaserKey.IMAGING:
                     seq_args[-2 + axis_ind] = [val]
                 elif laser_key == LaserKey.IONIZATION:
-                    seq_args[1][0][axis_ind] = val
+                    seq_args[1][axis_ind] = val
                 seq_args_string = tb.encode_seq_args(seq_args)
-                # print(seq_args)
 
                 pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
             elif axis_ind == 2:
                 axis_write_fn(val)
-                # print(val)
 
         # Read the camera images
         img_array_list = []
@@ -347,7 +353,7 @@ def _read_counts(
             pos.set_xyz(coords, coords_key)
         else:
             start_coords = np.copy(coords)
-            start_coords[axis_ind] = np.min(scan_vals)
+            start_coords[axis_ind] = scan_vals[-1]
             pos.set_xyz(start_coords, coords_key)
 
     # Assume the lasers are sequence controlled if using camera
@@ -356,26 +362,24 @@ def _read_counts(
             nv_sig, laser_key, coords, coords_key, axis_ind, scan_vals
         )
 
-    else:
+    elif collection_mode == CollectionMode.COUNTER:
+        if coords_key != CoordsKey.GLOBAL:
+            msg = "Optimization with a counter is only implemented for global coordinates."
+            raise NotImplementedError(msg)
         if laser_key != LaserKey.IMAGING:
-            raise NotImplementedError(
-                "Optimization is currently only implemented for imaging lasers."
-            )
+            msg = "Optimization with a counter is only implemented for imaging lasers."
+            raise NotImplementedError(msg)
+
         seq_file_name = "simple_readout.py"
         readout = laser_dict["duration"]
         seq_args = [delay, readout, laser_name, laser_power]
         seq_args_string = tb.encode_seq_args(seq_args)
-
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
-        if collection_mode == CollectionMode.COUNTER:
-            if control_mode == ControlMode.STEP:
-                ret_vals = _read_counts_counter_step(axis_ind, scan_vals)
-            elif control_mode == ControlMode.STREAM:
-                ret_vals = _read_counts_counter_stream(axis_ind, scan_vals)
-
-        elif collection_mode == CollectionMode.CAMERA:
-            ret_vals = _read_counts_camera_step(nv_sig, laser_key, axis_ind, scan_vals)
+        if control_mode == ControlMode.STEP:
+            ret_vals = _read_counts_counter_step(axis_ind, scan_vals)
+        elif control_mode == ControlMode.STREAM:
+            ret_vals = _read_counts_counter_stream(axis_ind, scan_vals)
 
     return ret_vals
 

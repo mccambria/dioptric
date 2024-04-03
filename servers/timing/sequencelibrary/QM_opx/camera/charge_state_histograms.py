@@ -41,6 +41,7 @@ def get_seq(
         do_ionize_ref = False
 
     with qua.program() as seq:
+        seq_utils.init_cache()
         seq_utils.turn_on_aods()
         # qua.wait(25000)
         # qua.align()

@@ -48,9 +48,6 @@ def get_seq(
     uwave_macro = [uwave_macro_sig, uwave_macro_ref]
     num_exps_per_rep = len(uwave_macro)
 
-    readout_laser_el = "ao_laser_OPTO_589_am"
-    buffer = seq_utils.get_widefield_operation_buffer()
-
     with qua.program() as seq:
         seq_utils.init_cache()
         crosstalk_x_coord = qua.declare(int)
@@ -59,7 +56,7 @@ def get_seq(
         def one_exp(exp_ind):
             seq_utils.turn_on_aods()
 
-            # Charge polarization with green
+            # Charge polarization with green, spin with yellow
             seq_utils.macro_polarize(pol_coords_list)
 
             # Custom macro for the microwave sequence here
@@ -68,7 +65,11 @@ def get_seq(
             exp_uwave_macro()
 
             if laser_name == tb.get_laser_name(LaserKey.POLARIZATION):
-                pulse_name = "polarize"
+                seq_utils.turn_on_aods(
+                    laser_names=["laser_INTE_520"],
+                    aod_suffices=["spin_pol"],
+                )
+                pulse_name = "spin_pol"
             elif laser_name == tb.get_laser_name(LaserKey.IONIZATION):
                 pulse_name = "scc"
             seq_utils.macro_pulse(
@@ -126,7 +127,7 @@ if __name__ == "__main__":
                 [73.78442169604547, 75.67270342527479],
             ],
             0,
-            "laser_COBO_638",
+            "laser_INTE_520",
             [[73.5, 75.5], [73.5, 75.6], [73.5, 75.7], [73.5, 75.8]],
             10,
         )

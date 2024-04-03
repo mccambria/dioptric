@@ -165,9 +165,11 @@ def set_xyz_on_nv(nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True):
 def get_nv_coords(
     nv_sig: NVSig, coords_key=CoordsKey.GLOBAL, drift_adjust=True, drift=None
 ):
-    coords = nv_sig.coords
-    if isinstance(coords, dict):
-        coords = coords[coords_key]
+    coords_val = nv_sig.coords
+    if isinstance(coords_val, dict):
+        coords = coords_val[coords_key]
+    else:
+        coords = coords_val
     if drift_adjust:
         coords = adjust_coords_for_drift(
             coords=coords, drift=drift, coords_key=coords_key
@@ -176,10 +178,10 @@ def get_nv_coords(
 
 
 def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.GLOBAL):
-    coords = nv_sig.coords
-    if isinstance(coords, list):
+    coords_val = nv_sig.coords
+    if isinstance(coords_val, list):
         nv_sig.coords = coords
-    if isinstance(coords, dict):
+    if isinstance(coords_val, dict):
         nv_sig.coords[coords_key] = coords
 
 
@@ -205,7 +207,7 @@ def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
     try:
         if coords_key in config_pos:
             return config_pos[coords_key][key]
-        else:
+        elif coords_key == CoordsKey.GLOBAL:
             return config_pos[key]
     except Exception:
         return None
@@ -253,7 +255,7 @@ def get_z_control_mode(coords_key=CoordsKey.GLOBAL):
 
 def _get_positioning_server(base_key, coords_key):
     server = common.get_server(f"{base_key}-{coords_key}")
-    if server is None:
+    if server is None and coords_key == CoordsKey.GLOBAL:
         server = common.get_server(base_key)
     return server
 

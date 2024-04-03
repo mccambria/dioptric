@@ -83,12 +83,16 @@ def get_seq(
 
     buffer = seq_utils.get_widefield_operation_buffer()
 
+    green_laser = tb.get_laser_name(LaserKey.POLARIZATION)
+    red_laser = tb.get_laser_name(LaserKey.IONIZATION)
+
     with qua.program() as seq:
         seq_utils.init_cache()
-        seq_utils.turn_on_aods()
 
         def one_exp(exp_ind):
-            # Charge polarization with green
+            seq_utils.turn_on_aods()
+
+            # Charge polarization with green, spin polarization with yellow
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
             # Custom macro for the microwave sequence here
@@ -97,10 +101,10 @@ def get_seq(
             # exp_uwave_macro(*uwave_macro_args)
             exp_uwave_macro(step_val)
 
-            # seq_utils.turn_on_aods([green_laser], pulse_suffix="low")
+            seq_utils.turn_on_aods([green_laser], aod_suffices=["shelving"])
 
             # Ionization
-            seq_utils.macro_ionize(ion_coords_list, ion_duration_ns, ion_pulse_type)
+            seq_utils.macro_scc(pol_coords_list, ion_coords_list)
 
             # Readout
             seq_utils.macro_charge_state_readout(readout_duration_ns)

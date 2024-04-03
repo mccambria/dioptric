@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from majorroutines.widefield import (
+    calibrate_green_red_delay,
     calibrate_iq_delay,
     charge_state_histograms,
     correlation_test,
@@ -80,10 +81,10 @@ def do_charge_state_histograms(nv_list, num_reps):
 
 
 def do_optimize_green(nv_sig, do_plot=True):
-    coords_suffix = tb.get_laser_name(LaserKey.IMAGING)
+    coords_key = tb.get_laser_name(LaserKey.IMAGING)
     ret_vals = optimize.main(
         nv_sig,
-        coords_suffix=coords_suffix,
+        coords_key=coords_key,
         no_crash=True,
         do_plot=do_plot,
         axes_to_optimize=[0, 1],
@@ -94,11 +95,11 @@ def do_optimize_green(nv_sig, do_plot=True):
 
 def do_optimize_red(nv_sig, do_plot=True):
     laser_key = LaserKey.IONIZATION
-    coords_suffix = red_laser
+    coords_key = red_laser
     ret_vals = optimize.main(
         nv_sig,
         laser_key=laser_key,
-        coords_suffix=coords_suffix,
+        coords_key=coords_key,
         no_crash=True,
         do_plot=do_plot,
         axes_to_optimize=[0, 1],
@@ -116,13 +117,13 @@ def do_optimize_pixel(nv_sig):
     return opti_coords
 
 
-def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
+def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     opti_coords_list = []
     for nv in nv_list:
         # Pixel coords
-        if coords_suffix is None:
+        if coords_key is None:
             imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
             if scanning_from_pixel:
                 widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
@@ -132,18 +133,21 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
         # Scanning coords
         else:
             if scanning_from_pixel:
-                widefield.set_nv_scanning_coords_from_pixel_coords(nv, coords_suffix)
+                widefield.set_nv_scanning_coords_from_pixel_coords(nv, coords_key)
 
-            if coords_suffix == green_laser:
+            if coords_key == green_laser:
                 opti_coords = do_optimize_green(nv)
-            elif coords_suffix == red_laser:
+            elif coords_key == red_laser:
                 opti_coords = do_optimize_red(nv)
 
             # Adjust for the drift that may have occurred since beginning the loop
             do_optimize_pixel(repr_nv_sig)
-            drift = pos.get_drift(coords_suffix)
+            drift = pos.get_drift(coords_key)
             drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
+
+            # For slower scanning optimizations keep make sure we don't drift off in z either
+            do_optimize_z(repr_nv_sig, do_plot=False)
 
         opti_coords_list.append(opti_coords)
 
@@ -153,9 +157,20 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
         print(f"{r_opti_coords},")
 
 
-def do_optimize_widefield_calibration():
-    with common.labrad_connect() as cxn:
-        optimize.optimize_widefield_calibration(cxn)
+def do_calibrate_green_red_delay():
+    cxn = common.labrad_connect()
+    pulse_gen = cxn.QM_opx
+
+    seq_file = "calibrate_green_red_delay.py"
+
+    seq_args = [2000]
+    seq_args_string = tb.encode_seq_args(seq_args)
+    num_reps = -1
+
+    pulse_gen.stream_immediate(seq_file, seq_args_string, num_reps)
+
+    input("Press enter to stop...")
+    pulse_gen.halt()
 
 
 def do_optimize_scc(nv_list):
@@ -169,7 +184,7 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 200
-    num_runs = 20
+    num_runs = 10
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
@@ -367,22 +382,28 @@ def do_crosstalk_check(nv_sig):
     num_steps = 21
     num_reps = 10
     num_runs = 160
-    aod_freq_range = 1.0
-    laser_name = red_laser
+    aod_freq_range = 3.0
+    # laser_name = red_laser
+    laser_name = green_laser
     axis_ind = 0  # 0: x, 1: y, 2: z
     uwave_ind = 0
 
-    for axis_ind in [0, 1]:
-        crosstalk_check.main(
-            nv_sig,
-            num_steps,
-            num_reps,
-            num_runs,
-            aod_freq_range,
-            laser_name,
-            axis_ind,  # 0: x, 1: y, 2: z
-            uwave_ind,
-        )
+    for laser_name in [red_laser, green_laser]:
+        if laser_name is red_laser:
+            aod_freq_range = 2.0
+        elif laser_name is green_laser:
+            aod_freq_range = 3.0
+        for axis_ind in [0, 1]:
+            crosstalk_check.main(
+                nv_sig,
+                num_steps,
+                num_reps,
+                num_runs,
+                aod_freq_range,
+                laser_name,
+                axis_ind,  # 0: x, 1: y, 2: z
+                uwave_ind,
+            )
 
 
 def do_spin_pol_check(nv_sig):
@@ -429,19 +450,19 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.5],  # Analog voltages
-        [0],  # Analog frequencies
-    )
-    # Green
     # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.19, 0.19],  # Analog voltages
-    #     [111, 111],  # Analog frequencies
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.5],  # Analog voltages
+    #     [0],  # Analog frequencies
     # )
+    # Green
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4],  # Analog channels
+        [0.03, 0.03],  # Analog voltages
+        [110, 110],  # Analog frequencies
+    )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -540,7 +561,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.12
+    z_coord = 4.046
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -600,28 +621,28 @@ if __name__ == "__main__":
     # region Coords (smiley)
 
     pixel_coords_list = [
-        [134.395, 145.486],
-        [152.557, 136.398],
-        [165.503, 121.443],
-        [177.514, 94.414],
-        [174.805, 65.13],
-        [161.244, 50.454],
+        [142.851, 193.093],
+        [161.181, 184.12],
+        [173.95, 169.448],
+        [186.133, 142.627],
+        [183.492, 113.143],
+        [170.196, 98.414],
     ]
     green_coords_list = [
-        [108.492, 110.038],
-        [108.889, 110.291],
-        [109.126, 110.648],
-        [109.356, 111.328],
-        [109.253, 111.974],
-        [108.944, 112.355],
+        [108.712, 108.84],
+        [109.137, 109.074],
+        [109.363, 109.421],
+        [109.587, 110.096],
+        [109.532, 110.746],
+        [109.22, 111.088],
     ]
     red_coords_list = [
-        [73.278, 75.07],
-        [73.591, 75.244],
-        [73.841, 75.566],
-        [74.083, 75.969],
-        [73.922, 76.603],
-        [73.748, 76.776],
+        [73.62, 74.141],
+        [73.813, 74.268],
+        [74.074, 74.529],
+        [74.37, 75.109],
+        [74.26, 75.662],
+        [74.009, 75.891],
     ]
 
     # endregion
@@ -643,12 +664,11 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    # nv_list[0].expected_counts = None
-    # nv_list[0].expected_counts = 3900
-    # nv_list[0].expected_counts = 4700
-    nv_list[0].expected_counts = 6000
-    # nv_list[0].expected_counts = 7400
+    nv_list[0].expected_counts = 4800
     nv_sig = widefield.get_repr_nv_sig(nv_list)
+
+    # nv_inds = [0, 2, 3]
+    # nv_list = [nv_list[ind] for ind in nv_inds]
 
     # endregion
 
@@ -661,17 +681,15 @@ if __name__ == "__main__":
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
     # for nv in nv_list:
-    #     widefield.set_nv_scanning_coords_from_pixel_coords(
+    #     coords = widefield.set_nv_scanning_coords_from_pixel_coords(
     #         nv, green_laser, drift_adjust=False
     #     )
-    #     coords = nv[green_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
     # for nv in nv_list:
-    #     widefield.set_nv_scanning_coords_from_pixel_coords(
+    #     coords = widefield.set_nv_scanning_coords_from_pixel_coords(
     #         nv, red_laser, drift_adjust=False
     #     )
-    #     coords = nv[red_coords_key]
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
     # sys.exit()
@@ -689,14 +707,14 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+7, -3])
+        # widefield.set_pixel_drift([+16, +66])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.0, 5.0, 11):
+        # for z in np.linspace(4.0, 4.3, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
@@ -715,16 +733,20 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
+        # for ind in range(10):
+        #     do_optimize_pixel(nv_sig)
+        #     time.sleep(5)
+
         do_optimize_pixel(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
-        do_optimize_z(nv_sig)
 
         # widefield.reset_all_drift()
-        # # coords_suffix = None  # Pixel coords
-        # # coords_suffix = green_laser
-        # coords_suffix = red_laser
-        # do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=True)
+        # coords_key = None  # Pixel coords
+        # coords_key = green_laser
+        # coords_key = red_laser
+        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # num_nvs = len(nv_list)
         # for ind in range(num_nvs):
@@ -753,10 +775,11 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
-        do_crosstalk_check(nv_sig)
+        # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
+        # do_calibrate_green_red_delay()
 
     # region Cleanup
 
