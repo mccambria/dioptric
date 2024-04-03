@@ -22,6 +22,7 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     def sig_exp():
+        qua.align()
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
 
@@ -40,7 +41,7 @@ def get_seq(
         def one_exp(exp_ind):
             seq_utils.macro_polarize(pol_coords_list)
             uwave_macro_list[exp_ind]()
-            seq_utils.macro_scc(pol_coords_list, ion_coords_list, ion_duration)
+            seq_utils.macro_scc(ion_coords_list, ion_duration, pol_coords_list)
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 
@@ -50,12 +51,13 @@ def get_seq(
 
         def one_step():
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-            seq_utils.pause()
+            seq_utils.macro_pause()
 
         with qua.for_each_(ion_duration, ion_duration_list):
             one_step()
 
-    return seq
+    seq_ret_vals = []
+    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
@@ -78,7 +80,7 @@ if __name__ == "__main__":
                 [75.64159786642307, 76.07968901215536],
             ],
             0,
-            1000,
+            [1000, 200, 16],
             5,
         )
 

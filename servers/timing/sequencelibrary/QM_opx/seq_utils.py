@@ -21,7 +21,7 @@ _cache_x_freq = None
 _cache_y_freq = None
 _cache_x_freq_2 = None
 _cache_y_freq_2 = None
-_cache_turn_on_aods = None
+_cache_macro_run_aods = None
 
 
 # region QUA macros
@@ -41,9 +41,9 @@ def init():
     _cache_x_freq_2 = qua.declare(int)
     _cache_y_freq_2 = qua.declare(int)
 
-    global _cache_turn_on_aods
-    _cache_turn_on_aods = None
-    turn_on_aods()
+    global _cache_macro_run_aods
+    _cache_macro_run_aods = {}
+    macro_run_aods()
 
 
 def handle_reps(
@@ -98,7 +98,7 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     """
 
     pol_laser_name = tb.get_laser_name(LaserKey.POLARIZATION)
-    turn_on_aods(laser_names=[pol_laser_name], aod_suffices=["charge_pol"])
+    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=["charge_pol"])
     _macro_pulse_list(pol_laser_name, pol_coords_list, "charge_pol", pol_duration_ns)
 
     # MCC
@@ -111,9 +111,7 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     qua.wait(buffer, readout_laser_el)
 
 
-def macro_ionize(
-    ion_coords_list, ion_duration_ns=None, ion_pulse_type=IonPulseType.SCC
-):
+def macro_ionize(ion_coords_list, ion_duration_ns=None):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -127,37 +125,47 @@ def macro_ionize(
         List of coordinate pairs to target
     """
     ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
-    turn_on_aods([ion_laser_name], aod_suffices=["ionize"])
-    if ion_pulse_type is IonPulseType.ION:
-        pulse_name = "ion"
-    elif ion_pulse_type is IonPulseType.SCC:
-        pulse_name = "scc"
-    _macro_pulse_list(ion_laser_name, ion_coords_list, pulse_name, ion_duration_ns)
+    macro_run_aods([ion_laser_name], aod_suffices=["ion"])
+    ion_pulse_name = "ion"
+    _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration_ns)
 
 
-def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
+def macro_scc(ion_coords_list, ion_duration=None, shelving_coords_list=None):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
     Parameters
     ----------
-    ion_laser_name : str
-        Name of ionitization laser
-    ion_duration_ns : numeric
-        Duration of the pulse in ns
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
+    ion_duration : numeric
+        Duration of the pulse in clock cycles (4 ns)
     """
+
+    config = common.get_config_dict()
+    do_shelving_pulse = config["Optics"]["scc_shelving_pulse"]
+
+    if do_shelving_pulse:
+        _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list)
+    else:
+        _macro_scc_no_shelving(ion_coords_list, ion_duration)
+
+
+def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
     shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
     ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
     laser_name_list = [shelving_laser_name, ion_laser_name]
-    pulse_name_list = ["shelving", "scc"]
+    shelving_pulse_name = "shelving"
+    ion_pulse_name = "scc"
+    pulse_name_list = [shelving_pulse_name, ion_pulse_name]
     shelving_laser_dict = tb.get_laser_dict(LaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
-    delays = [0, shelving_pulse_duration + 8]
-    duration_ns_list = [None, ion_duration_ns]
+    shelving_scc_gap_ns = 16
+    shelving_scc_gap = convert_ns_to_cc(shelving_scc_gap_ns)
+    delays = [0, shelving_pulse_duration + shelving_scc_gap]
+    duration_list = [None, ion_duration]
 
-    turn_on_aods(laser_name_list, aod_suffices=pulse_name_list)
+    macro_run_aods(laser_name_list, aod_suffices=pulse_name_list)
 
     # Unpack the coords and convert to Hz
     x_shelving_coords_list = [int(el[0] * 10**6) for el in shelving_coords_list]
@@ -165,7 +173,7 @@ def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
     x_ion_coords_list = [int(el[0] * 10**6) for el in ion_coords_list]
     y_ion_coords_list = [int(el[1] * 10**6) for el in ion_coords_list]
 
-    # These are declared in turn_on_aods
+    # These are declared in macro_run_aods
     global _cache_x_freq
     global _cache_y_freq
     global _cache_x_freq_2
@@ -184,10 +192,17 @@ def macro_scc(shelving_coords_list, ion_coords_list, ion_duration_ns=None):
             laser_name_list,
             ((_cache_x_freq, _cache_y_freq), (_cache_x_freq_2, _cache_y_freq_2)),
             pulse_name_list,
-            duration_ns_list=duration_ns_list,
+            duration_list=duration_list,
             delays=delays,
             convert_to_Hz=False,
         )
+
+
+def _macro_scc_no_shelving(ion_coords_list, ion_duration_ns=None):
+    ion_laser_name = tb.get_laser_name(LaserKey.IONIZATION)
+    macro_run_aods([ion_laser_name], aod_suffices=["scc"])
+    ion_pulse_name = "scc"
+    _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration_ns)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -235,7 +250,7 @@ def _get_default_aod_suffix(laser_name):
     return config["Optics"][laser_name]["default_aod_suffix"]
 
 
-def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
+def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
     """Turn on the AODs. They'll run indefinitely. Use pulse_suffix to run a pulse
     with a different power, etc"""
     # By default search the config for the lasers with AOD
@@ -269,7 +284,7 @@ def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
 
     ### Check if the requested pulse is already running using the cache
 
-    global _cache_turn_on_aods
+    global _cache_macro_run_aods
     skip_inds = []
     for ind in range(num_lasers):
         laser_name = laser_names[ind]
@@ -279,14 +294,14 @@ def turn_on_aods(laser_names=None, aod_suffices=None, amps=None):
         # could behave unexpectedly
         if amp is not None:
             continue
-        if laser_name in _cache_turn_on_aods:
-            cache_dict = _cache_turn_on_aods[laser_name]
+        if laser_name in _cache_macro_run_aods:
+            cache_dict = _cache_macro_run_aods[laser_name]
             if cache_dict["aod_suffix"] == aod_suffix:
                 skip_inds.append(ind)
                 continue
         # If we get here then the pulse is not already running, so cache it
-        _cache_turn_on_aods[laser_name] = {}
-        cache_dict = _cache_turn_on_aods[laser_name]
+        _cache_macro_run_aods[laser_name] = {}
+        cache_dict = _cache_macro_run_aods[laser_name]
         cache_dict["aod_suffix"] = aod_suffix
 
     ### Actual commands here
@@ -333,7 +348,7 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration_ns=None
     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
 
-    # These are declared in turn_on_aods
+    # These are declared in macro_run_aods
     global _cache_x_freq
     global _cache_y_freq
 
@@ -361,15 +376,15 @@ def macro_multi_pulse(
     laser_name_list,
     coords_list,
     pulse_name_list,
-    duration_ns_list=None,
+    duration_list=None,
     delays=None,
     convert_to_Hz=True,
 ):
     num_pulses = len(laser_name_list)
     if delays is None:
         delays = [0 for ind in range(num_pulses)]
-    if duration_ns_list is None:
-        duration_ns_list = [None for ind in range(num_pulses)]
+    if duration_list is None:
+        duration_list = [None for ind in range(num_pulses)]
 
     qua.align()
     for ind in range(num_pulses):
@@ -377,22 +392,21 @@ def macro_multi_pulse(
         laser_name = laser_name_list[ind]
         coords = coords_list[ind]
         pulse_name = pulse_name_list[ind]
-        duration_ns = duration_ns_list[ind]
+        duration = duration_list[ind]
         delay = delays[ind]
         _macro_single_pulse(
-            laser_name, coords, pulse_name, duration_ns, delay, convert_to_Hz
+            laser_name, coords, pulse_name, duration, delay, convert_to_Hz
         )
 
 
 def _macro_single_pulse(
-    laser_name, coords, pulse_name="on", duration_ns=None, delay=0, convert_to_Hz=True
+    laser_name, coords, pulse_name="on", duration=None, delay=0, convert_to_Hz=True
 ):
     # Setup
     laser_el = get_laser_mod_element(laser_name)
     x_el = f"ao_{laser_name}_x"
     y_el = f"ao_{laser_name}_y"
 
-    duration = convert_ns_to_cc(duration_ns)
     buffer = get_widefield_operation_buffer()
     access_time = get_aod_access_time()
 
@@ -408,7 +422,9 @@ def _macro_single_pulse(
     qua.wait(access_time + buffer + delay, laser_el)
     if duration is None:
         qua.play(pulse_name, laser_el)
-    elif duration > 0:
+    elif isinstance(duration, int) and duration == 0:
+        pass
+    else:
         qua.play(pulse_name, laser_el, duration=duration)
     qua.wait(buffer, laser_el)
 

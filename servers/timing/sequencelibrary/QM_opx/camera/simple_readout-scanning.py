@@ -27,10 +27,11 @@ def get_seq(readout_duration, readout_laser, coords_1, coords_2, num_reps):
     coords_1_hz = [round(el * 10**6) for el in coords_1]
     coords_2_hz = [round(el * 10**6) for el in coords_2]
     with qua.program() as seq:
+        seq_utils.init()
         x_freq = qua.declare(int)
         y_freq = qua.declare(int)
 
-        seq_utils.turn_on_aods([readout_laser], aod_suffices=["opti"])
+        seq_utils.macro_run_aods([readout_laser], aod_suffices=["opti"])
 
         ### Define one rep here
         def one_rep():

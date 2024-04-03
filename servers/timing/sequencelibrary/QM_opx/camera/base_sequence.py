@@ -86,7 +86,7 @@ def get_seq(
         def one_exp(exp_ind):
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
             uwave_macro[exp_ind](step_val)
-            seq_utils.macro_scc(pol_coords_list, ion_coords_list, ion_duration_ns)
+            seq_utils.macro_scc(ion_coords_list, ion_duration_ns, pol_coords_list)
             seq_utils.macro_charge_state_readout(readout_duration_ns)
             seq_utils.macro_wait_for_trigger()
 

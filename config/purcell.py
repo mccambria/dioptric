@@ -153,7 +153,7 @@ config |= {
         },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
         LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.SHELVING: {"name": "laser_INTE_520", "duration": 32},
+        LaserKey.SHELVING: {"name": "laser_INTE_520", "duration": 48},
         LaserKey.IONIZATION: {
             "name": "laser_COBO_638",
             # "scc_duration": 120,  # 100 mW, no shelving
@@ -168,6 +168,7 @@ config |= {
             # "duration": 200e6,
             # "duration": 1e9,
         },  # 35e6, 0.09
+        "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
     ###
     "Positioning": {
@@ -665,11 +666,11 @@ opx_config = {
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
-        "green_aod_cw-shelving": {"type": "constant", "sample": 0.07},
+        "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
         # Red AOD
         "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.17},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.17},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
