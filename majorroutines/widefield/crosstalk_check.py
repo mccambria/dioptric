@@ -72,7 +72,6 @@ def main(
             coords = crosstalk_coords_list[ind]
             adj_coords = pos.adjust_coords_for_drift(coords, coords_key=laser_name)
             crosstalk_coords_list_shuffle.append(adj_coords)
-
         seq_args.append(crosstalk_coords_list_shuffle)
 
         # Pass it over to the OPX
