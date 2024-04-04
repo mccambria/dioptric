@@ -16,12 +16,18 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
 def get_seq(
-    pol_coords_list, ion_coords_list, uwave_ind, ion_duration_ns_list, num_reps
+    pol_coords_list,
+    repol_coords_list,
+    ion_coords_list,
+    uwave_ind,
+    ion_duration_ns_list,
+    num_reps,
 ):
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
 
     def sig_exp():
+        seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
         qua.align()
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)

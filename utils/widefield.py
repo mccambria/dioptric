@@ -286,14 +286,16 @@ def get_nv_num(nv_sig):
     return nv_num
 
 
-def get_base_scc_seq_args(nv_list):
+def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
     """Return base seq_args for any SCC routine. The base sequence arguments
-    are the polarization and ionization AOD coordinates
+    are the minimum info required for state preparation and SCC
 
     Parameters
     ----------
-    nv_list : list(nv_sig)
+    nv_list : list[NVSig]
         List of nv signatures to target
+    uwave_ind : int
+        Index of the microwave chain to run for state prep
 
     Returns
     -------
@@ -301,22 +303,40 @@ def get_base_scc_seq_args(nv_list):
         Sequence arguments
     """
 
-    # Polarization
+    pol_coords_list = get_pol_coords_list(nv_list)
+    repol_coords_list = get_repol_coords_list(nv_list)
+    ion_coords_list = get_ion_coords_list(nv_list)
+    seq_args = [pol_coords_list, repol_coords_list, ion_coords_list, uwave_ind]
+    return seq_args
+
+
+def get_pol_coords_list(nv_list: list[NVSig]):
     pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
     drift = pos.get_drift(pol_laser)
     pol_coords_list = [
         pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift) for nv in nv_list
     ]
+    return pol_coords_list
 
-    # Ionization
+
+def get_repol_coords_list(nv_list: list[NVSig]):
+    pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
+    drift = pos.get_drift(pol_laser)
+    repol_coords_list = [
+        pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift)
+        for nv in nv_list
+        if not nv.init_spin_flipped
+    ]
+    return repol_coords_list
+
+
+def get_ion_coords_list(nv_list: list[NVSig]):
     ion_laser = tb.get_laser_name(LaserKey.IONIZATION)
     drift = pos.get_drift(ion_laser)
     ion_coords_list = [
         pos.get_nv_coords(nv, coords_key=ion_laser, drift=drift) for nv in nv_list
     ]
-
-    seq_args = [pol_coords_list, ion_coords_list]
-    return seq_args
+    return ion_coords_list
 
 
 # endregion

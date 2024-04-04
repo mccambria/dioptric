@@ -19,13 +19,22 @@ from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
 from utils import common
 
 
-# MCC
-def get_seq(args, num_reps):
-    # (pol_coords_list, ion_coords_list, uwave_ind) = args
-    uwave_duration_ns = args[-1]
-    args = args[:-1]
+def get_seq(
+    pol_coords_list,
+    repol_coords_list,
+    ion_coords_list,
+    uwave_ind,
+    uwave_duration_ns,
+    num_reps,
+):
     return resonance_ref.get_seq(
-        args, num_reps, reference=False, uwave_duration_ns=uwave_duration_ns
+        pol_coords_list,
+        repol_coords_list,
+        ion_coords_list,
+        uwave_ind,
+        num_reps=num_reps,
+        reference=False,
+        uwave_duration_ns=uwave_duration_ns,
     )
 
 

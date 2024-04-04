@@ -14,8 +14,6 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from utils import tool_belt as tb
-from utils.constants import IonPulseType, LaserKey
 
 
 def get_seq(
@@ -27,9 +25,7 @@ def get_seq(
     pol_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
-    setup_macro=None,
     reference=True,
-    ion_pulse_type=IonPulseType.SCC,
 ):
     """Base spin sequence for widefield experiments with many spatially resolved NV
     centers. Accompanies base routine
@@ -82,6 +78,7 @@ def get_seq(
 
     with qua.program() as seq:
         seq_utils.init()
+        step_val = qua.declare(qua.fixed)
 
         def one_exp(exp_ind):
             seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
@@ -98,7 +95,6 @@ def get_seq(
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
             seq_utils.macro_pause()
 
-        step_val = qua.declare(qua.fixed)
         if step_vals is None:
             one_step()
         else:

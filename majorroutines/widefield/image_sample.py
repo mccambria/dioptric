@@ -212,7 +212,9 @@ def main(
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
         nv_list = [nv_sig]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
+        pol_coords_list = widefield.get_pol_coords_list(nv_list)
+        ion_coords_list = widefield.get_ion_coords_list(nv_list)
+        seq_args = [pol_coords_list, ion_coords_list]
         raise RuntimeError(
             "The sequence simple_readout-charge_state_prep needs to be updated "
             "to match the format of the seq_args returned by get_base_scc_seq_args"

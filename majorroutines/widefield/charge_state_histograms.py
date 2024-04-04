@@ -272,8 +272,16 @@ def _collect_data(
     readout = laser_dict["duration"]
     readout_ms = readout / 10**6
 
-    seq_args = widefield.get_base_scc_seq_args(nv_list)
-    seq_args.extend([pol_duration, ion_duration, diff_polarize, diff_ionize])
+    pol_coords_list = widefield.get_pol_coords_list(nv_list)
+    ion_coords_list = widefield.get_ion_coords_list(nv_list)
+    seq_args = [
+        pol_coords_list,
+        ion_coords_list,
+        pol_duration,
+        ion_duration,
+        diff_polarize,
+        diff_ionize,
+    ]
     seq_file = "charge_state_histograms.py"
 
     # print(seq_args)

@@ -25,6 +25,11 @@ class NVSig:
     expected_counts: Number = None
     magnet_angle: Number = None
     opti_offset: list[Number] = None  # Only works for global coordinates
+    # init_spin_flipped: Flag for determining initial spin state of an NV. After normal
+    # polarization into ms=0, all spins of a given orientation are flipped with a pi
+    # pulse. If init_spin_flipped is True, leave the spin alone after the pi pulse. If
+    # init_spin_flipped is False, apply a green pulse to repolarize into ms=0
+    init_spin_flipped: bool = False
 
 
 class CoordsKey(StrEnum):
@@ -42,14 +47,21 @@ class CountFormat(Enum):
     RAW = auto()  # Just the raw number of counts
 
 
+# Laser keys describe virtual lasers, which accomplish one and only one function and
+# must be associated with a physical laser in config
 class LaserKey(Enum):
-    IMAGING = auto()  # Basic imaging
-    WIDEFIELD_IMAGING = auto()
-    IONIZATION = auto()
-    POLARIZATION = auto()  # Charge / spin state polarization
-    SHELVING = auto()  # Charge / spin state polarization
+    # Scanning mode functions
+    IMAGING = auto()
+    ION = auto()
+    SCC = auto()
+    CHARGE_POL = auto()
+    SPIN_POL = auto()
+    SHELVING = auto()
     SPIN_READOUT = auto()  # Standard spin readout
-    CHARGE_READOUT = auto()  # Readout of the charge state
+    # Widefield mode functions
+    WIDEFIELD_IMAGING = auto()
+    WIDEFIELD_CHARGE_READOUT = auto()
+    WIDEFIELD_SPIN_POL = auto()
 
 
 class LaserPosMode(Enum):
@@ -90,12 +102,6 @@ class ModMode(Enum):
 class Digital(IntEnum):
     LOW = 0
     HIGH = 1
-
-
-# Ionization pulse type
-class IonPulseType(IntEnum):
-    SCC = 0
-    ION = 1
 
 
 Boltzmann = 8.617e-2  # meV / K
