@@ -561,7 +561,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.046
+    z_coord = 4.18
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -707,7 +707,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+16, +66])
+        # widefield.set_pixel_drift([-12, -14])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -738,7 +738,7 @@ if __name__ == "__main__":
         #     time.sleep(5)
 
         do_optimize_pixel(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -776,7 +776,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
