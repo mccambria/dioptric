@@ -215,19 +215,16 @@ def do_resonance_zoom(nv_list):
     freq_range = 0.060
     num_steps = 20
     num_reps = 10
-    num_runs = 2
+    num_runs = 20
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_rabi(nv_list):
     min_tau = 16
     max_tau = 240 + min_tau
-    # num_steps = 21
-    # num_reps = 15
-    # num_runs = 30
     num_steps = 31
     num_reps = 10
-    num_runs = 20
+    num_runs = 40
     uwave_ind = 0
     rabi.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind

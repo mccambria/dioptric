@@ -89,11 +89,8 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            # "frequency": 2.8126,
-            "frequency": 2.8572,
-            # "rabi_period": 112,
+            "frequency": 2.8556,
             "rabi_period": 96,
-            # "uwave_power": 9,
             "uwave_power": 10,
             "iq_delay": 140,
         },

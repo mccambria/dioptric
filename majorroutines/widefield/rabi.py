@@ -156,7 +156,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
+        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
         seq_args.append(shuffled_taus)
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -167,8 +167,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     )
 
     ### Process and plot
+    sig_counts = counts[1]
+    ref_counts = counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts
+    )
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
@@ -192,7 +196,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     if "img_arrays" in raw_data:
         keys_to_compress = ["img_arrays"]

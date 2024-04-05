@@ -140,27 +140,27 @@ rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
 
-def average_counts(sig_counts_array, ref_counts_array=None):
+def average_counts(sig_counts, ref_counts=None):
     """Gets average and standard error for counts data structure.
     Assumes the counts arrays have the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
     Returns the [nv_ind] for norms.
     """
 
-    sig_counts_array = np.array(sig_counts_array)
+    sig_counts = np.array(sig_counts)
     # meas_array = counts_array > 75
-    meas_array = sig_counts_array
+    meas_array = sig_counts
 
     avg_counts = np.mean(meas_array, axis=run_rep_axes)
     num_shots = meas_array.shape[rep_ax] * meas_array.shape[run_ax]
     avg_counts_std = np.std(meas_array, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
-    if ref_counts_array is None:
+    if ref_counts is None:
         return avg_counts, avg_counts_ste
 
     else:
-        norms = np.mean(ref_counts_array, axis=(1, 2, 3))
+        norms = np.mean(ref_counts, axis=(1, 2, 3))
         # Account for heating by adjusting the norm using the counts from
         # a background spot
         # background_nv_ind = 1
@@ -169,11 +169,11 @@ def average_counts(sig_counts_array, ref_counts_array=None):
         return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(nv_list, sig_counts_array, ref_counts_array=None):
+def threshold_counts(nv_list, sig_counts, ref_counts=None):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
 
-    sig_counts_array = np.array(sig_counts_array)
+    sig_counts = np.array(sig_counts)
 
     thresholds = np.array([nv.threshold for nv in nv_list])
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
@@ -183,11 +183,11 @@ def threshold_counts(nv_list, sig_counts_array, ref_counts_array=None):
     where_thresh = np.array(thresholds, dtype=bool)
 
     sig_states_array = np.greater(
-        sig_counts_array, thresholds, out=sig_counts_array, where=where_thresh
+        sig_counts, thresholds, out=sig_counts, where=where_thresh
     )
-    if ref_counts_array is not None:
+    if ref_counts is not None:
         ref_states_array = np.greater(
-            ref_counts_array, thresholds, out=sig_counts_array, where=where_thresh
+            ref_counts, thresholds, out=sig_counts, where=where_thresh
         )
     else:
         ref_states_array = None
@@ -195,9 +195,9 @@ def threshold_counts(nv_list, sig_counts_array, ref_counts_array=None):
     return average_counts(sig_states_array, ref_states_array)
 
 
-def process_counts(nv_list, sig_counts_array, ref_counts_array=None):
+def process_counts(nv_list, sig_counts, ref_counts=None):
     """Alias for threshold_counts with a more generic name"""
-    return threshold_counts(nv_list, sig_counts_array, ref_counts_array)
+    return threshold_counts(nv_list, sig_counts, ref_counts)
 
 
 def calc_snr(sig_counts, ref_counts):
