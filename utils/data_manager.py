@@ -166,7 +166,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 # region Load functions
 
 
-def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
+def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
     """Returns a dictionary containing the json object from the specified
     raw data file
 

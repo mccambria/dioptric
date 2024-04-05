@@ -18,6 +18,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
+from utils.constants import NVSig
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
@@ -167,9 +168,9 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     )
 
     ### Process and plot
-    sig_counts = counts[1]
-    ref_counts = counts[1]
 
+    sig_counts = counts[0]
+    ref_counts = counts[1]
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts
     )
@@ -212,38 +213,23 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = ""
-    # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1395828354868, no_npz=True)
-    data = dm.get_raw_data(file_id=1470271194071, no_npz=True)
+    data = dm.get_raw_data(file_id=1492248078082)
 
     nv_list = data["nv_list"]
+    nv_list = [NVSig(**nv) for nv in nv_list]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     taus = data["taus"]
     counts = np.array(data["counts"])
-    ref_counts = np.array(data["ref_counts"])
-    # counts = counts > 50
+    sig_counts = counts[0]
+    ref_counts = counts[1]
 
-    # Spurious correlation testing
-    # step_ind_master_list = np.array(data["step_ind_master_list"])
-    # for step_ind in range(num_steps):
-    #     step_counts = [
-    #         counts[nv_ind, :, step_ind, :].flatten() for nv_ind in range(num_nvs)
-    #     ]
-    #     corr = np.corrcoef(step_counts)
-    #     print(corr)
-
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts
+    )
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     # correlation_fig = create_correlation_figure(nv_list, taus, counts)
-
-    # img_arrays = np.array(data["img_arrays"])
-    # img_arrays = np.mean(img_arrays[0], axis=0)
-    # img_arrays = img_arrays - np.mean(img_arrays[13:17], axis=0)
-
-    # widefield.animate(taus, nv_list, avg_counts, avg_counts_ste, img_arrays, -1, 6)
 
     plt.show(block=True)
