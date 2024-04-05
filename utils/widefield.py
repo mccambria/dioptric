@@ -10,6 +10,7 @@ Created on August 15th, 2023
 
 import dataclasses
 import itertools
+from functools import cache
 from importlib import import_module
 from pathlib import Path
 
@@ -196,7 +197,7 @@ def threshold_counts(nv_list, sig_counts_array, ref_counts_array=None):
 
 def process_counts(nv_list, sig_counts_array, ref_counts_array=None):
     """Alias for threshold_counts with a more generic name"""
-    return threshold_counts(nv_list, sig_counts_array, ref_counts_array=None)
+    return threshold_counts(nv_list, sig_counts_array, ref_counts_array)
 
 
 def calc_snr(sig_counts, ref_counts):
@@ -303,40 +304,33 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
         Sequence arguments
     """
 
-    pol_coords_list = get_pol_coords_list(nv_list)
+    pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
     repol_coords_list = get_repol_coords_list(nv_list)
-    ion_coords_list = get_ion_coords_list(nv_list)
+    ion_coords_list = get_coords_list(nv_list, LaserKey.SCC)
     seq_args = [pol_coords_list, repol_coords_list, ion_coords_list, uwave_ind]
     return seq_args
 
 
-def get_pol_coords_list(nv_list: list[NVSig]):
-    pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
-    drift = pos.get_drift(pol_laser)
-    pol_coords_list = [
-        pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift) for nv in nv_list
+def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
+    laser_name = tb.get_laser_name(laser_key)
+    drift = pos.get_drift(laser_name) if drift_adjust else None
+    coords_list = [
+        pos.get_nv_coords(
+            nv, coords_key=laser_name, drift_adjust=drift_adjust, drift=drift
+        )
+        for nv in nv_list
     ]
-    return pol_coords_list
+    return coords_list
 
 
 def get_repol_coords_list(nv_list: list[NVSig]):
-    pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
-    drift = pos.get_drift(pol_laser)
-    repol_coords_list = [
-        pos.get_nv_coords(nv, coords_key=pol_laser, drift=drift)
-        for nv in nv_list
-        if not nv.init_spin_flipped
-    ]
-    return repol_coords_list
+    # If every NV should init into ms=0, just leave them all alone
+    # after the initial polarization
+    repol_nv_list = [nv for nv in nv_list if not nv.init_spin_flipped]
+    if len(repol_nv_list) == len(nv_list):
+        return None
 
-
-def get_ion_coords_list(nv_list: list[NVSig]):
-    ion_laser = tb.get_laser_name(LaserKey.IONIZATION)
-    drift = pos.get_drift(ion_laser)
-    ion_coords_list = [
-        pos.get_nv_coords(nv, coords_key=ion_laser, drift=drift) for nv in nv_list
-    ]
-    return ion_coords_list
+    return get_coords_list(repol_nv_list, LaserKey.SPIN_POL)
 
 
 # endregion
@@ -544,69 +538,58 @@ def _scanning_to_pixel_calibration(coords_key=CoordsKey.GLOBAL):
 # endregion
 # region Camera getters - probably only needed internally
 
-# Cache these values to allow fast image processing
-_camera_spot_radius = None
-_camera_bias_clamp = None
-_camera_resolution = None
-_camera_em_gain = None
-_camera_k_gain = None
 
-
+@cache
 def _get_camera_spot_radius():
-    global _camera_spot_radius
-    if _camera_spot_radius is None:
-        _camera_spot_radius = _get_camera_config_val("spot_radius")
-    return _camera_spot_radius
+    return _get_camera_config_val("spot_radius")
 
 
+@cache
 def _get_camera_bias_clamp():
-    global _camera_bias_clamp
-    if _camera_bias_clamp is None:
-        _camera_bias_clamp = _get_camera_config_val("bias_clamp")
-    return _camera_bias_clamp
+    return _get_camera_config_val("bias_clamp")
 
 
+@cache
 def _get_camera_resolution():
-    global _camera_resolution
-    if _camera_resolution is None:
-        _camera_resolution = _get_camera_config_val("resolution")
-    return _camera_resolution
+    return _get_camera_config_val("resolution")
 
 
+@cache
 def _get_camera_em_gain():
-    global _camera_em_gain
-    if _camera_em_gain is None:
-        _camera_em_gain = _get_camera_config_val("em_gain")
-    return _camera_em_gain
+    return _get_camera_config_val("em_gain")
 
 
+@cache
 def _get_camera_k_gain():
-    global _camera_k_gain
-    if _camera_k_gain is None:
-        readout_mode = _get_camera_readout_mode()
-        camera_server_name = common.get_server_name("camera")
-        camera_module = import_module(f"servers.inputs.{camera_server_name}")
-        k_gain_dict = camera_module.k_gain_dict
-        _camera_k_gain = k_gain_dict[readout_mode]
+    readout_mode = _get_camera_readout_mode()
+    camera_server_name = common.get_server_name("camera")
+    camera_module = import_module(f"servers.inputs.{camera_server_name}")
+    k_gain_dict = camera_module.k_gain_dict
+    _camera_k_gain = k_gain_dict[readout_mode]
     return _camera_k_gain
 
 
+@cache
 def _get_camera_readout_mode():
     return _get_camera_config_val("readout_mode")
 
 
+@cache
 def _get_camera_timeout():
     return _get_camera_config_val("timeout")
 
 
+@cache
 def _get_camera_temp():
     return _get_camera_config_val("temp")
 
 
+@cache
 def _get_camera_readout_mode():
     return _get_camera_config_val("readout_mode")
 
 
+@cache
 def _get_camera_roi():
     try:
         return _get_camera_config_val("roi")

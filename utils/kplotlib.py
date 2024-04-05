@@ -519,6 +519,7 @@ def imshow(
     y_label=None,
     cbar_label=None,
     no_cbar=False,
+    nan_color=None,
     **kwargs,
 ):
     """Same as matplotlib's imshow, but with our defaults
@@ -549,11 +550,16 @@ def imshow(
 
     img = ax.imshow(img_array, **kwargs)
 
-    # Colorbar and labels
+    # Colorbar
     if not no_cbar:
         clb = fig.colorbar(img, ax=ax)
         if cbar_label is not None:
             clb.set_label(cbar_label)
+    if nan_color is not None:
+        cmap = img.cmap
+        cmap.set_bad(color=nan_color)
+
+    # Labels
     if x_label is not None:
         plt.xlabel(x_label)
     if y_label is not None:

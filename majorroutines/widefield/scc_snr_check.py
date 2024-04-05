@@ -17,6 +17,34 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
+def process_and_print(nv_list, counts):
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+
+    ### Report the results and return
+
+    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+
+    # There's only one point, so only consider that
+    avg_sig_counts = avg_sig_counts[:, 0]
+    avg_sig_counts_ste = avg_sig_counts_ste[:, 0]
+    avg_ref_counts = avg_ref_counts[:, 0]
+    avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
+    avg_snr = avg_snr[:, 0]
+    avg_snr_ste = avg_snr_ste[:, 0]
+
+    # Print
+    for ind in range(len(nv_list)):
+        nv_sig = nv_list[ind]
+        nv_num = widefield.get_nv_num(nv_sig)
+        nv_ref_counts = tb.round_for_print(avg_ref_counts[ind], avg_ref_counts_ste[ind])
+        nv_sig_counts = tb.round_for_print(avg_sig_counts[ind], avg_sig_counts_ste[ind])
+        nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
+        print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
+
+
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
@@ -46,30 +74,9 @@ def main(nv_list, num_reps, num_runs):
         uwave_ind=uwave_ind,
         save_images=False,
     )
-    sig_counts = counts[0]
-    ref_counts = counts[1]
 
-    ### Report the results and return
+    ### Report results and cleanup
 
-    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
-    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-
-    # There's only one point, so only consider that
-    avg_sig_counts = avg_sig_counts[:, 0]
-    avg_sig_counts_ste = avg_sig_counts_ste[:, 0]
-    avg_ref_counts = avg_ref_counts[:, 0]
-    avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
-    avg_snr = avg_snr[:, 0]
-    avg_snr_ste = avg_snr_ste[:, 0]
-
-    # Print
-    for ind in range(len(nv_list)):
-        nv_sig = nv_list[ind]
-        nv_num = widefield.get_nv_num(nv_sig)
-        nv_ref_counts = tb.round_for_print(avg_ref_counts[ind], avg_ref_counts_ste[ind])
-        nv_sig_counts = tb.round_for_print(avg_sig_counts[ind], avg_sig_counts_ste[ind])
-        nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
-        print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
+    process_and_print(nv_list, counts)
 
     tb.reset_cfm()

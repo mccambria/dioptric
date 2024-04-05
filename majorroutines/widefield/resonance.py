@@ -218,16 +218,8 @@ def main(
     ### Collect the data
 
     def run_fn(step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(uwave_ind)
-        shuffled_freqs = [freqs[step_ind] for step_ind in step_inds]
-        seq_args.append(shuffled_freqs)
-        # MCC
-        # if 2.835 < freq < 2.905:
-        #     uwave_duration = 96 // 2
-        # else:
-        #     uwave_duration = 112 // 2
-        # seq_args.append(uwave_duration)
+        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
+        seq_args.append(step_inds)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -244,7 +236,9 @@ def main(
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts
+    )
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)

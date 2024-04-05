@@ -24,52 +24,29 @@ def get_seq(
     repol_coords_list,
     ion_coords_list,
     uwave_ind,
-    step_vals=None,
     num_reps=1,
-    reference=True,
-    pol_duration_ns=None,
-    uwave_duration_ns=None,
-    ion_duration_ns=None,
-    readout_duration_ns=None,
-    phase=None,
 ):
-    # if phase is not None:
-    #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
-    # phase_rad = phase * (np.pi / 180)
-    # i_comp = 0.5 * np.cos(phase_rad)
-    # q_comp = 0.5 * np.sin(phase_rad)
-    # iq_pulse_dict = {0: , 90:}
-
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, allow_zero=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
-    no_uwave = isinstance(uwave_duration, int) and uwave_duration == 0
-
     with qua.program() as seq:
+        qua_random = qua.Random()
 
         def uwave_macro_sig(step_val):
+            qua.assign(step_val, qua_random.rand_int(2))
+            # qua.assign(step_val, 1)
+
             seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
             qua.align()
-            if uwave_duration is None:
+            with qua.if_(step_val == 1):
                 qua.play("pi_pulse", sig_gen_el)
-                # if phase is not None:
-                #     qua.play("pi_pulse", i_el)
-                #     qua.play("pi_pulse", q_el)
-            elif no_uwave:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
-            qua.wait(buffer, sig_gen_el)
+                qua.wait(buffer, sig_gen_el)
 
         base_sequence.macro(
             pol_coords_list,
             ion_coords_list,
             uwave_macro_sig,
-            step_vals,
-            num_reps,
-            pol_duration_ns,
-            ion_duration_ns,
-            readout_duration_ns,
-            reference=reference,
+            num_reps=num_reps,
         )
 
     seq_ret_vals = []
@@ -88,18 +65,19 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [109.05560372660722, 110.77022466032236],
-                [109.2856037266072, 111.45022466032236],
+                [
+                    [108.20663774042235, 109.18919887824842],
+                    [108.63163774042235, 109.42319887824841],
+                ],
+                [
+                    [108.20663774042235, 109.18919887824842],
+                ],
+                [
+                    [73.2138344723166, 74.44585432573876],
+                    [73.4068344723166, 74.57285432573876],
+                ],
+                0,
             ],
-            [
-                [109.05560372660722, 110.77022466032236],
-            ],
-            [
-                [73.78442169604547, 75.67270342527479],
-                [74.02642169604547, 76.07570342527478],
-            ],
-            0,
-            [1, 2, 3, 4],
             10,
         )
 

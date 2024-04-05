@@ -8,15 +8,12 @@ Created on December 11th, 2023
 @author: mccambria
 """
 
-import matplotlib.pyplot as plt
-from qm import QuantumMachinesManager, qua
-from qm.simulate import SimulationConfig
+from qm import qua
 
-import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(
+def macro(
     pol_coords_list,
     ion_coords_list,
     uwave_macro,
@@ -27,8 +24,8 @@ def get_seq(
     readout_duration_ns=None,
     reference=True,
 ):
-    """Base spin sequence for widefield experiments with many spatially resolved NV
-    centers. Accompanies base routine
+    """Base spin sequence as a QUA macro for widefield experiments with many
+    spatially resolved NV centers. Accompanies base routine
 
     Parameters
     ----------
@@ -62,6 +59,9 @@ def get_seq(
     _type_
         _description_
     """
+
+    ### Non-QUA stuff
+
     if num_reps is None:
         num_reps = 1
 
@@ -76,71 +76,28 @@ def get_seq(
         uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
 
-    with qua.program() as seq:
-        seq_utils.init()
-        step_val = qua.declare(qua.fixed)
+    ### QUA stuff
 
-        def one_exp(exp_ind):
-            seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
-            uwave_macro[exp_ind](step_val)
-            seq_utils.macro_scc(ion_coords_list, ion_duration_ns, pol_coords_list)
-            seq_utils.macro_charge_state_readout(readout_duration_ns)
-            seq_utils.macro_wait_for_trigger()
+    seq_utils.init()
+    step_val = qua.declare(int)
 
-        def one_rep():
-            for exp_ind in range(num_exps_per_rep):
-                one_exp(exp_ind)
+    def one_exp(exp_ind):
+        seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
+        uwave_macro[exp_ind](step_val)
+        seq_utils.macro_scc(ion_coords_list, ion_duration_ns, pol_coords_list)
+        seq_utils.macro_charge_state_readout(readout_duration_ns)
+        seq_utils.macro_wait_for_trigger()
 
-        def one_step():
-            seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-            seq_utils.macro_pause()
+    def one_rep():
+        for exp_ind in range(num_exps_per_rep):
+            one_exp(exp_ind)
 
-        if step_vals is None:
+    def one_step():
+        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+        seq_utils.macro_pause()
+
+    if step_vals is None:
+        one_step()
+    else:
+        with qua.for_each_(step_val, step_vals):
             one_step()
-        else:
-            with qua.for_each_(step_val, step_vals):
-                one_step()
-
-    return seq
-
-
-if __name__ == "__main__":
-    config_module = common.get_config_module()
-    config = config_module.config
-    opx_config = config_module.opx_config
-
-    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
-    qmm = QuantumMachinesManager(**qm_opx_args)
-    opx = qmm.open_qm(opx_config)
-
-    try:
-        args = [
-            "laser_INTE_520",
-            1000.0,
-            [
-                [112.8143831410256, 110.75435400118901],
-                [112.79838314102561, 110.77035400118902],
-            ],
-            "laser_COBO_638",
-            200,
-            [
-                [76.56091979499166, 75.8487161634141],
-                [76.30891979499165, 75.96071616341409],
-            ],
-            "laser_OPTO_589",
-            3500.0,
-            "sig_gen_STAN_sg394",
-            96 / 2,
-        ]
-        seq, seq_ret_vals = get_seq(args, 5, readout_duration_ns=1000)
-
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
-        sim = opx.simulate(seq, sim_config)
-        samples = sim.get_simulated_samples()
-        samples.con1.plot()
-        plt.show(block=True)
-
-    except Exception as exc:
-        raise exc
-    finally:
-        qmm.close_all_quantum_machines()

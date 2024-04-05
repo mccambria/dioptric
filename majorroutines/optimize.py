@@ -224,11 +224,11 @@ def _read_counts_camera_sequence(
         ]
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
-    elif laser_key == LaserKey.IONIZATION:
-        pol_laser = tb.get_laser_name(LaserKey.POLARIZATION)
+    elif laser_key == LaserKey.ION:
+        pol_laser = tb.get_laser_name(LaserKey.CHARGE_POL)
         pol_coords = pos.get_nv_coords(nv_sig, coords_key=pol_laser)
         if coords is None:
-            ion_laser = tb.get_laser_name(LaserKey.IONIZATION)
+            ion_laser = tb.get_laser_name(LaserKey.ION)
             ion_coords = pos.get_nv_coords(nv_sig, coords_key=ion_laser)
         else:
             ion_coords = coords
@@ -258,7 +258,7 @@ def _read_counts_camera_sequence(
             if axis_ind in [0, 1]:
                 if laser_key == LaserKey.IMAGING:
                     seq_args[-2 + axis_ind] = [val]
-                elif laser_key == LaserKey.IONIZATION:
+                elif laser_key == LaserKey.ION:
                     seq_args[1][axis_ind] = val
                 seq_args_string = tb.encode_seq_args(seq_args)
 
@@ -321,7 +321,7 @@ def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fi
     #     f_counts = (counts / 1000) / (readout / 10**9)
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
-    positive_amplitude = laser_key != LaserKey.IONIZATION
+    positive_amplitude = laser_key != LaserKey.ION
     opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, positive_amplitude, fig)
 
     return opti_coord, scan_vals, f_counts
@@ -650,7 +650,7 @@ if __name__ == "__main__":
     file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
     data = dm.get_raw_data(file_name)
     laser_key = data["laser_key"]
-    positive_amplitude = laser_key != LaserKey.IONIZATION
+    positive_amplitude = laser_key != LaserKey.ION
 
     fig = _create_figure()
     nv_sig = data["nv_sig"]

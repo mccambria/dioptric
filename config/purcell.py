@@ -90,7 +90,7 @@ config |= {
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
             # "frequency": 2.8126,
-            "frequency": 2.8579,
+            "frequency": 2.8572,
             # "rabi_period": 112,
             "rabi_period": 96,
             # "uwave_power": 9,
@@ -143,27 +143,23 @@ config |= {
             "aod": True,
             "default_aod_suffix": "scc",
         },
-        # Virtual lasers, which accomplish one and only one function
+        # Virtual lasers
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
-        LaserKey.WIDEFIELD_IMAGING: {"name": "laser_OPTO_589", "duration": 1e9},
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
-        LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
+        LaserKey.CHARGE_POL: {"name": "laser_INTE_520", "duration": 10e3},
+        LaserKey.SPIN_POL: {"name": "laser_INTE_520", "duration": 10e3},
         LaserKey.SHELVING: {"name": "laser_INTE_520", "duration": 48},
-        LaserKey.IONIZATION: {
-            "name": "laser_COBO_638",
-            # "scc_duration": 120,  # 100 mW, 0.19 V, no shelving
-            "scc_duration": 144,  # 180 mW, 0.13 V, no shelving
-            # "scc_duration": 200,
-            "ion_duration": 1000,
-        },
-        LaserKey.CHARGE_READOUT: {
+        LaserKey.WIDEFIELD_IMAGING: {"name": "laser_OPTO_589", "duration": 1e9},
+        LaserKey.WIDEFIELD_SPIN_POL: {
             "name": "laser_OPTO_589",
-            # "duration": 30e6,
-            "duration": 50e6,
-            # "duration": 100e6,
-            # "duration": 200e6,
-            # "duration": 1e9,
-        },  # 35e6, 0.09
+            "duration": 10e3,
+        },
+        LaserKey.ION: {"name": "laser_COBO_638", "duration": 1000},
+        LaserKey.SCC: {
+            "name": "laser_COBO_638",
+            "duration": 144,  # 180 mW, 0.13 V, no shelving
+        },
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 50e6},
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
     ###
@@ -609,17 +605,17 @@ opx_config = {
         },
         "do_scc": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.IONIZATION]["scc_duration"],
+            "length": config["Optics"][LaserKey.SCC]["duration"],
             "digital_marker": "on",
         },
         "do_ion": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.IONIZATION]["ion_duration"],
+            "length": config["Optics"][LaserKey.ION]["duration"],
             "digital_marker": "on",
         },
         "do_charge_pol": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
+            "length": config["Optics"][LaserKey.CHARGE_POL]["duration"],
             "digital_marker": "on",
         },
         "do_shelving": {

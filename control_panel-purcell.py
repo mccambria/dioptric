@@ -10,17 +10,11 @@ Created on June 16th, 2023
 
 ### Imports
 
-import copy
-import os
-import sys
 import time
 
-import keyboard
 import matplotlib.pyplot as plt
-import numpy as np
 
 from majorroutines.widefield import (
-    calibrate_green_red_delay,
     calibrate_iq_delay,
     charge_state_histograms,
     correlation_test,
@@ -33,6 +27,7 @@ from majorroutines.widefield import (
     relaxation_interleave,
     resonance,
     scc_snr_check,
+    simple_correlation_test,
     spin_echo,
     spin_pol_check,
     xy8,
@@ -41,7 +36,7 @@ from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, LaserKey, NVSig, NVSpinState
+from utils.constants import CoordsKey, LaserKey, NVSig
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -94,7 +89,7 @@ def do_optimize_green(nv_sig, do_plot=True):
 
 
 def do_optimize_red(nv_sig, do_plot=True):
-    laser_key = LaserKey.IONIZATION
+    laser_key = LaserKey.ION
     coords_key = red_laser
     ret_vals = optimize.main(
         nv_sig,
@@ -188,6 +183,12 @@ def do_scc_snr_check(nv_list):
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
+def do_simple_correlation_test(nv_list):
+    num_reps = 200
+    num_runs = 20
+    simple_correlation_test.main(nv_list, num_reps, num_runs)
+
+
 def do_calibrate_iq_delay(nv_list):
     min_tau = -100
     max_tau = +100
@@ -204,16 +205,17 @@ def do_resonance(nv_list):
     freq_range = 0.180
     num_steps = 40
     num_reps = 10
-    num_runs = 240
+    # num_runs = 120
+    num_runs = 20
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.87
-    freq_range = 0.06
+    freq_center = 2.8572
+    freq_range = 0.060
     num_steps = 20
-    num_reps = 15
-    num_runs = 30
+    num_reps = 10
+    num_runs = 2
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -667,8 +669,12 @@ if __name__ == "__main__":
     nv_list[0].expected_counts = 4800
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    # nv_inds = [0, 2, 3]
-    # nv_list = [nv_list[ind] for ind in nv_inds]
+    nv_inds = [0, 1, 2, 4]
+    nv_list = [nv_list[ind] for ind in nv_inds]
+
+    # for nv in nv_list:
+    #     nv.init_spin_flipped = True
+    # nv_list[0].init_spin_flipped = False
 
     # endregion
 
@@ -695,6 +701,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # endregion
+
     ### Functions to run
 
     email_recipient = "mccambria@berkeley.edu"
@@ -738,7 +745,7 @@ if __name__ == "__main__":
         #     time.sleep(5)
 
         do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -761,7 +768,7 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
@@ -780,6 +787,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
+        # do_simple_correlation_test(nv_list)
 
     # region Cleanup
 
