@@ -121,42 +121,40 @@ config |= {
     ###
     "Optics": {
         # Physical lasers
-        "laser_INTE_520": {
+        green_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
             "default_aod_suffix": "charge_pol",
+            "opti_laser_key": LaserKey.IMAGING,
         },
-        "laser_OPTO_589": {
+        yellow_laser: {
             "delay": 0,
             "mod_mode": ModMode.ANALOG,
             "pos_mode": LaserPosMode.WIDEFIELD,
         },
-        "laser_COBO_638": {
+        red_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
             "default_aod_suffix": "scc",
+            "opti_laser_key": LaserKey.ION,
         },
         # Virtual lasers
-        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
-        LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
-        LaserKey.CHARGE_POL: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.SPIN_POL: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.SHELVING: {"name": "laser_INTE_520", "duration": 48},
-        LaserKey.WIDEFIELD_IMAGING: {"name": "laser_OPTO_589", "duration": 1e9},
-        LaserKey.WIDEFIELD_SPIN_POL: {
-            "name": "laser_OPTO_589",
-            "duration": 10e3,
-        },
-        LaserKey.ION: {"name": "laser_COBO_638", "duration": 1000},
-        LaserKey.SCC: {
-            "name": "laser_COBO_638",
-            "duration": 144,  # 180 mW, 0.13 V, no shelving
-        },
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 50e6},
+        LaserKey.IMAGING: {"name": green_laser, "duration": 20e6},
+        LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
+        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
+        LaserKey.SHELVING: {"name": green_laser, "duration": 48},
+        LaserKey.ION: {"name": red_laser, "duration": 1000},
+        # SCC: 180 mW, 0.13 V, no shelving
+        LaserKey.SCC: {"name": red_laser, "duration": 144},
+        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 1e9},
+        LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
+        #
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
     ###

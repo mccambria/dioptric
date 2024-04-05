@@ -106,9 +106,9 @@ marker_style = "o"
 
 class KplColors(StrEnum):
     BLUE = "#1f77b4"
-    ORANGE = "#ff7f0e"
-    GREEN = "#2ca02c"
     RED = "#d62728"
+    GREEN = "#2ca02c"
+    ORANGE = "#ff7f0e"
     PURPLE = "#9467bd"
     BROWN = "#8c564b"
     PINK = "#e377c2"

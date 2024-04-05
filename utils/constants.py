@@ -43,6 +43,8 @@ class CollectionMode(Enum):
 
 
 class CountFormat(Enum):
+    """Deprecated, everything should be raw"""
+
     KCPS = auto()  # Count rate in kilo counts per second
     RAW = auto()  # Just the raw number of counts
 

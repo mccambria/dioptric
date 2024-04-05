@@ -24,15 +24,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import (
-    CollectionMode,
-    ControlMode,
-    CoordsKey,
-    CountFormat,
-    LaserKey,
-    LaserPosMode,
-    NVSig,
-)
+from utils.constants import CollectionMode, ControlMode, CoordsKey, LaserKey, NVSig
 
 # endregion
 # region Plotting functions
@@ -40,7 +32,6 @@ from utils.constants import (
 
 def _create_figure():
     kpl.init_kplotlib(kpl.Size.SMALL)
-    config = common.get_config_dict()
     fig, axes_pack = plt.subplots(1, 3, figsize=kpl.double_figsize)
     axis_titles = ["X axis", "Y axis", "Z axis"]
     for ind in range(3):
@@ -48,12 +39,7 @@ def _create_figure():
         ax.set_title(axis_titles[ind])
         xlabel = pos.get_axis_units(ind)
         ax.set_xlabel(xlabel)
-        count_format = config["count_format"]
-        if count_format == CountFormat.RAW:
-            ylabel = "Counts"
-        elif count_format == CountFormat.KCPS:
-            ylabel = "Count rate (kcps)"
-        ax.set_ylabel(ylabel)
+        ax.set_ylabel("Counts")
     return fig
 
 
@@ -163,7 +149,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
     return [np.array(counts, dtype=int)]
 
 
-def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
+def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
     pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
@@ -185,9 +171,17 @@ def _read_counts_camera_step(nv_sig, laser_key, axis_ind=None, scan_vals=None):
     return [np.array(counts, dtype=int), img_array]
 
 
+def _get_opti_laser_key(coords_key):
+    if coords_key is CoordsKey.GLOBAL:
+        laser_key = LaserKey.IMAGING
+    else:
+        laser_dict = tb.get_laser_dict(laser_key)
+        laser_key = laser_dict["opti_laser_key"]
+    return laser_key
+
+
 def _read_counts_camera_sequence(
     nv_sig: NVSig,
-    laser_key,
     coords=None,
     coords_key=CoordsKey.GLOBAL,
     axis_ind=None,
@@ -206,13 +200,15 @@ def _read_counts_camera_sequence(
     else:
         num_steps = 1
 
+    laser_key = _get_opti_laser_key(coords_key)
+
     # Sequence setup
 
     if laser_key == LaserKey.IMAGING:
         imaging_laser_dict = tb.get_laser_dict(LaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
-        if coords is None or coords_key != laser_key:
+        if coords is None:
             laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         else:
             laser_coords = coords
@@ -286,14 +282,12 @@ def _read_counts_camera_sequence(
     return [np.array(counts, dtype=int), img_array]
 
 
-def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fig=None):
+def _optimize_on_axis(nv_sig: NVSig, coords, coords_key, axis_ind, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     ### Basic setup and definitions
 
     num_steps = 20
-    # config = common.get_config_dict()
-    # laser_dict = tb.get_laser_dict(laser_key)
     scan_range = pos.get_axis_optimize_range(axis_ind, coords_key)
 
     # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
@@ -307,20 +301,15 @@ def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fi
 
     ### Record the counts
 
-    ret_vals = _read_counts(nv_sig, laser_key, coords, coords_key, axis_ind, scan_vals)
+    ret_vals = _read_counts(nv_sig, coords, coords_key, axis_ind, scan_vals)
     counts = ret_vals[0]
 
     ### Plot, fit, return
 
     f_counts = counts
-    # count_format = config["count_format"]
-    # if count_format == CountFormat.RAW:
-    #     f_counts = counts
-    # elif count_format == CountFormat.KCPS:
-    #     readout = laser_dict["duration"]
-    #     f_counts = (counts / 1000) / (readout / 10**9)
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
+    laser_key = _get_opti_laser_key(coords_key)
     positive_amplitude = laser_key != LaserKey.ION
     opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, positive_amplitude, fig)
 
@@ -329,7 +318,6 @@ def _optimize_on_axis(nv_sig: NVSig, laser_key, coords, coords_key, axis_ind, fi
 
 def _read_counts(
     nv_sig,
-    laser_key=LaserKey.IMAGING,
     coords=None,
     coords_key=CoordsKey.GLOBAL,
     axis_ind=None,
@@ -340,9 +328,9 @@ def _read_counts(
     collection_mode = config["collection_mode"]
     pulse_gen = tb.get_server_pulse_gen()
 
+    laser_key = _get_opti_laser_key(coords_key)
     laser_dict = tb.get_laser_dict(laser_key)
-    laser_name = laser_dict["name"]
-    laser_power = tb.set_laser_power(nv_sig, laser_key)
+    laser_name = tb.get_laser_name(laser_key)
     if axis_ind is not None:
         delay = pos.get_axis_delay(axis_ind, coords_key=coords_key)
         control_mode = pos.get_axis_control_mode(axis_ind, coords_key)
@@ -359,7 +347,7 @@ def _read_counts(
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
         ret_vals = _read_counts_camera_sequence(
-            nv_sig, laser_key, coords, coords_key, axis_ind, scan_vals
+            nv_sig, coords, coords_key, axis_ind, scan_vals
         )
 
     elif collection_mode == CollectionMode.COUNTER:
@@ -372,7 +360,7 @@ def _read_counts(
 
         seq_file_name = "simple_readout.py"
         readout = laser_dict["duration"]
-        seq_args = [delay, readout, laser_name, laser_power]
+        seq_args = [delay, readout, laser_name]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
@@ -390,31 +378,23 @@ def _read_counts(
 
 def stationary_count_lite(
     nv_sig,
-    laser_key=LaserKey.IMAGING,
     coords=None,
     coords_key=CoordsKey.GLOBAL,
     ret_img_array=False,
 ):
     # Set up
     config = common.get_config_dict()
-    tb.set_filter(nv_sig, laser_key)
     prepare_microscope(nv_sig)
 
-    ret_vals = _read_counts(nv_sig, laser_key, coords, coords_key)
+    ret_vals = _read_counts(nv_sig, coords, coords_key)
     counts = ret_vals[0]
 
     # Return
     avg_counts = np.average(counts)
     config = common.get_config_dict()
-    count_format = config["count_format"]
     if ret_img_array:
         return ret_vals[1]
-    if count_format == CountFormat.RAW:
-        return avg_counts
-    elif count_format == CountFormat.KCPS and laser_key == LaserKey.IMAGING:
-        readout = tb.get_common_duration("imaging_readout")
-        count_rate = (avg_counts / 1000) / (readout / 10**9)
-        return count_rate
+    return avg_counts
 
 
 def prepare_microscope(nv_sig: NVSig):
@@ -439,15 +419,15 @@ def prepare_microscope(nv_sig: NVSig):
 
 def main(
     nv_sig: NVSig,
-    laser_key=LaserKey.IMAGING,
     coords_key=CoordsKey.GLOBAL,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
     do_plot=False,
 ):
+    prepare_microscope(nv_sig)
+
     # If optimize is disabled, just do prep and return
     if nv_sig.disable_opt:
-        prepare_microscope(nv_sig)
         return [], None
 
     ### Setup
@@ -459,7 +439,6 @@ def main(
 
     tb.reset_cfm()
     tb.init_safe_stop()
-    config = common.get_config_dict()
 
     initial_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust)
     expected_counts = nv_sig.expected_counts
@@ -469,25 +448,17 @@ def main(
 
     start_time = time.time()
 
-    # Filter sets for imaging
-    tb.set_filter(nv_sig, "collection")
-    tb.set_filter(nv_sig, laser_key)
-
     # Default values for status variables
     opti_succeeded = False
     opti_necessary = True
     opti_coords = initial_coords.copy()
 
     def count_check(coords):
-        return stationary_count_lite(nv_sig, laser_key, coords, coords_key)
+        return stationary_count_lite(nv_sig, coords, coords_key)
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
-    count_format = config["count_format"]
-    if count_format == CountFormat.RAW:
-        print(f"Expected counts: {expected_counts}")
-    elif count_format == CountFormat.KCPS:
-        print(f"Expected count rate: {expected_counts} kcps")
+    print(f"Expected counts: {expected_counts}")
     current_counts = count_check(initial_coords)
     print(f"Counts at initial coordinates: {current_counts}")
     if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
@@ -532,7 +503,7 @@ def main(
 
                 # Perform the optimization
                 ret_vals = _optimize_on_axis(
-                    nv_sig, laser_key, opti_coords, coords_key, axis_ind, fig
+                    nv_sig, opti_coords, coords_key, axis_ind, fig
                 )
                 opti_coord = ret_vals[0]
                 if opti_coord is not None:
@@ -622,7 +593,6 @@ def main(
             "nv_sig": nv_sig,
             "opti_coords": opti_coords,
             "axes_to_optimize": axes_to_optimize,
-            "laser_key": laser_key,
             "x_scan_vals": scan_vals_by_axis[0],
             "y_scan_vals": scan_vals_by_axis[1],
             "z_scan_vals": scan_vals_by_axis[2],
@@ -649,8 +619,6 @@ def main(
 if __name__ == "__main__":
     file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
     data = dm.get_raw_data(file_name)
-    laser_key = data["laser_key"]
-    positive_amplitude = laser_key != LaserKey.ION
 
     fig = _create_figure()
     nv_sig = data["nv_sig"]

@@ -13,6 +13,7 @@ Created on June 16th, 2023
 import time
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from majorroutines.widefield import (
     calibrate_iq_delay,
@@ -89,11 +90,9 @@ def do_optimize_green(nv_sig, do_plot=True):
 
 
 def do_optimize_red(nv_sig, do_plot=True):
-    laser_key = LaserKey.ION
     coords_key = red_laser
     ret_vals = optimize.main(
         nv_sig,
-        laser_key=laser_key,
         coords_key=coords_key,
         no_crash=True,
         do_plot=do_plot,
@@ -226,8 +225,17 @@ def do_rabi(nv_list):
     num_reps = 10
     num_runs = 40
     uwave_ind = 0
+    nv_list[0].init_spin_flipped = True
+    nv_list[1].init_spin_flipped = False
+    nv_list[2].init_spin_flipped = True
     rabi.main(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind=uwave_ind,
     )
 
 
@@ -560,7 +568,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.18
+    z_coord = 4.54
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -666,13 +674,13 @@ if __name__ == "__main__":
     nv_list[0].expected_counts = 4800
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    nv_inds = [0, 1, 2, 4]
+    nv_inds = [0, 2, 4]
     nv_list = [nv_list[ind] for ind in nv_inds]
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
-    nv_list[1].init_spin_flipped = True
-    nv_list[3].init_spin_flipped = True
+    # nv_list[1].init_spin_flipped = True
+    # nv_list[3].init_spin_flipped = True
     # seq_args = widefield.get_base_scc_seq_args(nv_list, 0)
     # print(seq_args)
 
@@ -714,14 +722,14 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-12, -14])
+        # widefield.set_pixel_drift([-19, -32])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.0, 4.3, 11):
+        # for z in np.linspace(4.0, 4.6, 21):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
