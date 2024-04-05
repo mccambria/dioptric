@@ -142,10 +142,12 @@ run_rep_axes = (run_ax, rep_ax)
 
 def average_counts(sig_counts, ref_counts=None):
     """Gets average and standard error for counts data structure.
-    Assumes the counts arrays have the structure [nv_ind, run_ind, freq_ind, rep_ind].
+    Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
     Returns the [nv_ind] for norms.
     """
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
 
     sig_counts = np.array(sig_counts)
     # meas_array = counts_array > 75
@@ -172,6 +174,8 @@ def average_counts(sig_counts, ref_counts=None):
 def threshold_counts(nv_list, sig_counts, ref_counts=None):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
 
     sig_counts = np.array(sig_counts)
 
@@ -197,11 +201,15 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
 
 def process_counts(nv_list, sig_counts, ref_counts=None):
     """Alias for threshold_counts with a more generic name"""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
     return threshold_counts(nv_list, sig_counts, ref_counts)
 
 
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
     avg_sig_counts, avg_sig_counts_ste = average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste = average_counts(ref_counts)
     noise = np.sqrt(
@@ -211,6 +219,16 @@ def calc_snr(sig_counts, ref_counts):
     avg_snr = (avg_sig_counts - avg_ref_counts) / noise
     avg_snr_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2)) / noise
     return avg_snr, avg_snr_ste
+
+
+def _validate_counts_structure(counts):
+    """Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind]."""
+    if counts is None:
+        return
+    if not isinstance(counts, np.ndarray):
+        raise RuntimeError("Passed counts object is not a numpy array.")
+    if counts.ndim != 4:
+        raise RuntimeError("Passed counts object has the wrong number of dimensions.")
 
 
 # endregion
