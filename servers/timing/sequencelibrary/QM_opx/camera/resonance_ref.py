@@ -28,7 +28,6 @@ def get_seq(
     num_reps=1,
     reference=True,
     pol_duration_ns=None,
-    uwave_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
     phase=None,
@@ -41,23 +40,17 @@ def get_seq(
     # iq_pulse_dict = {0: , 90:}
 
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, allow_zero=True)
     buffer = seq_utils.get_widefield_operation_buffer()
-
-    no_uwave = isinstance(uwave_duration, int) and uwave_duration == 0
 
     with qua.program() as seq:
 
         def uwave_macro_sig(step_val):
             seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
             qua.align()
-            if uwave_duration is None:
-                qua.play("pi_pulse", sig_gen_el)
-                # if phase is not None:
-                #     qua.play("pi_pulse", i_el)
-                #     qua.play("pi_pulse", q_el)
-            elif no_uwave:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
+            qua.play("pi_pulse", sig_gen_el)
+            # if phase is not None:
+            #     qua.play("pi_pulse", i_el)
+            #     qua.play("pi_pulse", q_el)
             qua.wait(buffer, sig_gen_el)
 
         base_sequence.macro(
