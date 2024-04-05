@@ -214,6 +214,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     data = dm.get_raw_data(file_id=1492248078082)
+    # data = dm.get_raw_data(file_id=1492313255352)
 
     nv_list = data["nv_list"]
     nv_list = [NVSig(**nv) for nv in nv_list]
