@@ -671,7 +671,10 @@ if __name__ == "__main__":
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
-    # nv_list[0].init_spin_flipped = False
+    nv_list[1].init_spin_flipped = True
+    nv_list[3].init_spin_flipped = True
+    # seq_args = widefield.get_base_scc_seq_args(nv_list, 0)
+    # print(seq_args)
 
     # endregion
 
