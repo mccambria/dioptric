@@ -21,8 +21,8 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 def get_seq(
     pol_coords_list,
-    repol_coords_list,
     ion_coords_list,
+    anticorrelation_ind_list,
     uwave_ind,
     step_vals,
     num_reps=1,
@@ -34,13 +34,18 @@ def get_seq(
     with qua.program() as seq:
 
         def uwave_macro_sig(step_val):
-            seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
             qua.align()
             qua.play("on", sig_gen_el, duration=step_val)
             qua.wait(buffer, sig_gen_el)
 
         base_sequence.macro(
-            pol_coords_list, ion_coords_list, uwave_macro_sig, step_vals, num_reps
+            pol_coords_list,
+            ion_coords_list,
+            anticorrelation_ind_list,
+            uwave_ind,
+            uwave_macro_sig,
+            step_vals,
+            num_reps,
         )
 
     seq_ret_vals = []
@@ -59,18 +64,23 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [109.05560372660722, 110.77022466032236],
-                [109.2856037266072, 111.45022466032236],
+                [108.14084863857236, 109.57872938907813],
+                [108.79184863857236, 110.15972938907814],
+                [108.96084863857236, 111.48472938907813],
             ],
             [
-                [109.05560372660722, 110.77022466032236],
+                [73.1609590057334, 74.78591859464281],
+                [73.6149590057334, 75.1739185946428],
+                [73.8009590057334, 76.30691859464281],
             ],
-            [
-                [73.78442169604547, 75.67270342527479],
-                [74.02642169604547, 76.07570342527478],
-            ],
+            [0],
             0,
-            [1, 2, 3, 4],
+            [
+                136.0,
+                168.0,
+                112.0,
+                224.0,
+            ],
             10,
         )
 

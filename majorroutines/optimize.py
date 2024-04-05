@@ -175,7 +175,7 @@ def _get_opti_laser_key(coords_key):
     if coords_key is CoordsKey.GLOBAL:
         laser_key = LaserKey.IMAGING
     else:
-        laser_dict = tb.get_laser_dict(laser_key)
+        laser_dict = tb.get_optics_dict(laser_key)
         laser_key = laser_dict["opti_laser_key"]
     return laser_key
 
@@ -205,10 +205,10 @@ def _read_counts_camera_sequence(
     # Sequence setup
 
     if laser_key == LaserKey.IMAGING:
-        imaging_laser_dict = tb.get_laser_dict(LaserKey.IMAGING)
+        imaging_laser_dict = tb.get_optics_dict(LaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
-        if coords is None:
+        if coords is None or coords_key != imaging_laser_name:
             laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         else:
             laser_coords = coords
@@ -329,7 +329,7 @@ def _read_counts(
     pulse_gen = tb.get_server_pulse_gen()
 
     laser_key = _get_opti_laser_key(coords_key)
-    laser_dict = tb.get_laser_dict(laser_key)
+    laser_dict = tb.get_optics_dict(laser_key)
     laser_name = tb.get_laser_name(laser_key)
     if axis_ind is not None:
         delay = pos.get_axis_delay(axis_ind, coords_key=coords_key)
@@ -383,7 +383,6 @@ def stationary_count_lite(
     ret_img_array=False,
 ):
     # Set up
-    config = common.get_config_dict()
     prepare_microscope(nv_sig)
 
     ret_vals = _read_counts(nv_sig, coords, coords_key)
@@ -391,7 +390,6 @@ def stationary_count_lite(
 
     # Return
     avg_counts = np.average(counts)
-    config = common.get_config_dict()
     if ret_img_array:
         return ret_vals[1]
     return avg_counts

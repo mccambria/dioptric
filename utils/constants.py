@@ -25,11 +25,11 @@ class NVSig:
     expected_counts: Number = None
     magnet_angle: Number = None
     opti_offset: list[Number] = None  # Only works for global coordinates
-    # init_spin_flipped: Flag for determining initial spin state of an NV. After normal
+    # anticorrelation: Flag for determining initial spin state of an NV. After normal
     # polarization into ms=0, all spins of a given orientation are flipped with a pi
     # pulse. If init_spin_flipped is True, leave the spin alone after the pi pulse. If
     # init_spin_flipped is False, apply a green pulse to repolarize into ms=0
-    init_spin_flipped: bool = False
+    anticorrelation: bool = False
 
 
 class CoordsKey(StrEnum):

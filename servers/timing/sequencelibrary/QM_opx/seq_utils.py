@@ -150,7 +150,13 @@ def macro_ionize(ion_coords_list, ion_duration=None):
     _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration)
 
 
-def macro_scc(ion_coords_list, ion_duration=None, shelving_coords_list=None):
+def macro_scc(
+    ion_coords_list,
+    anticorrelation_ind_list=None,
+    uwave_ind=None,
+    ion_duration=None,
+    shelving_coords_list=None,
+):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -166,9 +172,15 @@ def macro_scc(ion_coords_list, ion_duration=None, shelving_coords_list=None):
     do_shelving_pulse = config["Optics"]["scc_shelving_pulse"]
 
     if do_shelving_pulse:
+        if anticorrelation_ind_list is not None:
+            raise NotImplementedError(
+                "Shelving SCC with anticorrelations not yet implemented."
+            )
         _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list)
     else:
-        _macro_scc_no_shelving(ion_coords_list, ion_duration)
+        _macro_scc_no_shelving(
+            ion_coords_list, anticorrelation_ind_list, uwave_ind, ion_duration
+        )
 
 
 def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
@@ -178,7 +190,7 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
     shelving_pulse_name = "shelving"
     ion_pulse_name = "scc"
     pulse_name_list = [shelving_pulse_name, ion_pulse_name]
-    shelving_laser_dict = tb.get_laser_dict(LaserKey.SHELVING)
+    shelving_laser_dict = tb.get_optics_dict(LaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
     shelving_scc_gap_ns = 16
     shelving_scc_gap = convert_ns_to_cc(shelving_scc_gap_ns)
@@ -218,11 +230,50 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
         )
 
 
-def _macro_scc_no_shelving(ion_coords_list, ion_duration=None):
+def _macro_scc_no_shelving(
+    ion_coords_list, anticorrelation_ind_list=None, uwave_ind=None, ion_duration=None
+):
+    # Basic setup
+
     ion_laser_name = tb.get_laser_name(LaserKey.SCC)
-    macro_run_aods([ion_laser_name], aod_suffices=["scc"])
     ion_pulse_name = "scc"
-    _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration)
+    macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
+
+    # No anticorrelations
+    if anticorrelation_ind_list is None or len(anticorrelation_ind_list) == 0:
+        _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration)
+    # Anticorrelations
+    else:
+        # More setup
+
+        num_nvs = len(ion_coords_list)
+        first_ion_coords_list = [
+            ion_coords_list[ind]
+            for ind in range(num_nvs)
+            if ind not in anticorrelation_ind_list
+        ]
+        second_ion_coords_list = [
+            ion_coords_list[ind]
+            for ind in range(num_nvs)
+            if ind in anticorrelation_ind_list
+        ]
+
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        buffer = get_widefield_operation_buffer()
+
+        # Actual commands
+
+        _macro_pulse_list(
+            ion_laser_name, first_ion_coords_list, ion_pulse_name, ion_duration
+        )
+
+        qua.align()
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(buffer, sig_gen_el)
+
+        _macro_pulse_list(
+            ion_laser_name, second_ion_coords_list, ion_pulse_name, ion_duration
+        )
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -366,6 +417,9 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration=None):
         duration of the passed pulse
     """
 
+    if len(coords_list) == 0:
+        return
+
     # Unpack the coords and convert to Hz
     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
@@ -467,7 +521,7 @@ def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
 
 @cache
 def get_default_charge_readout_duration():
-    readout_laser_dict = tb.get_laser_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
+    readout_laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
     readout_duration_ns = readout_laser_dict["duration"]
     return convert_ns_to_cc(readout_duration_ns)
 

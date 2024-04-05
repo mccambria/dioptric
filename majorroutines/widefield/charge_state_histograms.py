@@ -29,7 +29,7 @@ from utils.constants import LaserKey
 
 def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
     try:
-        laser_dict = tb.get_laser_dict(LaserKey.CHARGE_READOUT)
+        laser_dict = tb.get_optics_dict(LaserKey.CHARGE_READOUT)
         readout = laser_dict["duration"]
         readout_ms = int(readout / 1e6)
         readout_s = readout / 1e9
@@ -261,7 +261,7 @@ def _collect_data(
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = tb.get_laser_dict(laser_key)
+    laser_dict = tb.get_optics_dict(laser_key)
     readout_laser = laser_dict["name"]
     tb.set_filter(repr_nv_sig, laser_key)
 

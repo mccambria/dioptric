@@ -225,18 +225,23 @@ def do_rabi(nv_list):
     num_reps = 10
     num_runs = 40
     uwave_ind = 0
-    nv_list[0].init_spin_flipped = True
-    nv_list[1].init_spin_flipped = False
-    nv_list[2].init_spin_flipped = True
-    rabi.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        min_tau,
-        max_tau,
-        uwave_ind=uwave_ind,
-    )
+    for ind in range(3):
+        for flipped in [True, False]:
+            for nv_ind in range(3):
+                nv = nv_list[nv_ind]
+                if ind == nv_ind:
+                    nv.anticorrelation = flipped
+                else:
+                    nv.anticorrelation = not flipped
+            rabi.main(
+                nv_list,
+                num_steps,
+                num_reps,
+                num_runs,
+                min_tau,
+                max_tau,
+                uwave_ind=uwave_ind,
+            )
 
 
 def do_spin_echo(nv_list):
@@ -731,7 +736,7 @@ if __name__ == "__main__":
 
         # for z in np.linspace(4.0, 4.6, 21):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     do_widefield_image_sample(nv_sig, 20)
+        #     do_widefield_image_sample(nv_si g, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)

@@ -17,8 +17,8 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 def get_seq(
     pol_coords_list,
-    repol_coords_list,
     ion_coords_list,
+    anticorrelation_ind_list,
     uwave_ind,
     ion_duration_ns_list,
     num_reps,
@@ -27,7 +27,6 @@ def get_seq(
     buffer = seq_utils.get_widefield_operation_buffer()
 
     def sig_exp():
-        seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
         qua.align()
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
@@ -47,7 +46,9 @@ def get_seq(
         def one_exp(exp_ind):
             seq_utils.macro_polarize(pol_coords_list)
             uwave_macro_list[exp_ind]()
-            seq_utils.macro_scc(ion_coords_list, ion_duration, pol_coords_list)
+            seq_utils.macro_scc(
+                ion_coords_list, anticorrelation_ind_list, uwave_ind, ion_duration
+            )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 

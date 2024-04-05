@@ -21,8 +21,8 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 
 def get_seq(
     pol_coords_list,
-    repol_coords_list,
     ion_coords_list,
+    anticorrelation_ind_list,
     uwave_ind,
     num_reps=1,
 ):
@@ -35,8 +35,6 @@ def get_seq(
         def uwave_macro_sig(step_val):
             qua.assign(step_val, qua_random.rand_int(2))
             # qua.assign(step_val, 1)
-
-            seq_utils.macro_anticorrelate(repol_coords_list, uwave_ind)
             qua.align()
             with qua.if_(step_val == 1):
                 qua.play("pi_pulse", sig_gen_el)
@@ -45,6 +43,8 @@ def get_seq(
         base_sequence.macro(
             pol_coords_list,
             ion_coords_list,
+            anticorrelation_ind_list,
+            uwave_ind,
             uwave_macro_sig,
             num_reps=num_reps,
         )

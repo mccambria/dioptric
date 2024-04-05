@@ -586,14 +586,14 @@ def get_common_duration(key):
 
 
 @cache
-def get_laser_dict(laser_key):
+def get_optics_dict(optics_key):
     config = common.get_config_dict()
-    return config["Optics"][laser_key]
+    return config["Optics"][optics_key]
 
 
 @cache
 def get_laser_name(laser_key):
-    return get_laser_dict(laser_key)["name"]
+    return get_optics_dict(laser_key)["name"]
 
 
 @cache

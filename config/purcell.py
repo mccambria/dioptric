@@ -129,11 +129,6 @@ config |= {
             "default_aod_suffix": "charge_pol",
             "opti_laser_key": LaserKey.IMAGING,
         },
-        yellow_laser: {
-            "delay": 0,
-            "mod_mode": ModMode.ANALOG,
-            "pos_mode": LaserPosMode.WIDEFIELD,
-        },
         red_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
@@ -141,6 +136,14 @@ config |= {
             "aod": True,
             "default_aod_suffix": "scc",
             "opti_laser_key": LaserKey.ION,
+        },
+        yellow_laser: {
+            "delay": 0,
+            "mod_mode": ModMode.ANALOG,
+            "pos_mode": LaserPosMode.WIDEFIELD,
+        },
+        CoordsKey.GLOBAL: {
+            "opti_laser_key": LaserKey.IMAGING,
         },
         # Virtual lasers
         LaserKey.IMAGING: {"name": green_laser, "duration": 20e6},

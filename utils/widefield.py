@@ -323,9 +323,9 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
     """
 
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
-    repol_coords_list = get_repol_coords_list(nv_list)
     ion_coords_list = get_coords_list(nv_list, LaserKey.SCC)
-    seq_args = [pol_coords_list, repol_coords_list, ion_coords_list, uwave_ind]
+    anticorrelation_ind_list = get_anticorrelation_ind_list(nv_list)
+    seq_args = [pol_coords_list, ion_coords_list, anticorrelation_ind_list, uwave_ind]
     return seq_args
 
 
@@ -341,14 +341,9 @@ def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
     return coords_list
 
 
-def get_repol_coords_list(nv_list: list[NVSig]):
-    # If every NV should init into ms=0, just leave them all alone
-    # after the initial polarization
-    repol_nv_list = [nv for nv in nv_list if not nv.init_spin_flipped]
-    if len(repol_nv_list) == len(nv_list):
-        return None
-
-    return get_coords_list(repol_nv_list, LaserKey.SPIN_POL)
+def get_anticorrelation_ind_list(nv_list: list[NVSig]):
+    num_nvs = len(nv_list)
+    return [ind for ind in range(num_nvs) if nv_list[ind].anticorrelation]
 
 
 # endregion
