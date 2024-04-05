@@ -673,8 +673,7 @@ if __name__ == "__main__":
     #     nv.init_spin_flipped = True
     nv_list[1].init_spin_flipped = True
     nv_list[3].init_spin_flipped = True
-    # seq_args = widefield.get_base_scc_seq_args(nv_list, 0)
-    # print(seq_args)
+    repol_coords_list = widefield.get_repol_coords_list(nv_list)
 
     # endregion
 
