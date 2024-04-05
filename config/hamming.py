@@ -13,6 +13,7 @@ from config.default import config
 from utils.constants import (
     CollectionMode,
     ControlMode,
+    CoordsKey,
     CountFormat,
     LaserKey,
     LaserPosMode,
@@ -27,19 +28,15 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
-pixel_coords_key = "pixel_coords"
-green_coords_key = f"coords-{green_laser}"
-red_coords_key = f"coords-{red_laser}"
-
-widefield_calibration_nv1 = {
-    pixel_coords_key: [94.422, 164.308],
-    green_coords_key: [107.624, 109.545],
-    red_coords_key: [72.549, 74.866],
+widefield_calibration_coords1 = {
+    CoordsKey.PIXEL: [34.67, 195.792],
+    green_laser: [106.398, 108.749],
+    red_laser: [71.483, 73.988],
 }
-widefield_calibration_nv2 = {
-    pixel_coords_key: [160.774, 88.405],
-    green_coords_key: [109.084, 111.507],
-    red_coords_key: [73.762, 76.351],
+widefield_calibration_coords2 = {
+    CoordsKey.PIXEL: [165.329, 67.355],
+    green_laser: [109.2, 111.765],
+    red_laser: [73.735, 76.621],
 }
 
 
@@ -52,6 +49,7 @@ config |= {
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
     "windows_repo_path": home / "GitHub/dioptric",
+    "linux_repo_path": home / "Documents/GitHub/dioptric",
     ###
     # Common durations are in ns
     "CommonDurations": {
@@ -59,7 +57,7 @@ config |= {
         "default_pulse_duration": 1000,
         "aod_access_time": 20e3,
         # "aod_access_time": 100e3,
-        "widefield_operation_buffer": 10e3,
+        "widefield_operation_buffer": 1e3,
     },
     ###
     "DeviceIDs": {
@@ -92,12 +90,8 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            # "frequency": 2.87,
-            # "rabi_period": 96,
-            "frequency": 2.812,
-            "rabi_period": 112,
-            # "rabi_period": 32,
-            # "uwave_power": 9,
+            "frequency": 2.8556,
+            "rabi_period": 96,
             "uwave_power": 10,
             "iq_delay": 140,
         },
@@ -111,7 +105,7 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 6,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 7,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 1000,
         # "em_gain": 100,
@@ -127,11 +121,13 @@ config |= {
     },
     ###
     "Optics": {
+        # Physical lasers
         "laser_INTE_520": {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
+            "default_aod_suffix": "charge_pol",
         },
         "laser_OPTO_589": {
             "delay": 0,
@@ -143,55 +139,55 @@ config |= {
             "mod_mode": ModMode.DIGITAL,
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
+            "default_aod_suffix": "scc",
         },
-        # LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
+        # Virtual lasers
         LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 20e6},
-        LaserKey.WIDEFIELD_IMAGING: {
-            "name": "laser_OPTO_589",
-            # "duration": 100e6,
-            # "duration": 500e6,
-            "duration": 1e9,
-        },  # 35e6
         LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
-        LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 120},
-        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 200},
-        # LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 1e3},
-        LaserKey.CHARGE_READOUT: {
+        LaserKey.CHARGE_POL: {"name": "laser_INTE_520", "duration": 10e3},
+        LaserKey.SPIN_POL: {"name": "laser_INTE_520", "duration": 10e3},
+        LaserKey.SHELVING: {"name": "laser_INTE_520", "duration": 48},
+        LaserKey.WIDEFIELD_IMAGING: {"name": "laser_OPTO_589", "duration": 1e9},
+        LaserKey.WIDEFIELD_SPIN_POL: {
             "name": "laser_OPTO_589",
-            # "duration": 30e6,
-            "duration": 50e6,
-            # "duration": 100e6,
-            # "duration": 200e6,
-            # "duration": 1e9,
-        },  # 35e6, 0.09
+            "duration": 10e3,
+        },
+        LaserKey.ION: {"name": "laser_COBO_638", "duration": 1000},
+        LaserKey.SCC: {
+            "name": "laser_COBO_638",
+            "duration": 144,  # 180 mW, 0.13 V, no shelving
+        },
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": "laser_OPTO_589", "duration": 50e6},
+        "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
     ###
     "Positioning": {
-        #
-        "xy_control_mode-laser_INTE_520": ControlMode.SEQUENCE,
-        "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_INTE_520": float,
-        "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.8,
-        "xy_units-laser_INTE_520": "MHz",
-        #
-        "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
-        "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_COBO_638": float,
-        "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 1.0,
-        # "xy_optimize_range-laser_COBO_638": 2.0,
-        "xy_units-laser_COBO_638": "MHz",
-        #
-        "z_control_mode": ControlMode.STREAM,
-        "z_delay": int(5e6),  # 5 ms for PIFOC
-        "z_dtype": float,
-        "z_nm_per_unit": 1000,
-        "z_optimize_range": 0.3,
-        "z_units": "Voltage (V)",
-        "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
-        "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
+        green_laser: {
+            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 1.2,
+            "xy_units": "MHz",
+        },
+        red_laser: {
+            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 0.8,
+            "xy_units": "MHz",
+        },
+        CoordsKey.GLOBAL: {
+            "z_control_mode": ControlMode.STREAM,
+            "z_delay": int(5e6),  # 5 ms for PIFOC
+            "z_dtype": float,
+            "z_nm_per_unit": 1000,
+            "z_optimize_range": 0.1,
+            "z_units": "Voltage (V)",
+        },
+        "widefield_calibration_coords1": widefield_calibration_coords1,
+        "widefield_calibration_coords2": widefield_calibration_coords2,
     },
     ###
     "Servers": {
@@ -369,12 +365,12 @@ opx_config = {
         # endregion
         # region Actual "elements", or physical things to control
         "do_laser_COBO_638_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 1), "delay": 16, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
-                "ionize": "do_ionization",
-                "long_ionize": "do_long_ionization",
+                "scc": "do_scc",
+                "ion": "do_ion",
             },
         },
         "ao_laser_OPTO_589_am": {
@@ -384,6 +380,7 @@ opx_config = {
                 "on": "yellow_imaging",
                 "off": "ao_off",
                 "charge_readout": "yellow_charge_readout",
+                "spin_pol": "yellow_spin_pol",
             },
         },
         "ao_laser_OPTO_589_am_sticky": {
@@ -401,7 +398,9 @@ opx_config = {
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
-                "polarize": "do_polarization",
+                "charge_pol": "do_charge_pol",
+                "spin_pol": "do_green_spin_pol",
+                "shelving": "do_shelving",
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
@@ -465,41 +464,91 @@ opx_config = {
             "singleInput": {"port": ("con1", 2)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
+            "operations": {
+                "aod_cw-opti": "red_aod_cw-opti",
+                "aod_cw-ion": "red_aod_cw-ion",
+                "aod_cw-scc": "red_aod_cw-scc",
+                "continue": "ao_off",
+            },
         },
         "ao_laser_COBO_638_y": {
             "singleInput": {"port": ("con1", 6)},
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {"aod_cw": "red_aod_cw", "continue": "ao_off"},
+            "operations": {
+                "aod_cw-opti": "red_aod_cw-opti",
+                "aod_cw-ion": "red_aod_cw-ion",
+                "aod_cw-scc": "red_aod_cw-scc",
+                "continue": "ao_off",
+            },
         },
         "ao_laser_INTE_520_x": {
             "singleInput": {"port": ("con1", 3)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
+            "operations": {
+                "aod_cw-opti": "green_aod_cw-opti",
+                "aod_cw-charge_pol": "green_aod_cw-charge_pol",
+                "aod_cw-spin_pol": "green_aod_cw-spin_pol",
+                "aod_cw-shelving": "green_aod_cw-shelving",
+                "continue": "ao_off",
+            },
         },
         "ao_laser_INTE_520_y": {
             "singleInput": {"port": ("con1", 4)},
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {"aod_cw": "green_aod_cw", "continue": "ao_off"},
+            "operations": {
+                "aod_cw-opti": "green_aod_cw-opti",
+                "aod_cw-charge_pol": "green_aod_cw-charge_pol",
+                "aod_cw-spin_pol": "green_aod_cw-spin_pol",
+                "aod_cw-shelving": "green_aod_cw-shelving",
+                "continue": "ao_off",
+            },
         },
         # endregion
     },
     # region Pulses
     "pulses": {
         ### Analog
-        "green_aod_cw": {
+        # Green
+        "green_aod_cw-opti": {
             "operation": "control",
             "length": default_pulse_duration,
-            "waveforms": {"single": "green_aod_cw"},
+            "waveforms": {"single": "green_aod_cw-opti"},
         },
-        "red_aod_cw": {
+        "green_aod_cw-charge_pol": {
             "operation": "control",
             "length": default_pulse_duration,
-            "waveforms": {"single": "red_aod_cw"},
+            "waveforms": {"single": "green_aod_cw-charge_pol"},
         },
+        "green_aod_cw-spin_pol": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "green_aod_cw-spin_pol"},
+        },
+        "green_aod_cw-shelving": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "green_aod_cw-shelving"},
+        },
+        # Red
+        "red_aod_cw-opti": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "red_aod_cw-opti"},
+        },
+        "red_aod_cw-ion": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "red_aod_cw-ion"},
+        },
+        "red_aod_cw-scc": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "red_aod_cw-scc"},
+        },
+        # Yellow
         "yellow_imaging": {
             "operation": "control",
             "length": default_pulse_duration,
@@ -510,6 +559,12 @@ opx_config = {
             "length": default_pulse_duration,
             "waveforms": {"single": "yellow_charge_readout"},
         },
+        "yellow_spin_pol": {
+            "operation": "control",
+            "length": 10e3,
+            "waveforms": {"single": "yellow_spin_pol"},
+        },
+        #
         "ao_cw": {
             "operation": "control",
             "length": default_pulse_duration,
@@ -546,19 +601,29 @@ opx_config = {
             "length": default_pulse_duration,
             "digital_marker": "square",
         },
-        "do_ionization": {
+        "do_scc": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.IONIZATION]["duration"],
+            "length": config["Optics"][LaserKey.SCC]["duration"],
             "digital_marker": "on",
         },
-        "do_long_ionization": {
+        "do_ion": {
+            "operation": "control",
+            "length": config["Optics"][LaserKey.ION]["duration"],
+            "digital_marker": "on",
+        },
+        "do_charge_pol": {
+            "operation": "control",
+            "length": config["Optics"][LaserKey.CHARGE_POL]["duration"],
+            "digital_marker": "on",
+        },
+        "do_shelving": {
+            "operation": "control",
+            "length": config["Optics"][LaserKey.SHELVING]["duration"],
+            "digital_marker": "on",
+        },
+        "do_green_spin_pol": {
             "operation": "control",
             "length": 1000,
-            "digital_marker": "on",
-        },
-        "do_polarization": {
-            "operation": "control",
-            "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
             "digital_marker": "on",
         },
         "do_pi_pulse_0": {
@@ -587,19 +652,21 @@ opx_config = {
     # region Waveforms
     ### Analog
     "waveforms": {
-        "aod_cw": {"type": "constant", "sample": 0.35},
-        # "red_aod_cw": {"type": "constant", "sample": 0.32},
-        # "red_aod_cw": {"type": "constant", "sample": 0.41},
-        "red_aod_cw": {"type": "constant", "sample": 0.17},
-        # "red_aod_cw": {"type": "constant", "sample": 0.14},  # MCC
-        # "red_aod_cw": {"type": "constant", "sample": 0.19},  # MCC
-        "green_aod_cw": {"type": "constant", "sample": 0.19},
-        # "yellow_imaging": {"type": "constant", "sample": 0.20},  # 0.35
+        # Green AOD
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
+        "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
+        "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
+        # Red AOD
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
+        # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.5},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.085},  # 30e6
         "yellow_charge_readout": {"type": "constant", "sample": 0.47},  # 30e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.075},  # 100e6
+        "yellow_spin_pol": {"type": "constant", "sample": 0.5},
+        # Other
+        "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},
         "off": {"type": "constant", "sample": 0.0},
     },
@@ -614,6 +681,6 @@ opx_config = {
 # endregion
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  #
     # print(config)
     print(config["DeviceIDs"]["gcs_dll_path"])
