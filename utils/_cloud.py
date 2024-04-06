@@ -35,7 +35,7 @@ except Exception as exc:
     raise exc
 
 
-def download(file_name, ext, file_id=None):
+def download(file_name=None, ext=None, file_id=None):
     """Download file from the cloud
 
     Parameters
@@ -61,7 +61,7 @@ def download(file_name, ext, file_id=None):
         try:
             match = next(search_results)
             file_id = match.id
-        except Exception as exc:
+        except Exception:
             raise RuntimeError("No file found with the passed file_name.")
     box_file = box_client.file(file_id)
     file_content = box_file.content()

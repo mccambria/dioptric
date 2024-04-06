@@ -166,6 +166,16 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 # region Load functions
 
 
+def get_file_name(file_id):
+    try:
+        with open(data_manager_folder / "cache_manifest.txt") as f:
+            cache_manifest = ujson.load(f)
+        file_name = cache_manifest[file_id]
+    except Exception:
+        _, _, file_name = _cloud.download(file_id=file_id)
+    return file_name
+
+
 def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
     """Returns a dictionary containing the json object from the specified
     raw data file

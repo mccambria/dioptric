@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Enums, dataclasses other constants. Should not import anything other user modules
+"""Enums, dataclasses, other constants. Should not import anything other user modules
 or else we will probably get a circular import
 
 Created on June 26th, 2023
@@ -25,11 +25,10 @@ class NVSig:
     expected_counts: Number = None
     magnet_angle: Number = None
     opti_offset: list[Number] = None  # Only works for global coordinates
-    # anticorrelation: Flag for determining initial spin state of an NV. After normal
-    # polarization into ms=0, all spins of a given orientation are flipped with a pi
-    # pulse. If init_spin_flipped is True, leave the spin alone after the pi pulse. If
-    # init_spin_flipped is False, apply a green pulse to repolarize into ms=0
-    anticorrelation: bool = False
+    # spin_flip: If True, an additional pi pulse will be applied to the NV at
+    # the end of a spin experiment prior to readout. Useful for anticorrelations
+    # and rejecting common mode noise
+    spin_flip: bool = False
 
 
 class CoordsKey(StrEnum):
@@ -38,7 +37,7 @@ class CoordsKey(StrEnum):
 
 
 class CollectionMode(Enum):
-    COUNTER = auto()  # Count all photons incident on a detector (e.g. PMT or APD)
+    COUNTER = auto()  # Count all photons incident on a detector (e.g. APD)
     CAMERA = auto()  # Collect photons onto a camera
 
 

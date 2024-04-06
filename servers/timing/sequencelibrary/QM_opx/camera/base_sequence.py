@@ -16,7 +16,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 def macro(
     pol_coords_list,
     ion_coords_list,
-    anticorrelation_ind_list,
+    spin_flip_ind_list,
     uwave_ind,
     uwave_macro,
     step_vals=None,
@@ -86,8 +86,10 @@ def macro(
     def one_exp(exp_ind):
         seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
         uwave_macro[exp_ind](step_val)
+        # Always look at ms=0 counts for the reference
+        exp_spin_flip_ind_list = spin_flip_ind_list if exp_ind == 0 else None
         seq_utils.macro_scc(
-            ion_coords_list, anticorrelation_ind_list, uwave_ind, ion_duration_ns
+            ion_coords_list, exp_spin_flip_ind_list, uwave_ind, ion_duration_ns
         )
         seq_utils.macro_charge_state_readout(readout_duration_ns)
         seq_utils.macro_wait_for_trigger()
