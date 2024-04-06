@@ -40,7 +40,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * tau))
         sign = np.sign(ptp_amp)
-        return 1 + sign * (amp - (envelope * cos_part))
+        return 1 + amp - sign * (envelope * cos_part)
 
     def constant(tau, norm):
         if isinstance(tau, list):
@@ -245,6 +245,6 @@ if __name__ == "__main__":
         dm_path = common.get_data_manager_folder()
         file_name = dm.get_file_name(file_id)
         # print(file_name)
-        fit_fig.savefig(dm_path / f"{file_name}.svg", format="svg")
+        # fit_fig.savefig(dm_path / f"{file_name}.svg", format="svg")
 
     plt.show(block=True)
