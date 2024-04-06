@@ -112,25 +112,6 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     qua.wait(buffer, readout_laser_el)
 
 
-def macro_anticorrelate(repol_coords_list, uwave_ind):
-    # get_base_seq_args sets repol_coords_list to None if we want all NVs
-    # to be prepared into ms=0. In this case, just skip everything here.
-    if repol_coords_list is None:
-        return
-
-    sig_gen_el = get_sig_gen_element(uwave_ind)
-    buffer = get_widefield_operation_buffer()
-    pol_laser_name = tb.get_laser_name(LaserKey.SPIN_POL)
-    pulse_name = "spin_pol"
-
-    qua.align()
-    qua.play("pi_pulse", sig_gen_el)
-    qua.wait(buffer, sig_gen_el)
-
-    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
-    _macro_pulse_list(pol_laser_name, repol_coords_list, pulse_name)
-
-
 def macro_ionize(ion_coords_list, ion_duration=None):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -152,7 +133,7 @@ def macro_ionize(ion_coords_list, ion_duration=None):
 
 def macro_scc(
     ion_coords_list,
-    anticorrelation_ind_list=None,
+    spin_flip_ind_list=None,
     uwave_ind=None,
     ion_duration=None,
     shelving_coords_list=None,
@@ -172,14 +153,14 @@ def macro_scc(
     do_shelving_pulse = config["Optics"]["scc_shelving_pulse"]
 
     if do_shelving_pulse:
-        if anticorrelation_ind_list is not None:
+        if spin_flip_ind_list is not None:
             raise NotImplementedError(
-                "Shelving SCC with anticorrelations not yet implemented."
+                "Shelving SCC with spin_flips not yet implemented."
             )
         _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list)
     else:
         _macro_scc_no_shelving(
-            ion_coords_list, anticorrelation_ind_list, uwave_ind, ion_duration
+            ion_coords_list, spin_flip_ind_list, uwave_ind, ion_duration
         )
 
 
@@ -231,7 +212,7 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
 
 
 def _macro_scc_no_shelving(
-    ion_coords_list, anticorrelation_ind_list=None, uwave_ind=None, ion_duration=None
+    ion_coords_list, spin_flip_ind_list=None, uwave_ind=None, ion_duration=None
 ):
     # Basic setup
 
@@ -239,41 +220,38 @@ def _macro_scc_no_shelving(
     ion_pulse_name = "scc"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
 
-    # No anticorrelations
-    if anticorrelation_ind_list is None or len(anticorrelation_ind_list) == 0:
-        _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration)
-    # Anticorrelations
-    else:
-        # More setup
+    if spin_flip_ind_list is None:
+        spin_flip_ind_list = []
 
-        num_nvs = len(ion_coords_list)
-        first_ion_coords_list = [
-            ion_coords_list[ind]
-            for ind in range(num_nvs)
-            if ind not in anticorrelation_ind_list
-        ]
-        second_ion_coords_list = [
-            ion_coords_list[ind]
-            for ind in range(num_nvs)
-            if ind in anticorrelation_ind_list
-        ]
+    num_nvs = len(ion_coords_list)
+    first_ion_coords_list = [
+        ion_coords_list[ind] for ind in range(num_nvs) if ind not in spin_flip_ind_list
+    ]
 
-        sig_gen_el = get_sig_gen_element(uwave_ind)
-        buffer = get_widefield_operation_buffer()
+    # Actual commands
 
-        # Actual commands
+    _macro_pulse_list(
+        ion_laser_name, first_ion_coords_list, ion_pulse_name, ion_duration
+    )
 
-        _macro_pulse_list(
-            ion_laser_name, first_ion_coords_list, ion_pulse_name, ion_duration
-        )
+    # Just exit here if all NVs are SCC'ed in the first batch
+    if len(spin_flip_ind_list) == 0:
+        return
 
-        qua.align()
-        qua.play("pi_pulse", sig_gen_el)
-        qua.wait(buffer, sig_gen_el)
+    sig_gen_el = get_sig_gen_element(uwave_ind)
+    buffer = get_widefield_operation_buffer()
 
-        _macro_pulse_list(
-            ion_laser_name, second_ion_coords_list, ion_pulse_name, ion_duration
-        )
+    second_ion_coords_list = [
+        ion_coords_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
+    ]
+
+    qua.align()
+    qua.play("pi_pulse", sig_gen_el)
+    qua.wait(buffer, sig_gen_el)
+
+    _macro_pulse_list(
+        ion_laser_name, second_ion_coords_list, ion_pulse_name, ion_duration
+    )
 
 
 def macro_charge_state_readout(readout_duration_ns=None):

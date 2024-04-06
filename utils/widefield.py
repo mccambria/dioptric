@@ -191,7 +191,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     )
     if ref_counts is not None:
         ref_states_array = np.greater(
-            ref_counts, thresholds, out=sig_counts, where=where_thresh
+            ref_counts, thresholds, out=ref_counts, where=where_thresh
         )
     else:
         ref_states_array = None
@@ -324,8 +324,8 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
 
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
     ion_coords_list = get_coords_list(nv_list, LaserKey.SCC)
-    anticorrelation_ind_list = get_anticorrelation_ind_list(nv_list)
-    seq_args = [pol_coords_list, ion_coords_list, anticorrelation_ind_list, uwave_ind]
+    spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
+    seq_args = [pol_coords_list, ion_coords_list, spin_flip_ind_list, uwave_ind]
     return seq_args
 
 
@@ -341,9 +341,9 @@ def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
     return coords_list
 
 
-def get_anticorrelation_ind_list(nv_list: list[NVSig]):
+def get_spin_flip_ind_list(nv_list: list[NVSig]):
     num_nvs = len(nv_list)
-    return [ind for ind in range(num_nvs) if nv_list[ind].anticorrelation]
+    return [ind for ind in range(num_nvs) if nv_list[ind].spin_flip]
 
 
 # endregion
@@ -654,8 +654,6 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
-        # if nv_ind != 7:
-        #     continue
         nv_sig = nv_list[nv_ind]
         label = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
@@ -681,6 +679,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     # ax.set_xlim(min_x - excess, max_x + excess)
     # ncols = 3  # MCC
     # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
+    ax.legend()
 
 
 # Separate plots, shared axes
@@ -727,8 +726,8 @@ def plot_fit(
         popt = None if popts is None else popts[nv_ind]
 
         nv_sig = nv_list[nv_ind]
-        label = get_nv_num(nv_sig)
-        color = kpl.data_color_cycler[nv_ind]
+        nv_num = get_nv_num(nv_sig)
+        color = kpl.data_color_cycler[nv_num]
 
         # MCC
         # if nv_ind == 1:
@@ -754,7 +753,7 @@ def plot_fit(
         ls = "none"
         size = kpl.Size.SMALL
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
+            ax, x, y, yerr=yerr, label=nv_num, size=size, color=color, linestyle=ls
         )
 
         # Plot the fit
@@ -764,6 +763,8 @@ def plot_fit(
             if norms is not None:
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
+
+        ax.legend()
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)

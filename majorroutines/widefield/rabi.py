@@ -14,6 +14,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
+from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
@@ -38,7 +39,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * tau))
-        return 1 + amp - (envelope * cos_part)
+        sign = np.sign(ptp_amp)
+        return 1 + sign * (amp - (envelope * cos_part))
 
     def constant(tau, norm):
         if isinstance(tau, list):
@@ -55,25 +57,20 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     fit_fns = []
     popts = []
     for nv_ind in range(num_nvs):
+        nv_sig = nv_list[nv_ind]
         nv_counts = counts[nv_ind] / norms[nv_ind]
         nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
 
-        if nv_ind not in [1]:
-            # if True:
-            # Estimate fit parameters
-            norm_guess = np.min(nv_counts)
-            ptp_amp_guess = np.max(nv_counts) - norm_guess
-            transform = np.fft.rfft(nv_counts)
-            freqs = np.fft.rfftfreq(num_steps, d=tau_step)
-            transform_mag = np.absolute(transform)
-            max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
-            freq_guess = freqs[max_ind + 1]
-            # freq_guess = 0.01
-            guess_params = [ptp_amp_guess, freq_guess, 1000]
-            fit_fn = cos_decay
-        else:
-            fit_fn = constant
-            guess_params = [np.average(nv_counts)]
+        ptp_amp_guess = np.max(nv_counts) - np.min(nv_counts)
+        if nv_sig.spin_flip:
+            ptp_amp_guess *= -1
+        transform = np.fft.rfft(nv_counts)
+        freqs = np.fft.rfftfreq(num_steps, d=tau_step)
+        transform_mag = np.absolute(transform)
+        max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
+        freq_guess = freqs[max_ind + 1]
+        guess_params = [ptp_amp_guess, freq_guess, 1000]
+        fit_fn = cos_decay
 
         try:
             popt, pcov = curve_fit(
@@ -86,9 +83,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
             )
             fit_fns.append(fit_fn)
             popts.append(popt)
-        except Exception as exc:
+        except Exception:
             fit_fns.append(None)
             popts.append(None)
+            continue
 
         residuals = fit_fn(taus, *popt) - nv_counts
         chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
@@ -213,24 +211,40 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1492313255352)
-    data = dm.get_raw_data(file_id=1492344376703)
+    file_list = [
+        1493341595374,
+        1493353386513,
+        1493385467773,
+        1493398682119,
+        1493417085053,
+        1493434969241,
+    ]
 
-    nv_list = data["nv_list"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    taus = data["taus"]
-    counts = np.array(data["counts"])
-    sig_counts = counts[0]
-    ref_counts = counts[1]
+    for file_id in file_list:
+        data = dm.get_raw_data(file_id=file_id)
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts
-    )
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    # correlation_fig = create_correlation_figure(nv_list, taus, counts)
+        nv_list = data["nv_list"]
+        for nv in nv_list:
+            nv["spin_flip"] = nv["anticorrelation"]
+            del nv["anticorrelation"]
+        nv_list = [NVSig(**nv) for nv in nv_list]
+        num_nvs = len(nv_list)
+        num_steps = data["num_steps"]
+        num_runs = data["num_runs"]
+        taus = data["taus"]
+        counts = np.array(data["counts"])
+        sig_counts = counts[0]
+        ref_counts = counts[1]
+
+        avg_counts, avg_counts_ste, norms = widefield.process_counts(
+            nv_list, sig_counts, ref_counts
+        )
+        # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+
+        dm_path = common.get_data_manager_folder()
+        file_name = dm.get_file_name(file_id)
+        # print(file_name)
+        fit_fig.savefig(dm_path / f"{file_name}.svg", format="svg")
 
     plt.show(block=True)
