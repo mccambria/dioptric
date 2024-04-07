@@ -101,7 +101,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     ### Make the figure
 
     fig, axes_pack = plt.subplots(
-        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+        nrows=2, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
     )
     axes_pack = axes_pack.flatten()
 

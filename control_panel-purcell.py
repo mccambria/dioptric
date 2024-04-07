@@ -224,24 +224,16 @@ def do_rabi(nv_list):
     num_steps = 31
     num_reps = 10
     num_runs = 40
-    uwave_ind = 0
-    for ind in range(3):
+    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    for ind in range(4):
         for flipped in [True, False]:
             for nv_ind in range(3):
                 nv = nv_list[nv_ind]
                 if ind == nv_ind:
-                    nv.anticorrelation = flipped
+                    nv.spin_flip = flipped
                 else:
-                    nv.anticorrelation = not flipped
-            rabi.main(
-                nv_list,
-                num_steps,
-                num_reps,
-                num_runs,
-                min_tau,
-                max_tau,
-                uwave_ind=uwave_ind,
-            )
+                    nv.spin_flip = not flipped
+            rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_spin_echo(nv_list):
@@ -573,7 +565,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.54
+    z_coord = 4.4
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -727,7 +719,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-19, -32])
+        # widefield.set_pixel_drift([-14, -36])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)

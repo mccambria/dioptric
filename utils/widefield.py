@@ -655,7 +655,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         nv_inds = subset_inds
     for nv_ind in nv_inds:
         nv_sig = nv_list[nv_ind]
-        label = get_nv_num(nv_sig)
+        nv_num = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
         nv_num = get_nv_num(nv_sig)
         color = kpl.data_color_cycler[nv_num]
@@ -664,7 +664,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
             x,
             ys[nv_ind],
             yerr=yerr,
-            label=label,
+            label=str(nv_num),
             size=kpl.Size.SMALL,
             color=color,
         )
@@ -753,7 +753,7 @@ def plot_fit(
         ls = "none"
         size = kpl.Size.SMALL
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=nv_num, size=size, color=color, linestyle=ls
+            ax, x, y, yerr=yerr, label=str(nv_num), size=size, color=color, linestyle=ls
         )
 
         # Plot the fit
