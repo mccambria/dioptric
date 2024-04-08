@@ -184,7 +184,7 @@ def do_scc_snr_check(nv_list):
 
 def do_simple_correlation_test(nv_list):
     num_reps = 200
-    num_runs = 20
+    num_runs = 40
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
 
@@ -719,7 +719,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-14, -36])
+        # widefield.set_pixel_drift([-14, -33])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -773,7 +773,7 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
@@ -792,7 +792,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        # do_simple_correlation_test(nv_list)
+        do_simple_correlation_test(nv_list)
 
     # region Cleanup
 

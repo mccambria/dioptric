@@ -29,7 +29,7 @@ from utils.constants import LaserKey
 
 def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
     try:
-        laser_dict = tb.get_optics_dict(LaserKey.CHARGE_READOUT)
+        laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
         readout = laser_dict["duration"]
         readout_ms = int(readout / 1e6)
         readout_s = readout / 1e9
@@ -256,7 +256,7 @@ def _collect_data(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     tb.reset_cfm()
-    laser_key = LaserKey.CHARGE_READOUT
+    laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
     optimize.prepare_microscope(repr_nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
@@ -272,8 +272,8 @@ def _collect_data(
     readout = laser_dict["duration"]
     readout_ms = readout / 10**6
 
-    pol_coords_list = widefield.get_pol_coords_list(nv_list)
-    ion_coords_list = widefield.get_ion_coords_list(nv_list)
+    pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
+    ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
     seq_args = [
         pol_coords_list,
         ion_coords_list,

@@ -196,6 +196,8 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     else:
         ref_states_array = None
 
+    return sig_states_array, ref_states_array
+
     return average_counts(sig_states_array, ref_states_array)
 
 
@@ -203,7 +205,10 @@ def process_counts(nv_list, sig_counts, ref_counts=None):
     """Alias for threshold_counts with a more generic name"""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
-    return threshold_counts(nv_list, sig_counts, ref_counts)
+    sig_states_array, ref_states_array = threshold_counts(
+        nv_list, sig_counts, ref_counts
+    )
+    return average_counts(sig_states_array, ref_states_array)
 
 
 def calc_snr(sig_counts, ref_counts):
@@ -222,7 +227,8 @@ def calc_snr(sig_counts, ref_counts):
 
 
 def _validate_counts_structure(counts):
-    """Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind]."""
+    """Make sure the structure of the counts object for a single experiment is valid
+    for further processing. The structure is [nv_ind, run_ind, freq_ind, rep_ind]."""
     if counts is None:
         return
     if not isinstance(counts, np.ndarray):

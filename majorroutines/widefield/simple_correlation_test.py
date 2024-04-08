@@ -17,6 +17,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
+from utils.constants import NVSig
 
 
 def process_and_plot(nv_list, counts):
@@ -26,6 +27,8 @@ def process_and_plot(nv_list, counts):
     # experiment, nv, run, step, rep
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
+
+    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
@@ -58,6 +61,7 @@ def process_and_plot(nv_list, counts):
             vmax=cbar_max,
             nan_color=kpl.KplColors.GRAY,
         )
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         figs.append(fig)
 
@@ -116,10 +120,14 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1492112223752)
+    data = dm.get_raw_data(file_id=1495733555384)
 
     nv_list = data["nv_list"]
     counts = data["counts"]
+    nv_list = [NVSig(nv) for nv in nv_list]
+    nv_list[0].threshold = 41.5
+    nv_list[1].threshold = 40.5
+    nv_list[2].threshold = 42.5
 
     process_and_plot(nv_list, counts)
 

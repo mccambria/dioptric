@@ -14,7 +14,6 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from utils.constants import IonPulseType
 
 
 def get_seq(
@@ -41,8 +40,8 @@ def get_seq(
         do_ionize_ref = False
 
     with qua.program() as seq:
-        seq_utils.init_cache()
-        seq_utils.turn_on_aods()
+        seq_utils.init()
+        seq_utils.macro_run_aods()
         # qua.wait(25000)
         # qua.align()
 
@@ -51,9 +50,7 @@ def get_seq(
                 seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
 
             if do_ionize_sub:
-                seq_utils.macro_ionize(
-                    ion_coords_list, ion_duration_ns, ion_pulse_type=IonPulseType.ION
-                )
+                seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
 
             seq_utils.macro_charge_state_readout()
 
@@ -99,7 +96,7 @@ if __name__ == "__main__":
         ]
         seq, seq_ret_vals = get_seq(*args, 5)
 
-        sim_config = SimulationConfig(duration=int(100e3 / 4))
+        sim_config = SimulationConfig(duration=int(400e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
