@@ -759,8 +759,8 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_pixel(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -779,7 +779,7 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list, 100)
-        # do_charge_state_histograms(nv_list, 1000)
+        do_charge_state_histograms(nv_list, 1000)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -802,7 +802,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
     # region Cleanup
 

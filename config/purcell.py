@@ -148,8 +148,8 @@ config |= {
         # Virtual lasers
         LaserKey.IMAGING: {"name": green_laser, "duration": 20e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
-        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
-        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 50},
+        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
         LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.SHELVING: {"name": green_laser, "duration": 48},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
@@ -656,6 +656,7 @@ opx_config = {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.16},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
         # Red AOD
