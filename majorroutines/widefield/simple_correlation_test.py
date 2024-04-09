@@ -51,6 +51,7 @@ def process_and_plot(nv_list, counts):
     for ind in range(2):
         fig, ax = plt.subplots()
         cbar_max = cbar_maxes[ind]
+        cbar_max = 0.032
         kpl.imshow(
             ax,
             vals[ind],
@@ -120,14 +121,17 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1495733555384)
+    # data = dm.get_raw_data(file_id=1496001810507)
+    data = dm.get_raw_data(file_id=1496001810507)
 
     nv_list = data["nv_list"]
     counts = data["counts"]
-    nv_list = [NVSig(nv) for nv in nv_list]
+    nv_list = [NVSig(**nv) for nv in nv_list]
     nv_list[0].threshold = 41.5
     nv_list[1].threshold = 40.5
     nv_list[2].threshold = 42.5
+    for nv in nv_list:
+        print(nv.spin_flip)
 
     process_and_plot(nv_list, counts)
 
