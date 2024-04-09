@@ -148,7 +148,8 @@ config |= {
         # Virtual lasers
         LaserKey.IMAGING: {"name": green_laser, "duration": 20e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
-        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 50},
         LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.SHELVING: {"name": green_laser, "duration": 48},
         LaserKey.ION: {"name": red_laser, "duration": 1000},

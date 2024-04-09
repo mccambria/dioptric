@@ -83,6 +83,34 @@ def handle_reps(
                 macro_wait_for_trigger()
 
 
+# def macro_polarize(pol_coords_list, pol_duration_ns=None):
+#     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
+#     Pulses are applied in series
+
+#     Parameters
+#     ----------
+#     pol_laser_name : str
+#         Name of polarization laser
+#     pol_duration_ns : numeric
+#         Duration of the pulse in ns
+#     pol_coords_list : list(coordinate pairs)
+#         List of coordinate pairs to target
+#     """
+
+#     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
+#     pulse_name = "charge_pol"
+#     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
+#     _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration_ns)
+
+#     # Spin polarization with widefield yellow
+#     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
+#     readout_laser_el = get_laser_mod_element(readout_laser_name)
+#     buffer = get_widefield_operation_buffer()
+#     qua.align()
+#     qua.play("spin_pol", readout_laser_el)
+#     qua.wait(buffer, readout_laser_el)
+
+
 def macro_polarize(pol_coords_list, pol_duration_ns=None):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -98,18 +126,30 @@ def macro_polarize(pol_coords_list, pol_duration_ns=None):
     """
 
     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
-    pulse_name = "charge_pol"
-    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
-    _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration_ns)
-
-    # MCC
-    # Spin polarization with widefield yellow
+    pol_pulse_name = "charge_pol"
     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
     readout_laser_el = get_laser_mod_element(readout_laser_name)
-    buffer = get_widefield_operation_buffer()
-    qua.align()
-    qua.play("spin_pol", readout_laser_el)
-    qua.wait(buffer, readout_laser_el)
+    spin_pulse_name = "spin_pol"
+    uwave_ind = 0
+
+    pol_reps_ind = qua.declare(int)
+    with qua.for_(pol_reps_ind, 0, pol_reps_ind < 10, pol_reps_ind + 1):
+        macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pol_pulse_name])
+        _macro_pulse_list(
+            pol_laser_name, pol_coords_list, pol_pulse_name, pol_duration_ns
+        )
+
+        # Spin polarization with widefield yellow
+        buffer = get_widefield_operation_buffer()
+        qua.align()
+        qua.play(spin_pulse_name, readout_laser_el)
+        qua.wait(buffer, readout_laser_el)
+
+        # MCC
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        qua.align()
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(buffer, sig_gen_el)
 
 
 def macro_ionize(ion_coords_list, ion_duration=None):
