@@ -187,6 +187,16 @@ def do_simple_correlation_test(nv_list):
     num_runs = 40
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
+    for ind in range(4):
+        for flipped in [True, False]:
+            for nv_ind in range(3):
+                nv = nv_list[nv_ind]
+                if ind == nv_ind:
+                    nv.spin_flip = flipped
+                else:
+                    nv.spin_flip = not flipped
+            simple_correlation_test.main(nv_list, num_reps, num_runs)
+
 
 def do_calibrate_iq_delay(nv_list):
     min_tau = -100
