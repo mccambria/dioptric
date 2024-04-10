@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     # file_name = "2023_12_06-06_51_41-johnson-nv0_2023_12_04"
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1470392816628, no_npz=True)  # Movie data
+    data = dm.get_raw_data(file_id=1470392816628, load_npz=True)  # Movie data
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

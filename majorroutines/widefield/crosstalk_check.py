@@ -132,7 +132,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1470392816628, no_npz=True)
+    data = dm.get_raw_data(file_id=1470392816628, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

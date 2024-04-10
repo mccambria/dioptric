@@ -24,7 +24,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey
+from utils.constants import LaserKey, NVSig
 
 
 def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
@@ -215,8 +215,6 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
     keys_to_compress = [
-        "sig_counts_lists",
-        "ref_counts_lists",
         "sig_img_array",
         "ref_img_array",
         "diff_img_array",
@@ -241,31 +239,43 @@ def main(
     tb.reset_cfm()
 
 
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), "valid") / w
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_11_20-17_38_07-johnson-nv0_2023_11_09"
-    # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1482405937799, no_npz=False)
-    data = dm.get_raw_data(file_id=1470407238122, no_npz=False)  # Movie data
+    data = dm.get_raw_data(file_id=1496976806208, load_npz=True)
 
     nv_list = data["nv_list"]
+    nv_list = [NVSig(**nv) for nv in nv_list]
     num_nvs = len(nv_list)
     sig_counts_lists = data["sig_counts_lists"]
     ref_counts_lists = data["ref_counts_lists"]
     num_shots = len(sig_counts_lists[0])
 
-    # determine_thresholds(nv_list, sig_counts_lists)
+    mean_vals = np.array(data["mean_vals"])
+    sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten())
+    ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten())
+    sig_mean_vals = moving_average(sig_mean_vals, 20)
+    ref_mean_vals = moving_average(ref_mean_vals, 20)
+    sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
+    ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, range(len(sig_norms)), sig_norms, label="Sig")
+    kpl.plot_line(ax, range(len(ref_norms)), ref_norms, label="Ref")
+    ax.legend()
 
-    # x = np.linspace(0, 50, 51)
-    # print(bimodal_dist(x, 0.3, 20, 50))
+    sig_counts_lists = [sig_counts_lists[ind] / sig_norms for ind in range(num_nvs)]
+    ref_counts_lists = [ref_counts_lists[ind] / ref_norms for ind in range(num_nvs)]
 
     ### Histograms
 
     if True:
         for ind in range(num_nvs):
             nv_sig = nv_list[ind]
-            print(nv_sig["name"])
+            print(nv_sig.name)
             sig_counts_list = sig_counts_lists[ind]
             ref_counts_list = ref_counts_lists[ind]
             fig = create_histogram(sig_counts_list, ref_counts_list)
