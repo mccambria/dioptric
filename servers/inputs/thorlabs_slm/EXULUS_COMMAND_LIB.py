@@ -1,8 +1,15 @@
 from ctypes import *
-
+import os
 
 #region import dll functions
-EXULUSLib=cdll.LoadLibrary("exulus_command_library.dll")
+# EXULUSLib=cdll.LoadLibrary("exulus_command_library.dll")
+
+# Get the path to the current directory
+current_directory = os.path.dirname(os.path.abspath(__file__))
+
+# Load the DLL
+dll_path = os.path.join(current_directory, "exulus_command_library.dll")
+EXULUSLib = cdll.LoadLibrary(dll_path)
 
 """comman command
 """
@@ -78,24 +85,24 @@ def EXULUSListDevices():
     Returns: 
        The EXULUS device list, each deice item is [serialNumber, EXULUSType]
     """
-    str = create_string_buffer(1024, '\0')
-    result = List(str,1024)
-    devicesStr = str.raw.decode("utf-8").rstrip('\x00').split(',')
+    temp_str = create_string_buffer(1024, '\0')
+    num_devices = List(temp_str,1024)
+    devicesStr = temp_str.raw.decode("utf-8").rstrip('\x00').split(',')
     length = len(devicesStr)
     i = 0
     devices = []
     devInfo = ["",""]
     while(i < length):
-        str = devicesStr[i]
+        temp_str = devicesStr[i]
         if (i % 2 == 0):
-            if str != '':
-                devInfo[0] = str
+            if temp_str != '':
+                devInfo[0] = temp_str
             else:
                 i+=1
         else:
-                if(str.find("EXULUS") >= 0):
+                if(temp_str.find("EXULUS") >= 0):
                     isFind = True
-                devInfo[1] = str
+                devInfo[1] = temp_str
                 devices.append(devInfo.copy())
         i+=1
     return devices
