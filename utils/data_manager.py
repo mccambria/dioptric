@@ -14,7 +14,6 @@ import os
 import socket
 import time
 from datetime import datetime
-from enum import Enum
 from io import BytesIO
 from pathlib import Path
 
@@ -176,7 +175,7 @@ def get_file_name(file_id):
     return file_name
 
 
-def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
+def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
@@ -194,10 +193,10 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
         the cache - if it's not there already we'll add it to the cache. Otherwise
         we'll get the file straight from the cloud and skip caching it. By default
         True
-    skip_npz: bool, optional
-        Whether or not to skip downloading and decompressing any linked compressed
-        numpy files (.npz files). Retrieving these can be slow if the file is very
-        large so it's better to skip it if you don't need it.
+    load_npz: bool, optional
+        Whether or not to retrieve any linked compressed numpy files (.npz files).
+        Retrieving these can be slow if the file is very large so it's better to
+        skip it if you don't need it.
 
     Returns
     -------
@@ -211,25 +210,31 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
     ### Check the cache first
 
     # Try to open an existing cache manifest
+    retrieved_from_cache = False
     if use_cache:
         try:
             with open(data_manager_folder / "cache_manifest.txt") as f:
                 cache_manifest = ujson.load(f)
-        except Exception as exc:
+        except Exception:
             cache_manifest = None
 
         # Try to open the cached file
         try:
-            if file_id is not None:
-                file_name = cache_manifest[file_id]
-            with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
-                file_content = f.read()
-            data = orjson.loads(file_content)
-            retrieved_from_cache = True
-        except Exception as exc:
-            retrieved_from_cache = False
-    else:
-        retrieved_from_cache = False
+            if file_id is None:
+                for key in cache_manifest.keys():
+                    if cache_manifest[key]["file_name"] == file_name:
+                        file_id = key
+            cache_entry = cache_manifest[file_id]
+            # Only load from cache if we either don't need the npz or we already have it
+            if not load_npz or cache_entry["load_npz"]:
+                if file_name is None:
+                    file_name = cache_entry["file_name"]
+                with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+                    file_content = f.read()
+                data = orjson.loads(file_content)
+                retrieved_from_cache = True
+        except Exception:
+            pass
 
     ### If not in cache, download from the cloud
 
@@ -239,7 +244,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
         data = orjson.loads(file_content)
 
         # Find and decompress the linked numpy arrays
-        if not no_npz:
+        if load_npz:
             for key in data:
                 val = data[key]
                 if not isinstance(val, str):
@@ -259,15 +264,13 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=True):
     # Update the cache manifest
     if use_cache:
         cache_manifest_updated = False
-        if cache_manifest is None:
-            cache_manifest = {file_id: file_name}
-            cache_manifest_updated = True
-        elif not retrieved_from_cache:
+        if not retrieved_from_cache:
+            if cache_manifest is None:
+                cache_manifest = {}
             cached_file_ids = list(cache_manifest.keys())
             # Add the new file to the manifest
-            if not retrieved_from_cache:
-                cache_manifest[file_id] = file_name
-                cached_file_ids.append(file_id)
+            cache_manifest[file_id] = {"file_name": file_name, "load_npz": load_npz}
+            cached_file_ids.append(file_id)
             while len(cached_file_ids) > 10:
                 file_id_to_remove = cached_file_ids.pop(0)
                 file_name_to_remove = cache_manifest[file_id_to_remove]

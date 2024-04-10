@@ -19,8 +19,6 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 def get_seq(
     pol_coords_list,
     ion_coords_list,
-    pol_duration_ns,
-    ion_duration_ns,
     diff_polarize,
     diff_ionize,
     num_reps,
@@ -42,15 +40,13 @@ def get_seq(
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
-        # qua.wait(25000)
-        # qua.align()
 
-        def half_rep(do_polarize_sub, do_ionize_sub):
+        def one_exp(do_polarize_sub, do_ionize_sub):
             if do_polarize_sub:
-                seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
+                seq_utils.macro_polarize(pol_coords_list)
 
             if do_ionize_sub:
-                seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
+                seq_utils.macro_ionize(ion_coords_list)
 
             seq_utils.macro_charge_state_readout()
 
@@ -59,12 +55,13 @@ def get_seq(
                 [do_polarize_sig, do_ionize_sig],
                 [do_polarize_ref, do_ionize_ref],
             ]:
-                half_rep(*half_rep_args)
+                one_exp(*half_rep_args)
 
                 # qua.align()
                 seq_utils.macro_wait_for_trigger()
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+        seq_utils.macro_pause()
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -89,8 +86,6 @@ if __name__ == "__main__":
                 [75.42725784791932, 75.65982013416432],
                 [75.98725784791932, 74.74382013416432],
             ],
-            None,
-            None,
             False,
             True,
         ]

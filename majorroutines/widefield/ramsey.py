@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1398480205550, no_npz=True)
-    data = dm.get_raw_data(file_id=1399222081277, no_npz=True)
+    data = dm.get_raw_data(file_id=1399222081277, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
