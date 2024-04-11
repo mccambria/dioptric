@@ -112,8 +112,9 @@ def main(
     ### Data tracking
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
-    median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
+    # MCC
+    # mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
+    # median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     if save_images:
         shape = widefield.get_img_array_shape()
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
@@ -178,12 +179,12 @@ def main(
 
                             counts_list = [get_counts(el) for el in pixel_coords_list]
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
-                            mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
-                                img_array
-                            )
-                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                                np.median(img_array)
-                            )
+                            # mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
+                            #     img_array
+                            # )
+                            # median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
+                            #     np.median(img_array)
+                            # )
 
                     if save_images:
                         for exp_ind in range(num_exps_per_rep):
@@ -239,8 +240,8 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
-        "mean_vals": mean_vals,
-        "median_vals": median_vals,
+        # "mean_vals": mean_vals,
+        # "median_vals": median_vals,
     }
     if save_images:
         raw_data |= {

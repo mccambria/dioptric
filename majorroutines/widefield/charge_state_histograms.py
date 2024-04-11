@@ -255,17 +255,20 @@ if __name__ == "__main__":
     ref_counts_lists = data["ref_counts_lists"]
     num_shots = len(sig_counts_lists[0])
 
-    mean_vals = np.array(data["mean_vals"])
-    sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten())
-    ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten())
-    sig_mean_vals = moving_average(sig_mean_vals, 20)
-    ref_mean_vals = moving_average(ref_mean_vals, 20)
-    sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
-    ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
-    fig, ax = plt.subplots()
-    kpl.plot_line(ax, range(len(sig_norms)), sig_norms, label="Sig")
-    kpl.plot_line(ax, range(len(ref_norms)), ref_norms, label="Ref")
-    ax.legend()
+    # mean_vals = np.array(data["mean_vals"])
+    # sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten())
+    # ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten())
+    # sig_mean_vals = moving_average(sig_mean_vals, 20)
+    # ref_mean_vals = moving_average(ref_mean_vals, 20)
+    # sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
+    # ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
+    # fig, ax = plt.subplots()
+    # kpl.plot_line(ax, range(len(sig_norms)), sig_norms, label="Sig")
+    # kpl.plot_line(ax, range(len(ref_norms)), ref_norms, label="Ref")
+    # ax.set_xlabel("Shot index")
+    # ax.set_ylabel("Normalized yellow intensity")
+    # ax.legend()
+    # kpl.show(block=True)
 
     sig_counts_lists = [sig_counts_lists[ind] / sig_norms for ind in range(num_nvs)]
     ref_counts_lists = [ref_counts_lists[ind] / ref_norms for ind in range(num_nvs)]
@@ -337,4 +340,4 @@ if __name__ == "__main__":
                 # )
                 kpl.draw_circle(ax, pixel_coords, color=color, radius=9, label=ind)
 
-    plt.show(block=True)
+    kpl.show(block=True)
