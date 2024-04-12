@@ -223,10 +223,12 @@ if __name__ == "__main__":
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts
-    )
+    sig_counts, _ = widefield.threshold_counts(nv_list, sig_counts)
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
+    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    #     nv_list, sig_counts, ref_counts
+    # )
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
     plt.show(block=True)
