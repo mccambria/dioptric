@@ -264,8 +264,7 @@ def main(
                 step_ind_master_list[run_ind] = step_ind_list.copy()
 
                 # Update coordinates
-                optimize.optimize_pixel(repr_nv_sig)  # xy
-                optimize.main(repr_nv_sig, axes_to_optimize=[2])  # z
+                optimize.optimize_pixel_and_z(repr_nv_sig)
 
                 break
 

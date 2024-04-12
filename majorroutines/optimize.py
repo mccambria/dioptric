@@ -415,6 +415,15 @@ def prepare_microscope(nv_sig: NVSig):
         rotation_stage_server.set_angle(magnet_angle)
 
 
+def expected_counts_check(nv_sig, counts):
+    expected_counts = nv_sig.expected_counts
+    if expected_counts is None:
+        return False
+    lower_bound = 0.95 * expected_counts
+    upper_bound = 1.1 * expected_counts
+    return lower_bound < counts < upper_bound
+
+
 def main(
     nv_sig: NVSig,
     coords_key=CoordsKey.GLOBAL,
@@ -439,10 +448,6 @@ def main(
     tb.init_safe_stop()
 
     initial_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust)
-    expected_counts = nv_sig.expected_counts
-    if expected_counts is not None:
-        lower_bound = 0.95 * expected_counts
-        upper_bound = 1.1 * expected_counts
 
     start_time = time.time()
 
@@ -456,10 +461,10 @@ def main(
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
-    print(f"Expected counts: {expected_counts}")
+    print(f"Expected counts: {nv_sig.expected_counts}")
     current_counts = count_check(initial_coords)
     print(f"Counts at initial coordinates: {current_counts}")
-    if (expected_counts is not None) and (lower_bound < current_counts < upper_bound):
+    if expected_counts_check(nv_sig, current_counts):
         print("No need to optimize.")
         opti_necessary = False
 
@@ -493,7 +498,7 @@ def main(
                 # Check if z optimization is necessary after xy optimization
                 if axis_ind == 2 and axes_to_optimize == [0, 1, 2]:
                     current_counts = count_check(opti_coords)
-                    if lower_bound < current_counts < upper_bound:
+                    if expected_counts_check(nv_sig, current_counts):
                         print("Z optimization unnecessary.")
                         scan_vals_by_axis.append(np.array([]))
                         opti_succeeded = True
@@ -520,13 +525,10 @@ def main(
             # Check the counts - if the threshold is not set, we just do one pass and succeed
             current_counts = count_check(opti_coords)
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
-            if expected_counts is None:
+            if expected_counts_check(nv_sig, current_counts):
                 opti_succeeded = True
-            else:
-                if lower_bound < current_counts < upper_bound:
-                    opti_succeeded = True
-                else:
-                    print("Value at optimized coordinates out of bounds.")
+            elif nv_sig.expected_counts is not None:
+                print("Value at optimized coordinates out of bounds.")
 
     ### Calculate the drift relative to the passed coordinates
 
