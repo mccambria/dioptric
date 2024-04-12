@@ -211,7 +211,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1499636403769)
+    data = dm.get_raw_data(file_id=1500003371604)
 
     nv_list = data["nv_list"]
     nv_list = [NVSig(**nv) for nv in nv_list]
@@ -223,11 +223,7 @@ if __name__ == "__main__":
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    sig_counts, _ = widefield.threshold_counts(nv_list, sig_counts)
     avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
-    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
-    #     nv_list, sig_counts, ref_counts
-    # )
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
