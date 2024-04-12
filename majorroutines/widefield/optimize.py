@@ -16,7 +16,7 @@ from numba import njit
 from numpy import inf
 from scipy.optimize import minimize
 
-from majorroutines.optimize import main, prepare_microscope, stationary_count_lite
+from majorroutines.optimize import expected_counts_check, main, stationary_count_lite
 from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
@@ -68,6 +68,15 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 
 
 # endregion
+
+
+def optimize_pixel_and_z(nv_sig, do_plot=False):
+    img_array = stationary_count_lite(nv_sig, ret_img_array=True)
+    opti_pixel_coords = optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
+    counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
+    if expected_counts_check(nv_sig, counts):
+        return
+    main(nv_sig, axes_to_optimize=[2])  # z
 
 
 def optimize_pixel(nv_sig, do_plot=False):

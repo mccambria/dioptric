@@ -179,7 +179,7 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 200
+    num_reps = 40
     num_runs = 10
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
@@ -232,11 +232,14 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
+    min_tau = 64
     max_tau = 240 + min_tau
     num_steps = 31
-    num_reps = 5
-    num_runs = 40
-    nv_list[1].spin_flip = True
+    num_steps = 1
+    num_reps = 2
+    num_reps = 50
+    num_runs = 20
+    # nv_list[1].spin_flip = True
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     # for ind in range(4):
     #     for flipped in [True, False]:
@@ -787,7 +790,7 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
@@ -806,7 +809,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
     # region Cleanup
 
