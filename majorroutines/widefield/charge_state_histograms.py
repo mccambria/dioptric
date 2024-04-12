@@ -205,7 +205,8 @@ def main(
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list)
-        determine_threshold(ref_counts_list)
+        all_counts_list = np.append(sig_counts_list, ref_counts_list)
+        determine_threshold(all_counts_list)
         nv_sig = nv_list[ind]
         nv_name = nv_sig.name
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
