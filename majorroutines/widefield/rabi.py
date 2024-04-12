@@ -226,7 +226,7 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts
     )
-    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
     plt.show(block=True)

@@ -17,8 +17,11 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield
 
-camera = tb.get_server_camera()
-pulse_gen = tb.get_server_pulse_gen()
+try:
+    camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
+except Exception:
+    pass
 
 
 def charge_prep_loop(pixel_coords_list, threshold_list):
@@ -226,9 +229,9 @@ def main(
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                                np.median(img_array)
-                            )
+                            median_vals[
+                                exp_ind, run_ind, step_ind, rep_ind
+                            ] = np.median(img_array)
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
 
