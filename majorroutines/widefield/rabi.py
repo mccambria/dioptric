@@ -222,6 +222,7 @@ if __name__ == "__main__":
     counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
+    # ref_counts = np.copy(sig_counts)
 
     avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)

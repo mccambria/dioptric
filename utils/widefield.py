@@ -149,13 +149,9 @@ def average_counts(sig_counts, ref_counts=None):
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
-    sig_counts = np.array(sig_counts)
-    # meas_array = counts_array > 75
-    meas_array = sig_counts
-
-    avg_counts = np.mean(meas_array, axis=run_rep_axes)
-    num_shots = meas_array.shape[rep_ax] * meas_array.shape[run_ax]
-    avg_counts_std = np.std(meas_array, axis=run_rep_axes, ddof=1)
+    avg_counts = np.mean(sig_counts, axis=run_rep_axes)
+    num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
+    avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
     if ref_counts is None:
@@ -177,8 +173,6 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
-    sig_counts = np.array(sig_counts)
-
     thresholds = np.array([nv.threshold for nv in nv_list])
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
@@ -190,7 +184,6 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         sig_counts, thresholds, out=sig_counts, where=where_thresh
     )
     if ref_counts is not None:
-        ref_counts = np.array(ref_counts)
         ref_states_array = np.greater(
             ref_counts, thresholds, out=ref_counts, where=where_thresh
         )
