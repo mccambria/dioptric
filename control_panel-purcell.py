@@ -73,8 +73,8 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list):
-    num_reps = 250
-    num_runs = 4
+    num_reps = 50
+    num_runs = 10
     return charge_state_histograms.main(nv_list, num_reps, num_runs)
 
 
@@ -466,19 +466,19 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.5],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
-    # Green
     opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4],  # Analog channels
-        [0.03, 0.03],  # Analog voltages
-        [110, 110],  # Analog frequencies
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.5],  # Analog voltages
+        [0],  # Analog frequencies
     )
+    # Green
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4],  # Analog channels
+    #     [0.03, 0.03],  # Analog voltages
+    #     [110, 110],  # Analog frequencies
+    # )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -680,11 +680,13 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 4800
+    nv_list[0].expected_counts = 4700
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     nv_inds = [0, 2, 4]
     nv_list = [nv_list[ind] for ind in nv_inds]
+    for nv in nv_list:
+        nv.threshold = 35.5
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
@@ -730,17 +732,17 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-        pos.reset_drift()  # Reset z drift
-        widefield.set_pixel_drift([+16, -4])
-        widefield.set_all_scanning_drift_from_pixel_drift()
+        # pos.reset_drift()  # Reset z drift
+        # widefield.set_pixel_drift([+12, +23])
+        # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.0, 4.6, 21):
+        # for z in np.linspace(3.7, 4.2, 21):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     do_widefield_image_sample(nv_si g, 20)
+        #     do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -780,7 +782,7 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)

@@ -22,12 +22,14 @@ _cache_y_freq = None
 _cache_x_freq_2 = None
 _cache_y_freq_2 = None
 _cache_macro_run_aods = None
+_cache_charge_pol_target = None
+_cache_charge_pol_incomplete = None
 
 
 # region QUA macros
 
 
-def init():
+def init(num_nvs=None):
     """
     This should be the first command we call in any sequence
     """
@@ -44,6 +46,16 @@ def init():
     global _cache_macro_run_aods
     _cache_macro_run_aods = {}
     macro_run_aods()
+
+    global _cache_charge_pol_incomplete
+    _cache_charge_pol_incomplete = qua.declare_input_stream(
+        bool, name="_cache_charge_pol_incomplete"
+    )
+
+    global _cache_charge_pol_target
+    _cache_charge_pol_target = qua.declare_input_stream(
+        bool, name="_cache_charge_pol_target"
+    )
 
 
 def handle_reps(
@@ -83,6 +95,34 @@ def handle_reps(
                 macro_wait_for_trigger()
 
 
+# def macro_polarize(pol_coords_list, pol_duration=None):
+#     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
+#     Pulses are applied in series
+
+#     Parameters
+#     ----------
+#     pol_laser_name : str
+#         Name of polarization laser
+#     pol_duration : numeric
+#         Duration of the pulse in ns
+#     pol_coords_list : list(coordinate pairs)
+#         List of coordinate pairs to target
+#     """
+
+#     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
+#     pulse_name = "charge_pol"
+#     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
+#     _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration)
+
+#     # Spin polarization with widefield yellow
+#     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
+#     readout_laser_el = get_laser_mod_element(readout_laser_name)
+#     buffer = get_widefield_operation_buffer()
+#     qua.align()
+#     qua.play("spin_pol", readout_laser_el)
+#     qua.wait(buffer, readout_laser_el)
+
+
 def macro_polarize(pol_coords_list, pol_duration=None):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -97,10 +137,25 @@ def macro_polarize(pol_coords_list, pol_duration=None):
         List of coordinate pairs to target
     """
 
+    global _cache_charge_pol_incomplete
+    global _cache_charge_pol_target
+
     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
-    _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration)
+
+    qua.advance_input_stream(_cache_charge_pol_incomplete)
+    with qua.while_(_cache_charge_pol_incomplete):
+        _macro_pulse_list(
+            pol_laser_name,
+            pol_coords_list,
+            pulse_name,
+            pol_duration,
+            input_stream=_cache_charge_pol_target,
+        )
+        macro_charge_state_readout()
+        macro_pause()
+        qua.advance_input_stream(_cache_charge_pol_incomplete)
 
     # Spin polarization with widefield yellow
     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
@@ -424,7 +479,9 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
             qua.play(pulse_name, y_el)
 
 
-def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration=None):
+def _macro_pulse_list(
+    laser_name, coords_list, pulse_name="on", duration=None, input_stream=None
+):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -454,13 +511,24 @@ def _macro_pulse_list(laser_name, coords_list, pulse_name="on", duration=None):
 
     qua.align()
     with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
-        macro_pulse(
-            laser_name,
-            (_cache_x_freq, _cache_y_freq),
-            pulse_name=pulse_name,
-            duration=duration,
-            convert_to_Hz=False,
-        )
+        if input_stream is not None:
+            qua.advance_input_stream(input_stream)
+            with qua.if_(input_stream):
+                macro_pulse(
+                    laser_name,
+                    (_cache_x_freq, _cache_y_freq),
+                    pulse_name=pulse_name,
+                    duration=duration,
+                    convert_to_Hz=False,
+                )
+        else:
+            macro_pulse(
+                laser_name,
+                (_cache_x_freq, _cache_y_freq),
+                pulse_name=pulse_name,
+                duration=duration,
+                convert_to_Hz=False,
+            )
 
 
 def macro_pulse(laser_name, coords, pulse_name="on", duration=None, convert_to_Hz=True):

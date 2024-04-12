@@ -253,6 +253,11 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             time.sleep(time_step)
             
         self.running_job.resume()
+        
+        
+    @setting(19, input_stream_name="s", val="?")
+    def insert_input_stream(self, c, input_stream_name, val):
+        self.running_job.insert_input_stream(input_stream_name, val)
 
     # endregion
     # region Time tagging
