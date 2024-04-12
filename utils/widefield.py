@@ -190,6 +190,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         sig_counts, thresholds, out=sig_counts, where=where_thresh
     )
     if ref_counts is not None:
+        ref_counts = np.array(ref_counts)
         ref_states_array = np.greater(
             ref_counts, thresholds, out=ref_counts, where=where_thresh
         )
@@ -197,8 +198,6 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         ref_states_array = None
 
     return sig_states_array, ref_states_array
-
-    return average_counts(sig_states_array, ref_states_array)
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None):
