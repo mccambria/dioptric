@@ -154,7 +154,7 @@ def macro_polarize(pol_coords_list, pol_duration=None):
             input_stream=_cache_charge_pol_target,
         )
         macro_charge_state_readout()
-        macro_pause()
+        macro_wait_for_trigger()
         qua.advance_input_stream(_cache_charge_pol_incomplete)
 
     # Spin polarization with widefield yellow

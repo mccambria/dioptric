@@ -24,23 +24,21 @@ except Exception:
     pass
 
 
-def charge_prep_loop(pixel_coords_list, threshold_list):
+def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None):
     num_nvs = len(pixel_coords_list)
 
-    # Initial input stream conditions
-    pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", True)
-    for val in range(num_nvs):
-        pulse_gen.insert_input_stream("_cache_charge_pol_target", True)
-
+    counts_list = initial_counts_list
     num_attempts = 10
     attempt_ind = 0
     while True:
-        _, counts_list = read_image_and_get_counts(pixel_coords_list)
-        charge_pol_target_list = [
-            counts_list[ind] < threshold_list[ind] for ind in range(num_nvs)
-        ]
+        if counts_list is not None:
+            charge_pol_target_list = [
+                counts_list[ind] < threshold_list[ind] for ind in range(num_nvs)
+            ]
+        else:
+            charge_pol_target_list = [True for ind in range(num_nvs)]
 
-        out_of_attempts = attempt_ind == num_attempts - 1
+        out_of_attempts = attempt_ind == num_attempts
         charge_pol_complete = True not in charge_pol_target_list or out_of_attempts
         pulse_gen.insert_input_stream(
             "_cache_charge_pol_incomplete", not charge_pol_complete
@@ -50,12 +48,12 @@ def charge_prep_loop(pixel_coords_list, threshold_list):
 
         for val in charge_pol_target_list:
             pulse_gen.insert_input_stream("_cache_charge_pol_target", val)
-        pulse_gen.resume()
 
         attempt_ind += 1
+        _, counts_list = read_image_and_get_counts(pixel_coords_list)
 
-    print(attempt_ind)
-    pulse_gen.resume()
+    # pulse_gen.resume()
+    return attempt_ind
 
 
 def read_image_and_get_counts(pixel_coords_list):
@@ -189,6 +187,8 @@ def main(
                 pixel_coords_list = [
                     widefield.get_nv_pixel_coords(nv) for nv in nv_list
                 ]
+                counts_list = None
+                charge_prep_readouts_list = []
 
                 for ind in uwave_ind_list:
                     sig_gen = tb.get_server_sig_gen(ind=ind)
@@ -221,7 +221,12 @@ def main(
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
                             if do_charge_prep_loop:
-                                charge_prep_loop(pixel_coords_list, threshold_list)
+                                charge_prep_readouts = charge_prep_loop(
+                                    pixel_coords_list,
+                                    threshold_list,
+                                    initial_counts_list=counts_list,
+                                )
+                                charge_prep_readouts_list.append(charge_prep_readouts)
                             img_array, counts_list = read_image_and_get_counts(
                                 pixel_coords_list
                             )
@@ -244,6 +249,9 @@ def main(
                     pulse_gen.resume()
 
                 ### Move on to the next run
+
+                if len(charge_prep_readouts_list) > 0:
+                    print(np.mean(charge_prep_readouts_list))
 
                 # Turn stuff off
                 pulse_gen.halt()

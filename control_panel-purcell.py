@@ -185,7 +185,7 @@ def do_scc_snr_check(nv_list):
 
 
 def do_simple_correlation_test(nv_list):
-    num_reps = 200
+    num_reps = 60
     num_runs = 40
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
@@ -234,18 +234,19 @@ def do_rabi(nv_list):
     min_tau = 16
     max_tau = 240 + min_tau
     num_steps = 31
-    num_reps = 10
+    num_reps = 5
     num_runs = 40
-    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-    for ind in range(4):
-        for flipped in [True, False]:
-            for nv_ind in range(3):
-                nv = nv_list[nv_ind]
-                if ind == nv_ind:
-                    nv.spin_flip = flipped
-                else:
-                    nv.spin_flip = not flipped
-            rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    nv_list[1].spin_flip = True
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    # for ind in range(4):
+    #     for flipped in [True, False]:
+    #         for nv_ind in range(3):
+    #             nv = nv_list[nv_ind]
+    #             if ind == nv_ind:
+    #                 nv.spin_flip = flipped
+    #             else:
+    #                 nv.spin_flip = not flipped
+    #         rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_spin_echo(nv_list):
@@ -686,7 +687,7 @@ if __name__ == "__main__":
     nv_inds = [0, 2, 4]
     nv_list = [nv_list[ind] for ind in nv_inds]
     for nv in nv_list:
-        nv.threshold = 35.5
+        nv.threshold = 27.5
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
@@ -763,8 +764,8 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        do_optimize_pixel(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_pixel(nv_sig)
+        # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -782,7 +783,7 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -805,7 +806,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        # do_simple_correlation_test(nv_list)
+        do_simple_correlation_test(nv_list)
 
     # region Cleanup
 
