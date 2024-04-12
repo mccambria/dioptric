@@ -177,8 +177,11 @@ def main(
     readout = laser_dict["duration"]
     readout_ms = readout / 10**6
 
-    sig_img_array = np.mean(img_arrays[0], axis=(1, 2))
-    ref_img_array = np.mean(img_arrays[1], axis=(1, 2))
+    img_arrays = raw_data["img_arrays"]
+    del raw_data["img_arrays"]
+    mean_img_arrays = np.mean(img_arrays, axis=(1, 2))
+    sig_img_array = mean_img_arrays[0]
+    ref_img_array = mean_img_arrays[1]
     diff_img_array = sig_img_array - ref_img_array
     img_arrays = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
@@ -195,8 +198,6 @@ def main(
     num_nvs = len(nv_list)
     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
-    img_arrays = raw_data["img_arrays"]
-    del raw_data["img_arrays"]
 
     num_nvs = len(nv_list)
     timestamp = dm.get_time_stamp()
@@ -270,8 +271,8 @@ if __name__ == "__main__":
     # ax.legend()
     # kpl.show(block=True)
 
-    sig_counts_lists = [sig_counts_lists[ind] / sig_norms for ind in range(num_nvs)]
-    ref_counts_lists = [ref_counts_lists[ind] / ref_norms for ind in range(num_nvs)]
+    # sig_counts_lists = [sig_counts_lists[ind] / sig_norms for ind in range(num_nvs)]
+    # ref_counts_lists = [ref_counts_lists[ind] / ref_norms for ind in range(num_nvs)]
 
     ### Histograms
 

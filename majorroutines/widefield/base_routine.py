@@ -17,6 +17,56 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield
 
+camera = tb.get_server_camera()
+pulse_gen = tb.get_server_pulse_gen()
+
+
+def charge_prep_loop(pixel_coords_list, threshold_list):
+    num_nvs = len(pixel_coords_list)
+
+    # Initial input stream conditions
+    pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", True)
+    for val in range(num_nvs):
+        pulse_gen.insert_input_stream("_cache_charge_pol_target", True)
+
+    num_attempts = 10
+    attempt_ind = 0
+    while True:
+        _, counts_list = read_image_and_get_counts(pixel_coords_list)
+        charge_pol_target_list = [
+            counts_list[ind] < threshold_list[ind] for ind in range(num_nvs)
+        ]
+
+        out_of_attempts = attempt_ind == num_attempts - 1
+        charge_pol_complete = True not in charge_pol_target_list or out_of_attempts
+        pulse_gen.insert_input_stream(
+            "_cache_charge_pol_incomplete", not charge_pol_complete
+        )
+        if charge_pol_complete:
+            break
+
+        for val in charge_pol_target_list:
+            pulse_gen.insert_input_stream("_cache_charge_pol_target", val)
+        pulse_gen.resume()
+
+        attempt_ind += 1
+
+    print(attempt_ind)
+    pulse_gen.resume()
+
+
+def read_image_and_get_counts(pixel_coords_list):
+    img_str = camera.read()
+    img_array = widefield.img_str_to_array(img_str)
+    img_array_photons = widefield.adus_to_photons(img_array)
+
+    def get_counts(pixel_coords):
+        return widefield.integrate_counts(img_array_photons, pixel_coords)
+
+    counts_list = [get_counts(el) for el in pixel_coords_list]
+
+    return img_array, counts_list
+
 
 def main(
     nv_list,
@@ -82,12 +132,13 @@ def main(
 
     tb.reset_cfm()
 
+    do_charge_prep_loop = True
+
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
 
-    camera = tb.get_server_camera()
-    pulse_gen = tb.get_server_pulse_gen()
+    threshold_list = [nv.threshold for nv in nv_list]
 
     # Sig gen setup - all but turning on the output
     if isinstance(uwave_ind, int):
@@ -113,8 +164,8 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     # MCC
-    # mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
-    # median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
+    mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
+    median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     if save_images:
         shape = widefield.get_img_array_shape()
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
@@ -166,25 +217,20 @@ def main(
                     # Reps loop
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
-                            img_str = camera.read()
-                            img_array = widefield.img_str_to_array(img_str)
+                            if do_charge_prep_loop:
+                                charge_prep_loop(pixel_coords_list, threshold_list)
+                            img_array, counts_list = read_image_and_get_counts(
+                                pixel_coords_list
+                            )
+                            counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
+                            mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
+                                img_array
+                            )
+                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
+                                np.median(img_array)
+                            )
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
-                            img_array_photons = widefield.adus_to_photons(img_array)
-
-                            def get_counts(pixel_coords):
-                                return widefield.integrate_counts(
-                                    img_array_photons, pixel_coords
-                                )
-
-                            counts_list = [get_counts(el) for el in pixel_coords_list]
-                            counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
-                            # mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
-                            #     img_array
-                            # )
-                            # median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                            #     np.median(img_array)
-                            # )
 
                     if save_images:
                         for exp_ind in range(num_exps_per_rep):
@@ -240,8 +286,8 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
-        # "mean_vals": mean_vals,
-        # "median_vals": median_vals,
+        "mean_vals": mean_vals,
+        "median_vals": median_vals,
     }
     if save_images:
         raw_data |= {
