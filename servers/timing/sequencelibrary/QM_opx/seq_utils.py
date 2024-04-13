@@ -144,6 +144,9 @@ def macro_polarize(pol_coords_list, pol_duration=None):
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
 
+    # MCC
+    # test = qua.declare(bool, False)
+    # with qua.while_(test):
     qua.advance_input_stream(_cache_charge_pol_incomplete)
     with qua.while_(_cache_charge_pol_incomplete):
         _macro_pulse_list(
@@ -158,12 +161,12 @@ def macro_polarize(pol_coords_list, pol_duration=None):
         qua.advance_input_stream(_cache_charge_pol_incomplete)
 
     # Spin polarization with widefield yellow
-    readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
-    readout_laser_el = get_laser_mod_element(readout_laser_name)
+    spin_pol_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
+    spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
     buffer = get_widefield_operation_buffer()
     qua.align()
-    qua.play("spin_pol", readout_laser_el)
-    qua.wait(buffer, readout_laser_el)
+    qua.play("spin_pol", spin_pol_laser_el)
+    qua.wait(buffer, spin_pol_laser_el)
 
 
 # def macro_polarize(pol_coords_list, pol_duration=None):

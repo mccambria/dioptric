@@ -76,7 +76,7 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
     counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
     if expected_counts_check(nv_sig, counts):
         return
-    main(nv_sig, axes_to_optimize=[2])  # z
+    main(nv_sig, axes_to_optimize=[2], opti_necessary=True, do_plot=do_plot)  # z
 
 
 def optimize_pixel(nv_sig, do_plot=False):

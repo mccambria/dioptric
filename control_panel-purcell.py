@@ -74,7 +74,8 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list):
     num_reps = 50
-    num_runs = 10
+    # num_runs = 10
+    num_runs = 2
     return charge_state_histograms.main(nv_list, num_reps, num_runs)
 
 
@@ -179,7 +180,7 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 40
+    num_reps = 20
     num_runs = 10
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
@@ -232,13 +233,16 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    min_tau = 64
     max_tau = 240 + min_tau
     num_steps = 31
-    num_steps = 1
-    num_reps = 2
-    num_reps = 50
+    num_reps = 4
     num_runs = 20
+    # num_runs = 2
+
+    # min_tau = 64
+    # num_steps = 1
+    # num_reps = 50
+
     # nv_list[1].spin_flip = True
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     # for ind in range(4):
@@ -767,6 +771,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_optimize_pixel(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
@@ -790,7 +795,7 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
@@ -804,7 +809,7 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

@@ -430,6 +430,7 @@ def main(
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
     do_plot=False,
+    opti_necessary=None,
 ):
     prepare_microscope(nv_sig)
 
@@ -453,7 +454,6 @@ def main(
 
     # Default values for status variables
     opti_succeeded = False
-    opti_necessary = True
     opti_coords = initial_coords.copy()
 
     def count_check(coords):
@@ -462,11 +462,12 @@ def main(
     ### Check if we even need to optimize by reading counts at current coordinates
 
     print(f"Expected counts: {nv_sig.expected_counts}")
-    current_counts = count_check(initial_coords)
-    print(f"Counts at initial coordinates: {current_counts}")
-    if expected_counts_check(nv_sig, current_counts):
+    if opti_necessary is None:
+        current_counts = count_check(initial_coords)
+        opti_necessary = not expected_counts_check(nv_sig, current_counts)
+        print(f"Counts at initial coordinates: {current_counts}")
+    if not opti_necessary:
         print("No need to optimize.")
-        opti_necessary = False
 
     ### Try to optimize.
 

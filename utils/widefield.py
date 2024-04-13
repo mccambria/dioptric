@@ -180,12 +180,14 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     # If there's no threshold, just return the counts unchanged
     where_thresh = np.array(thresholds, dtype=bool)
 
+    sig_states_array = np.copy(sig_counts)
     sig_states_array = np.greater(
-        sig_counts, thresholds, out=sig_counts, where=where_thresh
+        sig_counts, thresholds, out=sig_states_array, where=where_thresh
     )
     if ref_counts is not None:
+        ref_states_array = np.copy(ref_counts)
         ref_states_array = np.greater(
-            ref_counts, thresholds, out=ref_counts, where=where_thresh
+            ref_counts, thresholds, out=ref_states_array, where=where_thresh
         )
     else:
         ref_states_array = None
@@ -193,14 +195,17 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     return sig_states_array, ref_states_array
 
 
-def process_counts(nv_list, sig_counts, ref_counts=None):
+def process_counts(nv_list, sig_counts, ref_counts=None, no_threshold=False):
     """Alias for threshold_counts with a more generic name"""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
-    sig_states_array, ref_states_array = threshold_counts(
-        nv_list, sig_counts, ref_counts
-    )
-    return average_counts(sig_states_array, ref_states_array)
+    if no_threshold:
+        return average_counts(sig_counts, ref_counts)
+    else:
+        sig_states_array, ref_states_array = threshold_counts(
+            nv_list, sig_counts, ref_counts
+        )
+        return average_counts(sig_states_array, ref_states_array)
 
 
 def calc_snr(sig_counts, ref_counts):

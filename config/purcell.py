@@ -156,7 +156,8 @@ config |= {
         # SCC: 180 mW, 0.13 V, no shelving
         LaserKey.SCC: {"name": red_laser, "duration": 144},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 1e9},
-        LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
+        # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
+        LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
         #
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
@@ -562,7 +563,7 @@ opx_config = {
         },
         "yellow_spin_pol": {
             "operation": "control",
-            "length": 10e3,
+            "length": config["Optics"][LaserKey.WIDEFIELD_SPIN_POL]["duration"],
             "waveforms": {"single": "yellow_spin_pol"},
         },
         #

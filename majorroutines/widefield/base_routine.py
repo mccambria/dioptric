@@ -28,7 +28,8 @@ def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None
     num_nvs = len(pixel_coords_list)
 
     counts_list = initial_counts_list
-    num_attempts = 10
+    # num_attempts = 10
+    num_attempts = 1
     attempt_ind = 0
     while True:
         if counts_list is not None:
@@ -51,6 +52,8 @@ def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None
 
         attempt_ind += 1
         _, counts_list = read_image_and_get_counts(pixel_coords_list)
+
+    # print(counts_list)
 
     # pulse_gen.resume()
     return attempt_ind
@@ -234,9 +237,9 @@ def main(
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[
-                                exp_ind, run_ind, step_ind, rep_ind
-                            ] = np.median(img_array)
+                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
+                                np.median(img_array)
+                            )
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
 

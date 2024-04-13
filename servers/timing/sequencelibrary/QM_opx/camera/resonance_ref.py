@@ -22,7 +22,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 def get_seq(
     pol_coords_list,
     ion_coords_list,
-    anticorrelation_ind_list,
+    spin_flip_ind_list,
     uwave_ind,
     step_vals=None,
     num_reps=1,
@@ -55,7 +55,7 @@ def get_seq(
         base_sequence.macro(
             pol_coords_list,
             ion_coords_list,
-            anticorrelation_ind_list,
+            spin_flip_ind_list,
             uwave_ind,
             uwave_macro_sig,
             step_vals,
@@ -82,19 +82,17 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [109.05560372660722, 110.77022466032236],
-                [109.2856037266072, 111.45022466032236],
+                [108.63547773676507, 108.73446819207585],
+                [109.45547773676506, 110.64046819207584],
             ],
             [
-                [109.05560372660722, 110.77022466032236],
+                [73.55849816673624, 74.04886961198135],
+                [74.19849816673624, 75.56986961198135],
             ],
-            [
-                [73.78442169604547, 75.67270342527479],
-                [74.02642169604547, 76.07570342527478],
-            ],
+            [],
             0,
-            [1, 2, 3, 4],
-            10,
+            [0],
+            1,
         )
 
         sim_config = SimulationConfig(duration=int(200e3 / 4))

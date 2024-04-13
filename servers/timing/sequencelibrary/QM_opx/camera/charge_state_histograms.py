@@ -49,6 +49,7 @@ def get_seq(
                 seq_utils.macro_ionize(ion_coords_list)
 
             seq_utils.macro_charge_state_readout()
+            seq_utils.macro_wait_for_trigger()
 
         def one_rep():
             for half_rep_args in [
@@ -56,9 +57,6 @@ def get_seq(
                 [do_polarize_ref, do_ionize_ref],
             ]:
                 one_exp(*half_rep_args)
-
-                # qua.align()
-                seq_utils.macro_wait_for_trigger()
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
         seq_utils.macro_pause()

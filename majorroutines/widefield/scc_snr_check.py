@@ -57,9 +57,7 @@ def main(nv_list, num_reps, num_runs):
 
     def run_fn(step_inds):
         seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
-        seq_args.append(uwave_ind)
-        shuffled_freqs = [uwave_freq]  # Just one frequency, not used by sequence anyway
-        seq_args.append(shuffled_freqs)
+        seq_args.append(step_inds)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
