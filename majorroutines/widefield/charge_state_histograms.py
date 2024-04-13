@@ -170,6 +170,10 @@ def main(
 
     ### Process and plot
 
+    timestamp = dm.get_time_stamp()
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+
     # Images
     laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_optics_dict(laser_key)
@@ -193,6 +197,8 @@ def main(
         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
         kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
         figs.append(fig)
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+        dm.save_figure(fig, file_path)
 
     # Histograms
     num_nvs = len(nv_list)
@@ -200,7 +206,6 @@ def main(
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
 
     num_nvs = len(nv_list)
-    timestamp = dm.get_time_stamp()
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
@@ -214,8 +219,6 @@ def main(
 
     ### Save and clean up
 
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
     keys_to_compress = [
         "sig_img_array",
         "ref_img_array",
