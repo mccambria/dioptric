@@ -32,6 +32,7 @@ def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
         nv_list,
         num_reps,
         num_runs,
+        "detect_cosmic_rays",
         dark_time,
         base_routine.charge_prep_loop,
         process_detect_cosmic_rays,
@@ -56,6 +57,7 @@ def check_readout_fidelity(nv_list, num_reps, num_runs):
         nv_list,
         num_reps,
         num_runs,
+        "check_readout_fidelity",
         dark_time,
         base_routine.charge_prep_loop_first_rep,
         process_check_readout_fidelity,
@@ -98,7 +100,15 @@ def process_check_readout_fidelity(data):
     return fig
 
 
-def main(nv_list, num_reps, num_runs, dark_time, charge_prep_fn, data_processing_fn):
+def main(
+    nv_list,
+    num_reps,
+    num_runs,
+    caller_fn_name,
+    dark_time,
+    charge_prep_fn,
+    data_processing_fn,
+):
     ### Some initial setup
     seq_file = "charge_monitor.py"
 
@@ -131,6 +141,7 @@ def main(nv_list, num_reps, num_runs, dark_time, charge_prep_fn, data_processing
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
+        "caller_fn_name": caller_fn_name,
     }
 
     try:

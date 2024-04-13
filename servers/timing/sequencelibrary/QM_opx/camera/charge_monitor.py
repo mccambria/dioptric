@@ -20,7 +20,7 @@ def get_seq(pol_coords_list, dark_time_ns, num_reps):
     if num_reps is None:
         num_reps = 1
 
-    dark_time = seq_utils.convert_ns_to_cc(dark_time_ns)
+    dark_time = seq_utils.convert_ns_to_cc(dark_time_ns, allow_zero=True)
 
     with qua.program() as seq:
         seq_utils.init()
