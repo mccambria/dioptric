@@ -24,12 +24,27 @@ except Exception:
     pass
 
 
-def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None):
+def charge_prep_loop_first_rep(
+    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
+):
+    if rep_ind == 0:
+        num_attempts = charge_prep_loop(
+            rep_ind, pixel_coords_list, threshold_list, initial_counts_list
+        )
+    else:
+        pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
+        num_attempts = 0
+    return num_attempts
+
+
+def charge_prep_loop(
+    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
+):
     num_nvs = len(pixel_coords_list)
 
     counts_list = initial_counts_list
-    num_attempts = 10
-    # num_attempts = 1
+    max_num_attempts = 10
+    # max_num_attempts = 1
     attempt_ind = 0
     while True:
         if counts_list is not None:
@@ -39,7 +54,7 @@ def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
 
-        out_of_attempts = attempt_ind == num_attempts
+        out_of_attempts = attempt_ind == max_num_attempts
         charge_pol_complete = True not in charge_pol_target_list or out_of_attempts
         pulse_gen.insert_input_stream(
             "_cache_charge_pol_incomplete", not charge_pol_complete
@@ -53,9 +68,6 @@ def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None
         attempt_ind += 1
         _, counts_list = read_image_and_get_counts(pixel_coords_list)
 
-    # print(counts_list)
-
-    # pulse_gen.resume()
     return attempt_ind
 
 
@@ -85,6 +97,7 @@ def main(
     load_iq=False,
     save_images=False,
     stream_load_in_run_fn=True,
+    charge_prep_fn=charge_prep_loop,
 ) -> tuple[np.ndarray, dict]:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 
@@ -135,8 +148,6 @@ def main(
     ### Some initial setup
 
     tb.reset_cfm()
-
-    do_charge_prep_loop = True
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
@@ -223,8 +234,9 @@ def main(
                     # Reps loop
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
-                            if do_charge_prep_loop:
-                                charge_prep_readouts = charge_prep_loop(
+                            if charge_prep_fn is not None:
+                                charge_prep_readouts = charge_prep_fn(
+                                    rep_ind,
                                     pixel_coords_list,
                                     threshold_list,
                                     initial_counts_list=counts_list,
@@ -292,15 +304,19 @@ def main(
 
     raw_data = {
         "nv_list": nv_list,
-        "num_reps": num_reps,
         "num_steps": num_steps,
+        "num_reps": num_reps,
         "num_runs": num_runs,
         "uwave_ind": uwave_ind,
+        "uwave_freq": uwave_freq,
+        "num_exps_per_rep": num_exps_per_rep,
+        "load_iq": load_iq,
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
         "mean_vals": mean_vals,
         "median_vals": median_vals,
+        "img_array-units": "ADUs",
     }
     if save_images:
         raw_data |= {

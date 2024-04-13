@@ -17,6 +17,7 @@ import numpy as np
 
 from majorroutines.widefield import (
     calibrate_iq_delay,
+    charge_monitor,
     charge_state_histograms,
     correlation_test,
     crosstalk_check,
@@ -449,6 +450,13 @@ def do_spin_pol_check(nv_sig):
     )
 
 
+def do_charge_monitor(nv_list):
+    num_reps = 100
+    dark_time = 0
+
+    charge_monitor.main(nv_list, num_reps, dark_time)
+
+
 def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
@@ -805,6 +813,7 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
+        do_charge_monitor(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()

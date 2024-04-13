@@ -123,7 +123,7 @@ def handle_reps(
 #     qua.wait(buffer, readout_laser_el)
 
 
-def macro_polarize(pol_coords_list, pol_duration=None):
+def macro_polarize(pol_coords_list, pol_duration=None, spin_pol=True):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -161,12 +161,13 @@ def macro_polarize(pol_coords_list, pol_duration=None):
         qua.advance_input_stream(_cache_charge_pol_incomplete)
 
     # Spin polarization with widefield yellow
-    spin_pol_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
-    spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
-    buffer = get_widefield_operation_buffer()
-    qua.align()
-    qua.play("spin_pol", spin_pol_laser_el)
-    qua.wait(buffer, spin_pol_laser_el)
+    if spin_pol:
+        spin_pol_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
+        spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
+        buffer = get_widefield_operation_buffer()
+        qua.align()
+        qua.play("spin_pol", spin_pol_laser_el)
+        qua.wait(buffer, spin_pol_laser_el)
 
 
 # def macro_polarize(pol_coords_list, pol_duration=None):
