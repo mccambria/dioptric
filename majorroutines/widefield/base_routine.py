@@ -28,8 +28,8 @@ def charge_prep_loop(pixel_coords_list, threshold_list, initial_counts_list=None
     num_nvs = len(pixel_coords_list)
 
     counts_list = initial_counts_list
-    # num_attempts = 10
-    num_attempts = 1
+    num_attempts = 10
+    # num_attempts = 1
     attempt_ind = 0
     while True:
         if counts_list is not None:
