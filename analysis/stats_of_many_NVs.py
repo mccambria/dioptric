@@ -15,6 +15,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
+from scipy.optimize import curve_fit
 
 import majorroutines.optimize as optimize
 from majorroutines.widefield.optimize import optimize_pixel_with_img_array
@@ -45,9 +46,22 @@ def many_cond_init_expected(init_prob, num_nvs):
     return 1 + np.sum(1 - (1 - (1 - init_prob) ** (test_vals)) ** (num_nvs))
 
 
+def generic_log(x, x_offset, y_offset, scaling):
+    return scaling * np.log(x + x_offset) + y_offset
+
+
+# def generic_log(x, y_offset, scaling):
+#     return scaling * np.log(x) + y_offset
+
+
+# def generic_log(x, x_offset, y_offset):
+#     scaling = 1 / 0.5
+#     return scaling * np.log(x + x_offset) + y_offset
+
+
 def many_cond_init_plot():
-    init_prob = 0.65
-    max_num_nvs = 1000
+    init_prob = 0.5
+    max_num_nvs = 100
     fig, ax = plt.subplots()
 
     plot_x_vals = np.linspace(1, max_num_nvs, max_num_nvs)
@@ -57,7 +71,11 @@ def many_cond_init_plot():
     kpl.plot_line(ax, plot_x_vals, plot_y_vals)
     ax.set_xlabel("Number of NVs")
     ax.set_ylabel("Expected shots until success")
-    kpl.plot_line(ax, plot_x_vals, 0.88 * np.log(plot_x_vals) + plot_y_vals[0])
+    popt, pcov = curve_fit(
+        generic_log, plot_x_vals, plot_y_vals, p0=(0, 1 / init_prob, 1)
+    )
+    print(popt)
+    kpl.plot_line(ax, plot_x_vals, generic_log(plot_x_vals, *popt))
 
     # plot_x_vals = np.linspace(1, 20, 20)
     # plot_y_vals = many_cond_init_cdf(1000, init_prob, plot_x_vals)
