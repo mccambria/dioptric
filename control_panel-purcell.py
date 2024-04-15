@@ -451,8 +451,8 @@ def do_spin_pol_check(nv_sig):
 
 
 def do_detect_cosmic_rays(nv_list):
-    num_reps = 50
-    num_runs = 2
+    num_reps = 100
+    num_runs = 100
     dark_time = 0
 
     charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
