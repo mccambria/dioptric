@@ -34,9 +34,9 @@ def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
         num_reps,
         num_runs,
         "detect_cosmic_rays",
-        dark_time,
         base_routine.charge_prep_loop,
         process_detect_cosmic_rays,
+        dark_time=dark_time,
     )
 
 
@@ -48,20 +48,31 @@ def process_detect_cosmic_rays(data):
     states, _ = widefield.threshold_counts(nv_list, sig_counts)
     img_array = np.array([states[nv_ind].flatten() for nv_ind in range(num_nvs)])
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array)
+    kpl.imshow(ax, img_array, aspect="auto")
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     return fig
 
 
 def check_readout_fidelity(nv_list, num_reps, num_runs):
-    dark_time = 0
     main(
         nv_list,
         num_reps,
         num_runs,
         "check_readout_fidelity",
-        dark_time,
         base_routine.charge_prep_loop_first_rep,
         process_check_readout_fidelity,
+    )
+
+
+def charge_quantum_jump(nv_list, num_reps):
+    num_runs = 1
+    main(
+        nv_list,
+        num_reps,
+        num_runs,
+        "charge_quantum_jump",
+        base_routine.charge_prep_loop_first_rep,
+        process_detect_cosmic_rays,
     )
 
 
@@ -81,8 +92,7 @@ def process_check_readout_fidelity(data):
     for init_state in [0, 1]:
         ax = axes_pack[init_state]
         for nv_ind in range(num_nvs):
-            num_shots = 0
-            num_same_shots = 0
+            shots_list = []
             for run_ind in range(num_runs):
                 for rep_ind in range(num_reps):
                     prev_state = (
@@ -90,11 +100,9 @@ def process_check_readout_fidelity(data):
                     )
                     current_state = states[nv_ind, run_ind, 0, rep_ind]
                     if prev_state == init_state:
-                        num_shots += 1
-                        if current_state == prev_state:
-                            num_same_shots += 1
-            prob = num_same_shots / num_shots
-            err = prob * (1 - prob) / np.sqrt(num_shots)
+                        shots_list.append(current_state == prev_state)
+            prob = np.mean(shots_list)
+            err = np.std(shots_list, ddof=1) / np.sqrt(len(shots_list))
             nv_num = widefield.get_nv_num(nv_list[nv_ind])
             kpl.plot_points(ax, nv_num, prob, yerr=err)
         label = labels[init_state]
@@ -111,9 +119,9 @@ def main(
     num_reps,
     num_runs,
     caller_fn_name,
-    dark_time,
     charge_prep_fn,
     data_processing_fn,
+    dark_time=0,
 ):
     ### Some initial setup
     seq_file = "charge_monitor.py"
@@ -167,13 +175,14 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1501081143996)
-    # data = dm.get_raw_data(file_id=1501090074991)
+    # data = dm.get_raw_data(file_id=1502975221813)
+    data = dm.get_raw_data(file_id=1501101877756)
 
     nv_list = data["nv_list"]
     nv_list = [NVSig(**nv) for nv in nv_list]
     data["nv_list"] = nv_list
 
-    process_check_readout_fidelity(data)
+    # process_check_readout_fidelity(data)
+    process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

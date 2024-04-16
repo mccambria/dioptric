@@ -321,7 +321,6 @@ def do_ramsey(nv_list):
     num_steps = 101
     num_reps = 10
     num_runs = 400
-    uwave_ind = 0
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -465,6 +464,12 @@ def do_check_readout_fidelity(nv_list):
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
 
+def do_charge_quantum_jump(nv_list):
+    num_reps = 2000
+
+    charge_monitor.charge_quantum_jump(nv_list, num_reps)
+
+
 def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
@@ -601,7 +606,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.36
+    z_coord = 4.20
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -757,7 +762,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-7, -15])
+        # widefield.set_pixel_drift([-1, -6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -787,7 +792,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_optimize_pixel(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
@@ -821,8 +826,9 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
-        do_detect_cosmic_rays(nv_list)
+        # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
+        do_charge_quantum_jump(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()

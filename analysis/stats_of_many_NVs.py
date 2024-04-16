@@ -7,7 +7,6 @@ Created on November 14th, 2023
 @author: mccambria
 """
 
-
 import os
 import time
 from pathlib import Path
@@ -16,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
 from scipy.optimize import curve_fit
+from scipy.special import binom
 
 import majorroutines.optimize as optimize
 from majorroutines.widefield.optimize import optimize_pixel_with_img_array
@@ -60,7 +60,8 @@ def generic_log(x, x_offset, y_offset, scaling):
 
 
 def many_cond_init_plot():
-    init_prob = 0.5
+    init_prob = 0.65
+    q = 1 - init_prob
     max_num_nvs = 100
     fig, ax = plt.subplots()
 
@@ -71,11 +72,20 @@ def many_cond_init_plot():
     kpl.plot_line(ax, plot_x_vals, plot_y_vals)
     ax.set_xlabel("Number of NVs")
     ax.set_ylabel("Expected shots until success")
-    popt, pcov = curve_fit(
-        generic_log, plot_x_vals, plot_y_vals, p0=(0, 1 / init_prob, 1)
-    )
-    print(popt)
-    kpl.plot_line(ax, plot_x_vals, generic_log(plot_x_vals, *popt))
+    # popt, pcov = curve_fit(
+    #     generic_log, plot_x_vals, plot_y_vals, p0=(0, 1 / init_prob, 1)
+    # )
+    # print(popt)
+    # kpl.plot_line(ax, plot_x_vals, generic_log(plot_x_vals, *popt))
+
+    plot_y_vals = []
+    for num_nvs in np.linspace(1, max_num_nvs, max_num_nvs, dtype=int):
+        k_vals = np.linspace(1, num_nvs, num_nvs)
+        y_vals = 1 - np.sum(
+            binom(num_nvs, k_vals) * (-1) ** k_vals * (q**k_vals) / (1 - q**k_vals)
+        )
+        plot_y_vals.append(y_vals)
+    kpl.plot_line(ax, plot_x_vals, plot_y_vals)
 
     # plot_x_vals = np.linspace(1, 20, 20)
     # plot_y_vals = many_cond_init_cdf(1000, init_prob, plot_x_vals)

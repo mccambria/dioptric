@@ -273,6 +273,7 @@ def init_kplotlib(
     plt.rcParams["figure.max_open_warning"] = 100
     plt.rcParams["image.cmap"] = "inferno"
     plt.rcParams["figure.constrained_layout.use"] = constrained_layout
+    plt.rcParams["image.interpolation"] = "none"
 
 
 def get_default_color(ax, plot_type):
