@@ -175,7 +175,7 @@ def _get_opti_laser_key(coords_key):
     if coords_key is CoordsKey.GLOBAL:
         laser_key = LaserKey.IMAGING
     else:
-        laser_dict = tb.get_optics_dict(laser_key)
+        laser_dict = tb.get_optics_dict(coords_key)
         laser_key = laser_dict["opti_laser_key"]
     return laser_key
 
@@ -417,8 +417,6 @@ def prepare_microscope(nv_sig: NVSig):
 
 def expected_counts_check(nv_sig, counts):
     expected_counts = nv_sig.expected_counts
-    if expected_counts is None:
-        return False
     lower_bound = 0.95 * expected_counts
     upper_bound = 1.1 * expected_counts
     return lower_bound < counts < upper_bound
@@ -464,7 +462,9 @@ def main(
     print(f"Expected counts: {nv_sig.expected_counts}")
     if opti_necessary is None:
         current_counts = count_check(initial_coords)
-        opti_necessary = not expected_counts_check(nv_sig, current_counts)
+        opti_necessary = nv_sig.expected_counts is None or not expected_counts_check(
+            nv_sig, current_counts
+        )
         print(f"Counts at initial coordinates: {current_counts}")
     if not opti_necessary:
         print("No need to optimize.")
@@ -499,7 +499,9 @@ def main(
                 # Check if z optimization is necessary after xy optimization
                 if axis_ind == 2 and axes_to_optimize == [0, 1, 2]:
                     current_counts = count_check(opti_coords)
-                    if expected_counts_check(nv_sig, current_counts):
+                    if nv_sig.expected_counts is not None and expected_counts_check(
+                        nv_sig, current_counts
+                    ):
                         print("Z optimization unnecessary.")
                         scan_vals_by_axis.append(np.array([]))
                         opti_succeeded = True
@@ -526,7 +528,9 @@ def main(
             # Check the counts - if the threshold is not set, we just do one pass and succeed
             current_counts = count_check(opti_coords)
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
-            if expected_counts_check(nv_sig, current_counts):
+            if nv_sig.expected_counts is None or expected_counts_check(
+                nv_sig, current_counts
+            ):
                 opti_succeeded = True
             elif nv_sig.expected_counts is not None:
                 print("Value at optimized coordinates out of bounds.")

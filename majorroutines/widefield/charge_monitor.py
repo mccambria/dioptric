@@ -59,7 +59,9 @@ def check_readout_fidelity(nv_list, num_reps, num_runs):
         num_reps,
         num_runs,
         "check_readout_fidelity",
-        base_routine.charge_prep_loop_first_rep,
+        # base_routine.charge_prep_loop_first_rep,
+        # base_routine.charge_prep_no_verification,
+        base_routine.charge_prep_no_prep,
         process_check_readout_fidelity,
     )
 
@@ -95,9 +97,12 @@ def process_check_readout_fidelity(data):
             shots_list = []
             for run_ind in range(num_runs):
                 for rep_ind in range(num_reps):
-                    prev_state = (
-                        1 if rep_ind == 0 else states[nv_ind, run_ind, 0, rep_ind - 1]
-                    )
+                    # prev_state = (
+                    #     1 if rep_ind == 0 else states[nv_ind, run_ind, 0, rep_ind - 1]
+                    # )
+                    if rep_ind == 0:
+                        continue
+                    prev_state = states[nv_ind, run_ind, 0, rep_ind - 1]
                     current_state = states[nv_ind, run_ind, 0, rep_ind]
                     if prev_state == init_state:
                         shots_list.append(current_state == prev_state)
@@ -175,14 +180,16 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1502975221813)
-    data = dm.get_raw_data(file_id=1501101877756)
+    data = dm.get_raw_data(file_id=1506560701597)
 
-    nv_list = data["nv_list"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
-    data["nv_list"] = nv_list
+    # counts = np.array(data["counts"])
+    # sig_counts = counts[0]
+    # num_nvs = len(data["nv_list"])
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     kpl.histogram(ax, sig_counts[nv_ind].flatten())
 
-    # process_check_readout_fidelity(data)
-    process_detect_cosmic_rays(data)
+    process_check_readout_fidelity(data)
+    # process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

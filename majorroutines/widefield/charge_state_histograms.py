@@ -197,7 +197,9 @@ def main(
         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
         kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
         figs.append(fig)
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+        file_path = dm.get_file_path(
+            __file__, timestamp, f"{repr_nv_name}-{title_suffixes[ind]}"
+        )
         dm.save_figure(fig, file_path)
 
     # Histograms
@@ -206,16 +208,19 @@ def main(
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
 
     num_nvs = len(nv_list)
+    threshold_list = []
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        determine_threshold(all_counts_list)
+        _, threshold = determine_threshold(all_counts_list)
+        threshold_list.append(threshold)
         nv_sig = nv_list[ind]
         nv_name = nv_sig.name
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
+    print(threshold_list)
 
     ### Save and clean up
 
@@ -251,8 +256,8 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1496976806208, load_npz=True)
-    data = dm.get_raw_data(file_id=1499208769470, load_npz=True)
+    # data = dm.get_raw_data(file_id=1499208769470)
+    data = dm.get_raw_data(file_id=1506532995797)
 
     nv_list = data["nv_list"]
     nv_list = [NVSig(**nv) for nv in nv_list]

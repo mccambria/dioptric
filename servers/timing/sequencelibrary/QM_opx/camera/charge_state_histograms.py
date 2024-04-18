@@ -37,7 +37,7 @@ def get_seq(pol_coords_list, ion_coords_list, diff_polarize, diff_ionize, num_re
 
         def one_exp(do_polarize_sub, do_ionize_sub):
             if do_polarize_sub:
-                seq_utils.macro_polarize(pol_coords_list)
+                seq_utils.macro_polarize(pol_coords_list, spin_pol=False)
 
             if do_ionize_sub:
                 seq_utils.macro_ionize(ion_coords_list)
