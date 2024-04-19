@@ -75,9 +75,12 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list):
     num_reps = 50
-    # num_runs = 10
-    num_runs = 2
-    return charge_state_histograms.main(nv_list, num_reps, num_runs)
+    num_runs = 10
+    # num_runs = 2
+    charge_prep_verification = False
+    return charge_state_histograms.main(
+        nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
+    )
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -385,19 +388,19 @@ def do_opx_square_wave():
     opx = cxn.QM_opx
 
     # Yellow
-    # opx.square_wave(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [1.0],  # Analog voltages
-    #     1000,  # Period (ns)
-    # )
-    # Camera trigger
     opx.square_wave(
-        [4],  # Digital channels
-        [],  # Analog channels
-        [],  # Analog voltages
-        100000,  # Period (ns)
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4],  # Analog voltages
+        10000,  # Period (ns)
     )
+    # Camera trigger
+    # opx.square_wave(
+    #     [4],  # Digital channels
+    #     [],  # Analog channels
+    #     [],  # Analog voltages
+    #     100000,  # Period (ns)
+    # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -495,18 +498,18 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.5],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.4],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.03, 0.03],  # Analog voltages
-    #     [110, 110],  # Analog frequencies
+    #     # [3, 4],  # Analog channels
+    #     # [0.03, 0.03],  # Analog voltages
+    #     # [110, 110],  # Analog frequencies
     # )
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -527,12 +530,12 @@ def do_opx_constant_ac():
     #     opx.halt()
     # opx.constant_ac(
     #     [1],  # Digital channels
-    #     [2, 6],  # Analog channels
-    #     [0.17, 0.17],  # Analog voltages
-    #     [
-    #         75,
-    #         75,
-    #     ],  # Analog frequencies                                                                                                                                                                              uencies
+    #     # [2, 6],  # Analog channels
+    #     # [0.17, 0.17],  # Analog voltages
+    #     # [
+    #     #     75,
+    #     #     75,
+    #     # ],  # Analog frequencies                                                                                                                                                                              uencies
     # )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
@@ -606,7 +609,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.20
+    z_coord = 4.34
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -689,6 +692,7 @@ if __name__ == "__main__":
         [74.26, 75.662],
         [74.009, 75.891],
     ]
+    threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
 
     # endregion
     # region NV list construction
@@ -703,19 +707,23 @@ if __name__ == "__main__":
             green_laser: green_coords_list.pop(0),
             red_laser: red_coords_list.pop(0),
         }
-        nv_sig = NVSig(name=f"{sample_name}-nv{ind}_{date_str}", coords=coords)
+        nv_sig = NVSig(
+            name=f"{sample_name}-nv{ind}_{date_str}",
+            coords=coords,
+            threshold=threshold_list[ind],
+        )
         nv_list.append(nv_sig)
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 4700
+    nv_list[0].expected_counts = 4000
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    nv_inds = [0, 2, 4]
-    nv_list = [nv_list[ind] for ind in nv_inds]
-    for nv in nv_list:
-        nv.threshold = 27.5
+    # nv_inds = [0, 2, 4]
+    # nv_list = [nv_list[ind] for ind in nv_inds]
+    # for nv in nv_list:
+    #     nv.threshold = 27.5
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
@@ -762,14 +770,14 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-1, -6])
+        # widefield.set_pixel_drift([+3, -37])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(3.7, 4.2, 21):
+        # for z in np.linspace(4.3, 4.0, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
@@ -793,8 +801,10 @@ if __name__ == "__main__":
         #     time.sleep(5)
 
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # for ind in range(20):
+        #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -813,6 +823,7 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
+        # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -828,7 +839,7 @@ if __name__ == "__main__":
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
-        do_charge_quantum_jump(nv_list)
+        # do_charge_quantum_jump(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
@@ -866,7 +877,7 @@ if __name__ == "__main__":
         tb.reset_cfm()
         cxn = common.labrad_connect()
         cxn.disconnect()
-        plt.show(block=True)
         tb.reset_safe_stop()
+        plt.show(block=True)
 
     # endregion

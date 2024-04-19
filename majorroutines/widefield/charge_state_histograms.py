@@ -143,8 +143,7 @@ def main(
     nv_list,
     num_reps,
     num_runs,
-    pol_duration=None,
-    ion_duration=None,
+    charge_prep_verification=True,
     diff_polarize=False,
     diff_ionize=True,
 ):
@@ -152,6 +151,11 @@ def main(
     uwave_ind = 0
     seq_file = "charge_state_histograms.py"
     num_steps = 1
+
+    if charge_prep_verification:
+        charge_prep_fn = base_routine.charge_prep_loop
+    else:
+        charge_prep_fn = base_routine.charge_prep_no_verification
 
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -165,7 +169,13 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, save_images=True
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        save_images=True,
+        charge_prep_fn=charge_prep_fn,
     )
 
     ### Process and plot
@@ -197,7 +207,9 @@ def main(
         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
         kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
         figs.append(fig)
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+        file_path = dm.get_file_path(
+            __file__, timestamp, f"{repr_nv_name}-{title_suffixes[ind]}"
+        )
         dm.save_figure(fig, file_path)
 
     # Histograms
@@ -206,16 +218,19 @@ def main(
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
 
     num_nvs = len(nv_list)
+    threshold_list = []
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        determine_threshold(all_counts_list)
+        _, threshold = determine_threshold(all_counts_list)
+        threshold_list.append(threshold)
         nv_sig = nv_list[ind]
         nv_name = nv_sig.name
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
+    print(threshold_list)
 
     ### Save and clean up
 
@@ -251,11 +266,9 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1496976806208, load_npz=True)
-    data = dm.get_raw_data(file_id=1499208769470, load_npz=True)
+    data = dm.get_raw_data(file_id=1506649629313)
 
     nv_list = data["nv_list"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
     num_nvs = len(nv_list)
     sig_counts_lists = data["sig_counts_lists"]
     ref_counts_lists = data["ref_counts_lists"]
@@ -281,7 +294,7 @@ if __name__ == "__main__":
 
     ### Histograms
 
-    if True:
+    if False:
         for ind in range(num_nvs):
             nv_sig = nv_list[ind]
             print(nv_sig.name)
@@ -346,4 +359,4 @@ if __name__ == "__main__":
                 # )
                 kpl.draw_circle(ax, pixel_coords, color=color, radius=9, label=ind)
 
-    kpl.show(block=True)
+    # kpl.show(block=True)

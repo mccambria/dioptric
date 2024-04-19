@@ -24,6 +24,7 @@ import ujson  # usjson is faster than standard json library
 from git import Repo
 
 from utils import _cloud, common
+from utils.constants import NVSig
 
 data_manager_folder = common.get_data_manager_folder()
 
@@ -273,7 +274,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
             cached_file_ids.append(file_id)
             while len(cached_file_ids) > 10:
                 file_id_to_remove = cached_file_ids.pop(0)
-                file_name_to_remove = cache_manifest[file_id_to_remove]
+                file_name_to_remove = cache_manifest[file_id_to_remove]["file_name"]
                 del cache_manifest[file_id_to_remove]
                 os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
             cache_manifest_updated = True
@@ -286,6 +287,11 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
             file_content = orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY)
             with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
                 f.write(file_content)
+
+    if "nv_list" in data:
+        nv_list = data["nv_list"]
+        nv_list = [NVSig(**nv) for nv in nv_list]
+        data["nv_list"] = nv_list
 
     return data
 

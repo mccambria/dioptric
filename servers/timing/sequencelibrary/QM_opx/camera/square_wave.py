@@ -20,8 +20,7 @@ import utils.tool_belt as tb
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(args, num_reps=None):
-    digital_channels, analog_channels, analog_voltages, period = args
+def get_seq(digital_channels, analog_channels, analog_voltages, period, num_reps=None):
     if num_reps is None:
         num_reps = -1
 

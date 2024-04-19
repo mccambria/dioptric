@@ -24,7 +24,25 @@ except Exception:
     pass
 
 
-def charge_prep_loop_first_rep(
+def charge_prep_no_prep(
+    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
+):
+    pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
+    return 0
+
+
+def charge_prep_no_verification(
+    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
+):
+    # Initial setup
+    num_nvs = len(pixel_coords_list)
+    threshold_list = [None for ind in range(num_nvs)]
+    return charge_prep_loop(
+        rep_ind, pixel_coords_list, threshold_list, verify_charge_states=False
+    )
+
+
+def charge_prep_first_rep_only(
     rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
 ):
     if rep_ind == 0:
@@ -38,35 +56,64 @@ def charge_prep_loop_first_rep(
 
 
 def charge_prep_loop(
-    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
+    rep_ind,
+    pixel_coords_list,
+    threshold_list,
+    initial_counts_list=None,
+    verify_charge_states=None,
 ):
+    # Initial setup
     num_nvs = len(pixel_coords_list)
-
+    no_thresholds = True not in [bool(val) for val in threshold_list]
+    if verify_charge_states is None:
+        verify_charge_states = not no_thresholds
     counts_list = initial_counts_list
     max_num_attempts = 10
     # max_num_attempts = 1
+    out_of_attempts = False
     attempt_ind = 0
-    while True:
+
+    # Inner function for determining which NVs to target
+    def assemble_charge_pol_target_list(counts_list):
         if counts_list is not None:
             charge_pol_target_list = [
-                counts_list[ind] < threshold_list[ind] for ind in range(num_nvs)
+                threshold_list[ind] is None or counts_list[ind] < threshold_list[ind]
+                for ind in range(num_nvs)
             ]
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
+        return charge_pol_target_list
 
-        out_of_attempts = attempt_ind == max_num_attempts
-        charge_pol_complete = True not in charge_pol_target_list or out_of_attempts
+    # Loop until we have a reason to stop
+    while True:
+        charge_pol_target_list = assemble_charge_pol_target_list(counts_list)
+
+        # Reasons to stop
+        charge_pol_complete = (
+            (True not in charge_pol_target_list)  # No more targets left
+            or out_of_attempts
+            or (attempt_ind == 1 and no_thresholds)
+        )
         pulse_gen.insert_input_stream(
             "_cache_charge_pol_incomplete", not charge_pol_complete
         )
         if charge_pol_complete:
             break
 
+        # Target NVs in charge_pol_target_list
         for val in charge_pol_target_list:
             pulse_gen.insert_input_stream("_cache_charge_pol_target", val)
 
+        # Get charge state verification image
+        pulse_gen.insert_input_stream(
+            "_cache_verify_charge_states", verify_charge_states
+        )
+        if verify_charge_states:
+            _, counts_list = read_image_and_get_counts(pixel_coords_list)
+
+        # Move on to next attempt
         attempt_ind += 1
-        _, counts_list = read_image_and_get_counts(pixel_coords_list)
+        out_of_attempts = attempt_ind == max_num_attempts
 
     return attempt_ind
 
