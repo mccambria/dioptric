@@ -72,11 +72,11 @@ def many_cond_init_plot():
     kpl.plot_line(ax, plot_x_vals, plot_y_vals)
     ax.set_xlabel("Number of NVs")
     ax.set_ylabel("Expected shots until success")
-    # popt, pcov = curve_fit(
-    #     generic_log, plot_x_vals, plot_y_vals, p0=(0, 1 / init_prob, 1)
-    # )
-    # print(popt)
-    # kpl.plot_line(ax, plot_x_vals, generic_log(plot_x_vals, *popt))
+    popt, pcov = curve_fit(
+        generic_log, plot_x_vals, plot_y_vals, p0=(0, 1 / init_prob, 1)
+    )
+    print(popt)
+    kpl.plot_line(ax, plot_x_vals, generic_log(plot_x_vals, *popt))
 
     plot_y_vals = []
     for num_nvs in np.linspace(1, max_num_nvs, max_num_nvs, dtype=int):
