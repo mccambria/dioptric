@@ -77,7 +77,10 @@ def do_charge_state_histograms(nv_list):
     num_reps = 50
     num_runs = 10
     # num_runs = 2
-    return charge_state_histograms.main(nv_list, num_reps, num_runs)
+    charge_prep_verification = False
+    return charge_state_histograms.main(
+        nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
+    )
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -385,19 +388,19 @@ def do_opx_square_wave():
     opx = cxn.QM_opx
 
     # Yellow
-    # opx.square_wave(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [1.0],  # Analog voltages
-    #     1000,  # Period (ns)
-    # )
-    # Camera trigger
     opx.square_wave(
-        [4],  # Digital channels
-        [],  # Analog channels
-        [],  # Analog voltages
-        100000,  # Period (ns)
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4],  # Analog voltages
+        10000,  # Period (ns)
     )
+    # Camera trigger
+    # opx.square_wave(
+    #     [4],  # Digital channels
+    #     [],  # Analog channels
+    #     [],  # Analog voltages
+    #     100000,  # Period (ns)
+    # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -525,15 +528,15 @@ def do_opx_constant_ac():
     #         )
     #         time.sleep(0.5)
     #     opx.halt()
-    opx.constant_ac(
-        [1],  # Digital channels
-        # [2, 6],  # Analog channels
-        # [0.17, 0.17],  # Analog voltages
-        # [
-        #     75,
-        #     75,
-        # ],  # Analog frequencies                                                                                                                                                                              uencies
-    )
+    # opx.constant_ac(
+    #     [1],  # Digital channels
+    #     # [2, 6],  # Analog channels
+    #     # [0.17, 0.17],  # Analog voltages
+    #     # [
+    #     #     75,
+    #     #     75,
+    #     # ],  # Analog frequencies                                                                                                                                                                              uencies
+    # )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
     # opx.constant_ac(
@@ -689,7 +692,7 @@ if __name__ == "__main__":
         [74.26, 75.662],
         [74.009, 75.891],
     ]
-    threshold_list = [34.5, 36.5, 35.5, 31.5, 31.5, 31.5]
+    threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
 
     # endregion
     # region NV list construction
@@ -797,11 +800,11 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -819,7 +822,7 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)

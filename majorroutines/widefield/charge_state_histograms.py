@@ -143,8 +143,7 @@ def main(
     nv_list,
     num_reps,
     num_runs,
-    pol_duration=None,
-    ion_duration=None,
+    charge_prep_verification=True,
     diff_polarize=False,
     diff_ionize=True,
 ):
@@ -152,6 +151,11 @@ def main(
     uwave_ind = 0
     seq_file = "charge_state_histograms.py"
     num_steps = 1
+
+    if charge_prep_verification:
+        charge_prep_fn = base_routine.charge_prep_loop
+    else:
+        charge_prep_fn = base_routine.charge_prep_no_verification
 
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -165,7 +169,13 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, save_images=True
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        save_images=True,
+        charge_prep_fn=charge_prep_fn,
     )
 
     ### Process and plot
@@ -256,11 +266,9 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1499208769470)
-    data = dm.get_raw_data(file_id=1506532995797)
+    data = dm.get_raw_data(file_id=1506649629313)
 
     nv_list = data["nv_list"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
     num_nvs = len(nv_list)
     sig_counts_lists = data["sig_counts_lists"]
     ref_counts_lists = data["ref_counts_lists"]
@@ -286,7 +294,7 @@ if __name__ == "__main__":
 
     ### Histograms
 
-    if True:
+    if False:
         for ind in range(num_nvs):
             nv_sig = nv_list[ind]
             print(nv_sig.name)
@@ -351,4 +359,4 @@ if __name__ == "__main__":
                 # )
                 kpl.draw_circle(ax, pixel_coords, color=color, radius=9, label=ind)
 
-    kpl.show(block=True)
+    # kpl.show(block=True)

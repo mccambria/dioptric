@@ -42,7 +42,7 @@ def charge_prep_no_verification(
     )
 
 
-def charge_prep_loop_first_rep(
+def charge_prep_first_rep_only(
     rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
 ):
     if rep_ind == 0:
