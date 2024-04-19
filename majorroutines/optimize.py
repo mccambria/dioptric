@@ -477,7 +477,7 @@ def main(
             axes_to_optimize.remove(2)
 
         # Loop through attempts until we succeed or give up
-        num_attempts = 10
+        num_attempts = 5
         for ind in range(num_attempts):
             ### Attempt setup
 
