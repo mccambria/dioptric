@@ -693,6 +693,14 @@ if __name__ == "__main__":
         [74.009, 75.891],
     ]
     threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
+    nvn_dist_params_list = [
+        (0.09, 0.27, 3),
+        (0.09, 0.27, 3),
+        (0.09, 0.27, 3),
+        (0.09, 0.27, 3),
+        (0.09, 0.27, 3),
+        (0.09, 0.27, 3),
+    ]
 
     # endregion
     # region NV list construction
@@ -711,6 +719,7 @@ if __name__ == "__main__":
             name=f"{sample_name}-nv{ind}_{date_str}",
             coords=coords,
             threshold=threshold_list[ind],
+            nvn_dist_params=nvn_dist_params_list[ind],
         )
         nv_list.append(nv_sig)
 

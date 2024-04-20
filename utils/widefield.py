@@ -208,10 +208,8 @@ def charge_state_mle(nv_list, img_array):
 
     for nv in nv_list:
         radius = _get_camera_spot_radius()
-        x0, y0 = get_nv_pixel_coords(nv, drift=(-10.8, -47.25))
-        sigma = 3
-        amp = 0.27
-        bg = 0.09
+        x0, y0 = get_nv_pixel_coords(nv)
+        bg, amp, sigma = nv.nvn_dist_params
 
         def nvn_count_distribution(x, y):
             return bg + amp * np.exp(
