@@ -822,8 +822,8 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        do_charge_state_histograms(nv_list)
-        # do_check_readout_fidelity(nv_list)
+        # do_charge_state_histograms(nv_list)
+        do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
