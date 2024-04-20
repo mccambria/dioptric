@@ -258,6 +258,8 @@ def main(
 
     tb.reset_cfm()
 
+    return raw_data
+
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), "valid") / w
