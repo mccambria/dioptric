@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 from numpy import inf
+from scipy.stats import poisson
 
 from utils import common
 from utils import data_manager as dm
@@ -193,6 +194,69 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         ref_states_array = None
 
     return sig_states_array, ref_states_array
+
+
+def charge_state_mle(nv_list, img_array):
+    """Maximum likelihood estimator of state based on image"""
+
+    states = []
+    states_thresh = []
+    img_array_photons = np.round(adus_to_photons(img_array))
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, img_array)
+    # kpl.show(block=True)
+
+    for nv in nv_list:
+        radius = _get_camera_spot_radius()
+        x0, y0 = get_nv_pixel_coords(nv, drift=(-10.8, -47.25))
+        sigma = 3
+        amp = 0.27
+        bg = 0.09
+
+        def nvn_count_distribution(x, y):
+            return bg + amp * np.exp(
+                -(((x - x0) ** 2) + ((y - y0) ** 2)) / (2 * sigma**2)
+            )
+
+        def nv0_count_distribution(x, y):
+            return bg
+
+        half_range = radius
+        left = round(x0 - half_range)
+        right = round(x0 + half_range)
+        top = round(y0 - half_range)
+        bottom = round(y0 + half_range)
+        x_crop = np.linspace(left, right, right - left + 1)
+        y_crop = np.linspace(top, bottom, bottom - top + 1)
+        x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+        img_array_crop = img_array_photons[top : bottom + 1, left : right + 1]
+        img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
+        img_array_crop = np.where(
+            img_array_crop < 20 * (bg + amp), img_array_crop, np.nan
+        )
+
+        # fig, ax = plt.subplots()
+        # kpl.imshow(ax, nvn_count_distribution(x_crop_mesh, y_crop_mesh))
+        # # # fig, ax = plt.subplots()
+        # # kpl.imshow(ax, img_array_crop)
+        # kpl.show(block=True)
+
+        nvn_probs = poisson.pmf(
+            img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
+        )
+        nv0_probs = poisson.pmf(
+            img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
+        )
+
+        nvn_prob = np.nanprod(nvn_probs)
+        nv0_prob = np.nanprod(nv0_probs)
+        states.append(int(nvn_prob > nv0_prob))
+
+        # counts = integrate_counts_from_adus(img_array, (x0, y0))
+        # states_thresh.append(int(counts > 30.5))
+        # test = 0
+
+    return states
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None, no_threshold=False):

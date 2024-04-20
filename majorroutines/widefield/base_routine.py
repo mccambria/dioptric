@@ -225,6 +225,7 @@ def main(
     ### Data tracking
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    charge_states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     # MCC
     mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
@@ -293,12 +294,18 @@ def main(
                                 pixel_coords_list
                             )
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
+                            charge_states_list = widefield.charge_state_mle(
+                                nv_list, img_array
+                            )
+                            charge_states[
+                                exp_ind, :, run_ind, step_ind, rep_ind
+                            ] = charge_states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                                np.median(img_array)
-                            )
+                            median_vals[
+                                exp_ind, run_ind, step_ind, rep_ind
+                            ] = np.median(img_array)
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
 
@@ -361,6 +368,7 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
+        "charge_states": charge_states,
         "mean_vals": mean_vals,
         "median_vals": median_vals,
         "img_array-units": "ADUs",
