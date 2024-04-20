@@ -184,56 +184,53 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
-    try:
-        # Images
-        laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
-        laser_dict = tb.get_optics_dict(laser_key)
-        readout_laser = laser_dict["name"]
-        readout = laser_dict["duration"]
-        readout_ms = readout / 10**6
+    # Images
+    laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
+    laser_dict = tb.get_optics_dict(laser_key)
+    readout_laser = laser_dict["name"]
+    readout = laser_dict["duration"]
+    readout_ms = readout / 10**6
 
-        img_arrays = raw_data["img_arrays"]
-        del raw_data["img_arrays"]
-        mean_img_arrays = np.mean(img_arrays, axis=(1, 2))
-        sig_img_array = mean_img_arrays[0]
-        ref_img_array = mean_img_arrays[1]
-        diff_img_array = sig_img_array - ref_img_array
-        img_arrays = [sig_img_array, ref_img_array, diff_img_array]
-        title_suffixes = ["sig", "ref", "diff"]
-        figs = []
-        for ind in range(3):
-            img_array = img_arrays[ind]
-            title_suffix = title_suffixes[ind]
-            fig, ax = plt.subplots()
-            title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
-            kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
-            figs.append(fig)
-            file_path = dm.get_file_path(
-                __file__, timestamp, f"{repr_nv_name}-{title_suffixes[ind]}"
-            )
-            dm.save_figure(fig, file_path)
+    img_arrays = raw_data["img_arrays"]
+    del raw_data["img_arrays"]
+    mean_img_arrays = np.mean(img_arrays, axis=(1, 2))
+    sig_img_array = mean_img_arrays[0]
+    ref_img_array = mean_img_arrays[1]
+    diff_img_array = sig_img_array - ref_img_array
+    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    title_suffixes = ["sig", "ref", "diff"]
+    figs = []
+    for ind in range(3):
+        img_array = img_arrays[ind]
+        title_suffix = title_suffixes[ind]
+        fig, ax = plt.subplots()
+        title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
+        kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
+        figs.append(fig)
+        file_path = dm.get_file_path(
+            __file__, timestamp, f"{repr_nv_name}-{title_suffixes[ind]}"
+        )
+        dm.save_figure(fig, file_path)
 
-        # Histograms
-        num_nvs = len(nv_list)
-        sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
-        ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+    # Histograms
+    num_nvs = len(nv_list)
+    sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
+    ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
 
-        num_nvs = len(nv_list)
-        threshold_list = []
-        for ind in range(num_nvs):
-            sig_counts_list = sig_counts_lists[ind]
-            ref_counts_list = ref_counts_lists[ind]
-            fig = create_histogram(sig_counts_list, ref_counts_list)
-            all_counts_list = np.append(sig_counts_list, ref_counts_list)
-            _, threshold = determine_threshold(all_counts_list)
-            threshold_list.append(threshold)
-            nv_sig = nv_list[ind]
-            nv_name = nv_sig.name
-            file_path = dm.get_file_path(__file__, timestamp, nv_name)
-            dm.save_figure(fig, file_path)
-        print(threshold_list)
-    except Exception:
-        pass
+    num_nvs = len(nv_list)
+    threshold_list = []
+    for ind in range(num_nvs):
+        sig_counts_list = sig_counts_lists[ind]
+        ref_counts_list = ref_counts_lists[ind]
+        fig = create_histogram(sig_counts_list, ref_counts_list)
+        all_counts_list = np.append(sig_counts_list, ref_counts_list)
+        _, threshold = determine_threshold(all_counts_list)
+        threshold_list.append(threshold)
+        nv_sig = nv_list[ind]
+        nv_name = nv_sig.name
+        file_path = dm.get_file_path(__file__, timestamp, nv_name)
+        dm.save_figure(fig, file_path)
+    print(threshold_list)
 
     ### Save and clean up
 

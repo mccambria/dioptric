@@ -505,12 +505,12 @@ def do_opx_constant_ac():
     #     [0],  # Analog frequencies
     # )
     # Green
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     # [3, 4],  # Analog channels
-    #     # [0.03, 0.03],  # Analog voltages
-    #     # [110, 110],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        # [3, 4],  # Analog channels
+        # [0.03, 0.03],  # Analog voltages
+        # [110, 110],  # Analog frequencies
+    )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -717,7 +717,7 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    # nv_list[0].expected_counts = 1200
+    nv_list[0].expected_counts = 1150
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # nv_inds = [0, 2, 4]
@@ -770,7 +770,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+19, -30])
+        # widefield.set_pixel_drift([-10, -46])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -803,7 +803,7 @@ if __name__ == "__main__":
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
-        do_optimize_pixel(nv_sig)
+        # do_optimize_pixel(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
@@ -822,7 +822,7 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
