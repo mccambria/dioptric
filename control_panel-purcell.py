@@ -73,7 +73,7 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig, num_reps)
 
 
-def do_charge_state_histograms(nv_list):
+def do_charge_state_histograms(nv_list, charge_prep_verification=False):
     num_reps = 50
     num_runs = 10
     # num_runs = 2
@@ -81,6 +81,19 @@ def do_charge_state_histograms(nv_list):
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
     )
+
+
+def do_calibrate_nvn_dist_params(nv_list):
+    data = do_charge_state_histograms(nv_list, charge_prep_verification=True)
+    ref_img_array = data["ref_img_array"]
+
+    nvn_dist_params_list = []
+    for nv in nv_list:
+        popt = optimize.optimize_pixel_with_img_array(
+            ref_img_array, nv, return_popt=True
+        )
+        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    print(nvn_dist_params_list)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -832,7 +845,8 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
-        do_check_readout_fidelity(nv_list)
+        # do_check_readout_fidelity(nv_list)
+        do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
