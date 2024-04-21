@@ -141,8 +141,9 @@ def img_str_to_array(img_str):
     if roi is not None:
         offset_x = roi[0]
         width = roi[2]
-        bg = img_array[0:, 0:offset_x].flatten()
-        bg = np.append(img_array[0:, offset_x + width + 1 :].flatten())
+        buffer = 10
+        bg = img_array[0:, 0 : offset_x - buffer].flatten()
+        bg = np.append(img_array[0:, offset_x + width + 1 + buffer :].flatten())
         bg = np.mean(bg)
         img_array = img_array[0:, offset_x : offset_x + width + 1]
         img_array -= bg
