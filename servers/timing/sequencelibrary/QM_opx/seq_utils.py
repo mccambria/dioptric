@@ -384,7 +384,7 @@ def macro_charge_state_readout(readout_duration_ns=None):
     wait_duration = readout_duration - default_duration
 
     qua.align()
-    qua.play("charge_readout", readout_laser_el)
+    # qua.play("charge_readout", readout_laser_el)
     qua.play("on", camera_el)
     qua.wait(wait_duration, readout_laser_el)
     qua.wait(wait_duration, camera_el)

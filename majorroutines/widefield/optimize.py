@@ -93,7 +93,7 @@ def optimize_pixel_with_img_array(
 ):
     if do_plot:
         fig, ax = plt.subplots()
-        kpl.imshow(ax, img_array, cbar_label="Counts")
+        kpl.imshow(ax, img_array, cbar_label="ADUs")
 
     # Default operations of the routine
     set_pixel_drift = nv_sig is not None

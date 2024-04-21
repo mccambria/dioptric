@@ -184,6 +184,9 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(raw_data, file_path)
+
     # Images
     laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_optics_dict(laser_key)

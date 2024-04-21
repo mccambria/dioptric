@@ -83,7 +83,7 @@ def integrate_counts(img_array, pixel_coords, radius=None):
     return counts
 
 
-def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
+def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):
     """Convert camera analog-to-digital converter units (ADUs) to an
     estimated number of photons. Since the gain stages are noisy, this is
     just an estimate
@@ -96,9 +96,9 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
         k gain of the camera in e- / ADU, by default retrieved from config
     em_gain : numeric, optional
         Electron-multiplying gain of the camera, by default retrieved from config
-    bias_clamp : numeric, optional
-        Bias clamp level, i.e. the ADU value for a pixel which receives no light. Used to
-        ensure the camera does not return negative values. By default retrieved from config
+    baseline : numeric, optional
+        Baseline, or bias clamp level, i.e. the ADU value for a pixel which receives no light.
+        Used to ensure the camera does not return negative values. By default retrieved from config
 
     Returns
     -------
@@ -109,11 +109,11 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
         k_gain = _get_camera_k_gain()
     if em_gain is None:
         em_gain = _get_camera_em_gain()
-    if bias_clamp is None:
-        bias_clamp = _get_camera_bias_clamp()
+    if baseline is None:
+        baseline = _get_camera_bias_clamp()
 
     total_gain = k_gain / em_gain
-    photons = (adus - bias_clamp) * total_gain
+    photons = (adus - baseline) * total_gain
     return photons
 
 
@@ -132,22 +132,25 @@ def img_str_to_array(img_str):
     ndarray
         Image array contructed from the byte string
     """
-    shape = get_img_array_shape()
+    shape = _get_img_str_shape()
     img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*shape)
     img_array = img_array.astype(int)
 
     # Subtract off correlated readout noise (see wiki 4/19/24)
     roi = _get_camera_roi()  # offsetX, offsetY, width, height
-    if roi is not None:
+    if roi is None:
+        baseline = _get_camera_bias_clamp()
+    else:
         offset_x = roi[0]
         width = roi[2]
         buffer = 10
-        bg = img_array[0:, 0 : offset_x - buffer].flatten()
-        bg = np.append(img_array[0:, offset_x + width + 1 + buffer :].flatten())
-        bg = np.mean(bg)
-        img_array = img_array[0:, offset_x : offset_x + width + 1]
-        img_array -= bg
-    return img_array
+        bg_pixels = img_array[0:, 0 : offset_x - buffer].flatten()
+        bg_pixels = np.append(
+            bg_pixels, img_array[0:, offset_x + width + buffer :].flatten()
+        )
+        baseline = np.mean(bg_pixels)
+        img_array = img_array[0:, offset_x : offset_x + width]
+    return img_array, baseline
 
 
 run_ax = 1
@@ -707,10 +710,21 @@ def _get_camera_config_val(key):
     return config["Camera"][key]
 
 
-def get_img_array_shape():
+def _get_img_str_shape():
+    resolution = _get_camera_resolution()
     roi = _get_camera_roi()
     if roi is None:
-        shape = _get_camera_resolution()
+        shape = resolution
+    else:
+        shape = (roi[3], resolution[0])
+    return shape
+
+
+def get_img_array_shape():
+    resolution = _get_camera_resolution()
+    roi = _get_camera_roi()
+    if roi is None:
+        shape = resolution
     else:
         shape = roi[2:]
     return shape

@@ -21,7 +21,6 @@ timeout = 5
 ### END NODE INFO
 """
 
-
 import logging
 import socket
 import time
@@ -117,7 +116,7 @@ class CameraNuvuHnu512gamma(LabradServer):
         self.clear_roi()
         roi = widefield._get_camera_roi()
         adj_roi = (0, roi[1], resolution[0], roi[3])  # offsetX, offsetY, width, height
-        if self.roi is not None:
+        if roi is not None:
             self.set_roi(*adj_roi)
 
         # Check if we're in EM mode
