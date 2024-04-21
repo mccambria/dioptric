@@ -119,7 +119,8 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
 
 def img_str_to_array(img_str):
     """Convert an img_array from a uint16-valued byte string (returned by the camera
-    labrad server for speed) into a usable int-valued 2D array
+    labrad server for speed) into a usable int-valued 2D array. Also subtracts off bias
+    not captured on Nuvu's end camera software
 
     Parameters
     ----------
@@ -134,6 +135,18 @@ def img_str_to_array(img_str):
     shape = get_img_array_shape()
     img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*shape)
     img_array = img_array.astype(int)
+
+    # Subtract off correlated readout noise (see wiki 4/19/24)
+    roi = _get_camera_roi()  # offsetX, offsetY, width, height
+    if roi is not None:
+        offset_x = roi[0]
+        width = roi[2]
+        buffer = 10
+        bg = img_array[0:, 0 : offset_x - buffer].flatten()
+        bg = np.append(img_array[0:, offset_x + width + 1 + buffer :].flatten())
+        bg = np.mean(bg)
+        img_array = img_array[0:, offset_x : offset_x + width + 1]
+        img_array -= bg
     return img_array
 
 

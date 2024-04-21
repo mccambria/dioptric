@@ -92,6 +92,7 @@ def process_check_readout_fidelity(data):
     figsize[1] *= 1.5
     fig, axes_pack = plt.subplots(2, 1, sharex=True, figsize=figsize)
     labels = {0: "NV0", 1: "NV-"}
+    fidelities = [0 for ind in range(num_nvs)]
     for init_state in [0, 1]:
         ax = axes_pack[init_state]
         for nv_ind in range(num_nvs):
@@ -111,9 +112,11 @@ def process_check_readout_fidelity(data):
             err = np.std(shots_list, ddof=1) / np.sqrt(len(shots_list))
             nv_num = widefield.get_nv_num(nv_list[nv_ind])
             kpl.plot_points(ax, nv_num, prob, yerr=err)
+            fidelities[nv_ind] += prob / 2
         label = labels[init_state]
         ax.set_ylabel(f"P({label}|previous shot {label})")
 
+    print(fidelities)
     ax.set_xlabel("NV index")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
@@ -181,7 +184,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1508565707027)
+    data = dm.get_raw_data(file_id=1508726411686)
 
     process_check_readout_fidelity(data)
     # process_detect_cosmic_rays(data)
