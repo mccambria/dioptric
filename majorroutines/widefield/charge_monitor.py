@@ -181,7 +181,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1508535628026)
+    data = dm.get_raw_data(file_id=1508565707027)
 
     process_check_readout_fidelity(data)
     # process_detect_cosmic_rays(data)
