@@ -163,6 +163,7 @@ def macro_polarize(
                 pol_duration,
                 input_stream=_cache_charge_pol_target,
             )
+            qua.advance_input_stream(_cache_verify_charge_states)
             with qua.if_(_cache_verify_charge_states):
                 macro_charge_state_readout()
                 macro_wait_for_trigger()

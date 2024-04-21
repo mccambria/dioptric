@@ -77,7 +77,6 @@ def do_charge_state_histograms(nv_list, charge_prep_verification=False):
     num_reps = 50
     num_runs = 10
     # num_runs = 2
-    charge_prep_verification = False
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
     )
@@ -92,7 +91,13 @@ def do_calibrate_nvn_dist_params(nv_list):
         popt = optimize.optimize_pixel_with_img_array(
             ref_img_array, nv, return_popt=True
         )
-        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+        nvn_dist_params_list.append(
+            (
+                widefield.adus_to_photons(popt[-1]),  # bg
+                widefield.adus_to_photons(popt[0] + 300),  # amp
+                popt[-2],  # sigma
+            )
+        )
     print(nvn_dist_params_list)
 
 
@@ -707,12 +712,12 @@ if __name__ == "__main__":
     ]
     threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
     nvn_dist_params_list = [
-        (0.09, 0.27, 3),
-        (0.09, 0.27, 3),
-        (0.09, 0.27, 3),
-        (0.09, 0.27, 3),
-        (0.09, 0.27, 3),
-        (0.09, 0.27, 3),
+        (0.08864254977843133, 0.31782688165126877, 3.8583663986211434),
+        (0.07940066813697125, 0.3064650349721238, 4.313006125005059),
+        (0.08060280012144272, 0.28900824292747535, 4.1945931058872095),
+        (0.0970023907871867, 0.16389041639281693, 3.7315296874137602),
+        (0.05820311354749401, 0.22557983981381505, 4.7204760434244895),
+        (0.079625551762134, 0.16060140009866478, 4.222986241289107),
     ]
 
     # endregion
@@ -822,10 +827,10 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
-        # do_optimize_pixel(nv_sig)
+        do_optimize_pixel(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
@@ -846,7 +851,7 @@ if __name__ == "__main__":
 
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
-        do_calibrate_nvn_dist_params(nv_list)
+        # do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
