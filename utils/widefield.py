@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 from numpy import inf
+from scipy.special import gamma
 from scipy.stats import poisson
 
 from utils import common
@@ -196,14 +197,20 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     return sig_states_array, ref_states_array
 
 
+def poisson_pmf_cont(k, mean):
+    return mean**k * np.exp(-mean) / gamma(k + 1)
+
+
 def charge_state_mle(nv_list, img_array):
     """Maximum likelihood estimator of state based on image"""
 
     states = []
     states_thresh = []
-    img_array_photons = np.round(adus_to_photons(img_array))
+    img_array_photons = adus_to_photons(img_array)
+    # test = np.sort(adus_to_photons(img_array).flatten())
     # fig, ax = plt.subplots()
-    # kpl.imshow(ax, img_array)
+    # kpl.histogram(ax, test, hist_type=kpl.HistType.STEP, nbins=100)
+    # # kpl.imshow(ax, img_array)
     # kpl.show(block=True)
 
     for nv in nv_list:
@@ -239,10 +246,16 @@ def charge_state_mle(nv_list, img_array):
         # # kpl.imshow(ax, img_array_crop)
         # kpl.show(block=True)
 
-        nvn_probs = poisson.pmf(
+        # nvn_probs = poisson.pmf(
+        #     img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
+        # )
+        # nv0_probs = poisson.pmf(
+        #     img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
+        # )
+        nvn_probs = poisson_pmf_cont(
             img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
         )
-        nv0_probs = poisson.pmf(
+        nv0_probs = poisson_pmf_cont(
             img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
         )
 
@@ -250,11 +263,11 @@ def charge_state_mle(nv_list, img_array):
         nv0_prob = np.nanprod(nv0_probs)
         states.append(int(nvn_prob > nv0_prob))
 
-        # counts = integrate_counts_from_adus(img_array, (x0, y0))
-        # states_thresh.append(int(counts > 30.5))
-        # test = 0
+        counts = integrate_counts_from_adus(img_array, (x0, y0))
+        states_thresh.append(int(counts > nv.threshold))
+        test = 0
 
-    return states
+    return states, states_thresh
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None, no_threshold=False):

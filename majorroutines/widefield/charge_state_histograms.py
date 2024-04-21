@@ -286,16 +286,22 @@ if __name__ == "__main__":
     num_shots = num_runs * num_steps * num_reps
 
     states = np.array([0 for ind in range(num_nvs)])
+    states_thresh = np.array([0 for ind in range(num_nvs)])
 
     start = time.time()
     for run_ind in range(num_runs):
         for step_ind in range(num_steps):
             for rep_ind in range(num_reps):
                 img_array = img_arrays[0, run_ind, step_ind, rep_ind]
-                states += widefield.charge_state_mle(nv_list, img_array)
+                states_list, states_thresh_list = widefield.charge_state_mle(
+                    nv_list, img_array
+                )
+                states += states_list
+                states_thresh += states_thresh_list
     stop = time.time()
     print(stop - start)
 
     print(states / num_shots)
+    print(states_thresh / num_shots)
 
     kpl.show(block=True)
