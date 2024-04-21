@@ -267,7 +267,8 @@ def charge_state_mle(nv_list, img_array):
         states_thresh.append(int(counts > nv.threshold))
         test = 0
 
-    return states, states_thresh
+    # return states, states_thresh
+    return states
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None, no_threshold=False):
