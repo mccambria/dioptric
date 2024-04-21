@@ -236,9 +236,9 @@ def charge_state_mle(nv_list, img_array):
         x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
         img_array_crop = img_array_photons[top : bottom + 1, left : right + 1]
         img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
-        img_array_crop = np.where(
-            img_array_crop < 20 * (bg + amp), img_array_crop, np.nan
-        )
+        # img_array_crop = np.where(
+        #     img_array_crop < 20 * (bg + amp), img_array_crop, np.nan
+        # )
 
         # fig, ax = plt.subplots()
         # kpl.imshow(ax, nvn_count_distribution(x_crop_mesh, y_crop_mesh))
