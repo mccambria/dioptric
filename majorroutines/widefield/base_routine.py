@@ -121,7 +121,7 @@ def charge_prep_loop(
 def read_image_and_get_counts(pixel_coords_list):
     img_str = camera.read()
     img_array_adus, baseline = widefield.img_str_to_array(img_str)
-    baseline = 300
+    # baseline = 300
     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
 
     def get_counts(pixel_coords):
@@ -298,15 +298,16 @@ def main(
                             charge_states_list = widefield.charge_state_mle(
                                 nv_list, img_array
                             )
-                            charge_states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                charge_states_list
-                            )
+                            charge_states[
+                                exp_ind, :, run_ind, step_ind, rep_ind
+                            ] = charge_states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                                np.median(img_array)
-                            )
+                            median_vals[
+                                exp_ind, run_ind, step_ind, rep_ind
+                            ] = np.median(img_array)
+
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
 

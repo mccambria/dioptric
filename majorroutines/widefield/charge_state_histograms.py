@@ -271,13 +271,30 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1508448548404)
-    # data = dm.get_raw_data(file_id=1506984409725, load_npz=True)
+    # data = dm.get_raw_data(file_id=1508790988173)  # Measured baseline
+    data = dm.get_raw_data(file_id=1508788945726)  # Baseline 300
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
+
+    mean_vals = np.array(data["mean_vals"])
+    sig_mean_vals = mean_vals[0].flatten()
+    ref_mean_vals = mean_vals[1].flatten()
+    sig_mean_vals = moving_average(sig_mean_vals, 20)
+    ref_mean_vals = moving_average(ref_mean_vals, 20)
+    sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
+    ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, range(len(sig_mean_vals)), sig_mean_vals, label="Sig")
+    kpl.plot_line(ax, range(len(ref_mean_vals)), ref_mean_vals, label="Ref")
+    ax.set_xlabel("Shot index")
+    ax.set_ylabel("Average photon count / pixel")
+    ax.legend()
+    kpl.show(block=True)
+
     img_arrays = np.array(data["img_arrays"])
     img_arrays_photons = widefield.adus_to_photons(img_arrays)
+
     fig, ax = plt.subplots()
     kpl.imshow(ax, np.mean(img_arrays_photons, axis=(0, 1, 2, 3)))
 
