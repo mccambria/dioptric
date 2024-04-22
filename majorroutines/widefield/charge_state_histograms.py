@@ -271,15 +271,24 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1508790988173)  # Measured baseline
-    data = dm.get_raw_data(file_id=1508788945726)  # Baseline 300
+    # data = dm.get_raw_data(file_id=1506800366384)  # Yellow on, -60 C, 50 ms readout
+    # data = dm.get_raw_data(file_id=1506826857288)  # Yellow off, -60 C, 50 ms readout
+    # data = dm.get_raw_data(file_id=1506865734454)  # Yellow off, -65 C, 50 ms readout
+    # data = dm.get_raw_data(file_id=1506877254094)  # Yellow off, -60 C, 100 ms readout
+    # data = dm.get_raw_data(file_id=1506936719223)  # EM gain 100
+    # data = dm.get_raw_data(file_id=1506961050354)  # EM gain 5000
+    data = dm.get_raw_data(file_id=1508790988173)  # Background subtraction
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
+    sig_counts_lists = np.array(data["sig_counts_lists"])
+    ref_counts_lists = np.array(data["ref_counts_lists"])
+    num_shots = len(sig_counts_lists[0])
 
     mean_vals = np.array(data["mean_vals"])
-    sig_mean_vals = mean_vals[0].flatten()
-    ref_mean_vals = mean_vals[1].flatten()
+    # mean_vals = np.array(data["median_vals"])
+    sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten(), em_gain=5000)
+    ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten(), em_gain=5000)
     sig_mean_vals = moving_average(sig_mean_vals, 20)
     ref_mean_vals = moving_average(ref_mean_vals, 20)
     sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
