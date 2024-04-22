@@ -164,8 +164,9 @@ def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
             axis_write_fn(scan_vals[ind])
         pulse_gen.stream_start()
         img_str = camera.read()
-        img_array = widefield.img_str_to_array(img_str)
-        sample = widefield.integrate_counts_from_adus(img_array, pixel_coords)
+        img_array_adus, baseline = widefield.img_str_to_array(img_str)
+        img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
+        sample = widefield.integrate_counts(img_array, pixel_coords)
         counts.append(sample)
     camera.disarm()
     return [np.array(counts, dtype=int), img_array]
@@ -267,7 +268,7 @@ def _read_counts_camera_sequence(
 
         def rep_fn(rep_ind):
             img_str = camera.read()
-            sub_img_array = widefield.img_str_to_array(img_str)
+            sub_img_array, _ = widefield.img_str_to_array(img_str)
             img_array_list.append(sub_img_array)
 
         widefield.rep_loop(num_reps, rep_fn)
@@ -477,7 +478,7 @@ def main(
             axes_to_optimize.remove(2)
 
         # Loop through attempts until we succeed or give up
-        num_attempts = 10
+        num_attempts = 5
         for ind in range(num_attempts):
             ### Attempt setup
 

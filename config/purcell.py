@@ -106,7 +106,8 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 7,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 1000,
+        "em_gain": 5000,
+        # "em_gain": 1000,
         # "em_gain": 100,
         "temp": -60,
         "timeout": 2000,  # ms
@@ -146,7 +147,7 @@ config |= {
             "opti_laser_key": LaserKey.IMAGING,
         },
         # Virtual lasers
-        LaserKey.IMAGING: {"name": green_laser, "duration": 20e6},
+        LaserKey.IMAGING: {"name": green_laser, "duration": 6e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
         LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
@@ -155,10 +156,11 @@ config |= {
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
         LaserKey.SCC: {"name": red_laser, "duration": 144},
-        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 1e9},
+        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
+        # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         #
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },

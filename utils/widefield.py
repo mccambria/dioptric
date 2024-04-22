@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 from numpy import inf
+from scipy.special import gamma
+from scipy.stats import poisson
 
 from utils import common
 from utils import data_manager as dm
@@ -81,7 +83,7 @@ def integrate_counts(img_array, pixel_coords, radius=None):
     return counts
 
 
-def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
+def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):
     """Convert camera analog-to-digital converter units (ADUs) to an
     estimated number of photons. Since the gain stages are noisy, this is
     just an estimate
@@ -94,9 +96,9 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
         k gain of the camera in e- / ADU, by default retrieved from config
     em_gain : numeric, optional
         Electron-multiplying gain of the camera, by default retrieved from config
-    bias_clamp : numeric, optional
-        Bias clamp level, i.e. the ADU value for a pixel which receives no light. Used to
-        ensure the camera does not return negative values. By default retrieved from config
+    baseline : numeric, optional
+        Baseline, or bias clamp level, i.e. the ADU value for a pixel which receives no light.
+        Used to ensure the camera does not return negative values. By default retrieved from config
 
     Returns
     -------
@@ -107,17 +109,18 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, bias_clamp=None):
         k_gain = _get_camera_k_gain()
     if em_gain is None:
         em_gain = _get_camera_em_gain()
-    if bias_clamp is None:
-        bias_clamp = _get_camera_bias_clamp()
+    if baseline is None:
+        baseline = _get_camera_bias_clamp()
 
     total_gain = k_gain / em_gain
-    photons = (adus - bias_clamp) * total_gain
+    photons = (adus - baseline) * total_gain
     return photons
 
 
 def img_str_to_array(img_str):
     """Convert an img_array from a uint16-valued byte string (returned by the camera
-    labrad server for speed) into a usable int-valued 2D array
+    labrad server for speed) into a usable int-valued 2D array. Also subtracts off bias
+    not captured on Nuvu's end camera software
 
     Parameters
     ----------
@@ -129,10 +132,25 @@ def img_str_to_array(img_str):
     ndarray
         Image array contructed from the byte string
     """
-    shape = get_img_array_shape()
+    shape = _get_img_str_shape()
     img_array = np.frombuffer(img_str, dtype=np.uint16).reshape(*shape)
     img_array = img_array.astype(int)
-    return img_array
+
+    # Subtract off correlated readout noise (see wiki 4/19/24)
+    roi = _get_camera_roi()  # offsetX, offsetY, width, height
+    if roi is None:
+        baseline = _get_camera_bias_clamp()
+    else:
+        offset_x = roi[0]
+        width = roi[2]
+        buffer = 10
+        bg_pixels = img_array[0:, 0 : offset_x - buffer].flatten()
+        bg_pixels = np.append(
+            bg_pixels, img_array[0:, offset_x + width + buffer :].flatten()
+        )
+        baseline = np.mean(bg_pixels)
+        img_array = img_array[0:, offset_x : offset_x + width]
+    return img_array, baseline
 
 
 run_ax = 1
@@ -193,6 +211,80 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         ref_states_array = None
 
     return sig_states_array, ref_states_array
+
+
+def poisson_pmf_cont(k, mean):
+    return mean**k * np.exp(-mean) / gamma(k + 1)
+
+
+def charge_state_mle(nv_list, img_array):
+    """Maximum likelihood estimator of state based on image"""
+
+    states = []
+    states_thresh = []
+    img_array_photons = adus_to_photons(img_array)
+    # test = np.sort(adus_to_photons(img_array).flatten())
+    # fig, ax = plt.subplots()
+    # kpl.histogram(ax, test, hist_type=kpl.HistType.STEP, nbins=100)
+    # # kpl.imshow(ax, img_array)
+    # kpl.show(block=True)
+
+    for nv in nv_list:
+        radius = _get_camera_spot_radius()
+        x0, y0 = get_nv_pixel_coords(nv)
+        bg, amp, sigma = nv.nvn_dist_params
+
+        def nvn_count_distribution(x, y):
+            return bg + amp * np.exp(
+                -(((x - x0) ** 2) + ((y - y0) ** 2)) / (2 * sigma**2)
+            )
+
+        def nv0_count_distribution(x, y):
+            return bg
+
+        half_range = radius
+        left = round(x0 - half_range)
+        right = round(x0 + half_range)
+        top = round(y0 - half_range)
+        bottom = round(y0 + half_range)
+        x_crop = np.linspace(left, right, right - left + 1)
+        y_crop = np.linspace(top, bottom, bottom - top + 1)
+        x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+        img_array_crop = img_array_photons[top : bottom + 1, left : right + 1]
+        img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
+        # img_array_crop = np.where(
+        #     img_array_crop < 20 * (bg + amp), img_array_crop, np.nan
+        # )
+
+        # fig, ax = plt.subplots()
+        # kpl.imshow(ax, nvn_count_distribution(x_crop_mesh, y_crop_mesh))
+        # # # fig, ax = plt.subplots()
+        # # kpl.imshow(ax, img_array_crop)
+        # kpl.show(block=True)
+
+        # nvn_probs = poisson.pmf(
+        #     img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
+        # )
+        # nv0_probs = poisson.pmf(
+        #     img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
+        # )
+        nvn_probs = poisson_pmf_cont(
+            img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
+        )
+        nv0_probs = poisson_pmf_cont(
+            img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
+        )
+
+        nvn_prob = np.nanprod(nvn_probs)
+        nv0_prob = np.nanprod(nv0_probs)
+        states.append(int(nvn_prob > nv0_prob))
+
+        counts = integrate_counts_from_adus(img_array, (x0, y0))
+        states_thresh.append(int(counts > nv.threshold))
+        test = 0
+
+    # return states, states_thresh
+    return states
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None, no_threshold=False):
@@ -618,10 +710,21 @@ def _get_camera_config_val(key):
     return config["Camera"][key]
 
 
-def get_img_array_shape():
+def _get_img_str_shape():
+    resolution = _get_camera_resolution()
     roi = _get_camera_roi()
     if roi is None:
-        shape = _get_camera_resolution()
+        shape = resolution
+    else:
+        shape = (roi[3], resolution[0])
+    return shape
+
+
+def get_img_array_shape():
+    resolution = _get_camera_resolution()
+    roi = _get_camera_roi()
+    if roi is None:
+        shape = resolution
     else:
         shape = roi[2:]
     return shape

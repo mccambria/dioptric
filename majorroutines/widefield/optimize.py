@@ -85,11 +85,15 @@ def optimize_pixel(nv_sig, do_plot=False):
 
 
 def optimize_pixel_with_img_array(
-    img_array, nv_sig=None, pixel_coords=None, do_plot=False
+    img_array,
+    nv_sig=None,
+    pixel_coords=None,
+    do_plot=False,
+    return_popt=False,
 ):
     if do_plot:
         fig, ax = plt.subplots()
-        kpl.imshow(ax, img_array, cbar_label="Counts")
+        kpl.imshow(ax, img_array, cbar_label="ADUs")
 
     # Default operations of the routine
     set_pixel_drift = nv_sig is not None
@@ -193,4 +197,7 @@ def optimize_pixel_with_img_array(
         print(f"Counts at optimized coordinates: {r_counts}")
         print()
 
-    return opti_pixel_coords
+    if return_popt:
+        return popt
+    else:
+        return opti_pixel_coords

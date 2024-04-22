@@ -21,7 +21,6 @@ timeout = 5
 ### END NODE INFO
 """
 
-
 import logging
 import socket
 import time
@@ -112,10 +111,13 @@ class CameraNuvuHnu512gamma(LabradServer):
         readout_mode = widefield._get_camera_readout_mode()
         self.cam.set_readout_mode(readout_mode)
 
+        resolution = widefield._get_camera_resolution()
+
         self.clear_roi()
         roi = widefield._get_camera_roi()
+        adj_roi = (0, roi[1], resolution[0], roi[3])  # offsetX, offsetY, width, height
         if roi is not None:
-            self.set_roi(*roi)
+            self.set_roi(*adj_roi)
 
         # Check if we're in EM mode
         if readout_mode in [1, 2, 3, 4, 16, 17, 18, 19]:
@@ -130,26 +132,6 @@ class CameraNuvuHnu512gamma(LabradServer):
         if timeout is not None:
             self.cam.set_timeout(timeout)
         self.cam.get_size()
-
-        # self.cam.set_buffer_count(1000)
-        # logging.info(self.cam.get_dynamic_buffer_count())
-        # waiting_time = self.cam.getWaitingTime()
-        # logging.info(f"Waiting time: {waiting_time}")
-        # exposure_time = self.cam.getExposureTime()
-        # logging.info(f"Exposure time: {exposure_time}")
-
-        # Defaults to be updated by client
-        # self.set_exposure_time(None, 35)
-        # self.set_waiting_time(None, 0)
-
-        # frame_latency = self.cam.get_frame_latency()
-        # frame_transfer_duration = self.cam.get_frame_transfer_duration()
-        # readout_time = self.cam.getReadoutTime()
-        # frame_rate_maximum = self.cam.get_frame_rate_maximum()
-        # logging.info(f"frame_latency: {frame_latency}")
-        # logging.info(f"frame_transfer_duration: {frame_transfer_duration}")
-        # logging.info(f"readout_time: {readout_time}")
-        # logging.info(f"frame_rate_maximum: {frame_rate_maximum}")
 
         logging.info("Init complete")
 

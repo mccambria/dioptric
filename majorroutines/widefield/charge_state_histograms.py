@@ -184,6 +184,9 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(raw_data, file_path)
+
     # Images
     laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_optics_dict(laser_key)
@@ -258,6 +261,8 @@ def main(
 
     tb.reset_cfm()
 
+    return raw_data
+
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), "valid") / w
@@ -289,83 +294,43 @@ if __name__ == "__main__":
     sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
     ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
     fig, ax = plt.subplots()
-    # kpl.plot_line(ax, range(len(sig_norms)), sig_norms, label="Sig")
-    # kpl.plot_line(ax, range(len(ref_norms)), ref_norms, label="Ref")
-    kpl.plot_line(ax, range(len(sig_norms)), sig_mean_vals, label="Sig")
-    kpl.plot_line(ax, range(len(ref_norms)), ref_mean_vals, label="Ref")
+    kpl.plot_line(ax, range(len(sig_mean_vals)), sig_mean_vals, label="Sig")
+    kpl.plot_line(ax, range(len(ref_mean_vals)), ref_mean_vals, label="Ref")
     ax.set_xlabel("Shot index")
     ax.set_ylabel("Average photon count / pixel")
     ax.legend()
     kpl.show(block=True)
 
-    # sig_counts_lists = [sig_counts_lists[ind] / sig_norms for ind in range(num_nvs)]
-    # ref_counts_lists = [ref_counts_lists[ind] / ref_norms for ind in range(num_nvs)]
+    img_arrays = np.array(data["img_arrays"])
+    img_arrays_photons = widefield.adus_to_photons(img_arrays)
 
-    ### Histograms
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, np.mean(img_arrays_photons, axis=(0, 1, 2, 3)))
 
-    if False:
-        for ind in range(num_nvs):
-            nv_sig = nv_list[ind]
-            print(nv_sig.name)
-            sig_counts_list = sig_counts_lists[ind]
-            ref_counts_list = ref_counts_lists[ind]
-            fig = create_histogram(sig_counts_list, ref_counts_list)
+    # widefield.charge_state_mle(nv_list, np.mean(img_arrays, axis=(0, 1, 2, 3)))
 
-            ax = fig.gca()
-            popt, threshold = determine_threshold(ref_counts_list)
-            x_vals = np.linspace(0, max(ref_counts_list), 1000)
-            kpl.plot_line(ax, x_vals, num_shots * bimodal_dist(x_vals, *popt))
-            ax.axvline(threshold, color=kpl.KplColors.GRAY)
+    num_runs = data["num_runs"]
+    num_steps = data["num_steps"]
+    num_reps = data["num_reps"]
+    num_shots = num_runs * num_steps * num_reps
 
-    ### Labeled images
+    states = np.array([0 for ind in range(num_nvs)])
+    states_thresh = np.array([0 for ind in range(num_nvs)])
 
-    if False:
-        num_nvs = len(nv_list)
-        pixel_coords_list = []
-        for nv in nv_list:
-            coords = nv["pixel_coords"]
-            adj_coords = [coords[0] - 7, coords[1] - 26]
-            pixel_coords_list.append(adj_coords)
+    start = time.time()
+    for run_ind in range(num_runs):
+        for step_ind in range(num_steps):
+            for rep_ind in range(num_reps):
+                img_array = img_arrays[0, run_ind, step_ind, rep_ind]
+                states_list, states_thresh_list = widefield.charge_state_mle(
+                    nv_list, img_array
+                )
+                states += states_list
+                states_thresh += states_thresh_list
+    stop = time.time()
+    print(stop - start)
 
-        sig_img_array = np.array(data["sig_img_array"])
-        ref_img_array = np.array(data["ref_img_array"])
-        diff_img_array = np.array(data["diff_img_array"])
-        # sig_counts_list, ref_counts_list = process_data(
-        #     nv_list, sig_img_array, ref_img_array
-        # )
-        sig_img_array_cts = widefield.adus_to_photons(sig_img_array)
-        ref_img_array_cts = widefield.adus_to_photons(ref_img_array)
-        img_arrays = [
-            sig_img_array_cts,
-            ref_img_array_cts,
-            sig_img_array_cts - ref_img_array_cts,
-        ]
+    print(states / num_shots)
+    print(states_thresh / num_shots)
 
-        titles = ["With ionization pulse", "Without ionization pulse", "Difference"]
-        for ind in range(3):
-            img_array = img_arrays[ind]
-            fig, ax = plt.subplots()
-            title = titles[ind]
-            if ind in [0, 1]:
-                vmin = 0
-                vmax = 0.7
-            else:
-                vmin = -0.45
-                vmax = 0.1
-            kpl.imshow(
-                ax, img_array, title=title, cbar_label="Counts", vmin=vmin, vmax=vmax
-            )
-
-            for ind in range(len(pixel_coords_list)):
-                # if ind != 8:
-                #     continue
-                # print(nv_list[ind]["name"])
-                pixel_coords = pixel_coords_list[ind]
-                pixel_coords = [el + 1 for el in pixel_coords]
-                color = kpl.data_color_cycler[ind]
-                # kpl.draw_circle(
-                #     ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
-                # )
-                kpl.draw_circle(ax, pixel_coords, color=color, radius=9, label=ind)
-
-    # kpl.show(block=True)
+    kpl.show(block=True)

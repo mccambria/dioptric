@@ -73,14 +73,32 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig, num_reps)
 
 
-def do_charge_state_histograms(nv_list):
+def do_charge_state_histograms(nv_list, charge_prep_verification=False):
     num_reps = 50
     num_runs = 10
     # num_runs = 2
-    charge_prep_verification = False
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
     )
+
+
+def do_calibrate_nvn_dist_params(nv_list):
+    data = do_charge_state_histograms(nv_list, charge_prep_verification=True)
+    ref_img_array = data["ref_img_array"]
+
+    nvn_dist_params_list = []
+    for nv in nv_list:
+        popt = optimize.optimize_pixel_with_img_array(
+            ref_img_array, nv, return_popt=True
+        )
+        nvn_dist_params_list.append(
+            (
+                widefield.adus_to_photons(popt[-1]),  # bg
+                widefield.adus_to_photons(popt[0] + 300),  # amp
+                popt[-2],  # sigma
+            )
+        )
+    print(nvn_dist_params_list)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -505,12 +523,12 @@ def do_opx_constant_ac():
     #     [0],  # Analog frequencies
     # )
     # Green
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     # [3, 4],  # Analog channels
-    #     # [0.03, 0.03],  # Analog voltages
-    #     # [110, 110],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        # [3, 4],  # Analog channels
+        # [0.03, 0.03],  # Analog voltages
+        # [110, 110],  # Analog frequencies
+    )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -609,7 +627,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.34
+    z_coord = 4.41
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -693,6 +711,14 @@ if __name__ == "__main__":
         [74.009, 75.891],
     ]
     threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
+    nvn_dist_params_list = [
+        (0.08864254977843133, 0.31782688165126877, 3.8583663986211434),
+        (0.07940066813697125, 0.3064650349721238, 4.313006125005059),
+        (0.08060280012144272, 0.28900824292747535, 4.1945931058872095),
+        (0.0970023907871867, 0.16389041639281693, 3.7315296874137602),
+        (0.05820311354749401, 0.22557983981381505, 4.7204760434244895),
+        (0.079625551762134, 0.16060140009866478, 4.222986241289107),
+    ]
 
     # endregion
     # region NV list construction
@@ -711,13 +737,14 @@ if __name__ == "__main__":
             name=f"{sample_name}-nv{ind}_{date_str}",
             coords=coords,
             threshold=threshold_list[ind],
+            nvn_dist_params=nvn_dist_params_list[ind],
         )
         nv_list.append(nv_sig)
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 4000
+    nv_list[0].expected_counts = 1150
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # nv_inds = [0, 2, 4]
@@ -770,7 +797,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+3, -37])
+        # widefield.set_pixel_drift([-9, -50])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -804,7 +831,7 @@ if __name__ == "__main__":
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
 
@@ -822,8 +849,9 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
+        # do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
