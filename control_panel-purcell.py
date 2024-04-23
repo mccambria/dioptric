@@ -627,7 +627,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.41
+    z_coord = 4.42
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -635,54 +635,33 @@ if __name__ == "__main__":
     # endregion
     # region Coords (from March 12th)
 
-    # pixel_coords_list = [
-    #     [126.905, 114.634],
-    #     [163.243, 117.933],
-    #     [83.205, 115.313],
-    #     [72.362, 125.984],
-    #     [94.422, 164.308],
-    #     [101.672, 142.676],
-    #     [99.67, 126.488],
-    #     [115.954, 128.468],
-    #     [124.404, 142.99],
-    #     [120.505, 169.064],
-    #     [138.882, 160.072],
-    #     [151.59, 144.97],
-    #     [160.774, 88.405],
-    #     [147.589, 73.976],
-    # ]
-    # green_coords_list = [
-    #     [108.333, 110.935],
-    #     [109.127, 110.828],
-    #     [107.44, 110.812],
-    #     [107.167, 110.596],
-    #     [107.624, 109.545],
-    #     [107.708, 110.114],
-    #     [107.792, 110.606],
-    #     [107.964, 110.409],
-    #     [108.561, 110.278],
-    #     [108.182, 109.55],
-    #     [108.657, 109.894],
-    #     [108.856, 110.129],
-    #     [109.084, 111.507],
-    #     [108.889, 111.896],
-    # ]
-    # red_coords_list = [
-    #     [73.226, 75.736],
-    #     [73.881, 75.68],
-    #     [72.427, 75.715],
-    #     [72.185, 75.526],
-    #     [72.549, 74.866],
-    #     [72.742, 75.307],
-    #     [72.721, 75.547],
-    #     [73.004, 75.583],
-    #     [73.194, 75.288],
-    #     [73.169, 74.814],
-    #     [73.484, 75.007],
-    #     [73.688, 75.275],
-    #     [73.762, 76.351],
-    #     [73.552, 76.608],
-    # ]
+    pixel_coords_list = [
+        [142.851, 193.093],
+        [161.181, 184.12],
+        [173.95, 169.448],
+        [186.133, 142.627],
+        [183.492, 113.143],
+        [170.196, 98.414],
+    ]
+    green_coords_list = [
+        [108.712, 108.84],
+        [109.137, 109.074],
+        [109.363, 109.421],
+        [109.587, 110.096],
+        [109.532, 110.746],
+        [109.22, 111.088],
+    ]
+    red_coords_list = [
+        [73.62, 74.141],
+        [73.813, 74.268],
+        [74.074, 74.529],
+        [74.37, 75.109],
+        [74.26, 75.662],
+        [74.009, 75.891],
+    ]
+    num_nvs = len(pixel_coords_list)
+    threshold_list = [None for ind in range(num_nvs)]
+    nvn_dist_params_list = [None for ind in range(num_nvs)]
     # endregion
     # region Coords (smiley)
 
@@ -744,7 +723,7 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 1150
+    nv_list[0].expected_counts = 1200
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # nv_inds = [0, 2, 4]
@@ -797,20 +776,20 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-9, -50])
+        # widefield.set_pixel_drift([0, -40])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.3, 4.0, 11):
+        # for z in np.linspace(4.5, 4.0, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -849,7 +828,7 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_calibrate_nvn_dist_params(nv_list)
 
