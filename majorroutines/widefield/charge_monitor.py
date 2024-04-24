@@ -25,7 +25,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import ChargeStateEstimationMode, LaserKey, NVSig
 
 
 def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
@@ -85,8 +85,13 @@ def process_check_readout_fidelity(data):
     num_runs = counts.shape[2]
     num_reps = counts.shape[4]
     sig_counts = counts[0]
-    states, _ = widefield.threshold_counts(nv_list, sig_counts)
-    # states = np.array(data["charge_states"])[0]
+    config = common.get_config_dict()
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    # charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
+    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
+        states, _ = widefield.threshold_counts(nv_list, sig_counts)
+    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        states = np.array(data["states"])[0]
 
     figsize = kpl.figsize
     figsize[1] *= 1.5
@@ -199,7 +204,9 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1511352373561)  # 0.33
     # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
-    data = dm.get_raw_data(file_id=1511388302072)  # 0.37
+    # data = dm.get_raw_data(file_id=1511388302072)  # 0.37
+
+    data = dm.get_raw_data(file_id=1511491052952)
 
     process_check_readout_fidelity(data)
     # process_detect_cosmic_rays(data)
