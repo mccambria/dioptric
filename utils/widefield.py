@@ -222,15 +222,14 @@ def charge_state_mle(nv_list, img_array):
 
     states = []
     states_thresh = []
-    img_array_photons = adus_to_photons(img_array)
-    # test = np.sort(adus_to_photons(img_array).flatten())
-    # fig, ax = plt.subplots()
-    # kpl.histogram(ax, test, hist_type=kpl.HistType.STEP, nbins=100)
-    # # kpl.imshow(ax, img_array)
-    # kpl.show(block=True)
+    radius = _get_camera_spot_radius()
 
     for nv in nv_list:
-        radius = _get_camera_spot_radius()
+        nvn_dist_params = nv.nvn_dist_params
+        if nvn_dist_params is None:
+            states.append(None)
+            continue
+
         x0, y0 = get_nv_pixel_coords(nv)
         bg, amp, sigma = nv.nvn_dist_params
 
@@ -250,24 +249,9 @@ def charge_state_mle(nv_list, img_array):
         x_crop = np.linspace(left, right, right - left + 1)
         y_crop = np.linspace(top, bottom, bottom - top + 1)
         x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
-        img_array_crop = img_array_photons[top : bottom + 1, left : right + 1]
+        img_array_crop = img_array[top : bottom + 1, left : right + 1]
         img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
-        # img_array_crop = np.where(
-        #     img_array_crop < 20 * (bg + amp), img_array_crop, np.nan
-        # )
 
-        # fig, ax = plt.subplots()
-        # kpl.imshow(ax, nvn_count_distribution(x_crop_mesh, y_crop_mesh))
-        # # # fig, ax = plt.subplots()
-        # # kpl.imshow(ax, img_array_crop)
-        # kpl.show(block=True)
-
-        # nvn_probs = poisson.pmf(
-        #     img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
-        # )
-        # nv0_probs = poisson.pmf(
-        #     img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
-        # )
         nvn_probs = poisson_pmf_cont(
             img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
         )
@@ -281,9 +265,7 @@ def charge_state_mle(nv_list, img_array):
 
         counts = integrate_counts_from_adus(img_array, (x0, y0))
         states_thresh.append(int(counts > nv.threshold))
-        test = 0
 
-    # return states, states_thresh
     return states
 
 

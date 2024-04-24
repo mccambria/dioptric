@@ -184,8 +184,8 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    # file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    # dm.save_raw_data(raw_data, file_path)
 
     # Images
     laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
@@ -208,7 +208,7 @@ def main(
         title_suffix = title_suffixes[ind]
         fig, ax = plt.subplots()
         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
-        kpl.imshow(ax, img_array, title=title, cbar_label="ADUs")
+        kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
         figs.append(fig)
         file_path = dm.get_file_path(
             __file__, timestamp, f"{repr_nv_name}-{title_suffixes[ind]}"
@@ -255,7 +255,7 @@ def main(
         "sig_img_array": sig_img_array,
         "ref_img_array": ref_img_array,
         "diff_img_array": diff_img_array,
-        "img_array-units": "ADUs",
+        "img_array-units": "photons",
     }
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
 

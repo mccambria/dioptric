@@ -24,31 +24,18 @@ except Exception:
     pass
 
 
-def charge_prep_no_prep(
-    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
-):
+def charge_prep_no_prep(rep_ind, nv_list, initial_states_list=None):
     pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
     return 0
 
 
-def charge_prep_no_verification(
-    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
-):
-    # Initial setup
-    num_nvs = len(pixel_coords_list)
-    threshold_list = [None for ind in range(num_nvs)]
-    return charge_prep_loop(
-        rep_ind, pixel_coords_list, threshold_list, verify_charge_states=False
-    )
+def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
+    return charge_prep_loop(rep_ind, nv_list, verify_charge_states=False)
 
 
-def charge_prep_first_rep_only(
-    rep_ind, pixel_coords_list, threshold_list, initial_counts_list=None
-):
+def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
     if rep_ind == 0:
-        num_attempts = charge_prep_loop(
-            rep_ind, pixel_coords_list, threshold_list, initial_counts_list
-        )
+        num_attempts = charge_prep_loop(rep_ind, nv_list, initial_states_list)
     else:
         pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
         num_attempts = 0
@@ -56,43 +43,37 @@ def charge_prep_first_rep_only(
 
 
 def charge_prep_loop(
-    rep_ind,
-    pixel_coords_list,
-    threshold_list,
-    initial_counts_list=None,
-    verify_charge_states=None,
+    rep_ind, nv_list, initial_states_list=None, verify_charge_states=None
 ):
     # Initial setup
-    num_nvs = len(pixel_coords_list)
-    no_thresholds = True not in [bool(val) for val in threshold_list]
+    num_nvs = len(nv_list)
+    has_way_to_verify_list = [nv.nvn_dist_params is not None for nv in nv_list]
+    no_way_to_verify = True not in has_way_to_verify_list
     if verify_charge_states is None:
-        verify_charge_states = not no_thresholds
-    counts_list = initial_counts_list
+        verify_charge_states = not no_way_to_verify
+    states_list = initial_states_list
     max_num_attempts = 10
     # max_num_attempts = 1
     out_of_attempts = False
     attempt_ind = 0
 
     # Inner function for determining which NVs to target
-    def assemble_charge_pol_target_list(counts_list):
-        if counts_list is not None:
-            charge_pol_target_list = [
-                threshold_list[ind] is None or counts_list[ind] < threshold_list[ind]
-                for ind in range(num_nvs)
-            ]
+    def assemble_charge_pol_target_list(states_list):
+        if states_list is not None:
+            charge_pol_target_list = [el is None or el == 0 for el in states_list]
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
         return charge_pol_target_list
 
     # Loop until we have a reason to stop
     while True:
-        charge_pol_target_list = assemble_charge_pol_target_list(counts_list)
+        charge_pol_target_list = assemble_charge_pol_target_list(states_list)
 
         # Reasons to stop
         charge_pol_complete = (
             (True not in charge_pol_target_list)  # No more targets left
             or out_of_attempts
-            or (attempt_ind == 1 and no_thresholds)
+            or (attempt_ind == 1 and not verify_charge_states)
         )
         pulse_gen.insert_input_stream(
             "_cache_charge_pol_incomplete", not charge_pol_complete
@@ -109,7 +90,7 @@ def charge_prep_loop(
             "_cache_verify_charge_states", verify_charge_states
         )
         if verify_charge_states:
-            _, counts_list = read_image_and_get_counts(pixel_coords_list)
+            _, counts_list, states_list = read_and_process_image(nv_list)
 
         # Move on to next attempt
         attempt_ind += 1
@@ -118,18 +99,35 @@ def charge_prep_loop(
     return attempt_ind
 
 
-def read_image_and_get_counts(pixel_coords_list):
+# def read_image_and_get_counts(nv_list):
+#     img_str = camera.read()
+#     img_array_adus, baseline = widefield.img_str_to_array(img_str)
+#     # baseline = 300
+#     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
+
+#     def get_counts(pixel_coords):
+#         return widefield.integrate_counts(img_array, pixel_coords)
+
+#     counts_list = [get_counts(el) for el in nv_list]
+
+#     return img_array, counts_list
+
+
+def read_and_process_image(nv_list):
     img_str = camera.read()
     img_array_adus, baseline = widefield.img_str_to_array(img_str)
     # baseline = 300
     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
 
-    def get_counts(pixel_coords):
+    def get_counts(nv_sig):
+        pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
         return widefield.integrate_counts(img_array, pixel_coords)
 
-    counts_list = [get_counts(el) for el in pixel_coords_list]
+    counts_list = [get_counts(nv) for nv in nv_list]
 
-    return img_array, counts_list
+    states_list = widefield.charge_state_mle(nv_list, img_array)
+
+    return img_array, counts_list, states_list
 
 
 def main(
@@ -226,7 +224,7 @@ def main(
     ### Data tracking
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    charge_states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     # MCC
     mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
@@ -247,10 +245,7 @@ def main(
             try:
                 print(f"\nRun index: {run_ind}")
 
-                pixel_coords_list = [
-                    widefield.get_nv_pixel_coords(nv) for nv in nv_list
-                ]
-                counts_list = None
+                states_list = None
                 charge_prep_readouts_list = []
 
                 for ind in uwave_ind_list:
@@ -285,28 +280,20 @@ def main(
                         for exp_ind in range(num_exps_per_rep):
                             if charge_prep_fn is not None:
                                 charge_prep_readouts = charge_prep_fn(
-                                    rep_ind,
-                                    pixel_coords_list,
-                                    threshold_list,
-                                    initial_counts_list=counts_list,
+                                    rep_ind, nv_list, initial_states_list=states_list
                                 )
                                 charge_prep_readouts_list.append(charge_prep_readouts)
-                            img_array, counts_list = read_image_and_get_counts(
-                                pixel_coords_list
+                            img_array, counts_list, states_list = (
+                                read_and_process_image(nv_list)
                             )
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
-                            charge_states_list = widefield.charge_state_mle(
-                                nv_list, img_array
-                            )
-                            charge_states[
-                                exp_ind, :, run_ind, step_ind, rep_ind
-                            ] = charge_states_list
+                            states[exp_ind, :, run_ind, step_ind, rep_ind] = states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[
-                                exp_ind, run_ind, step_ind, rep_ind
-                            ] = np.median(img_array)
+                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
+                                np.median(img_array)
+                            )
 
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
@@ -370,7 +357,7 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
-        "charge_states": charge_states,
+        "states": states,
         "mean_vals": mean_vals,
         "median_vals": median_vals,
         "img_array-units": "ADUs",
