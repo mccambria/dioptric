@@ -92,31 +92,44 @@ def process_check_readout_fidelity(data):
     figsize[1] *= 1.5
     fig, axes_pack = plt.subplots(2, 1, sharex=True, figsize=figsize)
     labels = {0: "NV0", 1: "NV-"}
-    fidelities = [0 for ind in range(num_nvs)]
+    probs = [[] for ind in range(2)]
+    prob_errs = [[] for ind in range(2)]
+    lookback = 2
     for init_state in [0, 1]:
         ax = axes_pack[init_state]
         for nv_ind in range(num_nvs):
             shots_list = []
             for run_ind in range(num_runs):
                 for rep_ind in range(num_reps):
-                    # prev_state = (
-                    #     1 if rep_ind == 0 else states[nv_ind, run_ind, 0, rep_ind - 1]
-                    # )
-                    if rep_ind == 0:
+                    if rep_ind < lookback:
                         continue
-                    prev_state = states[nv_ind, run_ind, 0, rep_ind - 1]
+                    prev_states = states[
+                        nv_ind, run_ind, 0, rep_ind - lookback : rep_ind
+                    ]
                     current_state = states[nv_ind, run_ind, 0, rep_ind]
-                    if prev_state == init_state:
-                        shots_list.append(current_state == prev_state)
+                    if np.all([el == init_state for el in prev_states]):
+                        shots_list.append(current_state == init_state)
             prob = np.mean(shots_list)
             err = np.std(shots_list, ddof=1) / np.sqrt(len(shots_list))
             nv_num = widefield.get_nv_num(nv_list[nv_ind])
             kpl.plot_points(ax, nv_num, prob, yerr=err)
-            fidelities[nv_ind] += prob / 2
+            probs[init_state].append(prob)
+            prob_errs[init_state].append(err)
         label = labels[init_state]
-        ax.set_ylabel(f"P({label}|previous shot {label})")
+        ax.set_ylabel(f"P({label}|previous {lookback} shots {label})")
 
-    print(fidelities)
+    ax.set_xlabel("NV index")
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    fig, ax = plt.subplots()
+    for nv_ind in range(num_nvs):
+        fidelity = (probs[0][nv_ind] + probs[1][nv_ind]) / 2
+        fidelity_err = (
+            np.sqrt(prob_errs[0][nv_ind] ** 2 + prob_errs[1][nv_ind] ** 2) / 2
+        )
+        nv_num = widefield.get_nv_num(nv_list[nv_ind])
+        kpl.plot_points(ax, nv_num, fidelity, yerr=fidelity_err)
+    ax.set_ylabel("Fidelity")
     ax.set_xlabel("NV index")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
@@ -184,7 +197,9 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1508726411686)
+    # data = dm.get_raw_data(file_id=1511352373561)  # 0.33
+    # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
+    data = dm.get_raw_data(file_id=1511388302072)  # 0.37
 
     process_check_readout_fidelity(data)
     # process_detect_cosmic_rays(data)

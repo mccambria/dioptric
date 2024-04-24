@@ -271,13 +271,7 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1506800366384)  # Yellow on, -60 C, 50 ms readout
-    # data = dm.get_raw_data(file_id=1506826857288)  # Yellow off, -60 C, 50 ms readout
-    # data = dm.get_raw_data(file_id=1506865734454)  # Yellow off, -65 C, 50 ms readout
-    # data = dm.get_raw_data(file_id=1506877254094)  # Yellow off, -60 C, 100 ms readout
-    # data = dm.get_raw_data(file_id=1506936719223)  # EM gain 100
-    # data = dm.get_raw_data(file_id=1506961050354)  # EM gain 5000
-    data = dm.get_raw_data(file_id=1508790988173)  # Background subtraction
+    data = dm.get_raw_data(file_id=1511349215700)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -285,52 +279,17 @@ if __name__ == "__main__":
     ref_counts_lists = np.array(data["ref_counts_lists"])
     num_shots = len(sig_counts_lists[0])
 
-    mean_vals = np.array(data["mean_vals"])
-    # mean_vals = np.array(data["median_vals"])
-    sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten(), em_gain=5000)
-    ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten(), em_gain=5000)
-    sig_mean_vals = moving_average(sig_mean_vals, 20)
-    ref_mean_vals = moving_average(ref_mean_vals, 20)
-    sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
-    ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
-    fig, ax = plt.subplots()
-    kpl.plot_line(ax, range(len(sig_mean_vals)), sig_mean_vals, label="Sig")
-    kpl.plot_line(ax, range(len(ref_mean_vals)), ref_mean_vals, label="Ref")
-    ax.set_xlabel("Shot index")
-    ax.set_ylabel("Average photon count / pixel")
-    ax.legend()
-    kpl.show(block=True)
-
-    img_arrays = np.array(data["img_arrays"])
-    img_arrays_photons = widefield.adus_to_photons(img_arrays)
-
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, np.mean(img_arrays_photons, axis=(0, 1, 2, 3)))
-
-    # widefield.charge_state_mle(nv_list, np.mean(img_arrays, axis=(0, 1, 2, 3)))
-
-    num_runs = data["num_runs"]
-    num_steps = data["num_steps"]
-    num_reps = data["num_reps"]
-    num_shots = num_runs * num_steps * num_reps
-
-    states = np.array([0 for ind in range(num_nvs)])
-    states_thresh = np.array([0 for ind in range(num_nvs)])
-
-    start = time.time()
-    for run_ind in range(num_runs):
-        for step_ind in range(num_steps):
-            for rep_ind in range(num_reps):
-                img_array = img_arrays[0, run_ind, step_ind, rep_ind]
-                states_list, states_thresh_list = widefield.charge_state_mle(
-                    nv_list, img_array
-                )
-                states += states_list
-                states_thresh += states_thresh_list
-    stop = time.time()
-    print(stop - start)
-
-    print(states / num_shots)
-    print(states_thresh / num_shots)
+    num_nvs = len(nv_list)
+    threshold_list = []
+    for ind in range(num_nvs):
+        sig_counts_list = sig_counts_lists[ind]
+        ref_counts_list = ref_counts_lists[ind]
+        fig = create_histogram(sig_counts_list, ref_counts_list)
+        all_counts_list = np.append(sig_counts_list, ref_counts_list)
+        _, threshold = determine_threshold(all_counts_list)
+        threshold_list.append(threshold)
+        nv_sig = nv_list[ind]
+        nv_name = nv_sig.name
+    print(threshold_list)
 
     kpl.show(block=True)
