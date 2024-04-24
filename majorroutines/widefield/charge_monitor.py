@@ -85,6 +85,7 @@ def process_check_readout_fidelity(data):
     num_runs = counts.shape[2]
     num_reps = counts.shape[4]
     sig_counts = counts[0]
+
     states, _ = widefield.threshold_counts(nv_list, sig_counts)
     # states = np.array(data["charge_states"])[0]
 
@@ -199,7 +200,9 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1511352373561)  # 0.33
     # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
-    data = dm.get_raw_data(file_id=1511388302072)  # 0.37
+    # data = dm.get_raw_data(file_id=1511388302072)  # 0.37
+
+    data = dm.get_raw_data(file_id=1511491052952)
 
     process_check_readout_fidelity(data)
     # process_detect_cosmic_rays(data)
