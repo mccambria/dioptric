@@ -1,32 +1,26 @@
 """
-Hardware control for Meadowlark SLMs.
-Tested with Meadowlark (AVR Optics) P1920-400-800-HDMI-T.
+subclass for Thorlab SLM hardware control in :mod:`slmsuite`.
+Outlines which SLM superclass functions must be implemented.
 
-Note
-~~~~
-Check that the Blink SDK, inlcuding DLL files etc, are in the default folder
-or otherwise pass the correct directory in the constructor.
+@author Saroj B Chand
+
 """
 import os
 import ctypes
 import warnings
+import sys
 
-from .slm import SLM
+sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
+# from .slm import SLM
+from slm import SLM
 
-DEFAULT_SDK_PATH = "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\"
-
-class Meadowlark(SLM):
+DEFAULT_SDK_PATH = "C:/Users/Saroj Chand/Documents/dioptric/servers/inputs/Thorlabs_EXULUS_PythonSDK"
+class ThorSLM(SLM):
     """
-    Interfaces with Meadowlark SLMs.
-
-    Attributes
-    ----------
-    slm_lib : ctypes.CDLL
-        Connection to the Meadowlark library.
-    sdk_path : str
-        Path of the Blink SDK folder.
+    Template for implementing a new SLM subclass. Replace :class:`Template`
+    with the desired subclass name. :class:`~slmsuite.hardware.slms.slm.SLM` is the
+    superclass that sets the requirements for :class:`Template`.
     """
-
     def __init__(self, verbose=True, sdk_path=DEFAULT_SDK_PATH, lut_path=None, dx_um=8, dy_um=8, **kwargs):
         r"""
         Initializes an instance of a Meadowlark SLM.
@@ -103,7 +97,9 @@ class Meadowlark(SLM):
             if verbose and true_lut_path != lut_path:
                 print("success\n(loaded from '{}')".format(true_lut_path))
 
-        # Construct other variables.
+
+        # Instantiate the superclass
+         # Construct other variables.
         super().__init__(
             self.slm_lib.Get_Width(),
             self.slm_lib.Get_Height(),
@@ -121,6 +117,7 @@ class Meadowlark(SLM):
 
         self.write(None)
 
+        
     def load_lut(self, lut_path=None):
         """
         Loads a voltage lookup table (LUT) to the SLM.
@@ -182,64 +179,32 @@ class Meadowlark(SLM):
         self.slm_lib.Load_lut(lut_path)
 
         return lut_path
-
+    
     @staticmethod
     def info(verbose=True):
         """
-        The normal behavior of this function is to discover the names of all the displays
-        to help the user identify the correct display. However, Meadowlark software does
-        not currently support multiple SLMs, so this function instead raises an error.
+        Discovers all SLMs detected by an SDK.
+        Useful for a user to identify the correct serial numbers / etc.
 
         Parameters
         ----------
         verbose : bool
             Whether to print the discovered information.
 
-        Raises
-        ------
-        NotImplementedError
-        """
-        raise NotImplementedError(
-            "Meadowlark software does not currently support multiple SLMs, "
-            "so a function to identify SLMs is moot. "
-            "If functionality with multiple SLMs is desired, contact them directly."
-        )
-
-    def close(self):
-        """
-        See :meth:`.SLM.close`.
-        """
-        self.slm_lib.Delete_SDK()
-
-    def _write_hw(self, display):
-        """
-        See :meth:`.SLM._write_hw`.
-        """
-        self.slm_lib.Write_image(
-            display.ctypes.data_as(ctypes.POINTER(ctypes.c_ubyte)),
-            ctypes.c_uint(self.bitdepth == 8)   # Is 8-bit
-        )
-
-    ### Additional Meadowlark-specific functionality
-
-    def get_temperature(self):
-        """
-        Read the temperature of the SLM.
-
         Returns
-        -------
-        float
-            Temperature in degrees celcius.
+        --------
+        list of str
+            List of serial numbers or identifiers.
         """
-        return self.slm_lib.Get_SLMTemp()
+        raise NotImplementedError()
+        serial_list = get_serial_list()     # TODO: Fill in proper function.
+        return serial_list
 
-    def get_coverglass_voltage(self):
+    def _write_hw(self, phase):
         """
-        Read the voltage of the SLM coverglass.
-
-        Returns
-        -------
-        float
-            Voltage of the SLM coverglass.
+        Low-level hardware interface to write ``phase`` data onto the SLM.
+        When the user calls the :meth:`.SLM.write` method of
+        :class:`.SLM`, ``phase`` is error checked before calling
+        :meth:`_write_hw()`. See :meth:`.SLM._write_hw` for further detail.
         """
-        return self.slm_lib.Get_SLMVCom()
+        # TODO: Insert code here to write raw phase data to the SLM.
