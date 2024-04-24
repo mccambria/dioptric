@@ -42,6 +42,11 @@ class CollectionMode(Enum):
     CAMERA = auto()  # Collect photons onto a camera
 
 
+class ChargeStateEstimationMode(Enum):
+    THRESHOLDING = auto()
+    MLE = auto()  # Maximum likelihood estimator for images
+
+
 class CountFormat(Enum):
     """Deprecated, everything should be raw"""
 
