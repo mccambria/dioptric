@@ -195,7 +195,8 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 20
-    num_runs = 10
+    # num_runs = 10
+    num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
@@ -230,7 +231,7 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 10
+    num_reps = 5
     # num_runs = 120
     num_runs = 20
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
@@ -463,9 +464,9 @@ def do_spin_pol_check(nv_sig):
 
 
 def do_detect_cosmic_rays(nv_list):
-    num_reps = 100
-    num_runs = 100
-    dark_time = 0
+    num_reps = 60
+    num_runs = 6 * 60
+    dark_time = 1e9
 
     charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
 
@@ -880,7 +881,7 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
-        do_check_readout_fidelity(nv_list)
+        # do_check_readout_fidelity(nv_list)
         # do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
@@ -895,7 +896,7 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
-        # do_detect_cosmic_rays(nv_list)
+        do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
 

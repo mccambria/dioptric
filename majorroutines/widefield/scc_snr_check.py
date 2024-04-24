@@ -63,7 +63,7 @@ def main(nv_list, num_reps, num_runs):
 
     ### Collect the data
 
-    counts, _ = base_routine.main(
+    data = base_routine.main(
         nv_list,
         1,
         num_reps,
@@ -75,6 +75,7 @@ def main(nv_list, num_reps, num_runs):
 
     ### Report results and cleanup
 
-    process_and_print(nv_list, counts)
+    states = data["states"]
+    process_and_print(nv_list, states)
 
     tb.reset_cfm()

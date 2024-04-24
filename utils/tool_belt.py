@@ -789,8 +789,11 @@ def round_for_print_sci(val, err):
     else:
         err_sig_figs = 1
 
-    power_of_10 = math.floor(math.log10(abs(val)))
-    if power_of_10 < err_mag:
+    try:
+        power_of_10 = math.floor(math.log10(abs(val)))
+    except:
+        power_of_10 = None
+    if power_of_10 is None or power_of_10 < err_mag:
         power_of_10 = err_mag + err_sig_figs
     mag = Decimal(10) ** power_of_10
     rounded_err = round_sig_figs(err / mag, err_sig_figs)

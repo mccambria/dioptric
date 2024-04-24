@@ -31,7 +31,9 @@ def charge_prep_no_prep(rep_ind, nv_list, initial_states_list=None):
 
 
 def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
-    return charge_prep_loop(rep_ind, nv_list, verify_charge_states=False)
+    return charge_prep_loop(
+        rep_ind, nv_list, initial_states_list, verify_charge_states=False
+    )
 
 
 def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
@@ -121,7 +123,10 @@ def charge_prep_loop(
 
 
 def read_and_process_image(nv_list):
+    # start = time.time()
     img_str = camera.read()
+    # stop = time.time()
+    # print(stop - start)
     img_array_adus, baseline = widefield.img_str_to_array(img_str)
     # baseline = 300
     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
@@ -132,6 +137,7 @@ def read_and_process_image(nv_list):
 
     counts_list = [get_counts(nv) for nv in nv_list]
 
+    # start = time.time()
     config = common.get_config_dict()
     charge_state_estimation_mode = config["charge_state_estimation_mode"]
     if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
@@ -145,6 +151,8 @@ def read_and_process_image(nv_list):
                 states_list.append(counts_list[nv_ind] > threshold)
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         states_list = widefield.charge_state_mle(nv_list, img_array)
+    # stop = time.time()
+    # print(stop - start)
 
     return img_array, counts_list, states_list
 
@@ -162,7 +170,7 @@ def main(
     load_iq=False,
     save_images=False,
     stream_load_in_run_fn=True,
-    charge_prep_fn=charge_prep_loop,
+    charge_prep_fn=charge_prep_no_verification,
 ) -> tuple[np.ndarray, dict]:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 
@@ -297,14 +305,20 @@ def main(
                     # Reps loop
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
+                            # start = time.time()
                             if charge_prep_fn is not None:
                                 charge_prep_readouts = charge_prep_fn(
                                     rep_ind, nv_list, initial_states_list=states_list
                                 )
                                 charge_prep_readouts_list.append(charge_prep_readouts)
+                            # stop = time.time()
+                            # print(stop - start)
+                            # start = time.time()
                             img_array, counts_list, states_list = (
                                 read_and_process_image(nv_list)
                             )
+                            # stop = time.time()
+                            # print(stop - start)
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                             states[exp_ind, :, run_ind, step_ind, rep_ind] = states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
@@ -316,6 +330,7 @@ def main(
 
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
+                            print()
 
                     if save_images:
                         for exp_ind in range(num_exps_per_rep):
@@ -386,7 +401,7 @@ def main(
             "img_arrays-units": "ADUs",
             "img_arrays": img_arrays,
         }
-    return counts, raw_data
+    return raw_data
 
 
 if __name__ == "__main__":

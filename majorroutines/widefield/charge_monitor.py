@@ -34,7 +34,7 @@ def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
         num_reps,
         num_runs,
         "detect_cosmic_rays",
-        base_routine.charge_prep_loop,
+        base_routine.charge_prep_no_verification,
         process_detect_cosmic_rays,
         dark_time=dark_time,
     )
@@ -162,7 +162,7 @@ def main(
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
