@@ -665,11 +665,11 @@ opx_config = {
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.33},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.35},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.40},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

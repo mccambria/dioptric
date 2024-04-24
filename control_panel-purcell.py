@@ -160,13 +160,10 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
                 opti_coords = do_optimize_red(nv)
 
             # Adjust for the drift that may have occurred since beginning the loop
-            do_optimize_pixel(repr_nv_sig)
+            optimize.optimize_pixel_and_z(repr_nv_sig, do_plot=False)
             drift = pos.get_drift(coords_key)
             drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
-
-            # For slower scanning optimizations keep make sure we don't drift off in z either
-            do_optimize_z(repr_nv_sig, do_plot=False)
 
         opti_coords_list.append(opti_coords)
 
@@ -636,74 +633,116 @@ if __name__ == "__main__":
     # region Coords (from March 12th)
 
     pixel_coords_list = [
-        [142.851, 193.093],
-        [161.181, 184.12],
-        [173.95, 169.448],
-        [186.133, 142.627],
-        [183.492, 113.143],
-        [170.196, 98.414],
-    ]
-    green_coords_list = [
-        [108.712, 108.84],
-        [109.137, 109.074],
-        [109.363, 109.421],
-        [109.587, 110.096],
-        [109.532, 110.746],
-        [109.22, 111.088],
-    ]
-    red_coords_list = [
-        [73.62, 74.141],
-        [73.813, 74.268],
-        [74.074, 74.529],
-        [74.37, 75.109],
-        [74.26, 75.662],
-        [74.009, 75.891],
+        [130.424, 152.027],
+        [149.37, 142.24],
+        [161.89, 127.546],
+        [134.965, 126.404],
+        [126.476, 111.281],
+        [110.102, 110.01],
+        [111.687, 124.857],
+        [82.449, 109.831],
+        [144.021, 186.017],
+        [159.297, 184.106],
+        [173.838, 100.29],
+        [171.224, 71.041],
+        [157.345, 56.683],
+        [104.585, 147.209],
+        [60.285, 99.869],
     ]
     num_nvs = len(pixel_coords_list)
-    threshold_list = [None for ind in range(num_nvs)]
+    green_coords_list = [
+        [108.521, 109.715],
+        [108.921, 109.958],
+        [109.169, 110.303],
+        [108.587, 110.341],
+        [108.369, 110.67],
+        [108.004, 110.702],
+        [108.103, 110.336],
+        [107.394, 110.71],
+        [108.863, 108.943],
+        [109.167, 108.999],
+        [109.409, 110.958],
+        [109.348, 111.623],
+        [109.039, 111.972],
+        [107.953, 109.844],
+        [106.937, 110.9],
+    ]
+    red_coords_list = [
+        [73.14, 74.937],
+        [73.457, 75.128],
+        [73.685, 75.413],
+        [73.248, 75.478],
+        [73.037, 75.735],
+        [72.835, 75.712],
+        [72.796, 75.461],
+        [72.33, 75.684],
+        [73.406, 74.299],
+        [73.669, 74.341],
+        [74.036, 75.932],
+        [73.868, 76.536],
+        [73.672, 76.756],
+        [72.707, 75.044],
+        [71.834, 75.944],
+    ]
+    threshold_list = [
+        19.5,
+        22.5,
+        21.5,
+        19.5,
+        19.5,
+        18.5,
+        19.5,
+        21.5,
+        19.5,
+        18.5,
+        17.5,
+        15.5,
+        14.5,
+        20.5,
+        14.5,
+    ]
     nvn_dist_params_list = [None for ind in range(num_nvs)]
     # endregion
     # region Coords (smiley)
 
-    pixel_coords_list = [
-        [142.851, 193.093],
-        [161.181, 184.12],
-        [173.95, 169.448],
-        [186.133, 142.627],
-        [183.492, 113.143],
-        [170.196, 98.414],
-    ]
-    green_coords_list = [
-        [108.712, 108.84],
-        [109.137, 109.074],
-        [109.363, 109.421],
-        [109.587, 110.096],
-        [109.532, 110.746],
-        [109.22, 111.088],
-    ]
-    red_coords_list = [
-        [73.62, 74.141],
-        [73.813, 74.268],
-        [74.074, 74.529],
-        [74.37, 75.109],
-        [74.26, 75.662],
-        [74.009, 75.891],
-    ]
-    threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
-    nvn_dist_params_list = [
-        (0.08864254977843133, 0.31782688165126877, 3.8583663986211434),
-        (0.07940066813697125, 0.3064650349721238, 4.313006125005059),
-        (0.08060280012144272, 0.28900824292747535, 4.1945931058872095),
-        (0.0970023907871867, 0.16389041639281693, 3.7315296874137602),
-        (0.05820311354749401, 0.22557983981381505, 4.7204760434244895),
-        (0.079625551762134, 0.16060140009866478, 4.222986241289107),
-    ]
+    # pixel_coords_list = [
+    #     [142.851, 193.093],
+    #     [161.181, 184.12],
+    #     [173.95, 169.448],
+    #     [186.133, 142.627],
+    #     [183.492, 113.143],
+    #     [170.196, 98.414],
+    # ]
+    # green_coords_list = [
+    #     [108.712, 108.84],
+    #     [109.137, 109.074],
+    #     [109.363, 109.421],
+    #     [109.587, 110.096],
+    #     [109.532, 110.746],
+    #     [109.22, 111.088],
+    # ]
+    # red_coords_list = [
+    #     [73.62, 74.141],
+    #     [73.813, 74.268],
+    #     [74.074, 74.529],
+    #     [74.37, 75.109],
+    #     [74.26, 75.662],
+    #     [74.009, 75.891],
+    # ]
+    # threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
+    # nvn_dist_params_list = [
+    #     (0.08864254977843133, 0.31782688165126877, 3.8583663986211434),
+    #     (0.07940066813697125, 0.3064650349721238, 4.313006125005059),
+    #     (0.08060280012144272, 0.28900824292747535, 4.1945931058872095),
+    #     (0.0970023907871867, 0.16389041639281693, 3.7315296874137602),
+    #     (0.05820311354749401, 0.22557983981381505, 4.7204760434244895),
+    #     (0.079625551762134, 0.16060140009866478, 4.222986241289107),
+    # ]
 
     # endregion
     # region NV list construction
 
     # nv_list[i] will have the ith coordinates from the above lists
-    num_nvs = len(pixel_coords_list)
     nv_list = []
     for ind in range(num_nvs):
         coords = {
@@ -818,7 +857,7 @@ if __name__ == "__main__":
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
         # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
+        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=True)
 
         # num_nvs = len(nv_list)
         # for ind in range(num_nvs):
@@ -828,8 +867,8 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]
         #     nv[green_coords_key][0] += 0.500
 
-        do_charge_state_histograms(nv_list)
-        # do_check_readout_fidelity(nv_list)
+        # do_charge_state_histograms(nv_list)
+        do_check_readout_fidelity(nv_list)
         # do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)

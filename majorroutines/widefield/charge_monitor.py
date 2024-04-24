@@ -86,7 +86,7 @@ def process_check_readout_fidelity(data):
     num_reps = counts.shape[4]
     sig_counts = counts[0]
     states, _ = widefield.threshold_counts(nv_list, sig_counts)
-    states = np.array(data["charge_states"])[0]
+    # states = np.array(data["charge_states"])[0]
 
     figsize = kpl.figsize
     figsize[1] *= 1.5

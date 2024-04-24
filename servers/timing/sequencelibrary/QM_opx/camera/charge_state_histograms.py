@@ -69,7 +69,7 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
+        seq, seq_ret_vals = get_seq(
             [
                 [110, 109.51847988358679],
                 [112, 110.70156405156148],
@@ -80,8 +80,8 @@ if __name__ == "__main__":
             ],
             False,
             True,
-        ]
-        seq, seq_ret_vals = get_seq(*args, 5)
+            5,
+        )
 
         sim_config = SimulationConfig(duration=int(400e3 / 4))
         sim = opx.simulate(seq, sim_config)

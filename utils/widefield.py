@@ -222,9 +222,14 @@ def charge_state_mle(nv_list, img_array):
 
     states = []
     states_thresh = []
+    radius = _get_camera_spot_radius()
 
     for nv in nv_list:
-        radius = _get_camera_spot_radius()
+        nvn_dist_params = nv.nvn_dist_params
+        if nvn_dist_params is None:
+            states.append(None)
+            continue
+
         x0, y0 = get_nv_pixel_coords(nv)
         bg, amp, sigma = nv.nvn_dist_params
 
