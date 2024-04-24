@@ -49,7 +49,7 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
+    "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
     "windows_repo_path": home / "GitHub/dioptric",
     ###
     # Common durations are in ns

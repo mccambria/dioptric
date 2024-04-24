@@ -776,9 +776,9 @@ if __name__ == "__main__":
     nv_list[0].expected_counts = 1200
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    nv_inds = [0]
-    nv_inds.extend(list(range(8, 15)))
-    nv_list = [nv_list[ind] for ind in nv_inds]
+    # nv_inds = [0]
+    # nv_inds.extend(list(range(8, 15)))
+    # nv_list = [nv_list[ind] for ind in nv_inds]
     # for nv in nv_list:
     #     nv.threshold = 27.5
 
@@ -880,8 +880,8 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
-        # do_check_readout_fidelity(nv_list)
-        do_calibrate_nvn_dist_params(nv_list)
+        do_check_readout_fidelity(nv_list)
+        # do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
