@@ -11,6 +11,7 @@ Created on June 22nd, 2022
 # region Imports and constants
 
 import re
+import sys
 from enum import Enum, auto
 
 import matplotlib as mpl
@@ -140,6 +141,7 @@ data_color_cycler = [
     mpl.colors.cnames["springgreen"],
     mpl.colors.cnames["indianred"],
     mpl.colors.cnames["darkslateblue"],
+    mpl.colors.cnames["sienna"],
 ]
 line_color_cycler = data_color_cycler.copy()
 hist_color_cycler = data_color_cycler.copy()
@@ -717,8 +719,8 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
 # endregion
 
 if __name__ == "__main__":
-    # print(cambria_fixed(15))
-    # sys.exit()
+    print(len(data_color_cycler))
+    sys.exit()
 
     # calc_zfs_from_compiled_data()
 
