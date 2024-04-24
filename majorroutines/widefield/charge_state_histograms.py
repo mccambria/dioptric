@@ -271,7 +271,7 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1511349215700)
+    data = dm.get_raw_data(file_id=1511480113600, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -279,17 +279,29 @@ if __name__ == "__main__":
     ref_counts_lists = np.array(data["ref_counts_lists"])
     num_shots = len(sig_counts_lists[0])
 
-    num_nvs = len(nv_list)
-    threshold_list = []
-    for ind in range(num_nvs):
-        sig_counts_list = sig_counts_lists[ind]
-        ref_counts_list = ref_counts_lists[ind]
-        fig = create_histogram(sig_counts_list, ref_counts_list)
-        all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        _, threshold = determine_threshold(all_counts_list)
-        threshold_list.append(threshold)
-        nv_sig = nv_list[ind]
-        nv_name = nv_sig.name
-    print(threshold_list)
+    # num_nvs = len(nv_list)
+    # threshold_list = []
+    # for ind in range(num_nvs):
+    #     sig_counts_list = sig_counts_lists[ind]
+    #     ref_counts_list = ref_counts_lists[ind]
+    #     fig = create_histogram(sig_counts_list, ref_counts_list)
+    #     all_counts_list = np.append(sig_counts_list, ref_counts_list)
+    #     _, threshold = determine_threshold(all_counts_list)
+    #     threshold_list.append(threshold)
+    #     nv_sig = nv_list[ind]
+    #     nv_name = nv_sig.name
+    # print(threshold_list)
 
-    kpl.show(block=True)
+    # kpl.show(block=True)
+
+    ref_img_array = np.array(data["ref_img_array"])
+
+    nvn_dist_params_list = []
+    for nv in nv_list:
+        pixel_coords = widefield.get_nv_pixel_coords(nv, drift_adjust=False)
+        popt = optimize.optimize_pixel_with_img_array(
+            ref_img_array, pixel_coords=pixel_coords, return_popt=True
+        )
+        # bg, amp, sigma
+        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    print(nvn_dist_params_list)
