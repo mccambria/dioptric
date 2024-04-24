@@ -281,14 +281,16 @@ if __name__ == "__main__":
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    sig_counts_lists = np.array(data["sig_counts_lists"])
-    ref_counts_lists = np.array(data["ref_counts_lists"])
-    num_shots = len(sig_counts_lists[0])
+    # sig_counts_lists = np.array(data["sig_counts_lists"])
+    # ref_counts_lists = np.array(data["ref_counts_lists"])
+    # num_shots = len(sig_counts_lists[0])
 
     mean_vals = np.array(data["mean_vals"])
     # mean_vals = np.array(data["median_vals"])
-    sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten(), em_gain=5000)
-    ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten(), em_gain=5000)
+    sig_mean_vals = mean_vals[0].flatten()
+    ref_mean_vals = mean_vals[1].flatten()
+    # sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten(), em_gain=5000)
+    # ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten(), em_gain=5000)
     sig_mean_vals = moving_average(sig_mean_vals, 20)
     ref_mean_vals = moving_average(ref_mean_vals, 20)
     sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
