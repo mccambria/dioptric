@@ -13,9 +13,10 @@ from random import shuffle
 import numpy as np
 
 from majorroutines.widefield import optimize
+from utils import common, widefield
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import widefield
+from utils.constants import ChargeStateEstimationMode
 
 try:
     camera = tb.get_server_camera()
@@ -46,11 +47,17 @@ def charge_prep_loop(
     rep_ind, nv_list, initial_states_list=None, verify_charge_states=None
 ):
     # Initial setup
-    num_nvs = len(nv_list)
-    has_way_to_verify_list = [nv.nvn_dist_params is not None for nv in nv_list]
+    config = common.get_config_dict()
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
+        has_way_to_verify_list = [nv.threshold is not None for nv in nv_list]
+    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        has_way_to_verify_list = [nv.nvn_dist_params is not None for nv in nv_list]
     no_way_to_verify = True not in has_way_to_verify_list
     if verify_charge_states is None:
         verify_charge_states = not no_way_to_verify
+
+    num_nvs = len(nv_list)
     states_list = initial_states_list
     max_num_attempts = 10
     # max_num_attempts = 1
@@ -125,7 +132,19 @@ def read_and_process_image(nv_list):
 
     counts_list = [get_counts(nv) for nv in nv_list]
 
-    states_list = widefield.charge_state_mle(nv_list, img_array)
+    config = common.get_config_dict()
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
+        num_nvs = len(nv_list)
+        states_list = []
+        for nv_ind in range(num_nvs):
+            threshold = nv_list[nv_ind].threshold
+            if threshold is None:
+                states_list.append(None)
+            else:
+                states_list.append(counts_list[nv_ind] > threshold)
+    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        states_list = widefield.charge_state_mle(nv_list, img_array)
 
     return img_array, counts_list, states_list
 

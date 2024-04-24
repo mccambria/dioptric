@@ -685,21 +685,21 @@ if __name__ == "__main__":
         [71.834, 75.944],
     ]
     threshold_list = [
-        51.5,
-        54.5,
-        50.5,
-        49.5,
-        49.5,
-        47.5,
-        48.5,
-        51.5,
-        48.5,
-        48.5,
-        44.5,
-        40.5,
-        37.5,
-        47.5,
-        36.5,
+        27.5,
+        29.5,
+        26.5,
+        26.5,
+        25.5,
+        25.5,
+        27.5,
+        30.5,
+        25.5,
+        24.5,
+        21.5,
+        20.5,
+        18.5,
+        26.5,
+        19.5,
     ]
     nvn_dist_params_list = [None for ind in range(num_nvs)]
     # endregion
@@ -765,8 +765,9 @@ if __name__ == "__main__":
     nv_list[0].expected_counts = 1200
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    # nv_inds = [0, 2, 4]
-    # nv_list = [nv_list[ind] for ind in nv_inds]
+    nv_inds = [0]
+    nv_inds.extend(list(range(8, 15)))
+    nv_list = [nv_list[ind] for ind in nv_inds]
     # for nv in nv_list:
     #     nv.threshold = 27.5
 
@@ -868,8 +869,8 @@ if __name__ == "__main__":
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
-        do_check_readout_fidelity(nv_list)
-        # do_calibrate_nvn_dist_params(nv_list)
+        # do_check_readout_fidelity(nv_list)
+        do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
