@@ -243,7 +243,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     @setting(18)
     def resume(self, c):
         
-        # Make sure we've gottent to the paused
+        # Make sure we've gotten to the pause
         timeout = 1
         time_step = 0.001
         start = time.time()
@@ -255,9 +255,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         self.running_job.resume()
         
         
-    @setting(19, input_stream_name="s", val="?")
+    @setting(31, input_stream_name="s", val="?")
     def insert_input_stream(self, c, input_stream_name, val):
+        if isinstance(val, np.ndarray):
+            val = val.tolist()
         self.running_job.insert_input_stream(input_stream_name, val)
+        
 
     # endregion
     # region Time tagging

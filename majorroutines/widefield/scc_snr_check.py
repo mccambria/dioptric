@@ -71,6 +71,7 @@ def main(nv_list, num_reps, num_runs):
         run_fn=run_fn,
         uwave_ind=uwave_ind,
         save_images=False,
+        # charge_prep_fn=base_routine.charge_prep_no_prep,
     )
 
     ### Report results and cleanup

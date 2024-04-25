@@ -1,4 +1,4 @@
-0  # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Various utility functions for widefield imaging and camera data processing
 
 Created on August 15th, 2023
@@ -207,64 +207,66 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         ref_states_array = np.greater(
             ref_counts, thresholds, out=ref_states_array, where=where_thresh
         )
+        return sig_states_array, ref_states_array
     else:
-        ref_states_array = None
+        return sig_states_array
 
-    return sig_states_array, ref_states_array
+
+def threshold(nv_sig, count_val):
+    """Threshold for a single value"""
+    threshold = nv_sig.threshold
+    if threshold is None:
+        return None
+    else:
+        return count_val > threshold
 
 
 def poisson_pmf_cont(k, mean):
     return mean**k * np.exp(-mean) / gamma(k + 1)
 
 
+def charge_state_mle_single(nv_sig, img_array):
+    nvn_dist_params = nv_sig.nvn_dist_params
+    if nvn_dist_params is None:
+        return None
+
+    x0, y0 = get_nv_pixel_coords(nv_sig)
+    bg, amp, sigma = nv_sig.nvn_dist_params
+
+    def nvn_count_distribution(x, y):
+        return bg + amp * np.exp(-(((x - x0) ** 2) + ((y - y0) ** 2)) / (2 * sigma**2))
+
+    def nv0_count_distribution(x, y):
+        return bg
+
+    radius = _get_camera_spot_radius()
+    half_range = radius
+    left = round(x0 - half_range)
+    right = round(x0 + half_range)
+    top = round(y0 - half_range)
+    bottom = round(y0 + half_range)
+    x_crop = np.linspace(left, right, right - left + 1)
+    y_crop = np.linspace(top, bottom, bottom - top + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
+    img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
+
+    nvn_probs = poisson_pmf_cont(
+        img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
+    )
+    nv0_probs = poisson_pmf_cont(
+        img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
+    )
+
+    nvn_prob = np.nanprod(nvn_probs)
+    nv0_prob = np.nanprod(nv0_probs)
+    return int(nvn_prob > nv0_prob)
+
+
 def charge_state_mle(nv_list, img_array):
     """Maximum likelihood estimator of state based on image"""
 
-    states = []
-    states_thresh = []
-    radius = _get_camera_spot_radius()
-
-    for nv in nv_list:
-        nvn_dist_params = nv.nvn_dist_params
-        if nvn_dist_params is None:
-            states.append(None)
-            continue
-
-        x0, y0 = get_nv_pixel_coords(nv)
-        bg, amp, sigma = nv.nvn_dist_params
-
-        def nvn_count_distribution(x, y):
-            return bg + amp * np.exp(
-                -(((x - x0) ** 2) + ((y - y0) ** 2)) / (2 * sigma**2)
-            )
-
-        def nv0_count_distribution(x, y):
-            return bg
-
-        half_range = radius
-        left = round(x0 - half_range)
-        right = round(x0 + half_range)
-        top = round(y0 - half_range)
-        bottom = round(y0 + half_range)
-        x_crop = np.linspace(left, right, right - left + 1)
-        y_crop = np.linspace(top, bottom, bottom - top + 1)
-        x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
-        img_array_crop = img_array[top : bottom + 1, left : right + 1]
-        img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
-
-        nvn_probs = poisson_pmf_cont(
-            img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
-        )
-        nv0_probs = poisson_pmf_cont(
-            img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
-        )
-
-        nvn_prob = np.nanprod(nvn_probs)
-        nv0_prob = np.nanprod(nv0_probs)
-        states.append(int(nvn_prob > nv0_prob))
-
-        counts = integrate_counts_from_adus(img_array, (x0, y0))
-        states_thresh.append(int(counts > nv.threshold))
+    states = [charge_state_mle_single(nv, img_array) for nv in nv_list]
 
     return states
 
@@ -427,12 +429,14 @@ def get_spin_flip_ind_list(nv_list: list[NVSig]):
 # region Drift tracking
 
 
+@cache
 def get_pixel_drift():
     pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
     return np.array(pixel_drift)
 
 
 def set_pixel_drift(drift):
+    get_pixel_drift.cache_clear()
     return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
 
 

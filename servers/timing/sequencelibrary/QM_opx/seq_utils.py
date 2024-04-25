@@ -7,6 +7,7 @@ Created June 25th, 2023
 @author: mccambria
 """
 
+import logging
 import time
 from functools import cache
 
@@ -22,7 +23,7 @@ _cache_y_freq = None
 _cache_x_freq_2 = None
 _cache_y_freq_2 = None
 _cache_macro_run_aods = None
-_cache_charge_pol_target = None
+_cache_charge_pol_target_list = None
 _cache_charge_pol_incomplete = None
 
 
@@ -43,24 +44,25 @@ def init(num_nvs=None):
     _cache_x_freq_2 = qua.declare(int)
     _cache_y_freq_2 = qua.declare(int)
 
+    global _cache_target
+    _cache_target = qua.declare(bool)
+
     global _cache_macro_run_aods
     _cache_macro_run_aods = {}
     macro_run_aods()
 
-    global _cache_charge_pol_incomplete
-    _cache_charge_pol_incomplete = qua.declare_input_stream(
-        bool, name="_cache_charge_pol_incomplete"
+    global _cache_charge_pol_args
+    _cache_charge_pol_args = qua.declare_input_stream(
+        bool, name="_cache_charge_pol_args", size=2
     )
 
-    global _cache_charge_pol_target
-    _cache_charge_pol_target = qua.declare_input_stream(
-        bool, name="_cache_charge_pol_target"
-    )
-
-    global _cache_verify_charge_states
-    _cache_verify_charge_states = qua.declare_input_stream(
-        bool, name="_cache_verify_charge_states"
-    )
+    if num_nvs is not None:
+        global _cache_target_list
+        _cache_target_list = qua.declare_input_stream(
+            bool, name="_cache_target_list", size=num_nvs
+        )
+    global _cache_test
+    _cache_test = qua.declare_input_stream(bool, name="_cache_test")
 
 
 def handle_reps(
@@ -129,7 +131,7 @@ def handle_reps(
 
 
 def macro_polarize(
-    pol_coords_list, pol_duration=None, spin_pol=True, verify_charge_states=True
+    pol_coords_list, pol_duration=None, spin_pol=True, targeted_polarization=True
 ):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -144,31 +146,34 @@ def macro_polarize(
         List of coordinate pairs to target
     """
 
-    global _cache_charge_pol_incomplete
-    global _cache_charge_pol_target
-    global _cache_verify_charge_states
+    global _cache_charge_pol_args
+    global _cache_target_list
 
     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
+    targeted_polarization = False
 
-    # MCC
-    if verify_charge_states:
-        qua.advance_input_stream(_cache_charge_pol_incomplete)
-        with qua.while_(_cache_charge_pol_incomplete):
+    if targeted_polarization:
+        qua.advance_input_stream(_cache_charge_pol_args)
+        with qua.while_(_cache_charge_pol_args[0]):  # While charge pol incomplete
+            qua.advance_input_stream(_cache_target_list)
             _macro_pulse_list(
                 pol_laser_name,
                 pol_coords_list,
                 pulse_name,
                 pol_duration,
-                input_stream=_cache_charge_pol_target,
+                target_list=_cache_target_list,
             )
-            qua.advance_input_stream(_cache_verify_charge_states)
-            with qua.if_(_cache_verify_charge_states):
+            with qua.if_(_cache_charge_pol_args[1]):  # If verify charge states
                 macro_charge_state_readout()
                 macro_wait_for_trigger()
-            qua.advance_input_stream(_cache_charge_pol_incomplete)
+            qua.advance_input_stream(_cache_charge_pol_args)
     else:
+        # qua.advance_input_stream(_cache_charge_pol_args)
+        qua.advance_input_stream(_cache_target_list)
+        # qua.wait(convert_ns_to_cc(30e6))
+        # qua.advance_input_stream(_cache_charge_pol_args)
         _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration)
 
     # Spin polarization with widefield yellow
@@ -495,7 +500,12 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
 
 
 def _macro_pulse_list(
-    laser_name, coords_list, pulse_name="on", duration=None, input_stream=None
+    laser_name,
+    coords_list,
+    pulse_name="on",
+    duration=None,
+    target_list=None,
+    # input_stream=None
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -520,23 +530,14 @@ def _macro_pulse_list(
     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
 
-    # These are declared in macro_run_aods
-    global _cache_x_freq
-    global _cache_y_freq
+    # These are declared in init
+    global _cache_x_freq, _cache_y_freq, _cache_target
 
     qua.align()
-    with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
-        if input_stream is not None:
-            qua.advance_input_stream(input_stream)
-            with qua.if_(input_stream):
-                macro_pulse(
-                    laser_name,
-                    (_cache_x_freq, _cache_y_freq),
-                    pulse_name=pulse_name,
-                    duration=duration,
-                    convert_to_Hz=False,
-                )
-        else:
+    if target_list is None:
+        with qua.for_each_(
+            (_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)
+        ):
             macro_pulse(
                 laser_name,
                 (_cache_x_freq, _cache_y_freq),
@@ -544,6 +545,20 @@ def _macro_pulse_list(
                 duration=duration,
                 convert_to_Hz=False,
             )
+    else:
+        # qua.advance_input_stream(input_stream)
+        with qua.for_each_(
+            (_cache_x_freq, _cache_y_freq, _cache_target),
+            (x_coords_list, y_coords_list, target_list),
+        ):
+            with qua.if_(_cache_target):
+                macro_pulse(
+                    laser_name,
+                    (_cache_x_freq, _cache_y_freq),
+                    pulse_name=pulse_name,
+                    duration=duration,
+                    convert_to_Hz=False,
+                )
 
 
 def macro_pulse(laser_name, coords, pulse_name="on", duration=None, convert_to_Hz=True):

@@ -488,6 +488,13 @@ def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
 
+    num_reps = 1000
+    start = time.time()
+    for ind in range(num_reps):
+        opx.test("_cache_charge_pol_incomplete", False)
+    stop = time.time()
+    print((stop - start) / num_reps)
+
     # Microwave test
     # if True:
     #     sig_gen = cxn.sig_gen_STAN_sg394
@@ -516,12 +523,12 @@ def do_opx_constant_ac():
     #     [0],  # Analog frequencies
     # )
     # Green
-    opx.constant_ac(
-        [4],  # Digital channels
-        # [3, 4],  # Analog channels
-        # [0.03, 0.03],  # Analog voltages
-        # [110, 110],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     # [3, 4],  # Analog channels
+    #     # [0.03, 0.03],  # Analog voltages
+    #     # [110, 110],  # Analog frequencies
+    # )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -877,7 +884,7 @@ if __name__ == "__main__":
         #     if ind == 0:
         #         continue
         #     nv = nv_list[ind]
-        #     green_coords = nv[green_coords_key]
+        #     green_coords = nv[green_coords_key]5
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
@@ -896,14 +903,14 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
-        do_detect_cosmic_rays(nv_list)
+        # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

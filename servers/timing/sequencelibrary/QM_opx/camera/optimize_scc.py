@@ -25,6 +25,7 @@ def get_seq(
 ):
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
+    num_nvs = len(pol_coords_list)
 
     def sig_exp():
         qua.align()
@@ -40,7 +41,7 @@ def get_seq(
     ion_duration_list = [seq_utils.convert_ns_to_cc(el) for el in ion_duration_ns_list]
 
     with qua.program() as seq:
-        seq_utils.init()
+        seq_utils.init(num_nvs)
         ion_duration = qua.declare(int)
 
         def one_exp(exp_ind):

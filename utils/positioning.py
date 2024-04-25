@@ -10,6 +10,7 @@ Created on Decemeber 1st, 2022
 # region Imports and constants
 
 import time
+from functools import cache
 
 import numpy as np
 
@@ -319,6 +320,7 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 """Implemented with a drift tracking global stored on the registry"""
 
 
+@cache
 def get_drift(coords_key=CoordsKey.GLOBAL):
     key = f"DRIFT-{coords_key}"
     drift = common.get_registry_entry(["State"], key)
@@ -333,6 +335,7 @@ def get_drift(coords_key=CoordsKey.GLOBAL):
 
 
 def set_drift(drift, coords_key=CoordsKey.GLOBAL):
+    get_drift.cache_clear()
     key = f"DRIFT-{coords_key}"
     return common.set_registry_entry(["State"], key, drift)
 

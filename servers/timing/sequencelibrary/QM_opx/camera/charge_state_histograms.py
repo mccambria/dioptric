@@ -19,6 +19,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 def get_seq(pol_coords_list, ion_coords_list, diff_polarize, diff_ionize, num_reps):
     if num_reps is None:
         num_reps = 1
+    num_nvs = len(pol_coords_list)
 
     if diff_polarize and not diff_ionize:
         do_polarize_sig = True
@@ -32,7 +33,7 @@ def get_seq(pol_coords_list, ion_coords_list, diff_polarize, diff_ionize, num_re
         do_ionize_ref = False
 
     with qua.program() as seq:
-        seq_utils.init()
+        seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()
 
         def one_exp(do_polarize_sub, do_ionize_sub):

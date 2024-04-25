@@ -18,14 +18,9 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import ChargeStateEstimationMode
 
-try:
-    camera = tb.get_server_camera()
-    pulse_gen = tb.get_server_pulse_gen()
-except Exception:
-    pass
-
 
 def charge_prep_no_prep(rep_ind, nv_list, initial_states_list=None):
+    pulse_gen = tb.get_server_pulse_gen()
     pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
     return 0
 
@@ -37,6 +32,7 @@ def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
 
 
 def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
+    pulse_gen = tb.get_server_pulse_gen()
     if rep_ind == 0:
         num_attempts = charge_prep_loop(rep_ind, nv_list, initial_states_list)
     else:
@@ -48,6 +44,7 @@ def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
 def charge_prep_loop(
     rep_ind, nv_list, initial_states_list=None, verify_charge_states=None
 ):
+    pulse_gen = tb.get_server_pulse_gen()
     # Initial setup
     config = common.get_config_dict()
     charge_state_estimation_mode = config["charge_state_estimation_mode"]
@@ -76,6 +73,7 @@ def charge_prep_loop(
 
     # Loop until we have a reason to stop
     while True:
+        out_of_attempts = attempt_ind == max_num_attempts
         charge_pol_target_list = assemble_charge_pol_target_list(states_list)
 
         # Reasons to stop
@@ -84,26 +82,21 @@ def charge_prep_loop(
             or out_of_attempts
             or (attempt_ind == 1 and not verify_charge_states)
         )
-        pulse_gen.insert_input_stream(
-            "_cache_charge_pol_incomplete", not charge_pol_complete
-        )
+        charge_pol_args = [not charge_pol_complete, verify_charge_states]
+        pulse_gen.insert_input_stream("_cache_charge_pol_args", charge_pol_args)
         if charge_pol_complete:
             break
 
-        # Target NVs in charge_pol_target_list
-        for val in charge_pol_target_list:
-            pulse_gen.insert_input_stream("_cache_charge_pol_target", val)
+        start = time.time()
+        pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
+        stop = time.time()
+        print(stop - start)
 
-        # Get charge state verification image
-        pulse_gen.insert_input_stream(
-            "_cache_verify_charge_states", verify_charge_states
-        )
         if verify_charge_states:
             _, counts_list, states_list = read_and_process_image(nv_list)
 
         # Move on to next attempt
         attempt_ind += 1
-        out_of_attempts = attempt_ind == max_num_attempts
 
     return attempt_ind
 
@@ -123,10 +116,8 @@ def charge_prep_loop(
 
 
 def read_and_process_image(nv_list):
-    # start = time.time()
+    camera = tb.get_server_camera()
     img_str = camera.read()
-    # stop = time.time()
-    # print(stop - start)
     img_array_adus, baseline = widefield.img_str_to_array(img_str)
     # baseline = 300
     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
@@ -137,20 +128,18 @@ def read_and_process_image(nv_list):
 
     counts_list = [get_counts(nv) for nv in nv_list]
 
-    # start = time.time()
     config = common.get_config_dict()
     charge_state_estimation_mode = config["charge_state_estimation_mode"]
     if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
         num_nvs = len(nv_list)
         states_list = []
         for nv_ind in range(num_nvs):
-            threshold = nv_list[nv_ind].threshold
-            if threshold is None:
-                states_list.append(None)
-            else:
-                states_list.append(counts_list[nv_ind] > threshold)
+            states_list.append(
+                widefield.threshold(nv_list[nv_ind], counts_list[nv_ind])
+            )
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         states_list = widefield.charge_state_mle(nv_list, img_array)
+
     # stop = time.time()
     # print(stop - start)
 
@@ -225,8 +214,8 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
-
-    threshold_list = [nv.threshold for nv in nv_list]
+    camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
 
     # Sig gen setup - all but turning on the output
     if isinstance(uwave_ind, int):
@@ -243,8 +232,8 @@ def main(
         else:
             freq = uwave_freq[ind]
         sig_gen = tb.get_server_sig_gen(ind=ind)
-        if load_iq:  # MCC
-            uwave_power += 0.4
+        # if load_iq:  # MCC
+        #     uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
 
@@ -305,20 +294,15 @@ def main(
                     # Reps loop
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
-                            # start = time.time()
+                            start = time.time()
                             if charge_prep_fn is not None:
                                 charge_prep_readouts = charge_prep_fn(
                                     rep_ind, nv_list, initial_states_list=states_list
                                 )
                                 charge_prep_readouts_list.append(charge_prep_readouts)
-                            # stop = time.time()
-                            # print(stop - start)
-                            # start = time.time()
                             img_array, counts_list, states_list = (
                                 read_and_process_image(nv_list)
                             )
-                            # stop = time.time()
-                            # print(stop - start)
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                             states[exp_ind, :, run_ind, step_ind, rep_ind] = states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
@@ -330,6 +314,8 @@ def main(
 
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
+                            stop = time.time()
+                            print(stop - start)
                             print()
 
                     if save_images:

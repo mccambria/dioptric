@@ -781,7 +781,10 @@ def round_for_print_sci(val, err):
     val = Decimal(val)
     err = Decimal(err)
 
-    err_mag = math.floor(math.log10(err))
+    try:
+        err_mag = math.floor(math.log10(err))
+    except Exception:
+        return [0, 0, 0]
     sci_err = err / (Decimal(10) ** err_mag)
     first_err_digit = int(str(sci_err)[0])
     if first_err_digit == 1:
@@ -791,7 +794,7 @@ def round_for_print_sci(val, err):
 
     try:
         power_of_10 = math.floor(math.log10(abs(val)))
-    except:
+    except Exception:
         power_of_10 = None
     if power_of_10 is None or power_of_10 < err_mag:
         power_of_10 = err_mag + err_sig_figs
@@ -865,7 +868,7 @@ def round_for_print(val, err):
     mag = Decimal(10) ** power_of_10
     str_rounded_err = str(rounded_err)
     val_str = np.format_float_positional(
-        rounded_val * mag, min_digits=len(str_rounded_err) - 2 - power_of_10
+        rounded_val * mag, min_digits=max(len(str_rounded_err) - 2 - power_of_10, 1)
     )
 
     # Trim possible trailing decimal point

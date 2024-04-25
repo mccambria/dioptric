@@ -43,14 +43,32 @@ def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
 def process_detect_cosmic_rays(data):
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    counts = np.array(data["counts"])
-    sig_counts = counts[0]
-    states, _ = widefield.threshold_counts(nv_list, sig_counts)
-    img_array = np.array([states[nv_ind].flatten() for nv_ind in range(num_nvs)])
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, aspect="auto")
+
+    states = np.array(data["states"])[0]
+    states_by_nv = np.array([states[nv_ind].flatten() for nv_ind in range(num_nvs)])
+
+    coincidences = []
+    num_shots = len(states_by_nv[0])
+    for shot_ind in range(num_shots):
+        coincidences.append(num_nvs - np.sum(states_by_nv[:, shot_ind]))
+    hist_fig, ax = plt.subplots()
+    kpl.histogram(ax, coincidences, label=f"Data ({num_nvs} NVs)")
+    ax.set_xlabel("Number NVs found in NV0")
+    ax.set_ylabel("Number of occurrences")
+    x_linspace = np.linspace(0, num_nvs, 100)
+    kpl.plot_line(
+        ax,
+        x_linspace,
+        num_shots * widefield.poisson_pmf_cont(x_linspace, np.mean(coincidences)),
+        label="Poisson pmf",
+        color=kpl.KplColors.RED,
+    )
+    ax.legend()
+
+    im_fig, ax = plt.subplots()
+    kpl.imshow(ax, states_by_nv, aspect="auto")
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-    return fig
+    return hist_fig, im_fig
 
 
 def check_readout_fidelity(nv_list, num_reps, num_runs):
@@ -195,20 +213,30 @@ def main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
     if fig is not None:
-        dm.save_figure(fig, file_path)
+        if isinstance(fig, tuple):
+            num_figs = len(fig)
+            for fig_ind in range(num_figs):
+                dm.save_figure(fig, file_path + f"-{fig_ind}")
+        else:
+            dm.save_figure(fig, file_path)
+
     tb.reset_cfm()
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1511352373561)  # 0.33
-    # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
-    # data = dm.get_raw_data(file_id=1511388302072)  # 0.37
+    # # data = dm.get_raw_data(file_id=1511352373561)  # 0.33
+    # data = dm.get_raw_data(file_id=1511491052952)  # 0.34
+    # # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
+    # # data = dm.get_raw_data(file_id=1511388302072)  # 0.37
 
-    data = dm.get_raw_data(file_id=1511491052952)
+    # process_check_readout_fidelity(data)
 
-    process_check_readout_fidelity(data)
-    # process_detect_cosmic_rays(data)
+    ###
+
+    data = dm.get_raw_data(file_id=1512018506235)
+
+    process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

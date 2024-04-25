@@ -77,10 +77,11 @@ def macro(
 
         uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
+    num_nvs = len(pol_coords_list)
 
     ### QUA stuff
 
-    seq_utils.init()
+    seq_utils.init(num_nvs)
     step_val = qua.declare(int)
 
     def one_exp(exp_ind):
