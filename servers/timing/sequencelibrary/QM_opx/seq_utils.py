@@ -51,9 +51,9 @@ def init(num_nvs=None):
     _cache_macro_run_aods = {}
     macro_run_aods()
 
-    global _cache_charge_pol_args
-    _cache_charge_pol_args = qua.declare_input_stream(
-        bool, name="_cache_charge_pol_args", size=2
+    global _cache_charge_pol_incomplete
+    _cache_charge_pol_incomplete = qua.declare_input_stream(
+        bool, name="_cache_charge_pol_incomplete"
     )
 
     if num_nvs is not None:
@@ -61,8 +61,6 @@ def init(num_nvs=None):
         _cache_target_list = qua.declare_input_stream(
             bool, name="_cache_target_list", size=num_nvs
         )
-    global _cache_test
-    _cache_test = qua.declare_input_stream(bool, name="_cache_test")
 
 
 def handle_reps(
@@ -131,7 +129,11 @@ def handle_reps(
 
 
 def macro_polarize(
-    pol_coords_list, pol_duration=None, spin_pol=True, targeted_polarization=True
+    pol_coords_list,
+    pol_duration=None,
+    spin_pol=True,
+    targeted_polarization=True,
+    verify_charge_states=False,
 ):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -146,7 +148,7 @@ def macro_polarize(
         List of coordinate pairs to target
     """
 
-    global _cache_charge_pol_args
+    global _cache_charge_pol_incomplete
     global _cache_target_list
 
     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
@@ -154,9 +156,9 @@ def macro_polarize(
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
     targeted_polarization = False
 
-    if targeted_polarization:
-        qua.advance_input_stream(_cache_charge_pol_args)
-        with qua.while_(_cache_charge_pol_args[0]):  # While charge pol incomplete
+    if verify_charge_states:
+        qua.advance_input_stream(_cache_charge_pol_incomplete)
+        with qua.while_(_cache_charge_pol_incomplete):
             qua.advance_input_stream(_cache_target_list)
             _macro_pulse_list(
                 pol_laser_name,
@@ -165,15 +167,19 @@ def macro_polarize(
                 pol_duration,
                 target_list=_cache_target_list,
             )
-            with qua.if_(_cache_charge_pol_args[1]):  # If verify charge states
-                macro_charge_state_readout()
-                macro_wait_for_trigger()
-            qua.advance_input_stream(_cache_charge_pol_args)
-    else:
-        # qua.advance_input_stream(_cache_charge_pol_args)
+            macro_charge_state_readout()
+            macro_wait_for_trigger()
+            qua.advance_input_stream(_cache_charge_pol_incomplete)
+    elif targeted_polarization:
         qua.advance_input_stream(_cache_target_list)
-        # qua.wait(convert_ns_to_cc(30e6))
-        # qua.advance_input_stream(_cache_charge_pol_args)
+        _macro_pulse_list(
+            pol_laser_name,
+            pol_coords_list,
+            pulse_name,
+            pol_duration,
+            target_list=_cache_target_list,
+        )
+    else:
         _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration)
 
     # Spin polarization with widefield yellow

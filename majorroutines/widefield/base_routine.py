@@ -19,49 +19,34 @@ from utils import tool_belt as tb
 from utils.constants import ChargeStateEstimationMode
 
 
-def charge_prep_no_prep(rep_ind, nv_list, initial_states_list=None):
-    pulse_gen = tb.get_server_pulse_gen()
-    pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
-    return 0
-
-
 def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
-    return charge_prep_loop(
-        rep_ind, nv_list, initial_states_list, verify_charge_states=False
-    )
+    charge_prep_base(nv_list, initial_states_list)
 
 
 def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
-    pulse_gen = tb.get_server_pulse_gen()
     if rep_ind == 0:
-        num_attempts = charge_prep_loop(rep_ind, nv_list, initial_states_list)
-    else:
-        pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
-        num_attempts = 0
-    return num_attempts
+        charge_prep_loop(nv_list, initial_states_list)
 
 
-def charge_prep_loop(
-    rep_ind, nv_list, initial_states_list=None, verify_charge_states=None
+def charge_prep_loop(rep_ind, nv_list, initial_states_list=None):
+    charge_prep_base(
+        nv_list,
+        initial_states_list,
+        targeted_polarization=True,
+        verify_charge_states=True,
+    )
+
+
+def charge_prep_base(
+    nv_list,
+    initial_states_list=None,
+    targeted_polarization=True,
+    verify_charge_states=False,
 ):
-    pulse_gen = tb.get_server_pulse_gen()
     # Initial setup
-    config = common.get_config_dict()
-    charge_state_estimation_mode = config["charge_state_estimation_mode"]
-    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
-        has_way_to_verify_list = [nv.threshold is not None for nv in nv_list]
-    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
-        has_way_to_verify_list = [nv.nvn_dist_params is not None for nv in nv_list]
-    no_way_to_verify = True not in has_way_to_verify_list
-    if verify_charge_states is None:
-        verify_charge_states = not no_way_to_verify
-
+    pulse_gen = tb.get_server_pulse_gen()
     num_nvs = len(nv_list)
     states_list = initial_states_list
-    max_num_attempts = 10
-    # max_num_attempts = 1
-    out_of_attempts = False
-    attempt_ind = 0
 
     # Inner function for determining which NVs to target
     def assemble_charge_pol_target_list(states_list):
@@ -71,34 +56,36 @@ def charge_prep_loop(
             charge_pol_target_list = [True for ind in range(num_nvs)]
         return charge_pol_target_list
 
-    # Loop until we have a reason to stop
-    while True:
-        out_of_attempts = attempt_ind == max_num_attempts
-        charge_pol_target_list = assemble_charge_pol_target_list(states_list)
+    if verify_charge_states:
+        max_num_attempts = 10
+        # max_num_attempts = 1
+        out_of_attempts = False
+        attempt_ind = 0
 
-        # Reasons to stop
-        charge_pol_complete = (
-            (True not in charge_pol_target_list)  # No more targets left
-            or out_of_attempts
-            or (attempt_ind == 1 and not verify_charge_states)
-        )
-        charge_pol_args = [not charge_pol_complete, verify_charge_states]
-        pulse_gen.insert_input_stream("_cache_charge_pol_args", charge_pol_args)
-        if charge_pol_complete:
-            break
+        # Loop until we have a reason to stop
+        while True:
+            out_of_attempts = attempt_ind == max_num_attempts
+            charge_pol_target_list = assemble_charge_pol_target_list(states_list)
 
-        start = time.time()
+            # Reasons to stop
+            no_more_targets = True not in charge_pol_target_list
+            charge_pol_complete = no_more_targets or out_of_attempts
+            pulse_gen.insert_input_stream(
+                "_cache_charge_pol_incomplete", not charge_pol_complete
+            )
+            if charge_pol_complete:
+                break
+
+            pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
+
+            _, _, states_list = read_and_process_image(nv_list)
+
+            # Move on to next attempt
+            attempt_ind += 1
+    elif targeted_polarization:
         pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
-        stop = time.time()
-        print(stop - start)
-
-        if verify_charge_states:
-            _, counts_list, states_list = read_and_process_image(nv_list)
-
-        # Move on to next attempt
-        attempt_ind += 1
-
-    return attempt_ind
+    else:
+        pass
 
 
 # def read_image_and_get_counts(nv_list):
@@ -300,17 +287,19 @@ def main(
                                     rep_ind, nv_list, initial_states_list=states_list
                                 )
                                 charge_prep_readouts_list.append(charge_prep_readouts)
-                            img_array, counts_list, states_list = (
-                                read_and_process_image(nv_list)
-                            )
+                            (
+                                img_array,
+                                counts_list,
+                                states_list,
+                            ) = read_and_process_image(nv_list)
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                             states[exp_ind, :, run_ind, step_ind, rep_ind] = states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                                np.median(img_array)
-                            )
+                            median_vals[
+                                exp_ind, run_ind, step_ind, rep_ind
+                            ] = np.median(img_array)
 
                             if save_images:
                                 img_array_list[exp_ind].append(img_array)
