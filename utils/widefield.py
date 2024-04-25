@@ -44,6 +44,20 @@ def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
     return integrate_counts(img_array_photons, pixel_coords, radius)
 
 
+@cache
+def _calc_dist_matrix(radius=None):
+    if radius is None:
+        radius = _get_camera_spot_radius()
+    left = -radius
+    right = +radius
+    top = -radius
+    bottom = +radius
+    x_crop = list(range(left, right + 1))
+    y_crop = list(range(top, bottom + 1))
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    return np.sqrt((x_crop_mesh) ** 2 + (y_crop_mesh) ** 2)
+
+
 def integrate_counts(img_array, pixel_coords, radius=None):
     """Add up the counts around a target set of pixel coordinates in the passed image array.
     Use for getting the total number of photons coming from a target NV.
@@ -69,15 +83,12 @@ def integrate_counts(img_array, pixel_coords, radius=None):
         radius = _get_camera_spot_radius()
 
     # Don't work through all the pixels, just the ones that might be relevant
-    left = int(np.floor(pixel_x - radius))
-    right = int(np.ceil(pixel_x + radius))
-    top = int(np.floor(pixel_y - radius))
-    bottom = int(np.ceil(pixel_y + radius))
-    x_crop = list(range(left, right + 1))
-    y_crop = list(range(top, bottom + 1))
-    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
-    dist = np.sqrt((x_crop_mesh - pixel_x) ** 2 + (y_crop_mesh - pixel_y) ** 2)
+    left = round(pixel_x - radius)
+    right = round(pixel_x + radius)
+    top = round(pixel_y - radius)
+    bottom = round(pixel_y + radius)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
+    dist = _calc_dist_matrix()
 
     counts = np.sum(img_array_crop, where=dist < radius)
     return counts
@@ -225,19 +236,40 @@ def poisson_pmf_cont(k, mean):
     return mean**k * np.exp(-mean) / gamma(k + 1)
 
 
+@cache
+def _calc_mesh_grid(radius=None):
+    radius = _get_camera_spot_radius()
+    half_range = radius
+    one_ax_linspace = np.linspace(-half_range, half_range, 2 * half_range + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(one_ax_linspace, one_ax_linspace)
+    return x_crop_mesh, y_crop_mesh
+
+
+@cache
+def _calc_nvn_count_distribution(nvn_dist_params):
+    x_crop_mesh, y_crop_mesh = _calc_mesh_grid()
+    bg, amp, sigma = nvn_dist_params
+    return bg + amp * np.exp(
+        -(((x_crop_mesh) ** 2) + ((y_crop_mesh) ** 2)) / (2 * sigma**2)
+    )
+
+
+@cache
+def _calc_nv0_count_distribution(nvn_dist_params):
+    bg = nvn_dist_params[0]
+    return bg
+
+
 def charge_state_mle_single(nv_sig, img_array):
     nvn_dist_params = nv_sig.nvn_dist_params
     if nvn_dist_params is None:
         return None
 
     x0, y0 = get_nv_pixel_coords(nv_sig)
-    bg, amp, sigma = nv_sig.nvn_dist_params
-
-    def nvn_count_distribution(x, y):
-        return bg + amp * np.exp(-(((x - x0) ** 2) + ((y - y0) ** 2)) / (2 * sigma**2))
-
-    def nv0_count_distribution(x, y):
-        return bg
+    # x0_r = x0 - round(x0)
+    # y0_r = y0 - round(y0)
+    # bg, amp, sigma = nv_sig.nvn_dist_params
+    # bg = nv_sig.nvn_dist_params[0]
 
     radius = _get_camera_spot_radius()
     half_range = radius
@@ -245,19 +277,26 @@ def charge_state_mle_single(nv_sig, img_array):
     right = round(x0 + half_range)
     top = round(y0 - half_range)
     bottom = round(y0 + half_range)
-    x_crop = np.linspace(left, right, right - left + 1)
-    y_crop = np.linspace(top, bottom, bottom - top + 1)
-    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
     img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
 
-    nvn_probs = poisson_pmf_cont(
-        img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
-    )
-    nv0_probs = poisson_pmf_cont(
-        img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
-    )
+    # x_crop_mesh, y_crop_mesh = _calc_mesh_grid()
 
+    # nvn_count_distribution = bg + amp * np.exp(
+    #     -(((x_crop_mesh - x0_r) ** 2) + ((y_crop_mesh - y0_r) ** 2)) / (2 * sigma**2)
+    # )
+    # nv0_count_distribution = bg
+    nvn_count_distribution = _calc_nvn_count_distribution(nv_sig.nvn_dist_params)
+    nv0_count_distribution = _calc_nv0_count_distribution(nv_sig.nvn_dist_params)
+
+    # fig, ax = plt.subplots()
+    # ax.imshow(img_array_crop)
+    # fig, ax = plt.subplots()
+    # ax.imshow(nvn_count_distribution)
+    # plt.show(block=True)
+
+    nvn_probs = poisson_pmf_cont(img_array_crop, nvn_count_distribution)
+    nv0_probs = poisson_pmf_cont(img_array_crop, nv0_count_distribution)
     nvn_prob = np.nanprod(nvn_probs)
     nv0_prob = np.nanprod(nv0_probs)
     return int(nvn_prob > nv0_prob)
@@ -769,9 +808,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     # max_x = max(x)
     # excess = 0.08 * (max_x - min_x)
     # ax.set_xlim(min_x - excess, max_x + excess)
-    # ncols = 3  # MCC
-    # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
-    ax.legend()
+    ncols = round(num_nvs / 5)
+    ax.legend(ncols=ncols)
 
 
 # Separate plots, shared axes
@@ -822,13 +860,6 @@ def plot_fit(
         color = kpl.data_color_cycler[nv_num]
 
         # MCC
-        # if nv_ind == 1:
-        #     color = kpl.KplColors.GRAY
-        #     ax = axes_pack[-1]
-        # elif nv_ind > 1:
-        #     ax = axes_pack[nv_ind - 1]
-        # else:
-        #     ax = axes_pack[nv_ind]
         ax = axes_pack[nv_ind]
 
         # Include the norm if there is one

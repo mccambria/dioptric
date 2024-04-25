@@ -154,7 +154,6 @@ def macro_polarize(
     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
-    targeted_polarization = False
 
     if verify_charge_states:
         qua.advance_input_stream(_cache_charge_pol_incomplete)

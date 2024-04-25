@@ -35,6 +35,7 @@ from majorroutines.widefield import (
     xy8,
 )
 from utils import common, widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -48,7 +49,7 @@ yellow_laser = "laser_OPTO_589"
 
 
 def do_widefield_image_sample(nv_sig, num_reps=1):
-    image_sample.widefield_image(nv_sig, num_reps)
+    return image_sample.widefield_image(nv_sig, num_reps)
 
 
 def do_scanning_image_sample(nv_sig):
@@ -80,20 +81,6 @@ def do_charge_state_histograms(nv_list, charge_prep_verification=False):
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
     )
-
-
-def do_calibrate_nvn_dist_params(nv_list):
-    data = do_charge_state_histograms(nv_list, charge_prep_verification=True)
-    ref_img_array = data["ref_img_array"]
-
-    nvn_dist_params_list = []
-    for nv in nv_list:
-        popt = optimize.optimize_pixel_with_img_array(
-            ref_img_array, nv, return_popt=True
-        )
-        # bg, amp, sigma
-        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
-    print(nvn_dist_params_list)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -134,14 +121,20 @@ def do_optimize_pixel(nv_sig):
 def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
+    # Pixel optimization in parallel with widefield yellow
+    if coords_key is None:
+        num_reps = 100
+        img_array = do_widefield_image_sample(nv_sig, num_reps=num_reps)
+
     opti_coords_list = []
     for nv in nv_list:
         # Pixel coords
         if coords_key is None:
-            imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
-            if scanning_from_pixel:
-                widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
-            opti_coords = do_optimize_pixel(nv)
+            # imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
+            # if scanning_from_pixel:
+            #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
+            # opti_coords = do_optimize_pixel(nv)
+            opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
             # widefield.reset_all_drift()
 
         # Scanning coords
@@ -231,9 +224,9 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 5
-    # num_runs = 120
-    num_runs = 20
+    num_reps = 10
+    num_runs = 120
+    # num_runs = 2
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -636,90 +629,90 @@ if __name__ == "__main__":
     # region Coords (from March 12th)
 
     pixel_coords_list = [
-        [130.424, 152.027],
-        [149.37, 142.24],
-        [161.89, 127.546],
-        [134.965, 126.404],
-        [126.476, 111.281],
-        [110.102, 110.01],
-        [111.687, 124.857],
-        [82.449, 109.831],
-        [144.021, 186.017],
-        [159.297, 184.106],
-        [173.838, 100.29],
-        [171.224, 71.041],
-        [157.345, 56.683],
-        [104.585, 147.209],
-        [60.285, 99.869],
+        [131.447, 154.371],
+        [149.612, 145.434],
+        [162.289, 130.925],
+        [135.679, 128.482],
+        [126.597, 113.929],
+        [110.558, 113.266],
+        [112.347, 127.94],
+        [83.832, 112.609],
+        [144.666, 188.907],
+        [159.542, 186.902],
+        [174.584, 103.798],
+        [171.363, 74.501],
+        [158.976, 59.177],
+        [105.906, 149.857],
+        [60.542, 102.178],
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [108.521, 109.715],
-        [108.921, 109.958],
-        [109.169, 110.303],
-        [108.587, 110.341],
-        [108.369, 110.67],
-        [108.004, 110.702],
-        [108.103, 110.336],
-        [107.394, 110.71],
-        [108.863, 108.943],
-        [109.167, 108.999],
-        [109.409, 110.958],
-        [109.348, 111.623],
-        [109.039, 111.972],
-        [107.953, 109.844],
-        [106.937, 110.9],
+        [108.485, 109.627],
+        [108.925, 109.878],
+        [109.177, 110.226],
+        [108.606, 110.28],
+        [108.363, 110.59],
+        [107.995, 110.61],
+        [108.077, 110.238],
+        [107.374, 110.612],
+        [108.848, 108.844],
+        [109.176, 108.916],
+        [109.383, 110.881],
+        [109.319, 111.517],
+        [109.02, 111.876],
+        [107.923, 109.72],
+        [106.92, 110.791],
     ]
     red_coords_list = [
-        [73.14, 74.937],
-        [73.457, 75.128],
-        [73.685, 75.413],
-        [73.248, 75.478],
-        [73.037, 75.735],
-        [72.835, 75.712],
-        [72.796, 75.461],
-        [72.33, 75.684],
-        [73.406, 74.299],
-        [73.669, 74.341],
-        [74.036, 75.932],
-        [73.868, 76.536],
-        [73.672, 76.756],
-        [72.707, 75.044],
-        [71.834, 75.944],
+        [73.166, 74.936],
+        [73.442, 75.083],
+        [73.701, 75.35],
+        [73.191, 75.334],
+        [72.997, 75.654],
+        [72.835, 75.638],
+        [72.754, 75.386],
+        [72.278, 75.661],
+        [73.401, 74.276],
+        [73.64, 74.29],
+        [73.978, 75.856],
+        [73.854, 76.464],
+        [73.673, 76.742],
+        [72.754, 74.993],
+        [71.845, 75.925],
     ]
     threshold_list = [
+        26.5,
+        27.5,
+        26.5,
         27.5,
         29.5,
         26.5,
-        26.5,
-        25.5,
-        25.5,
-        27.5,
-        30.5,
-        25.5,
-        24.5,
-        21.5,
+        29.5,
+        29.5,
         20.5,
-        18.5,
-        26.5,
-        19.5,
+        21.5,
+        22.5,
+        23.5,
+        21.5,
+        21.5,
+        22.5,
     ]
     nvn_dist_params_list = [
-        (0.08315799961152527, 0.3864189769082783, 4.048553589061115),
-        (0.11005828903421873, 0.3814565061766918, 4.100601509449526),
-        (0.12180045422854645, 0.3517852928374418, 3.916893498011493),
-        (0.10669062511770351, 0.3085388288047047, 4.144928339948053),
-        (0.16111318055498183, 0.2998192413934377, 3.458275332418897),
-        (0.14416026317186623, 0.2940628997005982, 3.471266801912637),
-        (0.11468325059939738, 0.3395653477068342, 3.9594836469313615),
-        (0.09657099298862892, 0.29912341831268285, 4.356696175225211),
-        (0.09422259066462835, 0.31203234269710906, 4.089553359350482),
-        (0.09569534729173282, 0.3013564204854867, 4.020874846264347),
-        (0.09743199369003977, 0.261914435264353, 4.003147918604017),
-        (0.07226343042817052, 0.2483207060558696, 4.583601391686538),
-        (0.0669240107004653, 0.19765853908103118, 4.779803178027258),
-        (0.10392426590628977, 0.2710379213589781, 4.029635174209021),
-        (0.0742268651079635, 0.21851859748730523, 4.316543516909557),
+        (0.07071426552706035, 0.47583065170288236, 4.236288048825568),
+        (0.04163835182982011, 0.516396683766659, 4.628473895160098),
+        (0.06909467923204098, 0.4719474743537519, 4.262395110455417),
+        (0.11277005462870046, 0.41288126495823285, 4.106801873362106),
+        (0.09782401520213962, 0.4593947095522118, 4.193368460175124),
+        (0.12536270017536777, 0.3570331484143629, 4.128460173203865),
+        (0.10846531586238944, 0.44580880141015894, 4.169048153647073),
+        (0.1346309562294585, 0.33324940037182155, 4.169931874852242),
+        (0.08184606021698992, 0.2839629916604948, 4.039656488039356),
+        (0.08223545427988611, 0.30342841750312155, 3.9152357967316544),
+        (0.10856029655502705, 0.2833730219482223, 3.937731460582444),
+        (0.07515609898177193, 0.34348264491660224, 4.304645870324053),
+        (0.05024329808053294, 0.2887620772501354, 4.8020524304386845),
+        (0.09831243239440975, 0.26636666131983483, 4.053390996542559),
+        (0.09278191541177262, 0.2935196887306656, 4.059763734349599),
     ]
     # endregion
     # region Coords (smiley)
@@ -889,7 +882,6 @@ if __name__ == "__main__":
 
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
-        # do_calibrate_nvn_dist_params(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -910,12 +902,33 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
+
+        data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
+        img_array = np.array(data["ref_img_array"])
+        num_nvs = len(nv_list)
+        counts = [
+            widefield.integrate_counts(
+                img_array, widefield.get_nv_pixel_coords(nv_list[ind])
+            )
+            for ind in range(num_nvs)
+        ]
+        res_thresh = [counts[ind] > nv_list[ind].threshold for ind in range(num_nvs)]
+        res_mle = widefield.charge_state_mle(nv_list, img_array)
+        num_reps = 1000
+        start = time.time()
+        for ind in range(num_reps):
+            widefield.charge_state_mle(nv_list, img_array)
+        stop = time.time()
+        print(stop - start)
+        print(res_thresh)
+        print(res_mle)
+        print([res_mle[ind] == res_thresh[ind] for ind in range(num_nvs)])
 
     # region Cleanup
 

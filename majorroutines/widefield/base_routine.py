@@ -23,9 +23,9 @@ def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
     charge_prep_base(nv_list, initial_states_list)
 
 
-def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
-    if rep_ind == 0:
-        charge_prep_loop(nv_list, initial_states_list)
+# def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
+#     if rep_ind == 0:
+#         charge_prep_loop(nv_list, initial_states_list)
 
 
 def charge_prep_loop(rep_ind, nv_list, initial_states_list=None):
@@ -83,6 +83,7 @@ def charge_prep_base(
             # Move on to next attempt
             attempt_ind += 1
     elif targeted_polarization:
+        charge_pol_target_list = assemble_charge_pol_target_list(states_list)
         pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
     else:
         pass
@@ -125,10 +126,10 @@ def read_and_process_image(nv_list):
                 widefield.threshold(nv_list[nv_ind], counts_list[nv_ind])
             )
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        # start = time.time()
         states_list = widefield.charge_state_mle(nv_list, img_array)
-
-    # stop = time.time()
-    # print(stop - start)
+        # stop = time.time()
+        # print(stop - start)
 
     return img_array, counts_list, states_list
 
@@ -233,7 +234,7 @@ def main(
     median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     if save_images:
         shape = widefield.get_img_array_shape()
-        img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
+        img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -249,7 +250,6 @@ def main(
                 print(f"\nRun index: {run_ind}")
 
                 states_list = None
-                charge_prep_readouts_list = []
 
                 for ind in uwave_ind_list:
                     sig_gen = tb.get_server_sig_gen(ind=ind)
@@ -275,50 +275,47 @@ def main(
                     if not stream_load_in_run_fn:
                         pulse_gen.stream_start()
 
-                    if save_images:
-                        img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
+                    # if save_images:
+                    #     img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
 
                     # Reps loop
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
                             start = time.time()
                             if charge_prep_fn is not None:
-                                charge_prep_readouts = charge_prep_fn(
+                                charge_prep_fn(
                                     rep_ind, nv_list, initial_states_list=states_list
                                 )
-                                charge_prep_readouts_list.append(charge_prep_readouts)
-                            (
-                                img_array,
-                                counts_list,
-                                states_list,
-                            ) = read_and_process_image(nv_list)
+                            (img_array, counts_list, states_list) = (
+                                read_and_process_image(nv_list)
+                            )
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
                             states[exp_ind, :, run_ind, step_ind, rep_ind] = states_list
                             mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
                                 img_array
                             )
-                            median_vals[
-                                exp_ind, run_ind, step_ind, rep_ind
-                            ] = np.median(img_array)
+                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
+                                np.median(img_array)
+                            )
 
                             if save_images:
-                                img_array_list[exp_ind].append(img_array)
+                                img_arrays[
+                                    exp_ind, run_ind, step_ind, rep_ind, :, :
+                                ] = img_array
+                                # img_array_list[exp_ind].append(img_array)
                             stop = time.time()
                             print(stop - start)
                             print()
 
-                    if save_images:
-                        for exp_ind in range(num_exps_per_rep):
-                            img_arrays[exp_ind, run_ind, step_ind, :, :] = np.mean(
-                                img_array_list[exp_ind], axis=0
-                            )
+                    # if save_images:
+                    # for exp_ind in range(num_exps_per_rep):
+                    # img_arrays[exp_ind, run_ind, step_ind, rep_ind, :, :] = (
+                    # np.mean(img_array_list[exp_ind], axis=0)
+                    # )
 
                     pulse_gen.resume()
 
                 ### Move on to the next run
-
-                if len(charge_prep_readouts_list) > 0:
-                    print(np.mean(charge_prep_readouts_list))
 
                 # Turn stuff off
                 pulse_gen.halt()

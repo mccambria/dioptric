@@ -168,7 +168,7 @@ def main(
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -196,15 +196,15 @@ def main(
 
     img_arrays = raw_data["img_arrays"]
     del raw_data["img_arrays"]
-    mean_img_arrays = np.mean(img_arrays, axis=(1, 2))
+    mean_img_arrays = np.mean(img_arrays, axis=(1, 2, 3))
     sig_img_array = mean_img_arrays[0]
     ref_img_array = mean_img_arrays[1]
     diff_img_array = sig_img_array - ref_img_array
-    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    img_arrays_to_save = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
     figs = []
     for ind in range(3):
-        img_array = img_arrays[ind]
+        img_array = img_arrays_to_save[ind]
         title_suffix = title_suffixes[ind]
         fig, ax = plt.subplots()
         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
@@ -215,12 +215,14 @@ def main(
         )
         dm.save_figure(fig, file_path)
 
-    # Histograms
+    ### Processing
     num_nvs = len(nv_list)
+    counts = raw_data["counts"]
     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+    num_shots = num_reps * num_runs
 
-    num_nvs = len(nv_list)
+    # Histograms and thresholding
     threshold_list = []
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
@@ -234,6 +236,27 @@ def main(
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
     print(threshold_list)
+
+    # MLE state estimation
+    shape = widefield.get_img_array_shape()
+    ref_img_arrays = img_arrays[1]
+    ref_img_arrays = ref_img_arrays.reshape((num_shots, *shape))
+    nvn_dist_params_list = []
+    for nv_ind in range(num_nvs):
+        nvn_img_arrays = []
+        nv = nv_list[nv_ind]
+        threshold = threshold_list[nv_ind]
+        ref_counts_list = ref_counts_lists[nv_ind]
+        for shot_ind in range(num_shots):
+            if ref_counts_list[shot_ind] > threshold:
+                nvn_img_arrays.append(ref_img_arrays[shot_ind])
+        mean_img_array = np.mean(nvn_img_arrays, axis=0)
+        popt = optimize.optimize_pixel_with_img_array(
+            mean_img_array, nv, return_popt=True
+        )
+        # bg, amp, sigma
+        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    print(nvn_dist_params_list)
 
     ### Save and clean up
 

@@ -18,6 +18,7 @@ from matplotlib.ticker import MaxNLocator
 from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import factorial
+from scipy.stats import poisson
 
 from majorroutines.widefield import base_routine, optimize
 from utils import common, widefield
@@ -51,17 +52,15 @@ def process_detect_cosmic_rays(data):
     num_shots = len(states_by_nv[0])
     for shot_ind in range(num_shots):
         coincidences.append(num_nvs - np.sum(states_by_nv[:, shot_ind]))
+    coincidences = np.array(coincidences)
     hist_fig, ax = plt.subplots()
     kpl.histogram(ax, coincidences, label=f"Data ({num_nvs} NVs)")
     ax.set_xlabel("Number NVs found in NV0")
     ax.set_ylabel("Number of occurrences")
-    x_linspace = np.linspace(0, num_nvs, 100)
-    kpl.plot_line(
-        ax,
-        x_linspace,
-        num_shots * widefield.poisson_pmf_cont(x_linspace, np.mean(coincidences)),
-        label="Poisson pmf",
-        color=kpl.KplColors.RED,
+    x_vals = np.array(range(0, num_nvs + 1))
+    expected_dist = num_shots * poisson.pmf(x_vals, np.mean(coincidences))
+    kpl.plot_points(
+        ax, x_vals, expected_dist, label="Poisson pmf", color=kpl.KplColors.RED
     )
     ax.legend()
 
