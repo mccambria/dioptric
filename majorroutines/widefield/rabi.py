@@ -100,10 +100,11 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     ### Make the figure
 
-    fig, axes_pack = plt.subplots(
-        nrows=2, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    layout = kpl.calc_mosaic_layout(num_nvs)
+    fig, axes_pack = plt.subplot_mosaic(
+        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
     )
-    axes_pack = axes_pack.flatten()
+    axes_pack = list(axes_pack.values())
 
     norm_counts = np.array([counts[ind] / norms[ind] for ind in range(num_nvs)])
     norm_counts_ste = np.array([counts_ste[ind] / norms[ind] for ind in range(num_nvs)])
@@ -145,7 +146,7 @@ def create_correlation_figure(nv_list, taus, counts):
     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -155,18 +156,24 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
+        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
         seq_args.append(shuffled_taus)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind_list=uwave_ind
+    raw_data = base_routine.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
 
+    counts = raw_data["counts"]
     sig_counts = counts[0]
     ref_counts = counts[1]
     avg_counts, avg_counts_ste, norms = widefield.process_counts(

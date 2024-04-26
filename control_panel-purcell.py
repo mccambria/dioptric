@@ -244,16 +244,17 @@ def do_rabi(nv_list):
     min_tau = 16
     max_tau = 240 + min_tau
     num_steps = 31
-    num_reps = 4
-    num_runs = 20
+    num_reps = 10
+    num_runs = 80
     # num_runs = 2
+    uwave_ind_list = [0, 1]
 
     # min_tau = 64
     # num_steps = 1
     # num_reps = 50
 
     # nv_list[1].spin_flip = True
-    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for ind in range(4):
     #     for flipped in [True, False]:
     #         for nv_ind in range(3):
@@ -859,7 +860,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -885,8 +886,8 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
-        do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        # do_resonance_zoom(nv_list)
+        do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
