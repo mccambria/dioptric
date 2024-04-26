@@ -57,18 +57,20 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     norm_counts_ste = counts_ste / norms_newaxis
 
     fit_fns = []
+    pcovs = []
     popts = []
     center_freqs = []
+    center_freq_errs = []
 
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
         amp_guess = np.max(nv_counts) - 1
 
-        if nv_ind in [3, 5, 7, 10, 12]:
-            num_resonances = 1
-        # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+        # if nv_ind in [3, 5, 7, 10, 12]:
         #     num_resonances = 1
+        if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+            num_resonances = 2
         else:
             num_resonances = 0
 
@@ -119,13 +121,16 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
             # Tracking for plotting
             fit_fns.append(fit_fn)
             popts.append(popt)
+            pcovs.append(pcov)
 
         if num_resonances == 1:
             center_freqs.append(popt[3])
+            center_freq_errs.append(np.sqrt(pcov[3, 3]))
         elif num_resonances == 2:
             center_freqs.append((popt[3], popt[7]))
 
     print(center_freqs)
+    print(center_freq_errs)
 
     ### Make the figure
 
@@ -242,8 +247,8 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1514274260440)
-    # data = dm.get_raw_data(file_id=1514160662353)
+    # data = dm.get_raw_data(file_id=1514274260440)
+    data = dm.get_raw_data(file_id=1514160662353)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -252,7 +257,6 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    # New style counts
     # counts = np.array(data["states"])
     counts = np.array(data["counts"])
     sig_counts = counts[0]
