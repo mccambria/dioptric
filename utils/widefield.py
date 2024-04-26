@@ -266,11 +266,6 @@ def charge_state_mle_single(nv_sig, img_array):
         return None
 
     x0, y0 = get_nv_pixel_coords(nv_sig)
-    # x0_r = x0 - round(x0)
-    # y0_r = y0 - round(y0)
-    # bg, amp, sigma = nv_sig.nvn_dist_params
-    # bg = nv_sig.nvn_dist_params[0]
-
     radius = _get_camera_spot_radius()
     half_range = radius
     left = round(x0 - half_range)
@@ -280,20 +275,8 @@ def charge_state_mle_single(nv_sig, img_array):
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
     img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
 
-    # x_crop_mesh, y_crop_mesh = _calc_mesh_grid()
-
-    # nvn_count_distribution = bg + amp * np.exp(
-    #     -(((x_crop_mesh - x0_r) ** 2) + ((y_crop_mesh - y0_r) ** 2)) / (2 * sigma**2)
-    # )
-    # nv0_count_distribution = bg
-    nvn_count_distribution = _calc_nvn_count_distribution(nv_sig.nvn_dist_params)
-    nv0_count_distribution = _calc_nv0_count_distribution(nv_sig.nvn_dist_params)
-
-    # fig, ax = plt.subplots()
-    # ax.imshow(img_array_crop)
-    # fig, ax = plt.subplots()
-    # ax.imshow(nvn_count_distribution)
-    # plt.show(block=True)
+    nvn_count_distribution = _calc_nvn_count_distribution(nvn_dist_params)
+    nv0_count_distribution = _calc_nv0_count_distribution(nvn_dist_params)
 
     nvn_probs = poisson_pmf_cont(img_array_crop, nvn_count_distribution)
     nv0_probs = poisson_pmf_cont(img_array_crop, nv0_count_distribution)

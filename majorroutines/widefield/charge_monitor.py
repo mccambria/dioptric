@@ -30,14 +30,40 @@ from utils.constants import ChargeStateEstimationMode, LaserKey, NVSig
 
 
 def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
+    charge_prep = True
     main(
         nv_list,
         num_reps,
         num_runs,
         "detect_cosmic_rays",
-        base_routine.charge_prep_no_verification,
+        charge_prep,
         process_detect_cosmic_rays,
         dark_time=dark_time,
+    )
+
+
+def check_readout_fidelity(nv_list, num_reps, num_runs):
+    charge_prep = False
+    main(
+        nv_list,
+        num_reps,
+        num_runs,
+        "check_readout_fidelity",
+        charge_prep,
+        process_check_readout_fidelity,
+    )
+
+
+def charge_quantum_jump(nv_list, num_reps):
+    num_runs = 1
+    charge_prep = False
+    main(
+        nv_list,
+        num_reps,
+        num_runs,
+        "charge_quantum_jump",
+        charge_prep,
+        process_detect_cosmic_rays,
     )
 
 
@@ -70,31 +96,6 @@ def process_detect_cosmic_rays(data):
     return hist_fig, im_fig
 
 
-def check_readout_fidelity(nv_list, num_reps, num_runs):
-    main(
-        nv_list,
-        num_reps,
-        num_runs,
-        "check_readout_fidelity",
-        # base_routine.charge_prep_loop_first_rep,
-        # base_routine.charge_prep_no_verification,
-        base_routine.charge_prep_no_prep,
-        process_check_readout_fidelity,
-    )
-
-
-def charge_quantum_jump(nv_list, num_reps):
-    num_runs = 1
-    main(
-        nv_list,
-        num_reps,
-        num_runs,
-        "charge_quantum_jump",
-        base_routine.charge_prep_loop_first_rep,
-        process_detect_cosmic_rays,
-    )
-
-
 def process_check_readout_fidelity(data):
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -106,7 +107,7 @@ def process_check_readout_fidelity(data):
     charge_state_estimation_mode = config["charge_state_estimation_mode"]
     # charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
     if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
-        states, _ = widefield.threshold_counts(nv_list, sig_counts)
+        states = widefield.threshold_counts(nv_list, sig_counts)
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         states = np.array(data["states"])[0]
 
@@ -163,7 +164,7 @@ def main(
     num_reps,
     num_runs,
     caller_fn_name,
-    charge_prep_fn,
+    charge_prep,
     data_processing_fn,
     dark_time=0,
 ):
@@ -180,10 +181,11 @@ def main(
 
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
-        seq_args = [pol_coords_list, dark_time]
+        seq_args = [pol_coords_list, charge_prep, dark_time]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
+    charge_prep_fn = base_routine.charge_prep_no_verification if charge_prep else None
     raw_data = base_routine.main(
         nv_list,
         num_steps,
@@ -229,13 +231,14 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1511491052952)  # 0.34
     # # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
     # # data = dm.get_raw_data(file_id=1511388302072)  # 0.37
+    data = dm.get_raw_data(file_id=1513573538386)
 
-    # process_check_readout_fidelity(data)
+    process_check_readout_fidelity(data)
 
     ###
 
-    data = dm.get_raw_data(file_id=1512018506235)
+    # data = dm.get_raw_data(file_id=1512018506235)
 
-    process_detect_cosmic_rays(data)
+    # process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

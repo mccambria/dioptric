@@ -56,8 +56,8 @@ config |= {
     "CommonDurations": {
         "uwave_buffer": 1000,
         "default_pulse_duration": 1000,
-        "aod_access_time": 20e3,
-        # "aod_access_time": 100e3,
+        # "aod_access_time": 20e3,
+        "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
     },
     ###
@@ -99,7 +99,7 @@ config |= {
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.87,
-            "rabi_period": 112,
+            "rabi_period": 96,
             "uwave_power": 10,
         },
     },
@@ -151,13 +151,14 @@ config |= {
         # Virtual lasers
         LaserKey.IMAGING: {"name": green_laser, "duration": 6e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
-        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 1e3},
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
         LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.SHELVING: {"name": green_laser, "duration": 48},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
-        LaserKey.SCC: {"name": red_laser, "duration": 144},
+        LaserKey.SCC: {"name": red_laser, "duration": 200},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
@@ -661,7 +662,7 @@ opx_config = {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.115},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
         # Red AOD
@@ -672,7 +673,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.34},  # 30e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.44},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},

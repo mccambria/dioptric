@@ -54,6 +54,9 @@ def charge_prep_base(
             charge_pol_target_list = [el is None or el == 0 for el in states_list]
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
+        # MCC
+        # charge_pol_target_list = [False for ind in range(num_nvs)]
+        # charge_pol_target_list[2] = True
         return charge_pol_target_list
 
     if verify_charge_states:
@@ -275,13 +278,10 @@ def main(
                     if not stream_load_in_run_fn:
                         pulse_gen.stream_start()
 
-                    # if save_images:
-                    #     img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
-
                     # Reps loop
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
-                            start = time.time()
+                            # start = time.time()
                             if charge_prep_fn is not None:
                                 charge_prep_fn(
                                     rep_ind, nv_list, initial_states_list=states_list
@@ -302,16 +302,9 @@ def main(
                                 img_arrays[
                                     exp_ind, run_ind, step_ind, rep_ind, :, :
                                 ] = img_array
-                                # img_array_list[exp_ind].append(img_array)
-                            stop = time.time()
-                            print(stop - start)
-                            print()
-
-                    # if save_images:
-                    # for exp_ind in range(num_exps_per_rep):
-                    # img_arrays[exp_ind, run_ind, step_ind, rep_ind, :, :] = (
-                    # np.mean(img_array_list[exp_ind], axis=0)
-                    # )
+                            # stop = time.time()
+                            # print(stop - start)
+                            # print()
 
                     pulse_gen.resume()
 

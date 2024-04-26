@@ -39,16 +39,17 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     snr_ax.set_xlabel("Ionization pulse duration (ns)")
     snr_ax.set_ylabel("SNR")
 
-    return sig_fig, ref_fig, snr_fig
-
     # Average across NVs
-    # snr_fig, snr_ax = plt.subplots()
+    avg_snr_fig, avg_snr_ax = plt.subplots()
     # avg_avg_snr = np.quantile(avg_snr, 0.75, axis=0)
     # avg_avg_snr_ste = np.quantile(avg_snr_ste, 0.75, axis=0)
-    # kpl.plot_points(snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
-    # snr_ax.set_xlabel("Ionization pulse duration (ns)")
-    # snr_ax.set_ylabel("Average SNR")
+    avg_avg_snr = np.mean(avg_snr, axis=0)
+    avg_avg_snr_ste = None
+    kpl.plot_points(avg_snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
+    avg_snr_ax.set_xlabel("Ionization pulse duration (ns)")
+    avg_snr_ax.set_ylabel("Average SNR")
 
+    return sig_fig, ref_fig, snr_fig
     # return sig_fig, ref_fig, snr_fig, avg_snr_fig
 
 
@@ -64,8 +65,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(uwave_ind)
+        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
 
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
         seq_args.append(shuffled_taus)
@@ -73,7 +73,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -84,6 +84,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Process and plot
 
+    counts = raw_data["states"]
     sig_counts = counts[0]
     ref_counts = counts[1]
 
@@ -127,15 +128,14 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = "2023_11_27-19_31_32-johnson-nv0_2023_11_25"
-    # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1394470302639)  # 120
-    data = dm.get_raw_data(file_id=1394440880735)  # 180
-    # data = dm.get_raw_data(file_id=1394488086583)  # 60
+    # data = dm.get_raw_data(file_id=1513579302278)  # 0.17
+    # data = dm.get_raw_data(file_id=1513581878233)  # 0.19
+    # data = dm.get_raw_data(file_id=1513596399968)  # 0.15
+    data = dm.get_raw_data(file_id=1513602121203)  # 0.16
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    counts = data["counts"]
+    counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 

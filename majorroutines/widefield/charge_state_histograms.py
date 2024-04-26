@@ -143,7 +143,7 @@ def main(
     nv_list,
     num_reps,
     num_runs,
-    charge_prep_verification=True,
+    verify_charge_states=False,
     diff_polarize=False,
     diff_ionize=True,
 ):
@@ -152,7 +152,7 @@ def main(
     seq_file = "charge_state_histograms.py"
     num_steps = 1
 
-    if charge_prep_verification:
+    if verify_charge_states:
         charge_prep_fn = base_routine.charge_prep_loop
     else:
         charge_prep_fn = base_routine.charge_prep_no_verification
@@ -164,7 +164,13 @@ def main(
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
         ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
-        seq_args = [pol_coords_list, ion_coords_list, diff_polarize, diff_ionize]
+        seq_args = [
+            pol_coords_list,
+            ion_coords_list,
+            diff_polarize,
+            diff_ionize,
+            verify_charge_states,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

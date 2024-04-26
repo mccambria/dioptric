@@ -505,12 +505,7 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
 
 
 def _macro_pulse_list(
-    laser_name,
-    coords_list,
-    pulse_name="on",
-    duration=None,
-    target_list=None,
-    # input_stream=None
+    laser_name, coords_list, pulse_name="on", duration=None, target_list=None
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series

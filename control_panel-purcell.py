@@ -74,12 +74,12 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig, num_reps)
 
 
-def do_charge_state_histograms(nv_list, charge_prep_verification=False):
+def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_reps = 50
     num_runs = 10
     # num_runs = 2
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
+        nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
     )
 
 
@@ -179,17 +179,17 @@ def do_calibrate_green_red_delay():
 
 def do_optimize_scc(nv_list):
     min_tau = 16
-    max_tau = 208
-    num_steps = 13
-    num_reps = 10
-    num_runs = 50
+    max_tau = 256
+    num_steps = 16
+    num_reps = 5
+    num_runs = 20
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 20
-    # num_runs = 10
-    num_runs = 2
+    num_reps = 100
+    num_runs = 10
+    # num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
@@ -858,7 +858,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -902,33 +902,34 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
 
-        data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
-        img_array = np.array(data["ref_img_array"])
-        num_nvs = len(nv_list)
-        counts = [
-            widefield.integrate_counts(
-                img_array, widefield.get_nv_pixel_coords(nv_list[ind])
-            )
-            for ind in range(num_nvs)
-        ]
-        res_thresh = [counts[ind] > nv_list[ind].threshold for ind in range(num_nvs)]
-        res_mle = widefield.charge_state_mle(nv_list, img_array)
-        num_reps = 1000
-        start = time.time()
-        for ind in range(num_reps):
-            widefield.charge_state_mle(nv_list, img_array)
-        stop = time.time()
-        print(stop - start)
-        print(res_thresh)
-        print(res_mle)
-        print([res_mle[ind] == res_thresh[ind] for ind in range(num_nvs)])
+        # Performance testing
+        # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
+        # img_array = np.array(data["ref_img_array"])
+        # num_nvs = len(nv_list)
+        # counts = [
+        #     widefield.integrate_counts(
+        #         img_array, widefield.get_nv_pixel_coords(nv_list[ind])
+        #     )
+        #     for ind in range(num_nvs)
+        # ]
+        # res_thresh = [counts[ind] > nv_list[ind].threshold for ind in range(num_nvs)]
+        # res_mle = widefield.charge_state_mle(nv_list, img_array)
+        # num_reps = 1000
+        # start = time.time()
+        # for ind in range(num_reps):
+        #     widefield.charge_state_mle(nv_list, img_array)
+        # stop = time.time()
+        # print(stop - start)
+        # print(res_thresh)
+        # print(res_mle)
+        # print([res_mle[ind] == res_thresh[ind] for ind in range(num_nvs)])
 
     # region Cleanup
 
