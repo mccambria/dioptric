@@ -79,7 +79,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         num_reps,
         num_runs,
         run_fn=run_fn,
-        uwave_ind=uwave_ind,
+        uwave_ind_list=uwave_ind,
     )
 
     ### Process and plot

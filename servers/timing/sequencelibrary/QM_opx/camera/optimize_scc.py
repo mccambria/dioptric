@@ -19,18 +19,17 @@ def get_seq(
     pol_coords_list,
     ion_coords_list,
     spin_flip_ind_list,
-    uwave_ind,
+    uwave_ind_list,
     ion_duration_ns_list,
     num_reps,
 ):
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    buffer = seq_utils.get_widefield_operation_buffer()
     num_nvs = len(pol_coords_list)
 
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
+
     def sig_exp():
-        qua.align()
-        qua.play("pi_pulse", sig_gen_el)
-        qua.wait(buffer, sig_gen_el)
+        seq_utils.macro_pi_pulse(uwave_ind_list)
 
     def ref_exp():
         pass
@@ -48,7 +47,7 @@ def get_seq(
             seq_utils.macro_polarize(pol_coords_list)
             uwave_macro_list[exp_ind]()
             seq_utils.macro_scc(
-                ion_coords_list, spin_flip_ind_list, uwave_ind, ion_duration
+                ion_coords_list, spin_flip_ind_list, uwave_ind_list, ion_duration
             )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()

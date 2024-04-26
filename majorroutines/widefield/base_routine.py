@@ -144,7 +144,7 @@ def main(
     num_runs,
     run_fn=None,
     step_fn=None,
-    uwave_ind=0,
+    uwave_ind_list=0,
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,
@@ -209,16 +209,14 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
 
     # Sig gen setup - all but turning on the output
-    if isinstance(uwave_ind, int):
-        uwave_ind_list = [uwave_ind]
-    else:
-        uwave_ind_list = uwave_ind
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
     for ind in uwave_ind_list:
         uwave_dict = tb.get_uwave_dict(ind)
         uwave_power = uwave_dict["uwave_power"]
         if uwave_freq is None:
             freq = uwave_dict["frequency"]
-        elif isinstance(uwave_ind, int):
+        elif isinstance(uwave_freq, float):
             freq = uwave_freq
         else:
             freq = uwave_freq[ind]
@@ -349,7 +347,7 @@ def main(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
-        "uwave_ind": uwave_ind,
+        "uwave_ind": uwave_ind_list,
         "uwave_freq": uwave_freq,
         "num_exps_per_rep": num_exps_per_rep,
         "load_iq": load_iq,

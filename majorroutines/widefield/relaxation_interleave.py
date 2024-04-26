@@ -7,7 +7,6 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
 import sys
 import time
 
@@ -277,7 +276,7 @@ def main(
         num_reps,
         num_runs,
         step_fn,
-        uwave_ind=[0, 1],
+        uwave_ind_list=[0, 1],
         num_exps_per_rep=2,
     )
     counts_0 = counts[0]

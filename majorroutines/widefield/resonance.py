@@ -180,7 +180,13 @@ def main(
         sig_gen.set_freq(freq)
 
     raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn, step_fn, uwave_ind=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn,
+        step_fn,
+        uwave_ind_list=uwave_ind,
     )
     counts = raw_data["counts"]
 

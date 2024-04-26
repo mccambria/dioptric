@@ -17,7 +17,7 @@ def macro(
     pol_coords_list,
     ion_coords_list,
     spin_flip_ind_list,
-    uwave_ind,
+    uwave_ind_list,
     uwave_macro,
     step_vals=None,
     num_reps=1,
@@ -92,7 +92,7 @@ def macro(
             None if exp_ind == num_exps_per_rep - 1 else spin_flip_ind_list
         )
         seq_utils.macro_scc(
-            ion_coords_list, exp_spin_flip_ind_list, uwave_ind, ion_duration_ns
+            ion_coords_list, exp_spin_flip_ind_list, uwave_ind_list, ion_duration_ns
         )
         seq_utils.macro_charge_state_readout(readout_duration_ns)
         seq_utils.macro_wait_for_trigger()

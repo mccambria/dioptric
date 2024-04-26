@@ -98,7 +98,7 @@ config |= {
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
-            "frequency": 2.87,
+            "frequency": 2.812,
             "rabi_period": 96,
             "uwave_power": 10,
         },
@@ -669,7 +669,7 @@ opx_config = {
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.17},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.16},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.34},  # 30e6
