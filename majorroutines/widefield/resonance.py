@@ -43,7 +43,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     num_freqs = len(freqs)
     half_num_freqs = num_freqs // 2
 
-    def constant(freq, norm):
+    def constant(freq):
+        norm = 1
         if isinstance(freq, list):
             return [norm] * len(freq)
         elif type(freq) == np.ndarray:
@@ -64,13 +65,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
         nv_counts_ste = norm_counts_ste[nv_ind]
         amp_guess = np.max(nv_counts) - 1
 
-        num_resonances = 2
+        if nv_ind in [3, 5, 7, 10, 12]:
+            num_resonances = 1
+        # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+        #     num_resonances = 1
+        else:
+            num_resonances = 0
 
-        if num_resonances == 0:
-            guess_params = []
-            bounds = [[0], [np.inf]]
-            fit_fn = constant
-        elif num_resonances == 1:
+        if num_resonances == 1:
             guess_params = [amp_guess, 5, 5, np.median(freqs)]
             bounds = [[0] * 4, [np.inf] * 4]
             # Limit linewidths
@@ -101,21 +103,25 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
             def fit_fn(freq, *args):
                 return 1 + voigt(freq, *args[:4]) + voigt(freq, *args[4:])
 
-        _, popt, pcov = fit_resonance(
-            freqs,
-            nv_counts,
-            nv_counts_ste,
-            fit_func=fit_fn,
-            guess_params=guess_params,
-            bounds=bounds,
-        )
+        if num_resonances == 0:
+            fit_fns.append(constant)
+            popts.append([])
+        else:
+            _, popt, pcov = fit_resonance(
+                freqs,
+                nv_counts,
+                nv_counts_ste,
+                fit_func=fit_fn,
+                guess_params=guess_params,
+                bounds=bounds,
+            )
 
-        # Tracking for plotting
-        fit_fns.append(fit_fn)
-        popts.append(popt)
+            # Tracking for plotting
+            fit_fns.append(fit_fn)
+            popts.append(popt)
 
         if num_resonances == 1:
-            center_freqs.append(popt[4])
+            center_freqs.append(popt[3])
         elif num_resonances == 2:
             center_freqs.append((popt[3], popt[7]))
 
@@ -236,7 +242,8 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1513065556571)
+    data = dm.get_raw_data(file_id=1514274260440)
+    # data = dm.get_raw_data(file_id=1514160662353)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
