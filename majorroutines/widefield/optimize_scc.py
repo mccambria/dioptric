@@ -132,6 +132,7 @@ if __name__ == "__main__":
 
     nv_list = data["nv_list"]
     taus = data["taus"]
+    # counts = np.array(data["counts"])
     counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
