@@ -93,9 +93,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
         print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
-    rabi_periods = [
-        round(1 / el[2], 2) for el in popts if el is not None and len(el) > 1
-    ]
+    rabi_periods = [None if el is None else round(1 / el[1], 2) for el in popts]
     print(f"rabi_periods: {rabi_periods}")
 
     ### Make the figure
@@ -218,21 +216,24 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1500286727132)
+    data = dm.get_raw_data(file_id=1514615480420)
 
     nv_list = data["nv_list"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     taus = data["taus"]
-    counts = np.array(data["counts"])
+
+    counts = np.array(data["states"])
+    # counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, no_threshold=True
-    )
+    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    #     nv_list, sig_counts, ref_counts
+    # )
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
+
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
