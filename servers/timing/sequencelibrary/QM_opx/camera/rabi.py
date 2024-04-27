@@ -22,27 +22,33 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
 def get_seq(
     pol_coords_list,
     ion_coords_list,
-    anticorrelation_ind_list,
-    uwave_ind,
+    spin_flip_ind_list,
+    uwave_ind_list,
     step_vals,
     num_reps=1,
 ):
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
+    sig_gen_els = [
+        seq_utils.get_sig_gen_element(uwave_ind) for uwave_ind in uwave_ind_list
+    ]
     step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
 
         def uwave_macro_sig(step_val):
-            qua.align()
-            qua.play("on", sig_gen_el, duration=step_val)
-            qua.wait(buffer, sig_gen_el)
+            for uwave_ind in uwave_ind_list:
+                sig_gen_el = sig_gen_els[uwave_ind]
+                qua.align()
+                qua.play("on", sig_gen_el, duration=step_val)
+                qua.wait(buffer, sig_gen_el)
 
         base_sequence.macro(
             pol_coords_list,
             ion_coords_list,
-            anticorrelation_ind_list,
-            uwave_ind,
+            spin_flip_ind_list,
+            uwave_ind_list,
             uwave_macro_sig,
             step_vals,
             num_reps,

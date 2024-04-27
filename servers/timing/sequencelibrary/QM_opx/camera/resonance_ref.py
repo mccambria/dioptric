@@ -23,7 +23,7 @@ def get_seq(
     pol_coords_list,
     ion_coords_list,
     spin_flip_ind_list,
-    uwave_ind,
+    uwave_ind_list,
     step_vals=None,
     num_reps=1,
     reference=True,
@@ -32,6 +32,8 @@ def get_seq(
     readout_duration_ns=None,
     phase=None,
 ):
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
     # if phase is not None:
     #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
     # phase_rad = phase * (np.pi / 180)
@@ -39,24 +41,16 @@ def get_seq(
     # q_comp = 0.5 * np.sin(phase_rad)
     # iq_pulse_dict = {0: , 90:}
 
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    buffer = seq_utils.get_widefield_operation_buffer()
-
     with qua.program() as seq:
 
         def uwave_macro_sig(step_val):
-            qua.align()
-            qua.play("pi_pulse", sig_gen_el)
-            # if phase is not None:
-            #     qua.play("pi_pulse", i_el)
-            #     qua.play("pi_pulse", q_el)
-            qua.wait(buffer, sig_gen_el)
+            seq_utils.macro_pi_pulse(uwave_ind_list)
 
         base_sequence.macro(
             pol_coords_list,
             ion_coords_list,
             spin_flip_ind_list,
-            uwave_ind,
+            uwave_ind_list,
             uwave_macro_sig,
             step_vals,
             num_reps,

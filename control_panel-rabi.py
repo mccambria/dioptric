@@ -10,7 +10,6 @@ Created on June 16th, 2023
 
 ### Imports
 
-
 import copy
 import os
 import sys
@@ -213,7 +212,13 @@ def do_rabi(nv_list):
     num_runs = 50
     uwave_ind = 0
     rabi.main(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind_list=uwave_ind,
     )
 
 

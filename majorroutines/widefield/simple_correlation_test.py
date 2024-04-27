@@ -85,7 +85,7 @@ def main(nv_list, num_reps, num_runs):
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind=uwave_ind
+        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind_list=uwave_ind
     )
 
     ### Process and plot

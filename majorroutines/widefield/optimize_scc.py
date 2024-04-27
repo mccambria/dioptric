@@ -79,7 +79,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         num_reps,
         num_runs,
         run_fn=run_fn,
-        uwave_ind=uwave_ind,
+        uwave_ind_list=uwave_ind,
     )
 
     ### Process and plot
@@ -128,13 +128,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1513579302278)  # 0.17
-    # data = dm.get_raw_data(file_id=1513581878233)  # 0.19
-    # data = dm.get_raw_data(file_id=1513596399968)  # 0.15
-    data = dm.get_raw_data(file_id=1513602121203)  # 0.16
+    data = dm.get_raw_data(file_id=1514918473805)  # 0.175
 
     nv_list = data["nv_list"]
     taus = data["taus"]
+    # counts = np.array(data["counts"])
     counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]

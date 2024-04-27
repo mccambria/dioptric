@@ -260,7 +260,7 @@ def macro_ionize(ion_coords_list, ion_duration=None):
 def macro_scc(
     ion_coords_list,
     spin_flip_ind_list=None,
-    uwave_ind=None,
+    uwave_ind_list=None,
     ion_duration=None,
     shelving_coords_list=None,
 ):
@@ -286,7 +286,7 @@ def macro_scc(
         _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list)
     else:
         _macro_scc_no_shelving(
-            ion_coords_list, spin_flip_ind_list, uwave_ind, ion_duration
+            ion_coords_list, spin_flip_ind_list, uwave_ind_list, ion_duration
         )
 
 
@@ -338,7 +338,7 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
 
 
 def _macro_scc_no_shelving(
-    ion_coords_list, spin_flip_ind_list=None, uwave_ind=None, ion_duration=None
+    ion_coords_list, spin_flip_ind_list=None, uwave_ind_list=None, ion_duration=None
 ):
     # Basic setup
 
@@ -364,20 +364,26 @@ def _macro_scc_no_shelving(
     if len(spin_flip_ind_list) == 0:
         return
 
-    sig_gen_el = get_sig_gen_element(uwave_ind)
-    buffer = get_widefield_operation_buffer()
-
     second_ion_coords_list = [
         ion_coords_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
     ]
 
-    qua.align()
-    qua.play("pi_pulse", sig_gen_el)
-    qua.wait(buffer, sig_gen_el)
+    macro_pi_pulse(uwave_ind_list)
 
     _macro_pulse_list(
         ion_laser_name, second_ion_coords_list, ion_pulse_name, ion_duration
     )
+
+
+def macro_pi_pulse(uwave_ind_list):
+    if uwave_ind_list is None:
+        return
+    buffer = get_widefield_operation_buffer()
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        qua.align()
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(buffer, sig_gen_el)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):

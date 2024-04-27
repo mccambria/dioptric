@@ -182,13 +182,21 @@ def do_optimize_scc(nv_list):
     max_tau = 256
     num_steps = 16
     num_reps = 5
-    num_runs = 20
+
+    # min_tau = 16
+    # max_tau = 104
+    # num_steps = 12
+    # num_reps = 8
+
+    num_runs = 20 * 25
+
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
     num_runs = 10
+    # num_runs = 5
     # num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
@@ -231,28 +239,30 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.8572
-    freq_range = 0.060
-    num_steps = 20
-    num_reps = 10
-    num_runs = 20
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    # freq_center = 2.8572
+    for freq_center in (2.858, 2.812):
+        freq_range = 0.060
+        num_steps = 20
+        num_reps = 15
+        num_runs = 120
+        resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_rabi(nv_list):
     min_tau = 16
     max_tau = 240 + min_tau
     num_steps = 31
-    num_reps = 4
-    num_runs = 20
+    num_reps = 10
+    num_runs = 80
     # num_runs = 2
+    uwave_ind_list = [0, 1]
 
     # min_tau = 64
     # num_steps = 1
     # num_reps = 50
 
     # nv_list[1].spin_flip = True
-    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for ind in range(4):
     #     for flipped in [True, False]:
     #         for nv_ind in range(3):
@@ -858,7 +868,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -902,8 +912,8 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
+        do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

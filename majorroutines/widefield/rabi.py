@@ -93,17 +93,16 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
         print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
-    rabi_periods = [
-        round(1 / el[2], 2) for el in popts if el is not None and len(el) > 1
-    ]
+    rabi_periods = [None if el is None else round(1 / el[1], 2) for el in popts]
     print(f"rabi_periods: {rabi_periods}")
 
     ### Make the figure
 
-    fig, axes_pack = plt.subplots(
-        nrows=2, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
+    layout = kpl.calc_mosaic_layout(num_nvs)
+    fig, axes_pack = plt.subplot_mosaic(
+        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
     )
-    axes_pack = axes_pack.flatten()
+    axes_pack = list(axes_pack.values())
 
     norm_counts = np.array([counts[ind] / norms[ind] for ind in range(num_nvs)])
     norm_counts_ste = np.array([counts_ste[ind] / norms[ind] for ind in range(num_nvs)])
@@ -145,7 +144,7 @@ def create_correlation_figure(nv_list, taus, counts):
     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -155,18 +154,24 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
+        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
         seq_args.append(shuffled_taus)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind=uwave_ind
+    raw_data = base_routine.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
 
+    counts = raw_data["counts"]
     sig_counts = counts[0]
     ref_counts = counts[1]
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
@@ -211,21 +216,24 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1500286727132)
+    data = dm.get_raw_data(file_id=1514615480420)
 
     nv_list = data["nv_list"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     taus = data["taus"]
-    counts = np.array(data["counts"])
+
+    counts = np.array(data["states"])
+    # counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, no_threshold=True
-    )
+    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    #     nv_list, sig_counts, ref_counts
+    # )
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
+
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
