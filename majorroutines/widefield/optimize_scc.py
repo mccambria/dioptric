@@ -24,15 +24,15 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
     # avg_snr_ste = None
 
-    sig_fig, sig_ax = plt.subplots()
-    widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
-    sig_ax.set_xlabel("Ionization pulse duration (ns)")
-    sig_ax.set_ylabel("Signal counts")
+    # sig_fig, sig_ax = plt.subplots()
+    # widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
+    # sig_ax.set_xlabel("Ionization pulse duration (ns)")
+    # sig_ax.set_ylabel("Signal counts")
 
-    ref_fig, ref_ax = plt.subplots()
-    widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
-    ref_ax.set_xlabel("Ionization pulse duration (ns)")
-    ref_ax.set_ylabel("Reference counts")
+    # ref_fig, ref_ax = plt.subplots()
+    # widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
+    # ref_ax.set_xlabel("Ionization pulse duration (ns)")
+    # ref_ax.set_ylabel("Reference counts")
 
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
@@ -128,7 +128,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1514918473805)  # 0.175
+    # data = dm.get_raw_data(file_id=1514918473805)  # 0.175
+    data = dm.get_raw_data(file_id=1515037393294)  # 0.165
 
     nv_list = data["nv_list"]
     taus = data["taus"]
