@@ -130,6 +130,7 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1514918473805)  # 0.175
     data = dm.get_raw_data(file_id=1515037393294)  # 0.165
+    # data = dm.get_raw_data(file_id=1515235873307)  # 0.155
 
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -137,6 +138,10 @@ if __name__ == "__main__":
     counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
+
+    # states = np.array(data["states"])
+    # sig_states = states[0]
+    # ref_states = states[1]
 
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 

@@ -788,6 +788,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         )
 
         # MCC
+        print(nv_sig.threshold)
         ax.legend()
         kpl.show(block=True)
         fig, ax = plt.subplots()
