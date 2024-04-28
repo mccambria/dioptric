@@ -24,15 +24,15 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
     # avg_snr_ste = None
 
-    # sig_fig, sig_ax = plt.subplots()
-    # widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
-    # sig_ax.set_xlabel("Ionization pulse duration (ns)")
-    # sig_ax.set_ylabel("Signal counts")
+    sig_fig, sig_ax = plt.subplots()
+    widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
+    sig_ax.set_xlabel("Ionization pulse duration (ns)")
+    sig_ax.set_ylabel("Signal counts")
 
-    # ref_fig, ref_ax = plt.subplots()
-    # widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
-    # ref_ax.set_xlabel("Ionization pulse duration (ns)")
-    # ref_ax.set_ylabel("Reference counts")
+    ref_fig, ref_ax = plt.subplots()
+    widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
+    ref_ax.set_xlabel("Ionization pulse duration (ns)")
+    ref_ax.set_ylabel("Reference counts")
 
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
