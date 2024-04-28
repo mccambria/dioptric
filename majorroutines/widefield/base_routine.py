@@ -150,7 +150,7 @@ def main(
     load_iq=False,
     save_images=False,
     stream_load_in_run_fn=True,
-    charge_prep_fn=charge_prep_no_verification,
+    charge_prep_fn=None,
 ) -> tuple[np.ndarray, dict]:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 

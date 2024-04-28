@@ -132,7 +132,7 @@ def macro_polarize(
     pol_coords_list,
     pol_duration=None,
     spin_pol=True,
-    targeted_polarization=True,
+    targeted_polarization=False,
     verify_charge_states=False,
 ):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.

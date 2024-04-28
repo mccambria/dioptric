@@ -87,6 +87,7 @@ def macro(
     def one_exp(exp_ind):
         seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
         uwave_macro[exp_ind](step_val)
+
         # Always look at ms=0 counts for the reference
         exp_spin_flip_ind_list = (
             None if exp_ind == num_exps_per_rep - 1 else spin_flip_ind_list
