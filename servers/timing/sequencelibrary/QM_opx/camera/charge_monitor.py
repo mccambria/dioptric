@@ -29,7 +29,9 @@ def get_seq(pol_coords_list, charge_prep, dark_time_ns, num_reps):
 
         def one_rep():
             if charge_prep:
-                seq_utils.macro_polarize(pol_coords_list, spin_pol=False)
+                seq_utils.macro_polarize(
+                    pol_coords_list, spin_pol=False, targeted_polarization=True
+                )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
             if dark_time > 0:

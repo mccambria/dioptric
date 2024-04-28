@@ -195,9 +195,7 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
-    num_runs = 10
-    # num_runs = 5
-    # num_runs = 2
+    num_runs = 30
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
@@ -838,7 +836,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([0, -40])
+        # widefield.set_pixel_drift([+3, -6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -912,8 +910,8 @@ if __name__ == "__main__":
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
-        # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

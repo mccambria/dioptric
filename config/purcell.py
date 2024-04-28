@@ -159,7 +159,7 @@ config |= {
         LaserKey.SHELVING: {"name": green_laser, "duration": 48},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
-        LaserKey.SCC: {"name": red_laser, "duration": 192},
+        LaserKey.SCC: {"name": red_laser, "duration": 16},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
@@ -663,8 +663,9 @@ opx_config = {
     "waveforms": {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.09},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
         # Red AOD

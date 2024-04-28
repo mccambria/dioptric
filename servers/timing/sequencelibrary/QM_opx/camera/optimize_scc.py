@@ -36,7 +36,6 @@ def get_seq(
 
     uwave_macro_list = [sig_exp, ref_exp]
     num_exps_per_rep = len(uwave_macro_list)
-
     ion_duration_list = [seq_utils.convert_ns_to_cc(el) for el in ion_duration_ns_list]
 
     with qua.program() as seq:

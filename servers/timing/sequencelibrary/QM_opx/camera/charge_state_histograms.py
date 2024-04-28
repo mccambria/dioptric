@@ -48,6 +48,7 @@ def get_seq(
                 seq_utils.macro_polarize(
                     pol_coords_list,
                     spin_pol=False,
+                    targeted_polarization=verify_charge_states,
                     verify_charge_states=verify_charge_states,
                 )
 
