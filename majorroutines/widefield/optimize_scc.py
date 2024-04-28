@@ -142,7 +142,6 @@ if __name__ == "__main__":
 
     states = np.array(data["states"])
     sig_states = states[0]
-
     ref_states = states[1]
 
     for ind in range(5):
