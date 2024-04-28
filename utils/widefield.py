@@ -768,6 +768,10 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
+        # if nv_ind in [3, 5, 7, 10, 12]:
+        #     continue
+        # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+        #     continue
         nv_sig = nv_list[nv_ind]
         nv_num = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
@@ -784,6 +788,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         )
 
         # MCC
+        # print(nv_sig.threshold)
+        # ax.legend()
         # kpl.show(block=True)
         # fig, ax = plt.subplots()
 
