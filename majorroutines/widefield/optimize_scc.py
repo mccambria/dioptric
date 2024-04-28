@@ -24,15 +24,15 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
     # avg_snr_ste = None
 
-    # sig_fig, sig_ax = plt.subplots()
-    # widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
-    # sig_ax.set_xlabel("Ionization pulse duration (ns)")
-    # sig_ax.set_ylabel("Signal counts")
+    sig_fig, sig_ax = plt.subplots()
+    widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
+    sig_ax.set_xlabel("Ionization pulse duration (ns)")
+    sig_ax.set_ylabel("Signal counts")
 
-    # ref_fig, ref_ax = plt.subplots()
-    # widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
-    # ref_ax.set_xlabel("Ionization pulse duration (ns)")
-    # ref_ax.set_ylabel("Reference counts")
+    ref_fig, ref_ax = plt.subplots()
+    widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
+    ref_ax.set_xlabel("Ionization pulse duration (ns)")
+    ref_ax.set_ylabel("Reference counts")
 
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
@@ -129,19 +129,28 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1514918473805)  # 0.175
-    data = dm.get_raw_data(file_id=1515037393294)  # 0.165
+    # data = dm.get_raw_data(file_id=1515037393294)  # 0.165
     # data = dm.get_raw_data(file_id=1515235873307)  # 0.155
+    data = dm.get_raw_data(file_id=1515724595074)  # no uwaves
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    # states = np.array(data["states"])
-    # sig_states = states[0]
-    # ref_states = states[1]
+    states = np.array(data["states"])
+    sig_states = states[0]
+    ref_states = states[1]
+
+    for ind in range(5):
+        sig_counts_slc = sig_counts[:, :, :, ind : ind + 1]
+        ref_counts_slc = ref_counts[:, :, :, ind : ind + 1]
+        sig_states_slc = sig_states[:, :, :, ind : ind + 1]
+        ref_states_slc = ref_states[:, :, :, ind : ind + 1]
+        print(np.mean(sig_counts_slc, where=sig_states_slc.astype(bool)))
+        print(np.mean(ref_counts_slc, where=ref_states_slc.astype(bool)))
 
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 
