@@ -17,13 +17,19 @@ import sys
 import time
 import numpy as np
 
+sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 from slmsuite.hardware.cameras.camera import Camera
 
-DEFAULT_DLL_PATH = (
-    "C:\\Program Files\\Thorlabs\\Scientific Imaging\\"
-    "Scientific Camera Support\\Scientific Camera "
-    "Interfaces\\SDK\\Native Toolkit\\dlls\\Native_"
-)
+# DEFAULT_DLL_PATH = (
+#     "C:\\Program Files\\Thorlabs\\Scientific Imaging\\"
+#     "Scientific Camera Support\\Scientific Camera "
+#     "Interfaces\\SDK\\Native Toolkit\\dlls\\Native_64_lib"
+# )
+# DEFAULT_DLL_PATH = (
+#     "C:\\Program Files\\Thorlabs\\Scientific Imaging\\Scientific Camera Support\\"
+#     "Scientific Camera Interfaces\\SDK\\Native Toolkit\\dlls\\Native_64_lib"
+# )
+DEFAULT_DLL_PATH = ("C:\\Users\\Saroj Chand\\Documents\\dioptric\\servers\\inputs\\slmsuite\\hardware\\cameras\\dlls\\Native_64_lib")
 
 def configure_tlcam_dll_path(dll_path=DEFAULT_DLL_PATH):
     """

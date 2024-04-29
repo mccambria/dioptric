@@ -10,6 +10,8 @@ from slmsuite.holography import toolbox
 from slmsuite.misc.math import INTEGER_TYPES
 from slmsuite.holography import analysis
 
+import sys
+sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 
 class SLM:
     """
