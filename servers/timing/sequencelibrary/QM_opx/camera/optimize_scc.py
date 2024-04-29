@@ -13,54 +13,23 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(
-    pol_coords_list,
-    ion_coords_list,
-    spin_flip_ind_list,
-    uwave_ind_list,
-    ion_duration_ns_list,
-    num_reps,
-):
-    num_nvs = len(pol_coords_list)
-
-    if isinstance(uwave_ind_list, int):
-        uwave_ind_list = [uwave_ind_list]
-
-    def sig_exp():
-        seq_utils.macro_pi_pulse(uwave_ind_list)
-
-    def ref_exp():
-        pass
-
-    uwave_macro_list = [sig_exp, ref_exp]
-    num_exps_per_rep = len(uwave_macro_list)
-    ion_duration_list = [seq_utils.convert_ns_to_cc(el) for el in ion_duration_ns_list]
-
+def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
     with qua.program() as seq:
-        seq_utils.init(num_nvs)
-        ion_duration = qua.declare(int)
 
-        def one_exp(exp_ind):
-            seq_utils.macro_polarize(pol_coords_list)
-            uwave_macro_list[exp_ind]()
-            seq_utils.macro_scc(
-                ion_coords_list, spin_flip_ind_list, uwave_ind_list, ion_duration
+        def uwave_macro_sig(uwave_ind_list, step_val):
+            seq_utils.macro_pi_pulse(uwave_ind_list)
+
+        for val in scc_duration_steps:
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                uwave_macro_sig,
+                step_vals=None,
+                num_reps=num_reps,
+                scc_duration_ns=val,
             )
-            seq_utils.macro_charge_state_readout()
-            seq_utils.macro_wait_for_trigger()
-
-        def one_rep():
-            for exp_ind in range(num_exps_per_rep):
-                one_exp(exp_ind)
-
-        def one_step():
-            seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-            seq_utils.macro_pause()
-
-        with qua.for_each_(ion_duration, ion_duration_list):
-            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

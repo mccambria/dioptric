@@ -16,14 +16,11 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(
-    pol_coords_list,
-    ion_coords_list,
-    spin_flip_ind_list,
-    uwave_ind_list,
+    base_scc_seq_args,
     step_vals=None,
     num_reps=1,
     reference=True,
@@ -32,8 +29,6 @@ def get_seq(
     readout_duration_ns=None,
     phase=None,
 ):
-    if isinstance(uwave_ind_list, int):
-        uwave_ind_list = [uwave_ind_list]
     # if phase is not None:
     #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
     # phase_rad = phase * (np.pi / 180)
@@ -43,14 +38,11 @@ def get_seq(
 
     with qua.program() as seq:
 
-        def uwave_macro_sig(step_val):
+        def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        base_sequence.macro(
-            pol_coords_list,
-            ion_coords_list,
-            spin_flip_ind_list,
-            uwave_ind_list,
+        base_scc_sequence.macro(
+            base_scc_seq_args,
             uwave_macro_sig,
             step_vals,
             num_reps,

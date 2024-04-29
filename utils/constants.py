@@ -29,6 +29,7 @@ class NVSig:
     # the end of a spin experiment prior to readout. Useful for anticorrelations
     # and rejecting common mode noise
     spin_flip: bool = False
+    scc_duration: int = None
     nvn_dist_params: tuple = None  # bg, amp, sigma
 
 

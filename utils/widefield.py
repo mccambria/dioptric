@@ -406,7 +406,7 @@ def get_nv_num(nv_sig):
     return nv_num
 
 
-def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
+def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     """Return base seq_args for any SCC routine. The base sequence arguments
     are the minimum info required for state preparation and SCC
 
@@ -424,9 +424,17 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
     """
 
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
-    ion_coords_list = get_coords_list(nv_list, LaserKey.SCC)
+    scc_coords_list = get_coords_list(nv_list, LaserKey.SCC)
+    scc_duration_list = get_scc_duration_list(nv_list)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
-    seq_args = [pol_coords_list, ion_coords_list, spin_flip_ind_list, uwave_ind]
+
+    seq_args = [
+        pol_coords_list,
+        scc_coords_list,
+        scc_duration_list,
+        spin_flip_ind_list,
+        uwave_ind_list,
+    ]
     return seq_args
 
 
@@ -445,6 +453,19 @@ def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
 def get_spin_flip_ind_list(nv_list: list[NVSig]):
     num_nvs = len(nv_list)
     return [ind for ind in range(num_nvs) if nv_list[ind].spin_flip]
+
+
+def get_scc_duration_list(nv_list: list[NVSig]):
+    scc_duration_list = []
+    for nv in nv_list:
+        scc_duration = nv.scc_duration
+        if scc_duration is None:
+            config = common.get_config_dict()
+            scc_duration = config["Optics"][LaserKey.SCC]["duration"]
+        if not (scc_duration % 4 == 0 and scc_duration >= 16):
+            raise RuntimeError("SCC pulse duration not valid for OPX.")
+        scc_duration_list.append(scc_duration)
+    return scc_duration_list
 
 
 # endregion
@@ -788,10 +809,9 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         )
 
         # MCC
-        # print(nv_sig.threshold)
-        # ax.legend()
-        # kpl.show(block=True)
-        # fig, ax = plt.subplots()
+        ax.legend()
+        kpl.show(block=True)
+        fig, ax = plt.subplots()
 
     # min_x = min(x)
     # max_x = max(x)
