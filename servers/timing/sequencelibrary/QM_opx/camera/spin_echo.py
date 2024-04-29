@@ -14,7 +14,7 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(args, num_reps):
@@ -35,7 +35,9 @@ def get_seq(args, num_reps):
         qua.play("pi_on_2_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
 
-    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
+    seq = base_scc_sequence.get_seq(
+        pol_coords_list, ion_coords_list, num_reps, uwave_macro
+    )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
