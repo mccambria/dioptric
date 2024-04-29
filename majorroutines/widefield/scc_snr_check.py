@@ -50,12 +50,15 @@ def main(nv_list, num_reps, num_runs):
 
     uwave_ind_list = [0, 1]
 
+    # seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), [0]]
+    # print(seq_args)
+    # return
+
     seq_file = "resonance_ref.py"
     pulse_gen = tb.get_server_pulse_gen()
 
     def run_fn(step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)
-        seq_args.append(step_inds)
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

@@ -75,8 +75,8 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list, verify_charge_states=False):
-    num_reps = 50
-    num_runs = 10
+    num_reps = 200
+    num_runs = 20
     # num_runs = 2
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
@@ -474,7 +474,7 @@ def do_detect_cosmic_rays(nv_list):
 
 def do_check_readout_fidelity(nv_list):
     num_reps = 200
-    num_runs = 10
+    num_runs = 5
 
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
@@ -628,7 +628,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.42
+    z_coord = 4.45
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -688,40 +688,44 @@ if __name__ == "__main__":
         [72.754, 74.993],
         [71.845, 75.925],
     ]
+    # 0.33
     threshold_list = [
-        26.5,
-        27.5,
-        26.5,
-        27.5,
-        29.5,
-        26.5,
-        29.5,
-        29.5,
+        21.5,
+        22.5,
         20.5,
         21.5,
-        22.5,
-        23.5,
+        20.5,
+        19.5,
+        20.5,
         21.5,
-        21.5,
-        22.5,
+        17.5,
+        17.5,
+        17.5,
+        16.5,
+        15.5,
+        18.5,
+        15.5,
     ]
     nvn_dist_params_list = [
-        (0.07071426552706035, 0.47583065170288236, 4.236288048825568),
-        (0.04163835182982011, 0.516396683766659, 4.628473895160098),
-        (0.06909467923204098, 0.4719474743537519, 4.262395110455417),
-        (0.11277005462870046, 0.41288126495823285, 4.106801873362106),
-        (0.09782401520213962, 0.4593947095522118, 4.193368460175124),
-        (0.12536270017536777, 0.3570331484143629, 4.128460173203865),
-        (0.10846531586238944, 0.44580880141015894, 4.169048153647073),
-        (0.1346309562294585, 0.33324940037182155, 4.169931874852242),
-        (0.08184606021698992, 0.2839629916604948, 4.039656488039356),
-        (0.08223545427988611, 0.30342841750312155, 3.9152357967316544),
-        (0.10856029655502705, 0.2833730219482223, 3.937731460582444),
-        (0.07515609898177193, 0.34348264491660224, 4.304645870324053),
-        (0.05024329808053294, 0.2887620772501354, 4.8020524304386845),
-        (0.09831243239440975, 0.26636666131983483, 4.053390996542559),
-        (0.09278191541177262, 0.2935196887306656, 4.059763734349599),
+        (0.06443429808816972, 0.3791189649289437, 4.1368418856851585),
+        (0.07494430636171144, 0.3710679423300316, 4.213857503731686),
+        (0.07204056083883696, 0.3275187253618198, 4.290060222321363),
+        (0.0881614063436749, 0.3042073277815471, 4.032393140373288),
+        (0.07711157198015801, 0.31971340404332166, 4.107311108466573),
+        (0.08494854460192118, 0.27504143619495125, 4.109166862938441),
+        (0.07915796610209644, 0.31873493665191827, 4.210681202111325),
+        (0.10493410261229554, 0.24354232551545466, 4.0165888857038174),
+        (0.061437622449729334, 0.2730253059227975, 4.156206623493335),
+        (0.06323589585568681, 0.2702014176282753, 4.154528533437604),
+        (0.057101333040385456, 0.25439030258651874, 4.369377738400205),
+        (0.06193103589587155, 0.2265636220969416, 4.2627373670479995),
+        (0.04450097443671284, 0.19157999594037944, 4.715086676445699),
+        (0.07553350344343861, 0.25497480628949876, 4.054140224035654),
+        (0.05401170599257353, 0.19846977223089152, 4.537236070880071),
     ]
+    # scc_duration_list = [
+
+    # ]
     # endregion
     # region Coords (smiley)
 
@@ -782,7 +786,7 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 1200
+    nv_list[0].expected_counts = 1250
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
     # nv_inds = [0]
@@ -836,7 +840,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+3, -6])
+        # widefield.set_pixel_drift([-2, -8])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -849,7 +853,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -866,7 +870,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -911,7 +915,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

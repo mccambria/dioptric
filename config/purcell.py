@@ -49,8 +49,8 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
-    "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
+    "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
+    # "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
     ###
     # Common durations are in ns
@@ -159,7 +159,8 @@ config |= {
         LaserKey.SHELVING: {"name": green_laser, "duration": 60},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
-        LaserKey.SCC: {"name": red_laser, "duration": 20},
+        LaserKey.SCC: {"name": red_laser, "duration": 100},
+        # LaserKey.SCC: {"name": red_laser, "duration": 200},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
@@ -673,9 +674,10 @@ opx_config = {
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.20},
+        # "red_aod_cw-scc": {"type": "constant", "sample": 0.165},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.34},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.33},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

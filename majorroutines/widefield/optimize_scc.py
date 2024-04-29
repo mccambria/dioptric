@@ -128,8 +128,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1516283334251)  # 0.165
-    data = dm.get_raw_data(file_id=1516334723697)  # 0.18
+    data = dm.get_raw_data(file_id=1516283334251)  # 0.165
+    # data = dm.get_raw_data(file_id=1516334723697)  # 0.18
 
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -141,14 +141,6 @@ if __name__ == "__main__":
     # states = np.array(data["states"])
     # sig_states = states[0]
     # ref_states = states[1]
-
-    # for ind in range(5):
-    #     sig_counts_slc = sig_counts[:, :, :, ind : ind + 1]
-    #     ref_counts_slc = ref_counts[:, :, :, ind : ind + 1]
-    #     sig_states_slc = sig_states[:, :, :, ind : ind + 1]
-    #     ref_states_slc = ref_states[:, :, :, ind : ind + 1]
-    #     print(np.mean(sig_counts_slc, where=sig_states_slc.astype(bool)))
-    #     print(np.mean(ref_counts_slc, where=ref_states_slc.astype(bool)))
 
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 

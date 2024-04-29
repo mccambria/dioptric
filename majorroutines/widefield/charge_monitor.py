@@ -227,11 +227,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # # data = dm.get_raw_data(file_id=1511352373561)  # 0.33
-    # data = dm.get_raw_data(file_id=1511491052952)  # 0.34
-    # # data = dm.get_raw_data(file_id=1511388325373)  # 0.35
-    # # data = dm.get_raw_data(file_id=1511388302072)  # 0.37
-    data = dm.get_raw_data(file_id=1513573538386)
+    data = dm.get_raw_data(file_id=1516812721880)
 
     process_check_readout_fidelity(data)
 

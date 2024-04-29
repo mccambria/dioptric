@@ -80,7 +80,7 @@ def macro(
         uwave_macro = [uwave_macro]
     if reference:
 
-        def ref_exp(step_val):
+        def ref_exp(uwave_ind_list, step_val):
             pass
 
         uwave_macro.append(ref_exp)
@@ -102,7 +102,7 @@ def macro(
 
     def one_exp(exp_ind):
         seq_utils.macro_polarize(pol_coords_list, pol_duration_list)
-        uwave_macro[exp_ind](step_val)
+        uwave_macro[exp_ind](uwave_ind_list, step_val)
 
         # Always look at ms=0 counts for the reference
         exp_spin_flip_ind_list = (

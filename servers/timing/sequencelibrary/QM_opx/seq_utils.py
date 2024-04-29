@@ -226,9 +226,9 @@ def _macro_scc_shelving(
     pulse_name_list = [shelving_pulse_name, ion_pulse_name]
     shelving_laser_dict = tb.get_optics_dict(LaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
-    shelving_scc_gap_ns = 16
-    shelving_scc_gap = convert_ns_to_cc(shelving_scc_gap_ns)
-    delays = [0, shelving_pulse_duration + shelving_scc_gap]
+    shelving_scc_gap_ns = 0
+    scc_delay = convert_ns_to_cc(shelving_pulse_duration + shelving_scc_gap_ns)
+    delays = [0, scc_delay]
     # duration_list = [None, ion_duration]
 
     macro_run_aods(laser_name_list, aod_suffices=pulse_name_list)
@@ -479,7 +479,8 @@ def _macro_pulse_list(
     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
 
     # Convert durations to clock cycles
-    duration_list = [convert_ns_to_cc(el) for el in duration_list]
+    if duration_list is not None:
+        duration_list = [convert_ns_to_cc(el) for el in duration_list]
 
     # These are declared in init
     global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_target
@@ -546,8 +547,8 @@ def macro_multi_pulse(
         duration_list = [None for ind in range(num_pulses)]
 
     qua.align()
-    for ind in range(num_pulses):
-        # for ind in [1]:
+    # for ind in range(num_pulses):
+    for ind in [1]:
         laser_name = laser_name_list[ind]
         coords = coords_list[ind]
         pulse_name = pulse_name_list[ind]
