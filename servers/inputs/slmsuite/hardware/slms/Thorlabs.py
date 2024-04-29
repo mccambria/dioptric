@@ -15,7 +15,7 @@ sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 from slm import SLM
 
 DEFAULT_SDK_PATH = "C:/Users/Saroj Chand/Documents/dioptric/servers/inputs/Thorlabs_EXULUS_PythonSDK"
-class ThorSLM(SLM):
+class thorSLM(SLM):
     """
     Template for implementing a new SLM subclass. Replace :class:`Template`
     with the desired subclass name. :class:`~slmsuite.hardware.slms.slm.SLM` is the
@@ -117,7 +117,7 @@ class ThorSLM(SLM):
 
         self.write(None)
 
-        
+
     def load_lut(self, lut_path=None):
         """
         Loads a voltage lookup table (LUT) to the SLM.
