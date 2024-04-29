@@ -11,6 +11,7 @@ from pathlib import Path
 
 from config.default import config
 from utils.constants import (
+    ChargeStateEstimationMode,
     CollectionMode,
     ControlMode,
     CoordsKey,
@@ -48,14 +49,16 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
+    "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
+    # "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
     ###
     # Common durations are in ns
     "CommonDurations": {
         "uwave_buffer": 1000,
         "default_pulse_duration": 1000,
-        "aod_access_time": 20e3,
-        # "aod_access_time": 100e3,
+        # "aod_access_time": 20e3,
+        "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
     },
     ###
@@ -89,15 +92,15 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.8556,
-            "rabi_period": 96,
+            "frequency": 2.85761751,
+            "rabi_period": 104,
             "uwave_power": 10,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
-            "frequency": 2.87,
-            "rabi_period": 112,
+            "frequency": 2.812251747511455,
+            "rabi_period": 128,
             "uwave_power": 10,
         },
     },
@@ -149,16 +152,19 @@ config |= {
         # Virtual lasers
         LaserKey.IMAGING: {"name": green_laser, "duration": 6e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
-        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
+        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 1e3},
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
         LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
-        LaserKey.SHELVING: {"name": green_laser, "duration": 48},
+        LaserKey.SHELVING: {"name": green_laser, "duration": 60},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
-        LaserKey.SCC: {"name": red_laser, "duration": 144},
+        LaserKey.SCC: {"name": red_laser, "duration": 100},
+        # LaserKey.SCC: {"name": red_laser, "duration": 200},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
+        # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
         LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         #
@@ -421,7 +427,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
-                "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+                # "pi_on_2_pulse": "do_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_i": {
@@ -432,7 +438,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "iq_pi_pulse_0",
-                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+                # "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_q": {
@@ -443,7 +449,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "iq_pi_pulse_0",
-                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+                # "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
@@ -452,7 +458,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
-                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+                # "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
         "do_camera_trigger": {
@@ -584,11 +590,11 @@ opx_config = {
             "length": int(rabi_period_0 / 2) + iq_buffer,
             "waveforms": {"single": "cw"},
         },
-        "iq_pi_on_2_pulse_0": {
-            "operation": "control",
-            "length": int(rabi_period_0 / 4) + iq_buffer,
-            "waveforms": {"single": "cw"},
-        },
+        # "iq_pi_on_2_pulse_0": {
+        #     "operation": "control",
+        #     "length": int(rabi_period_0 / 4) + iq_buffer,
+        #     "waveforms": {"single": "cw"},
+        # },
         ### Digital
         "do_on": {
             "operation": "control",
@@ -635,21 +641,21 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
-        "do_pi_on_2_pulse_0": {
-            "operation": "control",
-            "length": int(rabi_period_0 / 4),
-            "digital_marker": "on",
-        },
+        # "do_pi_on_2_pulse_0": {
+        #     "operation": "control",
+        #     "length": int(rabi_period_0 / 4),
+        #     "digital_marker": "on",
+        # },
         "do_pi_pulse_1": {
             "operation": "control",
             "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
-        "do_pi_on_2_pulse_1": {
-            "operation": "control",
-            "length": int(rabi_period_1 / 4),
-            "digital_marker": "on",
-        },
+        # "do_pi_on_2_pulse_1": {
+        #     "operation": "control",
+        #     "length": int(rabi_period_1 / 4),
+        #     "digital_marker": "on",
+        # },
         ### Mixed
     },
     # endregion
@@ -659,18 +665,20 @@ opx_config = {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.115},
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
-        "green_aod_cw-shelving": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.20},
+        # "red_aod_cw-scc": {"type": "constant", "sample": 0.165},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.35},  # 30e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.40},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.33},  # 30e6
+        "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},

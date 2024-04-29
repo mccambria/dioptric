@@ -1,4 +1,4 @@
-0  # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Various utility functions for widefield imaging and camera data processing
 
 Created on August 15th, 2023
@@ -44,6 +44,20 @@ def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
     return integrate_counts(img_array_photons, pixel_coords, radius)
 
 
+@cache
+def _calc_dist_matrix(radius=None):
+    if radius is None:
+        radius = _get_camera_spot_radius()
+    left = -radius
+    right = +radius
+    top = -radius
+    bottom = +radius
+    x_crop = list(range(left, right + 1))
+    y_crop = list(range(top, bottom + 1))
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    return np.sqrt((x_crop_mesh) ** 2 + (y_crop_mesh) ** 2)
+
+
 def integrate_counts(img_array, pixel_coords, radius=None):
     """Add up the counts around a target set of pixel coordinates in the passed image array.
     Use for getting the total number of photons coming from a target NV.
@@ -69,15 +83,12 @@ def integrate_counts(img_array, pixel_coords, radius=None):
         radius = _get_camera_spot_radius()
 
     # Don't work through all the pixels, just the ones that might be relevant
-    left = int(np.floor(pixel_x - radius))
-    right = int(np.ceil(pixel_x + radius))
-    top = int(np.floor(pixel_y - radius))
-    bottom = int(np.ceil(pixel_y + radius))
-    x_crop = list(range(left, right + 1))
-    y_crop = list(range(top, bottom + 1))
-    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
-    dist = np.sqrt((x_crop_mesh - pixel_x) ** 2 + (y_crop_mesh - pixel_y) ** 2)
+    left = round(pixel_x - radius)
+    right = round(pixel_x + radius)
+    top = round(pixel_y - radius)
+    bottom = round(pixel_y + radius)
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
+    dist = _calc_dist_matrix()
 
     counts = np.sum(img_array_crop, where=dist < radius)
     return counts
@@ -207,64 +218,77 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         ref_states_array = np.greater(
             ref_counts, thresholds, out=ref_states_array, where=where_thresh
         )
+        return sig_states_array, ref_states_array
     else:
-        ref_states_array = None
+        return sig_states_array
 
-    return sig_states_array, ref_states_array
+
+def threshold(nv_sig, count_val):
+    """Threshold for a single value"""
+    threshold = nv_sig.threshold
+    if threshold is None:
+        return None
+    else:
+        return count_val > threshold
 
 
 def poisson_pmf_cont(k, mean):
     return mean**k * np.exp(-mean) / gamma(k + 1)
 
 
+@cache
+def _calc_mesh_grid(radius=None):
+    radius = _get_camera_spot_radius()
+    half_range = radius
+    one_ax_linspace = np.linspace(-half_range, half_range, 2 * half_range + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(one_ax_linspace, one_ax_linspace)
+    return x_crop_mesh, y_crop_mesh
+
+
+@cache
+def _calc_nvn_count_distribution(nvn_dist_params):
+    x_crop_mesh, y_crop_mesh = _calc_mesh_grid()
+    bg, amp, sigma = nvn_dist_params
+    return bg + amp * np.exp(
+        -(((x_crop_mesh) ** 2) + ((y_crop_mesh) ** 2)) / (2 * sigma**2)
+    )
+
+
+@cache
+def _calc_nv0_count_distribution(nvn_dist_params):
+    bg = nvn_dist_params[0]
+    return bg
+
+
+def charge_state_mle_single(nv_sig, img_array):
+    nvn_dist_params = nv_sig.nvn_dist_params
+    if nvn_dist_params is None:
+        return None
+
+    x0, y0 = get_nv_pixel_coords(nv_sig)
+    radius = _get_camera_spot_radius()
+    half_range = radius
+    left = round(x0 - half_range)
+    right = round(x0 + half_range)
+    top = round(y0 - half_range)
+    bottom = round(y0 + half_range)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
+    img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
+
+    nvn_count_distribution = _calc_nvn_count_distribution(nvn_dist_params)
+    nv0_count_distribution = _calc_nv0_count_distribution(nvn_dist_params)
+
+    nvn_probs = poisson_pmf_cont(img_array_crop, nvn_count_distribution)
+    nv0_probs = poisson_pmf_cont(img_array_crop, nv0_count_distribution)
+    nvn_prob = np.nanprod(nvn_probs)
+    nv0_prob = np.nanprod(nv0_probs)
+    return int(nvn_prob > nv0_prob)
+
+
 def charge_state_mle(nv_list, img_array):
     """Maximum likelihood estimator of state based on image"""
 
-    states = []
-    states_thresh = []
-    radius = _get_camera_spot_radius()
-
-    for nv in nv_list:
-        nvn_dist_params = nv.nvn_dist_params
-        if nvn_dist_params is None:
-            states.append(None)
-            continue
-
-        x0, y0 = get_nv_pixel_coords(nv)
-        bg, amp, sigma = nv.nvn_dist_params
-
-        def nvn_count_distribution(x, y):
-            return bg + amp * np.exp(
-                -(((x - x0) ** 2) + ((y - y0) ** 2)) / (2 * sigma**2)
-            )
-
-        def nv0_count_distribution(x, y):
-            return bg
-
-        half_range = radius
-        left = round(x0 - half_range)
-        right = round(x0 + half_range)
-        top = round(y0 - half_range)
-        bottom = round(y0 + half_range)
-        x_crop = np.linspace(left, right, right - left + 1)
-        y_crop = np.linspace(top, bottom, bottom - top + 1)
-        x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
-        img_array_crop = img_array[top : bottom + 1, left : right + 1]
-        img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
-
-        nvn_probs = poisson_pmf_cont(
-            img_array_crop, nvn_count_distribution(x_crop_mesh, y_crop_mesh)
-        )
-        nv0_probs = poisson_pmf_cont(
-            img_array_crop, nv0_count_distribution(x_crop_mesh, y_crop_mesh)
-        )
-
-        nvn_prob = np.nanprod(nvn_probs)
-        nv0_prob = np.nanprod(nv0_probs)
-        states.append(int(nvn_prob > nv0_prob))
-
-        counts = integrate_counts_from_adus(img_array, (x0, y0))
-        states_thresh.append(int(counts > nv.threshold))
+    states = [charge_state_mle_single(nv, img_array) for nv in nv_list]
 
     return states
 
@@ -382,7 +406,7 @@ def get_nv_num(nv_sig):
     return nv_num
 
 
-def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
+def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     """Return base seq_args for any SCC routine. The base sequence arguments
     are the minimum info required for state preparation and SCC
 
@@ -400,9 +424,17 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind: int):
     """
 
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
-    ion_coords_list = get_coords_list(nv_list, LaserKey.SCC)
+    scc_coords_list = get_coords_list(nv_list, LaserKey.SCC)
+    scc_duration_list = get_scc_duration_list(nv_list)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
-    seq_args = [pol_coords_list, ion_coords_list, spin_flip_ind_list, uwave_ind]
+
+    seq_args = [
+        pol_coords_list,
+        scc_coords_list,
+        scc_duration_list,
+        spin_flip_ind_list,
+        uwave_ind_list,
+    ]
     return seq_args
 
 
@@ -423,16 +455,31 @@ def get_spin_flip_ind_list(nv_list: list[NVSig]):
     return [ind for ind in range(num_nvs) if nv_list[ind].spin_flip]
 
 
+def get_scc_duration_list(nv_list: list[NVSig]):
+    scc_duration_list = []
+    for nv in nv_list:
+        scc_duration = nv.scc_duration
+        if scc_duration is None:
+            config = common.get_config_dict()
+            scc_duration = config["Optics"][LaserKey.SCC]["duration"]
+        if not (scc_duration % 4 == 0 and scc_duration >= 16):
+            raise RuntimeError("SCC pulse duration not valid for OPX.")
+        scc_duration_list.append(scc_duration)
+    return scc_duration_list
+
+
 # endregion
 # region Drift tracking
 
 
+@cache
 def get_pixel_drift():
     pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
     return np.array(pixel_drift)
 
 
 def set_pixel_drift(drift):
+    get_pixel_drift.cache_clear()
     return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
 
 
@@ -742,6 +789,10 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
+        # if nv_ind in [3, 5, 7, 10, 12]:
+        #     continue
+        # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+        #     continue
         nv_sig = nv_list[nv_ind]
         nv_num = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
@@ -758,16 +809,16 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         )
 
         # MCC
-        # kpl.show(block=True)
-        # fig, ax = plt.subplots()
+        ax.legend()
+        kpl.show(block=True)
+        fig, ax = plt.subplots()
 
     # min_x = min(x)
     # max_x = max(x)
     # excess = 0.08 * (max_x - min_x)
     # ax.set_xlim(min_x - excess, max_x + excess)
-    # ncols = 3  # MCC
-    # ax.legend(loc=kpl.Loc.LOWER_RIGHT, ncols=ncols)
-    ax.legend()
+    ncols = round(num_nvs / 5)
+    ax.legend(ncols=ncols)
 
 
 # Separate plots, shared axes
@@ -818,13 +869,6 @@ def plot_fit(
         color = kpl.data_color_cycler[nv_num]
 
         # MCC
-        # if nv_ind == 1:
-        #     color = kpl.KplColors.GRAY
-        #     ax = axes_pack[-1]
-        # elif nv_ind > 1:
-        #     ax = axes_pack[nv_ind - 1]
-        # else:
-        #     ax = axes_pack[nv_ind]
         ax = axes_pack[nv_ind]
 
         # Include the norm if there is one

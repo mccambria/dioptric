@@ -14,15 +14,12 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
 def macro(
-    pol_coords_list,
-    ion_coords_list,
-    spin_flip_ind_list,
-    uwave_ind,
+    base_scc_seq_args,
     uwave_macro,
     step_vals=None,
     num_reps=1,
     pol_duration_ns=None,
-    ion_duration_ns=None,
+    scc_duration_ns=None,
     readout_duration_ns=None,
     reference=True,
 ):
@@ -64,6 +61,17 @@ def macro(
 
     ### Non-QUA stuff
 
+    (
+        pol_coords_list,
+        scc_coords_list,
+        scc_duration_list,
+        spin_flip_ind_list,
+        uwave_ind_list,
+    ) = base_scc_seq_args
+
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
+
     if num_reps is None:
         num_reps = 1
 
@@ -72,26 +80,40 @@ def macro(
         uwave_macro = [uwave_macro]
     if reference:
 
-        def ref_exp(step_val):
+        def ref_exp(uwave_ind_list, step_val):
             pass
 
         uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
+    num_nvs = len(pol_coords_list)
+
+    # scc_duration_ns and pol_duration_ns overrides NV-specific durations
+    if scc_duration_ns is not None:
+        scc_duration_list = [scc_duration_ns for ind in range(num_nvs)]
+    if pol_duration_ns is not None:
+        pol_duration_list = [pol_duration_ns for ind in range(num_nvs)]
+    else:
+        pol_duration_list = None
 
     ### QUA stuff
 
-    seq_utils.init()
+    seq_utils.init(num_nvs)
     step_val = qua.declare(int)
 
     def one_exp(exp_ind):
-        seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
-        uwave_macro[exp_ind](step_val)
+        seq_utils.macro_polarize(pol_coords_list, pol_duration_list)
+        uwave_macro[exp_ind](uwave_ind_list, step_val)
+
         # Always look at ms=0 counts for the reference
         exp_spin_flip_ind_list = (
             None if exp_ind == num_exps_per_rep - 1 else spin_flip_ind_list
         )
         seq_utils.macro_scc(
-            ion_coords_list, exp_spin_flip_ind_list, uwave_ind, ion_duration_ns
+            scc_coords_list,
+            scc_duration_list,
+            exp_spin_flip_ind_list,
+            uwave_ind_list,
+            pol_coords_list,
         )
         seq_utils.macro_charge_state_readout(readout_duration_ns)
         seq_utils.macro_wait_for_trigger()

@@ -15,7 +15,7 @@ from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 from utils import common
 from utils import tool_belt as tb
 from utils.constants import LaserKey

@@ -7,6 +7,7 @@ Created June 25th, 2023
 @author: mccambria
 """
 
+import logging
 import time
 from functools import cache
 
@@ -15,16 +16,6 @@ from qm import qua
 from utils import common
 from utils import tool_belt as tb
 from utils.constants import LaserKey, ModMode
-
-# Cached QUA variables to save on declaring variables more than we have to
-_cache_x_freq = None
-_cache_y_freq = None
-_cache_x_freq_2 = None
-_cache_y_freq_2 = None
-_cache_macro_run_aods = None
-_cache_charge_pol_target = None
-_cache_charge_pol_incomplete = None
-
 
 # region QUA macros
 
@@ -35,13 +26,19 @@ def init(num_nvs=None):
     """
     # Declare cached QUA variables (helps reduce compile times)
     global _cache_x_freq
-    global _cache_y_freq
-    global _cache_x_freq_2
-    global _cache_y_freq_2
     _cache_x_freq = qua.declare(int)
+    global _cache_y_freq
     _cache_y_freq = qua.declare(int)
+    global _cache_x_freq_2
     _cache_x_freq_2 = qua.declare(int)
+    global _cache_y_freq_2
     _cache_y_freq_2 = qua.declare(int)
+
+    global _cache_duration
+    _cache_duration = qua.declare(int)
+
+    global _cache_target
+    _cache_target = qua.declare(bool)
 
     global _cache_macro_run_aods
     _cache_macro_run_aods = {}
@@ -52,15 +49,11 @@ def init(num_nvs=None):
         bool, name="_cache_charge_pol_incomplete"
     )
 
-    global _cache_charge_pol_target
-    _cache_charge_pol_target = qua.declare_input_stream(
-        bool, name="_cache_charge_pol_target"
-    )
-
-    global _cache_verify_charge_states
-    _cache_verify_charge_states = qua.declare_input_stream(
-        bool, name="_cache_verify_charge_states"
-    )
+    if num_nvs is not None:
+        global _cache_target_list
+        _cache_target_list = qua.declare_input_stream(
+            bool, name="_cache_target_list", size=num_nvs
+        )
 
 
 def handle_reps(
@@ -100,36 +93,12 @@ def handle_reps(
                 macro_wait_for_trigger()
 
 
-# def macro_polarize(pol_coords_list, pol_duration=None):
-#     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
-#     Pulses are applied in series
-
-#     Parameters
-#     ----------
-#     pol_laser_name : str
-#         Name of polarization laser
-#     pol_duration : numeric
-#         Duration of the pulse in ns
-#     pol_coords_list : list(coordinate pairs)
-#         List of coordinate pairs to target
-#     """
-
-#     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
-#     pulse_name = "charge_pol"
-#     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
-#     _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration)
-
-#     # Spin polarization with widefield yellow
-#     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
-#     readout_laser_el = get_laser_mod_element(readout_laser_name)
-#     buffer = get_widefield_operation_buffer()
-#     qua.align()
-#     qua.play("spin_pol", readout_laser_el)
-#     qua.wait(buffer, readout_laser_el)
-
-
 def macro_polarize(
-    pol_coords_list, pol_duration=None, spin_pol=True, verify_charge_states=True
+    coords_list,
+    duration_list=None,
+    spin_pol=True,
+    targeted_polarization=False,
+    verify_charge_states=False,
 ):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -145,31 +114,35 @@ def macro_polarize(
     """
 
     global _cache_charge_pol_incomplete
-    global _cache_charge_pol_target
-    global _cache_verify_charge_states
+    global _cache_target_list
 
     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
 
-    # MCC
+    def macro_sub():
+        target_list = _cache_target_list if targeted_polarization else None
+        _macro_pulse_list(
+            pol_laser_name,
+            pulse_name,
+            coords_list,
+            duration_list=duration_list,
+            target_list=target_list,
+        )
+
     if verify_charge_states:
         qua.advance_input_stream(_cache_charge_pol_incomplete)
         with qua.while_(_cache_charge_pol_incomplete):
-            _macro_pulse_list(
-                pol_laser_name,
-                pol_coords_list,
-                pulse_name,
-                pol_duration,
-                input_stream=_cache_charge_pol_target,
-            )
-            qua.advance_input_stream(_cache_verify_charge_states)
-            with qua.if_(_cache_verify_charge_states):
-                macro_charge_state_readout()
-                macro_wait_for_trigger()
+            qua.advance_input_stream(_cache_target_list)
+            macro_sub()
+            macro_charge_state_readout()
+            macro_wait_for_trigger()
             qua.advance_input_stream(_cache_charge_pol_incomplete)
+    elif targeted_polarization:
+        qua.advance_input_stream(_cache_target_list)
+        macro_sub()
     else:
-        _macro_pulse_list(pol_laser_name, pol_coords_list, pulse_name, pol_duration)
+        macro_sub()
 
     # Spin polarization with widefield yellow
     if spin_pol:
@@ -181,54 +154,7 @@ def macro_polarize(
         qua.wait(buffer, spin_pol_laser_el)
 
 
-# def macro_polarize(pol_coords_list, pol_duration=None):
-#     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
-#     Pulses are applied in series
-
-#     Parameters
-#     ----------
-#     pol_laser_name : str
-#         Name of polarization laser
-#     pol_duration : numeric
-#         Duration of the pulse in ns
-#     pol_coords_list : list(coordinate pairs)
-#         List of coordinate pairs to target
-#     """
-
-#     pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
-#     pol_pulse_name = "charge_pol"
-#     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
-#     readout_laser_el = get_laser_mod_element(readout_laser_name)
-#     spin_pulse_name = "spin_pol"
-#     buffer = get_widefield_operation_buffer()
-#     uwave_ind = 0
-
-#     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pol_pulse_name])
-#     _macro_pulse_list(pol_laser_name, pol_coords_list, pol_pulse_name, pol_duration)
-
-#     # Spin polarization with widefield yellow
-#     qua.align()
-#     qua.play(spin_pulse_name, readout_laser_el)
-#     qua.wait(buffer, readout_laser_el)
-
-#     pol_reps_ind = qua.declare(int)
-#     with qua.for_(pol_reps_ind, 0, pol_reps_ind < 20, pol_reps_ind + 1):
-#         # MCC
-#         sig_gen_el = get_sig_gen_element(uwave_ind)
-#         qua.align()
-#         qua.play("pi_pulse", sig_gen_el)
-#         qua.wait(buffer, sig_gen_el)
-
-#         macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pol_pulse_name])
-#         _macro_pulse_list(pol_laser_name, pol_coords_list, pol_pulse_name, 15)
-
-#         # Spin polarization with widefield yellow
-#         qua.align()
-#         qua.play(spin_pulse_name, readout_laser_el)
-#         qua.wait(buffer, readout_laser_el)
-
-
-def macro_ionize(ion_coords_list, ion_duration=None):
+def macro_ionize(ion_coords_list):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
 
@@ -244,14 +170,14 @@ def macro_ionize(ion_coords_list, ion_duration=None):
     ion_laser_name = tb.get_laser_name(LaserKey.ION)
     macro_run_aods([ion_laser_name], aod_suffices=["ion"])
     ion_pulse_name = "ion"
-    _macro_pulse_list(ion_laser_name, ion_coords_list, ion_pulse_name, ion_duration)
+    _macro_pulse_list(ion_laser_name, ion_pulse_name, ion_coords_list)
 
 
 def macro_scc(
-    ion_coords_list,
+    scc_coords_list,
+    scc_duration_list=None,
     spin_flip_ind_list=None,
-    uwave_ind=None,
-    ion_duration=None,
+    uwave_ind_list=None,
     shelving_coords_list=None,
 ):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
@@ -259,7 +185,7 @@ def macro_scc(
 
     Parameters
     ----------
-    ion_coords_list : list(coordinate pairs)
+    scc_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     ion_duration : numeric
         Duration of the pulse in clock cycles (4 ns)
@@ -269,18 +195,29 @@ def macro_scc(
     do_shelving_pulse = config["Optics"]["scc_shelving_pulse"]
 
     if do_shelving_pulse:
-        if spin_flip_ind_list is not None:
-            raise NotImplementedError(
-                "Shelving SCC with spin_flips not yet implemented."
-            )
-        _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list)
+        # if spin_flip_ind_list is not None:
+        #     msg = "Shelving SCC with spin_flips not yet implemented."
+        #     raise NotImplementedError(msg)
+        _macro_scc_shelving(
+            scc_coords_list,
+            scc_duration_list,
+            spin_flip_ind_list,
+            uwave_ind_list,
+            shelving_coords_list,
+        )
     else:
         _macro_scc_no_shelving(
-            ion_coords_list, spin_flip_ind_list, uwave_ind, ion_duration
+            scc_coords_list, scc_duration_list, spin_flip_ind_list, uwave_ind_list
         )
 
 
-def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
+def _macro_scc_shelving(
+    scc_coords_list,
+    scc_duration_list,
+    spin_flip_ind_list,
+    uwave_ind_list,
+    shelving_coords_list,
+):
     shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
     ion_laser_name = tb.get_laser_name(LaserKey.SCC)
     laser_name_list = [shelving_laser_name, ion_laser_name]
@@ -289,18 +226,18 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
     pulse_name_list = [shelving_pulse_name, ion_pulse_name]
     shelving_laser_dict = tb.get_optics_dict(LaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
-    shelving_scc_gap_ns = 16
-    shelving_scc_gap = convert_ns_to_cc(shelving_scc_gap_ns)
-    delays = [0, shelving_pulse_duration + shelving_scc_gap]
-    duration_list = [None, ion_duration]
+    shelving_scc_gap_ns = 0
+    scc_delay = convert_ns_to_cc(shelving_pulse_duration + shelving_scc_gap_ns)
+    delays = [0, scc_delay]
+    # duration_list = [None, ion_duration]
 
     macro_run_aods(laser_name_list, aod_suffices=pulse_name_list)
 
     # Unpack the coords and convert to Hz
     x_shelving_coords_list = [int(el[0] * 10**6) for el in shelving_coords_list]
     y_shelving_coords_list = [int(el[1] * 10**6) for el in shelving_coords_list]
-    x_ion_coords_list = [int(el[0] * 10**6) for el in ion_coords_list]
-    y_ion_coords_list = [int(el[1] * 10**6) for el in ion_coords_list]
+    x_scc_coords_list = [int(el[0] * 10**6) for el in scc_coords_list]
+    y_scc_coords_list = [int(el[1] * 10**6) for el in scc_coords_list]
 
     # These are declared in macro_run_aods
     global _cache_x_freq
@@ -311,8 +248,8 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
     freq_lists = (
         x_shelving_coords_list,
         y_shelving_coords_list,
-        x_ion_coords_list,
-        y_ion_coords_list,
+        x_scc_coords_list,
+        y_scc_coords_list,
     )
 
     qua.align()
@@ -321,14 +258,17 @@ def _macro_scc_shelving(ion_coords_list, ion_duration, shelving_coords_list):
             laser_name_list,
             ((_cache_x_freq, _cache_y_freq), (_cache_x_freq_2, _cache_y_freq_2)),
             pulse_name_list,
-            duration_list=duration_list,
+            # duration_list=duration_list,
             delays=delays,
             convert_to_Hz=False,
         )
 
 
 def _macro_scc_no_shelving(
-    ion_coords_list, spin_flip_ind_list=None, uwave_ind=None, ion_duration=None
+    coords_list,
+    duration_list=None,
+    spin_flip_ind_list=None,
+    uwave_ind_list=None,
 ):
     # Basic setup
 
@@ -339,35 +279,53 @@ def _macro_scc_no_shelving(
     if spin_flip_ind_list is None:
         spin_flip_ind_list = []
 
-    num_nvs = len(ion_coords_list)
-    first_ion_coords_list = [
-        ion_coords_list[ind] for ind in range(num_nvs) if ind not in spin_flip_ind_list
+    num_nvs = len(coords_list)
+    first_coords_list = [
+        coords_list[ind] for ind in range(num_nvs) if ind not in spin_flip_ind_list
+    ]
+    first_duration_list = [
+        duration_list[ind] for ind in range(num_nvs) if ind not in spin_flip_ind_list
     ]
 
     # Actual commands
 
     _macro_pulse_list(
-        ion_laser_name, first_ion_coords_list, ion_pulse_name, ion_duration
+        ion_laser_name,
+        ion_pulse_name,
+        first_coords_list,
+        first_duration_list,
     )
 
     # Just exit here if all NVs are SCC'ed in the first batch
     if len(spin_flip_ind_list) == 0:
         return
 
-    sig_gen_el = get_sig_gen_element(uwave_ind)
-    buffer = get_widefield_operation_buffer()
-
-    second_ion_coords_list = [
-        ion_coords_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
+    second_coords_list = [
+        coords_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
+    ]
+    second_duration_list = [
+        duration_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
     ]
 
-    qua.align()
-    qua.play("pi_pulse", sig_gen_el)
-    qua.wait(buffer, sig_gen_el)
+    macro_pi_pulse(uwave_ind_list)
 
     _macro_pulse_list(
-        ion_laser_name, second_ion_coords_list, ion_pulse_name, ion_duration
+        ion_laser_name,
+        ion_pulse_name,
+        second_coords_list,
+        second_duration_list,
     )
+
+
+def macro_pi_pulse(uwave_ind_list):
+    if uwave_ind_list is None:
+        return
+    buffer = get_widefield_operation_buffer()
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        qua.align()
+        qua.play("pi_pulse", sig_gen_el)
+        qua.wait(buffer, sig_gen_el)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -495,7 +453,7 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
 
 
 def _macro_pulse_list(
-    laser_name, coords_list, pulse_name="on", duration=None, input_stream=None
+    laser_name, pulse_name, coords_list, duration_list=None, target_list=None
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -509,8 +467,8 @@ def _macro_pulse_list(
     pulse_name : str
         Name of the pulse to play - "on" by default
     duration : numeric
-        Duration of the pulse in clock cycles (4 ns) - if None, uses the default
-        duration of the passed pulse
+        Durations of the pulses in ns - if None, uses the default
+        duration for the passed pulse
     """
 
     if len(coords_list) == 0:
@@ -520,30 +478,51 @@ def _macro_pulse_list(
     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
 
-    # These are declared in macro_run_aods
-    global _cache_x_freq
-    global _cache_y_freq
+    # Convert durations to clock cycles
+    if duration_list is not None:
+        duration_list = [convert_ns_to_cc(el) for el in duration_list]
+
+    # These are declared in init
+    global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_target
+
+    def macro_sub():
+        duration = None if duration_list is None else _cache_duration
+        macro_pulse(
+            laser_name,
+            (_cache_x_freq, _cache_y_freq),
+            pulse_name=pulse_name,
+            duration=duration,
+            convert_to_Hz=False,
+        )
 
     qua.align()
-    with qua.for_each_((_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)):
-        if input_stream is not None:
-            qua.advance_input_stream(input_stream)
-            with qua.if_(input_stream):
-                macro_pulse(
-                    laser_name,
-                    (_cache_x_freq, _cache_y_freq),
-                    pulse_name=pulse_name,
-                    duration=duration,
-                    convert_to_Hz=False,
-                )
-        else:
-            macro_pulse(
-                laser_name,
-                (_cache_x_freq, _cache_y_freq),
-                pulse_name=pulse_name,
-                duration=duration,
-                convert_to_Hz=False,
-            )
+
+    # Branch based on what lists are populated
+    if target_list is None and duration_list is None:
+        with qua.for_each_(
+            (_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)
+        ):
+            macro_sub()
+    elif target_list is None and duration_list is not None:
+        with qua.for_each_(
+            (_cache_x_freq, _cache_y_freq, _cache_duration),
+            (x_coords_list, y_coords_list, duration_list),
+        ):
+            macro_sub()
+    elif target_list is not None and duration_list is None:
+        with qua.for_each_(
+            (_cache_x_freq, _cache_y_freq, _cache_target),
+            (x_coords_list, y_coords_list, target_list),
+        ):
+            with qua.if_(_cache_target):
+                macro_sub()
+    elif target_list is not None and duration_list is not None:
+        with qua.for_each_(
+            (_cache_x_freq, _cache_y_freq, _cache_duration, _cache_target),
+            (x_coords_list, y_coords_list, duration_list, target_list),
+        ):
+            with qua.if_(_cache_target):
+                macro_sub()
 
 
 def macro_pulse(laser_name, coords, pulse_name="on", duration=None, convert_to_Hz=True):
@@ -568,8 +547,8 @@ def macro_multi_pulse(
         duration_list = [None for ind in range(num_pulses)]
 
     qua.align()
-    for ind in range(num_pulses):
-        # for ind in [1]:
+    # for ind in range(num_pulses):
+    for ind in [1]:
         laser_name = laser_name_list[ind]
         coords = coords_list[ind]
         pulse_name = pulse_name_list[ind]

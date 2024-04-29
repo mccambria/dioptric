@@ -29,6 +29,7 @@ class NVSig:
     # the end of a spin experiment prior to readout. Useful for anticorrelations
     # and rejecting common mode noise
     spin_flip: bool = False
+    scc_duration: int = None
     nvn_dist_params: tuple = None  # bg, amp, sigma
 
 
@@ -40,6 +41,11 @@ class CoordsKey(StrEnum):
 class CollectionMode(Enum):
     COUNTER = auto()  # Count all photons incident on a detector (e.g. APD)
     CAMERA = auto()  # Collect photons onto a camera
+
+
+class ChargeStateEstimationMode(Enum):
+    THRESHOLDING = auto()
+    MLE = auto()  # Maximum likelihood estimator for images
 
 
 class CountFormat(Enum):

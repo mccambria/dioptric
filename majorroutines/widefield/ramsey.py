@@ -7,7 +7,6 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
 import time
 
 import matplotlib.pyplot as plt
@@ -122,7 +121,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
         num_reps,
         num_runs,
         step_fn,
-        uwave_ind=uwave_ind,
+        uwave_ind_list=uwave_ind,
         uwave_freq=uwave_freq,
     )
 

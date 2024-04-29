@@ -143,7 +143,7 @@ def main(
     nv_list,
     num_reps,
     num_runs,
-    charge_prep_verification=True,
+    verify_charge_states=False,
     diff_polarize=False,
     diff_ionize=True,
 ):
@@ -152,7 +152,7 @@ def main(
     seq_file = "charge_state_histograms.py"
     num_steps = 1
 
-    if charge_prep_verification:
+    if verify_charge_states:
         charge_prep_fn = base_routine.charge_prep_loop
     else:
         charge_prep_fn = base_routine.charge_prep_no_verification
@@ -164,11 +164,17 @@ def main(
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
         ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
-        seq_args = [pol_coords_list, ion_coords_list, diff_polarize, diff_ionize]
+        seq_args = [
+            pol_coords_list,
+            ion_coords_list,
+            diff_polarize,
+            diff_ionize,
+            verify_charge_states,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -196,15 +202,15 @@ def main(
 
     img_arrays = raw_data["img_arrays"]
     del raw_data["img_arrays"]
-    mean_img_arrays = np.mean(img_arrays, axis=(1, 2))
+    mean_img_arrays = np.mean(img_arrays, axis=(1, 2, 3))
     sig_img_array = mean_img_arrays[0]
     ref_img_array = mean_img_arrays[1]
     diff_img_array = sig_img_array - ref_img_array
-    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    img_arrays_to_save = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
     figs = []
     for ind in range(3):
-        img_array = img_arrays[ind]
+        img_array = img_arrays_to_save[ind]
         title_suffix = title_suffixes[ind]
         fig, ax = plt.subplots()
         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
@@ -215,12 +221,14 @@ def main(
         )
         dm.save_figure(fig, file_path)
 
-    # Histograms
+    ### Processing
     num_nvs = len(nv_list)
+    counts = raw_data["counts"]
     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+    num_shots = num_reps * num_runs
 
-    num_nvs = len(nv_list)
+    # Histograms and thresholding
     threshold_list = []
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
@@ -234,6 +242,27 @@ def main(
         file_path = dm.get_file_path(__file__, timestamp, nv_name)
         dm.save_figure(fig, file_path)
     print(threshold_list)
+
+    # MLE state estimation
+    shape = widefield.get_img_array_shape()
+    ref_img_arrays = img_arrays[1]
+    ref_img_arrays = ref_img_arrays.reshape((num_shots, *shape))
+    nvn_dist_params_list = []
+    for nv_ind in range(num_nvs):
+        nvn_img_arrays = []
+        nv = nv_list[nv_ind]
+        threshold = threshold_list[nv_ind]
+        ref_counts_list = ref_counts_lists[nv_ind]
+        for shot_ind in range(num_shots):
+            if ref_counts_list[shot_ind] > threshold:
+                nvn_img_arrays.append(ref_img_arrays[shot_ind])
+        mean_img_array = np.mean(nvn_img_arrays, axis=0)
+        popt = optimize.optimize_pixel_with_img_array(
+            mean_img_array, nv, return_popt=True
+        )
+        # bg, amp, sigma
+        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    print(nvn_dist_params_list)
 
     ### Save and clean up
 
@@ -271,68 +300,37 @@ def moving_average(x, w):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1506800366384)  # Yellow on, -60 C, 50 ms readout
-    # data = dm.get_raw_data(file_id=1506826857288)  # Yellow off, -60 C, 50 ms readout
-    # data = dm.get_raw_data(file_id=1506865734454)  # Yellow off, -65 C, 50 ms readout
-    # data = dm.get_raw_data(file_id=1506877254094)  # Yellow off, -60 C, 100 ms readout
-    # data = dm.get_raw_data(file_id=1506936719223)  # EM gain 100
-    # data = dm.get_raw_data(file_id=1506961050354)  # EM gain 5000
-    data = dm.get_raw_data(file_id=1508790988173)  # Background subtraction
+    data = dm.get_raw_data(file_id=1511480113600, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    # sig_counts_lists = np.array(data["sig_counts_lists"])
-    # ref_counts_lists = np.array(data["ref_counts_lists"])
-    # num_shots = len(sig_counts_lists[0])
+    sig_counts_lists = np.array(data["sig_counts_lists"])
+    ref_counts_lists = np.array(data["ref_counts_lists"])
+    num_shots = len(sig_counts_lists[0])
 
-    mean_vals = np.array(data["mean_vals"])
-    # mean_vals = np.array(data["median_vals"])
-    sig_mean_vals = mean_vals[0].flatten()
-    ref_mean_vals = mean_vals[1].flatten()
-    # sig_mean_vals = widefield.adus_to_photons(mean_vals[0].flatten(), em_gain=5000)
-    # ref_mean_vals = widefield.adus_to_photons(mean_vals[1].flatten(), em_gain=5000)
-    sig_mean_vals = moving_average(sig_mean_vals, 20)
-    ref_mean_vals = moving_average(ref_mean_vals, 20)
-    sig_norms = sig_mean_vals / np.mean(sig_mean_vals)
-    ref_norms = ref_mean_vals / np.mean(ref_mean_vals)
-    fig, ax = plt.subplots()
-    kpl.plot_line(ax, range(len(sig_mean_vals)), sig_mean_vals, label="Sig")
-    kpl.plot_line(ax, range(len(ref_mean_vals)), ref_mean_vals, label="Ref")
-    ax.set_xlabel("Shot index")
-    ax.set_ylabel("Average photon count / pixel")
-    ax.legend()
-    kpl.show(block=True)
+    # num_nvs = len(nv_list)
+    # threshold_list = []
+    # for ind in range(num_nvs):
+    #     sig_counts_list = sig_counts_lists[ind]
+    #     ref_counts_list = ref_counts_lists[ind]
+    #     fig = create_histogram(sig_counts_list, ref_counts_list)
+    #     all_counts_list = np.append(sig_counts_list, ref_counts_list)
+    #     _, threshold = determine_threshold(all_counts_list)
+    #     threshold_list.append(threshold)
+    #     nv_sig = nv_list[ind]
+    #     nv_name = nv_sig.name
+    # print(threshold_list)
 
-    img_arrays = np.array(data["img_arrays"])
-    img_arrays_photons = widefield.adus_to_photons(img_arrays)
+    # kpl.show(block=True)
 
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, np.mean(img_arrays_photons, axis=(0, 1, 2, 3)))
+    ref_img_array = np.array(data["ref_img_array"])
 
-    # widefield.charge_state_mle(nv_list, np.mean(img_arrays, axis=(0, 1, 2, 3)))
-
-    num_runs = data["num_runs"]
-    num_steps = data["num_steps"]
-    num_reps = data["num_reps"]
-    num_shots = num_runs * num_steps * num_reps
-
-    states = np.array([0 for ind in range(num_nvs)])
-    states_thresh = np.array([0 for ind in range(num_nvs)])
-
-    start = time.time()
-    for run_ind in range(num_runs):
-        for step_ind in range(num_steps):
-            for rep_ind in range(num_reps):
-                img_array = img_arrays[0, run_ind, step_ind, rep_ind]
-                states_list, states_thresh_list = widefield.charge_state_mle(
-                    nv_list, img_array
-                )
-                states += states_list
-                states_thresh += states_thresh_list
-    stop = time.time()
-    print(stop - start)
-
-    print(states / num_shots)
-    print(states_thresh / num_shots)
-
-    kpl.show(block=True)
+    nvn_dist_params_list = []
+    for nv in nv_list:
+        pixel_coords = widefield.get_nv_pixel_coords(nv, drift_adjust=False)
+        popt = optimize.optimize_pixel_with_img_array(
+            ref_img_array, pixel_coords=pixel_coords, return_popt=True
+        )
+        # bg, amp, sigma
+        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    print(nvn_dist_params_list)

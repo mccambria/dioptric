@@ -35,6 +35,7 @@ from majorroutines.widefield import (
     xy8,
 )
 from utils import common, widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -48,7 +49,7 @@ yellow_laser = "laser_OPTO_589"
 
 
 def do_widefield_image_sample(nv_sig, num_reps=1):
-    image_sample.widefield_image(nv_sig, num_reps)
+    return image_sample.widefield_image(nv_sig, num_reps)
 
 
 def do_scanning_image_sample(nv_sig):
@@ -73,32 +74,13 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig, num_reps)
 
 
-def do_charge_state_histograms(nv_list, charge_prep_verification=False):
-    num_reps = 50
-    num_runs = 10
+def do_charge_state_histograms(nv_list, verify_charge_states=False):
+    num_reps = 200
+    num_runs = 20
     # num_runs = 2
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, charge_prep_verification=charge_prep_verification
+        nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
     )
-
-
-def do_calibrate_nvn_dist_params(nv_list):
-    data = do_charge_state_histograms(nv_list, charge_prep_verification=True)
-    ref_img_array = data["ref_img_array"]
-
-    nvn_dist_params_list = []
-    for nv in nv_list:
-        popt = optimize.optimize_pixel_with_img_array(
-            ref_img_array, nv, return_popt=True
-        )
-        nvn_dist_params_list.append(
-            (
-                widefield.adus_to_photons(popt[-1]),  # bg
-                widefield.adus_to_photons(popt[0] + 300),  # amp
-                popt[-2],  # sigma
-            )
-        )
-    print(nvn_dist_params_list)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -139,14 +121,20 @@ def do_optimize_pixel(nv_sig):
 def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
 
+    # Pixel optimization in parallel with widefield yellow
+    if coords_key is None:
+        num_reps = 100
+        img_array = do_widefield_image_sample(nv_sig, num_reps=num_reps)
+
     opti_coords_list = []
     for nv in nv_list:
         # Pixel coords
         if coords_key is None:
-            imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
-            if scanning_from_pixel:
-                widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
-            opti_coords = do_optimize_pixel(nv)
+            # imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
+            # if scanning_from_pixel:
+            #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
+            # opti_coords = do_optimize_pixel(nv)
+            opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
             # widefield.reset_all_drift()
 
         # Scanning coords
@@ -191,16 +179,23 @@ def do_calibrate_green_red_delay():
 
 def do_optimize_scc(nv_list):
     min_tau = 16
-    max_tau = 208
-    num_steps = 13
-    num_reps = 10
-    num_runs = 50
+    max_tau = 256
+    num_steps = 16
+    num_reps = 5
+
+    # min_tau = 16
+    # max_tau = 104
+    # num_steps = 12
+    # num_reps = 8
+
+    num_runs = 20 * 25
+
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 20
-    num_runs = 10
+    num_reps = 100
+    num_runs = 30
     scc_snr_check.main(nv_list, num_reps, num_runs)
 
 
@@ -236,34 +231,36 @@ def do_resonance(nv_list):
     freq_range = 0.180
     num_steps = 40
     num_reps = 10
-    # num_runs = 120
-    num_runs = 20
+    num_runs = 120
+    # num_runs = 2
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    freq_center = 2.8572
-    freq_range = 0.060
-    num_steps = 20
-    num_reps = 10
-    num_runs = 20
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    # freq_center = 2.8572
+    for freq_center in (2.858, 2.812):
+        freq_range = 0.060
+        num_steps = 20
+        num_reps = 15
+        num_runs = 120
+        resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_rabi(nv_list):
     min_tau = 16
     max_tau = 240 + min_tau
     num_steps = 31
-    num_reps = 4
-    num_runs = 20
+    num_reps = 10
+    num_runs = 80
     # num_runs = 2
+    uwave_ind_list = [0, 1]
 
     # min_tau = 64
     # num_steps = 1
     # num_reps = 50
 
     # nv_list[1].spin_flip = True
-    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for ind in range(4):
     #     for flipped in [True, False]:
     #         for nv_ind in range(3):
@@ -468,16 +465,16 @@ def do_spin_pol_check(nv_sig):
 
 
 def do_detect_cosmic_rays(nv_list):
-    num_reps = 100
-    num_runs = 100
-    dark_time = 0
+    num_reps = 60
+    num_runs = 6 * 60
+    dark_time = 1e9
 
     charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
 
 
 def do_check_readout_fidelity(nv_list):
     num_reps = 200
-    num_runs = 10
+    num_runs = 5
 
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
@@ -491,6 +488,13 @@ def do_charge_quantum_jump(nv_list):
 def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
+
+    num_reps = 1000
+    start = time.time()
+    for ind in range(num_reps):
+        opx.test("_cache_charge_pol_incomplete", False)
+    stop = time.time()
+    print((stop - start) / num_reps)
 
     # Microwave test
     # if True:
@@ -520,12 +524,12 @@ def do_opx_constant_ac():
     #     [0],  # Analog frequencies
     # )
     # Green
-    opx.constant_ac(
-        [4],  # Digital channels
-        # [3, 4],  # Analog channels
-        # [0.03, 0.03],  # Analog voltages
-        # [110, 110],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     # [3, 4],  # Analog channels
+    #     # [0.03, 0.03],  # Analog voltages
+    #     # [110, 110],  # Analog frequencies
+    # )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -624,7 +628,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.42
+    z_coord = 4.45
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -633,75 +637,95 @@ if __name__ == "__main__":
     # region Coords (from March 12th)
 
     pixel_coords_list = [
-        [130.424, 152.027],
-        [149.37, 142.24],
-        [161.89, 127.546],
-        [134.965, 126.404],
-        [126.476, 111.281],
-        [110.102, 110.01],
-        [111.687, 124.857],
-        [82.449, 109.831],
-        [144.021, 186.017],
-        [159.297, 184.106],
-        [173.838, 100.29],
-        [171.224, 71.041],
-        [157.345, 56.683],
-        [104.585, 147.209],
-        [60.285, 99.869],
+        [131.447, 154.371],
+        [149.612, 145.434],
+        [162.289, 130.925],
+        [135.679, 128.482],
+        [126.597, 113.929],
+        [110.558, 113.266],
+        [112.347, 127.94],
+        [83.832, 112.609],
+        [144.666, 188.907],
+        [159.542, 186.902],
+        [174.584, 103.798],
+        [171.363, 74.501],
+        [158.976, 59.177],
+        [105.906, 149.857],
+        [60.542, 102.178],
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [108.521, 109.715],
-        [108.921, 109.958],
-        [109.169, 110.303],
-        [108.587, 110.341],
-        [108.369, 110.67],
-        [108.004, 110.702],
-        [108.103, 110.336],
-        [107.394, 110.71],
-        [108.863, 108.943],
-        [109.167, 108.999],
-        [109.409, 110.958],
-        [109.348, 111.623],
-        [109.039, 111.972],
-        [107.953, 109.844],
-        [106.937, 110.9],
+        [108.485, 109.627],
+        [108.925, 109.878],
+        [109.177, 110.226],
+        [108.606, 110.28],
+        [108.363, 110.59],
+        [107.995, 110.61],
+        [108.077, 110.238],
+        [107.374, 110.612],
+        [108.848, 108.844],
+        [109.176, 108.916],
+        [109.383, 110.881],
+        [109.319, 111.517],
+        [109.02, 111.876],
+        [107.923, 109.72],
+        [106.92, 110.791],
     ]
     red_coords_list = [
-        [73.14, 74.937],
-        [73.457, 75.128],
-        [73.685, 75.413],
-        [73.248, 75.478],
-        [73.037, 75.735],
-        [72.835, 75.712],
-        [72.796, 75.461],
-        [72.33, 75.684],
-        [73.406, 74.299],
-        [73.669, 74.341],
-        [74.036, 75.932],
-        [73.868, 76.536],
-        [73.672, 76.756],
-        [72.707, 75.044],
-        [71.834, 75.944],
+        [73.166, 74.936],
+        [73.442, 75.083],
+        [73.701, 75.35],
+        [73.191, 75.334],
+        [72.997, 75.654],
+        [72.835, 75.638],
+        [72.754, 75.386],
+        [72.278, 75.661],
+        [73.401, 74.276],
+        [73.64, 74.29],
+        [73.978, 75.856],
+        [73.854, 76.464],
+        [73.673, 76.742],
+        [72.754, 74.993],
+        [71.845, 75.925],
     ]
+    # 0.33
     threshold_list = [
-        19.5,
+        21.5,
         22.5,
-        21.5,
-        19.5,
-        19.5,
-        18.5,
-        19.5,
-        21.5,
-        19.5,
-        18.5,
-        17.5,
-        15.5,
-        14.5,
         20.5,
-        14.5,
+        21.5,
+        20.5,
+        19.5,
+        20.5,
+        21.5,
+        17.5,
+        17.5,
+        17.5,
+        16.5,
+        15.5,
+        18.5,
+        15.5,
     ]
-    nvn_dist_params_list = [None for ind in range(num_nvs)]
+    nvn_dist_params_list = [
+        (0.06443429808816972, 0.3791189649289437, 4.1368418856851585),
+        (0.07494430636171144, 0.3710679423300316, 4.213857503731686),
+        (0.07204056083883696, 0.3275187253618198, 4.290060222321363),
+        (0.0881614063436749, 0.3042073277815471, 4.032393140373288),
+        (0.07711157198015801, 0.31971340404332166, 4.107311108466573),
+        (0.08494854460192118, 0.27504143619495125, 4.109166862938441),
+        (0.07915796610209644, 0.31873493665191827, 4.210681202111325),
+        (0.10493410261229554, 0.24354232551545466, 4.0165888857038174),
+        (0.061437622449729334, 0.2730253059227975, 4.156206623493335),
+        (0.06323589585568681, 0.2702014176282753, 4.154528533437604),
+        (0.057101333040385456, 0.25439030258651874, 4.369377738400205),
+        (0.06193103589587155, 0.2265636220969416, 4.2627373670479995),
+        (0.04450097443671284, 0.19157999594037944, 4.715086676445699),
+        (0.07553350344343861, 0.25497480628949876, 4.054140224035654),
+        (0.05401170599257353, 0.19846977223089152, 4.537236070880071),
+    ]
+    # scc_duration_list = [
+
+    # ]
     # endregion
     # region Coords (smiley)
 
@@ -762,10 +786,11 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 1200
+    nv_list[0].expected_counts = 1250
     nv_sig = widefield.get_repr_nv_sig(nv_list)
 
-    # nv_inds = [0, 2, 4]
+    # nv_inds = [0]
+    # nv_inds.extend(list(range(8, 15)))
     # nv_list = [nv_list[ind] for ind in nv_inds]
     # for nv in nv_list:
     #     nv.threshold = 27.5
@@ -815,7 +840,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([0, -40])
+        # widefield.set_pixel_drift([-2, -8])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -828,7 +853,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -864,12 +889,11 @@ if __name__ == "__main__":
         #     if ind == 0:
         #         continue
         #     nv = nv_list[ind]
-        #     green_coords = nv[green_coords_key]
+        #     green_coords = nv[green_coords_key]5
         #     nv[green_coords_key][0] += 0.500
 
         # do_charge_state_histograms(nv_list)
-        do_check_readout_fidelity(nv_list)
-        # do_calibrate_nvn_dist_params(nv_list)
+        # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
@@ -896,6 +920,28 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
+
+        # Performance testing
+        # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
+        # img_array = np.array(data["ref_img_array"])
+        # num_nvs = len(nv_list)
+        # counts = [
+        #     widefield.integrate_counts(
+        #         img_array, widefield.get_nv_pixel_coords(nv_list[ind])
+        #     )
+        #     for ind in range(num_nvs)
+        # ]
+        # res_thresh = [counts[ind] > nv_list[ind].threshold for ind in range(num_nvs)]
+        # res_mle = widefield.charge_state_mle(nv_list, img_array)
+        # num_reps = 1000
+        # start = time.time()
+        # for ind in range(num_reps):
+        #     widefield.charge_state_mle(nv_list, img_array)
+        # stop = time.time()
+        # print(stop - start)
+        # print(res_thresh)
+        # print(res_mle)
+        # print([res_mle[ind] == res_thresh[ind] for ind in range(num_nvs)])
 
     # region Cleanup
 

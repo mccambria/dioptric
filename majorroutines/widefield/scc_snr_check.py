@@ -48,33 +48,36 @@ def process_and_print(nv_list, counts):
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
-    uwave_ind = 0
-    uwave_dict = tb.get_uwave_dict(uwave_ind)
-    uwave_freq = uwave_dict["frequency"]
+    uwave_ind_list = [0, 1]
+
+    # seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), [0]]
+    # print(seq_args)
+    # return
 
     seq_file = "resonance_ref.py"
     pulse_gen = tb.get_server_pulse_gen()
 
     def run_fn(step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
-        seq_args.append(step_inds)
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
 
-    counts, _ = base_routine.main(
+    data = base_routine.main(
         nv_list,
         1,
         num_reps,
         num_runs,
         run_fn=run_fn,
-        uwave_ind=uwave_ind,
+        uwave_ind_list=uwave_ind_list,
         save_images=False,
+        charge_prep_fn=None,
     )
 
     ### Report results and cleanup
 
-    process_and_print(nv_list, counts)
+    states = data["states"]
+    process_and_print(nv_list, states)
 
     tb.reset_cfm()

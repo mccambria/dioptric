@@ -13,49 +13,40 @@ from random import shuffle
 import numpy as np
 
 from majorroutines.widefield import optimize
+from utils import common, widefield
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import widefield
-
-try:
-    camera = tb.get_server_camera()
-    pulse_gen = tb.get_server_pulse_gen()
-except Exception:
-    pass
-
-
-def charge_prep_no_prep(rep_ind, nv_list, initial_states_list=None):
-    pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
-    return 0
+from utils.constants import ChargeStateEstimationMode
 
 
 def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
-    return charge_prep_loop(rep_ind, nv_list, verify_charge_states=False)
+    charge_prep_base(nv_list, initial_states_list)
 
 
-def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
-    if rep_ind == 0:
-        num_attempts = charge_prep_loop(rep_ind, nv_list, initial_states_list)
-    else:
-        pulse_gen.insert_input_stream("_cache_charge_pol_incomplete", False)
-        num_attempts = 0
-    return num_attempts
+# def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
+#     if rep_ind == 0:
+#         charge_prep_loop(nv_list, initial_states_list)
 
 
-def charge_prep_loop(
-    rep_ind, nv_list, initial_states_list=None, verify_charge_states=None
+def charge_prep_loop(rep_ind, nv_list, initial_states_list=None):
+    charge_prep_base(
+        nv_list,
+        initial_states_list,
+        targeted_polarization=True,
+        verify_charge_states=True,
+    )
+
+
+def charge_prep_base(
+    nv_list,
+    initial_states_list=None,
+    targeted_polarization=True,
+    verify_charge_states=False,
 ):
     # Initial setup
+    pulse_gen = tb.get_server_pulse_gen()
     num_nvs = len(nv_list)
-    has_way_to_verify_list = [nv.nvn_dist_params is not None for nv in nv_list]
-    no_way_to_verify = True not in has_way_to_verify_list
-    if verify_charge_states is None:
-        verify_charge_states = not no_way_to_verify
     states_list = initial_states_list
-    max_num_attempts = 10
-    # max_num_attempts = 1
-    out_of_attempts = False
-    attempt_ind = 0
 
     # Inner function for determining which NVs to target
     def assemble_charge_pol_target_list(states_list):
@@ -63,40 +54,42 @@ def charge_prep_loop(
             charge_pol_target_list = [el is None or el == 0 for el in states_list]
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
+        # MCC
+        # charge_pol_target_list = [False for ind in range(num_nvs)]
+        # charge_pol_target_list[2] = True
         return charge_pol_target_list
 
-    # Loop until we have a reason to stop
-    while True:
+    if verify_charge_states:
+        max_num_attempts = 10
+        # max_num_attempts = 1
+        out_of_attempts = False
+        attempt_ind = 0
+
+        # Loop until we have a reason to stop
+        while True:
+            out_of_attempts = attempt_ind == max_num_attempts
+            charge_pol_target_list = assemble_charge_pol_target_list(states_list)
+
+            # Reasons to stop
+            no_more_targets = True not in charge_pol_target_list
+            charge_pol_complete = no_more_targets or out_of_attempts
+            pulse_gen.insert_input_stream(
+                "_cache_charge_pol_incomplete", not charge_pol_complete
+            )
+            if charge_pol_complete:
+                break
+
+            pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
+
+            _, _, states_list = read_and_process_image(nv_list)
+
+            # Move on to next attempt
+            attempt_ind += 1
+    elif targeted_polarization:
         charge_pol_target_list = assemble_charge_pol_target_list(states_list)
-
-        # Reasons to stop
-        charge_pol_complete = (
-            (True not in charge_pol_target_list)  # No more targets left
-            or out_of_attempts
-            or (attempt_ind == 1 and not verify_charge_states)
-        )
-        pulse_gen.insert_input_stream(
-            "_cache_charge_pol_incomplete", not charge_pol_complete
-        )
-        if charge_pol_complete:
-            break
-
-        # Target NVs in charge_pol_target_list
-        for val in charge_pol_target_list:
-            pulse_gen.insert_input_stream("_cache_charge_pol_target", val)
-
-        # Get charge state verification image
-        pulse_gen.insert_input_stream(
-            "_cache_verify_charge_states", verify_charge_states
-        )
-        if verify_charge_states:
-            _, counts_list, states_list = read_and_process_image(nv_list)
-
-        # Move on to next attempt
-        attempt_ind += 1
-        out_of_attempts = attempt_ind == max_num_attempts
-
-    return attempt_ind
+        pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
+    else:
+        pass
 
 
 # def read_image_and_get_counts(nv_list):
@@ -114,6 +107,7 @@ def charge_prep_loop(
 
 
 def read_and_process_image(nv_list):
+    camera = tb.get_server_camera()
     img_str = camera.read()
     img_array_adus, baseline = widefield.img_str_to_array(img_str)
     # baseline = 300
@@ -125,7 +119,20 @@ def read_and_process_image(nv_list):
 
     counts_list = [get_counts(nv) for nv in nv_list]
 
-    states_list = widefield.charge_state_mle(nv_list, img_array)
+    config = common.get_config_dict()
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
+        num_nvs = len(nv_list)
+        states_list = []
+        for nv_ind in range(num_nvs):
+            states_list.append(
+                widefield.threshold(nv_list[nv_ind], counts_list[nv_ind])
+            )
+    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        # start = time.time()
+        states_list = widefield.charge_state_mle(nv_list, img_array)
+        # stop = time.time()
+        # print(stop - start)
 
     return img_array, counts_list, states_list
 
@@ -137,13 +144,13 @@ def main(
     num_runs,
     run_fn=None,
     step_fn=None,
-    uwave_ind=0,
+    uwave_ind_list=0,
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,
     save_images=False,
     stream_load_in_run_fn=True,
-    charge_prep_fn=charge_prep_loop,
+    charge_prep_fn=None,
 ) -> tuple[np.ndarray, dict]:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 
@@ -198,26 +205,24 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
-
-    threshold_list = [nv.threshold for nv in nv_list]
+    camera = tb.get_server_camera()
+    pulse_gen = tb.get_server_pulse_gen()
 
     # Sig gen setup - all but turning on the output
-    if isinstance(uwave_ind, int):
-        uwave_ind_list = [uwave_ind]
-    else:
-        uwave_ind_list = uwave_ind
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
     for ind in uwave_ind_list:
         uwave_dict = tb.get_uwave_dict(ind)
         uwave_power = uwave_dict["uwave_power"]
         if uwave_freq is None:
             freq = uwave_dict["frequency"]
-        elif isinstance(uwave_ind, int):
+        elif isinstance(uwave_freq, float):
             freq = uwave_freq
         else:
             freq = uwave_freq[ind]
         sig_gen = tb.get_server_sig_gen(ind=ind)
-        if load_iq:  # MCC
-            uwave_power += 0.4
+        # if load_iq:  # MCC
+        #     uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
         sig_gen.set_freq(freq)
 
@@ -230,7 +235,7 @@ def main(
     median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     if save_images:
         shape = widefield.get_img_array_shape()
-        img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, *shape))
+        img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -246,7 +251,6 @@ def main(
                 print(f"\nRun index: {run_ind}")
 
                 states_list = None
-                charge_prep_readouts_list = []
 
                 for ind in uwave_ind_list:
                     sig_gen = tb.get_server_sig_gen(ind=ind)
@@ -272,18 +276,15 @@ def main(
                     if not stream_load_in_run_fn:
                         pulse_gen.stream_start()
 
-                    if save_images:
-                        img_array_list = [[] for exp_ind in range(num_exps_per_rep)]
-
                     # Reps loop
+                    start = time.time()
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
                             if charge_prep_fn is not None:
-                                charge_prep_readouts = charge_prep_fn(
+                                charge_prep_fn(
                                     rep_ind, nv_list, initial_states_list=states_list
                                 )
-                                charge_prep_readouts_list.append(charge_prep_readouts)
-                            img_array, counts_list, states_list = (
+                            (img_array, counts_list, states_list) = (
                                 read_and_process_image(nv_list)
                             )
                             counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
@@ -296,20 +297,16 @@ def main(
                             )
 
                             if save_images:
-                                img_array_list[exp_ind].append(img_array)
-
-                    if save_images:
-                        for exp_ind in range(num_exps_per_rep):
-                            img_arrays[exp_ind, run_ind, step_ind, :, :] = np.mean(
-                                img_array_list[exp_ind], axis=0
-                            )
+                                img_arrays[
+                                    exp_ind, run_ind, step_ind, rep_ind, :, :
+                                ] = img_array
+                    stop = time.time()
+                    print((stop - start) / (num_reps * num_exps_per_rep))
+                    print()
 
                     pulse_gen.resume()
 
                 ### Move on to the next run
-
-                if len(charge_prep_readouts_list) > 0:
-                    print(np.mean(charge_prep_readouts_list))
 
                 # Turn stuff off
                 pulse_gen.halt()
@@ -350,7 +347,7 @@ def main(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
-        "uwave_ind": uwave_ind,
+        "uwave_ind": uwave_ind_list,
         "uwave_freq": uwave_freq,
         "num_exps_per_rep": num_exps_per_rep,
         "load_iq": load_iq,
@@ -367,7 +364,7 @@ def main(
             "img_arrays-units": "ADUs",
             "img_arrays": img_arrays,
         }
-    return counts, raw_data
+    return raw_data
 
 
 if __name__ == "__main__":

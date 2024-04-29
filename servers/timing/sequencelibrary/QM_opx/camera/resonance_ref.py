@@ -16,14 +16,11 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(
-    pol_coords_list,
-    ion_coords_list,
-    spin_flip_ind_list,
-    uwave_ind,
+    base_scc_seq_args,
     step_vals=None,
     num_reps=1,
     reference=True,
@@ -39,24 +36,13 @@ def get_seq(
     # q_comp = 0.5 * np.sin(phase_rad)
     # iq_pulse_dict = {0: , 90:}
 
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    buffer = seq_utils.get_widefield_operation_buffer()
-
     with qua.program() as seq:
 
-        def uwave_macro_sig(step_val):
-            qua.align()
-            qua.play("pi_pulse", sig_gen_el)
-            # if phase is not None:
-            #     qua.play("pi_pulse", i_el)
-            #     qua.play("pi_pulse", q_el)
-            qua.wait(buffer, sig_gen_el)
+        def uwave_macro_sig(uwave_ind_list, step_val):
+            seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        base_sequence.macro(
-            pol_coords_list,
-            ion_coords_list,
-            spin_flip_ind_list,
-            uwave_ind,
+        base_scc_sequence.macro(
+            base_scc_seq_args,
             uwave_macro_sig,
             step_vals,
             num_reps,
@@ -82,20 +68,28 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [108.63547773676507, 108.73446819207585],
-                [109.45547773676506, 110.64046819207584],
+                [
+                    [108.48124282165938, 109.79869381786162],
+                    [108.92124282165938, 110.04969381786162],
+                    [109.17324282165939, 110.39769381786162],
+                ],
+                [
+                    [73.16298031205457, 75.08589052467828],
+                    [73.43898031205457, 75.23289052467827],
+                    [73.69798031205457, 75.49989052467826],
+                ],
+                [
+                    100,
+                    100,
+                    100,
+                ],
+                [],
+                [0, 1],
             ],
-            [
-                [73.55849816673624, 74.04886961198135],
-                [74.19849816673624, 75.56986961198135],
-            ],
-            [],
-            0,
             [0],
-            1,
         )
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(500e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -182,7 +182,11 @@ class CameraNuvuHnu512gamma(LabradServer):
         # logging.info(f"processing: {proc_time}")
         # return img_str
 
-        return self.cam.read()
+        # start = time.time()
+        result = self.cam.read()
+        # stop = time.time()
+        # logging.info(stop - start)
+        return result
 
     @setting(5)
     def reset(self, c):

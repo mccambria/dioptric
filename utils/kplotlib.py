@@ -11,6 +11,8 @@ Created on June 22nd, 2022
 # region Imports and constants
 
 import re
+import string
+import sys
 from enum import Enum, auto
 
 import matplotlib as mpl
@@ -22,6 +24,8 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from strenum import StrEnum
 
 import utils.common as common
+
+alphabet = tuple(string.ascii_lowercase)
 
 
 # matplotlib semantic locations for legends and text boxes
@@ -140,6 +144,7 @@ data_color_cycler = [
     mpl.colors.cnames["springgreen"],
     mpl.colors.cnames["indianred"],
     mpl.colors.cnames["darkslateblue"],
+    mpl.colors.cnames["sienna"],
 ]
 line_color_cycler = data_color_cycler.copy()
 hist_color_cycler = data_color_cycler.copy()
@@ -200,6 +205,18 @@ def zero_to_one_threshold(val):
 # region Miscellaneous
 
 kplotlib_initialized = False
+
+
+def calc_mosaic_layout(num_nvs):
+    width = round(np.sqrt(num_nvs))
+    height = int(np.ceil(num_nvs / width))
+    num_axes = height * width
+
+    vals = np.reshape(alphabet[:num_axes], (height, width))
+    if num_nvs != num_axes:
+        vals[0, num_nvs - num_axes :] = "."
+
+    return vals
 
 
 def init_kplotlib(
@@ -274,6 +291,10 @@ def init_kplotlib(
     plt.rcParams["image.cmap"] = "inferno"
     plt.rcParams["figure.constrained_layout.use"] = constrained_layout
     plt.rcParams["image.interpolation"] = "none"
+    plt.rcParams["legend.fontsize"] = 0.9 * FontSize[default_font_size.value]
+    plt.rcParams["legend.handlelength"] = 0.8
+    plt.rcParams["legend.handletextpad"] = 0.4
+    plt.rcParams["legend.columnspacing"] = 1.0
 
 
 def get_default_color(ax, plot_type):
@@ -717,16 +738,5 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
 # endregion
 
 if __name__ == "__main__":
-    # print(cambria_fixed(15))
-    # sys.exit()
-
-    # calc_zfs_from_compiled_data()
-
-    init_kplotlib()
-
-    # main()
-    x = np.random.randint(10, size=500)
-    fig, ax = plt.subplots()
-    histogram(ax, x, hist_type=HistType.BAR)
-
-    plt.show(block=True)
+    num_nvs = 12
+    print(calc_mosaic_layout(num_nvs))

@@ -16,18 +16,22 @@ import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(pol_coords_list, dark_time_ns, num_reps):
+def get_seq(pol_coords_list, charge_prep, dark_time_ns, num_reps):
     if num_reps is None:
         num_reps = 1
+    num_nvs = len(pol_coords_list)
 
     dark_time = seq_utils.convert_ns_to_cc(dark_time_ns, allow_zero=True)
 
     with qua.program() as seq:
-        seq_utils.init()
+        seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()
 
         def one_rep():
-            seq_utils.macro_polarize(pol_coords_list, spin_pol=False)
+            if charge_prep:
+                seq_utils.macro_polarize(
+                    pol_coords_list, spin_pol=False, targeted_polarization=True
+                )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
             if dark_time > 0:

@@ -8,15 +8,14 @@ Created on October 13th, 2023
 """
 
 
-from qm import qua
-from qm import QuantumMachinesManager
+import matplotlib.pyplot as plt
+from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
+
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 from utils import common
 from utils import tool_belt as tb
-import matplotlib.pyplot as plt
-
 from utils.constants import NVSpinState
 
 
@@ -67,7 +66,9 @@ def get_seq(args, num_reps):
     # Call the base sequence
 
     uwave_macro = (uwave_macro_0, uwave_macro_1)
-    seq = base_sequence.get_seq(pol_coords_list, ion_coords_list, num_reps, uwave_macro)
+    seq = base_scc_sequence.get_seq(
+        pol_coords_list, ion_coords_list, num_reps, uwave_macro
+    )
 
     seq_ret_vals = []
     return seq, seq_ret_vals

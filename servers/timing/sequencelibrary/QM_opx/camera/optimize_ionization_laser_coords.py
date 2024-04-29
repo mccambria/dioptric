@@ -32,9 +32,7 @@ def get_seq(pol_coords, ion_coords, num_reps):
 
         def one_rep():
             # Charge polarization with green, spin polarization with yellow
-            seq_utils.macro_polarize(
-                [pol_coords], spin_pol=False, verify_charge_states=False
-            )
+            seq_utils.macro_polarize([pol_coords], spin_pol=False)
 
             # Ionization
             seq_utils.macro_ionize([ion_coords])

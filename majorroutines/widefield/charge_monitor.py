@@ -18,6 +18,7 @@ from matplotlib.ticker import MaxNLocator
 from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import factorial
+from scipy.stats import poisson
 
 from majorroutines.widefield import base_routine, optimize
 from utils import common, widefield
@@ -25,57 +26,74 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import ChargeStateEstimationMode, LaserKey, NVSig
 
 
 def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
+    charge_prep = True
     main(
         nv_list,
         num_reps,
         num_runs,
         "detect_cosmic_rays",
-        base_routine.charge_prep_loop,
+        charge_prep,
         process_detect_cosmic_rays,
         dark_time=dark_time,
     )
 
 
-def process_detect_cosmic_rays(data):
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    counts = np.array(data["counts"])
-    sig_counts = counts[0]
-    states, _ = widefield.threshold_counts(nv_list, sig_counts)
-    img_array = np.array([states[nv_ind].flatten() for nv_ind in range(num_nvs)])
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, aspect="auto")
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-    return fig
-
-
 def check_readout_fidelity(nv_list, num_reps, num_runs):
+    charge_prep = False
     main(
         nv_list,
         num_reps,
         num_runs,
         "check_readout_fidelity",
-        # base_routine.charge_prep_loop_first_rep,
-        # base_routine.charge_prep_no_verification,
-        base_routine.charge_prep_no_prep,
+        charge_prep,
         process_check_readout_fidelity,
     )
 
 
 def charge_quantum_jump(nv_list, num_reps):
     num_runs = 1
+    charge_prep = False
     main(
         nv_list,
         num_reps,
         num_runs,
         "charge_quantum_jump",
-        base_routine.charge_prep_loop_first_rep,
+        charge_prep,
         process_detect_cosmic_rays,
     )
+
+
+def process_detect_cosmic_rays(data):
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+
+    states = np.array(data["states"])[0]
+    states_by_nv = np.array([states[nv_ind].flatten() for nv_ind in range(num_nvs)])
+
+    coincidences = []
+    num_shots = len(states_by_nv[0])
+    for shot_ind in range(num_shots):
+        coincidences.append(num_nvs - np.sum(states_by_nv[:, shot_ind]))
+    coincidences = np.array(coincidences)
+    hist_fig, ax = plt.subplots()
+    kpl.histogram(ax, coincidences, label=f"Data ({num_nvs} NVs)")
+    ax.set_xlabel("Number NVs found in NV0")
+    ax.set_ylabel("Number of occurrences")
+    x_vals = np.array(range(0, num_nvs + 1))
+    expected_dist = num_shots * poisson.pmf(x_vals, np.mean(coincidences))
+    kpl.plot_points(
+        ax, x_vals, expected_dist, label="Poisson pmf", color=kpl.KplColors.RED
+    )
+    ax.legend()
+
+    im_fig, ax = plt.subplots()
+    kpl.imshow(ax, states_by_nv, aspect="auto")
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    return hist_fig, im_fig
 
 
 def process_check_readout_fidelity(data):
@@ -85,8 +103,13 @@ def process_check_readout_fidelity(data):
     num_runs = counts.shape[2]
     num_reps = counts.shape[4]
     sig_counts = counts[0]
-    states, _ = widefield.threshold_counts(nv_list, sig_counts)
-    # states = np.array(data["charge_states"])[0]
+    config = common.get_config_dict()
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    # charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
+    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
+        states = widefield.threshold_counts(nv_list, sig_counts)
+    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        states = np.array(data["states"])[0]
 
     figsize = kpl.figsize
     figsize[1] *= 1.5
@@ -141,7 +164,7 @@ def main(
     num_reps,
     num_runs,
     caller_fn_name,
-    charge_prep_fn,
+    charge_prep,
     data_processing_fn,
     dark_time=0,
 ):
@@ -158,11 +181,12 @@ def main(
 
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
-        seq_args = [pol_coords_list, dark_time]
+        seq_args = [pol_coords_list, charge_prep, dark_time]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    charge_prep_fn = base_routine.charge_prep_no_verification if charge_prep else None
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -190,16 +214,27 @@ def main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
     if fig is not None:
-        dm.save_figure(fig, file_path)
+        if isinstance(fig, tuple):
+            num_figs = len(fig)
+            for fig_ind in range(num_figs):
+                dm.save_figure(fig, file_path + f"-{fig_ind}")
+        else:
+            dm.save_figure(fig, file_path)
+
     tb.reset_cfm()
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1508726411686)
+    data = dm.get_raw_data(file_id=1516812721880)
 
     process_check_readout_fidelity(data)
+
+    ###
+
+    # data = dm.get_raw_data(file_id=1512018506235)
+
     # process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

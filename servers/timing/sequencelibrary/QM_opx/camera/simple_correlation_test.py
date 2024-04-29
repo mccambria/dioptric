@@ -16,38 +16,26 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(
-    pol_coords_list,
-    ion_coords_list,
-    anticorrelation_ind_list,
-    uwave_ind,
-    num_reps=1,
-):
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
+def get_seq(base_scc_seq_args, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
 
     with qua.program() as seq:
         qua_random = qua.Random()
 
-        def uwave_macro_sig(step_val):
+        def uwave_macro_sig(uwave_ind_list, step_val):
             qua.assign(step_val, qua_random.rand_int(2))
             # qua.assign(step_val, 1)
-            qua.align()
-            with qua.if_(step_val == 1):
-                qua.play("pi_pulse", sig_gen_el)
-                qua.wait(buffer, sig_gen_el)
+            for uwave_ind in uwave_ind_list:
+                sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
+                qua.align()
+                with qua.if_(step_val == 1):
+                    qua.play("pi_pulse", sig_gen_el)
+                    qua.wait(buffer, sig_gen_el)
 
-        base_sequence.macro(
-            pol_coords_list,
-            ion_coords_list,
-            anticorrelation_ind_list,
-            uwave_ind,
-            uwave_macro_sig,
-            num_reps=num_reps,
-        )
+        base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, num_reps=num_reps)
 
     seq_ret_vals = []
     return seq, seq_ret_vals
