@@ -48,7 +48,8 @@ def process_and_print(nv_list, counts):
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
-    uwave_ind_list = [0, 1]
+    # uwave_ind_list = [0, 1]
+    uwave_ind_list = [1, 0]
 
     # seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), [0]]
     # print(seq_args)

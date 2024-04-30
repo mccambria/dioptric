@@ -24,6 +24,7 @@ def init(num_nvs=None):
     """
     This should be the first command we call in any sequence
     """
+
     # Declare cached QUA variables (helps reduce compile times)
     global _cache_x_freq
     _cache_x_freq = qua.declare(int)
@@ -179,6 +180,7 @@ def macro_scc(
     spin_flip_ind_list=None,
     uwave_ind_list=None,
     shelving_coords_list=None,
+    scc_duration_override=None,
 ):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -207,7 +209,11 @@ def macro_scc(
         )
     else:
         _macro_scc_no_shelving(
-            scc_coords_list, scc_duration_list, spin_flip_ind_list, uwave_ind_list
+            scc_coords_list,
+            scc_duration_list,
+            spin_flip_ind_list,
+            uwave_ind_list,
+            scc_duration_override,
         )
 
 
@@ -269,6 +275,7 @@ def _macro_scc_no_shelving(
     duration_list=None,
     spin_flip_ind_list=None,
     uwave_ind_list=None,
+    duration_override=None,
 ):
     # Basic setup
 
@@ -293,7 +300,8 @@ def _macro_scc_no_shelving(
         ion_laser_name,
         ion_pulse_name,
         first_coords_list,
-        first_duration_list,
+        duration_list=first_duration_list,
+        duration_override=duration_override,
     )
 
     # Just exit here if all NVs are SCC'ed in the first batch
@@ -313,7 +321,8 @@ def _macro_scc_no_shelving(
         ion_laser_name,
         ion_pulse_name,
         second_coords_list,
-        second_duration_list,
+        duration_list=second_duration_list,
+        duration_override=duration_override,
     )
 
 
@@ -453,7 +462,12 @@ def macro_run_aods(laser_names=None, aod_suffices=None, amps=None):
 
 
 def _macro_pulse_list(
-    laser_name, pulse_name, coords_list, duration_list=None, target_list=None
+    laser_name,
+    pulse_name,
+    coords_list,
+    duration_list=None,
+    target_list=None,
+    duration_override=None,
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -486,7 +500,12 @@ def _macro_pulse_list(
     global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_target
 
     def macro_sub():
-        duration = None if duration_list is None else _cache_duration
+        if duration_override is not None:
+            duration = duration_override
+        elif duration_list is not None:
+            duration = _cache_duration
+        else:
+            duration = None
         macro_pulse(
             laser_name,
             (_cache_x_freq, _cache_y_freq),

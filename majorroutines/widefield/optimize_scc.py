@@ -18,21 +18,23 @@ from utils import widefield as widefield
 
 
 def process_and_plot(nv_list, taus, sig_counts, ref_counts):
+    num_nvs = len(nv_list)
+
     avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
     # avg_snr_ste = None
 
-    # sig_fig, sig_ax = plt.subplots()
-    # widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
-    # sig_ax.set_xlabel("Ionization pulse duration (ns)")
-    # sig_ax.set_ylabel("Signal counts")
+    sig_fig, sig_ax = plt.subplots()
+    widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
+    sig_ax.set_xlabel("Ionization pulse duration (ns)")
+    sig_ax.set_ylabel("Signal counts")
 
-    # ref_fig, ref_ax = plt.subplots()
-    # widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
-    # ref_ax.set_xlabel("Ionization pulse duration (ns)")
-    # ref_ax.set_ylabel("Reference counts")
+    ref_fig, ref_ax = plt.subplots()
+    widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
+    ref_ax.set_xlabel("Ionization pulse duration (ns)")
+    ref_ax.set_ylabel("Reference counts")
 
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
@@ -48,6 +50,19 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     kpl.plot_points(avg_snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
     avg_snr_ax.set_xlabel("Ionization pulse duration (ns)")
     avg_snr_ax.set_ylabel("Average SNR")
+
+    # Optimum SCC pulse duration for each NV
+    opti_snrs = []
+    opti_durations = []
+    for nv_ind in range(num_nvs):
+        opti_snr = round(np.max(avg_snr[nv_ind]), 3)
+        opti_snrs.append(opti_snr)
+        opti_duration = round(taus[np.argmax(avg_snr[nv_ind])])
+        opti_durations.append(opti_duration)
+    print("Optimum SNRs")
+    print(opti_snrs)
+    print("Optimum SCC pulse durations")
+    print(opti_durations)
 
     return sig_fig, ref_fig, snr_fig
     # return sig_fig, ref_fig, snr_fig, avg_snr_fig
@@ -65,11 +80,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
-
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
-        seq_args.append(shuffled_taus)
-
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind), shuffled_taus]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -128,8 +140,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    # data = dm.get_raw_data(file_id=1515235873307)  # 0.155
     data = dm.get_raw_data(file_id=1516283334251)  # 0.165
     # data = dm.get_raw_data(file_id=1516334723697)  # 0.18
+    # data = dm.get_raw_data(file_id=1516951871522)  # 0.19
+    # data = dm.get_raw_data(file_id=1517004902259)  # 0.20
 
     nv_list = data["nv_list"]
     taus = data["taus"]

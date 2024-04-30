@@ -18,9 +18,7 @@ def macro(
     uwave_macro,
     step_vals=None,
     num_reps=1,
-    pol_duration_ns=None,
-    scc_duration_ns=None,
-    readout_duration_ns=None,
+    scc_duration_override=None,
     reference=True,
 ):
     """Base spin sequence as a QUA macro for widefield experiments with many
@@ -87,21 +85,16 @@ def macro(
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
-    # scc_duration_ns and pol_duration_ns overrides NV-specific durations
-    if scc_duration_ns is not None:
-        scc_duration_list = [scc_duration_ns for ind in range(num_nvs)]
-    if pol_duration_ns is not None:
-        pol_duration_list = [pol_duration_ns for ind in range(num_nvs)]
-    else:
-        pol_duration_list = None
-
     ### QUA stuff
 
     seq_utils.init(num_nvs)
     step_val = qua.declare(int)
+    # scc_duration_override = qua.declare(int)
+    # scc_duration_override = 64
+    # scc_duration_override = None
 
     def one_exp(exp_ind):
-        seq_utils.macro_polarize(pol_coords_list, pol_duration_list)
+        seq_utils.macro_polarize(pol_coords_list)
         uwave_macro[exp_ind](uwave_ind_list, step_val)
 
         # Always look at ms=0 counts for the reference
@@ -114,8 +107,9 @@ def macro(
             exp_spin_flip_ind_list,
             uwave_ind_list,
             pol_coords_list,
+            scc_duration_override,
         )
-        seq_utils.macro_charge_state_readout(readout_duration_ns)
+        seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()
 
     def one_rep():
@@ -129,5 +123,9 @@ def macro(
     if step_vals is None:
         one_step()
     else:
-        with qua.for_each_(step_val, step_vals):
-            one_step()
+        if scc_duration_override is not None:
+            with qua.for_each_(scc_duration_override, step_vals):
+                one_step()
+        else:
+            with qua.for_each_(step_val, step_vals):
+                one_step()

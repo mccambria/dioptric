@@ -17,19 +17,20 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
+    scc_duration_steps = [seq_utils.convert_ns_to_cc(el) for el in scc_duration_steps]
     with qua.program() as seq:
+        scc_duration_override = qua.declare(int)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        for val in scc_duration_steps:
-            base_scc_sequence.macro(
-                base_scc_seq_args,
-                uwave_macro_sig,
-                step_vals=None,
-                num_reps=num_reps,
-                scc_duration_ns=val,
-            )
+        base_scc_sequence.macro(
+            base_scc_seq_args,
+            uwave_macro_sig,
+            step_vals=scc_duration_steps,
+            num_reps=num_reps,
+            scc_duration_override=scc_duration_override,
+        )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -47,15 +48,25 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [112.21219579120823, 110.40003798562638],
-                [112.10719579120823, 110.9080379856264],
+                [
+                    [108.48124282165938, 109.79869381786162],
+                    [108.92124282165938, 110.04969381786162],
+                    [109.17324282165939, 110.39769381786162],
+                ],
+                [
+                    [73.16298031205457, 75.08589052467828],
+                    [73.43898031205457, 75.23289052467827],
+                    [73.69798031205457, 75.49989052467826],
+                ],
+                [
+                    100,
+                    100,
+                    100,
+                ],
+                [],
+                [0, 1],
             ],
-            [
-                [75.99059786642306, 75.34468901215536],
-                [75.64159786642307, 76.07968901215536],
-            ],
-            0,
-            [1000, 200, 16],
+            [100, 112, 124],
             5,
         )
 

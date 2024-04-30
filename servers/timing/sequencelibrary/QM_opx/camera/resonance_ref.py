@@ -45,10 +45,10 @@ def get_seq(
             base_scc_seq_args,
             uwave_macro_sig,
             step_vals,
-            num_reps,
-            pol_duration_ns,
-            ion_duration_ns,
-            readout_duration_ns,
+            num_reps=num_reps,
+            # pol_duration_ns,
+            # ion_duration_ns,
+            # readout_duration_ns,
             reference=reference,
         )
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
             [0],
         )
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

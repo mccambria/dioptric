@@ -277,7 +277,7 @@ def main(
                         pulse_gen.stream_start()
 
                     # Reps loop
-                    start = time.time()
+                    # start = time.time()
                     for rep_ind in range(num_reps):
                         for exp_ind in range(num_exps_per_rep):
                             if charge_prep_fn is not None:
@@ -300,9 +300,9 @@ def main(
                                 img_arrays[
                                     exp_ind, run_ind, step_ind, rep_ind, :, :
                                 ] = img_array
-                    stop = time.time()
-                    print((stop - start) / (num_reps * num_exps_per_rep))
-                    print()
+                    # stop = time.time()
+                    # print((stop - start) / (num_reps * num_exps_per_rep))
+                    # print()
 
                     pulse_gen.resume()
 
