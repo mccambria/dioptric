@@ -55,8 +55,11 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     opti_snrs = []
     opti_durations = []
     for nv_ind in range(num_nvs):
+        # ind = -3
+        # opti_snr = round(avg_snr[nv_ind, ind], 3)
         opti_snr = round(np.max(avg_snr[nv_ind]), 3)
         opti_snrs.append(opti_snr)
+        # opti_duration = round(taus[ind])
         opti_duration = round(taus[np.argmax(avg_snr[nv_ind])])
         opti_durations.append(opti_duration)
     print("Optimum SNRs")
@@ -70,7 +73,7 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
 def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
-    uwave_ind = 0
+    uwave_ind_list = [0, 1]
 
     seq_file = "optimize_scc.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
@@ -81,7 +84,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     def run_fn(shuffled_step_inds):
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind), shuffled_taus]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_taus,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -91,7 +97,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         num_reps,
         num_runs,
         run_fn=run_fn,
-        uwave_ind_list=uwave_ind,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
@@ -140,11 +146,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1515235873307)  # 0.155
-    data = dm.get_raw_data(file_id=1516283334251)  # 0.165
-    # data = dm.get_raw_data(file_id=1516334723697)  # 0.18
-    # data = dm.get_raw_data(file_id=1516951871522)  # 0.19
-    # data = dm.get_raw_data(file_id=1517004902259)  # 0.20
+    data = dm.get_raw_data(file_id=1517855118940)  # 0.17
 
     nv_list = data["nv_list"]
     taus = data["taus"]

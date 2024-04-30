@@ -930,8 +930,8 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
+        do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
