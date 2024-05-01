@@ -71,7 +71,7 @@ def process_and_plot(nv_list, counts):
 
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
-    uwave_ind = 0
+    uwave_ind_list = [0, 1]
     seq_file = "simple_correlation_test.py"
     num_steps = 1
 
@@ -80,12 +80,17 @@ def main(nv_list, num_reps, num_runs):
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind_list=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
