@@ -202,7 +202,8 @@ def do_scc_snr_check(nv_list):
 
 def do_simple_correlation_test(nv_list):
     num_reps = 100
-    num_runs = 2
+    num_runs = 300
+    # num_runs = 2
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
     # for ind in range(4):
@@ -729,7 +730,7 @@ if __name__ == "__main__":
         116,
         208,
         92,
-        130,
+        132,
         76,
         152,
         120,
@@ -855,7 +856,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-2, -8])
+        # widefield.set_pixel_drift([-3, -20])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -935,7 +936,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
         # Performance testing
         # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)

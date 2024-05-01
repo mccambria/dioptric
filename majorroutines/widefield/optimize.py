@@ -71,12 +71,37 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 
 
 def optimize_pixel_and_z(nv_sig, do_plot=False):
-    img_array = stationary_count_lite(nv_sig, ret_img_array=True)
-    opti_pixel_coords = optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
-    counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
-    if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
-        return
-    main(nv_sig, axes_to_optimize=[2], opti_necessary=True, do_plot=do_plot)  # z
+    num_attempts = 5
+    attempt_ind = 0
+    while True:
+        # xy
+        img_array = stationary_count_lite(nv_sig, ret_img_array=True)
+        opti_pixel_coords = optimize_pixel_with_img_array(
+            img_array, nv_sig, None, do_plot
+        )
+        counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
+
+        if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
+            return
+
+        # z
+        try:
+            _, counts = main(
+                nv_sig,
+                axes_to_optimize=[2],
+                opti_necessary=True,
+                do_plot=do_plot,
+                num_attempts=2,
+            )
+        except Exception:
+            pass
+
+        if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
+            return
+
+        attempt_ind += 1
+        if attempt_ind == num_attempts:
+            raise RuntimeError("Optimization failed.")
 
 
 def optimize_pixel(nv_sig, do_plot=False):

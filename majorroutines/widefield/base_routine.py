@@ -230,9 +230,6 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    # MCC
-    mean_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
-    median_vals = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps))
     if save_images:
         shape = widefield.get_img_array_shape()
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
@@ -241,104 +238,108 @@ def main(
 
     ### Collect the data
 
-    # Runs loop
-    for run_ind in range(num_runs):
-        num_attempts = 5
-        attempt_ind = 0
+    try:
+        # Runs loop
+        for run_ind in range(num_runs):
+            num_attempts = 5
+            attempt_ind = 0
 
-        while True:
-            try:
-                print(f"\nRun index: {run_ind}")
+            while True:
+                try:
+                    print(f"\nRun index: {run_ind}")
 
-                states_list = None
+                    states_list = None
 
-                for ind in uwave_ind_list:
-                    sig_gen = tb.get_server_sig_gen(ind=ind)
-                    sig_gen.uwave_on()
-                    if load_iq:
-                        sig_gen.load_iq()
+                    for ind in uwave_ind_list:
+                        sig_gen = tb.get_server_sig_gen(ind=ind)
+                        sig_gen.uwave_on()
+                        if load_iq:
+                            sig_gen.load_iq()
 
-                shuffle(step_ind_list)
-                if run_fn is not None:
-                    run_fn(step_ind_list)
+                    shuffle(step_ind_list)
+                    if run_fn is not None:
+                        run_fn(step_ind_list)
 
-                camera.arm()
-                if stream_load_in_run_fn:
-                    pulse_gen.stream_start()
-
-                # Steps loop
-                for step_ind in step_ind_list:
-                    if step_fn is not None:
-                        step_fn(step_ind)
-
-                    # If the sequence wasn't loaded in the run_fn, it must be loaded in
-                    # the step_fn - this will be slower due to frequent compiling
-                    if not stream_load_in_run_fn:
+                    camera.arm()
+                    if stream_load_in_run_fn:
                         pulse_gen.stream_start()
 
-                    # Reps loop
-                    # start = time.time()
-                    for rep_ind in range(num_reps):
-                        for exp_ind in range(num_exps_per_rep):
-                            if charge_prep_fn is not None:
-                                charge_prep_fn(
-                                    rep_ind, nv_list, initial_states_list=states_list
+                    # Steps loop
+                    for step_ind in step_ind_list:
+                        if step_fn is not None:
+                            step_fn(step_ind)
+
+                        # If the sequence wasn't loaded in the run_fn, it must be loaded in
+                        # the step_fn - this will be slower due to frequent compiling
+                        if not stream_load_in_run_fn:
+                            pulse_gen.stream_start()
+
+                        # Reps loop
+                        # start = time.time()
+                        for rep_ind in range(num_reps):
+                            for exp_ind in range(num_exps_per_rep):
+                                if charge_prep_fn is not None:
+                                    charge_prep_fn(
+                                        rep_ind,
+                                        nv_list,
+                                        initial_states_list=states_list,
+                                    )
+                                (img_array, counts_list, states_list) = (
+                                    read_and_process_image(nv_list)
                                 )
-                            (img_array, counts_list, states_list) = (
-                                read_and_process_image(nv_list)
-                            )
-                            counts[exp_ind, :, run_ind, step_ind, rep_ind] = counts_list
-                            states[exp_ind, :, run_ind, step_ind, rep_ind] = states_list
-                            mean_vals[exp_ind, run_ind, step_ind, rep_ind] = np.mean(
-                                img_array
-                            )
-                            median_vals[exp_ind, run_ind, step_ind, rep_ind] = (
-                                np.median(img_array)
-                            )
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
-                            if save_images:
-                                img_arrays[
-                                    exp_ind, run_ind, step_ind, rep_ind, :, :
-                                ] = img_array
-                    # stop = time.time()
-                    # print((stop - start) / (num_reps * num_exps_per_rep))
-                    # print()
+                                if save_images:
+                                    img_arrays[
+                                        exp_ind, run_ind, step_ind, rep_ind, :, :
+                                    ] = img_array
+                        # stop = time.time()
+                        # print((stop - start) / (num_reps * num_exps_per_rep))
+                        # print()
 
-                    pulse_gen.resume()
+                        pulse_gen.resume()
 
-                ### Move on to the next run
+                    ### Move on to the next run
 
-                # Turn stuff off
-                pulse_gen.halt()
-                camera.disarm()
-                for ind in uwave_ind_list:
-                    sig_gen = tb.get_server_sig_gen(ind=ind)
-                    sig_gen.uwave_off()
+                    # Turn stuff off
+                    pulse_gen.halt()
+                    camera.disarm()
+                    for ind in uwave_ind_list:
+                        sig_gen = tb.get_server_sig_gen(ind=ind)
+                        sig_gen.uwave_off()
 
-                # Record step order
-                step_ind_master_list[run_ind] = step_ind_list.copy()
+                    # Record step order
+                    step_ind_master_list[run_ind] = step_ind_list.copy()
 
-                # Update coordinates
-                optimize.optimize_pixel_and_z(repr_nv_sig)
+                    # Update coordinates
+                    optimize.optimize_pixel_and_z(repr_nv_sig)
 
-                break
+                    break
 
-            except Exception as exc:
-                pulse_gen.halt()
-                # Camera disarmed automatically
+                except Exception as exc:
+                    pulse_gen.halt()
+                    # Camera disarmed automatically
 
-                nuvu_237 = "NuvuException: 237"
-                nuvu_214 = "NuvuException: 214"
-                if "NuvuException: 237" in str(exc):
-                    print(nuvu_237)
-                elif "NuvuException: 214" in str(exc):
-                    print(nuvu_214)
-                else:
-                    raise exc
+                    nuvu_237 = "NuvuException: 237"
+                    nuvu_214 = "NuvuException: 214"
+                    if "NuvuException: 237" in str(exc):
+                        print(nuvu_237)
+                    elif "NuvuException: 214" in str(exc):
+                        print(nuvu_214)
+                    else:
+                        raise exc
 
-                attempt_ind += 1
-                if attempt_ind == num_attempts:
-                    raise RuntimeError("Maxed out number of attempts")
+                    attempt_ind += 1
+                    if attempt_ind == num_attempts:
+                        raise RuntimeError("Maxed out number of attempts")
+
+    except Exception:
+        pass
 
     ### Return
 
@@ -355,13 +356,10 @@ def main(
         "counts-units": "photons",
         "counts": counts,
         "states": states,
-        "mean_vals": mean_vals,
-        "median_vals": median_vals,
-        "img_array-units": "ADUs",
     }
     if save_images:
         raw_data |= {
-            "img_arrays-units": "ADUs",
+            "img_arrays-units": "photons",
             "img_arrays": img_arrays,
         }
     return raw_data

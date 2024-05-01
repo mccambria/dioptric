@@ -430,6 +430,7 @@ def main(
     no_crash=False,
     do_plot=False,
     opti_necessary=None,
+    num_attempts=5,
 ):
     prepare_microscope(nv_sig)
 
@@ -478,7 +479,6 @@ def main(
             axes_to_optimize.remove(2)
 
         # Loop through attempts until we succeed or give up
-        num_attempts = 5
         for ind in range(num_attempts):
             ### Attempt setup
 

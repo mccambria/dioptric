@@ -20,7 +20,10 @@ from utils import widefield as widefield
 from utils.constants import NVSig
 
 
-def process_and_plot(nv_list, counts):
+def process_and_plot(data):
+    nv_list = data["nv_list"]
+    counts = data["counts"]
+    # counts = data["states"]
     num_nvs = len(nv_list)
 
     # Break down the counts array
@@ -58,8 +61,8 @@ def process_and_plot(nv_list, counts):
             title=titles[ind],
             cbar_label="Correlation coefficient",
             cmap="RdBu_r",
-            vmin=-cbar_max,
-            vmax=cbar_max,
+            # vmin=-cbar_max,
+            # vmax=cbar_max,
             nan_color=kpl.KplColors.GRAY,
         )
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -84,7 +87,7 @@ def main(nv_list, num_reps, num_runs):
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
@@ -95,10 +98,14 @@ def main(nv_list, num_reps, num_runs):
 
     ### Process and plot
 
-    process_and_print(nv_list, counts)
-    sig_fig, ref_fig = process_and_plot(nv_list, counts)
+    # process_and_print(nv_list, counts)
+    try:
+        sig_fig, ref_fig = process_and_plot(raw_data)
+    except Exception:
+        sig_fig = None
+        ref_fig = None
 
-    ### Clean up and return
+    ### Clean up and save data
 
     tb.reset_cfm()
 
@@ -117,27 +124,19 @@ def main(nv_list, num_reps, num_runs):
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
-    dm.save_figure(sig_fig, file_path)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
-    dm.save_figure(ref_fig, file_path)
+    if sig_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
+        dm.save_figure(sig_fig, file_path)
+    if ref_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
+        dm.save_figure(ref_fig, file_path)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1496001810507)
-    data = dm.get_raw_data(file_id=1496001810507)
+    data = dm.get_raw_data(file_id=1518794080496)
 
-    nv_list = data["nv_list"]
-    counts = data["counts"]
-    nv_list = [NVSig(**nv) for nv in nv_list]
-    nv_list[0].threshold = 41.5
-    nv_list[1].threshold = 40.5
-    nv_list[2].threshold = 42.5
-    for nv in nv_list:
-        print(nv.spin_flip)
-
-    process_and_plot(nv_list, counts)
+    process_and_plot(data)
 
     plt.show(block=True)
