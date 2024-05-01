@@ -201,19 +201,19 @@ def do_scc_snr_check(nv_list):
 
 
 def do_simple_correlation_test(nv_list):
-    num_reps = 60
-    num_runs = 40
+    num_reps = 100
+    num_runs = 2
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
-    for ind in range(4):
-        for flipped in [True, False]:
-            for nv_ind in range(3):
-                nv = nv_list[nv_ind]
-                if ind == nv_ind:
-                    nv.spin_flip = flipped
-                else:
-                    nv.spin_flip = not flipped
-            simple_correlation_test.main(nv_list, num_reps, num_runs)
+    # for ind in range(4):
+    #     for flipped in [True, False]:
+    #         for nv_ind in range(3):
+    #             nv = nv_list[nv_ind]
+    #             if ind == nv_ind:
+    #                 nv.spin_flip = flipped
+    #             else:
+    #                 nv.spin_flip = not flipped
+    #         simple_correlation_test.main(nv_list, num_reps, num_runs)
 
 
 def do_calibrate_iq_delay(nv_list):
@@ -724,21 +724,21 @@ if __name__ == "__main__":
         (0.07685628782646109, 0.2497550236464285, 4.350185904031819),
     ]
     scc_duration_list = [
-        176,
-        144,
-        176,
-        144,
+        124,
+        104,
+        116,
         208,
-        72,
-        80,
-        112,
-        176,
-        176,
-        80,
-        208,
-        192,
-        128,
-        128,
+        92,
+        130,
+        76,
+        152,
+        120,
+        100,
+        200,
+        136,
+        96,
+        204,
+        116,
     ]
     # endregion
     # region Coords (smiley)
@@ -781,7 +781,7 @@ if __name__ == "__main__":
     # region NV list construction
 
     # nv_list[i] will have the ith coordinates from the above lists
-    nv_list = []
+    nv_list: list[NVSig] = []
     for ind in range(num_nvs):
         coords = {
             CoordsKey.GLOBAL: global_coords,
@@ -794,7 +794,7 @@ if __name__ == "__main__":
             coords=coords,
             threshold=threshold_list[ind],
             nvn_dist_params=nvn_dist_params_list[ind],
-            # scc_duration=scc_duration_list[ind],
+            scc_duration=scc_duration_list[ind],
         )
         nv_list.append(nv_sig)
 
@@ -807,8 +807,8 @@ if __name__ == "__main__":
     # nv_inds = [0]
     # nv_inds.extend(list(range(8, 15)))
     # nv_list = [nv_list[ind] for ind in nv_inds]
-    # for nv in nv_list:
-    #     nv.threshold = 27.5
+    for nv in nv_list[::2]:
+        nv.spin_flip = True
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
@@ -931,11 +931,11 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        # do_simple_correlation_test(nv_list)
+        do_simple_correlation_test(nv_list)
 
         # Performance testing
         # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)

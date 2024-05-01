@@ -9,6 +9,7 @@ Created on December 6th, 2023
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
@@ -51,21 +52,71 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     avg_snr_ax.set_xlabel("Ionization pulse duration (ns)")
     avg_snr_ax.set_ylabel("Average SNR")
 
-    # Optimum SCC pulse duration for each NV
+    # Fits and optimum values
+    def fit_fn(tau, delay, slope, dec):
+        tau = np.array(tau) - delay
+        return slope * tau * np.exp(-tau / dec)
+
+    fit_fig, fit_ax = plt.subplots()
     opti_snrs = []
     opti_durations = []
     for nv_ind in range(num_nvs):
+        nv_sig = nv_list[nv_ind]
+        opti_snr = np.max(avg_snr[nv_ind])
+        opti_duration = taus[np.argmax(avg_snr[nv_ind])]
+        guess_params = [20, opti_snr / opti_duration, 300]
+        avg_snr_nv = avg_snr[nv_ind]
+        avg_snr_ste_nv = avg_snr_ste[nv_ind]
+        popt, pcov = curve_fit(
+            fit_fn,
+            taus,
+            avg_snr_nv,
+            p0=guess_params,
+            sigma=avg_snr_ste_nv,
+            absolute_sigma=True,
+        )
+        opti_duration = popt[-1] + popt[0]
+        opti_snr = fit_fn(opti_duration, *popt)
+        dof = len(taus) - len(guess_params)
+        red_chi_sq = (
+            np.sum(((avg_snr_nv - fit_fn(taus, *popt)) / avg_snr_ste_nv) ** 2) / dof
+        )
+        print(red_chi_sq)
+        tau_linspace = np.linspace(popt[0], np.max(taus), 1000)
+        nv_num = widefield.get_nv_num(nv_sig)
+        color = kpl.data_color_cycler[nv_num]
+        kpl.plot_line(
+            fit_ax,
+            tau_linspace,
+            fit_fn(tau_linspace, *popt),
+            color=color,
+            label=str(nv_num),
+        )
+        # kpl.plot_points(
+        #     fit_ax,
+        #     taus,
+        #     avg_snr_nv,
+        #     yerr=avg_snr_ste_nv,
+        #     color=color,
+        #     label=str(nv_num),
+        # )
+        # fit_ax.legend()
+        # fit_ax.set_xlabel("SCC pulse duration (ns)")
+        # fit_ax.set_ylabel("SNR")
+        # fit_fig, fit_ax = plt.subplots()
+
         # ind = -3
         # opti_snr = round(avg_snr[nv_ind, ind], 3)
-        opti_snr = round(np.max(avg_snr[nv_ind]), 3)
-        opti_snrs.append(opti_snr)
         # opti_duration = round(taus[ind])
-        opti_duration = round(taus[np.argmax(avg_snr[nv_ind])])
+        opti_snrs.append(opti_snr)
         opti_durations.append(opti_duration)
     print("Optimum SNRs")
-    print(opti_snrs)
+    print([round(val, 3) for val in opti_snrs])
     print("Optimum SCC pulse durations")
-    print(opti_durations)
+    print([round(val) for val in opti_durations])
+    fit_ax.legend(ncols=3)
+    fit_ax.set_xlabel("SCC pulse duration (ns)")
+    fit_ax.set_ylabel("SNR")
 
     return sig_fig, ref_fig, snr_fig
     # return sig_fig, ref_fig, snr_fig, avg_snr_fig
@@ -146,7 +197,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1517855118940)  # 0.17
+    # data = dm.get_raw_data(file_id=1517947115955)  # 0.15
+    # data = dm.get_raw_data(file_id=1517855118940)  # 0.17
+    data = dm.get_raw_data(file_id=1518051829285)  # 0.19
+    # data = dm.get_raw_data(file_id=1518284281214)  # 0.21
 
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -162,3 +216,10 @@ if __name__ == "__main__":
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 
     plt.show(block=True)
+
+
+# fmt: off
+[0.226, 0.096, 0.2,   0.199, 0.112, 0.126, 0.069, 0.091, 0.116, 0.059, 0.128, 0.248, 0.09,  0.034, 0.175]
+[0.224, 0.133, 0.19,  0.226, 0.141, 0.119, 0.059, 0.115, 0.116, 0.075, 0.158, 0.236, 0.09,  0.018, 0.173]
+[0.246, 0.113, 0.235, 0.257, 0.147, 0.127, 0.064, 0.132, 0.089, 0.07,  0.211, 0.24,  0.099, 0.029, 0.207]
+[0.201, 0.099, 0.223, 0.21, 0.149, 0.099, 0.089, 0.127, 0.114, 0.05, 0.221, 0.228, 0.105, 0.033, 0.199]
