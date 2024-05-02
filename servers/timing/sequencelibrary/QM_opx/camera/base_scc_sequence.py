@@ -89,25 +89,21 @@ def macro(
 
     seq_utils.init(num_nvs)
     step_val = qua.declare(int)
-    # scc_duration_override = qua.declare(int)
-    # scc_duration_override = 64
-    # scc_duration_override = None
 
     def one_exp(exp_ind):
         seq_utils.macro_polarize(pol_coords_list)
         uwave_macro[exp_ind](uwave_ind_list, step_val)
 
         # Always look at ms=0 counts for the reference
-        exp_spin_flip_ind_list = (
-            None if exp_ind == num_exps_per_rep - 1 else spin_flip_ind_list
-        )
+        ref_exp = reference and exp_ind == num_exps_per_rep - 1
         seq_utils.macro_scc(
             scc_coords_list,
             scc_duration_list,
-            exp_spin_flip_ind_list,
+            spin_flip_ind_list,
             uwave_ind_list,
             pol_coords_list,
             scc_duration_override,
+            spin_flip=not ref_exp,
         )
         seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()

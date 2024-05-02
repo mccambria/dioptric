@@ -181,6 +181,7 @@ def macro_scc(
     uwave_ind_list=None,
     shelving_coords_list=None,
     scc_duration_override=None,
+    spin_flip=True,
 ):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -206,6 +207,7 @@ def macro_scc(
             spin_flip_ind_list,
             uwave_ind_list,
             shelving_coords_list,
+            spin_flip=spin_flip,
         )
     else:
         _macro_scc_no_shelving(
@@ -214,6 +216,7 @@ def macro_scc(
             spin_flip_ind_list,
             uwave_ind_list,
             scc_duration_override,
+            spin_flip=spin_flip,
         )
 
 
@@ -223,6 +226,7 @@ def _macro_scc_shelving(
     spin_flip_ind_list,
     uwave_ind_list,
     shelving_coords_list,
+    spin_flip=True,
 ):
     shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
     ion_laser_name = tb.get_laser_name(LaserKey.SCC)
@@ -276,6 +280,7 @@ def _macro_scc_no_shelving(
     spin_flip_ind_list=None,
     uwave_ind_list=None,
     duration_override=None,
+    spin_flip=True,
 ):
     # Basic setup
 
@@ -315,7 +320,8 @@ def _macro_scc_no_shelving(
         duration_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
     ]
 
-    macro_pi_pulse(uwave_ind_list)
+    if spin_flip:
+        macro_pi_pulse(uwave_ind_list)
 
     _macro_pulse_list(
         ion_laser_name,

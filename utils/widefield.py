@@ -184,16 +184,11 @@ def average_counts(sig_counts, ref_counts=None):
     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
     if ref_counts is None:
-        return avg_counts, avg_counts_ste
-
+        norms = None
     else:
         norms = np.mean(ref_counts, axis=(1, 2, 3))
-        # Account for heating by adjusting the norm using the counts from
-        # a background spot
-        # background_nv_ind = 1
-        # norms *= np.mean(avg_counts[background_nv_ind]) / norms[background_nv_ind]
 
-        return avg_counts, avg_counts_ste, norms
+    return avg_counts, avg_counts_ste, norms
 
 
 def threshold_counts(nv_list, sig_counts, ref_counts=None):
@@ -218,9 +213,10 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
         ref_states_array = np.greater(
             ref_counts, thresholds, out=ref_states_array, where=where_thresh
         )
-        return sig_states_array, ref_states_array
     else:
-        return sig_states_array
+        ref_states_array = None
+
+    return sig_states_array, ref_states_array
 
 
 def threshold(nv_sig, count_val):
@@ -293,25 +289,25 @@ def charge_state_mle(nv_list, img_array):
     return states
 
 
-def process_counts(nv_list, sig_counts, ref_counts=None, no_threshold=False):
+def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     """Alias for threshold_counts with a more generic name"""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
-    if no_threshold:
-        return average_counts(sig_counts, ref_counts)
-    else:
+    if threshold:
         sig_states_array, ref_states_array = threshold_counts(
             nv_list, sig_counts, ref_counts
         )
         return average_counts(sig_states_array, ref_states_array)
+    else:
+        return average_counts(sig_counts, ref_counts)
 
 
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
-    avg_sig_counts, avg_sig_counts_ste = average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = average_counts(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
     noise = np.sqrt(
         np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
         + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2

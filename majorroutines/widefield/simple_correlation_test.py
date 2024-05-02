@@ -22,7 +22,7 @@ from utils.constants import NVSig
 
 def process_and_plot(data):
     nv_list = data["nv_list"]
-    counts = data["counts"]
+    counts = np.array(data["counts"])
     # counts = data["states"]
     num_nvs = len(nv_list)
 
@@ -42,6 +42,7 @@ def process_and_plot(data):
     # Replace diagonals (Cii=1) with nan so they don't show
     np.fill_diagonal(sig_corr_coeffs, np.nan)
     np.fill_diagonal(ref_corr_coeffs, np.nan)
+    print(np.nanmean(sig_corr_coeffs))
 
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
@@ -54,15 +55,15 @@ def process_and_plot(data):
     for ind in range(2):
         fig, ax = plt.subplots()
         cbar_max = cbar_maxes[ind]
-        cbar_max = 0.032
+        # cbar_max = 0.032
         kpl.imshow(
             ax,
             vals[ind],
             title=titles[ind],
             cbar_label="Correlation coefficient",
             cmap="RdBu_r",
-            # vmin=-cbar_max,
-            # vmax=cbar_max,
+            vmin=-cbar_max,
+            vmax=cbar_max,
             nan_color=kpl.KplColors.GRAY,
         )
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -137,6 +138,10 @@ if __name__ == "__main__":
 
     data = dm.get_raw_data(file_id=1518794080496)
 
+    nv_list = data["nv_list"]
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
+    process_and_print(nv_list, counts, threshold=True)
     process_and_plot(data)
 
     plt.show(block=True)

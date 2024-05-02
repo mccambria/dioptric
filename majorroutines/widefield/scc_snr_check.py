@@ -17,14 +17,23 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_print(nv_list, counts):
+def process_and_print(nv_list, counts, threshold=True):
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     ### Report the results and return
 
-    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
+    if threshold:
+        sig_counts, ref_counts = widefield.threshold_counts(
+            nv_list, sig_counts, ref_counts
+        )
+
+    avg_sig_counts, avg_sig_counts_ste, _ = widefield.process_counts(
+        nv_list, sig_counts, threshold=False
+    )
+    avg_ref_counts, avg_ref_counts_ste, _ = widefield.process_counts(
+        nv_list, ref_counts, threshold=False
+    )
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
     # There's only one point, so only consider that
@@ -77,7 +86,8 @@ def main(nv_list, num_reps, num_runs):
 
     ### Report results and cleanup
 
-    states = data["states"]
-    process_and_print(nv_list, states)
+    counts = data["counts"]
+    # counts = data["states"]
+    process_and_print(nv_list, counts)
 
     tb.reset_cfm()

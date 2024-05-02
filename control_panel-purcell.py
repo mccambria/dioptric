@@ -202,7 +202,7 @@ def do_scc_snr_check(nv_list):
 
 def do_simple_correlation_test(nv_list):
     num_reps = 100
-    num_runs = 300
+    num_runs = 500
     # num_runs = 2
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
@@ -804,12 +804,15 @@ if __name__ == "__main__":
     nv_list[0].representative = True
     nv_list[0].expected_counts = 1250
     nv_sig = widefield.get_repr_nv_sig(nv_list)
+    num_nvs = len(nv_list)
 
     # nv_inds = [0]
     # nv_inds.extend(list(range(8, 15)))
     # nv_list = [nv_list[ind] for ind in nv_inds]
-    for nv in nv_list[::2]:
+    # for nv in nv_list[::2]:
+    for nv in nv_list[num_nvs // 2 :]:
         nv.spin_flip = True
+    # print([nv.spin_flip for nv in nv_list])
 
     # for nv in nv_list:
     #     nv.init_spin_flipped = True
@@ -936,7 +939,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        # do_simple_correlation_test(nv_list)
+        do_simple_correlation_test(nv_list)
 
         # Performance testing
         # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
