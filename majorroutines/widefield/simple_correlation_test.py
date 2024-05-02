@@ -55,9 +55,10 @@ def process_and_plot(data):
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
 
+    # test
     figs = []
     titles = ["Signal", "Reference", "Ideal signal"]
-    vals = [sig_corr_coeffs - ref_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
+    vals = [sig_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
     cbar_maxes = [sig_max, ref_max, 1]
     for ind in range(len(vals)):
         fig, ax = plt.subplots()
