@@ -73,6 +73,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
             num_resonances = 2
         else:
             num_resonances = 0
+        num_resonances = 2
 
         if num_resonances == 1:
             guess_params = [amp_guess, 5, 5, np.median(freqs)]
@@ -247,8 +248,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1514274260440)
-    data = dm.get_raw_data(file_id=1514160662353)
+    data = dm.get_raw_data(file_id=1519797150132)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -265,7 +265,6 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts
     )
-    # avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)

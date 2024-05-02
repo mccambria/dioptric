@@ -212,7 +212,9 @@ def calc_mosaic_layout(num_nvs):
     height = int(np.ceil(num_nvs / width))
     num_axes = height * width
 
-    vals = np.reshape(alphabet[:num_axes], (height, width))
+    shape = (height, width)
+    shape = (width, height)
+    vals = np.reshape(alphabet[:num_axes], shape)
     if num_nvs != num_axes:
         vals[0, num_nvs - num_axes :] = "."
 
