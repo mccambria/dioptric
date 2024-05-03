@@ -53,8 +53,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
             return norm
 
     norms_newaxis = norms[:, np.newaxis]
-    norm_counts = counts / norms_newaxis
-    norm_counts_ste = counts_ste / norms_newaxis
+    norm_counts = counts - norms_newaxis
+    norm_counts_ste = counts_ste
 
     fit_fns = []
     pcovs = []
@@ -65,7 +65,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
-        amp_guess = np.max(nv_counts) - 1
+        # amp_guess = np.max(nv_counts) - 1
+        amp_guess = 1 - np.max(nv_counts)
 
         # if nv_ind in [3, 5, 7, 10, 12]:
         #     num_resonances = 1
@@ -104,7 +105,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
                 bounds[1][ind] = 10
 
             def fit_fn(freq, *args):
-                return 1 + voigt(freq, *args[:4]) + voigt(freq, *args[4:])
+                return voigt(freq, *args[:4]) + voigt(freq, *args[4:])
+                # return 1 + voigt(freq, *args[:4]) + voigt(freq, *args[4:])
 
         if num_resonances == 0:
             fit_fns.append(constant)
@@ -149,9 +151,9 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
     ax.set_ylabel(" ")
-    fig.text(
-        0.01, 0.55, "Normalized fraction in NV$^{-}$", va="center", rotation="vertical"
-    )
+    # label = "Normalized fraction in NV$^{-}$"
+    label = "Change in fraction in NV$^{-}$"
+    fig.text(0.01, 0.55, label, va="center", rotation="vertical")
     # ax.set_ylim([0.945, 1.19])
     # ax.set_yticks([1.0, 1.1, 1.2])
     # ax.set_xticks([2.83, 2.87, 2.91])
