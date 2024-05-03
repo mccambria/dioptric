@@ -202,7 +202,7 @@ def do_scc_snr_check(nv_list):
 
 def do_simple_correlation_test(nv_list):
     num_reps = 100
-    num_runs = 500
+    num_runs = 1600
     # num_runs = 2
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
@@ -231,9 +231,9 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
-    num_steps = 40
-    num_reps = 10
-    num_runs = 120
+    num_steps = 60
+    num_reps = 5
+    num_runs = 200
     # num_runs = 2
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
@@ -253,7 +253,7 @@ def do_rabi(nv_list):
     max_tau = 240 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 80
+    num_runs = 100
     # num_runs = 2
     uwave_ind_list = [0, 1]
 
@@ -476,7 +476,7 @@ def do_detect_cosmic_rays(nv_list):
 
 def do_check_readout_fidelity(nv_list):
     num_reps = 200
-    num_runs = 5
+    num_runs = 20
 
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
@@ -491,12 +491,12 @@ def do_opx_constant_ac():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
 
-    num_reps = 1000
-    start = time.time()
-    for ind in range(num_reps):
-        opx.test("_cache_charge_pol_incomplete", False)
-    stop = time.time()
-    print((stop - start) / num_reps)
+    # num_reps = 1000
+    # start = time.time()
+    # for ind in range(num_reps):
+    #     opx.test("_cache_charge_pol_incomplete", False)
+    # stop = time.time()
+    # print((stop - start) / num_reps)
 
     # Microwave test
     # if True:
@@ -522,15 +522,15 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [],  # Digital channels
     #     [7],  # Analog channels
-    #     [0.4],  # Analog voltages
+    #     [0.34],  # Analog voltages
     #     [0],  # Analog frequencies
     # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
-    #     # [3, 4],  # Analog channels
-    #     # [0.03, 0.03],  # Analog voltages
-    #     # [110, 110],  # Analog frequencies
+    #     [3, 4],  # Analog channels
+    #     [0.11, 0.11],  # Analog voltages
+    #     [110, 110],  # Analog frequencies
     # )
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -549,15 +549,15 @@ def do_opx_constant_ac():
     #         )
     #         time.sleep(0.5)
     #     opx.halt()
-    # opx.constant_ac(
-    #     [1],  # Digital channels
-    #     # [2, 6],  # Analog channels
-    #     # [0.17, 0.17],  # Analog voltages
-    #     # [
-    #     #     75,
-    #     #     75,
-    #     # ],  # Analog frequencies                                                                                                                                                                              uencies
-    # )
+    opx.constant_ac(
+        [1],  # Digital channels
+        [2, 6],  # Analog channels
+        [0.19, 0.19],  # Analog voltages
+        [
+            75,
+            75,
+        ],  # Analog frequencies                                                                                                                                                                       uencies
+    )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
     # opx.constant_ac(
@@ -630,7 +630,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.45
+    z_coord = 4.47
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -806,9 +806,10 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     num_nvs = len(nv_list)
 
-    # nv_inds = [0]
+    nv_inds = [1, 4, 6, 9, 13]
     # nv_inds.extend(list(range(8, 15)))
-    # nv_list = [nv_list[ind] for ind in nv_inds]
+    nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in nv_inds]
+    num_nvs = len(nv_list)
     # for nv in nv_list[::2]:
     for nv in nv_list[num_nvs // 2 :]:
         nv.spin_flip = True
@@ -930,7 +931,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
@@ -939,7 +940,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
         # Performance testing
         # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
