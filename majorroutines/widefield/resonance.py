@@ -181,8 +181,7 @@ def main(
     ### Collect the data
 
     def run_fn(step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind)
-        seq_args.append(step_inds)
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -199,21 +198,22 @@ def main(
         step_fn,
         uwave_ind_list=uwave_ind,
     )
-    counts = raw_data["counts"]
+    counts = raw_data["states"]
 
     ### Process and plot
 
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts
-    )
-    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     try:
+        sig_counts = counts[0]
+        ref_counts = counts[1]
+
+        avg_counts, avg_counts_ste, norms = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=False
+        )
+        raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
+        raw_fig = None
         fit_fig = None
 
     ### Clean up and return
@@ -238,7 +238,8 @@ def main(
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    dm.save_figure(raw_fig, file_path)
+    if raw_fig is not None:
+        dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
         dm.save_figure(fit_fig, file_path)

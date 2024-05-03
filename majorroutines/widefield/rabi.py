@@ -154,9 +154,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
-        seq_args.append(shuffled_taus)
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_taus,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -171,18 +173,19 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 
     ### Process and plot
 
-    counts = raw_data["counts"]
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts
-    )
-
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
+        counts = raw_data["counts"]
+        sig_counts = counts[0]
+        ref_counts = counts[1]
+        avg_counts, avg_counts_ste, norms = widefield.process_counts(
+            nv_list, sig_counts, ref_counts
+        )
+
+        raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     except Exception as exc:
         print(exc)
+        raw_fig = None
         fit_fig = None
 
     ### Clean up and return
@@ -207,7 +210,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    dm.save_figure(raw_fig, file_path)
+    if raw_fig is not None:
+        dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
         dm.save_figure(fit_fig, file_path)
