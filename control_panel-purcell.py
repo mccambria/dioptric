@@ -630,7 +630,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.45
+    z_coord = 4.47
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
