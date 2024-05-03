@@ -25,7 +25,7 @@ def process_and_plot(data):
     counts = np.array(data["counts"])
     # counts = data["states"]
     num_nvs = len(nv_list)
-    exclude_inds = (6, 9, 13)
+    # exclude_inds = (6, 9, 13)
     exclude_inds = ()
     nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in exclude_inds]
     num_nvs = len(nv_list)
@@ -60,7 +60,7 @@ def process_and_plot(data):
     figs = []
     titles = ["Signal", "Reference", "Ideal signal"]
     vals = [sig_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
-    cbar_maxes = [sig_max, ref_max, 1]
+    cbar_maxes = [sig_max, sig_max, 1]
     for ind in range(len(vals)):
         fig, ax = plt.subplots()
         cbar_max = cbar_maxes[ind]
