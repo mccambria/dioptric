@@ -931,7 +931,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
@@ -940,7 +940,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        # do_simple_correlation_test(nv_list)
+        do_simple_correlation_test(nv_list)
 
         # Performance testing
         # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)

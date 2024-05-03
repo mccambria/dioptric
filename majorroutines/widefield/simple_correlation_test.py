@@ -54,23 +54,25 @@ def process_and_plot(data):
     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
+    ### Plot
+
+    vals = [sig_corr_coeffs, diff_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
+
     # Replace diagonals (Cii=1) with nan so they don't show
-    np.fill_diagonal(sig_corr_coeffs, np.nan)
-    np.fill_diagonal(ref_corr_coeffs, np.nan)
-    np.fill_diagonal(ideal_sig_corr_coeffs, np.nan)
-    np.fill_diagonal(diff_corr_coeffs, np.nan)
+    for val in vals:
+        np.fill_diagonal(val, np.nan)
 
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
     diff_max = np.nanmax(np.abs(diff_corr_coeffs))
 
-    # test
     figs = []
     titles = ["Signal", "Difference", "Reference", "Ideal signal"]
-    vals = [sig_corr_coeffs, diff_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
     cbar_maxes = [sig_max, diff_max, sig_max, 1]
     for ind in range(len(vals)):
+        coors = vals[ind]  # Replace diagonals (Cii=1) with nan so they don't show
+        np.fill_diagonal(coors, np.nan)
         fig, ax = plt.subplots()
         cbar_max = cbar_maxes[ind]
         # cbar_max = 0.032
@@ -87,6 +89,45 @@ def process_and_plot(data):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         figs.append(fig)
+
+    ### Spurious correlations offset
+
+    # offsets = list(range(1000))
+    # # offsets = [500]
+    # spurious_vals = []
+    # for offset in offsets:
+    #     ref_corr_coeffs = np.array(
+    #         [[None for ind in range(num_nvs)] for ind in range(num_nvs)],
+    #         dtype=float,
+    #     )
+    #     for ind in range(num_nvs):
+    #         for jnd in range(num_nvs):
+    #             if jnd <= ind:
+    #                 continue
+    #             exclude_inds = [4, 9, 7, 8]
+    #             if ind in exclude_inds or jnd in exclude_inds:
+    #                 ref_corr_coeffs[ind, jnd] = np.nan
+    #                 ref_corr_coeffs[jnd, ind] = np.nan
+    #                 continue
+    #             val = np.corrcoef(
+    #                 # flattened_ref_counts[ind, offset:],
+    #                 # flattened_ref_counts[ind, :],
+    #                 flattened_ref_counts[ind],
+    #                 np.roll(flattened_ref_counts[jnd], offset),
+    #             )[0, 1]
+    #             ref_corr_coeffs[ind, jnd] = val
+    #             ref_corr_coeffs[jnd, ind] = val
+    #     ref_corr_coeffs = np.array(ref_corr_coeffs)
+    #     np.fill_diagonal(ref_corr_coeffs, np.nan)
+    #     spurious_vals.append(np.nanmean(ref_corr_coeffs))
+
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, offsets, spurious_vals)
+    # ax.set_xlabel("Shot offset")
+    # ax.set_ylabel("Average spurious correlation")
+
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, ref_corr_coeffs)
 
     return figs
 
@@ -158,6 +199,7 @@ if __name__ == "__main__":
     data = dm.get_raw_data(file_id=1519615059736)  # Block
 
     nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
     counts = np.array(data["counts"])
     # counts = np.array(data["states"])
     process_and_print(nv_list, counts, threshold=True)

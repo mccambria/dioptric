@@ -54,7 +54,7 @@ def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
     return prob_nv0 * val_nv0 + prob_nvn * val_nvn
 
 
-def determine_threshold(counts_list):
+def determine_threshold(counts_list, nvn_ratio=0.5):
     """counts_list should probably be the ref since we need some population
     in both NV- and NV0"""
 
@@ -88,7 +88,7 @@ def determine_threshold(counts_list):
     for val in thresh_options:
         nv0_fid = poisson_cdf(val, mean_counts_nv0)
         nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
-        fidelities.append((1 / 2) * (nv0_fid + nvn_fid))
+        fidelities.append((1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid)
 
     best_fidelity = max(fidelities)
     best_threshold = thresh_options[np.argmax(fidelities)]
@@ -175,7 +175,9 @@ def process_and_plot(raw_data):
         fig = create_histogram(sig_counts_list, ref_counts_list)
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        _, threshold = determine_threshold(all_counts_list)
+        # nvn_ratio = 0.3
+        nvn_ratio = None
+        _, threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
         threshold_list.append(threshold)
     print(threshold_list)
 
@@ -340,34 +342,34 @@ if __name__ == "__main__":
 
     data = dm.get_raw_data(file_id=1519868458902, load_npz=True)
 
-    # process_and_plot(data)
+    process_and_plot(data)
 
     ### Images
 
-    nv_list = data["nv_list"]
+    # nv_list = data["nv_list"]
 
-    sig_img_array = np.array(data["sig_img_array"])
-    ref_img_array = np.array(data["ref_img_array"])
-    diff_img_array = np.array(data["diff_img_array"])
-    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
-    titles = ["With ionization pulse", "Without ionization pulse", "difference"]
+    # sig_img_array = np.array(data["sig_img_array"])
+    # ref_img_array = np.array(data["ref_img_array"])
+    # diff_img_array = np.array(data["diff_img_array"])
+    # img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    # titles = ["With ionization pulse", "Without ionization pulse", "difference"]
 
-    for ind in range(3):
-        img_array = img_arrays[ind]
-        fig, ax = plt.subplots()
-        title = titles[ind]
-        img_array[142, 109] = np.mean(img_array[141:143:2, 108:110:2])
-        kpl.imshow(
-            ax,
-            img_array,
-            title=title,
-            cbar_label="Photons",
-            vmin=0 if ind < 1 else None,
-            vmax=np.max(ref_img_array) if ind < 1 else None,
-        )
-        scale = widefield.get_camera_scale()
-        kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+    # for ind in range(3):
+    #     img_array = img_arrays[ind]
+    #     fig, ax = plt.subplots()
+    #     title = titles[ind]
+    #     img_array[142, 109] = np.mean(img_array[141:143:2, 108:110:2])
+    #     kpl.imshow(
+    #         ax,
+    #         img_array,
+    #         title=title,
+    #         cbar_label="Photons",
+    #         vmin=0 if ind < 1 else None,
+    #         vmax=np.max(ref_img_array) if ind < 1 else None,
+    #     )
+    #     scale = widefield.get_camera_scale()
+    #     kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
 
-        widefield.draw_circles_on_nvs(ax, nv_list, drift=(-1, -11))
+    #     widefield.draw_circles_on_nvs(ax, nv_list, drift=(-1, -11))
 
-    kpl.show(block=True)
+    # kpl.show(block=True)
