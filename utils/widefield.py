@@ -755,8 +755,25 @@ def get_img_array_shape():
     return shape
 
 
+@cache
+def get_camera_scale():
+    return _get_camera_config_val("scale")
+
+
 # endregion
 # region Plotting
+
+
+def draw_circles_on_nvs(ax, nv_list, drift=None):
+    scale = get_camera_scale()
+    pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
+    for ind in range(len(pixel_coords_list)):
+        pixel_coords = pixel_coords_list[ind]
+        color = kpl.data_color_cycler[ind]
+        kpl.draw_circle(ax, pixel_coords, color=color, radius=scale / 2 - 1, label=ind)
+    num_nvs = len(nv_list)
+    ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
+    ax.legend(loc=kpl.Loc.LOWER_LEFT, ncols=ncols, markerscale=0.7)
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):

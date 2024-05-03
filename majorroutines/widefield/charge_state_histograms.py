@@ -149,6 +149,9 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
     return fig
 
 
+# def imshow_scalebar(ax, img_array):
+
+
 def process_and_plot(raw_data):
     ### Setup
 
@@ -337,6 +340,34 @@ if __name__ == "__main__":
 
     data = dm.get_raw_data(file_id=1519868458902, load_npz=True)
 
-    process_and_plot(data)
+    # process_and_plot(data)
+
+    ### Images
+
+    nv_list = data["nv_list"]
+
+    sig_img_array = np.array(data["sig_img_array"])
+    ref_img_array = np.array(data["ref_img_array"])
+    diff_img_array = np.array(data["diff_img_array"])
+    img_arrays = [sig_img_array, ref_img_array, diff_img_array]
+    titles = ["With ionization pulse", "Without ionization pulse", "difference"]
+
+    for ind in range(3):
+        img_array = img_arrays[ind]
+        fig, ax = plt.subplots()
+        title = titles[ind]
+        img_array[142, 109] = np.mean(img_array[141:143:2, 108:110:2])
+        kpl.imshow(
+            ax,
+            img_array,
+            title=title,
+            cbar_label="Photons",
+            vmin=0 if ind < 1 else None,
+            vmax=np.max(ref_img_array) if ind < 1 else None,
+        )
+        scale = widefield.get_camera_scale()
+        kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+
+        widefield.draw_circles_on_nvs(ax, nv_list, drift=(-1, -11))
 
     kpl.show(block=True)

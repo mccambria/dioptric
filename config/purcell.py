@@ -121,6 +121,7 @@ config |= {
         # "readout_mode": 6,  # Fast conventional
         "roi": (125, 95, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
+        "scale": 24,  # pixels / micron
     },
     ###
     "Optics": {

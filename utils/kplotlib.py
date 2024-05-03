@@ -726,7 +726,7 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
         Radius of the circle
     """
     if linewidth is None:
-        linewidth == radius / 4
+        linewidth = radius / 4
     ax.scatter(
         *coords,
         s=(2 * radius) ** 2,

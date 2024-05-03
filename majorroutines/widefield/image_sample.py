@@ -283,49 +283,28 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1470397379017, load_npz=True)  # Widefield
-    # img_array = np.array(data["img_array"])
-    # data = dm.get_raw_data(file_id=)  # Just green
-    # data = dm.get_raw_data(file_id=1471456249642)  # Just green
-    # data = dm.get_raw_data(file_id=1470499014796)  # Single NV
+    data = dm.get_raw_data(file_id=1520107996099, load_npz=True)
     img_array = np.array(data["img_array"])
 
     img_array = widefield.adus_to_photons(img_array)
 
-    num_reps = 1000
-    start = time.time()
-    for ind in range(num_reps):
-        val = widefield.integrate_counts(img_array, (126.3, 125.4))
-    stop = time.time()
-    print(stop - start)
-    print(val)
+    # Clean up dead pixel by taking average of nearby pixels
+    # dead_pixel = [142, 109]
+    # dead_pixel_x = dead_pixel[1]
+    # dead_pixel_y = dead_pixel[0]
+    # img_array[dead_pixel_y, dead_pixel_x] = np.mean(
+    #     img_array[
+    #         dead_pixel_y - 1 : dead_pixel_y + 1 : 2,
+    #         dead_pixel_x - 1 : dead_pixel_x + 1 : 2,
+    #     ]
+    # )
 
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, img_array, cbar_label="Counts")
-    # # 8 px = 0.61 * l / NA = 0.33 um
-    # # kpl.scale_bar(ax, 8 * 3, r"1 $\si{\micro\meter}$)", kpl.Loc.UPPER_LEFT)
-    # kpl.scale_bar(ax, 8 * 3, "1 µm", kpl.Loc.UPPER_RIGHT)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array, cbar_label="Photons")
+    scale = widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
 
-    # # pixel_coords_list = [
-    # #     [107.64, 76.7],
-    # #     # [74.828, 109.09],
-    # #     [110, 50],
-    # #     [85.41, 60.905],
-    # #     [72.062, 51.179],
-    # #     [72.573, 16.985],
-    # #     [52.824, 95.547],
-    # # ]
-    # # for ind in range(len(pixel_coords_list)):
-    # #     pixel_coords = pixel_coords_list[ind]
-    # #     pixel_coords = [el + 1 for el in pixel_coords]
-    # #     color = kpl.data_color_cycler[ind]
-    # #     if ind == 1:
-    # #         color = kpl.KplColors.GRAY
-    # #     kpl.draw_circle(
-    # #         ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
-    # #     )
-    # # ax.legend(loc=kpl.Loc.LOWER_LEFT)
+    nv_list = dm.get_raw_data(file_id=1519868458902, load_npz=True)["nv_list"]
+    widefield.draw_circles_on_nvs(ax, nv_list, drift=(+13, +5))
 
-    # kpl.draw_circle(ax, [115.365, 144.671], radius=48, linewidth=2)
-
-    # plt.show(block=True)
+    plt.show(block=True)
