@@ -43,6 +43,13 @@ def process_and_plot(data):
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
     sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
     ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+
+    diff_corr_coeffs = np.cov(flattened_sig_counts) - np.cov(flattened_ref_counts)
+    # stddev = np.sqrt(np.diag(sig_corr_coeffs).real + np.diag(ref_corr_coeffs).real)
+    # diff_corr_coeffs /= stddev[:, None]
+    # diff_corr_coeffs /= stddev[None, :]
+    # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+
     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
@@ -51,16 +58,18 @@ def process_and_plot(data):
     np.fill_diagonal(sig_corr_coeffs, np.nan)
     np.fill_diagonal(ref_corr_coeffs, np.nan)
     np.fill_diagonal(ideal_sig_corr_coeffs, np.nan)
+    np.fill_diagonal(diff_corr_coeffs, np.nan)
 
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
+    diff_max = np.nanmax(np.abs(diff_corr_coeffs))
 
     # test
     figs = []
-    titles = ["Signal", "Reference", "Ideal signal"]
-    vals = [sig_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
-    cbar_maxes = [sig_max, sig_max, 1]
+    titles = ["Signal", "Difference", "Reference", "Ideal signal"]
+    vals = [sig_corr_coeffs, diff_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
+    cbar_maxes = [sig_max, diff_max, sig_max, 1]
     for ind in range(len(vals)):
         fig, ax = plt.subplots()
         cbar_max = cbar_maxes[ind]
@@ -69,7 +78,7 @@ def process_and_plot(data):
             ax,
             vals[ind],
             title=titles[ind],
-            cbar_label="Correlation coefficient",
+            cbar_label="Covariance" if ind == 1 else "Correlation coefficient",
             cmap="RdBu_r",
             vmin=-cbar_max,
             vmax=cbar_max,
@@ -145,7 +154,8 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1520104346137)
+    # data = dm.get_raw_data(file_id=1520104346137)  # Checkerboard
+    data = dm.get_raw_data(file_id=1519615059736)  # Block
 
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])
