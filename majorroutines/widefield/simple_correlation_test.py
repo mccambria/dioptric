@@ -25,9 +25,14 @@ def process_and_plot(data):
     counts = np.array(data["counts"])
     # counts = data["states"]
     num_nvs = len(nv_list)
+    # exclude_inds = (6, 9, 13)
+    exclude_inds = ()
+    nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in exclude_inds]
+    num_nvs = len(nv_list)
 
     # Break down the counts array
     # experiment, nv, run, step, rep
+    counts = np.delete(counts, exclude_inds, axis=1)
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
 
@@ -38,21 +43,25 @@ def process_and_plot(data):
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
     sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
     ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+    ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
     # Replace diagonals (Cii=1) with nan so they don't show
     np.fill_diagonal(sig_corr_coeffs, np.nan)
     np.fill_diagonal(ref_corr_coeffs, np.nan)
-    print(np.nanmean(sig_corr_coeffs))
+    np.fill_diagonal(ideal_sig_corr_coeffs, np.nan)
 
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
 
+    # test
     figs = []
-    titles = ["Signal", "Reference"]
-    vals = [sig_corr_coeffs, ref_corr_coeffs]
-    cbar_maxes = [sig_max, ref_max]
-    for ind in range(2):
+    titles = ["Signal", "Reference", "Ideal signal"]
+    vals = [sig_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
+    cbar_maxes = [sig_max, sig_max, 1]
+    for ind in range(len(vals)):
         fig, ax = plt.subplots()
         cbar_max = cbar_maxes[ind]
         # cbar_max = 0.032
@@ -136,7 +145,7 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1518794080496)
+    data = dm.get_raw_data(file_id=1519615059736)
 
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])

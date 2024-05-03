@@ -104,10 +104,10 @@ def process_check_readout_fidelity(data):
     num_reps = counts.shape[4]
     sig_counts = counts[0]
     config = common.get_config_dict()
-    charge_state_estimation_mode = config["charge_state_estimation_mode"]
-    # charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
+    # charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
     if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
-        states = widefield.threshold_counts(nv_list, sig_counts)
+        states, _ = widefield.threshold_counts(nv_list, sig_counts)
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         states = np.array(data["states"])[0]
 
@@ -135,7 +135,7 @@ def process_check_readout_fidelity(data):
             prob = np.mean(shots_list)
             err = np.std(shots_list, ddof=1) / np.sqrt(len(shots_list))
             nv_num = widefield.get_nv_num(nv_list[nv_ind])
-            kpl.plot_points(ax, nv_num, prob, yerr=err)
+            kpl.plot_points(ax, nv_ind, prob, yerr=err)
             probs[init_state].append(prob)
             prob_errs[init_state].append(err)
         label = labels[init_state]
@@ -151,7 +151,7 @@ def process_check_readout_fidelity(data):
             np.sqrt(prob_errs[0][nv_ind] ** 2 + prob_errs[1][nv_ind] ** 2) / 2
         )
         nv_num = widefield.get_nv_num(nv_list[nv_ind])
-        kpl.plot_points(ax, nv_num, fidelity, yerr=fidelity_err)
+        kpl.plot_points(ax, nv_ind, fidelity, yerr=fidelity_err)
     ax.set_ylabel("Fidelity")
     ax.set_xlabel("NV index")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -227,7 +227,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1516812721880)
+    data = dm.get_raw_data(file_id=1519865755053)
 
     process_check_readout_fidelity(data)
 

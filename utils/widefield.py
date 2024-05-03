@@ -789,10 +789,10 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         #     continue
         # if nv_ind not in [0, 1, 2, 4, 6, 11, 14]:
         #     continue
-        nv_sig = nv_list[nv_ind]
-        nv_num = get_nv_num(nv_sig)
         yerr = None if yerrs is None else yerrs[nv_ind]
-        nv_num = get_nv_num(nv_sig)
+        nv_sig = nv_list[nv_ind]
+        # nv_num = get_nv_num(nv_sig)
+        nv_num = nv_ind
         color = kpl.data_color_cycler[nv_num]
         kpl.plot_points(
             ax,
@@ -861,10 +861,10 @@ def plot_fit(
         popt = None if popts is None else popts[nv_ind]
 
         nv_sig = nv_list[nv_ind]
-        nv_num = get_nv_num(nv_sig)
+        nv_num = nv_ind
+        # nv_num = get_nv_num(nv_sig)
         color = kpl.data_color_cycler[nv_num]
 
-        # MCC
         ax = axes_pack[nv_ind]
 
         # Include the norm if there is one
@@ -892,7 +892,7 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        ax.legend()
+        ax.legend(loc=kpl.Loc.UPPER_LEFT)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)

@@ -26,7 +26,7 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     fig, ax = plt.subplots()
     widefield.plot_raw_data(ax, nv_list, taus, counts, counts_ste)
     ax.set_xlabel("Pulse duration (ns)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("Fraction in NV$^{-}$")
     return fig
 
 
@@ -40,9 +40,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * tau))
         sign = np.sign(ptp_amp)
-        return 1 + amp - sign * (envelope * cos_part)
+        return amp - sign * (envelope * cos_part)
 
-    def constant(tau, norm):
+    def constant(tau):
+        norm = 0
         if isinstance(tau, list):
             return [norm] * len(tau)
         elif type(tau) == np.ndarray:
@@ -54,12 +55,16 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     tau_step = taus[1] - taus[0]
     num_steps = len(taus)
 
+    norms_newaxis = norms[:, np.newaxis]
+    norm_counts = counts - norms_newaxis
+    norm_counts_ste = counts_ste
+
     fit_fns = []
     popts = []
     for nv_ind in range(num_nvs):
         nv_sig = nv_list[nv_ind]
-        nv_counts = counts[nv_ind] / norms[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
+        nv_counts = norm_counts[nv_ind]
+        nv_counts_ste = norm_counts_ste[nv_ind]
 
         ptp_amp_guess = np.max(nv_counts) - np.min(nv_counts)
         if nv_sig.spin_flip:
@@ -102,12 +107,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     fig, axes_pack = plt.subplot_mosaic(
         layout, figsize=[6.5, 6.0], sharex=True, sharey=True
     )
-    axes_pack = list(axes_pack.values())
+    axes_pack_flat = list(axes_pack.values())
 
-    norm_counts = np.array([counts[ind] / norms[ind] for ind in range(num_nvs)])
-    norm_counts_ste = np.array([counts_ste[ind] / norms[ind] for ind in range(num_nvs)])
     widefield.plot_fit(
-        axes_pack,
+        axes_pack_flat,
         nv_list,
         taus,
         norm_counts,
@@ -116,11 +119,12 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         popts,
         xlim=[0, None],
     )
-    ax = axes_pack[-2]
+    ax = axes_pack[layout[-1, 0]]
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
     ax.set_ylabel(" ")
-    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    label = "Change in fraction in NV$^{-}$"
+    fig.text(0.01, 0.55, label, va="center", rotation="vertical")
     # ax.set_ylim([0.966, 1.24])
     # ax.set_yticks([1.0, 1.2])
     return fig
@@ -220,7 +224,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1514615480420)
+    data = dm.get_raw_data(file_id=1519858323604)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -228,15 +232,14 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
-    counts = np.array(data["states"])
-    # counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
+    counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
-    #     nv_list, sig_counts, ref_counts
-    # )
-    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
