@@ -29,10 +29,6 @@ from utils.constants import LaserKey, NVSig
 # region Math functions
 
 
-def moving_average(x, w):
-    return np.convolve(x, np.ones(w), "valid") / w
-
-
 def poisson_dist(x, rate):
     return (rate**x) * np.exp(-rate) / factorial(x)
 
