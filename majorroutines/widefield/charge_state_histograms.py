@@ -11,6 +11,7 @@ Created on Fall 2023
 import os
 import sys
 import time
+import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -164,6 +165,7 @@ def process_and_plot(raw_data):
     ### Histograms and thresholding
 
     threshold_list = []
+    prep_fidelity_list = []
     hist_figs = []
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
@@ -172,10 +174,14 @@ def process_and_plot(raw_data):
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
         # nvn_ratio = 0.3
-        nvn_ratio = None
+        nvn_ratio = 0.5
         _, threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
         threshold_list.append(threshold)
+        prep_fidelity_list.append(
+            np.sum(np.greater(ref_counts_list, threshold)) / num_shots
+        )
     print(threshold_list)
+    print([round(el, 3) for el in prep_fidelity_list])
 
     ### Images
 
@@ -274,23 +280,23 @@ def main(
         run_fn=run_fn,
         save_images=True,
         charge_prep_fn=charge_prep_fn,
+        uwave_ind_list=[],  # MCC
     )
 
     ### Processing
 
-    try:
-        img_figs, imgs, hist_figs = process_and_plot(raw_data)
-        del raw_data["img_arrays"]
+    timestamp = dm.get_time_stamp()
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
 
-        timestamp = dm.get_time_stamp()
-        repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-        repr_nv_name = repr_nv_sig.name
+    try:
+        imgs, img_figs, hist_figs = process_and_plot(raw_data)
 
         title_suffixes = ["sig", "ref", "diff"]
-        for fig in img_figs:
-            file_path = dm.get_file_path(
-                __file__, timestamp, f"{repr_nv_name}-{title_suffixes[ind]}"
-            )
+        for ind in range(len(img_figs)):
+            fig = img_figs[ind]
+            title = title_suffixes[ind]
+            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
             dm.save_figure(fig, file_path)
 
         num_nvs = len(nv_list)
@@ -309,10 +315,16 @@ def main(
         ]
 
     except Exception:
+        print(traceback.format_exc())
         sig_img_array = None
         ref_img_array = None
         diff_img_array = None
         keys_to_compress = None
+
+    try:
+        del raw_data["img_arrays"]
+    except Exception:
+        pass
 
     ### Save raw data
 
@@ -336,7 +348,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1519868458902, load_npz=True)
+    data = dm.get_raw_data(file_id=1521893706012, load_npz=True)
 
     process_and_plot(data)
 
@@ -368,4 +380,4 @@ if __name__ == "__main__":
 
     #     widefield.draw_circles_on_nvs(ax, nv_list, drift=(-1, -11))
 
-    # kpl.show(block=True)
+    kpl.show(block=True)
