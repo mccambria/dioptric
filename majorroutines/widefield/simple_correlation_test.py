@@ -94,7 +94,7 @@ def process_and_plot(data):
 
     ### Spurious correlations offset
 
-    offsets = list(range(1000))
+    offsets = np.array(range(15000))
     # offsets = list(range(200))
     # offsets = [500]
     spurious_vals = []
@@ -132,7 +132,7 @@ def process_and_plot(data):
     kpl.plot_points(ax, offsets, spurious_vals, label="Data")
     ax.set_xlabel("Shot offset")
     ax.set_ylabel("Average spurious correlation")
-    window = 100
+    window = 20
     avg = tb.moving_average(spurious_vals, window)
     avg_x_vals = np.array(range(len(avg))) + window // 2
     kpl.plot_line(
@@ -145,26 +145,25 @@ def process_and_plot(data):
         label="Moving average",
     )
 
-    def fit_fn(offset, amp1, d1):
+    def fit_fn(offset, amp1, amp2, d1, d2):
         return (
-            amp1 * np.exp(-offset / d1)
-            # + amp2 * np.exp(-offset / d2)
+            amp1 * np.exp(-offset / d1) + amp2 * np.exp(-offset / d2)
             # + amp3 * np.exp(offset / d3)
         )
 
-    popt, pcov = curve_fit(fit_fn, avg_x_vals, avg, p0=(0.001, 20))
+    # # popt, pcov = curve_fit(fit_fn, avg_x_vals, avg, p0=(0.001, 20))
     # popt, pcov = curve_fit(fit_fn, avg_x_vals, avg, p0=(0.001, 0.0015, 20, 3000))
-    kpl.plot_line(
-        ax,
-        offsets,
-        fit_fn(offsets, *popt),
-        color=kpl.KplColors.ORANGE,
-        zorder=10,
-        linewidth=3,
-        label="Fit",
-    )
-    print(popt)
-    ax.legend()
+    # kpl.plot_line(
+    #     ax,
+    #     offsets,
+    #     fit_fn(offsets, *popt),
+    #     color=kpl.KplColors.ORANGE,
+    #     zorder=10,
+    #     linewidth=3,
+    #     label="Fit",
+    # )
+    # print(popt)
+    # ax.legend()
 
     return figs
 
