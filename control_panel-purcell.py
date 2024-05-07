@@ -123,7 +123,7 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
 
     # Pixel optimization in parallel with widefield yellow
     if coords_key is None:
-        num_reps = 100
+        num_reps = 200
         img_array = do_widefield_image_sample(nv_sig, num_reps=num_reps)
 
     opti_coords_list = []
@@ -630,7 +630,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.60
+    z_coord = 4.53
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -779,6 +779,71 @@ if __name__ == "__main__":
     # ]
 
     # endregion
+    # region Coords (publication set)
+    pixel_coords_list = [
+        [131.144, 129.272],
+        [161.477, 105.335],
+        [135.139, 104.013],
+        [110.023, 87.942],
+        [144.169, 163.787],
+        [173.93, 78.505],
+        [171.074, 49.877],
+        [60.432, 77.385],
+        [170.501, 132.597],
+        [137.025, 74.662],
+        [104.915, 124.846],
+        [58.628, 139.616],
+        [174.414, 195.672],
+    ]
+    num_nvs = len(pixel_coords_list)
+    green_coords_list = [
+        [108.507, 110.208],
+        [109.089, 110.756],
+        [108.53, 110.804],
+        [107.93, 111.171],
+        [108.778, 109.393],
+        [109.305, 111.414],
+        [109.237, 112.058],
+        [106.811, 111.322],
+        [109.294, 110.155],
+        [108.479, 111.479],
+        [107.841, 110.266],
+        [106.85, 109.898],
+        [109.483, 108.695],
+    ]
+    red_coords_list = [
+        [73.117, 75.316],
+        [73.607, 75.802],
+        [73.127, 75.791],
+        [72.778, 76.095],
+        [73.336, 74.706],
+        [73.889, 76.248],
+        [73.758, 76.877],
+        [71.756, 76.302],
+        [73.76, 75.257],
+        [73.239, 76.429],
+        [72.592, 75.323],
+        [71.742, 75.01],
+        [73.879, 74.135],
+    ]
+    threshold_list = [
+        26.5,
+        25.5,
+        23.5,
+        22.5,
+        25.5,
+        20.5,
+        16.5,
+        15.5,
+        23.5,
+        22.5,
+        22.5,
+        18.5,
+        21.5,
+    ]
+    nvn_dist_params_list = [None] * num_nvs
+    scc_duration_list = [None] * num_nvs
+    # endregion
     # region NV list construction
 
     # nv_list[i] will have the ith coordinates from the above lists
@@ -806,10 +871,9 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     num_nvs = len(nv_list)
 
-    nv_inds = [1, 4, 6, 9, 13]
-    # nv_inds.extend(list(range(8, 15)))
-    nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in nv_inds]
-    num_nvs = len(nv_list)
+    # nv_inds = [1, 4, 6, 9, 13]
+    # nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in nv_inds]
+    # num_nvs = len(nv_list)
     # for nv in nv_list[::2]:
     # for nv in nv_list[num_nvs // 2 :]:
     #     nv.spin_flip = True
@@ -886,11 +950,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # for ind in range(10):
-        #     do_optimize_pixel(nv_sig)
-        #     time.sleep(5)
-
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -904,15 +964,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=True)
 
-        # num_nvs = len(nv_list)
-        # for ind in range(num_nvs):
-        #     if ind == 0:
-        #         continue
-        #     nv = nv_list[ind]
-        #     green_coords = nv[green_coords_key]5
-        #     nv[green_coords_key][0] += 0.500
-
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
@@ -936,7 +988,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

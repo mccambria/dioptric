@@ -7,6 +7,8 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
+import traceback
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
@@ -21,8 +23,8 @@ from utils import widefield as widefield
 def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     num_nvs = len(nv_list)
 
-    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
     # avg_snr_ste = None
@@ -159,7 +161,15 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Process and plot
 
-    sig_fig, ref_fig, snr_fig = process_and_plot(nv_list, taus, sig_counts, ref_counts)
+    try:
+        sig_fig, ref_fig, snr_fig = process_and_plot(
+            nv_list, taus, sig_counts, ref_counts
+        )
+    except Exception:
+        print(traceback.format_exc())
+        sig_fig = None
+        ref_fig = None
+        snr_fig = None
 
     ### Clean up and return
 
@@ -184,12 +194,15 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
-    dm.save_figure(sig_fig, file_path)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
-    dm.save_figure(ref_fig, file_path)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-snr")
-    dm.save_figure(snr_fig, file_path)
+    if sig_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
+        dm.save_figure(sig_fig, file_path)
+    if ref_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
+        dm.save_figure(ref_fig, file_path)
+    if snr_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-snr")
+        dm.save_figure(snr_fig, file_path)
     # file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-avg_snr")
     # dm.save_figure(avg_snr_fig, file_path)
 
@@ -216,10 +229,3 @@ if __name__ == "__main__":
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 
     plt.show(block=True)
-
-
-# fmt: off
-[0.226, 0.096, 0.2,   0.199, 0.112, 0.126, 0.069, 0.091, 0.116, 0.059, 0.128, 0.248, 0.09,  0.034, 0.175]
-[0.224, 0.133, 0.19,  0.226, 0.141, 0.119, 0.059, 0.115, 0.116, 0.075, 0.158, 0.236, 0.09,  0.018, 0.173]
-[0.246, 0.113, 0.235, 0.257, 0.147, 0.127, 0.064, 0.132, 0.089, 0.07,  0.211, 0.24,  0.099, 0.029, 0.207]
-[0.201, 0.099, 0.223, 0.21, 0.149, 0.099, 0.089, 0.127, 0.114, 0.05, 0.221, 0.228, 0.105, 0.033, 0.199]

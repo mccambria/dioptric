@@ -49,8 +49,8 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
-    # "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
+    # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
+    "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
     ###
     # Common durations are in ns
@@ -160,7 +160,7 @@ config |= {
         LaserKey.SHELVING: {"name": green_laser, "duration": 60},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
-        LaserKey.SCC: {"name": red_laser, "duration": 200},
+        LaserKey.SCC: {"name": red_laser, "duration": 160},
         # LaserKey.SCC: {"name": red_laser, "duration": 200},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
