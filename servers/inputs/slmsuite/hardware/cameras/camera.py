@@ -3,10 +3,12 @@ Abstract camera functionality.
 """
 
 import time
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 from slmsuite.holography import analysis
 from slmsuite.misc.fitfunctions import lorentzian, lorentzian_jacobian
 

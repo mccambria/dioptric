@@ -84,7 +84,7 @@ class ThorSLM(SLM):
         dy_um=8,
         )
 
-        # self.write(None)
+        self.write(None)
         
 
     @staticmethod
@@ -134,29 +134,98 @@ class ThorSLM(SLM):
             print("Show failed")
         else:
             print("Show successfully")
-
-        # time.sleep(1)   
-        # Ask before closing the SLM display
-        user_input = input("Press Enter to close SLM display... ")
-        if user_input:
-            print("Window closing aborted by user")
-            return -1
+            
+        time.sleep(10)
 
         CghDisplayCloseWindow(hdl)
-        return 0
 
-    def _show_window(self, c):
-        """Show window on SLM display."""
-        return CghDisplayShowWindow(self.hdl, c)  
+    # def _show_window(self, c):
+    #     """Show window on SLM display."""
+    #     return CghDisplayShowWindow(self.hdl, c)  
 
-    def _close_display(self):
-        """Close SLM display."""
-        if self.hdl:
-            CghDisplayCloseWindow(self.hdl)
+    # def _close_display(self):
+    #     """Close SLM display."""
+    #     if self.hdl:
+    #         CghDisplayCloseWindow(self.hdl)
 
-    def _close_connection(self):
-        """Close SLM connection."""
-        if self.hdl:
-            EXULUSClose(self.serialNumber)
+    # def _close_connection(self):
+    #     """Close SLM connection."""
+    #     if self.hdl:
+    #         EXULUSClose(self.serialNumber)
 
         # TODO: Insert code here to write raw phase data to the SLM.
+    
+# class ThorSLM(SLM):
+#     """
+#     Subclass for Thorlab SLM hardware control.
+#     """
+
+#     def __init__(self, serialNumber):
+#         """
+#         Initializes an instance of a Thorlab SLM.
+
+#         Args:
+#             serialNumber (str): The serial number of the Thorlab SLM.
+#         """
+#         self.serialNumber = serialNumber
+#         super().__init__(1920, 1080, bitdepth=8, dx_um=8, dy_um=8)
+#         self.hdl = None  # Initialize SLM handle
+        
+#     def write(self, phase):
+#         """
+#         Write phase data onto the SLM.
+
+#         Args:
+#             phase (numpy.ndarray): Phase data to be written.
+#         """
+#         if self.hdl is None:
+#             self._initialize_slm()
+
+#         try:
+#             while True:
+#                 matrix = phase.astype(c_ubyte)
+#                 flattened_matrix = matrix.flatten()
+#                 c = ctypes.cast(flattened_matrix.ctypes.data, ctypes.POINTER(ctypes.c_ubyte))
+#                 result = self._show_window(c)
+
+#                 if result < 0:
+#                     print("Show failed")
+#                 else:
+#                     print("Show successful")
+#                 time.sleep(10)
+
+#         except KeyboardInterrupt:
+#             print("Display aborted by user")
+#         finally:
+#             self._close_display()
+#             self._close_connection()
+
+#     def _initialize_slm(self):
+#         """Initialize SLM connection."""
+#         hdl = EXULUSOpen(self.serialNumber, 38400, 3)
+#         if hdl < 0:
+#             print("Connect {} failed".format(self.serialNumber))
+#             return -1
+#         else:
+#             print("Connect {} successfully".format(self.serialNumber))
+#             self.hdl = hdl
+
+#         result = EXULUSIsOpen(self.serialNumber)
+#         if result < 0:
+#             print("Open failed")
+#         else:
+#             print("EXULUS is open")
+
+#     def _close_display(self):
+#         """Close SLM display."""
+#         if self.hdl:
+#             CghDisplayCloseWindow(self.hdl)
+
+#     def _close_connection(self):
+#         """Close SLM connection."""
+#         if self.hdl:
+#             EXULUSClose(self.serialNumber)
+
+#     def _show_window(self, c):
+#         """Show window on SLM display."""
+#         return CghDisplayShowWindow(self.hdl, c)
