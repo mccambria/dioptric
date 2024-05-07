@@ -212,8 +212,9 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1517947115955)  # 0.15
     # data = dm.get_raw_data(file_id=1517855118940)  # 0.17
-    data = dm.get_raw_data(file_id=1518051829285)  # 0.19
+    # data = dm.get_raw_data(file_id=1518051829285)  # 0.19
     # data = dm.get_raw_data(file_id=1518284281214)  # 0.21
+    data = dm.get_raw_data(file_id=1523169361209)  # 0.19 again
 
     nv_list = data["nv_list"]
     taus = data["taus"]
