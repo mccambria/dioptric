@@ -80,12 +80,12 @@ def fourier_calibration():
     print("Fouri er calibration saved to:", calibration_file)
 
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\dioptric\26438-SLM-fourier-calibration_00000.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\dioptric\26438-SLM-fourier-calibration_00001.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
 def cam_plot():
-    cam.set_exposure(.001)
+    cam.set_exposure(.00001)
     img = cam.get_image()
 
     # Plot the result
@@ -99,6 +99,98 @@ def computaional_feedback():
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+
+    # Precondition computationally.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+
+
+def circle():
+   # Define parameters for the circle
+    center = (1000, 400)  # Center of the circle
+    radius = 200  # Radius of the circle
+
+    # Generate points within the circle using polar coordinates
+    num_points = 20  # Number of points to generate
+    theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
+    x_circle = center[0] + radius * np.cos(theta)  # X coordinates
+    y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
+
+    # Convert to grid format if needed
+    square = np.vstack((x_circle, y_circle))
+
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+
+    # Precondition computationally.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+    # Hone the result with experimental feedback.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='experimental_spot',
+        stat_groups=['computational_spot', 'experimental_spot'],
+        fixed_phase=True
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+
+def smiley():
+  # Define points for the smiley face
+    x_eyes = [1100, 1200]  # X coordinates for the eyes
+    y_eyes = [400, 400]     # Y coordinates for the eyes
+
+    # Define points for the mouth (a semi-circle)
+    theta = np.linspace(0, np.pi, 15)  # Angle values for the semi-circle
+    mouth_radius = 150  # Radius of the mouth
+    x_mouth = 1150 + mouth_radius * np.cos(theta)  # X coordinates for the mouth
+    y_mouth = 500 + mouth_radius * np.sin(theta)   # Y coordinates for the mouth
+
+    # Combine all points into a single array
+    smiley = np.vstack((np.concatenate((x_eyes, x_mouth)), np.concatenate((y_eyes, y_mouth))))
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=smiley, basis='ij', cameraslm=fs)
+
+    # Precondition computationally.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+
+# Call the function to define points for "Berkeley Physics" within the grid
+
+def computaional_Berkeley():
+    # Define coordinates for each letter in "UCB"
+    letters = {
+        'U': [(700, 400), (650, 500), (650, 600), (700, 700), (750, 600), (750, 500)],
+        'C': [(800, 500), (800, 600), (850, 600), (900, 550), (850, 500), (900, 500)],
+        'B': [(950, 500), (950, 600), (1000, 600), (1050, 550), (1000, 500), (1050, 500)],
+    }
+
+    # Combine coordinates for "UCB"
+    ucb = np.vstack([letters[letter] for letter in "UCB"]).T
+
+
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=ucb, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -141,7 +233,10 @@ try:
     fs = FourierSLM(cam, slm)
     # fourier_calibration()
     load_fourier_calibration()
-    computaional_feedback()
+    circle()
+    # smiley()
+    # computaional_Berkeley()
+    # computaional_feedback()
     # experiment_feedback()
     # cam_plot()
 
