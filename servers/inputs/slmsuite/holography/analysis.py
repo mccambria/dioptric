@@ -1501,7 +1501,7 @@ def blob_array_detect(
 
 
 def _make_8bit(img):
-    """
+    """ 
     Convert an image to ``numpy.uint8``, scaling to the limits.
 
     This function is useful to convert float or larger bitdepth images to

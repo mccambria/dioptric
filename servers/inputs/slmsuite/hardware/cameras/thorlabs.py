@@ -25,47 +25,25 @@ from slmsuite.hardware.cameras.camera import Camera
 #     "Scientific Camera Support\\Scientific Camera "
 #     "Interfaces\\SDK\\Native Toolkit\\dlls\\Native_64_lib"
 # )
-# DEFAULT_DLL_PATH = (
-#     "C:\\Program Files\\Thorlabs\\Scientific Imaging\\Scientific Camera Support\\"
-#     "Scientific Camera Interfaces\\SDK\\Native Toolkit\\dlls\\Native_64_lib"
-# )
-DEFAULT_DLL_PATH = ("C:\\Users\\Saroj Chand\\Documents\\dioptric\\servers\\inputs\\slmsuite\\hardware\\cameras\\dlls\\Native_64_lib")
 
-def configure_tlcam_dll_path(dll_path=DEFAULT_DLL_PATH):
-    """
-    Adds Thorlabs camera DLLs to the DLL path.
-    `"32_lib"` or `"64_lib"` is appended to the default .dll path
-    depending on the type of system.
+def configure_path():
+    absolute_path_to_dlls = "C:\\Users\\Saroj Chand\\Documents\\dioptric\\servers\\inputs\\slmsuite\\hardware\\cameras\\dlls\\Native_64_lib"
 
-    Parameters
-    ----------
-    dll_path : str
-        Full path to the Thorlabs camera DLLs.
-    """
-    if DEFAULT_DLL_PATH == dll_path:
-        is_64bits = sys.maxsize > 2 ** 32
+    os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
 
-        if is_64bits:
-            dll_path += "64_lib"
-        else:
-            dll_path += "32_lib"
-
-    if hasattr(os, "add_dll_directory"):
-        try:
-            os.add_dll_directory(dll_path)
-        except:
-            if DEFAULT_DLL_PATH == dll_path:
-                print(
-                    "thorlabs.py: thorlabs_tsi_sdk DLLs not found at default path. "
-                    "Resolve to use Thorlabs cameras.\nDefault path: '{}'".format(DEFAULT_DLL_PATH)
-                )
-    else:
-        os.environ["PATH"] = dll_path + os.pathsep + os.environ["PATH"]
-
-configure_tlcam_dll_path()
+    try:
+        # Python 3.8 introduces a new method to specify dll directory
+        os.add_dll_directory(absolute_path_to_dlls)
+    except AttributeError:
+        pass
+try:
+    # if on Windows, use the provided setup script to add the DLLs folder to the PATH
+    configure_path()
+except ImportError:
+    configure_path = None
 
 try:
-    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK, ROI
+    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK, ROI, OPERATION_MODE
 except ImportError:
     print("thorlabs.py: thorlabs_tsi_sdk not installed. Install to use Thorlabs cameras.")
 
@@ -146,7 +124,12 @@ class ThorCam(Camera):
         if verbose:
             print("ThorCam sn \"{}\" initializing... ".format(serial), end="")
         self.cam = ThorCam.sdk.open_camera(serial)
+        # self.cam.frames_per_trigger_zero_for_unlimited = 0  # start camera in continuous mode
+        # self.cam.image_poll_timeout_ms = 1000  # 1 second polling timeout
 
+        # self.cam.arm(2)
+
+        # self.cam.issue_software_trigger()
         self.cam.is_led_on = False
 
         # Initialize profile variable, then set to the proper value.
@@ -169,6 +152,7 @@ class ThorCam(Camera):
         if verbose:
             print("success")
 
+        
     def close(self, close_sdk=False):
         """
         See :meth:`.Camera.close`.
@@ -182,11 +166,11 @@ class ThorCam(Camera):
         # to keep a class-wide count of the number of open instances
         # and delete the sdk when the last instance is closed.
         # We would want to use a lock to do this.
-
-        self.cam.dispose()
-
         if close_sdk:
             self.close_sdk()
+            
+        self.cam.dispose()
+
 
     @staticmethod
     def info(verbose=True):

@@ -3,6 +3,7 @@ Datastructures, methods, and calibrations for an SLM monitored by a camera.
 """
 
 import os
+import sys
 import time
 import cv2
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ import numpy as np
 from scipy import optimize
 from tqdm.autonotebook import tqdm
 
+sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 from slmsuite.holography import analysis
 from slmsuite.holography import toolbox
 from slmsuite.holography.algorithms import SpotHologram

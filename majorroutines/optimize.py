@@ -456,15 +456,22 @@ def main(
     opti_succeeded = False
     opti_coords = initial_coords.copy()
 
-    def count_check(coords):
+    # Only check expected counts for the imaging laser
+    imaging_laser_name = tb.get_laser_name(LaserKey.IMAGING)
+    if coords_key in [CoordsKey.GLOBAL, imaging_laser_name]:
+        expected_counts = nv_sig.expected_counts
+    else:
+        expected_counts = None
+
+    def counts_check(coords):
         return stationary_count_lite(nv_sig, coords, coords_key)
 
     ### Check if we even need to optimize by reading counts at current coordinates
 
-    print(f"Expected counts: {nv_sig.expected_counts}")
+    print(f"Expected counts: {expected_counts}")
     if opti_necessary is None:
-        current_counts = count_check(initial_coords)
-        opti_necessary = nv_sig.expected_counts is None or not expected_counts_check(
+        current_counts = counts_check(initial_coords)
+        opti_necessary = expected_counts is None or not expected_counts_check(
             nv_sig, current_counts
         )
         print(f"Counts at initial coordinates: {current_counts}")
@@ -499,8 +506,8 @@ def main(
             for axis_ind in axes_to_optimize:
                 # Check if z optimization is necessary after xy optimization
                 if axis_ind == 2 and axes_to_optimize == [0, 1, 2]:
-                    current_counts = count_check(opti_coords)
-                    if nv_sig.expected_counts is not None and expected_counts_check(
+                    current_counts = counts_check(opti_coords)
+                    if expected_counts is not None and expected_counts_check(
                         nv_sig, current_counts
                     ):
                         print("Z optimization unnecessary.")
@@ -527,13 +534,11 @@ def main(
                 continue
 
             # Check the counts - if the threshold is not set, we just do one pass and succeed
-            current_counts = count_check(opti_coords)
+            current_counts = counts_check(opti_coords)
             print(f"Value at optimized coordinates: {round(current_counts, 1)}")
-            if nv_sig.expected_counts is None or expected_counts_check(
-                nv_sig, current_counts
-            ):
+            if expected_counts is None or expected_counts_check(nv_sig, current_counts):
                 opti_succeeded = True
-            elif nv_sig.expected_counts is not None:
+            elif expected_counts is not None:
                 print("Value at optimized coordinates out of bounds.")
 
     ### Calculate the drift relative to the passed coordinates
