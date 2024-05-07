@@ -270,6 +270,10 @@ def get_tagger_wiring():
 # region Math functions
 
 
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), "valid") / w
+
+
 def get_pi_pulse_dur(rabi_period):
     return round(rabi_period / 2)
 

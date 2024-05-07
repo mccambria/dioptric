@@ -45,6 +45,9 @@ def init(num_nvs=None):
     _cache_macro_run_aods = {}
     macro_run_aods()
 
+    global _cache_pol_reps_ind
+    _cache_pol_reps_ind = qua.declare(int)
+
     global _cache_charge_pol_incomplete
     _cache_charge_pol_incomplete = qua.declare_input_stream(
         bool, name="_cache_charge_pol_incomplete"
@@ -592,6 +595,8 @@ def _macro_single_pulse(
     x_el = f"ao_{laser_name}_x"
     y_el = f"ao_{laser_name}_y"
 
+    global _cache_pol_reps_ind
+
     buffer = get_widefield_operation_buffer()
     access_time = get_aod_access_time()
 
@@ -603,15 +608,26 @@ def _macro_single_pulse(
     qua.update_frequency(x_el, coords[0])
     qua.update_frequency(y_el, coords[1])
 
-    # Pulse the laser
-    qua.wait(access_time + buffer + delay, laser_el)
-    if duration is None:
-        qua.play(pulse_name, laser_el)
-    elif isinstance(duration, int) and duration == 0:
-        pass
-    else:
-        qua.play(pulse_name, laser_el, duration=duration)
-    qua.wait(buffer, laser_el)
+    # if True:
+    if laser_name != "laser_INTE_520":
+        # Pulse the laser
+        qua.wait(access_time + buffer + delay, laser_el)
+        if duration is None:
+            qua.play(pulse_name, laser_el)
+        elif isinstance(duration, int) and duration == 0:
+            pass
+        else:
+            qua.play(pulse_name, laser_el, duration=duration)
+        qua.wait(buffer, laser_el)
+    else:  # Green pulsed initialization with microwaves test MCC
+        qua.wait(access_time, laser_el)
+        with qua.for_(
+            _cache_pol_reps_ind, 0, _cache_pol_reps_ind < 100, _cache_pol_reps_ind + 1
+        ):
+            macro_pi_pulse([0, 1])
+            qua.align()
+            qua.play(pulse_name, laser_el, duration=20)
+            qua.wait(buffer, laser_el)
 
 
 # endregion

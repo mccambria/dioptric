@@ -10,6 +10,7 @@ Created on December 6th, 2023
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
+from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
 from majorroutines.widefield.scc_snr_check import process_and_print
@@ -41,6 +42,7 @@ def process_and_plot(data):
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+    num_shots = len(flattened_ref_counts[0])
     sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
     ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
 
@@ -92,42 +94,76 @@ def process_and_plot(data):
 
     ### Spurious correlations offset
 
-    # offsets = list(range(1000))
-    # # offsets = [500]
-    # spurious_vals = []
-    # for offset in offsets:
-    #     ref_corr_coeffs = np.array(
-    #         [[None for ind in range(num_nvs)] for ind in range(num_nvs)],
-    #         dtype=float,
-    #     )
-    #     for ind in range(num_nvs):
-    #         for jnd in range(num_nvs):
-    #             if jnd <= ind:
-    #                 continue
-    #             exclude_inds = [4, 9, 7, 8]
-    #             if ind in exclude_inds or jnd in exclude_inds:
-    #                 ref_corr_coeffs[ind, jnd] = np.nan
-    #                 ref_corr_coeffs[jnd, ind] = np.nan
-    #                 continue
-    #             val = np.corrcoef(
-    #                 # flattened_ref_counts[ind, offset:],
-    #                 # flattened_ref_counts[ind, :],
-    #                 flattened_ref_counts[ind],
-    #                 np.roll(flattened_ref_counts[jnd], offset),
-    #             )[0, 1]
-    #             ref_corr_coeffs[ind, jnd] = val
-    #             ref_corr_coeffs[jnd, ind] = val
-    #     ref_corr_coeffs = np.array(ref_corr_coeffs)
-    #     np.fill_diagonal(ref_corr_coeffs, np.nan)
-    #     spurious_vals.append(np.nanmean(ref_corr_coeffs))
+    offsets = np.array(range(15000))
+    # offsets = list(range(200))
+    # offsets = [500]
+    spurious_vals = []
+    for offset in offsets:
+        ref_corr_coeffs = np.array(
+            [[None for ind in range(num_nvs)] for ind in range(num_nvs)],
+            dtype=float,
+        )
+        for ind in range(num_nvs):
+            for jnd in range(num_nvs):
+                if jnd <= ind:
+                    continue
+                # exclude_inds = [4, 9, 7, 8]
+                # if ind in exclude_inds or jnd in exclude_inds:
+                #     ref_corr_coeffs[ind, jnd] = np.nan
+                #     ref_corr_coeffs[jnd, ind] = np.nan
+                #     continue
+                val = np.corrcoef(
+                    [
+                        flattened_ref_counts[ind][: num_shots - offset],
+                        flattened_ref_counts[jnd][offset:],
+                    ]
+                    # [
+                    #     flattened_ref_counts[ind],
+                    #     np.roll(flattened_ref_counts[jnd], offset),
+                    # ]
+                )[0, 1]
+                ref_corr_coeffs[ind, jnd] = val
+                ref_corr_coeffs[jnd, ind] = val
+        ref_corr_coeffs = np.array(ref_corr_coeffs)
+        np.fill_diagonal(ref_corr_coeffs, np.nan)
+        spurious_vals.append(np.nanmean(ref_corr_coeffs))
 
-    # fig, ax = plt.subplots()
-    # kpl.plot_points(ax, offsets, spurious_vals)
-    # ax.set_xlabel("Shot offset")
-    # ax.set_ylabel("Average spurious correlation")
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, offsets, spurious_vals, label="Data")
+    ax.set_xlabel("Shot offset")
+    ax.set_ylabel("Average spurious correlation")
+    window = 20
+    avg = tb.moving_average(spurious_vals, window)
+    avg_x_vals = np.array(range(len(avg))) + window // 2
+    kpl.plot_line(
+        ax,
+        avg_x_vals,
+        avg,
+        color=kpl.KplColors.RED,
+        zorder=10,
+        linewidth=3,
+        label="Moving average",
+    )
 
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, ref_corr_coeffs)
+    def fit_fn(offset, amp1, amp2, d1, d2):
+        return (
+            amp1 * np.exp(-offset / d1) + amp2 * np.exp(-offset / d2)
+            # + amp3 * np.exp(offset / d3)
+        )
+
+    # # popt, pcov = curve_fit(fit_fn, avg_x_vals, avg, p0=(0.001, 20))
+    # popt, pcov = curve_fit(fit_fn, avg_x_vals, avg, p0=(0.001, 0.0015, 20, 3000))
+    # kpl.plot_line(
+    #     ax,
+    #     offsets,
+    #     fit_fn(offsets, *popt),
+    #     color=kpl.KplColors.ORANGE,
+    #     zorder=10,
+    #     linewidth=3,
+    #     label="Fit",
+    # )
+    # print(popt)
+    # ax.legend()
 
     return figs
 

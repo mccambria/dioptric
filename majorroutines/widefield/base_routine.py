@@ -144,7 +144,7 @@ def main(
     num_runs,
     run_fn=None,
     step_fn=None,
-    uwave_ind_list=0,
+    uwave_ind_list=[0, 1],
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,

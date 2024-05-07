@@ -76,7 +76,7 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_reps = 200
-    num_runs = 20
+    num_runs = 10
     # num_runs = 2
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
@@ -630,7 +630,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.47
+    z_coord = 4.60
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -802,7 +802,7 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 1250
+    nv_list[0].expected_counts = 1200
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     num_nvs = len(nv_list)
 
@@ -811,8 +811,8 @@ if __name__ == "__main__":
     nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in nv_inds]
     num_nvs = len(nv_list)
     # for nv in nv_list[::2]:
-    for nv in nv_list[num_nvs // 2 :]:
-        nv.spin_flip = True
+    # for nv in nv_list[num_nvs // 2 :]:
+    #     nv.spin_flip = True
     # print([nv.spin_flip for nv in nv_list])
 
     # for nv in nv_list:
@@ -860,7 +860,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-3, -20])
+        # widefield.set_pixel_drift([-5, -27])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -890,7 +890,7 @@ if __name__ == "__main__":
         #     do_optimize_pixel(nv_sig)
         #     time.sleep(5)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -912,7 +912,7 @@ if __name__ == "__main__":
         #     green_coords = nv[green_coords_key]5
         #     nv[green_coords_key][0] += 0.500
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
@@ -940,7 +940,7 @@ if __name__ == "__main__":
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
         # Performance testing
         # data = dm.get_raw_data(file_id=1513523816819, load_npz=True)
