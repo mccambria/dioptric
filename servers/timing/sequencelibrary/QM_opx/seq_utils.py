@@ -608,8 +608,8 @@ def _macro_single_pulse(
     qua.update_frequency(x_el, coords[0])
     qua.update_frequency(y_el, coords[1])
 
-    # if True:
-    if laser_name != "laser_INTE_520":
+    if True:
+        # if laser_name != "laser_INTE_520":
         # Pulse the laser
         qua.wait(access_time + buffer + delay, laser_el)
         if duration is None:
@@ -622,11 +622,11 @@ def _macro_single_pulse(
     else:  # Green pulsed initialization with microwaves test MCC
         qua.wait(access_time, laser_el)
         with qua.for_(
-            _cache_pol_reps_ind, 0, _cache_pol_reps_ind < 100, _cache_pol_reps_ind + 1
+            _cache_pol_reps_ind, 0, _cache_pol_reps_ind < 10, _cache_pol_reps_ind + 1
         ):
             macro_pi_pulse([0, 1])
             qua.align()
-            qua.play(pulse_name, laser_el, duration=20)
+            qua.play(pulse_name, laser_el, duration=50)
             qua.wait(buffer, laser_el)
 
 
