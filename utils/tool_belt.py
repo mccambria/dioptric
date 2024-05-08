@@ -570,6 +570,13 @@ def process_counts(
 
 
 @cache
+def get_ref_img_array():
+    config = common.get_config_module()
+    ref_img_array = config.ref_img_array
+    return ref_img_array
+
+
+@cache
 def get_apd_indices():
     "Get a list of the APD indices in use from the config"
     config_dict = common.get_config_dict()

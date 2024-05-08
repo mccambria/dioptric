@@ -9,6 +9,8 @@ Created July 20th, 2023
 
 from pathlib import Path
 
+import numpy as np
+
 from config.default import config
 from utils.constants import (
     ChargeStateEstimationMode,
@@ -694,6 +696,8 @@ opx_config = {
     # endregion
 }
 # endregion
+
+ref_img_array = np.array([])
 
 
 if __name__ == "__main__":  #

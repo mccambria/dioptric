@@ -69,14 +69,17 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
         guess_params = [20, opti_snr / opti_duration, 300]
         avg_snr_nv = avg_snr[nv_ind]
         avg_snr_ste_nv = avg_snr_ste[nv_ind]
-        popt, pcov = curve_fit(
-            fit_fn,
-            taus,
-            avg_snr_nv,
-            p0=guess_params,
-            sigma=avg_snr_ste_nv,
-            absolute_sigma=True,
-        )
+        try:
+            popt, pcov = curve_fit(
+                fit_fn,
+                taus,
+                avg_snr_nv,
+                p0=guess_params,
+                sigma=avg_snr_ste_nv,
+                absolute_sigma=True,
+            )
+        except Exception:
+            popt = (20, 0, 300)
         opti_duration = popt[-1] + popt[0]
         opti_snr = fit_fn(opti_duration, *popt)
         dof = len(taus) - len(guess_params)
@@ -212,8 +215,11 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1517947115955)  # 0.15
     # data = dm.get_raw_data(file_id=1517855118940)  # 0.17
-    data = dm.get_raw_data(file_id=1518051829285)  # 0.19
+    # data = dm.get_raw_data(file_id=1518051829285)  # 0.19
     # data = dm.get_raw_data(file_id=1518284281214)  # 0.21
+    # data = dm.get_raw_data(file_id=1523169361209)  # 0.19 again
+    # data = dm.get_raw_data(file_id=1523521535018)  # 0.21 again
+    data = dm.get_raw_data(file_id=1523599575810)
 
     nv_list = data["nv_list"]
     taus = data["taus"]

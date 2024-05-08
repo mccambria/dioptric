@@ -283,10 +283,10 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1520107996099, load_npz=True)
-    img_array = np.array(data["img_array"])
+    data = dm.get_raw_data(file_id=1522594732577, load_npz=True)
+    img_array = np.array(data["ref_img_array"])
 
-    img_array = widefield.adus_to_photons(img_array)
+    # img_array = widefield.adus_to_photons(img_array)
 
     # Clean up dead pixel by taking average of nearby pixels
     # dead_pixel = [142, 109]
@@ -304,7 +304,7 @@ if __name__ == "__main__":
     scale = widefield.get_camera_scale()
     kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
 
-    nv_list = dm.get_raw_data(file_id=1519868458902, load_npz=True)["nv_list"]
-    widefield.draw_circles_on_nvs(ax, nv_list, drift=(+13, +5))
+    nv_list = dm.get_raw_data(file_id=1523090296109)["nv_list"]
+    widefield.draw_circles_on_nvs(ax, nv_list, drift=(+4, +9))
 
     plt.show(block=True)
