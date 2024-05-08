@@ -630,7 +630,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.53
+    z_coord = 4.65
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -834,20 +834,9 @@ if __name__ == "__main__":
         (0.0725151817586375, 0.28395847724808704, 4.4747713666259274),
         (0.07810805850820039, 0.24763859929113882, 4.185269864197604),
     ]
-    scc_duration_list = [
-        258,
-        190,
-        259,
-        219,
-        203,
-        265,
-        201,
-        194,
-        574,
-        148,
-        291,
-    ]
-    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    # scc_duration_list = [251, 225, 300, 230, 208, 224, 241, 222, 300, 157, 262]
+    # scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
 
@@ -929,7 +918,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-5, +6])
+        # widefield.set_pixel_drift([-9, -14])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -955,7 +944,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -970,7 +959,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=True)
 
         # do_charge_state_histograms(nv_list)
-        # do_check_readout_fidelity(nv_list)
+        do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
