@@ -15,9 +15,11 @@ import numpy as np
 from numba import njit
 from numpy import inf
 from scipy.optimize import minimize
+from scipy.signal import correlate
 
 from majorroutines.optimize import expected_counts_check, main, stationary_count_lite
 from utils import common, widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -68,6 +70,37 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 
 
 # endregion
+
+
+def optimize_pixel_by_ref_img_array(img_array, ref_img_array=None, margin=10):
+    """Correlate images to track drift. Not fully implemented yet"""
+    if ref_img_array is None:
+        config = common.get_config_module()
+        ref_img_array = config.ref_img_array
+
+    current_drift = np.array([-2, -3])
+    # current_drift = widefield.get_pixel_drift()
+
+    shape = ref_img_array.shape
+    ref_center = np.array([shape[1] / 2, shape[0] / 2])
+
+    expected_center = ref_center + current_drift
+    crop_img_array = img_array[
+        current_drift[1] + margin : current_drift[1] + shape[0] - margin,
+        current_drift[0] + margin : current_drift[0] + shape[1] - margin,
+    ]
+
+    corr = correlate(ref_img_array, crop_img_array, mode="valid")
+    new_drift = np.unravel_index(np.argmax(corr), corr.shape)
+
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, ref_img_array)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, corr)
+
+    print(new_drift)
 
 
 def optimize_pixel_and_z(nv_sig, do_plot=False):
@@ -226,3 +259,19 @@ def optimize_pixel_with_img_array(
         return popt
     else:
         return opti_pixel_coords
+
+
+if __name__ == "__main__":
+    kpl.init_kplotlib()
+
+    data = dm.get_raw_data(file_id=1521874556597, load_npz=True)
+    img_array = np.array(data["img_array"])
+
+    print(widefield.integrate_counts_from_adus(img_array, (126.687, 128.27)))
+    print(widefield.integrate_counts_from_adus(img_array, (126.687 - 0.2, 128.27)))
+    # data = dm.get_raw_data(file_id=1522533978767, load_npz=True)
+    # ref_img_array = np.array(data["img_array"])
+
+    # optimize_pixel_by_ref_img_array(img_array, ref_img_array)
+
+    plt.show(block=True)
