@@ -219,18 +219,16 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1518284281214)  # 0.21
     # data = dm.get_raw_data(file_id=1523169361209)  # 0.19 again
     # data = dm.get_raw_data(file_id=1523521535018)  # 0.21 again
-    data = dm.get_raw_data(file_id=1523599575810)
+    data = dm.get_raw_data(file_id=1524144763182)
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    # states = np.array(data["states"])
-    # sig_states = states[0]
-    # ref_states = states[1]
+    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 

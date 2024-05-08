@@ -107,20 +107,11 @@ def process_and_plot(data):
             for jnd in range(num_nvs):
                 if jnd <= ind:
                     continue
-                # exclude_inds = [4, 9, 7, 8]
-                # if ind in exclude_inds or jnd in exclude_inds:
-                #     ref_corr_coeffs[ind, jnd] = np.nan
-                #     ref_corr_coeffs[jnd, ind] = np.nan
-                #     continue
                 val = np.corrcoef(
                     [
                         flattened_ref_counts[ind][: num_shots - offset],
                         flattened_ref_counts[jnd][offset:],
                     ]
-                    # [
-                    #     flattened_ref_counts[ind],
-                    #     np.roll(flattened_ref_counts[jnd], offset),
-                    # ]
                 )[0, 1]
                 ref_corr_coeffs[ind, jnd] = val
                 ref_corr_coeffs[jnd, ind] = val
@@ -236,9 +227,9 @@ if __name__ == "__main__":
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
-    process_and_print(nv_list, counts, threshold=True)
+    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
+    process_and_print(nv_list, counts, threshold=False)
     process_and_plot(data)
 
     plt.show(block=True)
