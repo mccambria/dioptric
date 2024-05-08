@@ -49,16 +49,16 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
-    "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
+    "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
+    # "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
     ###
     # Common durations are in ns
     "CommonDurations": {
         "uwave_buffer": 1000,
         "default_pulse_duration": 1000,
-        # "aod_access_time": 20e3,
-        "aod_access_time": 30e3,
+        "aod_access_time": 20e3,
+        # "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
     },
     ###
@@ -675,6 +675,7 @@ opx_config = {
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.19},
+        # "red_aod_cw-scc": {"type": "constant", "sample": 0.17},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.34},  # 30e6

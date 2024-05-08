@@ -76,7 +76,7 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_reps = 200
-    num_runs = 10
+    num_runs = 20
     # num_runs = 2
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
@@ -178,8 +178,8 @@ def do_calibrate_green_red_delay():
 
 
 def do_optimize_scc(nv_list):
-    min_tau = 16
-    max_tau = 224
+    min_tau = 100
+    max_tau = 308
     num_steps = 14
     num_reps = 5
 
@@ -791,9 +791,7 @@ if __name__ == "__main__":
         [60.432, 77.385],
         [170.501, 132.597],
         [137.025, 74.662],
-        [104.915, 124.846],
         [58.628, 139.616],
-        [174.414, 195.672],
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
@@ -807,9 +805,7 @@ if __name__ == "__main__":
         [106.811, 111.322],
         [109.294, 110.155],
         [108.479, 111.479],
-        [107.841, 110.266],
         [106.85, 109.898],
-        [109.483, 108.695],
     ]
     red_coords_list = [
         [73.117, 75.316],
@@ -822,27 +818,36 @@ if __name__ == "__main__":
         [71.756, 76.302],
         [73.76, 75.257],
         [73.239, 76.429],
-        [72.592, 75.323],
         [71.742, 75.01],
-        [73.879, 74.135],
     ]
-    threshold_list = [
-        26.5,
-        25.5,
-        23.5,
-        22.5,
-        25.5,
-        20.5,
-        16.5,
-        15.5,
-        23.5,
-        22.5,
-        22.5,
-        18.5,
-        21.5,
+    threshold_list = [26.5, 25.5, 23.5, 21.5, 24.5, 20.5, 17.5, 15.5, 21.5, 21.5, 19.5]
+    nvn_dist_params_list = [
+        (0.08464401715842375, 0.41937505964187316, 4.291646247092469),
+        (0.08452614916494061, 0.38626140940411346, 4.348328511019792),
+        (0.09662980043683089, 0.3069995206976949, 4.278558214740025),
+        (0.08911203296601192, 0.28729651620030733, 4.213097129704373),
+        (0.07933969585546227, 0.3821595989193449, 4.30777882270795),
+        (0.09116555356072459, 0.25336433538241615, 4.096115552473045),
+        (0.0640282949423746, 0.2133409254064659, 4.470752864626123),
+        (0.0672743382071684, 0.17513093407929617, 4.4573525356754535),
+        (0.06302367288529255, 0.36935781855103417, 4.297985873174506),
+        (0.0725151817586375, 0.28395847724808704, 4.4747713666259274),
+        (0.07810805850820039, 0.24763859929113882, 4.185269864197604),
     ]
-    nvn_dist_params_list = [None] * num_nvs
-    scc_duration_list = [None] * num_nvs
+    scc_duration_list = [
+        258,
+        190,
+        259,
+        219,
+        203,
+        265,
+        201,
+        194,
+        574,
+        148,
+        291,
+    ]
+    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # endregion
     # region NV list construction
 
@@ -924,7 +929,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-5, -27])
+        # widefield.set_pixel_drift([-5, +6])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -950,7 +955,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -988,7 +993,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

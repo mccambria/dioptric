@@ -8,6 +8,7 @@ Created on December 6th, 2023
 """
 
 import time
+import traceback
 from random import shuffle
 
 import numpy as np
@@ -332,6 +333,7 @@ def main(
                     elif "NuvuException: 214" in str(exc):
                         print(nuvu_214)
                     else:
+                        print(traceback.format_exc())
                         raise exc
 
                     attempt_ind += 1

@@ -87,7 +87,6 @@ def main(nv_list, num_reps, num_runs):
     ### Report results and cleanup
 
     counts = data["counts"]
-    # counts = data["states"]
     process_and_print(nv_list, counts)
 
     tb.reset_cfm()

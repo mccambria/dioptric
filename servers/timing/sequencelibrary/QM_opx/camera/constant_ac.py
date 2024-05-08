@@ -80,8 +80,7 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [[4], [6, 4], [2 * 0.19, 2 * 0.19], [110, 110]]
-        ret_vals = get_seq(args)
+        ret_vals = get_seq([1], [2, 6], [0.19, 0.19], [75, 75])
         seq, seq_ret_vals = ret_vals
 
         # Serialize to file
