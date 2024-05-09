@@ -223,12 +223,12 @@ if __name__ == "__main__":
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
+    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+    # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 
