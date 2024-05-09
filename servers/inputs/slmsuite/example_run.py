@@ -70,7 +70,7 @@ def blaze():
 
 # region "fourier_calibration" 
 def fourier_calibration():
-    cam.set_exposure(.0001)               # Increase exposure because power will be split many ways
+    cam.set_exposure(.003)               # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
         array_shape=[30, 20],           # Size of the calibration grid (Nx, Ny) [knm]
         array_pitch=[30, 40],           # Pitch of the calibration grid (x, y) [knm]
@@ -96,7 +96,7 @@ def wavefront_calibration():
     
 # region "load_fourier_calibration" 
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\dioptric\26438-SLM-fourier-calibration_00001.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\dioptric\26438-SLM-fourier-calibration_00003.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
@@ -161,7 +161,7 @@ def square_array():
     ylist = np.arange(240, 1040, 100) 
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=square, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -177,25 +177,25 @@ def square_array():
     cam_plot()
     # evaluate_uniformity(vectors=square)
     # Hone the result with experimental feedback.
-    # hologram.optimize(
-    #     'WGS',
-    #     maxiter=20,
-    #     feedback='experimental_spot',
-    #     stat_groups=['computational_spot', 'experimental_spot'],
-    #     fixed_phase=False
-    # )
-    # phase = hologram.extract_phase()
-    # slm.write(phase, settle=True)
-    # cam_plot()
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='experimental_spot',
+        stat_groups=['computational_spot', 'experimental_spot'],
+        fixed_phase=False
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
 
 # region "circle" function 
 def circle_pattern():
    # Define parameters for the circle
-    center = (400, 640)  # Center of the circle
-    radius = 300  # Radius of the circle
+    center = (300, 700)  # Center of the circle
+    radius = 200  # Radius of the circle
 
     # Generate points within the circle using polar coordinates
-    num_points = 30  # Number of points to generate
+    num_points = 15  # Number of points to generate
     theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
@@ -203,7 +203,7 @@ def circle_pattern():
     # Convert to grid format if needed
     circle = np.vstack((x_circle, y_circle))
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circle, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=circle, basis='ij', cameraslm=fs)
 
     # # Precondition computationally.
     hologram.optimize(
@@ -238,7 +238,7 @@ def scatter_pattern():
         iterations=40
         ) * 5
     
-    hologram = SpotHologram((2048, 2048), lloyds_points, basis='ij', cameraslm=fs)
+    hologram = SpotHologram((2048, 1200), lloyds_points, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -277,7 +277,7 @@ def smiley_pattern():
 
     # Combine all points into a single array
     smiley = np.vstack((np.concatenate((x_eyes, x_mouth)), np.concatenate((y_eyes, y_mouth))))
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=smiley, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=smiley, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -302,7 +302,7 @@ def UCB_pattern():
     # Combine coordinates for "UCB"
     ucb = np.vstack([letters[letter] for letter in "UCB"]).T
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=ucb, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=ucb, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(

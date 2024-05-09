@@ -1525,7 +1525,7 @@ def _make_8bit(img):
     return img.astype(np.uint8)
 
 
-def get_orientation_transformation(rot="0", fliplr=False, flipud=False):
+def get_orientation_transformation(rot="0", fliplr=True, flipud=False):
     """
     Compile a transformation lambda from simple rotates and flips.
 
