@@ -5,12 +5,13 @@ sys.path.append(os.path.join(os.getcwd(), 'c:/Users/Saroj Chand/Documents/dioptr
 import numpy as np
 import cv2
 import scipy.ndimage as ndimage
-
 import warnings
 warnings.filterwarnings("ignore")
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+# Generate a phase .gif
+from IPython.display import Image
+import imageio
 
 mpl.rc('image', cmap='Blues')
 
@@ -21,6 +22,7 @@ from slmsuite.hardware.cameraslms import FourierSLM
 from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
 
 # funtions
+# region "plot_phase" function
 def plot_phase(phase, title="", zoom=True):
     # One plot if no camera; two otherwise.
     _, axs = plt.subplots(1, 2 - (cam is None), figsize=(24,6))
@@ -55,6 +57,7 @@ def plot_phase(phase, title="", zoom=True):
     plt.suptitle(title)
     plt.show()
 
+# region "blaze" function
 def blaze():
     # Get .2 degrees in normalized units.
     vector_deg = (.2, .2)
@@ -65,6 +68,7 @@ def blaze():
 
     plot_phase(blaze_phase, title="Blaze at {} deg".format(vector_deg))
 
+# region "fourier_calibration" 
 def fourier_calibration():
     cam.set_exposure(.0001)               # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
@@ -72,18 +76,54 @@ def fourier_calibration():
         array_pitch=[30, 40],           # Pitch of the calibration grid (x, y) [knm]
         plot=True
     )
-    cam.set_exposure(.0002)
+    cam.set_exposure(.0001)
     #save calibation
     calibration_file = fs.save_fourier_calibration()
     print("Fouri er calibration saved to:", calibration_file)
 
+def wavefront_calibration():
+    cam.set_exposure(.0001)
+    fs.wavefront_calibrate(
+        interference_point=(1000, 700),
+        field_point=(.25, 0),
+        field_point_units="freq",
+        superpixel_size=50,
+        autoexposure=False
+    )
+    #save calibation
+    calibration_file = fs.save_wavefront_calibration()
+    print("Fouri er calibration saved to:", calibration_file)
+    
+# region "load_fourier_calibration" 
 def load_fourier_calibration():
     calibration_file_path = r"C:\Users\Saroj Chand\Documents\dioptric\26438-SLM-fourier-calibration_00001.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
+# region "load_fourier_calibration" 
+def load_wavefront_calibration():
+    calibration_file_path = r""
+    fs.load_wavefront_calibration(calibration_file_path)
+    print("Fourier calibration loaded from:", calibration_file_path)
+
+def test_wavefront_calibration():
+    cam.set_exposure(.0001)
+    movie = fs.wavefront_calibrate(
+        interference_point=(1100, 400),
+        field_point=(.25, 0),
+        field_point_units="freq",
+        superpixel_size=50,
+        test_superpixel=(16, 16),           # Testing mode
+        autoexposure=False,
+        plot=3                              # Special mode to generate a phase .gif
+    )
+
+    imageio.mimsave('wavefront.gif', movie)
+    Image(filename="wavefront.gif")
+    
+# region "cam_plot" function 
 def cam_plot():
-    cam.set_exposure(.000001)
+    cam.set_exposure(.0001)
     img = cam.get_image()
 
     # Plot the result
@@ -91,6 +131,7 @@ def cam_plot():
     plt.imshow(img)
     plt.show()
 
+# region "evaluate" function 
 def evaluate_uniformity(vectors=None, size=25):
     # Set exposure and capture image
     cam.set_exposure(0.00001)
@@ -114,7 +155,7 @@ def evaluate_uniformity(vectors=None, size=25):
 
     # return subimages, powers
 
-
+# region "square" function 
 def square_array():
     xlist = np.arange(350, 1150, 100)                      # Get the coordinates for one edge
     ylist = np.arange(240, 1040, 100) 
@@ -129,13 +170,15 @@ def square_array():
         feedback='computational_spot',
         stat_groups=['computational_spot']
     )
+    hologram.plot_nearfield(title="Padded", padded=True)
+    hologram.plot_nearfield(title="Unpadded")
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
     # evaluate_uniformity(vectors=square)
     # Hone the result with experimental feedback.
     # hologram.optimize(
-    #     'WGS-Kim',
+    #     'WGS',
     #     maxiter=20,
     #     feedback='experimental_spot',
     #     stat_groups=['computational_spot', 'experimental_spot'],
@@ -145,14 +188,14 @@ def square_array():
     # slm.write(phase, settle=True)
     # cam_plot()
 
-
+# region "circle" function 
 def circle_pattern():
    # Define parameters for the circle
-    center = (700, 640)  # Center of the circle
-    radius = 400  # Radius of the circle
+    center = (400, 640)  # Center of the circle
+    radius = 300  # Radius of the circle
 
     # Generate points within the circle using polar coordinates
-    num_points = 60  # Number of points to generate
+    num_points = 30  # Number of points to generate
     theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
@@ -162,7 +205,7 @@ def circle_pattern():
 
     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circle, basis='ij', cameraslm=fs)
 
-    # Precondition computationally.
+    # # Precondition computationally.
     hologram.optimize(
         'WGS-Kim',
         maxiter=20,
@@ -171,11 +214,11 @@ def circle_pattern():
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
-    # cam_plot()
+    cam_plot()
     # evaluate_uniformity(vectors=circle)
 
 
-    # Hone the result with experimental feedback.
+    # # Hone the result with experimental feedback.
     # hologram.optimize(
     #     'WGS-Kim',
     #     maxiter=20,
@@ -187,6 +230,7 @@ def circle_pattern():
     # slm.write(phase, settle=True)
     # cam_plot()
 
+# region "scatter" function 
 def scatter_pattern():
     lloyds_points = toolbox.lloyds_points(
         grid=tuple(int(s/5) for s in fs.cam.shape), 
@@ -218,6 +262,7 @@ def scatter_pattern():
     slm.write(phase, settle=True)
     cam_plot()
 
+# region "smiley" function 
 
 def smiley_pattern():
   # Define points for the smiley face
@@ -245,7 +290,7 @@ def smiley_pattern():
     slm.write(phase, settle=True)
     cam_plot()
 
-# region function to define the "UCB" 
+# region "UCB"  function 
 def UCB_pattern():
     # Define coordinates for each letter in "UCB"
     letters = {
@@ -270,16 +315,23 @@ def UCB_pattern():
     slm.write(phase, settle=True)
     cam_plot()
 
+
 # region run funtions
 slm = ThorSLM(serialNumber='00429430')
 try:
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
+    # fs.load_wavefront_calibration(plot=True)
     # blaze()
     # fourier_calibration()
     load_fourier_calibration()
-    square_array()
-    # circle_pattern()
+    # vector_500_700 = fs.ijcam_to_kxyslm((300, 700))
+    # print(vector_500_700)
+    # print(fs.fourier_calibration)
+    # wavefront_calibration()
+    # test_wavefront_calibration()
+    # square_array()
+    circle_pattern()
     # smiley()
     # scatter_pattern()
     # cam_plot()
@@ -289,4 +341,4 @@ finally:
     cam.close()  # Add this line
     # Then close the SDK
     ThorCam.close_sdk()
-# endregion
+# endregions

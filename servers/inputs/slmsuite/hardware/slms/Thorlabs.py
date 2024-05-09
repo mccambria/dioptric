@@ -134,8 +134,8 @@ class ThorSLM(SLM):
             print("Show failed")
         else:
             print("Show successfully")
-
-        time.sleep(3)   
+        time.sleep(2)
+           
         # Ask before closing the SLM display
         # user_input = input("Press Enter to close SLM display... ")
         # if user_input:
@@ -145,16 +145,16 @@ class ThorSLM(SLM):
         # CghDisplayCloseWindow(hdl)
         # return 0
 
-    def _show_window(self, c):
+    def show_window(self, c):
         """Show window on SLM display."""
         return CghDisplayShowWindow(self.hdl, c)  
 
-    def _close_display(self):
+    def close_display(self):
         """Close SLM display."""
         if self.hdl:
             CghDisplayCloseWindow(self.hdl)
 
-    def _close_connection(self):
+    def close_connection(self):
         """Close SLM connection."""
         if self.hdl:
             EXULUSClose(self.serialNumber)
