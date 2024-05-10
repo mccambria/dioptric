@@ -286,10 +286,10 @@ class FourierSLM(CameraSLM):
         scaling =   ( np.array((self.slm.dx, self.slm.dy))
                     * np.flip(np.squeeze(hologram.shape))
                     / np.squeeze(array_pitch) )
-
+   
         M = np.array([  [M[0, 0] * scaling[0], M[0, 1] * scaling[1]],
                         [M[1, 0] * scaling[0], M[1, 1] * scaling[1]]  ])
-
+        
         self.fourier_calibration = {"M": M, "b": b, "a": a}
 
         return self.fourier_calibration

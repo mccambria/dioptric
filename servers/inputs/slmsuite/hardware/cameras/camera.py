@@ -96,7 +96,7 @@ class Camera:
             self.default_shape = (height, width)
 
         # Create image transformation.
-        self.transform = analysis.get_orientation_transformation(rot, fliplr, flipud)
+        self.transform = analysis.get_orientation_transformation(rot, fliplr=True, flipud=False)
 
         # Update WOI information.
         self.woi = (0, width, 0, height)

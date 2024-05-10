@@ -283,8 +283,9 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1522594732577, load_npz=True)
+    data = dm.get_raw_data(file_id=1525081713075, load_npz=True)
     img_array = np.array(data["ref_img_array"])
+    nv_list = data["nv_list"]
 
     # img_array = widefield.adus_to_photons(img_array)
 
@@ -304,7 +305,6 @@ if __name__ == "__main__":
     scale = widefield.get_camera_scale()
     kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
 
-    nv_list = dm.get_raw_data(file_id=1523090296109)["nv_list"]
-    widefield.draw_circles_on_nvs(ax, nv_list, drift=(+4, +9))
+    widefield.draw_circles_on_nvs(ax, nv_list, drift=(-38, -19))
 
     plt.show(block=True)
