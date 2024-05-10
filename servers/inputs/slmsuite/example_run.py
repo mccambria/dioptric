@@ -68,39 +68,38 @@ def blaze():
 
     plot_phase(blaze_phase, title="Blaze at {} deg".format(vector_deg))
 
-# region "fourier_calibration" 
+# region "calibration"
 def fourier_calibration():
     cam.set_exposure(.003)               # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
-        array_shape=[30, 20],           # Size of the calibration grid (Nx, Ny) [knm]
+        array_shape=[25, 16],           # Size of the calibration grid (Nx, Ny) [knm]
         array_pitch=[30, 40],           # Pitch of the calibration grid (x, y) [knm]
         plot=True
     )
     cam.set_exposure(.0001)
     #save calibation
-    calibration_file = fs.save_fourier_calibration()
+    calibration_file = fs.save_fourier_calibration(path=r"C:\Users\Saroj Chand\Documents\fourier_calibration")
     print("Fouri er calibration saved to:", calibration_file)
 
 def wavefront_calibration():
-    cam.set_exposure(.0001)
+    cam.set_exposure(.001)
     fs.wavefront_calibrate(
-        interference_point=(1000, 700),
+        interference_point=(1100, 300),
         field_point=(.25, 0),
         field_point_units="freq",
-        superpixel_size=50,
+        superpixel_size=120,
         autoexposure=False
     )
     #save calibation
-    calibration_file = fs.save_wavefront_calibration()
-    print("Fouri er calibration saved to:", calibration_file)
+    calibration_file = fs.save_wavefront_calibration(path=r"C:\Users\Saroj Chand\Documents\wavefront_calibration")
+    print("Fourier calibration saved to:", calibration_file)
     
-# region "load_fourier_calibration" 
+# region "load calibration" 
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\dioptric\26438-SLM-fourier-calibration_00003.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\fourier_calibration\26438-SLM-fourier-calibration_00000.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
-# region "load_fourier_calibration" 
 def load_wavefront_calibration():
     calibration_file_path = r""
     fs.load_wavefront_calibration(calibration_file_path)
@@ -109,7 +108,7 @@ def load_wavefront_calibration():
 def test_wavefront_calibration():
     cam.set_exposure(.0001)
     movie = fs.wavefront_calibrate(
-        interference_point=(1100, 400),
+        interference_point=(1100, 300),
         field_point=(.25, 0),
         field_point_units="freq",
         superpixel_size=50,
@@ -117,7 +116,6 @@ def test_wavefront_calibration():
         autoexposure=False,
         plot=3                              # Special mode to generate a phase .gif
     )
-
     imageio.mimsave('wavefront.gif', movie)
     Image(filename="wavefront.gif")
     
@@ -161,7 +159,7 @@ def square_array():
     ylist = np.arange(240, 1040, 100) 
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
-    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=square, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -175,7 +173,7 @@ def square_array():
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
-    # evaluate_uniformity(vectors=square)
+    evaluate_uniformity(vectors=square)
     # Hone the result with experimental feedback.
     hologram.optimize(
         'WGS-Kim',
@@ -187,15 +185,17 @@ def square_array():
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
+    evaluate_uniformity(vectors=square)
 
 # region "circle" function 
 def circle_pattern():
+    cam.set_exposure(0.001)
    # Define parameters for the circle
-    center = (300, 700)  # Center of the circle
-    radius = 200  # Radius of the circle
+    center = (720, 540)  # Center of the circle
+    radius = 300  # Radius of the circle
 
     # Generate points within the circle using polar coordinates
-    num_points = 15  # Number of points to generate
+    num_points = 20  # Number of points to generate
     theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
@@ -203,7 +203,7 @@ def circle_pattern():
     # Convert to grid format if needed
     circle = np.vstack((x_circle, y_circle))
 
-    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=circle, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circle, basis='ij', cameraslm=fs)
 
     # # Precondition computationally.
     hologram.optimize(
@@ -215,20 +215,21 @@ def circle_pattern():
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
-    # evaluate_uniformity(vectors=circle)
+    evaluate_uniformity(vectors=circle)
 
 
-    # # Hone the result with experimental feedback.
-    # hologram.optimize(
-    #     'WGS-Kim',
-    #     maxiter=20,
-    #     feedback='experimental_spot',
-    #     stat_groups=['computational_spot', 'experimental_spot'],
-    #     fixed_phase=False
-    # )
-    # phase = hologram.extract_phase()
-    # slm.write(phase, settle=True)
-    # cam_plot()
+    # Hone the result with experimental feedback.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='experimental_spot',
+        stat_groups=['computational_spot', 'experimental_spot'],
+        fixed_phase=False
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+    evaluate_uniformity(vectors=circle)
 
 # region "scatter" function 
 def scatter_pattern():
@@ -238,7 +239,7 @@ def scatter_pattern():
         iterations=40
         ) * 5
     
-    hologram = SpotHologram((2048, 1200), lloyds_points, basis='ij', cameraslm=fs)
+    hologram = SpotHologram((2048, 2048), lloyds_points, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -277,7 +278,7 @@ def smiley_pattern():
 
     # Combine all points into a single array
     smiley = np.vstack((np.concatenate((x_eyes, x_mouth)), np.concatenate((y_eyes, y_mouth))))
-    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=smiley, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=smiley, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -302,7 +303,7 @@ def UCB_pattern():
     # Combine coordinates for "UCB"
     ucb = np.vstack([letters[letter] for letter in "UCB"]).T
 
-    hologram = SpotHologram(shape=(2048, 1200), spot_vectors=ucb, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=ucb, basis='ij', cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
@@ -325,13 +326,10 @@ try:
     # blaze()
     # fourier_calibration()
     load_fourier_calibration()
-    # vector_500_700 = fs.ijcam_to_kxyslm((300, 700))
-    # print(vector_500_700)
-    # print(fs.fourier_calibration)
-    # wavefront_calibration()
+    wavefront_calibration()
     # test_wavefront_calibration()
     # square_array()
-    circle_pattern()
+    # circle_pattern()
     # smiley()
     # scatter_pattern()
     # cam_plot()
