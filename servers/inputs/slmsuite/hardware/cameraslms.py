@@ -547,7 +547,7 @@ class FourierSLM(CameraSLM):
         field_point_units="ij",
         superpixel_size=50,
         phase_steps=10,
-        exclude_superpixels=(0, 0),
+        exclude_superpixels=(0,0),
         autoexposure=False,
         test_superpixel=None,
         reference_superpixel=None,

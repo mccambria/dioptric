@@ -87,7 +87,7 @@ def wavefront_calibration():
         interference_point=(1100, 300),
         field_point=(.25, 0),
         field_point_units="freq",
-        superpixel_size=120,
+        superpixel_size=60,
         autoexposure=False
     )
     #save calibation
@@ -101,12 +101,12 @@ def load_fourier_calibration():
     print("Fourier calibration loaded from:", calibration_file_path)
 
 def load_wavefront_calibration():
-    calibration_file_path = r""
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00001.h5"
     fs.load_wavefront_calibration(calibration_file_path)
-    print("Fourier calibration loaded from:", calibration_file_path)
+    print("Wavefront calibration loaded from:", calibration_file_path)
 
 def test_wavefront_calibration():
-    cam.set_exposure(.0001)
+    cam.set_exposure(.001)
     movie = fs.wavefront_calibrate(
         interference_point=(1100, 300),
         field_point=(.25, 0),
@@ -316,17 +316,17 @@ def UCB_pattern():
     slm.write(phase, settle=True)
     cam_plot()
 
-
 # region run funtions
 slm = ThorSLM(serialNumber='00429430')
 try:
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
-    # fs.load_wavefront_calibration(plot=True)
     # blaze()
     # fourier_calibration()
     load_fourier_calibration()
     wavefront_calibration()
+    # load_wavefront_calibration()
+    # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
     # test_wavefront_calibration()
     # square_array()
     # circle_pattern()

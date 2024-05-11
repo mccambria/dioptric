@@ -71,7 +71,7 @@ class ThorSLM(SLM):
         else:
             print("Device parameters: ", codeList.get(code[0]))    
             
-        
+
         # Check for the SLM parameters and save them
         width = 1920
         height = 1080
@@ -84,7 +84,28 @@ class ThorSLM(SLM):
         dy_um=8,
         )
 
-        # self.write(None)
+        # Create SLM window
+        self.hdl = CghDisplayCreateWindow(2, 1920, 1080, "SLM window")
+        if self.hdl < 0:
+            print("Create window failed")
+            return -1
+        else:
+            print("SLM Window is Create and Current screen is 2")
+
+        result = CghDisplaySetWindowInfo(self.hdl, 1920, 1080, 1)
+        if result < 0:
+            print("Set Window Info failed")
+        else:
+            print("Set Window Info successfully")
+            
+        # Show the window
+        buffer_phase = None
+        result = CghDisplayShowWindow(self.hdl,buffer_phase)
+        if result < 0:
+            print("Show failed")
+        else:
+            print("Show successfully")
+        time.sleep(1)
         
 
     @staticmethod
@@ -109,33 +130,19 @@ class ThorSLM(SLM):
     
     def _write_hw(self, phase):
         """Low-level hardware interface to write ``phase`` data onto the SLM."""
-        hdl = CghDisplayCreateWindow(2,1920,1080,"SLM window")
-        if(hdl < 0):
-            print("Create window failed")
-            return -1
-        else:
-            print("Current screen is 2")
-
-  
-        result=CghDisplaySetWindowInfo(hdl,1920,1080,1)
-        if(result < 0):
-            print("Set Window Info failed")
-        else:
-            print("Set Window Info successfully")
-
- 
         matrix = phase.astype(c_ubyte)
         flattened_matrix = matrix.flatten()
         c = ctypes.cast(flattened_matrix.ctypes.data, ctypes.POINTER(ctypes.c_ubyte))
+        
+        # Display the phase
+        result = CghDisplayShowWindow(self.hdl,c)
 
-        result = CghDisplayShowWindow(hdl, c)
+        # if result < 0:
+        #     print("Show failed")
+        # else:
+        #     print("Show successfully")
+        time.sleep(1)
 
-        if result < 0:
-            print("Show failed")
-        else:
-            print("Show successfully")
-        time.sleep(2)
-           
         # Ask before closing the SLM display
         # user_input = input("Press Enter to close SLM display... ")
         # if user_input:
