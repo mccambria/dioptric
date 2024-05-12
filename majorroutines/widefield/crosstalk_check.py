@@ -42,7 +42,7 @@ def main(
     aod_freq_range,
     laser_name,
     axis_ind,  # 0: x, 1: y, 2: z
-    uwave_ind=0,
+    uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
 
@@ -62,8 +62,8 @@ def main(
 
     def run_fn(step_ind_list):
         # Base seq args
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(uwave_ind)
+        seq_args = []
+        seq_args.append(widefield.get_base_scc_seq_args(nv_list, uwave_ind_list))
         seq_args.append(laser_name)
 
         # Add on the coordinates for the crosstalk pulse
@@ -78,27 +78,36 @@ def main(
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind_list=uwave_ind
+    raw_data = base_routine.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
 
-    # experiment, nv, run, step, rep
-    sig_counts = counts[0]
-    ref_counts = counts[1]
+    try:
+        # experiment, nv, run, step, rep
+        counts = raw_data["states"]
+        sig_counts = counts[0]
+        ref_counts = counts[1]
 
-    # avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
-    # avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
-    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+        # avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
+        # avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
+        avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
-    avg_snr = avg_snr[0]
-    avg_snr_ste = avg_snr_ste[0]
+        avg_snr = avg_snr[0]
+        avg_snr_ste = avg_snr_ste[0]
 
-    relative_aod_freqs = aod_freqs - aod_freq_center
-    raw_fig = create_raw_data_figure(
-        nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
-    )
+        relative_aod_freqs = aod_freqs - aod_freq_center
+        raw_fig = create_raw_data_figure(
+            nv_sig, laser_name, axis_ind, relative_aod_freqs, avg_snr, avg_snr_ste
+        )
+    except Exception:
+        raw_fig = None
 
     ### Clean up and return
 
@@ -112,21 +121,17 @@ def main(
         "aod_freq_range": aod_freq_range,
         "laser_name": laser_name,
         "axis_ind": axis_ind,
-        "nv_sig": nv_sig,
-        "aod_freq_range": aod_freq_range,
-        "laser_name": laser_name,
-        "axis_ind": axis_ind,
     }
 
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
+    repr_nv_name = nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     if "img_arrays" in raw_data:
         keys_to_compress = ["img_arrays"]
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    dm.save_figure(raw_fig, file_path)
+    if raw_fig is not None:
+        dm.save_figure(raw_fig, file_path)
 
 
 if __name__ == "__main__":

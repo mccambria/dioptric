@@ -152,7 +152,7 @@ def main(
     save_images=False,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
-) -> tuple[np.ndarray, dict]:
+) -> dict:
     """Base routine for widefield experiments with many spatially resolved NV centers.
 
     The routine is broken down into a sequence of identical "runs". In between runs
@@ -285,15 +285,17 @@ def main(
                                         nv_list,
                                         initial_states_list=states_list,
                                     )
-                                (img_array, counts_list, states_list) = (
-                                    read_and_process_image(nv_list)
-                                )
-                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
-                                )
+                                (
+                                    img_array,
+                                    counts_list,
+                                    states_list,
+                                ) = read_and_process_image(nv_list)
+                                counts[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = counts_list
+                                states[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = states_list
 
                                 if save_images:
                                     img_arrays[
