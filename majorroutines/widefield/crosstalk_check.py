@@ -42,7 +42,7 @@ def main(
     aod_freq_range,
     laser_name,
     axis_ind,  # 0: x, 1: y, 2: z
-    uwave_ind=0,
+    uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
 
@@ -63,8 +63,7 @@ def main(
     def run_fn(step_ind_list):
         # Base seq args
         seq_args = []
-        seq_args.append(widefield.get_base_scc_seq_args(nv_list))
-        seq_args.append(uwave_ind)
+        seq_args.append(widefield.get_base_scc_seq_args(nv_list, uwave_ind_list))
         seq_args.append(laser_name)
 
         # Add on the coordinates for the crosstalk pulse
@@ -80,7 +79,12 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn=run_fn, uwave_ind_list=uwave_ind
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
@@ -114,10 +118,6 @@ def main(
     raw_data |= {
         "nv_sig": nv_sig,
         "timestamp": timestamp,
-        "aod_freq_range": aod_freq_range,
-        "laser_name": laser_name,
-        "axis_ind": axis_ind,
-        "nv_sig": nv_sig,
         "aod_freq_range": aod_freq_range,
         "laser_name": laser_name,
         "axis_ind": axis_ind,
