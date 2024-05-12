@@ -127,7 +127,7 @@ def process_check_readout_fidelity(data):
                 for rep_ind in range(num_reps):
                     if rep_ind < lookback:
                         continue
-                    prev_states = states[
+                    prev_states = ref_states[
                         nv_ind, run_ind, 0, rep_ind - lookback : rep_ind
                     ]
                     current_state = states[nv_ind, run_ind, 0, rep_ind]

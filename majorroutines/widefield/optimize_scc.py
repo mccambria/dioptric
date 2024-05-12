@@ -213,22 +213,18 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1517947115955)  # 0.15
-    # data = dm.get_raw_data(file_id=1517855118940)  # 0.17
-    # data = dm.get_raw_data(file_id=1518051829285)  # 0.19
-    # data = dm.get_raw_data(file_id=1518284281214)  # 0.21
-    # data = dm.get_raw_data(file_id=1523169361209)  # 0.19 again
-    # data = dm.get_raw_data(file_id=1523521535018)  # 0.21 again
-    data = dm.get_raw_data(file_id=1524144763182)
+    data = dm.get_raw_data(file_id=1525986823001)  # 0.15
+    # data = dm.get_raw_data(file_id=1525900772760)  # 0.17
+    # data = dm.get_raw_data(file_id=1525829519181)  # 0.19
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
+    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+    # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
     process_and_plot(nv_list, taus, sig_counts, ref_counts)
 
