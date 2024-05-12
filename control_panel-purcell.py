@@ -424,29 +424,28 @@ def do_opx_square_wave():
 def do_crosstalk_check(nv_sig):
     num_steps = 21
     num_reps = 10
-    num_runs = 160
+    num_runs = 150
     # aod_freq_range = 3.0
     laser_name = red_laser
     # laser_name = green_laser
     # axis_ind = 0  # 0: x, 1: y, 2: z
     uwave_ind = [0, 1]
 
-    for laser_name in [red_laser, green_laser]:
-        if laser_name is red_laser:
-            aod_freq_range = 2.0
-        elif laser_name is green_laser:
-            aod_freq_range = 3.0
-        for axis_ind in [0, 1]:
-            crosstalk_check.main(
-                nv_sig,
-                num_steps,
-                num_reps,
-                num_runs,
-                aod_freq_range,
-                laser_name,
-                axis_ind,  # 0: x, 1: y, 2: z
-                uwave_ind,
-            )
+    if laser_name is red_laser:
+        aod_freq_range = 2.0
+    elif laser_name is green_laser:
+        aod_freq_range = 3.0
+    for axis_ind in [0, 1]:
+        crosstalk_check.main(
+            nv_sig,
+            num_steps,
+            num_reps,
+            num_runs,
+            aod_freq_range,
+            laser_name,
+            axis_ind,  # 0: x, 1: y, 2: z
+            uwave_ind,
+        )
 
 
 def do_spin_pol_check(nv_sig):
@@ -983,7 +982,7 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
-        # do_crosstalk_check(nv_sig)
+        do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)

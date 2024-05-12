@@ -41,7 +41,7 @@ def get_seq(
     crosstalk_y_coords_list = [int(el[1] * 10**6) for el in crosstalk_coords_list]
     uwave_ind_list = base_scc_seq_args[-1]
 
-    def uwave_macro_sig():
+    def uwave_macro_sig(uwave_ind_list, step_val):
         seq_utils.macro_pi_pulse(uwave_ind_list)
 
     if isinstance(uwave_ind_list, int):
@@ -108,6 +108,8 @@ def get_seq(
         ):
             one_step()
 
+    return seq, []
+
 
 if __name__ == "__main__":
     config_module = common.get_config_module()
@@ -121,15 +123,18 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [109.05560372660722, 110.77022466032236],
+                [[108.89743284830334, 109.37928060155055]],
+                [[73.51479542269061, 74.71851917237485]],
+                [200],
+                [],
+                [0, 1],
             ],
+            "laser_COBO_638",
             [
-                [73.78442169604547, 75.67270342527479],
+                [73.21479542269061, 74.71851917237485],
+                [73.51479542269061, 74.71851917237485],
+                [73.71479542269061, 74.71851917237485],
             ],
-            0,
-            "laser_INTE_520",
-            [[73.5, 75.5], [73.5, 75.6], [73.5, 75.7], [73.5, 75.8]],
-            10,
         )
 
         sim_config = SimulationConfig(duration=int(200e3 / 4))
