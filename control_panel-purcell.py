@@ -423,11 +423,11 @@ def do_crosstalk_check(nv_sig):
     num_steps = 21
     num_reps = 10
     num_runs = 160
-    aod_freq_range = 3.0
-    # laser_name = red_laser
-    laser_name = green_laser
-    axis_ind = 0  # 0: x, 1: y, 2: z
-    uwave_ind = 0
+    # aod_freq_range = 3.0
+    laser_name = red_laser
+    # laser_name = green_laser
+    # axis_ind = 0  # 0: x, 1: y, 2: z
+    uwave_ind = [0, 1]
 
     for laser_name in [red_laser, green_laser]:
         if laser_name is red_laser:

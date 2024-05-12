@@ -22,55 +22,60 @@ from utils.constants import LaserKey
 
 
 def get_seq(
-    pol_coords_list,
-    ion_coords_list,
-    uwave_ind,
+    base_scc_seq_args,
     laser_name,
     crosstalk_coords_list,
     num_reps=1,
 ):
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    buffer = seq_utils.get_widefield_operation_buffer()
+    ### Non-QUA stuff
 
+    (
+        pol_coords_list,
+        scc_coords_list,
+        scc_duration_list,
+        spin_flip_ind_list,
+        uwave_ind_list,
+    ) = base_scc_seq_args
+    reference = True
     crosstalk_x_coords_list = [int(el[0] * 10**6) for el in crosstalk_coords_list]
     crosstalk_y_coords_list = [int(el[1] * 10**6) for el in crosstalk_coords_list]
+    uwave_ind_list = base_scc_seq_args[-1]
+
+    def uwave_macro_sig():
+        seq_utils.macro_pi_pulse(uwave_ind_list)
+
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
 
     if num_reps is None:
         num_reps = 1
 
-    def uwave_macro_sig():
-        qua.play("pi_pulse", sig_gen_el)
-        qua.wait(buffer, sig_gen_el)
+    # Construct the list of experiments to run
+    uwave_macro = [uwave_macro_sig]
+    if reference:
 
-    def uwave_macro_ref():
-        pass
+        def ref_exp(uwave_ind_list, step_val):
+            pass
 
-    uwave_macro = [uwave_macro_sig, uwave_macro_ref]
+        uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
+    num_nvs = len(pol_coords_list)
+
+    ### QUA stuff
 
     with qua.program() as seq:
-        seq_utils.init_cache()
+        seq_utils.init(num_nvs)
+        step_val = qua.declare(int)
         crosstalk_x_coord = qua.declare(int)
         crosstalk_y_coord = qua.declare(int)
 
         def one_exp(exp_ind):
-            seq_utils.turn_on_aods()
-
-            # Charge polarization with green, spin with yellow
             seq_utils.macro_polarize(pol_coords_list)
+            uwave_macro[exp_ind](uwave_ind_list, step_val)
 
-            # Custom macro for the microwave sequence here
-            qua.align()
-            exp_uwave_macro = uwave_macro[exp_ind]
-            exp_uwave_macro()
-
-            if laser_name == tb.get_laser_name(LaserKey.POLARIZATION):
-                seq_utils.turn_on_aods(
-                    laser_names=["laser_INTE_520"],
-                    aod_suffices=["spin_pol"],
-                )
-                pulse_name = "spin_pol"
-            elif laser_name == tb.get_laser_name(LaserKey.IONIZATION):
+            # Always look at ms=0 counts for the reference
+            ref_exp = reference and exp_ind == num_exps_per_rep - 1
+            if laser_name == tb.get_laser_name(LaserKey.ION):
                 pulse_name = "scc"
             seq_utils.macro_pulse(
                 laser_name,
@@ -78,13 +83,15 @@ def get_seq(
                 pulse_name,
                 convert_to_Hz=False,
             )
-
-            # Ionization
-            seq_utils.macro_ionize(ion_coords_list)
-
-            # Readout
+            seq_utils.macro_scc(
+                scc_coords_list,
+                scc_duration_list,
+                spin_flip_ind_list,
+                uwave_ind_list,
+                pol_coords_list,
+                spin_flip=not ref_exp,
+            )
             seq_utils.macro_charge_state_readout()
-
             seq_utils.macro_wait_for_trigger()
 
         def one_rep():
@@ -93,20 +100,13 @@ def get_seq(
 
         def one_step():
             seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-
-            # Make sure everything is off before pausing for the next step
-            qua.align()
-            qua.wait(buffer)
-            qua.pause()
+            seq_utils.macro_pause()
 
         with qua.for_each_(
             (crosstalk_x_coord, crosstalk_y_coord),
             (crosstalk_x_coords_list, crosstalk_y_coords_list),
         ):
             one_step()
-
-    seq_ret_vals = []
-    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
