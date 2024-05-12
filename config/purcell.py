@@ -162,8 +162,9 @@ config |= {
         LaserKey.SHELVING: {"name": green_laser, "duration": 60},
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
-        LaserKey.SCC: {"name": red_laser, "duration": 248},
-        # LaserKey.SCC: {"name": red_laser, "duration": 200},
+        # LaserKey.SCC: {"name": red_laser, "duration": 248},
+        LaserKey.SCC: {"name": red_laser, "duration": 200},
+        # LaserKey.SCC: {"name": green_laser, "duration": 200},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
@@ -414,6 +415,7 @@ opx_config = {
                 "charge_pol": "do_charge_pol",
                 "spin_pol": "do_green_spin_pol",
                 "shelving": "do_shelving",
+                "scc": "do_scc",
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
@@ -504,6 +506,7 @@ opx_config = {
                 "aod_cw-charge_pol": "green_aod_cw-charge_pol",
                 "aod_cw-spin_pol": "green_aod_cw-spin_pol",
                 "aod_cw-shelving": "green_aod_cw-shelving",
+                "aod_cw-scc": "green_aod_cw-scc",
                 "continue": "ao_off",
             },
         },
@@ -516,6 +519,7 @@ opx_config = {
                 "aod_cw-charge_pol": "green_aod_cw-charge_pol",
                 "aod_cw-spin_pol": "green_aod_cw-spin_pol",
                 "aod_cw-shelving": "green_aod_cw-shelving",
+                "aod_cw-scc": "green_aod_cw-scc",
                 "continue": "ao_off",
             },
         },
@@ -544,6 +548,11 @@ opx_config = {
             "operation": "control",
             "length": default_pulse_duration,
             "waveforms": {"single": "green_aod_cw-shelving"},
+        },
+        "green_aod_cw-scc": {
+            "operation": "control",
+            "length": default_pulse_duration,
+            "waveforms": {"single": "green_aod_cw-scc"},
         },
         # Red
         "red_aod_cw-opti": {
@@ -672,15 +681,16 @@ opx_config = {
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
+        "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.19},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.19},
-        # "red_aod_cw-scc": {"type": "constant", "sample": 0.17},
+        # "red_aod_cw-scc": {"type": "constant", "sample": 0.19},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.34},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

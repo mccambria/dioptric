@@ -104,8 +104,9 @@ def process_check_readout_fidelity(data):
     num_reps = counts.shape[4]
     sig_counts = counts[0]
     config = common.get_config_dict()
-    # charge_state_estimation_mode = config["charge_state_estimation_mode"]
-    charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    # charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
+    # charge_state_estimation_mode = ChargeStateEstimationMode.MLE
     if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
         states, _ = widefield.threshold_counts(nv_list, sig_counts)
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:

@@ -167,7 +167,7 @@ def process_and_plot(raw_data):
     threshold_list = []
     prep_fidelity_list = []
     hist_figs = []
-    prior_thresholds = [27.5, 27.5, 24.5, 22.5, 25.5, 25.5, 20.5, 19.5, 16.5, 18.5]
+    # prior_thresholds = [27.5, 27.5, 24.5, 22.5, 25.5, 25.5, 20.5, 19.5, 16.5, 18.5]
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
@@ -178,9 +178,10 @@ def process_and_plot(raw_data):
         nvn_ratio = 0.5
         _, threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
         threshold_list.append(threshold)
-        threshold = prior_thresholds[ind]
+        # threshold = prior_thresholds[ind]
         prep_fidelity_list.append(
-            np.sum(np.greater(ref_counts_list, threshold)) / num_shots
+            # np.sum(np.greater(ref_counts_list, threshold)) / num_shots
+            np.sum(np.less(sig_counts_list, threshold)) / num_shots
         )
     print(threshold_list)
     print([round(el, 3) for el in prep_fidelity_list])
@@ -353,7 +354,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1521998327617, load_npz=True)  # pulsed
     # data = dm.get_raw_data(file_id=1521930169788, load_npz=True)  # cw
     # data = dm.get_raw_data(file_id=1522051554985, load_npz=True)  # standard
-    data = dm.get_raw_data(file_id=1522054672008, load_npz=True)
+    # data = dm.get_raw_data(file_id=1525195012094)  #NV0 last night
+    # data = dm.get_raw_data(file_id=1525182290095)  # NV3
+    # data = dm.get_raw_data(file_id=1525646085036)  # this morning, 15
+    data = dm.get_raw_data(file_id=1525669327192)  # 20
 
     process_and_plot(data)
 

@@ -178,8 +178,10 @@ def do_calibrate_green_red_delay():
 
 
 def do_optimize_scc(nv_list):
-    min_tau = 100
-    max_tau = 308
+    min_tau = 16
+    max_tau = 224
+    # min_tau = 100
+    # max_tau = 308
     num_steps = 14
     num_reps = 5
 
@@ -557,6 +559,7 @@ def do_opx_constant_ac():
             75,
             75,
         ],  # Analog frequencies                                                                                                                                                                       uencies
+        # [73.76, 75.257],
     )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
@@ -630,7 +633,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.65
+    z_coord = 4.40
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -788,7 +791,6 @@ if __name__ == "__main__":
         [144.169, 163.787],
         [173.93, 78.505],
         [171.074, 49.877],
-        [60.432, 77.385],
         [170.501, 132.597],
         [137.025, 74.662],
         [58.628, 139.616],
@@ -802,40 +804,37 @@ if __name__ == "__main__":
         [108.778, 109.393],
         [109.305, 111.414],
         [109.237, 112.058],
-        [106.811, 111.322],
         [109.294, 110.155],
         [108.479, 111.479],
         [106.85, 109.898],
     ]
     red_coords_list = [
-        [73.117, 75.316],
-        [73.607, 75.802],
-        [73.127, 75.791],
-        [72.778, 76.095],
-        [73.336, 74.706],
-        [73.889, 76.248],
-        [73.758, 76.877],
-        [71.756, 76.302],
-        [73.76, 75.257],
-        [73.239, 76.429],
-        [71.742, 75.01],
+        [73.201, 75.442],
+        [73.735, 75.942],
+        [73.227, 75.931],
+        [72.759, 76.216],
+        [73.451, 74.819],
+        [73.949, 76.429],
+        [73.874, 76.99],
+        [73.922, 75.418],
+        [73.255, 76.455],
+        [71.804, 75.209],
     ]
-    threshold_list = [26.5, 25.5, 23.5, 21.5, 24.5, 20.5, 17.5, 15.5, 21.5, 21.5, 19.5]
+    threshold_list = [32.5, 32.5, 29.5, 26.5, 36.5, 25.5, 21.5, 30.5, 26.5, 23.5]
     nvn_dist_params_list = [
-        (0.08464401715842375, 0.41937505964187316, 4.291646247092469),
-        (0.08452614916494061, 0.38626140940411346, 4.348328511019792),
-        (0.09662980043683089, 0.3069995206976949, 4.278558214740025),
-        (0.08911203296601192, 0.28729651620030733, 4.213097129704373),
-        (0.07933969585546227, 0.3821595989193449, 4.30777882270795),
-        (0.09116555356072459, 0.25336433538241615, 4.096115552473045),
-        (0.0640282949423746, 0.2133409254064659, 4.470752864626123),
-        (0.0672743382071684, 0.17513093407929617, 4.4573525356754535),
-        (0.06302367288529255, 0.36935781855103417, 4.297985873174506),
-        (0.0725151817586375, 0.28395847724808704, 4.4747713666259274),
-        (0.07810805850820039, 0.24763859929113882, 4.185269864197604),
+        (0.08897904084705015, 0.5803339914255852, 4.257384596172747),
+        (0.10625569662123675, 0.5018752292884165, 4.289188766186462),
+        (0.12230401755781324, 0.37287859394604983, 4.149760658191325),
+        (0.10734153754520642, 0.3258070275529417, 4.2181229473414925),
+        (0.14026909861707423, 0.5853044352335418, 3.929191463227104),
+        (0.11377499740039126, 0.30690090067479303, 4.050459650938236),
+        (0.08295092169084559, 0.22375062591043576, 4.659127963509584),
+        (0.08108982247401345, 0.5434242398094083, 4.202669183168745),
+        (0.10466856007724555, 0.30431743600926336, 4.404019836394203),
+        (0.10426197452783184, 0.28755143038196374, 3.981208415735105),
     ]
-    # scc_duration_list = [251, 225, 300, 230, 208, 224, 241, 222, 300, 157, 262]
-    # scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    scc_duration_list = [251, 225, 300, 230, 208, 224, 241, 222, 300, 157, 262]
+    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
@@ -861,8 +860,8 @@ if __name__ == "__main__":
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
-    nv_list[0].expected_counts = 1200
     nv_sig = widefield.get_repr_nv_sig(nv_list)
+    nv_sig.expected_counts = 1200
     num_nvs = len(nv_list)
 
     # nv_inds = [1, 4, 6, 9, 13]
@@ -918,7 +917,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([-9, -14])
+        # widefield.set_pixel_drift([+15, +26])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -944,7 +943,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -956,10 +955,11 @@ if __name__ == "__main__":
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
         # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=True)
+        # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
+        # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        do_check_readout_fidelity(nv_list)
+        # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
