@@ -163,7 +163,7 @@ config |= {
         LaserKey.ION: {"name": red_laser, "duration": 1000},
         # SCC: 180 mW, 0.13 V, no shelving
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
-        LaserKey.SCC: {"name": red_laser, "duration": 200},
+        LaserKey.SCC: {"name": red_laser, "duration": 124},
         # LaserKey.SCC: {"name": green_laser, "duration": 200},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 500e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
@@ -687,7 +687,7 @@ opx_config = {
         "red_aod_cw-opti": {"type": "constant", "sample": 0.19},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.19},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.19},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6

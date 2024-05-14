@@ -10,6 +10,7 @@ Created on June 16th, 2023
 
 ### Imports
 
+import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -784,6 +785,7 @@ if __name__ == "__main__":
     # region Coords (publication set)
     pixel_coords_list = [
         [131.144, 129.272],
+        [149.198, 120.136],
         [161.477, 105.335],
         [135.139, 104.013],
         [110.023, 87.942],
@@ -797,6 +799,7 @@ if __name__ == "__main__":
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
         [108.507, 110.208],
+        [108.929, 110.494],
         [109.089, 110.756],
         [108.53, 110.804],
         [107.93, 111.171],
@@ -809,6 +812,7 @@ if __name__ == "__main__":
     ]
     red_coords_list = [
         [73.201, 75.442],
+        [73.452, 75.603],
         [73.735, 75.942],
         [73.227, 75.931],
         [72.759, 76.216],
@@ -819,21 +823,22 @@ if __name__ == "__main__":
         [73.255, 76.455],
         [71.804, 75.209],
     ]
-    threshold_list = [32.5, 32.5, 29.5, 26.5, 36.5, 25.5, 21.5, 30.5, 26.5, 23.5]
+    threshold_list = [29.5, 32.5, 30.5, 27.5, 28.5, 25.5, 25.5, 22.5, 25.5, 27.5, 21.5]
     nvn_dist_params_list = [
-        (0.08897904084705015, 0.5803339914255852, 4.257384596172747),
-        (0.10625569662123675, 0.5018752292884165, 4.289188766186462),
-        (0.12230401755781324, 0.37287859394604983, 4.149760658191325),
-        (0.10734153754520642, 0.3258070275529417, 4.2181229473414925),
-        (0.14026909861707423, 0.5853044352335418, 3.929191463227104),
-        (0.11377499740039126, 0.30690090067479303, 4.050459650938236),
-        (0.08295092169084559, 0.22375062591043576, 4.659127963509584),
-        (0.08108982247401345, 0.5434242398094083, 4.202669183168745),
-        (0.10466856007724555, 0.30431743600926336, 4.404019836394203),
-        (0.10426197452783184, 0.28755143038196374, 3.981208415735105),
+        (0.09496880693969349, 0.5430310817421609, 4.111623245645377),
+        (0.10943553490858787, 0.5594077410656036, 4.0951582637952875),
+        (0.08359072378569227, 0.5563169029105488, 4.196289833384432),
+        (0.11300965562470393, 0.47823686241827884, 3.8176119920970115),
+        (0.0996750651815728, 0.424081185734665, 4.237557317052255),
+        (0.09142517435366085, 0.418406183250579, 3.983237245504112),
+        (0.09448250078879838, 0.38128375699001393, 4.107847483889908),
+        (0.08487363049170515, 0.34228777403846117, 4.100027054548481),
+        (0.06556139443532955, 0.45722506046681255, 4.229944715687993),
+        (0.08389347687050605, 0.4240274428116519, 4.374313132895644),
+        (0.09076716513861707, 0.27713000037202323, 4.057229646484007),
     ]
-    scc_duration_list = [251, 225, 300, 230, 208, 224, 241, 222, 300, 157, 262]
-    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    # scc_duration_list = [251, None, 225, 300, 230, 208, 224, 241, 222, 300, 157, 262]
+    # scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
@@ -856,15 +861,14 @@ if __name__ == "__main__":
         )
         nv_list.append(nv_sig)
 
-    # nv_list = nv_list[::-1]  # flipping the order of NVs
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig.expected_counts = 1200
     num_nvs = len(nv_list)
 
-    # nv_inds = [1, 4, 6, 9, 13]
-    # nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in nv_inds]
+    # nv_inds = [0, 1]
+    # nv_list = [nv_list[ind] for ind in range(num_nvs) if ind in nv_inds]
     # num_nvs = len(nv_list)
     # for nv in nv_list[::2]:
     # for nv in nv_list[num_nvs // 2 :]:
@@ -877,6 +881,8 @@ if __name__ == "__main__":
     # nv_list[3].init_spin_flipped = True
     # seq_args = widefield.get_base_scc_seq_args(nv_list, 0)
     # print(seq_args)
+
+    # nv_list = nv_list[::-1]  # flipping the order of NVs
 
     # endregion
 
@@ -916,7 +922,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+15, +26])
+        # widefield.set_pixel_drift([+15, +34])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -942,7 +948,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -980,9 +986,9 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
-        do_crosstalk_check(nv_sig)
+        # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
@@ -1039,3 +1045,32 @@ if __name__ == "__main__":
         plt.show(block=True)
 
     # endregion
+
+
+NV 0: a0=0.093(5), a1=0.158(7), SNR=0.141(18)
+NV 1: a0=0.488(9), a1=0.519(9), SNR=0.044(18)
+NV 2: a0=0.287(8), a1=0.459(9), SNR=0.256(18)
+NV 3: a0=0.416(9), a1=0.528(9), SNR=0.160(18)
+NV 4: a0=0.411(9), a1=0.524(9), SNR=0.162(18)
+NV 5: a0=0.320(9), a1=0.444(9), SNR=0.183(18)
+NV 6: a0=0.373(9), a1=0.491(9), SNR=0.170(18)
+NV 7: a0=0.246(8), a1=0.373(9), SNR=0.197(18)
+NV 8: a0=0.389(9), a1=0.514(9), SNR=0.179(18)
+NV 9: a0=0.373(9), a1=0.528(9), SNR=0.223(18)
+NV 10: a0=0.553(9), a1=0.596(9), SNR=0.062(18)
+
+
+
+
+
+NV 10: a0=0.524(9), a1=0.596(9), SNR=0.102(18)
+NV 9: a0=0.386(9), a1=0.511(9), SNR=0.179(18)
+NV 8: a0=0.419(9), a1=0.521(9), SNR=0.146(18)
+NV 7: a0=0.215(8), a1=0.406(9), SNR=0.298(18)
+NV 6: a0=0.392(9), a1=0.518(9), SNR=0.180(18)
+NV 5: a0=0.293(8), a1=0.426(9), SNR=0.198(18)
+NV 4: a0=0.406(9), a1=0.537(9), SNR=0.187(18)
+NV 3: a0=0.428(9), a1=0.525(9), SNR=0.138(18)
+NV 2: a0=0.272(8), a1=0.407(9), SNR=0.205(18)
+NV 1: a0=0.478(9), a1=0.501(9), SNR=0.033(18)
+NV 0: a0=0.085(5), a1=0.129(6), SNR=0.101(18)
