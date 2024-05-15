@@ -161,9 +161,9 @@ class ThorSLM(SLM):
         if self.hdl:
             CghDisplayCloseWindow(self.hdl)
 
-    def close_connection(self):
-        """Close SLM connection."""
-        if self.hdl:
-            EXULUSClose(self.serialNumber)
+    # def close_connection(self):
+    #     """Close SLM connection."""
+    #     if self.hdl:
+    #         EXULUSClose(self.serialNumber)
 
         # TODO: Insert code here to write raw phase data to the SLM.
