@@ -141,7 +141,7 @@ class ThorSLM(SLM):
         #     print("Show failed")
         # else:
         #     print("Show successfully")
-        time.sleep(1)
+        time.sleep(2)
 
         # Ask before closing the SLM display
         # user_input = input("Press Enter to close SLM display... ")
@@ -161,9 +161,9 @@ class ThorSLM(SLM):
         if self.hdl:
             CghDisplayCloseWindow(self.hdl)
 
-    # def close_connection(self):
-    #     """Close SLM connection."""
-    #     if self.hdl:
-    #         EXULUSClose(self.serialNumber)
+    def close_connection(self):
+        """Close SLM connection."""
+        if self.hdl:
+            EXULUSClose(self.serialNumber)
 
         # TODO: Insert code here to write raw phase data to the SLM.

@@ -1,5 +1,5 @@
 Metadata-Version: 2.1
-Name: thorlabs-tsi-sdk
+Name: thorlabs_tsi_sdk
 Version: 0.0.8
 Summary: Python wrapper of the Thorlabs TSI SDK
 Author: Thorlabs Scientific Imaging

@@ -6,12 +6,11 @@ import time
 import numpy as np
 from PIL import Image
 
+import sys
+sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 from slmsuite.holography import toolbox
 from slmsuite.misc.math import INTEGER_TYPES
 from slmsuite.holography import analysis
-
-import sys
-sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
 
 class SLM:
     """

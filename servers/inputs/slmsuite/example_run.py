@@ -70,7 +70,7 @@ def blaze():
 
 # region "calibration"
 def fourier_calibration():
-    cam.set_exposure(.003)               # Increase exposure because power will be split many ways
+    cam.set_exposure(.006)               # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
         array_shape=[25, 16],           # Size of the calibration grid (Nx, Ny) [knm]
         array_pitch=[30, 40],           # Pitch of the calibration grid (x, y) [knm]
@@ -81,13 +81,27 @@ def fourier_calibration():
     calibration_file = fs.save_fourier_calibration(path=r"C:\Users\Saroj Chand\Documents\fourier_calibration")
     print("Fouri er calibration saved to:", calibration_file)
 
+def test_wavefront_calibration():
+    cam.set_exposure(.001)
+    movie = fs.wavefront_calibrate(
+        interference_point=(1100, 300),
+        field_point=(.25, 0),
+        field_point_units="freq",
+        superpixel_size=40,
+        test_superpixel=(32, 16),           # Testing mode
+        autoexposure=False,
+        plot=3                              # Special mode to generate a phase .gif
+    )
+    imageio.mimsave('wavefront.gif', movie)
+    Image(filename="wavefront.gif")
+
 def wavefront_calibration():
     cam.set_exposure(.001)
     fs.wavefront_calibrate(
         interference_point=(1100, 300),
         field_point=(.25, 0),
         field_point_units="freq",
-        superpixel_size=60,
+        superpixel_size=40,
         autoexposure=False
     )
     #save calibation
@@ -96,28 +110,14 @@ def wavefront_calibration():
     
 # region "load calibration" 
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\fourier_calibration\26438-SLM-fourier-calibration_00000.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\fourier_calibration\26438-SLM-fourier-calibration_00003.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
 def load_wavefront_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00001.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00002.h5"
     fs.load_wavefront_calibration(calibration_file_path)
     print("Wavefront calibration loaded from:", calibration_file_path)
-
-def test_wavefront_calibration():
-    cam.set_exposure(.001)
-    movie = fs.wavefront_calibrate(
-        interference_point=(1100, 300),
-        field_point=(.25, 0),
-        field_point_units="freq",
-        superpixel_size=50,
-        test_superpixel=(16, 16),           # Testing mode
-        autoexposure=False,
-        plot=3                              # Special mode to generate a phase .gif
-    )
-    imageio.mimsave('wavefront.gif', movie)
-    Image(filename="wavefront.gif")
     
 # region "cam_plot" function 
 def cam_plot():
@@ -125,7 +125,7 @@ def cam_plot():
     img = cam.get_image()
 
     # Plot the result
-    plt.figure(figsize=(18, 9))
+    plt.figure(figsize=(12, 9))
     plt.imshow(img)
     plt.show()
 
@@ -191,11 +191,11 @@ def square_array():
 def circle_pattern():
     cam.set_exposure(0.001)
    # Define parameters for the circle
-    center = (720, 540)  # Center of the circle
-    radius = 300  # Radius of the circle
+    center = (1020, 740)  # Center of the circle
+    radius = 200  # Radius of the circle
 
     # Generate points within the circle using polar coordinates
-    num_points = 20  # Number of points to generate
+    num_points = 30  # Number of points to generate
     theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
@@ -231,6 +231,56 @@ def circle_pattern():
     cam_plot()
     evaluate_uniformity(vectors=circle)
 
+def circles():
+    cam.set_exposure(0.001)
+   # Define parameters for the circle
+    center = (1120, 640)  # Center of the circle
+    # Generate circles with radii ranging from 10 to 200
+    radii = np.linspace(50, 200, num=4)  # Adjust the number of circles as needed
+    # Generate points for each circle and create the hologram
+    circle_points = []
+    for radius in radii:
+        num_points = int(2 * np.pi * radius / 60)  # Adjust the number of points based on the radius
+
+        # Generate points within the circle using polar coordinates
+        theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
+        x_circle = center[0] + radius * np.cos(theta)  # X coordinates
+        y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
+
+        # Convert to grid format for the current circle
+        circle = np.vstack((x_circle, y_circle))
+        
+        circle_points.append(circle)
+
+    # Combine the points of all circles
+    circles = np.concatenate(circle_points, axis=1)
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circles, basis='ij', cameraslm=fs)
+
+    # # Precondition computationally.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+    evaluate_uniformity(vectors=circle)
+
+
+    # Hone the result with experimental feedback.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='experimental_spot',
+        stat_groups=['computational_spot', 'experimental_spot'],
+        fixed_phase=False
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+    evaluate_uniformity(vectors=circle)
 # region "scatter" function 
 def scatter_pattern():
     lloyds_points = toolbox.lloyds_points(
@@ -322,15 +372,16 @@ try:
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
     # blaze()
-    fourier_calibration()
-    # load_fourier_calibration()
-    # wavefront_calibration()
+    # fourier_calibration()
+    load_fourier_calibration()
+    wavefront_calibration()
     # load_wavefront_calibration()
     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
     # test_wavefront_calibration()
     # square_array()
+    # circles()
     # circle_pattern()
-    # smiley()
+    # smiley()pip i
     # scatter_pattern()
     # cam_plot()
 
