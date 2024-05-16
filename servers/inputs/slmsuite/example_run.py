@@ -84,11 +84,11 @@ def fourier_calibration():
 def test_wavefront_calibration():
     cam.set_exposure(.001)
     movie = fs.wavefront_calibrate(
-        interference_point=(1100, 300),
+        interference_point=(600, 400),
         field_point=(.25, 0),
         field_point_units="freq",
-        superpixel_size=40,
-        test_superpixel=(32, 16),           # Testing mode
+        superpixel_size=60,
+        test_superpixel=(16, 16),           # Testing mode
         autoexposure=False,
         plot=3                              # Special mode to generate a phase .gif
     )
@@ -98,7 +98,7 @@ def test_wavefront_calibration():
 def wavefront_calibration():
     cam.set_exposure(.001)
     fs.wavefront_calibrate(
-        interference_point=(1100, 300),
+        interference_point=(600, 400),
         field_point=(.25, 0),
         field_point_units="freq",
         superpixel_size=40,
@@ -110,12 +110,12 @@ def wavefront_calibration():
     
 # region "load calibration" 
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\fourier_calibration\26438-SLM-fourier-calibration_00003.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\fourier_calibration\26438-SLM-fourier-calibration_00006.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
 def load_wavefront_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00002.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00003.h5"
     fs.load_wavefront_calibration(calibration_file_path)
     print("Wavefront calibration loaded from:", calibration_file_path)
     
@@ -155,8 +155,8 @@ def evaluate_uniformity(vectors=None, size=25):
 
 # region "square" function 
 def square_array():
-    xlist = np.arange(350, 1150, 100)                      # Get the coordinates for one edge
-    ylist = np.arange(240, 1040, 100) 
+    xlist = np.arange(550, 1150, 50)                      # Get the coordinates for one edge
+    ylist = np.arange(240, 840, 50) 
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
@@ -191,7 +191,7 @@ def square_array():
 def circle_pattern():
     cam.set_exposure(0.001)
    # Define parameters for the circle
-    center = (1020, 740)  # Center of the circle
+    center = (850, 540)  # Center of the circle
     radius = 200  # Radius of the circle
 
     # Generate points within the circle using polar coordinates
@@ -374,10 +374,10 @@ try:
     # blaze()
     # fourier_calibration()
     load_fourier_calibration()
+    # test_wavefront_calibration()
     wavefront_calibration()
     # load_wavefront_calibration()
     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
-    # test_wavefront_calibration()
     # square_array()
     # circles()
     # circle_pattern()
