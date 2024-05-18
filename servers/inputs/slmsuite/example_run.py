@@ -115,7 +115,7 @@ def load_fourier_calibration():
     print("Fourier calibration loaded from:", calibration_file_path)
 
 def load_wavefront_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00003.h5"
+    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00004.h5"
     fs.load_wavefront_calibration(calibration_file_path)
     print("Wavefront calibration loaded from:", calibration_file_path)
     
@@ -155,8 +155,8 @@ def evaluate_uniformity(vectors=None, size=25):
 
 # region "square" function 
 def square_array():
-    xlist = np.arange(550, 1150, 50)                      # Get the coordinates for one edge
-    ylist = np.arange(240, 840, 50) 
+    xlist = np.arange(550, 1150, 25)                      # Get the coordinates for one edge
+    ylist = np.arange(240, 840, 25) 
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
@@ -366,6 +366,56 @@ def UCB_pattern():
     slm.write(phase, settle=True)
     cam_plot()
 
+def pattern_from_image():
+        # Load the image of the letters "UCB"
+    image = cv2.imread("cgn30eDI_400x400.png", cv2.IMREAD_GRAYSCALE)
+    
+    # Threshold the image to obtain binary representation
+    _, thresholded = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    
+    # Display the thresholded image for debugging
+    cv2.imshow("Thresholded Image", thresholded)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+    # Find contours of the letters in the image
+    contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # Display the contours for debugging
+    contour_image = np.zeros_like(image)
+    cv2.drawContours(contour_image, contours, -1, (255), thickness=cv2.FILLED)
+    cv2.imshow("Contours", contour_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+          # Extract the coordinates of the contours
+    ucb_coords = []
+    for contour in contours:
+        for point in contour:
+            ucb_coords.append([point[0][0], point[0][1]])
+
+    # Print out ucb_coords for debugging
+    print("ucb_coords:", ucb_coords)
+
+    # Convert ucb_coords to numpy array and transpose it
+    ucb_coords = np.vstack(ucb_coords).T
+    
+    # Print out ucb_coords after conversion for debugging
+    print("ucb_coords after conversion:", ucb_coords)
+
+    # Transpose the coordinates array to match the expected shape (2, N)
+    ucb = ucb_coords
+    
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=ucb, basis='ij', cameraslm=fs)
+    # Precondition computationally.
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
 # region run funtions
 slm = ThorSLM(serialNumber='00429430')
 try:
@@ -375,14 +425,16 @@ try:
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
-    wavefront_calibration()
-    # load_wavefront_calibration()
+    # wavefront_calibration()
+    load_wavefront_calibration()
     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
-    # square_array()
+    square_array()
     # circles()
     # circle_pattern()
     # smiley()pip i
     # scatter_pattern()
+    # UCB_pattern()
+    # pattern_from_image()
     # cam_plot()
 
 finally:

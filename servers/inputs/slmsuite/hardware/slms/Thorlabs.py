@@ -104,29 +104,8 @@ class ThorSLM(SLM):
         if result < 0:
             print("Show failed")
         else:
-            print("Show successfully")
-        time.sleep(1)
-        
+            print("Show successfully")        
 
-    @staticmethod
-    def info(verbose=True):
-        """
-        Discovers all SLMs detected by an SDK.
-        Useful for a user to identify the correct serial numbers / etc.
-
-        Parameters
-        ----------
-        verbose : bool
-            Whether to print the discovered information.
-
-        Returns
-        --------
-        list of str
-            List of serial numbers or identifiers.
-        """
-        raise NotImplementedError()
-        serial_list = get_serial_list()     # TODO: Fill in proper function.
-        return serial_list
     
     def _write_hw(self, phase):
         """Low-level hardware interface to write ``phase`` data onto the SLM."""
@@ -152,18 +131,28 @@ class ThorSLM(SLM):
         # CghDisplayCloseWindow(hdl)
         # return 0
 
-    def show_window(self, c):
-        """Show window on SLM display."""
-        return CghDisplayShowWindow(self.hdl, c)  
-
-    def close_display(self):
-        """Close SLM display."""
-        if self.hdl:
-            CghDisplayCloseWindow(self.hdl)
-
     def close_connection(self):
         """Close SLM connection."""
         if self.hdl:
             EXULUSClose(self.serialNumber)
 
+    @staticmethod
+    def info(verbose=True):
+        """
+        Discovers all SLMs detected by an SDK.
+        Useful for a user to identify the correct serial numbers / etc.
+
+        Parameters
+        ----------
+        verbose : bool
+            Whether to print the discovered information.
+
+        Returns
+        --------
+        list of str
+            List of serial numbers or identifiers.
+        """
+        raise NotImplementedError()
+        serial_list = get_serial_list()     # TODO: Fill in proper function.
+        return serial_list
         # TODO: Insert code here to write raw phase data to the SLM.
