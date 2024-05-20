@@ -213,9 +213,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1525986823001)  # 0.15
-    data = dm.get_raw_data(file_id=1525900772760)  # 0.17
-    # data = dm.get_raw_data(file_id=1525829519181)  # 0.19
+    data = dm.get_raw_data(file_id=1533399424192)
 
     nv_list = data["nv_list"]
     taus = data["taus"]

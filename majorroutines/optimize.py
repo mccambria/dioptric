@@ -425,7 +425,7 @@ def expected_counts_check(nv_sig, counts):
 
 def main(
     nv_sig: NVSig,
-    coords_key=CoordsKey.GLOBAL,
+    coords_key: str | CoordsKey = CoordsKey.GLOBAL,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
     do_plot=False,

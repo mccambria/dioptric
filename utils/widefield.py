@@ -563,7 +563,7 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
 
 
 def set_nv_scanning_coords_from_pixel_coords(
-    nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True
+    nv_sig, coords_key: str | CoordsKey = CoordsKey.GLOBAL, drift_adjust=True
 ):
     pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=drift_adjust)
     # pixel_coords = pos.get_nv_coords(

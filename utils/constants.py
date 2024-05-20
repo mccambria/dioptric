@@ -9,28 +9,29 @@ Created on June 26th, 2023
 
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
-from numbers import Number
 
 from strenum import StrEnum
+
+number = int | float
 
 
 @dataclass
 class NVSig:
-    name: str = None
-    coords: dict | list = None
+    name: str | None = None
+    coords: dict | list | None = None
     representative: bool = False
     disable_opt: bool = False
     disable_z_opt: bool = False
-    threshold: Number = None
-    expected_counts: Number = None
-    magnet_angle: Number = None
-    opti_offset: list[Number] = None  # Only works for global coordinates
+    threshold: number | None = None
+    expected_counts: number | None = None
+    magnet_angle: number | None = None
+    opti_offset: list[number] | None = None  # Only works for global coordinates
     # spin_flip: If True, an additional pi pulse will be applied to the NV at
     # the end of a spin experiment prior to readout. Useful for anticorrelations
     # and rejecting common mode noise
     spin_flip: bool = False
-    scc_duration: int = None
-    nvn_dist_params: tuple = None  # bg, amp, sigma
+    scc_duration: int | None = None
+    nvn_dist_params: tuple | None = None  # bg, amp, sigma
 
 
 class CoordsKey(StrEnum):

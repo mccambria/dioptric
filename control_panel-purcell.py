@@ -633,7 +633,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.40
+    z_coord = 4.42
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -785,7 +785,6 @@ if __name__ == "__main__":
     # region Coords (publication set)
     pixel_coords_list = [
         [131.144, 129.272],
-        [149.198, 120.136],
         [161.477, 105.335],
         [135.139, 104.013],
         [110.023, 87.942],
@@ -799,7 +798,6 @@ if __name__ == "__main__":
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
         [108.507, 110.208],
-        [108.929, 110.494],
         [109.089, 110.756],
         [108.53, 110.804],
         [107.93, 111.171],
@@ -811,22 +809,31 @@ if __name__ == "__main__":
         [106.85, 109.898],
     ]
     red_coords_list = [
-        [73.201, 75.442],
-        [73.452, 75.603],
-        [73.735, 75.942],
-        [73.227, 75.931],
-        [72.759, 76.216],
-        [73.451, 74.819],
-        [73.949, 76.429],
-        [73.874, 76.99],
-        [73.922, 75.418],
-        [73.255, 76.455],
-        [71.804, 75.209],
+        [73.293, 75.462],
+        [73.83, 75.913],
+        [73.345, 75.937],
+        [72.85, 76.202],
+        [73.536, 74.8],
+        [74.025, 76.402],
+        [73.968, 76.974],
+        [74.035, 75.432],
+        [73.333, 76.454],
+        [71.956, 75.199],
     ]
-    threshold_list = [29.5, 32.5, 30.5, 27.5, 28.5, 25.5, 25.5, 22.5, 25.5, 27.5, 21.5]
+    threshold_list = [
+        29.5,
+        30.5,
+        27.5,
+        28.5,
+        25.5,
+        25.5,
+        22.5,
+        25.5,
+        27.5,
+        21.5,
+    ]
     nvn_dist_params_list = [
         (0.09496880693969349, 0.5430310817421609, 4.111623245645377),
-        (0.10943553490858787, 0.5594077410656036, 4.0951582637952875),
         (0.08359072378569227, 0.5563169029105488, 4.196289833384432),
         (0.11300965562470393, 0.47823686241827884, 3.8176119920970115),
         (0.0996750651815728, 0.424081185734665, 4.237557317052255),
@@ -837,9 +844,9 @@ if __name__ == "__main__":
         (0.08389347687050605, 0.4240274428116519, 4.374313132895644),
         (0.09076716513861707, 0.27713000037202323, 4.057229646484007),
     ]
-    # scc_duration_list = [251, None, 225, 300, 230, 208, 224, 241, 222, 300, 157, 262]
-    # scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_duration_list = [None] * num_nvs
+    scc_duration_list = [145, 160, 163, 187, 168, 188, 143, 174, 193, 156]
+    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    # scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
 
@@ -864,7 +871,7 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1150
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -922,7 +929,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+15, +34])
+        # widefield.set_pixel_drift([+4, +7])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -986,7 +993,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
@@ -1045,32 +1052,3 @@ if __name__ == "__main__":
         plt.show(block=True)
 
     # endregion
-
-
-NV 0: a0=0.093(5), a1=0.158(7), SNR=0.141(18)
-NV 1: a0=0.488(9), a1=0.519(9), SNR=0.044(18)
-NV 2: a0=0.287(8), a1=0.459(9), SNR=0.256(18)
-NV 3: a0=0.416(9), a1=0.528(9), SNR=0.160(18)
-NV 4: a0=0.411(9), a1=0.524(9), SNR=0.162(18)
-NV 5: a0=0.320(9), a1=0.444(9), SNR=0.183(18)
-NV 6: a0=0.373(9), a1=0.491(9), SNR=0.170(18)
-NV 7: a0=0.246(8), a1=0.373(9), SNR=0.197(18)
-NV 8: a0=0.389(9), a1=0.514(9), SNR=0.179(18)
-NV 9: a0=0.373(9), a1=0.528(9), SNR=0.223(18)
-NV 10: a0=0.553(9), a1=0.596(9), SNR=0.062(18)
-
-
-
-
-
-NV 10: a0=0.524(9), a1=0.596(9), SNR=0.102(18)
-NV 9: a0=0.386(9), a1=0.511(9), SNR=0.179(18)
-NV 8: a0=0.419(9), a1=0.521(9), SNR=0.146(18)
-NV 7: a0=0.215(8), a1=0.406(9), SNR=0.298(18)
-NV 6: a0=0.392(9), a1=0.518(9), SNR=0.180(18)
-NV 5: a0=0.293(8), a1=0.426(9), SNR=0.198(18)
-NV 4: a0=0.406(9), a1=0.537(9), SNR=0.187(18)
-NV 3: a0=0.428(9), a1=0.525(9), SNR=0.138(18)
-NV 2: a0=0.272(8), a1=0.407(9), SNR=0.205(18)
-NV 1: a0=0.478(9), a1=0.501(9), SNR=0.033(18)
-NV 0: a0=0.085(5), a1=0.129(6), SNR=0.101(18)
