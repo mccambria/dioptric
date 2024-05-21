@@ -77,7 +77,7 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_reps = 200
-    num_runs = 20
+    num_runs = 40
     # num_runs = 2
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
@@ -478,7 +478,7 @@ def do_detect_cosmic_rays(nv_list):
 
 def do_check_readout_fidelity(nv_list):
     num_reps = 200
-    num_runs = 20
+    num_runs = 40
 
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
@@ -633,7 +633,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.42
+    z_coord = 4.47
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -820,29 +820,18 @@ if __name__ == "__main__":
         [73.333, 76.454],
         [71.956, 75.199],
     ]
-    threshold_list = [
-        29.5,
-        30.5,
-        27.5,
-        28.5,
-        25.5,
-        25.5,
-        22.5,
-        25.5,
-        27.5,
-        21.5,
-    ]
+    threshold_list = [27.5, 27.5, 25.5, 23.5, 27.5, 22.5, 17.5, 24.5, 22.5, 20.5]
     nvn_dist_params_list = [
-        (0.09496880693969349, 0.5430310817421609, 4.111623245645377),
-        (0.08359072378569227, 0.5563169029105488, 4.196289833384432),
-        (0.11300965562470393, 0.47823686241827884, 3.8176119920970115),
-        (0.0996750651815728, 0.424081185734665, 4.237557317052255),
-        (0.09142517435366085, 0.418406183250579, 3.983237245504112),
-        (0.09448250078879838, 0.38128375699001393, 4.107847483889908),
-        (0.08487363049170515, 0.34228777403846117, 4.100027054548481),
-        (0.06556139443532955, 0.45722506046681255, 4.229944715687993),
-        (0.08389347687050605, 0.4240274428116519, 4.374313132895644),
-        (0.09076716513861707, 0.27713000037202323, 4.057229646484007),
+        (0.06949197853215423, 0.5631391420690471, 4.216881064360549),
+        (0.11193774130398557, 0.47231178723798944, 4.014239435395525),
+        (0.10381090503410967, 0.3769014823750456, 4.2066099249824465),
+        (0.0885175358700188, 0.3582170426257401, 4.128432914770158),
+        (0.0805859848201578, 0.527147580304454, 4.126784289287142),
+        (0.08303824820569747, 0.3533486405172414, 4.153486955348017),
+        (0.0798138155994101, 0.25658246969626625, 4.152802177012195),
+        (0.06476534188853134, 0.493100136132556, 4.172789007253776),
+        (0.08984212570556235, 0.34267315254366004, 4.171807751951278),
+        (0.0827199390683145, 0.3142148295165403, 4.010679074571614),
     ]
     scc_duration_list = [145, 160, 163, 187, 168, 188, 143, 174, 193, 156]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
@@ -929,7 +918,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+4, +7])
+        # widefield.set_pixel_drift([+13, +3])
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -955,7 +944,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -971,7 +960,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        # do_check_readout_fidelity(nv_list)
+        do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)

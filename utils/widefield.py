@@ -233,8 +233,13 @@ def poisson_pmf_cont(k, mean):
 
 
 @cache
+def _get_mle_radius():
+    return round(1.5 * _get_camera_spot_radius())
+
+
+@cache
 def _calc_mesh_grid(radius=None):
-    radius = _get_camera_spot_radius()
+    radius = _get_mle_radius()
     half_range = radius
     one_ax_linspace = np.linspace(-half_range, half_range, 2 * half_range + 1)
     x_crop_mesh, y_crop_mesh = np.meshgrid(one_ax_linspace, one_ax_linspace)
@@ -242,11 +247,15 @@ def _calc_mesh_grid(radius=None):
 
 
 @cache
-def _calc_nvn_count_distribution(nvn_dist_params):
+def _calc_nvn_count_distribution(nvn_dist_params, subpixel_offset=(0, 0)):
     x_crop_mesh, y_crop_mesh = _calc_mesh_grid()
     bg, amp, sigma = nvn_dist_params
     return bg + amp * np.exp(
-        -(((x_crop_mesh) ** 2) + ((y_crop_mesh) ** 2)) / (2 * sigma**2)
+        -(
+            ((x_crop_mesh - subpixel_offset[0]) ** 2)
+            + ((y_crop_mesh - subpixel_offset[1]) ** 2)
+        )
+        / (2 * sigma**2)
     )
 
 
@@ -262,7 +271,7 @@ def charge_state_mle_single(nv_sig, img_array):
         return None
 
     x0, y0 = get_nv_pixel_coords(nv_sig)
-    radius = _get_camera_spot_radius()
+    radius = _get_mle_radius()
     half_range = radius
     left = round(x0 - half_range)
     right = round(x0 + half_range)
@@ -271,7 +280,10 @@ def charge_state_mle_single(nv_sig, img_array):
     img_array_crop = img_array[top : bottom + 1, left : right + 1]
     img_array_crop = np.where(img_array_crop >= 0, img_array_crop, 0)
 
-    nvn_count_distribution = _calc_nvn_count_distribution(nvn_dist_params)
+    subpixel_offset = (x0 - round(x0), y0 - round(y0))
+    nvn_count_distribution = _calc_nvn_count_distribution(
+        nvn_dist_params, subpixel_offset
+    )
     nv0_count_distribution = _calc_nv0_count_distribution(nvn_dist_params)
 
     nvn_probs = poisson_pmf_cont(img_array_crop, nvn_count_distribution)
@@ -1035,4 +1047,10 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
 
 if __name__ == "__main__":
-    print(_get_camera_k_gain())
+    params = (0.0719270334338683, 0.5119287280798724, 4.299725330652744)
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots()
+    subpixel_offset = (5, 5)
+    kpl.imshow(ax, _calc_nvn_count_distribution(params, subpixel_offset))
+    # kpl.imshow(ax, _calc_nv0_count_distribution(params))
+    kpl.show(block=True)
