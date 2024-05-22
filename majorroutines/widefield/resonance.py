@@ -153,7 +153,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     ax.set_ylabel(" ")
     # label = "Normalized fraction in NV$^{-}$"
     label = "Change in fraction in NV$^{-}$"
-    fig.text(0.01, 0.55, label, va="center", rotation="vertical")
+    fig.text(0.005, 0.55, label, va="center", rotation="vertical")
     # ax.set_ylim([0.945, 1.19])
     # ax.set_yticks([1.0, 1.1, 1.2])
     # ax.set_xticks([2.83, 2.87, 2.91])
@@ -251,7 +251,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1519797150132)
+    data = dm.get_raw_data(file_id=1537436953888)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -260,13 +260,13 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    # counts = np.array(data["states"])
-    counts = np.array(data["counts"])
+    counts = np.array(data["states"])
+    # counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts
+        nv_list, sig_counts, ref_counts, threshold=False
     )
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)

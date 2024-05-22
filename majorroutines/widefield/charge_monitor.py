@@ -146,8 +146,10 @@ def process_check_readout_fidelity(data):
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     fig, ax = plt.subplots()
+    fidelities = []
     for nv_ind in range(num_nvs):
         fidelity = (probs[0][nv_ind] + probs[1][nv_ind]) / 2
+        fidelities.append(fidelity)
         fidelity_err = (
             np.sqrt(prob_errs[0][nv_ind] ** 2 + prob_errs[1][nv_ind] ** 2) / 2
         )
@@ -156,6 +158,7 @@ def process_check_readout_fidelity(data):
     ax.set_ylabel("Fidelity")
     ax.set_xlabel("NV index")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    print(fidelities)
 
     return fig
 
@@ -228,7 +231,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1537171319096)
+    data = dm.get_raw_data(file_id=1537295022762)
 
     process_check_readout_fidelity(data)
 
