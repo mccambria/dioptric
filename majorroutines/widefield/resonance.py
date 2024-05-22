@@ -65,15 +65,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
-        # amp_guess = np.max(nv_counts) - 1
         amp_guess = 1 - np.max(nv_counts)
 
         # if nv_ind in [3, 5, 7, 10, 12]:
         #     num_resonances = 1
-        if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
-            num_resonances = 2
-        else:
-            num_resonances = 0
+        # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+        #     num_resonances = 2
+        # else:
+        #     num_resonances = 0
         num_resonances = 2
 
         if num_resonances == 1:
@@ -137,9 +136,9 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     ### Make the figure
 
-    layout = kpl.calc_mosaic_layout(num_nvs)
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
     fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
+        layout, figsize=[6.5, 4.0], sharex=True, sharey=True
     )
     axes_pack_flat = list(axes_pack.values())
 

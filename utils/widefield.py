@@ -909,8 +909,9 @@ def plot_fit(
         # ls = "none" if fn is not None else "solid"
         ls = "none"
         size = kpl.Size.SMALL
+        label = str(nv_num)
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=str(nv_num), size=size, color=color, linestyle=ls
+            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
         )
 
         # Plot the fit
@@ -921,7 +922,8 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        ax.legend(loc=kpl.Loc.UPPER_LEFT)
+        # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
+        # ax.legend(loc=loc)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)
