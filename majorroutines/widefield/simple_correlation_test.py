@@ -9,6 +9,7 @@ Created on December 6th, 2023
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma as ma
 from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 
@@ -23,10 +24,12 @@ from utils.constants import NVSig
 
 def process_and_plot(data):
     nv_list = data["nv_list"]
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
+    states = np.array(data["states"])
     num_runs = counts.shape[2]
     counts = counts[:, :, num_runs // 2 :]
+    states = states[:, :, num_runs // 2 :]
 
     # exclude_inds = (6, 9, 13)
     exclude_inds = ()
@@ -45,9 +48,19 @@ def process_and_plot(data):
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+    ref_states = states[1]
+    flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
+    flattened_ref_counts = np.array(flattened_ref_counts)
+    flattened_ref_states = np.array(flattened_ref_states)
+    flattened_ref_counts = np.where(
+        np.logical_not(flattened_ref_states), flattened_ref_counts, np.nan
+    )
+
     num_shots = len(flattened_ref_counts[0])
     sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
     ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    ref_corr_coeffs = ma.corrcoef(ma.masked_invalid(flattened_ref_counts))
 
     diff_corr_coeffs = np.cov(flattened_sig_counts) - np.cov(flattened_ref_counts)
     # stddev = np.sqrt(np.diag(sig_corr_coeffs).real + np.diag(ref_corr_coeffs).real)
