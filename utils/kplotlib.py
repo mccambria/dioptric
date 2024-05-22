@@ -207,13 +207,13 @@ def zero_to_one_threshold(val):
 kplotlib_initialized = False
 
 
-def calc_mosaic_layout(num_nvs):
-    width = round(np.sqrt(num_nvs))
-    height = int(np.ceil(num_nvs / width))
-    num_axes = height * width
+def calc_mosaic_layout(num_nvs, num_rows=None):
+    if num_rows is None:
+        num_rows = round(np.sqrt(num_nvs))
+    num_cols = int(np.ceil(num_nvs / num_rows))
+    num_axes = num_cols * num_rows
 
-    shape = (height, width)
-    shape = (width, height)
+    shape = (num_rows, num_cols)
     vals = np.reshape(alphabet[:num_axes], shape)
     if num_nvs != num_axes:
         vals[0, num_nvs - num_axes :] = "."
@@ -297,6 +297,8 @@ def init_kplotlib(
     plt.rcParams["legend.handlelength"] = 0.8
     plt.rcParams["legend.handletextpad"] = 0.4
     plt.rcParams["legend.columnspacing"] = 1.0
+    plt.rcParams["legend.borderaxespad"] = 0.2
+    plt.rcParams["legend.borderpad"] = 0.3
 
 
 def get_default_color(ax, plot_type):
@@ -457,6 +459,44 @@ def plot_points(ax, x, y, size=None, **kwargs):
     params["markerfacecolor"] = face_color
 
     ax.errorbar(x, y, **params)
+
+
+def plot_bars(ax, x, y, **kwargs):
+    """Same as matplotlib's errorbar, but with our defaults. Use for plotting
+    data points
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot on
+    x : 1D array
+        x values to plot
+    y : 1D array
+        y values to plot
+    kwargs
+        Passed on to matplotlib's errorbar function
+    """
+
+    # Color handling
+    if "color" in kwargs:
+        color = kwargs["color"]
+    else:
+        color = get_default_color(ax, PlotType.POINTS)
+    if "markerfacecolor" in kwargs:
+        face_color = kwargs["markerfacecolor"]
+    else:
+        face_color = lighten_color_hex(color)
+
+    # Combine passed args and defaults
+    params = kwargs
+    params["ecolor"] = color
+    params["edgecolor"] = color
+    params["facecolor"] = face_color
+    linewidth = 1.5
+    params["linewidth"] = linewidth
+    params["error_kw"] = {"elinewidth": linewidth}
+
+    ax.bar(x, y, **params)
 
 
 def plot_line(ax, x, y, size=None, **kwargs):
