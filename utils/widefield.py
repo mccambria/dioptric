@@ -344,6 +344,15 @@ def _validate_counts_structure(counts):
 # region Miscellaneous public functions
 
 
+def get_default_keys_to_compress(raw_data):
+    keys_to_compress = []
+    if "img_arrays" in raw_data:
+        keys_to_compress.append("img_arrays")
+    if "mean_img_arrays" in raw_data:
+        keys_to_compress.append("mean_img_arrays")
+    return keys_to_compress
+
+
 def rep_loop(num_reps, rep_fn):
     """Loop through the reps for a routine. Handles errors from the camera,
     as well as starting and stopping the pulse generator. Does not handle
@@ -785,7 +794,7 @@ def draw_circles_on_nvs(ax, nv_list, drift=None):
         kpl.draw_circle(ax, pixel_coords, color=color, radius=scale / 2 - 1, label=ind)
     num_nvs = len(nv_list)
     ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-    ax.legend(loc=kpl.Loc.LOWER_LEFT, ncols=ncols, markerscale=0.7)
+    ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.7)
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
@@ -922,8 +931,9 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
+        loc = kpl.Loc.UPPER_LEFT
         # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
-        # ax.legend(loc=loc)
+        ax.legend(loc=loc)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)

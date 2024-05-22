@@ -238,6 +238,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     data = dm.get_raw_data(file_id=1537208030313)
+    data = dm.get_raw_data(file_id=1538348677725)
 
     process_check_readout_fidelity(data)
 

@@ -54,7 +54,7 @@ def main(
         step_fn,
         uwave_ind_list=uwave_ind,
         load_iq=True,
-        save_images=False,
+        save_all_images=False,
     )
 
     ### Process and plot
