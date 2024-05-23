@@ -13,11 +13,12 @@ import numpy as np
 
 from majorroutines.widefield import base_routine
 from utils import common
+from utils import data_manager as dm
 from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_print(nv_list, counts, threshold=True):
+def process_and_plot(nv_list, counts, threshold=True):
     sig_counts = counts[0]
     ref_counts = counts[1]
 
@@ -53,6 +54,8 @@ def process_and_print(nv_list, counts, threshold=True):
         nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
         print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
 
+    ### Plot
+
 
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
@@ -87,6 +90,17 @@ def main(nv_list, num_reps, num_runs):
     ### Report results and cleanup
 
     counts = data["counts"]
-    process_and_print(nv_list, counts)
+    try:
+        fig = process_and_plot(nv_list, counts)
+    except Exception:
+        fig = None
+
+    timestamp = dm.get_time_stamp()
+
+    repr_nv_name = widefield.get_repr_nv_sig(nv_list).name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(data, file_path)
+    if fig is not None:
+        dm.save_figure(fig, file_path)
 
     tb.reset_cfm()
