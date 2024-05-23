@@ -128,6 +128,23 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):
     return photons
 
 
+@cache
+def _img_array_iris(shape):
+    roi = _get_camera_roi()  # offsetX, offsetY, width, height
+    offsetX, offsetY, width, height = roi
+    iris_radius = np.sqrt((height / 2) ** 2 + (width / 2) ** 2) + 10
+    center_x = offsetX + width // 2
+    center_y = height // 2
+
+    iris = np.empty(shape)
+    for ind in range(shape[0]):
+        for jnd in range(shape[1]):
+            dist = np.sqrt((jnd - center_x) ** 2 + (ind - center_y) ** 2)
+            iris[ind, jnd] = dist > iris_radius
+
+    return iris
+
+
 def img_str_to_array(img_str):
     """Convert an img_array from a uint16-valued byte string (returned by the camera
     labrad server for speed) into a usable int-valued 2D array. Also subtracts off bias
@@ -154,12 +171,9 @@ def img_str_to_array(img_str):
     else:
         offset_x = roi[0]
         width = roi[2]
-        buffer = 10
-        bg_pixels = img_array[0:, 0 : offset_x - buffer].flatten()
-        bg_pixels = np.append(
-            bg_pixels, img_array[0:, offset_x + width + buffer :].flatten()
-        )
-        baseline = np.mean(bg_pixels)
+        iris = _img_array_iris(img_array.shape)
+        bg_pixels = np.where(iris, img_array, np.nan)
+        baseline = np.nanmean(bg_pixels)
         img_array = img_array[0:, offset_x : offset_x + width]
     return img_array, baseline
 
@@ -1059,10 +1073,7 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
 
 if __name__ == "__main__":
-    params = (0.0719270334338683, 0.5119287280798724, 4.299725330652744)
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    subpixel_offset = (5, 5)
-    kpl.imshow(ax, _calc_nvn_count_distribution(params, subpixel_offset))
-    # kpl.imshow(ax, _calc_nv0_count_distribution(params))
+    kpl.imshow(ax, _img_array_iris((250, 512)))
     kpl.show(block=True)

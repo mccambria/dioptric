@@ -247,7 +247,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1537436953888)
+    data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -268,14 +268,19 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    # img_arrays = np.array(data["img_arrays"])
-    # img_arrays = np.mean(img_arrays, axis=0)
-    # bottom = np.percentile(img_arrays, 30, axis=0)
-    # img_arrays -= bottom
+    img_arrays = np.array(data["mean_img_arrays"])[0]
+    bottom = np.percentile(img_arrays, 30, axis=0)
+    img_arrays -= bottom
 
-    # norms = norms[:, np.newaxis]
-    # widefield.animate(
-    #     freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, 0, 3
-    # )
+    norms = norms[:, np.newaxis]
+    widefield.animate(
+        freqs,
+        nv_list,
+        avg_counts / norms,
+        avg_counts_ste / norms,
+        img_arrays,
+        cmin=0.01,
+        cmax=0.06,
+    )
 
     kpl.show(block=True)
