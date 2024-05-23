@@ -128,6 +128,23 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):
     return photons
 
 
+@cache
+def _img_array_iris(shape):
+    roi = _get_camera_roi()  # offsetX, offsetY, width, height
+    offsetX, offsetY, width, height = roi
+    iris_radius = np.sqrt((height / 2) ** 2 + (width / 2) ** 2) + 10
+    center_x = offsetX + width // 2
+    center_y = height // 2
+
+    iris = np.empty(shape)
+    for ind in range(shape[0]):
+        for jnd in range(shape[1]):
+            dist = np.sqrt((jnd - center_x) ** 2 + (ind - center_y) ** 2)
+            iris[ind, jnd] = dist > iris_radius
+
+    return iris
+
+
 def img_str_to_array(img_str):
     """Convert an img_array from a uint16-valued byte string (returned by the camera
     labrad server for speed) into a usable int-valued 2D array. Also subtracts off bias
@@ -154,12 +171,9 @@ def img_str_to_array(img_str):
     else:
         offset_x = roi[0]
         width = roi[2]
-        buffer = 10
-        bg_pixels = img_array[0:, 0 : offset_x - buffer].flatten()
-        bg_pixels = np.append(
-            bg_pixels, img_array[0:, offset_x + width + buffer :].flatten()
-        )
-        baseline = np.mean(bg_pixels)
+        iris = _img_array_iris(img_array.shape)
+        bg_pixels = np.where(iris, img_array, np.nan)
+        baseline = np.nanmean(bg_pixels)
         img_array = img_array[0:, offset_x : offset_x + width]
     return img_array, baseline
 
@@ -342,6 +356,15 @@ def _validate_counts_structure(counts):
 
 # endregion
 # region Miscellaneous public functions
+
+
+def get_default_keys_to_compress(raw_data):
+    keys_to_compress = []
+    if "img_arrays" in raw_data:
+        keys_to_compress.append("img_arrays")
+    if "mean_img_arrays" in raw_data:
+        keys_to_compress.append("mean_img_arrays")
+    return keys_to_compress
 
 
 def rep_loop(num_reps, rep_fn):
@@ -785,7 +808,7 @@ def draw_circles_on_nvs(ax, nv_list, drift=None):
         kpl.draw_circle(ax, pixel_coords, color=color, radius=scale / 2 - 1, label=ind)
     num_nvs = len(nv_list)
     ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-    ax.legend(loc=kpl.Loc.LOWER_LEFT, ncols=ncols, markerscale=0.7)
+    ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.7)
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
@@ -909,8 +932,9 @@ def plot_fit(
         # ls = "none" if fn is not None else "solid"
         ls = "none"
         size = kpl.Size.SMALL
+        label = str(nv_num)
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=str(nv_num), size=size, color=color, linestyle=ls
+            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
         )
 
         # Plot the fit
@@ -921,7 +945,9 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        ax.legend(loc=kpl.Loc.UPPER_LEFT)
+        loc = kpl.Loc.UPPER_LEFT
+        # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
+        ax.legend(loc=loc)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)
@@ -1047,10 +1073,7 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
 
 if __name__ == "__main__":
-    params = (0.0719270334338683, 0.5119287280798724, 4.299725330652744)
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    subpixel_offset = (5, 5)
-    kpl.imshow(ax, _calc_nvn_count_distribution(params, subpixel_offset))
-    # kpl.imshow(ax, _calc_nv0_count_distribution(params))
+    kpl.imshow(ax, _img_array_iris((250, 512)))
     kpl.show(block=True)

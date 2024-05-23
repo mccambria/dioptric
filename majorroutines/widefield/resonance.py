@@ -65,15 +65,14 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
-        # amp_guess = np.max(nv_counts) - 1
         amp_guess = 1 - np.max(nv_counts)
 
         # if nv_ind in [3, 5, 7, 10, 12]:
         #     num_resonances = 1
-        if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
-            num_resonances = 2
-        else:
-            num_resonances = 0
+        # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
+        #     num_resonances = 2
+        # else:
+        #     num_resonances = 0
         num_resonances = 2
 
         if num_resonances == 1:
@@ -137,9 +136,9 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     ### Make the figure
 
-    layout = kpl.calc_mosaic_layout(num_nvs)
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
     fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
+        layout, figsize=[6.5, 4.0], sharex=True, sharey=True
     )
     axes_pack_flat = list(axes_pack.values())
 
@@ -200,6 +199,7 @@ def main(
         run_fn,
         step_fn,
         uwave_ind_list=uwave_ind,
+        save_mean_images=True,
     )
     counts = raw_data["states"]
 
@@ -236,11 +236,7 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    if "img_arrays" in raw_data:
-        keys_to_compress = ["img_arrays"]
-    else:
-        keys_to_compress = None
-    dm.save_raw_data(raw_data, file_path, keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
@@ -251,7 +247,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1537436953888)
+    data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -272,14 +268,19 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    # img_arrays = np.array(data["img_arrays"])
-    # img_arrays = np.mean(img_arrays, axis=0)
-    # bottom = np.percentile(img_arrays, 30, axis=0)
-    # img_arrays -= bottom
+    img_arrays = np.array(data["mean_img_arrays"])[0]
+    bottom = np.percentile(img_arrays, 30, axis=0)
+    img_arrays -= bottom
 
-    # norms = norms[:, np.newaxis]
-    # widefield.animate(
-    #     freqs, nv_list, avg_counts / norms, avg_counts_ste / norms, img_arrays, 0, 3
-    # )
+    norms = norms[:, np.newaxis]
+    widefield.animate(
+        freqs,
+        nv_list,
+        avg_counts / norms,
+        avg_counts_ste / norms,
+        img_arrays,
+        cmin=0.01,
+        cmax=0.06,
+    )
 
     kpl.show(block=True)

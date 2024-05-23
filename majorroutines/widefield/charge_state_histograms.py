@@ -281,7 +281,7 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        save_images=True,
+        save_all_images=True,
         charge_prep_fn=charge_prep_fn,
         uwave_ind_list=[0, 1],  # MCC
     )

@@ -95,15 +95,16 @@ config |= {
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
             "frequency": 2.85761751,
-            "rabi_period": 104,
-            "uwave_power": 10,
+            # "rabi_period": 104,
+            "rabi_period": 112,
+            "uwave_power": 6,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.812251747511455,
             "rabi_period": 128,
-            "uwave_power": 10,
+            "uwave_power": 8.5,
         },
     },
     ###
@@ -160,7 +161,7 @@ config |= {
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
         LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.SHELVING: {"name": green_laser, "duration": 60},
-        LaserKey.ION: {"name": red_laser, "duration": 1000},
+        LaserKey.ION: {"name": red_laser, "duration": 10e3},
         # SCC: 180 mW, 0.13 V, no shelving
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
@@ -685,11 +686,12 @@ opx_config = {
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.17},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
         "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other

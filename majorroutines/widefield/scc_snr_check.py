@@ -83,7 +83,7 @@ def main(nv_list, num_reps, num_runs):
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=False,
+        save_all_images=False,
         charge_prep_fn=None,
     )
 
