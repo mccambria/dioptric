@@ -48,14 +48,14 @@ class ThorSLM(SLM):
         kwargs
             See :meth:`.SLM.__init__` for permissible options.
         """
-        hdl = EXULUSOpen(serialNumber,38400,3)
-        if(hdl < 0):
+        self.device_hdl = EXULUSOpen(serialNumber,38400,3)
+        if(self.device_hdl < 0):
             print("Connect ",serialNumber, "fail")
             return -1
         else:
             print("Connect ",serialNumber, "successfully")
 
-        result = EXULUSIsOpen(serialNumber)
+        result= EXULUSIsOpen(serialNumber)
         if(result < 0):
             print("Open failed ")
         else:
@@ -65,7 +65,7 @@ class ThorSLM(SLM):
 
         code=[0]
         codeList={6:"Acknowledge", 9:"Not Acknowledge", 187:"SPI_Busy"}
-        result = EXULUSCheckCommunication(hdl,code) 
+        result = EXULUSCheckCommunication(self.device_hdl,code) 
         if(result < 0):
             print("Get device parameters failed ")
         else:
@@ -85,14 +85,14 @@ class ThorSLM(SLM):
         )
 
         # Create SLM window
-        self.hdl = CghDisplayCreateWindow(2, 1920, 1080, "SLM window")
-        if self.hdl < 0:
+        self.window_hdl = CghDisplayCreateWindow(2, 1920, 1080, "SLM window")
+        if self.window_hdl < 0:
             print("Create window failed")
             return -1
         else:
             print("SLM Window is Create and Current screen is 2")
 
-        result = CghDisplaySetWindowInfo(self.hdl, 1920, 1080, 1)
+        result = CghDisplaySetWindowInfo(self.window_hdl, 1920, 1080, 1)
         if result < 0:
             print("Set Window Info failed")
         else:
@@ -100,11 +100,13 @@ class ThorSLM(SLM):
             
         # Show the window
         buffer_phase = None
-        result = CghDisplayShowWindow(self.hdl,buffer_phase)
+        result = CghDisplayShowWindow(self.window_hdl,buffer_phase)
         if result < 0:
             print("Show failed")
         else:
-            print("Show successfully")        
+            print("Show successfully")  
+
+        self.serialNumber = serialNumber      
 
     
     def _write_hw(self, phase):
@@ -114,7 +116,7 @@ class ThorSLM(SLM):
         c = ctypes.cast(flattened_matrix.ctypes.data, ctypes.POINTER(ctypes.c_ubyte))
         
         # Display the phase
-        result = CghDisplayShowWindow(self.hdl,c)
+        result = CghDisplayShowWindow(self.window_hdl,c)
 
         # if result < 0:
         #     print("Show failed")
@@ -131,10 +133,18 @@ class ThorSLM(SLM):
         # CghDisplayCloseWindow(hdl)
         # return 0
 
-    def close_connection(self):
+    def close(self):
+        self.close_window()
+        self.close_device()
+
+    def close_device(self):
         """Close SLM connection."""
-        if self.hdl:
-            EXULUSClose(self.serialNumber)
+        if self.device_hdl:
+            EXULUSClose(self.device_hdl)
+    def close_window(self):
+        """Close SLM connection."""
+        if self.window_hdl:
+            CghDisplayCloseWindow(self.window_hdl)
 
     @staticmethod
     def info(verbose=True):
