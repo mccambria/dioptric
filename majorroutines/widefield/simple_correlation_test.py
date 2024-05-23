@@ -9,6 +9,7 @@ Created on December 6th, 2023
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma as ma
 from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 
@@ -24,27 +25,42 @@ from utils.constants import NVSig
 def process_and_plot(data):
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])
-    # counts = data["states"]
-    num_nvs = len(nv_list)
+    # counts = np.array(data["states"])
+    states = np.array(data["states"])
+    num_runs = counts.shape[2]
+    counts = counts[:, :, num_runs // 2 :]
+    states = states[:, :, num_runs // 2 :]
+
     # exclude_inds = (6, 9, 13)
     exclude_inds = ()
+    num_nvs = len(nv_list)
     nv_list = [nv_list[ind] for ind in range(num_nvs) if ind not in exclude_inds]
     num_nvs = len(nv_list)
+    counts = np.delete(counts, exclude_inds, axis=1)
 
     # Break down the counts array
     # experiment, nv, run, step, rep
-    counts = np.delete(counts, exclude_inds, axis=1)
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
 
-    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+    # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+    ref_states = states[1]
+    flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
+    flattened_ref_counts = np.array(flattened_ref_counts)
+    flattened_ref_states = np.array(flattened_ref_states)
+    flattened_ref_counts = np.where(
+        np.logical_not(flattened_ref_states), flattened_ref_counts, np.nan
+    )
+
     num_shots = len(flattened_ref_counts[0])
     sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
     ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    ref_corr_coeffs = ma.corrcoef(ma.masked_invalid(flattened_ref_counts))
 
     diff_corr_coeffs = np.cov(flattened_sig_counts) - np.cov(flattened_ref_counts)
     # stddev = np.sqrt(np.diag(sig_corr_coeffs).real + np.diag(ref_corr_coeffs).real)
@@ -92,10 +108,12 @@ def process_and_plot(data):
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         figs.append(fig)
 
+    return figs
+
     ### Spurious correlations offset
 
-    offsets = np.array(range(15000))
-    # offsets = list(range(200))
+    # offsets = np.array(range(15000))
+    offsets = list(range(1000))
     # offsets = [500]
     spurious_vals = []
     for offset in offsets:
@@ -206,11 +224,7 @@ def main(nv_list, num_reps, num_runs):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    if "img_arrays" in raw_data:
-        keys_to_compress = ["img_arrays"]
-    else:
-        keys_to_compress = None
-    dm.save_raw_data(raw_data, file_path, keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
     if sig_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
         dm.save_figure(sig_fig, file_path)
@@ -222,14 +236,9 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1520104346137)  # Checkerboard
-    data = dm.get_raw_data(file_id=1519615059736)  # Block
+    data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
+    # data = dm.get_raw_data(file_id=1519615059736)  # Block
 
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
-    process_and_print(nv_list, counts, threshold=False)
     process_and_plot(data)
 
     plt.show(block=True)

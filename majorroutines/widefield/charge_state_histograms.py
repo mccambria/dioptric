@@ -222,7 +222,7 @@ def process_and_plot(raw_data):
     for nv_ind in range(num_nvs):
         nvn_img_arrays = []
         nv = nv_list[nv_ind]
-        threshold = threshold_list[nv_ind]
+        threshold = threshold_list[nv_ind] + 5  # + 5 to decrease nv0 prob
         ref_counts_list = ref_counts_lists[nv_ind]
         for shot_ind in range(num_shots):
             if ref_counts_list[shot_ind] > threshold:
@@ -281,7 +281,7 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        save_images=True,
+        save_all_images=True,
         charge_prep_fn=charge_prep_fn,
         uwave_ind_list=[0, 1],  # MCC
     )

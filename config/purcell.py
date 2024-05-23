@@ -95,7 +95,8 @@ config |= {
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
             "frequency": 2.85761751,
-            "rabi_period": 104,
+            # "rabi_period": 104,
+            "rabi_period": 112,
             "uwave_power": 10,
             "iq_delay": 140,
         },
@@ -160,7 +161,7 @@ config |= {
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
         LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.SHELVING: {"name": green_laser, "duration": 60},
-        LaserKey.ION: {"name": red_laser, "duration": 1000},
+        LaserKey.ION: {"name": red_laser, "duration": 10e3},
         # SCC: 180 mW, 0.13 V, no shelving
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
@@ -690,6 +691,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
         "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other

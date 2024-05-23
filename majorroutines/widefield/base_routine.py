@@ -149,7 +149,8 @@ def main(
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_images=False,
+    save_all_images=False,
+    save_mean_images=False,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
 ) -> dict:
@@ -206,6 +207,7 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
+    num_shots = num_reps * num_runs
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -231,9 +233,12 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    if save_images:
+    if save_all_images:
         shape = widefield.get_img_array_shape()
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
+    if save_mean_images:
+        shape = widefield.get_img_array_shape()
+        mean_img_arrays = np.zeros((num_exps_per_rep, num_steps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -290,17 +295,21 @@ def main(
                                     counts_list,
                                     states_list,
                                 ) = read_and_process_image(nv_list)
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
-                                if save_images:
+                                if save_all_images:
                                     img_arrays[
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
+                                if save_mean_images:
+                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
+                                        img_array
+                                    )
                         # stop = time.time()
                         # print((stop - start) / (num_reps * num_exps_per_rep))
                         # print()
@@ -361,10 +370,16 @@ def main(
         "counts": counts,
         "states": states,
     }
-    if save_images:
+    if save_all_images:
         raw_data |= {
             "img_arrays-units": "photons",
             "img_arrays": img_arrays,
+        }
+    if save_mean_images:
+        mean_img_arrays /= num_shots
+        raw_data |= {
+            "mean_img_arrays-units": "photons",
+            "mean_img_arrays": mean_img_arrays,
         }
     return raw_data
 

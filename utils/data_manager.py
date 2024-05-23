@@ -23,7 +23,7 @@ import orjson  # orjson is faster and more lightweight than ujson, but can't wri
 import ujson  # usjson is faster than standard json library
 from git import Repo
 
-from utils import _cloud, common
+from utils import _cloud, common, widefield
 from utils.constants import NVSig
 
 data_manager_folder = common.get_data_manager_folder()
@@ -117,6 +117,9 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             Keys to values in raw_data that we want to extract and save to
             a separate compressed file. Currently supports numpy arrays
     """
+
+    if keys_to_compress is None:
+        keys_to_compress = widefield.get_default_keys_to_compress(raw_data)
 
     # start = time.time()
     file_path_txt = file_path.with_suffix(".txt")
