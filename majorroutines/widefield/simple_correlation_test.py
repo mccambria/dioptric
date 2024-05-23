@@ -27,9 +27,9 @@ def process_and_plot(data):
     counts = np.array(data["counts"])
     # counts = np.array(data["states"])
     states = np.array(data["states"])
-    num_runs = counts.shape[2]
-    counts = counts[:, :, num_runs // 2 :]
-    states = states[:, :, num_runs // 2 :]
+    # num_runs = counts.shape[2]
+    # counts = counts[:, :, :]
+    # states = states[:, :, :]
 
     # exclude_inds = (6, 9, 13)
     exclude_inds = ()
@@ -53,14 +53,31 @@ def process_and_plot(data):
     flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
     flattened_ref_counts = np.array(flattened_ref_counts)
     flattened_ref_states = np.array(flattened_ref_states)
-    flattened_ref_counts = np.where(
-        np.logical_not(flattened_ref_states), flattened_ref_counts, np.nan
-    )
 
     num_shots = len(flattened_ref_counts[0])
     sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
-    ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    # ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+
+    # MCC
+    flattened_ref_counts = np.where(
+        np.logical_not(flattened_ref_states), flattened_ref_counts, np.nan
+    )
     ref_corr_coeffs = ma.corrcoef(ma.masked_invalid(flattened_ref_counts))
+    # fmt: off
+    coords = [(5.464, 5.386),(6.728, 4.389),(5.631, 4.334),(4.584, 3.664),(6.007, 6.824),(7.247, 3.271),(7.128, 2.078),(7.104, 5.525),(5.709, 3.111),(2.443, 5.817)]
+    # fmt: on
+    coords = [np.array(el) for el in coords]
+    fig, ax = plt.subplots()
+    for ind in range(num_nvs):
+        for jnd in range(num_nvs):
+            if jnd <= ind:
+                continue
+            dist = np.sqrt(np.sum((coords[ind] - coords[jnd]) ** 2))
+            kpl.plot_points(
+                ax, dist, ref_corr_coeffs[ind, jnd], color=kpl.KplColors.BLUE
+            )
+    ax.set_xlabel("Distance between NVs (μm)")
+    ax.set_ylabel("Count correlation | both NVs in NV$^{0}$")
 
     diff_corr_coeffs = np.cov(flattened_sig_counts) - np.cov(flattened_ref_counts)
     # stddev = np.sqrt(np.diag(sig_corr_coeffs).real + np.diag(ref_corr_coeffs).real)

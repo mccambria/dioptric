@@ -264,23 +264,26 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    norms_newaxis = norms[:, np.newaxis]
+    avg_counts = avg_counts - norms_newaxis
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
     img_arrays = np.array(data["mean_img_arrays"])[0]
-    bottom = np.percentile(img_arrays, 30, axis=0)
-    img_arrays -= bottom
+    proc_img_arrays = widefield.downsample_img_arrays(img_arrays, 3)
 
-    norms = norms[:, np.newaxis]
+    bottom = np.percentile(proc_img_arrays, 30, axis=0)
+    proc_img_arrays -= bottom
+
     widefield.animate(
         freqs,
         nv_list,
-        avg_counts / norms,
-        avg_counts_ste / norms,
-        img_arrays,
+        avg_counts,
+        avg_counts_ste,
+        proc_img_arrays,
         cmin=0.01,
-        cmax=0.06,
+        cmax=0.04,
     )
 
     kpl.show(block=True)
