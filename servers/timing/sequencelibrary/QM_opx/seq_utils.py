@@ -304,6 +304,7 @@ def _macro_scc_no_shelving(
 
     # Actual commands
 
+    macro_pi_pulse([0])  # MCC
     _macro_pulse_list(
         ion_laser_name,
         ion_pulse_name,
@@ -311,6 +312,7 @@ def _macro_scc_no_shelving(
         duration_list=first_duration_list,
         duration_override=duration_override,
     )
+    return  # MCC
 
     # Just exit here if all NVs are SCC'ed in the first batch
     if len(spin_flip_ind_list) == 0:

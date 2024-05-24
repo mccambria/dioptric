@@ -97,14 +97,14 @@ config |= {
             "frequency": 2.85761751,
             # "rabi_period": 104,
             "rabi_period": 112,
-            "uwave_power": 6,
+            "uwave_power": 6.3,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.812251747511455,
             "rabi_period": 128,
-            "uwave_power": 8.5,
+            "uwave_power": 8.8,
         },
     },
     ###
@@ -433,7 +433,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
-                # "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_i": {
@@ -444,7 +444,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "iq_pi_pulse_0",
-                # "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
         },
         "ao_sig_gen_STAN_sg394_q": {
@@ -455,7 +455,7 @@ opx_config = {
                 "on": "ao_cw",
                 "off": "ao_off",
                 "pi_pulse": "iq_pi_pulse_0",
-                # "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
@@ -464,7 +464,7 @@ opx_config = {
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
-                # "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
         "do_camera_trigger": {
@@ -603,11 +603,11 @@ opx_config = {
             "length": int(rabi_period_0 / 2) + iq_buffer,
             "waveforms": {"single": "cw"},
         },
-        # "iq_pi_on_2_pulse_0": {
-        #     "operation": "control",
-        #     "length": int(rabi_period_0 / 4) + iq_buffer,
-        #     "waveforms": {"single": "cw"},
-        # },
+        "iq_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4) + iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
         ### Digital
         "do_on": {
             "operation": "control",
@@ -654,21 +654,21 @@ opx_config = {
             "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
-        # "do_pi_on_2_pulse_0": {
-        #     "operation": "control",
-        #     "length": int(rabi_period_0 / 4),
-        #     "digital_marker": "on",
-        # },
+        "do_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4),
+            "digital_marker": "on",
+        },
         "do_pi_pulse_1": {
             "operation": "control",
             "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
-        # "do_pi_on_2_pulse_1": {
-        #     "operation": "control",
-        #     "length": int(rabi_period_1 / 4),
-        #     "digital_marker": "on",
-        # },
+        "do_pi_on_2_pulse_1": {
+            "operation": "control",
+            "length": int(rabi_period_1 / 4),
+            "digital_marker": "on",
+        },
         ### Mixed
     },
     # endregion
