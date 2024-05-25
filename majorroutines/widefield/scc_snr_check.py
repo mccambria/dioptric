@@ -57,6 +57,7 @@ def process_and_plot(nv_list, counts, threshold=False):
     figsize[1] *= 1.5
     counts_fig, axes_pack = plt.subplots(2, 1, sharex=True, figsize=figsize)
     snr_fig, ax = plt.subplots()
+    fid_fig, fid_ax = plt.subplots()
 
     for ind in range(len(nv_list)):
         nv_sig = nv_list[ind]
@@ -69,13 +70,17 @@ def process_and_plot(nv_list, counts, threshold=False):
         )
         kpl.plot_bars(ax, nv_num, avg_snr[ind], avg_snr_ste[ind])
 
-    axes_pack[0].set_xlabel("NV index")
-    ax.set_xlabel("NV index")
-    axes_pack[0].set_ylabel("NV- population after prep in ms=0")
-    axes_pack[1].set_ylabel("NV- population after prep in ms=1")
-    ax.set_ylabel("SNR")
+    xlabel = "NV index"
+    axes_pack[0].set_xlabel(xlabel)
+    ax.set_xlabel(xlabel)
+    fid_ax.set_xlabel(xlabel)
 
-    return counts_fig, snr_fig
+    axes_pack[0].set_ylabel("NV$^{-}$ population after prep in ms=0")
+    axes_pack[1].set_ylabel("NV$^{-}$ population after prep in ms=1")
+    ax.set_ylabel("Spin experiment SNR")
+    fid_ax.set_ylabel("Spin experiment fidelity")
+
+    return counts_fig, snr_fig, fid_fig
 
 
 def main(nv_list, num_reps, num_runs):
