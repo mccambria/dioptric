@@ -86,7 +86,10 @@ def process_and_plot(data):
     # diff_corr_coeffs /= stddev[None, :]
     # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
 
-    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    # spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    spin_flips = np.array(
+        [-1 if ind in [0, 1, 4, 6] else +1 for ind in range(num_nvs)]
+    )  # MCC
     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
@@ -256,7 +259,8 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
     # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    data = dm.get_raw_data(file_id=1540048047866)  # Block
+    # data = dm.get_raw_data(file_id=1540048047866)  # Block
+    data = dm.get_raw_data(file_id=1540558251818)  # By orientation
 
     process_and_plot(data)
 
