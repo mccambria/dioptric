@@ -32,6 +32,9 @@ def process_and_plot(data):
     # counts = counts[:, :, :]
     # states = states[:, :, :]
 
+    # counts = counts[:, :, :, :, 1:]
+    # states = states[:, :, :, :, 1:]
+
     # exclude_inds = (6, 9, 13)
     exclude_inds = ()
     num_nvs = len(nv_list)
@@ -259,8 +262,8 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
     # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    # data = dm.get_raw_data(file_id=1540048047866)  # Block
-    data = dm.get_raw_data(file_id=1540558251818)  # By orientation
+    data = dm.get_raw_data(file_id=1540048047866)  # Block
+    # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
 
     process_and_plot(data)
 
