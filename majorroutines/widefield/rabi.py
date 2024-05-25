@@ -232,7 +232,19 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
+    # counts = np.array(data["counts"])
     counts = np.array(data["states"])
+    ref_counts = counts[1]
+    # counts = counts[:, :, :, :, 0:1:]
+    counts = counts[:, :, :, :, 1:2]
+    # counts = counts[:, :, :, :, 1:]
+    # counts = counts[:, :, :, :, 1:2:]
+    # counts = counts[:, :, :, :, 2:3:]
+    # counts = counts[:, :, :, :, 4:5:]
+    # counts = counts[:, :, :, :, 9:10:]
+    # counts = np.array(data["counts"])
+
+    # counts = np.array(data["states"])
     # counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]

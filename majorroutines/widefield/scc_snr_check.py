@@ -60,6 +60,7 @@ def process_and_plot(data, threshold=False):
     figsize[1] *= 1.5
     counts_fig, axes_pack = plt.subplots(2, 1, sharex=True, figsize=figsize)
     snr_fig, ax = plt.subplots()
+    # fid_fig, fid_ax = plt.subplots()
 
     for ind in range(len(nv_list)):
         nv_sig = nv_list[ind]
@@ -78,7 +79,13 @@ def process_and_plot(data, threshold=False):
     axes_pack[1].set_ylabel("NV- | prep in ms=1")
     ax.set_ylabel("SNR")
 
+    # axes_pack[0].set_ylabel("NV$^{-}$ population after prep in ms=0")
+    # axes_pack[1].set_ylabel("NV$^{-}$ population after prep in ms=1")
+    # ax.set_ylabel("Spin experiment SNR")
+    # fid_ax.set_ylabel("Spin experiment fidelity")
+
     return counts_fig, snr_fig
+    # return counts_fig, snr_fig, fid_fig
 
 
 def main(nv_list, num_reps, num_runs):
