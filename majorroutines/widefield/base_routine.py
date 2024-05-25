@@ -252,6 +252,7 @@ def main(
 
             while True:
                 try:
+                    start = time.time()
                     print(f"\nRun index: {run_ind}")
 
                     states_list = None
@@ -259,8 +260,8 @@ def main(
                     for ind in uwave_ind_list:
                         sig_gen = tb.get_server_sig_gen(ind=ind)
                         sig_gen.uwave_on()
-                        if load_iq:
-                            sig_gen.load_iq()
+                        # if load_iq:
+                        #     sig_gen.load_iq()
 
                     shuffle(step_ind_list)
                     if run_fn is not None:
@@ -317,6 +318,8 @@ def main(
                         pulse_gen.resume()
 
                     ### Move on to the next run
+                    stop = time.time()
+                    print(f"Run time: {round(stop-start, 3)}")
 
                     # Turn stuff off
                     pulse_gen.halt()

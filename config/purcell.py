@@ -97,14 +97,14 @@ config |= {
             "frequency": 2.85761751,
             # "rabi_period": 104,
             "rabi_period": 112,
-            "uwave_power": 6.3,
+            "uwave_power": 6.15,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.812251747511455,
             "rabi_period": 128,
-            "uwave_power": 8.8,
+            "uwave_power": 8.35,
         },
     },
     ###

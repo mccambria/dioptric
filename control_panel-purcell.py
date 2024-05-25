@@ -235,9 +235,14 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
+    num_reps = 10
+    num_runs = 100
+    num_runs = 50
+
     num_reps = 3
-    num_runs = 400
+    num_runs = 150
     # num_runs = 2
+
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
@@ -254,11 +259,14 @@ def do_resonance_zoom(nv_list):
 def do_rabi(nv_list):
     min_tau = 16
     max_tau = 240 + min_tau
+    # max_tau = 796
     num_steps = 31
+    # num_steps = 40
     num_reps = 10
     num_runs = 100
     num_runs = 50
     # num_runs = 2
+    # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
 
     # min_tau = 64
@@ -876,7 +884,7 @@ if __name__ == "__main__":
     #     nv.init_spin_flipped = True
     # nv_list[1].init_spin_flipped = True
     # nv_list[3].init_spin_flipped = True
-    # seq_args = widefield.get_base_scc_seq_args(nv_list, 0)
+    # seq_args = widefield.get_base_scc_seq_args(nv_list[:3], [0, 1])
     # print(seq_args)
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -919,7 +927,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+11, +28])  # [131.144, 129.272]
+        # widefield.set_pixel_drift([+14, +15])  # [131.144, 129.272]
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -963,7 +971,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -990,7 +998,7 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
 
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False

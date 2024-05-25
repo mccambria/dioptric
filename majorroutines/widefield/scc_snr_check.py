@@ -20,7 +20,10 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_plot(nv_list, counts, threshold=False):
+def process_and_plot(data, threshold=False):
+    nv_list = data["nv_list"]
+    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
@@ -62,17 +65,17 @@ def process_and_plot(nv_list, counts, threshold=False):
         nv_sig = nv_list[ind]
         nv_num = widefield.get_nv_num(nv_sig)
         kpl.plot_bars(
-            axes_pack[0], nv_num, avg_ref_counts[ind], avg_ref_counts_ste[ind]
+            axes_pack[0], nv_num, avg_ref_counts[ind], yerr=avg_ref_counts_ste[ind]
         )
         kpl.plot_bars(
-            axes_pack[1], nv_num, avg_sig_counts[ind], avg_sig_counts_ste[ind]
+            axes_pack[1], nv_num, avg_sig_counts[ind], yerr=avg_sig_counts_ste[ind]
         )
-        kpl.plot_bars(ax, nv_num, avg_snr[ind], avg_snr_ste[ind])
+        kpl.plot_bars(ax, nv_num, avg_snr[ind], yerr=avg_snr_ste[ind])
 
     axes_pack[0].set_xlabel("NV index")
     ax.set_xlabel("NV index")
-    axes_pack[0].set_ylabel("NV- population after prep in ms=0")
-    axes_pack[1].set_ylabel("NV- population after prep in ms=1")
+    axes_pack[0].set_ylabel("NV- | prep in ms=0")
+    axes_pack[1].set_ylabel("NV- | prep in ms=1")
     ax.set_ylabel("SNR")
 
     return counts_fig, snr_fig
@@ -82,16 +85,19 @@ def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
     uwave_ind_list = [0, 1]
+    # uwave_ind_list = [0]
 
     # seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), [0]]
     # print(seq_args)
     # return
 
-    seq_file = "resonance_ref.py"
+    # seq_file = "resonance_ref.py"
+    seq_file = "rabi.py"
     pulse_gen = tb.get_server_pulse_gen()
 
     def run_fn(step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
+        # seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), [56]]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -110,9 +116,8 @@ def main(nv_list, num_reps, num_runs):
 
     ### Report results and cleanup
 
-    counts = data["states"]
     try:
-        figs = process_and_plot(nv_list, counts)
+        figs = process_and_plot(data)
     except Exception:
         figs = None
 
@@ -124,6 +129,14 @@ def main(nv_list, num_reps, num_runs):
     if figs is not None:
         num_figs = len(figs)
         for ind in range(num_figs):
-            dm.save_figure(figs[ind], file_path + f"-{ind}")
+            file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + f"-{ind}")
+            dm.save_figure(figs[ind], file_path)
 
     tb.reset_cfm()
+
+
+if __name__ == "__main__":
+    kpl.init_kplotlib()
+    data = dm.get_raw_data(file_id=1540813367760)
+    figs = process_and_plot(data)
+    kpl.show(block=True)

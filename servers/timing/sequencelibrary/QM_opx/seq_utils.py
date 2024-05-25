@@ -304,7 +304,7 @@ def _macro_scc_no_shelving(
 
     # Actual commands
 
-    macro_pi_pulse([0])  # MCC
+    # macro_pi_pulse([0])  # MCC
     _macro_pulse_list(
         ion_laser_name,
         ion_pulse_name,
@@ -312,7 +312,7 @@ def _macro_scc_no_shelving(
         duration_list=first_duration_list,
         duration_override=duration_override,
     )
-    return  # MCC
+    # return  # MCC
 
     # Just exit here if all NVs are SCC'ed in the first batch
     if len(spin_flip_ind_list) == 0:
@@ -337,14 +337,14 @@ def _macro_scc_no_shelving(
     )
 
 
-def macro_pi_pulse(uwave_ind_list):
+def macro_pi_pulse(uwave_ind_list, duration=None):
     if uwave_ind_list is None:
         return
     buffer = get_widefield_operation_buffer()
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
-        qua.play("pi_pulse", sig_gen_el)
+        qua.play("pi_pulse", sig_gen_el, duration=duration)
         qua.wait(buffer, sig_gen_el)
 
 

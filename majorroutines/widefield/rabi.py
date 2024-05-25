@@ -103,7 +103,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     ### Make the figure
 
-    layout = kpl.calc_mosaic_layout(num_nvs)
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
+    # layout = kpl.calc_mosaic_layout(num_nvs)
     fig, axes_pack = plt.subplot_mosaic(
         layout, figsize=[6.5, 6.0], sharex=True, sharey=True
     )
@@ -179,11 +180,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     ### Process and plot
 
     try:
-        counts = raw_data["counts"]
+        # counts = raw_data["counts"]
+        counts = raw_data["states"]
         sig_counts = counts[0]
         ref_counts = counts[1]
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts
+            nv_list, sig_counts, ref_counts, threshold=False
         )
 
         raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
@@ -222,7 +224,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1538601728884, load_npz=True)
-    data = dm.get_raw_data(file_id=1539051848767)
+    data = dm.get_raw_data(file_id=1540791781984)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

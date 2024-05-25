@@ -14,7 +14,6 @@ from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
-from majorroutines.widefield.scc_snr_check import process_and_print
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
