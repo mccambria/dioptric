@@ -250,7 +250,8 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
     # data = dm.get_raw_data(file_id=1541455417524)
-    data = dm.get_raw_data(file_id=1541508213162)
+    # data = dm.get_raw_data(file_id=1519797150132)
+    data = dm.get_raw_data(file_id=1541604395737)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -259,8 +260,8 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
     ref_counts = counts[1]
     counts = counts[:, :, :, :, 0:1:]
     # counts = counts[:, :, :, :, 1:2:]
