@@ -88,7 +88,7 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         # Determine how many decimal places we need
         precision = len(str(freq).split(".")[1])
         self.sig_gen.write("FREQ {0:.{1}f} GHZ".format(freq, precision))
-        time.sleep(0.1)
+        time.sleep(0.01)
 
     @setting(3, amp="v[]")
     def set_amp(self, c, amp):

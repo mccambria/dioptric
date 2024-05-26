@@ -190,7 +190,6 @@ def main(
     def step_fn(step_ind):
         freq = freqs[step_ind]
         sig_gen.set_freq(freq)
-        time.sleep(0.1)
 
     raw_data = base_routine.main(
         nv_list,

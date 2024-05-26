@@ -273,6 +273,9 @@ def do_rabi(nv_list):
     # num_steps = 1
     # num_reps = 50
 
+    num_reps = 3
+    num_runs = 150
+
     # nv_list[1].spin_flip = True
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for ind in range(4):
@@ -971,7 +974,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_correlation_test(nv_list)
