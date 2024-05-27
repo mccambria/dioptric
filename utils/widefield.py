@@ -958,24 +958,29 @@ def plot_fit(
     fig.get_layout_engine().set(h_pad=0, hspace=0, w_pad=0, wspace=0)
 
 
-def downsample_img_arrays(img_arrays, downsample_factor):
-    num_steps = img_arrays.shape[0]
-    shape = img_arrays.shape[1:]
-    proc_shape = (
+def downsample_img_array(img_array, downsample_factor):
+    shape = img_array.shape
+    downsampled_shape = (
         int(np.floor(shape[0] / downsample_factor)),
         int(np.floor(shape[1] / downsample_factor)),
     )
-    clip_shape = (downsample_factor * proc_shape[0], downsample_factor * proc_shape[1])
-    img_arrays = img_arrays[:, : clip_shape[0], : clip_shape[1]]
-    proc_img_arrays = np.zeros((num_steps, *proc_shape))
+
+    # Clip the original img_array so that its dimensions are an integer
+    # multiple of downsample_factor
+    clip_shape = (
+        downsample_factor * downsampled_shape[0],
+        downsample_factor * downsampled_shape[1],
+    )
+    img_array = img_array[: clip_shape[0], : clip_shape[1]]
+
+    downsampled_img_array = np.zeros(downsampled_shape)
     for ind in range(downsample_factor):
         for jnd in range(downsample_factor):
-            proc_img_arrays += img_arrays[
-                :, ind::downsample_factor, jnd::downsample_factor
+            downsampled_img_array += img_array[
+                ind::downsample_factor, jnd::downsample_factor
             ]
-    proc_img_arrays /= downsample_factor**2
 
-    return proc_img_arrays
+    return downsampled_img_array
 
 
 def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
