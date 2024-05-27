@@ -149,9 +149,9 @@ def main(
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=False,
+    save_all_images=True,
     save_mean_images=False,
-    save_images_downsample_factor=None,
+    save_images_downsample_factor=3,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
 ) -> dict:
