@@ -15,7 +15,93 @@ import matplotlib.pyplot as plt
 from IPython.display import Image
 import imageio
 import io 
+from slmsuite.holography import analysis, toolbox
 mpl.rc('image', cmap='Blues')
+
+def nuvu2thorcam_calibration(coords):
+    """
+    Calibrates and transforms coordinates from the Nuvu camera's coordinate system
+    to the Thorlabs camera's coordinate system using an affine transformation.
+
+    Parameters:
+    coords (np.ndarray): An array of shape (N, 2) containing coordinates in the Nuvu camera's system.
+
+    Returns:
+    np.ndarray: An array of shape (N, 2) containing transformed coordinates in the Thorlabs camera's system.
+    """
+    # Define the corresponding points in both coordinate systems
+    cal_coords_nuvu = np.array([[100, 100], [200, 100], [200, 200]], dtype='float32')  # Points in (512, 512) coordinate system
+    cal_coords_thorcam = np.array([[281.25, 210.9375], [562.5, 210.9375], [562.5, 421.875]], dtype='float32')  # Corresponding points in (1480, 1020) coordinate system
+
+    # Compute the affine transformation matrix
+    M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
+
+    # Append a column of ones to the input coordinates to facilitate affine transformation
+    ones_column = np.ones((coords.shape[0], 1))
+    coords_homogeneous = np.hstack((coords, ones_column))
+
+    # Perform the affine transformation
+    thorcam_coords = np.dot(coords_homogeneous, M.T)
+
+    return thorcam_coords
+
+
+def shift_phase(phase, shift_x, shift_y):
+    for ind in range(phase.shape[0]):
+        for jnd in range(phase.shape[1]):
+            phase[ind, jnd] += np.dot((ind, jnd), (shift_x, shift_y))
+    return phase
+
+# Ensure the 'shift_phase' function is optimized and efficient
+def shift_phase(phase, shift_x, shift_y):
+    # Create a meshgrid of indices
+    y_indices, x_indices = np.indices(phase.shape)
+    # Compute the phase shift using vectorized operations
+    phase_shift = shift_x * x_indices + shift_y * y_indices
+    # Apply the phase shift
+    shifted_phase = phase + phase_shift
+    return shifted_phase
+
+def selcted_shift_phase(phase, spot_indices, shift_x, shift_y):
+    # Create a meshgrid of indices
+    y_indices, x_indices = np.indices(phase.shape)
+    # Initialize phase shift array with zeros
+    phase_shift = np.zeros_like(phase)
+    # Apply shifts only to the specified spots
+    for (y_idx, x_idx) in spot_indices:
+        phase_shift[y_idx, x_idx] = shift_x * x_idx + shift_y * y_idx
+    # Apply the phase shift
+    shifted_phase = phase + phase_shift
+    return shifted_phase
+
+
+def square_tweezer_path(x1, x2, num_points=31):
+    shifts = np.linspace(x1, x2, num=num_points)
+    path = []
+    for shift in shifts:
+        path.append((shift, -x2))  # Right
+    for shift in shifts:
+        path.append((x2, shift))  # Up
+    for shift in shifts[::-1]:
+        path.append((shift, x2))  # Left
+    for shift in shifts[::-1]:
+        path.append((-x2, shift))  # Down
+    return path
+
+def circular_tweezer_path(num_points=100, radius=0.5):
+    theta = np.linspace(0, 2*np.pi*radius, num=num_points)
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    path = [(x[i], y[i]) for i in range(num_points)]
+    return path
+
+def spiral_tweezer_path(num_points=100, max_radius=0.5, num_turns=2):
+    theta = np.linspace(0, 2*np.pi*num_turns, num=num_points)
+    radius = np.linspace(0, max_radius, num=num_points)
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    path = [(x[i], y[i]) for i in range(num_points)]
+    return path
 
 def plot_intensity():
     # Data from the image
@@ -34,7 +120,6 @@ def plot_intensity():
     plt.plot(df['Power'], df['Relative Intensity'], label='Relative Intensity (All Array / 0th Order)', marker='s', color='blue')
     # plt.plot(df['Power'], df['all_array_spot Intensity'], label='Array Spots Integrated Intensity', marker='o', color='orange')
     # plt.plot(df['Power'], df['oth order'], label='0th Order Intensity', marker='x', color='red')
-
     plt.xlabel('Power')
     plt.ylabel('Intensity')
     plt.title('Intensity vs Power')
@@ -42,43 +127,3 @@ def plot_intensity():
     plt.grid(True)
     plt.show()
 # plot_intensity()
-
-def shift_phase(phase, shift_x, shift_y):
-    for ind in range(phase.shape[0]):
-        for jnd in range(phase.shape[1]):
-            phase[ind, jnd] += np.dot((ind, jnd), (shift_x, shift_y))
-    return phase
-
-# Define the corresponding points in both coordinate systems
-points_512 = np.array([[100, 100], [200, 100], [200, 200]], dtype='float32')  # Points in (512, 512) coordinate system
-points_1480 = np.array([[300, 200], [600, 200], [600, 400]], dtype='float32')  # Corresponding points in (1480, 1020) coordinate system
-
-# Compute the affine transformation matrix
-M = cv2.getAffineTransform(points_512, points_1480)
-
-# Save the affine transformation matrix to an .h5 file
-with h5py.File('affine_transformation.h5', 'w') as f:
-    f.create_dataset('affine_matrix', data=M)
-
-# Function to transform a point using the affine transformation matrix
-def transform_point_affine(point, M):
-    point_homogeneous = np.array([point[0], point[1], 1]).reshape((3, 1))
-    transformed_point_homogeneous = np.dot(M, point_homogeneous)
-    return transformed_point_homogeneous.flatten()
-
-# Example usage:
-point_512 = np.array([150, 150])  # A point in the (512, 512) coordinate system
-transformed_point = transform_point_affine(point_512, M)
-print(f"Transformed point in the (1480, 1020) coordinate system: {transformed_point}")
-
-# Load the affine transformation matrix from the .h5 file
-with h5py.File('affine_transformation.h5', 'r') as f:
-    M_loaded = f['affine_matrix'][:]
-
-# Verify the loaded matrix is the same as the original matrix
-print("Original matrix:\n", M)
-print("Loaded matrix:\n", M_loaded)
-
-# Transform a point using the loaded matrix to verify
-transformed_point_loaded = transform_point_affine(point_512, M_loaded)
-print(f"Transformed point using the loaded matrix in the (1480, 1020) coordinate system: {transformed_point_loaded}")
