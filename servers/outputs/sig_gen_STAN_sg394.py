@@ -22,12 +22,14 @@ timeout = 5
 ### END NODE INFO
 """
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-import socket
 import logging
+import socket
+import time
+
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+from labrad.server import LabradServer, setting
+from twisted.internet.defer import ensureDeferred
+
 from servers.outputs.interfaces.sig_gen_vector import SigGenVector
 from utils import common
 from utils import tool_belt as tb
@@ -86,6 +88,7 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         # Determine how many decimal places we need
         precision = len(str(freq).split(".")[1])
         self.sig_gen.write("FREQ {0:.{1}f} GHZ".format(freq, precision))
+        time.sleep(0.01)
 
     @setting(3, amp="v[]")
     def set_amp(self, c, amp):

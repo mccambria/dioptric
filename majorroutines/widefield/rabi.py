@@ -103,7 +103,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     ### Make the figure
 
-    layout = kpl.calc_mosaic_layout(num_nvs)
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
+    # layout = kpl.calc_mosaic_layout(num_nvs)
     fig, axes_pack = plt.subplot_mosaic(
         layout, figsize=[6.5, 6.0], sharex=True, sharey=True
     )
@@ -179,11 +180,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     ### Process and plot
 
     try:
-        counts = raw_data["counts"]
+        # counts = raw_data["counts"]
+        counts = raw_data["states"]
         sig_counts = counts[0]
         ref_counts = counts[1]
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts
+            nv_list, sig_counts, ref_counts, threshold=False
         )
 
         raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
@@ -221,7 +223,9 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1519858323604)
+    # data = dm.get_raw_data(file_id=1538601728884, load_npz=True)
+    data = dm.get_raw_data(file_id=1540791781984)
+    data = dm.get_raw_data(file_id=1541475268648)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -229,16 +233,51 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
+    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
+    ref_counts = counts[1]
+    # counts = counts[:, :, :, :, 0:1:]
+    counts = counts[:, :, :, :, 1:2]
+    # counts = counts[:, :, :, :, 1:]
+    # counts = counts[:, :, :, :, 1:2:]
+    # counts = counts[:, :, :, :, 2:3:]
+    # counts = counts[:, :, :, :, 4:5:]
+    # counts = counts[:, :, :, :, 9:10:]
+    # counts = np.array(data["counts"])
+
     # counts = np.array(data["states"])
-    counts = np.array(data["counts"])
+    # counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=False
     )
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+
+    ###
+
+    # img_arrays = np.array(data["mean_img_arrays"])[0]
+
+    # proc_img_arrays = widefield.downsample_img_arrays(img_arrays, 3)
+
+    # bottom = np.percentile(proc_img_arrays, 30, axis=0)
+    # proc_img_arrays -= bottom
+
+    # norms_newaxis = norms[:, np.newaxis]
+    # avg_counts = avg_counts - norms_newaxis
+    # widefield.animate(
+    #     taus,
+    #     nv_list,
+    #     avg_counts,
+    #     avg_counts_ste,
+    #     proc_img_arrays,
+    #     cmin=0.01,
+    #     cmax=0.05,
+    # )
+
+    ###
 
     plt.show(block=True)

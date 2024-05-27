@@ -880,6 +880,7 @@ def plot_fit(
     popts=None,
     xlim=[None, None],
     norms=None,
+    legend=True,
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -945,15 +946,36 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        loc = kpl.Loc.UPPER_LEFT
-        # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
-        ax.legend(loc=loc)
+        if legend:
+            loc = kpl.Loc.UPPER_LEFT
+            # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
+            ax.legend(loc=loc)
 
     for ax in axes_pack:
         ax.spines[["right", "top"]].set_visible(False)
 
     fig = axes_pack[0].get_figure()
     fig.get_layout_engine().set(h_pad=0, hspace=0, w_pad=0, wspace=0)
+
+
+def downsample_img_arrays(img_arrays, downsample_factor):
+    num_steps = img_arrays.shape[0]
+    shape = img_arrays.shape[1:]
+    proc_shape = (
+        int(np.floor(shape[0] / downsample_factor)),
+        int(np.floor(shape[1] / downsample_factor)),
+    )
+    clip_shape = (downsample_factor * proc_shape[0], downsample_factor * proc_shape[1])
+    img_arrays = img_arrays[:, : clip_shape[0], : clip_shape[1]]
+    proc_img_arrays = np.zeros((num_steps, *proc_shape))
+    for ind in range(downsample_factor):
+        for jnd in range(downsample_factor):
+            proc_img_arrays += img_arrays[
+                :, ind::downsample_factor, jnd::downsample_factor
+            ]
+    proc_img_arrays /= downsample_factor**2
+
+    return proc_img_arrays
 
 
 def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
@@ -964,13 +986,8 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
     fig = plt.figure(figsize=figsize)
     im_fig, data_fig = fig.subfigures(1, 2, width_ratios=(6, 6.5))
     im_ax = im_fig.add_subplot()
-    layout = np.array(
-        [
-            ["a", "b", "c", ".", "."],
-            ["f", "g", "h", "d", "e"],
-            ["k", "l", "m", "i", "j"],
-        ]
-    )
+    num_nvs = len(nv_list)
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=3)
     data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
     data_axes_flat = list(data_axes.values())
     rep_data_ax = data_axes[layout[-1, 0]]
@@ -990,18 +1007,34 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
         # pass
         x_buffer = 0.05 * (np.max(x) - np.min(x))
         rep_data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
+        # rep_data_ax.set_xlim(0, np.max(x) + x_buffer)
+        # ax.set_xticks((0, 100, 200))
         y_buffer = 0.05 * (np.max(counts) - np.min(counts))
         rep_data_ax.set_ylim(np.min(counts) - y_buffer, np.max(counts) + y_buffer)
-        # data_ax.set_xlabel("Pulse duration (ns)")
-        # data_ax.set_ylabel("Counts")
-        data_axes["m"].set_xlabel("Frequency (GHz)")
-        data_axes["f"].set_ylabel("Normalized fluorescence")
+
+        ax = data_axes[layout[-1, 0]]
+        ax.set_xlabel(" ")
+        xlabel = "Frequency (GHz)"
+        # xlabel = "Pulse duration (ns)"
+        data_fig.text(0.55, 0.01, xlabel, ha="center")
+        ylabel = "Change in fraction in NV$^{-}$"
+        ax.set_ylabel(" ")
+        data_fig.text(0.005, 0.55, ylabel, va="center", rotation="vertical")
+
+        # data_axes[layout[0, 1]].legend(bbox_to_anchor=(1.05, 1), loc=kpl.Loc.UPPER_LEFT)
+
+    # ax.set_xlabel(" ")
+    # ax.set_ylabel(" ")
+    # # label = "Normalized fraction in NV$^{-}$"
+    # label = "Change in fraction in NV$^{-}$"
+    # fig.text(0.005, 0.55, label, va="center", rotation="vertical")
 
     data_ax_relim()
 
     def animate_sub(step_ind):
         # print(step_ind)
         kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
+        im_ax.axis("off")
 
         # data_ax.clear()
         # plot_raw_data(
@@ -1022,6 +1055,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
             x[: step_ind + 1],
             counts[:, : step_ind + 1],
             counts_errs[:, : step_ind + 1],
+            legend=False,
         )
         data_ax_relim()
         return all_axes

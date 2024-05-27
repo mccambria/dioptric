@@ -247,7 +247,10 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
+    # data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
+    # data = dm.get_raw_data(file_id=1541455417524)
+    # data = dm.get_raw_data(file_id=1519797150132)
+    data = dm.get_raw_data(file_id=1541604395737)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -256,10 +259,17 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
+    ref_counts = counts[1]
+    counts = counts[:, :, :, :, 0:1:]
+    # counts = counts[:, :, :, :, 1:2:]
+    # counts = counts[:, :, :, :, 2:3:]
+    # counts = counts[:, :, :, :, 4:5:]
+    # counts = counts[:, :, :, :, 9:10:]
     # counts = np.array(data["counts"])
     sig_counts = counts[0]
-    ref_counts = counts[1]
+    # ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
@@ -268,19 +278,22 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    img_arrays = np.array(data["mean_img_arrays"])[0]
-    bottom = np.percentile(img_arrays, 30, axis=0)
-    img_arrays -= bottom
+    # img_arrays = np.array(data["mean_img_arrays"])[0]
+    # proc_img_arrays = widefield.downsample_img_arrays(img_arrays, 3)
 
-    norms = norms[:, np.newaxis]
-    widefield.animate(
-        freqs,
-        nv_list,
-        avg_counts / norms,
-        avg_counts_ste / norms,
-        img_arrays,
-        cmin=0.01,
-        cmax=0.06,
-    )
+    # bottom = np.percentile(proc_img_arrays, 30, axis=0)
+    # proc_img_arrays -= bottom
+
+    norms_newaxis = norms[:, np.newaxis]
+    avg_counts = avg_counts - norms_newaxis
+    # widefield.animate(
+    #     freqs,
+    #     nv_list,
+    #     avg_counts,
+    #     avg_counts_ste,
+    #     proc_img_arrays,
+    #     cmin=0.01,
+    #     cmax=0.04,
+    # )
 
     kpl.show(block=True)

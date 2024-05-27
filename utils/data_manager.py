@@ -86,7 +86,7 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
 
 
 def save_figure(fig, file_path):
-    """Save a matplotlib figure as a svg.
+    """Save a matplotlib figure as a png.
 
     Params:
         fig: matplotlib.figure.Figure
@@ -97,10 +97,11 @@ def save_figure(fig, file_path):
     """
 
     # Write to bytes then upload that to the cloud
-    file_path_svg = file_path.with_suffix(".svg")
+    ext = "png"
+    file_path_ext = file_path.with_suffix(f".{ext}")
     content = BytesIO()
-    fig.savefig(content, format="svg")
-    _cloud.upload(file_path_svg, content)
+    fig.savefig(content, format=ext)
+    _cloud.upload(file_path_ext, content)
 
 
 def save_raw_data(raw_data, file_path, keys_to_compress=None):
@@ -147,7 +148,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     config = common.get_config_dict()
     config_copy = copy.deepcopy(config)
     _json_escape(config_copy)
-    # raw_data["config"] = config_copy
+    raw_data["config"] = config_copy
 
     # And the OPX config dict if there is one
     opx_config = common.get_opx_config_dict()
