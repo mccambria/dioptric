@@ -272,7 +272,7 @@ def main(nv_list, num_reps, num_runs):
     dm.save_raw_data(raw_data, file_path)
 
     if figs is not None:
-        for ind in range(len(figs)) in figs:
+        for ind in range(len(figs)):
             fig = figs[ind]
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
             dm.save_figure(fig, file_path)
