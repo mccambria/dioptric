@@ -252,7 +252,6 @@ def main(
 
             while True:
                 try:
-                    start = time.time()
                     print(f"\nRun index: {run_ind}")
 
                     states_list = None
@@ -268,20 +267,17 @@ def main(
                     if run_fn is not None:
                         run_fn(step_ind_list)
 
-                    # Call the step function before the sequence starts
-                    if step_fn is not None:
-                        step_fn(step_ind_list[0])
-
                     camera.arm()
-                    pulse_gen.stream_start()
 
                     # Steps loop
                     for step_ind in step_ind_list:
+                        if step_fn is not None:
+                            step_fn(step_ind)
+
                         if first_step:
+                            pulse_gen.stream_start()
                             first_step = False
                         else:
-                            if step_fn is not None:
-                                step_fn(step_ind)
                             if stream_load_in_run_fn:
                                 pulse_gen.resume()
                             else:
@@ -298,25 +294,23 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
                                 if save_all_images:
                                     img_arrays[
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
                                 if save_mean_images:
-                                    mean_img_arrays[
-                                        exp_ind, step_ind, :, :
-                                    ] += img_array
+                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
+                                        img_array
+                                    )
 
                     ### Move on to the next run
-                    stop = time.time()
-                    print(f"Run time: {round(stop-start, 3)}")
 
                     # Turn stuff off
                     pulse_gen.halt()

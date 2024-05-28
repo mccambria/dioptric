@@ -351,13 +351,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1521998327617, load_npz=True)  # pulsed
-    # data = dm.get_raw_data(file_id=1521930169788, load_npz=True)  # cw
-    # data = dm.get_raw_data(file_id=1522051554985, load_npz=True)  # standard
-    # data = dm.get_raw_data(file_id=1525195012094)  #NV0 last night
-    # data = dm.get_raw_data(file_id=1525182290095)  # NV3
-    # data = dm.get_raw_data(file_id=1525646085036)  # this morning, 15
-    data = dm.get_raw_data(file_id=1525669327192)  # 20
+    data = dm.get_raw_data(file_id=1537195144201)
 
     process_and_plot(data)
 

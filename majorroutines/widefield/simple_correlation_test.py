@@ -23,6 +23,7 @@ from utils.constants import NVSig
 
 def process_and_plot(data):
     nv_list = data["nv_list"]
+    # nv_list = nv_list[::-1]
     # counts = np.array(data["counts"])
     counts = np.array(data["states"])
     states = np.array(data["states"])
@@ -50,6 +51,9 @@ def process_and_plot(data):
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+    # flattened_sig_counts = flattened_sig_counts[::-1]
+    # flattened_ref_counts = flattened_ref_counts[::-1]
 
     ref_states = states[1]
     flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
@@ -87,20 +91,27 @@ def process_and_plot(data):
     # diff_corr_coeffs /= stddev[None, :]
     # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
 
-    # spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
-    spin_flips = np.array(
-        [-1 if ind in [0, 1, 4, 6] else +1 for ind in range(num_nvs)]
-    )  # MCC
+    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    # spin_flips = np.array(
+    #     [-1 if ind in [0, 1, 4, 6] else +1 for ind in range(num_nvs)]
+    # )  # MCC
     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
-    ### Plot
-
-    vals = [sig_corr_coeffs, diff_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
-
     # Replace diagonals (Cii=1) with nan so they don't show
+    vals = [sig_corr_coeffs, diff_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
     for val in vals:
         np.fill_diagonal(val, np.nan)
+
+    fig, ax = plt.subplots()
+    mean_diff_corr_coeffs = [
+        np.nanmean(np.abs(diff_corr_coeffs[ind])) for ind in range(num_nvs)
+    ]
+    kpl.plot_points(ax, range(num_nvs), mean_diff_corr_coeffs)
+    ax.set_xlabel("NV index")
+    ax.set_ylabel("Mean abs val of diff covariances")
+
+    ### Plot
 
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
@@ -211,6 +222,7 @@ def main(nv_list, num_reps, num_runs):
 
     def run_fn(shuffled_step_inds):
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -227,10 +239,9 @@ def main(nv_list, num_reps, num_runs):
 
     # process_and_print(nv_list, counts)
     try:
-        sig_fig, ref_fig = process_and_plot(raw_data)
+        figs = process_and_plot(raw_data)
     except Exception:
-        sig_fig = None
-        ref_fig = None
+        figs = None
 
     ### Clean up and save data
 
@@ -247,12 +258,12 @@ def main(nv_list, num_reps, num_runs):
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
-    if sig_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
-        dm.save_figure(sig_fig, file_path)
-    if ref_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
-        dm.save_figure(ref_fig, file_path)
+
+    if figs is not None:
+        for ind in range(len(figs)) in figs:
+            fig = figs[ind]
+            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
+            dm.save_figure(fig, file_path)
 
 
 if __name__ == "__main__":
@@ -260,8 +271,16 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
     # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    data = dm.get_raw_data(file_id=1540048047866)  # Block
+    # data = dm.get_raw_data(file_id=1540048047866)  # Block
     # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
+    #
+    # data = dm.get_raw_data(file_id=1541938921939)  # Block
+    # data = dm.get_raw_data(file_id=1542229869361)  # Block
+    data = dm.get_raw_data(file_id=1542771522665)  # Block
+
+    # nv_list = data["nv_list"]
+    # nv_inds = [nv.name for nv in nv_list]
+    # spin_flips = [nv.spin_flip for nv in nv_list]
 
     process_and_plot(data)
 
