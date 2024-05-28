@@ -320,8 +320,8 @@ def do_spin_echo_short(nv_list):
     # min_tau = 167.4e3
     max_tau = 2e3 + min_tau
     num_steps = 51
-    num_reps = 10
-    num_runs = 400
+    num_reps = 6
+    num_runs = 200
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -329,8 +329,8 @@ def do_spin_echo_medium(nv_list):
     min_tau = 100
     max_tau = 15e3 + min_tau
     num_steps = 51
-    num_reps = 10
-    num_runs = 400
+    num_reps = 6
+    num_runs = 200
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -338,8 +338,8 @@ def do_spin_echo_long(nv_list):
     min_tau = 100
     max_tau = 200e3 + min_tau
     num_steps = 51
-    num_reps = 10
-    num_runs = 400
+    num_reps = 6
+    num_runs = 200
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -353,7 +353,7 @@ def do_ramsey(nv_list):
     # num_runs = 30
     num_steps = 101
     num_reps = 10
-    num_runs = 400
+    num_runs = 200
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -931,16 +931,16 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+5, +12])  # [131.144, 129.272]
+        # widefield.set_pixel_drift([+8, +18])  # [131.144, 129.272]
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        for z in np.linspace(4.45, 4.75, 11):
-            nv_sig.coords[CoordsKey.GLOBAL][2] = z
-            do_widefield_image_sample(nv_sig, 20)
+        # for z in np.linspace(4.45, 4.75, 11):
+        #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
+        #     do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -957,7 +957,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -980,9 +980,9 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
-        # do_spin_echo_long(nv_list)
-        # do_spin_echo_medium(nv_list)
-        # do_spin_echo_short(nv_list)
+        do_spin_echo_long(nv_list)
+        do_spin_echo_medium(nv_list)
+        do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)

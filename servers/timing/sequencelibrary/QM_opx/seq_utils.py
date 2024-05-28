@@ -340,12 +340,32 @@ def _macro_scc_no_shelving(
 def macro_pi_pulse(uwave_ind_list, duration=None):
     if uwave_ind_list is None:
         return
-    buffer = get_widefield_operation_buffer()
+    uwave_buffer = get_uwave_buffer()
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
         qua.play("pi_pulse", sig_gen_el, duration=duration)
-        qua.wait(buffer, sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
+
+
+def get_macro_pi_pulse_duration(uwave_ind_list):
+    duration = 0
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        duration += get_rabi_period(uwave_ind) // 2
+        duration += uwave_buffer
+    return duration
+
+
+def macro_pi_on_2_pulse(uwave_ind_list):
+    if uwave_ind_list is None:
+        return
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        qua.align()
+        qua.play("pi_on_2_pulse", sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -669,6 +689,11 @@ def get_aod_access_time():
 @cache
 def get_widefield_operation_buffer():
     return get_common_duration_cc("widefield_operation_buffer")
+
+
+@cache
+def get_uwave_buffer():
+    return get_common_duration_cc("uwave_buffer")
 
 
 @cache

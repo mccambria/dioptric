@@ -193,37 +193,24 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     seq_file = "spin_echo.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
+    uwave_ind_list = [0, 1]
+
     ### Collect the data
 
-    # MCC testing
-    # tau = taus[0]
-    # seq_args = widefield.get_base_scc_seq_args(nv_list)
-    # seq_args.append(tau)
-    # print(seq_args)
-    # return
-
-    def step_fn(tau_ind):
-        tau = taus[tau_ind]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.append(tau)
-        # print(seq_args)
+    def run_fn(shuffled_step_inds):
+        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_taus,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, ref_counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn
+    raw_data = base_routine.main(
+        nv_list, num_steps, num_reps, num_runs, run_fn, uwave_ind_list=uwave_ind_list
     )
 
     ### Process and plot
-
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
-
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    try:
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    except Exception as exc:
-        print(exc)
-        fit_fig = None
 
     ### Clean up and return
 
@@ -240,65 +227,18 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
-    dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
+    # dm.save_figure(raw_fig, file_path)
+    # if fit_fig is not None:
+    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
+    #     dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_name = ""
-    # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1396164244162, no_npz=True)
-    # data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
-    # data = dm.get_raw_data(file_id=1397700913905, no_npz=True)
-    data = dm.get_raw_data(file_id=1409676402822, load_npz=True)
-
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    taus = data["taus"]
-    counts = np.array(data["counts"])
-    ref_counts = np.array(data["ref_counts"])
-    # counts = counts[:, : num_runs // 2, :, :]
-
-    # data = dm.get_raw_data(file_id=1398135297223, no_npz=True)
-
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    correlation_fig = create_correlation_figure(nv_list, taus, counts)
-
-    peak_total_evolution_times = [
-        [2, 162, 335.0],
-        [2, 162, 338.12],
-        [2, 170, 335.24],
-        [2, 162, 338.76],
-        [2, 162, 335.8],
-    ]
-    peak_contrasts = [
-        [1.0, 1.01101875, 1.010826],
-        [1.0, 1.03949457, 1.024653],
-        [1.0, 1.03255067, 1.031515],
-        [1.0, 1.00638179, 1.011792],
-        [1.0, 1.01289830, 1.020581],
-    ]
-    peak_contrast_errs = [
-        [0.00606988, 0.006136653, 0.0066262],
-        [0.00701808, 0.007445652, 0.0050701],
-        [0.00695533, 0.007280518, 0.0062269],
-        [0.00636465, 0.006256734, 0.0059204],
-        [0.00516468, 0.005303820, 0.0046309],
-    ]
-    baselines = [1.0594120, 1.0891454, 1.0631568, 1.0335516, 1.0499098]
-    calc_T2_times(
-        peak_total_evolution_times, peak_contrasts, peak_contrast_errs, baselines
-    )
+    data = dm.get_raw_data(file_id=1409676402822)
 
     plt.show(block=True)

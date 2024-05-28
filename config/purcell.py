@@ -57,11 +57,11 @@ config |= {
     ###
     # Common durations are in ns
     "CommonDurations": {
-        "uwave_buffer": 1000,
         "default_pulse_duration": 1000,
         "aod_access_time": 20e3,
         # "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
+        "uwave_buffer": 20,
     },
     ###
     "DeviceIDs": {
