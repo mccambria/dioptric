@@ -32,7 +32,7 @@ def process_and_plot(data):
     # states = states[:, :, :]
 
     # start = 400
-    # window = 40
+    # window = 100
     # counts = counts[:, :, start : start + window, :, :]
     # states = states[:, :, start : start + window, :, :]
     # counts = counts[:, :, ::10, :, :]
@@ -69,29 +69,33 @@ def process_and_plot(data):
     ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
 
     # MCC
-    # flattened_ref_counts = np.where(
-    #     np.logical_not(flattened_ref_states), flattened_ref_counts, np.nan
-    # )
-    # # fmt: off
-    # coords = [(5.464, 5.386),(6.728, 4.389),(5.631, 4.334),(4.584, 3.664),(6.007, 6.824),(7.247, 3.271),(7.128, 2.078),(7.104, 5.525),(5.709, 3.111),(2.443, 5.817)]
-    # # fmt: on
-    # coords = [np.array(el) for el in coords]
-    # fig, ax = plt.subplots()
-    # for ind in range(num_nvs):
-    #     for jnd in range(num_nvs):
-    #         if jnd <= ind:
-    #             continue
-    #         dist = np.sqrt(np.sum((coords[ind] - coords[jnd]) ** 2))
-    #         i_counts = flattened_ref_counts[ind]
-    #         j_counts = flattened_ref_counts[jnd]
-    #         i_counts_m = ma.masked_invalid(i_counts)
-    #         j_counts_m = ma.masked_invalid(j_counts)
-    #         mask = ~i_counts_m.mask & ~j_counts_m.mask
-    #         corr = np.corrcoef(i_counts[mask], j_counts[mask])[0, 1]
-    #         kpl.plot_points(ax, dist, corr, color=kpl.KplColors.BLUE)
-    # ax.set_xlabel("Distance between NVs (μm)")
-    # ax.set_ylabel("Count correlation | both NVs in NV$^{0}$")
-    # return
+    flattened_ref_counts = np.where(flattened_ref_states, flattened_ref_counts, np.nan)
+    # fmt: off
+    coords = [(5.464, 5.386),(6.728, 4.389),(5.631, 4.334),(4.584, 3.664),(6.007, 6.824),(7.247, 3.271),(7.128, 2.078),(7.104, 5.525),(5.709, 3.111),(2.443, 5.817)]
+    # fmt: on
+    coords = [np.array(el) for el in coords]
+    fig, ax = plt.subplots()
+    max_corr = 0
+    max_corr_inds = None
+    for ind in range(num_nvs):
+        for jnd in range(num_nvs):
+            if jnd <= ind:
+                continue
+            dist = np.sqrt(np.sum((coords[ind] - coords[jnd]) ** 2))
+            i_counts = flattened_ref_counts[ind]
+            j_counts = flattened_ref_counts[jnd]
+            i_counts_m = ma.masked_invalid(i_counts)
+            j_counts_m = ma.masked_invalid(j_counts)
+            mask = ~i_counts_m.mask & ~j_counts_m.mask
+            corr = np.corrcoef(i_counts[mask], j_counts[mask])[0, 1]
+            if corr > max_corr:
+                max_corr = corr
+                max_corr_inds = [ind, jnd]
+            kpl.plot_points(ax, dist, corr, color=kpl.KplColors.BLUE)
+    ax.set_xlabel("Distance between NVs (μm)")
+    ax.set_ylabel("Count correlation | both NVs in NV$^{0}$")
+    print(max_corr_inds)
+    return
 
     diff_corr_coeffs = np.cov(flattened_sig_counts) - np.cov(flattened_ref_counts)
     # stddev = np.sqrt(np.diag(sig_corr_coeffs).real + np.diag(ref_corr_coeffs).real)
