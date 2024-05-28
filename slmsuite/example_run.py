@@ -61,6 +61,37 @@ def plot_phase(phase, title="", zoom=True):
     plt.suptitle(title)
     plt.show()
 
+def update_plot(phase, angle):
+    # Initialize the figure and axes outside the loop
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+    blaze_vector = (np.cos(np.radians(angle)), np.sin(np.radians(angle)))
+    
+    # Update phase with live rotation
+    delta_phase = toolbox.phase.blaze(grid=slm, vector=blaze_vector, offset=0)
+    phase = None
+    
+    # Display the phase pattern on the SLM
+    slm.write(phase, settle=True)
+    
+    # Capture image from the camera
+    cam.set_exposure(0.0001)
+    im = cam.get_image()
+    
+    # Clear the axes and plot the phase, delta phase, and camera image
+    ax[0].clear()
+    ax[0].imshow(phase, cmap='gray')
+    ax[0].set_title('Total Phase')
+
+    ax[1].clear()
+    ax[1].imshow(delta_phase, cmap='gray')
+    ax[1].set_title('Delta Phase')
+
+    ax[2].clear()
+    ax[2].imshow(im, cmap='gray')
+    ax[2].set_title('Camera Image')
+
+    plt.pause(0.01)
+
 # region "blaze" function
 def blaze():
     # Get .2 degrees in normalized units.
@@ -634,11 +665,11 @@ def real_time_dynamical_tweezers():
 
 def selected_dynamical_tweezers():
     # Define parameters for the circle
-    center = (550, 840)  # Center of the circle
-    radius = 200  # Radius of the bigger circle
+    center = (550, 740)  # Center of the circle
+    radius = 100  # Radius of the bigger circle
 
     # Generate points within the circle using polar coordinates
-    num_points = 60  # Number of points to generate
+    num_points = 12  # Number of points to generate
     theta = np.linspace(0, 2 * np.pi, num_points)  # Angle values
     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
@@ -656,18 +687,92 @@ def selected_dynamical_tweezers():
     )
 
     initial_phase = hologram.extract_phase()
-      
-    # Assuming `slm` is a valid instance and `toolbox` is properly defined with the phase method
-    laguerre_gaussian_phase =  toolbox.phase.laguerre_gaussian(grid=slm, l=0, p=0)  # Example values for l and p
-    plot_phase(laguerre_gaussian_phase)
-    phase = initial_phase + laguerre_gaussian_phase
+
+    # Initialize the figure and axes outside the loop
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+    frames = []
 
     try:
-        while True:  # Loop indefinitely until interrupted
-            slm.write(phase, settle=False)
-    except KeyboardInterrupt:
-        print("Real-time dynamical tweezers operation interrupted and stopped.")
+        while True:
+            for angle in range(0, 360, 30):  # Rotate in steps of 30 degrees
+                blaze_vector = (np.cos(np.radians(angle)), np.sin(np.radians(angle)))
+                
+                # Update phase with live rotation
+                delta_phase = toolbox.phase.blaze(grid=slm, vector=blaze_vector, offset=0)
+                phase = initial_phase + delta_phase
+                
+                # Display the phase pattern on the SLM
+                slm.write(phase, settle=True)
+                
+                # Capture image from the camera
+                cam.set_exposure(0.0001)
+                im = cam.get_image()
+                
+                # Clear the axes and plot the phase, delta phase, and camera image
+                ax[0].clear()
+                ax[0].imshow(phase, cmap='gray')
+                ax[0].set_title('Total Phase')
 
+                ax[1].clear()
+                ax[1].imshow(delta_phase, cmap='gray')
+                ax[1].set_title('Delta Phase')
+
+                ax[2].clear()
+                ax[2].imshow(im, cmap='gray')
+                ax[2].set_title('Camera Image')
+                plt.pause(0.01)
+       
+                plt.show()
+    finally:
+            print("Real-time dynamical tweezers operation stopped.")
+
+def camp2phase_calibration():
+    # Define parameters for the circle
+    center = (550, 740)  # Center of the circle
+    radius = 30  # Radius of the bigger circle
+
+    # Generate points within the circle using polar coordinates
+    num_points = 3  # Number of points to generate
+    theta = np.linspace(0, 2 * np.pi, num_points)  # Angle values
+    x_circle = center[0] + radius * np.cos(theta)  # X coordinates
+    y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
+
+    # Combine x and y coordinates into an array of spot indices
+    spot_indices = np.vstack((y_circle, x_circle)).astype(int)
+
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=spot_indices, basis='ij', cameraslm=fs)
+   # Precondition computationally
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+
+    initial_phase = hologram.extract_phase()
+
+    nuvu_pixel_coords = [
+      [131.144, 129.272], 
+       [261.477, 205.335], 
+       [435.139, 304.013], 
+       [310.023, 187.942], 
+       [444.169, 463.787], 
+    ]
+    # Convert the list to a numpy array
+    nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
+    # calibration Path
+    # path = example_library.triangular(0.6,0.6)
+    # Calibrate the coordinates from Nuvu to Thorlabs system
+    thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
+    print(thorcam_coords)
+    # calculate the phase shifts based on camera pixels cange
+    phase_shifts = example_library.calculate_phaseshifts(thorcam_coords)
+    for shift_x, shift_y in phase_shifts:
+        shifted_phase = example_library.shift_phase(np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y)
+        print(shift_x)
+        print(shift_y)
+        slm.write(shifted_phase, settle=True)
+        cam_plot()
 
 def nvs_demo():
     # Example usage with a list of Nuvu pixel coordinates
@@ -709,6 +814,7 @@ def plot_laguerre_gaussian_phase():
     # Assuming `slm` is a valid instance and `toolbox` is properly defined with the phase method
     laguerre_gaussian_phase =  toolbox.phase.laguerre_gaussian(grid=slm, l=12, p=0)  # Example values for l and p
     plot_phase(laguerre_gaussian_phase)
+
 # region run funtions
 try:
     slm = ThorSLM(serialNumber='00429430')
@@ -726,8 +832,9 @@ try:
     # animate_wavefront_shifts()
     # real_time_dynamical_tweezers()
     # selected_dynamical_tweezers()
+    camp2phase_calibration()
     # plot_laguerre_gaussian_phase()
-    nvs_demo()
+    # nvs_demo()
     # circles()
     # circle_pattern()
     # smiley()pip i

@@ -63,17 +63,14 @@ def shift_phase(phase, shift_x, shift_y):
     return shifted_phase
 
 def selcted_shift_phase(phase, spot_indices, shift_x, shift_y):
-    # Create a meshgrid of indices
-    y_indices, x_indices = np.indices(phase.shape)
     # Initialize phase shift array with zeros
-    phase_shift = np.zeros_like(phase)
+    phase_shift = np.indices(phase.shape)
     # Apply shifts only to the specified spots
     for (y_idx, x_idx) in spot_indices:
         phase_shift[y_idx, x_idx] = shift_x * x_idx + shift_y * y_idx
     # Apply the phase shift
     shifted_phase = phase + phase_shift
     return shifted_phase
-
 
 def square_tweezer_path(x1, x2, num_points=31):
     shifts = np.linspace(x1, x2, num=num_points)
@@ -86,6 +83,18 @@ def square_tweezer_path(x1, x2, num_points=31):
         path.append((shift, x2))  # Left
     for shift in shifts[::-1]:
         path.append((-x2, shift))  # Down
+    return path
+
+def triangular(x1, x2):
+    # Define the three vertices of the triangle
+    centeroid = (0,0)
+    top_vertex = (x1, x1)
+    right_vertex = (x2, -x2)
+    left_vertex = (-x2, -x2)
+    
+    # Create the path by appending the vertices
+    path = [centeroid, top_vertex, right_vertex, left_vertex, centeroid]
+    
     return path
 
 def circular_tweezer_path(num_points=100, radius=0.5):
@@ -102,6 +111,31 @@ def spiral_tweezer_path(num_points=100, max_radius=0.5, num_turns=2):
     y = radius * np.sin(theta)
     path = [(x[i], y[i]) for i in range(num_points)]
     return path
+
+def calculate_phaseshifts(cam_coords):
+    """
+    Calibrates and transforms coordinates from the Nuvu camera's coordinate system
+    to the Thorlabs camera's coordinate system using an affine transformation.
+
+    Parameters:
+    cam_coords (np.ndarray): Coordinates in the Nuvu camera's coordinate system.
+
+    Returns:
+    np.ndarray: Transformed coordinates in the Thorlabs camera's coordinate system.
+    """
+    # Define the corresponding points in both coordinate systems
+    cam_pixel_coords = np.array([[1020, 862], [1019, 310], [460, 310]], dtype='float32')  # Points in Nuvu camera's coordinate system
+    phaseshift_coords = np.array([[0.6, 0.6], [0.6, -0.6],  [-0.6, -0.6]], dtype='float32')  # Corresponding points in Thorlabs camera's coordinate system
+
+    # Compute the affine transformation matrix
+    M = cv2.getAffineTransform(cam_pixel_coords, phaseshift_coords)
+
+    # Perform the affine transformation
+    # Add a column of ones to cam_coords to make it compatible for affine transformation
+    cam_coords_augmented = np.hstack([cam_coords, np.ones((cam_coords.shape[0], 1))])
+    phase_shift_coords = np.dot(cam_coords_augmented, M.T)
+
+    return phase_shift_coords[:, :2]
 
 def plot_intensity():
     # Data from the image
