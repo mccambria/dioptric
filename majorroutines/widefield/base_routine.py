@@ -234,11 +234,16 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    if save_all_images:
+    if save_all_images or save_mean_images:
         shape = widefield.get_img_array_shape()
+        if save_images_downsample_factor is not None:
+            shape = [
+                int(np.floor(shape[ind] / save_images_downsample_factor))
+                for ind in range(2)
+            ]
+    if save_all_images:
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
     if save_mean_images:
-        shape = widefield.get_img_array_shape()
         mean_img_arrays = np.zeros((num_exps_per_rep, num_steps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))

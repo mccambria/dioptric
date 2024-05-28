@@ -236,9 +236,9 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 10
-    num_runs = 100
-    num_runs = 50
+    num_reps = 8
+    num_runs = 120
+    # num_runs = 50
 
     # num_reps = 3
     # num_runs = 150
@@ -265,7 +265,7 @@ def do_rabi(nv_list):
     # num_steps = 40
     num_reps = 10
     num_runs = 100
-    num_runs = 50
+    # num_runs = 50
     # num_runs = 2
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
@@ -938,9 +938,9 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.5, 4.0, 11):
-        #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     do_widefield_image_sample(nv_sig, 20)
+        for z in np.linspace(4.45, 4.75, 11):
+            nv_sig.coords[CoordsKey.GLOBAL][2] = z
+            do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -1002,7 +1002,7 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
 
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False
