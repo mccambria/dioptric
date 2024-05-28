@@ -284,11 +284,13 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     data = dm.get_raw_data(file_id=1537195144201, load_npz=True)
-    img_array = np.array(data["ref_img_array"])
+    img_array = np.array(data["sig_img_array"])
     nv_list = data["nv_list"]
     coords_list = [
-        widefield.get_nv_pixel_coords(nv, drift_adjust=False) for nv in nv_list
+        widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
+        for nv in nv_list
     ]
+    widefield.integrate_counts(img_array, coords_list[1])
     print(coords_list)
     scale = widefield.get_camera_scale()
     um_coords_list = [
