@@ -206,6 +206,7 @@ def do_scc_snr_check(nv_list):
 def do_simple_correlation_test(nv_list):
     num_reps = 100
     num_runs = 2000
+    num_runs = 1000
     # num_runs = 2
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
@@ -235,12 +236,12 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 10
-    num_runs = 100
-    num_runs = 50
+    num_reps = 8
+    num_runs = 120
+    # num_runs = 50
 
-    num_reps = 3
-    num_runs = 150
+    # num_reps = 3
+    # num_runs = 150
     # num_runs = 2
 
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
@@ -264,7 +265,7 @@ def do_rabi(nv_list):
     # num_steps = 40
     num_reps = 10
     num_runs = 100
-    num_runs = 50
+    # num_runs = 50
     # num_runs = 2
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
@@ -273,8 +274,8 @@ def do_rabi(nv_list):
     # num_steps = 1
     # num_reps = 50
 
-    num_reps = 3
-    num_runs = 150
+    # num_reps = 3
+    # num_runs = 150
 
     # nv_list[1].spin_flip = True
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
@@ -930,16 +931,16 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+14, +15])  # [131.144, 129.272]
+        # widefield.set_pixel_drift([+5, +12])  # [131.144, 129.272]
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.5, 4.0, 11):
-        #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     do_widefield_image_sample(nv_sig, 20)
+        for z in np.linspace(4.45, 4.75, 11):
+            nv_sig.coords[CoordsKey.GLOBAL][2] = z
+            do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -956,7 +957,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -974,7 +975,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1011,8 +1012,17 @@ if __name__ == "__main__":
 
         # for nv in nv_list:
         #     nv.spin_flip = False
+        # for nv in nv_list[: num_nvs // 2]:
+        #     nv.spin_flip = True
+        # do_simple_correlation_test(nv_list)
+        # for nv in nv_list:
+        #     nv.spin_flip = False
         # for nv in nv_list[num_nvs // 2 :]:
         #     nv.spin_flip = True
+        # # do_simple_correlation_test(nv_list)
+        # nv_list = nv_list[::-1]
+        # spin_flips = [nv.spin_flip for nv in nv_list]
+        # print(spin_flips)
         # do_simple_correlation_test(nv_list)
 
         # Performance testing

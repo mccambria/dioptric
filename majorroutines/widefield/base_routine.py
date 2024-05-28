@@ -149,8 +149,9 @@ def main(
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=False,
+    save_all_images=True,
     save_mean_images=False,
+    save_images_downsample_factor=3,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
 ) -> dict:
@@ -233,11 +234,16 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    if save_all_images:
+    if save_all_images or save_mean_images:
         shape = widefield.get_img_array_shape()
+        if save_images_downsample_factor is not None:
+            shape = [
+                int(np.floor(shape[ind] / save_images_downsample_factor))
+                for ind in range(2)
+            ]
+    if save_all_images:
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
     if save_mean_images:
-        shape = widefield.get_img_array_shape()
         mean_img_arrays = np.zeros((num_exps_per_rep, num_steps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
@@ -252,7 +258,6 @@ def main(
 
             while True:
                 try:
-                    start = time.time()
                     print(f"\nRun index: {run_ind}")
 
                     states_list = None
@@ -268,20 +273,17 @@ def main(
                     if run_fn is not None:
                         run_fn(step_ind_list)
 
-                    # Call the step function before the sequence starts
-                    if step_fn is not None:
-                        step_fn(step_ind_list[0])
-
                     camera.arm()
-                    pulse_gen.stream_start()
 
                     # Steps loop
                     for step_ind in step_ind_list:
+                        if step_fn is not None:
+                            step_fn(step_ind)
+
                         if first_step:
+                            pulse_gen.stream_start()
                             first_step = False
                         else:
-                            if step_fn is not None:
-                                step_fn(step_ind)
                             if stream_load_in_run_fn:
                                 pulse_gen.resume()
                             else:
@@ -298,25 +300,27 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
+                                if save_images_downsample_factor is not None:
+                                    img_array = widefield.downsample_img_array(
+                                        img_array, save_images_downsample_factor
+                                    )
                                 if save_all_images:
                                     img_arrays[
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
                                 if save_mean_images:
-                                    mean_img_arrays[
-                                        exp_ind, step_ind, :, :
-                                    ] += img_array
+                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
+                                        img_array
+                                    )
 
                     ### Move on to the next run
-                    stop = time.time()
-                    print(f"Run time: {round(stop-start, 3)}")
 
                     # Turn stuff off
                     pulse_gen.halt()
