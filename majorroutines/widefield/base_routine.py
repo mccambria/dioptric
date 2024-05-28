@@ -149,8 +149,9 @@ def main(
     uwave_freq=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=False,
+    save_all_images=True,
     save_mean_images=False,
+    save_images_downsample_factor=3,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
 ) -> dict:
@@ -301,6 +302,10 @@ def main(
                                     states_list
                                 )
 
+                                if save_images_downsample_factor is not None:
+                                    img_array = widefield.downsample_img_array(
+                                        img_array, save_images_downsample_factor
+                                    )
                                 if save_all_images:
                                     img_arrays[
                                         exp_ind, run_ind, step_ind, rep_ind, :, :

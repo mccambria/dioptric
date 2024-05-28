@@ -6,19 +6,17 @@ Outlines which SLM superclass functions must be implemented.
 
 """
 import os
+import sys
 import ctypes
 import warnings
-import sys
 import time
 import numpy as np
-import select
 sys.path.append('c:/Users/Saroj Chand/Documents/dioptric')
 from slmsuite.hardware.slms.slm import SLM
-from Thorlabs_EXULUS_PythonSDK.Thorlabs_EXULUS_Python_SDK.EXULUS_COMMAND_LIB import*
-from Thorlabs_EXULUS_PythonSDK.Thorlabs_EXULUS_CGHDisplay.Thorlabs_EXULUS_CGHDisplay import*
+from slmsuite.hardware.Thorlabs_EXULUS_PythonSDK.Thorlabs_EXULUS_Python_SDK.EXULUS_COMMAND_LIB import*
+from slmsuite.hardware.Thorlabs_EXULUS_PythonSDK.Thorlabs_EXULUS_CGHDisplay.Thorlabs_EXULUS_CGHDisplay import*
 
 DEFAULT_SDK_PATH = "C:/Users/Saroj Chand/Documents/dioptric/Thorlabs_EXULUS_PythonSDK"
-
 
 class ThorSLM(SLM):
     """
@@ -29,13 +27,7 @@ class ThorSLM(SLM):
 
     def __init__(self, serialNumber):
         """
-        Initializes an instance of a Meadowlark SLM.
-
-        Caution
-        ~~~~~~~
-        :class:`.Meadowlark` defaults to 8 micron SLM pixel size
-        (:attr:`.SLM.dx_um` = :attr:`.SLM.dy_um` = 8).
-        This is valid for most Meadowlark models, but not true for all!
+        Initializes an instance of a Thorabs SLM.
 
         Arguments
         ---------
@@ -49,6 +41,7 @@ class ThorSLM(SLM):
             See :meth:`.SLM.__init__` for permissible options.
         """
         self.device_hdl = EXULUSOpen(serialNumber,38400,3)
+        
         if(self.device_hdl < 0):
             print("Connect ",serialNumber, "fail")
             return -1
@@ -122,7 +115,7 @@ class ThorSLM(SLM):
         #     print("Show failed")
         # else:
         #     print("Show successfully")
-        # time.sleep(1)
+        # time.sleep(0.1)
 
         # Ask before closing the SLM display
         # user_input = input("Press Enter to close SLM display... ")
@@ -141,6 +134,7 @@ class ThorSLM(SLM):
         """Close SLM connection."""
         if self.device_hdl:
             EXULUSClose(self.device_hdl)
+
     def close_window(self):
         """Close SLM connection."""
         if self.window_hdl:
