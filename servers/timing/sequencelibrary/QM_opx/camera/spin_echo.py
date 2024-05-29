@@ -8,6 +8,7 @@ Created on October 13th, 2023
 """
 
 import matplotlib.pyplot as plt
+import numpy as np
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
@@ -23,6 +24,8 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     step_vals = [
         seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
     ]
+    if np.any(np.less(step_vals, 4)):
+        raise RuntimeError("Negative wait duration")
 
     with qua.program() as seq:
 

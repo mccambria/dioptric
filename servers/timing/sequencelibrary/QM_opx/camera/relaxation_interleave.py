@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
@@ -19,56 +18,54 @@ from utils import tool_belt as tb
 from utils.constants import NVSpinState
 
 
-def get_seq(args, num_reps):
-    pol_coords_list, ion_coords_list, tau_ns = args[:3]
-    states = args[3:]
-
-    states = [eval(el) for el in states]
-    init_state_0, readout_state_0, init_state_1, readout_state_1 = states
-
+def get_seq(
+    base_scc_seq_args,
+    init_state_0,
+    readout_state_0,
+    init_state_1,
+    readout_state_1,
+    step_vals,
+    num_reps=1,
+):
     buffer = seq_utils.get_widefield_operation_buffer()
-    tau = seq_utils.convert_ns_to_cc(tau_ns)
+    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
 
-    sig_gen_el_dict = {
-        NVSpinState.ZERO: None,
-        NVSpinState.LOW: seq_utils.get_sig_gen_element(0),
-        NVSpinState.HIGH: seq_utils.get_sig_gen_element(1),
+    init_state_0 = eval(init_state_0)
+    readout_state_0 = eval(readout_state_0)
+    init_state_1 = eval(init_state_1)
+    readout_state_1 = eval(readout_state_1)
+
+    uwave_ind_list_dict = {
+        NVSpinState.ZERO: [],
+        NVSpinState.LOW: [0],
+        NVSpinState.HIGH: [1],
     }
 
-    # Set up microwave sequence for experiment 0
+    with qua.program() as seq:
 
-    init_sig_gen_el_0 = sig_gen_el_dict[init_state_0]
-    readout_sig_gen_el_0 = sig_gen_el_dict[readout_state_0]
+        def uwave_macro_0(uwave_ind_list, step_val):
+            qua.align()
+            seq_utils.macro_pi_pulse(uwave_ind_list_dict[init_state_0])
+            qua.wait(step_val)
+            seq_utils.macro_pi_pulse(uwave_ind_list_dict[readout_state_0])
+            qua.wait(buffer)
 
-    def uwave_macro_0():
-        if init_sig_gen_el_0 is not None:
-            qua.play("pi_pulse", init_sig_gen_el_0)
-        qua.wait(tau)
-        if readout_sig_gen_el_0 is not None:
-            qua.play("pi_pulse", readout_sig_gen_el_0)
-        qua.wait(buffer)
-        qua.align()
+        def uwave_macro_1(uwave_ind_list, step_val):
+            qua.align()
+            seq_utils.macro_pi_pulse(uwave_ind_list_dict[init_state_1])
+            qua.wait(step_val)
+            seq_utils.macro_pi_pulse(uwave_ind_list_dict[readout_state_1])
+            qua.wait(buffer)
 
-    # Set up microwave sequence for experiment 1
-
-    init_sig_gen_el_1 = sig_gen_el_dict[init_state_1]
-    readout_sig_gen_el_1 = sig_gen_el_dict[readout_state_1]
-
-    def uwave_macro_1():
-        if init_sig_gen_el_1 is not None:
-            qua.play("pi_pulse", init_sig_gen_el_1)
-        qua.wait(tau)
-        if readout_sig_gen_el_1 is not None:
-            qua.play("pi_pulse", readout_sig_gen_el_1)
-        qua.wait(buffer)
-        qua.align()
-
-    # Call the base sequence
-
-    uwave_macro = (uwave_macro_0, uwave_macro_1)
-    seq = base_scc_sequence.get_seq(
-        pol_coords_list, ion_coords_list, num_reps, uwave_macro
-    )
+        # Call the base sequence
+        num_reps_ind = qua.declare(int)
+        with qua.for_(num_reps_ind, 0, num_reps_ind < num_reps, num_reps_ind + 1):
+            base_scc_sequence.macro(
+                base_scc_seq_args, uwave_macro_0, step_vals, 1, reference=False
+            )
+            base_scc_sequence.macro(
+                base_scc_seq_args, uwave_macro_1, step_vals, 1, reference=False
+            )
 
     seq_ret_vals = []
     return seq, seq_ret_vals

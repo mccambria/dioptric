@@ -315,7 +315,7 @@ def do_spin_echo(nv_list):
 
 
 def do_spin_echo_short(nv_list):
-    min_tau = 100
+    min_tau = 200
     # min_tau = 83.7e3
     # min_tau = 167.4e3
     max_tau = 2e3 + min_tau
@@ -326,7 +326,7 @@ def do_spin_echo_short(nv_list):
 
 
 def do_spin_echo_medium(nv_list):
-    min_tau = 100
+    min_tau = 200
     max_tau = 15e3 + min_tau
     num_steps = 51
     num_reps = 6
@@ -335,7 +335,7 @@ def do_spin_echo_medium(nv_list):
 
 
 def do_spin_echo_long(nv_list):
-    min_tau = 100
+    min_tau = 200
     max_tau = 200e3 + min_tau
     num_steps = 51
     num_reps = 6
@@ -352,8 +352,8 @@ def do_ramsey(nv_list):
     # num_reps = 15
     # num_runs = 30
     num_steps = 101
-    num_reps = 10
-    num_runs = 200
+    num_reps = 4
+    num_runs = 250
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -957,7 +957,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
