@@ -258,17 +258,9 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
-    ref_counts = counts[1]
-    counts = counts[:, :, :, :, 0:1:]
-    # counts = counts[:, :, :, :, 1:2:]
-    # counts = counts[:, :, :, :, 2:3:]
-    # counts = counts[:, :, :, :, 4:5:]
-    # counts = counts[:, :, :, :, 9:10:]
-    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
     sig_counts = counts[0]
-    # ref_counts = counts[1]
+    ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
@@ -283,8 +275,8 @@ if __name__ == "__main__":
     # bottom = np.percentile(proc_img_arrays, 30, axis=0)
     # proc_img_arrays -= bottom
 
-    norms_newaxis = norms[:, np.newaxis]
-    avg_counts = avg_counts - norms_newaxis
+    # norms_newaxis = norms[:, np.newaxis]
+    # avg_counts = avg_counts - norms_newaxis
     # widefield.animate(
     #     freqs,
     #     nv_list,

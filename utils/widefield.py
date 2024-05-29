@@ -837,8 +837,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
-        if nv_ind not in [3]:
-            continue
+        # if nv_ind not in [3]:
+        #     continue
         # if nv_ind not in [0, 1, 2, 4, 6, 11, 14]:
         #     continue
         yerr = None if yerrs is None else yerrs[nv_ind]
@@ -903,6 +903,8 @@ def plot_fit(
     popts : list(list(numeric))
         The ith popt is the curve fit results for the ith NV
     """
+    if isinstance(axes_pack, dict):
+        axes_pack = list(axes_pack.values())
     if xlim[0] is None:
         xlim[0] = min(x)
     if xlim[1] is None:

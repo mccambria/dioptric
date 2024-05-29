@@ -81,78 +81,76 @@ def create_raw_data_figure(data):
     return fig
 
 
-def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
+def create_fit_figure(data):
+    nv_list = data["nv_list"]
+    taus = data["taus"]
+    counts = np.array(data["states"])
+
+    num_nvs = len(nv_list)
     total_evolution_times = 2 * np.array(taus) / 1e3
+
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=False
+    )
 
     fit_fns = []
     popts = []
 
-    num_nvs = len(nv_list)
+    # for nv_ind in range(num_nvs):
+    #     nv_counts = counts[nv_ind] / norms[nv_ind]
+    #     nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
 
-    for nv_ind in range(num_nvs):
-        nv_counts = counts[nv_ind] / norms[nv_ind]
-        nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
+    #     try:
+    #         if nv_ind != 1:
+    #             fit_fn = quartic_decay
+    #             amplitude_guess = np.quantile(nv_counts, 0.7)
+    #             guess_params = [amplitude_guess, 175, 15, 500]
+    #             popt, pcov = curve_fit(
+    #                 fit_fn,
+    #                 total_evolution_times,
+    #                 nv_counts,
+    #                 p0=guess_params,
+    #                 sigma=nv_counts_ste,
+    #                 absolute_sigma=True,
+    #                 maxfev=10000,
+    #                 bounds=(
+    #                     (0, 100, 5, 100),
+    #                     (100, 500, 30, 1000),
+    #                 ),
+    #             )
+    #         else:
+    #             fit_fn = constant
+    #             popt = []
+    #         fit_fns.append(fit_fn)
+    #         popts.append(popt)
+    #     except Exception as exc:
+    #         print(exc)
+    #         fit_fns.append(None)
+    #         popts.append(None)
 
-        try:
-            if nv_ind != 1:
-                fit_fn = quartic_decay
-                amplitude_guess = np.quantile(nv_counts, 0.7)
-                guess_params = [amplitude_guess, 175, 15, 500]
-                popt, pcov = curve_fit(
-                    fit_fn,
-                    total_evolution_times,
-                    nv_counts,
-                    p0=guess_params,
-                    sigma=nv_counts_ste,
-                    absolute_sigma=True,
-                    maxfev=10000,
-                    bounds=(
-                        (0, 100, 5, 100),
-                        (100, 500, 30, 1000),
-                    ),
-                )
-            else:
-                fit_fn = constant
-                popt = []
-            fit_fns.append(fit_fn)
-            popts.append(popt)
-        except Exception as exc:
-            print(exc)
-            fit_fns.append(None)
-            popts.append(None)
-
-        residuals = fit_fn(total_evolution_times, *popt) - nv_counts
-        chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
-        red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-        print(f"Red chi sq: {round(red_chi_sq, 3)}")
+    #     residuals = fit_fn(total_evolution_times, *popt) - nv_counts
+    #     chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+    #     red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+    #     print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     ### Make the figure
 
-    # fig, ax = plt.subplots()
-    fig, axes_pack = plt.subplots(
-        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
-    )
-    axes_pack = axes_pack.flatten()
-    norm_counts = counts / norms[:, np.newaxis]
-    norm_counts_ste = counts_ste / norms[:, np.newaxis]
+    fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+    norm_counts = avg_counts - norms[:, np.newaxis]
+    norm_counts_ste = avg_counts_ste
     widefield.plot_fit(
         axes_pack,
         nv_list,
         total_evolution_times,
         norm_counts,
         norm_counts_ste,
-        fit_fns,
-        popts,
+        # fit_fns,
+        # popts,
     )
-    ax = axes_pack[-2]
-    # ax.set_xlabel("Total evolution time (µs)")
-    # ax.set_ylabel("Normalized fluorescence")
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Total evolution time (µs)", ha="center")
-    ax.set_ylabel(" ")
-    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
-    # ax.set_ylim([0.9705, 1.1])
-    # ax.set_yticks([1.0, 1.1])
+    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Total evolution time (µs)")
+    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Normalized fluorescence")
     return fig
 
 
@@ -253,8 +251,13 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1544212555074)
     # data = dm.get_raw_data(file_id=1544356290934)
-    data = dm.get_raw_data(file_id=1544510655664)
+    # data = dm.get_raw_data(file_id=1544510655664)
+
+    # data = dm.get_raw_data(file_id=1544680353432)
+    # data = dm.get_raw_data(file_id=1544821259934)
+    data = dm.get_raw_data(file_id=1544947399019)
 
     create_raw_data_figure(data)
+    create_fit_figure(data)
 
     plt.show(block=True)
