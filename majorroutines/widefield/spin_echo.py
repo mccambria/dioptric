@@ -60,10 +60,22 @@ def constant(tau):
 #     return fig
 
 
-def create_raw_data_figure(nv_list, taus, counts, counts_ste):
+def create_raw_data_figure(data):
+    nv_list = data["nv_list"]
+    taus = data["taus"]
+    counts = np.array(data["states"])
+    sig_counts, ref_counts = counts[0], counts[1]
+
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=False
+    )
+    # avg_counts -= norms[:, np.newaxis]
+
     fig, ax = plt.subplots()
     total_evolution_times = 2 * np.array(taus) / 1e3
-    widefield.plot_raw_data(ax, nv_list, total_evolution_times, counts, counts_ste)
+    widefield.plot_raw_data(
+        ax, nv_list, total_evolution_times, avg_counts, avg_counts_ste
+    )
     ax.set_xlabel("Total evolution time (µs)")
     ax.set_ylabel("Counts")
     return fig
@@ -239,6 +251,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1409676402822)
+    # data = dm.get_raw_data(file_id=1544212555074)
+    # data = dm.get_raw_data(file_id=1544356290934)
+    data = dm.get_raw_data(file_id=1544510655664)
+
+    create_raw_data_figure(data)
 
     plt.show(block=True)
