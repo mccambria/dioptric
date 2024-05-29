@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
@@ -17,26 +16,23 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list, tau_ns) = args
-
-    tau = seq_utils.convert_ns_to_cc(tau_ns, allow_zero=True)
-
+def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
-    sig_gen_el = seq_utils.get_sig_gen_element()
+    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
 
-    def uwave_macro():
-        if tau == 0:
-            qua.play("pi_pulse", sig_gen_el)
-        else:
-            qua.play("pi_on_2_pulse", sig_gen_el)
-            qua.wait(tau, sig_gen_el)
-            qua.play("pi_on_2_pulse", sig_gen_el)
-        qua.wait(buffer, sig_gen_el)
+    with qua.program() as seq:
 
-    seq = base_scc_sequence.get_seq(
-        pol_coords_list, ion_coords_list, num_reps, uwave_macro
-    )
+        def uwave_macro_sig(uwave_ind_list, step_val):
+            qua.align()
+            with qua.if_(step_val == 0):
+                seq_utils.macro_pi__pulse(uwave_ind_list)
+            with qua.else_():
+                seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+                qua.wait(step_val)
+                seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            qua.wait(buffer)
+
+        base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, step_vals, num_reps)
 
     seq_ret_vals = []
     return seq, seq_ret_vals

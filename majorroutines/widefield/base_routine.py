@@ -146,7 +146,7 @@ def main(
     run_fn=None,
     step_fn=None,
     uwave_ind_list=[0, 1],
-    uwave_freq=None,
+    uwave_freq_list=None,
     num_exps_per_rep=2,
     load_iq=False,
     save_all_images=True,
@@ -218,12 +218,10 @@ def main(
     for ind in uwave_ind_list:
         uwave_dict = tb.get_uwave_dict(ind)
         uwave_power = uwave_dict["uwave_power"]
-        if uwave_freq is None:
+        if uwave_freq_list is None:
             freq = uwave_dict["frequency"]
-        elif isinstance(uwave_freq, float):
-            freq = uwave_freq
         else:
-            freq = uwave_freq[ind]
+            freq = uwave_freq_list.pop(0)
         sig_gen = tb.get_server_sig_gen(ind=ind)
         # if load_iq:  # MCC
         #     uwave_power += 0.4
@@ -366,7 +364,7 @@ def main(
         "num_reps": num_reps,
         "num_runs": num_runs,
         "uwave_ind": uwave_ind_list,
-        "uwave_freq": uwave_freq,
+        "uwave_freq": uwave_freq_list,
         "num_exps_per_rep": num_exps_per_rep,
         "load_iq": load_iq,
         "step_ind_master_list": step_ind_master_list,
