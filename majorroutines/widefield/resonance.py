@@ -73,7 +73,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
         #     num_resonances = 2
         # else:
         #     num_resonances = 0
-        num_resonances = 2
+        num_resonances = 1
+        # num_resonances = 2
 
         if num_resonances == 1:
             guess_params = [amp_guess, 5, 5, np.median(freqs)]
@@ -83,7 +84,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
                 bounds[1][ind] = 10
 
             def fit_fn(freq, contrast, g_width, l_width, center):
-                return 1 + voigt(freq, contrast, g_width, l_width, center)
+                return voigt(freq, contrast, g_width, l_width, center)
         elif num_resonances == 2:
             # Find peaks in left and right halves
             low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
@@ -246,10 +247,8 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
-    # data = dm.get_raw_data(file_id=1541455417524)
-    # data = dm.get_raw_data(file_id=1519797150132)
-    data = dm.get_raw_data(file_id=1541604395737)
+    data = dm.get_raw_data(file_id=1546290628159)
+    data = dm.get_raw_data(file_id=1546310936879)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -265,6 +264,7 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    norms = norms[0]
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
