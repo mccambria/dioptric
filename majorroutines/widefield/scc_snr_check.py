@@ -91,7 +91,10 @@ def process_and_plot(data, threshold=False):
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
 
+    # uwave_ind_list = [0]
+    # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
+    # uwave_ind_list = []
 
     seq_file = "scc_snr_check.py"
     pulse_gen = tb.get_server_pulse_gen()

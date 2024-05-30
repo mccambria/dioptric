@@ -27,12 +27,14 @@ def get_seq(base_scc_seq_args, num_reps=1):
 
         # MCC spin echo test
         def uwave_macro_sig(uwave_ind_list, step_val):
-            qua.align()
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-            qua.wait(4)
-            seq_utils.macro_pi_pulse(uwave_ind_list)
-            qua.wait(4)
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            for uwave_ind in uwave_ind_list:
+                qua.align()
+                # seq_utils.macro_pi_on_2_pulse([uwave_ind])
+                qua.wait(4)
+                seq_utils.macro_pi_pulse([uwave_ind])
+                qua.wait(4)
+                seq_utils.macro_pi_pulse([uwave_ind])
+                # seq_utils.macro_pi_on_2_pulse([uwave_ind])
             qua.wait(buffer)
 
         def uwave_macro_ref(uwave_ind_list, step_val):
@@ -78,7 +80,7 @@ if __name__ == "__main__":
             10,
         )
 
-        sim_config = SimulationConfig(duration=int(100e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

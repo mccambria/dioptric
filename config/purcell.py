@@ -96,21 +96,19 @@ config |= {
             "name": "sig_gen_STAN_sg394",
             "frequency": 2.85761751,
             # "rabi_period": 104,
-            # "rabi_period": 112,
-            # "uwave_power": 6.15,
-            "rabi_period": 192,
+            "rabi_period": 112,
+            "uwave_power": 6.15,
+            # "rabi_period": 192,
             # "uwave_power": -3.7,
-            "uwave_power": -3.6,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.812251747511455,
-            # "rabi_period": 128,
-            # "uwave_power": 8.35,
-            "rabi_period": 192,
+            "rabi_period": 128,
+            "uwave_power": 8.35,
+            # "rabi_period": 192,
             # "uwave_power": -0.6,
-            "uwave_power": -0.5,
         },
     },
     ###
@@ -657,7 +655,7 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2),
+            "length": int(rabi_period_0 / 2) + 4,
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
@@ -667,7 +665,7 @@ opx_config = {
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2),
+            "length": int(rabi_period_1 / 2) + 4,
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
