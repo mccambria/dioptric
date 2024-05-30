@@ -200,7 +200,12 @@ def average_counts(sig_counts, ref_counts=None):
     if ref_counts is None:
         norms = None
     else:
-        norms = np.mean(ref_counts, axis=(1, 2, 3))
+        ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        norms = [
+            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+        ]
 
     return avg_counts, avg_counts_ste, norms
 
@@ -837,8 +842,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
-        if nv_ind not in [3]:
-            continue
+        # if nv_ind not in [3]:
+        #     continue
         # if nv_ind not in [0, 1, 2, 4, 6, 11, 14]:
         #     continue
         yerr = None if yerrs is None else yerrs[nv_ind]
@@ -903,6 +908,8 @@ def plot_fit(
     popts : list(list(numeric))
         The ith popt is the curve fit results for the ith NV
     """
+    if isinstance(axes_pack, dict):
+        axes_pack = list(axes_pack.values())
     if xlim[0] is None:
         xlim[0] = min(x)
     if xlim[1] is None:

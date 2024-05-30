@@ -85,17 +85,7 @@ def macro(
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
-    ### QUA stuff
-
-    seq_utils.init(num_nvs)
-    step_val = qua.declare(int)
-
-    def one_exp(exp_ind):
-        seq_utils.macro_polarize(pol_coords_list)
-        uwave_macro[exp_ind](uwave_ind_list, step_val)
-
-        # Always look at ms=0 counts for the reference
-        ref_exp = reference and exp_ind == num_exps_per_rep - 1
+    def macro_scc_sub(exp_spin_flip, ref_spin_flip):
         seq_utils.macro_scc(
             scc_coords_list,
             scc_duration_list,
@@ -103,14 +93,39 @@ def macro(
             uwave_ind_list,
             pol_coords_list,
             scc_duration_override,
-            spin_flip=not ref_exp,
+            exp_spin_flip=exp_spin_flip,
+            ref_spin_flip=ref_spin_flip,
         )
+
+    ### QUA stuff
+
+    seq_utils.init(num_nvs)
+    step_val = qua.declare(int)
+
+    def one_exp(rep_ind, exp_ind):
+        # exp_ind = num_exps_per_rep - 1  # MCC
+        seq_utils.macro_polarize(pol_coords_list)
+        uwave_macro[exp_ind](uwave_ind_list, step_val)
+
+        ref_exp = reference and exp_ind == num_exps_per_rep - 1
+        # Signal experiment
+        if not ref_exp:
+            macro_scc_sub(True, False)
+        # Reference experiment
+        else:
+            # Measure ms=0 or ms=+/-1 based on rep_ind parity
+            # Even for ms=0, odd for ms=+/-1, indexed from 0
+            with qua.if_(~qua.Cast.unsafe_cast_bool(rep_ind)):
+                macro_scc_sub(False, False)
+            with qua.else_():
+                macro_scc_sub(False, True)
+
         seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()
 
-    def one_rep():
+    def one_rep(rep_ind=0):
         for exp_ind in range(num_exps_per_rep):
-            one_exp(exp_ind)
+            one_exp(rep_ind, exp_ind)
 
     def one_step():
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)

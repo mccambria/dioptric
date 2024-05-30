@@ -259,35 +259,18 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    max_tau = 240 + min_tau
-    # max_tau = 796
+    # max_tau = 240 + min_tau
+    max_tau = 360 + min_tau
     num_steps = 31
-    # num_steps = 40
     num_reps = 10
-    num_runs = 100
-    # num_runs = 50
+    # num_runs = 100
+    num_runs = 50
     # num_runs = 2
+
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
 
-    # min_tau = 64
-    # num_steps = 1
-    # num_reps = 50
-
-    # num_reps = 3
-    # num_runs = 150
-
-    # nv_list[1].spin_flip = True
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
-    # for ind in range(4):
-    #     for flipped in [True, False]:
-    #         for nv_ind in range(3):
-    #             nv = nv_list[nv_ind]
-    #             if ind == nv_ind:
-    #                 nv.spin_flip = flipped
-    #             else:
-    #                 nv.spin_flip = not flipped
-    #         rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_spin_echo(nv_list):
@@ -327,7 +310,7 @@ def do_spin_echo_short(nv_list):
 
 def do_spin_echo_medium(nv_list):
     min_tau = 200
-    max_tau = 15e3 + min_tau
+    max_tau = 45e3 + min_tau
     num_steps = 51
     num_reps = 6
     num_runs = 200
@@ -931,7 +914,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+8, +18])  # [131.144, 129.272]
+        # widefield.set_pixel_drift([+7, +19])  # [131.144, 129.272]
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -977,12 +960,12 @@ if __name__ == "__main__":
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
-        do_spin_echo_long(nv_list)
-        do_spin_echo_medium(nv_list)
-        do_spin_echo_short(nv_list)
+        # do_spin_echo_long(nv_list)
+        # do_spin_echo_medium(nv_list)
+        # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
