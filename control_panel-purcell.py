@@ -25,6 +25,7 @@ from majorroutines.widefield import (
     image_sample,
     optimize,
     optimize_scc,
+    power_rabi,
     rabi,
     ramsey,
     relaxation_interleave,
@@ -271,6 +272,24 @@ def do_rabi(nv_list):
     uwave_ind_list = [0, 1]
 
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+
+
+def do_power_rabi(nv_list):
+    min_tau = 16
+    # max_tau = 240 + min_tau
+    max_tau = 360 + min_tau
+    num_steps = 31
+    num_reps = 10
+    # num_runs = 100
+    num_runs = 50
+    # num_runs = 2
+
+    # uwave_ind_list = [1]
+    uwave_ind_list = [0, 1]
+
+    power_rabi.main(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+    )
 
 
 def do_spin_echo(nv_list):
