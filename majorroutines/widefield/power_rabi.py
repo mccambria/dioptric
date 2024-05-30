@@ -28,23 +28,24 @@ from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_powers
 
 
-def create_raw_data_figure():
-    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-    # layout = kpl.calc_mosaic_layout(num_nvs)
-    fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
-    )
-    axes_pack_flat = list(axes_pack.values())
+def create_raw_data_figure(data):
+    powers = data["powers"]
+    counts = data["states"]
+    sig_counts, ref_counts = counts[0], counts[1]
 
-    widefield.plot_fit(axes_pack_flat, nv_list, taus, norm_counts, norm_counts_ste)
-    ax = axes_pack[layout[-1, 0]]
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
-    ax.set_ylabel(" ")
-    label = "Change in fraction in NV$^{-}$"
-    fig.text(0.01, 0.55, label, va="center", rotation="vertical")
-    # ax.set_ylim([0.966, 1.24])
-    # ax.set_yticks([1.0, 1.2])
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=False
+    )
+    norm_counts = avg_counts - norms[0][:, np.newaxis]
+    norm_counts_ste = avg_counts_ste
+
+    fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+
+    widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
+
+    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
+    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Normalized NV- population")
+
     return fig
 
 
@@ -89,18 +90,10 @@ def main(
     ### Process and plot
 
     try:
-        counts = raw_data["states"]
-        sig_counts = counts[0]
-        ref_counts = counts[1]
-
-        avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=False
-        )
-        raw_fig = create_raw_data_figure(nv_list, powers, avg_counts, avg_counts_ste)
+        raw_fig = create_raw_data_figure(data)
     except Exception as exc:
         print(exc)
         raw_fig = None
-        fit_fig = None
 
     ### Clean up and return
 
@@ -122,9 +115,6 @@ def main(
     dm.save_raw_data(raw_data, file_path)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
