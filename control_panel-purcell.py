@@ -249,19 +249,19 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    # freq_center = 2.8572
-    for freq_center in (2.858, 2.812):
-        freq_range = 0.060
+    for freq_center in (2.85761751, 2.812251747511455):
+        freq_range = 0.030
         num_steps = 20
         num_reps = 15
-        num_runs = 120
+        num_runs = 60
         resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_rabi(nv_list):
     min_tau = 16
     # max_tau = 240 + min_tau
-    max_tau = 360 + min_tau
+    # max_tau = 360 + min_tau
+    max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
     # num_runs = 100
@@ -983,7 +983,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
-        # do_resonance_zoom(nv_list)
+        do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1003,7 +1003,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
