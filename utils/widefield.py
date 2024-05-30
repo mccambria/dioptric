@@ -200,7 +200,12 @@ def average_counts(sig_counts, ref_counts=None):
     if ref_counts is None:
         norms = None
     else:
-        norms = np.mean(ref_counts, axis=(1, 2, 3))
+        ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        norms = [
+            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+        ]
 
     return avg_counts, avg_counts_ste, norms
 

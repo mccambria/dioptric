@@ -35,10 +35,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     taus = np.array(taus)
 
-    def cos_decay(tau, ptp_amp, freq, decay):
+    def cos_decay(tau, ptp_amp, freq, decay, tau_offset):
         amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
-        cos_part = np.cos((2 * np.pi * freq * tau))
+        cos_part = np.cos((2 * np.pi * freq * (tau - tau_offset)))
         sign = np.sign(ptp_amp)
         return amp - sign * (envelope * cos_part)
 
@@ -55,7 +55,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     tau_step = taus[1] - taus[0]
     num_steps = len(taus)
 
-    norms_newaxis = norms[:, np.newaxis]
+    norms_newaxis = norms[0][:, np.newaxis]
     norm_counts = counts - norms_newaxis
     norm_counts_ste = counts_ste
 
@@ -74,7 +74,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         transform_mag = np.absolute(transform)
         max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
         freq_guess = freqs[max_ind + 1]
-        guess_params = [ptp_amp_guess, freq_guess, 1000]
+        guess_params = [ptp_amp_guess, freq_guess, 1000, 0]
         fit_fn = cos_decay
 
         try:
@@ -99,7 +99,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     rabi_periods = [None if el is None else round(1 / el[1], 2) for el in popts]
+    tau_offsets = [None if el is None else round(el[-1], 2) for el in popts]
     print(f"rabi_periods: {rabi_periods}")
+    print(f"tau_offsets: {tau_offsets}")
 
     ### Make the figure
 
@@ -174,7 +176,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_mean_images=False,
+        save_all_images=False,
     )
 
     ### Process and plot
@@ -224,8 +226,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1538601728884, load_npz=True)
-    data = dm.get_raw_data(file_id=1540791781984)
-    data = dm.get_raw_data(file_id=1541475268648)
+    # data = dm.get_raw_data(file_id=1540791781984)
+    data = dm.get_raw_data(file_id=1543670303416)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -233,26 +235,14 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
-    # counts = np.array(data["counts"])
     counts = np.array(data["states"])
-    ref_counts = counts[1]
-    # counts = counts[:, :, :, :, 0:1:]
-    counts = counts[:, :, :, :, 1:2]
-    # counts = counts[:, :, :, :, 1:]
-    # counts = counts[:, :, :, :, 1:2:]
-    # counts = counts[:, :, :, :, 2:3:]
-    # counts = counts[:, :, :, :, 4:5:]
-    # counts = counts[:, :, :, :, 9:10:]
-    # counts = np.array(data["counts"])
-
-    # counts = np.array(data["states"])
-    # counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    norms = np.mean(norms, axis=0)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)

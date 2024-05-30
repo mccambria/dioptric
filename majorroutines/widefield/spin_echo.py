@@ -138,7 +138,7 @@ def create_fit_figure(data):
     ### Make the figure
 
     fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
-    norm_counts = avg_counts - norms[:, np.newaxis]
+    norm_counts = avg_counts - norms[0][:, np.newaxis]
     norm_counts_ste = avg_counts_ste
     widefield.plot_fit(
         axes_pack,
@@ -254,8 +254,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1544510655664)
 
     # data = dm.get_raw_data(file_id=1544680353432)
-    # data = dm.get_raw_data(file_id=1544821259934)
-    data = dm.get_raw_data(file_id=1544947399019)
+    data = dm.get_raw_data(file_id=1544821259934)
+    # data = dm.get_raw_data(file_id=1544947399019)
 
     create_raw_data_figure(data)
     create_fit_figure(data)

@@ -103,6 +103,7 @@ def macro(
     step_val = qua.declare(int)
 
     def one_exp(rep_ind, exp_ind):
+        # exp_ind = num_exps_per_rep - 1  # MCC
         seq_utils.macro_polarize(pol_coords_list)
         uwave_macro[exp_ind](uwave_ind_list, step_val)
 
@@ -113,7 +114,8 @@ def macro(
         # Reference experiment
         else:
             # Measure ms=0 or ms=+/-1 based on rep_ind parity
-            with qua.if_(rep_ind % 2 == 0):
+            # Even for ms=0, odd for ms=+/-1, indexed from 0
+            with qua.if_(~qua.Cast.unsafe_cast_bool(rep_ind)):
                 macro_scc_sub(False, False)
             with qua.else_():
                 macro_scc_sub(False, True)

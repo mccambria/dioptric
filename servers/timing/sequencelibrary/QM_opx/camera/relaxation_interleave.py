@@ -57,15 +57,13 @@ def get_seq(
             seq_utils.macro_pi_pulse(uwave_ind_list_dict[readout_state_1])
             qua.wait(buffer)
 
-        # Call the base sequence
-        num_reps_ind = qua.declare(int)
-        with qua.for_(num_reps_ind, 0, num_reps_ind < num_reps, num_reps_ind + 1):
-            base_scc_sequence.macro(
-                base_scc_seq_args, uwave_macro_0, step_vals, 1, reference=False
-            )
-            base_scc_sequence.macro(
-                base_scc_seq_args, uwave_macro_1, step_vals, 1, reference=False
-            )
+        base_scc_sequence.macro(
+            base_scc_seq_args,
+            [uwave_macro_0, uwave_macro_1],
+            step_vals,
+            num_reps,
+            reference=False,
+        )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
