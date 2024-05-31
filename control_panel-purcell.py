@@ -279,8 +279,8 @@ def do_power_rabi(nv_list):
     power_range = -10
     num_steps = 21
     num_reps = 15
-    num_runs = 100
-    # num_runs = 50
+    # num_runs = 100
+    num_runs = 50
     # num_runs = 2
 
     # uwave_ind_list = [0]
@@ -984,7 +984,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo_medium(nv_list)
+        # do_spin_echo_medium(nv_list)
         do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
