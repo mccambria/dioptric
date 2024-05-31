@@ -201,7 +201,15 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "spin_echo.py"
-    taus = np.linspace(min_tau, max_tau, num_steps)
+
+    # MCC x point manipulation
+    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+    revival_width = 5e3
+    taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
+    taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
+    taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
+    taus = np.array(taus)
+    print(taus)
 
     uwave_ind_list = [0, 1]
 
@@ -222,28 +230,35 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     ### Process and plot
 
+    timestamp = dm.get_time_stamp()
+    raw_data |= {
+        "timestamp": timestamp,
+        "tau-units": "ns",
+        "taus": taus,
+        "min_tau": min_tau,
+        "max_tau": max_tau,
+    }
+
+    try:
+        raw_fig = create_raw_data_figure(data)
+        fit_fig = create_fit_figure(data)
+    except Exception:
+        pass
+
     ### Clean up and return
 
     tb.reset_cfm()
     kpl.show()
 
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "taus": taus,
-        "tau-units": "ns",
-        "min_tau": min_tau,
-        "max_tau": max_tau,
-    }
-
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
-    # dm.save_figure(raw_fig, file_path)
-    # if fit_fig is not None:
-    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-    #     dm.save_figure(fit_fig, file_path)
+    if raw_fig is not None:
+        dm.save_figure(raw_fig, file_path)
+    if fit_fig is not None:
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
+        dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
@@ -254,8 +269,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1544510655664)
 
     # data = dm.get_raw_data(file_id=1544680353432)
-    data = dm.get_raw_data(file_id=1544821259934)
+    # data = dm.get_raw_data(file_id=1544821259934)
     # data = dm.get_raw_data(file_id=1544947399019)
+
+    data = dm.get_raw_data(file_id=1546985295617)
 
     create_raw_data_figure(data)
     create_fit_figure(data)
