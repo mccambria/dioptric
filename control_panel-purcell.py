@@ -275,23 +275,22 @@ def do_rabi(nv_list):
 
 
 def do_power_rabi(nv_list):
-    power_center = -3.6
-    power_range = 1.5
-    num_steps = 31
-    num_reps = 10
+    # power_center = -3.6
+    power_range = 2
+    num_steps = 21
+    num_reps = 15
     # num_runs = 100
     num_runs = 50
     # num_runs = 2
 
-    uwave_ind_list = [0]
-    # uwave_ind_list = [0, 1]
+    # uwave_ind_list = [0]
+    uwave_ind_list = [0, 1]
 
     power_rabi.main(
         nv_list,
         num_steps,
         num_reps,
         num_runs,
-        power_center,
         power_range,
         uwave_ind_list,
     )
@@ -983,9 +982,9 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
-        do_resonance_zoom(nv_list)
+        # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_power_rabi(nv_list)
+        do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)

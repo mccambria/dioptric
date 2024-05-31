@@ -54,37 +54,39 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    power_center,
     power_range,
-    uwave_ind=0,
+    uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    sig_gen = tb.get_server_sig_gen()
-    powers = calculate_powers(power_center, power_range, num_steps)
+    powers = calculate_powers(0, power_range, num_steps)
 
     seq_file = "resonance_ref.py"
 
     ### Collect the data
 
     def run_fn(step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind), step_inds]
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     def step_fn(step_ind):
         power = powers[step_ind]
-        sig_gen.set_power(power)
+        for ind in uwave_ind_list:
+            uwave_dict = tb.get_uwave_dict(ind)
+            uwave_power = uwave_dict["uwave_power"]
+            sig_gen = tb.get_server_sig_gen(ind=ind)
+            sig_gen.set_amp(uwave_power + power)
 
-    raw_data = base_routine.main(
+    data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
         num_runs,
         run_fn,
         step_fn,
-        uwave_ind_list=uwave_ind,
+        uwave_ind_list=uwave_ind_list,
     )
 
     ### Process and plot
@@ -101,18 +103,17 @@ def main(
     kpl.show()
 
     timestamp = dm.get_time_stamp()
-    raw_data |= {
+    data |= {
         "timestamp": timestamp,
         "powers": powers,
         "power-units": "GHz",
         "power_range": power_range,
-        "power_center": power_center,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    dm.save_raw_data(data, file_path)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
 

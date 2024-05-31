@@ -247,7 +247,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1546290628159)
+    # data = dm.get_raw_data(file_id=1546290628159)
     data = dm.get_raw_data(file_id=1546310936879)
 
     nv_list = data["nv_list"]
