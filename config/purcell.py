@@ -57,11 +57,11 @@ config |= {
     ###
     # Common durations are in ns
     "CommonDurations": {
-        "uwave_buffer": 1000,
         "default_pulse_duration": 1000,
         "aod_access_time": 20e3,
         # "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
+        "uwave_buffer": 20,
     },
     ###
     "DeviceIDs": {
@@ -94,17 +94,24 @@ config |= {
         "iq_delay": 630,
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
-            "frequency": 2.85761751,
-            # "rabi_period": 104,
-            "rabi_period": 112,
-            "uwave_power": 6.15,
+            "frequency": 2.8585669247525622,
+            # "rabi_period": 112,
+            # "uwave_power": 6.05,
+            # "rabi_period": 192,
+            # "uwave_power": -3.7,
+            "rabi_period": 128,
+            "uwave_power": 2.51,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
-            "frequency": 2.812251747511455,
-            "rabi_period": 128,
-            "uwave_power": 8.35,
+            "frequency": 2.8124502997156644,
+            # "rabi_period": 128,
+            # "uwave_power": 8.2,
+            # "rabi_period": 192,
+            # "uwave_power": -0.6,
+            "rabi_period": 144,
+            "uwave_power": 6.7,
         },
     },
     ###

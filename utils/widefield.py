@@ -200,7 +200,12 @@ def average_counts(sig_counts, ref_counts=None):
     if ref_counts is None:
         norms = None
     else:
-        norms = np.mean(ref_counts, axis=(1, 2, 3))
+        ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        norms = [
+            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+        ]
 
     return avg_counts, avg_counts_ste, norms
 
@@ -837,7 +842,7 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
     else:
         nv_inds = subset_inds
     for nv_ind in nv_inds:
-        # if nv_ind not in [3, 5, 7, 10, 12]:
+        # if nv_ind not in [3]:
         #     continue
         # if nv_ind not in [0, 1, 2, 4, 6, 11, 14]:
         #     continue
@@ -903,6 +908,8 @@ def plot_fit(
     popts : list(list(numeric))
         The ith popt is the curve fit results for the ith NV
     """
+    if isinstance(axes_pack, dict):
+        axes_pack = list(axes_pack.values())
     if xlim[0] is None:
         xlim[0] = min(x)
     if xlim[1] is None:
@@ -958,24 +965,29 @@ def plot_fit(
     fig.get_layout_engine().set(h_pad=0, hspace=0, w_pad=0, wspace=0)
 
 
-def downsample_img_arrays(img_arrays, downsample_factor):
-    num_steps = img_arrays.shape[0]
-    shape = img_arrays.shape[1:]
-    proc_shape = (
+def downsample_img_array(img_array, downsample_factor):
+    shape = img_array.shape
+    downsampled_shape = (
         int(np.floor(shape[0] / downsample_factor)),
         int(np.floor(shape[1] / downsample_factor)),
     )
-    clip_shape = (downsample_factor * proc_shape[0], downsample_factor * proc_shape[1])
-    img_arrays = img_arrays[:, : clip_shape[0], : clip_shape[1]]
-    proc_img_arrays = np.zeros((num_steps, *proc_shape))
+
+    # Clip the original img_array so that its dimensions are an integer
+    # multiple of downsample_factor
+    clip_shape = (
+        downsample_factor * downsampled_shape[0],
+        downsample_factor * downsampled_shape[1],
+    )
+    img_array = img_array[: clip_shape[0], : clip_shape[1]]
+
+    downsampled_img_array = np.zeros(downsampled_shape)
     for ind in range(downsample_factor):
         for jnd in range(downsample_factor):
-            proc_img_arrays += img_arrays[
-                :, ind::downsample_factor, jnd::downsample_factor
+            downsampled_img_array += img_array[
+                ind::downsample_factor, jnd::downsample_factor
             ]
-    proc_img_arrays /= downsample_factor**2
 
-    return proc_img_arrays
+    return downsampled_img_array
 
 
 def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):

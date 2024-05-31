@@ -146,11 +146,12 @@ def main(
     run_fn=None,
     step_fn=None,
     uwave_ind_list=[0, 1],
-    uwave_freq=None,
+    uwave_freq_list=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=False,
+    save_all_images=True,
     save_mean_images=False,
+    save_images_downsample_factor=3,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
 ) -> dict:
@@ -217,12 +218,10 @@ def main(
     for ind in uwave_ind_list:
         uwave_dict = tb.get_uwave_dict(ind)
         uwave_power = uwave_dict["uwave_power"]
-        if uwave_freq is None:
+        if uwave_freq_list is None:
             freq = uwave_dict["frequency"]
-        elif isinstance(uwave_freq, float):
-            freq = uwave_freq
         else:
-            freq = uwave_freq[ind]
+            freq = uwave_freq_list.pop(0)
         sig_gen = tb.get_server_sig_gen(ind=ind)
         # if load_iq:  # MCC
         #     uwave_power += 0.4
@@ -233,11 +232,16 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    if save_all_images:
+    if save_all_images or save_mean_images:
         shape = widefield.get_img_array_shape()
+        if save_images_downsample_factor is not None:
+            shape = [
+                int(np.floor(shape[ind] / save_images_downsample_factor))
+                for ind in range(2)
+            ]
+    if save_all_images:
         img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
     if save_mean_images:
-        shape = widefield.get_img_array_shape()
         mean_img_arrays = np.zeros((num_exps_per_rep, num_steps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
@@ -252,10 +256,10 @@ def main(
 
             while True:
                 try:
-                    start = time.time()
                     print(f"\nRun index: {run_ind}")
 
                     states_list = None
+                    first_step = True
 
                     for ind in uwave_ind_list:
                         sig_gen = tb.get_server_sig_gen(ind=ind)
@@ -268,21 +272,22 @@ def main(
                         run_fn(step_ind_list)
 
                     camera.arm()
-                    if stream_load_in_run_fn:
-                        pulse_gen.stream_start()
 
                     # Steps loop
                     for step_ind in step_ind_list:
                         if step_fn is not None:
                             step_fn(step_ind)
 
-                        # If the sequence wasn't loaded in the run_fn, it must be loaded in
-                        # the step_fn - this will be slower due to frequent compiling
-                        if not stream_load_in_run_fn:
+                        if first_step:
                             pulse_gen.stream_start()
+                            first_step = False
+                        else:
+                            if stream_load_in_run_fn:
+                                pulse_gen.resume()
+                            else:
+                                pulse_gen.stream_start()
 
                         # Reps loop
-                        # start = time.time()
                         for rep_ind in range(num_reps):
                             for exp_ind in range(num_exps_per_rep):
                                 if charge_prep_fn is not None:
@@ -291,11 +296,8 @@ def main(
                                         nv_list,
                                         initial_states_list=states_list,
                                     )
-                                (
-                                    img_array,
-                                    counts_list,
-                                    states_list,
-                                ) = read_and_process_image(nv_list)
+                                ret_vals = read_and_process_image(nv_list)
+                                img_array, counts_list, states_list = ret_vals
                                 counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
                                     counts_list
                                 )
@@ -303,6 +305,10 @@ def main(
                                     states_list
                                 )
 
+                                if save_images_downsample_factor is not None:
+                                    img_array = widefield.downsample_img_array(
+                                        img_array, save_images_downsample_factor
+                                    )
                                 if save_all_images:
                                     img_arrays[
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
@@ -311,15 +317,8 @@ def main(
                                     mean_img_arrays[exp_ind, step_ind, :, :] += (
                                         img_array
                                     )
-                        # stop = time.time()
-                        # print((stop - start) / (num_reps * num_exps_per_rep))
-                        # print()
-
-                        pulse_gen.resume()
 
                     ### Move on to the next run
-                    stop = time.time()
-                    print(f"Run time: {round(stop-start, 3)}")
 
                     # Turn stuff off
                     pulse_gen.halt()
@@ -365,7 +364,7 @@ def main(
         "num_reps": num_reps,
         "num_runs": num_runs,
         "uwave_ind": uwave_ind_list,
-        "uwave_freq": uwave_freq,
+        "uwave_freq": uwave_freq_list,
         "num_exps_per_rep": num_exps_per_rep,
         "load_iq": load_iq,
         "step_ind_master_list": step_ind_master_list,

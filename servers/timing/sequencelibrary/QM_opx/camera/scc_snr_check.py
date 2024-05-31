@@ -19,44 +19,33 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(
-    base_scc_seq_args,
-    step_vals=None,
-    num_reps=1,
-    reference=True,
-    pol_duration_ns=None,
-    ion_duration_ns=None,
-    readout_duration_ns=None,
-    phase=None,
-):
-    # if phase is not None:
-    #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
-    # phase_rad = phase * (np.pi / 180)
-    # i_comp = 0.5 * np.cos(phase_rad)
-    # q_comp = 0.5 * np.sin(phase_rad)
-    # iq_pulse_dict = {0: , 90:}
-
+def get_seq(base_scc_seq_args, num_reps=1):
+    buffer = seq_utils.get_widefield_operation_buffer()
     with qua.program() as seq:
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        # MCC
+        # MCC spin echo test
         # def uwave_macro_sig(uwave_ind_list, step_val):
-        #     qua.align()
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(4)
-        #     seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     qua.wait(4)
-        #     # seq_utils.macro_pi_pulse([uwave_ind])
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        #     for uwave_ind in uwave_ind_list:
+        #         qua.align()
+        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
+        #         qua.wait(4)
+        #         seq_utils.macro_pi_pulse([uwave_ind])
+        #         qua.wait(4)
+        #         # seq_utils.macro_pi_pulse([uwave_ind])
+        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
+        #     qua.wait(buffer)
+
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            pass
 
         base_scc_sequence.macro(
             base_scc_seq_args,
-            uwave_macro_sig,
-            step_vals,
+            [uwave_macro_sig, uwave_macro_ref],
             num_reps=num_reps,
-            reference=reference,
+            reference=False,
         )
 
     seq_ret_vals = []
@@ -87,13 +76,12 @@ if __name__ == "__main__":
                 ],
                 [144, 160, 164],
                 [],
-                [0],
+                [0, 1],
             ],
-            [136, 168, 112, 224],
             10,
         )
 
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

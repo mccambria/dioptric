@@ -73,7 +73,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
         #     num_resonances = 2
         # else:
         #     num_resonances = 0
-        num_resonances = 2
+        num_resonances = 1
+        # num_resonances = 2
 
         if num_resonances == 1:
             guess_params = [amp_guess, 5, 5, np.median(freqs)]
@@ -83,7 +84,7 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
                 bounds[1][ind] = 10
 
             def fit_fn(freq, contrast, g_width, l_width, center):
-                return 1 + voigt(freq, contrast, g_width, l_width, center)
+                return voigt(freq, contrast, g_width, l_width, center)
         elif num_resonances == 2:
             # Find peaks in left and right halves
             low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
@@ -175,7 +176,7 @@ def main(
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    sig_gen = tb.get_server_sig_gen()
+    sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
     seq_file = "resonance_ref.py"
@@ -199,7 +200,6 @@ def main(
         run_fn,
         step_fn,
         uwave_ind_list=uwave_ind,
-        save_mean_images=True,
     )
     counts = raw_data["states"]
 
@@ -247,9 +247,8 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1538544646977, load_npz=True)
-    # data = dm.get_raw_data(file_id=1541455417524)
-    data = dm.get_raw_data(file_id=1541508213162)
+    # data = dm.get_raw_data(file_id=1546290628159)
+    data = dm.get_raw_data(file_id=1546310936879)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -258,21 +257,14 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    # counts = np.array(data["counts"])
     counts = np.array(data["states"])
-    ref_counts = counts[1]
-    counts = counts[:, :, :, :, 0:1:]
-    # counts = counts[:, :, :, :, 1:2:]
-    # counts = counts[:, :, :, :, 2:3:]
-    # counts = counts[:, :, :, :, 4:5:]
-    # counts = counts[:, :, :, :, 9:10:]
-    # counts = np.array(data["counts"])
     sig_counts = counts[0]
-    # ref_counts = counts[1]
+    ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    norms = norms[0]
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
@@ -283,8 +275,8 @@ if __name__ == "__main__":
     # bottom = np.percentile(proc_img_arrays, 30, axis=0)
     # proc_img_arrays -= bottom
 
-    norms_newaxis = norms[:, np.newaxis]
-    avg_counts = avg_counts - norms_newaxis
+    # norms_newaxis = norms[:, np.newaxis]
+    # avg_counts = avg_counts - norms_newaxis
     # widefield.animate(
     #     freqs,
     #     nv_list,

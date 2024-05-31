@@ -89,7 +89,7 @@ def get_seq(
                 spin_flip_ind_list,
                 uwave_ind_list,
                 pol_coords_list,
-                spin_flip=not ref_exp,
+                exp_spin_flip=not ref_exp,
             )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()

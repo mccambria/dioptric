@@ -207,18 +207,38 @@ def zero_to_one_threshold(val):
 kplotlib_initialized = False
 
 
-def calc_mosaic_layout(num_nvs, num_rows=None):
+def calc_mosaic_layout(num_panels, num_rows=None):
     if num_rows is None:
-        num_rows = round(np.sqrt(num_nvs))
-    num_cols = int(np.ceil(num_nvs / num_rows))
+        num_rows = round(np.sqrt(num_panels))
+    num_cols = int(np.ceil(num_panels / num_rows))
     num_axes = num_cols * num_rows
 
     shape = (num_rows, num_cols)
     vals = np.reshape(alphabet[:num_axes], shape)
-    if num_nvs != num_axes:
-        vals[0, num_nvs - num_axes :] = "."
+    if num_panels != num_axes:
+        vals[0, num_panels - num_axes :] = "."
 
     return vals
+
+
+def subplot_mosaic(num_panels, num_rows=None, figsize=[6.5, 4.0]):
+    layout = calc_mosaic_layout(num_panels, num_rows)
+    fig, axes_pack = plt.subplot_mosaic(
+        layout, figsize=figsize, sharex=True, sharey=True
+    )
+    return fig, axes_pack, layout
+
+
+def set_mosaic_xlabel(fig, axes_pack, layout, label):
+    ax = axes_pack[layout[-1, 0]]
+    ax.set_xlabel(" ")
+    fig.text(0.55, 0.01, label, ha="center")
+
+
+def set_mosaic_ylabel(fig, axes_pack, layout, label):
+    ax = axes_pack[layout[-1, 0]]
+    ax.set_ylabel(" ")
+    fig.text(0.005, 0.55, label, va="center", rotation="vertical")
 
 
 def init_kplotlib(
@@ -780,5 +800,5 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
 # endregion
 
 if __name__ == "__main__":
-    num_nvs = 12
-    print(calc_mosaic_layout(num_nvs))
+    num_panels = 12
+    print(calc_mosaic_layout(num_panels))

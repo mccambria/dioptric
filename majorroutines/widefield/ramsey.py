@@ -101,39 +101,44 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     seq_file = "ramsey.py"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
-    uwave_ind = 0
-    uwave_dict = tb.get_uwave_dict(uwave_ind)
-    uwave_freq = uwave_dict["frequency"]
-    uwave_freq += detuning / 1000
+    uwave_ind_list = [0, 1]
+    uwave_freq_list = []
+    for ind in uwave_ind_list:
+        uwave_ind = 0
+        uwave_dict = tb.get_uwave_dict(uwave_ind)
+        uwave_freq = uwave_dict["frequency"]
+        uwave_freq += detuning / 1000
+        uwave_freq_list.append(uwave_freq)
 
     ### Collect the data
 
-    def step_fn(tau_ind):
-        tau = taus[tau_ind]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([tau])
+    def run_fn(shuffled_step_inds):
+        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_taus,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, ref_counts, raw_data = base_routine.main(
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
         num_runs,
-        step_fn,
-        uwave_ind_list=uwave_ind,
-        uwave_freq=uwave_freq,
+        run_fn,
+        uwave_ind_list=uwave_ind_list,
+        uwave_freq_list=uwave_freq_list,
     )
 
     ### Process and plot
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(counts, ref_counts)
-
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     try:
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+        raw_fig = create_raw_data_figure(raw_data)
+        fit_fig = create_fit_figure(raw_data)
     except Exception as exc:
         print(exc)
+        raw_fig = None
         fit_fig = None
 
     ### Clean up and return
@@ -151,7 +156,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
     dm.save_figure(raw_fig, file_path)
@@ -163,21 +168,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1398480205550, no_npz=True)
-    data = dm.get_raw_data(file_id=1399222081277, load_npz=True)
-
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    taus = data["taus"]
-    counts = np.array(data["counts"])
-    # counts = counts > 50
-
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    raw_fig = create_raw_data_figure_sep(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    data = dm.get_raw_data(file_id=1399222081277)
 
     plt.show(block=True)

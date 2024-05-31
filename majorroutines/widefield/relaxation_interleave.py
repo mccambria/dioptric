@@ -42,7 +42,7 @@ def process_rates(
         print(round(gamma_err))
 
 
-def create_raw_data_figure(
+def create_raw_data_figures(
     nv_list, taus, counts, counts_ste, init_state, readout_state
 ):
     fig, ax = plt.subplots()
@@ -241,62 +241,34 @@ def main(
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "relaxation_interleave.py"
+    uwave_ind_list = [0, 1]
 
     # Get taus with a roughly even spacing on the y axis
     taus = np.geomspace(1 / num_steps, 1, num_steps)
     taus = (taus - taus[0]) / (taus[-1] - taus[0])  # Normalize to 0 to 1
     taus = (taus * (max_tau - min_tau)) + min_tau  # Normalize to mix/max tau
-    taus = (taus // 4) * 4
-    # taus = np.linspace(min_tau, max_tau, num_steps)
-
-    # tau = taus[10]
-    # seq_args = widefield.get_base_scc_seq_args(nv_list)
-    # seq_args.extend(
-    #     [tau, init_state_0, readout_state_0, init_state_1, readout_state_1]
-    # )
-    # seq_args_string = tb.encode_seq_args(seq_args)
-    # print(seq_args)
-    # print(seq_args_string)
-    # return
+    taus = (taus // 4) * 4  # Make sure they're multiples of 4 for the OPX
 
     ### Collect the data
 
-    def step_fn(tau_ind):
-        tau = taus[tau_ind]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend(
-            [tau, init_state_0, readout_state_0, init_state_1, readout_state_1]
-        )
+    def run_fn(shuffled_step_inds):
+        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+        seq_args.extend([init_state_0, readout_state_0, init_state_1, readout_state_1])
+        seq_args.append(shuffled_taus)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, ref_counts, raw_data = base_routine.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        step_fn,
-        uwave_ind_list=[0, 1],
-        num_exps_per_rep=2,
+    raw_data = base_routine.main(
+        nv_list, num_steps, num_reps, num_runs, run_fn, uwave_ind_list=uwave_ind_list
     )
-    counts_0 = counts[0]
-    counts_1 = counts[1]
 
     ### Process and plot
 
-    avg_counts_0, avg_counts_0_ste, norms_0 = widefield.process_counts(
-        counts_0, ref_counts
-    )
-    avg_counts_1, avg_counts_1_ste, norms_1 = widefield.process_counts(
-        counts_1, ref_counts
-    )
-
-    raw_fig_0 = create_raw_data_figure(
-        nv_list, taus, avg_counts_0, avg_counts_0_ste, init_state_0, readout_state_0
-    )
-    raw_fig_1 = create_raw_data_figure(
-        nv_list, taus, avg_counts_1, avg_counts_1_ste, init_state_1, readout_state_1
-    )
+    try:
+        figs = create_raw_data_figures(raw_data)
+    except Exception:
+        figs = None
 
     ### Clean up and return
 
@@ -317,134 +289,14 @@ def main(
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    if "img_arrays" in raw_data:
-        keys_to_compress = ["img_arrays"]
-    else:
-        keys_to_compress = None
-    dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-0")
-    dm.save_figure(raw_fig_0, file_path)
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-1")
-    dm.save_figure(raw_fig_1, file_path)
+    dm.save_raw_data(raw_data, file_path)
+    if figs is not None:
+        for ind in range(len(figs)):
+            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
+            dm.save_figure(figs[ind], file_path)
 
 
 if __name__ == "__main__":
-    ### Rate calculation
-    # No offset
-    # omega_exp_rates = [
-    #     149.52876293233442,
-    #     149.9076496706543,
-    #     163.90784727283057,
-    #     171.12691936163787,
-    #     140.68822177145015,
-    # ]
-    # omega_exp_rate_errs = [
-    #     13.071035712207378,
-    #     11.193227235059075,
-    #     13.205640033491687,
-    #     19.12327121476871,
-    #     13.316228407825507,
-    # ]
-    # gamma_exp_rates = [
-    #     288.9371794219599,
-    #     256.4689961920107,
-    #     260.8659957292199,
-    #     232.74941634806152,
-    #     208.3639073269649,
-    # ]
-    # gamma_exp_rate_errs = [
-    #     32.133818940701744,
-    #     22.25996376863929,
-    #     27.76090260093859,
-    #     39.0883152024931,
-    #     28.414155668518752,
-    # ]
-    # Offset
-    # omega_exp_rates = [
-    #     178.65927076759806,
-    #     150.55961333102456,
-    #     182.7383790247447,
-    #     221.49601578708612,
-    #     195.70649129132005,
-    # ]
-    # omega_exp_rate_errs = [
-    #     32.42518984990736,
-    #     25.278672433548234,
-    #     29.12756202583012,
-    #     45.32073245075222,
-    #     38.16464756629071,
-    # ]
-    # gamma_exp_rates = [
-    #     322.2588560877828,
-    #     274.8856110109759,
-    #     242.36811328021352,
-    #     307.08797888419207,
-    #     328.985126558155,
-    # ]
-    # gamma_exp_rate_errs = [
-    #     57.36359787667976,
-    #     41.97828859002894,
-    #     46.743780796640415,
-    #     91.47514044528685,
-    #     82.42819543109252,
-    # ]
-    # process_rates(
-    #     omega_exp_rates, omega_exp_rate_errs, gamma_exp_rates, gamma_exp_rate_errs
-    # )
-    # sys.exit()
-
-    kpl.init_kplotlib()
-
-    # file_name = ""
-    # data = dm.get_raw_data(file_name)
-    # data = dm.get_raw_data(file_id=1396784795732, no_npz=True)  # Omega
-    # data = dm.get_raw_data(file_id=1396928132593, no_npz=True)  # gamma
-    # data = dm.get_raw_data(file_id=1407502794886, no_npz=True)  # Omega
-    data = dm.get_raw_data(file_id=1408418654265, load_npz=True)  # Omega
-
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    img_arrays = data["img_arrays"]
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    # avg_img_arrays = np.average(img_arrays, axis=1)
-    taus = data["taus"]
-    counts = np.array(data["counts"])
-    ref_counts = np.array(data["ref_counts"])
-    init_state_0 = NVSpinState(data["init_state_0"])
-    readout_state_0 = NVSpinState(data["readout_state_0"])
-    init_state_1 = NVSpinState(data["init_state_1"])
-    readout_state_1 = NVSpinState(data["readout_state_1"])
-
-    avg_counts_0, avg_counts_ste_0, norms_0 = widefield.process_counts(
-        counts[0], ref_counts
-    )
-    raw_fig = create_raw_data_figure(
-        nv_list, taus, avg_counts_0, avg_counts_ste_0, init_state_0, readout_state_0
-    )
-    avg_counts_1, avg_counts_ste_1, norms_1 = widefield.process_counts(
-        counts[1], ref_counts
-    )
-    raw_fig = create_raw_data_figure(
-        nv_list, taus, avg_counts_1, avg_counts_ste_1, init_state_1, readout_state_1
-    )
-
-    # Calculate the differences and make the fit plot
-    diff_counts = avg_counts_1 / norms_1 - avg_counts_0 / norms_0
-    diff_counts_ste = np.sqrt(
-        (avg_counts_ste_0 / norms_0) ** 2 + (avg_counts_ste_1 / norms_1) ** 2
-    )
-    Omega_or_gamma = (
-        init_state_0 == NVSpinState.ZERO
-        and readout_state_0 == NVSpinState.ZERO
-        or init_state_1 == NVSpinState.ZERO
-        and readout_state_1 == NVSpinState.ZERO
-    )
-    nv1_norm = np.mean(avg_counts_0[1] + avg_counts_1[1]) / 2
-    fit_fig = create_fit_figure(
-        nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma, nv1_norm
-    )
-
     plt.show(block=True)

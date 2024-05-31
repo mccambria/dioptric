@@ -25,6 +25,7 @@ from majorroutines.widefield import (
     image_sample,
     optimize,
     optimize_scc,
+    power_rabi,
     rabi,
     ramsey,
     relaxation_interleave,
@@ -206,6 +207,7 @@ def do_scc_snr_check(nv_list):
 def do_simple_correlation_test(nv_list):
     num_reps = 100
     num_runs = 2000
+    num_runs = 1000
     # num_runs = 2
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
@@ -235,107 +237,72 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 10
-    num_runs = 100
-    num_runs = 50
+    num_reps = 8
+    num_runs = 120
+    # num_runs = 50
 
-    num_reps = 3
-    num_runs = 150
+    # num_reps = 3
+    # num_runs = 150
     # num_runs = 2
 
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
-    # freq_center = 2.8572
-    for freq_center in (2.858, 2.812):
-        freq_range = 0.060
+    for freq_center in (2.85761751, 2.812251747511455):
+        freq_range = 0.030
         num_steps = 20
         num_reps = 15
-        num_runs = 120
+        num_runs = 60
         resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_rabi(nv_list):
     min_tau = 16
-    max_tau = 240 + min_tau
-    # max_tau = 796
+    # max_tau = 240 + min_tau
+    # max_tau = 360 + min_tau
+    max_tau = 480 + min_tau
     num_steps = 31
-    # num_steps = 40
     num_reps = 10
-    num_runs = 100
+    # num_runs = 100
     num_runs = 50
     # num_runs = 2
+
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
 
-    # min_tau = 64
-    # num_steps = 1
-    # num_reps = 50
-
-    # nv_list[1].spin_flip = True
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
-    # for ind in range(4):
-    #     for flipped in [True, False]:
-    #         for nv_ind in range(3):
-    #             nv = nv_list[nv_ind]
-    #             if ind == nv_ind:
-    #                 nv.spin_flip = flipped
-    #             else:
-    #                 nv.spin_flip = not flipped
-    #         rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+
+
+def do_power_rabi(nv_list):
+    # power_center = -3.6
+    power_range = -10
+    num_steps = 21
+    num_reps = 15
+    # num_runs = 100
+    num_runs = 50
+    # num_runs = 2
+
+    # uwave_ind_list = [0]
+    uwave_ind_list = [0, 1]
+
+    power_rabi.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        power_range,
+        uwave_ind_list,
+    )
 
 
 def do_spin_echo(nv_list):
-    min_tau = 100
-    max_tau = 200e3 + min_tau
-
-    # Zooms
-    # min_tau = 100
-    # min_tau = 83.7e3
-    # min_tau = 167.4e3
-    # max_tau = 2e3 + min_tau
-
-    # min_tau = 100
-    # max_tau = 15e3 + min_tau
-
-    num_steps = 51
-
-    # num_reps = 150
-    # num_runs = 12
-    num_reps = 10
-    num_runs = 400
-    # num_runs = 2
-
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-
-
-def do_spin_echo_short(nv_list):
-    min_tau = 100
-    # min_tau = 83.7e3
-    # min_tau = 167.4e3
-    max_tau = 2e3 + min_tau
-    num_steps = 51
-    num_reps = 10
-    num_runs = 400
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-
-
-def do_spin_echo_medium(nv_list):
-    min_tau = 100
-    max_tau = 15e3 + min_tau
-    num_steps = 51
-    num_reps = 10
-    num_runs = 400
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-
-
-def do_spin_echo_long(nv_list):
-    min_tau = 100
-    max_tau = 200e3 + min_tau
-    num_steps = 51
-    num_reps = 10
-    num_runs = 400
+    min_tau = 200
+    max_tau = 84e3 + min_tau
+    num_steps = 29
+    num_reps = 3
+    num_runs = 800
+    num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -348,8 +315,8 @@ def do_ramsey(nv_list):
     # num_reps = 15
     # num_runs = 30
     num_steps = 101
-    num_reps = 10
-    num_runs = 400
+    num_reps = 4
+    num_runs = 250
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -927,14 +894,14 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+14, +15])  # [131.144, 129.272]
+        # widefield.set_pixel_drift([+7, +19])  # [131.144, 129.272]
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.5, 4.0, 11):
+        # for z in np.linspace(4.45, 4.75, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_widefield_image_sample(nv_sig, 20)
 
@@ -971,14 +938,12 @@ if __name__ == "__main__":
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
+        do_spin_echo(nv_list)
+        # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
-        # do_spin_echo(nv_list)
-        # do_spin_echo_long(nv_list)
-        # do_spin_echo_medium(nv_list)
-        # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -1008,8 +973,17 @@ if __name__ == "__main__":
 
         # for nv in nv_list:
         #     nv.spin_flip = False
+        # for nv in nv_list[: num_nvs // 2]:
+        #     nv.spin_flip = True
+        # do_simple_correlation_test(nv_list)
+        # for nv in nv_list:
+        #     nv.spin_flip = False
         # for nv in nv_list[num_nvs // 2 :]:
         #     nv.spin_flip = True
+        # # do_simple_correlation_test(nv_list)
+        # nv_list = nv_list[::-1]
+        # spin_flips = [nv.spin_flip for nv in nv_list]
+        # print(spin_flips)
         # do_simple_correlation_test(nv_list)
 
         # Performance testing

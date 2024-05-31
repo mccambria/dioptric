@@ -92,7 +92,7 @@ def handle_reps(
         with qua.for_(
             handle_reps_ind, 0, handle_reps_ind < num_reps, handle_reps_ind + 1
         ):
-            one_rep_macro()
+            one_rep_macro(handle_reps_ind)
             if wait_for_trigger:
                 macro_wait_for_trigger()
 
@@ -184,7 +184,8 @@ def macro_scc(
     uwave_ind_list=None,
     shelving_coords_list=None,
     scc_duration_override=None,
-    spin_flip=True,
+    exp_spin_flip=True,
+    ref_spin_flip=False,
 ):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -210,7 +211,7 @@ def macro_scc(
             spin_flip_ind_list,
             uwave_ind_list,
             shelving_coords_list,
-            spin_flip=spin_flip,
+            exp_spin_flip=exp_spin_flip,
         )
     else:
         _macro_scc_no_shelving(
@@ -219,7 +220,8 @@ def macro_scc(
             spin_flip_ind_list,
             uwave_ind_list,
             scc_duration_override,
-            spin_flip=spin_flip,
+            exp_spin_flip=exp_spin_flip,
+            ref_spin_flip=ref_spin_flip,
         )
 
 
@@ -229,7 +231,7 @@ def _macro_scc_shelving(
     spin_flip_ind_list,
     uwave_ind_list,
     shelving_coords_list,
-    spin_flip=True,
+    exp_spin_flip=True,
 ):
     shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
     ion_laser_name = tb.get_laser_name(LaserKey.SCC)
@@ -280,10 +282,11 @@ def _macro_scc_shelving(
 def _macro_scc_no_shelving(
     coords_list,
     duration_list=None,
-    spin_flip_ind_list=None,
+    exp_spin_flip_ind_list=None,
     uwave_ind_list=None,
     duration_override=None,
-    spin_flip=True,
+    exp_spin_flip=True,
+    ref_spin_flip=False,
 ):
     # Basic setup
 
@@ -291,20 +294,24 @@ def _macro_scc_no_shelving(
     ion_pulse_name = "scc"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
 
-    if spin_flip_ind_list is None:
-        spin_flip_ind_list = []
+    if exp_spin_flip_ind_list is None:
+        exp_spin_flip_ind_list = []
 
     num_nvs = len(coords_list)
     first_coords_list = [
-        coords_list[ind] for ind in range(num_nvs) if ind not in spin_flip_ind_list
+        coords_list[ind] for ind in range(num_nvs) if ind not in exp_spin_flip_ind_list
     ]
     first_duration_list = [
-        duration_list[ind] for ind in range(num_nvs) if ind not in spin_flip_ind_list
+        duration_list[ind]
+        for ind in range(num_nvs)
+        if ind not in exp_spin_flip_ind_list
     ]
 
     # Actual commands
 
-    # macro_pi_pulse([0])  # MCC
+    if ref_spin_flip:
+        macro_pi_pulse(uwave_ind_list)
+
     _macro_pulse_list(
         ion_laser_name,
         ion_pulse_name,
@@ -312,20 +319,19 @@ def _macro_scc_no_shelving(
         duration_list=first_duration_list,
         duration_override=duration_override,
     )
-    # return  # MCC
 
     # Just exit here if all NVs are SCC'ed in the first batch
-    if len(spin_flip_ind_list) == 0:
+    if len(exp_spin_flip_ind_list) == 0:
         return
 
     second_coords_list = [
-        coords_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
+        coords_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
     ]
     second_duration_list = [
-        duration_list[ind] for ind in range(num_nvs) if ind in spin_flip_ind_list
+        duration_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
     ]
 
-    if spin_flip:
+    if exp_spin_flip:
         macro_pi_pulse(uwave_ind_list)
 
     _macro_pulse_list(
@@ -340,12 +346,32 @@ def _macro_scc_no_shelving(
 def macro_pi_pulse(uwave_ind_list, duration=None):
     if uwave_ind_list is None:
         return
-    buffer = get_widefield_operation_buffer()
+    uwave_buffer = get_uwave_buffer()
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
         qua.play("pi_pulse", sig_gen_el, duration=duration)
-        qua.wait(buffer, sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
+
+
+def get_macro_pi_pulse_duration(uwave_ind_list):
+    duration = 0
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        duration += get_rabi_period(uwave_ind) // 2
+        duration += uwave_buffer
+    return duration
+
+
+def macro_pi_on_2_pulse(uwave_ind_list):
+    if uwave_ind_list is None:
+        return
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        qua.align()
+        qua.play("pi_on_2_pulse", sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -669,6 +695,11 @@ def get_aod_access_time():
 @cache
 def get_widefield_operation_buffer():
     return get_common_duration_cc("widefield_operation_buffer")
+
+
+@cache
+def get_uwave_buffer():
+    return get_common_duration_cc("uwave_buffer")
 
 
 @cache
