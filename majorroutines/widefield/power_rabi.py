@@ -91,6 +91,7 @@ def main(
 
     ### Process and plot
 
+    data["powers"] = powers
     try:
         raw_fig = create_raw_data_figure(data)
     except Exception as exc:
@@ -105,7 +106,6 @@ def main(
     timestamp = dm.get_time_stamp()
     data |= {
         "timestamp": timestamp,
-        "powers": powers,
         "power-units": "GHz",
         "power_range": power_range,
     }

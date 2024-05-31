@@ -276,7 +276,7 @@ def do_rabi(nv_list):
 
 def do_power_rabi(nv_list):
     # power_center = -3.6
-    power_range = 2
+    power_range = 6
     num_steps = 21
     num_reps = 15
     # num_runs = 100
