@@ -279,8 +279,8 @@ def do_power_rabi(nv_list):
     power_range = -10
     num_steps = 21
     num_reps = 15
-    num_runs = 100
-    # num_runs = 50
+    # num_runs = 100
+    num_runs = 50
     # num_runs = 2
 
     # uwave_ind_list = [0]
@@ -297,55 +297,12 @@ def do_power_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    min_tau = 100
-    max_tau = 200e3 + min_tau
-
-    # Zooms
-    # min_tau = 100
-    # min_tau = 83.7e3
-    # min_tau = 167.4e3
-    # max_tau = 2e3 + min_tau
-
-    # min_tau = 100
-    # max_tau = 15e3 + min_tau
-
-    num_steps = 51
-
-    # num_reps = 150
-    # num_runs = 12
-    num_reps = 10
-    num_runs = 400
-    # num_runs = 2
-
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-
-
-def do_spin_echo_short(nv_list):
     min_tau = 200
-    # min_tau = 83.7e3
-    # min_tau = 167.4e3
-    max_tau = 2e3 + min_tau
-    num_steps = 51
-    num_reps = 6
-    num_runs = 200
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-
-
-def do_spin_echo_medium(nv_list):
-    min_tau = 200
-    max_tau = 45e3 + min_tau
-    num_steps = 51
-    num_reps = 6
-    num_runs = 400
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-
-
-def do_spin_echo_long(nv_list):
-    min_tau = 200
-    max_tau = 200e3 + min_tau
-    num_steps = 51
-    num_reps = 6
-    num_runs = 200
+    max_tau = 84e3 + min_tau
+    num_steps = 29
+    num_reps = 3
+    num_runs = 800
+    num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -984,13 +941,9 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo_medium(nv_list)
-        do_power_rabi(nv_list)
+        do_spin_echo(nv_list)
+        # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
-        # do_spin_echo(nv_list)
-        # do_spin_echo_long(nv_list)
-        # do_spin_echo_medium(nv_list)
-        # do_spin_echo_short(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
