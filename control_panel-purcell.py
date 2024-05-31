@@ -276,11 +276,11 @@ def do_rabi(nv_list):
 
 def do_power_rabi(nv_list):
     # power_center = -3.6
-    power_range = 6
+    power_range = -10
     num_steps = 21
     num_reps = 15
-    # num_runs = 100
-    num_runs = 50
+    num_runs = 100
+    # num_runs = 50
     # num_runs = 2
 
     # uwave_ind_list = [0]
@@ -336,7 +336,7 @@ def do_spin_echo_medium(nv_list):
     max_tau = 45e3 + min_tau
     num_steps = 51
     num_reps = 6
-    num_runs = 200
+    num_runs = 400
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
@@ -984,6 +984,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
+        do_spin_echo_medium(nv_list)
         do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_spin_echo(nv_list)

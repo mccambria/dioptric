@@ -62,7 +62,8 @@ def main(
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    powers = calculate_powers(0, power_range, num_steps)
+    # powers = calculate_powers(0, power_range, num_steps)
+    powers = np.linspace(0, power_range, num_steps) + 1
 
     seq_file = "resonance_ref.py"
 
@@ -79,7 +80,7 @@ def main(
             uwave_dict = tb.get_uwave_dict(ind)
             uwave_power = uwave_dict["uwave_power"]
             sig_gen = tb.get_server_sig_gen(ind=ind)
-            sig_gen.set_amp(uwave_power + power)
+            sig_gen.set_amp(round(uwave_power + power, 3))
 
     data = base_routine.main(
         nv_list,

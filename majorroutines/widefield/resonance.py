@@ -176,7 +176,7 @@ def main(
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    sig_gen = tb.get_server_sig_gen()
+    sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
 
     seq_file = "resonance_ref.py"
