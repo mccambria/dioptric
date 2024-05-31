@@ -149,7 +149,7 @@ def main(
     uwave_freq_list=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=True,
+    save_all_images=False,
     save_mean_images=False,
     save_images_downsample_factor=3,
     stream_load_in_run_fn=True,

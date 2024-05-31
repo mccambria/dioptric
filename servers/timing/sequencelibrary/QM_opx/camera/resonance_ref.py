@@ -37,9 +37,18 @@ def get_seq(
     # iq_pulse_dict = {0: , 90:}
 
     with qua.program() as seq:
+        # def uwave_macro_sig(uwave_ind_list, step_val):
+        #     seq_utils.macro_pi_pulse(uwave_ind_list)
 
+        # MCC
         def uwave_macro_sig(uwave_ind_list, step_val):
+            qua.align()
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            qua.wait(4)
             seq_utils.macro_pi_pulse(uwave_ind_list)
+            qua.wait(4)
+            # seq_utils.macro_pi_pulse([uwave_ind])
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
 
         base_scc_sequence.macro(
             base_scc_seq_args,
