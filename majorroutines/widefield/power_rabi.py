@@ -62,8 +62,8 @@ def main(
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    # powers = calculate_powers(0, power_range, num_steps)
-    powers = np.linspace(0, power_range, num_steps) + 1
+    powers = calculate_powers(0, power_range, num_steps)
+    # powers = np.linspace(0, power_range, num_steps) + 1
 
     seq_file = "resonance_ref.py"
 

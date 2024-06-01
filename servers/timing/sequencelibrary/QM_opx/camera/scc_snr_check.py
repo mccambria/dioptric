@@ -28,14 +28,13 @@ def get_seq(base_scc_seq_args, num_reps=1):
 
         # MCC spin echo test
         # def uwave_macro_sig(uwave_ind_list, step_val):
-        #     for uwave_ind in uwave_ind_list:
-        #         qua.align()
-        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
-        #         qua.wait(4)
-        #         seq_utils.macro_pi_pulse([uwave_ind])
-        #         qua.wait(4)
-        #         # seq_utils.macro_pi_pulse([uwave_ind])
-        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
+        #     qua.align()
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        #     qua.wait(4)
+        #     seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     qua.wait(4)
+        #     # seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
         #     qua.wait(buffer)
 
         def uwave_macro_ref(uwave_ind_list, step_val):

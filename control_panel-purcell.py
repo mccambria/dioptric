@@ -276,9 +276,9 @@ def do_rabi(nv_list):
 
 def do_power_rabi(nv_list):
     # power_center = -3.6
-    power_range = -10
-    num_steps = 21
-    num_reps = 15
+    power_range = 6
+    num_steps = 16
+    num_reps = 20
     # num_runs = 100
     num_runs = 50
     # num_runs = 2
@@ -302,7 +302,7 @@ def do_spin_echo(nv_list):
     num_steps = 29
     num_reps = 3
     num_runs = 800
-    num_runs = 2
+    # num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 

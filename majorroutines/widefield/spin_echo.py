@@ -209,7 +209,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
     taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
     taus = np.array(taus)
-    print(taus)
+    # print(taus)
 
     uwave_ind_list = [0, 1]
 
@@ -243,7 +243,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         raw_fig = create_raw_data_figure(data)
         fit_fig = create_fit_figure(data)
     except Exception:
-        pass
+        raw_fig = None
+        fit_fig = None
 
     ### Clean up and return
 
