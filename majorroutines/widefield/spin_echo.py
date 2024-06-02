@@ -208,7 +208,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
     taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
     taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
-    taus = np.array(taus)
+    taus = [round(el / 4) * 4 for el in taus]
+    num_steps = len(taus)
     # print(taus)
 
     uwave_ind_list = [0, 1]
@@ -225,7 +226,13 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn, uwave_ind_list=uwave_ind_list
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn,
+        uwave_ind_list=uwave_ind_list,
+        save_all_images=False,
     )
 
     ### Process and plot
