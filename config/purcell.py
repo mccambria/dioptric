@@ -95,6 +95,7 @@ config |= {
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
             "frequency": 2.8585669247525622,
+            # "frequency": 2.8874701085827104,
             # "rabi_period": 112,
             # "uwave_power": 6.05,
             # "rabi_period": 192,
@@ -106,6 +107,7 @@ config |= {
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.8124502997156644,
+            # "frequency": 2.9304468840166678,
             # "rabi_period": 128,
             # "uwave_power": 8.2,
             # "rabi_period": 192,
