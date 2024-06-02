@@ -314,7 +314,7 @@ def do_ramsey(nv_list):
     num_steps = 101
     num_reps = 3
     num_runs = 400
-    num_runs = 2
+    # num_runs = 2
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -358,7 +358,7 @@ def do_sq_relaxation(nv_list):
     num_steps = 21
     num_reps = 15
     num_runs = 100
-    num_runs = 2
+    # num_runs = 2
     relaxation_interleave.sq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )

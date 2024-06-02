@@ -158,7 +158,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
-    dm.save_figure(raw_fig, file_path)
+    if raw_fig is not None:
+        dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
         dm.save_figure(fit_fig, file_path)
