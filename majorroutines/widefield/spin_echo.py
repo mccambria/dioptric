@@ -265,7 +265,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1547480065791)
+    data = dm.get_raw_data(file_id=1548381879624)
 
     create_raw_data_figure(data)
     create_fit_figure(data)
