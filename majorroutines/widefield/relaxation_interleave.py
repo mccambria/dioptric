@@ -204,25 +204,29 @@ def create_fit_figure(
 
 
 def sq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
-    init_state_1 = NVSpinState.ZERO
-    readout_state_1 = NVSpinState.ZERO
-    init_state_2 = NVSpinState.ZERO
-    readout_state_2 = NVSpinState.LOW
+    # init_state_1 = NVSpinState.ZERO
+    # readout_state_1 = NVSpinState.ZERO
+    # init_state_2 = NVSpinState.ZERO
+    # readout_state_2 = NVSpinState.LOW
+    # base_args = [nv_list, num_steps, num_reps, num_runs, min_tau, max_tau]
+    # return main(
+    #     *base_args, init_state_1, readout_state_1, init_state_2, readout_state_2
+    # )
     base_args = [nv_list, num_steps, num_reps, num_runs, min_tau, max_tau]
-    return main(
-        *base_args, init_state_1, readout_state_1, init_state_2, readout_state_2
-    )
+    return main(*base_args, "sq_relaxation_interleave.py")
 
 
 def dq_relaxation(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
-    init_state_1 = NVSpinState.LOW
-    readout_state_1 = NVSpinState.LOW
-    init_state_2 = NVSpinState.LOW
-    readout_state_2 = NVSpinState.HIGH
+    # init_state_1 = NVSpinState.LOW
+    # readout_state_1 = NVSpinState.LOW
+    # init_state_2 = NVSpinState.LOW
+    # readout_state_2 = NVSpinState.HIGH
+    # base_args = [nv_list, num_steps, num_reps, num_runs, min_tau, max_tau]
+    # return main(
+    #     *base_args, init_state_1, readout_state_1, init_state_2, readout_state_2
+    # )
     base_args = [nv_list, num_steps, num_reps, num_runs, min_tau, max_tau]
-    return main(
-        *base_args, init_state_1, readout_state_1, init_state_2, readout_state_2
-    )
+    return main(*base_args, "dq_relaxation_interleave.py")
 
 
 def main(
@@ -232,15 +236,16 @@ def main(
     num_runs,
     min_tau,
     max_tau,
-    init_state_0=NVSpinState.ZERO,
-    readout_state_0=NVSpinState.ZERO,
-    init_state_1=NVSpinState.ZERO,
-    readout_state_1=NVSpinState.LOW,
+    seq_file,
+    # init_state_0=NVSpinState.ZERO,
+    # readout_state_0=NVSpinState.ZERO,
+    # init_state_1=NVSpinState.ZERO,
+    # readout_state_1=NVSpinState.LOW,
 ):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "relaxation_interleave.py"
+    # seq_file = "relaxation_interleave.py"
     uwave_ind_list = [0, 1]
 
     # Get taus with a roughly even spacing on the y axis
@@ -252,10 +257,15 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
+        # shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        # seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+        # seq_args.extend([init_state_0, readout_state_0, init_state_1, readout_state_1])
+        # seq_args.append(shuffled_taus)
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
-        seq_args.extend([init_state_0, readout_state_0, init_state_1, readout_state_1])
-        seq_args.append(shuffled_taus)
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_taus,
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -264,6 +274,20 @@ def main(
     )
 
     ### Process and plot
+
+    timestamp = dm.get_time_stamp()
+    raw_data |= {
+        "timestamp": timestamp,
+        "taus": taus,
+        "tau-units": "ns",
+        "min_tau": min_tau,
+        "max_tau": max_tau,
+        "seq_file": seq_file,
+        # "init_state_0": init_state_0,
+        # "readout_state_0": readout_state_0,
+        # "init_state_1": init_state_1,
+        # "readout_state_1": readout_state_1,
+    }
 
     try:
         figs = create_raw_data_figures(raw_data)
@@ -274,19 +298,6 @@ def main(
 
     tb.reset_cfm()
     kpl.show()
-
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "taus": taus,
-        "tau-units": "ns",
-        "min_tau": min_tau,
-        "max_tau": max_tau,
-        "init_state_0": init_state_0,
-        "readout_state_0": readout_state_0,
-        "init_state_1": init_state_1,
-        "readout_state_1": readout_state_1,
-    }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name

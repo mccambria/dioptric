@@ -104,8 +104,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     uwave_ind_list = [0, 1]
     uwave_freq_list = []
     for ind in uwave_ind_list:
-        uwave_ind = 0
-        uwave_dict = tb.get_uwave_dict(uwave_ind)
+        uwave_dict = tb.get_uwave_dict(ind)
         uwave_freq = uwave_dict["frequency"]
         uwave_freq += detuning / 1000
         uwave_freq_list.append(uwave_freq)
