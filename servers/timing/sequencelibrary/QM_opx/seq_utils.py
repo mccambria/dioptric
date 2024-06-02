@@ -374,6 +374,15 @@ def macro_pi_on_2_pulse(uwave_ind_list):
         qua.wait(uwave_buffer, sig_gen_el)
 
 
+def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
+    duration = 0
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        duration += get_rabi_period(uwave_ind) // 4
+        duration += uwave_buffer
+    return duration
+
+
 def macro_charge_state_readout(readout_duration_ns=None):
     readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_CHARGE_READOUT)
     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)

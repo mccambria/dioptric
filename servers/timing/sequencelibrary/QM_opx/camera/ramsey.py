@@ -18,18 +18,22 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
-    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+    uwave_ind_list = base_scc_seq_args[-1]
+    macro_pi_on_2_pulse_duration = seq_utils.get_macro_pi_on_2_pulse_duration(
+        uwave_ind_list
+    )
+    step_vals = [
+        seq_utils.convert_ns_to_cc(el) - macro_pi_on_2_pulse_duration
+        for el in step_vals
+    ]
 
     with qua.program() as seq:
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
-            with qua.if_(step_val == 0):
-                seq_utils.macro_pi__pulse(uwave_ind_list)
-            with qua.else_():
-                seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-                qua.wait(step_val)
-                seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            qua.wait(step_val)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
             qua.wait(buffer)
 
         base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, step_vals, num_reps)

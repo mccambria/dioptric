@@ -249,7 +249,8 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    for freq_center in (2.85761751, 2.812251747511455):
+    # for freq_center in (2.85761751, 2.812251747511455):
+    for freq_center in (2.87 + (2.87 - 2.85856), 2.87 + (2.87 - 2.81245)):
         freq_range = 0.030
         num_steps = 20
         num_reps = 15
@@ -307,16 +308,13 @@ def do_spin_echo(nv_list):
 
 
 def do_ramsey(nv_list):
-    min_tau = 0
-    # max_tau = 2000 + min_tau
+    min_tau = 200
     max_tau = 3200 + min_tau
     detuning = 3
-    # num_steps = 21
-    # num_reps = 15
-    # num_runs = 30
     num_steps = 101
-    num_reps = 4
-    num_runs = 250
+    num_reps = 3
+    num_runs = 400
+    num_runs = 2
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -358,8 +356,9 @@ def do_sq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 20e6 + min_tau
     num_steps = 21
-    num_reps = 10
-    num_runs = 400
+    num_reps = 15
+    num_runs = 100
+    num_runs = 2
     relaxation_interleave.sq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -369,8 +368,8 @@ def do_dq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 15e6 + min_tau
     num_steps = 21
-    num_reps = 10
-    num_runs = 400
+    num_reps = 15
+    num_runs = 100
     relaxation_interleave.dq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -941,11 +940,11 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
-        # do_ramsey(nv_list)
-        # do_sq_relaxation(nv_list)
+        do_ramsey(nv_list)
+        do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)

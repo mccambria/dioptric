@@ -215,14 +215,15 @@ def main(
     # Sig gen setup - all but turning on the output
     if isinstance(uwave_ind_list, int):
         uwave_ind_list = [uwave_ind_list]
-    for ind in uwave_ind_list:
-        uwave_dict = tb.get_uwave_dict(ind)
+    for ind in len(uwave_ind_list):
+        uwave_ind = uwave_ind_list[ind]
+        uwave_dict = tb.get_uwave_dict(uwave_ind)
         uwave_power = uwave_dict["uwave_power"]
         if uwave_freq_list is None:
             freq = uwave_dict["frequency"]
         else:
-            freq = uwave_freq_list.pop(0)
-        sig_gen = tb.get_server_sig_gen(ind=ind)
+            freq = uwave_freq_list[uwave_ind]
+        sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
         # if load_iq:  # MCC
         #     uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
@@ -298,12 +299,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
-                                )
+                                counts[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = counts_list
+                                states[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = states_list
 
                                 if save_images_downsample_factor is not None:
                                     img_array = widefield.downsample_img_array(
@@ -314,9 +315,9 @@ def main(
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
                                 if save_mean_images:
-                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
-                                        img_array
-                                    )
+                                    mean_img_arrays[
+                                        exp_ind, step_ind, :, :
+                                    ] += img_array
 
                     ### Move on to the next run
 

@@ -272,15 +272,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1544212555074)
-    # data = dm.get_raw_data(file_id=1544356290934)
-    # data = dm.get_raw_data(file_id=1544510655664)
-
-    # data = dm.get_raw_data(file_id=1544680353432)
-    # data = dm.get_raw_data(file_id=1544821259934)
-    # data = dm.get_raw_data(file_id=1544947399019)
-
-    data = dm.get_raw_data(file_id=1546985295617)
+    data = dm.get_raw_data(file_id=1547480065791)
 
     create_raw_data_figure(data)
     create_fit_figure(data)
