@@ -14,6 +14,9 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
+from majorroutines.widefield.spin_echo import (
+    create_fit_figure as spin_echo_create_fit_figure,
+)
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
@@ -168,6 +171,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1399222081277)
+    data = dm.get_raw_data(file_id=1548724811111)
+
+    spin_echo_create_fit_figure(data)
 
     plt.show(block=True)
