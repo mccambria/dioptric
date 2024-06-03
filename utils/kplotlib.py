@@ -230,15 +230,35 @@ def subplot_mosaic(num_panels, num_rows=None, figsize=[6.5, 4.0]):
 
 
 def set_mosaic_xlabel(fig, axes_pack, layout, label):
-    ax = axes_pack[layout[-1, 0]]
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, label, ha="center")
+    _set_mosaic_axis_label(True, fig, axes_pack, layout, label)
 
 
 def set_mosaic_ylabel(fig, axes_pack, layout, label):
+    _set_mosaic_axis_label(False, fig, axes_pack, layout, label)
+
+
+def _set_mosaic_axis_label(x_or_y, fig, axes_pack, layout, label):
     ax = axes_pack[layout[-1, 0]]
-    ax.set_ylabel(" ")
-    fig.text(0.005, 0.55, label, va="center", rotation="vertical")
+    try:
+        label_ax = fig.label_ax
+    except Exception:
+        label_ax = fig.add_subplot(frameon=False)
+        fig.label_ax = label_ax
+        label_ax.tick_params(
+            which="both",
+            top=False,
+            bottom=False,
+            left=False,
+            right=False,
+            labelbottom=False,
+            labelleft=False,
+        )
+    if x_or_y:
+        ax.set_xlabel(" ")
+        label_ax.set_xlabel(label)
+    else:
+        ax.set_ylabel(" ")
+        label_ax.set_ylabel(label)
 
 
 def init_kplotlib(
