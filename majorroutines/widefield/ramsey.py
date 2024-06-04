@@ -174,4 +174,6 @@ if __name__ == "__main__":
 
     data = dm.get_raw_data(file_id=1550116175341)
 
+    spin_echo_create_fit_figure(data)
+
     plt.show(block=True)

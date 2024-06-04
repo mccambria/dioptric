@@ -87,7 +87,8 @@ def create_fit_figure(data):
     counts = np.array(data["states"])
 
     num_nvs = len(nv_list)
-    total_evolution_times = 2 * np.array(taus) / 1e3
+    # total_evolution_times = 2 * np.array(taus) / 1e3
+    total_evolution_times = np.array(taus) / 1e3
 
     sig_counts = counts[0]
     ref_counts = counts[1]
@@ -149,8 +150,9 @@ def create_fit_figure(data):
         # fit_fns,
         # popts,
     )
-    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Total evolution time (µs)")
-    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Normalized fluorescence")
+    # kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Total evolution time (µs)")
+    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Evolution time (µs)")
+    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Change in NV- fraction")
     return fig
 
 
