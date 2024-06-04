@@ -308,12 +308,12 @@ def do_spin_echo(nv_list):
 
 
 def do_ramsey(nv_list):
-    min_tau = 200
+    min_tau = 100
     max_tau = 3200 + min_tau
     detuning = 3
     num_steps = 101
     num_reps = 3
-    num_runs = 400
+    num_runs = 1600
     # num_runs = 2
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
@@ -608,7 +608,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.57
+    z_coord = 4.45
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -893,7 +893,7 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+7, +19])  # [131.144, 129.272]
+        widefield.set_pixel_drift([+3, +36])  # [131.144, 129.272]
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -944,7 +944,7 @@ if __name__ == "__main__":
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         do_ramsey(nv_list)
-        do_sq_relaxation(nv_list)
+        # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)

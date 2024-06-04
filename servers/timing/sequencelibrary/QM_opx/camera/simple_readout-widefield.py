@@ -7,7 +7,6 @@ Created on October 5th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 import numpy
 from qm import QuantumMachinesManager, generate_qua_script, qua
@@ -30,7 +29,7 @@ def get_seq(readout_duration_ns, readout_laser, num_reps):
     default_duration = seq_utils.get_default_pulse_duration()
     with qua.program() as seq:
         ### Define one rep here
-        def one_rep():
+        def one_rep(rep_ind):
             qua.play("on", laser_element)
             qua.play("on", camera_element)
             qua.wait(readout_duration - default_duration)

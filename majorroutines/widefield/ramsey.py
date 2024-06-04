@@ -131,6 +131,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
         run_fn,
         uwave_ind_list=uwave_ind_list,
         uwave_freq_list=uwave_freq_list,
+        save_all_images=False,
     )
 
     ### Process and plot

@@ -61,7 +61,7 @@ config |= {
         "aod_access_time": 20e3,
         # "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
-        "uwave_buffer": 20,
+        "uwave_buffer": 16,
     },
     ###
     "DeviceIDs": {

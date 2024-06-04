@@ -761,8 +761,4 @@ def get_rabi_period(uwave_ind=0):
 
 
 if __name__ == "__main__":
-    start = time.time()
-    for ind in range(1000):
-        get_rabi_period()
-    stop = time.time()
-    print(stop - start)
+    print(get_macro_pi_on_2_pulse_duration([0, 1]))
