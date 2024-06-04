@@ -64,9 +64,26 @@ def create_raw_data_figures(
     return fig
 
 
-def create_fit_figure(
-    nv_list, taus, diff_counts, diff_counts_ste, Omega_or_gamma, nv1_norm=None
-):
+def create_fit_figure(data):
+    # Process the counts
+
+    nv_list = data["nv_list"]
+    taus = data["taus"]
+    counts = data["counts"]
+
+    counts = np.array(data["states"])
+    a_counts, b_counts = counts[0], counts[1]
+
+    a_avg_counts, a_avg_counts_ste, _ = widefield.process_counts(
+        nv_list, a_counts, threshold=False
+    )
+    b_avg_counts, b_avg_counts_ste, _ = widefield.process_counts(
+        nv_list, b_counts, threshold=False
+    )
+
+    diff_counts = b_avg_counts - a_avg_counts
+    diff_counts_ste = np.sqrt(a_avg_counts_ste**2 + b_avg_counts_ste**2)
+    Omega_or_gamma = True
     # Do the fits
 
     taus_ms = np.array(taus) / 1e6
@@ -100,14 +117,10 @@ def create_fit_figure(
         nv_counts = diff_counts[nv_ind]
         nv_counts_ste = diff_counts_ste[nv_ind]
 
-        if nv_ind in [1]:
-            fit_fn = constant
-            guess_params = [np.average(nv_counts)]
-        else:
-            fit_fn = exp_decay
-            # guess_params = [nv_counts[0], 70, 0]
-            guess_params = [nv_counts[0], 70]
-            # guess_params = [nv_counts[0], 0.01, 0]
+        fit_fn = exp_decay
+        # guess_params = [nv_counts[0], 70, 0]
+        guess_params = [nv_counts[0], 70]
+        # guess_params = [nv_counts[0], 0.01, 0]
 
         try:
             popt, pcov = curve_fit(
@@ -121,17 +134,13 @@ def create_fit_figure(
             fit_fns.append(fit_fn)
             popts.append(popt)
             pste = np.sqrt(np.diag(pcov))
-            if nv_ind == 1:
-                norms.append(nv1_norm)
-            else:
-                norms.append(popt[0])
-                rates.append(popt[1])
-                rate_errs.append(pste[1])
-                # offsets.append(popt[2])
-                # offset_errs.append(pste[2])
-                # rate = 1 / popt[1]
-                # rates.append(rate)
-                # rate_errs.append(rate**2 * pste[1])
+            rates.append(popt[1])
+            rate_errs.append(pste[1])
+            # offsets.append(popt[2])
+            # offset_errs.append(pste[2])
+            # rate = 1 / popt[1]
+            # rates.append(rate)
+            # rate_errs.append(rate**2 * pste[1])
         except Exception as exc:
             fit_fns.append(None)
             popts.append(None)
@@ -150,13 +159,9 @@ def create_fit_figure(
     # print(offsets)
     # print(offset_errs)
 
-    # Make the figure
-    # fig, axes_pack = plt.subplots(nrows=6, sharex=True, figsize=[6.5, 6.0])
-    fig, axes_pack = plt.subplots(
-        nrows=3, ncols=2, sharex=True, sharey=True, figsize=[6.5, 6.0]
-    )
-    axes_pack = axes_pack.flatten()
-    norms = None
+    ### Make the figure
+
+    fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
     widefield.plot_fit(
         axes_pack,
         nv_list,
@@ -165,41 +170,9 @@ def create_fit_figure(
         diff_counts_ste,
         fit_fns,
         popts,
-        norms,
-        # skip_inds=[1],
     )
-
-    axes_pack[-1].set_xlabel(" ")
-    fig.text(0.55, 0.01, "Relaxation time (ms)", ha="center")
-    axes_pack[0].set_ylabel(" ")
-    fig.text(
-        0.01,
-        0.55,
-        "Normalized fluorescence difference",
-        va="center",
-        rotation="vertical",
-    )
-
-    # axes_pack[-1].set_xlabel("Relaxation time (ms)")
-    # ylabel = (
-    #     "$F_{\Omega}$ (arb. units)" if Omega_or_gamma else "$F_{\gamma}$ (arb. units)"
-    # )
-    # ylabel = "Normalized fluorescence"
-    # axes_pack[2].set_ylabel(ylabel)
-    # axes_pack[-1].set_ylabel("Counts")
-    # for ind in range(len(axes_pack)):
-    #     ax = axes_pack[ind]
-    #     if ind == 5:
-    #         # ax.set_ylim([-1.2, +1.2])
-    #         # ax.set_yticks([-1, 0, +1])
-    #         ax.set_ylim([-0.8, +0.8])
-    #         ax.set_yticks([-0.5, 0, +0.5])
-    #     else:
-    #         ax.set_ylim([-0.3, 1.35])
-    #         ax.set_yticks([0, 1])
-    ax = axes_pack[0]
-    # ax.set_ylim([-0.253, 1.276])
-    # ax.set_yticks([0, 1])
+    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Relaxation time (ms)")
+    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Change in NV- fraction")
     return fig
 
 
@@ -310,4 +283,10 @@ def main(
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
+
+    data = dm.get_raw_data(file_id=1548776385412)
+
+    create_fit_figure(data)
+
     plt.show(block=True)
