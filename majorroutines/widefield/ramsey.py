@@ -172,8 +172,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1548724811111)
-
-    spin_echo_create_fit_figure(data)
+    data = dm.get_raw_data(file_id=1550116175341)
 
     plt.show(block=True)
