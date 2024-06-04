@@ -55,8 +55,8 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     tau_step = taus[1] - taus[0]
     num_steps = len(taus)
 
-    norms_newaxis = norms[:, np.newaxis]
-    # norms_newaxis = norms[0][:, np.newaxis]
+    # norms_newaxis = norms[:, np.newaxis]
+    norms_newaxis = norms[0][:, np.newaxis]
     norm_counts = counts - norms_newaxis
     norm_counts_ste = counts_ste
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1538601728884, load_npz=True)
     # data = dm.get_raw_data(file_id=1540791781984)
     # data = dm.get_raw_data(file_id=1543670303416)
-    data = dm.get_raw_data(file_id=1546150195000)
+    data = dm.get_raw_data(file_id=1550171089315)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
-    norms = np.mean(norms, axis=0)
+    # norms = np.mean(norms[0], axis=0)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
