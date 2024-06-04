@@ -221,7 +221,7 @@ def calc_mosaic_layout(num_panels, num_rows=None):
     return vals
 
 
-def subplot_mosaic(num_panels, num_rows=None, figsize=[6.5, 4.0]):
+def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
     layout = calc_mosaic_layout(num_panels, num_rows)
     fig, axes_pack = plt.subplot_mosaic(
         layout, figsize=figsize, sharex=True, sharey=True
