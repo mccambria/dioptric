@@ -99,7 +99,14 @@ def determine_threshold(counts_list, nvn_ratio=0.5):
 # region Process and plotting functions
 
 
-def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
+def create_histogram(
+    sig_counts_list,
+    ref_counts_list,
+    no_title=True,
+    no_text=None,
+    ax=None,
+    density=False,
+):
     try:
         laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
         readout = laser_dict["duration"]
@@ -116,21 +123,27 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
     labels = ["With ionization pulse", "Without ionization pulse"]
     colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
     counts_lists = [sig_counts_list, ref_counts_list]
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = None
     if not no_title:
         ax.set_title(f"Charge prep hist, {num_reps} reps")
     ax.set_xlabel("Integrated counts")
-    ax.set_ylabel("Number of occurrences")
+    if density:
+        ax.set_ylabel("Probability")
+    else:
+        ax.set_ylabel("Number of occurrences")
     for ind in range(2):
         counts_list = counts_lists[ind]
         label = labels[ind]
         color = colors[ind]
         # kpl.histogram(ax, counts_list, num_bins, label=labels[ind])
-        kpl.histogram(ax, counts_list, label=label, color=color)
+        kpl.histogram(ax, counts_list, label=label, color=color, density=density)
     ax.legend()
 
     # Calculate the normalized separation
-    if True:
+    if not no_text:
         noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
         signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
         snr = signal / noise
@@ -143,7 +156,8 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
         snr_str = f"SNR: {snr}"
         kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
-    return fig
+    if fig is not None:
+        return fig
 
 
 # def imshow_scalebar(ax, img_array):

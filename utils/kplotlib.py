@@ -35,6 +35,10 @@ class Loc(StrEnum):
     UPPER_LEFT = "upper left"
     LOWER_RIGHT = "lower right"
     UPPER_RIGHT = "upper right"
+    UPPER_CENTER = "upper center"
+    LOWER_CENTER = "lower center"
+    CENTER_LEFT = "center left"
+    CENTER_RIGHT = "center right"
 
 
 class Size(Enum):
@@ -218,7 +222,7 @@ def calc_mosaic_layout(num_panels, num_rows=None):
     if num_panels != num_axes:
         vals[0, num_panels - num_axes :] = "."
 
-    return vals
+    return vals.tolist()
 
 
 def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
@@ -805,16 +809,22 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
     radius : numeric
         Radius of the circle
     """
+    M = ax.transData.get_matrix()
+    xscale = M[0, 0]
     if linewidth is None:
-        linewidth = radius / 4
+        linewidth = 0.13 * xscale * radius
     ax.scatter(
         *coords,
-        s=(2 * radius) ** 2,
+        s=(xscale * radius) ** 2,
         facecolors="none",
         edgecolors=color,
         label=label,
         linewidths=linewidth,
     )
+    # circle = plt.Circle(
+    #     coords, radius, fill=False, color=color, label=label, linewidth=linewidth
+    # )
+    # ax.add_patch(circle)
 
 
 # endregion

@@ -36,7 +36,7 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
+def create_fit_figure(nv_list, freqs, counts, counts_ste, norms, axes_pack=None):
     ### Do the fitting
 
     num_nvs = len(nv_list)
@@ -137,31 +137,32 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     ### Make the figure
 
-    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-    fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 4.0], sharex=True, sharey=True
-    )
+    if axes_pack is None:
+        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
+        fig, axes_pack = plt.subplot_mosaic(
+            layout, figsize=[6.5, 4.0], sharex=True, sharey=True
+        )
     axes_pack_flat = list(axes_pack.values())
 
     widefield.plot_fit(
         axes_pack_flat, nv_list, freqs, norm_counts, norm_counts_ste, fit_fns, popts
     )
 
-    ax = axes_pack[layout[-1, 0]]
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
-    ax.set_ylabel(" ")
-    # label = "Normalized fraction in NV$^{-}$"
-    label = "Change in fraction in NV$^{-}$"
-    fig.text(0.005, 0.55, label, va="center", rotation="vertical")
-    # ax.set_ylim([0.945, 1.19])
-    # ax.set_yticks([1.0, 1.1, 1.2])
-    # ax.set_xticks([2.83, 2.87, 2.91])
-    x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
-    ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
-    y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
-    ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
-    return fig
+    # ax = axes_pack[layout[-1, 0]]
+    # ax.set_xlabel(" ")
+    # fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
+    # ax.set_ylabel(" ")
+    # # label = "Normalized fraction in NV$^{-}$"
+    # label = "Change in fraction in NV$^{-}$"
+    # fig.text(0.005, 0.55, label, va="center", rotation="vertical")
+    # # ax.set_ylim([0.945, 1.19])
+    # # ax.set_yticks([1.0, 1.1, 1.2])
+    # # ax.set_xticks([2.83, 2.87, 2.91])
+    # x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
+    # ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
+    # y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
+    # ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
+    # return fig
 
 
 def main(

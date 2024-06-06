@@ -810,10 +810,11 @@ def draw_circles_on_nvs(ax, nv_list, drift=None):
     for ind in range(len(pixel_coords_list)):
         pixel_coords = pixel_coords_list[ind]
         color = kpl.data_color_cycler[ind]
-        kpl.draw_circle(ax, pixel_coords, color=color, radius=scale / 2 - 1, label=ind)
+        kpl.draw_circle(ax, pixel_coords, color=color, radius=0.7 * scale, label=ind)
     num_nvs = len(nv_list)
     ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-    ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.7)
+    ncols = 5
+    ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):

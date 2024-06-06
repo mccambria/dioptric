@@ -314,8 +314,8 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons")
 
-    # scale = widefield.get_camera_scale()
-    # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
-    # widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10))
+    scale = widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+    widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10))
 
     plt.show(block=True)
