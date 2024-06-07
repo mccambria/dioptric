@@ -44,12 +44,14 @@ class Loc(StrEnum):
 class Size(Enum):
     NORMAL = "NORMAL"
     SMALL = "SMALL"
+    XSMALL = "XSMALL"
     TINY = "TINY"
 
 
 class MarkerSize(float, Enum):
     NORMAL = 7
     SMALL = 6
+    XSMALL = 5
     TINY = 4
 
 
@@ -58,12 +60,14 @@ class LineWidth(float, Enum):
     BIG = 2.0
     NORMAL = 1.5
     SMALL = 1.25
+    XSMALL = 1.1
     TINY = 1.0
 
 
 class MarkerEdgeWidth(float, Enum):
     NORMAL = 1.5
     SMALL = 1.25
+    XSMALL = 1.1
     TINY = 1.0
 
 
@@ -233,16 +237,19 @@ def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
     return fig, axes_pack, layout
 
 
-def set_mosaic_xlabel(fig, axes_pack, layout, label):
-    _set_mosaic_axis_label(True, fig, axes_pack, layout, label)
+def set_mosaic_xlabel(axes_pack, layout, label):
+    _set_mosaic_axis_label(True, axes_pack, layout, label)
 
 
-def set_mosaic_ylabel(fig, axes_pack, layout, label):
-    _set_mosaic_axis_label(False, fig, axes_pack, layout, label)
+def set_mosaic_ylabel(axes_pack, layout, label):
+    _set_mosaic_axis_label(False, axes_pack, layout, label)
 
 
-def _set_mosaic_axis_label(x_or_y, fig, axes_pack, layout, label):
-    ax = axes_pack[layout[-1, 0]]
+def _set_mosaic_axis_label(x_or_y, axes_pack, layout, label):
+    """Works by making a dummy axis just for setting the label"""
+    ax = axes_pack[layout[-1][0]]
+    ax.set_xlabel(" ")
+    fig = ax.get_figure()
     try:
         label_ax = fig.label_ax
     except Exception:

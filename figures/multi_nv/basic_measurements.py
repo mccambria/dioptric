@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from majorroutines.widefield import resonance
+from majorroutines.widefield import resonance, spin_echo
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -25,34 +25,28 @@ from utils.constants import NVSig
 def main(esr_data, spin_echo_data):
     ### Setup
 
-    num_nvs = 10
-    sub_layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-    layout = [
-        ["sequence", "spin_echo"],
-        [sub_layout, "spin_echo"],
-    ]
-    w_factor = 0.3
-    h_factor = 0.4
+    w_factor = 0.4
+    h_factor = 0.5
     figsize = kpl.double_figsize
-    # figsize[1] *= 1.1
-    main_fig, axes_pack = plt.subplot_mosaic(
-        layout,
-        figsize=figsize,
-        width_ratios=(w_factor, 1 - w_factor),
-        height_ratios=(h_factor, 1 - h_factor),
+    figsize[1] *= 1.1
+    main_fig = plt.figure(figsize=figsize)
+    seq_esr_fig, spin_echo_double_fig = main_fig.subfigures(
+        ncols=2, width_ratios=(w_factor, 1 - w_factor)
     )
-    esr_axes_pack = {}
-    esr_ax = axes_pack[sub_layout[0][0]]
-    for val in np.array(sub_layout).flatten():
-        ax = axes_pack[val]
-        esr_axes_pack[val] = ax
-        if ax != esr_ax:
-            ax.sharex(esr_ax)
-            ax.sharey(esr_ax)
+    seq_fig, esr_fig = seq_esr_fig.subfigures(
+        nrows=2, height_ratios=(h_factor, 1 - h_factor)
+    )
+    spin_echo_fig, spin_echo_zoom_fig = spin_echo_double_fig.subfigures(
+        nrows=2, height_ratios=(1, 1)
+    )
+    num_nvs = 10
+    mosaic_layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
 
     ### Sequence
 
     ### ESR
+
+    esr_axes_pack = esr_fig.subplot_mosaic(mosaic_layout, sharex=True, sharey=True)
 
     nv_list = esr_data["nv_list"]
     freqs = esr_data["freqs"]
@@ -66,21 +60,46 @@ def main(esr_data, spin_echo_data):
     )
     norms = norms[0]
 
-    fit_fig = resonance.create_fit_figure(
-        nv_list, freqs, avg_counts, avg_counts_ste, norms, esr_axes_pack
+    resonance.create_fit_figure(
+        nv_list,
+        freqs,
+        avg_counts,
+        avg_counts_ste,
+        norms,
+        esr_axes_pack,
+        mosaic_layout,
+        no_legend=True,
     )
 
     ### Spin echo
 
-    ax = axes_pack["spin_echo"]
+    spin_echo_axes_pack = spin_echo_fig.subplot_mosaic(
+        mosaic_layout, sharex=True, sharey=True
+    )
+    spin_echo.create_fit_figure(
+        spin_echo_data, spin_echo_axes_pack, mosaic_layout, no_legend=True
+    )
 
-    ### Adjustments
+    zoom_range = [65, 87]
+    ax = spin_echo_axes_pack[mosaic_layout[0][0]]
+    ax.axvspan(*zoom_range, color=kpl.KplColors.LIGHT_GRAY, zorder=-11)
 
-    main_fig.get_layout_engine().set(w_pad=0, h_pad=0, hspace=0, wspace=0)
+    spin_echo_zoom_axes_pack = spin_echo_zoom_fig.subplot_mosaic(
+        mosaic_layout, sharex=True, sharey=True
+    )
+    spin_echo.create_fit_figure(
+        spin_echo_data, spin_echo_zoom_axes_pack, mosaic_layout, no_legend=True
+    )
+    ax = spin_echo_zoom_axes_pack[mosaic_layout[0][0]]
+    ax.set_xlim(zoom_range)
 
-    main_fig.text(0, 0.96, "(a)")
-    main_fig.text(w_factor - 0.04, 0.96, "(b)")
-    main_fig.text(w_factor - 0.04, 1 - h_factor + 0.05, "(c)")
+    # ### Adjustments
+
+    # main_fig.get_layout_engine().set(w_pad=0, h_pad=0, hspace=0, wspace=0)
+
+    # main_fig.text(0, 0.96, "(a)")
+    # main_fig.text(w_factor - 0.04, 0.96, "(b)")
+    # main_fig.text(w_factor - 0.04, 1 - h_factor + 0.05, "(c)")
 
 
 if __name__ == "__main__":

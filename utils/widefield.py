@@ -886,7 +886,7 @@ def plot_fit(
     popts=None,
     xlim=[None, None],
     norms=None,
-    legend=True,
+    no_legend=False,
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -940,7 +940,9 @@ def plot_fit(
         # Plot the points
         # ls = "none" if fn is not None else "solid"
         ls = "none"
-        size = kpl.Size.SMALL
+        # size = kpl.Size.SMALL
+        size = kpl.Size.XSMALL
+        # size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
             ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
@@ -954,7 +956,7 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        if legend:
+        if not no_legend:
             loc = kpl.Loc.UPPER_LEFT
             # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
             ax.legend(loc=loc)
@@ -1068,7 +1070,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
             x[: step_ind + 1],
             counts[:, : step_ind + 1],
             counts_errs[:, : step_ind + 1],
-            legend=False,
+            no_legend=False,
         )
         data_ax_relim()
         return all_axes

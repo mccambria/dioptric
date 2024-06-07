@@ -36,7 +36,16 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-def create_fit_figure(nv_list, freqs, counts, counts_ste, norms, axes_pack=None):
+def create_fit_figure(
+    nv_list,
+    freqs,
+    counts,
+    counts_ste,
+    norms,
+    axes_pack=None,
+    layout=None,
+    no_legend=False,
+):
     ### Do the fitting
 
     num_nvs = len(nv_list)
@@ -73,8 +82,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms, axes_pack=None)
         #     num_resonances = 2
         # else:
         #     num_resonances = 0
-        num_resonances = 1
-        # num_resonances = 2
+        # num_resonances = 1
+        num_resonances = 2
 
         if num_resonances == 1:
             guess_params = [amp_guess, 5, 5, np.median(freqs)]
@@ -145,15 +154,25 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms, axes_pack=None)
     axes_pack_flat = list(axes_pack.values())
 
     widefield.plot_fit(
-        axes_pack_flat, nv_list, freqs, norm_counts, norm_counts_ste, fit_fns, popts
+        axes_pack_flat,
+        nv_list,
+        freqs,
+        norm_counts,
+        norm_counts_ste,
+        fit_fns,
+        popts,
+        no_legend=no_legend,
     )
+
+    kpl.set_mosaic_xlabel(axes_pack, layout, "Frequency (GHz)")
+    kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
     # fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
     # ax.set_ylabel(" ")
     # # label = "Normalized fraction in NV$^{-}$"
-    # label = "Change in fraction in NV$^{-}$"
+    # label = "Change in NV$^{-}$ fraction"
     # fig.text(0.005, 0.55, label, va="center", rotation="vertical")
     # # ax.set_ylim([0.945, 1.19])
     # # ax.set_yticks([1.0, 1.1, 1.2])
