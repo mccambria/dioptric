@@ -335,17 +335,25 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
 
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
-    _validate_counts_structure(sig_counts)
-    _validate_counts_structure(ref_counts)
-    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
+    avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
     noise = np.sqrt(
         np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
         + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
     )
-    avg_snr = (avg_sig_counts - avg_ref_counts) / noise
-    avg_snr_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2)) / noise
+    avg_snr = avg_contrast / noise
+    avg_snr_ste = avg_contrast_ste / noise
     return avg_snr, avg_snr_ste
+
+
+def calc_contrast(sig_counts, ref_counts):
+    """Calculate contrast for a single shot"""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
+    avg_contrast = avg_sig_counts - avg_ref_counts
+    avg_contrast_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2))
+    return avg_contrast, avg_contrast_ste
 
 
 def _validate_counts_structure(counts):

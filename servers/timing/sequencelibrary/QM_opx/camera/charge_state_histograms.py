@@ -58,7 +58,7 @@ def get_seq(
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 
-        def one_rep():
+        def one_rep(rep_ind=None):
             for half_rep_args in [
                 [do_polarize_sig, do_ionize_sig],
                 [do_polarize_ref, do_ionize_ref],

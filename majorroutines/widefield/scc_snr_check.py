@@ -20,7 +20,8 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_plot(data, threshold=False):
+def process_and_plot(data):
+    threshold = False
     nv_list = data["nv_list"]
     # counts = np.array(data["counts"])
     counts = np.array(data["states"])
@@ -36,6 +37,7 @@ def process_and_plot(data, threshold=False):
         nv_list, ref_counts, threshold=threshold
     )
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
 
     # There's only one point, so only consider that
     avg_sig_counts = avg_sig_counts[:, 0]
@@ -44,6 +46,8 @@ def process_and_plot(data, threshold=False):
     avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
     avg_snr = avg_snr[:, 0]
     avg_snr_ste = avg_snr_ste[:, 0]
+    avg_contrast = avg_contrast[:, 0]
+    avg_contrast_ste = avg_contrast_ste[:, 0]
 
     # Print
     for ind in range(len(nv_list)):
@@ -72,12 +76,15 @@ def process_and_plot(data, threshold=False):
             axes_pack[1], nv_num, avg_sig_counts[ind], yerr=avg_sig_counts_ste[ind]
         )
         kpl.plot_bars(ax, nv_num, avg_snr[ind], yerr=avg_snr_ste[ind])
+        # kpl.plot_bars(ax, nv_num, avg_contrast[ind], yerr=avg_contrast_ste[ind])
 
     axes_pack[0].set_xlabel("NV index")
     ax.set_xlabel("NV index")
     axes_pack[0].set_ylabel("NV- | prep in ms=0")
     axes_pack[1].set_ylabel("NV- | prep in ms=1")
     ax.set_ylabel("SNR")
+    # ax.set_ylabel("Contrast")
+    # ax.set_ylim([0, 0.2])
 
     # axes_pack[0].set_ylabel("NV$^{-}$ population after prep in ms=0")
     # axes_pack[1].set_ylabel("NV$^{-}$ population after prep in ms=1")
@@ -140,6 +147,6 @@ def main(nv_list, num_reps, num_runs):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1540813367760)
+    data = dm.get_raw_data(file_id=1550678313325)
     figs = process_and_plot(data)
     kpl.show(block=True)

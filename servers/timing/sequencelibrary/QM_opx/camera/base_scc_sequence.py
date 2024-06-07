@@ -105,6 +105,7 @@ def macro(
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
         seq_utils.macro_polarize(pol_coords_list)
+        qua.align()
         uwave_macro[exp_ind](uwave_ind_list, step_val)
 
         ref_exp = reference and exp_ind == num_exps_per_rep - 1

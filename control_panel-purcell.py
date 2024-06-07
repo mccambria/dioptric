@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from majorroutines.widefield import (
+    ac_stark,
     calibrate_iq_delay,
     charge_monitor,
     charge_state_histograms,
@@ -78,7 +79,8 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_reps = 200
-    num_runs = 40
+    # num_runs = 40
+    num_runs = 20
     # num_runs = 2
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
@@ -275,6 +277,25 @@ def do_rabi(nv_list):
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
+def do_ac_stark(nv_list):
+    min_tau = 0
+    # max_tau = 240 + min_tau
+    # max_tau = 360 + min_tau
+    max_tau = 480 + min_tau
+    num_steps = 31
+    num_reps = 10
+    # num_runs = 100
+    num_runs = 50
+    # num_runs = 2
+
+    # uwave_ind_list = [1]
+    uwave_ind_list = [0, 1]
+
+    ac_stark.main(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+    )
+
+
 def do_power_rabi(nv_list):
     # power_center = -3.6
     power_range = 6
@@ -357,7 +378,7 @@ def do_sq_relaxation(nv_list):
     max_tau = 20e6 + min_tau
     num_steps = 21
     num_reps = 15
-    num_runs = 100
+    num_runs = 200
     # num_runs = 2
     relaxation_interleave.sq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
@@ -369,7 +390,7 @@ def do_dq_relaxation(nv_list):
     max_tau = 15e6 + min_tau
     num_steps = 21
     num_reps = 15
-    num_runs = 100
+    num_runs = 200
     relaxation_interleave.dq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -496,18 +517,18 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.34],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.11, 0.11],  # Analog voltages
-    #     [110, 110],  # Analog frequencies
+    #     # [3, 4],  # Analog channels
+    #     # [0.11, 0.11],  # Analog voltages
+    #     # [110, 110],  # Analog frequencies
     # )
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -526,16 +547,15 @@ def do_opx_constant_ac():
     #         )
     #         time.sleep(0.5)
     #     opx.halt()
-    opx.constant_ac(
-        [1],  # Digital channels
-        [2, 6],  # Analog channels
-        [0.19, 0.19],  # Analog voltages
-        [
-            75,
-            75,
-        ],  # Analog frequencies                                                                                                                                                                       uencies
-        # [73.76, 75.257],
-    )
+    # opx.constant_ac(
+    #     [1],  # Digital channels
+    #     # [2, 6],  # Analog channels
+    #     # [0.19, 0.19],  # Analog voltages
+    #     # [
+    #     #     75,
+    #     #     75,
+    #     # ],  # Analog frequencies                                                                                                                                                                       uencies
+    # )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
     # opx.constant_ac(
@@ -608,7 +628,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.45
+    z_coord = 4.38
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -772,28 +792,28 @@ if __name__ == "__main__":
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [108.507, 110.208],
-        [109.089, 110.756],
-        [108.53, 110.804],
-        [107.93, 111.171],
-        [108.778, 109.393],
-        [109.305, 111.414],
-        [109.237, 112.058],
-        [109.294, 110.155],
-        [108.479, 111.479],
-        [106.85, 109.898],
+        [108.512, 110.201],
+        [109.051, 110.872],
+        [108.511, 110.927],
+        [107.881, 111.232],
+        [108.728, 109.478],
+        [109.28, 111.491],
+        [109.221, 112.171],
+        [109.28, 110.262],
+        [108.464, 111.583],
+        [106.769, 109.962],
     ]
     red_coords_list = [
-        [73.293, 75.462],
-        [73.83, 75.913],
-        [73.345, 75.937],
-        [72.85, 76.202],
-        [73.536, 74.8],
-        [74.025, 76.402],
-        [73.968, 76.974],
-        [74.035, 75.432],
-        [73.333, 76.454],
-        [71.956, 75.199],
+        [73.383, 75.565],
+        [73.933, 76.033],
+        [73.442, 76.039],
+        [72.961, 76.308],
+        [73.676, 74.922],
+        [74.135, 76.538],
+        [74.094, 77.112],
+        [74.137, 75.56],
+        [73.489, 76.602],
+        [72.1, 75.333],
     ]
     threshold_list = [27.5, 27.5, 25.5, 23.5, 27.5, 22.5, 17.5, 24.5, 22.5, 20.5]
     nvn_dist_params_list = [
@@ -893,7 +913,10 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        widefield.set_pixel_drift([+3, +36])  # [131.144, 129.272]
+        # widefield.set_pixel_drift(
+        #     np.array([138.855, 164.092])  # New coords
+        #     - np.array([131.144, 129.272])  # Original coords
+        # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -943,19 +966,20 @@ if __name__ == "__main__":
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
-        do_ramsey(nv_list)
+        # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
+        # do_ac_stark(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

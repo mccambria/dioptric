@@ -350,7 +350,11 @@ def macro_pi_pulse(uwave_ind_list, duration=None):
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
-        qua.play("pi_pulse", sig_gen_el, duration=duration)
+        if duration is None:
+            qua.play("pi_pulse", sig_gen_el)
+        else:
+            with qua.if_(duration > 0):
+                qua.play("pi_pulse", sig_gen_el, duration=duration)
         qua.wait(uwave_buffer, sig_gen_el)
 
 

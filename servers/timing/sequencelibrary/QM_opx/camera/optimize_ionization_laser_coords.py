@@ -30,7 +30,7 @@ def get_seq(pol_coords, ion_coords, num_reps):
             [green_laser, red_laser], aod_suffices=["charge_pol", "opti"]
         )
 
-        def one_rep():
+        def one_rep(rep_ind=None):
             # Charge polarization with green, spin polarization with yellow
             seq_utils.macro_polarize([pol_coords], spin_pol=False)
 

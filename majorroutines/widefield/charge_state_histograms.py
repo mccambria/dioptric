@@ -215,25 +215,25 @@ def process_and_plot(raw_data):
 
     ### MLE state estimation
 
-    shape = widefield.get_img_array_shape()
-    ref_img_arrays = img_arrays[1]
-    ref_img_arrays = ref_img_arrays.reshape((num_shots, *shape))
-    nvn_dist_params_list = []
-    for nv_ind in range(num_nvs):
-        nvn_img_arrays = []
-        nv = nv_list[nv_ind]
-        threshold = threshold_list[nv_ind] + 5  # + 5 to decrease nv0 prob
-        ref_counts_list = ref_counts_lists[nv_ind]
-        for shot_ind in range(num_shots):
-            if ref_counts_list[shot_ind] > threshold:
-                nvn_img_arrays.append(ref_img_arrays[shot_ind])
-        mean_img_array = np.mean(nvn_img_arrays, axis=0)
-        popt = optimize.optimize_pixel_with_img_array(
-            mean_img_array, nv, return_popt=True
-        )
-        # bg, amp, sigma
-        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
-    print(nvn_dist_params_list)
+    # shape = widefield.get_img_array_shape()
+    # ref_img_arrays = img_arrays[1]
+    # ref_img_arrays = ref_img_arrays.reshape((num_shots, *shape))
+    # nvn_dist_params_list = []
+    # for nv_ind in range(num_nvs):
+    #     nvn_img_arrays = []
+    #     nv = nv_list[nv_ind]
+    #     threshold = threshold_list[nv_ind] + 5  # + 5 to decrease nv0 prob
+    #     ref_counts_list = ref_counts_lists[nv_ind]
+    #     for shot_ind in range(num_shots):
+    #         if ref_counts_list[shot_ind] > threshold:
+    #             nvn_img_arrays.append(ref_img_arrays[shot_ind])
+    #     mean_img_array = np.mean(nvn_img_arrays, axis=0)
+    #     popt = optimize.optimize_pixel_with_img_array(
+    #         mean_img_array, nv, return_popt=True
+    #     )
+    #     # bg, amp, sigma
+    #     nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    # print(nvn_dist_params_list)
 
     return img_arrays_to_save, img_figs, hist_figs
 
