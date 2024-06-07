@@ -512,8 +512,38 @@ def plot_points(ax, x, y, size=None, **kwargs):
     ax.errorbar(x, y, **params)
 
 
+def plot_sequence(ax, edges, values, size=None, **kwargs):
+    global default_data_size
+    if size is None:
+        size = default_data_size
+
+    # Color handling
+    if "color" in kwargs:
+        edge_color = kwargs["color"]
+    else:
+        edge_color = get_default_color(ax, PlotType.HIST)
+    if "facecolor" in kwargs:
+        face_color = kwargs["facecolor"]
+    else:
+        face_color = lighten_color_hex(edge_color)
+
+    # Defaults
+    params = {
+        "fill": True,
+        "linewidth": 1.2 * MarkerEdgeWidth[size.value],
+        "linestyle": "-",
+    }
+
+    # Combine passed args and defaults
+    params = {**params, **kwargs}
+    params["edgecolor"] = edge_color
+    params["facecolor"] = face_color
+
+    ax.stairs(values, edges, **params)
+
+
 def plot_bars(ax, x, y, **kwargs):
-    """Same as matplotlib's errorbar, but with our defaults. Use for plotting
+    """Same as matplotlib's bar, but with our defaults. Use for plotting
     data points
 
     Parameters
