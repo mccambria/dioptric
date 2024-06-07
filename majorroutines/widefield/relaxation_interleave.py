@@ -83,7 +83,7 @@ def create_fit_figure(data):
 
     diff_counts = b_avg_counts - a_avg_counts
     diff_counts_ste = np.sqrt(a_avg_counts_ste**2 + b_avg_counts_ste**2)
-    Omega_or_gamma = True
+    # Omega_or_gamma = False
     # Do the fits
 
     taus_ms = np.array(taus) / 1e6
@@ -285,7 +285,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1548776385412)
+    data = dm.get_raw_data(file_id=1550610460299)
 
     create_fit_figure(data)
 

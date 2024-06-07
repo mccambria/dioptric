@@ -81,13 +81,14 @@ def create_raw_data_figure(data):
     return fig
 
 
-def create_fit_figure(data):
+def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     nv_list = data["nv_list"]
     taus = data["taus"]
     counts = np.array(data["states"])
 
     num_nvs = len(nv_list)
     total_evolution_times = 2 * np.array(taus) / 1e3
+    # total_evolution_times = np.array(taus) / 1e3
 
     sig_counts = counts[0]
     ref_counts = counts[1]
@@ -137,7 +138,10 @@ def create_fit_figure(data):
 
     ### Make the figure
 
-    fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+    if axes_pack is None:
+        fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+    else:
+        fig = None
     norm_counts = avg_counts - norms[0][:, np.newaxis]
     norm_counts_ste = avg_counts_ste
     widefield.plot_fit(
@@ -148,9 +152,12 @@ def create_fit_figure(data):
         norm_counts_ste,
         # fit_fns,
         # popts,
+        no_legend=no_legend,
     )
-    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Total evolution time (µs)")
-    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Normalized fluorescence")
+    kpl.set_mosaic_xlabel(axes_pack, layout, "Total evolution time (µs)")
+    # kpl.set_mosaic_xlabel(axes_pack, layout, "Evolution time (µs)")
+    # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
+    kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
     return fig
 
 

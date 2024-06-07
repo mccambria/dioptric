@@ -96,7 +96,7 @@ def process_detect_cosmic_rays(data):
     return hist_fig, im_fig
 
 
-def process_check_readout_fidelity(data):
+def process_check_readout_fidelity(data, fidelity_ax=None):
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])
@@ -148,7 +148,10 @@ def process_check_readout_fidelity(data):
     # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_xticks(range(num_nvs))
 
-    fig, ax = plt.subplots()
+    if fidelity_ax is None:
+        fig, fidelity_ax = plt.subplots()
+    else:
+        fig = None
     fidelities = []
     for nv_ind in range(num_nvs):
         fidelity = (probs[0][nv_ind] + probs[1][nv_ind]) / 2
@@ -158,12 +161,12 @@ def process_check_readout_fidelity(data):
         )
         nv_num = widefield.get_nv_num(nv_list[nv_ind])
         # kpl.plot_points(ax, nv_num, fidelity, yerr=fidelity_err)
-        kpl.plot_bars(ax, nv_num, fidelity, yerr=fidelity_err)
-    ax.set_ylabel("Fidelity")
-    ax.set_xlabel("NV index")
-    # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.set_xticks(range(num_nvs))
-    ax.set_ylim((0.5, 1.0))
+        kpl.plot_bars(fidelity_ax, nv_num, fidelity, yerr=fidelity_err)
+    fidelity_ax.set_ylabel("Readout fidelity")
+    fidelity_ax.set_xlabel("NV index")
+    # fidelity_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    fidelity_ax.set_xticks(range(num_nvs))
+    fidelity_ax.set_ylim((0.5, 1.0))
     print(fidelities)
 
     return fig
@@ -238,7 +241,6 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     data = dm.get_raw_data(file_id=1537208030313)
-    data = dm.get_raw_data(file_id=1538348677725)
 
     process_check_readout_fidelity(data)
 

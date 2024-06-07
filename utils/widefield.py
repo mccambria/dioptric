@@ -818,10 +818,11 @@ def draw_circles_on_nvs(ax, nv_list, drift=None):
     for ind in range(len(pixel_coords_list)):
         pixel_coords = pixel_coords_list[ind]
         color = kpl.data_color_cycler[ind]
-        kpl.draw_circle(ax, pixel_coords, color=color, radius=scale / 2 - 1, label=ind)
+        kpl.draw_circle(ax, pixel_coords, color=color, radius=0.7 * scale, label=ind)
     num_nvs = len(nv_list)
     ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-    ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.7)
+    ncols = 5
+    ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
@@ -893,7 +894,7 @@ def plot_fit(
     popts=None,
     xlim=[None, None],
     norms=None,
-    legend=True,
+    no_legend=False,
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -947,7 +948,9 @@ def plot_fit(
         # Plot the points
         # ls = "none" if fn is not None else "solid"
         ls = "none"
-        size = kpl.Size.SMALL
+        # size = kpl.Size.SMALL
+        size = kpl.Size.XSMALL
+        # size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
             ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
@@ -961,7 +964,7 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        if legend:
+        if not no_legend:
             loc = kpl.Loc.UPPER_LEFT
             # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
             ax.legend(loc=loc)
@@ -1075,7 +1078,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
             x[: step_ind + 1],
             counts[:, : step_ind + 1],
             counts_errs[:, : step_ind + 1],
-            legend=False,
+            no_legend=False,
         )
         data_ax_relim()
         return all_axes

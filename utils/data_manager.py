@@ -10,6 +10,7 @@ Created November 15th, 2023
 # region Imports and constants
 
 import copy
+import io
 import os
 import socket
 import time
@@ -22,6 +23,7 @@ import numpy as np
 import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
 import ujson  # usjson is faster than standard json library
 from git import Repo
+from PIL import Image
 
 from utils import _cloud, common, widefield
 from utils.constants import NVSig
@@ -303,6 +305,13 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
         data["nv_list"] = nv_list
 
     return data
+
+
+def get_img(file_name=None, ext=None, file_id=None):
+    file_content, file_id, file_name = _cloud.download(file_name, ext, file_id)
+    img = Image.open(io.BytesIO(file_content))
+    img = np.asarray(img)
+    return np.asarray(img)
 
 
 # endregion
