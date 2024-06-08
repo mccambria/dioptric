@@ -24,12 +24,16 @@ def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            seq_utils.macro_pi_pulse(uwave_ind_list)
+
         base_scc_sequence.macro(
             base_scc_seq_args,
-            uwave_macro_sig,
+            [uwave_macro_sig, uwave_macro_ref],
             step_vals=scc_duration_steps,
             num_reps=num_reps,
             scc_duration_override=scc_duration_override,
+            reference=False,
         )
 
     seq_ret_vals = []

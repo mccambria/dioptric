@@ -213,7 +213,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1533399424192)
+    data = dm.get_raw_data(file_id=1554241870895)
 
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -221,6 +221,7 @@ if __name__ == "__main__":
     counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
+    ref_counts = ref_counts[:, :, :, ::2]
 
     # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
