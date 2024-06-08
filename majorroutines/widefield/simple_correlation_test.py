@@ -50,7 +50,9 @@ def process_and_plot(data):
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
 
-    # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, None
+    )
 
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
@@ -59,14 +61,16 @@ def process_and_plot(data):
     # flattened_sig_counts = flattened_sig_counts[::-1]
     # flattened_ref_counts = flattened_ref_counts[::-1]
 
-    ref_states = states[1]
-    flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
-    flattened_ref_counts = np.array(flattened_ref_counts)
-    flattened_ref_states = np.array(flattened_ref_states)
+    # ref_states = states[1]
+    # flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
+    # flattened_ref_counts = np.array(flattened_ref_counts)
+    # flattened_ref_states = np.array(flattened_ref_states)
 
     num_shots = len(flattened_ref_counts[0])
-    sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
-    ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    # sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
+    # ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
 
     # MCC
     # flattened_ref_counts = np.where(flattened_ref_states, flattened_ref_counts, np.nan)
@@ -289,10 +293,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1540048047866)  # Block
     # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
     #
-    # data = dm.get_raw_data(file_id=1541938921939)  # Block
+    data = dm.get_raw_data(file_id=1541938921939)  # Block
     # data = dm.get_raw_data(file_id=1542229869361)  # Block
     # data = dm.get_raw_data(file_id=1542771522665)  # Block
-    data = dm.get_raw_data(file_id=1543311522838)  # uniform
+    # data = dm.get_raw_data(file_id=1543311522838)  # uniform
 
     # nv_list = data["nv_list"]
     # nv_inds = [nv.name for nv in nv_list]

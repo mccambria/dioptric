@@ -210,7 +210,7 @@ def average_counts(sig_counts, ref_counts=None):
     return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(nv_list, sig_counts, ref_counts=None):
+def threshold_counts(nv_list, sig_counts, ref_counts=None, dual_thresh_range=None):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
     _validate_counts_structure(sig_counts)
@@ -219,19 +219,20 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None):
     thresholds = np.array([nv.threshold for nv in nv_list])
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
-    # Find where there are valid thresholds in the array
-    # If there's no threshold, just return the counts unchanged
-    where_thresh = np.array(thresholds, dtype=bool)
-
-    sig_states_array = np.copy(sig_counts)
-    sig_states_array = np.greater(
-        sig_counts, thresholds, out=sig_states_array, where=where_thresh
-    )
-    if ref_counts is not None:
-        ref_states_array = np.copy(ref_counts)
-        ref_states_array = np.greater(
-            ref_counts, thresholds, out=ref_states_array, where=where_thresh
+    if dual_thresh_range is None:
+        sig_states_array = tb.threshold(sig_counts, thresholds)
+    else:
+        half_range = dual_thresh_range / 2
+        sig_states_array = tb.dual_threshold(
+            sig_counts, thresholds - half_range, thresholds + half_range
         )
+    if ref_counts is not None:
+        if dual_thresh_range is None:
+            ref_states_array = tb.threshold(ref_counts, thresholds)
+        else:
+            ref_states_array = tb.dual_threshold(
+                ref_counts, thresholds - half_range, thresholds + half_range
+            )
     else:
         ref_states_array = None
 

@@ -24,6 +24,7 @@ from functools import cache
 
 import keyring
 import numpy as np
+import numpy.ma as ma
 from numpy import exp
 
 from utils import common
@@ -268,6 +269,48 @@ def get_tagger_wiring():
 
 # endregion
 # region Math functions
+
+
+def threshold(val, thresh):
+    where_thresh = np.array(thresh, dtype=bool)
+    thresh_val = np.copy(val)
+    thresh_val = np.greater(val, thresh, out=thresh_val, where=where_thresh)
+    return thresh_val
+
+
+def dual_threshold(val, low_thresh, high_thresh):
+    low_thresh_val = threshold(val, low_thresh)
+    high_thresh_val = threshold(val, high_thresh)
+    ambiguous = np.logical_xor(low_thresh_val, high_thresh_val)
+    dual_thresh_val = np.where(ambiguous, np.nan, high_thresh_val)
+    # mid_thresh_val = threshold(val, (high_thresh + low_thresh) / 2)
+    # dual_thresh_val = np.where(ambiguous, mid_thresh_val, np.nan)
+    return dual_thresh_val
+
+
+def nan_corr_coef(arr):
+    """
+    Version of numpy's correlation coefficient that respects nan by just throwing
+    out any pairs of measurements where either value is nan
+    """
+    arr = np.array(arr)
+    num_rows = arr.shape[0]
+    corr_coef_arr = np.empty((num_rows, num_rows))
+    for ind in range(num_rows):
+        for jnd in range(num_rows):
+            if jnd < ind:
+                corr_coef_arr[ind, jnd] = corr_coef_arr[jnd, ind]
+                continue
+            if jnd == ind:
+                corr_coef_arr[ind, jnd] = 1
+                continue
+            i_counts = arr[ind]
+            j_counts = arr[jnd]
+            i_counts_m = ma.masked_invalid(i_counts)
+            j_counts_m = ma.masked_invalid(j_counts)
+            mask = ~i_counts_m.mask & ~j_counts_m.mask
+            corr_coef_arr[ind, jnd] = np.corrcoef(i_counts[mask], j_counts[mask])[0, 1]
+    return corr_coef_arr
 
 
 def moving_average(x, w):
@@ -1014,4 +1057,9 @@ def reset_cfm():
 
 # Testing
 if __name__ == "__main__":
-    print(round_for_print(0.07, 0.5))
+    test_a = dual_threshold(
+        [1, 2, 3, 4.5, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5]
+    )
+    test_b = dual_threshold([1, 2, 3, 2, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    test_c = dual_threshold([1, 2, 3, 6, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    print(nan_corr_coef([test_a, test_b, test_c]))
