@@ -364,9 +364,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    data = dm.get_raw_data(file_id=1537195144201)
-
+    data = dm.get_raw_data(file_id=1554096668965)
     process_and_plot(data)
 
     ### Images

@@ -27,7 +27,7 @@ def get_seq(pol_coords_list, charge_prep, dark_time_ns, num_reps):
         seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()
 
-        def one_rep():
+        def one_rep(rep_ind=None):
             if charge_prep:
                 seq_utils.macro_polarize(
                     pol_coords_list, spin_pol=False, targeted_polarization=True

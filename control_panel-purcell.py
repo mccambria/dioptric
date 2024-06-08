@@ -474,7 +474,7 @@ def do_detect_cosmic_rays(nv_list):
 
 def do_check_readout_fidelity(nv_list):
     num_reps = 200
-    num_runs = 40
+    num_runs = 20
 
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
@@ -815,7 +815,7 @@ if __name__ == "__main__":
         [73.489, 76.602],
         [72.1, 75.333],
     ]
-    threshold_list = [27.5, 27.5, 25.5, 23.5, 27.5, 22.5, 17.5, 24.5, 22.5, 20.5]
+    threshold_list = [26.5, 27.5, 25.5, 27.5, 23.5, 23.5, 21.5, 23.5, 24.5, 18.5]
     nvn_dist_params_list = [
         (0.06949197853215423, 0.5631391420690471, 4.216881064360549),
         (0.11193774130398557, 0.47231178723798944, 4.014239435395525),
@@ -828,7 +828,7 @@ if __name__ == "__main__":
         (0.08984212570556235, 0.34267315254366004, 4.171807751951278),
         (0.0827199390683145, 0.3142148295165403, 4.010679074571614),
     ]
-    scc_duration_list = [145, 160, 163, 187, 168, 188, 143, 174, 193, 156]
+    scc_duration_list = [118, 106, 120, 106, 123, 111, 131, 132, 110, 103]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_duration_list = [None] * num_nvs
     # endregion
@@ -979,8 +979,8 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
+        do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
