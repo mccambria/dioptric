@@ -26,6 +26,8 @@ import keyring
 import numpy as np
 import numpy.ma as ma
 from numpy import exp
+from scipy.optimize import curve_fit
+from scipy.special import factorial
 
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
@@ -269,6 +271,74 @@ def get_tagger_wiring():
 
 # endregion
 # region Math functions
+
+
+def poisson_dist(x, rate):
+    return (rate**x) * np.exp(-rate) / factorial(x)
+
+
+def poisson_cdf(x, rate):
+    """Cumulative distribution function for poisson pdf. Integrates
+    up to and including x"""
+    x_floor = int(np.floor(x))
+    val = 0
+    for ind in range(x_floor):
+        val += poisson_dist(ind, rate)
+    return val
+
+
+def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
+    prob_nvn = 1 - prob_nv0
+    val_nv0 = poisson_dist(x, mean_counts_nv0)
+    val_nvn = poisson_dist(x, mean_counts_nvn)
+    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
+
+
+def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
+    """counts_list should probably be the ref since we need some population
+    in both NV- and NV0"""
+
+    # Histogram the counts
+    counts_list = [round(el) for el in counts_list]
+    max_count = max(counts_list)
+    x_vals = np.linspace(0, max_count, max_count + 1)
+    hist, _ = np.histogram(
+        counts_list, bins=max_count + 1, range=(0, max_count), density=True
+    )
+
+    # Fit the histogram
+    prob_nv0_guess = 0.3
+    mean_counts_nv0_guess = np.quantile(counts_list, 0.2)
+    mean_counts_nvn_guess = np.quantile(counts_list, 0.8)
+    guess_params = (prob_nv0_guess, mean_counts_nv0_guess, mean_counts_nvn_guess)
+    popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
+    if not no_print:
+        print(popt)
+
+    # Find the optimum threshold by maximizing readout fidelity
+    # I.e. find threshold that maximizes:
+    # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
+    _, mean_counts_nv0, mean_counts_nvn = popt
+    mean_counts_nv0 = round(mean_counts_nv0)
+    mean_counts_nvn = round(mean_counts_nvn)
+    num_steps = mean_counts_nvn - mean_counts_nv0
+    thresh_options = np.linspace(
+        mean_counts_nv0 + 0.5, mean_counts_nvn - 0.5, num_steps
+    )
+    fidelities = []
+    for val in thresh_options:
+        nv0_fid = poisson_cdf(val, mean_counts_nv0)
+        nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
+        fidelities.append((1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid)
+
+    best_fidelity = max(fidelities)
+    best_threshold = thresh_options[np.argmax(fidelities)]
+
+    if not no_print:
+        print(f"Optimum threshold: {best_threshold}")
+        print(f"Fidelity: {best_fidelity}")
+
+    return best_threshold
 
 
 def threshold(val, thresh):

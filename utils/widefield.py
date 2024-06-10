@@ -34,6 +34,7 @@ from utils.constants import (
     LaserPosMode,
     NVSig,
 )
+from utils.tool_belt import determine_threshold
 
 # endregion
 # region Image processing
@@ -210,13 +211,19 @@ def average_counts(sig_counts, ref_counts=None):
     return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(nv_list, sig_counts, ref_counts=None, dual_thresh_range=None):
+def threshold_counts(nv_list, sig_counts, ref_counts=None, dual_thresh_range=None, dynamic_thresh=True):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
-    thresholds = np.array([nv.threshold for nv in nv_list])
+    if dynamic_thresh:
+        combined_counts = 
+        thresholds = np.array([determine_threshold() for nv in nv_list])
+    else:
+        thresholds = [nv.threshold for nv in nv_list]
+        
+    thresholds = np.array(thresholds)
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
     if dual_thresh_range is None:
