@@ -517,12 +517,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.4],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.4],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -547,15 +547,15 @@ def do_opx_constant_ac():
     #         )
     #         time.sleep(0.5)
     #     opx.halt()
-    # opx.constant_ac(
-    #     [1],  # Digital channels
-    #     # [2, 6],  # Analog channels
-    #     # [0.19, 0.19],  # Analog voltages
-    #     # [
-    #     #     75,
-    #     #     75,
-    #     # ],  # Analog frequencies                                                                                                                                                                       uencies
-    # )
+    opx.constant_ac(
+        [1],  # Digital channels
+        # [2, 6],  # Analog channels
+        # [0.19, 0.19],  # Analog voltages
+        # [
+        #     75,
+        #     75,
+        # ],  # Analog frequencies                                                                                                                                                                       uencies
+    )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
     # opx.constant_ac(
@@ -804,16 +804,16 @@ if __name__ == "__main__":
         [106.769, 109.962],
     ]
     red_coords_list = [
-        [73.383, 75.565],
-        [73.933, 76.033],
-        [73.442, 76.039],
-        [72.961, 76.308],
-        [73.676, 74.922],
-        [74.135, 76.538],
-        [74.094, 77.112],
-        [74.137, 75.56],
-        [73.489, 76.602],
-        [72.1, 75.333],
+        [73.497, 75.563],
+        [74.042, 76.036],
+        [73.527, 76.016],
+        [73.04, 76.28],
+        [73.754, 74.915],
+        [74.227, 76.542],
+        [74.142, 77.09],
+        [74.208, 75.515],
+        [73.518, 76.561],
+        [72.122, 75.258],
     ]
     threshold_list = [26.5, 27.5, 25.5, 27.5, 23.5, 23.5, 21.5, 23.5, 24.5, 18.5]
     nvn_dist_params_list = [
@@ -979,8 +979,8 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

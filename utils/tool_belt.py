@@ -374,7 +374,7 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
         print(f"Optimum threshold: {best_threshold}")
         print(f"Fidelity: {best_fidelity}")
 
-    return 1.3 * best_threshold
+    return 1.4 * best_threshold
 
 
 def threshold(val, thresh):

@@ -31,10 +31,10 @@ def process_and_plot(data):
     # counts = counts[:, :, :]
     # states = states[:, :, :]
 
-    # start = 400
-    # window = 100
-    # counts = counts[:, :, start : start + window, :, :]
-    # states = states[:, :, start : start + window, :, :]
+    start = 1000
+    window = 500
+    counts = counts[:, :, start : start + window, :, :]
+    states = states[:, :, start : start + window, :, :]
     # counts = counts[:, :, ::10, :, :]
     # states = states[:, :, ::10, :, :]
 
@@ -51,7 +51,7 @@ def process_and_plot(data):
     ref_counts = np.array(counts[1])
 
     sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, 2, dynamic_thresh=True
+        nv_list, sig_counts, ref_counts, None, dynamic_thresh=True
     )
 
     i_counts = ref_counts[5]
@@ -65,6 +65,14 @@ def process_and_plot(data):
     j_counts = ref_ccounts[6]
     kpl.histogram(ax, i_counts[mask])
     kpl.histogram(ax, j_counts[mask])
+
+    fig, ax = plt.subplots()
+    sig_ccounts = np.array(counts[0])
+    kpl.histogram(ax, sig_ccounts[0].flatten())
+    ax.set_xlabel("Integrated counts")
+    ax.set_ylabel("Number of occurences")
+    ax.axvline(nv_list[0].threshold)
+    ax.axvline(31.85)
 
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
