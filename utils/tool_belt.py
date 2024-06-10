@@ -23,8 +23,13 @@ from enum import Enum
 from functools import cache
 
 import keyring
+import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma as ma
 from numpy import exp
+from scipy.optimize import curve_fit
+from scipy.special import erf, factorial
+from scipy.stats import norm
 
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
@@ -268,6 +273,152 @@ def get_tagger_wiring():
 
 # endregion
 # region Math functions
+
+
+def poisson_dist(x, rate):
+    return (rate**x) * np.exp(-rate) / factorial(x)
+
+
+def poisson_cdf(x, rate):
+    """Cumulative distribution function for poisson pdf. Integrates
+    up to and including x"""
+    x_floor = int(np.floor(x))
+    val = 0
+    for ind in range(x_floor):
+        val += poisson_dist(ind, rate)
+    return val
+
+
+def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
+    prob_nvn = 1 - prob_nv0
+    val_nv0 = poisson_dist(x, mean_counts_nv0)
+    val_nvn = poisson_dist(x, mean_counts_nvn)
+    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
+
+
+def bimodal_gaussian(x, prob_nv0, mean_nv0, std_nv0, mean_nvn, std_nvn):
+    prob_nvn = 1 - prob_nv0
+    val_nv0 = gaussian_pdf(x, mean_nv0, std_nv0)
+    val_nvn = gaussian_pdf(x, mean_nvn, std_nvn)
+    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
+
+
+def gaussian_pdf(x, mean, std):
+    return norm(loc=mean, scale=std**2).pdf(x)
+
+
+def gaussian_cdf(x, mean, std):
+    return norm(loc=mean, scale=std**2).cdf(x)
+
+
+def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
+    """counts_list should have some population in both NV- and NV0"""
+
+    # Remove outliers
+    median = np.median(counts_list)
+    std = np.std(counts_list)
+    counts_list = counts_list[counts_list < median + 10 * std]
+
+    # Histogram the counts
+    counts_list = [round(el) for el in counts_list]
+    max_count = max(counts_list)
+    x_vals = np.linspace(0, max_count, max_count + 1)
+    hist, _ = np.histogram(
+        counts_list, bins=max_count + 1, range=(0, max_count), density=True
+    )
+
+    def double_gaussian(x, mean_nv0, std_nv0, mean_nvn, std_nvn):
+        return gaussian_pdf(x, mean_nv0, std_nv0) + gaussian_pdf(x, mean_nvn, std_nvn)
+
+    # Fit the histogram
+    mean_nv0_guess = round(np.quantile(counts_list, 0.2))
+    mean_nvn_guess = round(np.quantile(counts_list, 0.95))
+    guess_params = (
+        0.6,
+        mean_nv0_guess,
+        np.sqrt(mean_nv0_guess),
+        mean_nvn_guess,
+        np.sqrt(mean_nvn_guess),
+        # 0.002,
+    )
+    popt, _ = curve_fit(bimodal_gaussian, x_vals, hist, p0=guess_params)
+    if not no_print:
+        print(popt)
+    # fig, ax = plt.subplots()
+    # ax.plot(x_vals, hist)
+    # ax.plot(x_vals, bimodal_gaussian(x_vals, *guess_params))
+    # ax.plot(x_vals, bimodal_gaussian(x_vals, *popt))
+
+    # Find the optimum threshold by maximizing readout fidelity
+    # I.e. find threshold that maximizes:
+    # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
+    mean_counts_nv0, mean_counts_nvn = popt[1], popt[3]
+    mean_counts_nv0 = round(mean_counts_nv0)
+    mean_counts_nvn = round(mean_counts_nvn)
+    num_steps = mean_counts_nvn - mean_counts_nv0
+    thresh_options = np.linspace(
+        mean_counts_nv0 + 0.5, mean_counts_nvn - 0.5, num_steps
+    )
+    fidelities = []
+    for val in thresh_options:
+        # nv0_fid = poisson_cdf(val, mean_counts_nv0)
+        # nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
+        nv0_fid = gaussian_cdf(val, *popt[1:3])
+        nvn_fid = 1 - gaussian_cdf(val, *popt[3:])
+        fidelities.append((1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid)
+
+    best_fidelity = max(fidelities)
+    best_threshold = thresh_options[np.argmax(fidelities)]
+
+    if not no_print:
+        print(f"Optimum threshold: {best_threshold}")
+        print(f"Fidelity: {best_fidelity}")
+
+    return 1.3 * best_threshold
+
+
+def threshold(val, thresh):
+    where_thresh = np.array(thresh, dtype=bool)
+    thresh_val = np.copy(val)
+    thresh_val = np.greater(val, thresh, out=thresh_val, where=where_thresh)
+    return thresh_val
+
+
+def dual_threshold(val, low_thresh, high_thresh):
+    low_thresh_val = threshold(val, low_thresh)
+    high_thresh_val = threshold(val, high_thresh)
+    ambiguous = np.logical_xor(low_thresh_val, high_thresh_val)
+    dual_thresh_val = np.where(ambiguous, np.nan, high_thresh_val)
+    # mid_thresh_val = threshold(val, (high_thresh + low_thresh) / 2)
+    # dual_thresh_val = np.where(ambiguous, mid_thresh_val, np.nan)
+    return dual_thresh_val
+
+
+def nan_corr_coef(arr):
+    """
+    Version of numpy's correlation coefficient that respects nan by just throwing
+    out any pairs of measurements where either value is nan
+    """
+    arr = np.array(arr)
+    num_rows = arr.shape[0]
+    corr_coef_arr = np.empty((num_rows, num_rows))
+    for ind in range(num_rows):
+        for jnd in range(num_rows):
+            if ind == 5 and jnd == 6:
+                pass
+            if jnd < ind:
+                corr_coef_arr[ind, jnd] = corr_coef_arr[jnd, ind]
+                continue
+            if jnd == ind:
+                corr_coef_arr[ind, jnd] = 1
+                continue
+            i_counts = arr[ind]
+            j_counts = arr[jnd]
+            i_counts_m = ma.masked_invalid(i_counts)
+            j_counts_m = ma.masked_invalid(j_counts)
+            mask = ~i_counts_m.mask & ~j_counts_m.mask
+            corr_coef_arr[ind, jnd] = np.corrcoef(i_counts[mask], j_counts[mask])[0, 1]
+    return corr_coef_arr
 
 
 def moving_average(x, w):
@@ -1014,4 +1165,9 @@ def reset_cfm():
 
 # Testing
 if __name__ == "__main__":
-    print(round_for_print(0.07, 0.5))
+    test_a = dual_threshold(
+        [1, 2, 3, 4.5, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5]
+    )
+    test_b = dual_threshold([1, 2, 3, 2, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    test_c = dual_threshold([1, 2, 3, 6, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    print(nan_corr_coef([test_a, test_b, test_c]))

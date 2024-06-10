@@ -50,7 +50,21 @@ def process_and_plot(data):
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
 
-    # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, 2, dynamic_thresh=True
+    )
+
+    i_counts = ref_counts[5]
+    j_counts = ref_counts[6]
+    i_counts_m = ma.masked_invalid(i_counts)
+    j_counts_m = ma.masked_invalid(j_counts)
+    mask = ~i_counts_m.mask & ~j_counts_m.mask
+    fig, ax = plt.subplots()
+    ref_ccounts = np.array(counts[1])
+    i_counts = ref_ccounts[5]
+    j_counts = ref_ccounts[6]
+    kpl.histogram(ax, i_counts[mask])
+    kpl.histogram(ax, j_counts[mask])
 
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
@@ -59,14 +73,16 @@ def process_and_plot(data):
     # flattened_sig_counts = flattened_sig_counts[::-1]
     # flattened_ref_counts = flattened_ref_counts[::-1]
 
-    ref_states = states[1]
-    flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
-    flattened_ref_counts = np.array(flattened_ref_counts)
-    flattened_ref_states = np.array(flattened_ref_states)
+    # ref_states = states[1]
+    # flattened_ref_states = [ref_states[ind].flatten() for ind in range(num_nvs)]
+    # flattened_ref_counts = np.array(flattened_ref_counts)
+    # flattened_ref_states = np.array(flattened_ref_states)
 
     num_shots = len(flattened_ref_counts[0])
-    sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
-    ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    # sig_corr_coeffs = np.corrcoef(flattened_sig_counts)
+    # ref_corr_coeffs = np.corrcoef(flattened_ref_counts)
+    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
 
     # MCC
     # flattened_ref_counts = np.where(flattened_ref_states, flattened_ref_counts, np.nan)
@@ -118,13 +134,16 @@ def process_and_plot(data):
     for val in vals:
         np.fill_diagonal(val, np.nan)
 
-    fig, ax = plt.subplots()
-    mean_diff_corr_coeffs = [
-        np.nanmean(np.abs(diff_corr_coeffs[ind])) for ind in range(num_nvs)
-    ]
-    kpl.plot_points(ax, range(num_nvs), mean_diff_corr_coeffs)
-    ax.set_xlabel("NV index")
-    ax.set_ylabel("Mean abs val of diff covariances")
+    print(np.nanmean(ref_corr_coeffs) / np.nanmean(np.abs(sig_corr_coeffs)))
+
+    # MCC
+    # fig, ax = plt.subplots()
+    # mean_diff_corr_coeffs = [
+    #     np.nanmean(np.abs(diff_corr_coeffs[ind])) for ind in range(num_nvs)
+    # ]
+    # kpl.plot_points(ax, range(num_nvs), mean_diff_corr_coeffs)
+    # ax.set_xlabel("NV index")
+    # ax.set_ylabel("Mean abs val of diff covariances")
 
     ### Plot
 
@@ -155,6 +174,10 @@ def process_and_plot(data):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         figs.append(fig)
+
+    # MCC
+    # for ind in [0, 1, 3]:
+    #     plt.close(figs[ind])
 
     return figs
 
@@ -286,13 +309,13 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
     # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    # data = dm.get_raw_data(file_id=1540048047866)  # Block
+    data = dm.get_raw_data(file_id=1540048047866)  # Block
     # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
     #
     # data = dm.get_raw_data(file_id=1541938921939)  # Block
     # data = dm.get_raw_data(file_id=1542229869361)  # Block
     # data = dm.get_raw_data(file_id=1542771522665)  # Block
-    data = dm.get_raw_data(file_id=1543311522838)  # uniform
+    # data = dm.get_raw_data(file_id=1543311522838)  # uniform
 
     # nv_list = data["nv_list"]
     # nv_inds = [nv.name for nv in nv_list]
