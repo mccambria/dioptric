@@ -211,18 +211,28 @@ def average_counts(sig_counts, ref_counts=None):
     return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(nv_list, sig_counts, ref_counts=None, dual_thresh_range=None, dynamic_thresh=True):
+def threshold_counts(
+    nv_list, sig_counts, ref_counts=None, dual_thresh_range=None, dynamic_thresh=False
+):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
     if dynamic_thresh:
-        combined_counts = 
-        thresholds = np.array([determine_threshold() for nv in nv_list])
+        thresholds = []
+        num_nvs = len(nv_list)
+        for ind in range(num_nvs):
+            # combined_counts = np.append(
+            #     sig_counts[ind].flatten(), ref_counts[ind].flatten()
+            # )
+            # threshold = determine_threshold(combined_counts)
+            threshold = determine_threshold(sig_counts[ind], no_print=True)
+            thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]
-        
+    print(thresholds)
+
     thresholds = np.array(thresholds)
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 

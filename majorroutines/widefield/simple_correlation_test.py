@@ -51,7 +51,7 @@ def process_and_plot(data):
     ref_counts = np.array(counts[1])
 
     sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, 6
+        nv_list, sig_counts, ref_counts, 2, dynamic_thresh=True
     )
 
     i_counts = ref_counts[5]
@@ -134,7 +134,7 @@ def process_and_plot(data):
     for val in vals:
         np.fill_diagonal(val, np.nan)
 
-    print(np.nanmean(ref_corr_coeffs))
+    print(np.nanmean(ref_corr_coeffs) / np.nanmean(np.abs(sig_corr_coeffs)))
 
     # MCC
     # fig, ax = plt.subplots()
@@ -309,12 +309,12 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
     # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    # data = dm.get_raw_data(file_id=1540048047866)  # Block
+    data = dm.get_raw_data(file_id=1540048047866)  # Block
     # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
     #
     # data = dm.get_raw_data(file_id=1541938921939)  # Block
     # data = dm.get_raw_data(file_id=1542229869361)  # Block
-    data = dm.get_raw_data(file_id=1542771522665)  # Block
+    # data = dm.get_raw_data(file_id=1542771522665)  # Block
     # data = dm.get_raw_data(file_id=1543311522838)  # uniform
 
     # nv_list = data["nv_list"]

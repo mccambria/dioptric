@@ -23,11 +23,13 @@ from enum import Enum
 from functools import cache
 
 import keyring
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 from numpy import exp
 from scipy.optimize import curve_fit
-from scipy.special import factorial
+from scipy.special import erf, factorial
+from scipy.stats import norm
 
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
@@ -294,9 +296,28 @@ def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
     return prob_nv0 * val_nv0 + prob_nvn * val_nvn
 
 
+def bimodal_gaussian(x, prob_nv0, mean_nv0, std_nv0, mean_nvn, std_nvn):
+    prob_nvn = 1 - prob_nv0
+    val_nv0 = gaussian_pdf(x, mean_nv0, std_nv0)
+    val_nvn = gaussian_pdf(x, mean_nvn, std_nvn)
+    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
+
+
+def gaussian_pdf(x, mean, std):
+    return norm(loc=mean, scale=std**2).pdf(x)
+
+
+def gaussian_cdf(x, mean, std):
+    return norm(loc=mean, scale=std**2).cdf(x)
+
+
 def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
-    """counts_list should probably be the ref since we need some population
-    in both NV- and NV0"""
+    """counts_list should have some population in both NV- and NV0"""
+
+    # Remove outliers
+    median = np.median(counts_list)
+    std = np.std(counts_list)
+    counts_list = counts_list[counts_list < median + 10 * std]
 
     # Histogram the counts
     counts_list = [round(el) for el in counts_list]
@@ -306,19 +327,32 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
         counts_list, bins=max_count + 1, range=(0, max_count), density=True
     )
 
+    def double_gaussian(x, mean_nv0, std_nv0, mean_nvn, std_nvn):
+        return gaussian_pdf(x, mean_nv0, std_nv0) + gaussian_pdf(x, mean_nvn, std_nvn)
+
     # Fit the histogram
-    prob_nv0_guess = 0.3
-    mean_counts_nv0_guess = np.quantile(counts_list, 0.2)
-    mean_counts_nvn_guess = np.quantile(counts_list, 0.8)
-    guess_params = (prob_nv0_guess, mean_counts_nv0_guess, mean_counts_nvn_guess)
-    popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
+    mean_nv0_guess = round(np.quantile(counts_list, 0.2))
+    mean_nvn_guess = round(np.quantile(counts_list, 0.95))
+    guess_params = (
+        0.6,
+        mean_nv0_guess,
+        np.sqrt(mean_nv0_guess),
+        mean_nvn_guess,
+        np.sqrt(mean_nvn_guess),
+        # 0.002,
+    )
+    popt, _ = curve_fit(bimodal_gaussian, x_vals, hist, p0=guess_params)
     if not no_print:
         print(popt)
+    # fig, ax = plt.subplots()
+    # ax.plot(x_vals, hist)
+    # ax.plot(x_vals, bimodal_gaussian(x_vals, *guess_params))
+    # ax.plot(x_vals, bimodal_gaussian(x_vals, *popt))
 
     # Find the optimum threshold by maximizing readout fidelity
     # I.e. find threshold that maximizes:
     # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
-    _, mean_counts_nv0, mean_counts_nvn = popt
+    mean_counts_nv0, mean_counts_nvn = popt[1], popt[3]
     mean_counts_nv0 = round(mean_counts_nv0)
     mean_counts_nvn = round(mean_counts_nvn)
     num_steps = mean_counts_nvn - mean_counts_nv0
@@ -327,8 +361,10 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
     )
     fidelities = []
     for val in thresh_options:
-        nv0_fid = poisson_cdf(val, mean_counts_nv0)
-        nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
+        # nv0_fid = poisson_cdf(val, mean_counts_nv0)
+        # nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
+        nv0_fid = gaussian_cdf(val, *popt[1:3])
+        nvn_fid = 1 - gaussian_cdf(val, *popt[3:])
         fidelities.append((1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid)
 
     best_fidelity = max(fidelities)
@@ -338,7 +374,7 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
         print(f"Optimum threshold: {best_threshold}")
         print(f"Fidelity: {best_fidelity}")
 
-    return best_threshold
+    return 1.3 * best_threshold
 
 
 def threshold(val, thresh):
