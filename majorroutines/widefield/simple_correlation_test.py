@@ -51,8 +51,20 @@ def process_and_plot(data):
     ref_counts = np.array(counts[1])
 
     sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, None
+        nv_list, sig_counts, ref_counts, 6
     )
+
+    i_counts = ref_counts[5]
+    j_counts = ref_counts[6]
+    i_counts_m = ma.masked_invalid(i_counts)
+    j_counts_m = ma.masked_invalid(j_counts)
+    mask = ~i_counts_m.mask & ~j_counts_m.mask
+    fig, ax = plt.subplots()
+    ref_ccounts = np.array(counts[1])
+    i_counts = ref_ccounts[5]
+    j_counts = ref_ccounts[6]
+    kpl.histogram(ax, i_counts[mask])
+    kpl.histogram(ax, j_counts[mask])
 
     # Calculate the correlations
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
@@ -122,13 +134,16 @@ def process_and_plot(data):
     for val in vals:
         np.fill_diagonal(val, np.nan)
 
-    fig, ax = plt.subplots()
-    mean_diff_corr_coeffs = [
-        np.nanmean(np.abs(diff_corr_coeffs[ind])) for ind in range(num_nvs)
-    ]
-    kpl.plot_points(ax, range(num_nvs), mean_diff_corr_coeffs)
-    ax.set_xlabel("NV index")
-    ax.set_ylabel("Mean abs val of diff covariances")
+    print(np.nanmean(ref_corr_coeffs))
+
+    # MCC
+    # fig, ax = plt.subplots()
+    # mean_diff_corr_coeffs = [
+    #     np.nanmean(np.abs(diff_corr_coeffs[ind])) for ind in range(num_nvs)
+    # ]
+    # kpl.plot_points(ax, range(num_nvs), mean_diff_corr_coeffs)
+    # ax.set_xlabel("NV index")
+    # ax.set_ylabel("Mean abs val of diff covariances")
 
     ### Plot
 
@@ -159,6 +174,10 @@ def process_and_plot(data):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         figs.append(fig)
+
+    # MCC
+    # for ind in [0, 1, 3]:
+    #     plt.close(figs[ind])
 
     return figs
 
@@ -293,9 +312,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1540048047866)  # Block
     # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
     #
-    data = dm.get_raw_data(file_id=1541938921939)  # Block
+    # data = dm.get_raw_data(file_id=1541938921939)  # Block
     # data = dm.get_raw_data(file_id=1542229869361)  # Block
-    # data = dm.get_raw_data(file_id=1542771522665)  # Block
+    data = dm.get_raw_data(file_id=1542771522665)  # Block
     # data = dm.get_raw_data(file_id=1543311522838)  # uniform
 
     # nv_list = data["nv_list"]

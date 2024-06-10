@@ -298,6 +298,8 @@ def nan_corr_coef(arr):
     corr_coef_arr = np.empty((num_rows, num_rows))
     for ind in range(num_rows):
         for jnd in range(num_rows):
+            if ind == 5 and jnd == 6:
+                pass
             if jnd < ind:
                 corr_coef_arr[ind, jnd] = corr_coef_arr[jnd, ind]
                 continue

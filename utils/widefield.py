@@ -216,7 +216,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dual_thresh_range=Non
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
-    thresholds = np.array([nv.threshold for nv in nv_list])
+    thresholds = np.array([nv.threshold + 7 for nv in nv_list])
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
     if dual_thresh_range is None:
