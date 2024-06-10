@@ -914,7 +914,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([138.855, 164.092])  # New coords
+        #     np.array([145.822, 164.672])  # New coords
         #     - np.array([131.144, 129.272])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
