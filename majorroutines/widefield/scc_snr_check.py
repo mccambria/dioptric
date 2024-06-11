@@ -104,12 +104,12 @@ def process_and_plot(data):
     # return counts_fig, snr_fig, fid_fig
 
 
-def main(nv_list, num_reps, num_runs, scc_include_inds=None):
+def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 1]):
     ### Some initial setup
 
     # uwave_ind_list = [0]
     # uwave_ind_list = [1]
-    uwave_ind_list = [0, 1]
+    # uwave_ind_list = [0, 1]
     # uwave_ind_list = []
 
     seq_file = "scc_snr_check.py"

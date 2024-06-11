@@ -205,15 +205,21 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
-    num_runs = 250
-    for scc_include_inds in [
-        [0, 1, 2, 3, 4, 5],
-        [0, 2, 5],
-        [1, 3, 4],
-        [4, 5],
-        [5],
+    num_runs = 200
+    # for scc_include_inds in [
+    #     [0, 1, 2, 3, 4, 5],
+    #     [0, 2, 5],
+    #     [1, 3, 4],
+    #     [4, 5],
+    #     [5],
+    # ]:
+    for uwave_ind_list in [
+        [],
+        [0, 1],
+        [0],
+        [1],
     ]:
-        scc_snr_check.main(nv_list, num_reps, num_runs, scc_include_inds)
+        scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=uwave_ind_list)
 
 
 def do_simple_correlation_test(nv_list):
@@ -796,7 +802,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 10, 11]]  # Smiley
-    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
+    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
 
     # endregion
@@ -857,7 +863,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
@@ -879,7 +885,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
