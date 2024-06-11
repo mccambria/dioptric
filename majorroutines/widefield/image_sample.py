@@ -287,7 +287,7 @@ if __name__ == "__main__":
     data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
     img_array = np.array(data["img_array"])
 
-    # nv_list = data["nv_list"]
+    nv_list = data["nv_list"]
     # coords_list = [
     #     widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
     #     for nv in nv_list
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     # ]
     # print(um_coords_list)
 
-    # img_array = widefield.adus_to_photons(img_array)
+    img_array = widefield.adus_to_photons(img_array)
 
     # Clean up dead pixel by taking average of nearby pixels
     # dead_pixel = [142, 109]
@@ -315,9 +315,10 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons")
+    ax.axis("off")
 
-    # scale = widefield.get_camera_scale()
-    # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
-    # widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10))
+    scale = widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+    widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10), color=)
 
     plt.show(block=True)

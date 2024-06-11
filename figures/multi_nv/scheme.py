@@ -122,7 +122,8 @@ if __name__ == "__main__":
     data = dm.get_raw_data(file_id=1537195144201)
     nv_list = data["nv_list"]
     apparatus_img = dm.get_img("multiplexed_apparatus", "png")
-    image_data = dm.get_raw_data(file_id=1537097641802, load_npz=True)
+    # image_data = dm.get_raw_data(file_id=1537097641802, load_npz=True)
+    image_data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
     histogram_data = dm.get_raw_data(file_id=1537195144201)
     readout_data = dm.get_raw_data(file_id=1537208030313)
 
