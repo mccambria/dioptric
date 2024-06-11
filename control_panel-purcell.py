@@ -212,8 +212,15 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
-    num_runs = 30
-    scc_snr_check.main(nv_list, num_reps, num_runs)
+    num_runs = 200
+    for scc_include_inds in [
+        [0, 1, 2, 3, 4, 5],
+        [0, 2, 5],
+        [1, 3, 4],
+        [4, 5],
+        [5],
+    ]:
+        scc_snr_check.main(nv_list, num_reps, num_runs, scc_include_inds)
 
 
 def do_simple_correlation_test(nv_list):
@@ -879,8 +886,8 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
