@@ -21,20 +21,25 @@ from utils import widefield as widefield
 
 
 def process_and_plot(data):
-    threshold = False
+    threshold = True
     nv_list = data["nv_list"]
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
+
+    if threshold:
+        sig_counts, ref_counts = widefield.threshold_counts(
+            nv_list, sig_counts, ref_counts
+        )
 
     ### Report the results and return
 
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.process_counts(
-        nv_list, sig_counts, threshold=threshold
+        nv_list, sig_counts, threshold=False
     )
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.process_counts(
-        nv_list, ref_counts, threshold=threshold
+        nv_list, ref_counts, threshold=False
     )
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
@@ -49,6 +54,9 @@ def process_and_plot(data):
     avg_contrast = avg_contrast[:, 0]
     avg_contrast_ste = avg_contrast_ste[:, 0]
 
+    # fig, ax = plt.subplots()
+    # kpl.histogram(ax, sig_counts[6].flatten())
+
     # Print
     for ind in range(len(nv_list)):
         nv_sig = nv_list[ind]
@@ -57,6 +65,7 @@ def process_and_plot(data):
         nv_sig_counts = tb.round_for_print(avg_sig_counts[ind], avg_sig_counts_ste[ind])
         nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
         print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
+    print(f"Mean SNR: {np.mean(avg_snr)}")
 
     ### Plot
 
@@ -120,8 +129,9 @@ def main(nv_list, num_reps, num_runs):
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_all_images=False,
+        save_all_images=True,
         charge_prep_fn=None,
+        save_images_downsample_factor=None,
     )
 
     ### Report results and cleanup
@@ -147,6 +157,8 @@ def main(nv_list, num_reps, num_runs):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1553940613599)
+
+    # data = dm.get_raw_data(file_id=1548854318015)  # 6/2 benchmark
+    data = dm.get_raw_data(file_id=1556376810964)
     figs = process_and_plot(data)
     kpl.show(block=True)

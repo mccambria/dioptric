@@ -230,7 +230,7 @@ def threshold_counts(
             threshold = determine_threshold(sig_counts[ind], no_print=True)
             thresholds.append(threshold)
     else:
-        thresholds = [nv.threshold for nv in nv_list]
+        thresholds = [1.2 * nv.threshold for nv in nv_list]  # MCC
     print(thresholds)
 
     thresholds = np.array(thresholds)
@@ -254,15 +254,6 @@ def threshold_counts(
         ref_states_array = None
 
     return sig_states_array, ref_states_array
-
-
-def threshold(nv_sig, count_val):
-    """Threshold for a single value"""
-    threshold = nv_sig.threshold
-    if threshold is None:
-        return None
-    else:
-        return count_val > threshold
 
 
 def poisson_pmf_cont(k, mean):

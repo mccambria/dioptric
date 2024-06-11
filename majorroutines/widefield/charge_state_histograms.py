@@ -271,10 +271,10 @@ def main(
         diff_img_array = None
         keys_to_compress = None
 
-    try:
-        del raw_data["img_arrays"]
-    except Exception:
-        pass
+    # try:
+    #     del raw_data["img_arrays"]
+    # except Exception:
+    #     pass
 
     ### Save raw data
 
