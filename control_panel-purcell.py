@@ -82,9 +82,18 @@ def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_runs = 40
     # num_runs = 20
     # num_runs = 2
-    return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
-    )
+    for ion_include_inds in [
+        [0, 2, 5],
+        [0, 1, 2, 3],
+        [0, 1, 2, 3, 4],
+    ]:
+        return charge_state_histograms.main(
+            nv_list,
+            num_reps,
+            num_runs,
+            verify_charge_states=verify_charge_states,
+            ion_include_inds=ion_include_inds,
+        )
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -647,7 +656,7 @@ if __name__ == "__main__":
         [137.025, 74.662],
         [58.628, 139.616],
         # Smiley additions
-        [150.34, 119.249],
+        [150.34, 119.249],  # Too much crosstalk
         [61.277, 76.387],
         [85.384, 33.935],
     ]
@@ -820,7 +829,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 20)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 200)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -832,7 +841,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)

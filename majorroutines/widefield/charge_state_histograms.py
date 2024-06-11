@@ -194,6 +194,7 @@ def main(
     verify_charge_states=False,
     diff_polarize=False,
     diff_ionize=True,
+    ion_include_inds=None,
 ):
     ### Some initial setup
     seq_file = "charge_state_histograms.py"
@@ -210,7 +211,9 @@ def main(
 
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
+        ion_coords_list = widefield.get_coords_list(
+            nv_list, LaserKey.ION, include_inds=ion_include_inds
+        )
         seq_args = [
             pol_coords_list,
             ion_coords_list,
@@ -275,6 +278,7 @@ def main(
     #     del raw_data["img_arrays"]
     # except Exception:
     #     pass
+    keys_to_compress = ["img_arrays"]
 
     ### Save raw data
 

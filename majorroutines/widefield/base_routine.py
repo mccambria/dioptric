@@ -127,7 +127,7 @@ def read_and_process_image(nv_list):
         states_list = []
         for nv_ind in range(num_nvs):
             states_list.append(
-                widefield.threshold(nv_list[nv_ind], counts_list[nv_ind])
+                tb.threshold(counts_list[nv_ind], nv_list[nv_ind].threshold)
             )
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         # start = time.time()

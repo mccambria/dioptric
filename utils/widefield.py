@@ -491,7 +491,9 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     return seq_args
 
 
-def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
+def get_coords_list(
+    nv_list: list[NVSig], laser_key, drift_adjust=True, include_inds=None
+):
     laser_name = tb.get_laser_name(laser_key)
     drift = pos.get_drift(laser_name) if drift_adjust else None
     coords_list = [
@@ -500,6 +502,8 @@ def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
         )
         for nv in nv_list
     ]
+    if include_inds is not None:
+        coords_list = [coords_list[ind] for ind in include_inds]
     return coords_list
 
 
