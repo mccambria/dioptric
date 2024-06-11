@@ -35,6 +35,20 @@ if __name__ == "__main__":
     # img_array = widefield.adus_to_photons(img_array)
     # img_array_offset = [0, 0]
 
+    ### Just green
+
+    # Same durations
+    # data = dm.get_raw_data(file_id=1557498151070, load_npz=True)
+    # img_array = np.array(data["img_array"])
+    # img_array = widefield.adus_to_photons(img_array)
+    # img_array_offset = [0, 0]
+
+    # 3x longer on NV2 (other orientation)
+    # data = dm.get_raw_data(file_id=1557494762280, load_npz=True)
+    # img_array = np.array(data["img_array"])
+    # img_array = widefield.adus_to_photons(img_array)
+    # img_array_offset = [0, 0]
+
     ### Smiley histograms
     smiley_inds = list(range(6))
 
@@ -76,7 +90,7 @@ if __name__ == "__main__":
 
     ### Smiley SCC
 
-    downsample_factor = 4
+    # downsample_factor = 4
 
     # Ref
     # file_id = 1557059855690
@@ -85,10 +99,10 @@ if __name__ == "__main__":
     # img_array_ind = 1
 
     # Everything spin -1
-    file_id = 1557059855690
-    img_array_offset = [3, 5]
-    ion_inds = [0, 1, 2, 3, 4, 5]
-    img_array_ind = 0
+    # file_id = 1557059855690
+    # img_array_offset = [3, 5]
+    # ion_inds = [0, 1, 2, 3, 4, 5]
+    # img_array_ind = 0
 
     ###
 

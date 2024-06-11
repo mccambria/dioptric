@@ -68,7 +68,8 @@ def do_scanning_image_sample_zoom(nv_sig):
 
 
 def do_image_nv_list(nv_list):
-    num_reps = 100
+    num_reps = 200
+    # num_reps = 2
     return image_sample.nv_list(nv_list, num_reps)
 
 
@@ -669,20 +670,18 @@ if __name__ == "__main__":
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [108.512, 110.201],
-        [109.051, 110.872],
-        [108.511, 110.927],
-        [107.881, 111.232],
-        [108.728, 109.478],
-        [109.28, 111.491],
-        [109.221, 112.171],
-        [109.28, 110.262],
-        [108.464, 111.583],
-        [106.769, 109.962],
-        #
-        # [108.869, 110.525],
-        [106.854, 111.442],
-        [107.346, 112.468],
+        [108.463, 110.222],
+        [109.141, 110.831],
+        [108.59, 110.861],
+        [107.94, 111.123],
+        [108.791, 109.466],
+        [109.397, 111.413],
+        [109.244, 112.113],
+        [109.387, 110.167],
+        [108.529, 111.472],
+        [106.843, 109.874],
+        [106.776, 111.351],
+        [107.227, 112.366],
     ]
     red_coords_list = [
         [73.497, 75.563],
@@ -757,7 +756,7 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1150
+    # nv_sig.expected_counts = 1200
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -783,7 +782,7 @@ if __name__ == "__main__":
 
     # for nv in nv_list:
     #     pixel_drift = widefield.get_pixel_drift()
-    #     pixel_drift = [-el for el in pixel_drift]
+    #     # pixel_drift = [-el for el in pixel_drift]
     #     coords = widefield.get_nv_pixel_coords(nv, drift=pixel_drift)
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
@@ -801,9 +800,10 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 10, 11]]  # Smiley
     nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
+
+    # nv_list = [nv_list[2]]
 
     # endregion
 
@@ -820,7 +820,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([145.822, 164.672])  # New coords
+        #     np.array([146.402, 172.22])  # New coords
         #     - np.array([131.144, 129.272])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
@@ -849,6 +849,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -885,7 +886,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

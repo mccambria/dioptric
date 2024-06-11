@@ -15,7 +15,7 @@ import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(readout_duration, readout_laser, coords_1, coords_2, num_reps):
+def get_seq(readout_duration_ns, readout_laser, coords_1, coords_2, num_reps):
     if num_reps is None:
         num_reps = 1
 
@@ -23,25 +23,39 @@ def get_seq(readout_duration, readout_laser, coords_1, coords_2, num_reps):
     camera_element = "do_camera_trigger"
     x_element = f"ao_{readout_laser}_x"
     y_element = f"ao_{readout_laser}_y"
-    readout_duration_cc = readout_duration / 4  # * 4 ns / clock_cycle = 1 us
+    aod_access_time = seq_utils.get_aod_access_time()
+    readout_duration = seq_utils.convert_ns_to_cc(readout_duration_ns)
+
+    # num_nvs = len(coords_1)
+    # readout_durations = [readout_duration] * num_nvs
+    # readout_durations[2] *= 3
+
     coords_1_hz = [round(el * 10**6) for el in coords_1]
     coords_2_hz = [round(el * 10**6) for el in coords_2]
     with qua.program() as seq:
         seq_utils.init()
         x_freq = qua.declare(int)
         y_freq = qua.declare(int)
+        # readout_duration = qua.declare(int)
 
         seq_utils.macro_run_aods([readout_laser], aod_suffices=["opti"])
 
         ### Define one rep here
-        def one_rep():
+        def one_rep(rep_ind=None):
             qua.play("on", camera_element)
             with qua.for_each_((x_freq, y_freq), (coords_1_hz, coords_2_hz)):
+                # with qua.for_each_(
+                #     (x_freq, y_freq, readout_duration),
+                #     (coords_1_hz, coords_2_hz, readout_durations),
+                # ):
                 qua.update_frequency(x_element, x_freq)
                 qua.update_frequency(y_element, y_freq)
                 qua.play("continue", x_element)
                 qua.play("continue", y_element)
-                qua.play("on", laser_element, duration=readout_duration_cc)
+                qua.align()
+                qua.wait(2 * aod_access_time)
+                qua.align()
+                qua.play("on", laser_element, duration=readout_duration)
             qua.align()
             qua.ramp_to_zero(camera_element)
 
@@ -64,14 +78,14 @@ if __name__ == "__main__":
     try:
         # readout, readout_laser, coords_1, coords_2
         seq, seq_ret_vals = get_seq(
-            20000000.0,
+            2000.0,
             "laser_INTE_520",
-            [108.21968456147596],
-            [109.1994991500164],
-            1,
+            [108.2, 108.7, 110.7],
+            [109.2, 109.7, 110.7],
+            2,
         )
 
-        sim_config = SimulationConfig(duration=round(40e3 / 4))
+        sim_config = SimulationConfig(duration=round(60e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

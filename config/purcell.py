@@ -690,7 +690,10 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.05},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
