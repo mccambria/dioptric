@@ -212,7 +212,7 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
-    num_runs = 200
+    num_runs = 250
     for scc_include_inds in [
         [0, 1, 2, 3, 4, 5],
         [0, 2, 5],
