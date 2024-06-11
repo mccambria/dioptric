@@ -131,7 +131,7 @@ def main(nv_list, num_reps, num_runs):
         uwave_ind_list=uwave_ind_list,
         save_all_images=True,
         charge_prep_fn=None,
-        save_images_downsample_factor=None,
+        save_images_downsample_factor=6,
     )
 
     ### Report results and cleanup

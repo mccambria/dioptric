@@ -83,9 +83,10 @@ def do_charge_state_histograms(nv_list, verify_charge_states=False):
     # num_runs = 20
     # num_runs = 2
     for ion_include_inds in [
-        [0, 2, 5],
-        [0, 1, 2, 3],
-        [0, 1, 2, 3, 4],
+        # [0, 2, 5],
+        # [1, 3, 4],
+        # [4, 5],
+        [5],
     ]:
         return charge_state_histograms.main(
             nv_list,
@@ -656,7 +657,7 @@ if __name__ == "__main__":
         [137.025, 74.662],
         [58.628, 139.616],
         # Smiley additions
-        [150.34, 119.249],  # Too much crosstalk
+        # [150.34, 119.249],  # Too much crosstalk
         [61.277, 76.387],
         [85.384, 33.935],
     ]
@@ -673,7 +674,7 @@ if __name__ == "__main__":
         [108.464, 111.583],
         [106.769, 109.962],
         #
-        [108.869, 110.525],
+        # [108.869, 110.525],
         [106.854, 111.442],
         [107.346, 112.468],
     ]
@@ -689,7 +690,7 @@ if __name__ == "__main__":
         [73.518, 76.561],
         [72.122, 75.258],
         #
-        [73.825, 75.724],
+        # [73.825, 75.724],
         [72.124, 76.462],
         [72.518, 77.284],
     ]
@@ -705,7 +706,7 @@ if __name__ == "__main__":
         24.5,
         18.5,
         #
-        22.5,
+        # 22.5,
         22.5,
         22.5,
     ]
@@ -721,9 +722,9 @@ if __name__ == "__main__":
         110,
         103,
         #
-        115,
-        115,
-        115,
+        # 115,
+        120,
+        120,
     ]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_duration_list = [None] * num_nvs
@@ -794,8 +795,8 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11, 12]]  # Smiley
-    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 11, 12]]  # Smiley
+    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 10, 11]]  # Smiley
+    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
 
     # endregion
@@ -856,7 +857,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
@@ -879,7 +880,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
