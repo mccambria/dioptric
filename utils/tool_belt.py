@@ -304,11 +304,11 @@ def bimodal_gaussian(x, prob_nv0, mean_nv0, std_nv0, mean_nvn, std_nvn):
 
 
 def gaussian_pdf(x, mean, std):
-    return norm(loc=mean, scale=std**2).pdf(x)
+    return norm(loc=mean, scale=std).pdf(x)
 
 
 def gaussian_cdf(x, mean, std):
-    return norm(loc=mean, scale=std**2).cdf(x)
+    return norm(loc=mean, scale=std).cdf(x)
 
 
 def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
@@ -331,23 +331,24 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
         return gaussian_pdf(x, mean_nv0, std_nv0) + gaussian_pdf(x, mean_nvn, std_nvn)
 
     # Fit the histogram
+    fit_fn = bimodal_gaussian
     mean_nv0_guess = round(np.quantile(counts_list, 0.2))
-    mean_nvn_guess = round(np.quantile(counts_list, 0.95))
+    mean_nvn_guess = round(np.quantile(counts_list, 0.9))
     guess_params = (
         0.6,
         mean_nv0_guess,
-        np.sqrt(mean_nv0_guess),
+        1.5 * np.sqrt(mean_nv0_guess),  # 1.5 factor for broadening
         mean_nvn_guess,
-        np.sqrt(mean_nvn_guess),
+        1.5 * np.sqrt(mean_nvn_guess),
         # 0.002,
     )
-    popt, _ = curve_fit(bimodal_gaussian, x_vals, hist, p0=guess_params)
+    popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
     if not no_print:
         print(popt)
     # fig, ax = plt.subplots()
     # ax.plot(x_vals, hist)
-    # ax.plot(x_vals, bimodal_gaussian(x_vals, *guess_params))
-    # ax.plot(x_vals, bimodal_gaussian(x_vals, *popt))
+    # ax.plot(x_vals, fit_fn(x_vals, *guess_params))
+    # ax.plot(x_vals, fit_fn(x_vals, *popt))
 
     # Find the optimum threshold by maximizing readout fidelity
     # I.e. find threshold that maximizes:
@@ -374,7 +375,7 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
         print(f"Optimum threshold: {best_threshold}")
         print(f"Fidelity: {best_fidelity}")
 
-    return 1.4 * best_threshold
+    return best_threshold
 
 
 def threshold(val, thresh):

@@ -28,6 +28,26 @@ def process_and_plot(data):
     sig_counts = counts[0]
     ref_counts = counts[1]
 
+    thresholds = [
+        29.5,
+        31.5,
+        30.5,
+        29.5,
+        29.5,
+        26.5,
+        23.5,
+        25.5,
+        27.5,
+        21.5,
+        21.5,
+        17.5,
+    ]
+    num_nvs = len(nv_list)
+    for ind in range(num_nvs):
+        nv = nv_list[ind]
+        nv_ind = widefield.get_nv_num(nv)
+        nv.threshold = thresholds[nv_ind]
+
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
             nv_list, sig_counts, ref_counts
@@ -133,7 +153,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         uwave_ind_list=uwave_ind_list,
         save_all_images=True,
         charge_prep_fn=None,
-        save_images_downsample_factor=6,
+        save_images_downsample_factor=4,
     )
 
     ### Report results and cleanup
@@ -161,6 +181,6 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1548854318015)  # 6/2 benchmark
-    data = dm.get_raw_data(file_id=1556376810964)
+    data = dm.get_raw_data(file_id=1557059855690)
     figs = process_and_plot(data)
     kpl.show(block=True)
