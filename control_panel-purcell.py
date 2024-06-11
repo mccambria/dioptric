@@ -88,6 +88,7 @@ def do_charge_state_histograms(nv_list, verify_charge_states=False):
         num_reps,
         num_runs,
         verify_charge_states=verify_charge_states,
+        ion_include_inds=[0, 1, 2, 3, 5],
     )
 
 
@@ -756,7 +757,7 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1200
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -820,7 +821,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([146.402, 172.22])  # New coords
+        #     np.array([139.435, 178.025])  # New coords
         #     - np.array([131.144, 129.272])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
@@ -849,7 +850,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
-        do_image_nv_list(nv_list)
+        # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -864,7 +865,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
