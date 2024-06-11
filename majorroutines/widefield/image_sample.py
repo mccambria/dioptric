@@ -283,20 +283,21 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1537195144201, load_npz=True)
-    img_array = np.array(data["sig_img_array"])
-    nv_list = data["nv_list"]
-    coords_list = [
-        widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
-        for nv in nv_list
-    ]
-    widefield.integrate_counts(img_array, coords_list[1])
-    print(coords_list)
-    scale = widefield.get_camera_scale()
-    um_coords_list = [
-        (round(el[0] / scale, 3), round(el[1] / scale, 3)) for el in coords_list
-    ]
-    print(um_coords_list)
+    data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    img_array = np.array(data["img_array"])
+
+    # nv_list = data["nv_list"]
+    # coords_list = [
+    #     widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
+    #     for nv in nv_list
+    # ]
+    # widefield.integrate_counts(img_array, coords_list[1])
+    # print(coords_list)
+    # scale = widefield.get_camera_scale()
+    # um_coords_list = [
+    #     (round(el[0] / scale, 3), round(el[1] / scale, 3)) for el in coords_list
+    # ]
+    # print(um_coords_list)
 
     # img_array = widefield.adus_to_photons(img_array)
 
@@ -314,8 +315,8 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons")
 
-    scale = widefield.get_camera_scale()
-    kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
-    widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10))
+    # scale = widefield.get_camera_scale()
+    # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+    # widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10))
 
     plt.show(block=True)
