@@ -29,16 +29,16 @@ if __name__ == "__main__":
     ######
 
     ### Basic widefield
-    # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
-    data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
-    img_array = np.array(data["img_array"])
-    img_array = widefield.adus_to_photons(img_array)
-    img_array_offset = [0, 0]
+    # # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    # data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
+    # img_array = np.array(data["img_array"])
+    # img_array = widefield.adus_to_photons(img_array)
+    # img_array_offset = [0, 0]
 
-    ### Smiley
+    ### Smiley histograms
     smiley_inds = list(range(6))
 
-    # Histograms ref
+    # Ref
     # file_id = 1556690958663
     # img_array_offset = [3, 5]
     # ion_inds = []
@@ -74,21 +74,39 @@ if __name__ == "__main__":
     # ion_inds = [5]
     # img_array_ind = 0
 
-    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    # img_arrays = np.array(data["img_arrays"])
-    # del data
-    # img_arrays = img_arrays[img_array_ind]
-    # img_array = np.mean(img_arrays, axis=(0, 1, 2))
-    # del img_arrays
-    # not_ion_inds = [ind for ind in smiley_inds if ind not in ion_inds]
+    ### Smiley SCC
+
+    downsample_factor = 4
+
+    # Ref
+    # file_id = 1557059855690
+    # img_array_offset = [0, 0]
+    # ion_inds = []
+    # img_array_ind = 1
+
+    # Everything spin -1
+    file_id = 1557059855690
+    img_array_offset = [3, 5]
+    ion_inds = [0, 1, 2, 3, 4, 5]
+    img_array_ind = 0
+
+    ###
+
+    data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+    img_arrays = np.array(data["img_arrays"])
+    del data
+    img_arrays = img_arrays[img_array_ind]
+    img_array = np.mean(img_arrays, axis=(0, 1, 2))
+    del img_arrays
+    not_ion_inds = [ind for ind in smiley_inds if ind not in ion_inds]
 
     ######
 
-    widefield.replace_dead_pixel(img_array)
-    img_array = img_array[
-        10 + img_array_offset[0] : 240 + img_array_offset[0],
-        10 + img_array_offset[1] : 240 + img_array_offset[1],
-    ]
+    # widefield.replace_dead_pixel(img_array)
+    # img_array = img_array[
+    #     10 + img_array_offset[0] : 240 + img_array_offset[0],
+    #     10 + img_array_offset[1] : 240 + img_array_offset[1],
+    # ]
 
     pixel_coords_list = [
         [131.144, 129.272],  #  Smiley
@@ -137,13 +155,14 @@ if __name__ == "__main__":
     # )
 
     fig, ax = plt.subplots()
-    img_array = widefield.downsample_img_array(img_array, 4)
+    # img_array = widefield.downsample_img_array(img_array, 4)
     kpl.imshow(ax, img_array, cbar_label="Photons")
     # kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.05, vmax=0.45)
     ax.axis("off")
 
-    scale = widefield.get_camera_scale()
+    scale = widefield.get_camera_scale(downsample_factor)
     kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+
     # pixel_coords_list = [pixel_coords_list[ind] for ind in range(10)]
     # widefield.draw_circles_on_nvs(ax, pixel_coords_list=pixel_coords_list)
     # pixel_coords_list = [pixel_coords_list[ind] for ind in [0, 1, 5, 6, 10, 11]]

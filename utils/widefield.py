@@ -823,8 +823,8 @@ def get_img_array_shape():
 
 
 @cache
-def get_camera_scale():
-    return _get_camera_config_val("scale")
+def get_camera_scale(downsample_factor=1):
+    return _get_camera_config_val("scale") / downsample_factor
 
 
 # endregion
