@@ -82,19 +82,12 @@ def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_runs = 40
     # num_runs = 20
     # num_runs = 2
-    for ion_include_inds in [
-        # [0, 2, 5],
-        # [1, 3, 4],
-        # [4, 5],
-        [5],
-    ]:
-        return charge_state_histograms.main(
-            nv_list,
-            num_reps,
-            num_runs,
-            verify_charge_states=verify_charge_states,
-            ion_include_inds=ion_include_inds,
-        )
+    return charge_state_histograms.main(
+        nv_list,
+        num_reps,
+        num_runs,
+        verify_charge_states=verify_charge_states,
+    )
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -857,7 +850,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
@@ -880,7 +873,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        do_optimize_scc(nv_list)
+        # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
