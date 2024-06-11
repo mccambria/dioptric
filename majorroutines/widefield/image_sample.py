@@ -283,7 +283,8 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
     img_array = np.array(data["img_array"])
 
     # nv_list = data["nv_list"]
