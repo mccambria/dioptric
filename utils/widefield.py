@@ -230,7 +230,7 @@ def threshold_counts(
             threshold = determine_threshold(sig_counts[ind], no_print=True)
             thresholds.append(threshold)
     else:
-        thresholds = [nv.threshold + 3 for nv in nv_list]
+        thresholds = [1.2 * nv.threshold for nv in nv_list]  # MCC
     print(thresholds)
 
     thresholds = np.array(thresholds)
