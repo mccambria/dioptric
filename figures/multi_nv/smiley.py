@@ -29,11 +29,11 @@ if __name__ == "__main__":
     ######
 
     ### Basic widefield
-    # # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
-    # data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
-    # img_array = np.array(data["img_array"])
-    # img_array = widefield.adus_to_photons(img_array)
-    # img_array_offset = [0, 0]
+    # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
+    img_array = np.array(data["img_array"])
+    img_array = widefield.adus_to_photons(img_array)
+    img_array_offset = [0, 0]
 
     ### Smiley
     smiley_inds = list(range(6))
@@ -57,10 +57,10 @@ if __name__ == "__main__":
     # img_array_ind = 0
 
     # Inverted every other
-    file_id = 1556745846534
-    img_array_offset = [2, 5]
-    ion_inds = [1, 3, 4]
-    img_array_ind = 0
+    # file_id = 1556745846534
+    # img_array_offset = [2, 5]
+    # ion_inds = [1, 3, 4]
+    # img_array_ind = 0
 
     # Blinking
     # file_id = 1556830424482
@@ -74,13 +74,13 @@ if __name__ == "__main__":
     # ion_inds = [5]
     # img_array_ind = 0
 
-    data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    img_arrays = np.array(data["img_arrays"])
-    del data
-    img_arrays = img_arrays[img_array_ind]
-    img_array = np.mean(img_arrays, axis=(0, 1, 2))
-    del img_arrays
-    not_ion_inds = [ind for ind in smiley_inds if ind not in ion_inds]
+    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+    # img_arrays = np.array(data["img_arrays"])
+    # del data
+    # img_arrays = img_arrays[img_array_ind]
+    # img_array = np.mean(img_arrays, axis=(0, 1, 2))
+    # del img_arrays
+    # not_ion_inds = [ind for ind in smiley_inds if ind not in ion_inds]
 
     ######
 
@@ -137,29 +137,31 @@ if __name__ == "__main__":
     # )
 
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.05, vmax=0.45)
+    img_array = widefield.downsample_img_array(img_array, 4)
+    kpl.imshow(ax, img_array, cbar_label="Photons")
+    # kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.05, vmax=0.45)
     ax.axis("off")
 
     scale = widefield.get_camera_scale()
     kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
     # pixel_coords_list = [pixel_coords_list[ind] for ind in range(10)]
     # widefield.draw_circles_on_nvs(ax, pixel_coords_list=pixel_coords_list)
-    pixel_coords_list = [pixel_coords_list[ind] for ind in [0, 1, 5, 6, 10, 11]]
-    draw_coords_list = [pixel_coords_list[ind] for ind in ion_inds]
-    widefield.draw_circles_on_nvs(
-        ax,
-        pixel_coords_list=draw_coords_list,
-        color=kpl.KplColors.DARK_GRAY,
-        no_legend=True,
-        linestyle="solid",
-    )
-    draw_coords_list = [pixel_coords_list[ind] for ind in not_ion_inds]
-    widefield.draw_circles_on_nvs(
-        ax,
-        pixel_coords_list=draw_coords_list,
-        color=kpl.KplColors.DARK_GRAY,
-        no_legend=True,
-        linestyle="dashed",
-    )
+    # pixel_coords_list = [pixel_coords_list[ind] for ind in [0, 1, 5, 6, 10, 11]]
+    # draw_coords_list = [pixel_coords_list[ind] for ind in ion_inds]
+    # widefield.draw_circles_on_nvs(
+    #     ax,
+    #     pixel_coords_list=draw_coords_list,
+    #     color=kpl.KplColors.DARK_GRAY,
+    #     no_legend=True,
+    #     linestyle="solid",
+    # )
+    # draw_coords_list = [pixel_coords_list[ind] for ind in not_ion_inds]
+    # widefield.draw_circles_on_nvs(
+    #     ax,
+    #     pixel_coords_list=draw_coords_list,
+    #     color=kpl.KplColors.DARK_GRAY,
+    #     no_legend=True,
+    #     linestyle="dashed",
+    # )
 
     plt.show(block=True)
