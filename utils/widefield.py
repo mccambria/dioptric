@@ -825,7 +825,7 @@ def get_camera_scale():
 # region Plotting
 
 
-def draw_circles_on_nvs(ax, nv_list, drift=None):
+def draw_circles_on_nvs(ax, nv_list, drift=None, color):
     scale = get_camera_scale()
     pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
     for ind in range(len(pixel_coords_list)):
