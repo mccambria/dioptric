@@ -149,7 +149,8 @@ data_color_cycler = [
     KplColors.YELLOW,
     KplColors.CYAN,
     mpl.colors.cnames["darkgoldenrod"],
-    mpl.colors.cnames["springgreen"],
+    # mpl.colors.cnames["greenyellow"],
+    mpl.colors.cnames["darkseagreen"],
     mpl.colors.cnames["indianred"],
     mpl.colors.cnames["darkslateblue"],
     mpl.colors.cnames["sienna"],
@@ -834,7 +835,15 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, **kwargs):
 #     ax.add_artist(circle)
 
 
-def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidth=None):
+def draw_circle(
+    ax,
+    coords,
+    radius=1,
+    color=KplColors.BLUE,
+    label=None,
+    linewidth=None,
+    linestyle="solid",
+):
     """Draw a circle on the passed axes
 
     Parameters
@@ -849,7 +858,7 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
     M = ax.transData.get_matrix()
     xscale = M[0, 0]
     if linewidth is None:
-        linewidth = 0.13 * xscale * radius
+        linewidth = 0.1 * xscale * radius
     ax.scatter(
         *coords,
         s=(xscale * radius) ** 2,
@@ -857,6 +866,7 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
         edgecolors=color,
         label=label,
         linewidths=linewidth,
+        linestyle=linestyle,
     )
     # circle = plt.Circle(
     #     coords, radius, fill=False, color=color, label=label, linewidth=linewidth

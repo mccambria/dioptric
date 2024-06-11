@@ -104,7 +104,7 @@ def process_and_plot(data):
     # return counts_fig, snr_fig, fid_fig
 
 
-def main(nv_list, num_reps, num_runs):
+def main(nv_list, num_reps, num_runs, scc_include_inds=None):
     ### Some initial setup
 
     # uwave_ind_list = [0]
@@ -116,7 +116,9 @@ def main(nv_list, num_reps, num_runs):
     pulse_gen = tb.get_server_pulse_gen()
 
     def run_fn(step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list, scc_include_inds)
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

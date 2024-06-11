@@ -459,7 +459,9 @@ def get_nv_num(nv_sig):
     return nv_num
 
 
-def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
+def get_base_scc_seq_args(
+    nv_list: list[NVSig], uwave_ind_list: list[int], scc_include_inds=None
+):
     """Return base seq_args for any SCC routine. The base sequence arguments
     are the minimum info required for state preparation and SCC
 
@@ -477,8 +479,10 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     """
 
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
-    scc_coords_list = get_coords_list(nv_list, LaserKey.SCC)
-    scc_duration_list = get_scc_duration_list(nv_list)
+    scc_coords_list = get_coords_list(
+        nv_list, LaserKey.SCC, include_inds=scc_include_inds
+    )
+    scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
 
     seq_args = [
@@ -512,7 +516,7 @@ def get_spin_flip_ind_list(nv_list: list[NVSig]):
     return [ind for ind in range(num_nvs) if nv_list[ind].spin_flip]
 
 
-def get_scc_duration_list(nv_list: list[NVSig]):
+def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
     scc_duration_list = []
     for nv in nv_list:
         scc_duration = nv.scc_duration
@@ -522,6 +526,8 @@ def get_scc_duration_list(nv_list: list[NVSig]):
         if not (scc_duration % 4 == 0 and scc_duration >= 16):
             raise RuntimeError("SCC pulse duration not valid for OPX.")
         scc_duration_list.append(scc_duration)
+    if include_inds is not None:
+        scc_duration_list = [scc_duration_list[ind] for ind in include_inds]
     return scc_duration_list
 
 
@@ -825,17 +831,51 @@ def get_camera_scale():
 # region Plotting
 
 
-def draw_circles_on_nvs(ax, nv_list, drift=None, color):
+def replace_dead_pixel(img_array):
+    dead_pixel = [142, 109]
+    dead_pixel_x = dead_pixel[1]
+    dead_pixel_y = dead_pixel[0]
+    img_array[dead_pixel_y, dead_pixel_x] = np.mean(
+        img_array[
+            dead_pixel_y - 1 : dead_pixel_y + 1 : 2,
+            dead_pixel_x - 1 : dead_pixel_x + 1 : 2,
+        ]
+    )
+
+
+def draw_circles_on_nvs(
+    ax,
+    nv_list=None,
+    drift=None,
+    pixel_coords_list=None,
+    color=None,
+    linestyle="solid",
+    no_legend=False,
+):
     scale = get_camera_scale()
-    pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
-    for ind in range(len(pixel_coords_list)):
+    passed_color = color
+    if pixel_coords_list is None:
+        pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
+    num_nvs = len(pixel_coords_list)
+    for ind in range(num_nvs):
         pixel_coords = pixel_coords_list[ind]
-        color = kpl.data_color_cycler[ind]
-        kpl.draw_circle(ax, pixel_coords, color=color, radius=0.7 * scale, label=ind)
-    num_nvs = len(nv_list)
-    ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-    ncols = 5
-    ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
+        if passed_color is None:
+            color = kpl.data_color_cycler[ind]
+        else:
+            color = passed_color
+        kpl.draw_circle(
+            ax,
+            pixel_coords,
+            color=color,
+            radius=0.7 * scale,
+            label=ind,
+            linestyle=linestyle,
+        )
+    if not no_legend:
+        ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
+        ncols = 6
+        # ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
+        ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.6)
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
