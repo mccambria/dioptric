@@ -109,13 +109,13 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
     while True:
         # xy
         img_array = stationary_count_lite(nv_sig, ret_img_array=True)
-        opti_pixel_coords = optimize_pixel_with_img_array(
-            img_array, nv_sig, None, do_plot
+        opti_pixel_coords, pixel_drift = optimize_pixel_with_img_array(
+            img_array, nv_sig, None, do_plot, return_drift=True
         )
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
 
         if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
-            return
+            return pixel_drift
 
         # z
         try:
@@ -130,12 +130,11 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
             pass
 
         if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
-            return
+            return pixel_drift
 
         attempt_ind += 1
         if attempt_ind == num_attempts:
             raise RuntimeError("Optimization failed.")
-    return opti_pixel_coords
 
 
 def optimize_pixel(nv_sig, do_plot=False):
@@ -149,6 +148,7 @@ def optimize_pixel_with_img_array(
     pixel_coords=None,
     do_plot=False,
     return_popt=False,
+    return_drift=False,
 ):
     if do_plot:
         fig, ax = plt.subplots()
@@ -258,6 +258,8 @@ def optimize_pixel_with_img_array(
 
     if return_popt:
         return popt
+    elif return_drift:
+        return opti_pixel_coords, drift
     else:
         return opti_pixel_coords
 

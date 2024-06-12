@@ -28,7 +28,12 @@ def get_seq(readout_duration_ns, readout_laser, coords_1, coords_2, num_reps):
 
     # num_nvs = len(coords_1)
     # readout_durations = [readout_duration] * num_nvs
-    # readout_durations[2] *= 3
+    # if num_nvs > 1:
+    #     readout_durations[1] = round(readout_durations[1] * 0.6)
+    #     readout_durations[2] = round(readout_durations[2] * 3.5)
+    #     readout_durations[-1] = round(readout_durations[-1] * 1.5)
+    #     readout_durations[-2] = round(readout_durations[-2] * 1.5)
+    #     readout_durations[-3] = round(readout_durations[-3] * 0.8)
 
     coords_1_hz = [round(el * 10**6) for el in coords_1]
     coords_2_hz = [round(el * 10**6) for el in coords_2]

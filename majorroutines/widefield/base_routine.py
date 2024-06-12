@@ -300,12 +300,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
                                 if save_images_downsample_factor is not None:
                                     img_array = widefield.downsample_img_array(
@@ -316,9 +316,9 @@ def main(
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
                                 if save_mean_images:
-                                    mean_img_arrays[
-                                        exp_ind, step_ind, :, :
-                                    ] += img_array
+                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
+                                        img_array
+                                    )
 
                     ### Move on to the next run
 

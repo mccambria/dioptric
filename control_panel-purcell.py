@@ -83,13 +83,18 @@ def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_runs = 40
     # num_runs = 20
     # num_runs = 2
-    return charge_state_histograms.main(
-        nv_list,
-        num_reps,
-        num_runs,
-        verify_charge_states=verify_charge_states,
-        ion_include_inds=[0, 1, 2, 3, 5],
-    )
+    for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
+        charge_state_histograms.main(
+            nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
+        )
+    # return charge_state_histograms.main(
+    #     nv_list,
+    #     num_reps,
+    #     num_runs,
+    #     verify_charge_states=verify_charge_states,
+    #     # ion_include_inds=[0, 1, 2, 3, 5],  # Missing tooth winking
+    #     # ion_include_inds=[0, 1, 2, 3, 4,5],  # Complete smiley winking
+    # )
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -206,8 +211,10 @@ def do_optimize_scc(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 100
-    num_runs = 100
+    # num_reps = 100
+    # num_runs = 100
+    num_reps = 200
+    num_runs = 40
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
@@ -633,7 +640,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.38
+    z_coord = 4.43
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -652,7 +659,7 @@ if __name__ == "__main__":
         [137.025, 74.662],
         [58.628, 139.616],
         # Smiley additions
-        # [150.34, 119.249],  # Too much crosstalk
+        [150.34, 119.249],  # Too much crosstalk
         [61.277, 76.387],
         [85.384, 33.935],
     ]
@@ -668,6 +675,8 @@ if __name__ == "__main__":
         [109.387, 110.167],
         [108.529, 111.472],
         [106.843, 109.874],
+        #
+        [108.869, 110.525],
         [106.776, 111.351],
         [107.227, 112.366],
     ]
@@ -683,7 +692,7 @@ if __name__ == "__main__":
         [73.518, 76.561],
         [72.122, 75.258],
         #
-        # [73.825, 75.724],
+        [73.825, 75.724],
         [72.124, 76.462],
         [72.518, 77.284],
     ]
@@ -699,7 +708,7 @@ if __name__ == "__main__":
         24.5,
         18.5,
         #
-        # 22.5,
+        22.5,
         22.5,
         22.5,
     ]
@@ -715,7 +724,23 @@ if __name__ == "__main__":
         110,
         103,
         #
-        # 115,
+        120,
+        120,
+        120,
+    ]
+    scc_duration_list = [
+        90,
+        90,
+        120,
+        106,
+        123,
+        111,
+        131,
+        132,
+        110,
+        103,
+        #
+        120,
         120,
         120,
     ]
@@ -788,7 +813,8 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
+    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11, 12]]  # Smiley
+    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
 
     # nv_list = [nv_list[2]]
@@ -808,7 +834,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([139.435, 178.025])  # New coords
+        #     np.array([140.6, 167.0])  # New coords
         #     - np.array([131.144, 129.272])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
@@ -852,7 +878,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
