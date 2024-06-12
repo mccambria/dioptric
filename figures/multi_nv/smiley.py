@@ -117,6 +117,9 @@ def main(
 
     ### Imshow
 
+    downsample_factor = 4
+    img_array = widefield.downsample_img_array(img_array, downsample_factor)
+
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons", vmin=vmin, vmax=vmax)
     ax.axis("off")
@@ -215,12 +218,16 @@ if __name__ == "__main__":
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Winking histogram
-    file_id = 1558619706453
-    img_array_offset=[-1,5]
-    main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.29, vmax=0.03)
+    # file_id = 1558619706453
+    # img_array_offset=[-1,5]
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.29, vmax=0.03)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Spin
-    # main(, diff=True, vmin=0, vmax=1.4)
+    file_id = 1558673759071
+    img_array_offset=[2,0]
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=0, vmax=1.4)
+    main(file_id, img_array_offset=img_array_offset, diff=True)
+    # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     plt.show(block=True)
