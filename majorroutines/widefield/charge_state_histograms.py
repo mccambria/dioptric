@@ -230,7 +230,7 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        save_all_images=False,
+        save_all_images=True,
         charge_prep_fn=charge_prep_fn,
         # uwave_ind_list=[0, 1],  # MCC
         save_images_downsample_factor=None,
@@ -274,11 +274,11 @@ def main(
         diff_img_array = None
         keys_to_compress = None
 
-    try:
-        del raw_data["img_arrays"]
-    except Exception:
-        pass
-    # keys_to_compress = ["img_arrays"]
+    # try:
+    #     del raw_data["img_arrays"]
+    # except Exception:
+    #     pass
+    keys_to_compress = ["img_arrays"]
 
     ### Save raw data
 
