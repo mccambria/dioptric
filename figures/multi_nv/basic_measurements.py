@@ -45,7 +45,7 @@ def main(esr_data, spin_echo_data):
     main_fig = plt.figure(figsize=figsize)
     seq_esr_fig, spin_echo_figs = main_fig.subfigures(nrows=2, height_ratios=(1, 2))
     spin_echo_fig, spin_echo_zoom_fig = spin_echo_figs.subfigures(
-        ncols=2, width_ratios=(1, 1)
+        ncols=2, width_ratios=(1, 1), wspace=0.01
     )
     seq_fig, esr_fig = seq_esr_fig.subfigures(
         ncols=2, width_ratios=(0.6, 0.4), wspace=0.01
