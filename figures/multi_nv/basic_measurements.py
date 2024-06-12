@@ -56,10 +56,16 @@ def main(esr_data, spin_echo_data):
 
     ### Sequence
 
+    global_alpha = 0.7
+
     # NV-specific axes
     nrows = 6
     seq_axes_pack = seq_fig.subplots(
-        nrows=nrows, sharex=True, sharey=True, height_ratios=[1, 1, 1, 0.25, 1, 1]
+        nrows=nrows,
+        sharex=True,
+        sharey=True,
+        height_ratios=[1, 1, 1, 0.25, 1, 1],
+        # hspace=0.005,
     )
     global_ax = seq_axes_pack[-1]
 
@@ -93,6 +99,7 @@ def main(esr_data, spin_echo_data):
             ax.set_ylabel(labels[ind])
         else:
             ax.set_ylabel(labels[ind], rotation="horizontal", labelpad=50, loc="bottom")
+    global_ax.set_ylabel(" ", labelpad=50, loc="bottom")
 
     ax = seq_axes_pack[0]
     ax.set_xlim([0, 80])
@@ -105,13 +112,15 @@ def main(esr_data, spin_echo_data):
     seq_axes_pack[-1].set_xlabel(" ")
     seq_ax.set_xlabel(" ")
     seq_fig.text(0.1, 0.9, "Charge pol.")
-    # seq_fig.text(0.4, 0.5, "Spin pol.", rotation=90)
-    seq_fig.text(0.4, 0.1, "Spin pol.")
-    # seq_fig.text(0.6, 0.3, "RF seq.", rotation=90)
-    seq_fig.text(0.6, 0.1, "RF seq.")
+    seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
+    # seq_fig.text(0.4, 0.1, "Spin pol.")
+    seq_fig.text(0.6, 0.3, "RF seq.", horizontalalignment="center", rotation=90)
+    # seq_fig.text(0.6, 0.1, "RF seq.")
     seq_fig.text(0.7, 0.9, "SCC")
-    # seq_fig.text(0.9, 0.5, "Charge state\nreadout", horizontalalignment="center")
-    seq_fig.text(0.9, 0.1, "Readout", horizontalalignment="center")
+    seq_fig.text(
+        0.9, 0.3, "Charge state\nreadout", horizontalalignment="center", rotation=90
+    )
+    # seq_fig.text(0.9, 0.1, "Readout", horizontalalignment="center")
 
     row_skip_inds = [nrows - 3, nrows - 1]
 
@@ -130,7 +139,9 @@ def main(esr_data, spin_echo_data):
     # Spin polarization
     start = stop + 1
     stop = start + 11
-    kpl.plot_sequence(global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900")
+    kpl.plot_sequence(
+        global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900", alpha=global_alpha
+    )
 
     # Microwaves A
     # start = stop + 2
@@ -146,7 +157,11 @@ def main(esr_data, spin_echo_data):
     start = stop + 1
     stop = start + 9
     kpl.plot_sequence(
-        global_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.DARK_GRAY
+        global_ax,
+        [0, start, stop, 0],
+        [0, 1, 0],
+        color=kpl.KplColors.DARK_GRAY,
+        alpha=global_alpha,
     )
 
     # SCC
@@ -162,7 +177,11 @@ def main(esr_data, spin_echo_data):
     # Charge state readout
     start = stop + 1
     stop = 200
-    kpl.plot_sequence(global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556")
+    kpl.plot_sequence(
+        global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556", alpha=global_alpha
+    )
+
+    seq_fig.subplots_adjust(hspace=0.1)
 
     ### ESR
 
