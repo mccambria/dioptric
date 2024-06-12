@@ -233,6 +233,7 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    pixel_drifts = np.empty((num_runs, 2))
     if save_all_images or save_mean_images:
         shape = widefield.get_img_array_shape()
         if save_images_downsample_factor is not None:
@@ -299,12 +300,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
-                                )
+                                counts[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = counts_list
+                                states[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = states_list
 
                                 if save_images_downsample_factor is not None:
                                     img_array = widefield.downsample_img_array(
@@ -315,9 +316,9 @@ def main(
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
                                 if save_mean_images:
-                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
-                                        img_array
-                                    )
+                                    mean_img_arrays[
+                                        exp_ind, step_ind, :, :
+                                    ] += img_array
 
                     ### Move on to the next run
 
@@ -332,7 +333,8 @@ def main(
                     step_ind_master_list[run_ind] = step_ind_list.copy()
 
                     # Update coordinates
-                    optimize.optimize_pixel_and_z(repr_nv_sig)
+                    pixel_drift = optimize.optimize_pixel_and_z(repr_nv_sig)
+                    pixel_drifts[run_ind, :] = pixel_drift
 
                     break
 
@@ -372,6 +374,7 @@ def main(
         "counts-units": "photons",
         "counts": counts,
         "states": states,
+        "pixel_drifts": pixel_drifts,
     }
     if save_all_images:
         raw_data |= {
