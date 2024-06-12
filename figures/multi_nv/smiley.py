@@ -85,8 +85,8 @@ def main(
             for ind in range(num_runs):
                 pixel_drift = pixel_drifts[ind]
                 offset = [
-                    pixel_drift[0] - base_pixel_drift[0],
-                    pixel_drift[1] - base_pixel_drift[1],
+                    img_array_offset[0] + pixel_drift[0] - base_pixel_drift[0],
+                    img_array_offset[1] + pixel_drift[1] - base_pixel_drift[1],
                 ]
                 img_array = img_arrays[ind]
                 cropped_img_array = crop_img_array(
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     # main(1556690958663, diff=True, img_array_offset=[3, 5])
 
     # Winking histogram
-    main(1557677298756, diff=True, vmin=-0.29, vmax=0.04)
+    main(1557896447093, diff=True, vmin=-0.29, vmax=0.04)
 
     # # Spin
     # main(1557059855690, diff=True, img_array_offset=[-2, 0], vmin=0, vmax=1.4)
