@@ -875,10 +875,13 @@ def draw_circles_on_nvs(
         )
         points.append(point)
     if not no_legend:
-        ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-        ncols = 6
+        # ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
+        # ncols = 6
+        nrows = 2
+        ncols = np.ceil(num_nvs / nrows)
         # ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
-        ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.5)
+        ax.legend(loc=kpl.Loc.UPPER_CENTER, ncols=ncols, markerscale=0.5)
+        # ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.5)
 
     if include_inds is not None:
         for ind in range(num_nvs):

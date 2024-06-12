@@ -156,8 +156,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     )
     kpl.set_mosaic_xlabel(axes_pack, layout, "Total evolution time (µs)")
     # kpl.set_mosaic_xlabel(axes_pack, layout, "Evolution time (µs)")
-    # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
-    kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
+    kpl.set_mosaic_ylabel(axes_pack, layout, "Change in $P($NV$^{-})$")
+    # kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
     return fig
 
 

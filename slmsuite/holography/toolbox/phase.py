@@ -581,3 +581,113 @@ def matheui_gaussian(grid, r, q, w=None):
 
     raise NotImplementedError()
 
+def gaussian(grid, wx, wy):
+    """
+    Returns a smoothly varying phase for a Gaussian beam with specified widths in x and y directions.
+
+    Parameters
+    ----------
+    grid : (array_like, array_like) OR SLM
+        The grid can be a tuple of x and y coordinates or an instance of SLM.
+    wx : float
+        The width of the Gaussian beam in the x direction.
+    wy : float
+        The width of the Gaussian beam in the y direction.
+
+    Returns
+    -------
+    numpy.ndarray
+        The smoothly varying phase for the Gaussian function.
+    """
+    x_grid, y_grid = _process_grid(grid)
+
+    # Compute the Gaussian amplitude with different widths in x and y directions
+    amplitude = np.exp(-(x_grid**2 / (2 * wx**2) + y_grid**2 / (2 * wy**2)))
+
+    # Normalize the amplitude to the range [0, 2*pi] to create a smooth phase pattern
+    normalized_amplitude = (amplitude - np.min(amplitude)) / (np.max(amplitude) - np.min(amplitude))
+    phase = normalized_amplitude * 2 * np.pi
+
+    return phase
+
+def sinc(grid, frequency):
+    """
+    Returns a phase pattern generated using the sinc function.
+
+    Parameters
+    ----------
+    grid : (array_like, array_like) OR SLM
+        The grid can be a tuple of x and y coordinates or an instance of SLM.
+    frequency : float
+        The frequency of oscillations in the sinc function.
+
+    Returns
+    -------
+    numpy.ndarray
+        The phase pattern generated using the sinc function.
+    """
+    # x_grid, y_grid = _process_grid(grid)
+    x = np.linspace(-1, 1, 1920)
+    y = np.linspace(-1, 1, 1080)
+    x_grid, y_grid = np.meshgrid(x, y)
+
+    # Compute the phase using the sinc function
+    phase = np.sinc(frequency * x_grid) * np.sinc(frequency * y_grid)
+
+    phase -= np.max(phase)
+
+    return phase
+
+def linear_gradient(grid, direction='x'):
+    """
+    Returns a linear gradient phase pattern.
+
+    Parameters
+    ----------
+    grid : (array_like, array_like) OR SLM
+        The grid can be a tuple of x and y coordinates or an instance of SLM.
+    direction : str
+        The direction of the gradient ('x' or 'y').
+
+    Returns
+    -------
+    numpy.ndarray
+        The linear gradient phase pattern.
+    """
+    x_grid, y_grid = _process_grid(grid)
+
+    if direction == 'x':
+        phase = np.linspace(0, 2 * np.pi, x_grid.shape[1])
+        phase = np.tile(phase, (x_grid.shape[0], 1))
+    elif direction == 'y':
+        phase = np.linspace(0, 2 * np.pi, y_grid.shape[0])
+        phase = np.tile(phase, (y_grid.shape[1], 1)).T
+    else:
+        raise ValueError("Direction must be 'x' or 'y'.")
+
+    return phase
+
+def radial_gradient(grid):
+    """
+    Returns a radial gradient phase pattern.
+
+    Parameters
+    ----------
+    grid : (array_like, array_like) OR SLM
+        The grid can be a tuple of x and y coordinates or an instance of SLM.
+
+    Returns
+    -------
+    numpy.ndarray
+        The radial gradient phase pattern.
+    """
+    x_grid, y_grid = _process_grid(grid)
+
+    # Calculate the radial distance from the center
+    r = np.sqrt(x_grid**2 + y_grid**2)
+
+    # Normalize the radial distance to the range [0, 2*pi]
+    radial_phase = r / np.max(r) * 2 * np.pi
+
+    return radial_phase
+

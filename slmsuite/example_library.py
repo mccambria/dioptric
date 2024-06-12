@@ -16,6 +16,7 @@ from IPython.display import Image
 import imageio
 import io 
 from slmsuite.holography import analysis, toolbox
+from scipy.optimize import curve_fit
 mpl.rc('image', cmap='Blues')
 
 def nuvu2thorcam_calibration(coords):
@@ -136,6 +137,40 @@ def calculate_phaseshifts(cam_coords):
     phase_shift_coords = np.dot(cam_coords_augmented, M.T)
 
     return phase_shift_coords[:, :2]
+
+
+def gaussian2d(xy, x0, y0, a, c, wx, wy, wxy=0):
+    x = xy[0] - x0
+    y = xy[1] - y0
+
+    wxy = np.sign(wxy) * np.min([np.abs(wxy), wx * wy])
+
+    try:
+        M = np.linalg.inv([[wx * wx, wxy], [wxy, wy * wy]])
+    except np.linalg.LinAlgError:
+        M = np.array([[1 / wx / wx, 0], [0, 1 / wy / wy]])
+
+    argument = np.square(x) * M[0, 0] + np.square(y) * M[1, 1] + 2 * x * y * M[1, 0]
+
+    return c + a * np.exp(-.5 * argument)
+
+def fit_gaussian2d(data, x0, y0):
+    x = np.linspace(0, data.shape[1] - 1, data.shape[1])
+    y = np.linspace(0, data.shape[0] - 1, data.shape[0])
+    x, y = np.meshgrid(x, y)
+    xy = np.vstack([x.ravel(), y.ravel()])
+
+    initial_guess = (x0, y0, data.max(), data.min(), 1, 1, 0)
+    bounds = ([-np.inf, -np.inf, 0, -np.inf, 0, 0, -np.inf],
+              [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+
+    try:
+        popt, _ = curve_fit(gaussian2d, xy, data.ravel(), p0=initial_guess, bounds=bounds)
+    except RuntimeError as e:
+        print(f"Error in fitting: {e}")
+        return None
+
+    return popt
 
 def plot_intensity():
     # Data from the image

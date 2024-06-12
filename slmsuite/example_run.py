@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 from IPython.display import Image
 import imageio
 import io 
+from scipy.optimize import curve_fit
+
 
 
 mpl.rc('image', cmap='Blues')
@@ -24,6 +26,7 @@ from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameraslms import FourierSLM
 from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
 from slmsuite import example_library
+from slmsuite.misc import fitfunctions
 
 # funtions
 # region "plot_phase" function
@@ -41,7 +44,7 @@ def plot_phase(phase, title="", zoom=True):
         vmin=0,
         vmax=2*np.pi,
         interpolation="none",
-        cmap="twilight"
+        cmap="gray"
     )
     plt.colorbar(im, ax=axs[0])
 
@@ -190,8 +193,8 @@ def evaluate_uniformity(vectors=None, size=25):
 
 # region "square" function 
 def square_array():
-    xlist = np.arange(550, 1150, 25)                      # Get the coordinates for one edge
-    ylist = np.arange(240, 840, 25) 
+    xlist = np.arange(550, 650, 25)                      # Get the coordinates for one edge
+    ylist = np.arange(450, 550, 25) 
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
@@ -203,12 +206,20 @@ def square_array():
         feedback='computational_spot',
         stat_groups=['computational_spot']
     )
-    hologram.plot_nearfield(title="Padded", padded=True)
-    hologram.plot_nearfield(title="Unpadded")
+    # hologram.plot_nearfield(title="Padded", padded=True)
+    # hologram.plot_nearfield(title="Unpadded")
     phase = hologram.extract_phase()
-    for ind in range(phase.shape[0]):
-        for jnd in range(phase.shape[1]):
-            phase[ind, jnd] += np.dot((ind, jnd), (0.03, 0.03))
+    # plot_phase(phase)
+    slm.write(phase, settle=True)
+    cam_plot()
+    # for ind in range(phase.shape[0]):
+    #     for jnd in range(phase.shape[1]):
+    #         phase[ind, jnd] += np.dot((ind, jnd), (0.03, 0.03))
+
+    phase_update = toolbox.phase.gaussian(grid=slm, wx=10000, wy=10000)
+    # Generate the initial phase with the gradient
+    phase += phase_update
+    plot_phase(phase_update)
     slm.write(phase, settle=True)
     cam_plot()
     # evaluate_uniformity(vectors=square)
@@ -477,7 +488,7 @@ def integrate_intensity():
     # print(phase)
     # phase *= np.exp(1j * np.dot(np.meshgrid(phase.shape), (10,15))), 855,502.5
     slm.write(phase, settle=True)
-    intensity_map = cam_plot()
+    cam_plot()
     cam.set_exposure(.0001)
     img = cam.get_image()
     # Define the region of interest (ROI) around the center spot and compute intensity
@@ -752,7 +763,7 @@ def camp2phase_calibration():
     initial_phase = hologram.extract_phase()
 
     nuvu_pixel_coords = [
-      [131.144, 129.272], 
+        [131.144, 129.272], 
        [261.477, 205.335], 
        [435.139, 304.013], 
        [310.023, 187.942], 
@@ -774,30 +785,29 @@ def camp2phase_calibration():
         slm.write(shifted_phase, settle=True)
         cam_plot()
 
+#region coords 
+# Example usage with a list of Nuvu pixel coordinates
+nuvu_pixel_coords = [
+    [131.144, 129.272], 
+    [161.477, 105.335], 
+    [135.139, 104.013], 
+    [110.023, 87.942], 
+    [144.169, 163.787], 
+    [173.93, 78.505], 
+    [171.074, 49.877], 
+    [170.501, 132.597], 
+    [137.025, 74.662], 
+    [58.628, 139.616]
+]
+# Convert the list to a numpy array
+nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
+
+# Calibrate the coordinates from Nuvu to Thorlabs system
+thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
+# thorcam_coords = thorcam_coords.T  #Transpose
+
 def nvs_demo():
-    # Example usage with a list of Nuvu pixel coordinates
-    nuvu_pixel_coords = [
-      [131.144, 129.272], 
-       [161.477, 105.335], 
-       [135.139, 104.013], 
-       [110.023, 87.942], 
-       [144.169, 163.787], 
-       [173.93, 78.505], 
-       [171.074, 49.877], 
-       [170.501, 132.597], 
-       [137.025, 74.662], 
-       [58.628, 139.616]
-    ]
-
-    # Convert the list to a numpy array
-    nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
-
-    # Calibrate the coordinates from Nuvu to Thorlabs system
-    thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
-    thorcam_coords = thorcam_coords.T  #Transpose
-
     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=thorcam_coords, basis='ij', cameraslm=fs)
-
     # Precondition computationally
     hologram.optimize(
         'WGS-Kim',
@@ -809,6 +819,82 @@ def nvs_demo():
     initial_phase = hologram.extract_phase()
     slm.write(initial_phase,settle=True)
     cam_plot()
+
+def initial_phase():
+    xlist = np.arange(650, 750, 10)  # X coordinates for the grid
+    ylist = np.arange(340, 440, 10)  # Y coordinates for the grid
+    xgrid, ygrid = np.meshgrid(xlist, ylist)
+    square = np.vstack((xgrid.ravel(), ygrid.ravel()))
+    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+
+    # Precondition computationally
+    hologram.optimize(
+        'WGS-Kim',
+        maxiter=20,
+        feedback='computational_spot',
+        stat_groups=['computational_spot']
+    )
+    initial_phase = hologram.extract_phase()
+
+    # Define the path to save the phase data
+    path = r'C:\Users\Saroj Chand\Documents\slm_phase'
+    filename = 'initial_phase.npy'
+    
+    # Save the phase data
+    save(initial_phase, path, filename)
+
+# Define the save function
+def save(data, path, filename):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    np.save(os.path.join(path, filename), data)
+
+def optimize_array():
+    # Import saved the phase data
+    path = r'C:\Users\Saroj Chand\Documents\slm_phase'
+    filename = 'initial_phase.npy'
+    initial_phase = np.load(os.path.join(path, filename))
+    optimized_coords = []
+    phase_shifts = example_library.calculate_phaseshifts(thorcam_coords)
+
+    print("Shape of phase_shifts:", phase_shifts.shape)
+    print("Shape of thorcam_coords:", thorcam_coords.shape)
+    print("phase shifts:", phase_shifts)
+    print("thorcam coords:", thorcam_coords)
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    plt.ion()
+
+    for (shift_x, shift_y), (x0, y0) in zip(phase_shifts, thorcam_coords):
+        shifted_phase = example_library.shift_phase(np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y)
+        slm.write(shifted_phase, settle=True)
+        im = cam.get_image()
+
+        fit_params = example_library.fit_gaussian2d(im, x0, y0)
+        if fit_params is not None:
+            x0, y0, a, c, wx, wy, wxy = fit_params
+            optimized_coords.append((x0, y0))
+            print(f"Fitted coordinates: x={x0}, y={y0}")
+
+            ax[0].clear()
+            ax[0].imshow(im)
+            ax[0].set_title('Captured Image')
+
+            x = np.linspace(0, im.shape[1] - 1, im.shape[1])
+            y = np.linspace(0, im.shape[0] - 1, im.shape[0])
+            x, y = np.meshgrid(x, y)
+            fitted_data =  example_library.gaussian2d((x, y), *fit_params).reshape(im.shape)
+
+            ax[1].clear()
+            ax[1].imshow(fitted_data)
+            ax[1].set_title('Fitted Gaussian')
+
+            plt.pause(0.01)
+
+    plt.ioff()
+    print("Optimized coordinates list:")
+    print(optimized_coords)
+    
 
 def plot_laguerre_gaussian_phase():
     # Assuming `slm` is a valid instance and `toolbox` is properly defined with the phase method
@@ -827,12 +913,14 @@ try:
     # wavefront_calibration()
     load_wavefront_calibration()
     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
-    # square_array()
+    square_array()
     # save_initial_phase()
     # animate_wavefront_shifts()
     # real_time_dynamical_tweezers()
     # selected_dynamical_tweezers()
-    camp2phase_calibration()
+    # camp2phase_calibration()
+    # initial_phase()
+    # optimize_array()
     # plot_laguerre_gaussian_phase()
     # nvs_demo()
     # circles()

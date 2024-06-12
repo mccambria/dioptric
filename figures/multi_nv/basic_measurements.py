@@ -41,10 +41,11 @@ def main(esr_data, spin_echo_data):
     # )
 
     figsize = kpl.double_figsize
-    figsize[1] *= 1.5
+    figsize[1] *= 1.6
     main_fig = plt.figure(figsize=figsize)
-    seq_esr_fig, spin_echo_fig, spin_echo_zoom_fig = main_fig.subfigures(
-        nrows=3, height_ratios=(1, 1, 1)
+    seq_esr_fig, spin_echo_figs = main_fig.subfigures(nrows=2, height_ratios=(1, 2))
+    spin_echo_fig, spin_echo_zoom_fig = spin_echo_figs.subfigures(
+        ncols=2, width_ratios=(1, 1), wspace=0.01
     )
     seq_fig, esr_fig = seq_esr_fig.subfigures(
         ncols=2, width_ratios=(0.6, 0.4), wspace=0.01
@@ -55,17 +56,25 @@ def main(esr_data, spin_echo_data):
 
     ### Sequence
 
+    global_alpha = 0.7
+
     # NV-specific axes
-    nrows = 5
+    nrows = 6
     seq_axes_pack = seq_fig.subplots(
-        nrows=nrows, sharex=True, sharey=True, height_ratios=[1, 1, 1, 0.25, 1]
+        nrows=nrows,
+        sharex=True,
+        sharey=True,
+        height_ratios=[1, 1, 1, 0.25, 1, 1],
+        # hspace=0.005,
     )
+    global_ax = seq_axes_pack[-1]
 
     # Global pulse axis
     seq_ax = seq_fig.add_subplot(111)
     seq_ax.set_ylabel(" ", rotation="horizontal", labelpad=40, loc="bottom")
     seq_ax.sharex(seq_axes_pack[0])
     # seq_ax.sharey(seq_axes_pack[0])
+    global_ax = seq_ax
 
     for ax in [*seq_axes_pack, seq_ax]:
         ax.tick_params(
@@ -79,17 +88,18 @@ def main(esr_data, spin_echo_data):
         )
         ax.spines[["left", "right", "top"]].set_visible(False)
 
-    seq_axes_pack[-2].spines[["bottom"]].set_visible(False)
+    seq_axes_pack[-3].spines[["bottom"]].set_visible(False)
     seq_ax.spines[["bottom"]].set_visible(False)
     seq_ax.patch.set_alpha(0)
 
-    labels = [*[f"NV {ind}" for ind in range(3)], "...", "NV $\it{n}$"]
+    labels = [*[f"NV {ind}" for ind in range(3)], "...", "NV $\it{n}$", "Global"]
     for ind in range(nrows):
         ax = seq_axes_pack[ind]
-        if ind == nrows - 2:
+        if ind == nrows - 3:
             ax.set_ylabel(labels[ind])
         else:
-            ax.set_ylabel(labels[ind], rotation="horizontal", labelpad=40, loc="bottom")
+            ax.set_ylabel(labels[ind], rotation="horizontal", labelpad=50, loc="bottom")
+    global_ax.set_ylabel(" ", labelpad=50, loc="bottom")
 
     ax = seq_axes_pack[0]
     ax.set_xlim([0, 80])
@@ -102,15 +112,24 @@ def main(esr_data, spin_echo_data):
     seq_axes_pack[-1].set_xlabel(" ")
     seq_ax.set_xlabel(" ")
     seq_fig.text(0.1, 0.9, "Charge pol.")
-    seq_fig.text(0.4, 0.5, "Spin pol.", rotation=90)
-    seq_fig.text(0.6, 0.3, "Microwave seq.", rotation=90)
+    seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
+    # seq_fig.text(0.4, 0.1, "Spin pol.")
+    seq_fig.text(0.6, 0.3, "RF seq.", horizontalalignment="center", rotation=90)
+    # seq_fig.text(0.6, 0.1, "RF seq.")
     seq_fig.text(0.7, 0.9, "SCC")
-    seq_fig.text(0.9, 0.5, "Charge state\nreadout", horizontalalignment="center")
+    seq_fig.text(
+        0.9, 0.3, "Charge state\nreadout", horizontalalignment="center", rotation=90
+    )
+    # seq_fig.text(0.9, 0.1, "Readout", horizontalalignment="center")
+
+    row_skip_inds = [nrows - 3, nrows - 1]
 
     # Charge polarization
+    start = 0
     stop = 0
     for ind in range(nrows):
-        if ind == nrows - 2:
+        if ind in row_skip_inds:
+            start += 2
             continue
         ax = seq_axes_pack[ind]
         start = stop + 4
@@ -118,31 +137,51 @@ def main(esr_data, spin_echo_data):
         kpl.plot_sequence(ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.GREEN)
 
     # Spin polarization
-    start = stop + 2
-    stop = start + 10
-    kpl.plot_sequence(seq_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556")
+    start = stop + 1
+    stop = start + 11
+    kpl.plot_sequence(
+        global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900", alpha=global_alpha
+    )
 
     # Microwaves A
-    start = stop + 2
-    stop = start + 1
-    kpl.plot_sequence(seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN)
+    # start = stop + 2
+    # stop = start + 1
+    # # kpl.plot_sequence(
+    # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
+    # # )
+    # start = stop + 1
+    # stop = start + 1
+    # # kpl.plot_sequence(
+    # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
+    # # )
     start = stop + 1
-    stop = start + 1
-    kpl.plot_sequence(seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN)
+    stop = start + 9
+    kpl.plot_sequence(
+        global_ax,
+        [0, start, stop, 0],
+        [0, 1, 0],
+        color=kpl.KplColors.DARK_GRAY,
+        alpha=global_alpha,
+    )
 
     # SCC
     for ind in range(nrows):
-        if ind == nrows - 2:
+        if ind in row_skip_inds:
+            start += 2
             continue
         ax = seq_axes_pack[ind]
         start = stop + 4
         stop = start + 1
         kpl.plot_sequence(ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.RED)
 
-    # Spin polarization
-    start = stop + 2
+    # Charge state readout
+    start = stop + 1
     stop = 200
-    kpl.plot_sequence(seq_ax, [0, start, stop, 0], [0, 1, 0], color="#f7f700")
+    kpl.plot_sequence(
+        global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556", alpha=global_alpha
+    )
+
+    seq_fig.subplots_adjust(hspace=0.1)
 
     ### ESR
 
@@ -181,8 +220,10 @@ def main(esr_data, spin_echo_data):
     )
 
     zoom_range = [65, 87]
-    ax = spin_echo_axes_pack[mosaic_layout[0][0]]
-    ax.axvspan(*zoom_range, color=kpl.KplColors.LIGHT_GRAY, zorder=-11)
+    # ax = spin_echo_axes_pack[mosaic_layout[0][0]]
+    # ax.axvspan(*zoom_range, color=kpl.KplColors.LIGHT_GRAY, zorder=-11)
+    for ax in spin_echo_axes_pack.values():
+        ax.axvspan(*zoom_range, color=kpl.KplColors.LIGHT_GRAY, zorder=-11)
 
     spin_echo_zoom_axes_pack = spin_echo_zoom_fig.subplot_mosaic(
         mosaic_layout, sharex=True, sharey=True
