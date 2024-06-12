@@ -68,6 +68,7 @@ def main(esr_data, spin_echo_data):
     seq_ax.set_ylabel(" ", rotation="horizontal", labelpad=40, loc="bottom")
     seq_ax.sharex(seq_axes_pack[0])
     # seq_ax.sharey(seq_axes_pack[0])
+    global_ax = seq_ax
 
     for ax in [*seq_axes_pack, seq_ax]:
         ax.tick_params(
