@@ -23,6 +23,33 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import LaserKey, NVSig
 
+pixel_coords_list = [
+    [131.144, 129.272],  #  Smiley
+    [161.477, 105.335],  #  Smiley
+    [135.139, 104.013],
+    [110.023, 87.942],
+    [144.169, 163.787],
+    [173.93, 78.505],  #  Smiley
+    [171.074, 49.877],  #  Smiley
+    [170.501, 132.597],
+    [137.025, 74.662],
+    [58.628, 139.616],
+    # Smiley additions
+    # [150.34, 119.249],  # Too much crosstalk
+    [61.277 - 1, 76.387],
+    [85.384 - 1, 33.935],
+]
+base_pixel_drift = [10, 38]
+
+
+def crop_img_array(img_array, offset=[0, 0], buffer=20):
+    size = img_array.shape[-1]
+    img_array = img_array[
+        buffer + offset[0] : size - buffer + offset[0],
+        buffer + offset[1] : size - buffer + offset[1],
+    ]
+    return img_array
+
 
 def main(
     file_id,
@@ -36,20 +63,53 @@ def main(
     ### Unpacking
 
     data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+
     if "img_arrays" in data:
         img_arrays = np.array(data["img_arrays"])
+        size = img_arrays.shape[-1]
+        downsample_factor = round(250 / size)
+        buffer = 20 // downsample_factor
+
         if diff:  # diff
-            img_arrays = np.mean(img_arrays, axis=(1, 2, 3))
-            img_array = img_arrays[0] - img_arrays[1]
+            img_arrays = img_arrays[0] - img_arrays[1]
         else:
             img_array_ind = 0 if sig_or_ref else 1
             img_arrays = img_arrays[img_array_ind]
+
+        # Crop/center the images
+        if "pixel_drifts" in data:
+            pixel_drifts = data["pixel_drifts"]
+            img_arrays = np.mean(img_arrays, axis=(1, 2))
+            cropped_img_arrays = []
+            num_runs = img_arrays.shape[0]
+            for ind in range(num_runs):
+                pixel_drift = pixel_drifts[ind]
+                offset = [
+                    pixel_drift[0] - base_pixel_drift[0],
+                    pixel_drift[1] - base_pixel_drift[1],
+                ]
+                img_array = img_arrays[ind]
+                cropped_img_array = crop_img_array(
+                    img_array, offset=offset, buffer=buffer
+                )
+                cropped_img_arrays.append(cropped_img_array)
+            img_array = np.mean(cropped_img_arrays, axis=(0))
+        else:
             img_array = np.mean(img_arrays, axis=(0, 1, 2))
+            img_array = crop_img_array(
+                img_array, offset=img_array_offset, buffer=buffer
+            )
+
         del img_arrays
     else:
+        downsample_factor = 1
         img_array = np.array(data["img_array"])
         img_array = widefield.adus_to_photons(img_array)
+        img_array = crop_img_array(img_array, offset=img_array_offset, buffer=buffer)
     del data
+
+    if downsample_factor == 1:
+        widefield.replace_dead_pixel(img_array)
 
     ### Cropping
 
@@ -67,9 +127,6 @@ def main(
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons", vmin=vmin, vmax=vmax)
-    # kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.04, vmax=0.42)
-    kpl.imshow(ax, img_array, cbar_label="Photons", vmin=-0.29, vmax=0.04)
-    # kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0, vmax=1.4)
     ax.axis("off")
 
     ### Scale bar
@@ -81,23 +138,9 @@ def main(
 
     if draw_circles:
         pixel_coords_list = [
-            [131.144, 129.272],  #  Smiley
-            [161.477, 105.335],  #  Smiley
-            [135.139, 104.013],
-            [110.023, 87.942],
-            [144.169, 163.787],
-            [173.93, 78.505],  #  Smiley
-            [171.074, 49.877],  #  Smiley
-            [170.501, 132.597],
-            [137.025, 74.662],
-            [58.628, 139.616],
-            # Smiley additions
-            # [150.34, 119.249],  # Too much crosstalk
-            [61.277 - 1, 76.387],
-            [85.384 - 1, 33.935],
-        ]
-        pixel_coords_list = [
-            widefield.adjust_pixel_coords_for_drift(el, [10 - buffer, 38 - buffer])
+            widefield.adjust_pixel_coords_for_drift(
+                el, [base_pixel_drift[0] - buffer, base_pixel_drift[1] - buffer]
+            )
             for el in pixel_coords_list
         ]
 
@@ -150,7 +193,7 @@ if __name__ == "__main__":
     # main(1556690958663, diff=True, img_array_offset=[3, 5])
 
     # Winking histogram
-    main(1557677298756, diff=True, img_array_offset=[-2, 0], vmin=-0.29, vmax=0.04)
+    main(1557677298756, diff=True, vmin=-0.29, vmax=0.04)
 
     # # Spin
     # main(1557059855690, diff=True, img_array_offset=[-2, 0], vmin=0, vmax=1.4)
@@ -164,14 +207,14 @@ if __name__ == "__main__":
     # main(, img_array_offset=[16, 13], vmin=0.04, vmax=0.42)
 
     # Histograms: ref, sig, diff
-    # main(, diff=False, sig_or_ref=False, img_array_offset=[3, 5], vmin=-0.29, vmax=0.04)
-    # main(, diff=False, sig_or_ref=True, img_array_offset=[3, 5], vmin=-0.29, vmax=0.04)
+    # main(, diff=False, sig_or_ref=False, vmin=-0.29, vmax=0.04)
+    # main(, diff=False, sig_or_ref=True, vmin=-0.29, vmax=0.04)
     # main(, diff=True, img_array_offset=[3, 5])
 
     # Winking histogram
-    # main(, diff=True, img_array_offset=[-2, 0], vmin=-0.29, vmax=0.04)
+    # main(, diff=True, vmin=-0.29, vmax=0.04)
 
     # Spin
-    # main(, diff=True, img_array_offset=[-2, 0], vmin=0, vmax=1.4)
+    # main(, diff=True, vmin=0, vmax=1.4)
 
     plt.show(block=True)
