@@ -67,7 +67,7 @@ def main(
     ### Unpacking
 
     data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-
+    global pixel_coords_list
     buffer = 20
 
     if "img_arrays" in data:
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     # Winking histogram
     # main(1557968425360, diff=True, vmin=-0.29, vmax=0.04)
-    main(1558050169335, diff=True, vmin=-0.29, vmax=0.04)
+    # main(1558050169335, diff=True, vmin=-0.29, vmax=0.04)
 
     # # Spin
     # main(1557059855690, diff=True, img_array_offset=[-2, 0], vmin=0, vmax=1.4)
@@ -193,10 +193,12 @@ if __name__ == "__main__":
     ### Complete smiley
     
     # Green, same durations
-    # main(, img_array_offset=[16, 13], vmin=0.04, vmax=0.42)
+    main(1558527830228, img_array_offset=[-2,-1], vmin=0.2, vmax=9.5)
+    # main(1558527830228, img_array_offset=[-2,-1], draw_circles=True)
 
     # Green, 3x longer on dim NV
-    # main(, img_array_offset=[16, 13], vmin=0.04, vmax=0.42)
+    main(1558519355335, img_array_offset=[-2,-1], vmin=0.2, vmax=9.5)
+    # main(1558519355335, img_array_offset=[-2,-1], draw_circles=True)
 
     # Histograms: ref, sig, diff
     # main(, diff=False, sig_or_ref=False, vmin=-0.29, vmax=0.04)
