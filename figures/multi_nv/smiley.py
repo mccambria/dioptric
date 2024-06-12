@@ -43,7 +43,11 @@ base_pixel_drift = [10, 38]
 
 
 def crop_img_array(img_array, offset=[0, 0], buffer=20):
+    offset = [round(el) for el in offset]
     size = img_array.shape[-1]
+    if size == 250:
+        widefield.replace_dead_pixel(img_array)
+    print([buffer + offset[0], buffer + offset[1]])
     img_array = img_array[
         buffer + offset[0] : size - buffer + offset[0],
         buffer + offset[1] : size - buffer + offset[1],
@@ -55,7 +59,7 @@ def main(
     file_id,
     diff=True,
     sig_or_ref=None,
-    img_array_offset=[0, 0],
+    img_array_offset=[+3, -3],
     vmin=None,
     vmax=None,
     draw_circles=False,
@@ -64,11 +68,13 @@ def main(
 
     data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
 
+    buffer = 20
+
     if "img_arrays" in data:
         img_arrays = np.array(data["img_arrays"])
         size = img_arrays.shape[-1]
         downsample_factor = round(250 / size)
-        buffer = 20 // downsample_factor
+        buffer = buffer // downsample_factor
 
         if diff:  # diff
             img_arrays = img_arrays[0] - img_arrays[1]
@@ -85,8 +91,8 @@ def main(
             for ind in range(num_runs):
                 pixel_drift = pixel_drifts[ind]
                 offset = [
-                    img_array_offset[0] + pixel_drift[0] - base_pixel_drift[0],
-                    img_array_offset[1] + pixel_drift[1] - base_pixel_drift[1],
+                    img_array_offset[0] + (pixel_drift[0] - base_pixel_drift[0]) / 2,
+                    img_array_offset[1] + (pixel_drift[1] - base_pixel_drift[1]) / 2,
                 ]
                 img_array = img_arrays[ind]
                 cropped_img_array = crop_img_array(
@@ -107,21 +113,6 @@ def main(
         img_array = widefield.adus_to_photons(img_array)
         img_array = crop_img_array(img_array, offset=img_array_offset, buffer=buffer)
     del data
-
-    if downsample_factor == 1:
-        widefield.replace_dead_pixel(img_array)
-
-    ### Cropping
-
-    size = img_array.shape[-1]
-    downsample_factor = round(250 / size)
-    if downsample_factor == 1:
-        widefield.replace_dead_pixel(img_array)
-    buffer = 20 // downsample_factor
-    img_array = img_array[
-        buffer + img_array_offset[0] : size - buffer + img_array_offset[0],
-        buffer + img_array_offset[1] : size - buffer + img_array_offset[1],
-    ]
 
     ### Imshow
 
@@ -182,10 +173,10 @@ if __name__ == "__main__":
     ### Missing tooth
 
     # # Green, same durations
-    # main(1557498151070, img_array_offset=[16, 13], vmin=0.04, vmax=0.42)
+    # main(1557498151070, img_array_offset=[16, 13], vmin=0.05, vmax=8.2)
 
     # # Green, 3x longer on dim NV
-    # main(1557494466189, img_array_offset=[16, 13], vmin=0.04, vmax=0.42)
+    # main(1557494466189, img_array_offset=[16, 13], vmin=0.05, vmax=8.2)
 
     # # Histograms: ref, sig, diff
     # main(1556690958663, diff=False, sig_or_ref=False, img_array_offset=[3, 5], vmin=-0.29, vmax=0.04)
@@ -193,7 +184,8 @@ if __name__ == "__main__":
     # main(1556690958663, diff=True, img_array_offset=[3, 5])
 
     # Winking histogram
-    main(1557896447093, diff=True, vmin=-0.29, vmax=0.04)
+    # main(1557968425360, diff=True, vmin=-0.29, vmax=0.04)
+    main(1558050169335, diff=True, vmin=-0.29, vmax=0.04)
 
     # # Spin
     # main(1557059855690, diff=True, img_array_offset=[-2, 0], vmin=0, vmax=1.4)
